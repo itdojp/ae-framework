@@ -2,14 +2,15 @@
  * Tests for SBOM Generator
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SBOMGenerator, type SBOMGeneratorOptions, type SBOM } from '../../src/security/sbom-generator.js';
 import * as fs from 'fs/promises';
 
 // Mock fs module
 vi.mock('fs/promises');
-const { mockGlob } = vi.hoisted(() => ({
-  mockGlob: vi.fn()
+const { mockGlob, mockFetch } = vi.hoisted(() => ({
+  mockGlob: vi.fn(),
+  mockFetch: vi.fn(),
 }));
 vi.mock('glob', () => ({
   glob: mockGlob,
@@ -23,6 +24,8 @@ describe('SBOMGenerator', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetch.mockReset();
+    vi.stubGlobal('fetch', mockFetch);
     
     options = {
       projectRoot: '/test/project',
@@ -35,6 +38,10 @@ describe('SBOMGenerator', () => {
     };
 
     generator = new SBOMGenerator(options);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe('Basic SBOM Generation', () => {
@@ -427,6 +434,225 @@ describe('SBOMGenerator', () => {
       
       expect(component?.licenses).toContain('MIT');
       expect(component?.licenses).toContain('Apache-2.0');
+    });
+  });
+
+  describe('Vulnerability Extraction', () => {
+    it('should extract vulnerabilities from OSV query results', async () => {
+      const optionsWithVulnerabilities = { ...options, includeVulnerabilities: true };
+      const generatorWithVulnerabilities = new SBOMGenerator(optionsWithVulnerabilities);
+
+      const mockPackageJson = {
+        dependencies: {
+          lodash: '^4.17.0',
+        },
+      };
+      const mockPackageLock = {
+        packages: {
+          'node_modules/lodash': {
+            version: '4.17.21',
+            license: 'MIT',
+          },
+        },
+      };
+
+      mockFs.readFile.mockImplementation((filePath: string) => {
+        const pathStr = filePath.toString();
+        if (pathStr.endsWith('package.json')) return Promise.resolve(JSON.stringify(mockPackageJson));
+        if (pathStr.endsWith('package-lock.json')) return Promise.resolve(JSON.stringify(mockPackageLock));
+        return Promise.reject(new Error('File not found'));
+      });
+      mockGlob.mockResolvedValue([]);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: {
+          get: () => null,
+        },
+        json: async () => ({
+          results: [
+            {
+              vulns: [
+                {
+                  id: 'OSV-2024-0001',
+                  summary: 'Prototype pollution in lodash',
+                  severity: [{ type: 'CVSS_V3', score: '9.8' }],
+                  references: [{ type: 'ADVISORY', url: 'https://osv.dev/vulnerability/OSV-2024-0001' }],
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      const sbom = await generatorWithVulnerabilities.generate();
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [, request] = mockFetch.mock.calls[0] as [string, { body?: string }];
+      const body = JSON.parse(String(request.body));
+      expect(body.queries).toEqual([
+        {
+          package: { ecosystem: 'npm', name: 'lodash' },
+          version: '4.17.21',
+        },
+      ]);
+      expect(sbom.vulnerabilities).toHaveLength(1);
+      expect(sbom.vulnerabilities?.[0]).toMatchObject({
+        bom_ref: 'lodash',
+        id: 'OSV-2024-0001',
+      });
+      expect(sbom.vulnerabilities?.[0]?.ratings?.[0]?.severity).toBe('critical');
+    });
+
+    it('should fallback to empty vulnerabilities with warning on rate limit', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const optionsWithVulnerabilities = { ...options, includeVulnerabilities: true };
+      const generatorWithVulnerabilities = new SBOMGenerator(optionsWithVulnerabilities);
+
+      const mockPackageJson = {
+        dependencies: {
+          express: '^4.18.0',
+        },
+      };
+      const mockPackageLock = {
+        packages: {
+          'node_modules/express': {
+            version: '4.18.2',
+            license: 'MIT',
+          },
+        },
+      };
+      mockFs.readFile.mockImplementation((filePath: string) => {
+        const pathStr = filePath.toString();
+        if (pathStr.endsWith('package.json')) return Promise.resolve(JSON.stringify(mockPackageJson));
+        if (pathStr.endsWith('package-lock.json')) return Promise.resolve(JSON.stringify(mockPackageLock));
+        return Promise.reject(new Error('File not found'));
+      });
+      mockGlob.mockResolvedValue([]);
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 429,
+        headers: {
+          get: (header: string) => (header.toLowerCase() === 'retry-after' ? '30' : null),
+        },
+      });
+
+      const sbom = await generatorWithVulnerabilities.generate();
+
+      expect(sbom.vulnerabilities).toEqual([]);
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('HTTP 429'));
+      warnSpy.mockRestore();
+    });
+
+    it('should fallback to empty vulnerabilities with warning on network errors', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const optionsWithVulnerabilities = { ...options, includeVulnerabilities: true };
+      const generatorWithVulnerabilities = new SBOMGenerator(optionsWithVulnerabilities);
+
+      const mockPackageJson = {
+        dependencies: {
+          express: '^4.18.0',
+        },
+      };
+      const mockPackageLock = {
+        packages: {
+          'node_modules/express': {
+            version: '4.18.2',
+            license: 'MIT',
+          },
+        },
+      };
+      mockFs.readFile.mockImplementation((filePath: string) => {
+        const pathStr = filePath.toString();
+        if (pathStr.endsWith('package.json')) return Promise.resolve(JSON.stringify(mockPackageJson));
+        if (pathStr.endsWith('package-lock.json')) return Promise.resolve(JSON.stringify(mockPackageLock));
+        return Promise.reject(new Error('File not found'));
+      });
+      mockGlob.mockResolvedValue([]);
+      mockFetch.mockRejectedValue(new Error('network unavailable'));
+
+      const sbom = await generatorWithVulnerabilities.generate();
+
+      expect(sbom.vulnerabilities).toEqual([]);
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('OSV query threw an error'));
+      warnSpy.mockRestore();
+    });
+
+    it('should derive severity from CVSS vector strings when numeric score is absent', async () => {
+      const optionsWithVulnerabilities = { ...options, includeVulnerabilities: true };
+      const generatorWithVulnerabilities = new SBOMGenerator(optionsWithVulnerabilities);
+
+      const mockPackageJson = {
+        dependencies: {
+          express: '^4.18.0',
+        },
+      };
+      const mockPackageLock = {
+        packages: {
+          'node_modules/express': {
+            version: '4.18.2',
+            license: 'MIT',
+          },
+        },
+      };
+      mockFs.readFile.mockImplementation((filePath: string) => {
+        const pathStr = filePath.toString();
+        if (pathStr.endsWith('package.json')) return Promise.resolve(JSON.stringify(mockPackageJson));
+        if (pathStr.endsWith('package-lock.json')) return Promise.resolve(JSON.stringify(mockPackageLock));
+        return Promise.reject(new Error('File not found'));
+      });
+      mockGlob.mockResolvedValue([]);
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: {
+          get: () => null,
+        },
+        json: async () => ({
+          results: [
+            {
+              vulns: [
+                {
+                  id: 'OSV-2024-0002',
+                  summary: 'Remote execution risk',
+                  severity: [
+                    {
+                      type: 'CVSS_V3',
+                      score: 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      });
+
+      const sbom = await generatorWithVulnerabilities.generate();
+      expect(sbom.vulnerabilities).toHaveLength(1);
+      expect(sbom.vulnerabilities?.[0]?.ratings?.[0]?.severity).toBe('critical');
+      expect(sbom.vulnerabilities?.[0]?.ratings?.[0]?.score).toBeUndefined();
+    });
+
+    it('should skip custom components without purl ecosystem mapping', async () => {
+      const optionsWithVulnerabilities = {
+        ...options,
+        includeVulnerabilities: true,
+        customComponents: [
+          {
+            name: 'custom-lib',
+            version: '1.0.0',
+            type: 'library' as const,
+          },
+        ],
+      };
+      const generatorWithVulnerabilities = new SBOMGenerator(optionsWithVulnerabilities);
+
+      mockFs.readFile.mockResolvedValue('{}');
+      mockGlob.mockResolvedValue([]);
+      await generatorWithVulnerabilities.generate();
+
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 });

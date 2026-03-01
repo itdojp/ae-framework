@@ -117,7 +117,7 @@ describe('codex adapter stdio contract', () => {
                 summary: request.description,
                 analysis: request.prompt,
                 recommendations: [],
-                nextActions: [],
+                nextActions: ['continue'],
                 warnings: [],
                 shouldBlockProgress: false
               };
@@ -148,7 +148,7 @@ describe('codex adapter stdio contract', () => {
                 summary: 'blocked',
                 analysis: 'analysis',
                 recommendations: [],
-                nextActions: [],
+                nextActions: ['Provide missing input and rerun'],
                 warnings: ['w1'],
                 shouldBlockProgress: true
               };
@@ -279,6 +279,110 @@ describe('codex adapter stdio contract', () => {
         }),
       );
       expect(Array.isArray(payload.details?.errors)).toBe(true);
+    });
+  });
+
+  it('returns exit 1 when shouldBlockProgress=false and nextActions is empty', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return {
+            async handleTask() {
+              return {
+                summary: 'ok',
+                analysis: 'analysis',
+                recommendations: [],
+                nextActions: [],
+                warnings: [],
+                shouldBlockProgress: false
+              };
+            }
+          };
+        }
+      `);
+
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({ description: 'run', subagent_type: 'intent' }),
+      );
+
+      expect(result.status).toBe(1);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload).toEqual(
+        expect.objectContaining({
+          error: true,
+          code: 'INVALID_RESPONSE_SCHEMA',
+        }),
+      );
+    });
+  });
+
+  it('returns exit 2 when blocked response omits blocked metadata but has actionable nextActions', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return {
+            async handleTask() {
+              return {
+                summary: 'blocked',
+                analysis: 'analysis',
+                recommendations: [],
+                nextActions: ['fix and rerun'],
+                warnings: [],
+                shouldBlockProgress: true
+              };
+            }
+          };
+        }
+      `);
+
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({ description: 'run', subagent_type: 'intent' }),
+      );
+
+      expect(result.status).toBe(2);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload).toEqual(
+        expect.objectContaining({
+          shouldBlockProgress: true,
+        }),
+      );
+    });
+  });
+
+  it('returns exit 1 when shouldBlockProgress=true and nextActions is empty', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return {
+            async handleTask() {
+              return {
+                summary: 'blocked',
+                analysis: 'analysis',
+                recommendations: [],
+                nextActions: [],
+                warnings: [],
+                shouldBlockProgress: true
+              };
+            }
+          };
+        }
+      `);
+
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({ description: 'run', subagent_type: 'intent' }),
+      );
+
+      expect(result.status).toBe(1);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload).toEqual(
+        expect.objectContaining({
+          error: true,
+          code: 'INVALID_RESPONSE_SCHEMA',
+        }),
+      );
     });
   });
 });

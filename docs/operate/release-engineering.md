@@ -113,6 +113,13 @@ Web UI 実行:
 - `post-deploy-verify-artifacts` artifact（`artifacts/release/**`）
 - Step Summary（status, fail/warn/unknown, missing evidence, 詳細 report）
 
+## 5.1 PRゲートとの接続（policy-gate / topology）
+
+- 本ドキュメントの release verify は「PRゲート通過後」の運用判定を対象とします。
+- PR段階の承認条件は `policy-gate.yml` 側で評価され、`AE_REVIEW_TOPOLOGY`（`team` / `solo`）または `AE_POLICY_MIN_HUMAN_APPROVALS` で切替できます。
+- 1人体制/複数人体制でフローを大きく変えず、差分は approvals 判定条件のみに限定する運用を推奨します。
+- 関連手順: `docs/ci/pr-automation.md`, `docs/ci/review-topology-matrix.md`
+
 ## 6. ロールバック実行責務
 
 - 本ワークフローは既定で「判定 + 証跡保存」を行う。

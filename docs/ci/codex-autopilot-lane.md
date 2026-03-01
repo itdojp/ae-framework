@@ -45,6 +45,7 @@ Repository Variables:
 
 PRコメント（upsert）:
 - marker: `<!-- AE-CODEX-AUTOPILOT v1 -->`
+- `reason` に応じた `unblock` 手順を定型出力
 
 ## 4. 安全設計
 
@@ -59,3 +60,17 @@ PRコメント（upsert）:
 - 自動復旧は `PR Self-Heal`（`pr-self-heal.yml`）と併用すると停止率を下げられます
 - auto-merge が有効化されない場合は branch protection / required checks / label条件を確認してください
 - `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1`（既定）の場合、PR summary に `Change Package Validation` が出力済みであることを確認してください
+
+## 6. 停止理由と解除手順（運用定型）
+
+| status/reason | 最小解除手順 |
+| --- | --- |
+| `skip` + `missing label autopilot:on` | PR に `autopilot:on` ラベルを付与して `/autopilot run` |
+| `skip` + `draft PR` | Ready for review に変更して `/autopilot run` |
+| `blocked` + `merge conflict` | update-branch または手動 rebase で衝突を解消して push 後に `/autopilot run` |
+| `done` + `checks healthy, waiting for required checks/merge queue` | required checks/merge queue の完了を待機（追加修正不要） |
+| `done` + `auto-merge enabled` / `already merged` | 追加操作不要 |
+
+補足:
+- `done` で上表以外の reason の場合は、PR checks を監視して merge 完了まで待機します。
+- レスポンス契約（継続/停止の定義）は `docs/integrations/CODEX-CONTINUATION-CONTRACT.md` を参照してください。

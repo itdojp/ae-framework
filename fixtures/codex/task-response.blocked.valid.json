@@ -1,0 +1,16 @@
+{
+  "summary": "Blocked: release target is missing",
+  "analysis": "The task cannot continue without environment selection.",
+  "recommendations": [
+    "Provide environment before rerun"
+  ],
+  "nextActions": [
+    "Provide environment=staging and rerun the task"
+  ],
+  "warnings": [
+    "REQUIRED_INPUT: environment=staging|production"
+  ],
+  "shouldBlockProgress": true,
+  "blockingReason": "missing-environment",
+  "requiredHumanInput": "environment=staging|production"
+}

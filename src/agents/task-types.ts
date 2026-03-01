@@ -23,6 +23,9 @@ export interface TaskResponse {
   nextActions: string[];
   warnings: string[];
   shouldBlockProgress: boolean;
+  // Optional during transition; required by schema when blocked in strict branch.
+  blockingReason?: string;
+  requiredHumanInput?: string;
 }
 
 export interface TaskHandler {
