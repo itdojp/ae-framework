@@ -288,10 +288,10 @@ error TS2307: Cannot find module './types.js'
 **Solution**: ES module format requires `.js` extension（verbatimModuleSyntax 対応）
 ```typescript
 // ❌ Wrong
-import { Type } from './types';
+const wrongImportPath = './types';
 
 // ✅ Correct  
-import { Type } from './types.js';
+const correctImportPath = './types.js';
 ```
 
 **3. MCP Server Connection Error**
@@ -681,10 +681,10 @@ error TS2307: Cannot find module './types.js'
 **解決方法**: ESモジュール形式で`.js`拡張子が必要
 ```typescript
 // ❌ 間違い
-import { Type } from './types';
+const wrongImportPath = './types';
 
 // ✅ 正しい  
-import { Type } from './types.js';
+const correctImportPath = './types.js';
 ```
 
 **3. MCPサーバー接続エラー**
