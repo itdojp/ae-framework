@@ -259,22 +259,104 @@ function fetchPrView(number) {
   ]);
 }
 
-function fetchCopilotThreadState(number) {
-  const query = `query($owner:String!, $repo:String!, $number:Int!) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100) {\n        nodes {\n          isResolved\n          comments(first:100) { nodes { author { login } } }\n        }\n      }\n    }\n  }\n}`;
+const REVIEW_THREADS_PAGE_QUERY = `query($owner:String!, $repo:String!, $number:Int!, $threadsAfter:String) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100, after:$threadsAfter) {\n        pageInfo { hasNextPage endCursor }\n        nodes {\n          id\n          path\n          isResolved\n          comments(first:100) {\n            pageInfo { hasNextPage endCursor }\n            nodes {\n              databaseId\n              bodyText\n              path\n              line\n              startLine\n              url\n              createdAt\n              author { login __typename }\n            }\n          }\n        }\n      }\n    }\n  }\n}`;
+const REVIEW_THREAD_COMMENTS_PAGE_QUERY = `query($threadId:ID!, $commentsAfter:String) {\n  node(id:$threadId) {\n    ... on PullRequestReviewThread {\n      comments(first:100, after:$commentsAfter) {\n        pageInfo { hasNextPage endCursor }\n        nodes {\n          databaseId\n          bodyText\n          path\n          line\n          startLine\n          url\n          createdAt\n          author { login __typename }\n        }\n      }\n    }\n  }\n}`;
+
+function execGraphql(query, variables = {}) {
+  const args = ['api', 'graphql', '-f', `query=${query}`];
+  for (const [key, value] of Object.entries(variables || {})) {
+    if (value === undefined || value === null || value === '') continue;
+    if (key === 'number' && /^[0-9]+$/.test(String(value))) {
+      args.push('-F', `${key}=${value}`);
+      continue;
+    }
+    args.push('-f', `${key}=${value}`);
+  }
+  return execJson(args);
+}
+
+function paginateGraphqlConnection(connection, fetchNextConnection) {
+  const nodes = Array.isArray(connection?.nodes) ? [...connection.nodes] : [];
+  let hasNextPage = Boolean(connection?.pageInfo?.hasNextPage);
+  let nextCursor = connection?.pageInfo?.endCursor;
+  const seenCursors = new Set();
+
+  while (hasNextPage) {
+    const cursor = typeof nextCursor === 'string' ? nextCursor.trim() : '';
+    if (!cursor || seenCursors.has(cursor)) {
+      return { nodes, truncated: true };
+    }
+    seenCursors.add(cursor);
+    let nextConnection;
+    try {
+      nextConnection = fetchNextConnection(cursor);
+    } catch {
+      return { nodes, truncated: true };
+    }
+    if (!nextConnection || typeof nextConnection !== 'object') {
+      return { nodes, truncated: true };
+    }
+    const chunk = Array.isArray(nextConnection.nodes) ? nextConnection.nodes : [];
+    nodes.push(...chunk);
+    hasNextPage = Boolean(nextConnection.pageInfo?.hasNextPage);
+    nextCursor = nextConnection.pageInfo?.endCursor;
+  }
+
+  return { nodes, truncated: false };
+}
+
+function fetchReviewThreadsPage(number, owner, repoName, threadsAfter) {
+  const data = execGraphql(REVIEW_THREADS_PAGE_QUERY, {
+    owner,
+    repo: repoName,
+    number,
+    threadsAfter,
+  });
+  return data?.data?.repository?.pullRequest?.reviewThreads;
+}
+
+function fetchReviewThreadCommentsPage(threadId, commentsAfter) {
+  const data = execGraphql(REVIEW_THREAD_COMMENTS_PAGE_QUERY, {
+    threadId,
+    commentsAfter,
+  });
+  return data?.data?.node?.comments;
+}
+
+function fetchReviewThreadsWithPagination(number) {
   const [owner, repoName] = repo.split('/');
-  const data = execJson([
-    'api',
-    'graphql',
-    '-f',
-    `query=${query}`,
-    '-f',
-    `owner=${owner}`,
-    '-f',
-    `repo=${repoName}`,
-    '-F',
-    `number=${number}`,
-  ]);
-  const threads = data?.data?.repository?.pullRequest?.reviewThreads?.nodes || [];
+  const firstThreadsConnection = fetchReviewThreadsPage(number, owner, repoName);
+  const pagedThreads = paginateGraphqlConnection(
+    firstThreadsConnection,
+    (cursor) => fetchReviewThreadsPage(number, owner, repoName, cursor),
+  );
+
+  let truncated = pagedThreads.truncated;
+  const threads = [];
+  for (const thread of pagedThreads.nodes) {
+    if (!thread) continue;
+    const pagedComments = paginateGraphqlConnection(thread.comments, (cursor) => {
+      const threadId = String(thread.id || '').trim();
+      if (!threadId) return null;
+      return fetchReviewThreadCommentsPage(threadId, cursor);
+    });
+    if (pagedComments.truncated) truncated = true;
+    threads.push({
+      ...thread,
+      comments: {
+        ...(thread.comments && typeof thread.comments === 'object' ? thread.comments : {}),
+        nodes: pagedComments.nodes,
+        pageInfo: { hasNextPage: false, endCursor: null },
+      },
+    });
+  }
+
+  return { threads, truncated };
+}
+
+function fetchCopilotThreadState(number) {
+  const paged = fetchReviewThreadsWithPagination(number);
+  const threads = paged.threads;
   const unresolved = threads.filter((thread) =>
     thread
     && !thread.isResolved
@@ -285,6 +367,7 @@ function fetchCopilotThreadState(number) {
   return {
     total: threads.length,
     unresolvedCopilot: unresolved.length,
+    truncated: paged.truncated,
   };
 }
 
@@ -336,30 +419,14 @@ function collectActionableTasksFromReviewThreads(reviewThreads, actorSet) {
 }
 
 function fetchActionableReviewTaskState(number) {
-  const query = `query($owner:String!, $repo:String!, $number:Int!) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100) {\n        pageInfo { hasNextPage }\n        nodes {\n          path\n          isResolved\n          comments(first:100) {\n            pageInfo { hasNextPage }\n            nodes {\n              databaseId\n              bodyText\n              path\n              line\n              startLine\n              url\n              createdAt\n              author { login __typename }\n            }\n          }\n        }\n      }\n    }\n  }\n}`;
-  const [owner, repoName] = repo.split('/');
-  const data = execJson([
-    'api',
-    'graphql',
-    '-f',
-    `query=${query}`,
-    '-f',
-    `owner=${owner}`,
-    '-f',
-    `repo=${repoName}`,
-    '-F',
-    `number=${number}`,
-  ]);
-  const reviewThreadsRoot = data?.data?.repository?.pullRequest?.reviewThreads || {};
-  const reviewThreads = reviewThreadsRoot?.nodes || [];
-  const threadsHasNextPage = Boolean(reviewThreadsRoot?.pageInfo?.hasNextPage);
-  const commentsHasNextPage = reviewThreads.some((thread) => Boolean(thread?.comments?.pageInfo?.hasNextPage));
+  const paged = fetchReviewThreadsWithPagination(number);
+  const reviewThreads = paged.threads;
   const tasks = collectActionableTasksFromReviewThreads(reviewThreads, reviewActorSet);
   return {
     total: tasks.length,
     preview: summarizeActionTasks(tasks, 3),
     tasks,
-    truncated: threadsHasNextPage || commentsHasNextPage,
+    truncated: paged.truncated,
   };
 }
 
@@ -549,12 +616,17 @@ async function processPr(number) {
     }
 
     const threadState = fetchCopilotThreadState(number);
+    if (threadState.truncated) {
+      finalReason = 'actionable review task scan truncated (pagination required)';
+      actions.push(`round${round}: detect pagination failure while scanning review threads/comments; stop fail-closed`);
+      break;
+    }
     if (threadState.unresolvedCopilot > 0) {
       const actionableState = fetchActionableReviewTaskState(number);
       finalActionableState = actionableState;
       if (actionableState.truncated) {
         finalReason = 'actionable review task scan truncated (pagination required)';
-        actions.push(`round${round}: detect partial actionable scan result; stop fail-closed`);
+        actions.push(`round${round}: detect pagination failure while collecting actionable review tasks; stop fail-closed`);
         break;
       }
       if (actionableState.total > 0) {
@@ -591,6 +663,11 @@ async function processPr(number) {
     const refreshed = fetchPrView(number);
     finalState = refreshed;
     const refreshedThreads = fetchCopilotThreadState(number);
+    if (refreshedThreads.truncated) {
+      finalReason = 'actionable review task scan truncated (pagination required)';
+      actions.push(`round${round}: detect pagination failure while re-checking review threads/comments; stop fail-closed`);
+      break;
+    }
     const refreshedGate = parseGateStatus(refreshed.statusCheckRollup || []);
     if (refreshed.autoMergeRequest) {
       finalReason = 'auto-merge enabled';
@@ -735,4 +812,5 @@ export {
   deriveBlockedSummary,
   deriveUnblockActions,
   collectActionableTasksFromReviewThreads,
+  paginateGraphqlConnection,
 };

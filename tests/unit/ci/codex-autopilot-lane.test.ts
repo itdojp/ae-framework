@@ -4,6 +4,7 @@ import {
   deriveBlockedSummary,
   deriveUnblockActions,
   hasLabel,
+  paginateGraphqlConnection,
   parseGateStatus,
 } from '../../../scripts/ci/codex-autopilot-lane.mjs';
 import { toActorSet } from '../../../scripts/ci/lib/automation-guards.mjs';
@@ -237,5 +238,54 @@ describe('codex-autopilot-lane helpers', () => {
       },
     ], actorSet);
     expect(tasks).toHaveLength(0);
+  });
+
+  it('paginates GraphQL connections when cursors are available', () => {
+    const fetchNext = (cursor: string) => {
+      if (cursor === 'cursor-1') {
+        return {
+          pageInfo: { hasNextPage: true, endCursor: 'cursor-2' },
+          nodes: [{ id: 2 }],
+        };
+      }
+      if (cursor === 'cursor-2') {
+        return {
+          pageInfo: { hasNextPage: false, endCursor: null },
+          nodes: [{ id: 3 }],
+        };
+      }
+      throw new Error(`unexpected cursor: ${cursor}`);
+    };
+
+    expect(paginateGraphqlConnection({
+      pageInfo: { hasNextPage: true, endCursor: 'cursor-1' },
+      nodes: [{ id: 1 }],
+    }, fetchNext)).toEqual({
+      nodes: [{ id: 1 }, { id: 2 }, { id: 3 }],
+      truncated: false,
+    });
+  });
+
+  it('keeps fail-closed behavior only when connection pagination cannot continue', () => {
+    expect(paginateGraphqlConnection({
+      pageInfo: { hasNextPage: true, endCursor: '' },
+      nodes: [{ id: 1 }],
+    }, () => ({
+      pageInfo: { hasNextPage: false, endCursor: null },
+      nodes: [{ id: 2 }],
+    }))).toEqual({
+      nodes: [{ id: 1 }],
+      truncated: true,
+    });
+
+    expect(paginateGraphqlConnection({
+      pageInfo: { hasNextPage: true, endCursor: 'cursor-1' },
+      nodes: [{ id: 1 }],
+    }, () => {
+      throw new Error('rate limit');
+    })).toEqual({
+      nodes: [{ id: 1 }],
+      truncated: true,
+    });
   });
 });
