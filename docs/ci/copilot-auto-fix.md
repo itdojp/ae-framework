@@ -63,7 +63,7 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
   - `pull_request_review: submitted` で起動
   - fork PR は対象外
   - `vars.AE_COPILOT_AUTO_FIX == '1'` を満たす場合のみ実行
-  - `github.actor` が Copilot 系アクターに一致する場合のみ実行（workflow 側で制限）
+  - `github.actor` が `AI_REVIEW_ACTORS`（未設定時は `COPILOT_ACTORS`）に一致する場合のみ適用処理を継続
 - 実行: `node scripts/ci/copilot-auto-fix.mjs`
   - PR review comments（`pulls/{number}/comments`）から ```` ```suggestion ```` を抽出
   - 行番号レンジ（`start_line`〜`line`）を suggestion で置換
@@ -109,7 +109,7 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
 
 - ワークフローが起動しない:
   - `AE_COPILOT_AUTO_FIX=1` が設定されているか確認
-  - Copilot レビューの実行者が想定アクターに含まれるか確認（workflow の `COPILOT_ACTORS`）
+  - レビュー実行者が `AI_REVIEW_ACTORS`（後方互換で `COPILOT_ACTORS`）に含まれるか確認
 - `AE_COPILOT_AUTO_FIX_SCOPE=docs` でスキップされる:
   - docs 以外の差分が含まれているため。docs のみに分割するか、`AE_COPILOT_AUTO_FIX_SCOPE=all` を検討
 - Copilot Review Gate が失敗のまま:

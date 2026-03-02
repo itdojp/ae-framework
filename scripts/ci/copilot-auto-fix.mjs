@@ -11,7 +11,7 @@ import {
   isActorAllowed,
   isDocsPath,
   normalizeLabelNames,
-  parseActorCsv,
+  resolveReviewActors,
   toActorSet,
 } from './lib/automation-guards.mjs';
 
@@ -25,11 +25,11 @@ const actor = String(process.env.GITHUB_ACTOR || '').trim();
 const forceApply = String(process.env.AE_COPILOT_AUTO_FIX_FORCE || '').trim() === '1';
 const autoFixEnabled = String(process.env.AE_COPILOT_AUTO_FIX || '').trim() === '1';
 const globalDisabled = String(process.env.AE_AUTOMATION_GLOBAL_DISABLE || '').trim() === '1';
-const copilotActors = parseActorCsv(
+const reviewActors = resolveReviewActors(
+  process.env.AI_REVIEW_ACTORS,
   process.env.COPILOT_ACTORS,
-  'github-copilot,github-copilot[bot]',
 );
-const copilotActorSet = toActorSet(copilotActors);
+const reviewActorSet = toActorSet(reviewActors);
 
 if (!repo) {
   console.error('[copilot-auto-fix] GITHUB_REPOSITORY is required.');
@@ -85,9 +85,9 @@ if (!forceApply && !autoFixEnabled) {
   process.exit(0);
 }
 
-if (!forceApply && !isActorAllowed(actor, copilotActorSet)) {
-  console.log(`[copilot-auto-fix] Skip: actor ${actor || '(empty)'} is not in COPILOT_ACTORS.`);
-  emitReport('skip', `actor ${actor || '(empty)'} is not in COPILOT_ACTORS`);
+if (!forceApply && !isActorAllowed(actor, reviewActorSet)) {
+  console.log(`[copilot-auto-fix] Skip: actor ${actor || '(empty)'} is not in AI_REVIEW_ACTORS/COPILOT_ACTORS.`);
+  emitReport('skip', `actor ${actor || '(empty)'} is not in AI_REVIEW_ACTORS/COPILOT_ACTORS`);
   process.exit(0);
 }
 
@@ -385,7 +385,7 @@ const main = async () => {
 
   const reviewComments = await listReviewComments(prNumber);
   const copilotReviewComments = reviewComments.filter(
-    (c) => c && c.user && copilotActorSet.has(String(c.user.login || '').toLowerCase())
+    (c) => c && c.user && reviewActorSet.has(String(c.user.login || '').toLowerCase())
   );
 
   const ops = [];
@@ -522,7 +522,7 @@ const main = async () => {
     for (const thread of threads) {
       const comments = thread?.comments?.nodes || [];
       const copilotComments = comments.filter(
-        (c) => c?.author?.login && copilotActorSet.has(String(c.author.login).toLowerCase())
+        (c) => c?.author?.login && reviewActorSet.has(String(c.author.login).toLowerCase())
       );
       if (copilotComments.length === 0) continue;
       const allHandled = copilotComments.every((c) => handledCommentIds.has(Number(c.databaseId)));
@@ -547,7 +547,7 @@ const main = async () => {
       skipped,
       note:
         handledCommentIds.size === 0
-          ? 'No Copilot suggestion blocks were applied; unresolved threads may remain.'
+          ? 'No AI-review suggestion blocks were applied; unresolved threads may remain.'
           : null,
     })
   );

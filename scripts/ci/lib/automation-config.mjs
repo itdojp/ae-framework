@@ -4,6 +4,16 @@ import { pathToFileURL } from 'node:url';
 
 const KNOWN_PROFILES = ['conservative', 'balanced', 'aggressive'];
 const EXPLICIT_EMPTY_SENTINEL = '(empty)';
+const DEFAULT_AI_REVIEW_ACTORS = [
+  'copilot-pull-request-reviewer',
+  'github-copilot',
+  'github-copilot[bot]',
+  'copilot',
+  'copilot[bot]',
+  'chatgpt-codex-connector',
+  'chatgpt-codex-connector[bot]',
+  'Copilot',
+].join(',');
 
 const PROFILE_PRESETS = {
   conservative: {
@@ -72,6 +82,7 @@ const PROFILE_PRESETS = {
 };
 
 const FIELD_SPECS = [
+  { key: 'AI_REVIEW_ACTORS', type: 'string', defaultValue: DEFAULT_AI_REVIEW_ACTORS },
   { key: 'AE_REVIEW_TOPOLOGY', type: 'enum', values: ['team', 'solo'], defaultValue: 'team' },
   { key: 'AE_POLICY_MIN_HUMAN_APPROVALS', type: 'optional-int', min: 0, defaultValue: '' },
   { key: 'AE_AUTOMATION_GLOBAL_DISABLE', type: 'toggle', defaultValue: '0' },
@@ -200,6 +211,18 @@ function resolveAutomationConfig(env = process.env) {
       }
       const explicitText = explicitState.value === '' ? EXPLICIT_EMPTY_SENTINEL : explicitState.value;
       warnings.push(`${key}=${explicitText} is invalid; falling back.`);
+    }
+
+    if (key === 'AI_REVIEW_ACTORS') {
+      const legacyActors = String(env.COPILOT_ACTORS ?? '').trim();
+      if (legacyActors) {
+        const normalized = normalizeField(field, legacyActors);
+        if (normalized.valid) {
+          values[key] = normalized.value;
+          sources[key] = 'legacy(COPILOT_ACTORS)';
+          continue;
+        }
+      }
     }
 
     if (profilePreset && Object.prototype.hasOwnProperty.call(profilePreset, key)) {

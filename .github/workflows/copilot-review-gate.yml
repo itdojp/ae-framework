@@ -33,6 +33,8 @@ jobs:
       - name: Resolve automation config
         env:
           AE_AUTOMATION_PROFILE: ${{ vars.AE_AUTOMATION_PROFILE || '' }}
+          AI_REVIEW_ACTORS: ${{ vars.AI_REVIEW_ACTORS || '' }}
+          COPILOT_ACTORS: ${{ vars.COPILOT_ACTORS || '' }}
           AE_COPILOT_AUTO_FIX: ${{ vars.AE_COPILOT_AUTO_FIX || '' }}
           AE_COPILOT_AUTO_FIX_SCOPE: ${{ vars.AE_COPILOT_AUTO_FIX_SCOPE || '' }}
           AE_COPILOT_AUTO_FIX_LABEL: ${{ vars.AE_COPILOT_AUTO_FIX_LABEL || '' }}
@@ -56,8 +58,6 @@ jobs:
           node scripts/ci/lib/automation-config.mjs --format summary >> "$GITHUB_STEP_SUMMARY"
       - name: Check Copilot review presence and resolution
         uses: actions/github-script@v7
-        env:
-          COPILOT_ACTORS: copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],chatgpt-codex-connector,chatgpt-codex-connector[bot]
         with:
           script: |
             const owner = context.repo.owner;
@@ -81,10 +81,16 @@ jobs:
               core.notice('Issue comment is not for a pull request; skipping.');
               return;
             }
-            const actors = (process.env.COPILOT_ACTORS || 'github-copilot,github-copilot[bot]')
+            const actors = (process.env.AI_REVIEW_ACTORS || process.env.COPILOT_ACTORS || '')
               .split(',')
               .map(s => s.trim())
               .filter(Boolean);
+            const actorSet = new Set(actors.map((login) => String(login || '').toLowerCase()).filter(Boolean));
+            const isAllowedActor = (login) => actorSet.has(String(login || '').toLowerCase());
+            if (actors.length === 0) {
+              core.notice('AI_REVIEW_ACTORS/COPILOT_ACTORS is empty; gate is skipped by configuration.');
+              return;
+            }
             const waitMinutesRaw = Number(process.env.COPILOT_REVIEW_WAIT_MINUTES || '5');
             const maxAttemptsRaw = Number(process.env.COPILOT_REVIEW_MAX_ATTEMPTS || '3');
             const waitMinutes = Number.isFinite(waitMinutesRaw) && waitMinutesRaw >= 0 ? waitMinutesRaw : 5;
@@ -158,7 +164,7 @@ jobs:
                 return;
               }
               const reviewAuthors = pr.reviews.nodes.map(r => r.author && r.author.login).filter(Boolean);
-              hasCopilotReview = reviewAuthors.some(login => actors.includes(login));
+              hasCopilotReview = reviewAuthors.some(login => isAllowedActor(login));
               if (hasCopilotReview) {
                 break;
               }
@@ -200,12 +206,12 @@ jobs:
             };
 
             const copilotThreads = pr.reviewThreads.nodes.filter(t =>
-              t.comments.nodes.some(c => c.author && actors.includes(c.author.login))
+              t.comments.nodes.some(c => c.author && isAllowedActor(c.author.login))
             );
             const unresolved = copilotThreads.filter(t => !t.isResolved);
             if (unresolved.length > 0) {
               const unresolvedLines = unresolved.slice(0, 5).map((thread, index) => {
-                const firstComment = thread.comments.nodes.find(c => c.author && actors.includes(c.author.login)) || thread.comments.nodes[0];
+                const firstComment = thread.comments.nodes.find(c => c.author && isAllowedActor(c.author.login)) || thread.comments.nodes[0];
                 const snippet = truncateUnicodeSafe(firstComment?.bodyText || '', 140);
                 return `- Thread ${index + 1}: ${snippet || '(no comment body)'}`;
               });

@@ -51,12 +51,11 @@ PR運用を以下の形に収束させます。
 
 - `Copilot Auto Fix`（`.github/workflows/copilot-auto-fix.yml`）
   - `pull_request_review: submitted` で起動
-  - Copilot系 actor のインラインコメント本文の ```` ```suggestion ```` を抽出し、PRへ適用（commit + push）
-  - 適用（または既適用）と判断できた Copilot スレッドを resolve（保守的）
+  - `AI_REVIEW_ACTORS`（未設定時は `COPILOT_ACTORS`）に含まれる actor のインラインコメント本文の ```` ```suggestion ```` を抽出し、PRへ適用（commit + push）
+  - 適用（または既適用）と判断できた対象スレッドを resolve（保守的）
 
 重要:
 - AI reviewer が「コメント」だけを残し、レビューとして `submitted` されない場合は、auto-fix も gate も期待通りに動きません。
-- 現行実装では auto-fix の起動 actor は Copilot系に限定されています（汎用 AI reviewer 対応は #2372 で拡張予定）。
 - fork PR の扱い:
   - auto-fix は fork PR を workflow 条件で除外します（`.github/workflows/copilot-auto-fix.yml`）。
   - auto-merge は `pull_request` 経路では fork PR を除外しますが、`schedule` 経路は open PR を列挙するため fork PR も対象になり得ます（`.github/workflows/pr-ci-status-comment.yml`, `scripts/ci/auto-merge-enabler.mjs`）。
@@ -209,7 +208,7 @@ Settings（Repository）で次を確認してください。
 
 - "No Copilot review found"
   - Copilotレビューが `submitted` されていない（コメントのみ）可能性
-  - `COPILOT_ACTORS` が実アカウント名と一致しているか確認（`.github/workflows/copilot-review-gate.yml`）
+  - `AI_REVIEW_ACTORS`（後方互換で `COPILOT_ACTORS`）が実アカウント名と一致しているか確認（`.github/workflows/copilot-review-gate.yml`）
   - wait/retry は `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` を調整（workflow env）
 - "Unresolved Copilot review threads"
   - PR上で Resolve conversation
