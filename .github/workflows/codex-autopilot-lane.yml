@@ -72,6 +72,8 @@ jobs:
       - name: Resolve automation config
         env:
           AE_AUTOMATION_PROFILE: ${{ vars.AE_AUTOMATION_PROFILE || '' }}
+          AI_REVIEW_ACTORS: ${{ vars.AI_REVIEW_ACTORS || '' }}
+          COPILOT_ACTORS: ${{ vars.COPILOT_ACTORS || '' }}
           AE_COPILOT_AUTO_FIX: ${{ vars.AE_COPILOT_AUTO_FIX || '' }}
           AE_COPILOT_AUTO_FIX_SCOPE: ${{ vars.AE_COPILOT_AUTO_FIX_SCOPE || '' }}
           AE_COPILOT_AUTO_FIX_LABEL: ${{ vars.AE_COPILOT_AUTO_FIX_LABEL || '' }}

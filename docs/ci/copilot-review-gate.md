@@ -6,11 +6,11 @@
 - Workflow: `.github/workflows/copilot-review-gate.yml`
 - Script: `scripts/ci/copilot-review-gate.mjs`
 - トリガー: `pull_request`, `pull_request_review`, `workflow_dispatch`
-- 補助トリガー: `.github/workflows/agent-commands.yml` の `issue_comment(created/edited)`  
+- 補助トリガー: `.github/workflows/agent-commands.yml` の `issue_comment(created/edited)`
   - auto-fix結果コメント `<!-- AE-COPILOT-AUTO-FIX v1 -->` を検知すると、`copilot-review-gate.yml` を `workflow_dispatch` で PR head に再実行します
 - 動作: PRのレビュー一覧とレビュー・スレッドをGraphQLで取得
-  - `AI_REVIEW_ACTORS`（未設定時は `COPILOT_ACTORS`）に含まれる reviewer のレビューが存在するか
-  - 対象 reviewer が関与したスレッド（コメントを含む）がすべて `isResolved=true` であるか
+  - `AI_REVIEW_ACTORS`（未設定時は `COPILOT_ACTORS`）に含まれるアカウントのレビューが存在するか
+  - 対象 actor が関与したスレッド（コメントを含む）がすべて `isResolved=true` であるか
 - 未満の条件の場合、チェックを失敗させます（Required化でマージを停止）
 - `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` は `scripts/ci/lib/automation-config.mjs` で解決（個別変数 > `AE_AUTOMATION_PROFILE` > 既定値）
 - GitHub API 呼び出しは `scripts/ci/lib/gh-exec.mjs` 経由で実行され、`AE_GH_THROTTLE_MS` / `AE_GH_RETRY_*` が適用されます（429 対策）
@@ -18,7 +18,6 @@
 関連:
 - Copilot suggestion の自動適用（auto-fix）: `docs/ci/copilot-auto-fix.md`
 - PR自動化の運用全体像（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
-  
 
 ## 必須化（Branch protection）
 - `gate` を Required checks に追加してください。
@@ -32,15 +31,17 @@
 
 ### 補足: 既定のCopilotアクター
 - 優先変数: `AI_REVIEW_ACTORS`
-- 後方互換: `AI_REVIEW_ACTORS` 未設定時は `COPILOT_ACTORS`
-- 既定アクター: `copilot-pull-request-reviewer`, `github-copilot`, `github-copilot[bot]`, `copilot`, `copilot[bot]`, `chatgpt-codex-connector`, `chatgpt-codex-connector[bot]`
+- 後方互換: `AI_REVIEW_ACTORS` 未設定時は `COPILOT_ACTORS` を参照
+- 既定アクター（未設定時）: `copilot-pull-request-reviewer`, `github-copilot`, `github-copilot[bot]`, `copilot`, `copilot[bot]`, `chatgpt-codex-connector`, `chatgpt-codex-connector[bot]`
+- 大文字小文字は区別せず照合します（`Copilot` / `copilot` どちらでも可）。
 
 ### 補足: wait/retry の調整（レビュー到着待ち）
 - workflow 側 env の `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` を調整できます（既定: 5分 x 3回）。
 - `AE_AUTOMATION_PROFILE` による一括設定も可能です（詳細: `docs/ci/automation-profiles.md`）。
 
 ## 例外運用
-- AI review が利用できない環境では、Requiredチェックに含めない運用、または `AI_REVIEW_ACTORS`（後方互換で `COPILOT_ACTORS`）を空にして無効化できます（workflow の `env` を編集）。
+- AI review が利用できない環境では、Requiredチェックに含めない運用、または `AI_REVIEW_ACTORS`（互換で `COPILOT_ACTORS`）を空にして無効化できます。
+  - `automation-config` 経由で空文字を明示する場合は `AI_REVIEW_ACTORS=(empty)` を設定します。
 
 ## トラブルシューティング
 - Copilotレビューが「コメント」のみで「レビュー」として表示されない場合は、Copilotレビューの起動方法を見直してください（PR画面のCopilotパネルからの実行を推奨）。

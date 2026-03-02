@@ -16,7 +16,10 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 - `balanced`
 - `aggressive`
 
-未設定時はプロファイル無効で、既存の個別変数（`AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `AE_AUTOMATION_GLOBAL_DISABLE`, `AE_REVIEW_TOPOLOGY`, `AE_POLICY_MIN_HUMAN_APPROVALS` など）がそのまま使われます（`AE_AUTO_MERGE_REQUIRE_RISK_LOW` / `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE` を含む）。
+未設定時はプロファイル無効で、既存の個別変数（`AI_REVIEW_ACTORS`, `AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `AE_AUTOMATION_GLOBAL_DISABLE`, `AE_REVIEW_TOPOLOGY`, `AE_POLICY_MIN_HUMAN_APPROVALS` など）がそのまま使われます（`AE_AUTO_MERGE_REQUIRE_RISK_LOW` / `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE` を含む）。
+
+補足:
+- reviewer actor は `AI_REVIEW_ACTORS` が優先され、未設定時は `COPILOT_ACTORS` を後方互換で参照します。
 
 注記:
 - `AE_REVIEW_TOPOLOGY` / `AE_POLICY_MIN_HUMAN_APPROVALS` は、automation-config と policy-gate の対応実装が入っているバージョンで有効です。

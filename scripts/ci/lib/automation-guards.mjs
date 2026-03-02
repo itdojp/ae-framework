@@ -8,6 +8,18 @@ function parseActorCsv(raw, fallbackRaw = '') {
     .filter(Boolean);
 }
 
+function resolveReviewActors(rawPrimary, rawLegacy, fallbackRaw = '') {
+  const primary = String(rawPrimary || '').trim();
+  if (primary) {
+    return parseActorCsv(primary, fallbackRaw);
+  }
+  const legacy = String(rawLegacy || '').trim();
+  if (legacy) {
+    return parseActorCsv(legacy, fallbackRaw);
+  }
+  return parseActorCsv('', fallbackRaw);
+}
+
 function toActorSet(actors) {
   return new Set(
     (Array.isArray(actors) ? actors : [])
@@ -62,5 +74,6 @@ export {
   isDocsPath,
   normalizeLabelNames,
   parseActorCsv,
+  resolveReviewActors,
   toActorSet,
 };

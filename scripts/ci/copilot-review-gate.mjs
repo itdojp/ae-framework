@@ -6,8 +6,6 @@ import { isActorAllowed, resolveReviewActors, toActorSet } from './lib/automatio
 import { waitForNextRound } from './lib/round-control.mjs';
 
 const marker = '<!-- copilot-review-gate -->';
-const defaultActors =
-  'copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],chatgpt-codex-connector,chatgpt-codex-connector[bot],Copilot';
 
 function toPositiveInt(raw) {
   const parsed = Number.parseInt(String(raw || '').trim(), 10);
@@ -167,8 +165,11 @@ async function main() {
   const reviewActors = resolveReviewActors(
     process.env.AI_REVIEW_ACTORS,
     process.env.COPILOT_ACTORS,
-    defaultActors,
   );
+  if (reviewActors.length === 0) {
+    console.log('[copilot-review-gate] Skip: AI_REVIEW_ACTORS/COPILOT_ACTORS is empty by configuration.');
+    return;
+  }
   const reviewActorSet = toActorSet(reviewActors);
   const waitMinutesRaw = Number(process.env.COPILOT_REVIEW_WAIT_MINUTES || '5');
   const maxAttemptsRaw = Number(process.env.COPILOT_REVIEW_MAX_ATTEMPTS || '3');

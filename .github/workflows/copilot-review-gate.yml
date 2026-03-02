@@ -60,6 +60,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number || '' }}
-          AI_REVIEW_ACTORS: ${{ vars.AI_REVIEW_ACTORS || vars.COPILOT_ACTORS || '' }}
-          COPILOT_ACTORS: ${{ vars.COPILOT_ACTORS || '' }}
         run: node scripts/ci/copilot-review-gate.mjs
