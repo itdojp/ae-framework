@@ -415,6 +415,17 @@ const main = async () => {
     const line = c && c.line;
     const startLine = c && c.start_line;
     const commentCommitId = c && c.commit_id ? String(c.commit_id) : '';
+    const suggestions = extractSuggestionBlocks(c.body);
+
+    if (suggestions.length === 0) {
+      const actionableTask = buildActionTaskFromComment(c);
+      if (actionableTask) {
+        actionableTasks.push(actionableTask);
+      }
+      skipped.push(`comment=${commentId || 'unknown'}${filePath ? ` path=${filePath}` : ''}: no suggestion block`);
+      continue;
+    }
+
     if (!commentId || !filePath || !Number.isFinite(line)) {
       skipped.push(`comment=${commentId || 'unknown'}: missing path/line`);
       continue;
@@ -429,16 +440,6 @@ const main = async () => {
     }
     if (scope === 'docs' && !isDocsPath(filePath)) {
       skipped.push(`comment=${commentId} path=${filePath}: outside docs scope`);
-      continue;
-    }
-
-    const suggestions = extractSuggestionBlocks(c.body);
-    if (suggestions.length === 0) {
-      skipped.push(`comment=${commentId} path=${filePath}: no suggestion block`);
-      const actionableTask = buildActionTaskFromComment(c);
-      if (actionableTask) {
-        actionableTasks.push(actionableTask);
-      }
       continue;
     }
     if (suggestions.length > 1) {
