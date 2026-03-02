@@ -55,6 +55,11 @@ PRコメント（upsert）:
   - `To unblock: <single action>`
 - 追加情報として `reason` / `actions` / `unblock` の詳細を続けて出力
 
+No Human Bottleneck（Issue #2333）整合ポイント:
+- 停止時は必ず「理由」と「最小解除手順」を同時に出す（オープンエンド質問を禁止）
+- `blocked` コメントは 1 行 1 アクションで再実行可能な文面に固定する
+- `done`/`skip`/`blocked` の判定は `scripts/ci/codex-autopilot-lane.mjs` の reason ルールに一致させる
+
 ## 4. 安全設計
 
 - opt-in ラベル必須（`autopilot:on`）
@@ -83,3 +88,14 @@ PRコメント（upsert）:
 補足:
 - `done` で上表以外の reason の場合は、PR checks を監視して merge 完了まで待機します。
 - レスポンス契約（継続/停止の定義）は `docs/integrations/CODEX-CONTINUATION-CONTRACT.md` を参照してください。
+
+## 7. 回帰確認コマンド（最小）
+
+```bash
+pnpm vitest run tests/unit/ci/codex-autopilot-lane.test.ts
+```
+
+`blocked` 系ケースで以下を確認します。
+- 1行目が `Blocked: ...`
+- 2行目が `To unblock: ...`
+- reason ごとに解除手順が deterministic に一致

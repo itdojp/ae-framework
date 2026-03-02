@@ -353,6 +353,67 @@ describe('codex adapter stdio contract', () => {
     });
   });
 
+  it('uses requiredHumanInput as the highest-priority warning fallback for blocked responses', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return {
+            async handleTask() {
+              return {
+                summary: 'blocked',
+                analysis: 'analysis',
+                recommendations: [],
+                nextActions: ['rerun with required approval'],
+                warnings: [],
+                shouldBlockProgress: true,
+                requiredHumanInput: 'approval=1'
+              };
+            }
+          };
+        }
+      `);
+
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({ description: 'run', subagent_type: 'intent' }),
+      );
+
+      expect(result.status).toBe(2);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload.warnings).toEqual(['Human action: provide approval=1']);
+    });
+  });
+
+  it('trims blocked warnings and removes empty warning entries when warnings are present', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return {
+            async handleTask() {
+              return {
+                summary: 'blocked',
+                analysis: 'analysis',
+                recommendations: [],
+                nextActions: ['fix and rerun'],
+                warnings: ['  Human action: add label autopilot:on  ', '', '   '],
+                shouldBlockProgress: true
+              };
+            }
+          };
+        }
+      `);
+
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({ description: 'run', subagent_type: 'intent' }),
+      );
+
+      expect(result.status).toBe(2);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload.warnings).toEqual(['Human action: add label autopilot:on']);
+    });
+  });
+
   it('returns exit 1 when shouldBlockProgress=true and nextActions is empty', () => {
     withTempRepo((tempRoot) => {
       writeAdapterModule(tempRoot, `

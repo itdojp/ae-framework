@@ -132,6 +132,7 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
   - Move blocked responses to explicit `blockingReason` / `requiredHumanInput` fields where possible.
   - Existing blocked responses without those fields are accepted for compatibility.
   - Local schema sanity check: `pnpm run check:schemas`
+  - Adapter normalization tests: `pnpm vitest run tests/unit/agents/codex-task-adapter.test.ts tests/unit/scripts/codex-adapter-stdio.test.ts`
 
 ## 4) CodeX (no MCP) – Spec Tools over stdio
 - Script: `pnpm run codex:spec:stdio`
