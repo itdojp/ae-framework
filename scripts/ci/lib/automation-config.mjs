@@ -1,6 +1,16 @@
 #!/usr/bin/env node
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import {
+  COPILOT_REVIEW_MAX_ATTEMPTS_DEFAULT,
+  COPILOT_REVIEW_WAIT_MINUTES_DEFAULT,
+  GH_RETRY_INITIAL_DELAY_MS_DEFAULT,
+  GH_RETRY_JITTER_MS_DEFAULT,
+  GH_RETRY_MAX_ATTEMPTS_DEFAULT,
+  GH_RETRY_MAX_DELAY_MS_DEFAULT,
+  GH_RETRY_MULTIPLIER_DEFAULT,
+  GH_THROTTLE_MS_DEFAULT,
+} from './automation-defaults.mjs';
 
 const KNOWN_PROFILES = ['conservative', 'balanced', 'aggressive'];
 const EXPLICIT_EMPTY_SENTINEL = '(empty)';
@@ -97,15 +107,15 @@ const FIELD_SPECS = [
   { key: 'AE_AUTO_MERGE_REQUIRE_RISK_LOW', type: 'toggle', defaultValue: '1' },
   { key: 'AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE', type: 'toggle', defaultValue: '1' },
   { key: 'AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN', type: 'toggle', defaultValue: '1' },
-  { key: 'AE_GH_THROTTLE_MS', type: 'int', min: 0, defaultValue: '250' },
-  { key: 'AE_GH_RETRY_MAX_ATTEMPTS', type: 'int', min: 1, defaultValue: '8' },
-  { key: 'AE_GH_RETRY_INITIAL_DELAY_MS', type: 'int', min: 0, defaultValue: '750' },
-  { key: 'AE_GH_RETRY_MAX_DELAY_MS', type: 'int', min: 0, defaultValue: '60000' },
-  { key: 'AE_GH_RETRY_MULTIPLIER', type: 'int', min: 1, defaultValue: '2' },
-  { key: 'AE_GH_RETRY_JITTER_MS', type: 'int', min: 0, defaultValue: '250' },
+  { key: 'AE_GH_THROTTLE_MS', type: 'int', min: 0, defaultValue: String(GH_THROTTLE_MS_DEFAULT) },
+  { key: 'AE_GH_RETRY_MAX_ATTEMPTS', type: 'int', min: 1, defaultValue: String(GH_RETRY_MAX_ATTEMPTS_DEFAULT) },
+  { key: 'AE_GH_RETRY_INITIAL_DELAY_MS', type: 'int', min: 0, defaultValue: String(GH_RETRY_INITIAL_DELAY_MS_DEFAULT) },
+  { key: 'AE_GH_RETRY_MAX_DELAY_MS', type: 'int', min: 0, defaultValue: String(GH_RETRY_MAX_DELAY_MS_DEFAULT) },
+  { key: 'AE_GH_RETRY_MULTIPLIER', type: 'int', min: 1, defaultValue: String(GH_RETRY_MULTIPLIER_DEFAULT) },
+  { key: 'AE_GH_RETRY_JITTER_MS', type: 'int', min: 0, defaultValue: String(GH_RETRY_JITTER_MS_DEFAULT) },
   { key: 'AE_GH_RETRY_DEBUG', type: 'toggle', defaultValue: '0' },
-  { key: 'COPILOT_REVIEW_WAIT_MINUTES', type: 'int', min: 0, defaultValue: '5' },
-  { key: 'COPILOT_REVIEW_MAX_ATTEMPTS', type: 'int', min: 1, defaultValue: '3' },
+  { key: 'COPILOT_REVIEW_WAIT_MINUTES', type: 'int', min: 0, defaultValue: String(COPILOT_REVIEW_WAIT_MINUTES_DEFAULT) },
+  { key: 'COPILOT_REVIEW_MAX_ATTEMPTS', type: 'int', min: 1, defaultValue: String(COPILOT_REVIEW_MAX_ATTEMPTS_DEFAULT) },
 ];
 
 function normalizeToggle(value) {
