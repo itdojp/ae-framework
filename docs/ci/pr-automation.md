@@ -277,6 +277,7 @@ Settings（Repository）で次を確認してください。
   - copilot auto-fix（force mode）
   - review gate dispatch
   - auto-merge 有効化試行
+  - 非 suggestion の actionable review 指摘が残る場合は fail-closed で `status:blocked` へ遷移（自動修正は行わない）
 - 収束しない場合は `status:blocked` を付与して停止します。
 - 詳細: `docs/ci/codex-autopilot-lane.md`
 補足:

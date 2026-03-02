@@ -42,11 +42,14 @@ Repository Variables:
    - `AE_AUTOPILOT_AUTO_LABEL=1` のときは不足ラベルを自動付与
    - 既定 (`0`) は不足ラベルを reason にして停止
 3. `mergeState=BEHIND` なら `PR Maintenance` の update-branch を dispatch
-4. Copilot未解決スレッドまたは gate failure/missing の場合:
+4. 未解決の AI review thread を走査し、`suggestion` ではない actionable 指摘を検出した場合:
+   - fail-closed で `status:blocked` に遷移（自動修正は行わない）
+   - コメントに actionable task preview（最大3件）を出力
+5. Copilot未解決スレッドまたは gate failure/missing の場合:
    - `copilot-auto-fix.mjs` を force mode で実行
    - `copilot-review-gate.yml` を dispatch
-5. `auto-merge-enabler.mjs` で auto-merge 有効化を試行
-6. 収束しない場合は `status:blocked` を付与して停止
+6. `auto-merge-enabler.mjs` で auto-merge 有効化を試行
+7. 収束しない場合は `status:blocked` を付与して停止
 
 PRコメント（upsert）:
 - marker: `<!-- AE-CODEX-AUTOPILOT v1 -->`
@@ -81,6 +84,8 @@ No Human Bottleneck（Issue #2333）整合ポイント:
 | `skip` + `missing label autopilot:on` | PR に `autopilot:on` ラベルを付与して `/autopilot run` |
 | `skip` + `draft PR` | Ready for review に変更して `/autopilot run` |
 | `blocked` + `missing policy labels: ...` | 不足ラベルを付与して `/autopilot run`（`AE_AUTOPILOT_AUTO_LABEL=1` なら自動付与） |
+| `blocked` + `actionable review tasks pending: <n>` | actionable 指摘に対応（または非適用理由を返信）して `/autopilot run` |
+| `blocked` + `actionable review task scan truncated (pagination required)` | 未解決 AI review thread/comment を減らす（またはページング対応）後に `/autopilot run` |
 | `blocked` + `merge conflict` | update-branch または手動 rebase で衝突を解消して push 後に `/autopilot run` |
 | `done` + `checks healthy, waiting for required checks/merge queue` | required checks/merge queue の完了を待機（追加修正不要） |
 | `done` + `auto-merge enabled` / `already merged` | 追加操作不要 |

@@ -15,6 +15,10 @@ import {
   resolveReviewActors,
   toActorSet,
 } from './lib/automation-guards.mjs';
+import {
+  buildActionTaskFromComment,
+  summarizeActionTasks,
+} from './lib/review-comment-classifier.mjs';
 import { DEFAULT_POLICY_PATH, collectRequiredLabels, loadRiskPolicy } from './lib/risk-policy.mjs';
 
 const marker = '<!-- AE-CODEX-AUTOPILOT v1 -->';
@@ -33,6 +37,11 @@ const reviewActors = resolveReviewActors(
   process.env.COPILOT_ACTORS,
 );
 const reviewActorSet = toActorSet(reviewActors);
+const HUMAN_DISPOSITION_PATTERNS = [
+  /\b(not applicable|won't fix|wont fix|won't apply|wont apply|handled in another pr|covered elsewhere)\b/i,
+  /\b(fixed|applied|addressed|updated|resolved|done)\b/i,
+  /(対応不要|適用しない|見送り|別PRで対応|別途対応|対応済み|修正済み|完了)/,
+];
 
 function toBool(value) {
   const normalized = String(value || '').trim().toLowerCase();
@@ -193,6 +202,12 @@ function deriveUnblockActions(status, reason) {
   if (normalizedReason.startsWith('auto-label failed:')) {
     return ['Grant label-write permission (or disable auto-label) and rerun `/autopilot run`.'];
   }
+  if (normalizedReason.startsWith('actionable review tasks pending:')) {
+    return ['Address actionable non-suggestion review comments (or reply why not applicable), then rerun `/autopilot run`.'];
+  }
+  if (normalizedReason === 'actionable review task scan truncated (pagination required)') {
+    return ['Reduce unresolved AI-review threads/comments (or implement pagination support), then rerun `/autopilot run`.'];
+  }
   if (normalizedReason === 'merge conflict') {
     return ['Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.'];
   }
@@ -251,6 +266,81 @@ function fetchCopilotThreadState(number) {
   return {
     total: threads.length,
     unresolvedCopilot: unresolved.length,
+  };
+}
+
+function collectActionableTasksFromReviewThreads(reviewThreads, actorSet) {
+  const threads = Array.isArray(reviewThreads) ? reviewThreads : [];
+  const seen = new Set();
+  const tasks = [];
+
+  for (const thread of threads) {
+    if (!thread || thread.isResolved) continue;
+    const comments = Array.isArray(thread.comments?.nodes) ? [...thread.comments.nodes] : [];
+    comments.sort((left, right) => {
+      const leftAt = Date.parse(left?.createdAt || '');
+      const rightAt = Date.parse(right?.createdAt || '');
+      if (!Number.isFinite(leftAt) && !Number.isFinite(rightAt)) return 0;
+      if (!Number.isFinite(leftAt)) return -1;
+      if (!Number.isFinite(rightAt)) return 1;
+      return leftAt - rightAt;
+    });
+    for (const comment of comments) {
+      if (!isActorAllowed(comment?.author?.login, actorSet)) continue;
+      const hasHumanDispositionReply = comments.some((item) => {
+        if (item === comment) return false;
+        if (isActorAllowed(item?.author?.login, actorSet)) return false;
+        if (item?.author?.__typename !== 'User') return false;
+        const itemAt = Date.parse(item?.createdAt || '');
+        const commentAt = Date.parse(comment?.createdAt || '');
+        if (Number.isFinite(itemAt) && Number.isFinite(commentAt) && itemAt <= commentAt) return false;
+        const body = String(item?.bodyText || '').trim();
+        return body && HUMAN_DISPOSITION_PATTERNS.some((pattern) => pattern.test(body));
+      });
+      if (hasHumanDispositionReply) continue;
+      const task = buildActionTaskFromComment({
+        id: comment?.databaseId,
+        body: comment?.bodyText,
+        path: comment?.path || thread?.path,
+        line: comment?.line,
+        start_line: comment?.startLine,
+        html_url: comment?.url,
+      });
+      if (!task || !task.commentId) continue;
+      if (seen.has(task.commentId)) continue;
+      seen.add(task.commentId);
+      tasks.push(task);
+    }
+  }
+
+  return tasks.sort((left, right) => (left.commentId || 0) - (right.commentId || 0));
+}
+
+function fetchActionableReviewTaskState(number) {
+  const query = `query($owner:String!, $repo:String!, $number:Int!) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100) {\n        pageInfo { hasNextPage }\n        nodes {\n          path\n          isResolved\n          comments(first:100) {\n            pageInfo { hasNextPage }\n            nodes {\n              databaseId\n              bodyText\n              path\n              line\n              startLine\n              url\n              createdAt\n              author { login __typename }\n            }\n          }\n        }\n      }\n    }\n  }\n}`;
+  const [owner, repoName] = repo.split('/');
+  const data = execJson([
+    'api',
+    'graphql',
+    '-f',
+    `query=${query}`,
+    '-f',
+    `owner=${owner}`,
+    '-f',
+    `repo=${repoName}`,
+    '-F',
+    `number=${number}`,
+  ]);
+  const reviewThreadsRoot = data?.data?.repository?.pullRequest?.reviewThreads || {};
+  const reviewThreads = reviewThreadsRoot?.nodes || [];
+  const threadsHasNextPage = Boolean(reviewThreadsRoot?.pageInfo?.hasNextPage);
+  const commentsHasNextPage = reviewThreads.some((thread) => Boolean(thread?.comments?.pageInfo?.hasNextPage));
+  const tasks = collectActionableTasksFromReviewThreads(reviewThreads, reviewActorSet);
+  return {
+    total: tasks.length,
+    preview: summarizeActionTasks(tasks, 3),
+    tasks,
+    truncated: threadsHasNextPage || commentsHasNextPage,
   };
 }
 
@@ -346,6 +436,7 @@ function renderBody(result) {
     `- dry-run: ${dryRun ? 'true' : 'false'}`,
     `- gate: ${result.gateStatus}`,
     `- unresolved copilot threads: ${result.unresolvedCopilot}`,
+    `- actionable non-suggestion comments: ${result.actionableTasks}`,
     `- mergeable: ${result.mergeable || 'UNKNOWN'}`,
     `- merge state: ${result.mergeState || 'UNKNOWN'}`,
   );
@@ -362,6 +453,12 @@ function renderBody(result) {
       lines.push(`  - ${action}`);
     }
   }
+  if (Array.isArray(result.actionablePreview) && result.actionablePreview.length > 0) {
+    lines.push('- actionable-preview:');
+    for (const item of result.actionablePreview) {
+      lines.push(`  - ${item}`);
+    }
+  }
   return `${lines.join('\n')}\n`;
 }
 
@@ -369,6 +466,7 @@ async function processPr(number) {
   const actions = [];
   let finalReason = '';
   let finalState = null;
+  let finalActionableState = { total: 0, preview: [], truncated: false };
   let done = false;
   let roundsExecuted = 0;
   let requiredPolicyLabels = null;
@@ -426,6 +524,20 @@ async function processPr(number) {
     }
 
     const threadState = fetchCopilotThreadState(number);
+    if (threadState.unresolvedCopilot > 0) {
+      const actionableState = fetchActionableReviewTaskState(number);
+      finalActionableState = actionableState;
+      if (actionableState.truncated) {
+        finalReason = 'actionable review task scan truncated (pagination required)';
+        actions.push(`round${round}: detect partial actionable scan result; stop fail-closed`);
+        break;
+      }
+      if (actionableState.total > 0) {
+        finalReason = `actionable review tasks pending: ${actionableState.total}`;
+        actions.push(`round${round}: detect actionable non-suggestion review tasks (${actionableState.total})`);
+        break;
+      }
+    }
     const gateStatus = parseGateStatus(pr.statusCheckRollup || []);
 
     if (pr.mergeStateStatus === 'BEHIND') {
@@ -494,9 +606,16 @@ async function processPr(number) {
     actions,
     unresolvedCopilot: finalThreads.unresolvedCopilot,
     gateStatus: finalGate,
+    actionableTasks: 0,
+    actionablePreview: [],
     mergeable: finalState?.mergeable || '',
     mergeState: finalState?.mergeStateStatus || '',
   };
+
+  if (status === 'blocked' && String(finalReason || '').startsWith('actionable review tasks pending:')) {
+    result.actionableTasks = finalActionableState.total;
+    result.actionablePreview = finalActionableState.preview;
+  }
 
   if (!dryRun) {
     if (status === 'blocked') {
@@ -558,6 +677,7 @@ async function main() {
         actions: result.actions.length,
         unresolvedCopilot: result.unresolvedCopilot,
         gateStatus: result.gateStatus,
+        actionableTasks: result.actionableTasks,
       },
       data: {
         mergeable: result.mergeable,
@@ -581,4 +701,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { parseGateStatus, hasLabel, deriveBlockedSummary, deriveUnblockActions };
+export {
+  parseGateStatus,
+  hasLabel,
+  deriveBlockedSummary,
+  deriveUnblockActions,
+  collectActionableTasksFromReviewThreads,
+};
