@@ -1,14 +1,5 @@
 import { EventEmitter } from 'events';
-/**
- * Minimal AEIR stub type for build fix.
- * TODO: Replace with import from '@ae-framework/spec-compiler' when available.
- */
-export interface AEIR {
-    id?: string;
-    name?: string;
-    type?: string;
-    version?: string;
-}
+import type { AEIR } from '@ae-framework/spec-compiler';
 /**
  * Enhanced State Storage Entry with versioning and metadata
  */
@@ -41,6 +32,10 @@ export interface StorageOptions {
     gcInterval?: number;
     maxVersions?: number;
     enableTransactions?: boolean;
+    enablePerformanceMetrics?: boolean;
+    enableSerializationCache?: boolean;
+    performanceSampleSize?: number;
+    skipUnchangedPersistence?: boolean;
 }
 /**
  * Failure artifact information for CEGIS integration
@@ -69,6 +64,13 @@ export interface SnapshotMetadata {
     size: number;
     ttl?: number;
 }
+interface StringifySample {
+    context: string;
+    durationMs: number;
+    size: number;
+    cacheHit: boolean;
+    timestamp: string;
+}
 /**
  * Enhanced State Manager with SQLite-like storage, compression, and EventBus integration
  */
@@ -78,8 +80,13 @@ export declare class EnhancedStateManager extends EventEmitter {
     private versionIndex;
     private ttlIndex;
     private activeTransactions;
-    private gcTimer?;
+    private gcTimer;
     private isInitialized;
+    private performanceMetrics;
+    private stringifySamples;
+    private readonly stringifySampleLimit;
+    private serializationCache?;
+    private lastPersistedChecksum;
     private readonly options;
     private readonly dataDir;
     private readonly databaseFile;
@@ -147,6 +154,10 @@ export declare class EnhancedStateManager extends EventEmitter {
      */
     private runGarbageCollection;
     /**
+     * Public entry point for manual garbage collection (CLI-safe)
+     */
+    collectGarbage(): Promise<void>;
+    /**
      * Stop garbage collection
      */
     stopGarbageCollection(): void;
@@ -163,6 +174,19 @@ export declare class EnhancedStateManager extends EventEmitter {
         newestEntry: string | null;
         activeTransactions: number;
     };
+    getPerformanceMetrics(): {
+        stringifyCalls: number;
+        stringifyDurationMs: number;
+        stringifyMaxDurationMs: number;
+        averageDurationMs: number;
+        lastPayloadSize: number;
+        stringifyCacheHits: number;
+        stringifyCacheMisses: number;
+        persistedWrites: number;
+        skippedPersistWrites: number;
+        samples: StringifySample[];
+    };
+    resetPerformanceMetrics(): void;
     /**
      * Export state for backup or migration
      */
@@ -182,11 +206,16 @@ export declare class EnhancedStateManager extends EventEmitter {
      * Import state from backup or migration
      */
     importState(exportedState: Awaited<ReturnType<typeof this.exportState>>): Promise<void>;
+    private normalizeImportedEntry;
+    private reviveEntryData;
     private ensureInitialized;
     private getNextVersion;
     private findLatestKey;
     private findKeyByVersion;
     private updateIndices;
+    private recordStringifyMetrics;
+    private stringifyForStorage;
+    private measureSerializedSize;
     private shouldCompress;
     private compress;
     private decompress;
@@ -200,3 +229,4 @@ export declare class EnhancedStateManager extends EventEmitter {
      */
     shutdown(): Promise<void>;
 }
+export {};

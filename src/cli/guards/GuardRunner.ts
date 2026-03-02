@@ -150,8 +150,7 @@ export class GuardRunner {
         }
       }
       
-      // Alternative: Check if test files were modified more recently than source files
-      // const srcFiles = await glob('src/**/*.ts');  // TODO: use for timestamp comparison
+      // Timestamp heuristics are intentionally omitted because CI checkout times are not stable.
       const testFiles = await glob('tests/**/*.test.ts');
       
       if (testFiles.length === 0) {

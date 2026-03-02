@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
+const PNPM_BIN = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const stripShebang = (content) => content.replace(/^#!.*(?:\r?\n)?/gm, '');
 
 function run(cmd, args) {
@@ -15,7 +16,11 @@ function run(cmd, args) {
 const code = await run('tsc', ['-p', 'configs/tsconfig/tsconfig.types.json']);
 if (code !== 0) process.exit(code);
 
-// 2) 生成されたバンドルを一時ファイルへ
+// 2) Sync targets that are outside tsconfig.types include set
+const syncCode = await run(PNPM_BIN, ['api:sync-targets']);
+if (syncCode !== 0) process.exit(syncCode);
+
+// 3) 生成されたバンドルを一時ファイルへ
 const snap = await readFile('api/public-types.d.ts', 'utf8').catch(()=> '');
 const { glob } = await import('glob');
 import { readFile as rf } from 'node:fs/promises';
@@ -29,7 +34,7 @@ for (const f of files) {
 
 await writeFile('artifacts/public-types.current.d.ts', current);
 
-// 3) 簡易 diff（存在しなければ「初回」扱い）
+// 4) 簡易 diff（存在しなければ「初回」扱い）
 if (!snap) {
   console.log('[api:check] no baseline (first run). Use `pnpm api:update` to create snapshot.');
   process.exit(0);

@@ -344,7 +344,6 @@ async function executeAutoFix(options: AutoFixCliOptions): Promise<void> {
     dryRun: options.dryRun || false,
     maxIterations: Number.parseInt(options.maxIterations ?? '10', 10) || 10,
     confidenceThreshold: Number.parseFloat(options.confidence ?? '0.7') || 0.7,
-    // backupOriginals: !options.noBackup, // TODO: Verify property exists in interface
     outputDir: options.output || '.ae/auto-fix',
   };
 
