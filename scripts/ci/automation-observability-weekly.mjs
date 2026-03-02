@@ -578,6 +578,10 @@ function collectReportsFromRuns(repo, workflows, sinceIso, maxRunsPerWorkflow) {
 }
 
 function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, outputPath }) {
+  const blockedCount = summary.byStatus?.blocked ?? 0;
+  const blockedRateLine = summary.totalReports > 0
+    ? `- blockedRate: ${summary.blockedRatePercent ?? 'n/a'}% (${blockedCount}/${summary.totalReports})`
+    : '- blockedRate: n/a (no reports in this period)';
   const lines = [
     '## Automation Observability Weekly Summary',
     `- generatedAt: ${new Date().toISOString()}`,
@@ -588,11 +592,11 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
     `- scannedRuns: ${runStats.scannedRuns}`,
     `- reports: ${summary.totalReports}`,
     `- failures(error/blocked): ${summary.totalFailures}`,
-    `- blockedRate: ${summary.blockedRatePercent ?? 'n/a'}% (${summary.byStatus?.blocked ?? 0}/${summary.totalReports})`,
+    blockedRateLine,
     `- maxConsecutiveFailures: ${summary.maxConsecutiveFailures}`,
     `- convergence rounds (overall): count=${summary.convergenceRounds?.overall?.count ?? 0}, mean=${summary.convergenceRounds?.overall?.meanRounds ?? 'n/a'}, p95=${summary.convergenceRounds?.overall?.p95Rounds ?? 'n/a'}, max=${summary.convergenceRounds?.overall?.maxRounds ?? 'n/a'}`,
-    `- SLO successRate: ${summary.slo?.successRatePercent ?? 'n/a'}% (target: ${summary.slo?.targetPercent ?? 'n/a'}%, achieved: ${summary.slo?.achieved === null ? 'n/a' : summary.slo.achieved})`,
-    `- MTTR mean: ${summary.mttr?.meanMinutes ?? 'n/a'} min (target: ${summary.mttr?.targetMinutes ?? 'n/a'} min, achieved: ${summary.mttr?.achieved === null ? 'n/a' : summary.mttr.achieved})`,
+    `- SLO successRate: ${summary.slo?.successRatePercent ?? 'n/a'}% (target: ${summary.slo?.targetPercent ?? 'n/a'}%, achieved: ${summary.slo?.achieved == null ? 'n/a' : summary.slo.achieved})`,
+    `- MTTR mean: ${summary.mttr?.meanMinutes ?? 'n/a'} min (target: ${summary.mttr?.targetMinutes ?? 'n/a'} min, achieved: ${summary.mttr?.achieved == null ? 'n/a' : summary.mttr.achieved})`,
     `- MTTR p95: ${summary.mttr?.p95Minutes ?? 'n/a'} min, unresolvedOpenIncidents: ${summary.mttr?.unresolvedOpenIncidents ?? 'n/a'}`,
     `- output: ${outputPath}`,
     '',

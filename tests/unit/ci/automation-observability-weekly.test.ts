@@ -384,4 +384,32 @@ describe('automation-observability-weekly', () => {
     expect(lines.some((line) => line.includes('MTTR by incident type'))).toBe(true);
     expect(lines.some((line) => line.includes('Top failure reasons'))).toBe(true);
   });
+
+  it('renders blocked rate without fraction when no reports exist', () => {
+    const lines = buildSummaryMarkdown({
+      repo: 'itdojp/ae-framework',
+      sinceIso: '2026-02-01T00:00:00.000Z',
+      workflows: ['PR Self-Heal'],
+      runStats: {
+        listedRuns: 0,
+        scannedRuns: 0,
+        logsFailed: 0,
+        workflows: {},
+      },
+      summary: {
+        totalReports: 0,
+        totalFailures: 0,
+        blockedRatePercent: null,
+        maxConsecutiveFailures: 0,
+        byStatus: { blocked: 0 },
+        byTool: {},
+        convergenceRounds: { overall: { count: 0 }, byTool: {} },
+        topFailureReasons: [],
+      },
+      outputPath: '/tmp/out.json',
+    });
+
+    expect(lines.some((line) => line.includes('blockedRate: n/a (no reports in this period)'))).toBe(true);
+    expect(lines.some((line) => line.includes('(0/0)'))).toBe(false);
+  });
 });
