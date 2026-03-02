@@ -142,6 +142,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Automation Alerting: `ci/automation-alerting.md`（通知条件/テンプレート/重複抑止）
 - Automation SLO/MTTR: `ci/automation-slo-mttr.md`（成功率SLOと復旧時間MTTRの定義）
 - OTel/Artifacts/Gate Integration Plan: `ci/otel-artifacts-gate-integration-plan.md`（Issue #2380 の段階導入設計）
+- Trace Required Criteria: `ci/trace-required-criteria.md`（Go/No-Go基準/集計手順/preset昇格）
 - Context Pack Gate Rollout: `ci/context-pack-gate-rollout.md`（non-blocking→blocking 段階導入）
 - Automation Permission Boundaries: `ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment の権限境界）
 - Workflow dispatch validation report (2026-02-12): `ci/workflow-dispatch-validation-2026-02-12.md`
