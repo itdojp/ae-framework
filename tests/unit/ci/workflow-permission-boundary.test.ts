@@ -54,9 +54,11 @@ describe('workflow permission boundaries', () => {
     expect(updateBranch).toContain('AE_AUTOMATION_GLOBAL_DISABLE');
   });
 
-  it('copilot-review-gate avoids PR comment writes on fork PRs', () => {
+  it('copilot-review-gate delegates fork-safe behavior to trusted script with explicit actor env', () => {
     const workflow = readWorkflow('copilot-review-gate.yml');
-    expect(workflow).toContain('context.payload.pull_request?.head?.repo?.fork !== true');
-    expect(workflow).toContain('Skipping PR comment (');
+    expect(workflow).toContain('run: node scripts/ci/copilot-review-gate.mjs');
+    expect(workflow).toContain('GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}');
+    expect(workflow).toContain('PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number || \'\' }}');
+    expect(workflow).toContain('AI_REVIEW_ACTORS');
   });
 });

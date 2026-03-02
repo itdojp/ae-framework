@@ -4,19 +4,20 @@
 
 ## 仕組み
 - Workflow: `.github/workflows/copilot-review-gate.yml`
+- Script: `scripts/ci/copilot-review-gate.mjs`
 - トリガー: `pull_request`, `pull_request_review`, `workflow_dispatch`
-- 補助トリガー: `.github/workflows/agent-commands.yml` の `issue_comment(created/edited)`  
+- 補助トリガー: `.github/workflows/agent-commands.yml` の `issue_comment(created/edited)`
   - auto-fix結果コメント `<!-- AE-COPILOT-AUTO-FIX v1 -->` を検知すると、`copilot-review-gate.yml` を `workflow_dispatch` で PR head に再実行します
 - 動作: PRのレビュー一覧とレビュー・スレッドをGraphQLで取得
   - `AI_REVIEW_ACTORS`（未設定時は `COPILOT_ACTORS`）に含まれるアカウントのレビューが存在するか
   - 対象 actor が関与したスレッド（コメントを含む）がすべて `isResolved=true` であるか
 - 未満の条件の場合、チェックを失敗させます（Required化でマージを停止）
 - `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` は `scripts/ci/lib/automation-config.mjs` で解決（個別変数 > `AE_AUTOMATION_PROFILE` > 既定値）
+- GitHub API 呼び出しは `scripts/ci/lib/gh-exec.mjs` 経由で実行され、`AE_GH_THROTTLE_MS` / `AE_GH_RETRY_*` が適用されます（429 対策）
 
 関連:
 - Copilot suggestion の自動適用（auto-fix）: `docs/ci/copilot-auto-fix.md`
 - PR自動化の運用全体像（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
-  
 
 ## 必須化（Branch protection）
 - `gate` を Required checks に追加してください。
