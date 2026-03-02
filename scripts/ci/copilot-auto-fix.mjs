@@ -18,6 +18,7 @@ import {
   resolveReviewActors,
   toActorSet,
 } from './lib/automation-guards.mjs';
+import { buildActionTaskFromComment, summarizeActionTasks } from './lib/review-comment-classifier.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 const prNumberRaw = process.env.PR_NUMBER ? String(process.env.PR_NUMBER).trim() : '';
@@ -237,6 +238,18 @@ const formatSummary = (summary) => {
       lines.push(`  - ... and ${summary.skipped.length - 10} more`);
     }
   }
+  if (typeof summary.actionableCount === 'number') {
+    lines.push(`- actionable non-suggestion comments: ${summary.actionableCount}`);
+  }
+  if (Array.isArray(summary.actionablePreview) && summary.actionablePreview.length > 0) {
+    lines.push('- actionable-preview:');
+    for (const item of summary.actionablePreview.slice(0, 10)) {
+      lines.push(`  - ${item}`);
+    }
+    if (summary.actionablePreview.length > 10) {
+      lines.push(`  - ... and ${summary.actionablePreview.length - 10} more`);
+    }
+  }
   if (summary.note) {
     lines.push(`- note: ${summary.note}`);
   }
@@ -394,6 +407,7 @@ const main = async () => {
 
   const ops = [];
   const skipped = [];
+  const actionableTasks = [];
 
   for (const c of copilotReviewComments) {
     const commentId = c && c.id;
@@ -401,6 +415,17 @@ const main = async () => {
     const line = c && c.line;
     const startLine = c && c.start_line;
     const commentCommitId = c && c.commit_id ? String(c.commit_id) : '';
+    const suggestions = extractSuggestionBlocks(c.body);
+
+    if (suggestions.length === 0) {
+      const actionableTask = buildActionTaskFromComment(c);
+      if (actionableTask) {
+        actionableTasks.push(actionableTask);
+      }
+      skipped.push(`comment=${commentId || 'unknown'}${filePath ? ` path=${filePath}` : ''}: no suggestion block`);
+      continue;
+    }
+
     if (!commentId || !filePath || !Number.isFinite(line)) {
       skipped.push(`comment=${commentId || 'unknown'}: missing path/line`);
       continue;
@@ -415,12 +440,6 @@ const main = async () => {
     }
     if (scope === 'docs' && !isDocsPath(filePath)) {
       skipped.push(`comment=${commentId} path=${filePath}: outside docs scope`);
-      continue;
-    }
-
-    const suggestions = extractSuggestionBlocks(c.body);
-    if (suggestions.length === 0) {
-      skipped.push(`comment=${commentId} path=${filePath}: no suggestion block`);
       continue;
     }
     if (suggestions.length > 1) {
@@ -541,6 +560,8 @@ const main = async () => {
     skipped.push(`thread resolve failed: ${message}`);
   }
 
+  const actionablePreview = summarizeActionTasks(actionableTasks, 3);
+
   upsertComment(
     prNumber,
     formatSummary({
@@ -549,9 +570,15 @@ const main = async () => {
       resolvedThreads,
       changedFiles,
       skipped,
+      actionableCount: actionableTasks.length,
+      actionablePreview,
       note:
         handledCommentIds.size === 0
-          ? 'No AI-review suggestion blocks were applied; unresolved threads may remain.'
+          ? (
+            actionableTasks.length > 0
+              ? 'No suggestion blocks were applied; actionable non-suggestion comments remain for autopilot/manual handling.'
+              : 'No AI-review suggestion blocks were applied; unresolved threads may remain.'
+          )
           : null,
     })
   );
@@ -564,6 +591,7 @@ const main = async () => {
       resolvedThreads,
       changedFiles: changedFiles.length,
       skipped: skipped.length,
+      actionableComments: actionableTasks.length,
     },
   });
 };

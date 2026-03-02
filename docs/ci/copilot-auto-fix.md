@@ -95,6 +95,10 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
   - suggestion が重なっている（同一ファイルで行レンジが重複）
   - 行番号が範囲外
 
+補足:
+- suggestion が無いコメントでも、本文が action 指示として解釈できる場合は `actionable non-suggestion comments` として件数/プレビューを結果コメントへ出力します（自動適用はしません）。
+- 非 suggestion 指摘の実際の処理は Codex Autopilot Lane または手動対応に委ねます。
+
 ## 6. PR への実行結果コメント
 
 実行結果は PR コメントとして upsert します（一次情報: `scripts/ci/copilot-auto-fix.mjs`）。
@@ -104,6 +108,7 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
   - applied / already / resolved threads
   - changed files
   - skipped の理由（上限あり）
+  - actionable non-suggestion comments（件数とプレビュー）
 
 ## 7. トラブルシューティング
 
