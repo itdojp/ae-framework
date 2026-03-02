@@ -6,6 +6,28 @@ const NANOS_PER_MILLI = 1_000_000n;
 const MAX_DATE_MILLIS = BigInt(Number.MAX_SAFE_INTEGER);
 const MIN_DATE_MILLIS = BigInt(Number.MIN_SAFE_INTEGER);
 const EXIT_NO_EVENTS = 2;
+const DEFAULT_ACTOR = "unknown";
+const TRACE_ID_ATTRIBUTE_CANDIDATES = [
+  "traceId",
+  "trace_id",
+  "kvonce.traceId",
+  "kvonce.trace_id",
+  "otel.trace_id",
+];
+const ACTOR_ATTRIBUTE_CANDIDATES = [
+  "kvonce.event.actor",
+  "kvonce.actor",
+  "actor",
+  "enduser.id",
+  "service.name",
+  "service.instance.id",
+];
+const EVENT_ATTRIBUTE_CANDIDATES = [
+  "kvonce.event.name",
+  "kvonce.event.event",
+  "event.name",
+  "event",
+];
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -85,6 +107,63 @@ function attrsToRecord(attributes = []) {
   return record;
 }
 
+function toNonEmptyString(value) {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return String(value);
+  }
+  return null;
+}
+
+function pickStringFromRecord(record, keys = []) {
+  if (!record || typeof record !== "object") {
+    return null;
+  }
+  for (const key of keys) {
+    const candidate = toNonEmptyString(record[key]);
+    if (candidate) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function resolveTraceId({
+  span,
+  spanAttrs,
+  resourceAttrs,
+  resourceSpanIndex,
+  scopeSpanIndex,
+  spanIndex,
+}) {
+  const directTraceId = toNonEmptyString(span?.traceId);
+  if (directTraceId) {
+    return directTraceId;
+  }
+  const attributeTraceId =
+    pickStringFromRecord(spanAttrs, TRACE_ID_ATTRIBUTE_CANDIDATES) ??
+    pickStringFromRecord(resourceAttrs, TRACE_ID_ATTRIBUTE_CANDIDATES);
+  if (attributeTraceId) {
+    return attributeTraceId;
+  }
+  return `otlp-missing-traceid-r${resourceSpanIndex}-s${scopeSpanIndex}-p${spanIndex}`;
+}
+
+function resolveActor({ spanAttrs, resourceAttrs }) {
+  return (
+    pickStringFromRecord(spanAttrs, ACTOR_ATTRIBUTE_CANDIDATES) ??
+    pickStringFromRecord(resourceAttrs, ACTOR_ATTRIBUTE_CANDIDATES) ??
+    DEFAULT_ACTOR
+  );
+}
+
+function resolveEventName({ spanAttrs, type }) {
+  return pickStringFromRecord(spanAttrs, EVENT_ATTRIBUTE_CANDIDATES) ?? type;
+}
+
 function toTimestamp(nanoString) {
   if (!nanoString) {
     console.warn("[convert-otlp-kvonce] missing span timestamp; skipping event");
@@ -109,20 +188,34 @@ function toTimestamp(nanoString) {
 
 function extractEvents(otlp) {
   const events = [];
-  for (const resourceSpan of otlp?.resourceSpans || []) {
-    for (const scopeSpan of resourceSpan.scopeSpans || []) {
-      for (const span of scopeSpan.spans || []) {
+  for (const [resourceSpanIndex, resourceSpan] of (otlp?.resourceSpans || []).entries()) {
+    const resourceAttrs = attrsToRecord(resourceSpan?.resource?.attributes);
+    for (const [scopeSpanIndex, scopeSpan] of (resourceSpan?.scopeSpans || []).entries()) {
+      for (const [spanIndex, span] of (scopeSpan?.spans || []).entries()) {
         const attrs = attrsToRecord(span.attributes);
-        const type = attrs["kvonce.event.type"];
-        const key = attrs["kvonce.event.key"];
+        const type = toNonEmptyString(attrs["kvonce.event.type"]);
+        const key = toNonEmptyString(attrs["kvonce.event.key"]);
         if (!type || !key) continue;
         const timestamp = toTimestamp(span.startTimeUnixNano);
         if (!timestamp) {
           console.warn("[convert-otlp-kvonce] span missing usable timestamp; event dropped");
           continue;
         }
+        const traceId = resolveTraceId({
+          span,
+          spanAttrs: attrs,
+          resourceAttrs,
+          resourceSpanIndex,
+          scopeSpanIndex,
+          spanIndex,
+        });
+        const actor = resolveActor({ spanAttrs: attrs, resourceAttrs });
+        const eventName = resolveEventName({ spanAttrs: attrs, type });
         const event = {
+          traceId,
           timestamp,
+          actor,
+          event: eventName,
           type,
           key,
         };
