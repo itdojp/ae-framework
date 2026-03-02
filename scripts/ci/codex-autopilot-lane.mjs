@@ -372,6 +372,9 @@ function runAutoFix(pr) {
   const trustedGhExecPath = path.join(ciDir, 'lib', 'gh-exec.mjs');
   const trustedAutomationReportPath = path.join(ciDir, 'lib', 'automation-report.mjs');
   const trustedGuardsPath = path.join(ciDir, 'lib', 'automation-guards.mjs');
+  const trustedDefaultsPath = path.join(ciDir, 'lib', 'automation-defaults.mjs');
+  const trustedTimingPath = path.join(ciDir, 'lib', 'timing.mjs');
+  const trustedReviewClassifierPath = path.join(ciDir, 'lib', 'review-comment-classifier.mjs');
   const runnerAutoFixPath = path.join(runnerDir, 'copilot-auto-fix.mjs');
   const runnerLibDir = path.join(runnerDir, 'lib');
 
@@ -380,6 +383,9 @@ function runAutoFix(pr) {
   fs.copyFileSync(trustedGhExecPath, path.join(runnerLibDir, 'gh-exec.mjs'));
   fs.copyFileSync(trustedAutomationReportPath, path.join(runnerLibDir, 'automation-report.mjs'));
   fs.copyFileSync(trustedGuardsPath, path.join(runnerLibDir, 'automation-guards.mjs'));
+  fs.copyFileSync(trustedDefaultsPath, path.join(runnerLibDir, 'automation-defaults.mjs'));
+  fs.copyFileSync(trustedTimingPath, path.join(runnerLibDir, 'timing.mjs'));
+  fs.copyFileSync(trustedReviewClassifierPath, path.join(runnerLibDir, 'review-comment-classifier.mjs'));
 
   const env = {
     ...process.env,
