@@ -3,6 +3,10 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
+import {
+  COPILOT_AUTO_FIX_PAGING_SLEEP_MS_DEFAULT,
+  COPILOT_AUTO_FIX_THREAD_RESOLVE_SLEEP_MS_DEFAULT,
+} from './lib/automation-defaults.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
 import { sleep } from './lib/timing.mjs';
 import {
@@ -146,7 +150,7 @@ const listPullFiles = async (number) => {
     files.push(...chunk);
     if (chunk.length < 100) break;
     page += 1;
-    await sleep(100);
+    await sleep(COPILOT_AUTO_FIX_PAGING_SLEEP_MS_DEFAULT);
   }
   return files;
 };
@@ -168,7 +172,7 @@ const listReviewComments = async (number) => {
     comments.push(...chunk);
     if (chunk.length < 100) break;
     page += 1;
-    await sleep(100);
+    await sleep(COPILOT_AUTO_FIX_PAGING_SLEEP_MS_DEFAULT);
   }
   return comments;
 };
@@ -530,7 +534,7 @@ const main = async () => {
       if (thread.isResolved) continue;
       await resolveReviewThread(thread.id);
       resolvedThreads += 1;
-      await sleep(150);
+      await sleep(COPILOT_AUTO_FIX_THREAD_RESOLVE_SLEEP_MS_DEFAULT);
     }
   } catch (error) {
     const message = error && error.message ? error.message : String(error);

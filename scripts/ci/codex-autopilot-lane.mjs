@@ -6,6 +6,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
+import {
+  AE_AUTOPILOT_MAX_ROUNDS_DEFAULT,
+  AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS_DEFAULT,
+  AE_AUTOPILOT_ROUND_WAIT_SECONDS_DEFAULT,
+  AE_AUTOPILOT_WAIT_STRATEGY_DEFAULT,
+} from './lib/automation-defaults.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
 import { readIntEnv, waitForNextRound } from './lib/round-control.mjs';
 import {
@@ -24,10 +30,20 @@ import { DEFAULT_POLICY_PATH, collectRequiredLabels, loadRiskPolicy } from './li
 const marker = '<!-- AE-CODEX-AUTOPILOT v1 -->';
 const repo = String(process.env.GITHUB_REPOSITORY || '').trim();
 const prNumber = toPositiveInt(process.env.PR_NUMBER || '');
-const maxRounds = readIntEnv('AE_AUTOPILOT_MAX_ROUNDS', 3, 1);
-const roundWaitSeconds = readIntEnv('AE_AUTOPILOT_ROUND_WAIT_SECONDS', 8, 0);
-const roundWaitStrategy = String(process.env.AE_AUTOPILOT_WAIT_STRATEGY || 'fixed').trim().toLowerCase();
-const roundWaitMaxSeconds = readIntEnv('AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS', roundWaitSeconds, 0);
+const maxRounds = readIntEnv('AE_AUTOPILOT_MAX_ROUNDS', AE_AUTOPILOT_MAX_ROUNDS_DEFAULT, 1);
+const roundWaitSeconds = readIntEnv(
+  'AE_AUTOPILOT_ROUND_WAIT_SECONDS',
+  AE_AUTOPILOT_ROUND_WAIT_SECONDS_DEFAULT,
+  0
+);
+const roundWaitStrategy = String(process.env.AE_AUTOPILOT_WAIT_STRATEGY || AE_AUTOPILOT_WAIT_STRATEGY_DEFAULT)
+  .trim()
+  .toLowerCase();
+const hasExplicitRoundWaitSeconds = String(process.env.AE_AUTOPILOT_ROUND_WAIT_SECONDS || '').trim() !== '';
+const roundWaitMaxFallback = hasExplicitRoundWaitSeconds
+  ? roundWaitSeconds
+  : AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS_DEFAULT;
+const roundWaitMaxSeconds = readIntEnv('AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS', roundWaitMaxFallback, 0);
 const dryRun = toBool(process.env.AE_AUTOPILOT_DRY_RUN) || toBool(process.env.DRY_RUN);
 const autoLabelEnabled = toBool(process.env.AE_AUTOPILOT_AUTO_LABEL);
 const riskPolicyPath = String(process.env.AE_AUTOPILOT_RISK_POLICY_PATH || DEFAULT_POLICY_PATH).trim() || DEFAULT_POLICY_PATH;

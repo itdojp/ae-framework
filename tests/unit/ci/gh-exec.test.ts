@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { GH_RETRY_MAX_ATTEMPTS_DEFAULT } from '../../../scripts/ci/lib/automation-defaults.mjs';
 
 const baseEnv = {
   AE_GH_RETRY_NO_SLEEP: process.env.AE_GH_RETRY_NO_SLEEP,
@@ -47,6 +48,25 @@ describe('gh-exec', () => {
     expect(__testOnly_extractRetryAfterMs('retry after 250ms')).toBe(250);
     expect(__testOnly_extractRetryAfterMs('retrying after 2 seconds')).toBe(2000);
     expect(__testOnly_extractRetryAfterMs('no retry header')).toBeNull();
+  });
+
+  it('uses SSOT default max attempts when retry env is unset', async () => {
+    process.env.AE_GH_RETRY_NO_SLEEP = '1';
+    delete process.env.AE_GH_RETRY_MAX_ATTEMPTS;
+
+    const execFileSyncMock = vi.fn(() => {
+      const error = new Error('HTTP 429: Too Many Requests');
+      (error as any).stderr = 'HTTP 429: Too Many Requests';
+      throw error;
+    });
+
+    vi.doMock('node:child_process', () => ({
+      execFileSync: execFileSyncMock,
+    }));
+
+    const { execGh } = await import('../../../scripts/ci/lib/gh-exec.mjs');
+    expect(() => execGh(['api', 'rate_limit'])).toThrow(/Too Many Requests/);
+    expect(execFileSyncMock).toHaveBeenCalledTimes(GH_RETRY_MAX_ATTEMPTS_DEFAULT);
   });
 
   it('retries execGh on retryable failures', async () => {

@@ -1,12 +1,12 @@
 import { execFileSync } from 'node:child_process';
-
-const DEFAULT_MAX_ATTEMPTS = 8;
-const DEFAULT_INITIAL_DELAY_MS = 750;
-const DEFAULT_MAX_DELAY_MS = 60_000;
-const DEFAULT_MULTIPLIER = 2;
-const DEFAULT_JITTER_MS = 250;
-// Add a small default spacing between gh calls to reduce secondary rate-limit bursts.
-const DEFAULT_THROTTLE_MS = 250;
+import {
+  GH_RETRY_INITIAL_DELAY_MS_DEFAULT,
+  GH_RETRY_JITTER_MS_DEFAULT,
+  GH_RETRY_MAX_ATTEMPTS_DEFAULT,
+  GH_RETRY_MAX_DELAY_MS_DEFAULT,
+  GH_RETRY_MULTIPLIER_DEFAULT,
+  GH_THROTTLE_MS_DEFAULT,
+} from './automation-defaults.mjs';
 
 let lastGhInvocationAtMs = 0;
 
@@ -43,7 +43,7 @@ const sleepSync = (ms) => {
 };
 
 const throttleSync = () => {
-  const throttleMs = Math.max(0, readEnvInt('AE_GH_THROTTLE_MS', DEFAULT_THROTTLE_MS));
+  const throttleMs = Math.max(0, readEnvInt('AE_GH_THROTTLE_MS', GH_THROTTLE_MS_DEFAULT));
   if (throttleMs <= 0) return;
   const now = Date.now();
   const earliest = lastGhInvocationAtMs + throttleMs;
@@ -106,11 +106,11 @@ const applyJitter = (baseDelayMs, jitterMs) => {
 };
 
 export function execGh(args, { input, encoding = 'utf8', cwd, env, stdio } = {}) {
-  const maxAttempts = Math.max(1, readEnvInt('AE_GH_RETRY_MAX_ATTEMPTS', DEFAULT_MAX_ATTEMPTS));
-  const initialDelay = Math.max(0, readEnvInt('AE_GH_RETRY_INITIAL_DELAY_MS', DEFAULT_INITIAL_DELAY_MS));
-  const maxDelay = Math.max(initialDelay, readEnvInt('AE_GH_RETRY_MAX_DELAY_MS', DEFAULT_MAX_DELAY_MS));
-  const multiplier = Math.max(1, readEnvNumber('AE_GH_RETRY_MULTIPLIER', DEFAULT_MULTIPLIER));
-  const jitterMs = Math.max(0, readEnvInt('AE_GH_RETRY_JITTER_MS', DEFAULT_JITTER_MS));
+  const maxAttempts = Math.max(1, readEnvInt('AE_GH_RETRY_MAX_ATTEMPTS', GH_RETRY_MAX_ATTEMPTS_DEFAULT));
+  const initialDelay = Math.max(0, readEnvInt('AE_GH_RETRY_INITIAL_DELAY_MS', GH_RETRY_INITIAL_DELAY_MS_DEFAULT));
+  const maxDelay = Math.max(initialDelay, readEnvInt('AE_GH_RETRY_MAX_DELAY_MS', GH_RETRY_MAX_DELAY_MS_DEFAULT));
+  const multiplier = Math.max(1, readEnvNumber('AE_GH_RETRY_MULTIPLIER', GH_RETRY_MULTIPLIER_DEFAULT));
+  const jitterMs = Math.max(0, readEnvInt('AE_GH_RETRY_JITTER_MS', GH_RETRY_JITTER_MS_DEFAULT));
   const resolvedStdio = stdio === undefined ? ['pipe', 'pipe', 'pipe'] : stdio;
   const debug = process.env.AE_GH_RETRY_DEBUG === '1';
 

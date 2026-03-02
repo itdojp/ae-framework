@@ -2,8 +2,12 @@
 
 import fs from 'node:fs';
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
+import {
+  COPILOT_REVIEW_MAX_ATTEMPTS_DEFAULT,
+  COPILOT_REVIEW_WAIT_MINUTES_DEFAULT,
+} from './lib/automation-defaults.mjs';
 import { isActorAllowed, resolveReviewActors, toActorSet } from './lib/automation-guards.mjs';
-import { waitForNextRound } from './lib/round-control.mjs';
+import { readIntEnv, waitForNextRound } from './lib/round-control.mjs';
 
 const marker = '<!-- copilot-review-gate -->';
 
@@ -171,10 +175,8 @@ async function main() {
     return;
   }
   const reviewActorSet = toActorSet(reviewActors);
-  const waitMinutesRaw = Number(process.env.COPILOT_REVIEW_WAIT_MINUTES || '5');
-  const maxAttemptsRaw = Number(process.env.COPILOT_REVIEW_MAX_ATTEMPTS || '3');
-  const waitMinutes = Number.isFinite(waitMinutesRaw) && waitMinutesRaw >= 0 ? waitMinutesRaw : 5;
-  const maxAttempts = Number.isFinite(maxAttemptsRaw) && maxAttemptsRaw > 0 ? Math.trunc(maxAttemptsRaw) : 3;
+  const waitMinutes = readIntEnv('COPILOT_REVIEW_WAIT_MINUTES', COPILOT_REVIEW_WAIT_MINUTES_DEFAULT, 0);
+  const maxAttempts = readIntEnv('COPILOT_REVIEW_MAX_ATTEMPTS', COPILOT_REVIEW_MAX_ATTEMPTS_DEFAULT, 1);
 
   let pr = null;
   let gateResult = null;
