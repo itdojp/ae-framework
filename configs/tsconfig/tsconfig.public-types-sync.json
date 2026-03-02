@@ -1,0 +1,27 @@
+{
+  "extends": "./tsconfig.types.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "paths": {
+      "@ae-framework/spec-compiler": [
+        "packages/spec-compiler/src/index.ts",
+        "packages/spec-compiler/dist/index.d.ts"
+      ],
+      "@ae-framework/spec-compiler/*": [
+        "packages/spec-compiler/src/*",
+        "packages/spec-compiler/dist/*"
+      ]
+    }
+  },
+  "include": [
+    "../../src/agents/adapters/ui-ux-agent-adapter.ts",
+    "../../src/utils/enhanced-state-manager.ts"
+  ],
+  "exclude": [
+    "../../**/*.test.ts",
+    "../../**/*.spec.ts",
+    "../../tests/**/*",
+    "../../node_modules",
+    "../../dist"
+  ]
+}
