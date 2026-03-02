@@ -242,7 +242,7 @@ Settings（Repository）で次を確認してください。
 
 `gh` CLI 経由のAPI呼び出しは GitHub secondary rate limit（HTTP 429）で失敗することがあります。
 本リポジトリのCIスクリプトは `scripts/ci/lib/gh-exec.mjs` により retry/backoff を行います。
-既定値は `scripts/ci/lib/gh-exec.mjs` と `scripts/ci/lib/automation-config.mjs` で管理されています。
+既定値は `scripts/ci/lib/automation-defaults.mjs` と `scripts/ci/lib/automation-config.mjs` で管理されています。
 
 調整用ENV（必要時のみ）:
 - `AE_GH_RETRY_MAX_ATTEMPTS`（既定 8）
@@ -253,6 +253,32 @@ Settings（Repository）で次を確認してください。
 - `AE_GH_THROTTLE_MS`（既定 250。`gh` 呼び出し間の最小間隔ms。`0` で無効化）
 - `AE_GH_RETRY_DEBUG=1`（retryログ出力）
 - `AE_GH_RETRY_NO_SLEEP=1`（テスト用途: sleep無効）
+
+### 5.4.1 retry / wait 設定 早見表（gate / autopilot / auto-fix / self-heal）
+
+SSOT:
+- 共通既定値: `scripts/ci/lib/automation-defaults.mjs`
+- profile 上書き・バリデーション: `scripts/ci/lib/automation-config.mjs`
+
+| レーン | retry 設定 | wait 設定 | 既定値 | `AE_AUTOMATION_PROFILE` による上書き |
+| --- | --- | --- | --- | --- |
+| gate (`copilot-review-gate`) | `COPILOT_REVIEW_MAX_ATTEMPTS` | `COPILOT_REVIEW_WAIT_MINUTES`（fixed） | `3` 回 / `5` 分 | conservative: `4` 回 / `7` 分、balanced: `3` 回 / `5` 分、aggressive: `2` 回 / `2` 分 |
+| autopilot (`codex-autopilot-lane`) | `AE_AUTOPILOT_MAX_ROUNDS` | `AE_AUTOPILOT_ROUND_WAIT_SECONDS`, `AE_AUTOPILOT_WAIT_STRATEGY`, `AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS` | `3` 回 / `8` 秒 / `fixed` / `8` 秒 | なし |
+| auto-fix (`copilot-auto-fix`) | （明示的な retry 変数なし） | `COPILOT_AUTO_FIX_PAGING_SLEEP_MS_DEFAULT`, `COPILOT_AUTO_FIX_THREAD_RESOLVE_SLEEP_MS_DEFAULT` | `100ms` / `150ms` | なし |
+| self-heal (`pr-self-heal`) | `AE_SELF_HEAL_MAX_ROUNDS` | `AE_SELF_HEAL_ROUND_WAIT_SECONDS`, `AE_SELF_HEAL_WAIT_STRATEGY`, `AE_SELF_HEAL_ROUND_WAIT_MAX_SECONDS` | `3` 回 / `60` 秒 / `fixed` / `60` 秒 | なし |
+
+| 共通 `gh-exec` retry/backoff（全レーン） | default | conservative | balanced | aggressive |
+| --- | --- | --- | --- | --- |
+| `AE_GH_RETRY_MAX_ATTEMPTS` | `8` | `10` | `8` | `6` |
+| `AE_GH_RETRY_INITIAL_DELAY_MS` | `750` | `1000` | `750` | `500` |
+| `AE_GH_RETRY_MAX_DELAY_MS` | `60000` | `120000` | `60000` | `30000` |
+| `AE_GH_RETRY_MULTIPLIER` | `2` | `2` | `2` | `2` |
+| `AE_GH_RETRY_JITTER_MS` | `250` | `400` | `250` | `100` |
+| `AE_GH_THROTTLE_MS` | `250` | `400` | `300` | `150` |
+
+注記:
+- `AE_GH_*` / `COPILOT_REVIEW_*` は `automation-config` で `explicit -> profile -> default` の優先順位で確定します。
+- `autopilot` / `auto-fix` / `self-heal` の wait 値は profile 非連動です。
 
 それでも失敗する場合は、Actions の rerun（failedのみ）で再試行してください。
 
