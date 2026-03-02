@@ -4,6 +4,14 @@ import {
   resolveAutomationConfig,
   toGithubEnv,
 } from '../../../scripts/ci/lib/automation-config.mjs';
+import {
+  AE_AUTOPILOT_MAX_ROUNDS_DEFAULT,
+  AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS_DEFAULT,
+  AE_AUTOPILOT_ROUND_WAIT_SECONDS_DEFAULT,
+  AE_AUTOPILOT_WAIT_STRATEGY_DEFAULT,
+  COPILOT_REVIEW_MAX_ATTEMPTS_DEFAULT,
+  COPILOT_REVIEW_WAIT_MINUTES_DEFAULT,
+} from '../../../scripts/ci/lib/automation-defaults.mjs';
 
 describe('automation-config', () => {
   it('uses defaults when profile and variables are not set', () => {
@@ -24,7 +32,16 @@ describe('automation-config', () => {
     expect(config.values.AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN).toBe('1');
     expect(config.values.AE_GH_RETRY_MULTIPLIER).toBe('2');
     expect(config.values.AE_GH_RETRY_JITTER_MS).toBe('250');
+    expect(config.values.COPILOT_REVIEW_WAIT_MINUTES).toBe(String(COPILOT_REVIEW_WAIT_MINUTES_DEFAULT));
+    expect(config.values.COPILOT_REVIEW_MAX_ATTEMPTS).toBe(String(COPILOT_REVIEW_MAX_ATTEMPTS_DEFAULT));
     expect(config.warnings).toEqual([]);
+  });
+
+  it('exposes SSOT autopilot defaults', () => {
+    expect(AE_AUTOPILOT_MAX_ROUNDS_DEFAULT).toBe(3);
+    expect(AE_AUTOPILOT_ROUND_WAIT_SECONDS_DEFAULT).toBe(8);
+    expect(AE_AUTOPILOT_WAIT_STRATEGY_DEFAULT).toBe('fixed');
+    expect(AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS_DEFAULT).toBe(8);
   });
 
   it('loads balanced profile values', () => {
