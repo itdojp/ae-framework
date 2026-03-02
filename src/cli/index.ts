@@ -37,7 +37,9 @@ import { normalizeProgramArgv } from './argv-normalize.js';
 const program = new Command();
 
 if (typeof process !== 'undefined' && process.env['DISABLE_TELEMETRY'] !== 'true') {
-  initializeTelemetry();
+  void initializeTelemetry().catch((error: unknown) => {
+    console.error(chalk.yellow(`⚠️ Telemetry initialization failed: ${toMessage(error)}`));
+  });
 }
 
 // TaskResult is now TaskResponse from the adapters (addressing Copilot review comment 2280080078)

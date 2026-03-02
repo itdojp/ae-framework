@@ -30,25 +30,34 @@ export const telemetrySDK = new NodeSDK({
 });
 
 let telemetryInitialized = false;
+let telemetryInitPromise: Promise<void> | null = null;
 
 // Initialize telemetry
-export function initializeTelemetry(): void {
+export async function initializeTelemetry(): Promise<void> {
   if (telemetryInitialized) {
     return;
   }
-  try {
-    telemetrySDK.start();
-    telemetryInitialized = true;
-    
-    if (isProduction || process.env['DEBUG_TELEMETRY']) {
-      console.log('📊 OpenTelemetry initialized for ae-framework Phase 6');
-      console.log(`   Service: ae-framework v1.0.0`);
-      console.log(`   Environment: ${process.env['NODE_ENV'] || 'development'}`);
-      console.log(`   OTLP Export: ${enableOTLP ? '✅ Enabled' : '❌ Console only'}`);
-    }
-  } catch (error: unknown) {
-    console.error('❌ Failed to initialize OpenTelemetry:', toMessage(error));
+  if (telemetryInitPromise) {
+    return telemetryInitPromise;
   }
+
+  telemetryInitPromise = telemetrySDK.start()
+    .then(() => {
+      telemetryInitialized = true;
+      if (isProduction || process.env['DEBUG_TELEMETRY']) {
+        console.log('📊 OpenTelemetry initialized for ae-framework Phase 6');
+        console.log('   Service: ae-framework v1.0.0');
+        console.log(`   Environment: ${process.env['NODE_ENV'] || 'development'}`);
+        console.log(`   OTLP Export: ${enableOTLP ? '✅ Enabled' : '❌ Console only'}`);
+      }
+    })
+    .catch((error: unknown) => {
+      telemetryInitialized = false;
+      telemetryInitPromise = null;
+      throw new Error(`Failed to initialize OpenTelemetry: ${toMessage(error)}`);
+    });
+
+  return telemetryInitPromise;
 }
 
 // Graceful shutdown
