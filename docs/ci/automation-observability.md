@@ -48,7 +48,27 @@ PR自動化系スクリプトの実行結果は、共通フォーマット `ae-a
 - `skip`: 実行対象なし、または設定によりスキップ
 - `error`: 実行時エラー
 
-## 4. ログからの抽出例
+## 4. 主要運用指標（#2374）
+
+### 4.1 blocked率
+- 定義: `summary.byStatus.blocked / summary.totalReports * 100`
+- JSON出力: `weekly-failure-summary.json` の `summary.blockedRatePercent`
+- 目的: 自動化停止（blocked）の増加を早期検知する
+
+### 4.2 収束までのラウンド数
+- 元データ: `ae-automation-report/v1` の `metrics.rounds`
+- 集計出力:
+  - `summary.convergenceRounds.overall`（count / meanRounds / p95Rounds / maxRounds）
+  - `summary.convergenceRounds.byTool.<tool>`（同指標）
+- 目的: 自動収束に必要な試行回数の増減を追跡する
+
+取得例:
+
+```bash
+jq '.summary | {blockedRatePercent, convergenceRounds}' artifacts/automation/weekly-failure-summary.json
+```
+
+## 5. ログからの抽出例
 
 `rg` 版（bash/zsh前提）:
 
@@ -66,13 +86,13 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
   | sed 's/^\[ae-automation-report\] //'
 ```
 
-## 5. 代表的な運用
+## 6. 代表的な運用
 
 - 監視連携: `status != resolved` を抽出して通知
 - 失敗分析: `reason` と `metrics` で要因を分類
 - 証跡保存: `AE_AUTOMATION_REPORT_FILE` でJSONを生成し artifact 化
 
-## 6. 週次集計（失敗理由 Top N）
+## 7. 週次集計（失敗理由 Top N）
 
 週次バッチ `Automation Observability Weekly` が、主要自動化WFの実行ログから `ae-automation-report/v1` を抽出し、`error` / `blocked` の理由を集計します。
 
