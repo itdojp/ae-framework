@@ -5,7 +5,8 @@ on:
     types: [submitted]
 
 env:
-  COPILOT_ACTORS: copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],Copilot
+  AI_REVIEW_ACTORS: ${{ vars.AI_REVIEW_ACTORS || vars.COPILOT_ACTORS || 'copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],chatgpt-codex-connector,chatgpt-codex-connector[bot],Copilot' }}
+  COPILOT_ACTORS: ${{ vars.COPILOT_ACTORS || '' }}
 
 concurrency:
   group: copilot-auto-fix-${{ github.event.pull_request.number }}
@@ -21,7 +22,6 @@ jobs:
     if: >-
       !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
       && github.event.pull_request.head.repo.fork == false
-      && contains(fromJSON('["copilot-pull-request-reviewer","github-copilot","github-copilot[bot]","copilot","copilot[bot]","Copilot"]'), github.actor)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +35,8 @@ jobs:
       - name: Resolve automation config
         env:
           AE_AUTOMATION_PROFILE: ${{ vars.AE_AUTOMATION_PROFILE || '' }}
+          AI_REVIEW_ACTORS: ${{ vars.AI_REVIEW_ACTORS || '' }}
+          COPILOT_ACTORS: ${{ vars.COPILOT_ACTORS || '' }}
           AE_COPILOT_AUTO_FIX: ${{ vars.AE_COPILOT_AUTO_FIX || '' }}
           AE_COPILOT_AUTO_FIX_SCOPE: ${{ vars.AE_COPILOT_AUTO_FIX_SCOPE || '' }}
           AE_COPILOT_AUTO_FIX_LABEL: ${{ vars.AE_COPILOT_AUTO_FIX_LABEL || '' }}

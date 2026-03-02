@@ -12,7 +12,7 @@ import {
   hasLabel as hasOptInLabel,
   isActorAllowed,
   normalizeLabelNames,
-  parseActorCsv,
+  resolveReviewActors,
   toActorSet,
 } from './lib/automation-guards.mjs';
 import { DEFAULT_POLICY_PATH, collectRequiredLabels, loadRiskPolicy } from './lib/risk-policy.mjs';
@@ -28,11 +28,12 @@ const dryRun = toBool(process.env.AE_AUTOPILOT_DRY_RUN) || toBool(process.env.DR
 const autoLabelEnabled = toBool(process.env.AE_AUTOPILOT_AUTO_LABEL);
 const riskPolicyPath = String(process.env.AE_AUTOPILOT_RISK_POLICY_PATH || DEFAULT_POLICY_PATH).trim() || DEFAULT_POLICY_PATH;
 const globalDisabled = toBool(process.env.AE_AUTOMATION_GLOBAL_DISABLE);
-const copilotActors = parseActorCsv(
+const reviewActors = resolveReviewActors(
+  process.env.AI_REVIEW_ACTORS,
   process.env.COPILOT_ACTORS,
-  'copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],Copilot',
+  'copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],chatgpt-codex-connector,chatgpt-codex-connector[bot],Copilot',
 );
-const copilotActorSet = toActorSet(copilotActors);
+const reviewActorSet = toActorSet(reviewActors);
 
 function toBool(value) {
   const normalized = String(value || '').trim().toLowerCase();
@@ -246,7 +247,7 @@ function fetchCopilotThreadState(number) {
     && !thread.isResolved
     && Array.isArray(thread.comments?.nodes)
     && thread.comments.nodes.some((comment) =>
-      isActorAllowed(comment?.author?.login, copilotActorSet))
+      isActorAllowed(comment?.author?.login, reviewActorSet))
   );
   return {
     total: threads.length,
