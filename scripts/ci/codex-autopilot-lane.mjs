@@ -259,8 +259,10 @@ function fetchPrView(number) {
   ]);
 }
 
-const REVIEW_THREADS_PAGE_QUERY = `query($owner:String!, $repo:String!, $number:Int!, $threadsAfter:String) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100, after:$threadsAfter) {\n        pageInfo { hasNextPage endCursor }\n        nodes {\n          id\n          path\n          isResolved\n          comments(first:100) {\n            pageInfo { hasNextPage endCursor }\n            nodes {\n              databaseId\n              bodyText\n              path\n              line\n              startLine\n              url\n              createdAt\n              author { login __typename }\n            }\n          }\n        }\n      }\n    }\n  }\n}`;
-const REVIEW_THREAD_COMMENTS_PAGE_QUERY = `query($threadId:ID!, $commentsAfter:String) {\n  node(id:$threadId) {\n    ... on PullRequestReviewThread {\n      comments(first:100, after:$commentsAfter) {\n        pageInfo { hasNextPage endCursor }\n        nodes {\n          databaseId\n          bodyText\n          path\n          line\n          startLine\n          url\n          createdAt\n          author { login __typename }\n        }\n      }\n    }\n  }\n}`;
+const REVIEW_THREADS_DETAIL_PAGE_QUERY = `query($owner:String!, $repo:String!, $number:Int!, $threadsAfter:String) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100, after:$threadsAfter) {\n        pageInfo { hasNextPage endCursor }\n        nodes {\n          id\n          path\n          isResolved\n          comments(first:100) {\n            pageInfo { hasNextPage endCursor }\n            nodes {\n              databaseId\n              bodyText\n              path\n              line\n              startLine\n              url\n              createdAt\n              author { login __typename }\n            }\n          }\n        }\n      }\n    }\n  }\n}`;
+const REVIEW_THREAD_DETAIL_COMMENTS_PAGE_QUERY = `query($threadId:ID!, $commentsAfter:String) {\n  node(id:$threadId) {\n    ... on PullRequestReviewThread {\n      comments(first:100, after:$commentsAfter) {\n        pageInfo { hasNextPage endCursor }\n        nodes {\n          databaseId\n          bodyText\n          path\n          line\n          startLine\n          url\n          createdAt\n          author { login __typename }\n        }\n      }\n    }\n  }\n}`;
+const REVIEW_THREADS_STATE_PAGE_QUERY = `query($owner:String!, $repo:String!, $number:Int!, $threadsAfter:String) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100, after:$threadsAfter) {\n        pageInfo { hasNextPage endCursor }\n        nodes {\n          id\n          isResolved\n          comments(first:100) {\n            pageInfo { hasNextPage endCursor }\n            nodes {\n              author { login __typename }\n            }\n          }\n        }\n      }\n    }\n  }\n}`;
+const REVIEW_THREAD_STATE_COMMENTS_PAGE_QUERY = `query($threadId:ID!, $commentsAfter:String) {\n  node(id:$threadId) {\n    ... on PullRequestReviewThread {\n      comments(first:100, after:$commentsAfter) {\n        pageInfo { hasNextPage endCursor }\n        nodes {\n          author { login __typename }\n        }\n      }\n    }\n  }\n}`;
 
 function execGraphql(query, variables = {}) {
   const args = ['api', 'graphql', '-f', `query=${query}`];
@@ -305,8 +307,11 @@ function paginateGraphqlConnection(connection, fetchNextConnection) {
   return { nodes, truncated: false };
 }
 
-function fetchReviewThreadsPage(number, owner, repoName, threadsAfter) {
-  const data = execGraphql(REVIEW_THREADS_PAGE_QUERY, {
+function fetchReviewThreadsPage(number, owner, repoName, threadsAfter, includeCommentDetails) {
+  const query = includeCommentDetails
+    ? REVIEW_THREADS_DETAIL_PAGE_QUERY
+    : REVIEW_THREADS_STATE_PAGE_QUERY;
+  const data = execGraphql(query, {
     owner,
     repo: repoName,
     number,
@@ -315,20 +320,29 @@ function fetchReviewThreadsPage(number, owner, repoName, threadsAfter) {
   return data?.data?.repository?.pullRequest?.reviewThreads;
 }
 
-function fetchReviewThreadCommentsPage(threadId, commentsAfter) {
-  const data = execGraphql(REVIEW_THREAD_COMMENTS_PAGE_QUERY, {
+function fetchReviewThreadCommentsPage(threadId, commentsAfter, includeCommentDetails) {
+  const query = includeCommentDetails
+    ? REVIEW_THREAD_DETAIL_COMMENTS_PAGE_QUERY
+    : REVIEW_THREAD_STATE_COMMENTS_PAGE_QUERY;
+  const data = execGraphql(query, {
     threadId,
     commentsAfter,
   });
   return data?.data?.node?.comments;
 }
 
-function fetchReviewThreadsWithPagination(number) {
+function fetchReviewThreadsWithPagination(number, { includeCommentDetails = true } = {}) {
   const [owner, repoName] = repo.split('/');
-  const firstThreadsConnection = fetchReviewThreadsPage(number, owner, repoName);
+  const firstThreadsConnection = fetchReviewThreadsPage(
+    number,
+    owner,
+    repoName,
+    null,
+    includeCommentDetails,
+  );
   const pagedThreads = paginateGraphqlConnection(
     firstThreadsConnection,
-    (cursor) => fetchReviewThreadsPage(number, owner, repoName, cursor),
+    (cursor) => fetchReviewThreadsPage(number, owner, repoName, cursor, includeCommentDetails),
   );
 
   let truncated = pagedThreads.truncated;
@@ -338,7 +352,7 @@ function fetchReviewThreadsWithPagination(number) {
     const pagedComments = paginateGraphqlConnection(thread.comments, (cursor) => {
       const threadId = String(thread.id || '').trim();
       if (!threadId) return null;
-      return fetchReviewThreadCommentsPage(threadId, cursor);
+      return fetchReviewThreadCommentsPage(threadId, cursor, includeCommentDetails);
     });
     if (pagedComments.truncated) truncated = true;
     threads.push({
@@ -355,7 +369,7 @@ function fetchReviewThreadsWithPagination(number) {
 }
 
 function fetchCopilotThreadState(number) {
-  const paged = fetchReviewThreadsWithPagination(number);
+  const paged = fetchReviewThreadsWithPagination(number, { includeCommentDetails: false });
   const threads = paged.threads;
   const unresolved = threads.filter((thread) =>
     thread
@@ -419,7 +433,7 @@ function collectActionableTasksFromReviewThreads(reviewThreads, actorSet) {
 }
 
 function fetchActionableReviewTaskState(number) {
-  const paged = fetchReviewThreadsWithPagination(number);
+  const paged = fetchReviewThreadsWithPagination(number, { includeCommentDetails: true });
   const reviewThreads = paged.threads;
   const tasks = collectActionableTasksFromReviewThreads(reviewThreads, reviewActorSet);
   return {
