@@ -92,6 +92,13 @@ gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:block
 2. PRブランチを手動 rebase/merge で整合
 3. required checks を再評価し、安定後に段階復帰
 
+### 4.4 autopilot non-convergence（`max rounds reached without convergence`）
+
+1. PRコメント（`<!-- AE-CODEX-AUTOPILOT v1 -->`）で最新 reason を確認
+2. in-flight の `Copilot Review Gate` / `PR Maintenance` 実行が残っていないか確認
+3. checks が落ち着いた後に `/autopilot run` を再実行
+4. 同症状が連続する場合は `write` で一時停止し、`docs/ci/codex-autopilot-lane.md` の停止理由表に従って要因を切り分け
+
 ## 5. 復帰方針
 
 - 緊急停止解除は `unfreeze` を先に実行
