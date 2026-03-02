@@ -103,4 +103,59 @@ describe('finalizeTaskResponse', () => {
     expect(response.nextActions[0]).toContain('Provide resolve formal specification warnings and rerun formal phase and rerun codex task');
     expect(response.nextActions[1]).toBe('pnpm -s run verify:lite');
   });
+
+  it('infers requiredHumanInput from REQUIRED_INPUT warning when explicit field is missing', () => {
+    const response = finalizeTaskResponse(
+      'validation',
+      request,
+      createBaseResponse({
+        shouldBlockProgress: true,
+        summary: 'validation needs policy exception',
+        nextActions: ['rerun validation after policy check'],
+        warnings: [' REQUIRED_INPUT: policy_exception_ticket=SEC-123 '],
+        blockingReason: 'policy-exception-required',
+      }),
+    );
+
+    expect(response.requiredHumanInput).toBe('policy_exception_ticket=SEC-123');
+    expect(response.nextActions[0]).toBe('Provide policy_exception_ticket=SEC-123 and rerun codex task (validation)');
+    expect(response.nextActions[1]).toBe('rerun validation after policy check');
+  });
+
+  it('does not duplicate unblock action when same action already exists (case-insensitive)', () => {
+    const response = finalizeTaskResponse(
+      'intent',
+      request,
+      createBaseResponse({
+        shouldBlockProgress: true,
+        summary: 'blocked',
+        nextActions: [
+          '  provide approval=1 and rerun codex task (intent)  ',
+          'gh pr review --approve 1234',
+        ],
+        warnings: ['REQUIRED_INPUT: approval=1'],
+        blockingReason: 'missing-approval',
+      }),
+    );
+
+    const unblockActions = response.nextActions.filter((item) => item.toLowerCase().includes('rerun codex task'));
+    expect(unblockActions).toHaveLength(1);
+    expect(response.nextActions[0]).toBe('provide approval=1 and rerun codex task (intent)');
+    expect(response.nextActions[1]).toBe('gh pr review --approve 1234');
+  });
+
+  it('uses deterministic blocked summary when summary is empty', () => {
+    const response = finalizeTaskResponse(
+      'ui',
+      request,
+      createBaseResponse({
+        summary: '   ',
+        shouldBlockProgress: true,
+        nextActions: ['Provide approval=1 and rerun codex task (ui)'],
+        warnings: ['REQUIRED_INPUT: approval=1'],
+      }),
+    );
+
+    expect(response.summary).toBe('Blocked: ui task requires human input');
+  });
 });
