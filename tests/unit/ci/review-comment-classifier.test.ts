@@ -31,6 +31,7 @@ describe('review-comment-classifier', () => {
   it('detects actionable text in English and Japanese', () => {
     expect(isActionableText('Please add null check for this branch.')).toBe(true);
     expect(isActionableText('ここは命名を統一してください。')).toBe(true);
+    expect(isActionableText('Thanks! Please rename this helper.')).toBe(true);
     expect(isActionableText('Looks good to me, thanks.')).toBe(false);
   });
 
@@ -63,6 +64,30 @@ describe('review-comment-classifier', () => {
       body: 'LGTM',
     });
     expect(task).toBeNull();
+  });
+
+  it('returns null task when comment id is missing (fail-closed)', () => {
+    const task = buildActionTaskFromComment({
+      path: 'src/app.ts',
+      line: 12,
+      body: 'Please update this branch name.',
+    });
+    expect(task).toBeNull();
+  });
+
+  it('normalizes inverted line range', () => {
+    const task = buildActionTaskFromComment({
+      id: 30,
+      path: 'src/range.ts',
+      start_line: 20,
+      line: 10,
+      body: 'Please replace this block with a helper.',
+    });
+    expect(task).toMatchObject({
+      startLine: 10,
+      endLine: 20,
+      title: 'Address actionable review comment (src/range.ts:10)',
+    });
   });
 
   it('summarizes tasks deterministically', () => {

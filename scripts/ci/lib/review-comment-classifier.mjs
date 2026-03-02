@@ -52,8 +52,15 @@ function isActionableText(body) {
   if (!normalized) return false;
   const stripped = stripCodeFences(normalized);
   if (!stripped.trim()) return false;
-  if (INFORMATIONAL_PATTERNS.some((pattern) => pattern.test(stripped))) return false;
   return ACTIONABLE_PATTERNS.some((pattern) => pattern.test(stripped));
+}
+
+function isInformationalText(body) {
+  const normalized = normalizeBody(body);
+  if (!normalized) return true;
+  const stripped = stripCodeFences(normalized);
+  if (!stripped.trim()) return true;
+  return INFORMATIONAL_PATTERNS.some((pattern) => pattern.test(stripped));
 }
 
 function classifyReviewCommentBody(body) {
@@ -67,6 +74,9 @@ function classifyReviewCommentBody(body) {
   if (isActionableText(normalized)) {
     return { category: 'actionable', reason: 'matched-action-pattern', normalizedBody: normalized };
   }
+  if (isInformationalText(normalized)) {
+    return { category: 'informational', reason: 'matched-informational-pattern', normalizedBody: normalized };
+  }
   return { category: 'informational', reason: 'no-action-pattern', normalizedBody: normalized };
 }
 
@@ -77,9 +87,12 @@ function buildActionTaskFromComment(comment) {
 
   const path = String(comment?.path || '').trim();
   const line = toPositiveInt(comment?.line);
-  const startLine = toPositiveInt(comment?.start_line) || line;
-  const endLine = line || startLine;
+  const startCandidate = toPositiveInt(comment?.start_line) || line;
+  const endCandidate = line || startCandidate;
+  const startLine = startCandidate && endCandidate ? Math.min(startCandidate, endCandidate) : startCandidate;
+  const endLine = startCandidate && endCandidate ? Math.max(startCandidate, endCandidate) : endCandidate;
   const commentId = toPositiveInt(comment?.id) || toPositiveInt(comment?.databaseId);
+  if (!commentId) return null;
   const sourceUrl = String(comment?.html_url || comment?.url || '').trim();
   const instruction = truncate(stripCodeFences(classification.normalizedBody).replace(/\s+/g, ' '), 280);
   const titlePath = path ? `${path}${startLine ? `:${startLine}` : ''}` : 'review comment';
