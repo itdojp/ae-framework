@@ -41,7 +41,14 @@ export async function initializeTelemetry(): Promise<void> {
     return telemetryInitPromise;
   }
 
-  telemetryInitPromise = telemetrySDK.start()
+  let startResult;
+  try {
+    startResult = telemetrySDK.start();
+  } catch (error: unknown) {
+    throw new Error(`Failed to initialize OpenTelemetry: ${toMessage(error)}`);
+  }
+
+  const initPromise = Promise.resolve(startResult)
     .then(() => {
       telemetryInitialized = true;
       if (isProduction || process.env['DEBUG_TELEMETRY']) {
@@ -56,8 +63,9 @@ export async function initializeTelemetry(): Promise<void> {
       telemetryInitPromise = null;
       throw new Error(`Failed to initialize OpenTelemetry: ${toMessage(error)}`);
     });
+  telemetryInitPromise = initPromise;
 
-  return telemetryInitPromise;
+  return initPromise;
 }
 
 // Graceful shutdown
