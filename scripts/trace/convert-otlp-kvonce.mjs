@@ -22,12 +22,6 @@ const ACTOR_ATTRIBUTE_CANDIDATES = [
   "service.name",
   "service.instance.id",
 ];
-const EVENT_ATTRIBUTE_CANDIDATES = [
-  "kvonce.event.name",
-  "kvonce.event.event",
-  "event.name",
-  "event",
-];
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -161,7 +155,8 @@ function resolveActor({ spanAttrs, resourceAttrs }) {
 }
 
 function resolveEventName({ spanAttrs, type }) {
-  return pickStringFromRecord(spanAttrs, EVENT_ATTRIBUTE_CANDIDATES) ?? type;
+  void spanAttrs;
+  return type;
 }
 
 function toTimestamp(nanoString) {

@@ -197,7 +197,7 @@ describe('convert-otlp-kvonce CLI', () => {
       expect(events[0]).toMatchObject({
         traceId: 'trace-explicit',
         actor: 'worker-42',
-        event: 'kvonce.retry.scheduled',
+        event: 'retry',
         type: 'retry'
       });
       expect(events[1]).toMatchObject({

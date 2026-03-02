@@ -61,11 +61,18 @@
 - Issue #1012 Phase C: 他ドメイン仕様のトレーススキーマも同様の形式で整理する。
 
 ## OTLP Mapping
-- OTLP span属性からの対応:
-  - `span.traceId` → `traceId`
-  - `span.startTimeUnixNano` → `timestamp`（ISO8601）
-  - `kvonce.actor` → `actor`
-  - `kvonce.event.type` → `event`（現行変換では互換キー `type` として出力）
+- OTLP span属性からの対応（優先順あり）:
+  - `traceId`:
+    1) `span.traceId`
+    2) span属性 `traceId` / `trace_id` / `kvonce.traceId` / `kvonce.trace_id` / `otel.trace_id`
+    3) resource属性の同キー
+    4) 上記が無い場合は決定的ID `otlp-missing-traceid-r{r}-s{s}-p{p}`
+  - `timestamp`: `span.startTimeUnixNano`（ISO8601）
+  - `actor`:
+    1) span属性 `kvonce.event.actor` / `kvonce.actor` / `actor` / `enduser.id` / `service.name` / `service.instance.id`
+    2) resource属性の同キー
+    3) 上記が無い場合は `unknown`
+  - `event`: `kvonce.event.type`（互換キー `type` と同値）
   - `kvonce.event.key` → キー
   - `kvonce.event.value` → 成功時の値
   - `kvonce.event.reason` → 失敗理由
