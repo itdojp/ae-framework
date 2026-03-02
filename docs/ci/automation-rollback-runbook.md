@@ -20,7 +20,7 @@ PR 自動化を手動運用へ安全に戻すための runbook です。
 `scripts/ci/automation-rollback.sh` で段階停止できます。
 
 ```bash
-GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh <mode>
+GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh '<mode>'
 ```
 
 | mode | 目的 | 設定される Variables |
