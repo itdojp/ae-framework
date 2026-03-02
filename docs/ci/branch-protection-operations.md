@@ -73,14 +73,14 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 - [ ] General で `Allow auto-merge` が有効
 - [ ] main の Required checks が `verify-lite`, `policy-gate`, `gate` の3つ
 - [ ] strict（up-to-date 要件）が有効
-- [ ] `required_approving_review_count=0`（branch rule 側）
+- [ ] branch rule のレビュー要件が実質 0（`required_pull_request_reviews=null` または `required_approving_review_count=0`）
 - [ ] `AE_REVIEW_TOPOLOGY` が体制に応じて設定済み（`solo` または `team`）
 - [ ] 必要時のみ `AE_POLICY_MIN_HUMAN_APPROVALS` を明示設定
 - [ ] `AE_AUTOMATION_PROFILE` と個別変数の上書き方針を決定済み
 
 ## 障害時チェックリスト（#2371）
 
-- [ ] Required check 名が branch protection と workflow の実名で一致している
+- [ ] Required check 名（check context 名）が branch protection の required contexts と workflow の check context で一致している
 - [ ] `gate` fail の場合、AI review 未投稿 or unresolved thread を優先確認
 - [ ] `policy-gate` fail の場合、`AE_REVIEW_TOPOLOGY` / labels / risk policy を確認
 - [ ] auto-merge 未発火時、`Allow auto-merge` と `AE_AUTO_MERGE*` を確認

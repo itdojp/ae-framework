@@ -51,11 +51,12 @@ PR運用を以下の形に収束させます。
 
 - `Copilot Auto Fix`（`.github/workflows/copilot-auto-fix.yml`）
   - `pull_request_review: submitted` で起動
-  - AI reviewer のインラインコメント本文の ```` ```suggestion ```` を抽出し、PRへ適用（commit + push）
-  - 適用（または既適用）と判断できた AI review スレッドを resolve（保守的）
+  - Copilot系 actor のインラインコメント本文の ```` ```suggestion ```` を抽出し、PRへ適用（commit + push）
+  - 適用（または既適用）と判断できた Copilot スレッドを resolve（保守的）
 
 重要:
 - AI reviewer が「コメント」だけを残し、レビューとして `submitted` されない場合は、auto-fix も gate も期待通りに動きません。
+- 現行実装では auto-fix の起動 actor は Copilot系に限定されています（汎用 AI reviewer 対応は #2372 で拡張予定）。
 - fork PR の扱い:
   - auto-fix は fork PR を workflow 条件で除外します（`.github/workflows/copilot-auto-fix.yml`）。
   - auto-merge は `pull_request` 経路では fork PR を除外しますが、`schedule` 経路は open PR を列挙するため fork PR も対象になり得ます（`.github/workflows/pr-ci-status-comment.yml`, `scripts/ci/auto-merge-enabler.mjs`）。
@@ -109,7 +110,7 @@ PR運用を以下の形に収束させます。
 - 実測手順は `docs/ci/review-topology-matrix.md` を参照してください。
 
 運用フローは体制にかかわらず共通です。
-- PR作成 → Copilotレビュー → 指摘解消 → required checks green → merge
+- PR作成 → AI review → 指摘解消 → required checks green → merge
 - 差分は `policy-gate` の approvals 判定条件のみです。
 
 ### 3.1.2 体制別ベースライン設定（推奨）
@@ -183,7 +184,7 @@ Settings（Repository）で次を確認してください。
    - Required checks に `verify-lite`, `policy-gate`, `gate` を設定
    - `Require branches to be up to date before merging` を有効化（strict）
 3. Actions permissions
-   - Workflow が `contents/pull-requests/issues: write` で実行できる状態であること
+   - Workflow が必要に応じて `contents: write` / `pull-requests: write` / `issues: write` などの権限で実行できる状態であること
 4. AI review 起動設定
    - 利用する AI reviewer（Copilot など）が PR review を自動起票/実行する GitHub 側設定を有効化
    - 設定名称は GitHub プラン/機能差で変わるため、組織の GitHub 管理設定に従って有効化する
