@@ -65,6 +65,20 @@ pnpm run artifacts:validate
 # JSON Schema 契約を strict モードで検証（違反で exit 1）
 pnpm run artifacts:validate -- --strict
 
+# enforce-artifacts 相当（strict）をローカル再現:
+# trace/verify-lite artifacts を先に生成してから検証する
+bash scripts/trace/run-kvonce-conformance.sh \
+  --input samples/trace/kvonce-sample.ndjson \
+  --format ndjson \
+  --output-dir artifacts/hermetic-reports/trace
+node scripts/ci/write-verify-lite-summary.mjs
+node scripts/trace/create-report-envelope.mjs \
+  artifacts/verify-lite/verify-lite-run-summary.json \
+  artifacts/report-envelope.json
+mkdir -p artifacts/trace
+cp artifacts/report-envelope.json artifacts/trace/report-envelope.json
+pnpm run artifacts:validate -- --strict
+
 # 既定の必須成果物を確認（非厳格）
 node scripts/ci/check-required-artifacts.mjs
 
@@ -83,6 +97,8 @@ node scripts/ci/check-required-artifacts.mjs --strict
 - `verify-lite.yml` に **non-blocking** で組み込み（観測フェーズ）
 - 厳格化する場合は `REQUIRED_ARTIFACTS_STRICT=1` を有効化  
   - 例: PRラベル `enforce-artifacts` を条件に strict モードを有効化
+- `validate-artifacts-ajv.yml` では strict（`enforce-artifacts`）時に `run-kvonce-conformance.sh`（trace artifacts）と `artifacts/verify-lite/verify-lite-run-summary.json` / `artifacts/report-envelope.json` / `artifacts/trace/report-envelope.json` を生成してから `artifacts:validate` を実行
+- non-strict 時は従来どおり `artifacts:validate` のみを実行（軽量動作を維持）
 - `verify-lite.yml` の必須ステップで `tests/contracts/cli-artifacts-contracts.test.ts` を実行し、主要CLIの JSON schema / exit code 契約を継続検証
 
 ## 6. 参照
