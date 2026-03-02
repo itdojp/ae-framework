@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  collectActionableTasksFromReviewThreads,
   deriveBlockedSummary,
   deriveUnblockActions,
   hasLabel,
   parseGateStatus,
 } from '../../../scripts/ci/codex-autopilot-lane.mjs';
+import { toActorSet } from '../../../scripts/ci/lib/automation-guards.mjs';
 
 describe('codex-autopilot-lane helpers', () => {
   it('detects label presence', () => {
@@ -99,6 +101,9 @@ describe('codex-autopilot-lane helpers', () => {
     expect(deriveUnblockActions('blocked', 'missing policy labels: run-security, enforce-artifacts')).toEqual([
       'Add labels: run-security, enforce-artifacts. Then rerun `/autopilot run`.',
     ]);
+    expect(deriveUnblockActions('blocked', 'actionable review tasks pending: 2')).toEqual([
+      'Address actionable non-suggestion review comments (or reply why not applicable), then rerun `/autopilot run`.',
+    ]);
     expect(deriveUnblockActions('done', 'checks healthy, waiting for required checks/merge queue')).toEqual([
       'No manual fix required. Wait for required checks or merge queue completion.',
     ]);
@@ -131,6 +136,63 @@ describe('codex-autopilot-lane helpers', () => {
     ])).toEqual({
       blockedLine: 'Blocked: merge conflict',
       unblockLine: 'To unblock: Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.',
+    });
+  });
+
+  it('collects actionable non-suggestion tasks from unresolved AI-review threads', () => {
+    const actorSet = toActorSet(['github-copilot[bot]']);
+    const tasks = collectActionableTasksFromReviewThreads([
+      {
+        isResolved: false,
+        path: 'src/a.ts',
+        comments: {
+          nodes: [
+            {
+              databaseId: 101,
+              author: { login: 'github-copilot[bot]' },
+              bodyText: 'Please rename this helper for clarity.',
+              path: 'src/a.ts',
+              line: 12,
+              startLine: 12,
+              url: 'https://example.invalid/101',
+            },
+            {
+              databaseId: 102,
+              author: { login: 'github-copilot[bot]' },
+              bodyText: '```suggestion\nconst value = 1;\n```',
+              path: 'src/a.ts',
+              line: 13,
+              startLine: 13,
+              url: 'https://example.invalid/102',
+            },
+          ],
+        },
+      },
+      {
+        isResolved: true,
+        path: 'src/b.ts',
+        comments: {
+          nodes: [
+            {
+              databaseId: 103,
+              author: { login: 'github-copilot[bot]' },
+              bodyText: 'Please update this.',
+              path: 'src/b.ts',
+              line: 8,
+              startLine: 8,
+              url: 'https://example.invalid/103',
+            },
+          ],
+        },
+      },
+    ], actorSet);
+
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0]).toMatchObject({
+      commentId: 101,
+      path: 'src/a.ts',
+      startLine: 12,
+      endLine: 12,
     });
   });
 });
