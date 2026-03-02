@@ -19,7 +19,7 @@ import { createValidationTaskHandler, type ValidationTaskType } from '../agents/
 import { createDomainModelingTaskHandler } from '../agents/domain-modeling-task-adapter.js';
 import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
 import { Phase6Telemetry } from '../telemetry/phase6-metrics.js';
-import '../telemetry/telemetry-setup.js'; // Initialize telemetry
+import { initializeTelemetry } from '../telemetry/telemetry-setup.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { createSecurityCommand } from './security-cli.js';
@@ -35,6 +35,12 @@ import { createTraceabilityCommand } from './traceability-cli.js';
 import { normalizeProgramArgv } from './argv-normalize.js';
 
 const program = new Command();
+
+if (typeof process !== 'undefined' && process.env['DISABLE_TELEMETRY'] !== 'true') {
+  void initializeTelemetry().catch((error: unknown) => {
+    console.error(chalk.yellow(`⚠️ Telemetry initialization failed: ${toMessage(error)}`));
+  });
+}
 
 // TaskResult is now TaskResponse from the adapters (addressing Copilot review comment 2280080078)
 type TaskResult = TaskResponse;
