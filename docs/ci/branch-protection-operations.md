@@ -21,6 +21,19 @@
   - さらに `gate` も Required に含め、Copilot指摘の存在と解決を強制
   - 備考: Branch protection の context は workflow表示名ではなく check context（`verify-lite`, `policy-gate`, `gate`）を使用
 
+## 現行ベースライン（main, 2026-03-02 時点）
+
+`gh api repos/itdojp/ae-framework/branches/main/protection` の確認結果:
+
+- `required_status_checks.strict`: `true`
+- required contexts: `verify-lite`, `gate`, `policy-gate`
+- `required_pull_request_reviews.required_approving_review_count`: `0`
+- `required_pull_request_reviews`: 有効（count 0 で運用）
+
+補足:
+- Repository Variables では `AE_REVIEW_TOPOLOGY=solo` が設定済み（2026-03-02 時点）。
+- 承認要件は branch rule ではなく `policy-gate`（topology）で切替する方針。
+
 ## 切替方法（推奨: GitHub Actions 手動ディスパッチ）
 1. リポジトリに `ADMIN_TOKEN`（repo admin scope の PAT）を登録
    - Settings → Secrets and variables → Actions → New repository secret → Name: `ADMIN_TOKEN`
@@ -54,6 +67,25 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
   - `solo`: approvals 要件を 0 として判定（他の required checks は同一）
 - 追加で `AE_POLICY_MIN_HUMAN_APPROVALS` を設定すると、approvals 要件を明示上書きできる
 - 注記: 上記2変数は policy-gate の topology対応実装が導入済みであることが前提
+
+## 導入時チェックリスト（#2371）
+
+- [ ] General で `Allow auto-merge` が有効
+- [ ] main の Required checks が `verify-lite`, `policy-gate`, `gate` の3つ
+- [ ] strict（up-to-date 要件）が有効
+- [ ] `required_approving_review_count=0`（branch rule 側）
+- [ ] `AE_REVIEW_TOPOLOGY` が体制に応じて設定済み（`solo` または `team`）
+- [ ] 必要時のみ `AE_POLICY_MIN_HUMAN_APPROVALS` を明示設定
+- [ ] `AE_AUTOMATION_PROFILE` と個別変数の上書き方針を決定済み
+
+## 障害時チェックリスト（#2371）
+
+- [ ] Required check 名が branch protection と workflow の実名で一致している
+- [ ] `gate` fail の場合、AI review 未投稿 or unresolved thread を優先確認
+- [ ] `policy-gate` fail の場合、`AE_REVIEW_TOPOLOGY` / labels / risk policy を確認
+- [ ] auto-merge 未発火時、`Allow auto-merge` と `AE_AUTO_MERGE*` を確認
+- [ ] 429 多発時、`AE_GH_THROTTLE_MS` / `AE_GH_RETRY_*` を保守的に調整
+- [ ] 必要なら `AE_AUTOMATION_GLOBAL_DISABLE=1` で停止後、runbook に沿って段階復旧
 
 ## 運用補助（自動化）
 - `ci-auto-rerun-failed` が失敗ジョブを **1回だけ** 自動再実行します（最終判断はログで確認）。

@@ -1,4 +1,4 @@
-# PR Automation (Copilot Review -> Auto Fix -> Auto Merge)
+# PR Automation (AI Review -> Auto Fix -> Auto Merge)
 
 > Language / 言語: English | 日本語
 
@@ -7,8 +7,8 @@
 ## English (Summary)
 
 This document describes an end-to-end PR automation runbook:
-- Require Copilot review + resolved threads (Copilot Review Gate)
-- Auto-apply Copilot ```` ```suggestion ```` blocks (Copilot Auto Fix)
+- Require AI review + resolved threads (Copilot Review Gate)
+- Auto-apply AI review ```` ```suggestion ```` blocks (Copilot Auto Fix)
 - Enable GitHub auto-merge when eligible (Auto Merge)
 
 It is controlled per repository via GitHub Repository Variables.
@@ -28,7 +28,7 @@ Primary sources:
 PR運用を以下の形に収束させます。
 
 - (1) PR作成
-- (2) GitHub Copilotレビュー
+- (2) GitHub AIレビュー
 - (3) レビュー対応（auto-fix）
 - (4) マージ操作の省略（auto-merge）
 
@@ -37,25 +37,25 @@ PR運用を以下の形に収束させます。
 - ただし品質ゲート（Branch protection の Required checks）は維持する
 
 非ゴール:
-- Copilotレビュー自体の生成を強制的に自動化する（GitHub側機能の運用に依存）
+- AIレビュー自体の生成を強制的に自動化する（GitHub側機能の運用に依存）
 
 ## 2. 全体フロー（実装準拠）
 
 ### 2.1 Gate（レビュー必須化）
 
 - `Copilot Review Gate / gate`（`.github/workflows/copilot-review-gate.yml`）
-  - Copilotレビューの存在
-  - Copilotが関与したスレッドがすべて `isResolved=true`
+  - 許可された AI reviewer のレビューが存在する
+  - AI reviewer が関与したスレッドがすべて `isResolved=true`
 
 ### 2.2 Auto Fix（suggestion 自動適用）
 
 - `Copilot Auto Fix`（`.github/workflows/copilot-auto-fix.yml`）
   - `pull_request_review: submitted` で起動
-  - Copilotのインラインコメント本文の ```` ```suggestion ```` を抽出し、PRへ適用（commit + push）
-  - 適用（または既適用）と判断できた Copilot スレッドを resolve（保守的）
+  - AI reviewer のインラインコメント本文の ```` ```suggestion ```` を抽出し、PRへ適用（commit + push）
+  - 適用（または既適用）と判断できた AI review スレッドを resolve（保守的）
 
 重要:
-- Copilotが「コメント」だけを残し、レビューとして `submitted` されない場合は、auto-fix も gate も期待通りに動きません。
+- AI reviewer が「コメント」だけを残し、レビューとして `submitted` されない場合は、auto-fix も gate も期待通りに動きません。
 - fork PR の扱い:
   - auto-fix は fork PR を workflow 条件で除外します（`.github/workflows/copilot-auto-fix.yml`）。
   - auto-merge は `pull_request` 経路では fork PR を除外しますが、`schedule` 経路は open PR を列挙するため fork PR も対象になり得ます（`.github/workflows/pr-ci-status-comment.yml`, `scripts/ci/auto-merge-enabler.mjs`）。
@@ -88,6 +88,10 @@ PR運用を以下の形に収束させます。
 3. 問題がなければ `balanced` / `aggressive` へ拡張
 4. 必要時のみ個別変数で上書き
 
+補足:
+- 本リポジトリの `main` は 2026-03-02 時点で `verify-lite` / `policy-gate` / `gate` を Required にしています。
+- `gate` は AI review の存在/未解決スレッドを検証するため、無人運用では Required 化を推奨します。
+
 ### 3.1.1 承認トポロジ（1人体制 / 複数人体制）
 
 `policy-gate` の人手承認要件は、次の変数で切替できます。
@@ -107,6 +111,20 @@ PR運用を以下の形に収束させます。
 運用フローは体制にかかわらず共通です。
 - PR作成 → Copilotレビュー → 指摘解消 → required checks green → merge
 - 差分は `policy-gate` の approvals 判定条件のみです。
+
+### 3.1.2 体制別ベースライン設定（推奨）
+
+| 項目 | 1人体制（solo） | 2人以上（team） |
+| --- | --- | --- |
+| `AE_REVIEW_TOPOLOGY` | `solo` | `team` |
+| `AE_POLICY_MIN_HUMAN_APPROVALS` | *(empty)* | *(empty)* |
+| Branch protection required checks | `verify-lite`, `policy-gate`, `gate` | `verify-lite`, `policy-gate`, `gate` |
+| branch rule の approving review count | `0` | `0`（high risk は `policy-gate` が制御） |
+| フロー | PR作成 → AI review → auto-fix/再評価 → auto-merge | PR作成 → AI review → auto-fix/再評価 → auto-merge |
+
+注記:
+- `AE_POLICY_MIN_HUMAN_APPROVALS` を設定した場合は topology 設定より優先されます。
+- high risk PR の人手承認を branch rule 側で必須化すると、solo 運用と整合しないため非推奨です。
 
 ### 3.2 変数セット例（保守的）
 
@@ -135,6 +153,18 @@ auto-merge（ラベルopt-in）:
 `AE_COPILOT_AUTO_FIX_SCOPE=docs` の安全設計（A）:
 - PR差分に `docs/**` と README.md 以外が含まれる場合、auto-fix 全体をスキップします（`scripts/ci/copilot-auto-fix.mjs` の allowlist に準拠）。
 
+### 3.2.1 `AE_AUTOMATION_PROFILE` + 個別上書きの推奨セット
+
+| 用途 | `AE_AUTOMATION_PROFILE` | 追加で明示推奨する個別変数 |
+| --- | --- | --- |
+| 初期導入（安全側） | `conservative` | `AE_REVIEW_TOPOLOGY=solo|team` |
+| 通常運用 | `balanced` | `AE_REVIEW_TOPOLOGY=solo|team`, 必要に応じて `AE_COPILOT_AUTO_FIX_SCOPE=docs` |
+| 高速運用 | `aggressive` | `AE_REVIEW_TOPOLOGY=team`（高リスク時の運用手順を先に整備） |
+
+原則:
+- まず profile を選び、差分だけ個別変数で上書きします。
+- `AE_COPILOT_AUTO_FIX_LABEL` / `AE_AUTO_MERGE_LABEL` を意図的に空にする場合は `(empty)` を使います（`automation-config` 仕様）。
+
 ### 3.3 全PR自動マージ（積極設定）
 
 - `AE_AUTO_MERGE_MODE=all`（既定）
@@ -142,6 +172,21 @@ auto-merge（ラベルopt-in）:
 
 注意:
 - 影響範囲が大きいため、まず `label` モードで運用設計と例外対応を固めることを推奨します。
+
+### 3.4 GitHub 側の必須設定（workflow前提）
+
+Settings（Repository）で次を確認してください。
+
+1. General
+   - `Allow auto-merge` を有効化
+2. Branch protection (`main`)
+   - Required checks に `verify-lite`, `policy-gate`, `gate` を設定
+   - `Require branches to be up to date before merging` を有効化（strict）
+3. Actions permissions
+   - Workflow が `contents/pull-requests/issues: write` で実行できる状態であること
+4. AI review 起動設定
+   - 利用する AI reviewer（Copilot など）が PR review を自動起票/実行する GitHub 側設定を有効化
+   - 設定名称は GitHub プラン/機能差で変わるため、組織の GitHub 管理設定に従って有効化する
 
 ## 4. PR作者の運用手順（最短）
 
