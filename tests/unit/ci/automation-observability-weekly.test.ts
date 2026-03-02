@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildConvergenceRoundStats,
   buildConsecutiveFailureStats,
   buildMttrStats,
   buildSloStats,
@@ -48,6 +49,7 @@ describe('automation-observability-weekly', () => {
         status: 'blocked',
         reason: 'checks pending',
         generatedAt: '2026-02-13T00:20:00.000Z',
+        metrics: { rounds: 2 },
         run: { url: 'https://example/runs/2' },
       },
       {
@@ -56,6 +58,7 @@ describe('automation-observability-weekly', () => {
         status: 'resolved',
         reason: 'completed',
         generatedAt: '2026-02-13T00:50:00.000Z',
+        metrics: { rounds: 1 },
         run: { url: 'https://example/runs/3' },
       },
       {
@@ -85,6 +88,7 @@ describe('automation-observability-weekly', () => {
     expect(summary.totalFailures).toBe(2);
     expect(summary.byStatus.resolved).toBe(3);
     expect(summary.byStatus.blocked).toBe(1);
+    expect(summary.blockedRatePercent).toBe(20);
     expect(summary.byTool['auto-merge-enabler']).toBe(2);
     expect(summary.topFailureReasons).toHaveLength(2);
     const reasonMap = new Map(summary.topFailureReasons.map((item) => [item.reason, item]));
@@ -93,6 +97,9 @@ describe('automation-observability-weekly', () => {
     expect(reasonMap.get('api timeout')?.count).toBe(1);
     expect(summary.maxConsecutiveFailures).toBe(1);
     expect(summary.maxConsecutiveFailuresByTool['auto-merge-enabler']).toBe(1);
+    expect(summary.convergenceRounds.overall.count).toBe(2);
+    expect(summary.convergenceRounds.overall.meanRounds).toBe(1.5);
+    expect(summary.convergenceRounds.byTool['auto-merge-enabler'].p95Rounds).toBe(2);
     expect(summary.slo.successRatePercent).toBe(60);
     expect(summary.slo.achieved).toBe(true);
     expect(summary.mttr.recoveries).toBe(2);
@@ -233,6 +240,22 @@ describe('automation-observability-weekly', () => {
     expect(mttr.byIncidentType.some((item) => item.incidentType === 'blocked')).toBe(true);
   });
 
+  it('aggregates convergence rounds by tool', () => {
+    const rounds = buildConvergenceRoundStats([
+      { tool: 'codex-autopilot-lane', metrics: { rounds: 3 } },
+      { tool: 'codex-autopilot-lane', metrics: { rounds: 2 } },
+      { tool: 'pr-self-heal', metrics: { rounds: 1 } },
+      { tool: 'pr-self-heal', metrics: {} },
+      { tool: 'copilot-auto-fix' },
+    ]);
+
+    expect(rounds.overall.count).toBe(3);
+    expect(rounds.overall.meanRounds).toBe(2);
+    expect(rounds.overall.p95Rounds).toBe(3);
+    expect(rounds.byTool['codex-autopilot-lane'].maxRounds).toBe(3);
+    expect(rounds.byTool['pr-self-heal'].count).toBe(1);
+  });
+
   it('matches overlapping incidents by tool and scope', () => {
     const reports = [
       {
@@ -290,9 +313,32 @@ describe('automation-observability-weekly', () => {
       summary: {
         totalReports: 3,
         totalFailures: 1,
+        blockedRatePercent: 33.33,
         maxConsecutiveFailures: 1,
         byStatus: { resolved: 2, blocked: 1 },
         byTool: { 'pr-self-heal': 2, 'auto-merge-enabler': 1 },
+        convergenceRounds: {
+          overall: {
+            count: 2,
+            meanRounds: 1.5,
+            p95Rounds: 2,
+            maxRounds: 2,
+          },
+          byTool: {
+            'pr-self-heal': {
+              count: 1,
+              meanRounds: 1,
+              p95Rounds: 1,
+              maxRounds: 1,
+            },
+            'auto-merge-enabler': {
+              count: 1,
+              meanRounds: 2,
+              p95Rounds: 2,
+              maxRounds: 2,
+            },
+          },
+        },
         topFailureReasons: [
           {
             reason: 'checks pending',
@@ -329,7 +375,10 @@ describe('automation-observability-weekly', () => {
     });
     expect(lines[0]).toBe('## Automation Observability Weekly Summary');
     expect(lines.some((line) => line.includes('failures(error/blocked): 1'))).toBe(true);
+    expect(lines.some((line) => line.includes('blockedRate: 33.33%'))).toBe(true);
     expect(lines.some((line) => line.includes('maxConsecutiveFailures: 1'))).toBe(true);
+    expect(lines.some((line) => line.includes('convergence rounds (overall): count=2, mean=1.5, p95=2, max=2'))).toBe(true);
+    expect(lines.some((line) => line.includes('Convergence rounds by tool'))).toBe(true);
     expect(lines.some((line) => line.includes('SLO successRate'))).toBe(true);
     expect(lines.some((line) => line.includes('MTTR mean'))).toBe(true);
     expect(lines.some((line) => line.includes('MTTR by incident type'))).toBe(true);

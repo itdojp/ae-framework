@@ -308,6 +308,58 @@ function buildMttrStats(reports, { failureStatuses, targetMinutes }) {
     byIncidentType: byIncidentTypeSummary,
   };
 }
+
+function parseConvergenceRounds(report) {
+  const numeric = Number(report?.metrics?.rounds);
+  if (!Number.isFinite(numeric) || numeric < 0) return null;
+  return numeric;
+}
+
+function summarizeRoundSeries(values) {
+  if (!Array.isArray(values) || values.length === 0) {
+    return {
+      count: 0,
+      meanRounds: null,
+      p95Rounds: null,
+      maxRounds: null,
+    };
+  }
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const p95 = percentile(values, 0.95);
+  return {
+    count: values.length,
+    meanRounds: round2(mean),
+    p95Rounds: round2(p95),
+    maxRounds: round2(Math.max(...values)),
+  };
+}
+
+function buildConvergenceRoundStats(reports) {
+  const seriesByTool = new Map();
+  const allSeries = [];
+
+  for (const report of reports || []) {
+    const rounds = parseConvergenceRounds(report);
+    if (rounds === null) continue;
+    const tool = String(report?.tool || 'unknown').trim() || 'unknown';
+    allSeries.push(rounds);
+    if (!seriesByTool.has(tool)) {
+      seriesByTool.set(tool, []);
+    }
+    seriesByTool.get(tool).push(rounds);
+  }
+
+  const byTool = {};
+  for (const tool of [...seriesByTool.keys()].sort((left, right) => left.localeCompare(right))) {
+    byTool[tool] = summarizeRoundSeries(seriesByTool.get(tool));
+  }
+
+  return {
+    overall: summarizeRoundSeries(allSeries),
+    byTool,
+  };
+}
+
 function summarizeAutomationReports(reports, options = {}) {
   const topN = toInt(options.topN, 5, 1);
   const sloTargetPercent = Math.min(100, Math.max(0, toInt(
@@ -373,14 +425,21 @@ function summarizeAutomationReports(reports, options = {}) {
       sampleRuns: item.sampleRuns,
     }));
 
+  const blockedCount = Number(byStatus.blocked || 0);
+  const blockedRatePercent = reports.length > 0
+    ? round2((blockedCount / reports.length) * 100)
+    : null;
+
   return {
     totalReports: reports.length,
     totalFailures: failures,
     byStatus,
+    blockedRatePercent,
     byTool,
     maxConsecutiveFailures: streakStats.maxConsecutiveFailures,
     maxConsecutiveFailuresByTool: streakStats.maxConsecutiveFailuresByTool,
     topFailureReasons,
+    convergenceRounds: buildConvergenceRoundStats(reports),
     slo: buildSloStats({
       totalReports: reports.length,
       totalFailures: failures,
@@ -529,7 +588,9 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
     `- scannedRuns: ${runStats.scannedRuns}`,
     `- reports: ${summary.totalReports}`,
     `- failures(error/blocked): ${summary.totalFailures}`,
+    `- blockedRate: ${summary.blockedRatePercent ?? 'n/a'}% (${summary.byStatus?.blocked ?? 0}/${summary.totalReports})`,
     `- maxConsecutiveFailures: ${summary.maxConsecutiveFailures}`,
+    `- convergence rounds (overall): count=${summary.convergenceRounds?.overall?.count ?? 0}, mean=${summary.convergenceRounds?.overall?.meanRounds ?? 'n/a'}, p95=${summary.convergenceRounds?.overall?.p95Rounds ?? 'n/a'}, max=${summary.convergenceRounds?.overall?.maxRounds ?? 'n/a'}`,
     `- SLO successRate: ${summary.slo?.successRatePercent ?? 'n/a'}% (target: ${summary.slo?.targetPercent ?? 'n/a'}%, achieved: ${summary.slo?.achieved === null ? 'n/a' : summary.slo.achieved})`,
     `- MTTR mean: ${summary.mttr?.meanMinutes ?? 'n/a'} min (target: ${summary.mttr?.targetMinutes ?? 'n/a'} min, achieved: ${summary.mttr?.achieved === null ? 'n/a' : summary.mttr.achieved})`,
     `- MTTR p95: ${summary.mttr?.p95Minutes ?? 'n/a'} min, unresolvedOpenIncidents: ${summary.mttr?.unresolvedOpenIncidents ?? 'n/a'}`,
@@ -540,6 +601,17 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
     '',
     '### Tool breakdown',
     `- ${joinCountMap(summary.byTool)}`,
+    '',
+    '### Convergence rounds by tool',
+    ...(summary.convergenceRounds?.byTool && Object.keys(summary.convergenceRounds.byTool).length > 0
+      ? [
+        '| Tool | Samples | Mean rounds | P95 rounds | Max rounds |',
+        '| --- | ---: | ---: | ---: | ---: |',
+        ...Object.entries(summary.convergenceRounds.byTool).map(([tool, item]) => (
+          `| ${escapeMarkdownCell(tool)} | ${item.count} | ${item.meanRounds ?? '-'} | ${item.p95Rounds ?? '-'} | ${item.maxRounds ?? '-'} |`
+        )),
+      ]
+      : ['No convergence-round metrics were observed in this period.']),
     '',
     '### Top failure reasons',
     ...formatTopReasonTable(summary),
@@ -645,6 +717,7 @@ export {
   REPORT_PREFIX,
   REPORT_SCHEMA,
   buildConsecutiveFailureStats,
+  buildConvergenceRoundStats,
   buildSummaryMarkdown,
   extractAutomationReportsFromLog,
   formatTopReasonTable,
