@@ -32,6 +32,24 @@ export const telemetrySDK = new NodeSDK({
 let telemetryInitialized = false;
 let telemetryInitPromise: Promise<void> | null = null;
 
+function logTelemetryInitialized(): void {
+  if (isProduction || process.env['DEBUG_TELEMETRY']) {
+    console.log('📊 OpenTelemetry initialized for ae-framework Phase 6');
+    console.log('   Service: ae-framework v1.0.0');
+    console.log(`   Environment: ${process.env['NODE_ENV'] || 'development'}`);
+    console.log(`   OTLP Export: ${enableOTLP ? '✅ Enabled' : '❌ Console only'}`);
+  }
+}
+
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return (
+    (typeof value === 'object' || typeof value === 'function') &&
+    value !== null &&
+    'then' in value &&
+    typeof (value as { then?: unknown }).then === 'function'
+  );
+}
+
 // Initialize telemetry
 export async function initializeTelemetry(): Promise<void> {
   if (telemetryInitialized) {
@@ -48,15 +66,17 @@ export async function initializeTelemetry(): Promise<void> {
     throw new Error(`Failed to initialize OpenTelemetry: ${toMessage(error)}`);
   }
 
-  const initPromise = Promise.resolve(startResult)
+  if (!isPromiseLike(startResult)) {
+    telemetryInitialized = true;
+    logTelemetryInitialized();
+    telemetryInitPromise = Promise.resolve();
+    return telemetryInitPromise;
+  }
+
+  const initPromise = Promise.resolve(startResult as PromiseLike<unknown>)
     .then(() => {
       telemetryInitialized = true;
-      if (isProduction || process.env['DEBUG_TELEMETRY']) {
-        console.log('📊 OpenTelemetry initialized for ae-framework Phase 6');
-        console.log('   Service: ae-framework v1.0.0');
-        console.log(`   Environment: ${process.env['NODE_ENV'] || 'development'}`);
-        console.log(`   OTLP Export: ${enableOTLP ? '✅ Enabled' : '❌ Console only'}`);
-      }
+      logTelemetryInitialized();
     })
     .catch((error: unknown) => {
       telemetryInitialized = false;
