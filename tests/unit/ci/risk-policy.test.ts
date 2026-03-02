@@ -37,9 +37,19 @@ describe('risk-policy', () => {
     expect(requiredLabels).toContain('enforce-testing');
   });
 
+  it('collects trace label requirement for trace validation changes', () => {
+    const { requiredLabels } = collectRequiredLabels(policy, ['scripts/trace/render-trace-summary.mjs']);
+    expect(requiredLabels).toContain('run-trace');
+  });
+
   it('returns check patterns for label-gated checks', () => {
     const patterns = getGateCheckPatternsForLabel(policy, 'enforce-context-pack');
     expect(patterns).toContain('context-pack-e2e');
+  });
+
+  it('returns trace validation check pattern for run-trace', () => {
+    const patterns = getGateCheckPatternsForLabel(policy, 'run-trace');
+    expect(patterns).toContain('KvOnce Trace Validation');
   });
 
   it('respects high_risk.require_policy_labels toggle', () => {

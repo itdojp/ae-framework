@@ -86,6 +86,53 @@ describe('policy-gate', () => {
     expect(result.errors).toHaveLength(0);
   });
 
+  it('fails high-risk PR when run-trace label is present but trace check was not executed', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'run-trace' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['.github/workflows/spec-generate-model.yml'],
+      reviews: [
+        {
+          id: 201,
+          state: 'APPROVED',
+          submitted_at: '2026-03-01T00:00:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [checkRun('verify-lite')],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('required gate check not green for label run-trace (missing)');
+  });
+
+  it('fails high-risk PR when KvOnce trace validation check fails', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'run-trace' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['.github/workflows/spec-generate-model.yml'],
+      reviews: [
+        {
+          id: 202,
+          state: 'APPROVED',
+          submitted_at: '2026-03-01T00:10:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [
+        checkRun('verify-lite'),
+        checkRun('KvOnce Trace Validation', 'FAILURE'),
+      ],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('required gate check not green for label run-trace (failure)');
+  });
+
   it('passes high-risk PR without approvals in solo topology', () => {
     const result = evaluatePolicyGate({
       policy,

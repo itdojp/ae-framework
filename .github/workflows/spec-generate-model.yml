@@ -13,6 +13,7 @@ on:
         description: 'HTTP/S3 URL to download kvonce OTLP payload JSON'
         required: false
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -454,9 +455,10 @@ jobs:
             }
 
       - name: Publish trace validation check
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ always() && github.event_name == 'pull_request' }}
         uses: actions/github-script@v7
         env:
+          TRACE_JOB_STATUS: ${{ job.status }}
           VALID_OTLP: ${{ steps.trace_summary.outputs.valid_otlp }}
           VALID_NDJSON: ${{ steps.trace_summary.outputs.valid_ndjson }}
           ISSUES_OTLP: ${{ steps.trace_summary.outputs.issues_otlp }}
@@ -475,8 +477,12 @@ jobs:
             const issuesOtlp = process.env.ISSUES_OTLP || 'N/A';
             const issuesNdjson = process.env.ISSUES_NDJSON || 'N/A';
 
+            const traceJobStatus = (process.env.TRACE_JOB_STATUS || '').toLowerCase();
+
             let conclusion = 'success';
-            if (validOtlp === 'false' || validNdjson === 'false') {
+            if (traceJobStatus && traceJobStatus !== 'success') {
+              conclusion = 'failure';
+            } else if (validOtlp === 'false' || validNdjson === 'false') {
               conclusion = 'failure';
             } else if (validOtlp === 'missing' && validNdjson === 'missing') {
               conclusion = 'neutral';
