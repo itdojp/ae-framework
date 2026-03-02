@@ -36,6 +36,7 @@ Repository Variables:
 - `autopilot:on` ラベルが付与されていること
 - draft ではないこと
 - fork PR ではないこと（権限の都合で運用非推奨）
+- `pull_request_review` 起点は trusted reviewer のみ（`author_association` が MEMBER/OWNER/COLLABORATOR、または許可済みAI review actor）
 
 ## 3. 状態遷移（実装）
 
