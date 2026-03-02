@@ -258,13 +258,15 @@ Settings（Repository）で次を確認してください。
 
 SSOT:
 - 共通既定値: `scripts/ci/lib/automation-defaults.mjs`
-- profile 上書き・バリデーション: `scripts/ci/lib/automation-config.mjs`
+- profile 上書き・バリデーション（`AE_GH_*`, `COPILOT_REVIEW_*` のみ）: `scripts/ci/lib/automation-config.mjs`
+- self-heal lane 既定値: `scripts/ci/pr-self-heal.mjs`（および `.github/workflows/pr-self-heal.yml`）
+- autopilot lane 既定値: `scripts/ci/codex-autopilot-lane.mjs`（および `.github/workflows/codex-autopilot-lane.yml`）
 
 | レーン | retry 設定 | wait 設定 | 既定値 | `AE_AUTOMATION_PROFILE` による上書き |
 | --- | --- | --- | --- | --- |
 | gate (`copilot-review-gate`) | `COPILOT_REVIEW_MAX_ATTEMPTS` | `COPILOT_REVIEW_WAIT_MINUTES`（fixed） | `3` 回 / `5` 分 | conservative: `4` 回 / `7` 分、balanced: `3` 回 / `5` 分、aggressive: `2` 回 / `2` 分 |
 | autopilot (`codex-autopilot-lane`) | `AE_AUTOPILOT_MAX_ROUNDS` | `AE_AUTOPILOT_ROUND_WAIT_SECONDS`, `AE_AUTOPILOT_WAIT_STRATEGY`, `AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS` | `3` 回 / `8` 秒 / `fixed` / `8` 秒 | なし |
-| auto-fix (`copilot-auto-fix`) | （明示的な retry 変数なし） | `COPILOT_AUTO_FIX_PAGING_SLEEP_MS_DEFAULT`, `COPILOT_AUTO_FIX_THREAD_RESOLVE_SLEEP_MS_DEFAULT` | `100ms` / `150ms` | なし |
+| auto-fix (`copilot-auto-fix`) | （明示的な retry 変数なし） | コード定数（ENV で上書き不可）: `COPILOT_AUTO_FIX_PAGING_SLEEP_MS_DEFAULT`, `COPILOT_AUTO_FIX_THREAD_RESOLVE_SLEEP_MS_DEFAULT` | `100ms` / `150ms` | なし |
 | self-heal (`pr-self-heal`) | `AE_SELF_HEAL_MAX_ROUNDS` | `AE_SELF_HEAL_ROUND_WAIT_SECONDS`, `AE_SELF_HEAL_WAIT_STRATEGY`, `AE_SELF_HEAL_ROUND_WAIT_MAX_SECONDS` | `3` 回 / `60` 秒 / `fixed` / `60` 秒 | なし |
 
 | 共通 `gh-exec` retry/backoff（全レーン） | default | conservative | balanced | aggressive |
@@ -278,6 +280,7 @@ SSOT:
 
 注記:
 - `AE_GH_*` / `COPILOT_REVIEW_*` は `automation-config` で `explicit -> profile -> default` の優先順位で確定します。
+- `AE_AUTOMATION_PROFILE` / `automation-config` の profile 連動対象は `AE_GH_*` と `COPILOT_REVIEW_*` のみです。
 - `autopilot` / `auto-fix` / `self-heal` の wait 値は profile 非連動です。
 
 それでも失敗する場合は、Actions の rerun（failedのみ）で再試行してください。
