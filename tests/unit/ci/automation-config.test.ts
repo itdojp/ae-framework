@@ -9,6 +9,7 @@ describe('automation-config', () => {
   it('uses defaults when profile and variables are not set', () => {
     const config = resolveAutomationConfig({});
     expect(config.profile.resolved).toBe('');
+    expect(config.values.AI_REVIEW_ACTORS).toContain('github-copilot');
     expect(config.values.AE_REVIEW_TOPOLOGY).toBe('team');
     expect(config.values.AE_POLICY_MIN_HUMAN_APPROVALS).toBe('');
     expect(config.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('0');
@@ -31,6 +32,7 @@ describe('automation-config', () => {
       AE_AUTOMATION_PROFILE: 'balanced',
     });
     expect(config.profile.resolved).toBe('balanced');
+    expect(config.values.AI_REVIEW_ACTORS).toContain('chatgpt-codex-connector');
     expect(config.values.AE_REVIEW_TOPOLOGY).toBe('team');
     expect(config.values.AE_POLICY_MIN_HUMAN_APPROVALS).toBe('');
     expect(config.values.AE_AUTOMATION_GLOBAL_DISABLE).toBe('0');
@@ -51,12 +53,15 @@ describe('automation-config', () => {
   it('prefers explicit values over profile values', () => {
     const config = resolveAutomationConfig({
       AE_AUTOMATION_PROFILE: 'aggressive',
+      AI_REVIEW_ACTORS: 'custom-reviewer[bot]',
       AE_REVIEW_TOPOLOGY: 'solo',
       AE_POLICY_MIN_HUMAN_APPROVALS: '0',
       AE_COPILOT_AUTO_FIX_SCOPE: 'docs',
       AE_AUTO_MERGE_MODE: 'label',
       AE_AUTO_MERGE_LABEL: 'manual-opt-in',
     });
+    expect(config.values.AI_REVIEW_ACTORS).toBe('custom-reviewer[bot]');
+    expect(config.sources.AI_REVIEW_ACTORS).toBe('explicit');
     expect(config.values.AE_REVIEW_TOPOLOGY).toBe('solo');
     expect(config.values.AE_POLICY_MIN_HUMAN_APPROVALS).toBe('0');
     expect(config.values.AE_COPILOT_AUTO_FIX_SCOPE).toBe('docs');
@@ -73,6 +78,14 @@ describe('automation-config', () => {
     });
     expect(config.values.AE_COPILOT_AUTO_FIX_LABEL).toBe('');
     expect(config.sources.AE_COPILOT_AUTO_FIX_LABEL).toBe('explicit');
+  });
+
+  it('accepts legacy COPILOT_ACTORS when AI_REVIEW_ACTORS is not set', () => {
+    const config = resolveAutomationConfig({
+      COPILOT_ACTORS: 'legacy-reviewer[bot],legacy-reviewer-2',
+    });
+    expect(config.values.AI_REVIEW_ACTORS).toBe('legacy-reviewer[bot],legacy-reviewer-2');
+    expect(config.sources.AI_REVIEW_ACTORS).toBe('legacy(COPILOT_ACTORS)');
   });
 
   it('falls back on invalid explicit values with warnings', () => {
@@ -108,6 +121,7 @@ describe('automation-config', () => {
     });
     const envBody = toGithubEnv(config);
     expect(envBody).toContain('AE_AUTOMATION_PROFILE_RESOLVED=conservative');
+    expect(envBody).toContain('AI_REVIEW_ACTORS=');
     expect(envBody).toContain('AE_REVIEW_TOPOLOGY=team');
     expect(envBody).toContain('AE_POLICY_MIN_HUMAN_APPROVALS=');
     expect(envBody).toContain('AE_AUTOMATION_GLOBAL_DISABLE=0');

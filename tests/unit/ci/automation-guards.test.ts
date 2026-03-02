@@ -6,6 +6,7 @@ import {
   isDocsPath,
   normalizeLabelNames,
   parseActorCsv,
+  resolveReviewActors,
   toActorSet,
 } from '../../../scripts/ci/lib/automation-guards.mjs';
 
@@ -13,6 +14,12 @@ describe('automation-guards', () => {
   it('parses actor csv with fallback', () => {
     expect(parseActorCsv('', 'a,b')).toEqual(['a', 'b']);
     expect(parseActorCsv(' x, y ,,z ')).toEqual(['x', 'y', 'z']);
+  });
+
+  it('resolves review actors from primary/legacy env with fallback', () => {
+    expect(resolveReviewActors('actor-a, actor-b', 'legacy-a', 'fallback-a')).toEqual(['actor-a', 'actor-b']);
+    expect(resolveReviewActors('', 'legacy-a, legacy-b', 'fallback-a')).toEqual(['legacy-a', 'legacy-b']);
+    expect(resolveReviewActors('', '', 'fallback-a, fallback-b')).toEqual(['fallback-a', 'fallback-b']);
   });
 
   it('checks actor allowlist case-insensitively', () => {
