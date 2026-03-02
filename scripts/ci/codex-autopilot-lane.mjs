@@ -37,6 +37,11 @@ const reviewActors = resolveReviewActors(
   process.env.COPILOT_ACTORS,
 );
 const reviewActorSet = toActorSet(reviewActors);
+const HUMAN_DISPOSITION_PATTERNS = [
+  /\b(not applicable|won't fix|wont fix|won't apply|wont apply|handled in another pr|covered elsewhere)\b/i,
+  /\b(fixed|applied|addressed|updated|resolved|done)\b/i,
+  /(対応不要|適用しない|見送り|別PRで対応|別途対応|対応済み|修正済み|完了)/,
+];
 
 function toBool(value) {
   const normalized = String(value || '').trim().toLowerCase();
@@ -200,6 +205,9 @@ function deriveUnblockActions(status, reason) {
   if (normalizedReason.startsWith('actionable review tasks pending:')) {
     return ['Address actionable non-suggestion review comments (or reply why not applicable), then rerun `/autopilot run`.'];
   }
+  if (normalizedReason === 'actionable review task scan truncated (pagination required)') {
+    return ['Reduce unresolved AI-review threads/comments (or implement pagination support), then rerun `/autopilot run`.'];
+  }
   if (normalizedReason === 'merge conflict') {
     return ['Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.'];
   }
@@ -268,9 +276,28 @@ function collectActionableTasksFromReviewThreads(reviewThreads, actorSet) {
 
   for (const thread of threads) {
     if (!thread || thread.isResolved) continue;
-    const comments = Array.isArray(thread.comments?.nodes) ? thread.comments.nodes : [];
+    const comments = Array.isArray(thread.comments?.nodes) ? [...thread.comments.nodes] : [];
+    comments.sort((left, right) => {
+      const leftAt = Date.parse(left?.createdAt || '');
+      const rightAt = Date.parse(right?.createdAt || '');
+      if (!Number.isFinite(leftAt) && !Number.isFinite(rightAt)) return 0;
+      if (!Number.isFinite(leftAt)) return -1;
+      if (!Number.isFinite(rightAt)) return 1;
+      return leftAt - rightAt;
+    });
     for (const comment of comments) {
       if (!isActorAllowed(comment?.author?.login, actorSet)) continue;
+      const hasHumanDispositionReply = comments.some((item) => {
+        if (item === comment) return false;
+        if (isActorAllowed(item?.author?.login, actorSet)) return false;
+        if (item?.author?.__typename !== 'User') return false;
+        const itemAt = Date.parse(item?.createdAt || '');
+        const commentAt = Date.parse(comment?.createdAt || '');
+        if (Number.isFinite(itemAt) && Number.isFinite(commentAt) && itemAt <= commentAt) return false;
+        const body = String(item?.bodyText || '').trim();
+        return body && HUMAN_DISPOSITION_PATTERNS.some((pattern) => pattern.test(body));
+      });
+      if (hasHumanDispositionReply) continue;
       const task = buildActionTaskFromComment({
         id: comment?.databaseId,
         body: comment?.bodyText,
@@ -290,7 +317,7 @@ function collectActionableTasksFromReviewThreads(reviewThreads, actorSet) {
 }
 
 function fetchActionableReviewTaskState(number) {
-  const query = `query($owner:String!, $repo:String!, $number:Int!) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100) {\n        nodes {\n          path\n          isResolved\n          comments(first:100) {\n            nodes {\n              databaseId\n              bodyText\n              path\n              line\n              startLine\n              url\n              author { login }\n            }\n          }\n        }\n      }\n    }\n  }\n}`;
+  const query = `query($owner:String!, $repo:String!, $number:Int!) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first:100) {\n        pageInfo { hasNextPage }\n        nodes {\n          path\n          isResolved\n          comments(first:100) {\n            pageInfo { hasNextPage }\n            nodes {\n              databaseId\n              bodyText\n              path\n              line\n              startLine\n              url\n              createdAt\n              author { login __typename }\n            }\n          }\n        }\n      }\n    }\n  }\n}`;
   const [owner, repoName] = repo.split('/');
   const data = execJson([
     'api',
@@ -304,12 +331,16 @@ function fetchActionableReviewTaskState(number) {
     '-F',
     `number=${number}`,
   ]);
-  const reviewThreads = data?.data?.repository?.pullRequest?.reviewThreads?.nodes || [];
+  const reviewThreadsRoot = data?.data?.repository?.pullRequest?.reviewThreads || {};
+  const reviewThreads = reviewThreadsRoot?.nodes || [];
+  const threadsHasNextPage = Boolean(reviewThreadsRoot?.pageInfo?.hasNextPage);
+  const commentsHasNextPage = reviewThreads.some((thread) => Boolean(thread?.comments?.pageInfo?.hasNextPage));
   const tasks = collectActionableTasksFromReviewThreads(reviewThreads, reviewActorSet);
   return {
     total: tasks.length,
     preview: summarizeActionTasks(tasks, 3),
     tasks,
+    truncated: threadsHasNextPage || commentsHasNextPage,
   };
 }
 
@@ -435,6 +466,7 @@ async function processPr(number) {
   const actions = [];
   let finalReason = '';
   let finalState = null;
+  let finalActionableState = { total: 0, preview: [], truncated: false };
   let done = false;
   let roundsExecuted = 0;
   let requiredPolicyLabels = null;
@@ -492,11 +524,19 @@ async function processPr(number) {
     }
 
     const threadState = fetchCopilotThreadState(number);
-    const actionableState = fetchActionableReviewTaskState(number);
-    if (actionableState.total > 0) {
-      finalReason = `actionable review tasks pending: ${actionableState.total}`;
-      actions.push(`round${round}: detect actionable non-suggestion review tasks (${actionableState.total})`);
-      break;
+    if (threadState.unresolvedCopilot > 0) {
+      const actionableState = fetchActionableReviewTaskState(number);
+      finalActionableState = actionableState;
+      if (actionableState.truncated) {
+        finalReason = 'actionable review task scan truncated (pagination required)';
+        actions.push(`round${round}: detect partial actionable scan result; stop fail-closed`);
+        break;
+      }
+      if (actionableState.total > 0) {
+        finalReason = `actionable review tasks pending: ${actionableState.total}`;
+        actions.push(`round${round}: detect actionable non-suggestion review tasks (${actionableState.total})`);
+        break;
+      }
     }
     const gateStatus = parseGateStatus(pr.statusCheckRollup || []);
 
@@ -573,9 +613,8 @@ async function processPr(number) {
   };
 
   if (status === 'blocked' && String(finalReason || '').startsWith('actionable review tasks pending:')) {
-    const actionableState = fetchActionableReviewTaskState(number);
-    result.actionableTasks = actionableState.total;
-    result.actionablePreview = actionableState.preview;
+    result.actionableTasks = finalActionableState.total;
+    result.actionablePreview = finalActionableState.preview;
   }
 
   if (!dryRun) {

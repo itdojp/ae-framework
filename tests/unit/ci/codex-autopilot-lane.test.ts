@@ -104,6 +104,9 @@ describe('codex-autopilot-lane helpers', () => {
     expect(deriveUnblockActions('blocked', 'actionable review tasks pending: 2')).toEqual([
       'Address actionable non-suggestion review comments (or reply why not applicable), then rerun `/autopilot run`.',
     ]);
+    expect(deriveUnblockActions('blocked', 'actionable review task scan truncated (pagination required)')).toEqual([
+      'Reduce unresolved AI-review threads/comments (or implement pagination support), then rerun `/autopilot run`.',
+    ]);
     expect(deriveUnblockActions('done', 'checks healthy, waiting for required checks/merge queue')).toEqual([
       'No manual fix required. Wait for required checks or merge queue completion.',
     ]);
@@ -155,6 +158,7 @@ describe('codex-autopilot-lane helpers', () => {
               line: 12,
               startLine: 12,
               url: 'https://example.invalid/101',
+              createdAt: '2026-03-02T01:00:00Z',
             },
             {
               databaseId: 102,
@@ -164,6 +168,7 @@ describe('codex-autopilot-lane helpers', () => {
               line: 13,
               startLine: 13,
               url: 'https://example.invalid/102',
+              createdAt: '2026-03-02T01:01:00Z',
             },
           ],
         },
@@ -194,5 +199,40 @@ describe('codex-autopilot-lane helpers', () => {
       startLine: 12,
       endLine: 12,
     });
+  });
+
+  it('skips actionable task when a human disposition reply exists in the same thread', () => {
+    const actorSet = toActorSet(['github-copilot[bot]']);
+    const tasks = collectActionableTasksFromReviewThreads([
+      {
+        isResolved: false,
+        path: 'src/a.ts',
+        comments: {
+          nodes: [
+            {
+              databaseId: 201,
+              author: { login: 'github-copilot[bot]', __typename: 'Bot' },
+              bodyText: 'Please update this branch.',
+              path: 'src/a.ts',
+              line: 8,
+              startLine: 8,
+              url: 'https://example.invalid/201',
+              createdAt: '2026-03-02T01:00:00Z',
+            },
+            {
+              databaseId: 202,
+              author: { login: 'devuser', __typename: 'User' },
+              bodyText: 'この指摘は別PRで対応済みのため、ここでは適用しません。',
+              path: 'src/a.ts',
+              line: 8,
+              startLine: 8,
+              url: 'https://example.invalid/202',
+              createdAt: '2026-03-02T01:01:00Z',
+            },
+          ],
+        },
+      },
+    ], actorSet);
+    expect(tasks).toHaveLength(0);
   });
 });

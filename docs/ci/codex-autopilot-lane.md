@@ -85,6 +85,7 @@ No Human Bottleneck（Issue #2333）整合ポイント:
 | `skip` + `draft PR` | Ready for review に変更して `/autopilot run` |
 | `blocked` + `missing policy labels: ...` | 不足ラベルを付与して `/autopilot run`（`AE_AUTOPILOT_AUTO_LABEL=1` なら自動付与） |
 | `blocked` + `actionable review tasks pending: <n>` | actionable 指摘に対応（または非適用理由を返信）して `/autopilot run` |
+| `blocked` + `actionable review task scan truncated (pagination required)` | 未解決 AI review thread/comment を減らす（またはページング対応）後に `/autopilot run` |
 | `blocked` + `merge conflict` | update-branch または手動 rebase で衝突を解消して push 後に `/autopilot run` |
 | `done` + `checks healthy, waiting for required checks/merge queue` | required checks/merge queue の完了を待機（追加修正不要） |
 | `done` + `auto-merge enabled` / `already merged` | 追加操作不要 |
