@@ -227,6 +227,9 @@ function deriveUnblockActions(status, reason) {
   if (normalizedReason === 'merge conflict') {
     return ['Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.'];
   }
+  if (normalizedReason === 'max rounds reached without convergence') {
+    return ['Wait for in-flight checks/dispatch jobs to settle, then rerun `/autopilot run`.'];
+  }
   if (normalizedReason) {
     return [`Resolve: ${reason}. Then rerun \`/autopilot run\`.`];
   }
@@ -606,6 +609,9 @@ async function processPr(number) {
   const finalThreads = finalState ? fetchCopilotThreadState(number) : { unresolvedCopilot: 0 };
   const finalGate = finalState ? parseGateStatus(finalState.statusCheckRollup || []) : 'missing';
   let status = done ? 'done' : 'blocked';
+  if (!done && !finalReason) {
+    finalReason = 'max rounds reached without convergence';
+  }
   if (!done && finalReason.startsWith('missing label')) {
     status = 'skip';
   }

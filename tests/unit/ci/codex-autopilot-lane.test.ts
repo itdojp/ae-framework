@@ -107,6 +107,9 @@ describe('codex-autopilot-lane helpers', () => {
     expect(deriveUnblockActions('blocked', 'actionable review task scan truncated (pagination required)')).toEqual([
       'Reduce unresolved AI-review threads/comments (or implement pagination support), then rerun `/autopilot run`.',
     ]);
+    expect(deriveUnblockActions('blocked', 'max rounds reached without convergence')).toEqual([
+      'Wait for in-flight checks/dispatch jobs to settle, then rerun `/autopilot run`.',
+    ]);
     expect(deriveUnblockActions('done', 'checks healthy, waiting for required checks/merge queue')).toEqual([
       'No manual fix required. Wait for required checks or merge queue completion.',
     ]);

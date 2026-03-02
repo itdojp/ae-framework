@@ -242,6 +242,7 @@ Settings（Repository）で次を確認してください。
 
 `gh` CLI 経由のAPI呼び出しは GitHub secondary rate limit（HTTP 429）で失敗することがあります。
 本リポジトリのCIスクリプトは `scripts/ci/lib/gh-exec.mjs` により retry/backoff を行います。
+既定値は `scripts/ci/lib/gh-exec.mjs` と `scripts/ci/lib/automation-config.mjs` で管理されています。
 
 調整用ENV（必要時のみ）:
 - `AE_GH_RETRY_MAX_ATTEMPTS`（既定 8）
