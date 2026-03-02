@@ -123,4 +123,5 @@ gate_checks:
   enforce-context-pack:
     - "context-pack-e2e"
   run-trace:
+    - "trace-conformance"
     - "KvOnce Trace Validation"

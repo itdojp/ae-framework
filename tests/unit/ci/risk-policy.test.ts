@@ -49,6 +49,7 @@ describe('risk-policy', () => {
 
   it('returns trace validation check pattern for run-trace', () => {
     const patterns = getGateCheckPatternsForLabel(policy, 'run-trace');
+    expect(patterns).toContain('trace-conformance');
     expect(patterns).toContain('KvOnce Trace Validation');
   });
 

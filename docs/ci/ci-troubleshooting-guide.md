@@ -51,7 +51,7 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 | `Copilot Review Gate / gate` fail | 未解決レビューthread数、失敗runのconclusion | thread解消 → `gh run rerun <runId> --failed` |
 | `PR Self-Heal` が `blocked` | PRコメントの reason、`status:blocked` ラベル | 競合解消/失敗チェック修復後に手動rerun |
 | `auto-merge` が有効化されない | `AE_AUTO_MERGE*`、required checks、reviewDecision | `docs/ci/auto-merge.md` に沿って条件修正 |
-| `policy-gate` fail（`run-trace`） | `run-trace` ラベル有無、`KvOnce Trace Validation` の conclusion | `run-trace` を付与し `Spec Generate & Model Tests` を PR文脈で再実行 |
+| `policy-gate` fail（`run-trace`） | `run-trace` ラベル有無、`trace-conformance` / `KvOnce Trace Validation` の conclusion | `run-trace` を付与し `Spec Generate & Model Tests` を PR文脈で再実行 |
 | 429 / secondary rate limit | `gh-exec` retryログ、失敗タイミング | rerun優先、必要なら `AE_GH_THROTTLE_MS` と `AE_GH_RETRY_*` を調整 |
 | unified exec process 上限警告 | 長時間ジョブ数、同時セッション数 | 長時間セッション停止・既存セッション再利用・並列度を抑制 |
 
@@ -87,7 +87,7 @@ gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
 2. PR文脈の trace check を再実行
    - `gh run list --workflow "Spec Generate & Model Tests" --branch <head-branch> --limit 20`
    - `gh run rerun <runId> --failed`
-3. `KvOnce Trace Validation` が `success` になったことを確認し、`policy-gate` を再評価
+3. `trace-conformance`（fork含む）または `KvOnce Trace Validation`（non-fork）が `success` になったことを確認し、`policy-gate` を再評価
    - `gh run list --workflow "Policy Gate" --branch <head-branch> --limit 20`
 
 ## 8) 失敗時の切り分け（5分版）

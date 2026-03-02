@@ -108,6 +108,31 @@ describe('policy-gate', () => {
     expect(result.errors).toContain('required gate check not green for label run-trace (missing)');
   });
 
+  it('passes high-risk PR when run-trace is satisfied by trace-conformance check', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'run-trace' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['.github/workflows/spec-generate-model.yml'],
+      reviews: [
+        {
+          id: 211,
+          state: 'APPROVED',
+          submitted_at: '2026-03-01T00:05:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [
+        checkRun('verify-lite'),
+        checkRun('trace-conformance'),
+      ],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
   it('fails high-risk PR when KvOnce trace validation check fails', () => {
     const result = evaluatePolicyGate({
       policy,

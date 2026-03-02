@@ -455,7 +455,7 @@ jobs:
             }
 
       - name: Publish trace validation check
-        if: ${{ always() && github.event_name == 'pull_request' }}
+        if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
         uses: actions/github-script@v7
         env:
           TRACE_JOB_STATUS: ${{ job.status }}
@@ -493,15 +493,39 @@ jobs:
               `NDJSON: ${validNdjson} (issues: ${issuesNdjson})`,
             ];
 
-            await github.rest.checks.create({
+            const checkName = 'KvOnce Trace Validation';
+            const updatePayload = {
               owner,
               repo,
-              name: 'KvOnce Trace Validation',
-              head_sha: headSha,
               status: 'completed',
               conclusion,
               output: {
-                title: 'KvOnce Trace Validation',
+                title: checkName,
                 summary: summaryLines.join('\n'),
               },
+            };
+
+            const existing = await github.rest.checks.listForRef({
+              owner,
+              repo,
+              ref: headSha,
+              check_name: checkName,
+              per_page: 100,
             });
+            const runs = (existing.data.check_runs || []).filter((run) => run.name === checkName);
+
+            if (runs.length === 0) {
+              await github.rest.checks.create({
+                ...updatePayload,
+                name: checkName,
+                head_sha: headSha,
+              });
+              return;
+            }
+
+            for (const run of runs) {
+              await github.rest.checks.update({
+                ...updatePayload,
+                check_run_id: run.id,
+              });
+            }
