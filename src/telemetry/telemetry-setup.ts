@@ -29,10 +29,16 @@ export const telemetrySDK = new NodeSDK({
   ...(traceExporter ? { traceExporter } : {}),
 });
 
+let telemetryInitialized = false;
+
 // Initialize telemetry
 export function initializeTelemetry(): void {
+  if (telemetryInitialized) {
+    return;
+  }
   try {
     telemetrySDK.start();
+    telemetryInitialized = true;
     
     if (isProduction || process.env['DEBUG_TELEMETRY']) {
       console.log('📊 OpenTelemetry initialized for ae-framework Phase 6');
@@ -66,9 +72,4 @@ try {
   // In some ESM environments, process.on may not be available
   // This is not critical for telemetry functionality
   console.warn('Process SIGTERM handler could not be registered:', error instanceof Error ? error.message : String(error));
-}
-
-// Default initialization (can be disabled via environment variable)
-if (typeof process !== 'undefined' && process.env['DISABLE_TELEMETRY'] !== 'true') {
-  initializeTelemetry();
 }
