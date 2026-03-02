@@ -29,20 +29,63 @@ export const telemetrySDK = new NodeSDK({
   ...(traceExporter ? { traceExporter } : {}),
 });
 
-// Initialize telemetry
-export function initializeTelemetry(): void {
-  try {
-    telemetrySDK.start();
-    
-    if (isProduction || process.env['DEBUG_TELEMETRY']) {
-      console.log('📊 OpenTelemetry initialized for ae-framework Phase 6');
-      console.log(`   Service: ae-framework v1.0.0`);
-      console.log(`   Environment: ${process.env['NODE_ENV'] || 'development'}`);
-      console.log(`   OTLP Export: ${enableOTLP ? '✅ Enabled' : '❌ Console only'}`);
-    }
-  } catch (error: unknown) {
-    console.error('❌ Failed to initialize OpenTelemetry:', toMessage(error));
+let telemetryInitialized = false;
+let telemetryInitPromise: Promise<void> | null = null;
+
+function logTelemetryInitialized(): void {
+  if (isProduction || process.env['DEBUG_TELEMETRY']) {
+    console.log('📊 OpenTelemetry initialized for ae-framework Phase 6');
+    console.log('   Service: ae-framework v1.0.0');
+    console.log(`   Environment: ${process.env['NODE_ENV'] || 'development'}`);
+    console.log(`   OTLP Export: ${enableOTLP ? '✅ Enabled' : '❌ Console only'}`);
   }
+}
+
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return (
+    (typeof value === 'object' || typeof value === 'function') &&
+    value !== null &&
+    'then' in value &&
+    typeof (value as { then?: unknown }).then === 'function'
+  );
+}
+
+// Initialize telemetry
+export async function initializeTelemetry(): Promise<void> {
+  if (telemetryInitialized) {
+    return;
+  }
+  if (telemetryInitPromise) {
+    return telemetryInitPromise;
+  }
+
+  let startResult;
+  try {
+    startResult = telemetrySDK.start();
+  } catch (error: unknown) {
+    throw new Error(`Failed to initialize OpenTelemetry: ${toMessage(error)}`);
+  }
+
+  if (!isPromiseLike(startResult)) {
+    telemetryInitialized = true;
+    logTelemetryInitialized();
+    telemetryInitPromise = Promise.resolve();
+    return telemetryInitPromise;
+  }
+
+  const initPromise = Promise.resolve(startResult as PromiseLike<unknown>)
+    .then(() => {
+      telemetryInitialized = true;
+      logTelemetryInitialized();
+    })
+    .catch((error: unknown) => {
+      telemetryInitialized = false;
+      telemetryInitPromise = null;
+      throw new Error(`Failed to initialize OpenTelemetry: ${toMessage(error)}`);
+    });
+  telemetryInitPromise = initPromise;
+
+  return initPromise;
 }
 
 // Graceful shutdown
@@ -66,9 +109,4 @@ try {
   // In some ESM environments, process.on may not be available
   // This is not critical for telemetry functionality
   console.warn('Process SIGTERM handler could not be registered:', error instanceof Error ? error.message : String(error));
-}
-
-// Default initialization (can be disabled via environment variable)
-if (typeof process !== 'undefined' && process.env['DISABLE_TELEMETRY'] !== 'true') {
-  initializeTelemetry();
 }
