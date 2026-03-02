@@ -5,11 +5,11 @@ on:
     types: [submitted]
 
 env:
-  AI_REVIEW_ACTORS: ${{ vars.AI_REVIEW_ACTORS || vars.COPILOT_ACTORS || 'copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],chatgpt-codex-connector,chatgpt-codex-connector[bot],Copilot' }}
+  AI_REVIEW_ACTORS: ${{ vars.AI_REVIEW_ACTORS || '' }}
   COPILOT_ACTORS: ${{ vars.COPILOT_ACTORS || '' }}
 
 concurrency:
-  group: copilot-auto-fix-${{ github.event.pull_request.number }}
+  group: copilot-auto-fix-${{ github.event.pull_request.number }}-${{ github.actor }}
   cancel-in-progress: true
 
 permissions:
@@ -22,6 +22,11 @@ jobs:
     if: >-
       !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
       && github.event.pull_request.head.repo.fork == false
+      && (
+        contains(fromJSON('["copilot-pull-request-reviewer","github-copilot","github-copilot[bot]","copilot","copilot[bot]","chatgpt-codex-connector","chatgpt-codex-connector[bot]","Copilot"]'), github.actor)
+        || contains(format(',{0},', vars.AI_REVIEW_ACTORS || ''), format(',{0},', github.actor))
+        || contains(format(',{0},', vars.COPILOT_ACTORS || ''), format(',{0},', github.actor))
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

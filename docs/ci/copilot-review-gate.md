@@ -32,13 +32,15 @@
 - 優先変数: `AI_REVIEW_ACTORS`
 - 後方互換: `AI_REVIEW_ACTORS` 未設定時は `COPILOT_ACTORS` を参照
 - 既定アクター（未設定時）: `copilot-pull-request-reviewer`, `github-copilot`, `github-copilot[bot]`, `copilot`, `copilot[bot]`, `chatgpt-codex-connector`, `chatgpt-codex-connector[bot]`
+- 大文字小文字は区別せず照合します（`Copilot` / `copilot` どちらでも可）。
 
 ### 補足: wait/retry の調整（レビュー到着待ち）
 - workflow 側 env の `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` を調整できます（既定: 5分 x 3回）。
 - `AE_AUTOMATION_PROFILE` による一括設定も可能です（詳細: `docs/ci/automation-profiles.md`）。
 
 ## 例外運用
-- AI review が利用できない環境では、Requiredチェックに含めない運用、または `AI_REVIEW_ACTORS`（互換で `COPILOT_ACTORS`）を空にして無効化できます（workflow の `env` を編集）。
+- AI review が利用できない環境では、Requiredチェックに含めない運用、または `AI_REVIEW_ACTORS`（互換で `COPILOT_ACTORS`）を空にして無効化できます。
+  - `automation-config` 経由で空文字を明示する場合は `AI_REVIEW_ACTORS=(empty)` を設定します。
 
 ## トラブルシューティング
 - Copilotレビューが「コメント」のみで「レビュー」として表示されない場合は、Copilotレビューの起動方法を見直してください（PR画面のCopilotパネルからの実行を推奨）。

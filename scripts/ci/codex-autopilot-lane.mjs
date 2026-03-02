@@ -31,7 +31,6 @@ const globalDisabled = toBool(process.env.AE_AUTOMATION_GLOBAL_DISABLE);
 const reviewActors = resolveReviewActors(
   process.env.AI_REVIEW_ACTORS,
   process.env.COPILOT_ACTORS,
-  'copilot-pull-request-reviewer,github-copilot,github-copilot[bot],copilot,copilot[bot],chatgpt-codex-connector,chatgpt-codex-connector[bot],Copilot',
 );
 const reviewActorSet = toActorSet(reviewActors);
 
