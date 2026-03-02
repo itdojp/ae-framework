@@ -21,6 +21,10 @@ jobs:
   auto-fix:
     if: >-
       !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
+      && !(
+        vars.AE_CODEX_AUTOPILOT_ENABLED == '1'
+        && contains(github.event.pull_request.labels.*.name, 'autopilot:on')
+      )
       && github.event.pull_request.head.repo.fork == false
       && (
         contains(fromJSON('["copilot-pull-request-reviewer","github-copilot","github-copilot[bot]","copilot","copilot[bot]","chatgpt-codex-connector","chatgpt-codex-connector[bot]","Copilot"]'), github.actor)

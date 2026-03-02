@@ -23,10 +23,12 @@ Repository Variables:
 
 補足:
 - `workflow_dispatch` は `AE_CODEX_AUTOPILOT_ENABLED` 未設定でも実行可能（手動検証用）
+- `autopilot:on` かつ `AE_CODEX_AUTOPILOT_ENABLED=1` のPRでは `copilot-auto-fix.yml` は重複実行抑止のため skip され、`pull_request_review` 起点の `Codex Autopilot Lane` が処理を継続
 
 ## 2. 起動条件
 
 - `pull_request`（opened/synchronize/reopened/labeled/ready_for_review）
+- `pull_request_review`（submitted）
 - `issue_comment`（`/autopilot run`）
 - `workflow_dispatch`（`pr_number` 必須）
 
@@ -34,6 +36,7 @@ Repository Variables:
 - `autopilot:on` ラベルが付与されていること
 - draft ではないこと
 - fork PR ではないこと（権限の都合で運用非推奨）
+- `pull_request_review` 起点は trusted reviewer のみ（`author_association` が MEMBER/OWNER/COLLABORATOR、または許可済みAI review actor）
 
 ## 3. 状態遷移（実装）
 
