@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   compareEvaluationSnapshots,
+  parseArgs,
   runPolicyShadowComparison,
 } from '../../../scripts/ci/policy-shadow-compare.mjs';
 
@@ -314,5 +315,14 @@ describe('policy-shadow-compare', () => {
 
     expect(comparison.match).toBe(true);
     expect(comparison.mismatches).toHaveLength(0);
+  });
+
+  it('accepts --rego=<path> argument form', () => {
+    const parsed = parseArgs([
+      'node',
+      'scripts/ci/policy-shadow-compare.mjs',
+      '--rego=policy/custom.rego',
+    ]);
+    expect(parsed.regoPath).toBe('policy/custom.rego');
   });
 });

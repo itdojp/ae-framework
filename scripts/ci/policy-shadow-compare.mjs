@@ -2,7 +2,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const DEFAULT_INPUT_PATH = 'artifacts/ci/policy-input-v1.json';
@@ -65,6 +64,10 @@ function parseArgs(argv) {
     }
     if (value.startsWith('--policy=')) {
       options.regoPath = value.slice('--policy='.length);
+      continue;
+    }
+    if (value.startsWith('--rego=')) {
+      options.regoPath = value.slice('--rego='.length);
       continue;
     }
     if ((value === '--query') && argv[index + 1]) {
@@ -351,7 +354,7 @@ function buildMarkdownSummary(report) {
 function isDirectExecution() {
   const entry = process.argv[1];
   if (!entry) return false;
-  return import.meta.url === pathToFileURL(resolve(entry)).href;
+  return import.meta.url === pathToFileURL(path.resolve(entry)).href;
 }
 
 async function runPolicyShadowComparison(

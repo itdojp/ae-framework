@@ -546,17 +546,21 @@ function normalizeStringArray(value) {
     .filter(Boolean);
 }
 
+function normalizeUniqueStringArray(value) {
+  return [...new Set(normalizeStringArray(value))];
+}
+
 function buildPolicyInputPolicy(policy) {
   const riskLabels = getRiskLabels(policy);
-  const optionalGates = getOptionalGateLabels(policy);
-  const requiredChecks = getRequiredChecks(policy);
-  const highRiskPaths = normalizeStringArray(policy?.classification?.high_risk_paths);
-  const forceHighRiskWhen = normalizeStringArray(policy?.classification?.force_high_risk_when);
+  const optionalGates = normalizeUniqueStringArray(getOptionalGateLabels(policy));
+  const requiredChecks = normalizeUniqueStringArray(getRequiredChecks(policy));
+  const highRiskPaths = normalizeUniqueStringArray(policy?.classification?.high_risk_paths);
+  const forceHighRiskWhen = normalizeUniqueStringArray(policy?.classification?.force_high_risk_when);
   const labelRequirements = Array.isArray(policy?.label_requirements) ? policy.label_requirements : [];
   const normalizedLabelRequirements = labelRequirements.map((rule, index) => ({
     id: String(rule?.id || `rule-${index + 1}`).trim() || `rule-${index + 1}`,
-    whenAnyChanged: normalizeStringArray(rule?.when_any_changed),
-    requireLabels: normalizeStringArray(rule?.require_labels),
+    whenAnyChanged: normalizeUniqueStringArray(rule?.when_any_changed),
+    requireLabels: normalizeUniqueStringArray(rule?.require_labels),
   }));
 
   const gateCheckKeys = new Set([
@@ -566,7 +570,7 @@ function buildPolicyInputPolicy(policy) {
   const gateChecks = {};
   for (const label of [...gateCheckKeys].map((item) => String(item || '').trim()).filter(Boolean).sort()) {
     gateChecks[label] = {
-      patterns: getGateCheckPatternsForLabel(policy, label),
+      patterns: normalizeUniqueStringArray(getGateCheckPatternsForLabel(policy, label)),
     };
   }
 
@@ -672,10 +676,10 @@ function buildPolicyInputV1({
     policy: buildPolicyInputPolicy(policy),
     pullRequest: {
       number: Number(prNumber) || 0,
-      labels: normalizeLabelNames(pullRequest?.labels || []),
+      labels: normalizeUniqueStringArray(normalizeLabelNames(pullRequest?.labels || [])),
       body: String(pullRequest?.body || ''),
     },
-    changedFiles: normalizeStringArray(changedFiles),
+    changedFiles: normalizeUniqueStringArray(changedFiles),
     reviews: normalizePolicyInputReviews(reviews),
     statusRollup: normalizePolicyInputStatusRollup(statusRollup),
     config: {
