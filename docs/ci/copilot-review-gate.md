@@ -14,6 +14,10 @@
 - 未満の条件の場合、チェックを失敗させます（Required化でマージを停止）
 - `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` は `scripts/ci/lib/automation-config.mjs` で解決（個別変数 > `AE_AUTOMATION_PROFILE` > 既定値）
 - GitHub API 呼び出しは `scripts/ci/lib/gh-exec.mjs` 経由で実行され、`AE_GH_THROTTLE_MS` / `AE_GH_RETRY_*` が適用されます（429 対策）
+- スキップ条件（実装）:
+  - `issue_comment` だが PR 文脈ではない
+  - `workflow_dispatch` で default branch に対して `pr_number` なし
+  - `AI_REVIEW_ACTORS`（互換で `COPILOT_ACTORS`）が空
 
 関連:
 - Copilot suggestion の自動適用（auto-fix）: `docs/ci/copilot-auto-fix.md`
@@ -32,7 +36,7 @@
 ### 補足: 既定のCopilotアクター
 - 優先変数: `AI_REVIEW_ACTORS`
 - 後方互換: `AI_REVIEW_ACTORS` 未設定時は `COPILOT_ACTORS` を参照
-- 既定アクター（未設定時）: `copilot-pull-request-reviewer`, `github-copilot`, `github-copilot[bot]`, `copilot`, `copilot[bot]`, `chatgpt-codex-connector`, `chatgpt-codex-connector[bot]`
+- 既定アクター（未設定時）: `copilot-pull-request-reviewer`, `github-copilot`, `github-copilot[bot]`, `copilot`, `copilot[bot]`, `chatgpt-codex-connector`, `chatgpt-codex-connector[bot]`, `Copilot`
 - 大文字小文字は区別せず照合します（`Copilot` / `copilot` どちらでも可）。
 
 ### 補足: wait/retry の調整（レビュー到着待ち）

@@ -1,12 +1,14 @@
 # Automation Profiles（PR自動化プロファイル）
 
-PR自動化（Copilot Review Gate / Copilot Auto Fix / Auto Merge）の設定を、Repository Variables 1つで段階的に切り替えるための運用ガイドです。
+PR自動化（Copilot Review Gate / Copilot Auto Fix / Auto Merge / Policy Gate）の設定を、Repository Variables 1つで段階的に切り替えるための運用ガイドです。
 
 一次情報:
 - `scripts/ci/lib/automation-config.mjs`
 - `.github/workflows/copilot-auto-fix.yml`
 - `.github/workflows/copilot-review-gate.yml`
 - `.github/workflows/pr-ci-status-comment.yml`
+- `.github/workflows/policy-gate.yml`
+- `.github/workflows/codex-autopilot-lane.yml`
 
 ## 1. 使い方
 
@@ -16,7 +18,7 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 - `balanced`
 - `aggressive`
 
-未設定時はプロファイル無効で、既存の個別変数（`AI_REVIEW_ACTORS`, `AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `AE_AUTOMATION_GLOBAL_DISABLE`, `AE_REVIEW_TOPOLOGY`, `AE_POLICY_MIN_HUMAN_APPROVALS` など）がそのまま使われます（`AE_AUTO_MERGE_REQUIRE_RISK_LOW` / `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE` を含む）。
+未設定時はプロファイル無効で、既存の個別変数（`AI_REVIEW_ACTORS`, `AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `AE_AUTOMATION_GLOBAL_DISABLE`, `AE_REVIEW_TOPOLOGY`, `AE_POLICY_MIN_HUMAN_APPROVALS`, `AE_AUTOPILOT_AUTO_LABEL`, `AE_AUTOPILOT_RISK_POLICY_PATH` など）がそのまま使われます（`AE_AUTO_MERGE_REQUIRE_RISK_LOW` / `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE` を含む）。
 
 補足:
 - reviewer actor は `AI_REVIEW_ACTORS` が優先され、未設定時は `COPILOT_ACTORS` を後方互換で参照します。
@@ -40,9 +42,12 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 
 | Key | conservative | balanced | aggressive |
 | --- | --- | --- | --- |
+| `AI_REVIEW_ACTORS` | default actors | default actors | default actors |
 | `AE_REVIEW_TOPOLOGY` | `team` | `team` | `team` |
 | `AE_POLICY_MIN_HUMAN_APPROVALS` | *(empty)* | *(empty)* | *(empty)* |
 | `AE_AUTOMATION_GLOBAL_DISABLE` | `0` | `0` | `0` |
+| `AE_AUTOPILOT_AUTO_LABEL` | `0` | `0` | `0` |
+| `AE_AUTOPILOT_RISK_POLICY_PATH` | `policy/risk-policy.yml` | `policy/risk-policy.yml` | `policy/risk-policy.yml` |
 | `AE_COPILOT_AUTO_FIX` | `1` | `1` | `1` |
 | `AE_COPILOT_AUTO_FIX_SCOPE` | `docs` | `docs` | `all` |
 | `AE_COPILOT_AUTO_FIX_LABEL` | `copilot-auto-fix` | *(empty)* | *(empty)* |
@@ -60,6 +65,16 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 | `AE_GH_RETRY_JITTER_MS` | `400` | `250` | `100` |
 | `COPILOT_REVIEW_WAIT_MINUTES` | `7` | `5` | `2` |
 | `COPILOT_REVIEW_MAX_ATTEMPTS` | `4` | `3` | `2` |
+
+`AI_REVIEW_ACTORS` の default actors:
+- `copilot-pull-request-reviewer`
+- `github-copilot`
+- `github-copilot[bot]`
+- `copilot`
+- `copilot[bot]`
+- `chatgpt-codex-connector`
+- `chatgpt-codex-connector[bot]`
+- `Copilot`
 
 ## 4. 推奨導入順
 
@@ -82,3 +97,4 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 - `AE_GH_RETRY_MAX_DELAY_MS < AE_GH_RETRY_INITIAL_DELAY_MS` の場合は、`MAX_DELAY` を `INITIAL_DELAY` に補正します。
 - プロファイル名が不正な場合は無効扱い（既定値にフォールバック）です。
 - `AE_AUTOMATION_GLOBAL_DISABLE=1`（`true` / `yes` / `on` も可）の場合、auto-fix / auto-merge / update-branch / self-heal / autopilot の実行は安全側で停止（skip）します。
+- `AE_AUTOPILOT_ACTIONABLE_COMMAND` / `AE_AUTOPILOT_ACTIONABLE_DRY_RUN` / `AE_AUTOPILOT_MAX_ROUNDS` / `AE_AUTOPILOT_ROUND_WAIT_*` は `automation-config` 管理外のため、プロファイルでは変更されません。

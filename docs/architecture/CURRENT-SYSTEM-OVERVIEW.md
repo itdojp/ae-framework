@@ -6,7 +6,7 @@
 
 ## English (Summary)
 
-This document captures the implementation-aligned architecture of `ae-framework` as of 2026-03-01, including review-topology aware policy gates, release verify operations, and the expanded formal-verification stack with CSP (`cspx`) integration.
+This document captures the implementation-aligned architecture of `ae-framework` as of 2026-03-03, including review-topology aware policy gates, Codex autopilot orchestration, trace-required check integration, release verify operations, and the expanded formal-verification stack with CSP (`cspx`) integration.
 
 ---
 
@@ -17,6 +17,7 @@ This document captures the implementation-aligned architecture of `ae-framework`
 本資料は、`ae-framework` の現行実装をベースに、以下を短時間で把握するための全体構成ドキュメントです。
 
 - 主要レイヤ（CLI/CI/仕様検証/成果物）
+- PR自動化レーン（review gate / auto-fix / autopilot / auto-merge）の責務分割
 - 拡張済み形式検証スタック（Alloy/TLA/SMT/Apalache/Kani/SPIN/CSP/Lean4）
 - `cspx` 連携の契約（summary/result artifact）
 - 運用導線（ローカル実行、PRラベル実行、集約確認）
@@ -78,10 +79,12 @@ This document captures the implementation-aligned architecture of `ae-framework`
 | 種別 | 代表ワークフロー | 目的 |
 | --- | --- | --- |
 | 必須軽量ゲート | `verify-lite.yml`, `coverage-check.yml`, `workflow-lint.yml` | 日常PRの安定ゲート |
-| 必須ポリシーゲート | `policy-gate.yml` | risk/topology/approval 方針の判定（team/solo 切替対応） |
+| 必須ポリシーゲート | `policy-gate.yml` | risk/topology/approval 方針の判定（team/solo 切替対応、required checks評価） |
 | レビューゲート | `copilot-review-gate.yml` | Copilotレビュー存在 + スレッド解決確認 |
 | レビュー対応（auto-fix） | `copilot-auto-fix.yml` | Copilot suggestion をPRへ自動適用（コミット/push）+ スレッド解決（任意） |
+| touchless運用レーン | `codex-autopilot-lane.yml` | `autopilot:on` PRの収束ループ（update-branch / auto-fix / gate再実行 / auto-merge試行） |
 | 自動マージ（auto-merge） | `pr-ci-status-comment.yml` | 条件成立時に auto-merge を自動有効化し、人手マージを省略（任意） |
+| トレース適合性 | `spec-generate-model.yml` | KvOnce trace conformance と `KvOnce Trace Validation` check を出力 |
 | 形式検証（opt-in） | `formal-verify.yml` | `run-formal` ラベル/dispatchで重い検証を実行 |
 | 形式集約 | `formal-aggregate.yml` | formal出力をPRコメント向けに集約 |
 | セキュリティ | `security.yml`, `sbom-generation.yml` | 依存・脆弱性・SBOM運用 |
@@ -90,6 +93,8 @@ This document captures the implementation-aligned architecture of `ae-framework`
 補足:
 - `formal-verify.yml` は non-blocking 設計。必要時のみ `enforce-formal` で Apalache の `ran/ok` をゲート化。
 - `policy-gate.yml` の approval 評価は `AE_REVIEW_TOPOLOGY` / `AE_POLICY_MIN_HUMAN_APPROVALS` で切替可能。
+- `policy-gate.yml` は `policy/risk-policy.yml` の `required_checks` と `gate_checks` を評価し、`run-trace` ラベルでは `trace-conformance` / `KvOnce Trace Validation` の完了を監視します。
+- `codex-autopilot-lane.yml` は non-suggestion 指摘を fail-closed で扱い、`AE_AUTOPILOT_ACTIONABLE_COMMAND` 設定時のみ自動処理へ進みます。
 
 ## 5. 形式検証スタック（拡張後）
 
@@ -136,6 +141,9 @@ CI pin（再現性）:
 | CSP詳細 | `artifacts/hermetic-reports/formal/cspx-result.json` |
 | Apalache要約 | `artifacts/hermetic-reports/formal/apalache-summary.json` |
 | PR向け形式集約 | `artifacts/formal/formal-aggregate.json`, `artifacts/formal/formal-aggregate.md` |
+| Policy Gate要約 | `artifacts/ci/policy-gate-summary.json`, `artifacts/ci/policy-gate-summary.md` |
+| Risk label要約 | `artifacts/ci/risk-labeler-summary.json`, `artifacts/ci/risk-labeler-summary.md` |
+| Trace検証成果物 | `artifacts/kvonce-trace-summary.json`, `artifacts/kvonce-trace-envelope.json`, `artifacts/automation/kvonce-trace-validation-report.json` |
 
 ## 7. 運用開始の最短導線
 
@@ -150,9 +158,12 @@ CI pin（再現性）:
    - `pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck`
    - `artifacts/hermetic-reports/formal/csp-summary.json` を確認
 4. PR運用:
-   - 必要時に `run-formal` ラベルを付与
-   - 集約結果を PR コメントと artifacts で確認
-5. リリース運用:
+   - `verify-lite` / `policy-gate` / `gate` の required checks を green にする
+   - `autopilot:on` を使う場合は `AE_CODEX_AUTOPILOT_ENABLED=1` と必要変数を設定し、`<!-- AE-CODEX-AUTOPILOT v1 -->` コメントで停止理由を確認
+5. 追加検証（必要時）:
+   - `run-formal` ラベルで重い形式検証を実行
+   - `run-trace` ラベルで trace 連動の gate 条件を満たす
+6. リリース運用:
    - `gh workflow run post-deploy-verify.yml ...` で post-deploy verify を実行
    - `artifacts/release/post-deploy-verify.json` を判定証跡として保管
 
@@ -167,15 +178,20 @@ CI pin（再現性）:
 - CSP詳細: `docs/quality/formal-csp.md`
 - 全ドキュメント索引: `docs/README.md`
 
-## 9. 更新サマリ（2026-03-01）
+## 9. 更新サマリ（2026-03-03）
 
 更新内容:
-- 必須ゲートに `policy-gate.yml` を追加し、review topology 切替運用を反映
-- リリース検証導線（`post-deploy-verify.yml` / `release verify`）を全体像へ統合
-- PR自動化/リリース運用ドキュメントへの一次参照を明示
+- `codex-autopilot-lane.yml` の収束フロー（actionable非suggestion対応を含む）を CIモデルへ統合
+- `policy/risk-policy.yml` の trace-required 条件（`run-trace` + gate_checks）を明示
+- 主要成果物に policy/risk/trace の実運用ファイルを追加
+- PR運用導線を required checks 起点に更新
 
 一次情報（実装ソース）:
 - `.github/workflows/policy-gate.yml`
+- `.github/workflows/codex-autopilot-lane.yml`
+- `.github/workflows/spec-generate-model.yml`
+- `policy/risk-policy.yml`
+- `scripts/ci/codex-autopilot-lane.mjs`
 - `.github/workflows/post-deploy-verify.yml`
 - `scripts/ci/lib/automation-config.mjs`
 - `src/cli/release-cli.ts`
