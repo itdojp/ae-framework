@@ -57,11 +57,14 @@
     "targetState": {
       "type": "string",
       "enum": [
+        "draft",
+        "ready_for_review",
         "review_feedback_pending",
         "action_execution",
         "gate_recheck",
         "merge_eligible",
-        "blocked"
+        "blocked",
+        "merged"
       ]
     },
     "tasks": {

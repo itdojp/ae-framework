@@ -142,6 +142,7 @@ CI pin（再現性）:
 | Apalache要約 | `artifacts/hermetic-reports/formal/apalache-summary.json` |
 | PR向け形式集約 | `artifacts/formal/formal-aggregate.json`, `artifacts/formal/formal-aggregate.md` |
 | Policy Gate要約 | `artifacts/ci/policy-gate-summary.json`, `artifacts/ci/policy-gate-summary.md` |
+| Autopilot契約成果物 | `artifacts/ci/pr-state-v1.json`, `artifacts/ci/execution-plan-v1.json` |
 | Risk label要約 | `artifacts/ci/risk-labeler-summary.json`, `artifacts/ci/risk-labeler-summary.md` |
 | Trace検証成果物 | `artifacts/kvonce-trace-summary.json`, `artifacts/kvonce-trace-envelope.json`, `artifacts/automation/kvonce-trace-validation-report.json` |
 
