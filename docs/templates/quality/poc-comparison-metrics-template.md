@@ -100,7 +100,7 @@
 
 ## 7. 実行コマンドと証跡リンク
 
-```bash
+```text
 # 例: 計測コマンド
 pnpm run <benchmark:ts>
 pnpm run <benchmark:go>
