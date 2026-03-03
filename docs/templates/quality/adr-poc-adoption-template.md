@@ -37,7 +37,7 @@
 | 性能 |  |  |  | p95<=0.85, throughput>=1.20 | Pass/Fail |
 | 再現性 |  |  |  | CV<=0.05, checksum一致=100% | Pass/Fail |
 | 実装コスト |  |  |  | 合計<=15人日, 再現<=45分 | Pass/Fail |
-| 運用差分 |  |  |  | CI増分<=15%, Critical=0 | Pass/Fail |
+| 運用差分 |  |  |  | CI増分<=15%, 監視欠落=0, Critical=0 | Pass/Fail |
 | 撤収条件 |  |  |  | 該当なし | Pass/Fail |
 
 ## 5. 判定

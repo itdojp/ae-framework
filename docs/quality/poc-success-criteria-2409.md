@@ -15,7 +15,9 @@
 - 反復回数: 各実装・各シナリオでウォームアップ2回 + 本計測10回。
 - 計測値: `throughput(req/s)`, `p95 latency(ms)`, `error rate(%)`, `peak RSS(MB)`, `cold start(ms)`。
 - 集計方法: 中央値（median）を主指標、ばらつきは `CV = stddev / mean` で算出。
-- ベースライン比: `ratio = candidate / ts_baseline`、改善率は `improvement = (1 - ratio) * 100`。
+- ベースライン比: `ratio = candidate / ts_baseline`。
+  - latency改善率（小さいほど良い）: `latency_improvement = (1 - ratio) * 100`
+  - throughput改善率（大きいほど良い）: `throughput_improvement = (ratio - 1) * 100`
 
 ## 2. 成功基準（定量・判定可能）
 
