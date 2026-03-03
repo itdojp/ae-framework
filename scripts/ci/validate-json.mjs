@@ -155,6 +155,11 @@ const checks = [
     schema: 'schema/release-policy.schema.json',
     fixtures: ['fixtures/release/sample.release-policy.json', 'policy/release-policy.yml'],
     label: 'Release policy schema validation'
+  },
+  {
+    schema: 'schema/policy-gate-summary-v1.schema.json',
+    fixtures: ['fixtures/policy-gate/sample.policy-gate-summary-v1.json'],
+    label: 'Policy gate summary v1 schema validation'
   }
 ];
 

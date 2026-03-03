@@ -56,6 +56,7 @@
 - `schema/conformance-verify-result.schema.json`
 - `schema/issue-traceability-matrix.schema.json`
 - `schema/pr-state-v1.schema.json`
+- `schema/policy-gate-summary-v1.schema.json`
 - `schema/quality-report.schema.json`
 - `schema/trace-validation.schema.json`
 - `schema/verify-profile-summary.schema.json`
@@ -95,6 +96,7 @@
 | `artifacts/observability/trace-bundle.json` | `schema/trace-bundle.schema.json` | `src/cli/conformance-cli.ts` (`ae conformance ingest`) | `src/cli/conformance-cli.ts` (`ae conformance verify --trace-bundle`) |
 | `artifacts/hermetic-reports/trace/**/kvonce-validation.json` | `schema/trace-validation.schema.json` | `scripts/trace/run-kvonce-conformance.sh` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/render-trace-summary.mjs` |
 | `artifacts/change-package/change-package.json` | `schema/change-package.schema.json` | `scripts/change-package/generate.mjs` | `scripts/change-package/validate.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
+| `artifacts/ci/policy-gate-summary.json` | `schema/policy-gate-summary-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/validate-policy-gate-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/ci/pr-state-v1.json` | `schema/pr-state-v1.schema.json` | `scripts/ci/codex-autopilot-lane.mjs` | `scripts/ci/validate-json.mjs`, `docs/ci/codex-autopilot-lane.md` |
 | `artifacts/ci/execution-plan-v1.json` | `schema/execution-plan-v1.schema.json` | `scripts/ci/codex-autopilot-lane.mjs` | `scripts/ci/validate-json.mjs`, `docs/ci/codex-autopilot-lane.md` |
 

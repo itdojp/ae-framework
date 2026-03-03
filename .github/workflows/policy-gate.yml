@@ -107,6 +107,13 @@ jobs:
           PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
         run: node scripts/ci/policy-gate.mjs
 
+      - name: Validate policy-gate summary schema
+        if: ${{ steps.pr.outputs.skip != 'true' }}
+        run: |
+          node scripts/ci/validate-policy-gate-summary.mjs \
+            artifacts/ci/policy-gate-summary.json \
+            schema/policy-gate-summary-v1.schema.json
+
       - name: Upload policy artifacts
         if: always()
         uses: actions/upload-artifact@v4
