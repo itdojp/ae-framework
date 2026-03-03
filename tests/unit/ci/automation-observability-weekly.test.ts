@@ -423,6 +423,8 @@ describe('automation-observability-weekly', () => {
     });
 
     expect(lines.some((line) => line.includes('blockedRate: n/a (no reports in this period)'))).toBe(true);
+    expect(lines.some((line) => line.includes('reasonCode coverage (failures): n/a'))).toBe(true);
+    expect(lines.some((line) => line.includes('reasonCode coverage (failures): n/a%'))).toBe(false);
     expect(lines.some((line) => line.includes('(0/0)'))).toBe(false);
   });
 });

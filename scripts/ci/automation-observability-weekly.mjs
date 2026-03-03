@@ -651,6 +651,9 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
   const blockedRateLine = summary.totalReports > 0
     ? `- blockedRate: ${summary.blockedRatePercent ?? 'n/a'}% (${blockedCount}/${summary.totalReports})`
     : '- blockedRate: n/a (no reports in this period)';
+  const reasonCodeCoverageLine = Number.isFinite(summary.reasonCodeCoveragePercent)
+    ? `- reasonCode coverage (failures): ${summary.reasonCodeCoveragePercent}%`
+    : '- reasonCode coverage (failures): n/a';
   const lines = [
     '## Automation Observability Weekly Summary',
     `- generatedAt: ${new Date().toISOString()}`,
@@ -661,7 +664,7 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
     `- scannedRuns: ${runStats.scannedRuns}`,
     `- reports: ${summary.totalReports}`,
     `- failures(error/blocked): ${summary.totalFailures}`,
-    `- reasonCode coverage (failures): ${summary.reasonCodeCoveragePercent ?? 'n/a'}%`,
+    reasonCodeCoverageLine,
     blockedRateLine,
     `- maxConsecutiveFailures: ${summary.maxConsecutiveFailures}`,
     `- convergence rounds (overall): count=${summary.convergenceRounds?.overall?.count ?? 0}, mean=${summary.convergenceRounds?.overall?.meanRounds ?? 'n/a'}, p95=${summary.convergenceRounds?.overall?.p95Rounds ?? 'n/a'}, max=${summary.convergenceRounds?.overall?.maxRounds ?? 'n/a'}`,
