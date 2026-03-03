@@ -18,6 +18,8 @@ Repository Variables:
 - `AE_AUTOPILOT_WAIT_STRATEGY`（既定 `fixed`。`fixed` / `exponential`）
 - `AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS`（既定 `AE_AUTOPILOT_ROUND_WAIT_SECONDS` と同値）
 - `AE_AUTOPILOT_DRY_RUN=1` で副作用なし検証
+- `AE_AUTOPILOT_ACTIONABLE_COMMAND`（任意）: actionable non-suggestion 指摘を処理する実行コマンド
+- `AE_AUTOPILOT_ACTIONABLE_DRY_RUN`（任意）: actionable 実行のみ dry-run を個別制御（未設定時は `AE_AUTOPILOT_DRY_RUN` に追従）
 - `AE_AUTOPILOT_AUTO_LABEL=1` のとき、Risk Policy 由来の不足ラベルを自動付与（既定は `0`）
 - `AE_AUTOPILOT_RISK_POLICY_PATH`（既定 `policy/risk-policy.yml`）
 
@@ -46,8 +48,10 @@ Repository Variables:
    - 既定 (`0`) は不足ラベルを reason にして停止
 3. `mergeState=BEHIND` なら `PR Maintenance` の update-branch を dispatch
 4. 未解決の AI review thread を走査し、`suggestion` ではない actionable 指摘を検出した場合:
-   - fail-closed で `status:blocked` に遷移（自動修正は行わない）
-   - コメントに actionable task preview（最大3件）を出力
+   - `AE_AUTOPILOT_ACTIONABLE_COMMAND` が設定されていれば実行し、結果を集計
+   - 失敗（`failed > 0`）は fail-closed で `status:blocked`
+   - active実行で `skipped > 0` は `actionable execution incomplete` として fail-closed
+   - 成功時は再評価へ進行
 5. Copilot未解決スレッドまたは gate failure/missing の場合:
    - `copilot-auto-fix.mjs` を force mode で実行
    - `copilot-review-gate.yml` を dispatch
@@ -60,6 +64,23 @@ PRコメント（upsert）:
   - `Blocked: <reason>`
   - `To unblock: <single action>`
 - 追加情報として `reason` / `actions` / `unblock` の詳細を続けて出力
+- actionable 実行結果は常に deterministic に出力
+  - `- execution-result: success|failed|skipped`
+  - `- actionable execution: <status> (attempted=..., succeeded=..., failed=..., skipped=...)`
+  - `- actionable-execution-preview:`（最大3件）
+
+### `AE_AUTOPILOT_ACTIONABLE_COMMAND` の入出力契約
+
+- 入力（環境変数）:
+  - `AE_ACTIONABLE_TASKS_JSON`（task配列を含むJSONファイル）
+  - `AE_ACTIONABLE_PR_NUMBER`
+  - `AE_ACTIONABLE_ROUND`
+- 期待する標準出力:
+  - JSON object: `{ "results": [{ "commentId": <number>, "status": "success|failed|skipped", "reason": "<optional>" }] }`
+- 判定:
+  - `failed > 0` は fail-closed
+  - active 実行で `skipped > 0` は fail-closed
+  - すべて `success` のときのみ次段へ進行
 
 No Human Bottleneck（Issue #2333）整合ポイント:
 - 停止時は必ず「理由」と「最小解除手順」を同時に出す（オープンエンド質問を禁止）
@@ -88,6 +109,8 @@ No Human Bottleneck（Issue #2333）整合ポイント:
 | `skip` + `draft PR` | Ready for review に変更して `/autopilot run` |
 | `blocked` + `missing policy labels: ...` | 不足ラベルを付与して `/autopilot run`（`AE_AUTOPILOT_AUTO_LABEL=1` なら自動付与） |
 | `blocked` + `actionable review tasks pending: <n>` | actionable 指摘に対応（または非適用理由を返信）して `/autopilot run` |
+| `blocked` + `actionable execution failed: <x>/<y> failed` | 実行結果を確認し、手動修正または `AE_AUTOPILOT_ACTIONABLE_COMMAND` を修正して `/autopilot run` |
+| `blocked` + `actionable execution incomplete: <x>/<y> skipped` | skip 理由を解消して再実行（または手動対応）後に `/autopilot run` |
 | `blocked` + `actionable review task scan truncated (pagination required)` | 未解決 AI review thread/comment を減らす（またはページング対応）後に `/autopilot run` |
 | `blocked` + `max rounds reached without convergence` | 進行中の checks/dispatch が収束するまで待機し、`/autopilot run` を再実行 |
 | `blocked` + `merge conflict` | update-branch または手動 rebase で衝突を解消して push 後に `/autopilot run` |

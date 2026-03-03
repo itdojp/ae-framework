@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   collectActionableTasksFromReviewThreads,
+  createEmptyActionableExecution,
   deriveBlockedSummary,
   deriveUnblockActions,
+  formatActionableExecutionLine,
   hasLabel,
   paginateGraphqlConnection,
   parseGateStatus,
+  summarizeActionableExecutionResults,
 } from '../../../scripts/ci/codex-autopilot-lane.mjs';
 import { toActorSet } from '../../../scripts/ci/lib/automation-guards.mjs';
 
@@ -105,6 +108,12 @@ describe('codex-autopilot-lane helpers', () => {
     expect(deriveUnblockActions('blocked', 'actionable review tasks pending: 2')).toEqual([
       'Address actionable non-suggestion review comments (or reply why not applicable), then rerun `/autopilot run`.',
     ]);
+    expect(deriveUnblockActions('blocked', 'actionable execution failed: 1/2 failed')).toEqual([
+      'Inspect actionable execution results, apply fixes (or adjust `AE_AUTOPILOT_ACTIONABLE_COMMAND`), then rerun `/autopilot run`.',
+    ]);
+    expect(deriveUnblockActions('blocked', 'actionable execution incomplete: 1/2 skipped')).toEqual([
+      'Resolve skipped actionable tasks manually (or update `AE_AUTOPILOT_ACTIONABLE_COMMAND`), then rerun `/autopilot run`.',
+    ]);
     expect(deriveUnblockActions('blocked', 'actionable review task scan truncated (pagination required)')).toEqual([
       'Reduce unresolved AI-review threads/comments (or implement pagination support), then rerun `/autopilot run`.',
     ]);
@@ -144,6 +153,32 @@ describe('codex-autopilot-lane helpers', () => {
       blockedLine: 'Blocked: merge conflict',
       unblockLine: 'To unblock: Rebase/update branch to resolve merge conflicts, then rerun `/autopilot run`.',
     });
+  });
+
+  it('formats actionable execution summary in deterministic order', () => {
+    expect(formatActionableExecutionLine(createEmptyActionableExecution())).toBe(
+      'skipped (attempted=0, succeeded=0, failed=0, skipped=0)',
+    );
+    expect(formatActionableExecutionLine({
+      status: 'failed',
+      attempted: 3,
+      succeeded: 1,
+      failed: 1,
+      skipped: 1,
+    })).toBe('failed (attempted=3, succeeded=1, failed=1, skipped=1)');
+  });
+
+  it('summarizes actionable execution preview deterministically', () => {
+    expect(summarizeActionableExecutionResults({
+      results: [
+        { commentId: 303, status: 'failed', reason: 'missing result' },
+        { commentId: 101, status: 'success', reason: '' },
+        { commentId: 202, status: 'skipped', reason: 'not applicable' },
+      ],
+    }, 2)).toEqual([
+      '1. comment=101 status=success',
+      '2. comment=202 status=skipped reason=not applicable',
+    ]);
   });
 
   it('collects actionable non-suggestion tasks from unresolved AI-review threads', () => {
