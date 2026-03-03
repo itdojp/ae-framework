@@ -18,7 +18,7 @@ async function withTempDir<T>(fn: (dir: string) => Promise<T>) {
 }
 
 describe('convert-otlp-kvonce CLI', () => {
-  it('converts OTLP spans to NDJSON with nested context preserved', async () => {
+  it('converts OTLP spans to NDJSON with stable common fields and nested context preserved', async () => {
     await withTempDir(async (dir) => {
       const inputPath = join(dir, 'input.json');
       const outputPath = join(dir, 'out.ndjson');
@@ -26,10 +26,14 @@ describe('convert-otlp-kvonce CLI', () => {
       const payload = {
         resourceSpans: [
           {
+            resource: {
+              attributes: [{ key: 'service.name', value: { stringValue: 'kvonce-service' } }]
+            },
             scopeSpans: [
               {
                 spans: [
                   {
+                    traceId: 'trace-001',
                     startTimeUnixNano: '1728000000000000000',
                     attributes: [
                       { key: 'kvonce.event.type', value: { stringValue: 'success' } },
@@ -72,6 +76,7 @@ describe('convert-otlp-kvonce CLI', () => {
                     ]
                   },
                   {
+                    traceId: 'trace-002',
                     startTimeUnixNano: '1728000005000000000',
                     attributes: [
                       { key: 'kvonce.event.type', value: { stringValue: 'failure' } },
@@ -98,7 +103,11 @@ describe('convert-otlp-kvonce CLI', () => {
         .map((line) => JSON.parse(line));
 
       expect(events).toHaveLength(2);
+      expect(Object.keys(events[0]).slice(0, 4)).toEqual(['traceId', 'timestamp', 'actor', 'event']);
       expect(events[0]).toMatchObject({
+        traceId: 'trace-001',
+        actor: 'kvonce-service',
+        event: 'success',
         type: 'success',
         key: 'alpha',
         value: 'v1',
@@ -111,10 +120,97 @@ describe('convert-otlp-kvonce CLI', () => {
         }
       });
       expect(events[1]).toMatchObject({
+        traceId: 'trace-002',
+        actor: 'kvonce-service',
+        event: 'failure',
         type: 'failure',
         key: 'beta',
         reason: 'duplicate',
         context: 'short'
+      });
+    });
+  });
+
+  it('applies actor and traceId fallback rules and keeps type compatibility', async () => {
+    await withTempDir(async (dir) => {
+      const inputPath = join(dir, 'input.json');
+      const outputPath = join(dir, 'out.ndjson');
+
+      const payload = {
+        resourceSpans: [
+          {
+            resource: {
+              attributes: [{ key: 'service.name', value: { stringValue: 'inventory-api' } }]
+            },
+            scopeSpans: [
+              {
+                spans: [
+                  {
+                    traceId: 'trace-explicit',
+                    startTimeUnixNano: '1728000010000000000',
+                    attributes: [
+                      { key: 'kvonce.event.type', value: { stringValue: 'retry' } },
+                      { key: 'kvonce.event.key', value: { stringValue: 'alpha' } },
+                      { key: 'kvonce.event.actor', value: { stringValue: 'worker-42' } },
+                      { key: 'kvonce.event.name', value: { stringValue: 'kvonce.retry.scheduled' } }
+                    ]
+                  },
+                  {
+                    startTimeUnixNano: '1728000011000000000',
+                    attributes: [
+                      { key: 'kvonce.event.type', value: { stringValue: 'failure' } },
+                      { key: 'kvonce.event.key', value: { stringValue: 'beta' } }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            scopeSpans: [
+              {
+                spans: [
+                  {
+                    startTimeUnixNano: '1728000012000000000',
+                    attributes: [
+                      { key: 'kvonce.event.type', value: { stringValue: 'success' } },
+                      { key: 'kvonce.event.key', value: { stringValue: 'gamma' } }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      };
+
+      await writeFile(inputPath, JSON.stringify(payload));
+      await execFileAsync('node', [scriptPath, '--input', inputPath, '--output', outputPath]);
+
+      const raw = await readFile(outputPath, 'utf8');
+      const events = raw
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line));
+
+      expect(events).toHaveLength(3);
+      expect(events[0]).toMatchObject({
+        traceId: 'trace-explicit',
+        actor: 'worker-42',
+        event: 'retry',
+        type: 'retry'
+      });
+      expect(events[1]).toMatchObject({
+        traceId: 'otlp-missing-traceid-r0-s0-p1',
+        actor: 'inventory-api',
+        event: 'failure',
+        type: 'failure'
+      });
+      expect(events[2]).toMatchObject({
+        traceId: 'otlp-missing-traceid-r1-s0-p0',
+        actor: 'unknown',
+        event: 'success',
+        type: 'success'
       });
     });
   });

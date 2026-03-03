@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -17,6 +17,23 @@ async function withTempDir<T>(fn: (dir: string) => Promise<T>) {
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+}
+
+async function listArtifacts(rootDir: string, current = ''): Promise<string[]> {
+  const absolute = current ? join(rootDir, current) : rootDir;
+  const entries = await readdir(absolute, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const rel = current ? join(current, entry.name) : entry.name;
+    if (entry.isDirectory()) {
+      files.push(...(await listArtifacts(rootDir, rel)));
+      continue;
+    }
+    if (entry.isFile()) {
+      files.push(rel.replaceAll('\\', '/'));
+    }
+  }
+  return files.sort();
 }
 
 describe('run-kvonce-conformance.sh', () => {
@@ -49,6 +66,26 @@ describe('run-kvonce-conformance.sh', () => {
 
       const validation = JSON.parse(await readFile(join(outputDir, 'kvonce-validation.json'), 'utf8'));
       expect(validation.valid).toBe(true);
+    });
+  });
+
+  it('emits the same artifact set for NDJSON and OTLP paths', async () => {
+    await withTempDir(async (dir) => {
+      const ndjsonOutputDir = join(dir, 'ndjson');
+      const otlpOutputDir = join(dir, 'otlp');
+      await execFileAsync('bash', [scriptPath, '--input', 'samples/trace/kvonce-sample.ndjson', '--format', 'ndjson', '--output-dir', ndjsonOutputDir]);
+      await execFileAsync('bash', [scriptPath, '--input', 'samples/trace/kvonce-otlp.json', '--format', 'otlp', '--output-dir', otlpOutputDir]);
+
+      const ndjsonArtifacts = await listArtifacts(ndjsonOutputDir);
+      const otlpArtifacts = await listArtifacts(otlpOutputDir);
+
+      expect(ndjsonArtifacts).toEqual([
+        'kvonce-events.ndjson',
+        'kvonce-projection.json',
+        'kvonce-validation.json',
+        'projected/kvonce-state-sequence.json',
+      ]);
+      expect(otlpArtifacts).toEqual(ndjsonArtifacts);
     });
   });
 
