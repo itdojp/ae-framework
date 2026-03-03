@@ -20,13 +20,21 @@ const FAIL_CONCLUSIONS = new Set([
 ]);
 const SUCCESS_CONCLUSIONS = new Set(['SUCCESS']);
 const SKIP_CONCLUSIONS = new Set(['SKIPPED', 'NEUTRAL']);
+const ENFORCE_ARTIFACTS_STRICT_COMMAND = [
+  'bash scripts/trace/run-kvonce-conformance.sh --input samples/trace/kvonce-sample.ndjson --format ndjson --output-dir artifacts/hermetic-reports/trace',
+  'node scripts/ci/write-verify-lite-summary.mjs',
+  'node scripts/trace/create-report-envelope.mjs artifacts/verify-lite/verify-lite-run-summary.json artifacts/report-envelope.json',
+  'mkdir -p artifacts/trace',
+  'cp artifacts/report-envelope.json artifacts/trace/report-envelope.json',
+  'pnpm run artifacts:validate -- --strict=true',
+].join(' && ');
 
 const GATE_DEFINITIONS = [
   {
     id: 'artifactsSchema',
     title: 'Artifacts schema',
     recommendedLabels: ['enforce-artifacts'],
-    defaultCommands: ['pnpm run artifacts:validate -- --strict=true'],
+    defaultCommands: [ENFORCE_ARTIFACTS_STRICT_COMMAND],
     matcher: (check) => (
       /^validate-artifacts\s*\//i.test(check.name)
       || /validate-artifacts-ajv/i.test(check.workflowName)

@@ -27,7 +27,7 @@
 
 | Category | 判定起点 | 典型ラベル | 主な再現入口 |
 | --- | --- | --- | --- |
-| `CONTRACT_SCHEMA` | `artifactsSchema=fail/warn` | `enforce-artifacts` | `pnpm run artifacts:validate -- --strict=true` |
+| `CONTRACT_SCHEMA` | `artifactsSchema=fail/warn` | `enforce-artifacts` | `bash scripts/trace/run-kvonce-conformance.sh --input samples/trace/kvonce-sample.ndjson --format ndjson --output-dir artifacts/hermetic-reports/trace && node scripts/ci/write-verify-lite-summary.mjs && node scripts/trace/create-report-envelope.mjs artifacts/verify-lite/verify-lite-run-summary.json artifacts/report-envelope.json && mkdir -p artifacts/trace && cp artifacts/report-envelope.json artifacts/trace/report-envelope.json && pnpm run artifacts:validate -- --strict=true` |
 | `DETERMINISTIC_TEST_FAIL` | `testingHarness=fail` | `enforce-testing` | `gh workflow run testing-ddd-scripts.yml --repo <owner/repo>` |
 | `FLAKE_SUSPECTED` | `testingHarness=warn`（pending/inconclusive） | `enforce-testing` | `trace:<id>` + `test:replay:focus` |
 | `BOUNDARY_VIOLATION` | `contextPack=fail/warn` | `enforce-context-pack` | `pnpm run context-pack:deps` |
@@ -38,6 +38,7 @@
 補足:
 - `severity=critical` は、いずれかのゲートが `fail` の場合に設定。
 - `severity=warn` は、`fail` が無く `warn` が1件以上ある場合に設定。
+- `enforce-artifacts` の strict 再現では、`artifacts:validate` 実行前に trace/verify-lite artifacts を生成する。
 
 ## 運用
 

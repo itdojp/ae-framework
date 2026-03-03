@@ -148,6 +148,13 @@ describe('build-harness-health', () => {
       ),
     ).toBe(true);
     expect(report.reproducibleHints.some((hint) => hint.seed === 20260226)).toBe(true);
+    expect(
+      report.reproducibleHints.some(
+        (hint) => hint.gate === 'artifactsSchema'
+          && hint.command?.includes('scripts/trace/run-kvonce-conformance.sh')
+          && hint.command?.includes('pnpm run artifacts:validate -- --strict=true'),
+      ),
+    ).toBe(true);
   });
 
   it('downgrades to warn when PR check loading failed and all gates are skipped', () => {

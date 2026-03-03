@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { validateArtifactsAjv } from '../../../scripts/ci/validate-artifacts-ajv.mjs';
+import { DEFAULT_RULES, validateArtifactsAjv } from '../../../scripts/ci/validate-artifacts-ajv.mjs';
 
 function withTempDir(fn: (dir: string) => void): void {
   const dir = mkdtempSync(path.join(tmpdir(), 'ae-validate-artifacts-ajv-'));
@@ -205,5 +205,58 @@ describe('validate-artifacts-ajv', () => {
       expect(result.summary.rules[0]?.skipped).toBe(true);
       expect(result.summary.rules[0]?.skipReason).toBe('no files matched');
     });
+  });
+
+  it('requiredWhenStrict rule fails only in strict mode when files are missing', () => {
+    withTempDir((rootDir) => {
+      writeJson(path.join(rootDir, 'schema', 'required.schema.json'), {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        $id: 'https://example.test/schema/required.schema.json',
+        type: 'object',
+        properties: {
+          ok: { type: 'boolean' },
+        },
+        additionalProperties: false,
+      });
+
+      const sharedRule = {
+        id: 'required-strict-only',
+        schemaPath: 'schema/required.schema.json',
+        patterns: ['artifacts/required-target.json'],
+        requiredWhenStrict: true,
+      };
+
+      const nonStrictResult = validateArtifactsAjv({
+        rootDir,
+        strict: false,
+        rules: [sharedRule],
+      });
+      expect(nonStrictResult.exitCode).toBe(0);
+      expect(nonStrictResult.errors.length).toBe(0);
+      expect(nonStrictResult.summary.rules[0]?.skipped).toBe(true);
+      expect(nonStrictResult.summary.rules[0]?.ruleError).toBeNull();
+
+      const strictResult = validateArtifactsAjv({
+        rootDir,
+        strict: true,
+        rules: [sharedRule],
+      });
+      expect(strictResult.exitCode).toBe(1);
+      expect(strictResult.errors.some((error) => error.keyword === 'required_when_strict')).toBe(true);
+      expect(strictResult.summary.rules[0]?.ruleError).toBe('required_when_strict');
+      expect(strictResult.summary.rules[0]?.skipped).toBe(false);
+    });
+  });
+
+  it('default rules include strict-required trace validation and trace envelope checks', () => {
+    const traceValidationRule = DEFAULT_RULES.find((rule) => rule.id === 'trace-validation');
+    expect(traceValidationRule).toBeDefined();
+    expect(traceValidationRule?.requiredWhenStrict).toBe(true);
+    expect(traceValidationRule?.schemaPath).toBe('schema/trace-validation.schema.json');
+
+    const traceEnvelopeRule = DEFAULT_RULES.find((rule) => rule.id === 'trace-envelope');
+    expect(traceEnvelopeRule).toBeDefined();
+    expect(traceEnvelopeRule?.requiredWhenStrict).toBe(true);
+    expect(traceEnvelopeRule?.patterns).toContain('artifacts/trace/report-envelope.json');
   });
 });

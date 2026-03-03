@@ -43,7 +43,7 @@ The CI Extended workflow restores cached heavy test artifacts from `.cache/test-
 
 Workflows
 - policy-gate.yml: runs `risk-labeler` + `policy-gate`; enforces low/high risk policy, approval, required labels, and label-gated check results
-- validate-artifacts-ajv.yml: reads `enforce-artifacts` and passes strict mode to `pnpm run artifacts:validate`
+- validate-artifacts-ajv.yml: reads `enforce-artifacts`; strict の場合は trace/verify-lite artifacts を先に生成してから `pnpm run artifacts:validate` を実行
 - testing-ddd-scripts.yml: reads `enforce-testing` and makes property/replay/BDD lint blocking only in strict mode; reads `trace:<id>` to focus runs
 - context-pack-quality-gate.yml: reads `enforce-context-pack`; runs `context-pack:deps` + `context-pack:e2e-fixture` in report-only/blocking mode
 - pr-ci-status-comment.yml: reads `pr-summary:detailed` to switch summary mode; also generates `artifacts/ci/harness-health.{json,md}` and appends Harness Health section to PR summary
@@ -58,6 +58,15 @@ Artifacts
   - `artifacts/schema-validation/summary.md`
   - `artifacts/schema-validation/errors.json`
 - `enforce-artifacts` が付与されると strict モード（スキーマ違反で exit 1）になります。
+- strict モードでは事前に以下を生成してから検証します。
+  - `artifacts/hermetic-reports/trace/kvonce-events.ndjson`
+  - `artifacts/hermetic-reports/trace/kvonce-projection.json`
+  - `artifacts/hermetic-reports/trace/kvonce-validation.json`
+  - `artifacts/hermetic-reports/trace/projected/kvonce-state-sequence.json`
+  - `artifacts/verify-lite/verify-lite-run-summary.json`
+  - `artifacts/report-envelope.json`
+  - `artifacts/trace/report-envelope.json`
+- ラベル未付与（non-strict）時は従来どおり軽量に `artifacts:validate` のみを実行します。
 
 Testing reproducibility artifacts
 - `artifacts/properties/summary.json`
