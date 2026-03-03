@@ -162,7 +162,8 @@ jobs:
         run: |
           node scripts/ci/validate-report-envelope.mjs \
             artifacts/report-envelope.json \
-            schema/envelope.schema.json
+            schema/envelope.schema.json \
+            --dual
       - name: Check required artifacts (required)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         env:
