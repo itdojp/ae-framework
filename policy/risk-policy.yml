@@ -9,6 +9,7 @@ labels:
   optional_gates:
     - "run-security"
     - "run-ci-extended"
+    - "run-trace"
     - "enforce-artifacts"
     - "enforce-testing"
     - "enforce-context-pack"
@@ -97,6 +98,15 @@ label_requirements:
       - ".github/workflows/context-pack-quality-gate.yml"
     require_labels:
       - "enforce-context-pack"
+  - id: "trace-validation"
+    when_any_changed:
+      - ".github/workflows/spec-generate-model.yml"
+      - "scripts/trace/**"
+      - "scripts/pipelines/run-trace-conformance.mjs"
+      - "tests/unit/trace/**"
+      - "tests/unit/pipelines/run-trace-conformance.integration.test.ts"
+    require_labels:
+      - "run-trace"
 
 gate_checks:
   run-security:
@@ -112,3 +122,6 @@ gate_checks:
     - "testing-ddd"
   enforce-context-pack:
     - "context-pack-e2e"
+  run-trace:
+    - "trace-conformance"
+    - "KvOnce Trace Validation"

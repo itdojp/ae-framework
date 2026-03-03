@@ -9,7 +9,7 @@
 PR ラベルでゲートを段階的に強化するための方針です（既定は非ブロッキング）。
 - `risk:low`, `risk:high`
 - `enforce-artifacts`, `enforce-testing`, `enforce-coverage`, `enforce-context-pack`, `coverage:<pct>`, `trace:<id>`, `pr-summary:detailed`
-- `run-ci-extended`, `run-integration`, `run-property`, `run-mbt`, `run-mutation`
+- `run-ci-extended`, `run-integration`, `run-property`, `run-mbt`, `run-mutation`, `run-trace`
 - オプトイン系: `run-security`（Security/SBOM）、`run-hermetic`（Hermetic CI）、`run-qa`（QA bench）
 - 各ワークフローがラベルを読み取り、`continue-on-error` 等を切り替え
 - required checks は `verify-lite` + `policy-gate` を想定（`policy/risk-policy.yml` が一次情報）
@@ -34,6 +34,7 @@ Labels
 - `run-property`: run only the property harness portion of CI Extended
 - `run-mbt`: run only the MBT smoke (`test:mbt:ci`) portion of CI Extended
 - `run-mutation`: run only the mutation auto diff step of CI Extended
+- `run-trace`: trigger trace gate checks (`trace-conformance`, `KvOnce Trace Validation`) on PR context
 - Opt-in (heavy/conditional)
   - `run-security`: trigger Security/SBOM on PRs when deps/crypto/security code change or before release (otherwise weekly cron covers baseline)
   - `run-hermetic`: run Hermetic CI on PRs to validate determinism/network isolation when needed
@@ -46,6 +47,7 @@ Workflows
 - validate-artifacts-ajv.yml: reads `enforce-artifacts`; strict の場合は trace/verify-lite artifacts を先に生成してから `pnpm run artifacts:validate` を実行
 - testing-ddd-scripts.yml: reads `enforce-testing` and makes property/replay/BDD lint blocking only in strict mode; reads `trace:<id>` to focus runs
 - context-pack-quality-gate.yml: reads `enforce-context-pack`; runs `context-pack:deps` + `context-pack:e2e-fixture` in report-only/blocking mode
+- spec-generate-model.yml: publishes `KvOnce Trace Validation` (non-fork PR) and always emits `trace-conformance`; `policy-gate` treats these checks as blocking when `run-trace` is required on high-risk PRs
 - pr-ci-status-comment.yml: reads `pr-summary:detailed` to switch summary mode; also generates `artifacts/ci/harness-health.{json,md}` and appends Harness Health section to PR summary
 
 Harness Health recommendation
