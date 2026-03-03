@@ -61,6 +61,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Maintenance operations: `docs/maintenance/branch-cleanup-runbook.md`
 - TODO triage operations: `docs/maintenance/todo-triage-runbook.md`
 - Current architecture snapshot: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
+- Zero-based ideal redesign blueprint: `docs/architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - Product fit (what to input/output, which tools to use): `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - PR automation (Copilot -> auto-fix -> auto-merge): `docs/ci/pr-automation.md`
 - Release engineering (release verify / post-deploy): `docs/operate/release-engineering.md`
@@ -123,6 +124,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 ### ドキュメントへの入り口
 - 全体概要: `docs/README.md`, `docs/project-organization.md`
 - 現行アーキテクチャ全体像: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
+- ゼロベース再設計の理想像: `docs/architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - 適用対象/入力/出力/ツール適性: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - PR自動化（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
 - リリース運用（release verify / post-deploy verify）: `docs/operate/release-engineering.md`
