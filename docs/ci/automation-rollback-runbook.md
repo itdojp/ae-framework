@@ -99,12 +99,23 @@ gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:block
 3. checks が落ち着いた後に `/autopilot run` を再実行
 4. 同症状が連続する場合は `write` で一時停止し、`docs/ci/codex-autopilot-lane.md` の停止理由表に従って要因を切り分け
 
+### 4.5 trace required rollback（`KvOnce Trace Validation` が merge を継続阻害）
+
+1. `automation-observability` の集計値を確認し、`docs/ci/trace-required-criteria.md` のロールバック条件に該当するか判定
+2. branch protection preset を `branch-protection.main.verify-lite-noreview.json` へ一時切り戻し（`KvOnce Trace Validation` を Required から外す）
+   - Actions: `Admin — Apply Branch Protection Preset`
+   - preset: `branch-protection.main.verify-lite-noreview.json`
+   - branch: `main`
+3. PR 側では `Spec Generate & Model Tests` の失敗要因（OTLP payload / validation issues / check publish）を修正し、`KvOnce Trace Validation` 単体で再緑化
+4. 28日観測で Go 基準を再充足した後、`branch-protection.main.verify-lite-trace-noreview.json` を再適用
+
 ## 5. 復帰方針
 
 - 緊急停止解除は `unfreeze` を先に実行
 - `write` は `unfreeze` で即時復帰可能（個別トグルは変更しない）
 - `freeze` は `unfreeze` 後も個別トグルが `0` のため、必要変数を明示的に戻して復帰する
 - 復帰判断では `docs/ci/automation-slo-mttr.md` の MTTR 目標と `automation-observability-weekly` の実測値を確認する
+- trace Required化運用では `docs/ci/trace-required-criteria.md` の Go/No-Go 基準を満たした時のみ preset を昇格する
 - その後、プロジェクト方針に沿って個別Variablesを段階復帰
   - 例: `AE_AUTOMATION_PROFILE=conservative` を基準に再設定
 - 復帰直後は `PR Maintenance` / `Copilot Review Gate` の run を監視し、再発時は `write` へ戻す
@@ -115,5 +126,6 @@ gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:block
 - `docs/ci/ci-troubleshooting-guide.md`
 - `docs/ci/automation-alerting.md`
 - `docs/ci/automation-slo-mttr.md`
+- `docs/ci/trace-required-criteria.md`
 - `docs/ci/automation-rollback-validation-2026-02-14.md`
 - `docs/internal/autopilot-operations.md`

@@ -8,6 +8,7 @@ PR自動化系スクリプトの実行結果は、共通フォーマット `ae-a
 - `scripts/ci/codex-autopilot-lane.mjs`
 - `scripts/ci/auto-merge-enabler.mjs`
 - `scripts/ci/copilot-auto-fix.mjs`
+- `.github/workflows/spec-generate-model.yml`（`kvonce-trace-validation` report emit）
 
 ## 1. 出力先
 
@@ -144,3 +145,18 @@ gh workflow run "Automation Observability Weekly" \
 ```
 
 通知条件・テンプレート・抑止ルールの詳細は `docs/ci/automation-alerting.md` を参照してください。
+
+## 8. trace Required化向け集計（#2394）
+
+`KvOnce Trace Validation` の Required 化判定に使う場合は、対象 workflow を `Spec Generate & Model Tests` に絞って集計する。
+
+```bash
+AE_AUTOMATION_REPOSITORY=itdojp/ae-framework \
+AE_AUTOMATION_OBSERVABILITY_WORKFLOWS='Spec Generate & Model Tests' \
+AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS=28 \
+AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW=120 \
+AE_AUTOMATION_OBSERVABILITY_OUTPUT=artifacts/automation/trace-required-summary.json \
+node scripts/ci/automation-observability-weekly.mjs
+```
+
+判定基準（期間/しきい値/Go-NoGo）は `docs/ci/trace-required-criteria.md` を参照。

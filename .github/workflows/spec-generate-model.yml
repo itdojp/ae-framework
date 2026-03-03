@@ -13,13 +13,7 @@ on:
         description: 'HTTP/S3 URL to download kvonce OTLP payload JSON'
         required: false
   pull_request:
-    paths:
-      - 'spec/**'
-      - 'templates/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'artifacts/**'
-      - '.github/workflows/spec-generate-model.yml'
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -334,6 +328,67 @@ jobs:
           node ./scripts/ci/validate-report-envelope.mjs \
             artifacts/kvonce-trace-envelope.json \
             schema/envelope.schema.json
+      - name: Emit trace automation report
+        if: always()
+        env:
+          AE_AUTOMATION_REPORT_FILE: artifacts/automation/kvonce-trace-validation-report.json
+          TRACE_SUMMARY_OUTCOME: ${{ steps.trace_summary.outcome || 'unknown' }}
+          VALID_OTLP: ${{ steps.trace_summary.outputs.valid_otlp || 'missing' }}
+          VALID_NDJSON: ${{ steps.trace_summary.outputs.valid_ndjson || 'missing' }}
+          ISSUES_OTLP: ${{ steps.trace_summary.outputs.issues_otlp || '' }}
+          ISSUES_NDJSON: ${{ steps.trace_summary.outputs.issues_ndjson || '' }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { emitAutomationReport } from './scripts/ci/lib/automation-report.mjs';
+
+          const toInt = (value) => {
+            if (value === null || value === undefined) {
+              return null;
+            }
+            const str = String(value).trim();
+            if (str === '') {
+              return null;
+            }
+            const parsed = Number.parseInt(str, 10);
+            return Number.isFinite(parsed) ? parsed : null;
+          };
+
+          const outcome = String(process.env.TRACE_SUMMARY_OUTCOME || '').trim();
+          const validOtlp = String(process.env.VALID_OTLP || 'missing').trim();
+          const validNdjson = String(process.env.VALID_NDJSON || 'missing').trim();
+
+          let status = 'error';
+          let reason = 'trace summary unavailable';
+          if (outcome === 'success' && validOtlp === 'true' && validNdjson === 'true') {
+            status = 'resolved';
+            reason = 'trace validation passed';
+          } else if (validOtlp === 'false' || validNdjson === 'false' || outcome === 'failure') {
+            status = 'error';
+            reason = 'trace validation failed';
+          } else if (outcome === 'cancelled') {
+            status = 'error';
+            reason = 'trace validation cancelled';
+          } else if (validOtlp === 'missing' && validNdjson === 'missing') {
+            status = 'error';
+            reason = 'trace validation report missing';
+          }
+
+          emitAutomationReport({
+            tool: 'kvonce-trace-validation',
+            mode: 'validate',
+            status,
+            reason,
+            metrics: {
+              issuesOtlp: toInt(process.env.ISSUES_OTLP),
+              issuesNdjson: toInt(process.env.ISSUES_NDJSON),
+              validOtlp: validOtlp === 'true' ? 1 : validOtlp === 'false' ? 0 : null,
+              validNdjson: validNdjson === 'true' ? 1 : validNdjson === 'false' ? 0 : null,
+            },
+            data: {
+              traceSummaryOutcome: outcome || 'unknown',
+            },
+          });
+          NODE
       - name: Upload trace artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -350,6 +405,7 @@ jobs:
             artifacts/hermetic-reports/trace/ndjson/kvonce-events.ndjson
             artifacts/hermetic-reports/trace/ndjson/kvonce-projection.json
             artifacts/hermetic-reports/trace/ndjson/kvonce-validation.json
+            artifacts/automation/kvonce-trace-validation-report.json
           if-no-files-found: warn
       - name: Update PR with trace summary
         if: github.event_name == 'pull_request'
@@ -399,9 +455,10 @@ jobs:
             }
 
       - name: Publish trace validation check
-        if: ${{ github.event_name == 'pull_request' }}
+        if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
         uses: actions/github-script@v7
         env:
+          TRACE_JOB_STATUS: ${{ job.status }}
           VALID_OTLP: ${{ steps.trace_summary.outputs.valid_otlp }}
           VALID_NDJSON: ${{ steps.trace_summary.outputs.valid_ndjson }}
           ISSUES_OTLP: ${{ steps.trace_summary.outputs.issues_otlp }}
@@ -420,8 +477,12 @@ jobs:
             const issuesOtlp = process.env.ISSUES_OTLP || 'N/A';
             const issuesNdjson = process.env.ISSUES_NDJSON || 'N/A';
 
+            const traceJobStatus = (process.env.TRACE_JOB_STATUS || '').toLowerCase();
+
             let conclusion = 'success';
-            if (validOtlp === 'false' || validNdjson === 'false') {
+            if (traceJobStatus && traceJobStatus !== 'success') {
+              conclusion = 'failure';
+            } else if (validOtlp === 'false' || validNdjson === 'false') {
               conclusion = 'failure';
             } else if (validOtlp === 'missing' && validNdjson === 'missing') {
               conclusion = 'neutral';
@@ -432,15 +493,39 @@ jobs:
               `NDJSON: ${validNdjson} (issues: ${issuesNdjson})`,
             ];
 
-            await github.rest.checks.create({
+            const checkName = 'KvOnce Trace Validation';
+            const updatePayload = {
               owner,
               repo,
-              name: 'KvOnce Trace Validation',
-              head_sha: headSha,
               status: 'completed',
               conclusion,
               output: {
-                title: 'KvOnce Trace Validation',
+                title: checkName,
                 summary: summaryLines.join('\n'),
               },
+            };
+
+            const existing = await github.rest.checks.listForRef({
+              owner,
+              repo,
+              ref: headSha,
+              check_name: checkName,
+              per_page: 100,
             });
+            const runs = (existing.data.check_runs || []).filter((run) => run.name === checkName);
+
+            if (runs.length === 0) {
+              await github.rest.checks.create({
+                ...updatePayload,
+                name: checkName,
+                head_sha: headSha,
+              });
+              return;
+            }
+
+            for (const run of runs) {
+              await github.rest.checks.update({
+                ...updatePayload,
+                check_run_id: run.id,
+              });
+            }

@@ -31,6 +31,7 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `run-resilience` | Resilience quick実行 | `verify-lite.yml` 内 `Resilience quick` | `/run-resilience` で付与 |
 | `run-hermetic` | Hermetic CI 実行 | `ci.yml`, `hermetic-ci.yml` | `/run-hermetic` で付与 |
 | `run-spec` | fail-fast spec validation | `spec-validation.yml` | `/run-spec` で付与 |
+| `run-trace` | KvOnce trace validation を required gate 対象として再評価 | `spec-generate-model.yml`（checks: `trace-conformance`, `KvOnce Trace Validation`） | 高リスクPRで `policy-gate` が参照（fork PRは `trace-conformance` で判定） |
 | `run-drift` | codegen drift detection | `codegen-drift-check.yml` | `/run-drift` で付与 |
 | `enforce-bdd-lint` | BDD lint を strict 化 | `verify-lite.yml` | `/enforce-bdd-lint` で付与 |
 | `enforce-verify-lite-lint` | verify-lite lint baseline を enforce | `verify-lite.yml` | PRラベルで制御 |
