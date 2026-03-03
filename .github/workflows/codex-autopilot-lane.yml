@@ -126,4 +126,17 @@ jobs:
           AE_AUTOPILOT_RISK_POLICY_PATH: ${{ vars.AE_AUTOPILOT_RISK_POLICY_PATH || 'policy/risk-policy.yml' }}
           AE_AUTOPILOT_ACTIONABLE_COMMAND: ${{ vars.AE_AUTOPILOT_ACTIONABLE_COMMAND || '' }}
           AE_AUTOPILOT_ACTIONABLE_DRY_RUN: ${{ vars.AE_AUTOPILOT_ACTIONABLE_DRY_RUN || '' }}
+          AE_AUTOPILOT_WRITE_CONTRACT_ARTIFACTS: "1"
+          AE_AUTOPILOT_PR_STATE_FILE: artifacts/ci/pr-state-v1.json
+          AE_AUTOPILOT_EXECUTION_PLAN_FILE: artifacts/ci/execution-plan-v1.json
+          AE_AUTOPILOT_REQUIRED_CHECKS: gate
         run: node scripts/ci/codex-autopilot-lane.mjs
+      - name: Upload autopilot contracts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-autopilot-contracts
+          path: |
+            artifacts/ci/pr-state-v1.json
+            artifacts/ci/execution-plan-v1.json
+          if-no-files-found: warn

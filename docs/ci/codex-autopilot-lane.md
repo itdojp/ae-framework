@@ -22,6 +22,10 @@ Repository Variables:
 - `AE_AUTOPILOT_ACTIONABLE_DRY_RUN`（任意）: actionable 実行のみ dry-run を個別制御（未設定時は `AE_AUTOPILOT_DRY_RUN` に追従）
 - `AE_AUTOPILOT_AUTO_LABEL=1` のとき、Risk Policy 由来の不足ラベルを自動付与（既定は `0`）
 - `AE_AUTOPILOT_RISK_POLICY_PATH`（既定 `policy/risk-policy.yml`）
+- `AE_AUTOPILOT_WRITE_CONTRACT_ARTIFACTS=1`（任意）: `pr-state.v1` / `execution-plan.v1` の成果物を出力
+- `AE_AUTOPILOT_PR_STATE_FILE`（既定 `artifacts/ci/pr-state-v1.json`）
+- `AE_AUTOPILOT_EXECUTION_PLAN_FILE`（既定 `artifacts/ci/execution-plan-v1.json`）
+- `AE_AUTOPILOT_REQUIRED_CHECKS`（既定 `gate`、カンマ区切り）
 
 補足:
 - `workflow_dispatch` は `AE_CODEX_AUTOPILOT_ENABLED` 未設定でも実行可能（手動検証用）
@@ -70,6 +74,12 @@ PRコメント（upsert）:
   - `- execution-result: success|failed|skipped`
   - `- actionable execution: <status> (attempted=..., succeeded=..., failed=..., skipped=...)`
   - `- actionable-execution-preview:`（最大3件）
+
+成果物（`AE_AUTOPILOT_WRITE_CONTRACT_ARTIFACTS=1` の場合）:
+- `artifacts/ci/pr-state-v1.json`
+  - PR状態（`pr-state.v1` 契約）
+- `artifacts/ci/execution-plan-v1.json`
+  - ラウンド内タスク列（`execution-plan.v1` 契約）
 
 ### `AE_AUTOPILOT_ACTIONABLE_COMMAND` の入出力契約
 

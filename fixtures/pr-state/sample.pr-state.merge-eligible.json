@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractId": "pr-state.v1",
+  "repository": {
+    "owner": "itdojp",
+    "name": "ae-framework"
+  },
+  "pullRequest": {
+    "number": 2405,
+    "headSha": "a13b4f8aa13b4f8aa13b4f8aa13b4f8aa13b4f8a",
+    "baseRef": "main",
+    "headRef": "feat/pr-state-v1"
+  },
+  "state": "merge_eligible",
+  "previousState": "gate_recheck",
+  "transition": {
+    "event": "required_checks_green",
+    "source": "pr-ci-status-comment",
+    "actor": "github-actions[bot]",
+    "at": "2026-03-04T02:45:10Z"
+  },
+  "blocked": null,
+  "requiredChecks": [
+    "verify-lite",
+    "policy-gate",
+    "gate"
+  ],
+  "checkResults": [
+    { "name": "verify-lite", "status": "success" },
+    { "name": "policy-gate", "status": "success" },
+    { "name": "gate", "status": "success" }
+  ],
+  "evidence": {
+    "summaryPaths": [
+      "artifacts/ci/policy-gate-summary.json",
+      "artifacts/ci/review-gate-summary.json",
+      "artifacts/verify-lite/verify-lite-run-summary.json"
+    ],
+    "artifactRunId": "run-20260304-024510"
+  },
+  "metadata": {
+    "runId": "run-20260304-024510",
+    "workflow": "pr-ci-status-comment.yml",
+    "createdAt": "2026-03-04T02:45:10Z",
+    "updatedAt": "2026-03-04T02:45:10Z",
+    "traceId": "trace-policy-2405-02"
+  }
+}

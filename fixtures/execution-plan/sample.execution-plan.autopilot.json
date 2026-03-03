@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractId": "execution-plan.v1",
+  "planId": "plan-pr-2405-autopilot-01",
+  "repository": {
+    "owner": "itdojp",
+    "name": "ae-framework"
+  },
+  "pullRequest": {
+    "number": 2405,
+    "headSha": "b555fbd8b555fbd8b555fbd8b555fbd8b555fbd8"
+  },
+  "trigger": {
+    "kind": "autopilot",
+    "source": "codex-autopilot-lane",
+    "at": "2026-03-04T03:15:00Z"
+  },
+  "targetState": "merge_eligible",
+  "tasks": [
+    {
+      "id": "t1",
+      "kind": "review_fetch",
+      "title": "Fetch unresolved review threads",
+      "owner": "ai",
+      "status": "completed",
+      "run": {
+        "command": "node scripts/ci/fetch-review-feedback.mjs --pr 2405"
+      },
+      "result": {
+        "status": "success",
+        "summaryPath": "artifacts/ci/review-feedback-summary.json"
+      }
+    },
+    {
+      "id": "t2",
+      "kind": "suggestion_apply",
+      "title": "Apply actionable suggestions",
+      "owner": "ai",
+      "dependsOn": ["t1"],
+      "status": "completed",
+      "conditions": {
+        "maxAttempts": 2,
+        "stopOnFailure": true
+      },
+      "run": {
+        "command": "node scripts/ci/copilot-auto-fix.mjs --pr 2405"
+      },
+      "result": {
+        "status": "success",
+        "summaryPath": "artifacts/ci/copilot-auto-fix-summary.json"
+      }
+    },
+    {
+      "id": "t3",
+      "kind": "workflow_dispatch",
+      "title": "Dispatch gate recheck",
+      "owner": "ai",
+      "dependsOn": ["t2"],
+      "status": "completed",
+      "run": {
+        "workflow": "pr-ci-status-comment.yml",
+        "args": ["--pr=2405", "--recheck=1"]
+      },
+      "result": {
+        "status": "success"
+      }
+    },
+    {
+      "id": "t4",
+      "kind": "gate_recheck",
+      "title": "Wait for required checks convergence",
+      "owner": "either",
+      "dependsOn": ["t3"],
+      "status": "planned",
+      "conditions": {
+        "maxAttempts": 3,
+        "stopOnFailure": false
+      },
+      "expectedArtifacts": [
+        "artifacts/ci/policy-gate-summary.json",
+        "artifacts/verify-lite/verify-lite-run-summary.json"
+      ]
+    }
+  ],
+  "metadata": {
+    "runId": "run-20260304-031500",
+    "workflow": "codex-autopilot-lane.yml",
+    "generatedAt": "2026-03-04T03:15:00Z",
+    "generator": "scripts/ci/codex-autopilot-lane.mjs"
+  }
+}

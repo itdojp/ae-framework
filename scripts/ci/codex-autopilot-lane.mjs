@@ -27,6 +27,11 @@ import {
 } from './lib/review-comment-classifier.mjs';
 import { executeActionableTasks } from './lib/actionable-task-executor.mjs';
 import { DEFAULT_POLICY_PATH, collectRequiredLabels, loadRiskPolicy } from './lib/risk-policy.mjs';
+import {
+  buildExecutionPlanV1,
+  buildPrStateV1,
+  writePrOrchestrationContracts,
+} from './lib/pr-orchestration-contracts.mjs';
 
 const marker = '<!-- AE-CODEX-AUTOPILOT v1 -->';
 const repo = String(process.env.GITHUB_REPOSITORY || '').trim();
@@ -54,6 +59,12 @@ const actionableCommand = String(process.env.AE_AUTOPILOT_ACTIONABLE_COMMAND || 
 const autoLabelEnabled = toBool(process.env.AE_AUTOPILOT_AUTO_LABEL);
 const riskPolicyPath = String(process.env.AE_AUTOPILOT_RISK_POLICY_PATH || DEFAULT_POLICY_PATH).trim() || DEFAULT_POLICY_PATH;
 const globalDisabled = toBool(process.env.AE_AUTOMATION_GLOBAL_DISABLE);
+const writeContractArtifacts = toBool(process.env.AE_AUTOPILOT_WRITE_CONTRACT_ARTIFACTS);
+const prStateArtifactPath = String(process.env.AE_AUTOPILOT_PR_STATE_FILE || 'artifacts/ci/pr-state-v1.json').trim();
+const executionPlanArtifactPath = String(
+  process.env.AE_AUTOPILOT_EXECUTION_PLAN_FILE || 'artifacts/ci/execution-plan-v1.json',
+).trim();
+const requiredChecks = parseCsvList(process.env.AE_AUTOPILOT_REQUIRED_CHECKS, ['gate']);
 const reviewActors = resolveReviewActors(
   process.env.AI_REVIEW_ACTORS,
   process.env.COPILOT_ACTORS,
@@ -74,6 +85,13 @@ function toPositiveInt(value) {
   const parsed = Number.parseInt(String(value || '').trim(), 10);
   if (!Number.isFinite(parsed) || parsed <= 0) return null;
   return parsed;
+}
+
+function parseCsvList(raw, fallback = []) {
+  const text = String(raw || '').trim();
+  if (!text) return [...fallback];
+  const list = text.split(',').map((item) => item.trim()).filter(Boolean);
+  return list.length > 0 ? [...new Set(list)] : [...fallback];
 }
 
 function execJson(args, input) {
@@ -580,7 +598,9 @@ function enableAutoMerge(pr) {
 }
 
 function renderBody(result) {
-  const unblockActions = deriveUnblockActions(result.status, result.reason);
+  const unblockActions = Array.isArray(result.unblockActions) && result.unblockActions.length > 0
+    ? result.unblockActions
+    : deriveUnblockActions(result.status, result.reason);
   const blockedSummary = result.status === 'blocked' ? deriveBlockedSummary(result.reason, unblockActions) : null;
   const lines = [marker];
   if (blockedSummary) {
@@ -822,6 +842,9 @@ async function processPr(number) {
     actionableExecutionPreview: summarizeActionableExecutionResults(finalActionableExecution, 3),
     mergeable: finalState?.mergeable || '',
     mergeState: finalState?.mergeStateStatus || '',
+    headRefName: finalState?.headRefName || '',
+    headRefOid: finalState?.headRefOid || '',
+    unblockActions: deriveUnblockActions(status, finalReason),
   };
 
   if (!dryRun) {
@@ -871,8 +894,36 @@ async function main() {
 
   try {
     const result = await processPr(prNumber);
+    const generatedAt = new Date().toISOString();
+    const prState = buildPrStateV1({
+      repository: repo,
+      prNumber: result.number,
+      headRefName: result.headRefName,
+      headRefOid: result.headRefOid,
+      result,
+      requiredChecks,
+      now: generatedAt,
+    });
+    const executionPlan = buildExecutionPlanV1({
+      repository: repo,
+      prNumber: result.number,
+      headRefOid: result.headRefOid,
+      result,
+      now: generatedAt,
+    });
+    const contractArtifact = writePrOrchestrationContracts({
+      enabled: writeContractArtifacts,
+      prState,
+      executionPlan,
+      prStatePath: prStateArtifactPath,
+      executionPlanPath: executionPlanArtifactPath,
+    });
     console.log(`[codex-autopilot] #${result.number}: ${result.status} (${result.reason || 'n/a'})`);
     console.log(`[codex-autopilot] execution-result=${result.executionResult}`);
+    if (contractArtifact.written) {
+      console.log(`[codex-autopilot] contract-artifact: pr-state=${contractArtifact.prStatePath}`);
+      console.log(`[codex-autopilot] contract-artifact: execution-plan=${contractArtifact.executionPlanPath}`);
+    }
     const reportStatus = result.status === 'done' ? 'resolved' : result.status;
     emitAutomationReport({
       tool: 'codex-autopilot-lane',
@@ -890,12 +941,15 @@ async function main() {
         actionableSucceeded: result.actionableExecution.succeeded,
         actionableFailed: result.actionableExecution.failed,
         actionableSkipped: result.actionableExecution.skipped,
+        contractArtifactsWritten: contractArtifact.written ? 1 : 0,
       },
       data: {
         mergeable: result.mergeable,
         mergeState: result.mergeState,
         executionResult: result.executionResult,
         actionableExecutionStatus: result.actionableExecution.status,
+        prStatePath: contractArtifact.prStatePath,
+        executionPlanPath: contractArtifact.executionPlanPath,
       },
     });
   } catch (error) {

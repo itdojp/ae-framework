@@ -6,6 +6,9 @@ Provide a machine-readable ExecPlan format that can be validated in CI and reuse
 ## Files
 - Schema: `schema/execplan.schema.json`
 - Sample: `fixtures/execplan/sample.execplan.json`
+- PR orchestration draft schema: `schema/execution-plan-v1.schema.json`
+- PR orchestration draft sample: `fixtures/execution-plan/sample.execution-plan.autopilot.json`
+- Related state schema: `schema/pr-state-v1.schema.json`
 
 ## Required fields
 - `schemaVersion`
@@ -25,3 +28,4 @@ Each step should include:
 ## Notes
 - Keep `inputs`/`outputs` aligned with Spec Kit and Blueprint artifacts.
 - Use `commands[].run` for reproducible CLI snippets.
+- `execplan.schema.json` は汎用契約、`execution-plan-v1.schema.json` は PR自動化向けの専用契約（Issue #2405）として併存運用する。

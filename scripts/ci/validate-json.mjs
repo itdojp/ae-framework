@@ -94,6 +94,19 @@ const checks = [
     label: 'ExecPlan schema validation'
   },
   {
+    schema: 'schema/pr-state-v1.schema.json',
+    fixtures: [
+      'fixtures/pr-state/sample.pr-state.blocked.json',
+      'fixtures/pr-state/sample.pr-state.merge-eligible.json'
+    ],
+    label: 'PR state v1 schema validation'
+  },
+  {
+    schema: 'schema/execution-plan-v1.schema.json',
+    fixtures: ['fixtures/execution-plan/sample.execution-plan.autopilot.json'],
+    label: 'Execution plan v1 schema validation'
+  },
+  {
     schema: 'schema/counterexample.schema.json',
     fixtures: ['fixtures/counterexample/sample.counterexample.json'],
     label: 'Counterexample schema validation'
