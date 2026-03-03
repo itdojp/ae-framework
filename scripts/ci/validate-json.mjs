@@ -119,6 +119,16 @@ const checks = [
     label: 'Execution plan v1 schema validation'
   },
   {
+    schema: 'schema/policy-input-v1.schema.json',
+    fixtures: ['fixtures/policy/sample.policy-input-v1.json'],
+    label: 'Policy input v1 schema validation'
+  },
+  {
+    schema: 'schema/policy-decision-v1.schema.json',
+    fixtures: ['fixtures/policy/sample.policy-decision-v1.json'],
+    label: 'Policy decision v1 schema validation'
+  },
+  {
     schema: 'schema/counterexample.schema.json',
     fixtures: ['fixtures/counterexample/sample.counterexample.json'],
     label: 'Counterexample schema validation'

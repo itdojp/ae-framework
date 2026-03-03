@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/policy-input-v1.schema.json",
+  "title": "ae-policy-input-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "contractId": {
+      "type": "string",
+      "const": "policy-input.v1"
+    },
+    "generatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repository": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "policyPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policy": {
+      "$ref": "#/$defs/policy"
+    },
+    "pullRequest": {
+      "$ref": "#/$defs/pullRequest"
+    },
+    "changedFiles": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "reviews": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/review" }
+    },
+    "statusRollup": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/statusItem" }
+    },
+    "config": {
+      "$ref": "#/$defs/config"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "generatedAtUtc",
+    "repository",
+    "prNumber",
+    "policyPath",
+    "policy",
+    "pullRequest",
+    "changedFiles",
+    "reviews",
+    "statusRollup",
+    "config"
+  ],
+  "$defs": {
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "labels": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "risk": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "low": { "type": "string", "minLength": 1 },
+                "high": { "type": "string", "minLength": 1 }
+              },
+              "required": ["low", "high"]
+            },
+            "optionalGates": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            }
+          },
+          "required": ["risk", "optionalGates"]
+        },
+        "requiredChecks": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "highRisk": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minHumanApprovals": { "type": "integer", "minimum": 0 },
+            "requirePolicyLabels": { "type": "boolean" },
+            "failWhenRequiredGateIsPending": { "type": "boolean" }
+          },
+          "required": [
+            "minHumanApprovals",
+            "requirePolicyLabels",
+            "failWhenRequiredGateIsPending"
+          ]
+        },
+        "classification": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "highRiskPaths": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            },
+            "forceHighRiskWhen": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            }
+          },
+          "required": ["highRiskPaths", "forceHighRiskWhen"]
+        },
+        "labelRequirements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/labelRequirement" }
+        },
+        "gateChecks": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/gateCheckMapping" }
+        }
+      },
+      "required": [
+        "labels",
+        "requiredChecks",
+        "highRisk",
+        "classification",
+        "labelRequirements",
+        "gateChecks"
+      ]
+    },
+    "labelRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "whenAnyChanged": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "requireLabels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      },
+      "required": ["id", "whenAnyChanged", "requireLabels"]
+    },
+    "gateCheckMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      },
+      "required": ["patterns"]
+    },
+    "pullRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "number": { "type": "integer", "minimum": 1 },
+        "labels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "body": { "type": "string" }
+      },
+      "required": ["number", "labels", "body"]
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "state": { "type": "string", "minLength": 1 },
+        "submittedAt": { "type": ["string", "null"], "format": "date-time" },
+        "user": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "login": { "type": "string", "minLength": 1 },
+            "type": { "type": "string", "minLength": 1 }
+          },
+          "required": ["login", "type"]
+        }
+      },
+      "required": ["id", "state", "submittedAt", "user"]
+    },
+    "statusItem": {
+      "oneOf": [
+        { "$ref": "#/$defs/checkRun" },
+        { "$ref": "#/$defs/statusContext" }
+      ]
+    },
+    "checkRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "__typename": { "type": "string", "const": "CheckRun" },
+        "name": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "minLength": 1 },
+        "conclusion": { "type": ["string", "null"] }
+      },
+      "required": ["__typename", "name", "status", "conclusion"]
+    },
+    "statusContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "__typename": { "type": "string", "const": "StatusContext" },
+        "context": { "type": "string", "minLength": 1 },
+        "state": { "type": "string", "minLength": 1 }
+      },
+      "required": ["__typename", "context", "state"]
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reviewTopology": { "type": ["string", "null"] },
+        "approvalOverride": { "type": ["string", "null"] }
+      },
+      "required": ["reviewTopology", "approvalOverride"]
+    }
+  }
+}
+
