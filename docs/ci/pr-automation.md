@@ -53,6 +53,7 @@ PR運用を以下の形に収束させます。
   - `pull_request_review: submitted` で起動
   - `AI_REVIEW_ACTORS`（未設定時は `COPILOT_ACTORS`）に含まれる actor のインラインコメント本文の ```` ```suggestion ```` を抽出し、PRへ適用（commit + push）
   - 適用（または既適用）と判断できた対象スレッドを resolve（保守的）
+  - `autopilot:on` かつ `AE_CODEX_AUTOPILOT_ENABLED=1` のPRでは重複実行を抑止し、`Codex Autopilot Lane` 側で同等処理を継続
 
 重要:
 - AI reviewer が「コメント」だけを残し、レビューとして `submitted` されない場合は、auto-fix も gate も期待通りに動きません。
@@ -75,9 +76,9 @@ PR運用を以下の形に収束させます。
 
 ### 3.0 プロファイル方式（推奨）
 
-- `AE_AUTOMATION_PROFILE` を設定すると、auto-fix / auto-merge / retry / gate wait の既定値をまとめて適用できます。
+- `AE_AUTOMATION_PROFILE` を設定すると、`automation-config` が管理する既定値（actor/review topology/auto-fix/auto-merge/retry/wait など）をまとめて適用できます。
   - `conservative` / `balanced` / `aggressive`
-- 個別変数（`AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `COPILOT_REVIEW_*`）を設定した場合は、そちらが優先されます。
+- 個別変数（`AI_REVIEW_ACTORS`, `AE_REVIEW_TOPOLOGY`, `AE_POLICY_MIN_HUMAN_APPROVALS`, `AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `COPILOT_REVIEW_*`, `AE_AUTOPILOT_AUTO_LABEL`, `AE_AUTOPILOT_RISK_POLICY_PATH`）を設定した場合は、そちらが優先されます。
 - 詳細: `docs/ci/automation-profiles.md`
 
 ### 3.1 推奨導入順（手戻りを減らす）
@@ -89,7 +90,7 @@ PR運用を以下の形に収束させます。
 4. 必要時のみ個別変数で上書き
 
 補足:
-- 本リポジトリの `main` は 2026-03-02 時点で `verify-lite` / `policy-gate` / `gate` を Required にしています。
+- 本リポジトリの branch protection 定義（`.github/branch-protection.main.verify-lite-noreview.json`）は `verify-lite` / `policy-gate` / `gate` を Required checks として管理しています。
 - `gate` は AI review の存在/未解決スレッドを検証するため、無人運用では Required 化を推奨します。
 
 ### 3.1.1 承認トポロジ（1人体制 / 複数人体制）
@@ -258,7 +259,7 @@ Settings（Repository）で次を確認してください。
 
 SSOT:
 - 共通既定値: `scripts/ci/lib/automation-defaults.mjs`
-- profile 上書き・バリデーション（`AE_GH_*`, `COPILOT_REVIEW_*` のみ）: `scripts/ci/lib/automation-config.mjs`
+- profile 上書き・バリデーション（`AI_REVIEW_ACTORS`, `AE_REVIEW_TOPOLOGY`, `AE_POLICY_MIN_HUMAN_APPROVALS`, `AE_COPILOT_AUTO_FIX*`, `AE_AUTO_MERGE*`, `AE_GH_*`, `COPILOT_REVIEW_*`, `AE_AUTOPILOT_AUTO_LABEL`, `AE_AUTOPILOT_RISK_POLICY_PATH`）: `scripts/ci/lib/automation-config.mjs`
 - self-heal lane 既定値: `scripts/ci/pr-self-heal.mjs`（および `.github/workflows/pr-self-heal.yml`）
 - autopilot lane 既定値: `scripts/ci/codex-autopilot-lane.mjs`（および `.github/workflows/codex-autopilot-lane.yml`）
 
@@ -279,8 +280,8 @@ SSOT:
 | `AE_GH_THROTTLE_MS` | `250` | `400` | `300` | `150` |
 
 注記:
-- `AE_GH_*` / `COPILOT_REVIEW_*` は `automation-config` で `explicit -> profile -> default` の優先順位で確定します。
-- `AE_AUTOMATION_PROFILE` / `automation-config` の profile 連動対象は `AE_GH_*` と `COPILOT_REVIEW_*` のみです。
+- `automation-config` 管理下の変数は `explicit -> profile -> default` の優先順位で確定します。
+- `AE_AUTOPILOT_ACTIONABLE_COMMAND` / `AE_AUTOPILOT_ACTIONABLE_DRY_RUN` / `AE_AUTOPILOT_MAX_ROUNDS` / `AE_AUTOPILOT_ROUND_WAIT_*` は profile 非連動で、Repository Variables の値がそのまま使われます。
 - `autopilot` / `auto-fix` / `self-heal` の wait 値は profile 非連動です。
 
 それでも失敗する場合は、Actions の rerun（failedのみ）で再試行してください。
@@ -307,7 +308,9 @@ SSOT:
   - copilot auto-fix（force mode）
   - review gate dispatch
   - auto-merge 有効化試行
-  - 非 suggestion の actionable review 指摘が残る場合は fail-closed で `status:blocked` へ遷移（自動修正は行わない）
+  - 非 suggestion の actionable review 指摘が残る場合は `AE_AUTOPILOT_ACTIONABLE_COMMAND` の設定有無で分岐
+    - 未設定: fail-closed で `status:blocked`
+    - 設定済み: コマンドを実行して結果を判定（`failed>0` または active 実行で `skipped>0` は fail-closed）
 - 収束しない場合は `status:blocked` を付与して停止します。
 - 詳細: `docs/ci/codex-autopilot-lane.md`
 補足:

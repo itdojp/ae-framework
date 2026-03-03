@@ -50,6 +50,7 @@ Repository Variables:
 4. 未解決の AI review thread を走査し、`suggestion` ではない actionable 指摘を検出した場合:
    - `AE_AUTOPILOT_ACTIONABLE_COMMAND` が設定されていれば実行し、結果を集計
    - `AE_AUTOPILOT_ACTIONABLE_COMMAND` 未設定時は `actionable review tasks pending` で停止（従来どおり）
+   - 人手コメントに `対応不要/対応済み/not applicable/fixed` 相当の disposition が含まれる指摘は actionable 対象から除外
    - 失敗（`failed > 0`）は fail-closed で `status:blocked`
    - active実行で `skipped > 0` は `actionable execution incomplete` として fail-closed
    - 成功時は再評価へ進行
@@ -112,7 +113,7 @@ No Human Bottleneck（Issue #2333）整合ポイント:
 | `blocked` + `actionable review tasks pending: <n>` | actionable 指摘に対応（または非適用理由を返信）して `/autopilot run` |
 | `blocked` + `actionable execution failed: <x>/<y> failed` | 実行結果を確認し、手動修正または `AE_AUTOPILOT_ACTIONABLE_COMMAND` を修正して `/autopilot run` |
 | `blocked` + `actionable execution incomplete: <x>/<y> skipped` | skip 理由を解消して再実行（または手動対応）後に `/autopilot run` |
-| `blocked` + `actionable review task scan truncated (pagination required)` | 未解決 AI review thread/comment を減らす（またはページング対応）後に `/autopilot run` |
+| `blocked` + `actionable review task scan truncated (pagination required)` | GitHub API/GraphQL 応答異常やページング失敗を解消して `/autopilot run` |
 | `blocked` + `max rounds reached without convergence` | 進行中の checks/dispatch が収束するまで待機し、`/autopilot run` を再実行 |
 | `blocked` + `merge conflict` | update-branch または手動 rebase で衝突を解消して push 後に `/autopilot run` |
 | `done` + `checks healthy, waiting for required checks/merge queue` | required checks/merge queue の完了を待機（追加修正不要） |
