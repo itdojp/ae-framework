@@ -98,6 +98,9 @@ describe('change-package generate', () => {
           highRiskPathMatches: string[];
         };
       };
+      reproducibility: {
+        commands: string[];
+      };
       evidence: { presentCount: number; missingCount: number };
       exceptions: Array<{ code: string; message: string }>;
     };
@@ -115,6 +118,12 @@ describe('change-package generate', () => {
     expect(generated.risk.requiredLabels).toContain('enforce-artifacts');
     expect(generated.risk.missingRequiredLabels).toContain('run-ci-extended');
     expect(generated.risk.rationale.highRiskPathMatches).toContain('.github/workflows/pr-ci-status-comment.yml');
+    expect(
+      generated.reproducibility.commands.some(
+        (command) => command.includes('scripts/trace/run-kvonce-conformance.sh')
+          && command.includes('pnpm run artifacts:validate -- --strict=true'),
+      ),
+    ).toBe(true);
     expect(generated.evidence.presentCount).toBe(1);
     expect(generated.evidence.missingCount).toBeGreaterThan(0);
     expect(generated.exceptions.some((item) => item.code === 'missing-required-labels')).toBe(true);

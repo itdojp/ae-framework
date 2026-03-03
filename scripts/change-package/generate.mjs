@@ -47,6 +47,14 @@ const EVIDENCE_CATALOG = [
     description: 'context-pack suggestions summary',
   },
 ];
+const ENFORCE_ARTIFACTS_STRICT_COMMAND = [
+  'bash scripts/trace/run-kvonce-conformance.sh --input samples/trace/kvonce-sample.ndjson --format ndjson --output-dir artifacts/hermetic-reports/trace',
+  'node scripts/ci/write-verify-lite-summary.mjs',
+  'node scripts/trace/create-report-envelope.mjs artifacts/verify-lite/verify-lite-run-summary.json artifacts/report-envelope.json',
+  'mkdir -p artifacts/trace',
+  'cp artifacts/report-envelope.json artifacts/trace/report-envelope.json',
+  'pnpm run artifacts:validate -- --strict=true',
+].join(' && ');
 
 function parseChangedFilesEnv(value) {
   if (!value) return [];
@@ -458,7 +466,7 @@ function buildReproducibilityCommands(requiredLabels) {
     pushUnique(commands, 'pnpm run security:integrated:quick');
   }
   if (requiredLabels.includes('enforce-artifacts')) {
-    pushUnique(commands, 'pnpm run artifacts:validate -- --strict=true');
+    pushUnique(commands, ENFORCE_ARTIFACTS_STRICT_COMMAND);
   }
   if (requiredLabels.includes('enforce-testing')) {
     pushUnique(commands, 'pnpm run test:ci:lite');

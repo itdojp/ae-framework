@@ -40,6 +40,21 @@ jobs:
         with: { node-version: '20' }
       - name: Install deps (pnpm)
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Bootstrap trace/verify-lite artifacts (strict only)
+        if: needs.gate.outputs.strict == 'true'
+        run: |
+          bash scripts/trace/run-kvonce-conformance.sh \
+            --input samples/trace/kvonce-sample.ndjson \
+            --format ndjson \
+            --output-dir artifacts/hermetic-reports/trace
+          node scripts/ci/write-verify-lite-summary.mjs
+          mkdir -p artifacts/trace
+          REPORT_ENVELOPE_SOURCE=validate-artifacts-ajv \
+          REPORT_ENVELOPE_NOTES='Generated for enforce-artifacts strict gate.' \
+          node scripts/trace/create-report-envelope.mjs \
+            artifacts/verify-lite/verify-lite-run-summary.json \
+            artifacts/report-envelope.json
+          cp artifacts/report-envelope.json artifacts/trace/report-envelope.json
       - name: Validate artifacts schema contracts
         env:
           ARTIFACTS_VALIDATE_STRICT: ${{ needs.gate.outputs.strict }}

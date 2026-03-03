@@ -36,6 +36,25 @@ export const DEFAULT_RULES = [
     ],
   },
   {
+    id: 'trace-validation',
+    schemaPath: 'schema/trace-validation.schema.json',
+    patterns: [
+      'artifacts/hermetic-reports/trace/kvonce-validation.json',
+      'artifacts/hermetic-reports/trace/**/kvonce-validation.json',
+    ],
+    requiredWhenStrict: true,
+  },
+  {
+    id: 'trace-envelope',
+    schemaPath: 'schema/envelope.schema.json',
+    patterns: [
+      'artifacts/trace/report-envelope.json',
+      'artifacts/kvonce-trace-envelope.json',
+      'artifacts/**/*trace-envelope.json',
+    ],
+    requiredWhenStrict: true,
+  },
+  {
     id: 'formal-summary-v1',
     schemaPath: 'schema/formal-summary-v1.schema.json',
     patterns: ['artifacts/formal/formal-summary-v1.json'],
@@ -407,6 +426,7 @@ export function validateArtifactsAjv({
       id: rule.id,
       schemaPath: rule.schemaPath,
       patterns: [...rule.patterns],
+      requiredWhenStrict: rule.requiredWhenStrict === true,
       matchedFiles: 0,
       validatedFiles: 0,
       passedFiles: 0,
@@ -467,8 +487,21 @@ export function validateArtifactsAjv({
     matchedFiles += files.length;
 
     if (files.length === 0) {
-      ruleSummary.skipped = true;
-      ruleSummary.skipReason = 'no files matched';
+      if (strict && rule.requiredWhenStrict === true) {
+        const normalizedPatterns = rule.patterns.map((pattern) => toPosix(pattern)).join(', ');
+        errors.push({
+          ruleId: rule.id,
+          file: toPosix(rule.patterns[0] ?? rule.schemaPath),
+          schemaPath: toPosix(rule.schemaPath),
+          keyword: 'required_when_strict',
+          instancePath: '/',
+          message: `no files matched required strict patterns: ${normalizedPatterns}`,
+        });
+        ruleSummary.ruleError = 'required_when_strict';
+      } else {
+        ruleSummary.skipped = true;
+        ruleSummary.skipReason = 'no files matched';
+      }
       ruleSummaries.push(ruleSummary);
       continue;
     }
