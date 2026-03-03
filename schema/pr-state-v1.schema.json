@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/pr-state-v1.schema.json",
+  "title": "ae-pr-state-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "contractId": {
+      "type": "string",
+      "const": "pr-state.v1"
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "owner": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 }
+      },
+      "required": ["owner", "name"]
+    },
+    "pullRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "number": { "type": "integer", "minimum": 1 },
+        "headSha": { "type": "string", "minLength": 7 },
+        "baseRef": { "type": "string", "minLength": 1 },
+        "headRef": { "type": "string", "minLength": 1 }
+      },
+      "required": ["number", "headSha", "baseRef", "headRef"]
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready_for_review",
+        "review_feedback_pending",
+        "action_execution",
+        "gate_recheck",
+        "merge_eligible",
+        "blocked",
+        "merged"
+      ]
+    },
+    "previousState": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready_for_review",
+        "review_feedback_pending",
+        "action_execution",
+        "gate_recheck",
+        "merge_eligible",
+        "blocked",
+        "merged"
+      ]
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event": { "type": "string", "minLength": 1 },
+        "source": {
+          "type": "string",
+          "enum": [
+            "policy-gate",
+            "copilot-review-gate",
+            "codex-autopilot-lane",
+            "pr-ci-status-comment",
+            "manual"
+          ]
+        },
+        "actor": { "type": "string", "minLength": 1 },
+        "at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["event", "source", "at"]
+    },
+    "blocked": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "reasonCode": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{2,}$"
+        },
+        "message": { "type": "string", "minLength": 1 },
+        "unblockActions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "ownerHint": {
+          "type": "string",
+          "enum": ["human", "ai", "either"]
+        },
+        "until": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["reasonCode", "unblockActions", "ownerHint"]
+    },
+    "requiredChecks": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "checkResults": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["success", "pending", "failure", "missing", "skipped"]
+          }
+        },
+        "required": ["name", "status"]
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "summaryPaths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "artifactRunId": { "type": "string", "minLength": 1 }
+      },
+      "required": ["summaryPaths"]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "runId": { "type": "string", "minLength": 1 },
+        "workflow": { "type": "string", "minLength": 1 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "traceId": { "type": "string", "minLength": 1 }
+      },
+      "required": ["runId", "workflow", "createdAt", "updatedAt"]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "repository",
+    "pullRequest",
+    "state",
+    "transition",
+    "requiredChecks",
+    "checkResults",
+    "metadata"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": { "const": "blocked" }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "properties": {
+          "blocked": { "type": "object" }
+        },
+        "required": ["blocked"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "draft",
+              "ready_for_review",
+              "review_feedback_pending",
+              "action_execution",
+              "gate_recheck",
+              "merge_eligible",
+              "merged"
+            ]
+          }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "properties": {
+          "blocked": { "type": "null" }
+        }
+      }
+    }
+  ]
+}

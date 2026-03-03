@@ -97,6 +97,8 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - TDD Framework Architecture: `architecture/TDD-FRAMEWORK-ARCHITECTURE.md`
 - CEGIS Design: `architecture/CEGIS-DESIGN.md`
 - Runtime Conformance Design: `architecture/RUNTIME-CONFORMANCE-DESIGN.md`
+- Zero-based ideal redesign: `architecture/ZERO-BASED-IDEAL-DESIGN.md`
+- PR state / execution plan v1 draft: `architecture/PR-STATE-EXECUTION-PLAN-V1-DRAFT.md`
 
 ### Quality / Verification
 - Formal Quality Gates (DoD v0.2): `quality/formal-gates.md`
@@ -128,6 +130,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Review topology matrix validation: `ci/review-topology-matrix.md`（solo/team/override の比較検証）
 - Change Package runbook: `ci/change-package.md`（証跡パッケージ生成/検証/PR要約連携）
 - Workflow role matrix: `ci/workflow-role-matrix.md`（core / optional / report の責務整理）
+- Workflow topology mapping (4 tracks): `ci/workflow-topology-mapping-2026-03-04.md`（56 workflows の4系統再配置案）
 - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）
 - CI docs boundary matrix: `ci/ci-doc-boundary-matrix.md`（方針文書とrunbookの責務境界）
 - Copilot Review Gate: `ci/copilot-review-gate.md`（レビュー必須化）
@@ -242,6 +245,8 @@ Claude CodeやMCPとの統合
 - **[TDD-FRAMEWORK-ARCHITECTURE.md](./architecture/TDD-FRAMEWORK-ARCHITECTURE.md)** ⭐ **重要** - TDDフレームワーク設計
 - **🆕 [CEGIS-DESIGN.md](./architecture/CEGIS-DESIGN.md)** ⭐ **NEW** - CEGIS自動修復システム設計
 - **🆕 [RUNTIME-CONFORMANCE-DESIGN.md](./architecture/RUNTIME-CONFORMANCE-DESIGN.md)** ⭐ **NEW** - Runtime Conformance設計
+- **🆕 [ZERO-BASED-IDEAL-DESIGN.md](./architecture/ZERO-BASED-IDEAL-DESIGN.md)** ⭐ **NEW** - ゼロベース再設計（理想アーキテクチャ + 技術再選定）
+- **🆕 [PR-STATE-EXECUTION-PLAN-V1-DRAFT.md](./architecture/PR-STATE-EXECUTION-PLAN-V1-DRAFT.md)** ⭐ **NEW** - PR状態機械と実行計画の v1 契約ドラフト（Issue #2405）
 - [ARCHITECTURE.md](./architecture/ARCHITECTURE.md) - システムアーキテクチャ
 - [NEW_FEATURES.md](./architecture/NEW_FEATURES.md) - 新機能仕様
 

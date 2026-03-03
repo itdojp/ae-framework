@@ -4,6 +4,10 @@
 
 対象: `.github/workflows/*.yml` の運用責務整理（Issue #2031 / Phase 3）
 
+補足（2026-03-04）:
+- 4系統（`pr-core` / `pr-extended` / `maintenance` / `release-assurance`）への再配置案は
+  `docs/ci/workflow-topology-mapping-2026-03-04.md` を参照。
+
 ## 1. 目的
 
 - CI workflow の責務を `core / optional / report` に明確化する
@@ -78,3 +82,4 @@
 - `docs/ci-policy.md`
 - `docs/ci/docs-doctest-policy.md`
 - `docs/ci/copilot-review-gate.md`
+- `docs/ci/workflow-topology-mapping-2026-03-04.md`
