@@ -41,6 +41,7 @@ describe('automation-observability-weekly', () => {
         status: 'resolved',
         reason: 'completed',
         generatedAt: '2026-02-13T00:10:00.000Z',
+        metrics: { rounds: 3 },
         run: { url: 'https://example/runs/1' },
       },
       {
@@ -97,9 +98,11 @@ describe('automation-observability-weekly', () => {
     expect(reasonMap.get('api timeout')?.count).toBe(1);
     expect(summary.maxConsecutiveFailures).toBe(1);
     expect(summary.maxConsecutiveFailuresByTool['auto-merge-enabler']).toBe(1);
-    expect(summary.convergenceRounds.overall.count).toBe(2);
-    expect(summary.convergenceRounds.overall.meanRounds).toBe(1.5);
+    expect(summary.convergenceRounds.overall.count).toBe(3);
+    expect(summary.convergenceRounds.overall.meanRounds).toBe(2);
+    expect(summary.convergenceRounds.overall.p95Rounds).toBe(3);
     expect(summary.convergenceRounds.byTool['auto-merge-enabler'].p95Rounds).toBe(2);
+    expect(summary.convergenceRounds.byTool['pr-self-heal'].count).toBe(1);
     expect(summary.slo.successRatePercent).toBe(60);
     expect(summary.slo.achieved).toBe(true);
     expect(summary.mttr.recoveries).toBe(2);

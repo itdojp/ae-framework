@@ -452,6 +452,7 @@ async function main() {
       status: 'skip',
       reason: 'AE_AUTOMATION_GLOBAL_DISABLE is enabled',
       metrics: {
+        rounds: 0,
         targets: 0,
         processed: 0,
       },
@@ -475,6 +476,7 @@ async function main() {
       status: 'skip',
       reason: 'workflow_run has no associated pull request',
       metrics: {
+        rounds: 0,
         targets: 0,
         processed: 0,
       },
@@ -492,6 +494,7 @@ async function main() {
       status: 'skip',
       reason: 'no PR targets found',
       metrics: {
+        rounds: 0,
         targets: 0,
         processed: 0,
       },
@@ -543,6 +546,13 @@ async function main() {
     status = 'skip';
     reason = 'all targets skipped';
   }
+  const rounds = results.reduce((maxRounds, item) => {
+    const numeric = Number(item?.rounds);
+    if (!Number.isFinite(numeric) || numeric < 0) {
+      return maxRounds;
+    }
+    return Math.max(maxRounds, numeric);
+  }, 0);
 
   emitAutomationReport({
     tool: 'pr-self-heal',
@@ -550,6 +560,7 @@ async function main() {
     status,
     reason,
     metrics: {
+      rounds,
       targets: targets.length,
       processed: results.length,
       resolved,
