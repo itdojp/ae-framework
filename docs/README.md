@@ -286,6 +286,7 @@ Claude CodeやMCPとの統合
 
 ### 🧠 現行実装ベース全体像（推奨）
 - **[architecture/CURRENT-SYSTEM-OVERVIEW.md](./architecture/CURRENT-SYSTEM-OVERVIEW.md)** - 2026-03 時点の全体構成（CLI/CI/Formal/Artifacts）
+- **[architecture/ZERO-BASED-IDEAL-DESIGN.md](./architecture/ZERO-BASED-IDEAL-DESIGN.md)** - ゼロベースで再設計する場合の理想像（設計/技術構成）
 - [product/OVERVIEW.md](./product/OVERVIEW.md) - 概要説明資料
 - [product/DETAIL.md](./product/DETAIL.md) - 詳細説明資料
 - [product/USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
