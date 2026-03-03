@@ -13,13 +13,6 @@ on:
         description: 'HTTP/S3 URL to download kvonce OTLP payload JSON'
         required: false
   pull_request:
-    paths:
-      - 'spec/**'
-      - 'templates/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'artifacts/**'
-      - '.github/workflows/spec-generate-model.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -334,6 +327,67 @@ jobs:
           node ./scripts/ci/validate-report-envelope.mjs \
             artifacts/kvonce-trace-envelope.json \
             schema/envelope.schema.json
+      - name: Emit trace automation report
+        if: always()
+        env:
+          AE_AUTOMATION_REPORT_FILE: artifacts/automation/kvonce-trace-validation-report.json
+          TRACE_SUMMARY_OUTCOME: ${{ steps.trace_summary.outcome || 'unknown' }}
+          VALID_OTLP: ${{ steps.trace_summary.outputs.valid_otlp || 'missing' }}
+          VALID_NDJSON: ${{ steps.trace_summary.outputs.valid_ndjson || 'missing' }}
+          ISSUES_OTLP: ${{ steps.trace_summary.outputs.issues_otlp || '' }}
+          ISSUES_NDJSON: ${{ steps.trace_summary.outputs.issues_ndjson || '' }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { emitAutomationReport } from './scripts/ci/lib/automation-report.mjs';
+
+          const toInt = (value) => {
+            if (value === null || value === undefined) {
+              return null;
+            }
+            const str = String(value).trim();
+            if (str === '') {
+              return null;
+            }
+            const parsed = Number.parseInt(str, 10);
+            return Number.isFinite(parsed) ? parsed : null;
+          };
+
+          const outcome = String(process.env.TRACE_SUMMARY_OUTCOME || '').trim();
+          const validOtlp = String(process.env.VALID_OTLP || 'missing').trim();
+          const validNdjson = String(process.env.VALID_NDJSON || 'missing').trim();
+
+          let status = 'error';
+          let reason = 'trace summary unavailable';
+          if (outcome === 'success' && validOtlp === 'true' && validNdjson === 'true') {
+            status = 'resolved';
+            reason = 'trace validation passed';
+          } else if (validOtlp === 'false' || validNdjson === 'false' || outcome === 'failure') {
+            status = 'error';
+            reason = 'trace validation failed';
+          } else if (outcome === 'cancelled') {
+            status = 'error';
+            reason = 'trace validation cancelled';
+          } else if (validOtlp === 'missing' && validNdjson === 'missing') {
+            status = 'error';
+            reason = 'trace validation report missing';
+          }
+
+          emitAutomationReport({
+            tool: 'kvonce-trace-validation',
+            mode: 'validate',
+            status,
+            reason,
+            metrics: {
+              issuesOtlp: toInt(process.env.ISSUES_OTLP),
+              issuesNdjson: toInt(process.env.ISSUES_NDJSON),
+              validOtlp: validOtlp === 'true' ? 1 : validOtlp === 'false' ? 0 : null,
+              validNdjson: validNdjson === 'true' ? 1 : validNdjson === 'false' ? 0 : null,
+            },
+            data: {
+              traceSummaryOutcome: outcome || 'unknown',
+            },
+          });
+          NODE
       - name: Upload trace artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -350,6 +404,7 @@ jobs:
             artifacts/hermetic-reports/trace/ndjson/kvonce-events.ndjson
             artifacts/hermetic-reports/trace/ndjson/kvonce-projection.json
             artifacts/hermetic-reports/trace/ndjson/kvonce-validation.json
+            artifacts/automation/kvonce-trace-validation-report.json
           if-no-files-found: warn
       - name: Update PR with trace summary
         if: github.event_name == 'pull_request'

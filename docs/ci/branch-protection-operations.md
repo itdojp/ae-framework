@@ -20,6 +20,9 @@
   - `policy-gate` で risk/approval/label-gate 条件を強制
   - さらに `gate` も Required に含め、Copilot指摘の存在と解決を強制
   - 備考: Branch protection の context は workflow表示名ではなく check context（`verify-lite`, `policy-gate`, `gate`）を使用
+- `branch-protection.main.verify-lite-trace-noreview.json` … trace Required化案（#2394）
+  - `verify-lite` / `policy-gate` / `gate` に加えて `KvOnce Trace Validation` を Required に追加
+  - 適用前に `docs/ci/trace-required-criteria.md` の Go/No-Go 基準で判定する
 
 ## 現行ベースライン（main, 2026-03-02 時点）
 
@@ -105,6 +108,7 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 - [ ] `verify-lite` が Required に含まれている
 - [ ] `policy-gate` が Required に含まれている
 - [ ] （既存運用）`gate` が Required に含まれている
+- [ ] （trace Required化後）`KvOnce Trace Validation` が Required に含まれている
 - [ ] PR Verify / verify が Required に含まれていない（verify-lite 運用時）
 - [ ] main で想定外の Required チェックが残っていない
 
