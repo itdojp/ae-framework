@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -112,6 +112,18 @@ function parseExecutionPayload(stdout) {
   }
 }
 
+function toExecutorFailureReason(error) {
+  const status = Number.isInteger(error?.status) ? `exit=${error.status}` : null;
+  const signal = String(error?.signal || '').trim();
+  const signalPart = signal ? `signal=${signal}` : null;
+  const code = String(error?.code || '').trim();
+  const codePart = code && !status ? `code=${code}` : null;
+  const details = [status, signalPart, codePart].filter(Boolean).join(', ');
+  return details
+    ? `actionable executor command failed (${details})`
+    : 'actionable executor command failed';
+}
+
 function executeActionableTasks(tasks, options = {}) {
   const list = Array.isArray(tasks) ? tasks.filter(Boolean) : [];
   if (list.length === 0) {
@@ -131,16 +143,18 @@ function executeActionableTasks(tasks, options = {}) {
     );
   }
 
-  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ae-actionable-executor-'));
-  const tasksPath = path.join(tempRoot, 'tasks.json');
-  fs.writeFileSync(tasksPath, `${JSON.stringify({
-    prNumber: options.prNumber || null,
-    round: options.round || null,
-    tasks: list,
-  }, null, 2)}\n`);
-
+  let tempRoot = '';
+  let tasksPath = '';
   try {
-    const stdout = execFileSync('bash', ['-lc', command], {
+    tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ae-actionable-executor-'));
+    tasksPath = path.join(tempRoot, 'tasks.json');
+    fs.writeFileSync(tasksPath, `${JSON.stringify({
+      prNumber: options.prNumber || null,
+      round: options.round || null,
+      tasks: list,
+    }, null, 2)}\n`);
+
+    const stdout = execSync(command, {
       env: {
         ...process.env,
         ...(options.env || {}),
@@ -148,6 +162,7 @@ function executeActionableTasks(tasks, options = {}) {
         AE_ACTIONABLE_PR_NUMBER: String(options.prNumber || ''),
         AE_ACTIONABLE_ROUND: String(options.round || ''),
       },
+      shell: true,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -155,14 +170,15 @@ function executeActionableTasks(tasks, options = {}) {
     const normalized = normalizeExecutionResults(parsed?.results, list);
     return summarizeResults(normalized);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
     return summarizeWithSingleReason(
       list,
       'failed',
-      `actionable executor command failed: ${message}`,
+      toExecutorFailureReason(error),
     );
   } finally {
-    fs.rmSync(tempRoot, { recursive: true, force: true });
+    if (tempRoot) {
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
   }
 }
 

@@ -707,6 +707,11 @@ async function processPr(number) {
       }
       if (actionableState.total > 0) {
         actions.push(`round${round}: detect actionable non-suggestion review tasks (${actionableState.total})`);
+        if (!actionableCommand) {
+          finalReason = `actionable review tasks pending: ${actionableState.total}`;
+          actions.push(`round${round}: actionable command is not configured; stop fail-closed`);
+          break;
+        }
         const execution = executeActionableTasks(actionableState.tasks, {
           dryRun: actionableDryRun,
           command: actionableCommand,

@@ -49,6 +49,7 @@ Repository Variables:
 3. `mergeState=BEHIND` なら `PR Maintenance` の update-branch を dispatch
 4. 未解決の AI review thread を走査し、`suggestion` ではない actionable 指摘を検出した場合:
    - `AE_AUTOPILOT_ACTIONABLE_COMMAND` が設定されていれば実行し、結果を集計
+   - `AE_AUTOPILOT_ACTIONABLE_COMMAND` 未設定時は `actionable review tasks pending` で停止（従来どおり）
    - 失敗（`failed > 0`）は fail-closed で `status:blocked`
    - active実行で `skipped > 0` は `actionable execution incomplete` として fail-closed
    - 成功時は再評価へ進行
