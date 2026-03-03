@@ -97,6 +97,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - TDD Framework Architecture: `architecture/TDD-FRAMEWORK-ARCHITECTURE.md`
 - CEGIS Design: `architecture/CEGIS-DESIGN.md`
 - Runtime Conformance Design: `architecture/RUNTIME-CONFORMANCE-DESIGN.md`
+- Zero-based ideal redesign: `architecture/ZERO-BASED-IDEAL-DESIGN.md`
 
 ### Quality / Verification
 - Formal Quality Gates (DoD v0.2): `quality/formal-gates.md`
@@ -242,6 +243,7 @@ Claude CodeやMCPとの統合
 - **[TDD-FRAMEWORK-ARCHITECTURE.md](./architecture/TDD-FRAMEWORK-ARCHITECTURE.md)** ⭐ **重要** - TDDフレームワーク設計
 - **🆕 [CEGIS-DESIGN.md](./architecture/CEGIS-DESIGN.md)** ⭐ **NEW** - CEGIS自動修復システム設計
 - **🆕 [RUNTIME-CONFORMANCE-DESIGN.md](./architecture/RUNTIME-CONFORMANCE-DESIGN.md)** ⭐ **NEW** - Runtime Conformance設計
+- **🆕 [ZERO-BASED-IDEAL-DESIGN.md](./architecture/ZERO-BASED-IDEAL-DESIGN.md)** ⭐ **NEW** - ゼロベース再設計（理想アーキテクチャ + 技術再選定）
 - [ARCHITECTURE.md](./architecture/ARCHITECTURE.md) - システムアーキテクチャ
 - [NEW_FEATURES.md](./architecture/NEW_FEATURES.md) - 新機能仕様
 
@@ -281,6 +283,7 @@ Claude CodeやMCPとの統合
 
 ### 🧠 現行実装ベース全体像（推奨）
 - **[architecture/CURRENT-SYSTEM-OVERVIEW.md](./architecture/CURRENT-SYSTEM-OVERVIEW.md)** - 2026-03 時点の全体構成（CLI/CI/Formal/Artifacts）
+- **[architecture/ZERO-BASED-IDEAL-DESIGN.md](./architecture/ZERO-BASED-IDEAL-DESIGN.md)** - ゼロベースで再設計する場合の理想像（設計/技術構成）
 - [product/OVERVIEW.md](./product/OVERVIEW.md) - 概要説明資料
 - [product/DETAIL.md](./product/DETAIL.md) - 詳細説明資料
 - [product/USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
