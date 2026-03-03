@@ -25,6 +25,7 @@ import {
   buildActionTaskFromComment,
   summarizeActionTasks,
 } from './lib/review-comment-classifier.mjs';
+import { executeActionableTasks } from './lib/actionable-task-executor.mjs';
 import { DEFAULT_POLICY_PATH, collectRequiredLabels, loadRiskPolicy } from './lib/risk-policy.mjs';
 
 const marker = '<!-- AE-CODEX-AUTOPILOT v1 -->';
@@ -45,6 +46,11 @@ const roundWaitMaxFallback = hasExplicitRoundWaitSeconds
   : AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS_DEFAULT;
 const roundWaitMaxSeconds = readIntEnv('AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS', roundWaitMaxFallback, 0);
 const dryRun = toBool(process.env.AE_AUTOPILOT_DRY_RUN) || toBool(process.env.DRY_RUN);
+const hasExplicitActionableDryRun = String(process.env.AE_AUTOPILOT_ACTIONABLE_DRY_RUN || '').trim() !== '';
+const actionableDryRun = hasExplicitActionableDryRun
+  ? toBool(process.env.AE_AUTOPILOT_ACTIONABLE_DRY_RUN)
+  : dryRun;
+const actionableCommand = String(process.env.AE_AUTOPILOT_ACTIONABLE_COMMAND || '').trim();
 const autoLabelEnabled = toBool(process.env.AE_AUTOPILOT_AUTO_LABEL);
 const riskPolicyPath = String(process.env.AE_AUTOPILOT_RISK_POLICY_PATH || DEFAULT_POLICY_PATH).trim() || DEFAULT_POLICY_PATH;
 const globalDisabled = toBool(process.env.AE_AUTOMATION_GLOBAL_DISABLE);
@@ -188,6 +194,47 @@ function parseGateStatus(statusCheckRollup) {
   return 'failure';
 }
 
+function createEmptyActionableExecution() {
+  return {
+    attempted: 0,
+    succeeded: 0,
+    failed: 0,
+    skipped: 0,
+    status: 'skipped',
+    results: [],
+  };
+}
+
+function mapLaneStatusToExecutionResult(status) {
+  if (status === 'done') return 'success';
+  if (status === 'blocked') return 'failed';
+  return 'skipped';
+}
+
+function formatActionableExecutionLine(execution) {
+  const summary = execution && typeof execution === 'object'
+    ? execution
+    : createEmptyActionableExecution();
+  return `${summary.status} (attempted=${summary.attempted}, succeeded=${summary.succeeded}, failed=${summary.failed}, skipped=${summary.skipped})`;
+}
+
+function summarizeActionableExecutionResults(execution, maxItems = 3) {
+  const summary = execution && typeof execution === 'object'
+    ? execution
+    : createEmptyActionableExecution();
+  const list = Array.isArray(summary.results) ? summary.results : [];
+  const limit = Math.max(1, Number(maxItems) || 3);
+  return list
+    .slice()
+    .sort((left, right) => (left?.commentId || 0) - (right?.commentId || 0))
+    .slice(0, limit)
+    .map((item, index) => {
+      const reason = String(item?.reason || '').trim();
+      const reasonText = reason ? ` reason=${reason}` : '';
+      return `${index + 1}. comment=${item?.commentId || 'n/a'} status=${item?.status || 'unknown'}${reasonText}`;
+    });
+}
+
 function deriveUnblockActions(status, reason) {
   const normalizedStatus = String(status || '').trim().toLowerCase();
   const normalizedReason = String(reason || '').trim().toLowerCase();
@@ -220,6 +267,12 @@ function deriveUnblockActions(status, reason) {
   }
   if (normalizedReason.startsWith('actionable review tasks pending:')) {
     return ['Address actionable non-suggestion review comments (or reply why not applicable), then rerun `/autopilot run`.'];
+  }
+  if (normalizedReason.startsWith('actionable execution failed:')) {
+    return ['Inspect actionable execution results, apply fixes (or adjust `AE_AUTOPILOT_ACTIONABLE_COMMAND`), then rerun `/autopilot run`.'];
+  }
+  if (normalizedReason.startsWith('actionable execution incomplete:')) {
+    return ['Resolve skipped actionable tasks manually (or update `AE_AUTOPILOT_ACTIONABLE_COMMAND`), then rerun `/autopilot run`.'];
   }
   if (normalizedReason === 'actionable review task scan truncated (pagination required)') {
     return ['Reduce unresolved AI-review threads/comments (or implement pagination support), then rerun `/autopilot run`.'];
@@ -538,11 +591,13 @@ function renderBody(result) {
     `## Codex Autopilot Lane (${new Date().toISOString()})`,
     `- PR: #${result.number} ${result.title}`.trimEnd(),
     `- status: ${result.status}`,
+    `- execution-result: ${result.executionResult}`,
     `- rounds: ${result.rounds}`,
     `- dry-run: ${dryRun ? 'true' : 'false'}`,
     `- gate: ${result.gateStatus}`,
     `- unresolved copilot threads: ${result.unresolvedCopilot}`,
     `- actionable non-suggestion comments: ${result.actionableTasks}`,
+    `- actionable execution: ${formatActionableExecutionLine(result.actionableExecution)}`,
     `- mergeable: ${result.mergeable || 'UNKNOWN'}`,
     `- merge state: ${result.mergeState || 'UNKNOWN'}`,
   );
@@ -565,6 +620,12 @@ function renderBody(result) {
       lines.push(`  - ${item}`);
     }
   }
+  if (Array.isArray(result.actionableExecutionPreview) && result.actionableExecutionPreview.length > 0) {
+    lines.push('- actionable-execution-preview:');
+    for (const item of result.actionableExecutionPreview) {
+      lines.push(`  - ${item}`);
+    }
+  }
   return `${lines.join('\n')}\n`;
 }
 
@@ -573,6 +634,7 @@ async function processPr(number) {
   let finalReason = '';
   let finalState = null;
   let finalActionableState = { total: 0, preview: [], truncated: false };
+  let finalActionableExecution = createEmptyActionableExecution();
   let done = false;
   let roundsExecuted = 0;
   let requiredPolicyLabels = null;
@@ -629,7 +691,7 @@ async function processPr(number) {
       break;
     }
 
-    const threadState = fetchCopilotThreadState(number);
+    let threadState = fetchCopilotThreadState(number);
     if (threadState.truncated) {
       finalReason = 'actionable review task scan truncated (pagination required)';
       actions.push(`round${round}: detect pagination failure while scanning review threads/comments; stop fail-closed`);
@@ -644,9 +706,37 @@ async function processPr(number) {
         break;
       }
       if (actionableState.total > 0) {
-        finalReason = `actionable review tasks pending: ${actionableState.total}`;
         actions.push(`round${round}: detect actionable non-suggestion review tasks (${actionableState.total})`);
-        break;
+        if (!actionableCommand) {
+          finalReason = `actionable review tasks pending: ${actionableState.total}`;
+          actions.push(`round${round}: actionable command is not configured; stop fail-closed`);
+          break;
+        }
+        const execution = executeActionableTasks(actionableState.tasks, {
+          dryRun: actionableDryRun,
+          command: actionableCommand,
+          prNumber: number,
+          round,
+        });
+        finalActionableExecution = execution;
+        actions.push(
+          `round${round}: actionable execution ${execution.status} `
+          + `(attempted=${execution.attempted}, succeeded=${execution.succeeded}, failed=${execution.failed}, skipped=${execution.skipped})`,
+        );
+        if (execution.failed > 0) {
+          finalReason = `actionable execution failed: ${execution.failed}/${execution.attempted} failed`;
+          break;
+        }
+        if (!actionableDryRun && execution.skipped > 0) {
+          finalReason = `actionable execution incomplete: ${execution.skipped}/${execution.attempted} skipped`;
+          break;
+        }
+        threadState = fetchCopilotThreadState(number);
+        if (threadState.truncated) {
+          finalReason = 'actionable review task scan truncated (pagination required)';
+          actions.push(`round${round}: detect pagination failure while re-checking review threads/comments after actionable execution; stop fail-closed`);
+          break;
+        }
       }
     }
     const gateStatus = parseGateStatus(pr.statusCheckRollup || []);
@@ -720,21 +810,19 @@ async function processPr(number) {
     number,
     title: finalState?.title || '',
     status,
+    executionResult: mapLaneStatusToExecutionResult(status),
     reason: finalReason,
     rounds: roundsExecuted,
     actions,
     unresolvedCopilot: finalThreads.unresolvedCopilot,
     gateStatus: finalGate,
-    actionableTasks: 0,
-    actionablePreview: [],
+    actionableTasks: finalActionableState.total,
+    actionablePreview: finalActionableState.preview,
+    actionableExecution: finalActionableExecution,
+    actionableExecutionPreview: summarizeActionableExecutionResults(finalActionableExecution, 3),
     mergeable: finalState?.mergeable || '',
     mergeState: finalState?.mergeStateStatus || '',
   };
-
-  if (status === 'blocked' && String(finalReason || '').startsWith('actionable review tasks pending:')) {
-    result.actionableTasks = finalActionableState.total;
-    result.actionablePreview = finalActionableState.preview;
-  }
 
   if (!dryRun) {
     if (status === 'blocked') {
@@ -784,6 +872,7 @@ async function main() {
   try {
     const result = await processPr(prNumber);
     console.log(`[codex-autopilot] #${result.number}: ${result.status} (${result.reason || 'n/a'})`);
+    console.log(`[codex-autopilot] execution-result=${result.executionResult}`);
     const reportStatus = result.status === 'done' ? 'resolved' : result.status;
     emitAutomationReport({
       tool: 'codex-autopilot-lane',
@@ -797,10 +886,16 @@ async function main() {
         unresolvedCopilot: result.unresolvedCopilot,
         gateStatus: result.gateStatus,
         actionableTasks: result.actionableTasks,
+        actionableAttempted: result.actionableExecution.attempted,
+        actionableSucceeded: result.actionableExecution.succeeded,
+        actionableFailed: result.actionableExecution.failed,
+        actionableSkipped: result.actionableExecution.skipped,
       },
       data: {
         mergeable: result.mergeable,
         mergeState: result.mergeState,
+        executionResult: result.executionResult,
+        actionableExecutionStatus: result.actionableExecution.status,
       },
     });
   } catch (error) {
@@ -827,4 +922,7 @@ export {
   deriveUnblockActions,
   collectActionableTasksFromReviewThreads,
   paginateGraphqlConnection,
+  createEmptyActionableExecution,
+  formatActionableExecutionLine,
+  summarizeActionableExecutionResults,
 };
