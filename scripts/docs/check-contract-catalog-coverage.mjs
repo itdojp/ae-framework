@@ -17,6 +17,8 @@ function parseArgs(argv = process.argv) {
     rootDir: DEFAULT_ROOT,
     catalogPath: DEFAULT_CATALOG,
     schemaDir: DEFAULT_SCHEMA_DIR,
+    format: 'text',
+    unknown: [],
     help: false,
   };
 
@@ -29,7 +31,8 @@ function parseArgs(argv = process.argv) {
     }
     if (arg === '--root') {
       if (!next || next.startsWith('-')) {
-        throw new Error('missing value for --root');
+        options.unknown.push(arg);
+        continue;
       }
       options.rootDir = path.resolve(next);
       index += 1;
@@ -41,7 +44,8 @@ function parseArgs(argv = process.argv) {
     }
     if (arg === '--catalog') {
       if (!next || next.startsWith('-')) {
-        throw new Error('missing value for --catalog');
+        options.unknown.push(arg);
+        continue;
       }
       options.catalogPath = next;
       index += 1;
@@ -53,7 +57,8 @@ function parseArgs(argv = process.argv) {
     }
     if (arg === '--schema-dir') {
       if (!next || next.startsWith('-')) {
-        throw new Error('missing value for --schema-dir');
+        options.unknown.push(arg);
+        continue;
       }
       options.schemaDir = next;
       index += 1;
@@ -63,7 +68,25 @@ function parseArgs(argv = process.argv) {
       options.schemaDir = arg.slice('--schema-dir='.length);
       continue;
     }
-    throw new Error(`unknown option: ${arg}`);
+    if (arg === '--format') {
+      if (next === 'text' || next === 'json') {
+        options.format = next;
+        index += 1;
+      } else {
+        options.unknown.push(arg);
+      }
+      continue;
+    }
+    if (arg.startsWith('--format=')) {
+      const value = arg.slice('--format='.length);
+      if (value === 'text' || value === 'json') {
+        options.format = value;
+      } else {
+        options.unknown.push(arg);
+      }
+      continue;
+    }
+    options.unknown.push(arg);
   }
 
   return options;
@@ -125,6 +148,14 @@ export function run(argv = process.argv) {
   if (options.help) {
     printHelp();
     return 0;
+  }
+  if (options.unknown.length > 0) {
+    process.stderr.write('[contract-catalog] unknown options:\n');
+    for (const arg of options.unknown) {
+      process.stderr.write(`  - ${arg}\n`);
+    }
+    process.stderr.write('[contract-catalog] use --help for usage.\n');
+    return 2;
   }
 
   const result = checkCatalogCoverage(options);

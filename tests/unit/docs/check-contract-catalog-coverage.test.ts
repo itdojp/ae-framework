@@ -7,6 +7,7 @@ import {
   checkCatalogCoverage,
   listSchemas,
   parseArgs,
+  run,
 } from '../../../scripts/docs/check-contract-catalog-coverage.mjs';
 
 describe('check-contract-catalog-coverage', () => {
@@ -25,8 +26,20 @@ describe('check-contract-catalog-coverage', () => {
       rootDir: path.resolve('/tmp/repo'),
       catalogPath: 'docs/reference/CATALOG.md',
       schemaDir: 'schemas',
+      format: 'text',
+      unknown: [],
       help: false,
     });
+  });
+
+  it('collects unknown CLI options instead of throwing', () => {
+    const options = parseArgs([
+      'node',
+      'check-contract-catalog-coverage.mjs',
+      '--bogus',
+      '--root',
+    ]);
+    expect(options.unknown).toEqual(['--bogus', '--root']);
   });
 
   it('lists schema files in lexical order', () => {
@@ -90,5 +103,14 @@ describe('check-contract-catalog-coverage', () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+
+  it('returns exit code 2 when unknown options are provided', () => {
+    const exitCode = run([
+      'node',
+      'check-contract-catalog-coverage.mjs',
+      '--bogus',
+    ]);
+    expect(exitCode).toBe(2);
   });
 });
