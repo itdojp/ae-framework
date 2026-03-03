@@ -29,10 +29,12 @@ describe('run-manifest (generate + check)', () => {
       const verifyLitePath = join(dir, 'artifacts', 'verify-lite', 'verify-lite-run-summary.json');
       const envelopePath = join(dir, 'artifacts', 'report-envelope.json');
       const formalSummaryV1Path = join(dir, 'artifacts', 'formal', 'formal-summary-v1.json');
+      const formalSummaryV2Path = join(dir, 'artifacts', 'formal', 'formal-summary-v2.json');
 
       writeJson(verifyLitePath, { metadata: { gitCommit: commit } });
       writeJson(envelopePath, { correlation: { commit } });
       writeJson(formalSummaryV1Path, { metadata: { gitCommit: commit } });
+      writeJson(formalSummaryV2Path, { metadata: { gitCommit: commit } });
 
       const gen = runNode(
         dir,
@@ -49,11 +51,13 @@ describe('run-manifest (generate + check)', () => {
       expect(manifest.summaries.verifyLite.staleComparedToCurrentCommit).toBe(false);
       expect(manifest.summaries.reportEnvelope.status).toBe('present');
       expect(manifest.summaries.reportEnvelope.staleComparedToCurrentCommit).toBe(false);
+      expect(manifest.summaries.formalSummaryV2.status).toBe('present');
+      expect(manifest.summaries.formalSummaryV2.staleComparedToCurrentCommit).toBe(false);
 
       const check = runNode(
         dir,
         checkScript,
-        ['--manifest', 'artifacts/run-manifest.json', '--require-fresh', 'verifyLite,reportEnvelope,formalSummaryV1', '--result', 'artifacts/run-manifest-check.json'],
+        ['--manifest', 'artifacts/run-manifest.json', '--require-fresh', 'verifyLite,reportEnvelope,formalSummaryV1,formalSummaryV2', '--result', 'artifacts/run-manifest-check.json'],
         {},
       );
       expect(check.status).toBe(0);

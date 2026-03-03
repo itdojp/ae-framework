@@ -42,6 +42,18 @@ function validateSchema(schemaPath, fixturePaths) {
   return failures;
 }
 
+function preloadSharedSchemas() {
+  const sharedSchemas = [
+    'schema/artifact-metadata.schema.json',
+  ];
+  for (const schemaPath of sharedSchemas) {
+    const schema = loadJson(schemaPath);
+    ajv.addSchema(schema);
+  }
+}
+
+preloadSharedSchemas();
+
 const checks = [
   {
     schema: 'schema/envelope.schema.json',
@@ -165,6 +177,11 @@ const checks = [
     schema: 'schema/automation-observability-v1.schema.json',
     fixtures: ['fixtures/automation/sample.automation-observability-v1.json'],
     label: 'Automation report v1 schema validation'
+  },
+  {
+    schema: 'schema/formal-summary-v2.schema.json',
+    fixtures: ['fixtures/formal/sample.formal-summary-v2.json'],
+    label: 'Formal summary v2 schema validation'
   }
 ];
 

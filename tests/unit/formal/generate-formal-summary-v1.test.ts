@@ -32,13 +32,19 @@ describe('formal-summary/v1 generator', () => {
       writeJson(join(dir, 'input', 'conformance', 'summary.json'), { ok: true, exitCode: 0, timeMs: 5 });
 
       const out = join(dir, 'out', 'formal-summary-v1.json');
-      const result = runNode(dir, ['--layout', 'hermetic', '--in', 'input', '--out', out], { GIT_COMMIT: commit });
+      const outV2 = join(dir, 'out', 'formal-summary-v2.json');
+      const result = runNode(dir, ['--layout', 'hermetic', '--in', 'input', '--out', out, '--out-v2', outV2], { GIT_COMMIT: commit });
       expect(result.status).toBe(0);
 
       const payload = JSON.parse(readFileSync(out, 'utf8'));
       expect(payload.schemaVersion).toBe('formal-summary/v1');
       expect(payload.tool).toBe('aggregate');
       expect(payload.metadata.gitCommit).toBe(commit);
+
+      const payloadV2 = JSON.parse(readFileSync(outV2, 'utf8'));
+      expect(payloadV2.schemaVersion).toBe('formal-summary/v2');
+      expect(payloadV2.contractId).toBe('formal-summary.v2');
+      expect(payloadV2.metadata.gitCommit).toBe(commit);
 
       const names = payload.results.map((r: any) => r.name);
       expect(names).toEqual(['tla', 'alloy', 'smt', 'apalache', 'conformance', 'kani', 'spin', 'csp', 'lean']);

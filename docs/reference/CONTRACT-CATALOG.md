@@ -70,6 +70,7 @@
 - `schema/counterexample.schema.json`
 - `schema/envelope.schema.json`
 - `schema/formal-summary-v1.schema.json`
+- `schema/formal-summary-v2.schema.json`
 - `schema/report-envelope.schema.json`
 - `schema/spec-validation-report.schema.json`
 - `schema/trace-bundle.schema.json`
@@ -91,7 +92,8 @@
 | `artifacts/verify-lite/verify-lite-run-summary.json` | `schema/verify-lite-run-summary.schema.json` | `scripts/ci/write-verify-lite-summary.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-verify-lite-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/publish-envelope.mjs` |
 | `artifacts/trace/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` (copy運用含む) | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/post-envelope-comment.mjs` |
-| `artifacts/formal/formal-summary-v1.json` | `schema/formal-summary-v1.schema.json` | `scripts/formal/generate-formal-summary-v1.mjs`, `.github/workflows/formal-aggregate.yml` | `scripts/ci/validate-formal-summary-v1.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
+| `artifacts/formal/formal-summary-v1.json` | `schema/formal-summary-v1.schema.json` | `scripts/formal/generate-formal-summary-v1.mjs` (`--out`), `.github/workflows/verify-lite.yml`, `.github/workflows/formal-aggregate.yml` | `scripts/ci/validate-formal-summary-v1.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/generate-run-manifest.mjs` |
+| `artifacts/formal/formal-summary-v2.json` | `schema/formal-summary-v2.schema.json` | `scripts/formal/generate-formal-summary-v1.mjs` (`--out-v2`), `.github/workflows/verify-lite.yml`, `.github/workflows/formal-aggregate.yml` | `scripts/ci/validate-formal-summary-v2.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/generate-run-manifest.mjs` |
 | `artifacts/conformance/conformance-results.json` | `schema/conformance-verify-result.schema.json` | `src/cli/conformance-cli.ts` (`ae conformance verify`) | `src/cli/conformance-report.ts`, `scripts/formal/verify-conformance.mjs` |
 | `artifacts/hermetic-reports/conformance/summary.json` | `schema/conformance-report.schema.json` | `scripts/formal/verify-conformance.mjs` | `scripts/change-package/generate.mjs`, `scripts/ci/validate-json.mjs` |
 | `artifacts/observability/trace-bundle.json` | `schema/trace-bundle.schema.json` | `src/cli/conformance-cli.ts` (`ae conformance ingest`) | `src/cli/conformance-cli.ts` (`ae conformance verify --trace-bundle`) |
@@ -105,6 +107,7 @@
 ## 5. 現時点の未整備（次段階）
 
 - `schemaVersion` は semver と `*/v1` 形式が混在している（統一規約は `docs/reference/SCHEMA-GOVERNANCE.md` で段階導入）。
+- Formal Summary は `v1` / `v2` の dual-write + dual-validate 期間として運用中（`v2`: `schemaVersion=formal-summary/v2`, `contractId=formal-summary.v2`）。
 - `report-envelope` は `schema/envelope.schema.json` と `schema/report-envelope.schema.json` の二系統が併存している。
 - 次の artifact は専用 schema の明示運用が未完（要追加整理）:
   - `artifacts/verify-lite/verify-lite-lint-summary.json`
@@ -117,5 +120,7 @@
 - `docs/reference/SCHEMA-GOVERNANCE.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`
 - `scripts/ci/validate-artifacts-ajv.mjs`
+- `scripts/ci/validate-formal-summary-v1.mjs`
+- `scripts/ci/validate-formal-summary-v2.mjs`
 - `scripts/ci/validate-json.mjs`
 - `docs/architecture/PR-STATE-EXECUTION-PLAN-V1-DRAFT.md`

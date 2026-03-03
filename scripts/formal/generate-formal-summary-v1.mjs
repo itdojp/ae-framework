@@ -13,10 +13,17 @@ import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const DEFAULT_IN = 'artifacts_dl';
 const DEFAULT_OUT = path.join('artifacts', 'formal', 'formal-summary-v1.json');
+const DEFAULT_OUT_V2 = null;
 const DEFAULT_LAYOUT = 'downloaded';
 
 function parseArgs(argv) {
-  const args = { inDir: DEFAULT_IN, outFile: DEFAULT_OUT, layout: DEFAULT_LAYOUT, inProvided: false };
+  const args = {
+    inDir: DEFAULT_IN,
+    outFile: DEFAULT_OUT,
+    outFileV2: DEFAULT_OUT_V2,
+    layout: DEFAULT_LAYOUT,
+    inProvided: false,
+  };
   for (let i = 2; i < argv.length; i += 1) {
     const a = argv[i];
     const next = argv[i + 1];
@@ -32,6 +39,11 @@ function parseArgs(argv) {
       i += 1;
     } else if (a.startsWith('--out=')) {
       args.outFile = a.slice('--out='.length);
+    } else if (a === '--out-v2' && next) {
+      args.outFileV2 = next;
+      i += 1;
+    } else if (a.startsWith('--out-v2=')) {
+      args.outFileV2 = a.slice('--out-v2='.length);
     } else if (a === '--layout' && next) {
       args.layout = next;
       i += 1;
@@ -45,7 +57,7 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`Usage: node scripts/formal/generate-formal-summary-v1.mjs [--layout <downloaded|hermetic>] [--in <dir>] [--out <file>]
+  console.log(`Usage: node scripts/formal/generate-formal-summary-v1.mjs [--layout <downloaded|hermetic>] [--in <dir>] [--out <file>] [--out-v2 <file>]
 
 Options:
   --layout <downloaded|hermetic> Input layout (default: ${DEFAULT_LAYOUT})
@@ -53,8 +65,17 @@ Options:
                                downloaded: expects formal-reports-*/... under <dir>
                                hermetic: expects artifacts/hermetic-reports layout under <dir>
   --out <file>                 Output JSON file path (default: ${DEFAULT_OUT})
+  --out-v2 <file>              Optional Formal Summary v2 output path (disabled by default)
   -h, --help                   Show this help
 `);
+}
+
+function toFormalSummaryV2(summaryV1) {
+  return {
+    ...summaryV1,
+    schemaVersion: 'formal-summary/v2',
+    contractId: 'formal-summary.v2',
+  };
 }
 
 function readJsonSafe(p) {
@@ -271,6 +292,14 @@ function main() {
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
   console.log(`Formal Summary v1 written: ${path.relative(repoRoot, outFile)}`);
+
+  if (args.outFileV2) {
+    const summaryV2 = toFormalSummaryV2(summary);
+    const outFileV2 = path.resolve(repoRoot, args.outFileV2);
+    fs.mkdirSync(path.dirname(outFileV2), { recursive: true });
+    fs.writeFileSync(outFileV2, JSON.stringify(summaryV2, null, 2));
+    console.log(`Formal Summary v2 written: ${path.relative(repoRoot, outFileV2)}`);
+  }
   return 0;
 }
 

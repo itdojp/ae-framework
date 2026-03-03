@@ -66,7 +66,7 @@ jobs:
         if: always()
         continue-on-error: ${{ inputs.strict_formal_summary_v1 != true }}
         run: |
-          node scripts/formal/generate-formal-summary-v1.mjs --in artifacts_dl --out artifacts/formal/formal-summary-v1.json
+          node scripts/formal/generate-formal-summary-v1.mjs --in artifacts_dl --out artifacts/formal/formal-summary-v1.json --out-v2 artifacts/formal/formal-summary-v2.json
       - name: Upload aggregate
         if: always()
         uses: actions/upload-artifact@v4
@@ -85,14 +85,25 @@ jobs:
         with:
           name: formal-summary-v1
           path: artifacts/formal/formal-summary-v1.json
+      - name: Upload Formal Summary v2 JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-summary-v2
+          path: artifacts/formal/formal-summary-v2.json
       - name: Validate Formal Summary v1 JSON (non-blocking)
         if: always()
         run: |
           node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json || true
+      - name: Validate Formal Summary v2 JSON (non-blocking)
+        if: always()
+        run: |
+          node scripts/ci/validate-formal-summary-v2.mjs artifacts/formal/formal-summary-v2.json schema/formal-summary-v2.schema.json || true
       - name: Enforce Formal Summary v1 JSON (strict)
         if: inputs.strict_formal_summary_v1 == true
         run: |
           node scripts/ci/validate-formal-summary-v1.mjs --require artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json
+          node scripts/ci/validate-formal-summary-v2.mjs --require artifacts/formal/formal-summary-v2.json schema/formal-summary-v2.schema.json
       - name: Validate aggregate JSON (non-blocking)
         if: always()
         run: |

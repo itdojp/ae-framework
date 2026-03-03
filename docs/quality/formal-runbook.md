@@ -79,7 +79,7 @@ Timeout（任意）
   - `schema_version mismatch` の場合は `cspx-result.json` の `schema_version` を確認し、現行の契約（`schema_version=0.1`）に合わせて `cspx` を更新してください
   - 詳細: `docs/quality/formal-csp.md`
 - Logs: 生ログは `artifacts/hermetic-reports/formal/<tool>-output.txt` に保存（例: `apalache-output.txt`, `tla-output.txt`, `smt-output.txt`, `alloy-output.txt`, `spin-output.txt`, `csp-output.txt`, `lean-output.txt`）
-  - Formal Summary v1（`artifacts/formal/formal-summary-v1.json`）の `results[].logPath` は、ログが存在する場合にそのパス（repo-relative）を設定します
+  - Formal Summary v1/v2（`artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json`）の `results[].logPath` は、ログが存在する場合にそのパス（repo-relative）を設定します
 
 Advanced toggles（運用向け）
 - Aggregate wrap 幅: `FORMAL_AGG_WRAP_WIDTH`（0=無効、推奨 80–100）
@@ -90,10 +90,16 @@ Aggregate JSON の軽量検証（非ブロッキング）
 - 集約ワークフローでは `artifacts/formal/formal-aggregate.json` を出力し、最小スキーマを警告レベルで検証します。
 - ローカル確認: `node scripts/formal/validate-aggregate-json.mjs`（存在時に検証、欠損/不正は `::warning::` 出力）
 
-Formal Summary v1（Normalized / 段階導入）
-- 集約ワークフロー（および verify-lite の `run-formal` 実行）は `artifacts/formal/formal-summary-v1.json` を出力します（スキーマ: `schema/formal-summary-v1.schema.json`）。
-- ローカル確認: `node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json`
-- strict（欠損/不正で失敗）: PRラベル `enforce-formal` が付与されている場合、Formal Reports Aggregate 内で v1 を必須検証します。
+Formal Summary v1/v2（dual-write + dual-validate / 段階導入）
+- producer: `scripts/formal/generate-formal-summary-v1.mjs`（`--out` で v1、`--out-v2` で v2）を使用し、`.github/workflows/verify-lite.yml` と `.github/workflows/formal-aggregate.yml` で並行出力します。
+- 出力:
+  - `artifacts/formal/formal-summary-v1.json`（スキーマ: `schema/formal-summary-v1.schema.json`）
+  - `artifacts/formal/formal-summary-v2.json`（スキーマ: `schema/formal-summary-v2.schema.json`、`schemaVersion=formal-summary/v2`、`contractId=formal-summary.v2`）
+- dual-validate（ローカル）:
+  - `node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json`
+  - `node scripts/ci/validate-formal-summary-v2.mjs artifacts/formal/formal-summary-v2.json schema/formal-summary-v2.schema.json`
+- dual-validate（CI）: `scripts/ci/validate-artifacts-ajv.mjs` が v1/v2 をともに検証し、`.github/workflows/formal-aggregate.yml` の strict（`enforce-formal`）では v1/v2 を `--require` で必須化します。
+- consumer: `scripts/ci/generate-run-manifest.mjs` が `formalSummaryV1` / `formalSummaryV2` として参照します。
 - 1行サマリを表示する簡易CLI（ローカル）:
   - `node -e "const p='artifacts/formal/formal-aggregate.json';const j=require('fs').existsSync(p)?require('./'+p):null;if(!j){console.log('no aggregate');process.exit(0)}const pr=j.info?.present||{};const keys=Object.entries(pr).filter(([,v])=>v).map(([k])=>k);const total=(typeof j.info?.presentTotal==='number')?j.info.presentTotal:Object.keys(pr).length;console.log('Present:', keys.length+'/'+total, keys.length?('('+keys.join(', ')+')'):'');"`
   - jq 例（presentCount/by-type）:
@@ -257,6 +263,8 @@ Formal Verify の実行（target=all）
 
 Artifacts（Formal Reports）
 - `artifacts/hermetic-reports/formal/summary.json`: 形式結果の集約（Conformance/SMT/Alloy/TLA/Apalache/Kani/SPIN/CSP/Lean）
+- `artifacts/formal/formal-summary-v1.json`: Formal Summary v1（normalized）
+- `artifacts/formal/formal-summary-v2.json`: Formal Summary v2（`schemaVersion=formal-summary/v2`, `contractId=formal-summary.v2`）
 - `artifacts/hermetic-reports/formal/tla-summary.json`: TLA ランナーの簡易要約（engine/file/status/output）
 - `artifacts/hermetic-reports/formal/alloy-summary.json`: Alloy ランナーの簡易要約（file/status/output）
 - `artifacts/hermetic-reports/formal/smt-summary.json`: SMT ランナーの簡易要約（solver/file/status/output）
