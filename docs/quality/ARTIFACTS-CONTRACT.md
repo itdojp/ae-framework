@@ -119,5 +119,6 @@ node scripts/ci/check-required-artifacts.mjs --strict
 - `scripts/ci/validate-formal-summary-v1.mjs`
 - `schema/artifact-metadata.schema.json`
 - `schema/formal-summary-v1.schema.json`
+- `docs/reference/CONTRACT-CATALOG.md`
 - `docs/quality/path-normalization-contract.md`
 - `docs/quality/run-manifest-freshness-contract.md`
