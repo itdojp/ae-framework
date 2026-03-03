@@ -3,11 +3,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { resolveAutomationReasonCode } from './automation-reason-codes.mjs';
+
 const SCHEMA_VERSION = 'ae-automation-report/v1';
 
 function toInt(raw) {
   const parsed = Number.parseInt(String(raw || '').trim(), 10);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toNonEmptyString(value, fallback = '') {
+  const normalized = String(value || '').trim();
+  return normalized || fallback;
 }
 
 function buildRunUrl(env = process.env) {
@@ -61,6 +68,9 @@ function summarizeReport(report) {
     `- workflow: ${report.tool}`,
     `- status: ${report.status || 'unknown'}`,
   ];
+  if (report.reasonCode) {
+    lines.push(`- reasonCode: ${report.reasonCode}`);
+  }
   if (report.reason) {
     lines.push(`- reason: ${report.reason}`);
   }
@@ -91,6 +101,17 @@ function emitAutomationReport(input, env = process.env) {
       ...(input && typeof input.run === 'object' ? input.run : {}),
     },
   };
+
+  if (!toNonEmptyString(report.reasonCode) && report.status && String(report.status).trim() !== 'resolved') {
+    const derived = resolveAutomationReasonCode({
+      tool: report.tool,
+      status: report.status,
+      reason: report.reason,
+    });
+    if (derived) {
+      report.reasonCode = derived;
+    }
+  }
 
   const jsonLine = JSON.stringify(report);
   console.log(`[ae-automation-report] ${jsonLine}`);
