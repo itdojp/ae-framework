@@ -42,12 +42,9 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 
 | Key | conservative | balanced | aggressive |
 | --- | --- | --- | --- |
-| `AI_REVIEW_ACTORS` | default actors | default actors | default actors |
 | `AE_REVIEW_TOPOLOGY` | `team` | `team` | `team` |
 | `AE_POLICY_MIN_HUMAN_APPROVALS` | *(empty)* | *(empty)* | *(empty)* |
 | `AE_AUTOMATION_GLOBAL_DISABLE` | `0` | `0` | `0` |
-| `AE_AUTOPILOT_AUTO_LABEL` | `0` | `0` | `0` |
-| `AE_AUTOPILOT_RISK_POLICY_PATH` | `policy/risk-policy.yml` | `policy/risk-policy.yml` | `policy/risk-policy.yml` |
 | `AE_COPILOT_AUTO_FIX` | `1` | `1` | `1` |
 | `AE_COPILOT_AUTO_FIX_SCOPE` | `docs` | `docs` | `all` |
 | `AE_COPILOT_AUTO_FIX_LABEL` | `copilot-auto-fix` | *(empty)* | *(empty)* |
@@ -66,7 +63,12 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 | `COPILOT_REVIEW_WAIT_MINUTES` | `7` | `5` | `2` |
 | `COPILOT_REVIEW_MAX_ATTEMPTS` | `4` | `3` | `2` |
 
-`AI_REVIEW_ACTORS` の default actors:
+profile で値が変化しない（`default` または `explicit`/`legacy` で決まる）代表項目:
+- `AI_REVIEW_ACTORS`
+- `AE_AUTOPILOT_AUTO_LABEL`
+- `AE_AUTOPILOT_RISK_POLICY_PATH`
+
+`AI_REVIEW_ACTORS` の default actors（未設定時）:
 - `copilot-pull-request-reviewer`
 - `github-copilot`
 - `github-copilot[bot]`

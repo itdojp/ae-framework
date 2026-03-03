@@ -93,7 +93,7 @@ This document captures the implementation-aligned architecture of `ae-framework`
 補足:
 - `formal-verify.yml` は non-blocking 設計。必要時のみ `enforce-formal` で Apalache の `ran/ok` をゲート化。
 - `policy-gate.yml` の approval 評価は `AE_REVIEW_TOPOLOGY` / `AE_POLICY_MIN_HUMAN_APPROVALS` で切替可能。
-- `policy-gate.yml` は `policy/risk-policy.yml` の `required_checks` と `gate_checks` を評価し、`run-trace` ラベルでは `trace-conformance` / `KvOnce Trace Validation` の完了を監視します。
+- `policy-gate.yml` は `policy/risk-policy.yml` の `required_checks` を常時評価し、`gate_checks` は high-risk 判定時に評価します。`run-trace` に紐づく `trace-conformance` / `KvOnce Trace Validation` も high-risk 条件を満たした場合のみゲート対象です。
 - `codex-autopilot-lane.yml` は non-suggestion 指摘を fail-closed で扱い、`AE_AUTOPILOT_ACTIONABLE_COMMAND` 設定時のみ自動処理へ進みます。
 
 ## 5. 形式検証スタック（拡張後）
