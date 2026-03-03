@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/automation-observability-v1.schema.json",
+  "title": "Automation Observability Report v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "tool",
+    "status",
+    "run"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "ae-automation-report/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tool": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reason": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "prNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": "number" },
+          { "type": "string" },
+          { "type": "boolean" },
+          { "type": "null" }
+        ]
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "workflow",
+        "event",
+        "repository",
+        "ref",
+        "sha"
+      ],
+      "properties": {
+        "workflow": { "type": "string" },
+        "event": { "type": "string" },
+        "runId": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "attempt": {
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "url": { "type": "string" },
+        "repository": { "type": "string" },
+        "ref": { "type": "string" },
+        "sha": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

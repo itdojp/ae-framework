@@ -130,13 +130,21 @@ jobs:
           AE_AUTOPILOT_PR_STATE_FILE: artifacts/ci/pr-state-v1.json
           AE_AUTOPILOT_EXECUTION_PLAN_FILE: artifacts/ci/execution-plan-v1.json
           AE_AUTOPILOT_REQUIRED_CHECKS: gate
+          AE_AUTOMATION_REPORT_FILE: artifacts/ci/automation-report.json
         run: node scripts/ci/codex-autopilot-lane.mjs
+      - name: Validate autopilot automation report schema
+        if: always()
+        run: |
+          node scripts/ci/validate-automation-report.mjs \
+            artifacts/ci/automation-report.json \
+            schema/automation-observability-v1.schema.json
       - name: Upload autopilot contracts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: codex-autopilot-contracts
           path: |
+            artifacts/ci/automation-report.json
             artifacts/ci/pr-state-v1.json
             artifacts/ci/execution-plan-v1.json
           if-no-files-found: warn

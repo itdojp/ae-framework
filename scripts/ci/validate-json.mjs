@@ -160,6 +160,11 @@ const checks = [
     schema: 'schema/policy-gate-summary-v1.schema.json',
     fixtures: ['fixtures/policy-gate/sample.policy-gate-summary-v1.json'],
     label: 'Policy gate summary v1 schema validation'
+  },
+  {
+    schema: 'schema/automation-observability-v1.schema.json',
+    fixtures: ['fixtures/automation/sample.automation-observability-v1.json'],
+    label: 'Automation report v1 schema validation'
   }
 ];
 
