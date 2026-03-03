@@ -142,7 +142,7 @@ and (3) migration principles to move from the current implementation to the targ
 
 ## 6. 環境/言語/技術の再選定（フリーハンド）
 
-## 6.1 推奨スタック（理想案A: Hybrid）
+### 6.1 推奨スタック（理想案A: Hybrid）
 
 | レイヤ | 推奨 | 理由 |
 | --- | --- | --- |
@@ -158,24 +158,24 @@ and (3) migration principles to move from the current implementation to the targ
 | Observability | OpenTelemetry + Prometheus + Loki + Tempo + Grafana | トレース/ログ/メトリクス統合 |
 | Packaging | OCI + distroless | セキュリティ更新と再現性 |
 
-## 6.2 実行環境プロファイル
+### 6.2 実行環境プロファイル
 
-### Solo（開発者1名 + AIエージェント）
+#### Solo（開発者1名 + AIエージェント）
 - GitHub Actions中心
 - 外部DBなし（SQLite + artifact files でも可）
 - OPAはローカルbundle
 
-### Team（2〜20名）
+#### Team（2〜20名）
 - GitHub Actions + 軽量Control Plane（Go service）
 - PostgreSQL + S3 + Redis
 - NATSで非同期ジョブ分離
 
-### Enterprise（高トラフィック）
+#### Enterprise（高トラフィック）
 - Kubernetes（HPA）
 - PostgreSQL HA / object storage multi-AZ
 - multi-tenant policy bundles
 
-## 6.3 代替スタック案
+### 6.3 代替スタック案
 
 - 理想案B（TypeScript-only）
   - 速度優先で導入しやすいが、長期的には運用負荷が増えやすい。
