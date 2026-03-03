@@ -1,0 +1,66 @@
+# PoC成功基準（#2409 first slice: TS baseline vs Go/Rust）
+
+目的:
+- TypeScript baseline と Go/Rust 候補を同一条件で比較し、採用/不採用を機械的に判定できる基準を定義する。
+
+前提条件（2026-03-04時点）:
+- Node.js: `>=20.11 <23`（`package.json` の `engines.node`）
+- pnpm: `10.0.0`（`package.json` の `packageManager`）
+- 比較対象: `TS baseline` / `Go candidate` / `Rust candidate`
+- 同一入力データ・同一シナリオ・同一計測スクリプトで比較する。
+
+## 1. 計測プロトコル
+
+- シナリオ: `small` / `medium` / `large` の3段階（入力件数は比較テンプレートに固定値を記録）。
+- 反復回数: 各実装・各シナリオでウォームアップ2回 + 本計測10回。
+- 計測値: `throughput(req/s)`, `p95 latency(ms)`, `error rate(%)`, `peak RSS(MB)`, `cold start(ms)`。
+- 集計方法: 中央値（median）を主指標、ばらつきは `CV = stddev / mean` で算出。
+- ベースライン比: `ratio = candidate / ts_baseline`、改善率は `improvement = (1 - ratio) * 100`。
+
+## 2. 成功基準（定量・判定可能）
+
+| 区分 | 指標 | 合格基準 | 判定 |
+| --- | --- | --- | --- |
+| 性能 | `p95 latency ratio` | `<= 0.85`（TS比 15%以上改善） | 必須 |
+| 性能 | `throughput ratio` | `>= 1.20`（TS比 20%以上改善） | 必須 |
+| 性能 | `error rate` | `<= max(0.5, TS + 0.2pt)` | 必須 |
+| 性能 | `peak RSS ratio` | `<= 1.15` | 必須 |
+| 再現性 | `CV(p95 latency)` / `CV(throughput)` | いずれも `<= 0.05` | 必須 |
+| 再現性 | 出力整合 | 同一入力で checksum 一致率 `= 100%` | 必須 |
+| 実装コスト | PoC実装工数 | `<= 15` 人日（設計/実装/検証/文書化を含む） | 必須 |
+| 実装コスト | 立ち上げ時間 | 新規メンバーが `<= 45` 分でローカル計測を再現 | 必須 |
+| 運用差分 | CI実行時間増分 | 既存TS運用比 `<= +15%` | 必須 |
+| 運用差分 | 監視項目互換 | 既存SLO指標（latency/error/throughput）欠落 `= 0` | 必須 |
+| 運用差分 | セキュリティ差分 | 新規 Critical 脆弱性 `= 0` | 必須 |
+| 参考 | `cold start ratio` | `<= 1.10` | 参考 |
+
+## 3. Go / No-Go ルール
+
+- **Go**: 必須基準を全て充足し、撤収条件（第4章）に該当しない。
+- **Conditional Go**: 必須基準を充足しつつ、参考指標のみ未達。改善計画と期限（最大2スプリント）を ADR に明記する。
+- **No-Go**: 必須基準を1つでも未達、または撤収条件に該当。
+
+## 4. 撤収条件（早期中止・不採用）
+
+以下のいずれかを満たした時点で当該候補は撤収（不採用）とする。
+
+1. 2回連続計測で性能必須基準を2項目以上未達。
+2. 再現性基準（CVまたはchecksum一致）を1回でも満たせない。
+3. 実装工数が `20` 人日を超過見込み（残作業見積を含む）。
+4. CI運用差分が `+25%` を超え、改善策の見込みがない。
+5. 重大障害（P1相当）または Critical 脆弱性が解消不能。
+
+## 5. 証跡（必須成果物）
+
+- 比較計測結果: `docs/templates/quality/poc-comparison-metrics-template.md` を使用して記録。
+- 判定記録: `docs/templates/quality/adr-poc-adoption-template.md` を使用して ADR 化。
+- 実行ログ: コマンド、使用コミットSHA、計測日時、実行環境（CPU/メモリ/OS/ランタイム）を必ず添付。
+
+## 6. #2409 チェックリスト対応
+
+| #2409 first slice 項目 | 対応ドキュメント |
+| --- | --- |
+| 1) PoC成功基準の定義 | `docs/quality/poc-success-criteria-2409.md` |
+| 2) 比較計測テンプレート追加 | `docs/templates/quality/poc-comparison-metrics-template.md` |
+| 3) ADRテンプレート追加 | `docs/templates/quality/adr-poc-adoption-template.md` |
+| 4) docs index の最小更新 | `docs/README.md`, `docs/templates/quality/README.md` |

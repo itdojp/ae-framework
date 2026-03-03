@@ -17,6 +17,8 @@ Canonical templates live under `docs/quality/` and are linked below for reuse.
 - PR summary template: `docs/quality/pr-summary-template.md`
 - Verify-first gate baseline: `docs/quality/verify-first-gate-baseline.md`
 - Verify-first failure diagnostic template: `docs/quality/verify-first-failure-diagnostic-template.md`
+- PoC comparison metrics template (TS baseline vs Go/Rust): `docs/templates/quality/poc-comparison-metrics-template.md`
+- ADR template for PoC adoption/rejection: `docs/templates/quality/adr-poc-adoption-template.md`
 
 ### Guardrails (machine verifying machine)
 - Human review is required before merge, even if automated gates pass.
@@ -38,6 +40,8 @@ Canonical templates live under `docs/quality/` and are linked below for reuse.
 - PRサマリーテンプレ: `docs/quality/pr-summary-template.md`
 - Verify-first ゲート基準: `docs/quality/verify-first-gate-baseline.md`
 - Verify-first 失敗診断テンプレ: `docs/quality/verify-first-failure-diagnostic-template.md`
+- PoC比較計測テンプレート（TS baseline vs Go/Rust）: `docs/templates/quality/poc-comparison-metrics-template.md`
+- PoC採用/不採用判定ADRテンプレート: `docs/templates/quality/adr-poc-adoption-template.md`
 
 ### ガードレール（machine verifying machine）
 - 自動ゲートが通っても、人のレビューを必須とする。
