@@ -49,6 +49,7 @@ describe('automation-observability-weekly', () => {
         tool: 'auto-merge-enabler',
         status: 'blocked',
         reason: 'checks pending',
+        reasonCode: 'checks.waiting_queue',
         generatedAt: '2026-02-13T00:20:00.000Z',
         metrics: { rounds: 2 },
         run: { url: 'https://example/runs/2' },
@@ -67,6 +68,7 @@ describe('automation-observability-weekly', () => {
         tool: 'copilot-auto-fix',
         status: 'error',
         reason: 'api timeout',
+        reasonCode: 'automation.unknown',
         generatedAt: '2026-02-13T01:00:00.000Z',
         run: { url: 'https://example/runs/4' },
       },
@@ -108,6 +110,12 @@ describe('automation-observability-weekly', () => {
     expect(summary.mttr.recoveries).toBe(2);
     expect(summary.mttr.meanMinutes).toBe(45);
     expect(summary.mttr.achieved).toBe(true);
+
+    expect(summary.topFailureReasonCodes).toHaveLength(2);
+    const codeMap = new Map(summary.topFailureReasonCodes.map((item) => [item.reasonCode, item]));
+    expect(codeMap.get('checks.waiting_queue')?.count).toBe(1);
+    expect(codeMap.get('automation.unknown')?.count).toBe(1);
+    expect(summary.reasonCodeCoveragePercent).toBe(100);
   });
 
   it('parses integers with min validation', () => {
@@ -378,6 +386,7 @@ describe('automation-observability-weekly', () => {
     });
     expect(lines[0]).toBe('## Automation Observability Weekly Summary');
     expect(lines.some((line) => line.includes('failures(error/blocked): 1'))).toBe(true);
+    expect(lines.some((line) => line.includes('reasonCode coverage (failures):'))).toBe(true);
     expect(lines.some((line) => line.includes('blockedRate: 33.33%'))).toBe(true);
     expect(lines.some((line) => line.includes('maxConsecutiveFailures: 1'))).toBe(true);
     expect(lines.some((line) => line.includes('convergence rounds (overall): count=2, mean=1.5, p95=2, max=2'))).toBe(true);
@@ -385,6 +394,7 @@ describe('automation-observability-weekly', () => {
     expect(lines.some((line) => line.includes('SLO successRate'))).toBe(true);
     expect(lines.some((line) => line.includes('MTTR mean'))).toBe(true);
     expect(lines.some((line) => line.includes('MTTR by incident type'))).toBe(true);
+    expect(lines.some((line) => line.includes('Top failure reason codes'))).toBe(true);
     expect(lines.some((line) => line.includes('Top failure reasons'))).toBe(true);
   });
 
@@ -413,6 +423,8 @@ describe('automation-observability-weekly', () => {
     });
 
     expect(lines.some((line) => line.includes('blockedRate: n/a (no reports in this period)'))).toBe(true);
+    expect(lines.some((line) => line.includes('reasonCode coverage (failures): n/a'))).toBe(true);
+    expect(lines.some((line) => line.includes('reasonCode coverage (failures): n/a%'))).toBe(false);
     expect(lines.some((line) => line.includes('(0/0)'))).toBe(false);
   });
 });

@@ -81,4 +81,29 @@ describe('automation-report', () => {
       fs.rmSync(tmpRoot, { recursive: true, force: true });
     }
   });
+
+  it('derives reasonCode for non-resolved reports when missing', () => {
+    const blocked = emitAutomationReport({
+      tool: 'pr-self-heal',
+      status: 'blocked',
+      reason: '2 target(s) blocked',
+    }, {});
+    expect(blocked.reasonCode).toBe('automation.targets_blocked');
+
+    const autopilot = emitAutomationReport({
+      tool: 'codex-autopilot-lane',
+      status: 'blocked',
+      reason: 'merge conflict',
+      prNumber: 42,
+    }, {});
+    expect(autopilot.reasonCode).toBe('vcs.merge_conflict');
+
+    const skipped = emitAutomationReport({
+      tool: 'copilot-auto-fix',
+      status: 'skip',
+      reason: 'AE_AUTOMATION_GLOBAL_DISABLE is enabled',
+      prNumber: 42,
+    }, {});
+    expect(skipped.reasonCode).toBe('automation.globally_disabled');
+  });
 });
