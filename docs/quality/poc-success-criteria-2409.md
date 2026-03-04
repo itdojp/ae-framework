@@ -130,6 +130,14 @@ node scripts/quality/bench-compare.mjs \
   - 適用時の切替手順（on/off 条件、ロールバック手順）を運用手順へ明記済み
 - 上記を満たした時点で、`monitor` ジョブ内の `bench-compare` を段階的に gate 化する（最初は warning 運用、次に fail 運用）。
 
+### 5.1.3 Nightly 失敗時の artifact 確認手順（monitor）
+
+1. GitHub Actions の `Nightly Matrix` 実行履歴から失敗 run を開き、`monitor` job の `Upload artifacts` ステップが実行済みであることを確認する。
+2. run の Artifacts から `nightly-artifacts` をダウンロードし、`artifacts/bench-ts-compare.json` を確認する。
+   - `ok: false` または `rows[].pass: false` の行が、`compare-bench.mjs`（2点比較・5%許容）での閾値逸脱箇所を示す。
+3. 併せて `artifacts/bench-ts-runset.txt` と `artifacts/bench-ts-run*.json` を参照し、比較対象 run の取り違えがないことを検証する。
+4. `artifacts/bench-compare.json` / `artifacts/bench-compare.md` が存在する場合は、再現性（CV/checksum）と trend の補助情報として確認する。
+
 ### 5.2 指標の一次データ源と算出方式（確定）
 
 - 入力契約: `benchmark-report/v1`（`schema/benchmark-report.schema.json`）
