@@ -90,6 +90,20 @@ jobs:
           RUNSET="$(cat artifacts/bench-ts-runset.txt)"
           IFS=',' read -r BENCH_1 BENCH_2 _ <<< "${RUNSET}"
           node scripts/ci/compare-bench.mjs "${BENCH_1}" "${BENCH_2}" 0.05
+      - name: Generate bench-compare report (report-only)
+        run: |
+          RUNSET="$(cat artifacts/bench-ts-runset.txt)"
+          node scripts/quality/bench-compare.mjs \
+            --baseline "${RUNSET}" \
+            --candidate ts-self="${RUNSET}" \
+            --out-json artifacts/bench-compare.json \
+            --out-md artifacts/bench-compare.md
+      - name: Show nightly reproducibility summary
+        run: |
+          jq '{
+            baselineReproducibility: .baseline.reproducibility,
+            candidateReproducibility: .candidates[0].reproducibility
+          }' artifacts/bench-compare.json
       - name: Replay smoke
         run: AE_RECORDER_MODE=replay node dist/src/cli/index.js agent:complete --prompt "Hello, ae!"
       - name: Upload artifacts
