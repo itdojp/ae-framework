@@ -169,8 +169,28 @@ export const isProtectedBranch = (name) =>
 
 const defaultBranchExists = (branch) => runGitSafe(['show-ref', '--verify', '--quiet', `refs/heads/${branch}`]).ok;
 
+// NOTE: This "merged" check only succeeds when the branch tip is an ancestor
+// of base. Squash merges typically create a new commit on base, so squash-merged
+// branches may still be treated as "branch-not-merged" by this default.
 const defaultIsMergedToBase = (branch, base) => runGitSafe(['merge-base', '--is-ancestor', branch, base]).ok;
 
+/**
+ * Collect worktrees that are safe cleanup candidates.
+ *
+ * @param {Array<{
+ *   path: string,
+ *   branch?: string,
+ *   locked?: boolean
+ * }>} worktrees Parsed `git worktree list --porcelain` entries.
+ * @param {{ currentWorktreePath: string, baseRef: string }} context
+ * @param {{
+ *   branchExists?: (branch: string) => boolean,
+ *   isMergedToBase?: (branch: string, baseRef: string) => boolean
+ * }} [overrides]
+ * `isMergedToBase` defaults to merge-base ancestor semantics (non-squash merge
+ * oriented). To treat squash-merged branches as merged, pass a custom
+ * implementation via `overrides`.
+ */
 export const collectCleanupCandidates = (
   worktrees,
   { currentWorktreePath, baseRef },

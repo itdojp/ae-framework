@@ -8,6 +8,14 @@ This runbook defines a safe process to remove stale local worktrees that are alr
 - Goal: reduce stale worktree noise and avoid merge/conflict overhead
 - Safe default: **only branch-attached worktrees whose branch is already merged to base**
 
+## Merge semantics note
+
+- This tool defines "merged" as `git merge-base --is-ancestor <branch> <base>`.
+- In squash-merge workflows, a merged PR branch may not be an ancestor of `base`,
+  so it can still be reported as `branch-not-merged`.
+- If squash-merged branches should be treated as merged, run with a custom
+  `isMergedToBase` strategy (wrapper script / API-assisted check).
+
 ## Protected branch rules
 
 The cleanup script never removes worktrees attached to:
