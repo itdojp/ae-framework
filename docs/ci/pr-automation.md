@@ -127,12 +127,32 @@ PR運用を以下の形に収束させます。
 - `AE_POLICY_MIN_HUMAN_APPROVALS` を設定した場合は topology 設定より優先されます。
 - high risk PR の人手承認を branch rule 側で必須化すると、solo 運用と整合しないため非推奨です。
 
+### 3.1.3 Policy Engine ロールアウト（`shadow` → `shadow_strict`）
+
+`policy-gate.yml` の OPA shadow compare は `AE_POLICY_ENGINE_MODE`（Repository Variables）で段階移行できます。
+
+- `shadow`（既定）: 既存互換。`policy-shadow-compare` は report-only で実行し、mismatch は成果物に記録
+- `shadow_strict`: `policy-shadow-compare --strict` で実行し、mismatch を `policy-gate` 失敗として扱う
+
+推奨移行手順:
+1. `AE_POLICY_ENGINE_MODE=shadow` のまま `artifacts/ci/policy-shadow-compare-v1.json` を観測し、mismatch 傾向を把握する
+2. 運用上許容できる水準まで収束したら `AE_POLICY_ENGINE_MODE=shadow_strict` に切り替える
+3. 想定外差分が増えた場合は `AE_POLICY_ENGINE_MODE=shadow` に戻し、`policy-decision-js-v1.json` / `policy-decision-opa-v1.json` 差分を起点に原因を切り分ける
+
+注記:
+- 未設定時は `shadow` として扱われます
+- 不正値は `shadow` にフォールバックし、`policy-shadow-compare` が warning を出力します
+
 ### 3.2 変数セット例（保守的）
 
 体制切替:
 - `AE_REVIEW_TOPOLOGY=team`（既定、複数人体制）
 - `AE_REVIEW_TOPOLOGY=solo`（1人体制）
 - `AE_POLICY_MIN_HUMAN_APPROVALS=`（空: override無効）
+
+policy engine rollout:
+- `AE_POLICY_ENGINE_MODE=shadow`（既定、report-only）
+- `AE_POLICY_ENGINE_MODE=shadow_strict`（mismatchをblocking）
 
 auto-fix（docsのみ）:
 - `AE_COPILOT_AUTO_FIX=1`

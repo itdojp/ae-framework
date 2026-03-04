@@ -121,8 +121,16 @@ jobs:
 
       - name: Policy shadow compare (JS vs OPA)
         if: ${{ always() && steps.pr.outputs.skip != 'true' }}
-        continue-on-error: true
-        run: node scripts/ci/policy-shadow-compare.mjs
+        continue-on-error: ${{ vars.AE_POLICY_ENGINE_MODE != 'shadow_strict' }}
+        env:
+          AE_POLICY_ENGINE_MODE: ${{ vars.AE_POLICY_ENGINE_MODE || 'shadow' }}
+        run: |
+          set -euo pipefail
+          compare_args=(--mode "${AE_POLICY_ENGINE_MODE}")
+          if [ "${AE_POLICY_ENGINE_MODE}" = "shadow_strict" ]; then
+            compare_args+=(--strict)
+          fi
+          node scripts/ci/policy-shadow-compare.mjs "${compare_args[@]}"
       - name: Upload policy artifacts
         if: always()
         uses: actions/upload-artifact@v4

@@ -11,6 +11,9 @@ const DEFAULT_COMPARE_REPORT_PATH = 'artifacts/ci/policy-shadow-compare-v1.json'
 const DEFAULT_REGO_PATH = 'policy/risk-policy.rego';
 const DEFAULT_QUERY = 'data.ae.policy.decision';
 const DEFAULT_OPA_BIN = process.env.OPA_BIN || 'opa';
+const POLICY_ENGINE_MODE_ENV = 'AE_POLICY_ENGINE_MODE';
+const POLICY_ENGINE_MODE_SHADOW = 'shadow';
+const POLICY_ENGINE_MODE_SHADOW_STRICT = 'shadow_strict';
 
 function parseArgs(argv) {
   const options = {
@@ -21,6 +24,7 @@ function parseArgs(argv) {
     regoPath: DEFAULT_REGO_PATH,
     query: DEFAULT_QUERY,
     opaBin: DEFAULT_OPA_BIN,
+    mode: '',
     strict: false,
   };
 
@@ -86,6 +90,18 @@ function parseArgs(argv) {
       options.opaBin = value.slice('--opa-bin='.length);
       continue;
     }
+    if ((value === '--mode' || value === '--policy-engine-mode') && argv[index + 1]) {
+      options.mode = argv[++index];
+      continue;
+    }
+    if (value.startsWith('--mode=')) {
+      options.mode = value.slice('--mode='.length);
+      continue;
+    }
+    if (value.startsWith('--policy-engine-mode=')) {
+      options.mode = value.slice('--policy-engine-mode='.length);
+      continue;
+    }
     if (value === '--strict') {
       options.strict = true;
     }
@@ -123,6 +139,29 @@ function defaultCommandRunner(command, args) {
 
 function normalizeString(value) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function resolvePolicyEngineMode(rawMode) {
+  const normalized = normalizeString(rawMode).toLowerCase();
+  if (!normalized || normalized === POLICY_ENGINE_MODE_SHADOW) {
+    return {
+      mode: POLICY_ENGINE_MODE_SHADOW,
+      strict: false,
+      warning: '',
+    };
+  }
+  if (normalized === POLICY_ENGINE_MODE_SHADOW_STRICT) {
+    return {
+      mode: POLICY_ENGINE_MODE_SHADOW_STRICT,
+      strict: true,
+      warning: '',
+    };
+  }
+  return {
+    mode: POLICY_ENGINE_MODE_SHADOW,
+    strict: false,
+    warning: `unknown ${POLICY_ENGINE_MODE_ENV} value '${normalized}', fallback to '${POLICY_ENGINE_MODE_SHADOW}'`,
+  };
 }
 
 function toIntOrNull(value) {
@@ -328,6 +367,8 @@ function buildMarkdownSummary(report) {
     '### Policy Shadow Compare',
     `- status: ${report.status}`,
     `- PR: #${report.prNumber}`,
+    `- mode: ${report.policyEngineMode}`,
+    `- strict: ${report.strict ? 'true' : 'false'}`,
     `- opa engine: ${report.engine.status}${report.engine.version ? ` (${report.engine.version})` : ''}`,
   ];
 
@@ -370,6 +411,13 @@ async function runPolicyShadowComparison(
 
   let jsDecision = null;
   const notes = [];
+  const modeFromArgs = normalizeString(options.mode);
+  const mode = resolvePolicyEngineMode(modeFromArgs || process.env[POLICY_ENGINE_MODE_ENV] || '');
+  const strictEnabled = Boolean(options.strict || mode.strict);
+  if (mode.warning) {
+    notes.push(mode.warning);
+    process.stderr.write(`[policy-shadow-compare] warning: ${mode.warning}\n`);
+  }
   try {
     jsDecision = readJson(options.jsDecisionPath);
   } catch (error) {
@@ -403,6 +451,8 @@ async function runPolicyShadowComparison(
       jsDecisionPath: options.jsDecisionPath,
       opaDecisionPath: options.opaDecisionPath,
       status: 'unsupported',
+      policyEngineMode: mode.mode,
+      strict: strictEnabled,
       engine: opaDecision.engine,
       reason: opa.reason || 'opa is unavailable',
       comparison: null,
@@ -458,6 +508,8 @@ async function runPolicyShadowComparison(
       jsDecisionPath: options.jsDecisionPath,
       opaDecisionPath: options.opaDecisionPath,
       status: 'error',
+      policyEngineMode: mode.mode,
+      strict: strictEnabled,
       engine: opaDecision.engine,
       reason: message,
       comparison: null,
@@ -512,6 +564,8 @@ async function runPolicyShadowComparison(
     jsDecisionPath: options.jsDecisionPath,
     opaDecisionPath: options.opaDecisionPath,
     status,
+    policyEngineMode: mode.mode,
+    strict: strictEnabled,
     engine: opaDecision.engine,
     comparison,
     notes,
@@ -524,7 +578,7 @@ async function runPolicyShadowComparison(
   appendStepSummary(markdown);
   process.stdout.write(`${markdown}\n`);
 
-  const exitCode = options.strict && status === 'mismatch' ? 1 : 0;
+  const exitCode = strictEnabled && status === 'mismatch' ? 1 : 0;
   return {
     exitCode,
     report,
@@ -546,6 +600,7 @@ if (isDirectExecution()) {
 export {
   compareEvaluationSnapshots,
   parseArgs,
+  resolvePolicyEngineMode,
   runPolicyShadowComparison,
   toEvaluationSnapshot,
 };
