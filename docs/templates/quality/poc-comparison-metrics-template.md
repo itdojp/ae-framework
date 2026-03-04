@@ -113,7 +113,7 @@ jq '.metrics | {p95, errorRate, coldStartMs, peakRssMb}' artifacts/bench.json
 
 # 比較判定（bench.json -> 比率/合否）
 node scripts/quality/bench-compare.mjs \
-  --baseline artifacts/bench-ts.json \
+  --baseline artifacts/bench.json \
   --candidate go=artifacts/bench-go.json \
   --candidate rust=artifacts/bench-rust.json \
   --out-json artifacts/bench-compare.json \

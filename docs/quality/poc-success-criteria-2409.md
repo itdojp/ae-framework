@@ -67,7 +67,7 @@
 
 ```bash
 node scripts/quality/bench-compare.mjs \
-  --baseline artifacts/bench-ts.json \
+  --baseline artifacts/bench.json \
   --candidate go=artifacts/bench-go.json \
   --candidate rust=artifacts/bench-rust.json \
   --out-json artifacts/bench-compare.json \

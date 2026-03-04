@@ -111,6 +111,14 @@ function assertNonNegativeFiniteNumber(value, label) {
   return value;
 }
 
+function assertPercentage(value, label) {
+  const normalized = assertNonNegativeFiniteNumber(value, label);
+  if (normalized > 100) {
+    throw new Error(`${label} must be <= 100`);
+  }
+  return normalized;
+}
+
 function readBenchmarkReport(filePath) {
   if (!fs.existsSync(filePath)) {
     throw new Error(`benchmark report not found: ${filePath}`);
@@ -121,16 +129,20 @@ function readBenchmarkReport(filePath) {
     throw new Error(`unsupported schemaVersion at ${filePath}: ${String(report?.schemaVersion || '')}`);
   }
 
-  const summary = Array.isArray(report.summary) ? report.summary : [];
-  const throughputHz = summary.reduce((sum, task) => {
+  if (!Array.isArray(report.summary) || report.summary.length === 0) {
+    throw new Error(`${filePath}: summary must be a non-empty array`);
+  }
+  const throughputHz = report.summary.reduce((sum, task, index) => {
     const hz = Number(task?.hz);
-    return Number.isFinite(hz) && hz > 0 ? sum + hz : sum;
+    if (!Number.isFinite(hz) || hz <= 0) {
+      throw new Error(`${filePath}: summary[${index}].hz must be a positive finite number`);
+    }
+    return sum + hz;
   }, 0);
-  const normalizedThroughputHz = throughputHz > 0 ? throughputHz : null;
 
   const metrics = {
     p95: assertNonNegativeFiniteNumber(report?.metrics?.p95, `${filePath}: metrics.p95`),
-    errorRate: assertNonNegativeFiniteNumber(report?.metrics?.errorRate, `${filePath}: metrics.errorRate`),
+    errorRate: assertPercentage(report?.metrics?.errorRate, `${filePath}: metrics.errorRate`),
     coldStartMs: assertNonNegativeFiniteNumber(report?.metrics?.coldStartMs, `${filePath}: metrics.coldStartMs`),
     peakRssMb: assertNonNegativeFiniteNumber(report?.metrics?.peakRssMb, `${filePath}: metrics.peakRssMb`),
   };
@@ -138,8 +150,8 @@ function readBenchmarkReport(filePath) {
   return {
     path: filePath,
     metrics,
-    throughputHz: normalizedThroughputHz,
-    taskCount: summary.length,
+    throughputHz,
+    taskCount: report.summary.length,
   };
 }
 
@@ -152,21 +164,29 @@ function ratio(candidateValue, baselineValue) {
   return candidateValue / baselineValue;
 }
 
+function upperBoundCheck(value, threshold) {
+  if (value === null) return true;
+  return value <= threshold;
+}
+
+function lowerBoundCheck(value, threshold) {
+  if (value === null) return true;
+  return value >= threshold;
+}
+
 function evaluateCandidate(candidate, baseline) {
   const p95Ratio = ratio(candidate.metrics.p95, baseline.metrics.p95);
-  const throughputRatio = candidate.throughputHz !== null && baseline.throughputHz !== null
-    ? ratio(candidate.throughputHz, baseline.throughputHz)
-    : null;
+  const throughputRatio = ratio(candidate.throughputHz, baseline.throughputHz);
   const coldStartRatio = ratio(candidate.metrics.coldStartMs, baseline.metrics.coldStartMs);
   const peakRssRatio = ratio(candidate.metrics.peakRssMb, baseline.metrics.peakRssMb);
   const errorRateLimit = Math.max(0.5, baseline.metrics.errorRate + 0.2);
 
   const checks = {
-    p95: p95Ratio !== null && p95Ratio <= 0.85,
-    throughput: throughputRatio !== null && throughputRatio >= 1.2,
+    p95: upperBoundCheck(p95Ratio, 0.85),
+    throughput: lowerBoundCheck(throughputRatio, 1.2),
     errorRate: candidate.metrics.errorRate <= errorRateLimit,
-    peakRss: peakRssRatio !== null && peakRssRatio <= 1.15,
-    coldStartReference: coldStartRatio !== null && coldStartRatio <= 1.1,
+    peakRss: upperBoundCheck(peakRssRatio, 1.15),
+    coldStartReference: upperBoundCheck(coldStartRatio, 1.1),
   };
 
   const overallPass = checks.p95 && checks.throughput && checks.errorRate && checks.peakRss;
