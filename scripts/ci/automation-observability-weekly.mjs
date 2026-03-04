@@ -380,7 +380,9 @@ function summarizeAutomationReports(reports, options = {}) {
   const byStatus = {};
   const byTool = {};
   const reasonMap = new Map();
+  const reasonCodeMap = new Map();
   let failures = 0;
+  let failuresWithReasonCode = 0;
 
   for (const report of reports) {
     const status = String(report.status || 'unknown').trim() || 'unknown';
@@ -412,6 +414,32 @@ function summarizeAutomationReports(reports, options = {}) {
     if (runUrl && !entry.sampleRuns.includes(runUrl) && entry.sampleRuns.length < 3) {
       entry.sampleRuns.push(runUrl);
     }
+
+    const rawReasonCode = String(report.reasonCode || report.reason_code || '').trim();
+    if (rawReasonCode) {
+      failuresWithReasonCode += 1;
+    }
+    const reasonCode = rawReasonCode || '(no reasonCode)';
+    if (!reasonCodeMap.has(reasonCode)) {
+      reasonCodeMap.set(reasonCode, {
+        reasonCode,
+        count: 0,
+        statuses: {},
+        tools: {},
+        sampleRuns: [],
+        sampleReasons: [],
+      });
+    }
+    const codeEntry = reasonCodeMap.get(reasonCode);
+    codeEntry.count += 1;
+    codeEntry.statuses[status] = (codeEntry.statuses[status] || 0) + 1;
+    codeEntry.tools[tool] = (codeEntry.tools[tool] || 0) + 1;
+    if (runUrl && !codeEntry.sampleRuns.includes(runUrl) && codeEntry.sampleRuns.length < 3) {
+      codeEntry.sampleRuns.push(runUrl);
+    }
+    if (reason && !codeEntry.sampleReasons.includes(reason) && codeEntry.sampleReasons.length < 3) {
+      codeEntry.sampleReasons.push(reason);
+    }
   }
 
   const topFailureReasons = [...reasonMap.values()]
@@ -424,6 +452,22 @@ function summarizeAutomationReports(reports, options = {}) {
       tools: item.tools,
       sampleRuns: item.sampleRuns,
     }));
+
+  const topFailureReasonCodes = [...reasonCodeMap.values()]
+    .sort((a, b) => b.count - a.count || a.reasonCode.localeCompare(b.reasonCode))
+    .slice(0, topN)
+    .map((item) => ({
+      reasonCode: item.reasonCode,
+      count: item.count,
+      statuses: item.statuses,
+      tools: item.tools,
+      sampleRuns: item.sampleRuns,
+      sampleReasons: item.sampleReasons,
+    }));
+
+  const reasonCodeCoveragePercent = failures > 0
+    ? round2((failuresWithReasonCode / failures) * 100)
+    : null;
 
   const blockedCount = Number(byStatus.blocked || 0);
   const blockedRatePercent = reports.length > 0
@@ -439,6 +483,8 @@ function summarizeAutomationReports(reports, options = {}) {
     maxConsecutiveFailures: streakStats.maxConsecutiveFailures,
     maxConsecutiveFailuresByTool: streakStats.maxConsecutiveFailuresByTool,
     topFailureReasons,
+    topFailureReasonCodes,
+    reasonCodeCoveragePercent,
     convergenceRounds: buildConvergenceRoundStats(reports),
     slo: buildSloStats({
       totalReports: reports.length,
@@ -471,6 +517,29 @@ function formatTopReasonTable(summary) {
       : '-';
     lines.push(
       `| ${index + 1} | ${escapeMarkdownCell(item.reason)} | ${item.count} | ${escapeMarkdownCell(joinCountMap(item.statuses))} | ${escapeMarkdownCell(joinCountMap(item.tools))} | ${escapeMarkdownCell(sampleRun)} |`,
+    );
+  });
+  return lines;
+}
+
+function formatTopReasonCodeTable(summary) {
+  if (!summary.topFailureReasonCodes || summary.topFailureReasonCodes.length === 0) {
+    return ['No failure reason codes were observed in this period.'];
+  }
+
+  const lines = [
+    '| Rank | Reason Code | Count | Status | Tool | Sample run | Sample reason |',
+    '| ---: | --- | ---: | --- | --- | --- | --- |',
+  ];
+  summary.topFailureReasonCodes.forEach((item, index) => {
+    const sampleRun = item.sampleRuns && item.sampleRuns.length > 0
+      ? item.sampleRuns[0]
+      : '-';
+    const sampleReason = item.sampleReasons && item.sampleReasons.length > 0
+      ? item.sampleReasons[0]
+      : '-';
+    lines.push(
+      `| ${index + 1} | ${escapeMarkdownCell(item.reasonCode)} | ${item.count} | ${escapeMarkdownCell(joinCountMap(item.statuses))} | ${escapeMarkdownCell(joinCountMap(item.tools))} | ${escapeMarkdownCell(sampleRun)} | ${escapeMarkdownCell(sampleReason)} |`,
     );
   });
   return lines;
@@ -582,6 +651,9 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
   const blockedRateLine = summary.totalReports > 0
     ? `- blockedRate: ${summary.blockedRatePercent ?? 'n/a'}% (${blockedCount}/${summary.totalReports})`
     : '- blockedRate: n/a (no reports in this period)';
+  const reasonCodeCoverageLine = Number.isFinite(summary.reasonCodeCoveragePercent)
+    ? `- reasonCode coverage (failures): ${summary.reasonCodeCoveragePercent}%`
+    : '- reasonCode coverage (failures): n/a';
   const lines = [
     '## Automation Observability Weekly Summary',
     `- generatedAt: ${new Date().toISOString()}`,
@@ -592,6 +664,7 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
     `- scannedRuns: ${runStats.scannedRuns}`,
     `- reports: ${summary.totalReports}`,
     `- failures(error/blocked): ${summary.totalFailures}`,
+    reasonCodeCoverageLine,
     blockedRateLine,
     `- maxConsecutiveFailures: ${summary.maxConsecutiveFailures}`,
     `- convergence rounds (overall): count=${summary.convergenceRounds?.overall?.count ?? 0}, mean=${summary.convergenceRounds?.overall?.meanRounds ?? 'n/a'}, p95=${summary.convergenceRounds?.overall?.p95Rounds ?? 'n/a'}, max=${summary.convergenceRounds?.overall?.maxRounds ?? 'n/a'}`,
@@ -616,6 +689,9 @@ function buildSummaryMarkdown({ repo, sinceIso, workflows, runStats, summary, ou
         )),
       ]
       : ['No convergence-round metrics were observed in this period.']),
+    '',
+    '### Top failure reason codes',
+    ...formatTopReasonCodeTable(summary),
     '',
     '### Top failure reasons',
     ...formatTopReasonTable(summary),

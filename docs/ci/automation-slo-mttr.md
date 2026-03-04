@@ -54,7 +54,7 @@ PR 自動化運用で使用する SLO / MTTR の定義をまとめる。
 ## 5. 運用時の基準
 
 - SLO未達 (`summary.slo.achieved=false`):
-  - Top failure reasons を確認し、対象 workflow の再発要因を優先対処
+  - `summary.topFailureReasonCodes`（安定キー）と `summary.topFailureReasons`（補足）を確認し、再発要因を優先対処
 - MTTR未達 (`summary.mttr.achieved=false`):
   - `summary.mttr.byIncidentType` の高頻度・長時間カテゴリを優先改善
 - 未解消インシデントあり (`unresolvedOpenIncidents>0`):
@@ -63,5 +63,6 @@ PR 自動化運用で使用する SLO / MTTR の定義をまとめる。
 ## 6. 関連ドキュメント
 
 - `docs/ci/automation-observability.md`
+- `docs/ci/reason-codes.md`
 - `docs/ci/ci-troubleshooting-guide.md`
 - `docs/ci/automation-rollback-runbook.md`

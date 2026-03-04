@@ -122,6 +122,9 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - CSP verification (cspx runner): `quality/formal-csp.md`（使い方/成果物/実行結果例）
 - Usefulness evaluation: `quality/usefulness-evaluation.md`（4軸スコア算出/終了コード契約）
 - Issue requirements traceability: `quality/issue-requirements-traceability.md`（extract-ids/matrix/strict validate）
+- PoC success criteria (#2409 first slice): `quality/poc-success-criteria-2409.md`（performance/reproducibility/cost/ops/exit）
+- PoC comparison template (TS baseline vs Go/Rust): `templates/quality/poc-comparison-metrics-template.md`
+- ADR template for adoption/rejection decision: `templates/quality/adr-poc-adoption-template.md`
 - CI policy: `ci-policy.md`（PR必須ゲート/opt-in/運用方針）
 - Docs Doctest policy: `ci/docs-doctest-policy.md`（PR軽量チェック + 週次全量チェック）
 - CI operations handbook: `ci/ci-operations-handbook.md`（日次確認/再実行/停止復帰）
@@ -279,6 +282,9 @@ Claude CodeやMCPとの統合
 - [formal-ops-guidelines.md](./quality/formal-ops-guidelines.md) - 運用パターン/命名/証跡/CI分割の指針
 - [formal-tools-setup.md](./quality/formal-tools-setup.md) - ローカル環境セットアップ（Apalache/TLC/Z3/cvc5）
 - [formal-mini-flow.md](./quality/formal-mini-flow.md) - 反例→失敗テスト→修正→緑の最小フロー
+- [poc-success-criteria-2409.md](./quality/poc-success-criteria-2409.md) - #2409 first slice の PoC成功基準（性能/再現性/実装コスト/運用差分/撤収条件）
+- [poc-comparison-metrics-template.md](./templates/quality/poc-comparison-metrics-template.md) - TS baseline vs Go/Rust 比較計測テンプレート
+- [adr-poc-adoption-template.md](./templates/quality/adr-poc-adoption-template.md) - PoC採用/不採用判定用 ADR テンプレート
 
 ### 🛠️ [maintenance/](./maintenance/) - リポジトリ整理・改善計画
 - [repo-layout-policy.md](./maintenance/repo-layout-policy.md) - ルート配置ルールと生成物配置方針
