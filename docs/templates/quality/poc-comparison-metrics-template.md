@@ -108,6 +108,7 @@
 - `throughput` = `sum(summary[].hz)`
 - `ratio = candidate / baseline`（baseline が `<= 0` の場合は `null` として non-applicable 扱い）
 - `CV = stddev / mean`（runCount >= 2 のとき算出、1件時は `null`）
+- `checksum match rate` = `schemaVersion + summary + metrics` を正規化（summaryはname順、JSON keyを安定化）したハッシュの一致件数 / run件数（%）
 
 ```text
 # TS baseline（機械可読: artifacts/bench.json）

@@ -75,6 +75,7 @@
         "path",
         "paths",
         "runCount",
+        "checksums",
         "metrics",
         "throughputHz",
         "taskCount",
@@ -97,6 +98,14 @@
           "type": "integer",
           "minimum": 1
         },
+        "checksums": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
         "metrics": {
           "$ref": "#/$defs/metrics"
         },
@@ -117,7 +126,8 @@
       "additionalProperties": false,
       "required": [
         "p95Cv",
-        "throughputCv"
+        "throughputCv",
+        "checksumMatchRate"
       ],
       "properties": {
         "p95Cv": {
@@ -125,6 +135,14 @@
         },
         "throughputCv": {
           "$ref": "#/$defs/ratioOrNull"
+        },
+        "checksumMatchRate": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
         }
       }
     },
@@ -170,7 +188,8 @@
         "peakRss",
         "coldStartReference",
         "p95Cv",
-        "throughputCv"
+        "throughputCv",
+        "checksum"
       ],
       "properties": {
         "p95": {
@@ -193,6 +212,9 @@
         },
         "throughputCv": {
           "type": "boolean"
+        },
+        "checksum": {
+          "type": "boolean"
         }
       }
     },
@@ -204,6 +226,7 @@
         "path",
         "paths",
         "runCount",
+        "checksums",
         "metrics",
         "throughputHz",
         "reproducibility",
@@ -231,6 +254,14 @@
         "runCount": {
           "type": "integer",
           "minimum": 1
+        },
+        "checksums": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
         },
         "metrics": {
           "$ref": "#/$defs/metrics"
