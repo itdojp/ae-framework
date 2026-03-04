@@ -22,10 +22,11 @@ PR自動化系スクリプトの実行結果は、共通フォーマット `ae-a
 {
   "schemaVersion": "ae-automation-report/v1",
   "generatedAt": "2026-02-13T00:00:00.000Z",
-  "tool": "pr-self-heal",
-  "mode": "dry-run",
-  "status": "resolved",
-  "reason": "completed",
+  "tool": "codex-autopilot-lane",
+  "mode": "active",
+  "status": "blocked",
+  "reasonCode": "policy.required_labels_missing",
+  "reason": "missing policy labels: run-security, run-ci-extended",
   "prNumber": 123,
   "metrics": {},
   "data": {},
@@ -48,6 +49,10 @@ PR自動化系スクリプトの実行結果は、共通フォーマット `ae-a
 - `blocked`: 条件不一致や未収束で停止
 - `skip`: 実行対象なし、または設定によりスキップ
 - `error`: 実行時エラー
+
+補足:
+- `reasonCode`: 失敗/スキップ理由の分類キー（辞書: `policy/reason-codes.yml`、解説: `docs/ci/reason-codes.md`）
+- `reason`: 人間向けの補足（自由記述）
 
 ## 4. 主要運用指標（#2374）
 
@@ -121,6 +126,8 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
 - `AE_AUTOMATION_ALERT_DRY_RUN`: `true` の場合は通知を投稿せず判定のみ
 
 出力に追加される主要指標:
+- `summary.topFailureReasonCodes`: 失敗（`error`/`blocked`）の reasonCode Top N（安定キー、辞書: `policy/reason-codes.yml`）
+- `summary.reasonCodeCoveragePercent`: 失敗のうち reasonCode が付与されている割合（%）
 - `summary.slo.successRatePercent`: 期間内成功率（`(1 - failures/totalReports) * 100`）
 - `summary.slo.achieved`: SLO達成可否
 - `summary.mttr.meanMinutes` / `summary.mttr.p95Minutes`: 復旧時間の平均/P95

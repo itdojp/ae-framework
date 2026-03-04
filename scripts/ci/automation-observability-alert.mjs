@@ -129,6 +129,9 @@ function normalizeSummary(payload = {}) {
   if (!Array.isArray(summary.topFailureReasons)) {
     summary.topFailureReasons = [];
   }
+  if (!Array.isArray(summary.topFailureReasonCodes)) {
+    summary.topFailureReasonCodes = [];
+  }
   return summary;
 }
 
@@ -242,6 +245,7 @@ function buildAlertCommentBody({
 }) {
   const sinceIso = String(payload?.config?.sinceIso || payload?.generatedAt || '').trim() || '-';
   const topReason = summary.topFailureReasons?.[0];
+  const topReasonCode = summary.topFailureReasonCodes?.[0];
   const sampleRun = pickSampleRunUrl(summary);
   const actionHints = buildActionHints(alerts);
 
@@ -263,6 +267,7 @@ function buildAlertCommentBody({
     ...alerts.map((alert) => `| ${alert.code} | ${alert.severity} | ${alert.value} | ${alert.threshold ?? '-'} |`),
     '',
     '### Cause (initial)',
+    `- topFailureReasonCode: ${topReasonCode ? `${topReasonCode.reasonCode} (${topReasonCode.count})` : '-'}`,
     `- topFailureReason: ${topReason ? `${topReason.reason} (${topReason.count})` : '-'}`,
     '',
     '### Impact',
