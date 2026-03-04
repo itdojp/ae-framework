@@ -332,16 +332,33 @@ function aggregateBenchmarkRuns(reports) {
   };
 }
 
+function describeRunInputs(value) {
+  const paths = Array.isArray(value?.paths)
+    ? value.paths.map((entry) => String(entry)).filter((entry) => entry.length > 0)
+    : [];
+  if (paths.length > 0) {
+    const runCount = Number.isInteger(value?.runCount) ? value.runCount : paths.length;
+    return `runs=${runCount}, paths=[${paths.join(', ')}]`;
+  }
+
+  const fallbackPath = String(value?.path || '(unknown)');
+  const runCount = Number.isInteger(value?.runCount) ? value.runCount : null;
+  if (runCount !== null && runCount > 1) {
+    return `runs=${runCount}, path=${fallbackPath}`;
+  }
+  return `path=${fallbackPath}`;
+}
+
 function assertComparableWithBaseline(candidate, baseline) {
   const baselineTasks = Array.isArray(baseline?.taskIdentities) ? baseline.taskIdentities : [];
   const candidateTasks = Array.isArray(candidate?.taskIdentities) ? candidate.taskIdentities : [];
   const candidateName = String(candidate?.name || '(unknown)');
-  const baselinePath = String(baseline?.path || '(unknown)');
-  const candidatePath = String(candidate?.path || '(unknown)');
+  const baselineInput = describeRunInputs(baseline);
+  const candidateInput = describeRunInputs(candidate);
 
   if (candidate.taskCount !== baseline.taskCount) {
     throw new Error(
-      `incompatible summary task count between baseline and candidate "${candidateName}": expected ${baseline.taskCount} (${baselinePath}), got ${candidate.taskCount} (${candidatePath})`,
+      `incompatible summary task count between baseline and candidate "${candidateName}": expected ${baseline.taskCount} (${baselineInput}), got ${candidate.taskCount} (${candidateInput})`,
     );
   }
 
@@ -349,7 +366,7 @@ function assertComparableWithBaseline(candidate, baseline) {
     && candidateTasks.every((task, index) => task === baselineTasks[index]);
   if (!sameTasks) {
     throw new Error(
-      `incompatible summary task identities between baseline and candidate "${candidateName}": expected [${baselineTasks.join(', ')}] (${baselinePath}), got [${candidateTasks.join(', ')}] (${candidatePath})`,
+      `incompatible summary task identities between baseline and candidate "${candidateName}": expected [${baselineTasks.join(', ')}] (${baselineInput}), got [${candidateTasks.join(', ')}] (${candidateInput})`,
     );
   }
 }
