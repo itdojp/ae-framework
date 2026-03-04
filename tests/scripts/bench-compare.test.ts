@@ -131,8 +131,8 @@ describe.sequential('bench-compare script', () => {
       expect(payload.candidates.find((candidate) => candidate.name === 'rust')?.overall).toBe('fail');
       expect(payload.candidates.find((candidate) => candidate.name === 'go')?.checks.throughput).toBe(true);
       expect(markdown).toContain('# Bench Comparison Report');
-      expect(markdown).toContain('| go | PASS |');
-      expect(markdown).toContain('| rust | FAIL |');
+      expect(markdown).toContain('| go | 1 | PASS |');
+      expect(markdown).toContain('| rust | 1 | FAIL |');
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
@@ -281,6 +281,103 @@ describe.sequential('bench-compare script', () => {
       );
       expect(resultWithInvalidErrorRate.status).toBe(1);
       expect(resultWithInvalidErrorRate.stderr).toContain('metrics.errorRate must be <= 100');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('supports multi-run input and computes CV checks', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'ae-bench-compare-multi-run-'));
+
+    try {
+      const baseline1Path = join(tempDir, 'baseline-1.json');
+      const baseline2Path = join(tempDir, 'baseline-2.json');
+      const go1Path = join(tempDir, 'go-1.json');
+      const go2Path = join(tempDir, 'go-2.json');
+      const outJsonPath = join(tempDir, 'bench-compare.json');
+      const outMdPath = join(tempDir, 'bench-compare.md');
+
+      writeFileSync(
+        baseline1Path,
+        JSON.stringify(createBenchReport({
+          p95: 100,
+          errorRate: 0.1,
+          coldStartMs: 50,
+          peakRssMb: 100,
+          hz: 1000,
+        })),
+        'utf8',
+      );
+      writeFileSync(
+        baseline2Path,
+        JSON.stringify(createBenchReport({
+          p95: 100.2,
+          errorRate: 0.1,
+          coldStartMs: 50.1,
+          peakRssMb: 100.1,
+          hz: 1002,
+        })),
+        'utf8',
+      );
+      writeFileSync(
+        go1Path,
+        JSON.stringify(createBenchReport({
+          p95: 80,
+          errorRate: 0.2,
+          coldStartMs: 45,
+          peakRssMb: 105,
+          hz: 1300,
+        })),
+        'utf8',
+      );
+      writeFileSync(
+        go2Path,
+        JSON.stringify(createBenchReport({
+          p95: 82,
+          errorRate: 0.2,
+          coldStartMs: 45,
+          peakRssMb: 105,
+          hz: 900,
+        })),
+        'utf8',
+      );
+
+      const result = spawnSync(
+        'node',
+        [
+          compareScript,
+          '--baseline',
+          `${baseline1Path},${baseline2Path}`,
+          '--candidate',
+          `go=${go1Path},${go2Path}`,
+          '--out-json',
+          outJsonPath,
+          '--out-md',
+          outMdPath,
+          '--fail-on-threshold-breach',
+        ],
+        { encoding: 'utf8', timeout: 120_000 },
+      );
+
+      expect(result.status).toBe(1);
+      const payload = JSON.parse(readFileSync(outJsonPath, 'utf8')) as {
+        baseline: { runCount: number; reproducibility: { p95Cv: number | null } };
+        candidates: Array<{
+          name: string;
+          runCount: number;
+          reproducibility: { throughputCv: number | null };
+          checks: { throughputCv: boolean };
+          overall: string;
+        }>;
+      };
+
+      expect(payload.baseline.runCount).toBe(2);
+      expect(payload.baseline.reproducibility.p95Cv).not.toBeNull();
+      expect(payload.candidates[0]?.name).toBe('go');
+      expect(payload.candidates[0]?.runCount).toBe(2);
+      expect(payload.candidates[0]?.reproducibility.throughputCv).not.toBeNull();
+      expect(payload.candidates[0]?.checks.throughputCv).toBe(false);
+      expect(payload.candidates[0]?.overall).toBe('fail');
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }

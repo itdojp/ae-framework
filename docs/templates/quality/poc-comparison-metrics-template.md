@@ -107,6 +107,7 @@
 - `peak RSS` = `metrics.peakRssMb`
 - `throughput` = `sum(summary[].hz)`
 - `ratio = candidate / baseline`（baseline が `<= 0` の場合は `null` として non-applicable 扱い）
+- `CV = stddev / mean`（runCount >= 2 のとき算出、1件時は `null`）
 
 ```text
 # TS baseline（機械可読: artifacts/bench.json）
@@ -119,11 +120,11 @@ jq '.metrics | {p95, errorRate, coldStartMs, peakRssMb}' artifacts/bench.json
 <go-benchmark-command>
 <rust-benchmark-command>
 
-# 比較判定（bench.json -> 比率/合否）
+# 比較判定（複数run対応: bench.json -> 比率/合否/CV）
 node scripts/quality/bench-compare.mjs \
-  --baseline artifacts/bench.json \
-  --candidate go=artifacts/bench-go.json \
-  --candidate rust=artifacts/bench-rust.json \
+  --baseline artifacts/bench-ts-run1.json,artifacts/bench-ts-run2.json \
+  --candidate go=artifacts/bench-go-run1.json,artifacts/bench-go-run2.json \
+  --candidate rust=artifacts/bench-rust-run1.json,artifacts/bench-rust-run2.json \
   --out-json artifacts/bench-compare.json \
   --out-md artifacts/bench-compare.md
 ```

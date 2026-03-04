@@ -67,9 +67,9 @@
 
 ```bash
 node scripts/quality/bench-compare.mjs \
-  --baseline artifacts/bench.json \
-  --candidate go=artifacts/bench-go.json \
-  --candidate rust=artifacts/bench-rust.json \
+  --baseline artifacts/bench-ts-run1.json,artifacts/bench-ts-run2.json \
+  --candidate go=artifacts/bench-go-run1.json,artifacts/bench-go-run2.json \
+  --candidate rust=artifacts/bench-rust-run1.json,artifacts/bench-rust-run2.json \
   --out-json artifacts/bench-compare.json \
   --out-md artifacts/bench-compare.md
 ```
@@ -77,6 +77,7 @@ node scripts/quality/bench-compare.mjs \
 - 出力JSON: `artifacts/bench-compare.json`
 - 出力Markdown: `artifacts/bench-compare.md`
 - 必須判定: `p95 ratio <= 0.85`, `throughput ratio >= 1.20`, `error rate <= max(0.5, baseline + 0.2pt)`, `peak RSS ratio <= 1.15`
+- 再現性判定: `p95 CV <= 0.05`, `throughput CV <= 0.05`（runCount >= 2 のとき）
 - 参考判定: `cold start ratio <= 1.10`
 
 ### 5.2 指標の一次データ源と算出方式（確定）
@@ -91,6 +92,10 @@ node scripts/quality/bench-compare.mjs \
 - 比率計算: `ratio = candidate / baseline`
   - しきい値の向き: p95/cold-start/peak-RSS は上限、throughput は下限
   - baseline 値が `<= 0` の比率は `null`（non-applicable）として扱い、当該比率判定のみ fail 強制しない
+- 再現性計算: `CV = stddev / mean`
+  - `p95 CV`: 複数runの `metrics.p95` から算出
+  - `throughput CV`: 複数runの `sum(summary[].hz)` から算出
+  - run が1件のみの場合、CVは `null`（non-applicable）
 - error rate 上限: `max(0.5, baseline.errorRate + 0.2)`（percentage point）
 - 比較成果物契約: `artifacts/bench-compare.json`（`schemaVersion: bench-compare/v1`、schema: `schema/bench-compare.schema.json`）
 
