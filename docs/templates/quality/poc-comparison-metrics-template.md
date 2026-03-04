@@ -112,7 +112,7 @@ jq '.metrics | {p95, errorRate, coldStartMs, peakRssMb}' artifacts/bench.json
 <rust-benchmark-command>
 
 # 比較判定（bench.json -> 比率/合否）
-pnpm run bench:compare -- \
+node scripts/quality/bench-compare.mjs \
   --baseline artifacts/bench-ts.json \
   --candidate go=artifacts/bench-go.json \
   --candidate rust=artifacts/bench-rust.json \

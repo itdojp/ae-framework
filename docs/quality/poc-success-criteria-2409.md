@@ -66,7 +66,7 @@
 `benchmark-report/v1`（`artifacts/bench.json`）を入力に、PoC比較の比率と必須閾値判定を機械的に生成する。
 
 ```bash
-pnpm run bench:compare -- \
+node scripts/quality/bench-compare.mjs \
   --baseline artifacts/bench-ts.json \
   --candidate go=artifacts/bench-go.json \
   --candidate rust=artifacts/bench-rust.json \
