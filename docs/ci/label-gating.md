@@ -19,7 +19,7 @@ CI Extended を再実行する際は `.cache/test-results` に保存された成
 `run-trace` ラベル適用時に `policy-gate` が trace check 未充足で失敗した場合は、次の順で収束させます。
 1. `Spec Generate & Model Tests`（`.github/workflows/spec-generate-model.yml`）が PR 文脈で `completed` になるまで待つ
 2. `trace-conformance`（fork 含む）または `KvOnce Trace Validation`（non-fork）が `success` になったことを確認する
-3. `policy-gate` を再評価し、`run-trace` の required gate 判定が更新されたことを確認する
+3. `policy-gate` が自動で再評価されるのを待ち、`run-trace` の required gate 判定が更新されたことを確認する（自動で再評価されない場合は `workflow_dispatch` で同じ PR 番号を指定して `policy-gate` を手動実行する）
 
 詳細な動作は以下の英語セクションの Workflows/Automation を参照してください。
 
@@ -58,7 +58,7 @@ Workflows
 run-trace convergence steps
 - If `policy-gate` fails because run-trace checks are missing, wait for `Spec Generate & Model Tests` (`spec-generate-model.yml`) to complete on the same PR context.
 - Confirm either `trace-conformance` (fork/non-fork) or `KvOnce Trace Validation` (non-fork) is `success`.
-- Re-evaluate `policy-gate` so required-gate status converges with the completed trace workflow run.
+- Wait for `policy-gate` to re-run automatically so required-gate status converges with the completed trace workflow run. If it does not trigger automatically, manually dispatch `policy-gate` with the same PR number.
 
 Harness Health recommendation
 - `artifacts/ci/harness-health.json` emits `recommendedLabels` based on gate states.
