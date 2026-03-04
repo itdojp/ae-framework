@@ -132,7 +132,7 @@ PR運用を以下の形に収束させます。
 `policy-gate.yml` の OPA shadow compare は `AE_POLICY_ENGINE_MODE`（Repository Variables）で段階移行できます。
 
 - `shadow`（既定）: 既存互換。`policy-shadow-compare` は report-only で実行し、mismatch は成果物に記録
-- `shadow_strict`: `policy-shadow-compare --strict` で実行し、mismatch を `policy-gate` 失敗として扱う
+- `shadow_strict`: `policy-shadow-compare` を strict 判定で実行し、mismatch と OPA evaluation error（`status=error` の非ゼロ終了）を `policy-gate` 失敗として扱う
 
 推奨移行手順:
 1. `AE_POLICY_ENGINE_MODE=shadow` のまま `artifacts/ci/policy-shadow-compare-v1.json` を観測し、mismatch 傾向を把握する
@@ -141,6 +141,7 @@ PR運用を以下の形に収束させます。
 
 注記:
 - 未設定時は `shadow` として扱われます
+- 変数値は trim + lowercase で正規化して判定します（例: `Shadow_Strict ` は `shadow_strict` と同等）
 - 不正値は `shadow` にフォールバックし、`policy-shadow-compare` が warning を出力します
 
 ### 3.2 変数セット例（保守的）
@@ -152,7 +153,7 @@ PR運用を以下の形に収束させます。
 
 policy engine rollout:
 - `AE_POLICY_ENGINE_MODE=shadow`（既定、report-only）
-- `AE_POLICY_ENGINE_MODE=shadow_strict`（mismatchをblocking）
+- `AE_POLICY_ENGINE_MODE=shadow_strict`（mismatch / OPA evaluation error をblocking）
 
 auto-fix（docsのみ）:
 - `AE_COPILOT_AUTO_FIX=1`

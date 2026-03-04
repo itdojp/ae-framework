@@ -408,8 +408,67 @@ describe('policy-shadow-compare', () => {
       expect(result.report.status).toBe('mismatch');
       expect(result.report.policyEngineMode).toBe('shadow');
       expect(result.report.strict).toBe(false);
-      expect(result.report.notes.some((item: string) => item.includes('unknown AE_POLICY_ENGINE_MODE value'))).toBe(true);
+      expect(result.report.notes.some((item: string) => item.includes("unknown policy engine mode value 'unexpected' from AE_POLICY_ENGINE_MODE"))).toBe(true);
     });
+  });
+
+  it('keeps shadow mode when OPA eval fails and strict mode is disabled', async () => {
+    const sandbox = createSandbox();
+    cleanupTargets.push(sandbox.root);
+
+    const commandRunner = (_command: string, args: string[]): CommandResult => {
+      if (args[0] === 'version') {
+        return {
+          status: 0,
+          stdout: JSON.stringify({ version: '1.2.3' }),
+          stderr: '',
+        };
+      }
+      if (args[0] === 'eval') {
+        return {
+          status: 1,
+          stdout: '',
+          stderr: 'opa eval failed',
+        };
+      }
+      return {
+        status: 1,
+        stdout: '',
+        stderr: 'unexpected args',
+      };
+    };
+
+    const shadowResult = await runPolicyShadowComparison({
+      inputPath: sandbox.inputPath,
+      jsDecisionPath: sandbox.jsDecisionPath,
+      opaDecisionPath: sandbox.opaDecisionPath,
+      reportPath: sandbox.reportPath,
+      regoPath: sandbox.regoPath,
+      query: 'data.ae.policy.decision',
+      opaBin: 'opa',
+      strict: false,
+      mode: 'shadow',
+    }, {
+      commandRunner,
+    });
+    expect(shadowResult.exitCode).toBe(0);
+    expect(shadowResult.report.status).toBe('error');
+
+    const strictResult = await runPolicyShadowComparison({
+      inputPath: sandbox.inputPath,
+      jsDecisionPath: sandbox.jsDecisionPath,
+      opaDecisionPath: sandbox.opaDecisionPath,
+      reportPath: sandbox.reportPath,
+      regoPath: sandbox.regoPath,
+      query: 'data.ae.policy.decision',
+      opaBin: 'opa',
+      strict: false,
+      mode: 'shadow_strict',
+    }, {
+      commandRunner,
+    });
+    expect(strictResult.exitCode).toBe(1);
+    expect(strictResult.report.status).toBe('error');
   });
 
   it('normalizes order before comparing snapshots', () => {
@@ -480,10 +539,30 @@ describe('policy-shadow-compare', () => {
     expect(parsed.mode).toBe('shadow_strict');
   });
 
+  it('ignores --mode without value when the next token is a flag', () => {
+    const parsed = parseArgs([
+      'node',
+      'scripts/ci/policy-shadow-compare.mjs',
+      '--mode',
+      '--strict',
+    ]);
+    expect(parsed.mode).toBe('');
+    expect(parsed.strict).toBe(true);
+    expect(parsed.warnings).toContain(
+      '--mode flag requires a non-flag mode value; using default mode resolution',
+    );
+  });
+
   it('resolves unknown policy engine mode to shadow with warning', () => {
     const resolved = resolvePolicyEngineMode('something_else');
     expect(resolved.mode).toBe('shadow');
     expect(resolved.strict).toBe(false);
-    expect(resolved.warning).toContain('unknown AE_POLICY_ENGINE_MODE value');
+    expect(resolved.warning).toContain('unknown policy engine mode value');
+    expect(resolved.warning).toContain('from AE_POLICY_ENGINE_MODE');
+  });
+
+  it('uses CLI source in unknown mode warning when provided', () => {
+    const resolved = resolvePolicyEngineMode('something_else', 'cli(--mode|--policy-engine-mode)');
+    expect(resolved.warning).toContain('from cli(--mode|--policy-engine-mode)');
   });
 });

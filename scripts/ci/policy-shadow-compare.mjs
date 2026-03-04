@@ -26,6 +26,7 @@ function parseArgs(argv) {
     opaBin: DEFAULT_OPA_BIN,
     mode: '',
     strict: false,
+    warnings: [],
   };
 
   for (let index = 2; index < argv.length; index += 1) {
@@ -90,8 +91,16 @@ function parseArgs(argv) {
       options.opaBin = value.slice('--opa-bin='.length);
       continue;
     }
-    if ((value === '--mode' || value === '--policy-engine-mode') && argv[index + 1]) {
-      options.mode = argv[++index];
+    if (value === '--mode' || value === '--policy-engine-mode') {
+      const nextValue = argv[index + 1];
+      if (nextValue && !nextValue.startsWith('-')) {
+        options.mode = nextValue;
+        index += 1;
+      } else {
+        options.warnings.push(
+          `${value} flag requires a non-flag mode value; using default mode resolution`,
+        );
+      }
       continue;
     }
     if (value.startsWith('--mode=')) {
@@ -141,7 +150,7 @@ function normalizeString(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function resolvePolicyEngineMode(rawMode) {
+function resolvePolicyEngineMode(rawMode, source = POLICY_ENGINE_MODE_ENV) {
   const normalized = normalizeString(rawMode).toLowerCase();
   if (!normalized || normalized === POLICY_ENGINE_MODE_SHADOW) {
     return {
@@ -160,7 +169,7 @@ function resolvePolicyEngineMode(rawMode) {
   return {
     mode: POLICY_ENGINE_MODE_SHADOW,
     strict: false,
-    warning: `unknown ${POLICY_ENGINE_MODE_ENV} value '${normalized}', fallback to '${POLICY_ENGINE_MODE_SHADOW}'`,
+    warning: `unknown policy engine mode value '${normalized}' from ${source}, fallback to '${POLICY_ENGINE_MODE_SHADOW}'`,
   };
 }
 
@@ -411,8 +420,16 @@ async function runPolicyShadowComparison(
 
   let jsDecision = null;
   const notes = [];
+  for (const warning of Array.isArray(options.warnings) ? options.warnings : []) {
+    notes.push(warning);
+    process.stderr.write(`[policy-shadow-compare] warning: ${warning}\n`);
+  }
   const modeFromArgs = normalizeString(options.mode);
-  const mode = resolvePolicyEngineMode(modeFromArgs || process.env[POLICY_ENGINE_MODE_ENV] || '');
+  const modeSource = modeFromArgs ? 'cli(--mode|--policy-engine-mode)' : POLICY_ENGINE_MODE_ENV;
+  const mode = resolvePolicyEngineMode(
+    modeFromArgs || process.env[POLICY_ENGINE_MODE_ENV] || '',
+    modeSource,
+  );
   const strictEnabled = Boolean(options.strict || mode.strict);
   if (mode.warning) {
     notes.push(mode.warning);
@@ -524,7 +541,7 @@ async function runPolicyShadowComparison(
     process.stdout.write(`${markdown}\n`);
 
     return {
-      exitCode: 1,
+      exitCode: strictEnabled ? 1 : 0,
       report,
       opaDecision,
     };
