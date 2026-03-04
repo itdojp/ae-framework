@@ -83,6 +83,7 @@ jobs:
       - name: Install
         env:
           NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
         run: |
           pnpm fetch --prefer-offline
           # Keep required PR verify deterministic; lockfile drift should fail fast.

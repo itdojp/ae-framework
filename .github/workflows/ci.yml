@@ -71,6 +71,7 @@ jobs:
           pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=false
         env:
           NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
       - run: pnpm run lint
       - run: pnpm test -- --run
       - run: pnpm run bdd || true            # 失敗時は仕様更新提案へ
