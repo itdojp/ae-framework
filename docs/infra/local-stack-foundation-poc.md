@@ -19,9 +19,12 @@
 
 ## 前提条件
 
-- Docker Engine / Docker Desktop が利用可能
-- Docker Compose v2 (`docker compose`) が利用可能
+- 以下いずれかの Compose 実行環境が利用可能
+  - Docker Engine / Docker Desktop + Docker Compose v2 (`docker compose`)
+  - Podman + Podman Compose（`podman compose` 推奨。未対応環境は `podman-compose`）
 - 疎通確認用に `curl` が利用可能
+
+> 以降のコマンド例は `docker compose` 表記で統一する。Podman を利用する場合は `docker compose` を `podman compose`（または `podman-compose`）に読み替えて実行する。
 
 ## ポートと永続ボリューム
 
@@ -79,11 +82,16 @@ docker compose down --volumes --remove-orphans
 ## 静的確認（Compose解決結果）
 
 ```bash
-# Docker Compose が使える環境
-docker compose -f infra/poc/stack/docker-compose.yml config
+cd infra/poc/stack
 
-# Docker が使えない環境での代替（Podman Compose）
-podman-compose -f infra/poc/stack/docker-compose.yml config
+# Docker Compose
+docker compose -f ./docker-compose.yml config
+
+# Podman Compose（native）
+podman compose -f ./docker-compose.yml config
+
+# Podman Compose（legacy）
+podman-compose -f ./docker-compose.yml config
 ```
 
 `config` が成功すれば、環境変数展開後の Compose 定義が構文的に解決できていることを確認できる。
