@@ -115,8 +115,9 @@ gate_checks:
     - "CI Extended (entry: pr/push) / extended"
     - "Parallel Tests (entry: pr/push) / Test Suite (integration)"
   enforce-artifacts:
+    - "generate-artifacts"
+    - "validate-artifacts / gate"
     - "validate-artifacts / validate"
-    - "*validate-artifacts*/*validate*"
   enforce-testing:
     - "testing-ddd"
   enforce-context-pack:
