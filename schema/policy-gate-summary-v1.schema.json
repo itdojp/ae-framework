@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/policy-gate-summary-v1.schema.json",
+  "title": "Policy Gate Summary v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "generatedAtUtc",
+    "repository",
+    "prNumber",
+    "changedFiles",
+    "evaluation"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "policy-gate-summary/v1"
+    },
+    "contractId": {
+      "const": "policy-gate-summary.v1"
+    },
+    "generatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[^/\\s]+/[^/\\s]+$"
+    },
+    "prNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "changedFiles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "required": [
+        "ok",
+        "errors",
+        "warnings",
+        "inferredRisk",
+        "selectedRiskLabel",
+        "currentRiskLabels",
+        "reviewTopology",
+        "approvals",
+        "minApprovals",
+        "policyMinApprovals",
+        "topologyMinApprovals",
+        "effectiveMinApprovals",
+        "minApprovalsSource",
+        "requiredLabels",
+        "missingRequiredLabels",
+        "requiredCheckResults",
+        "gateCheckResults"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "inferredRisk": {
+          "type": "object",
+          "required": [
+            "level"
+          ],
+          "properties": {
+            "level": {
+              "type": "string",
+              "minLength": 1
+            },
+            "labels": {
+              "type": "object",
+              "required": [
+                "low",
+                "high"
+              ],
+              "properties": {
+                "low": { "type": "string", "minLength": 1 },
+                "high": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": true
+            },
+            "highRiskPathMatches": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "forceHighRiskTriggers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["condition", "ruleId", "matchedFiles"],
+                "properties": {
+                  "condition": { "type": "string", "minLength": 1 },
+                  "ruleId": { "type": "string", "minLength": 1 },
+                  "matchedFiles": {
+                    "type": "array",
+                    "items": { "type": "string", "minLength": 1 }
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "selectedRiskLabel": {
+          "type": ["string", "null"]
+        },
+        "currentRiskLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reviewTopology": {
+          "type": "string",
+          "enum": ["team", "solo"]
+        },
+        "approvals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minApprovals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "policyMinApprovals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "topologyMinApprovals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "effectiveMinApprovals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minApprovalsSource": {
+          "type": "string",
+          "enum": ["policy", "topology", "override"]
+        },
+        "requiredLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missingRequiredLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "requiredCheckResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["checkName", "result"],
+            "properties": {
+              "checkName": { "type": "string", "minLength": 1 },
+              "result": {
+                "type": "object",
+                "required": ["status", "matches", "reason"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["success", "pending", "failure", "missing"]
+                  },
+                  "reason": { "type": "string", "minLength": 1 },
+                  "matches": {
+                    "type": "array",
+                    "items": { "type": "object" }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "gateCheckResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["label", "patterns", "result"],
+            "properties": {
+              "label": { "type": "string", "minLength": 1 },
+              "patterns": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "result": {
+                "type": "object",
+                "required": ["status", "matches", "reason"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["success", "pending", "failure", "missing"]
+                  },
+                  "reason": { "type": "string", "minLength": 1 },
+                  "matches": {
+                    "type": "array",
+                    "items": { "type": "object" }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

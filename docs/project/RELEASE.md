@@ -20,12 +20,16 @@ Tips
 ### Breaking schema changes (required)
 When changing machine-readable outputs (for example `schema/*.schema.json` consumers), follow this procedure in the same PR:
 1. Bump the schema version marker (for example `schemaVersion` major for backward-incompatible changes).
-2. Update contract tests and schema validation scripts so CI fails on old payloads and passes on new payloads.
-3. Add a compatibility note in release notes with:
+2. Apply `dual-write + dual-validate` during migration when consumers exist on both old and new contracts.
+3. Update contract tests and schema validation scripts so CI fails on invalid payloads and passes on expected payloads.
+4. Add a compatibility note in release notes with:
    - affected command/artifact
    - old vs new schema/version
    - migration guidance
-4. Link the tracking issue/PR in the release note entry.
+5. Update the contract inventory documents:
+   - `docs/reference/CONTRACT-CATALOG.md`
+   - `docs/reference/SCHEMA-GOVERNANCE.md`
+6. Link the tracking issue/PR in the release note entry.
 
 ---
 
@@ -45,9 +49,13 @@ When changing machine-readable outputs (for example `schema/*.schema.json` consu
 ### 互換性破壊を伴うスキーマ変更（必須手順）
 機械可読出力（例: `schema/*.schema.json` の利用対象）を変更する場合は、同一PRで次を実施します。
 1. スキーマのバージョン識別子を更新する（後方互換性を破る場合は `schemaVersion` の major を更新）。
-2. 契約テストとスキーマ検証スクリプトを更新し、旧ペイロードをCIで検出できる状態にする。
-3. リリースノートに互換性注記を追加する。
+2. 旧/新の利用者が併存する期間は `dual-write + dual-validate` を運用する。
+3. 契約テストとスキーマ検証スクリプトを更新し、想定外ペイロードをCIで検出できる状態にする。
+4. リリースノートに互換性注記を追加する。
    - 影響コマンド/成果物
    - 旧/新スキーマまたはバージョン
    - 移行手順
-4. リリースノート項目に追跡 Issue/PR を紐付ける。
+5. 契約棚卸しドキュメントを更新する。
+   - `docs/reference/CONTRACT-CATALOG.md`
+   - `docs/reference/SCHEMA-GOVERNANCE.md`
+6. リリースノート項目に追跡 Issue/PR を紐付ける。

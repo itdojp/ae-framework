@@ -171,6 +171,7 @@ export function main(argv = process.argv) {
     { name: 'reportEnvelope', relPath: path.join('artifacts', 'report-envelope.json') },
     { name: 'formal', relPath: path.join('artifacts', 'hermetic-reports', 'formal', 'summary.json') },
     { name: 'formalSummaryV1', relPath: path.join('artifacts', 'formal', 'formal-summary-v1.json') },
+    { name: 'formalSummaryV2', relPath: path.join('artifacts', 'formal', 'formal-summary-v2.json') },
     { name: 'conformance', relPath: path.join('artifacts', 'hermetic-reports', 'conformance', 'summary.json') },
     { name: 'progress', relPath: path.join('artifacts', 'progress', 'summary.json') },
   ];

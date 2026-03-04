@@ -258,5 +258,10 @@ describe('validate-artifacts-ajv', () => {
     expect(traceEnvelopeRule).toBeDefined();
     expect(traceEnvelopeRule?.requiredWhenStrict).toBe(true);
     expect(traceEnvelopeRule?.patterns).toContain('artifacts/trace/report-envelope.json');
+
+    const formalSummaryV2Rule = DEFAULT_RULES.find((rule) => rule.id === 'formal-summary-v2');
+    expect(formalSummaryV2Rule).toBeDefined();
+    expect(formalSummaryV2Rule?.schemaPath).toBe('schema/formal-summary-v2.schema.json');
+    expect(formalSummaryV2Rule?.patterns).toContain('artifacts/formal/formal-summary-v2.json');
   });
 });

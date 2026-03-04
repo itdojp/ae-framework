@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "policy-gate-summary/v1",
+  "contractId": "policy-gate-summary.v1",
+  "generatedAtUtc": "2026-03-04T00:00:00.000Z",
+  "repository": "itdojp/ae-framework",
+  "prNumber": 2406,
+  "changedFiles": [
+    "docs/reference/CONTRACT-CATALOG.md",
+    "scripts/ci/policy-gate.mjs"
+  ],
+  "evaluation": {
+    "ok": false,
+    "errors": [
+      "required gate check not green for label run-security (missing)"
+    ],
+    "warnings": [
+      "PR body is missing Rollback section"
+    ],
+    "inferredRisk": {
+      "level": "risk:high",
+      "labels": {
+        "low": "risk:low",
+        "high": "risk:high"
+      },
+      "highRiskPathMatches": [
+        "package.json"
+      ],
+      "forceHighRiskTriggers": []
+    },
+    "selectedRiskLabel": "risk:high",
+    "currentRiskLabels": [
+      "risk:high"
+    ],
+    "reviewTopology": "team",
+    "approvals": 0,
+    "minApprovals": 1,
+    "policyMinApprovals": 1,
+    "topologyMinApprovals": 1,
+    "effectiveMinApprovals": 1,
+    "minApprovalsSource": "policy",
+    "requiredLabels": [
+      "run-security"
+    ],
+    "missingRequiredLabels": [
+      "run-security"
+    ],
+    "requiredCheckResults": [
+      {
+        "checkName": "verify-lite",
+        "result": {
+          "status": "success",
+          "matches": [
+            {
+              "name": "verify-lite",
+              "state": "success",
+              "type": "check-run",
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS"
+            }
+          ],
+          "reason": "success"
+        }
+      }
+    ],
+    "gateCheckResults": [
+      {
+        "label": "run-security",
+        "patterns": [
+          "Security Scanning"
+        ],
+        "result": {
+          "status": "missing",
+          "matches": [],
+          "reason": "not-found"
+        }
+      }
+    ]
+  }
+}

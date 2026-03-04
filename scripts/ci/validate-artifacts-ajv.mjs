@@ -60,6 +60,21 @@ export const DEFAULT_RULES = [
     patterns: ['artifacts/formal/formal-summary-v1.json'],
   },
   {
+    id: 'formal-summary-v2',
+    schemaPath: 'schema/formal-summary-v2.schema.json',
+    patterns: ['artifacts/formal/formal-summary-v2.json'],
+  },
+  {
+    id: 'policy-gate-summary-v1',
+    schemaPath: 'schema/policy-gate-summary-v1.schema.json',
+    patterns: ['artifacts/ci/policy-gate-summary.json'],
+  },
+  {
+    id: 'automation-observability-v1',
+    schemaPath: 'schema/automation-observability-v1.schema.json',
+    patterns: ['artifacts/ci/automation-report.json', 'artifacts/automation/*-report.json'],
+  },
+  {
     id: 'flow-fixture',
     schemaPath: 'schema/flow.schema.json',
     patterns: ['fixtures/flow/sample.flow.json'],

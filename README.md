@@ -74,6 +74,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Context Pack onboarding checklist: `docs/guides/context-pack-onboarding-checklist.md`
 - Context Pack Phase5+ cookbook: `docs/guides/context-pack-phase5-cookbook.md`
 - Context Pack troubleshooting runbook: `docs/operations/context-pack-troubleshooting.md`
+- Contract catalog (input/decision/evidence/operation): `docs/reference/CONTRACT-CATALOG.md`
 - Spec & Verification Kit (minimal activation guide): `docs/reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Connectors & agent workflows: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `docs/integrations/CODEX-INTEGRATION.md`
 
@@ -138,6 +139,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Context Pack 導入チェックリスト: `docs/guides/context-pack-onboarding-checklist.md`
 - Context Pack Phase5+ 実践ガイド: `docs/guides/context-pack-phase5-cookbook.md`
 - Context Pack 障害対応ランブック: `docs/operations/context-pack-troubleshooting.md`
+- 契約カタログ（input/decision/evidence/operation）: `docs/reference/CONTRACT-CATALOG.md`
 - Spec & Verification Kit（最小パッケージ・有効化手順）: `docs/reference/SPEC-VERIFICATION-KIT-MIN.md`
 - エージェント統合: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `docs/integrations/CODEX-INTEGRATION.md`
 

@@ -21,6 +21,8 @@ import {
 
 const OUTPUT_JSON_PATH = 'artifacts/ci/policy-gate-summary.json';
 const OUTPUT_MD_PATH = 'artifacts/ci/policy-gate-summary.md';
+const SUMMARY_SCHEMA_VERSION = 'policy-gate-summary/v1';
+const SUMMARY_CONTRACT_ID = 'policy-gate-summary.v1';
 const VALID_REVIEW_TOPOLOGIES = new Set(['team', 'solo']);
 
 function parseArgs(argv) {
@@ -516,6 +518,24 @@ function persistReport(report, markdown) {
   fs.writeFileSync(OUTPUT_MD_PATH, markdown);
 }
 
+function buildPolicyGateReport({
+  generatedAtUtc = new Date().toISOString(),
+  repository,
+  prNumber,
+  changedFiles,
+  evaluation,
+}) {
+  return {
+    schemaVersion: SUMMARY_SCHEMA_VERSION,
+    contractId: SUMMARY_CONTRACT_ID,
+    generatedAtUtc,
+    repository,
+    prNumber,
+    changedFiles,
+    evaluation,
+  };
+}
+
 async function run(options = parseArgs(process.argv)) {
   const repo = String(process.env.GITHUB_REPOSITORY || '').trim();
   if (!repo) {
@@ -542,13 +562,12 @@ async function run(options = parseArgs(process.argv)) {
     approvalOverride: process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
   });
 
-  const report = {
-    generatedAtUtc: new Date().toISOString(),
+  const report = buildPolicyGateReport({
     repository: repo,
     prNumber,
     changedFiles,
     evaluation,
-  };
+  });
   const markdown = buildMarkdownSummary(prNumber, evaluation);
   persistReport(report, markdown);
   appendStepSummary(markdown);
@@ -579,6 +598,7 @@ if (isDirectExecution()) {
 export {
   evaluateCheckRequirement,
   evaluatePolicyGate,
+  buildPolicyGateReport,
   run,
   toCheckEntries,
 };
