@@ -149,6 +149,7 @@ function parseArgs(argv = process.argv) {
 function validatePolicyShape(parsed, resolvedPolicyPath) {
   const violations = [];
   const registry = parsed && typeof parsed === 'object' ? parsed : {};
+  const registryPath = path.relative(process.cwd(), resolvedPolicyPath) || resolvedPolicyPath;
 
   if (!registry || typeof registry !== 'object' || Array.isArray(registry)) {
     violations.push(createViolation('invalid_root', 'policy root must be an object'));
@@ -230,7 +231,13 @@ function validatePolicyShape(parsed, resolvedPolicyPath) {
       violations.push(createViolation('missing_title', 'title is required', { itemPath, code }));
     }
     if (!description) {
-      violations.push(createViolation('missing_description', 'description is required', { itemPath, code }));
+      violations.push(
+        createViolation('missing_description', 'description is required', {
+          itemPath,
+          code,
+          registryPath,
+        }),
+      );
     }
     if (!ownerHint) {
       violations.push(createViolation('missing_owner_hint', 'ownerHint is required', { itemPath, code }));
@@ -259,20 +266,6 @@ function validatePolicyShape(parsed, resolvedPolicyPath) {
 
   if (codeEntries.length === 0) {
     violations.push(createViolation('empty_codes', 'codes must contain at least one entry'));
-  }
-
-  const registryPath = path.relative(process.cwd(), resolvedPolicyPath) || resolvedPolicyPath;
-  for (const entry of codeEntries) {
-    if (!entry.code) continue;
-    if (!entry.description) {
-      violations.push(
-        createViolation('invalid_description', 'description must be non-empty', {
-          itemPath: entry.itemPath,
-          code: entry.code,
-          registryPath,
-        }),
-      );
-    }
   }
 
   return {
@@ -393,11 +386,7 @@ export function runReasonCodeValidation(argv = process.argv) {
 
   if (options.format === 'json') {
     process.stdout.write(JSON.stringify({
-      policyPath: result.policyPath,
-      registeredCodes: result.registryCodes,
-      emittedCodes: result.emittedCodes,
-      missingEmittedCodes: result.missingEmitCodes,
-      violations: result.violations,
+      ...result,
       exitCode,
     }, null, 2));
     process.stdout.write('\n');

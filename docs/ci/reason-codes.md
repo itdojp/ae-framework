@@ -20,9 +20,9 @@
 
 ## 3. 検証導線（CI）
 
-- `verify-lite` (`.github/workflows/verify-lite.yml`) で `pnpm run reason-codes:validate` を required ステップとして実行する。
-- `minimal-pipeline` (`.github/workflows/minimal-pipeline.yml`) でも同 validator を実行する。
-- `scripts/ci/run-verify-lite-local.sh` でも同 validator を実行し、`verify-lite-run-summary` の `steps.reasonCodeRegistryValidation` に結果を記録する。
+- `verify-lite` (`.github/workflows/verify-lite.yml`) / `minimal-pipeline` (`.github/workflows/minimal-pipeline.yml`) は `pnpm run verify:lite` を実行する。
+- `pnpm run verify:lite` の実体である `scripts/ci/run-verify-lite-local.sh` が validator を 1 回だけ実行し、`verify-lite-run-summary` の `steps.reasonCodeRegistryValidation` に結果を記録する。
+- 単体確認が必要な場合は `pnpm run reason-codes:validate` を直接実行する。
 
 ## 4. 参照
 

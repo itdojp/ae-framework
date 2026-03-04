@@ -93,10 +93,6 @@ jobs:
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         run: pnpm -s vitest run tests/contracts/cli-artifacts-contracts.test.ts
 
-      - name: Validate reason code registry and emit mappings (required)
-        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
-        run: pnpm run reason-codes:validate
-
       - name: Collect TypeScript inventory
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         continue-on-error: ${{ !(github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-ts-inventory')) }}

@@ -80,6 +80,7 @@ describe('validate-reason-codes', () => {
       expect(violationTypes).toContain('missing_description');
       expect(violationTypes).toContain('invalid_owner_hint');
       expect(violationTypes).toContain('missing_category');
+      expect(violationTypes).not.toContain('invalid_description');
     } finally {
       await rm(workdir, { recursive: true, force: true });
     }
@@ -103,10 +104,18 @@ describe('validate-reason-codes', () => {
       expect(result.exitCode).toBe(0);
       const parsed = JSON.parse(output) as {
         exitCode: number;
+        registryCodes: string[];
         emittedCodes: string[];
+        missingEmitCodes: string[];
+        registeredCodes?: string[];
+        missingEmittedCodes?: string[];
       };
       expect(parsed.exitCode).toBe(0);
+      expect(parsed.registryCodes.length).toBeGreaterThan(0);
       expect(parsed.emittedCodes.length).toBeGreaterThan(0);
+      expect(parsed.missingEmitCodes).toHaveLength(0);
+      expect(parsed.registeredCodes).toBeUndefined();
+      expect(parsed.missingEmittedCodes).toBeUndefined();
     } finally {
       process.stdout.write = originalWrite;
     }
