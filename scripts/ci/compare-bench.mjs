@@ -7,6 +7,17 @@ function printUsage() {
   console.error('Usage: compare-bench.mjs <file1> <file2> [tolerance] [--out-json <path>] [--tolerance <value>]');
 }
 
+function parseTolerance(rawValue, label) {
+  if (rawValue === undefined || rawValue === null || String(rawValue).trim() === '') {
+    return undefined;
+  }
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error(`${label} must be a non-negative number`);
+  }
+  return parsed;
+}
+
 function parseArgs(argv) {
   let outJsonPath = null;
   let toleranceFromOption;
@@ -20,7 +31,7 @@ function parseArgs(argv) {
     }
     if (arg === '--out-json') {
       const next = argv[index + 1];
-      if (!next) {
+      if (!next || next.startsWith('--')) {
         throw new Error('--out-json requires a value');
       }
       outJsonPath = path.resolve(next);
@@ -29,7 +40,7 @@ function parseArgs(argv) {
     }
     if (arg === '--tolerance') {
       const next = argv[index + 1];
-      if (!next) {
+      if (!next || next.startsWith('--')) {
         throw new Error('--tolerance requires a value');
       }
       toleranceFromOption = next;
@@ -103,8 +114,8 @@ async function main() {
   const { file1: f1, file2: f2, toleranceRaw: tolStr, outJsonPath } = parseArgs(process.argv.slice(2));
   
   // tol の決定: env > arg > default
-  const tolFromEnv = process.env.BENCH_TOLERANCE ? Number(process.env.BENCH_TOLERANCE) : undefined;
-  const tolFromArg = Number(tolStr ?? '');
+  const tolFromEnv = parseTolerance(process.env.BENCH_TOLERANCE, 'BENCH_TOLERANCE');
+  const tolFromArg = parseTolerance(tolStr, 'tolerance');
   const tol = Number.isFinite(tolFromEnv) ? tolFromEnv
             : Number.isFinite(tolFromArg) ? tolFromArg
             : 0.05;

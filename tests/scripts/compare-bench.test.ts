@@ -80,4 +80,46 @@ describe.sequential('compare-bench script', () => {
       rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('uses default tolerance (0.05) when omitted', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'ae-compare-bench-default-tol-'));
+
+    try {
+      const basePath = join(tempDir, 'base.json');
+      const candidatePath = join(tempDir, 'candidate.json');
+      const outPath = join(tempDir, 'bench-ts-compare.json');
+      writeFileSync(basePath, JSON.stringify(createBenchSummary(10, 1000)), 'utf8');
+      writeFileSync(candidatePath, JSON.stringify(createBenchSummary(10.2, 980)), 'utf8');
+
+      const result = spawnSync(
+        'node',
+        [compareScript, basePath, candidatePath, '--out-json', outPath],
+        { encoding: 'utf8', timeout: 120_000 },
+      );
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const payload = JSON.parse(readFileSync(outPath, 'utf8')) as { tol: number };
+      expect(payload.tol).toBe(0.05);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails when --tolerance value is missing or invalid', () => {
+    const missingValue = spawnSync(
+      'node',
+      [compareScript, 'base.json', 'candidate.json', '--tolerance', '--out-json', 'out.json'],
+      { encoding: 'utf8', timeout: 120_000 },
+    );
+    expect(missingValue.status).toBe(2);
+    expect(missingValue.stderr).toContain('--tolerance requires a value');
+
+    const invalidValue = spawnSync(
+      'node',
+      [compareScript, 'base.json', 'candidate.json', '--tolerance', 'NaN'],
+      { encoding: 'utf8', timeout: 120_000 },
+    );
+    expect(invalidValue.status).toBe(2);
+    expect(invalidValue.stderr).toContain('tolerance must be a non-negative number');
+  });
 });
