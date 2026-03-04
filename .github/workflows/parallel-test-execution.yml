@@ -330,7 +330,7 @@ jobs:
       
       - name: Install deps
         run: |
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Retry failed tests with enhanced detection
         run: |

@@ -27,13 +27,50 @@ describe('llm schemas', () => {
     expect(result.success).toBe(true);
   });
 
-  test('BenchmarkResult accepts optional unknown env/config objects', () => {
+  test('BenchmarkResult accepts benchmark-report/v1 payload', () => {
     const result = BenchmarkResult.safeParse({
-      summary: [{ name: 'test', hz: 100, meanMs: 10 }],
-      env: { ci: true, platform: 'linux' },
-      config: { mode: 'fast' },
+      schemaVersion: 'benchmark-report/v1',
+      summary: [{
+        name: 'test',
+        hz: 100,
+        meanMs: 10,
+        sdMs: 1,
+        samples: 30,
+        p95: 12,
+        errorRate: 0,
+        coldStartMs: 15,
+      }],
+      metrics: {
+        p95: 12,
+        errorRate: 0,
+        coldStartMs: 15,
+        peakRssMb: 48.2,
+      },
+      meta: {
+        date: new Date().toISOString(),
+        env: {
+          node: process.version,
+          platform: process.platform,
+          arch: process.arch,
+          cpu: 'unit-test-cpu',
+          totalMem: 1024,
+          seed: 12345,
+        },
+        config: {
+          warmupMs: 300,
+          iterations: 30,
+          seed: 12345,
+        },
+      },
       extra: 'allowed',
     });
     expect(result.success).toBe(true);
+  });
+
+  test('BenchmarkResult rejects payload without required benchmark fields', () => {
+    const result = BenchmarkResult.safeParse({
+      summary: [{ name: 'test', hz: 100, meanMs: 10 }],
+    });
+    expect(result.success).toBe(false);
   });
 });

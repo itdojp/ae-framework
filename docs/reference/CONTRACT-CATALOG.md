@@ -68,6 +68,7 @@
 - `schema/agentic-metrics.schema.json`
 - `schema/automation-observability-v1.schema.json`
 - `schema/artifact-metadata.schema.json`
+- `schema/benchmark-report.schema.json`
 - `schema/conformance-metrics.schema.json`
 - `schema/counterexample.schema.json`
 - `schema/envelope.schema.json`
