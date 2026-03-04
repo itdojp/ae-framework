@@ -143,6 +143,10 @@ function readBenchmarkReport(filePath) {
   if (!Array.isArray(report.summary) || report.summary.length === 0) {
     throw new Error(`${filePath}: summary must be a non-empty array`);
   }
+  const taskIdentities = report.summary.map((task, index) => {
+    const normalizedName = typeof task?.name === 'string' ? task.name.trim() : '';
+    return normalizedName.length > 0 ? normalizedName : `#${index + 1}`;
+  });
   const throughputHz = report.summary.reduce((sum, task, index) => {
     const hz = Number(task?.hz);
     if (!Number.isFinite(hz) || hz <= 0) {
@@ -163,6 +167,7 @@ function readBenchmarkReport(filePath) {
     metrics,
     throughputHz,
     taskCount: report.summary.length,
+    taskIdentities,
   };
 }
 
@@ -208,10 +213,36 @@ function coefficientOfVariation(values) {
   return standardDeviation(values) / mean;
 }
 
+function assertConsistentRunShape(reports) {
+  if (!Array.isArray(reports) || reports.length <= 1) {
+    return;
+  }
+  const baseline = reports[0];
+  const baselineTasks = [...baseline.taskIdentities].sort();
+
+  for (const report of reports.slice(1)) {
+    if (report.taskCount !== baseline.taskCount) {
+      throw new Error(
+        `inconsistent summary task count across runs: expected ${baseline.taskCount} (${baseline.path}), got ${report.taskCount} (${report.path})`,
+      );
+    }
+
+    const reportTasks = [...report.taskIdentities].sort();
+    const sameTasks = reportTasks.length === baselineTasks.length
+      && reportTasks.every((task, index) => task === baselineTasks[index]);
+    if (!sameTasks) {
+      throw new Error(
+        `inconsistent summary task identities across runs: expected [${baselineTasks.join(', ')}] (${baseline.path}), got [${reportTasks.join(', ')}] (${report.path})`,
+      );
+    }
+  }
+}
+
 function aggregateBenchmarkRuns(reports) {
   if (!Array.isArray(reports) || reports.length === 0) {
     throw new Error('at least one benchmark report is required');
   }
+  assertConsistentRunShape(reports);
 
   const p95Values = reports.map((report) => report.metrics.p95);
   const errorRateValues = reports.map((report) => report.metrics.errorRate);
