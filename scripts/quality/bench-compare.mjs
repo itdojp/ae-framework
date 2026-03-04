@@ -3,10 +3,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import Ajv2020 from 'ajv/dist/2020.js';
 
 const DEFAULT_OUTPUT_JSON = 'artifacts/bench-compare.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/bench-compare.md';
 const DEFAULT_MIN_RUNS = 2;
+const DEFAULT_CRITERIA_RELATIVE_PATH = 'configs/bench-criteria.default.json';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, '..', '..');
+const DEFAULT_CRITERIA_PATH = path.resolve(REPO_ROOT, DEFAULT_CRITERIA_RELATIVE_PATH);
+const CRITERIA_SCHEMA_PATH = path.resolve(REPO_ROOT, 'schema/bench-criteria.schema.json');
 
 function printUsage() {
   process.stdout.write(`Usage: node scripts/quality/bench-compare.mjs --baseline <path[,path...]> --candidate <name=path[,path...]> [--candidate <name=path[,path...]> ...] [options]
@@ -14,6 +22,7 @@ function printUsage() {
 Options:
   --baseline <path[,path...]>     baseline bench.json path(s) (benchmark-report/v1)
   --candidate <name=path[,path...]> candidate label and bench.json path(s) (repeatable)
+  --criteria <path>               criteria JSON path (default: ${DEFAULT_CRITERIA_RELATIVE_PATH})
   --out-json <path>               output JSON path (default: ${DEFAULT_OUTPUT_JSON})
   --out-md <path>                 output Markdown path (default: ${DEFAULT_OUTPUT_MD})
   --min-runs <number>             minimum required runs for baseline/candidate (default: ${DEFAULT_MIN_RUNS})
@@ -45,6 +54,7 @@ function parseArgs(argv) {
   const options = {
     baseline: '',
     candidates: [],
+    criteriaPath: DEFAULT_CRITERIA_PATH,
     outJsonPath: DEFAULT_OUTPUT_JSON,
     outMdPath: DEFAULT_OUTPUT_MD,
     minRuns: DEFAULT_MIN_RUNS,
@@ -69,6 +79,13 @@ function parseArgs(argv) {
       const next = argv[index + 1];
       if (!next) throw new Error('--candidate requires a value');
       options.candidates.push(next);
+      index += 1;
+      continue;
+    }
+    if (arg === '--criteria') {
+      const next = argv[index + 1];
+      if (!next) throw new Error('--criteria requires a value');
+      options.criteriaPath = path.resolve(next);
       index += 1;
       continue;
     }
@@ -110,6 +127,7 @@ function parseArgs(argv) {
   return {
     baselinePaths: parsePathList(options.baseline, '--baseline'),
     candidates: options.candidates.map(parseCandidateArg),
+    criteriaPath: options.criteriaPath,
     outJsonPath: path.resolve(options.outJsonPath),
     outMdPath: path.resolve(options.outMdPath),
     minRuns: options.minRuns,
@@ -231,6 +249,38 @@ function readBenchmarkReport(filePath) {
   };
 }
 
+function readJsonFile(filePath, label) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`${label} not found: ${filePath}`);
+  }
+  const raw = fs.readFileSync(filePath, 'utf8');
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${label} is not valid JSON: ${filePath} (${message})`);
+  }
+}
+
+function formatAjvError(error) {
+  const location = error?.instancePath && error.instancePath.length > 0 ? error.instancePath : '/';
+  const message = error?.message || 'validation failed';
+  return `${location} ${message}`;
+}
+
+function loadCriteria(criteriaPath) {
+  const schema = readJsonFile(CRITERIA_SCHEMA_PATH, 'bench criteria schema');
+  const criteria = readJsonFile(criteriaPath, 'bench criteria');
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  const validate = ajv.compile(schema);
+  const valid = validate(criteria);
+  if (!valid) {
+    const details = (validate.errors || []).map(formatAjvError).join('; ');
+    throw new Error(`invalid criteria file: ${criteriaPath} (${details || 'schema validation failed'})`);
+  }
+  return criteria;
+}
+
 function round(value, digits = 4) {
   return Number(value.toFixed(digits));
 }
@@ -306,14 +356,6 @@ function checksumMatchRate(checksums) {
   const baseline = checksums[0];
   const matched = checksums.filter((entry) => entry === baseline).length;
   return (matched / checksums.length) * 100;
-}
-
-function allChecksumsMatch(checksums) {
-  if (!Array.isArray(checksums) || checksums.length <= 1) {
-    return true;
-  }
-  const baseline = checksums[0];
-  return checksums.every((entry) => entry === baseline);
 }
 
 function aggregateBenchmarkRuns(reports) {
@@ -416,27 +458,31 @@ function hasRequiredRuns(runCount, minRuns) {
   return Number.isInteger(runCount) && runCount >= minRuns;
 }
 
-function evaluateCandidate(candidate, baseline, minRuns) {
+function evaluateCandidate(candidate, baseline, minRuns, criteria) {
   assertComparableWithBaseline(candidate, baseline);
+  const thresholds = criteria.thresholds;
 
   const p95Ratio = ratio(candidate.metrics.p95, baseline.metrics.p95);
   const throughputRatio = ratio(candidate.throughputHz, baseline.throughputHz);
   const coldStartRatio = ratio(candidate.metrics.coldStartMs, baseline.metrics.coldStartMs);
   const peakRssRatio = ratio(candidate.metrics.peakRssMb, baseline.metrics.peakRssMb);
-  const errorRateLimit = Math.max(0.5, baseline.metrics.errorRate + 0.2);
+  const errorRateLimit = Math.max(
+    thresholds.errorRate.absoluteMinPercent,
+    baseline.metrics.errorRate + thresholds.errorRate.baselineDeltaPercentPoint,
+  );
   const baselineHasRequiredRuns = hasRequiredRuns(baseline.runCount, minRuns);
   const candidateHasRequiredRuns = hasRequiredRuns(candidate.runCount, minRuns);
   const hasRequiredRunsForCvChecks = baselineHasRequiredRuns && candidateHasRequiredRuns;
 
   const checks = {
-    p95: upperBoundCheck(p95Ratio, 0.85),
-    throughput: lowerBoundCheck(throughputRatio, 1.2),
+    p95: upperBoundCheck(p95Ratio, thresholds.p95RatioMax),
+    throughput: lowerBoundCheck(throughputRatio, thresholds.throughputRatioMin),
     errorRate: candidate.metrics.errorRate <= errorRateLimit,
-    peakRss: upperBoundCheck(peakRssRatio, 1.15),
-    coldStartReference: upperBoundCheck(coldStartRatio, 1.1),
-    p95Cv: hasRequiredRunsForCvChecks && upperBoundCheck(candidate.reproducibility.p95Cv, 0.05),
-    throughputCv: hasRequiredRunsForCvChecks && upperBoundCheck(candidate.reproducibility.throughputCv, 0.05),
-    checksum: allChecksumsMatch(candidate.checksums),
+    peakRss: upperBoundCheck(peakRssRatio, thresholds.peakRssRatioMax),
+    coldStartReference: upperBoundCheck(coldStartRatio, thresholds.coldStartRatioMax),
+    p95Cv: hasRequiredRunsForCvChecks && upperBoundCheck(candidate.reproducibility.p95Cv, thresholds.p95CvMax),
+    throughputCv: hasRequiredRunsForCvChecks && upperBoundCheck(candidate.reproducibility.throughputCv, thresholds.throughputCvMax),
+    checksum: lowerBoundCheck(candidate.reproducibility.checksumMatchRate, thresholds.checksumMatchRateMin),
   };
 
   const overallPass = checks.p95
@@ -491,12 +537,27 @@ function fmtNumber(value, digits = 3) {
   return Number(value).toFixed(digits);
 }
 
-function renderMarkdown(result, minRuns) {
+function fmtThreshold(value, digits = 4) {
+  return Number(value.toFixed(digits)).toString();
+}
+
+function toDisplayCriteriaPath(criteriaPath) {
+  const resolved = path.resolve(criteriaPath);
+  const relative = path.relative(REPO_ROOT, resolved).replace(/\\/g, '/');
+  if (relative.length > 0 && !relative.startsWith('..')) {
+    return relative;
+  }
+  return path.basename(resolved);
+}
+
+function renderMarkdown(result, minRuns, criteria, criteriaPath) {
+  const displayCriteriaPath = toDisplayCriteriaPath(criteriaPath);
   const lines = [
     '# Bench Comparison Report',
     '',
     `- Generated: ${result.generatedAt}`,
     `- Baseline: ${result.baseline.path} (runs=${result.baseline.runCount}, p95 CV=${fmtNumber(result.baseline.reproducibility.p95Cv, 4)}, throughput CV=${fmtNumber(result.baseline.reproducibility.throughputCv, 4)}, checksum match=${fmtNumber(result.baseline.reproducibility.checksumMatchRate, 2)}%)`,
+    `- Criteria: ${displayCriteriaPath}`,
     '',
     '| candidate | runs | overall | p95 ratio | throughput ratio | error rate(%) | error limit(%) | peak RSS ratio | cold start ratio | p95 CV | throughput CV | checksum match(%) |',
     '|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
@@ -511,17 +572,17 @@ function renderMarkdown(result, minRuns) {
   lines.push(
     '',
     '## Required checks',
-    '- p95 ratio <= 0.85',
-    '- throughput ratio >= 1.20',
-    '- error rate <= max(0.5, baseline + 0.2pt)',
-    '- peak RSS ratio <= 1.15',
+    `- p95 ratio <= ${fmtThreshold(criteria.thresholds.p95RatioMax)}`,
+    `- throughput ratio >= ${fmtThreshold(criteria.thresholds.throughputRatioMin)}`,
+    `- error rate <= max(${fmtThreshold(criteria.thresholds.errorRate.absoluteMinPercent)}, baseline + ${fmtThreshold(criteria.thresholds.errorRate.baselineDeltaPercentPoint)}pt)`,
+    `- peak RSS ratio <= ${fmtThreshold(criteria.thresholds.peakRssRatioMax)}`,
     `- baseline/candidate runCount >= ${minRuns}`,
-    `- p95 CV <= 0.05 (when baseline/candidate runCount >= ${minRuns})`,
-    `- throughput CV <= 0.05 (when baseline/candidate runCount >= ${minRuns})`,
-    '- checksum match rate == 100%',
+    `- p95 CV <= ${fmtThreshold(criteria.thresholds.p95CvMax)} (when baseline/candidate runCount >= ${minRuns})`,
+    `- throughput CV <= ${fmtThreshold(criteria.thresholds.throughputCvMax)} (when baseline/candidate runCount >= ${minRuns})`,
+    `- checksum match rate >= ${fmtThreshold(criteria.thresholds.checksumMatchRateMin, 2)}%`,
     '',
     '## Reference check',
-    '- cold start ratio <= 1.10',
+    `- cold start ratio <= ${fmtThreshold(criteria.thresholds.coldStartRatioMax)}`,
     '',
   );
   return lines.join('\n');
@@ -529,12 +590,13 @@ function renderMarkdown(result, minRuns) {
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
+  const criteria = loadCriteria(options.criteriaPath);
   const baselineRuns = options.baselinePaths.map((baselinePath) => readBenchmarkReport(baselinePath));
   const baseline = aggregateBenchmarkRuns(baselineRuns);
   const candidates = options.candidates.map((candidate) => {
     const runs = candidate.paths.map((candidatePath) => readBenchmarkReport(candidatePath));
     const aggregatedCandidate = aggregateBenchmarkRuns(runs);
-    return evaluateCandidate({ ...candidate, ...aggregatedCandidate }, baseline, options.minRuns);
+    return evaluateCandidate({ ...candidate, ...aggregatedCandidate }, baseline, options.minRuns, criteria);
   });
   const minRunsBreaches = collectMinRunsBreaches(baseline, candidates, options.minRuns);
   for (const message of minRunsBreaches) {
@@ -560,7 +622,7 @@ function main() {
   ensureParentDir(options.outJsonPath);
   ensureParentDir(options.outMdPath);
   fs.writeFileSync(options.outJsonPath, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
-  fs.writeFileSync(options.outMdPath, renderMarkdown(result, options.minRuns), 'utf8');
+  fs.writeFileSync(options.outMdPath, renderMarkdown(result, options.minRuns, criteria, options.criteriaPath), 'utf8');
 
   process.stdout.write(`[bench:compare] wrote ${options.outJsonPath}\n`);
   process.stdout.write(`[bench:compare] wrote ${options.outMdPath}\n`);

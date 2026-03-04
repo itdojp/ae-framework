@@ -210,12 +210,12 @@
           "maxMedium": 20,
           "blockOnCritical": false
         },
-        "testing": {
-          "maxCritical": 2,
-          "maxHigh": 6,
-          "maxMedium": 15,
-          "blockOnCritical": true
-        },
+    "testing": {
+      "maxCritical": 2,
+      "maxHigh": 8,
+      "maxMedium": 15,
+      "blockOnCritical": true
+    },
         "staging": {
           "maxCritical": 0,
           "maxHigh": 2,

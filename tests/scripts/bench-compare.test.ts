@@ -6,6 +6,26 @@ import { tmpdir } from 'node:os';
 
 const repoRoot = resolve('.');
 const compareScript = resolve(repoRoot, 'scripts/quality/bench-compare.mjs');
+const defaultCriteriaPath = resolve(repoRoot, 'configs/bench-criteria.default.json');
+
+type BenchCriteria = {
+  schemaVersion: 'bench-criteria/v1';
+  thresholds: {
+    p95RatioMax: number;
+    throughputRatioMin: number;
+    errorRate: {
+      absoluteMinPercent: number;
+      baselineDeltaPercentPoint: number;
+    };
+    peakRssRatioMax: number;
+    coldStartRatioMax: number;
+    p95CvMax: number;
+    throughputCvMax: number;
+    checksumMatchRateMin: number;
+  };
+};
+
+const defaultCriteria = JSON.parse(readFileSync(defaultCriteriaPath, 'utf8')) as BenchCriteria;
 
 function createBenchReport(metrics: {
   p95: number;
@@ -50,6 +70,35 @@ function createBenchReport(metrics: {
         iterations: 30,
         seed: 12345,
       },
+    },
+  };
+}
+
+function createBenchCriteria(overrides?: Partial<{
+  p95RatioMax: number;
+  throughputRatioMin: number;
+  errorRateAbsoluteMinPercent: number;
+  errorRateBaselineDeltaPercentPoint: number;
+  peakRssRatioMax: number;
+  coldStartRatioMax: number;
+  p95CvMax: number;
+  throughputCvMax: number;
+  checksumMatchRateMin: number;
+}>): BenchCriteria {
+  return {
+    schemaVersion: defaultCriteria.schemaVersion,
+    thresholds: {
+      p95RatioMax: overrides?.p95RatioMax ?? defaultCriteria.thresholds.p95RatioMax,
+      throughputRatioMin: overrides?.throughputRatioMin ?? defaultCriteria.thresholds.throughputRatioMin,
+      errorRate: {
+        absoluteMinPercent: overrides?.errorRateAbsoluteMinPercent ?? defaultCriteria.thresholds.errorRate.absoluteMinPercent,
+        baselineDeltaPercentPoint: overrides?.errorRateBaselineDeltaPercentPoint ?? defaultCriteria.thresholds.errorRate.baselineDeltaPercentPoint,
+      },
+      peakRssRatioMax: overrides?.peakRssRatioMax ?? defaultCriteria.thresholds.peakRssRatioMax,
+      coldStartRatioMax: overrides?.coldStartRatioMax ?? defaultCriteria.thresholds.coldStartRatioMax,
+      p95CvMax: overrides?.p95CvMax ?? defaultCriteria.thresholds.p95CvMax,
+      throughputCvMax: overrides?.throughputCvMax ?? defaultCriteria.thresholds.throughputCvMax,
+      checksumMatchRateMin: overrides?.checksumMatchRateMin ?? defaultCriteria.thresholds.checksumMatchRateMin,
     },
   };
 }
@@ -262,6 +311,177 @@ describe.sequential('bench-compare script', () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('--min-runs must be a positive integer');
+  });
+
+  it('switches threshold evaluation when --criteria is provided', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'ae-bench-compare-criteria-switch-'));
+
+    try {
+      const baselinePath = join(tempDir, 'baseline.json');
+      const candidatePath = join(tempDir, 'go.json');
+      const strictOutJsonPath = join(tempDir, 'bench-compare-strict.json');
+      const strictOutMdPath = join(tempDir, 'bench-compare-strict.md');
+      const relaxedOutJsonPath = join(tempDir, 'bench-compare-relaxed.json');
+      const relaxedOutMdPath = join(tempDir, 'bench-compare-relaxed.md');
+      const relaxedCriteriaPath = join(tempDir, 'criteria-relaxed.json');
+
+      writeFileSync(
+        baselinePath,
+        JSON.stringify(createBenchReport({
+          p95: 100,
+          errorRate: 0.1,
+          coldStartMs: 50,
+          peakRssMb: 100,
+          hz: 1000,
+        })),
+        'utf8',
+      );
+      writeFileSync(
+        candidatePath,
+        JSON.stringify(createBenchReport({
+          p95: 90,
+          errorRate: 0.2,
+          coldStartMs: 50,
+          peakRssMb: 105,
+          hz: 1100,
+        })),
+        'utf8',
+      );
+      writeFileSync(
+        relaxedCriteriaPath,
+        JSON.stringify(createBenchCriteria({
+          p95RatioMax: 0.95,
+          throughputRatioMin: 1.05,
+        })),
+        'utf8',
+      );
+
+      const strictResult = spawnSync(
+        'node',
+        [
+          compareScript,
+          '--baseline',
+          baselinePath,
+          '--candidate',
+          `go=${candidatePath}`,
+          '--out-json',
+          strictOutJsonPath,
+          '--out-md',
+          strictOutMdPath,
+          '--min-runs',
+          '1',
+          '--fail-on-threshold-breach',
+        ],
+        { encoding: 'utf8', timeout: 120_000 },
+      );
+      expect(strictResult.status).toBe(1);
+      const strictPayload = JSON.parse(readFileSync(strictOutJsonPath, 'utf8')) as {
+        candidates: Array<{ name: string; overall: string; checks: { p95: boolean; throughput: boolean } }>;
+      };
+      expect(strictPayload.candidates[0]?.name).toBe('go');
+      expect(strictPayload.candidates[0]?.checks.p95).toBe(false);
+      expect(strictPayload.candidates[0]?.checks.throughput).toBe(false);
+      expect(strictPayload.candidates[0]?.overall).toBe('fail');
+
+      const relaxedResult = spawnSync(
+        'node',
+        [
+          compareScript,
+          '--baseline',
+          baselinePath,
+          '--candidate',
+          `go=${candidatePath}`,
+          '--criteria',
+          relaxedCriteriaPath,
+          '--out-json',
+          relaxedOutJsonPath,
+          '--out-md',
+          relaxedOutMdPath,
+          '--min-runs',
+          '1',
+          '--fail-on-threshold-breach',
+        ],
+        { encoding: 'utf8', timeout: 120_000 },
+      );
+      expect(relaxedResult.status).toBe(0);
+      const relaxedPayload = JSON.parse(readFileSync(relaxedOutJsonPath, 'utf8')) as {
+        candidates: Array<{ name: string; overall: string; checks: { p95: boolean; throughput: boolean } }>;
+      };
+      expect(relaxedPayload.candidates[0]?.name).toBe('go');
+      expect(relaxedPayload.candidates[0]?.checks.p95).toBe(true);
+      expect(relaxedPayload.candidates[0]?.checks.throughput).toBe(true);
+      expect(relaxedPayload.candidates[0]?.overall).toBe('pass');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails with a clear error when criteria schema validation fails', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'ae-bench-compare-criteria-schema-error-'));
+
+    try {
+      const baselinePath = join(tempDir, 'baseline.json');
+      const candidatePath = join(tempDir, 'go.json');
+      const invalidCriteriaPath = join(tempDir, 'criteria-invalid.json');
+      const outJsonPath = join(tempDir, 'bench-compare.json');
+      const outMdPath = join(tempDir, 'bench-compare.md');
+
+      writeFileSync(
+        baselinePath,
+        JSON.stringify(createBenchReport({
+          p95: 100,
+          errorRate: 0.1,
+          coldStartMs: 50,
+          peakRssMb: 100,
+          hz: 1000,
+        })),
+        'utf8',
+      );
+      writeFileSync(
+        candidatePath,
+        JSON.stringify(createBenchReport({
+          p95: 80,
+          errorRate: 0.2,
+          coldStartMs: 45,
+          peakRssMb: 105,
+          hz: 1300,
+        })),
+        'utf8',
+      );
+
+      const invalidCriteria = createBenchCriteria() as {
+        schemaVersion: string;
+        thresholds: Record<string, unknown>;
+      };
+      delete invalidCriteria.thresholds.throughputRatioMin;
+      writeFileSync(invalidCriteriaPath, JSON.stringify(invalidCriteria), 'utf8');
+
+      const result = spawnSync(
+        'node',
+        [
+          compareScript,
+          '--baseline',
+          baselinePath,
+          '--candidate',
+          `go=${candidatePath}`,
+          '--criteria',
+          invalidCriteriaPath,
+          '--out-json',
+          outJsonPath,
+          '--out-md',
+          outMdPath,
+          '--min-runs',
+          '1',
+        ],
+        { encoding: 'utf8', timeout: 120_000 },
+      );
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('invalid criteria file');
+      expect(result.stderr).toContain('throughputRatioMin');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 
   it('treats zero baseline metrics as non-applicable ratio checks', () => {
