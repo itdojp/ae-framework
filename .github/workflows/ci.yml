@@ -68,7 +68,7 @@ jobs:
       - run: |
           pnpm fetch --prefer-offline
           # PR/push entry keeps lockfile strict to preserve CI reproducibility.
-          pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=false
+          pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=true
         env:
           NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
           NPM_CONFIG_GLOBALCONFIG: /dev/null
