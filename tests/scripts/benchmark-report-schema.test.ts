@@ -23,14 +23,19 @@ describe.sequential('benchmark report schema', () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'ae-bench-schema-'));
 
     try {
+      const env: NodeJS.ProcessEnv = {
+        ...process.env,
+        NODE_ENV: 'production',
+        AE_TEST_NO_EXIT: '0',
+        AE_SEED: '12345',
+      };
+      delete env.VITEST;
+
       const runResult = spawnSync(tsxBin, [cliEntry, 'bench'], {
         cwd: tempDir,
         encoding: 'utf8',
         timeout: 120_000,
-        env: {
-          ...process.env,
-          AE_SEED: '12345',
-        },
+        env,
       });
       expect(runResult.status, runResult.stderr || runResult.stdout).toBe(0);
 

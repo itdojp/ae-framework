@@ -47,7 +47,7 @@
           },
           "samples": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 1
           },
           "p95": {
             "$ref": "#/$defs/nonNegativeNumber"
@@ -116,6 +116,10 @@
       "type": "number",
       "minimum": 0
     },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
     "environment": {
       "type": "object",
       "additionalProperties": true,
@@ -141,7 +145,7 @@
           "type": "string"
         },
         "totalMem": {
-          "$ref": "#/$defs/nonNegativeNumber"
+          "$ref": "#/$defs/nonNegativeInteger"
         },
         "seed": {
           "type": "number"
@@ -158,10 +162,10 @@
       ],
       "properties": {
         "warmupMs": {
-          "$ref": "#/$defs/nonNegativeNumber"
+          "$ref": "#/$defs/nonNegativeInteger"
         },
         "iterations": {
-          "$ref": "#/$defs/nonNegativeNumber"
+          "$ref": "#/$defs/nonNegativeInteger"
         },
         "seed": {
           "type": "number"

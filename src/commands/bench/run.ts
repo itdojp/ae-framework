@@ -6,32 +6,16 @@ import { getSeed } from '../../core/seed.js';
 
 function percentile(samples: number[], ratio: number): number {
   if (samples.length === 0) {
-    return 0;
+    throw new Error('[ae:bench] percentile requires at least one sample');
   }
   const sorted = [...samples].sort((left, right) => left - right);
   const index = Math.max(0, Math.ceil(sorted.length * ratio) - 1);
   return sorted[Math.min(index, sorted.length - 1)] ?? 0;
 }
 
-function downsample(samples: number[], maxSamples: number): number[] {
-  if (samples.length <= maxSamples) {
-    return samples;
-  }
-  // Cap percentile input size to keep bench post-processing bounded even for ultra-fast tasks.
-  const sampled: number[] = [];
-  const step = Math.ceil(samples.length / maxSamples);
-  for (let index = 0; index < samples.length; index += step) {
-    const value = samples[index];
-    if (value !== undefined) {
-      sampled.push(value);
-    }
-  }
-  return sampled;
-}
-
 function roundMetric(value: number, digits = 3): number {
   if (!Number.isFinite(value)) {
-    return 0;
+    throw new Error(`[ae:bench] metric is not finite: ${value}`);
   }
   return Number(value.toFixed(digits));
 }
@@ -39,19 +23,24 @@ function roundMetric(value: number, digits = 3): number {
 export async function benchRun() {
   const cfg = await loadConfig();
   const seed = getSeed() ?? cfg.bench.seed;
-  
+
+  const iterations = Math.max(1, Math.trunc(cfg.bench.iterations));
+  const warmupMs = Math.max(0, Math.trunc(cfg.bench.warmupMs));
+
   // Ensure artifacts directory exists
   await mkdir('artifacts', { recursive: true });
-  
-  const bench = new Bench({ 
-    iterations: cfg.bench.iterations 
+
+  const bench = new Bench({
+    iterations,
+    warmup: warmupMs > 0,
+    warmupTime: warmupMs,
   });
-  
+
   // Placeholder task: will be replaced with actual processing later
   bench.add('noop', () => Math.sqrt(144));
-  
-  console.log(`[ae:bench] running with seed=${seed}, iterations=${cfg.bench.iterations}, warmup=${cfg.bench.warmupMs}ms`);
-  
+
+  console.log(`[ae:bench] running with seed=${seed}, iterations=${iterations}, warmup=${warmupMs}ms`);
+
   let peakRssBytes = process.memoryUsage().rss;
   const rssSampler = setInterval(() => {
     peakRssBytes = Math.max(peakRssBytes, process.memoryUsage().rss);
@@ -63,7 +52,7 @@ export async function benchRun() {
     clearInterval(rssSampler);
     peakRssBytes = Math.max(peakRssBytes, process.memoryUsage().rss);
   }
-  
+
   // Gather environment information
   const env = {
     node: process.version,
@@ -73,51 +62,62 @@ export async function benchRun() {
     totalMem: os.totalmem(),
     seed,
   };
-  
+
   // Create summary
   const p95InputSamplesMs: number[] = [];
   const coldStartSamplesMs: number[] = [];
   let failedTasks = 0;
   const summary = bench.tasks.map(task => {
-    const samplesMs = (task.result?.samples ?? []).map(sample => sample * 1000);
-    const sampledForP95 = downsample(samplesMs, 5000);
-    const coldStartMs = samplesMs[0] ?? 0;
-    const hasFailure = Boolean(task.result?.error) || Boolean(task.result?.aborted) || !task.result;
+    const result = task.result;
+    const hasFailure = !result || Boolean(result.error) || Boolean(result.aborted);
     if (hasFailure) {
       failedTasks += 1;
+      const reason = result?.error?.message || 'task failed or aborted';
+      throw new Error(`[ae:bench] task failed: ${task.name}: ${reason}`);
     }
-    for (const sampleMs of sampledForP95) {
+    const samplesMs = result.samples.map(sample => sample * 1000);
+    if (samplesMs.length === 0) {
+      throw new Error(`[ae:bench] task has no samples: ${task.name}`);
+    }
+    const hz = result.hz;
+    const meanMs = result.mean * 1000;
+    const sdMs = result.sd * 1000;
+    if (![hz, meanMs, sdMs].every(Number.isFinite)) {
+      throw new Error(`[ae:bench] task metrics are not finite: ${task.name}`);
+    }
+    const coldStartMs = samplesMs[0] as number;
+    for (const sampleMs of samplesMs) {
       p95InputSamplesMs.push(sampleMs);
     }
-    if (samplesMs.length > 0) {
-      coldStartSamplesMs.push(coldStartMs);
-    }
+    coldStartSamplesMs.push(coldStartMs);
 
     return {
       name: task.name,
-      hz: task.result?.hz ?? 0,
-      meanMs: (task.result?.mean ?? 0) * 1000,
-      sdMs: (task.result?.sd ?? 0) * 1000,
+      hz,
+      meanMs,
+      sdMs,
       samples: samplesMs.length,
-      p95: percentile(sampledForP95, 0.95),
+      p95: percentile(samplesMs, 0.95),
       errorRate: hasFailure ? 100 : 0,
       coldStartMs,
     };
   });
 
   const totalTasks = bench.tasks.length;
+  if (totalTasks === 0) {
+    throw new Error('[ae:bench] no benchmark tasks are registered');
+  }
+  if (coldStartSamplesMs.length === 0) {
+    throw new Error('[ae:bench] cold start metric cannot be computed');
+  }
+
   const metrics = {
     p95: roundMetric(percentile(p95InputSamplesMs, 0.95), 3),
-    errorRate: roundMetric(totalTasks === 0 ? 0 : (failedTasks / totalTasks) * 100, 2),
-    coldStartMs: roundMetric(
-      coldStartSamplesMs.length === 0
-        ? 0
-        : coldStartSamplesMs.reduce((sum, value) => sum + value, 0) / coldStartSamplesMs.length,
-      3
-    ),
+    errorRate: roundMetric((failedTasks / totalTasks) * 100, 2),
+    coldStartMs: roundMetric(coldStartSamplesMs.reduce((sum, value) => sum + value, 0) / coldStartSamplesMs.length, 3),
     peakRssMb: roundMetric(peakRssBytes / (1024 * 1024), 2),
   };
-  
+
   // Ensure stable JSON schema with minimum required fields
   const payload = {
     schemaVersion: 'benchmark-report/v1',
@@ -135,19 +135,23 @@ export async function benchRun() {
     meta: {
       date: new Date().toISOString(),
       env,
-      config: cfg.bench,
+      config: {
+        ...cfg.bench,
+        warmupMs,
+        iterations,
+      },
     },
   };
-  
+
   // Write JSON report
   await writeFile('artifacts/bench.json', JSON.stringify(payload, null, 2));
-  
+
   // Write Markdown report
   const markdown = `# Bench Report
 - Date: ${payload.meta.date}
 - Node: ${env.node}
 - Machine: ${env.platform}/${env.arch} ${env.cpu}
-- Iter: ${cfg.bench.iterations}, Warmup: ${cfg.bench.warmupMs}ms, Seed: ${env.seed}
+- Iter: ${iterations}, Warmup: ${warmupMs}ms, Seed: ${env.seed}
 - P95(ms): ${payload.metrics.p95.toFixed(3)}
 - Error Rate(%): ${payload.metrics.errorRate.toFixed(2)}
 - Cold Start(ms): ${payload.metrics.coldStartMs.toFixed(3)}
@@ -157,8 +161,8 @@ export async function benchRun() {
 |---|---:|---:|---:|---:|---:|
 ${summary.map(s => `| ${s.name} | ${s.meanMs.toFixed(3)} | ${s.p95.toFixed(3)} | ${s.sdMs.toFixed(3)} | ${s.errorRate.toFixed(2)} | ${s.hz.toFixed(1)} |`).join('\n')}
 `;
-  
+
   await writeFile('artifacts/bench.md', markdown);
-  
+
   console.log('[ae:bench] artifacts generated -> artifacts/bench.{json,md}');
 }
