@@ -68,6 +68,7 @@
 - `schema/agentic-metrics.schema.json`
 - `schema/automation-observability-v1.schema.json`
 - `schema/artifact-metadata.schema.json`
+- `schema/bench-criteria.schema.json`
 - `schema/bench-compare.schema.json`
 - `schema/benchmark-report.schema.json`
 - `schema/conformance-metrics.schema.json`
@@ -99,6 +100,7 @@
 | `artifacts/formal/formal-summary-v1.json` | `schema/formal-summary-v1.schema.json` | `scripts/formal/generate-formal-summary-v1.mjs` (`--out`), `.github/workflows/verify-lite.yml`, `.github/workflows/formal-aggregate.yml` | `scripts/ci/validate-formal-summary-v1.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/generate-run-manifest.mjs` |
 | `artifacts/formal/formal-summary-v2.json` | `schema/formal-summary-v2.schema.json` | `scripts/formal/generate-formal-summary-v1.mjs` (`--out-v2`), `.github/workflows/verify-lite.yml`, `.github/workflows/formal-aggregate.yml` | `scripts/ci/validate-formal-summary-v2.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/generate-run-manifest.mjs` |
 | `artifacts/bench.json` | `schema/benchmark-report.schema.json` | `src/commands/bench/run.ts` (`ae bench`) | `tests/scripts/benchmark-report-schema.test.ts`, `scripts/quality/bench-compare.mjs` |
+| `configs/bench-criteria.default.json` | `schema/bench-criteria.schema.json` | `configs/bench-criteria.default.json` (repo default), `scripts/quality/bench-compare.mjs` (`--criteria` 未指定時) | `scripts/quality/bench-compare.mjs`, `tests/scripts/bench-compare.test.ts` |
 | `artifacts/bench-compare.json` | `schema/bench-compare.schema.json` | `scripts/quality/bench-compare.mjs` | `tests/scripts/bench-compare-schema.test.ts`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/conformance/conformance-results.json` | `schema/conformance-verify-result.schema.json` | `src/cli/conformance-cli.ts` (`ae conformance verify`) | `src/cli/conformance-report.ts`, `scripts/formal/verify-conformance.mjs` |
 | `artifacts/hermetic-reports/conformance/summary.json` | `schema/conformance-report.schema.json` | `scripts/formal/verify-conformance.mjs` | `scripts/change-package/generate.mjs`, `scripts/ci/validate-json.mjs` |
