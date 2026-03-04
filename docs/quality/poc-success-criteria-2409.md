@@ -61,6 +61,24 @@
 - TS baseline 出力: `artifacts/bench.json`（機械可読） / `artifacts/bench.md`（人間可読）
 - 実行ログ: コマンド、使用コミットSHA、計測日時、実行環境（CPU/メモリ/OS/ランタイム）を必ず添付。
 
+### 5.1 比較判定コマンド（bench.json -> 比率/合否）
+
+`benchmark-report/v1`（`artifacts/bench.json`）を入力に、PoC比較の比率と必須閾値判定を機械的に生成する。
+
+```bash
+node scripts/quality/bench-compare.mjs \
+  --baseline artifacts/bench.json \
+  --candidate go=artifacts/bench-go.json \
+  --candidate rust=artifacts/bench-rust.json \
+  --out-json artifacts/bench-compare.json \
+  --out-md artifacts/bench-compare.md
+```
+
+- 出力JSON: `artifacts/bench-compare.json`
+- 出力Markdown: `artifacts/bench-compare.md`
+- 必須判定: `p95 ratio <= 0.85`, `throughput ratio >= 1.20`, `error rate <= max(0.5, baseline + 0.2pt)`, `peak RSS ratio <= 1.15`
+- 参考判定: `cold start ratio <= 1.10`
+
 ## 6. #2409 チェックリスト対応
 
 | #2409 first slice 項目 | 対応ドキュメント |

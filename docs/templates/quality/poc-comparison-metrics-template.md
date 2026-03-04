@@ -110,10 +110,20 @@ jq '.metrics | {p95, errorRate, coldStartMs, peakRssMb}' artifacts/bench.json
 # Go / Rust candidate（同一シナリオ・同一入力で実行）
 <go-benchmark-command>
 <rust-benchmark-command>
+
+# 比較判定（bench.json -> 比率/合否）
+node scripts/quality/bench-compare.mjs \
+  --baseline artifacts/bench.json \
+  --candidate go=artifacts/bench-go.json \
+  --candidate rust=artifacts/bench-rust.json \
+  --out-json artifacts/bench-compare.json \
+  --out-md artifacts/bench-compare.md
 ```
 
 - TS baseline raw result: `artifacts/bench.json`（schema: `schema/benchmark-report.schema.json`）
 - TS baseline summarized report: `artifacts/bench.md`
 - candidate raw result: `<path/to/bench-go-or-rust-results>`
+- comparison json: `artifacts/bench-compare.json`
+- comparison markdown: `artifacts/bench-compare.md`
 - logs: `<path/to/logs>`
 - related ADR: `<path/to/adr>`
