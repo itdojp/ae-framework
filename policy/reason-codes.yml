@@ -1,0 +1,172 @@
+schemaVersion: "1.0.0"
+contractId: "reason-code-registry.v1"
+
+# Stable, machine-readable failure classification codes.
+# - Format: lowercase dot-separated identifiers (e.g. "policy.required_labels_missing")
+# - Do not embed dynamic numbers (counts, PR numbers, URLs) into the code.
+# - Keep descriptions concise; operational runbooks belong in docs.
+codes:
+  # --- Autopilot lane / PR orchestration ---
+  - code: "autopilot.unknown"
+    title: "未分類（autopilot）"
+    description: "既知のマッピングに一致しないため、未分類として扱う。"
+    ownerHint: "either"
+    category: "autopilot"
+
+  - code: "autopilot.max_rounds_exceeded"
+    title: "最大ラウンド超過"
+    description: "収束までの試行回数が上限に達した。"
+    ownerHint: "ai"
+    category: "autopilot"
+
+  - code: "vcs.merge_conflict"
+    title: "マージコンフリクト"
+    description: "ベースブランチとのコンフリクト解消が必要。"
+    ownerHint: "human"
+    category: "vcs"
+
+  - code: "pr.draft"
+    title: "Draft PR"
+    description: "PRがdraftのため自動化対象外。"
+    ownerHint: "human"
+    category: "pr"
+
+  - code: "pr.already_merged"
+    title: "既にマージ済み"
+    description: "PRが既にマージされている。"
+    ownerHint: "either"
+    category: "pr"
+
+  - code: "policy.autopilot_label_missing"
+    title: "autopilot opt-inラベル不足"
+    description: "`autopilot:on` ラベルが無いため自動化対象外。"
+    ownerHint: "human"
+    category: "policy"
+
+  - code: "policy.required_labels_missing"
+    title: "必須ラベル不足"
+    description: "risk/policyにより要求されるラベルが不足している。"
+    ownerHint: "human"
+    category: "policy"
+
+  - code: "policy.auto_label_failed"
+    title: "ラベル自動付与失敗"
+    description: "自動ラベル付与処理が失敗した。"
+    ownerHint: "ai"
+    category: "policy"
+
+  - code: "policy.label_detection_failed"
+    title: "ラベル検出失敗"
+    description: "policy labelの検出処理が失敗した。"
+    ownerHint: "ai"
+    category: "policy"
+
+  - code: "review.scan_truncated"
+    title: "レビュータスク走査の打ち切り"
+    description: "Actionable review task の走査が打ち切られた（ページネーション等）。"
+    ownerHint: "ai"
+    category: "review"
+
+  - code: "review.actionable_pending"
+    title: "Actionable review未解消"
+    description: "Actionable review tasks が未解消のため停止。"
+    ownerHint: "human"
+    category: "review"
+
+  - code: "review.actionable_execution_failed"
+    title: "Actionable execution失敗"
+    description: "Actionable execution が失敗した。"
+    ownerHint: "either"
+    category: "review"
+
+  - code: "review.actionable_execution_incomplete"
+    title: "Actionable execution未完了"
+    description: "Actionable execution が未完了で停止した。"
+    ownerHint: "either"
+    category: "review"
+
+  - code: "checks.waiting_queue"
+    title: "Required checks待機"
+    description: "Required checks または merge queue の完了待ち。"
+    ownerHint: "either"
+    category: "checks"
+
+  - code: "merge.auto_merge_enabled"
+    title: "Auto-merge有効化"
+    description: "Auto-merge が有効化された。"
+    ownerHint: "either"
+    category: "merge"
+
+  # --- Automation report common (cross-workflow) ---
+  - code: "automation.globally_disabled"
+    title: "自動化の全体停止"
+    description: "`AE_AUTOMATION_GLOBAL_DISABLE` により実行がスキップされた。"
+    ownerHint: "either"
+    category: "automation"
+
+  - code: "automation.disabled_by_config"
+    title: "設定により無効"
+    description: "設定解決の結果、対象自動化が無効化されてスキップされた。"
+    ownerHint: "either"
+    category: "automation"
+
+  - code: "automation.missing_repository"
+    title: "リポジトリ情報不足"
+    description: "`GITHUB_REPOSITORY` が未設定。"
+    ownerHint: "ai"
+    category: "automation"
+
+  - code: "automation.invalid_repository_format"
+    title: "リポジトリ形式不正"
+    description: "`GITHUB_REPOSITORY` の形式が不正。"
+    ownerHint: "ai"
+    category: "automation"
+
+  - code: "automation.missing_pr_number"
+    title: "PR番号不足"
+    description: "`PR_NUMBER` が未設定、または整数として不正。"
+    ownerHint: "ai"
+    category: "automation"
+
+  - code: "automation.no_targets"
+    title: "対象なし"
+    description: "処理対象が検出されなかった。"
+    ownerHint: "either"
+    category: "automation"
+
+  - code: "automation.targets_failed"
+    title: "一部対象が失敗"
+    description: "複数対象処理のうち、失敗が発生した。"
+    ownerHint: "either"
+    category: "automation"
+
+  - code: "automation.targets_blocked"
+    title: "一部対象がblocked"
+    description: "複数対象処理のうち、blockedが発生した。"
+    ownerHint: "either"
+    category: "automation"
+
+  - code: "automation.targets_skipped"
+    title: "全対象skip"
+    description: "対象は存在するが、全てskipとなった。"
+    ownerHint: "either"
+    category: "automation"
+
+  - code: "automation.workflow_run_no_pr"
+    title: "workflow_runにPRが紐付かない"
+    description: "workflow_runイベントだがPR紐付けが無い。"
+    ownerHint: "either"
+    category: "automation"
+
+  - code: "automation.actor_not_allowed"
+    title: "実行者不許可"
+    description: "actor が許可リスト外のためスキップされた。"
+    ownerHint: "either"
+    category: "automation"
+
+  - code: "automation.unknown"
+    title: "未分類（automation）"
+    description: "既知のマッピングに一致しないため、未分類として扱う。"
+    ownerHint: "either"
+    category: "automation"
+
