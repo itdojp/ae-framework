@@ -117,7 +117,7 @@ gate_checks:
     - "Parallel Tests (entry: pr/push) / Test Suite (integration)"
   enforce-artifacts:
     - "validate-artifacts / validate"
-    - "*validate-artifacts*validate*"
+    - "*validate-artifacts*/*validate*"
   enforce-testing:
     - "testing-ddd"
   enforce-context-pack:
