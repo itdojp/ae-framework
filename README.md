@@ -59,6 +59,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 ### Documentation pointers
 - Overview & nav: `docs/README.md`, `docs/project-organization.md`
 - Maintenance operations: `docs/maintenance/branch-cleanup-runbook.md`
+- Worktree maintenance operations: `docs/maintenance/worktree-cleanup-runbook.md`
 - TODO triage operations: `docs/maintenance/todo-triage-runbook.md`
 - Current architecture snapshot: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Zero-based ideal redesign blueprint: `docs/architecture/ZERO-BASED-IDEAL-DESIGN.md`
