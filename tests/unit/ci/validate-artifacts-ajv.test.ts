@@ -263,5 +263,10 @@ describe('validate-artifacts-ajv', () => {
     expect(formalSummaryV2Rule).toBeDefined();
     expect(formalSummaryV2Rule?.schemaPath).toBe('schema/formal-summary-v2.schema.json');
     expect(formalSummaryV2Rule?.patterns).toContain('artifacts/formal/formal-summary-v2.json');
+
+    const benchCompareRule = DEFAULT_RULES.find((rule) => rule.id === 'bench-compare');
+    expect(benchCompareRule).toBeDefined();
+    expect(benchCompareRule?.schemaPath).toBe('schema/bench-compare.schema.json');
+    expect(benchCompareRule?.patterns).toContain('artifacts/bench-compare.json');
   });
 });

@@ -65,6 +65,11 @@ export const DEFAULT_RULES = [
     patterns: ['artifacts/formal/formal-summary-v2.json'],
   },
   {
+    id: 'bench-compare',
+    schemaPath: 'schema/bench-compare.schema.json',
+    patterns: ['artifacts/bench-compare.json'],
+  },
+  {
     id: 'policy-gate-summary-v1',
     schemaPath: 'schema/policy-gate-summary-v1.schema.json',
     patterns: ['artifacts/ci/policy-gate-summary.json'],

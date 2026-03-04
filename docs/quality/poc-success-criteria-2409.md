@@ -79,6 +79,21 @@ node scripts/quality/bench-compare.mjs \
 - 必須判定: `p95 ratio <= 0.85`, `throughput ratio >= 1.20`, `error rate <= max(0.5, baseline + 0.2pt)`, `peak RSS ratio <= 1.15`
 - 参考判定: `cold start ratio <= 1.10`
 
+### 5.2 指標の一次データ源と算出方式（確定）
+
+- 入力契約: `benchmark-report/v1`（`schema/benchmark-report.schema.json`）
+- 指標マッピング:
+  - `p95 latency` = `metrics.p95`
+  - `error rate` = `metrics.errorRate`
+  - `cold start` = `metrics.coldStartMs`
+  - `peak RSS` = `metrics.peakRssMb`
+  - `throughput` = `sum(summary[].hz)`（`summary` は non-empty、`hz > 0`）
+- 比率計算: `ratio = candidate / baseline`
+  - しきい値の向き: p95/cold-start/peak-RSS は上限、throughput は下限
+  - baseline 値が `<= 0` の比率は `null`（non-applicable）として扱い、当該比率判定のみ fail 強制しない
+- error rate 上限: `max(0.5, baseline.errorRate + 0.2)`（percentage point）
+- 比較成果物契約: `artifacts/bench-compare.json`（`schemaVersion: bench-compare/v1`、schema: `schema/bench-compare.schema.json`）
+
 ## 6. #2409 チェックリスト対応
 
 | #2409 first slice 項目 | 対応ドキュメント |
