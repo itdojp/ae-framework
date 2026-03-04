@@ -113,6 +113,8 @@ describe.sequential('bench-compare script', () => {
           outJsonPath,
           '--out-md',
           outMdPath,
+          '--min-runs',
+          '1',
           '--fail-on-threshold-breach',
         ],
         { encoding: 'utf8', timeout: 120_000 },
@@ -141,6 +143,98 @@ describe.sequential('bench-compare script', () => {
     }
   });
 
+  it('fails clearly when runCount is below default min-runs and fail-on-threshold-breach is enabled', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'ae-bench-compare-min-runs-default-'));
+
+    try {
+      const baselinePath = join(tempDir, 'baseline.json');
+      const goPath = join(tempDir, 'go.json');
+      const outJsonNoFailPath = join(tempDir, 'bench-compare-no-fail.json');
+      const outMdNoFailPath = join(tempDir, 'bench-compare-no-fail.md');
+      const outJsonFailPath = join(tempDir, 'bench-compare-fail.json');
+      const outMdFailPath = join(tempDir, 'bench-compare-fail.md');
+
+      writeFileSync(
+        baselinePath,
+        JSON.stringify(createBenchReport({
+          p95: 100,
+          errorRate: 0.1,
+          coldStartMs: 50,
+          peakRssMb: 100,
+          hz: 1000,
+        })),
+        'utf8',
+      );
+      writeFileSync(
+        goPath,
+        JSON.stringify(createBenchReport({
+          p95: 80,
+          errorRate: 0.2,
+          coldStartMs: 45,
+          peakRssMb: 105,
+          hz: 1300,
+        })),
+        'utf8',
+      );
+
+      const resultWithoutFailFlag = spawnSync(
+        'node',
+        [
+          compareScript,
+          '--baseline',
+          baselinePath,
+          '--candidate',
+          `go=${goPath}`,
+          '--out-json',
+          outJsonNoFailPath,
+          '--out-md',
+          outMdNoFailPath,
+        ],
+        { encoding: 'utf8', timeout: 120_000 },
+      );
+
+      expect(resultWithoutFailFlag.status).toBe(0);
+      expect(resultWithoutFailFlag.stderr).toContain('baseline runCount=1 is below --min-runs 2');
+      expect(resultWithoutFailFlag.stderr).toContain('candidate "go" runCount=1 is below --min-runs 2');
+
+      const payloadWithoutFailFlag = JSON.parse(readFileSync(outJsonNoFailPath, 'utf8')) as {
+        candidates: Array<{ overall: string; checks: { p95Cv: boolean; throughputCv: boolean } }>;
+      };
+      expect(payloadWithoutFailFlag.candidates[0]?.overall).toBe('fail');
+      expect(payloadWithoutFailFlag.candidates[0]?.checks.p95Cv).toBe(false);
+      expect(payloadWithoutFailFlag.candidates[0]?.checks.throughputCv).toBe(false);
+      expect(readFileSync(outMdNoFailPath, 'utf8')).toContain('baseline/candidate runCount >= 2');
+
+      const resultWithFailFlag = spawnSync(
+        'node',
+        [
+          compareScript,
+          '--baseline',
+          baselinePath,
+          '--candidate',
+          `go=${goPath}`,
+          '--out-json',
+          outJsonFailPath,
+          '--out-md',
+          outMdFailPath,
+          '--fail-on-threshold-breach',
+        ],
+        { encoding: 'utf8', timeout: 120_000 },
+      );
+
+      expect(resultWithFailFlag.status).toBe(1);
+      expect(resultWithFailFlag.stderr).toContain('baseline runCount=1 is below --min-runs 2');
+      expect(resultWithFailFlag.stderr).toContain('candidate "go" runCount=1 is below --min-runs 2');
+
+      const payloadWithFailFlag = JSON.parse(readFileSync(outJsonFailPath, 'utf8')) as {
+        candidates: Array<{ overall: string }>;
+      };
+      expect(payloadWithFailFlag.candidates[0]?.overall).toBe('fail');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it('fails when required arguments are missing', () => {
     const result = spawnSync('node', [compareScript], {
       encoding: 'utf8',
@@ -149,6 +243,25 @@ describe.sequential('bench-compare script', () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('--baseline is required');
+  });
+
+  it('fails when --min-runs is not a positive integer', () => {
+    const result = spawnSync(
+      'node',
+      [
+        compareScript,
+        '--baseline',
+        'baseline.json',
+        '--candidate',
+        'go=candidate.json',
+        '--min-runs',
+        '0',
+      ],
+      { encoding: 'utf8', timeout: 120_000 },
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--min-runs must be a positive integer');
   });
 
   it('treats zero baseline metrics as non-applicable ratio checks', () => {
@@ -195,6 +308,8 @@ describe.sequential('bench-compare script', () => {
           outJsonPath,
           '--out-md',
           outMdPath,
+          '--min-runs',
+          '1',
           '--fail-on-threshold-breach',
         ],
         { encoding: 'utf8', timeout: 120_000 },
