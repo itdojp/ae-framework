@@ -56,6 +56,7 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     'install',
     'specCompilerBuild',
     'typeCheck',
+    'reasonCodeRegistryValidation',
     'lint',
     'build',
     'stateMachineValidation',

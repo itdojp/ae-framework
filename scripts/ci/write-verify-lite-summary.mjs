@@ -49,6 +49,10 @@ const summary = {
     },
     specCompilerBuild: { status: readStatus('SPEC_COMPILER_STATUS', 'skipped') },
     typeCheck: { status: readStatus('TYPECHECK_STATUS', 'unknown') },
+    reasonCodeRegistryValidation: {
+      status: readStatus('REASON_CODES_STATUS', 'unknown'),
+      notes: process.env.REASON_CODES_NOTES || null,
+    },
     lint: { status: readStatus('LINT_STATUS', 'unknown') },
     build: { status: readStatus('BUILD_STATUS', 'unknown') },
     stateMachineValidation: { status: readStatus('STATE_MACHINE_STATUS', 'unknown') },

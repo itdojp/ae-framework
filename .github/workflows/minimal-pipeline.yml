@@ -37,6 +37,8 @@ jobs:
         run: |
           pnpm fetch --prefer-offline
           pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
+      - name: Validate reason code registry and emit mappings
+        run: pnpm run reason-codes:validate
       - name: Run CodeX quickstart (skip quality, run formal stub)
         env:
           CODEX_SKIP_QUALITY: "1"
