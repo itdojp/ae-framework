@@ -7,7 +7,7 @@
 ## English (summary)
 
 This folder indexes quality templates used for guarded automation and ownership.
-Canonical templates live under `docs/quality/` and are linked below for reuse.
+Quality standards/checklists mainly live under `docs/quality/`, and reusable template skeletons may live under `docs/templates/quality/`.
 
 ### Templates
 - Guarded automation policy: `docs/quality/guarded-automation-template.md`
@@ -17,6 +17,8 @@ Canonical templates live under `docs/quality/` and are linked below for reuse.
 - PR summary template: `docs/quality/pr-summary-template.md`
 - Verify-first gate baseline: `docs/quality/verify-first-gate-baseline.md`
 - Verify-first failure diagnostic template: `docs/quality/verify-first-failure-diagnostic-template.md`
+- PoC comparison metrics template (TS baseline vs Go/Rust): `docs/templates/quality/poc-comparison-metrics-template.md`
+- ADR template for PoC adoption/rejection: `docs/templates/quality/adr-poc-adoption-template.md`
 
 ### Guardrails (machine verifying machine)
 - Human review is required before merge, even if automated gates pass.
@@ -28,7 +30,7 @@ Canonical templates live under `docs/quality/` and are linked below for reuse.
 ## 日本語（概要）
 
 このフォルダは、ガード付き自動化とオーナーシップの品質テンプレを整理するための索引です。
-テンプレの本体は `docs/quality/` に置き、以下に参照リンクを集約しています。
+品質基準やチェックリストは主に `docs/quality/` に置き、再利用用テンプレート雛形は `docs/templates/quality/` に置く運用です。
 
 ### テンプレ一覧
 - ガード付き自動化ポリシー: `docs/quality/guarded-automation-template.md`
@@ -38,6 +40,8 @@ Canonical templates live under `docs/quality/` and are linked below for reuse.
 - PRサマリーテンプレ: `docs/quality/pr-summary-template.md`
 - Verify-first ゲート基準: `docs/quality/verify-first-gate-baseline.md`
 - Verify-first 失敗診断テンプレ: `docs/quality/verify-first-failure-diagnostic-template.md`
+- PoC比較計測テンプレート（TS baseline vs Go/Rust）: `docs/templates/quality/poc-comparison-metrics-template.md`
+- PoC採用/不採用判定ADRテンプレート: `docs/templates/quality/adr-poc-adoption-template.md`
 
 ### ガードレール（machine verifying machine）
 - 自動ゲートが通っても、人のレビューを必須とする。
