@@ -72,17 +72,24 @@ jobs:
         run: node scripts/ci/check-bins.mjs
       - name: Flake (30x)
         run: node dist/src/cli/index.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/**"
-      - name: Bench #1
+      - name: Bench (run set)
         run: |
-          rm -rf artifacts/bench.json || true
-          AE_SEED=321 node dist/src/cli/index.js bench
-          cp artifacts/bench.json artifacts/bench-1.json
-      - name: Bench #2
+          rm -f artifacts/bench.json artifacts/bench-ts-run*.json artifacts/bench-ts-runset.txt || true
+          for i in 1 2; do
+            AE_SEED=321 node dist/src/cli/index.js bench
+            cp artifacts/bench.json "artifacts/bench-ts-run${i}.json"
+          done
+      - name: Build bench runset
         run: |
-          AE_SEED=321 node dist/src/cli/index.js bench
-          cp artifacts/bench.json artifacts/bench-2.json
+          node scripts/ci/bench-runset.mjs \
+            --out artifacts/bench-ts-runset.txt \
+            --min-runs 2 \
+            artifacts/bench-ts-run*.json
       - name: Compare benches (<=5% tolerance)
-        run: node scripts/ci/compare-bench.mjs artifacts/bench-1.json artifacts/bench-2.json 0.05
+        run: |
+          RUNSET="$(cat artifacts/bench-ts-runset.txt)"
+          IFS=',' read -r BENCH_1 BENCH_2 _ <<< "${RUNSET}"
+          node scripts/ci/compare-bench.mjs "${BENCH_1}" "${BENCH_2}" 0.05
       - name: Replay smoke
         run: AE_RECORDER_MODE=replay node dist/src/cli/index.js agent:complete --prompt "Hello, ae!"
       - name: Upload artifacts

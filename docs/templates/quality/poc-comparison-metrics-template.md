@@ -120,9 +120,16 @@ jq '.metrics | {p95, errorRate, coldStartMs, peakRssMb}' artifacts/bench.json
 <go-benchmark-command>
 <rust-benchmark-command>
 
-# 比較判定（複数run対応: bench.json -> 比率/合否/CV）
+# run群を収集（deterministic order）
+node scripts/ci/bench-runset.mjs \
+  --out artifacts/bench-ts-runset.txt \
+  --min-runs 2 \
+  artifacts/bench-ts-run*.json
+
+# 比較判定（複数run対応: runset -> 比率/合否）
+RUNSET="$(cat artifacts/bench-ts-runset.txt)"
 node scripts/quality/bench-compare.mjs \
-  --baseline artifacts/bench-ts-run1.json,artifacts/bench-ts-run2.json \
+  --baseline "${RUNSET}" \
   --candidate go=artifacts/bench-go-run1.json,artifacts/bench-go-run2.json \
   --candidate rust=artifacts/bench-rust-run1.json,artifacts/bench-rust-run2.json \
   --out-json artifacts/bench-compare.json \
@@ -134,5 +141,6 @@ node scripts/quality/bench-compare.mjs \
 - candidate raw result: `<path/to/bench-go-or-rust-results>`
 - comparison json: `artifacts/bench-compare.json`（schema: `schema/bench-compare.schema.json`）
 - comparison markdown: `artifacts/bench-compare.md`
+- runset text: `artifacts/bench-ts-runset.txt`
 - logs: `<path/to/logs>`
 - related ADR: `<path/to/adr>`

@@ -74,8 +74,28 @@ node scripts/quality/bench-compare.mjs \
   --out-md artifacts/bench-compare.md
 ```
 
+複数runを比較する場合は、run群を先に標準化してから `bench-compare` に渡す:
+
+```bash
+# run群（例: artifacts/bench-ts-run1.json, artifacts/bench-ts-run2.json, ...）を収集
+node scripts/ci/bench-runset.mjs \
+  --out artifacts/bench-ts-runset.txt \
+  --min-runs 2 \
+  artifacts/bench-ts-run*.json
+
+# 収集済み runset を baseline として使用
+RUNSET="$(cat artifacts/bench-ts-runset.txt)"
+node scripts/quality/bench-compare.mjs \
+  --baseline "${RUNSET}" \
+  --candidate go=artifacts/bench-go-run1.json,artifacts/bench-go-run2.json \
+  --candidate rust=artifacts/bench-rust-run1.json,artifacts/bench-rust-run2.json \
+  --out-json artifacts/bench-compare.json \
+  --out-md artifacts/bench-compare.md
+```
+
 - 出力JSON: `artifacts/bench-compare.json`
 - 出力Markdown: `artifacts/bench-compare.md`
+- runset（baseline入力）: `artifacts/bench-ts-runset.txt`
 - 必須判定: `p95 ratio <= 0.85`, `throughput ratio >= 1.20`, `error rate <= max(0.5, baseline + 0.2pt)`, `peak RSS ratio <= 1.15`
 - 再現性判定: `p95 CV <= 0.05`, `throughput CV <= 0.05`（runCount >= 2 のとき）
 - 参考判定: `cold start ratio <= 1.10`
