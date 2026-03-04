@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import micromatch from 'micromatch';
 import { describe, expect, it } from 'vitest';
 import yaml from 'js-yaml';
 import {
@@ -8,6 +7,7 @@ import {
   getRequiredChecks,
   loadRiskPolicy,
 } from '../../../scripts/ci/lib/risk-policy.mjs';
+import { evaluateCheckRequirement } from '../../../scripts/ci/policy-gate.mjs';
 
 type WorkflowJob = {
   name?: unknown;
@@ -126,14 +126,21 @@ function collectWorkflowCheckNames() {
 
   for (const [file, { parsed }] of workflows) {
     const jobs = parsed?.jobs && typeof parsed.jobs === 'object' ? parsed.jobs : {};
-    const names = Object.entries(jobs)
-      .flatMap(([jobId, job]) => resolveJobDisplayNames(jobId, job))
-      .sort();
-    directJobNamesByWorkflow.set(file, names);
-    // `on: workflow_call` only workflows do not surface standalone PR checks.
-    if (!isWorkflowCallOnly(parsed)) {
-      for (const name of names) checkNames.add(name);
+    const names: string[] = [];
+    const standaloneChecksAllowed = !isWorkflowCallOnly(parsed);
+    for (const [jobId, job] of Object.entries(jobs)) {
+      const displayNames = resolveJobDisplayNames(jobId, job);
+      names.push(...displayNames);
+
+      const isLocalReusableCaller = Boolean(
+        resolveLocalReusableWorkflowFile((job as WorkflowJob | undefined)?.uses),
+      );
+      if (standaloneChecksAllowed && !isLocalReusableCaller) {
+        for (const name of displayNames) checkNames.add(name);
+      }
     }
+    names.sort();
+    directJobNamesByWorkflow.set(file, names);
   }
 
   for (const [_, { parsed }] of workflows) {
@@ -162,16 +169,10 @@ function collectWorkflowCheckNames() {
   return [...checkNames].sort();
 }
 
-function isGlobPattern(pattern: string) {
-  return /[*?[\]{}()!+@]/.test(pattern);
-}
-
 function patternMatchesAnyCheck(checkNames: string[], pattern: string) {
-  if (!pattern) return false;
-  if (isGlobPattern(pattern)) {
-    return checkNames.some((checkName) => micromatch.isMatch(checkName, pattern, { dot: true }));
-  }
-  return checkNames.includes(pattern);
+  const entries = checkNames.map((name) => ({ name, status: 'success' as const }));
+  const result = evaluateCheckRequirement(entries, [pattern]);
+  return result.status !== 'missing';
 }
 
 describe('risk-policy gate check alignment', () => {
