@@ -100,6 +100,14 @@
 
 ## 7. 実行コマンドと証跡リンク
 
+比較判定で使う指標の一次データ源（`benchmark-report/v1`）:
+- `p95 latency` = `metrics.p95`
+- `error rate` = `metrics.errorRate`
+- `cold start` = `metrics.coldStartMs`
+- `peak RSS` = `metrics.peakRssMb`
+- `throughput` = `sum(summary[].hz)`
+- `ratio = candidate / baseline`（baseline が `<= 0` の場合は `null` として non-applicable 扱い）
+
 ```text
 # TS baseline（機械可読: artifacts/bench.json）
 pnpm exec tsx src/cli.ts bench
@@ -123,7 +131,7 @@ node scripts/quality/bench-compare.mjs \
 - TS baseline raw result: `artifacts/bench.json`（schema: `schema/benchmark-report.schema.json`）
 - TS baseline summarized report: `artifacts/bench.md`
 - candidate raw result: `<path/to/bench-go-or-rust-results>`
-- comparison json: `artifacts/bench-compare.json`
+- comparison json: `artifacts/bench-compare.json`（schema: `schema/bench-compare.schema.json`）
 - comparison markdown: `artifacts/bench-compare.md`
 - logs: `<path/to/logs>`
 - related ADR: `<path/to/adr>`

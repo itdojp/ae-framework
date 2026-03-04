@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/bench-compare.schema.json",
+  "title": "AE Benchmark Compare Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "baseline",
+    "candidates"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "bench-compare/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "baseline": {
+      "$ref": "#/$defs/baselineReport"
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/candidateReport"
+      }
+    }
+  },
+  "$defs": {
+    "nonNegativeNumber": {
+      "type": "number",
+      "minimum": 0
+    },
+    "ratioOrNull": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "p95",
+        "errorRate",
+        "coldStartMs",
+        "peakRssMb"
+      ],
+      "properties": {
+        "p95": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "errorRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "coldStartMs": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "peakRssMb": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        }
+      }
+    },
+    "baselineReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "metrics",
+        "throughputHz",
+        "taskCount"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metrics": {
+          "$ref": "#/$defs/metrics"
+        },
+        "throughputHz": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "taskCount": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "p95Ratio",
+        "throughputRatio",
+        "coldStartRatio",
+        "peakRssRatio",
+        "errorRateLimit",
+        "errorRateDeltaPt"
+      ],
+      "properties": {
+        "p95Ratio": {
+          "$ref": "#/$defs/ratioOrNull"
+        },
+        "throughputRatio": {
+          "$ref": "#/$defs/ratioOrNull"
+        },
+        "coldStartRatio": {
+          "$ref": "#/$defs/ratioOrNull"
+        },
+        "peakRssRatio": {
+          "$ref": "#/$defs/ratioOrNull"
+        },
+        "errorRateLimit": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "errorRateDeltaPt": {
+          "type": "number"
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "p95",
+        "throughput",
+        "errorRate",
+        "peakRss",
+        "coldStartReference"
+      ],
+      "properties": {
+        "p95": {
+          "type": "boolean"
+        },
+        "throughput": {
+          "type": "boolean"
+        },
+        "errorRate": {
+          "type": "boolean"
+        },
+        "peakRss": {
+          "type": "boolean"
+        },
+        "coldStartReference": {
+          "type": "boolean"
+        }
+      }
+    },
+    "candidateReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "path",
+        "metrics",
+        "throughputHz",
+        "comparison",
+        "checks",
+        "overall"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metrics": {
+          "$ref": "#/$defs/metrics"
+        },
+        "throughputHz": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "comparison": {
+          "$ref": "#/$defs/comparison"
+        },
+        "checks": {
+          "$ref": "#/$defs/checks"
+        },
+        "overall": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail"
+          ]
+        }
+      }
+    }
+  }
+}
