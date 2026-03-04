@@ -75,7 +75,7 @@ jobs:
 
       - name: Install dependencies
         # policy-gate is merge-blocking; keep install path deterministic.
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=false
 
       - name: Resolve PR number
         id: pr

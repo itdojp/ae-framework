@@ -171,6 +171,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 - Quality Gates（development プロファイル）:
   - `node scripts/quality/check-lint-summary.mjs` による lint ベースライン差分チェック
   - `node scripts/quality/tdd-smoke-check.mjs` による TDD スモーク検証
+- Copilot Review Gate（Copilotレビューの存在と未解決スレッドなし）
 - lockfile 再現性: 必須ゲートでは `pnpm install --frozen-lockfile` を使用し、`--no-frozen-lockfile` へフォールバックしない
 - 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
  - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）

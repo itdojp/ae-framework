@@ -68,7 +68,7 @@ jobs:
       - run: |
           pnpm fetch --prefer-offline
           # PR/push entry keeps lockfile strict to preserve CI reproducibility.
-          pnpm install --frozen-lockfile --prefer-offline
+          pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=false
       - run: pnpm run lint
       - run: pnpm test -- --run
       - run: pnpm run bdd || true            # 失敗時は仕様更新提案へ
