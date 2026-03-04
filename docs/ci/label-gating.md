@@ -62,7 +62,8 @@ run-trace convergence steps
 
 Harness Health recommendation
 - `artifacts/ci/harness-health.json` emits `recommendedLabels` based on gate states.
-- Operators can apply suggested labels (`enforce-artifacts`, `enforce-testing`, `enforce-context-pack`, `run-conformance`, `run-ci-extended`, `autopilot:on`) to tighten reruns only where needed.
+- Operators can apply suggested labels (`enforce-artifacts`, `enforce-testing`, `enforce-context-pack`, `run-trace`, `run-ci-extended`, `autopilot:on`) to tighten reruns only where needed.
+- `run-conformance` is legacy compatibility wording; use `run-trace` as the canonical label.
 
 Artifacts
 - Policy gate contract/shadow artifacts:

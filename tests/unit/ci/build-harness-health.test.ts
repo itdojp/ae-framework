@@ -129,7 +129,7 @@ describe('build-harness-health', () => {
     expect(report.gates.ciExtended.status).toBe('fail');
     expect(report.recommendedLabels).toContain('enforce-artifacts');
     expect(report.recommendedLabels).toContain('enforce-context-pack');
-    expect(report.recommendedLabels).toContain('run-conformance');
+    expect(report.recommendedLabels).toContain('run-trace');
     expect(report.recommendedLabels).toContain('autopilot:on');
     expect(report.recommendedLabels).toContain('run-ci-extended');
     expect(report.recommendedLabels).not.toContain('enforce-testing');

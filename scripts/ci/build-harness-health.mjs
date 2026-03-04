@@ -67,7 +67,7 @@ const GATE_DEFINITIONS = [
   {
     id: 'runtimeConformance',
     title: 'Runtime Conformance',
-    recommendedLabels: ['run-conformance', 'autopilot:on'],
+    recommendedLabels: ['run-trace', 'autopilot:on'],
     defaultCommands: [
       'gh workflow run runtime-conformance-self-heal.yml --repo <owner/repo> -f trace_input=samples/conformance/sample-traces.json -f apply_fixes=false -f dry_run=true',
     ],

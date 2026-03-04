@@ -9,7 +9,7 @@
 | OTel 取り込み | `.github/workflows/spec-generate-model.yml` の `trace-conformance` ジョブが `scripts/trace/fetch-otlp-payload.mjs` で OTLP payload を取得し、`scripts/trace/convert-otlp-kvonce.mjs` で NDJSON へ正規化 | 正規化ルールが `kvonce.event.*` 前提で、ドメイン横断の共通契約が `docs/ci` 観点で未定義 |
 | Artifacts 出力 | `trace-conformance` は `artifacts/hermetic-reports/trace/**`、`artifacts/kvonce-trace-summary.json`、`artifacts/kvonce-trace-envelope.json` を出力。`verify-lite` は `artifacts/verify-lite/verify-lite-run-summary.json` と `artifacts/report-envelope.json` を必須生成 | 観測系成果物の命名・配置が `verify-lite` 系と `kvonce` 系で分散し、どこまでを gate 対象にするかが未整理 |
 | スキーマ検証 | `.github/workflows/validate-artifacts-ajv.yml`（`pnpm run artifacts:validate`）が `schema/envelope.schema.json` 等を検証し、`enforce-artifacts` で strict 化可能 | `spec-generate-model` で生成される成果物は、PR 実行経路によっては `validate-artifacts` の検証対象にならない |
-| 検証/ゲート | `scripts/trace/run-kvonce-conformance.sh` は `kvonce-validation.json` が invalid の場合に exit 1。`policy-gate` は `policy/risk-policy.yml` の `enforce-artifacts -> validate-artifacts / validate` を評価 | `KvOnce Trace Validation` チェックは `policy-gate` の評価対象に未接続。`run-conformance` ラベルは推奨表示のみで実行トリガー未実装 |
+| 検証/ゲート | `scripts/trace/run-kvonce-conformance.sh` は `kvonce-validation.json` が invalid の場合に exit 1。`policy-gate` は `policy/risk-policy.yml` の `enforce-artifacts -> validate-artifacts / validate` を評価 | `KvOnce Trace Validation` チェックは `policy-gate` の評価対象に未接続。`run-trace` ラベル（旧表記: `run-conformance`）は推奨表示のみで実行トリガー未実装 |
 | Required checks | `policy/risk-policy.yml` の required は `verify-lite` と `policy-gate`（branch protection preset で `gate` 併用パターンあり） | OTel/trace 検証を Required に昇格する判断基準と導線が未定義 |
 
 ## 2. 非ゴール
