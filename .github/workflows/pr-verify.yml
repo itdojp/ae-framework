@@ -81,6 +81,8 @@ jobs:
         run: node scripts/ci/check-root-layout.mjs
 
       - name: Install
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
         run: |
           pnpm fetch --prefer-offline
           # Keep required PR verify deterministic; lockfile drift should fail fast.

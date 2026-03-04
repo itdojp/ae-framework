@@ -84,6 +84,8 @@ jobs:
       - name: Install dependencies
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
         # For non-docs-only runs of this required gate, lockfile mismatch must fail instead of auto-heal.
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
         run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=false
 
       - name: Run Codex response schema checks (required)
