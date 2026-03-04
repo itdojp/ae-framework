@@ -101,6 +101,22 @@ node scripts/quality/bench-compare.mjs \
 - 出力整合判定: `checksum match rate == 100%`
 - 参考判定: `cold start ratio <= 1.10`
 
+### 5.1.1 Nightly monitor での証跡生成（report-only）
+
+- nightly monitor では `artifacts/bench-ts-runset.txt` を使って `bench-compare` を report-only で実行する。
+- 実行例（nightly workflow 内）:
+
+```bash
+RUNSET="$(cat artifacts/bench-ts-runset.txt)"
+node scripts/quality/bench-compare.mjs \
+  --baseline "${RUNSET}" \
+  --candidate ts-self="${RUNSET}" \
+  --out-json artifacts/bench-compare.json \
+  --out-md artifacts/bench-compare.md
+```
+
+- ここでの `overall` は gate に使わず、`reproducibility`（CV/checksum）と継続推移の証跡化を目的とする。
+
 ### 5.2 指標の一次データ源と算出方式（確定）
 
 - 入力契約: `benchmark-report/v1`（`schema/benchmark-report.schema.json`）
