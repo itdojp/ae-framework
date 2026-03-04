@@ -113,11 +113,12 @@ gate_checks:
     - "Security Scanning"
   run-ci-extended:
     - "CI Extended (entry: pr/push) / extended"
-    - "extended"
+    - "integration / run"
     - "Parallel Tests (entry: pr/push) / Test Suite (integration)"
   enforce-artifacts:
+    - "generate-artifacts"
+    - "validate-artifacts / gate"
     - "validate-artifacts / validate"
-    - "*validate-artifacts*validate*"
   enforce-testing:
     - "testing-ddd"
   enforce-context-pack:
