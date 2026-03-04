@@ -100,6 +100,19 @@ function numberOrNull(value) {
   return Number.isFinite(numeric) ? numeric : null;
 }
 
+function parseOptionalNumericValue(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+  const numeric = Number(raw);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function resolveAlertThreshold(overrideValue, fallbackValue) {
+  const override = parseOptionalNumericValue(overrideValue);
+  if (override !== null) return override;
+  return parseOptionalNumericValue(fallbackValue);
+}
+
 function normalizeSummary(payload = {}) {
   const summary = payload.summary && typeof payload.summary === 'object'
     ? { ...payload.summary }
@@ -438,13 +451,21 @@ function main(env = process.env) {
   const channel = normalizeAlertChannel(env.AE_AUTOMATION_ALERT_CHANNEL || DEFAULT_CHANNEL);
   const dryRun = toBool(env.AE_AUTOMATION_ALERT_DRY_RUN, false) || channel === 'dry_run';
   const cooldownHours = toInt(env.AE_AUTOMATION_ALERT_COOLDOWN_HOURS, DEFAULT_COOLDOWN_HOURS, 0);
+  const alertSloTargetPercent = resolveAlertThreshold(
+    env.AE_AUTOMATION_ALERT_SLO_TARGET_PERCENT,
+    env.AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT
+  );
+  const alertMttrTargetMinutes = resolveAlertThreshold(
+    env.AE_AUTOMATION_ALERT_MTTR_TARGET_MINUTES,
+    env.AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES
+  );
 
   const payload = readJsonFile(inputPath);
   const evaluated = evaluateAlertConditions(payload, {
     maxBlocked: env.AE_AUTOMATION_ALERT_MAX_BLOCKED,
     maxConsecutiveFailures: env.AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES,
-    sloTargetPercent: env.AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT,
-    mttrTargetMinutes: env.AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES,
+    sloTargetPercent: alertSloTargetPercent,
+    mttrTargetMinutes: alertMttrTargetMinutes,
   });
   const summary = evaluated.summary;
   const alerts = evaluated.alerts;
@@ -534,6 +555,8 @@ export {
   normalizeAlertChannel,
   parseEventTimestamp,
   parseFingerprint,
+  parseOptionalNumericValue,
+  resolveAlertThreshold,
   shouldEvaluateSuppression,
   toBool,
   toInt,

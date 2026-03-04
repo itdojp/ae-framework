@@ -10,6 +10,7 @@ import {
   findSuppressionState,
   normalizeAlertChannel,
   parseFingerprint,
+  resolveAlertThreshold,
   shouldEvaluateSuppression,
 } from '../../../scripts/ci/automation-observability-alert.mjs';
 
@@ -49,6 +50,61 @@ describe('automation-observability-alert', () => {
     expect(codes).toContain('consecutive_failures');
     expect(codes).toContain('slo_breach');
     expect(codes).toContain('mttr_breach');
+  });
+
+  it('applies alert threshold overrides for slo/mttr evaluation', () => {
+    const payload = {
+      summary: {
+        totalReports: 10,
+        totalFailures: 1,
+        byStatus: { blocked: 1, resolved: 9 },
+        maxConsecutiveFailures: 1,
+        slo: { successRatePercent: 92, targetPercent: 95 },
+        mttr: { meanMinutes: 130, targetMinutes: 120 },
+      },
+    };
+
+    const overridden = evaluateAlertConditions(payload, {
+      sloTargetPercent: 90,
+      mttrTargetMinutes: 140,
+    });
+    const overriddenCodes = overridden.alerts.map((item) => item.code);
+    expect(overriddenCodes).not.toContain('slo_breach');
+    expect(overriddenCodes).not.toContain('mttr_breach');
+
+    const summaryDefault = evaluateAlertConditions(payload, {});
+    const summaryCodes = summaryDefault.alerts.map((item) => item.code);
+    expect(summaryCodes).toContain('slo_breach');
+    expect(summaryCodes).toContain('mttr_breach');
+  });
+
+  it('falls back to summary targets when override values are invalid or empty', () => {
+    const payload = {
+      summary: {
+        totalReports: 5,
+        totalFailures: 1,
+        byStatus: { blocked: 0, resolved: 4, error: 1 },
+        maxConsecutiveFailures: 1,
+        slo: { successRatePercent: 92, targetPercent: 95 },
+        mttr: { meanMinutes: 130, targetMinutes: 120 },
+      },
+    };
+
+    const fromInvalidOverride = evaluateAlertConditions(payload, {
+      sloTargetPercent: resolveAlertThreshold('not-a-number', '95'),
+      mttrTargetMinutes: resolveAlertThreshold('oops', '120'),
+    });
+    const invalidCodes = fromInvalidOverride.alerts.map((item) => item.code);
+    expect(invalidCodes).toContain('slo_breach');
+    expect(invalidCodes).toContain('mttr_breach');
+
+    const fromEmptyOverride = evaluateAlertConditions(payload, {
+      sloTargetPercent: resolveAlertThreshold('   ', '95'),
+      mttrTargetMinutes: resolveAlertThreshold('', '120'),
+    });
+    const emptyCodes = fromEmptyOverride.alerts.map((item) => item.code);
+    expect(emptyCodes).toContain('slo_breach');
+    expect(emptyCodes).toContain('mttr_breach');
   });
 
   it('builds deterministic fingerprint', () => {
