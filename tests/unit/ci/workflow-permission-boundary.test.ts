@@ -61,4 +61,9 @@ describe('workflow permission boundaries', () => {
     expect(workflow).toContain('PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number || \'\' }}');
     expect(workflow).toContain('AI_REVIEW_ACTORS');
   });
+
+  it('policy-gate re-evaluates on Spec Generate & Model Tests workflow completion', () => {
+    const workflow = readWorkflow('policy-gate.yml');
+    expect(workflow).toContain('- Spec Generate & Model Tests');
+  });
 });

@@ -13,6 +13,7 @@ on:
       - testing-ddd-scripts
       - Context Pack Quality Gate
       - Spec Validation
+      - Spec Generate & Model Tests
       - Full CI (Comprehensive Testing)
     types: [completed]
   workflow_dispatch:
