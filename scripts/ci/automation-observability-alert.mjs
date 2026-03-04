@@ -433,13 +433,17 @@ function main(env = process.env) {
   const channel = normalizeAlertChannel(env.AE_AUTOMATION_ALERT_CHANNEL || DEFAULT_CHANNEL);
   const dryRun = toBool(env.AE_AUTOMATION_ALERT_DRY_RUN, false) || channel === 'dry_run';
   const cooldownHours = toInt(env.AE_AUTOMATION_ALERT_COOLDOWN_HOURS, DEFAULT_COOLDOWN_HOURS, 0);
+  const alertSloTargetPercent = env.AE_AUTOMATION_ALERT_SLO_TARGET_PERCENT
+    ?? env.AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT;
+  const alertMttrTargetMinutes = env.AE_AUTOMATION_ALERT_MTTR_TARGET_MINUTES
+    ?? env.AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES;
 
   const payload = readJsonFile(inputPath);
   const evaluated = evaluateAlertConditions(payload, {
     maxBlocked: env.AE_AUTOMATION_ALERT_MAX_BLOCKED,
     maxConsecutiveFailures: env.AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES,
-    sloTargetPercent: env.AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT,
-    mttrTargetMinutes: env.AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES,
+    sloTargetPercent: alertSloTargetPercent,
+    mttrTargetMinutes: alertMttrTargetMinutes,
   });
   const summary = evaluated.summary;
   const alerts = evaluated.alerts;

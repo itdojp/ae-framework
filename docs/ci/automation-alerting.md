@@ -10,7 +10,7 @@
 ## 1. 最小構成
 
 - 通知チャネル: `issue_comment`
-- 通知先: `AE_AUTOMATION_ALERT_ISSUE_NUMBER`（既定 `1963`）
+- 通知先: `AE_AUTOMATION_ALERT_ISSUE_NUMBER`（既定 `1963`。Repository Variable で運用Issueを定義し、`workflow_dispatch` 入力で一時上書き可能）
 - 通知の重複抑止:
   - 同一 fingerprint（同一期間・同一条件）を再投稿しない
   - 最終通知から `AE_AUTOMATION_ALERT_COOLDOWN_HOURS` 内は新規通知を抑止
@@ -25,8 +25,8 @@ Slack 等の外部チャネルは未対応。必要時は別 workflow/job で `w
 | --- | --- | --- |
 | `blocked_spike` | `summary.byStatus.blocked` が上限超過 | `AE_AUTOMATION_ALERT_MAX_BLOCKED=2` |
 | `consecutive_failures` | `summary.maxConsecutiveFailures` が上限超過 | `AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES=3` |
-| `slo_breach` | `summary.slo.successRatePercent < target` | target は summary or env |
-| `mttr_breach` | `summary.mttr.meanMinutes > target` | target は summary or env |
+| `slo_breach` | `summary.slo.successRatePercent < target` | `AE_AUTOMATION_ALERT_SLO_TARGET_PERCENT` → `AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT` → summary |
+| `mttr_breach` | `summary.mttr.meanMinutes > target` | `AE_AUTOMATION_ALERT_MTTR_TARGET_MINUTES` → `AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES` → summary |
 
 `slo_breach` / `mttr_breach` は SLO/MTTR 値が存在する場合のみ判定。
 
@@ -50,6 +50,8 @@ Issue comment の本文は次の要素で構成する。
 - `AE_AUTOMATION_ALERT_ISSUE_NUMBER`
 - `AE_AUTOMATION_ALERT_MAX_BLOCKED`
 - `AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES`
+- `AE_AUTOMATION_ALERT_SLO_TARGET_PERCENT`（`slo_breach` 判定しきい値）
+- `AE_AUTOMATION_ALERT_MTTR_TARGET_MINUTES`（`mttr_breach` 判定しきい値）
 - `AE_AUTOMATION_ALERT_COOLDOWN_HOURS`
 - `AE_AUTOMATION_ALERT_DRY_RUN`（`true` で通知投稿を抑止）
 

@@ -109,6 +109,19 @@ gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:block
 3. PR 側では `Spec Generate & Model Tests` の失敗要因（OTLP payload / validation issues / check publish）を修正し、`KvOnce Trace Validation` 単体で再緑化
 4. 28日観測で Go 基準を再充足した後、`branch-protection.main.verify-lite-trace-noreview.json` を再適用
 
+### 4.6 SLO/MTTR breach alert（`automation-observability-weekly` 通知発火）
+
+1. `automation-observability-weekly` artifact の `weekly-alert-summary.json` で `alerts[]` と `threshold` を確認し、誤検知でないことを判定
+2. しきい値と通知先を確認
+   - `AE_AUTOMATION_ALERT_SLO_TARGET_PERCENT` / `AE_AUTOMATION_ALERT_MTTR_TARGET_MINUTES`
+   - `AE_AUTOMATION_ALERT_ISSUE_NUMBER`（通知先Issue）
+3. `weekly-failure-summary.json` の `summary.topFailureReasons` 上位要因に対して一次対応
+   - 429 系: 本 runbook `4.1`
+   - review gate mismatch: 本 runbook `4.2`
+   - behind loop / blocked: 本 runbook `4.3`
+4. 同症状が連続し自動復旧が効かない場合は `write` で段階停止し、手動運用へ切替
+5. 復旧後に `workflow_dispatch` で週次workflowを再実行し、`slo_breach` / `mttr_breach` の解消を確認
+
 ## 5. 復帰方針
 
 - 緊急停止解除は `unfreeze` を先に実行
