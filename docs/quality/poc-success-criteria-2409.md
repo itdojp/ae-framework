@@ -101,6 +101,35 @@ node scripts/quality/bench-compare.mjs \
 - 出力整合判定: `checksum match rate == 100%`
 - 参考判定: `cold start ratio <= 1.10`
 
+### 5.1.1 Nightly monitor での証跡生成（report-only）
+
+- nightly monitor では `artifacts/bench-ts-runset.txt` を使って `bench-compare` を report-only で実行する。
+- 実行例（nightly workflow 内）:
+
+```bash
+RUNSET="$(cat artifacts/bench-ts-runset.txt)"
+node scripts/quality/bench-compare.mjs \
+  --baseline "${RUNSET}" \
+  --candidate ts-self="${RUNSET}" \
+  --out-json artifacts/bench-compare.json \
+  --out-md artifacts/bench-compare.md
+```
+
+- `ts-self` は自己比較のため、`p95 ratio <= 0.85` / `throughput ratio >= 1.20` の改善閾値を原理的に満たせず、`overall` は原則 `fail` になる。
+- 上記 `overall` は nightly monitor のアクション判定に使わない（non-action）。監視対象は `reproducibility`（CV/checksum）と継続推移の証跡化とする。
+- monitor の暫定運用は `compare-bench.mjs`（2点比較・5%許容）と `bench-compare`（report-only）を併用する。
+
+### 5.1.2 monitor 運用方針（compare-bench 併用と fail-on-threshold-breach 適用条件）
+
+- 現行（report-only）:
+  - 逸脱検知: `compare-bench.mjs`（<= 5%）を継続利用
+  - 証跡化: `bench-compare` の JSON/Markdown を nightly artifact として保存
+- `--fail-on-threshold-breach` 適用検討の前提条件:
+  - 直近 14 日で `bench-runset`（2 run 以上）が欠損なく継続取得できる
+  - `reproducibility`（p95 CV / throughput CV / checksum）が 7 日連続で安定し、ノイズ起因の fail が許容閾値内
+  - 適用時の切替手順（on/off 条件、ロールバック手順）を運用手順へ明記済み
+- 上記を満たした時点で、`monitor` ジョブ内の `bench-compare` を段階的に gate 化する（最初は warning 運用、次に fail 運用）。
+
 ### 5.2 指標の一次データ源と算出方式（確定）
 
 - 入力契約: `benchmark-report/v1`（`schema/benchmark-report.schema.json`）
