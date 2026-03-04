@@ -7,11 +7,11 @@ const DEFAULT_OUTPUT_JSON = 'artifacts/bench-compare.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/bench-compare.md';
 
 function printUsage() {
-  process.stdout.write(`Usage: node scripts/quality/bench-compare.mjs --baseline <path> --candidate <name=path> [--candidate <name=path> ...] [options]
+  process.stdout.write(`Usage: node scripts/quality/bench-compare.mjs --baseline <path[,path...]> --candidate <name=path[,path...]> [--candidate <name=path[,path...]> ...] [options]
 
 Options:
-  --baseline <path>               baseline bench.json path (benchmark-report/v1)
-  --candidate <name=path>         candidate label and bench.json path (repeatable)
+  --baseline <path[,path...]>     baseline bench.json path(s) (benchmark-report/v1)
+  --candidate <name=path[,path...]> candidate label and bench.json path(s) (repeatable)
   --out-json <path>               output JSON path (default: ${DEFAULT_OUTPUT_JSON})
   --out-md <path>                 output Markdown path (default: ${DEFAULT_OUTPUT_MD})
   --fail-on-threshold-breach      exit code 1 when any candidate fails required thresholds
@@ -19,9 +19,20 @@ Options:
 `);
 }
 
+function parsePathList(rawValue, label) {
+  const paths = String(rawValue || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (paths.length === 0) {
+    throw new Error(`${label} requires at least one path`);
+  }
+  return paths.map((entry) => path.resolve(entry));
+}
+
 function parseArgs(argv) {
   const options = {
-    baselinePath: '',
+    baseline: '',
     candidates: [],
     outJsonPath: DEFAULT_OUTPUT_JSON,
     outMdPath: DEFAULT_OUTPUT_MD,
@@ -38,7 +49,7 @@ function parseArgs(argv) {
     if (arg === '--baseline') {
       const next = argv[index + 1];
       if (!next) throw new Error('--baseline requires a value');
-      options.baselinePath = next;
+      options.baseline = next;
       index += 1;
       continue;
     }
@@ -70,7 +81,7 @@ function parseArgs(argv) {
     throw new Error(`Unknown argument: ${arg}`);
   }
 
-  if (!options.baselinePath) {
+  if (!options.baseline) {
     throw new Error('--baseline is required');
   }
   if (options.candidates.length === 0) {
@@ -78,7 +89,7 @@ function parseArgs(argv) {
   }
 
   return {
-    baselinePath: path.resolve(options.baselinePath),
+    baselinePaths: parsePathList(options.baseline, '--baseline'),
     candidates: options.candidates.map(parseCandidateArg),
     outJsonPath: path.resolve(options.outJsonPath),
     outMdPath: path.resolve(options.outMdPath),
@@ -87,15 +98,15 @@ function parseArgs(argv) {
 }
 
 function parseCandidateArg(raw) {
-  const [name, filePath] = String(raw).split('=');
+  const [name, ...rest] = String(raw).split('=');
   const normalizedName = String(name || '').trim();
-  const normalizedPath = String(filePath || '').trim();
-  if (!normalizedName || !normalizedPath) {
-    throw new Error(`invalid --candidate format: ${raw} (expected <name=path>)`);
+  const value = rest.join('=').trim();
+  if (!normalizedName || !value) {
+    throw new Error(`invalid --candidate format: ${raw} (expected <name=path[,path...]>)`);
   }
   return {
     name: normalizedName,
-    path: path.resolve(normalizedPath),
+    paths: parsePathList(value, `--candidate ${normalizedName}`),
   };
 }
 
@@ -132,6 +143,10 @@ function readBenchmarkReport(filePath) {
   if (!Array.isArray(report.summary) || report.summary.length === 0) {
     throw new Error(`${filePath}: summary must be a non-empty array`);
   }
+  const taskIdentities = report.summary.map((task, index) => {
+    const normalizedName = typeof task?.name === 'string' ? task.name.trim() : '';
+    return normalizedName.length > 0 ? normalizedName : `#${index + 1}`;
+  });
   const throughputHz = report.summary.reduce((sum, task, index) => {
     const hz = Number(task?.hz);
     if (!Number.isFinite(hz) || hz <= 0) {
@@ -152,11 +167,114 @@ function readBenchmarkReport(filePath) {
     metrics,
     throughputHz,
     taskCount: report.summary.length,
+    taskIdentities,
   };
 }
 
 function round(value, digits = 4) {
   return Number(value.toFixed(digits));
+}
+
+function median(values) {
+  if (!Array.isArray(values) || values.length === 0) {
+    throw new Error('median requires at least one numeric value');
+  }
+  const sorted = [...values].sort((left, right) => left - right);
+  const middle = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+  return sorted[middle];
+}
+
+function standardDeviation(values) {
+  if (!Array.isArray(values) || values.length === 0) {
+    throw new Error('standardDeviation requires at least one numeric value');
+  }
+  if (values.length === 1) {
+    return 0;
+  }
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  // Use sample standard deviation so low run counts do not underestimate CV.
+  const variance = values.reduce((sum, value) => {
+    const diff = value - mean;
+    return sum + (diff * diff);
+  }, 0) / (values.length - 1);
+  return Math.sqrt(variance);
+}
+
+function coefficientOfVariation(values) {
+  if (!Array.isArray(values) || values.length < 2) {
+    return null;
+  }
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  if (mean <= 0) {
+    return null;
+  }
+  return standardDeviation(values) / mean;
+}
+
+function assertConsistentRunShape(reports) {
+  if (!Array.isArray(reports) || reports.length <= 1) {
+    return;
+  }
+  const baseline = reports[0];
+  const baselineTasks = [...baseline.taskIdentities].sort();
+
+  for (const report of reports.slice(1)) {
+    if (report.taskCount !== baseline.taskCount) {
+      throw new Error(
+        `inconsistent summary task count across runs: expected ${baseline.taskCount} (${baseline.path}), got ${report.taskCount} (${report.path})`,
+      );
+    }
+
+    const reportTasks = [...report.taskIdentities].sort();
+    const sameTasks = reportTasks.length === baselineTasks.length
+      && reportTasks.every((task, index) => task === baselineTasks[index]);
+    if (!sameTasks) {
+      throw new Error(
+        `inconsistent summary task identities across runs: expected [${baselineTasks.join(', ')}] (${baseline.path}), got [${reportTasks.join(', ')}] (${report.path})`,
+      );
+    }
+  }
+}
+
+function aggregateBenchmarkRuns(reports) {
+  if (!Array.isArray(reports) || reports.length === 0) {
+    throw new Error('at least one benchmark report is required');
+  }
+  assertConsistentRunShape(reports);
+
+  const p95Values = reports.map((report) => report.metrics.p95);
+  const errorRateValues = reports.map((report) => report.metrics.errorRate);
+  const coldStartValues = reports.map((report) => report.metrics.coldStartMs);
+  const peakRssValues = reports.map((report) => report.metrics.peakRssMb);
+  const throughputValues = reports.map((report) => report.throughputHz);
+
+  return {
+    paths: reports.map((report) => report.path),
+    path: reports[0]?.path || '',
+    runCount: reports.length,
+    taskCount: reports[0]?.taskCount || 0,
+    metrics: {
+      p95: round(median(p95Values), 4),
+      errorRate: round(median(errorRateValues), 4),
+      coldStartMs: round(median(coldStartValues), 4),
+      peakRssMb: round(median(peakRssValues), 4),
+    },
+    throughputHz: round(median(throughputValues), 4),
+    reproducibility: {
+      p95Cv: roundOrNull(coefficientOfVariation(p95Values), 4),
+      throughputCv: roundOrNull(coefficientOfVariation(throughputValues), 4),
+    },
+  };
+}
+
+function roundOrNull(value, digits = 4) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  return round(value, digits);
 }
 
 function ratio(candidateValue, baselineValue) {
@@ -187,15 +305,25 @@ function evaluateCandidate(candidate, baseline) {
     errorRate: candidate.metrics.errorRate <= errorRateLimit,
     peakRss: upperBoundCheck(peakRssRatio, 1.15),
     coldStartReference: upperBoundCheck(coldStartRatio, 1.1),
+    p95Cv: upperBoundCheck(candidate.reproducibility.p95Cv, 0.05),
+    throughputCv: upperBoundCheck(candidate.reproducibility.throughputCv, 0.05),
   };
 
-  const overallPass = checks.p95 && checks.throughput && checks.errorRate && checks.peakRss;
+  const overallPass = checks.p95
+    && checks.throughput
+    && checks.errorRate
+    && checks.peakRss
+    && checks.p95Cv
+    && checks.throughputCv;
 
   return {
     name: candidate.name,
     path: candidate.path,
+    paths: candidate.paths,
+    runCount: candidate.runCount,
     metrics: candidate.metrics,
     throughputHz: candidate.throughputHz,
+    reproducibility: candidate.reproducibility,
     comparison: {
       p95Ratio: p95Ratio === null ? null : round(p95Ratio),
       throughputRatio: throughputRatio === null ? null : round(throughputRatio),
@@ -223,15 +351,15 @@ function renderMarkdown(result) {
     '# Bench Comparison Report',
     '',
     `- Generated: ${result.generatedAt}`,
-    `- Baseline: ${result.baseline.path}`,
+    `- Baseline: ${result.baseline.path} (runs=${result.baseline.runCount}, p95 CV=${fmtNumber(result.baseline.reproducibility.p95Cv, 4)}, throughput CV=${fmtNumber(result.baseline.reproducibility.throughputCv, 4)})`,
     '',
-    '| candidate | overall | p95 ratio | throughput ratio | error rate(%) | error limit(%) | peak RSS ratio | cold start ratio |',
-    '|---|---|---:|---:|---:|---:|---:|---:|',
+    '| candidate | runs | overall | p95 ratio | throughput ratio | error rate(%) | error limit(%) | peak RSS ratio | cold start ratio | p95 CV | throughput CV |',
+    '|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|',
   ];
 
   for (const candidate of result.candidates) {
     lines.push(
-      `| ${candidate.name} | ${candidate.overall.toUpperCase()} | ${fmtNumber(candidate.comparison.p95Ratio, 4)} | ${fmtNumber(candidate.comparison.throughputRatio, 4)} | ${fmtNumber(candidate.metrics.errorRate, 2)} | ${fmtNumber(candidate.comparison.errorRateLimit, 2)} | ${fmtNumber(candidate.comparison.peakRssRatio, 4)} | ${fmtNumber(candidate.comparison.coldStartRatio, 4)} |`,
+      `| ${candidate.name} | ${candidate.runCount} | ${candidate.overall.toUpperCase()} | ${fmtNumber(candidate.comparison.p95Ratio, 4)} | ${fmtNumber(candidate.comparison.throughputRatio, 4)} | ${fmtNumber(candidate.metrics.errorRate, 2)} | ${fmtNumber(candidate.comparison.errorRateLimit, 2)} | ${fmtNumber(candidate.comparison.peakRssRatio, 4)} | ${fmtNumber(candidate.comparison.coldStartRatio, 4)} | ${fmtNumber(candidate.reproducibility.p95Cv, 4)} | ${fmtNumber(candidate.reproducibility.throughputCv, 4)} |`,
     );
   }
 
@@ -242,6 +370,8 @@ function renderMarkdown(result) {
     '- throughput ratio >= 1.20',
     '- error rate <= max(0.5, baseline + 0.2pt)',
     '- peak RSS ratio <= 1.15',
+    '- p95 CV <= 0.05 (when runCount >= 2)',
+    '- throughput CV <= 0.05 (when runCount >= 2)',
     '',
     '## Reference check',
     '- cold start ratio <= 1.10',
@@ -252,10 +382,12 @@ function renderMarkdown(result) {
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
-  const baseline = readBenchmarkReport(options.baselinePath);
+  const baselineRuns = options.baselinePaths.map((baselinePath) => readBenchmarkReport(baselinePath));
+  const baseline = aggregateBenchmarkRuns(baselineRuns);
   const candidates = options.candidates.map((candidate) => {
-    const report = readBenchmarkReport(candidate.path);
-    return evaluateCandidate({ ...candidate, ...report }, baseline);
+    const runs = candidate.paths.map((candidatePath) => readBenchmarkReport(candidatePath));
+    const aggregatedCandidate = aggregateBenchmarkRuns(runs);
+    return evaluateCandidate({ ...candidate, ...aggregatedCandidate }, baseline);
   });
 
   const result = {
@@ -263,9 +395,12 @@ function main() {
     generatedAt: new Date().toISOString(),
     baseline: {
       path: baseline.path,
+      paths: baseline.paths,
+      runCount: baseline.runCount,
       metrics: baseline.metrics,
       throughputHz: baseline.throughputHz,
       taskCount: baseline.taskCount,
+      reproducibility: baseline.reproducibility,
     },
     candidates,
   };

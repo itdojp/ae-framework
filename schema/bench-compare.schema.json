@@ -73,14 +73,29 @@
       "additionalProperties": false,
       "required": [
         "path",
+        "paths",
+        "runCount",
         "metrics",
         "throughputHz",
-        "taskCount"
+        "taskCount",
+        "reproducibility"
       ],
       "properties": {
         "path": {
           "type": "string",
           "minLength": 1
+        },
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "runCount": {
+          "type": "integer",
+          "minimum": 1
         },
         "metrics": {
           "$ref": "#/$defs/metrics"
@@ -91,6 +106,25 @@
         "taskCount": {
           "type": "integer",
           "minimum": 1
+        },
+        "reproducibility": {
+          "$ref": "#/$defs/reproducibility"
+        }
+      }
+    },
+    "reproducibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "p95Cv",
+        "throughputCv"
+      ],
+      "properties": {
+        "p95Cv": {
+          "$ref": "#/$defs/ratioOrNull"
+        },
+        "throughputCv": {
+          "$ref": "#/$defs/ratioOrNull"
         }
       }
     },
@@ -134,7 +168,9 @@
         "throughput",
         "errorRate",
         "peakRss",
-        "coldStartReference"
+        "coldStartReference",
+        "p95Cv",
+        "throughputCv"
       ],
       "properties": {
         "p95": {
@@ -151,6 +187,12 @@
         },
         "coldStartReference": {
           "type": "boolean"
+        },
+        "p95Cv": {
+          "type": "boolean"
+        },
+        "throughputCv": {
+          "type": "boolean"
         }
       }
     },
@@ -160,8 +202,11 @@
       "required": [
         "name",
         "path",
+        "paths",
+        "runCount",
         "metrics",
         "throughputHz",
+        "reproducibility",
         "comparison",
         "checks",
         "overall"
@@ -175,11 +220,26 @@
           "type": "string",
           "minLength": 1
         },
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "runCount": {
+          "type": "integer",
+          "minimum": 1
+        },
         "metrics": {
           "$ref": "#/$defs/metrics"
         },
         "throughputHz": {
           "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "reproducibility": {
+          "$ref": "#/$defs/reproducibility"
         },
         "comparison": {
           "$ref": "#/$defs/comparison"
