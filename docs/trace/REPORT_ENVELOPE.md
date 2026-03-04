@@ -133,7 +133,7 @@ Issue: #1011 / #1012 / #1036 / #1038
 
 ## 運用ガイドライン
 1. CI では `scripts/trace/create-report-envelope.mjs` を利用し、Verify Lite などのサマリを Envelope 化して `artifacts/report-envelope.json` に保存する。
-   - スキーマは `schema/envelope.schema.json` で管理し、`scripts/ci/validate-report-envelope.mjs` で検証する。
+   - スキーマは `schema/envelope.schema.json` で管理し、`scripts/ci/validate-report-envelope.mjs --dual` で現行契約と legacy 投影の両方を検証する。
    - 追加の成果物を添付する場合は `REPORT_ENVELOPE_PAYLOAD_METADATA`（単一ファイル）や `REPORT_ENVELOPE_EXTRA_ARTIFACTS`（カンマ区切りのパス列）を指定すると自動的に `artifacts` 配列へ追記される。
    - Envelope が揃っている場合は `pnpm verify:conformance --from-envelope artifacts/report-envelope.json` でトレースサマリを再掲でき、CI なしの環境でも Step Summary を再利用できる。
 2. Envelope の生成時に `GITHUB_RUN_ID` / `GITHUB_WORKFLOW` / `GITHUB_SHA` / `GITHUB_REF` を自動埋め込み、他の CI でも環境変数から補完できるようにする。

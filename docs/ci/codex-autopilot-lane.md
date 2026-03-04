@@ -25,6 +25,7 @@ Repository Variables:
 - `AE_AUTOPILOT_WRITE_CONTRACT_ARTIFACTS=1`（任意）: `pr-state.v1` / `execution-plan.v1` の成果物を出力
 - `AE_AUTOPILOT_PR_STATE_FILE`（既定 `artifacts/ci/pr-state-v1.json`）
 - `AE_AUTOPILOT_EXECUTION_PLAN_FILE`（既定 `artifacts/ci/execution-plan-v1.json`）
+- `AE_AUTOMATION_REPORT_FILE`（任意）: 自動化レポートJSON出力先（例: `artifacts/ci/automation-report.json`）
 - `AE_AUTOPILOT_REQUIRED_CHECKS`（既定 `gate`、カンマ区切り）
 
 補足:
@@ -76,6 +77,8 @@ PRコメント（upsert）:
   - `- actionable-execution-preview:`（最大3件）
 
 成果物（`AE_AUTOPILOT_WRITE_CONTRACT_ARTIFACTS=1` の場合）:
+- `artifacts/ci/automation-report.json`
+  - 自動化実行レポート（`ae-automation-report/v1`）
 - `artifacts/ci/pr-state-v1.json`
   - PR状態（`pr-state.v1` 契約）
 - `artifacts/ci/execution-plan-v1.json`

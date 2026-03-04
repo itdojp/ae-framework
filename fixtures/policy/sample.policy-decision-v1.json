@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractId": "policy-decision.v1",
+  "generatedAtUtc": "2026-03-03T00:00:00.000Z",
+  "repository": "itdojp/ae-framework",
+  "prNumber": 1,
+  "inputPath": "artifacts/ci/policy-input-v1.json",
+  "engine": {
+    "kind": "js",
+    "status": "supported",
+    "version": "node"
+  },
+  "evaluation": {
+    "ok": true,
+    "errors": [],
+    "warnings": [],
+    "inferredRisk": {
+      "level": "risk:low",
+      "labels": {
+        "low": "risk:low",
+        "high": "risk:high"
+      },
+      "highRiskPathMatches": [],
+      "forceHighRiskTriggers": []
+    },
+    "selectedRiskLabel": "risk:low",
+    "currentRiskLabels": [
+      "risk:low"
+    ],
+    "reviewTopology": "team",
+    "approvals": 0,
+    "minApprovals": 1,
+    "policyMinApprovals": 1,
+    "topologyMinApprovals": 1,
+    "effectiveMinApprovals": 1,
+    "minApprovalsSource": "policy",
+    "requiredLabels": [],
+    "missingRequiredLabels": [],
+    "requiredCheckResults": [
+      {
+        "checkName": "verify-lite",
+        "result": {
+          "status": "success",
+          "matches": [
+            {
+              "name": "verify-lite",
+              "state": "success",
+              "type": "check-run",
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS"
+            }
+          ],
+          "reason": "success"
+        }
+      }
+    ],
+    "gateCheckResults": []
+  }
+}
+

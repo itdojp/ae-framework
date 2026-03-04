@@ -42,6 +42,18 @@ function validateSchema(schemaPath, fixturePaths) {
   return failures;
 }
 
+function preloadSharedSchemas() {
+  const sharedSchemas = [
+    'schema/artifact-metadata.schema.json',
+  ];
+  for (const schemaPath of sharedSchemas) {
+    const schema = loadJson(schemaPath);
+    ajv.addSchema(schema);
+  }
+}
+
+preloadSharedSchemas();
+
 const checks = [
   {
     schema: 'schema/envelope.schema.json',
@@ -107,6 +119,16 @@ const checks = [
     label: 'Execution plan v1 schema validation'
   },
   {
+    schema: 'schema/policy-input-v1.schema.json',
+    fixtures: ['fixtures/policy/sample.policy-input-v1.json'],
+    label: 'Policy input v1 schema validation'
+  },
+  {
+    schema: 'schema/policy-decision-v1.schema.json',
+    fixtures: ['fixtures/policy/sample.policy-decision-v1.json'],
+    label: 'Policy decision v1 schema validation'
+  },
+  {
     schema: 'schema/counterexample.schema.json',
     fixtures: ['fixtures/counterexample/sample.counterexample.json'],
     label: 'Counterexample schema validation'
@@ -155,6 +177,21 @@ const checks = [
     schema: 'schema/release-policy.schema.json',
     fixtures: ['fixtures/release/sample.release-policy.json', 'policy/release-policy.yml'],
     label: 'Release policy schema validation'
+  },
+  {
+    schema: 'schema/policy-gate-summary-v1.schema.json',
+    fixtures: ['fixtures/policy-gate/sample.policy-gate-summary-v1.json'],
+    label: 'Policy gate summary v1 schema validation'
+  },
+  {
+    schema: 'schema/automation-observability-v1.schema.json',
+    fixtures: ['fixtures/automation/sample.automation-observability-v1.json'],
+    label: 'Automation report v1 schema validation'
+  },
+  {
+    schema: 'schema/formal-summary-v2.schema.json',
+    fixtures: ['fixtures/formal/sample.formal-summary-v2.json'],
+    label: 'Formal summary v2 schema validation'
   }
 ];
 

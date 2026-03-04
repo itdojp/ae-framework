@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluatePolicyGate } from '../../../scripts/ci/policy-gate.mjs';
+import { buildPolicyGateReport, evaluatePolicyGate } from '../../../scripts/ci/policy-gate.mjs';
 import { loadRiskPolicy } from '../../../scripts/ci/lib/risk-policy.mjs';
 
 function checkRun(name: string, conclusion: string = 'SUCCESS') {
@@ -307,5 +307,37 @@ describe('policy-gate', () => {
       statusRollup: [checkRun('verify-lite')],
     });
     expect(result.warnings.some((item) => item.includes('Acceptance section'))).toBe(false);
+  });
+
+  it('builds v1 policy-gate summary report envelope', () => {
+    const report = buildPolicyGateReport({
+      generatedAtUtc: '2026-03-04T00:00:00.000Z',
+      repository: 'itdojp/ae-framework',
+      prNumber: 2406,
+      changedFiles: ['package.json'],
+      evaluation: {
+        ok: true,
+        errors: [],
+        warnings: [],
+        inferredRisk: { level: 'risk:low' },
+        selectedRiskLabel: 'risk:low',
+        currentRiskLabels: ['risk:low'],
+        reviewTopology: 'team',
+        approvals: 0,
+        minApprovals: 1,
+        policyMinApprovals: 1,
+        topologyMinApprovals: 1,
+        effectiveMinApprovals: 1,
+        minApprovalsSource: 'policy',
+        requiredLabels: [],
+        missingRequiredLabels: [],
+        requiredCheckResults: [],
+        gateCheckResults: [],
+      },
+    });
+
+    expect(report.schemaVersion).toBe('policy-gate-summary/v1');
+    expect(report.contractId).toBe('policy-gate-summary.v1');
+    expect(report.prNumber).toBe(2406);
   });
 });

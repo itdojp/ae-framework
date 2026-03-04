@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "ae-automation-report/v1",
+  "generatedAt": "2026-03-04T00:00:00.000Z",
+  "tool": "codex-autopilot-lane",
+  "status": "resolved",
+  "reason": "checks healthy",
+  "mode": "active",
+  "prNumber": 2406,
+  "metrics": {
+    "rounds": 2,
+    "actions": 5,
+    "unresolvedCopilot": 0
+  },
+  "data": {
+    "mergeable": "MERGEABLE",
+    "executionResult": "success"
+  },
+  "run": {
+    "workflow": "Codex Autopilot Lane",
+    "event": "pull_request",
+    "runId": 12345,
+    "attempt": 1,
+    "url": "https://github.com/itdojp/ae-framework/actions/runs/12345",
+    "repository": "itdojp/ae-framework",
+    "ref": "refs/pull/2406/merge",
+    "sha": "0123456789abcdef"
+  }
+}

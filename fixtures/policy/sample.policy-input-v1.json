@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractId": "policy-input.v1",
+  "generatedAtUtc": "2026-03-03T00:00:00.000Z",
+  "repository": "itdojp/ae-framework",
+  "prNumber": 1,
+  "policyPath": "policy/risk-policy.yml",
+  "policy": {
+    "labels": {
+      "risk": {
+        "low": "risk:low",
+        "high": "risk:high"
+      },
+      "optionalGates": [
+        "run-security"
+      ]
+    },
+    "requiredChecks": [
+      "verify-lite",
+      "policy-gate"
+    ],
+    "highRisk": {
+      "minHumanApprovals": 1,
+      "requirePolicyLabels": true,
+      "failWhenRequiredGateIsPending": false
+    },
+    "classification": {
+      "highRiskPaths": [
+        ".github/workflows/**"
+      ],
+      "forceHighRiskWhen": []
+    },
+    "labelRequirements": [],
+    "gateChecks": {
+      "run-security": {
+        "patterns": [
+          "Security Scanning"
+        ]
+      }
+    }
+  },
+  "pullRequest": {
+    "number": 1,
+    "labels": [
+      "risk:low"
+    ],
+    "body": "## Rollback\nnone\n\n## Acceptance\nok\n"
+  },
+  "changedFiles": [
+    "src/feature/example.ts"
+  ],
+  "reviews": [],
+  "statusRollup": [
+    {
+      "__typename": "CheckRun",
+      "name": "verify-lite",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS"
+    }
+  ],
+  "config": {
+    "reviewTopology": "team",
+    "approvalOverride": ""
+  }
+}
+
