@@ -315,6 +315,7 @@ function aggregateBenchmarkRuns(reports) {
     path: reports[0]?.path || '',
     runCount: reports.length,
     taskCount: reports[0]?.taskCount || 0,
+    taskIdentities: [...(reports[0]?.taskIdentities || [])].sort(),
     checksums,
     metrics: {
       p95: round(median(p95Values), 4),
@@ -329,6 +330,28 @@ function aggregateBenchmarkRuns(reports) {
       checksumMatchRate: roundOrNull(checksumMatchRate(checksums), 2),
     },
   };
+}
+
+function assertComparableWithBaseline(candidate, baseline) {
+  const baselineTasks = Array.isArray(baseline?.taskIdentities) ? baseline.taskIdentities : [];
+  const candidateTasks = Array.isArray(candidate?.taskIdentities) ? candidate.taskIdentities : [];
+  const candidateName = String(candidate?.name || '(unknown)');
+  const baselinePath = String(baseline?.path || '(unknown)');
+  const candidatePath = String(candidate?.path || '(unknown)');
+
+  if (candidate.taskCount !== baseline.taskCount) {
+    throw new Error(
+      `incompatible summary task count between baseline and candidate "${candidateName}": expected ${baseline.taskCount} (${baselinePath}), got ${candidate.taskCount} (${candidatePath})`,
+    );
+  }
+
+  const sameTasks = candidateTasks.length === baselineTasks.length
+    && candidateTasks.every((task, index) => task === baselineTasks[index]);
+  if (!sameTasks) {
+    throw new Error(
+      `incompatible summary task identities between baseline and candidate "${candidateName}": expected [${baselineTasks.join(', ')}] (${baselinePath}), got [${candidateTasks.join(', ')}] (${candidatePath})`,
+    );
+  }
 }
 
 function roundOrNull(value, digits = 4) {
@@ -354,6 +377,8 @@ function lowerBoundCheck(value, threshold) {
 }
 
 function evaluateCandidate(candidate, baseline) {
+  assertComparableWithBaseline(candidate, baseline);
+
   const p95Ratio = ratio(candidate.metrics.p95, baseline.metrics.p95);
   const throughputRatio = ratio(candidate.throughputHz, baseline.throughputHz);
   const coldStartRatio = ratio(candidate.metrics.coldStartMs, baseline.metrics.coldStartMs);

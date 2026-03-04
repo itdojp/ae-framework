@@ -555,4 +555,93 @@ describe.sequential('bench-compare script', () => {
       rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('fails when baseline and candidate summary shapes are incompatible', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'ae-bench-compare-cross-shape-mismatch-'));
+
+    try {
+      const baselinePath = join(tempDir, 'baseline.json');
+      const candidatePath = join(tempDir, 'candidate.json');
+      const outJsonPath = join(tempDir, 'bench-compare.json');
+      const outMdPath = join(tempDir, 'bench-compare.md');
+
+      const baseline = createBenchReport({
+        p95: 100,
+        errorRate: 0.1,
+        coldStartMs: 50,
+        peakRssMb: 100,
+        hz: 1000,
+        taskName: 'task-A',
+      });
+      const candidate = createBenchReport({
+        p95: 80,
+        errorRate: 0.2,
+        coldStartMs: 45,
+        peakRssMb: 105,
+        hz: 1300,
+        taskName: 'task-A',
+      });
+      candidate.summary.push({
+        name: 'task-B',
+        meanMs: 1.0,
+        hz: 5000,
+        sdMs: 0.1,
+        samples: 30,
+        p95: 90,
+        errorRate: 0.1,
+        coldStartMs: 40,
+      });
+
+      writeFileSync(baselinePath, JSON.stringify(baseline), 'utf8');
+      writeFileSync(candidatePath, JSON.stringify(candidate), 'utf8');
+
+      const resultWithTaskCountMismatch = spawnSync(
+        'node',
+        [
+          compareScript,
+          '--baseline',
+          baselinePath,
+          '--candidate',
+          `go=${candidatePath}`,
+          '--out-json',
+          outJsonPath,
+          '--out-md',
+          outMdPath,
+        ],
+        { encoding: 'utf8', timeout: 120_000 },
+      );
+      expect(resultWithTaskCountMismatch.status).toBe(1);
+      expect(resultWithTaskCountMismatch.stderr).toContain('incompatible summary task count between baseline and candidate');
+
+      const candidateIdentityMismatch = createBenchReport({
+        p95: 80,
+        errorRate: 0.2,
+        coldStartMs: 45,
+        peakRssMb: 105,
+        hz: 1300,
+        taskName: 'task-Z',
+      });
+      writeFileSync(candidatePath, JSON.stringify(candidateIdentityMismatch), 'utf8');
+
+      const resultWithTaskIdentityMismatch = spawnSync(
+        'node',
+        [
+          compareScript,
+          '--baseline',
+          baselinePath,
+          '--candidate',
+          `go=${candidatePath}`,
+          '--out-json',
+          outJsonPath,
+          '--out-md',
+          outMdPath,
+        ],
+        { encoding: 'utf8', timeout: 120_000 },
+      );
+      expect(resultWithTaskIdentityMismatch.status).toBe(1);
+      expect(resultWithTaskIdentityMismatch.stderr).toContain('incompatible summary task identities between baseline and candidate');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 });
