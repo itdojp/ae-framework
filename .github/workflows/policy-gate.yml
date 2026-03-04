@@ -114,6 +114,15 @@ jobs:
             artifacts/ci/policy-gate-summary.json \
             schema/policy-gate-summary-v1.schema.json
 
+      - name: Setup OPA (shadow mode)
+        if: ${{ always() && steps.pr.outputs.skip != 'true' }}
+        continue-on-error: true
+        uses: open-policy-agent/setup-opa@v2
+
+      - name: Policy shadow compare (JS vs OPA)
+        if: ${{ always() && steps.pr.outputs.skip != 'true' }}
+        continue-on-error: true
+        run: node scripts/ci/policy-shadow-compare.mjs
       - name: Upload policy artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -124,4 +133,8 @@ jobs:
             artifacts/ci/risk-labeler-summary.md
             artifacts/ci/policy-gate-summary.json
             artifacts/ci/policy-gate-summary.md
+            artifacts/ci/policy-input-v1.json
+            artifacts/ci/policy-decision-js-v1.json
+            artifacts/ci/policy-decision-opa-v1.json
+            artifacts/ci/policy-shadow-compare-v1.json
           if-no-files-found: warn

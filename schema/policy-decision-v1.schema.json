@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/policy-decision-v1.schema.json",
+  "title": "ae-policy-decision-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "contractId": {
+      "type": "string",
+      "const": "policy-decision.v1"
+    },
+    "generatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repository": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "inputPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "engine": {
+      "$ref": "#/$defs/engine"
+    },
+    "evaluation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "ok": { "type": "boolean" },
+        "errors": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "inferredRisk": { "$ref": "#/$defs/inferredRisk" },
+        "selectedRiskLabel": { "type": ["string", "null"] },
+        "currentRiskLabels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "reviewTopology": { "type": "string", "minLength": 1 },
+        "approvals": { "type": "integer", "minimum": 0 },
+        "minApprovals": { "type": "integer", "minimum": 0 },
+        "policyMinApprovals": { "type": "integer", "minimum": 0 },
+        "topologyMinApprovals": { "type": "integer", "minimum": 0 },
+        "effectiveMinApprovals": { "type": "integer", "minimum": 0 },
+        "minApprovalsSource": { "type": "string", "minLength": 1 },
+        "requiredLabels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "missingRequiredLabels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "requiredCheckResults": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/checkRequirementResult" }
+        },
+        "gateCheckResults": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/gateRequirementResult" }
+        }
+      },
+      "required": [
+        "ok",
+        "errors",
+        "warnings",
+        "inferredRisk",
+        "selectedRiskLabel",
+        "currentRiskLabels",
+        "reviewTopology",
+        "approvals",
+        "minApprovals",
+        "policyMinApprovals",
+        "topologyMinApprovals",
+        "effectiveMinApprovals",
+        "minApprovalsSource",
+        "requiredLabels",
+        "missingRequiredLabels",
+        "requiredCheckResults",
+        "gateCheckResults"
+      ]
+    },
+    "unsupportedReason": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "generatedAtUtc",
+    "repository",
+    "prNumber",
+    "inputPath",
+    "engine",
+    "evaluation"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "engine": {
+            "properties": { "status": { "const": "unsupported" } },
+            "required": ["status"]
+          }
+        },
+        "required": ["engine"]
+      },
+      "then": {
+        "properties": {
+          "evaluation": { "type": "null" }
+        },
+        "required": ["unsupportedReason"]
+      }
+    }
+  ],
+  "$defs": {
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["js", "opa"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["supported", "unsupported", "error"]
+        },
+        "version": { "type": "string" }
+      },
+      "required": ["kind", "status", "version"]
+    },
+    "inferredRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "level": { "type": "string", "minLength": 1 },
+        "labels": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "low": { "type": "string", "minLength": 1 },
+            "high": { "type": "string", "minLength": 1 }
+          },
+          "required": ["low", "high"]
+        },
+        "highRiskPathMatches": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "forceHighRiskTriggers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/forceHighRiskTrigger" }
+        }
+      },
+      "required": ["level", "labels", "highRiskPathMatches", "forceHighRiskTriggers"]
+    },
+    "forceHighRiskTrigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "condition": { "type": "string", "minLength": 1 },
+        "ruleId": { "type": "string", "minLength": 1 },
+        "matchedFiles": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "required": ["condition", "ruleId", "matchedFiles"]
+    },
+    "checkEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "state": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 },
+        "status": { "type": "string" },
+        "conclusion": { "type": "string" }
+      },
+      "required": ["name", "state", "type", "status", "conclusion"]
+    },
+    "checkRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": { "type": "string", "minLength": 1 },
+        "matches": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/checkEntry" }
+        },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "required": ["status", "matches", "reason"]
+    },
+    "checkRequirementResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "checkName": { "type": "string", "minLength": 1 },
+        "result": { "$ref": "#/$defs/checkRequirement" }
+      },
+      "required": ["checkName", "result"]
+    },
+    "gateRequirementResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "patterns": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "result": { "$ref": "#/$defs/checkRequirement" }
+      },
+      "required": ["label", "patterns", "result"]
+    }
+  }
+}

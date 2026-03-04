@@ -43,7 +43,7 @@ Labels
 The CI Extended workflow restores cached heavy test artifacts from `.cache/test-results`. To reuse MBT/property/mutation outputs when re-running locally or via dispatch, run `node scripts/pipelines/sync-test-results.mjs --restore` beforehand (and `--store` afterwards to refresh the cache). Scheduled runs share the `ci-heavy-${ runner.os }-schedule` cache key so that Nightly executions inherit the previous baseline and publish `heavy-test-trends-history` artifacts.
 
 Workflows
-- policy-gate.yml: runs `risk-labeler` + `policy-gate`; enforces low/high risk policy, approval, required labels, and label-gated check results
+- policy-gate.yml: runs `risk-labeler` + `policy-gate`; emits `policy-input.v1` / JS decision artifacts, then executes OPA shadow compare (`policy/risk-policy.rego`) and publishes diff artifacts
 - validate-artifacts-ajv.yml: reads `enforce-artifacts`; strict の場合は trace/verify-lite artifacts を先に生成してから `pnpm run artifacts:validate` を実行
 - testing-ddd-scripts.yml: reads `enforce-testing` and makes property/replay/BDD lint blocking only in strict mode; reads `trace:<id>` to focus runs
 - context-pack-quality-gate.yml: reads `enforce-context-pack`; runs `context-pack:deps` + `context-pack:e2e-fixture` in report-only/blocking mode
@@ -55,6 +55,11 @@ Harness Health recommendation
 - Operators can apply suggested labels (`enforce-artifacts`, `enforce-testing`, `enforce-context-pack`, `run-conformance`, `run-ci-extended`, `autopilot:on`) to tighten reruns only where needed.
 
 Artifacts
+- Policy gate contract/shadow artifacts:
+  - `artifacts/ci/policy-input-v1.json`
+  - `artifacts/ci/policy-decision-js-v1.json`
+  - `artifacts/ci/policy-decision-opa-v1.json`（OPA未導入時は `engine.status=unsupported`）
+  - `artifacts/ci/policy-shadow-compare-v1.json`
 - `pnpm run artifacts:validate` always writes:
   - `artifacts/schema-validation/summary.json`
   - `artifacts/schema-validation/summary.md`

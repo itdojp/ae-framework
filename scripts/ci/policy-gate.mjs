@@ -11,6 +11,7 @@ import {
   collectRequiredLabels,
   getGateCheckPatternsForLabel,
   getMinHumanApprovals,
+  getOptionalGateLabels,
   isPolicyLabelRequirementEnabled,
   getRequiredChecks,
   getRiskLabels,
@@ -23,6 +24,8 @@ const OUTPUT_JSON_PATH = 'artifacts/ci/policy-gate-summary.json';
 const OUTPUT_MD_PATH = 'artifacts/ci/policy-gate-summary.md';
 const SUMMARY_SCHEMA_VERSION = 'policy-gate-summary/v1';
 const SUMMARY_CONTRACT_ID = 'policy-gate-summary.v1';
+const POLICY_INPUT_PATH = 'artifacts/ci/policy-input-v1.json';
+const POLICY_DECISION_PATH = 'artifacts/ci/policy-decision-js-v1.json';
 const VALID_REVIEW_TOPOLOGIES = new Set(['team', 'solo']);
 
 function parseArgs(argv) {
@@ -536,6 +539,183 @@ function buildPolicyGateReport({
   };
 }
 
+function normalizeStringArray(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+}
+
+function normalizeUniqueStringArray(value) {
+  return [...new Set(normalizeStringArray(value))];
+}
+
+function buildPolicyInputPolicy(policy) {
+  const riskLabels = getRiskLabels(policy);
+  const optionalGates = normalizeUniqueStringArray(getOptionalGateLabels(policy));
+  const requiredChecks = normalizeUniqueStringArray(getRequiredChecks(policy));
+  const highRiskPaths = normalizeUniqueStringArray(policy?.classification?.high_risk_paths);
+  const forceHighRiskWhen = normalizeUniqueStringArray(policy?.classification?.force_high_risk_when);
+  const labelRequirements = Array.isArray(policy?.label_requirements) ? policy.label_requirements : [];
+  const normalizedLabelRequirements = labelRequirements.map((rule, index) => ({
+    id: String(rule?.id || `rule-${index + 1}`).trim() || `rule-${index + 1}`,
+    whenAnyChanged: normalizeUniqueStringArray(rule?.when_any_changed),
+    requireLabels: normalizeUniqueStringArray(rule?.require_labels),
+  }));
+
+  const gateCheckKeys = new Set([
+    ...optionalGates,
+    ...Object.keys(policy?.gate_checks || {}),
+  ]);
+  const gateChecks = {};
+  for (const label of [...gateCheckKeys].map((item) => String(item || '').trim()).filter(Boolean).sort()) {
+    gateChecks[label] = {
+      patterns: normalizeUniqueStringArray(getGateCheckPatternsForLabel(policy, label)),
+    };
+  }
+
+  return {
+    labels: {
+      risk: riskLabels,
+      optionalGates,
+    },
+    requiredChecks,
+    highRisk: {
+      minHumanApprovals: getMinHumanApprovals(policy),
+      requirePolicyLabels: isPolicyLabelRequirementEnabled(policy),
+      failWhenRequiredGateIsPending: isPendingGateFailureEnabled(policy),
+    },
+    classification: {
+      highRiskPaths,
+      forceHighRiskWhen,
+    },
+    labelRequirements: normalizedLabelRequirements,
+    gateChecks,
+  };
+}
+
+function normalizePolicyInputReviews(reviews) {
+  const list = Array.isArray(reviews) ? reviews : [];
+  return list
+    .map((review) => {
+      const id = Number(review?.id || 0);
+      const state = String(review?.state || '').trim();
+      const submittedAtRaw = review?.submitted_at || review?.submittedAt || null;
+      const submittedAt = submittedAtRaw ? String(submittedAtRaw).trim() : null;
+      const login = String(review?.user?.login || '').trim();
+      const type = String(review?.user?.type || '').trim();
+      if (!Number.isFinite(id) || id <= 0) return null;
+      if (!state) return null;
+      if (!login) return null;
+      if (!type) return null;
+      return {
+        id: Math.trunc(id),
+        state,
+        submittedAt,
+        user: { login, type },
+      };
+    })
+    .filter(Boolean);
+}
+
+function normalizePolicyInputStatusRollup(statusRollup) {
+  const list = Array.isArray(statusRollup) ? statusRollup : [];
+  return list
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const typename = String(item.__typename || '').trim();
+      if (typename === 'CheckRun') {
+        const name = String(item.name || '').trim();
+        const status = String(item.status || '').trim();
+        const conclusion = item.conclusion === null || item.conclusion === undefined
+          ? null
+          : String(item.conclusion || '').trim();
+        if (!name || !status) return null;
+        return {
+          __typename: 'CheckRun',
+          name,
+          status,
+          conclusion,
+        };
+      }
+      if (typename === 'StatusContext') {
+        const context = String(item.context || '').trim();
+        const state = String(item.state || '').trim();
+        if (!context || !state) return null;
+        return {
+          __typename: 'StatusContext',
+          context,
+          state,
+        };
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
+function buildPolicyInputV1({
+  repo,
+  prNumber,
+  policyPath,
+  policy,
+  pullRequest,
+  changedFiles,
+  reviews,
+  statusRollup,
+  reviewTopology,
+  approvalOverride,
+  now = new Date().toISOString(),
+}) {
+  return {
+    schemaVersion: '1.0.0',
+    contractId: 'policy-input.v1',
+    generatedAtUtc: now,
+    repository: String(repo || '').trim(),
+    prNumber: Number(prNumber) || 0,
+    policyPath: String(policyPath || '').trim(),
+    policy: buildPolicyInputPolicy(policy),
+    pullRequest: {
+      number: Number(prNumber) || 0,
+      labels: normalizeUniqueStringArray(normalizeLabelNames(pullRequest?.labels || [])),
+      body: String(pullRequest?.body || ''),
+    },
+    changedFiles: normalizeUniqueStringArray(changedFiles),
+    reviews: normalizePolicyInputReviews(reviews),
+    statusRollup: normalizePolicyInputStatusRollup(statusRollup),
+    config: {
+      reviewTopology: reviewTopology ?? null,
+      approvalOverride: approvalOverride ?? null,
+    },
+  };
+}
+
+function buildPolicyDecisionV1({
+  repo,
+  prNumber,
+  inputPath,
+  engine,
+  evaluation,
+  now = new Date().toISOString(),
+}) {
+  return {
+    schemaVersion: '1.0.0',
+    contractId: 'policy-decision.v1',
+    generatedAtUtc: now,
+    repository: String(repo || '').trim(),
+    prNumber: Number(prNumber) || 0,
+    inputPath: String(inputPath || '').trim(),
+    engine,
+    evaluation,
+  };
+}
+
+function persistPolicyContracts(policyInput, policyDecision) {
+  ensureDirectory(POLICY_INPUT_PATH);
+  fs.writeFileSync(POLICY_INPUT_PATH, `${JSON.stringify(policyInput, null, 2)}\n`);
+  ensureDirectory(POLICY_DECISION_PATH);
+  fs.writeFileSync(POLICY_DECISION_PATH, `${JSON.stringify(policyDecision, null, 2)}\n`);
+}
+
 async function run(options = parseArgs(process.argv)) {
   const repo = String(process.env.GITHUB_REPOSITORY || '').trim();
   if (!repo) {
@@ -562,7 +742,36 @@ async function run(options = parseArgs(process.argv)) {
     approvalOverride: process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
   });
 
+  const now = new Date().toISOString();
+  const policyInput = buildPolicyInputV1({
+    repo,
+    prNumber,
+    policyPath: options.policyPath,
+    policy,
+    pullRequest,
+    changedFiles,
+    reviews,
+    statusRollup,
+    reviewTopology: process.env.AE_REVIEW_TOPOLOGY,
+    approvalOverride: process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
+    now,
+  });
+  const policyDecision = buildPolicyDecisionV1({
+    repo,
+    prNumber,
+    inputPath: POLICY_INPUT_PATH,
+    engine: {
+      kind: 'js',
+      status: 'supported',
+      version: process.version,
+    },
+    evaluation,
+    now,
+  });
+  persistPolicyContracts(policyInput, policyDecision);
+
   const report = buildPolicyGateReport({
+    generatedAtUtc: now,
     repository: repo,
     prNumber,
     changedFiles,
