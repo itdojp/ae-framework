@@ -115,7 +115,8 @@ node scripts/quality/bench-compare.mjs \
   --out-md artifacts/bench-compare.md
 ```
 
-- ここでの `overall` は gate に使わず、`reproducibility`（CV/checksum）と継続推移の証跡化を目的とする。
+- `ts-self` は自己比較のため、`p95 ratio <= 0.85` / `throughput ratio >= 1.20` の改善閾値を原理的に満たせず、`overall` は原則 `fail` になる。
+- 上記 `overall` は nightly monitor のアクション判定に使わない（non-action）。監視対象は `reproducibility`（CV/checksum）と継続推移の証跡化とする。
 
 ### 5.2 指標の一次データ源と算出方式（確定）
 

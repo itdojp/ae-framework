@@ -102,8 +102,7 @@ jobs:
         run: |
           jq '{
             baselineReproducibility: .baseline.reproducibility,
-            candidateReproducibility: .candidates[0].reproducibility,
-            candidateOverall: .candidates[0].overall
+            candidateReproducibility: .candidates[0].reproducibility
           }' artifacts/bench-compare.json
       - name: Replay smoke
         run: AE_RECORDER_MODE=replay node dist/src/cli/index.js agent:complete --prompt "Hello, ae!"
