@@ -43,6 +43,8 @@ jobs:
         run: node scripts/ci/check-todo-issue-links.mjs
       - name: Check documentation consistency
         run: node scripts/docs/check-doc-consistency.mjs
+      - name: Check contract catalog coverage (required)
+        run: node scripts/docs/check-contract-catalog-coverage.mjs
       - name: Detect docs-only change
         id: docs-only
         shell: bash
