@@ -14,6 +14,7 @@
 - シナリオ: `small` / `medium` / `large` の3段階（入力件数は比較テンプレートに固定値を記録）。
 - 反復回数: 各実装・各シナリオでウォームアップ2回 + 本計測10回。
 - 計測値: `throughput(req/s)`, `p95 latency(ms)`, `error rate(%)`, `peak RSS(MB)`, `cold start(ms)`。
+- TS baseline の機械可読成果物は `artifacts/bench.json`（schema: `schema/benchmark-report.schema.json`）。主要指標キーは `metrics.p95` / `metrics.errorRate` / `metrics.coldStartMs` / `metrics.peakRssMb`。
 - 集計方法: 中央値（median）を主指標、ばらつきは `CV = stddev / mean` で算出。
 - ベースライン比: `ratio = candidate / ts_baseline`。
   - latency改善率（小さいほど良い）: `latency_improvement = (1 - ratio) * 100`
@@ -56,6 +57,8 @@
 
 - 比較計測結果: `docs/templates/quality/poc-comparison-metrics-template.md` を使用して記録。
 - 判定記録: `docs/templates/quality/adr-poc-adoption-template.md` を使用して ADR 化。
+- TS baseline 実行コマンド: `pnpm exec tsx src/cli.ts bench`
+- TS baseline 出力: `artifacts/bench.json`（機械可読） / `artifacts/bench.md`（人間可読）
 - 実行ログ: コマンド、使用コミットSHA、計測日時、実行環境（CPU/メモリ/OS/ランタイム）を必ず添付。
 
 ## 6. #2409 チェックリスト対応

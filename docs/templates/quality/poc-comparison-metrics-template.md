@@ -101,13 +101,19 @@
 ## 7. 実行コマンドと証跡リンク
 
 ```text
-# 例: 計測コマンド
-pnpm run <benchmark:ts>
-pnpm run <benchmark:go>
-pnpm run <benchmark:rust>
+# TS baseline（機械可読: artifacts/bench.json）
+pnpm exec tsx src/cli.ts bench
+
+# TS baseline の主要指標抽出例
+jq '.metrics | {p95, errorRate, coldStartMs, peakRssMb}' artifacts/bench.json
+
+# Go / Rust candidate（同一シナリオ・同一入力で実行）
+<go-benchmark-command>
+<rust-benchmark-command>
 ```
 
-- raw result: `<path/to/raw-results>`
-- summarized report: `<path/to/summary>`
+- TS baseline raw result: `artifacts/bench.json`（schema: `schema/benchmark-report.schema.json`）
+- TS baseline summarized report: `artifacts/bench.md`
+- candidate raw result: `<path/to/bench-go-or-rust-results>`
 - logs: `<path/to/logs>`
 - related ADR: `<path/to/adr>`

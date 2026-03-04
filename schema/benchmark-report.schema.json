@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/benchmark-report.schema.json",
+  "title": "AE Benchmark Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "summary",
+    "metrics",
+    "meta"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "benchmark-report/v1"
+    },
+    "summary": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "meanMs",
+          "hz",
+          "sdMs",
+          "samples",
+          "p95",
+          "errorRate",
+          "coldStartMs"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "meanMs": {
+            "$ref": "#/$defs/nonNegativeNumber"
+          },
+          "hz": {
+            "$ref": "#/$defs/nonNegativeNumber"
+          },
+          "sdMs": {
+            "$ref": "#/$defs/nonNegativeNumber"
+          },
+          "samples": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "p95": {
+            "$ref": "#/$defs/nonNegativeNumber"
+          },
+          "errorRate": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "coldStartMs": {
+            "$ref": "#/$defs/nonNegativeNumber"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "p95",
+        "errorRate",
+        "coldStartMs",
+        "peakRssMb"
+      ],
+      "properties": {
+        "p95": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "errorRate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "coldStartMs": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "peakRssMb": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "date",
+        "env",
+        "config"
+      ],
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "env": {
+          "$ref": "#/$defs/environment"
+        },
+        "config": {
+          "$ref": "#/$defs/benchConfig"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonNegativeNumber": {
+      "type": "number",
+      "minimum": 0
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "node",
+        "platform",
+        "arch",
+        "cpu",
+        "totalMem",
+        "seed"
+      ],
+      "properties": {
+        "node": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "totalMem": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "seed": {
+          "type": "number"
+        }
+      }
+    },
+    "benchConfig": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "warmupMs",
+        "iterations",
+        "seed"
+      ],
+      "properties": {
+        "warmupMs": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "iterations": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "seed": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}
