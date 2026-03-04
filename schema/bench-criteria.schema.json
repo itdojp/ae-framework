@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/bench-criteria.schema.json",
+  "title": "AE Benchmark Compare Criteria",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "thresholds"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "bench-criteria/v1"
+    },
+    "thresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "p95RatioMax",
+        "throughputRatioMin",
+        "errorRate",
+        "peakRssRatioMax",
+        "coldStartRatioMax",
+        "p95CvMax",
+        "throughputCvMax",
+        "checksumMatchRateMin"
+      ],
+      "properties": {
+        "p95RatioMax": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "throughputRatioMin": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "errorRate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "absoluteMinPercent",
+            "baselineDeltaPercentPoint"
+          ],
+          "properties": {
+            "absoluteMinPercent": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "baselineDeltaPercentPoint": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          }
+        },
+        "peakRssRatioMax": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "coldStartRatioMax": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "p95CvMax": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "throughputCvMax": {
+          "$ref": "#/$defs/nonNegativeNumber"
+        },
+        "checksumMatchRateMin": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonNegativeNumber": {
+      "type": "number",
+      "minimum": 0
+    }
+  }
+}

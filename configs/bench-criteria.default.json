@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "bench-criteria/v1",
+  "thresholds": {
+    "p95RatioMax": 0.85,
+    "throughputRatioMin": 1.2,
+    "errorRate": {
+      "absoluteMinPercent": 0.5,
+      "baselineDeltaPercentPoint": 0.2
+    },
+    "peakRssRatioMax": 1.15,
+    "coldStartRatioMax": 1.1,
+    "p95CvMax": 0.05,
+    "throughputCvMax": 0.05,
+    "checksumMatchRateMin": 100
+  }
+}
