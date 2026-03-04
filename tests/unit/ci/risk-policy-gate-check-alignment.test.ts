@@ -18,6 +18,7 @@ type WorkflowJob = {
 };
 
 type WorkflowDocument = {
+  on?: unknown;
   jobs?: Record<string, WorkflowJob>;
 };
 
@@ -35,6 +36,25 @@ function parseWorkflow(fileName: string) {
   const raw = fs.readFileSync(filePath, 'utf8');
   const parsed = yaml.load(raw) as WorkflowDocument;
   return { raw, parsed };
+}
+
+function listWorkflowTriggers(workflowOn: unknown): string[] {
+  if (typeof workflowOn === 'string') return [workflowOn];
+  if (Array.isArray(workflowOn)) {
+    return workflowOn
+      .filter((entry): entry is string => typeof entry === 'string')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+  if (workflowOn && typeof workflowOn === 'object') {
+    return Object.keys(workflowOn);
+  }
+  return [];
+}
+
+function isWorkflowCallOnly(parsed: WorkflowDocument | undefined) {
+  const triggers = listWorkflowTriggers(parsed?.on);
+  return triggers.length > 0 && triggers.every((trigger) => trigger === 'workflow_call');
 }
 
 function normalizeString(value: unknown) {
@@ -110,7 +130,10 @@ function collectWorkflowCheckNames() {
       .flatMap(([jobId, job]) => resolveJobDisplayNames(jobId, job))
       .sort();
     directJobNamesByWorkflow.set(file, names);
-    for (const name of names) checkNames.add(name);
+    // `on: workflow_call` only workflows do not surface standalone PR checks.
+    if (!isWorkflowCallOnly(parsed)) {
+      for (const name of names) checkNames.add(name);
+    }
   }
 
   for (const [_, { parsed }] of workflows) {
