@@ -78,6 +78,7 @@ node scripts/quality/bench-compare.mjs \
 - 出力Markdown: `artifacts/bench-compare.md`
 - 必須判定: `p95 ratio <= 0.85`, `throughput ratio >= 1.20`, `error rate <= max(0.5, baseline + 0.2pt)`, `peak RSS ratio <= 1.15`
 - 再現性判定: `p95 CV <= 0.05`, `throughput CV <= 0.05`（runCount >= 2 のとき）
+- 出力整合判定: `checksum match rate == 100%`
 - 参考判定: `cold start ratio <= 1.10`
 
 ### 5.2 指標の一次データ源と算出方式（確定）
@@ -96,6 +97,7 @@ node scripts/quality/bench-compare.mjs \
   - `p95 CV`: 複数runの `metrics.p95` から算出
   - `throughput CV`: 複数runの `sum(summary[].hz)` から算出
   - run が1件のみの場合、CVは `null`（non-applicable）
+- checksum 一致率: run群の `benchmark-report/v1` から `schemaVersion + summary + metrics` を正規化（summaryはname順、JSON key安定化）して `sha256` 比較し、先頭runと一致した件数/全件数で算出
 - error rate 上限: `max(0.5, baseline.errorRate + 0.2)`（percentage point）
 - 比較成果物契約: `artifacts/bench-compare.json`（`schemaVersion: bench-compare/v1`、schema: `schema/bench-compare.schema.json`）
 

@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { createHash } from 'node:crypto';
 
 const DEFAULT_OUTPUT_JSON = 'artifacts/bench-compare.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/bench-compare.md';
@@ -110,9 +111,47 @@ function parseCandidateArg(raw) {
   };
 }
 
-function readJsonFile(filePath) {
-  const raw = fs.readFileSync(filePath, 'utf8');
-  return JSON.parse(raw);
+function sha256Hex(payload) {
+  return createHash('sha256').update(payload).digest('hex');
+}
+
+function canonicalizeValue(value) {
+  if (Array.isArray(value)) {
+    return value.map((entry) => canonicalizeValue(entry));
+  }
+  if (value && typeof value === 'object') {
+    const normalized = {};
+    for (const key of Object.keys(value).sort()) {
+      const normalizedValue = canonicalizeValue(value[key]);
+      if (normalizedValue !== undefined) {
+        normalized[key] = normalizedValue;
+      }
+    }
+    return normalized;
+  }
+  return value;
+}
+
+function canonicalChecksumPayload(report) {
+  const summary = report.summary.map((task, index) => {
+    const normalizedName = typeof task?.name === 'string' ? task.name.trim() : '';
+    return {
+      name: normalizedName.length > 0 ? normalizedName : `#${index + 1}`,
+      meanMs: task?.meanMs,
+      hz: task?.hz,
+      sdMs: task?.sdMs,
+      samples: task?.samples,
+      p95: task?.p95,
+      errorRate: task?.errorRate,
+      coldStartMs: task?.coldStartMs,
+    };
+  });
+  summary.sort((left, right) => String(left.name).localeCompare(String(right.name)));
+  return canonicalizeValue({
+    schemaVersion: report.schemaVersion,
+    summary,
+    metrics: report.metrics,
+  });
 }
 
 function assertNonNegativeFiniteNumber(value, label) {
@@ -135,7 +174,8 @@ function readBenchmarkReport(filePath) {
     throw new Error(`benchmark report not found: ${filePath}`);
   }
 
-  const report = readJsonFile(filePath);
+  const raw = fs.readFileSync(filePath, 'utf8');
+  const report = JSON.parse(raw);
   if (report?.schemaVersion !== 'benchmark-report/v1') {
     throw new Error(`unsupported schemaVersion at ${filePath}: ${String(report?.schemaVersion || '')}`);
   }
@@ -164,6 +204,7 @@ function readBenchmarkReport(filePath) {
 
   return {
     path: filePath,
+    checksumSha256: sha256Hex(JSON.stringify(canonicalChecksumPayload(report))),
     metrics,
     throughputHz,
     taskCount: report.summary.length,
@@ -239,6 +280,23 @@ function assertConsistentRunShape(reports) {
   }
 }
 
+function checksumMatchRate(checksums) {
+  if (!Array.isArray(checksums) || checksums.length === 0) {
+    return null;
+  }
+  const baseline = checksums[0];
+  const matched = checksums.filter((entry) => entry === baseline).length;
+  return (matched / checksums.length) * 100;
+}
+
+function allChecksumsMatch(checksums) {
+  if (!Array.isArray(checksums) || checksums.length <= 1) {
+    return true;
+  }
+  const baseline = checksums[0];
+  return checksums.every((entry) => entry === baseline);
+}
+
 function aggregateBenchmarkRuns(reports) {
   if (!Array.isArray(reports) || reports.length === 0) {
     throw new Error('at least one benchmark report is required');
@@ -250,12 +308,14 @@ function aggregateBenchmarkRuns(reports) {
   const coldStartValues = reports.map((report) => report.metrics.coldStartMs);
   const peakRssValues = reports.map((report) => report.metrics.peakRssMb);
   const throughputValues = reports.map((report) => report.throughputHz);
+  const checksums = reports.map((report) => report.checksumSha256);
 
   return {
     paths: reports.map((report) => report.path),
     path: reports[0]?.path || '',
     runCount: reports.length,
     taskCount: reports[0]?.taskCount || 0,
+    checksums,
     metrics: {
       p95: round(median(p95Values), 4),
       errorRate: round(median(errorRateValues), 4),
@@ -266,6 +326,7 @@ function aggregateBenchmarkRuns(reports) {
     reproducibility: {
       p95Cv: roundOrNull(coefficientOfVariation(p95Values), 4),
       throughputCv: roundOrNull(coefficientOfVariation(throughputValues), 4),
+      checksumMatchRate: roundOrNull(checksumMatchRate(checksums), 2),
     },
   };
 }
@@ -307,6 +368,7 @@ function evaluateCandidate(candidate, baseline) {
     coldStartReference: upperBoundCheck(coldStartRatio, 1.1),
     p95Cv: upperBoundCheck(candidate.reproducibility.p95Cv, 0.05),
     throughputCv: upperBoundCheck(candidate.reproducibility.throughputCv, 0.05),
+    checksum: allChecksumsMatch(candidate.checksums),
   };
 
   const overallPass = checks.p95
@@ -314,13 +376,15 @@ function evaluateCandidate(candidate, baseline) {
     && checks.errorRate
     && checks.peakRss
     && checks.p95Cv
-    && checks.throughputCv;
+    && checks.throughputCv
+    && checks.checksum;
 
   return {
     name: candidate.name,
     path: candidate.path,
     paths: candidate.paths,
     runCount: candidate.runCount,
+    checksums: candidate.checksums,
     metrics: candidate.metrics,
     throughputHz: candidate.throughputHz,
     reproducibility: candidate.reproducibility,
@@ -351,15 +415,15 @@ function renderMarkdown(result) {
     '# Bench Comparison Report',
     '',
     `- Generated: ${result.generatedAt}`,
-    `- Baseline: ${result.baseline.path} (runs=${result.baseline.runCount}, p95 CV=${fmtNumber(result.baseline.reproducibility.p95Cv, 4)}, throughput CV=${fmtNumber(result.baseline.reproducibility.throughputCv, 4)})`,
+    `- Baseline: ${result.baseline.path} (runs=${result.baseline.runCount}, p95 CV=${fmtNumber(result.baseline.reproducibility.p95Cv, 4)}, throughput CV=${fmtNumber(result.baseline.reproducibility.throughputCv, 4)}, checksum match=${fmtNumber(result.baseline.reproducibility.checksumMatchRate, 2)}%)`,
     '',
-    '| candidate | runs | overall | p95 ratio | throughput ratio | error rate(%) | error limit(%) | peak RSS ratio | cold start ratio | p95 CV | throughput CV |',
-    '|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|',
+    '| candidate | runs | overall | p95 ratio | throughput ratio | error rate(%) | error limit(%) | peak RSS ratio | cold start ratio | p95 CV | throughput CV | checksum match(%) |',
+    '|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|',
   ];
 
   for (const candidate of result.candidates) {
     lines.push(
-      `| ${candidate.name} | ${candidate.runCount} | ${candidate.overall.toUpperCase()} | ${fmtNumber(candidate.comparison.p95Ratio, 4)} | ${fmtNumber(candidate.comparison.throughputRatio, 4)} | ${fmtNumber(candidate.metrics.errorRate, 2)} | ${fmtNumber(candidate.comparison.errorRateLimit, 2)} | ${fmtNumber(candidate.comparison.peakRssRatio, 4)} | ${fmtNumber(candidate.comparison.coldStartRatio, 4)} | ${fmtNumber(candidate.reproducibility.p95Cv, 4)} | ${fmtNumber(candidate.reproducibility.throughputCv, 4)} |`,
+      `| ${candidate.name} | ${candidate.runCount} | ${candidate.overall.toUpperCase()} | ${fmtNumber(candidate.comparison.p95Ratio, 4)} | ${fmtNumber(candidate.comparison.throughputRatio, 4)} | ${fmtNumber(candidate.metrics.errorRate, 2)} | ${fmtNumber(candidate.comparison.errorRateLimit, 2)} | ${fmtNumber(candidate.comparison.peakRssRatio, 4)} | ${fmtNumber(candidate.comparison.coldStartRatio, 4)} | ${fmtNumber(candidate.reproducibility.p95Cv, 4)} | ${fmtNumber(candidate.reproducibility.throughputCv, 4)} | ${fmtNumber(candidate.reproducibility.checksumMatchRate, 2)} |`,
     );
   }
 
@@ -372,6 +436,7 @@ function renderMarkdown(result) {
     '- peak RSS ratio <= 1.15',
     '- p95 CV <= 0.05 (when runCount >= 2)',
     '- throughput CV <= 0.05 (when runCount >= 2)',
+    '- checksum match rate == 100%',
     '',
     '## Reference check',
     '- cold start ratio <= 1.10',
@@ -397,6 +462,7 @@ function main() {
       path: baseline.path,
       paths: baseline.paths,
       runCount: baseline.runCount,
+      checksums: baseline.checksums,
       metrics: baseline.metrics,
       throughputHz: baseline.throughputHz,
       taskCount: baseline.taskCount,
