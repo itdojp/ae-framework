@@ -195,10 +195,11 @@ function standardDeviation(values) {
     return 0;
   }
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  // Use sample standard deviation so low run counts do not underestimate CV.
   const variance = values.reduce((sum, value) => {
     const diff = value - mean;
     return sum + (diff * diff);
-  }, 0) / values.length;
+  }, 0) / (values.length - 1);
   return Math.sqrt(variance);
 }
 

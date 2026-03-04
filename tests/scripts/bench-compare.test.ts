@@ -379,6 +379,10 @@ describe.sequential('bench-compare script', () => {
       expect(payload.candidates[0]?.reproducibility.throughputCv).not.toBeNull();
       expect(payload.candidates[0]?.checks.throughputCv).toBe(false);
       expect(payload.candidates[0]?.overall).toBe('fail');
+
+      const markdown = readFileSync(outMdPath, 'utf8');
+      expect(markdown).toMatch(/\|\s*go\s*\|\s*2\s*\|\s*FAIL\s*\|/);
+      expect(markdown).toContain('throughput CV');
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
