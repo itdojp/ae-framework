@@ -366,6 +366,7 @@
     "artifacts:aggregate": "node scripts/adapters/aggregate-artifacts.mjs",
     "testing:repro:summary": "node scripts/ci/render-testing-repro-summary.mjs",
     "artifacts:validate": "node scripts/ci/validate-artifacts-ajv.mjs",
+    "reason-codes:validate": "node scripts/ci/validate-reason-codes.mjs",
     "progress:summary": "node scripts/progress/aggregate-progress.mjs",
     "lint:actions": "bash scripts/ci/actionlint.sh",
     "ci:lockfile:verify": "bash scripts/ci/check-lockfile-clean-after-install.sh",
