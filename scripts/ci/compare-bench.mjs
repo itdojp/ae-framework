@@ -1,6 +1,61 @@
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 function relDiff(a, b) { return Math.abs(a - b) / Math.max(a, b); }
+
+function printUsage() {
+  console.error('Usage: compare-bench.mjs <file1> <file2> [tolerance] [--out-json <path>] [--tolerance <value>]');
+}
+
+function parseArgs(argv) {
+  let outJsonPath = null;
+  let toleranceFromOption;
+  const positional = [];
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--help' || arg === '-h') {
+      printUsage();
+      process.exit(0);
+    }
+    if (arg === '--out-json') {
+      const next = argv[index + 1];
+      if (!next) {
+        throw new Error('--out-json requires a value');
+      }
+      outJsonPath = path.resolve(next);
+      index += 1;
+      continue;
+    }
+    if (arg === '--tolerance') {
+      const next = argv[index + 1];
+      if (!next) {
+        throw new Error('--tolerance requires a value');
+      }
+      toleranceFromOption = next;
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--')) {
+      throw new Error(`Unknown option: ${arg}`);
+    }
+    positional.push(arg);
+  }
+
+  if (positional.length < 2 || positional.length > 3) {
+    throw new Error('Usage: compare-bench.mjs <file1> <file2> [tolerance] [--out-json <path>] [--tolerance <value>]');
+  }
+  if (typeof toleranceFromOption === 'string' && positional.length === 3) {
+    throw new Error('Specify tolerance either as positional argument or --tolerance, not both');
+  }
+
+  return {
+    file1: positional[0],
+    file2: positional[1],
+    toleranceRaw: toleranceFromOption ?? positional[2],
+    outJsonPath,
+  };
+}
 
 function extractSummary(data, filePath) {
   // Handle array format
@@ -45,11 +100,7 @@ function validateSummaryItem(item, filePath, index) {
 }
 
 async function main() {
-  const [f1, f2, tolStr] = process.argv.slice(2);
-  
-  if (!f1 || !f2) {
-    throw new Error('Usage: compare-bench.mjs <file1> <file2> [tolerance]');
-  }
+  const { file1: f1, file2: f2, toleranceRaw: tolStr, outJsonPath } = parseArgs(process.argv.slice(2));
   
   // tol の決定: env > arg > default
   const tolFromEnv = process.env.BENCH_TOLERANCE ? Number(process.env.BENCH_TOLERANCE) : undefined;
@@ -92,7 +143,13 @@ async function main() {
     if (!pass) ok = false;
   }
   
-  console.log('[bench-compare]', JSON.stringify({ tol, tolSource, rows }, null, 2));
+  const payload = { ok, tol, tolSource, rows };
+  if (outJsonPath) {
+    await mkdir(path.dirname(outJsonPath), { recursive: true });
+    await writeFile(outJsonPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  }
+
+  console.log('[bench-compare]', JSON.stringify(payload, null, 2));
   process.exit(ok ? 0 : 1);
 }
 

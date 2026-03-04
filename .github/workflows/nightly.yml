@@ -47,10 +47,33 @@ jobs:
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' &&
         (github.event.inputs.mode == 'all' || github.event.inputs.mode == 'perf'))
-    uses: ./.github/workflows/ci-core.yml
-    with:
-      node-version: '22'
-      run-script: test:perf
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '22'
+      - name: Root layout guard (pre-install)
+        run: node scripts/ci/check-root-layout.mjs
+      - name: TODO/FIXME issue reference guard
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/check-todo-issue-links.mjs
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Perf tests
+        run: pnpm run test:perf
+      - name: Root generated-file guard (post-run)
+        if: always()
+        run: node scripts/ci/check-no-root-generated-files.mjs
+      - name: Cleanup root safe-remove targets
+        if: always()
+        run: pnpm -s run clean:root-safe
+      - name: Root layout snapshot (post-cleanup, warn-only)
+        if: always()
+        run: node scripts/ci/check-root-layout.mjs --mode=warn
 
   monitor:
     if: >-
@@ -65,7 +88,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm run build
       - name: Bin smoke check
@@ -74,7 +97,7 @@ jobs:
         run: node dist/src/cli/index.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/**"
       - name: Bench (run set)
         run: |
-          rm -f artifacts/bench.json artifacts/bench-ts-run*.json artifacts/bench-ts-runset.txt || true
+          rm -f artifacts/bench.json artifacts/bench-ts-run*.json artifacts/bench-ts-runset.txt artifacts/bench-ts-compare.json || true
           for i in 1 2; do
             AE_SEED=321 node dist/src/cli/index.js bench
             cp artifacts/bench.json "artifacts/bench-ts-run${i}.json"
@@ -89,7 +112,11 @@ jobs:
         run: |
           RUNSET="$(cat artifacts/bench-ts-runset.txt)"
           IFS=',' read -r BENCH_1 BENCH_2 _ <<< "${RUNSET}"
-          node scripts/ci/compare-bench.mjs "${BENCH_1}" "${BENCH_2}" 0.05
+          node scripts/ci/compare-bench.mjs \
+            "${BENCH_1}" \
+            "${BENCH_2}" \
+            0.05 \
+            --out-json artifacts/bench-ts-compare.json
       - name: Generate bench-compare report (report-only)
         run: |
           RUNSET="$(cat artifacts/bench-ts-runset.txt)"
@@ -107,10 +134,16 @@ jobs:
       - name: Replay smoke
         run: AE_RECORDER_MODE=replay node dist/src/cli/index.js agent:complete --prompt "Hello, ae!"
       - name: Upload artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: nightly-artifacts
-          path: artifacts/
+          path: |
+            artifacts/bench-ts-run*.json
+            artifacts/bench-ts-runset.txt
+            artifacts/bench-ts-compare.json
+            artifacts/bench-compare.json
+            artifacts/bench-compare.md
           retention-days: 14
       - name: Notify Slack on failure
         if: failure() && env.SLACK_WEBHOOK != null
