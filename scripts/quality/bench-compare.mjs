@@ -315,6 +315,7 @@ function aggregateBenchmarkRuns(reports) {
     path: reports[0]?.path || '',
     runCount: reports.length,
     taskCount: reports[0]?.taskCount || 0,
+    taskIdentities: [...(reports[0]?.taskIdentities || [])].sort(),
     checksums,
     metrics: {
       p95: round(median(p95Values), 4),
@@ -329,6 +330,45 @@ function aggregateBenchmarkRuns(reports) {
       checksumMatchRate: roundOrNull(checksumMatchRate(checksums), 2),
     },
   };
+}
+
+function describeRunInputs(value) {
+  const paths = Array.isArray(value?.paths)
+    ? value.paths.map((entry) => String(entry)).filter((entry) => entry.length > 0)
+    : [];
+  if (paths.length > 0) {
+    const runCount = Number.isInteger(value?.runCount) ? value.runCount : paths.length;
+    return `runs=${runCount}, paths=[${paths.join(', ')}]`;
+  }
+
+  const fallbackPath = String(value?.path || '(unknown)');
+  const runCount = Number.isInteger(value?.runCount) ? value.runCount : null;
+  if (runCount !== null && runCount > 1) {
+    return `runs=${runCount}, path=${fallbackPath}`;
+  }
+  return `path=${fallbackPath}`;
+}
+
+function assertComparableWithBaseline(candidate, baseline) {
+  const baselineTasks = Array.isArray(baseline?.taskIdentities) ? baseline.taskIdentities : [];
+  const candidateTasks = Array.isArray(candidate?.taskIdentities) ? candidate.taskIdentities : [];
+  const candidateName = String(candidate?.name || '(unknown)');
+  const baselineInput = describeRunInputs(baseline);
+  const candidateInput = describeRunInputs(candidate);
+
+  if (candidate.taskCount !== baseline.taskCount) {
+    throw new Error(
+      `incompatible summary task count between baseline and candidate "${candidateName}": expected ${baseline.taskCount} (${baselineInput}), got ${candidate.taskCount} (${candidateInput})`,
+    );
+  }
+
+  const sameTasks = candidateTasks.length === baselineTasks.length
+    && candidateTasks.every((task, index) => task === baselineTasks[index]);
+  if (!sameTasks) {
+    throw new Error(
+      `incompatible summary task identities between baseline and candidate "${candidateName}": expected [${baselineTasks.join(', ')}] (${baselineInput}), got [${candidateTasks.join(', ')}] (${candidateInput})`,
+    );
+  }
 }
 
 function roundOrNull(value, digits = 4) {
@@ -354,6 +394,8 @@ function lowerBoundCheck(value, threshold) {
 }
 
 function evaluateCandidate(candidate, baseline) {
+  assertComparableWithBaseline(candidate, baseline);
+
   const p95Ratio = ratio(candidate.metrics.p95, baseline.metrics.p95);
   const throughputRatio = ratio(candidate.throughputHz, baseline.throughputHz);
   const coldStartRatio = ratio(candidate.metrics.coldStartMs, baseline.metrics.coldStartMs);
