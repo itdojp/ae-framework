@@ -122,7 +122,7 @@ describe.sequential('bench-compare script', () => {
 
       const payload = JSON.parse(readFileSync(outJsonPath, 'utf8')) as {
         schemaVersion: string;
-        candidates: Array<{ name: string; overall: string; checks: { throughput: boolean } }>;
+        candidates: Array<{ name: string; overall: string; checks: { throughput: boolean; checksum: boolean }; reproducibility: { checksumMatchRate: number | null } }>;
       };
       const markdown = readFileSync(outMdPath, 'utf8');
 
@@ -131,6 +131,8 @@ describe.sequential('bench-compare script', () => {
       expect(payload.candidates.find((candidate) => candidate.name === 'go')?.overall).toBe('pass');
       expect(payload.candidates.find((candidate) => candidate.name === 'rust')?.overall).toBe('fail');
       expect(payload.candidates.find((candidate) => candidate.name === 'go')?.checks.throughput).toBe(true);
+      expect(payload.candidates.find((candidate) => candidate.name === 'go')?.checks.checksum).toBe(true);
+      expect(payload.candidates.find((candidate) => candidate.name === 'go')?.reproducibility.checksumMatchRate).toBe(100);
       expect(markdown).toContain('# Bench Comparison Report');
       expect(markdown).toContain('| go | 1 | PASS |');
       expect(markdown).toContain('| rust | 1 | FAIL |');
@@ -362,27 +364,94 @@ describe.sequential('bench-compare script', () => {
 
       expect(result.status).toBe(1);
       const payload = JSON.parse(readFileSync(outJsonPath, 'utf8')) as {
-        baseline: { runCount: number; reproducibility: { p95Cv: number | null } };
+        baseline: { runCount: number; reproducibility: { p95Cv: number | null; checksumMatchRate: number | null } };
         candidates: Array<{
           name: string;
           runCount: number;
-          reproducibility: { throughputCv: number | null };
-          checks: { throughputCv: boolean };
+          reproducibility: { throughputCv: number | null; checksumMatchRate: number | null };
+          checks: { throughputCv: boolean; checksum: boolean };
           overall: string;
         }>;
       };
 
       expect(payload.baseline.runCount).toBe(2);
       expect(payload.baseline.reproducibility.p95Cv).not.toBeNull();
+      expect(payload.baseline.reproducibility.checksumMatchRate).toBe(50);
       expect(payload.candidates[0]?.name).toBe('go');
       expect(payload.candidates[0]?.runCount).toBe(2);
       expect(payload.candidates[0]?.reproducibility.throughputCv).not.toBeNull();
+      expect(payload.candidates[0]?.reproducibility.checksumMatchRate).toBe(50);
       expect(payload.candidates[0]?.checks.throughputCv).toBe(false);
+      expect(payload.candidates[0]?.checks.checksum).toBe(false);
       expect(payload.candidates[0]?.overall).toBe('fail');
 
       const markdown = readFileSync(outMdPath, 'utf8');
       expect(markdown).toMatch(/\|\s*go\s*\|\s*2\s*\|\s*FAIL\s*\|/);
       expect(markdown).toContain('throughput CV');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps checksum match rate stable when only volatile metadata differs', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'ae-bench-compare-checksum-stable-'));
+
+    try {
+      const baseline1Path = join(tempDir, 'baseline-1.json');
+      const baseline2Path = join(tempDir, 'baseline-2.json');
+      const candidatePath = join(tempDir, 'candidate.json');
+      const outJsonPath = join(tempDir, 'bench-compare.json');
+      const outMdPath = join(tempDir, 'bench-compare.md');
+
+      const baseline1 = createBenchReport({
+        p95: 100,
+        errorRate: 0.1,
+        coldStartMs: 50,
+        peakRssMb: 100,
+        hz: 1000,
+      });
+      const baseline2 = createBenchReport({
+        p95: 100,
+        errorRate: 0.1,
+        coldStartMs: 50,
+        peakRssMb: 100,
+        hz: 1000,
+      });
+      baseline1.meta.date = '2026-03-04T00:00:00.000Z';
+      baseline2.meta.date = '2026-03-05T00:00:00.000Z';
+      const candidate = createBenchReport({
+        p95: 80,
+        errorRate: 0.2,
+        coldStartMs: 45,
+        peakRssMb: 105,
+        hz: 1300,
+      });
+
+      writeFileSync(baseline1Path, JSON.stringify(baseline1), 'utf8');
+      writeFileSync(baseline2Path, JSON.stringify(baseline2), 'utf8');
+      writeFileSync(candidatePath, JSON.stringify(candidate), 'utf8');
+
+      const result = spawnSync(
+        'node',
+        [
+          compareScript,
+          '--baseline',
+          `${baseline1Path},${baseline2Path}`,
+          '--candidate',
+          `go=${candidatePath}`,
+          '--out-json',
+          outJsonPath,
+          '--out-md',
+          outMdPath,
+        ],
+        { encoding: 'utf8', timeout: 120_000 },
+      );
+
+      expect(result.status).toBe(0);
+      const payload = JSON.parse(readFileSync(outJsonPath, 'utf8')) as {
+        baseline: { reproducibility: { checksumMatchRate: number | null } };
+      };
+      expect(payload.baseline.reproducibility.checksumMatchRate).toBe(100);
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
