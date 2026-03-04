@@ -1,11 +1,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import yaml from 'js-yaml';
 
 const readWorkflow = (name: string) => fs.readFileSync(
   path.resolve(process.cwd(), '.github/workflows', name),
   'utf8',
 );
+
+type WorkflowDocument = {
+  on?: {
+    workflow_run?: {
+      workflows?: string[];
+    };
+  };
+};
+
+const parseWorkflow = (name: string) => yaml.load(readWorkflow(name)) as WorkflowDocument;
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -60,5 +71,11 @@ describe('workflow permission boundaries', () => {
     expect(workflow).toContain('GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}');
     expect(workflow).toContain('PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number || \'\' }}');
     expect(workflow).toContain('AI_REVIEW_ACTORS');
+  });
+
+  it('policy-gate re-evaluates on Spec Generate & Model Tests workflow completion', () => {
+    const workflow = parseWorkflow('policy-gate.yml');
+    expect(workflow.on?.workflow_run).toBeDefined();
+    expect(workflow.on?.workflow_run?.workflows).toContain('Spec Generate & Model Tests');
   });
 });
