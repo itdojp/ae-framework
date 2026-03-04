@@ -37,6 +37,7 @@ Issue comment の本文は次の要素で構成する。
 - marker: `<!-- AE-AUTOMATION-ALERT v1 -->`
 - Triggered conditions（code/severity/value/threshold）
 - Cause (initial): top failure reason
+- Cause (initial): top failure reason code（`reasonCode`）
 - Impact: 運用影響の共通文言
 - Primary actions: code別の一次対応
 - References: sample run URL / runbook / observability docs

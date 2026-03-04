@@ -1,0 +1,23 @@
+# Reason Codes（reasonCode）Registry
+
+本リポジトリでは、失敗要因の安定した分類キーとして `reasonCode` を導入する。
+
+- 目的: 週次集計（SLO/MTTR運用）やアラートで、`reason`（自由記述）に依存せず集計・分類できるようにする。
+- SSOT（辞書）: `policy/reason-codes.yml`
+
+## 1. 仕様
+
+- フィールド名: `reasonCode`（camelCase）
+- フォーマット: 小文字 + ドット区切り（例: `policy.required_labels_missing`）
+- 非推奨: 動的値（件数/PR番号/URLなど）を埋め込むコード
+
+## 2. 運用
+
+- `reasonCode` は「機械可読の分類キー」、`reason` は「人間向け補足」として併用する。
+- 新規コード追加時は `policy/reason-codes.yml` に追記し、対応する emit/集計のテストを更新する。
+
+## 3. 参照
+
+- Automation report（共通フォーマット）: `docs/ci/automation-observability.md`
+- 週次集計（Top理由）: `scripts/ci/automation-observability-weekly.mjs`
+
