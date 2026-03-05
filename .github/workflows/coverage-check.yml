@@ -86,7 +86,7 @@ jobs:
           node-version: '20'
       - name: Install deps (pnpm)
         # Required lane policy: detect lockfile drift immediately (no fallback install).
-        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=false
       - name: Run coverage
         env:
           COVERAGE_STRICT: ${{ needs.gate.outputs.strict }}

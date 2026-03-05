@@ -18,7 +18,7 @@ jobs:
           node-version: '20'
       - name: Install dependencies
         # Required lane policy: detect lockfile drift immediately (no fallback install).
-        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=false
       - name: Run KvOnce TLC (non-blocking)
         run: |
           pnpm run spec:kv-once:tlc || true

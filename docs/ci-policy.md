@@ -26,7 +26,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Lint baseline enforcement via `node scripts/quality/check-lint-summary.mjs`
   - TDD smoke validation via `node scripts/quality/tdd-smoke-check.mjs`
 - Copilot Review Gate（Copilotレビューの存在と未解決スレッドなし）
-- Lockfile reproducibility: required PR gates and their reusable workflow lane use `pnpm install --frozen-lockfile` (no `--no-frozen-lockfile` fallback)
+- Lockfile reproducibility: required PR gates and any reusable workflows they invoke use `pnpm install --frozen-lockfile` (no `--no-frozen-lockfile` fallback)
 - Optionally enable validate-artifacts-ajv / coverage-check as required
 
 ### Opt-in Labels

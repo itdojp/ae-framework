@@ -27,7 +27,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/ci/check-todo-issue-links.mjs
       # Required lane policy: detect lockfile drift immediately (no fallback install).
-      - run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+      - run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=false
       - run: pnpm run ${{ inputs.run-script }}
       - name: Root generated-file guard (post-run)
         if: always()

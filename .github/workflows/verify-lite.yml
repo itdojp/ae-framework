@@ -87,7 +87,7 @@ jobs:
         env:
           NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
           NPM_CONFIG_GLOBALCONFIG: /dev/null
-        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=false
 
       - name: Run Codex response schema checks (required)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}

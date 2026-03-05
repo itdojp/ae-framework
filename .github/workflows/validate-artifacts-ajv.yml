@@ -40,7 +40,7 @@ jobs:
         with: { node-version: '20' }
       - name: Install deps (pnpm)
         # Required lane policy: detect lockfile drift immediately (no fallback install).
-        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=false
       - name: Bootstrap trace/verify-lite artifacts (strict only)
         if: needs.gate.outputs.strict == 'true'
         run: |
