@@ -46,6 +46,8 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
+        # Exception (manual quick-check): fallback allows ad-hoc mutation probes without blocking on lockfile drift.
+        # Review condition: remove fallback if this workflow becomes PR-gated.
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Prepare mutation arguments

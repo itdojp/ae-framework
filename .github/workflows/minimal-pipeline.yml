@@ -35,6 +35,8 @@ jobs:
             ${{ runner.os }}-pnpm-
       - name: Install dependencies
         run: |
+          # Exception (manual demo lane): keep fallback to reduce setup friction for ad-hoc verification runs.
+          # Review condition: remove fallback if this lane is upgraded to a required PR gate.
           pnpm fetch --prefer-offline
           pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
       - name: Run CodeX quickstart (skip quality, run formal stub)
