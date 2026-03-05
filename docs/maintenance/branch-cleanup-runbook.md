@@ -1,6 +1,7 @@
 # Branch Cleanup Runbook
 
 This runbook defines a safe, repeatable process for branch cleanup.
+For stale worktree cleanup, use `docs/maintenance/worktree-cleanup-runbook.md`.
 
 ## Scope
 

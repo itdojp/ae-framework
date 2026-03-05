@@ -32,6 +32,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Repository layout policy: `maintenance/repo-layout-policy.md`
 - Code improvement plan: `maintenance/code-improvement-plan.md`
 - Branch cleanup runbook: `maintenance/branch-cleanup-runbook.md`
+- Worktree cleanup runbook: `maintenance/worktree-cleanup-runbook.md`
 - Branch cleanup report (2026-02-28): `maintenance/branch-cleanup-report-2026-02-28.md`
 - Public types sync runbook: `maintenance/public-types-sync-runbook.md`
 - TODO triage runbook: `maintenance/todo-triage-runbook.md`
@@ -289,6 +290,7 @@ Claude CodeやMCPとの統合
 ### 🛠️ [maintenance/](./maintenance/) - リポジトリ整理・改善計画
 - [repo-layout-policy.md](./maintenance/repo-layout-policy.md) - ルート配置ルールと生成物配置方針
 - [code-improvement-plan.md](./maintenance/code-improvement-plan.md) - 型安全性/分割/テスト改善の実行計画
+- [worktree-cleanup-runbook.md](./maintenance/worktree-cleanup-runbook.md) - マージ済み作業worktreeの安全な削除手順
 - [phase0-inventory-2026-02-17.md](./maintenance/phase0-inventory-2026-02-17.md) - Phase 0棚卸しスナップショット
 - [workflow-inventory-2026-02-17.md](./maintenance/workflow-inventory-2026-02-17.md) - Phase 3向けCI workflow棚卸し（目的/入力/重複/必須任意）
 
