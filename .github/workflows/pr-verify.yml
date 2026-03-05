@@ -81,9 +81,13 @@ jobs:
         run: node scripts/ci/check-root-layout.mjs
 
       - name: Install
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
         run: |
           pnpm fetch --prefer-offline
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile --prefer-offline
+          # Keep required PR verify deterministic; lockfile drift should fail fast.
+          pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=true
       
       - name: Build
         run: pnpm run build

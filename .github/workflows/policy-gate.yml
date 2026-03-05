@@ -74,7 +74,11 @@ jobs:
           node scripts/ci/lib/automation-config.mjs --format summary >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        # policy-gate is merge-blocking; keep install path deterministic.
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Resolve PR number
         id: pr
