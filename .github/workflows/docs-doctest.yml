@@ -54,7 +54,8 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        # Required lane policy: detect lockfile drift immediately (no fallback install).
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
       - name: Validate docs-doctest policy sync
         run: node scripts/ci/check-docs-doctest-policy-sync.mjs
       - name: Check documentation consistency
@@ -109,7 +110,8 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        # Keep the same lockfile policy as PR lane to avoid drift between full/scheduled and PR checks.
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
       - name: Validate docs-doctest policy sync
         run: node scripts/ci/check-docs-doctest-policy-sync.mjs
       - name: Run full docs doctest
