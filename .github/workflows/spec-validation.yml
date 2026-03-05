@@ -73,7 +73,8 @@ jobs:
           node-version: '20'
       
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        # Required lane policy: detect lockfile drift immediately (no fallback install).
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
       
       - name: Build spec compiler
         run: pnpm run build

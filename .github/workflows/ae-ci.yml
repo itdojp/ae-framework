@@ -57,7 +57,8 @@ jobs:
         with:
           node-version: '20'
       - name: Install
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        # Required lane policy: detect lockfile drift immediately (no fallback install).
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
       - name: Build
         run: pnpm run build
       - name: Bin smoke check
