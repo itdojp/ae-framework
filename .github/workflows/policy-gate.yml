@@ -78,7 +78,7 @@ jobs:
         env:
           NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
           NPM_CONFIG_GLOBALCONFIG: /dev/null
-        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=false
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Resolve PR number
         id: pr

@@ -87,7 +87,7 @@ jobs:
         run: |
           pnpm fetch --prefer-offline
           # Keep required PR verify deterministic; lockfile drift should fail fast.
-          pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=false
+          pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=true
       
       - name: Build
         run: pnpm run build

@@ -74,7 +74,7 @@ jobs:
       
       - name: Install dependencies
         # Required lane policy: detect lockfile drift immediately (no fallback install).
-        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=false
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
       
       - name: Build spec compiler
         run: pnpm run build

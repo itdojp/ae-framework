@@ -49,7 +49,7 @@ jobs:
       - name: Install dependencies
         run: |
           # Required lane policy: detect lockfile drift immediately (no fallback install).
-          pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=false
+          pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
           
       - name: Build ae-framework
         run: |
