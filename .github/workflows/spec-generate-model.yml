@@ -48,9 +48,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
       - name: Install dependencies
+        env:
+          SPEC_MODEL_STRICT: ${{ github.event_name == 'pull_request' }}
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
         run: |
           pnpm fetch --prefer-offline
-          if pnpm install --frozen-lockfile; then
+          if [ "${SPEC_MODEL_STRICT}" = "true" ]; then
+            # PR required lane is merge-blocking; keep install path deterministic for artifact generation.
+            pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=true
+          elif pnpm install --frozen-lockfile; then
             echo "pnpm install succeeded with --frozen-lockfile"
           else
             # Exception: automation-generated diffs can arrive before `pnpm-lock.yaml` refresh; review when upstream lockfile updates are mandatory.
@@ -156,9 +163,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
       - name: Install dependencies
+        env:
+          SPEC_MODEL_STRICT: ${{ github.event_name == 'pull_request' }}
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
         run: |
           pnpm fetch --prefer-offline
-          if pnpm install --frozen-lockfile; then
+          if [ "${SPEC_MODEL_STRICT}" = "true" ]; then
+            # PR required lane is merge-blocking; keep install path deterministic for model-based tests.
+            pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=true
+          elif pnpm install --frozen-lockfile; then
             echo "pnpm install succeeded with --frozen-lockfile"
           else
             # Exception: automation-generated diffs can arrive before `pnpm-lock.yaml` refresh; review when upstream lockfile updates are mandatory.
