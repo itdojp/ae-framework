@@ -87,7 +87,9 @@ gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
 ### 7.4 `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` / frozen-lockfile fail
 1. `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` は lockfile に記録された設定と現在の install 設定の不一致を示す。lane 判定は `docs/ci-policy.md` を source of truth とし、`gh pr checks <PR番号> --required` に出る job は `required-lane`、`workflow_dispatch` 専用は `manual-ops`、それ以外で明示的に非必須化されたものだけを `optional-pr` と扱う
 2. `required-lane` では `--no-frozen-lockfile` に切り替えず、ローカルで `pnpm install` を実行して `pnpm-lock.yaml` を更新する
-3. 差分を commit / push したら、push で生成された最新 SHA の `pull_request` run を確認する。`gh run rerun <runId> --failed` は push 後に新 run が生成されない手動系 workflow、または最新 SHA に対する failed run の再試行時だけ使う
+3. 差分を commit / push したら、push で生成された最新 SHA の `pull_request` run を確認する
+   - `gh run list --workflow "<workflow名>" --branch <head-branch> --limit 20`
+   - `gh run rerun <runId> --failed` は push 後に新 run が生成されない手動系 workflow、または最新 SHA に対する failed run の再試行時だけ使う
 4. `optional-pr` / `manual-ops` の fallback は一時運用。反復する場合も lockfile 更新で収束させる
 
 ### 7.5 ラベル起因の `policy-gate` fail

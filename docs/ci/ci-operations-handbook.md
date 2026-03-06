@@ -27,8 +27,9 @@
    - lockfile 不整合（`ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` / `pnpm install --frozen-lockfile` fail）
    - 実装不整合（workflow/script/doc drift）
    - 一時障害（429、network、runner）
-3. 修正後、失敗ジョブのみ再実行する  
-   `gh run rerun <runId> --failed`
+3. 修正後、対象 SHA を確認して再評価する  
+   - 新しい commit を push した場合は、その push で生成された run を確認する
+   - 同一 SHA の失敗ジョブだけを再試行したい場合は `gh run rerun <runId> --failed`
 
 ## 3. 代表的な運用ケース
 
@@ -50,7 +51,9 @@
 
 - lane 判定は `docs/ci-policy.md` の Lockfile reproducibility を source of truth とし、`gh pr checks <PR番号> --required` に出る job は `required-lane`、`workflow_dispatch` 専用は `manual-ops`、それ以外で明示的に非必須化されたものだけを `optional-pr` と扱う
 - `required-lane` は `pnpm install` で `pnpm-lock.yaml` を更新し、差分を commit / push する
-- PR の lockfile 修正後は新しい `pull_request` run が自動生成されるため、その最新 run を確認する。`gh run rerun <runId> --failed` は push 後に新 run が作られない手動系 workflow や、最新 SHA に対する failed run の再試行時だけ使う
+- PR の lockfile 修正後は新しい `pull_request` run が自動生成されるため、その最新 run を確認する
+  - `gh run list --branch <head-branch> --limit 20`
+- `gh run rerun <runId> --failed` は push 後に新 run が作られない手動系 workflow や、最新 SHA に対する failed run の再試行時だけ使う
 - `optional-pr` / `manual-ops` は例外 lane（`optional-pr`: 明示的に非必須化された PR lane、`manual-ops`: 手動オペレーション専用 lane）。fallback 実装があっても標準対応は同じく lockfile 更新を優先する
 
 ### 3.4 429 / secondary rate limit
