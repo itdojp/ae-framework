@@ -11,6 +11,7 @@
 - Formal Methods: `docs/agents/formal.md`
 - Context Pack: `docs/agents/context-pack.md`
 - Security: `docs/agents/security.md`
+- Multi-agent Safety: `docs/agents/multi-agent-safety.md`
 
 ## 主要ドメインと一次情報
 
@@ -26,12 +27,14 @@
 - Slash Commands実装: `.github/workflows/agent-commands.yml`
 - Slash Commands catalog（生成）: `docs/agents/commands.md`
 - Workflow責務整理: `docs/ci/workflow-role-matrix.md`
+- Subagent専用worktree運用: `docs/maintenance/subagent-worktree-runbook.md`
 
 ## 利用順
 
 1. `AGENTS.md` の Decision Table で作業タイプを決める
-2. この索引から一次情報とrunbookを開く
-3. 実行結果を PR コメントと artifacts に残す
+2. subagent を使う場合は `docs/agents/multi-agent-safety.md` と `docs/maintenance/subagent-worktree-runbook.md` を先に確認する
+3. この索引から一次情報とrunbookを開く
+4. 実行結果を PR コメントと artifacts に残す
 
 ## 関連Issue
 
