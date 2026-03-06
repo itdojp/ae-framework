@@ -31,6 +31,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 permissions: read-all
+# Lockfile drift should fail quality gates instead of mutating deps in CI.
 jobs:
   integration:
     uses: ./.github/workflows/ci-core.yml
@@ -60,7 +61,7 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
-      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
       - name: Run DoD composite gate
         run: pnpm run quality:run -- --env=testing --gates=dod --sequential
       - name: Upload quality report
@@ -85,7 +86,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install deps
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
       - name: Run type-coverage
         id: typecov
         run: |
