@@ -94,7 +94,15 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        env:
+          CONTEXT_PACK_STRICT: ${{ needs.gate.outputs.strict }}
+        run: |
+          if [ "${CONTEXT_PACK_STRICT}" = "true" ]; then
+            # Blocking mode must fail fast on lockfile drift.
+            pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+          else
+            pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          fi
       - name: Run Context Pack dependency boundary checks
         id: context_pack_deps
         continue-on-error: true
