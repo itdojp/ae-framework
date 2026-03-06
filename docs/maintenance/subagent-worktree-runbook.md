@@ -32,7 +32,7 @@
 
 ### 2. 専用 worktree を作成する
 
-```bash
+```text
 git fetch <base-remote> <base-branch> --quiet
 git worktree add ../ae-framework-<topic>-<agent>-wt -b wip/<topic>-<agent> <base-ref>
 ```
@@ -42,7 +42,7 @@ git worktree add ../ae-framework-<topic>-<agent>-wt -b wip/<topic>-<agent> <base
 
 確認:
 
-```bash
+```text
 git -C ../ae-framework-<topic>-<agent>-wt status --short --branch
 ```
 
@@ -66,7 +66,7 @@ git -C ../ae-framework-<topic>-<agent>-wt status --short --branch
 
 ### 4. subagent 完了後に検証する
 
-```bash
+```text
 git -C ../ae-framework-<topic>-<agent>-wt status --short
 git -C ../ae-framework-<topic>-<agent>-wt diff --stat
 git -C ../ae-framework-<topic>-<agent>-wt log -1 --decorate
@@ -74,7 +74,7 @@ git -C ../ae-framework-<topic>-<agent>-wt log -1 --decorate
 
 必要に応じて:
 
-```bash
+```text
 git -C ../ae-framework-<topic>-<agent>-wt diff
 git -C ../ae-framework-<topic>-<agent>-wt reflog -5
 ```
@@ -93,7 +93,7 @@ git -C ../ae-framework-<topic>-<agent>-wt reflog -5
 
 統合後に不要になった worktree は回収します。
 
-```bash
+```text
 git worktree remove ../ae-framework-<topic>-<agent>-wt
 git branch -D wip/<topic>-<agent>
 ```
@@ -105,7 +105,7 @@ stale worktree 一括清掃は `docs/maintenance/worktree-cleanup-runbook.md` �
 
 ### 想定外 commit が存在する
 
-```bash
+```text
 git -C ../ae-framework-<topic>-<agent>-wt log --oneline --decorate -5
 git -C ../ae-framework-<topic>-<agent>-wt show --stat --summary <commit>
 ```
