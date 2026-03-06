@@ -48,9 +48,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
       - name: Install dependencies
+        env:
+          TRACE_STRICT: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-trace') }}
         run: |
           pnpm fetch --prefer-offline
-          if pnpm install --frozen-lockfile; then
+          if [ "${TRACE_STRICT}" = "true" ]; then
+            # Gate-bound trace runs must fail fast on lockfile drift.
+            pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=true
+          elif pnpm install --frozen-lockfile; then
             echo "pnpm install succeeded with --frozen-lockfile"
           else
             echo "pnpm install --frozen-lockfile failed, falling back to --no-frozen-lockfile"
