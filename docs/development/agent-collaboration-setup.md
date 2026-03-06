@@ -2,6 +2,10 @@
 
 本ドキュメントは、複数エージェント（PM/設計/実装）がGitHub上のシグナルのみで、計画→実装→レビュー→マージ→レポートまで自律連携するためのセットアップ手順です。前提として、各エージェントは同一PC（WSL上のUbuntu）で別ワークスペースとして稼働します。
 
+ローカルで subagent を並行稼働させる場合の安全運用は、本書ではなく
+`docs/agents/multi-agent-safety.md` と
+`docs/maintenance/subagent-worktree-runbook.md` を一次情報とします。
+
 ## 前提
 - リポジトリ管理者権限（Settings/Actions/Branch protection）
 - gh CLI, git, Node.js/pnpm

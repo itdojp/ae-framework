@@ -2,6 +2,10 @@
 
 This runbook defines a safe process to remove stale local worktrees that are already merged.
 
+Related:
+
+- Subagent isolation and lifecycle: `docs/maintenance/subagent-worktree-runbook.md`
+
 ## Scope
 
 - Target repository: `ae-framework`
@@ -64,3 +68,4 @@ node scripts/maintenance/worktree-cleanup.mjs --base origin/main --max 100 --pru
 - [ ] Apply run executed
 - [ ] Failed removals reviewed (dirty/locked/missing branch)
 - [ ] Cleanup summary posted to issue/PR
+- [ ] Active subagent worktrees excluded or already integrated

@@ -15,6 +15,8 @@
 | Slash Commands 実装 | `.github/workflows/agent-commands.yml` | `AGENTS.md`, `docs/agents/README.md` | 受理コマンド、付与ラベル、dispatch実装 |
 | Workflow権限境界 | `docs/ci/automation-permission-boundaries.md` | `AGENTS.md` Progressive Disclosure | `workflow_dispatch` / `issue_comment` の境界 |
 | PR自動化運用 | `docs/ci/pr-automation.md` | `AGENTS.md` Decision Table | review gate / auto-fix / auto-merge の運用 |
+| Multi-agent安全運用 | `docs/agents/multi-agent-safety.md` | `AGENTS.md`, `docs/agents/README.md` | subagent 権限、担当境界、完了後確認 |
+| 専用worktreeライフサイクル | `docs/maintenance/subagent-worktree-runbook.md` | `docs/agents/multi-agent-safety.md` | worktree 作成、隔離、統合、回収 |
 
 ## 記述ルール（ドリフト防止）
 
@@ -22,9 +24,9 @@
 2. `docs/agents/*` は一次情報への導線のみを持ち、ポリシー本文を複製しない。  
 3. 実装値（コマンド名、ラベル名、required checks）は一次情報ファイルを更新し、二次情報はリンクのみ更新する。  
 4. CI境界の詳細は `docs/ci/ci-doc-boundary-matrix.md` を参照し、相互リンクを維持する。  
+5. subagent 安全運用の詳細手順は `docs/agents/multi-agent-safety.md` と `docs/maintenance/subagent-worktree-runbook.md` に集約し、`AGENTS.md` には不変条件のみ記載する。  
 
 ## 変更時チェック
 
 - `pnpm -s run check:doc-consistency`
 - 必要に応じて `pnpm -s run check:ci-doc-index-consistency`
-
