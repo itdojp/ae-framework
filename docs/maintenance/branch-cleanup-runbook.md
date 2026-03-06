@@ -8,6 +8,8 @@ For stale worktree cleanup, use `docs/maintenance/worktree-cleanup-runbook.md`.
 - Target repository: `ae-framework`
 - Goal: reduce stale branch noise without deleting protected or unmerged work
 - Safe default: **merged branches only**
+- `scripts/maintenance/branch-cleanup.mjs` が自動削除するのは、Git ancestry 上 `base` に取り込まれた branch のみ
+- GitHub 上で MERGED 済みでも ancestry で拾えない branch は、inventory では **manual review** として報告し、自動削除しない
 
 ## Protected branch rules
 
@@ -28,6 +30,14 @@ Outputs:
 
 - `tmp/maintenance/branch-inventory.json`
 - `tmp/maintenance/branch-inventory.md`
+
+Inventory では次も併せて確認する:
+
+- `localPrMergedManualReview`: GitHub 上では MERGED 済みだが ancestry では safe-delete 扱いにしない local branch
+- `linkedWorktreeBranches`: linked worktree で使用中のため cleanup 対象から除外する branch
+- `detachedWorktreesOnBaseClean`: `HEAD` が base 上にあり clean な detached worktree
+
+`localPrMergedManualReview` は `gh` CLI で merged PR 情報を取得できる環境でのみ出力される。
 
 ### 2) Dry-run cleanup candidates
 
@@ -50,6 +60,7 @@ Notes:
 - Uses `git branch -d` (safe delete; refuses unmerged branches)
 - Batch size default: 200 branches
 - Repeat in batches until target count is reached
+- `localPrMergedManualReview` に出た branch は、このコマンドでは削除されない
 
 ## Remote branch cleanup policy
 
@@ -69,6 +80,7 @@ node scripts/maintenance/branch-cleanup.mjs --scope remote --max 100 --apply
 ## Operational checklist
 
 - [ ] Inventory generated and reviewed
+- [ ] `localPrMergedManualReview` / `linkedWorktreeBranches` / `detachedWorktreesOnBaseClean` を確認した
 - [ ] Dry-run output archived
 - [ ] Safe local cleanup executed in batches
 - [ ] Remote cleanup approved and executed (if needed)
