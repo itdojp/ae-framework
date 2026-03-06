@@ -8,11 +8,13 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 
 ## 2) Classify the failure
 - **Lint/Type**: check `verify-lite` summary
+- **Lockfile**: check `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` or `pnpm install --frozen-lockfile` failure, then compare `pnpm-lock.yaml` with current pnpm install settings
 - **Tests**: use `docs/testing/flaky-test-triage.md`
 - **Artifacts/Codegen**: confirm `generate-artifacts` output
 - **Security**: check label gating (`run-security`) and fork limitations
 
 ## 3) Reproduce locally (minimal)
+- `pnpm install --frozen-lockfile`
 - `pnpm run verify:lite`
 - `pnpm run test:ci:lite`
 
@@ -51,7 +53,8 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 | `Copilot Review Gate / gate` fail | 未解決レビューthread数、失敗runのconclusion | thread解消 → `gh run rerun <runId> --failed` |
 | `PR Self-Heal` が `blocked` | PRコメントの reason、`status:blocked` ラベル | 競合解消/失敗チェック修復後に手動rerun |
 | `auto-merge` が有効化されない | `AE_AUTO_MERGE*`、required checks、reviewDecision | `docs/ci/auto-merge.md` に沿って条件修正 |
-| `policy-gate` fail（`run-trace`） | `run-trace` ラベル有無、`trace-conformance` / `KvOnce Trace Validation` の conclusion | `run-trace` を付与し `Spec Generate & Model Tests` を PR文脈で再実行 |
+| `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` / frozen-lockfile fail | install step、`pnpm-lock.yaml`、`.npmrc` / workspace config の差分 | lane を required-lane / `optional-pr` / `manual-ops` に分類 → required-lane は lockfile 更新を commit / push → 最新 SHA の run を確認 |
+| `policy-gate` fail（`run-trace` / `enforce-context-pack`） | required label 有無、`trace-conformance` / `KvOnce Trace Validation` / `context-pack-e2e` の conclusion | ラベル付与後に対応 workflow を PR 文脈で rerun し、`policy-gate` を再評価 |
 | 429 / secondary rate limit | `gh-exec` retryログ、失敗タイミング | rerun優先、必要なら `AE_GH_THROTTLE_MS` と `AE_GH_RETRY_*` を調整 |
 | unified exec process 上限警告 | 長時間ジョブ数、同時セッション数 | 長時間セッション停止・既存セッション再利用・並列度を抑制 |
 
@@ -81,13 +84,24 @@ gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
   1. PRブランチに空コミットをpushして `pull_request` イベントを再発火
   2. 必要なら `gate` / `verify-lite` を rerun
 
-### 7.4 `run-trace` ゲートの解除（`policy-gate`）
-1. `run-trace` ラベルを付与（required label を満たす）
+### 7.4 `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` / frozen-lockfile fail
+1. `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` は lockfile に記録された設定と現在の install 設定の不一致を示す。lane 判定は `docs/ci-policy.md` を source of truth とし、`gh pr checks <PR番号> --required` に出る job は `required-lane`、`workflow_dispatch` 専用は `manual-ops`、それ以外で明示的に非必須化されたものだけを `optional-pr` と扱う
+2. `required-lane` では `--no-frozen-lockfile` に切り替えず、ローカルで `pnpm install` を実行して `pnpm-lock.yaml` を更新する
+3. 差分を commit / push したら、push で生成された最新 SHA の `pull_request` run を確認する
+   - `gh run list --workflow "<workflow名>" --branch <head-branch> --limit 20`
+   - `gh run rerun <runId> --failed` は push 後に新 run が生成されない手動系 workflow、または最新 SHA に対する failed run の再試行時だけ使う
+4. `optional-pr` / `manual-ops` の fallback は一時運用。反復する場合も lockfile 更新で収束させる
+
+### 7.5 ラベル起因の `policy-gate` fail
+1. `run-trace` または `enforce-context-pack` が required label か `policy/risk-policy.yml` で確認する
+2. 必要ラベルを付与する
    - `gh pr edit <PR番号> --add-label run-trace`
-2. PR文脈の trace check を再実行
-   - `gh run list --workflow "Spec Generate & Model Tests" --branch <head-branch> --limit 20`
+   - `gh pr edit <PR番号> --add-label enforce-context-pack`
+3. 対応 workflow を PR 文脈で再実行する
+   - trace: `gh run list --workflow "Spec Generate & Model Tests" --branch <head-branch> --limit 20`
+   - context pack: `gh run list --workflow "Context Pack Quality Gate" --branch <head-branch> --limit 20`
    - `gh run rerun <runId> --failed`
-3. `trace-conformance`（fork含む）または `KvOnce Trace Validation`（non-fork）が `success` になったことを確認し、`policy-gate` を再評価
+4. `trace-conformance` / `KvOnce Trace Validation` / `context-pack-e2e` が `success` になったことを確認し、`policy-gate` を再評価する
    - `gh run list --workflow "Policy Gate" --branch <head-branch> --limit 20`
 
 ## 8) 失敗時の切り分け（5分版）

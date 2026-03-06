@@ -94,7 +94,18 @@ jobs:
         with:
           node-version: '20'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        env:
+          CONTEXT_PACK_STRICT: ${{ needs.gate.outputs.strict }}
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: |
+          if [ "${CONTEXT_PACK_STRICT}" = "true" ]; then
+            # Keep lockfile reads enabled for pnpm CI strict mode; this does not permit committing package-lock.json.
+            pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+          else
+            # Exception: automation-generated diffs can arrive before `pnpm-lock.yaml` refresh; review when upstream lockfile updates are mandatory.
+            pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          fi
       - name: Run Context Pack dependency boundary checks
         id: context_pack_deps
         continue-on-error: true
