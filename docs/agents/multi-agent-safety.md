@@ -5,6 +5,11 @@
 この文書は、`spawn_agent` / subagent を使う際の安全運用ルールの SSOT です。
 目的は、共有 branch / 共有 worktree 上で想定外の変更や commit が混入する事故を防ぐことです。
 
+本書での用語:
+
+- `spawn_agent`: main agent が別担当の subagent を起動し、専用 worktree に作業を分離する呼び出しを指します。
+- `explorer`: 調査・探索を主目的とする subagent 区分を指します。名称にかかわらず、repo コンテキストを与えた時点で変更可能として扱います。
+
 ## 背景
 
 - subagent は read-only を保証しません。
@@ -25,12 +30,13 @@
 
 | 区分 | worktree | 許可 | 禁止 | 典型例 |
 | --- | --- | --- | --- | --- |
-| 分析専用 subagent | 必須 | 読み取り、調査メモ作成 | ファイル変更、commit、push | コード探索、失敗原因切り分け |
+| 分析専用 subagent | 必須 | 読み取り、main agent への返答用メモ作成 | repo 配下ファイル変更、commit、push | コード探索、失敗原因切り分け |
 | 実装 subagent | 必須 | 指定ファイルの編集 | 担当外変更、無断commit、無断push | 小規模修正、テスト追加 |
 | main agent | 任意 | 統合、commit、push、PR更新 | 担当境界を曖昧にしたまま委譲 | 最終レビュー、反映判断 |
 
 注記:
 
+- 分析専用 subagent のメモは、CLI 応答または main agent への報告本文として残し、専用 worktree を含む repo 配下ファイルへ保存しません。
 - 実装 subagent に commit を許可する場合は、依頼文に明示した場合のみとします。
 - 既定値は「subagent に commit / push を許可しない」です。
 
@@ -47,7 +53,7 @@ subagent には最低限、次を含めて依頼します。
 例:
 
 ```text
-担当 worktree: /home/devuser/work/CodeX/ae-frameworkA/ae-framework-foo-agent1-wt
+担当 worktree: /home/devuser/work/CodeX/ae-framework-foo-agent1-wt
 担当ファイル: docs/agents/*, docs/maintenance/subagent-worktree-runbook.md
 禁止事項: commit, push, 担当外ファイル編集, 他 worktree への移動
 完了条件: 変更後に git status --short と git diff --stat を報告

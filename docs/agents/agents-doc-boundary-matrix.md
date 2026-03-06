@@ -1,6 +1,6 @@
 # Agent Documentation Boundary Matrix
 
-最終更新: 2026-02-26
+最終更新: 2026-03-06
 
 目的: `AGENTS.md` と `docs/agents/*` が一次情報を重複再掲しないための責務境界を定義する。
 

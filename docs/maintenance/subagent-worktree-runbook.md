@@ -27,13 +27,18 @@
 
 - PR 作業の追従なら対象 branch を base にする
 - 新規作業なら通常 `origin/main` を base にする
+- `<base-ref>` は worktree 作成元の ref を指す（例: `origin/main`, `origin/<pr-branch>`, `main`）
+- `<base-ref>` が remote-tracking ref の場合は、対応する `<base-remote>` / `<base-branch>` を先に fetch して最新化する（例: `origin/main` -> `origin`, `main`）
 
 ### 2. 専用 worktree を作成する
 
 ```bash
-git fetch origin main --quiet
+git fetch <base-remote> <base-branch> --quiet
 git worktree add ../ae-framework-<topic>-<agent>-wt -b wip/<topic>-<agent> <base-ref>
 ```
+
+例: `<base-ref>=origin/main` なら `git fetch origin main --quiet` を実行します。
+`<base-ref>` が最新化済みのローカル ref の場合は、`git fetch` を省略して構いません。
 
 確認:
 
