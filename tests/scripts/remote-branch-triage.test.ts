@@ -92,4 +92,43 @@ describe.sequential('remote-branch-triage script', () => {
       rmSync(sandbox, { recursive: true, force: true });
     }
   });
+
+  it('escapes markdown table meta characters in rendered cells', async () => {
+    const mod = await import(triageModuleUrl);
+    const markdown = mod.renderMarkdown({
+      generatedAt: '2026-03-06T11:00:00Z',
+      sourceInventory: {
+        path: 'tmp/maintenance/branch-inventory.json',
+        generatedAt: '2026-03-06T10:00:00Z',
+        base: 'origin/main',
+        remote: 'origin',
+      },
+      summary: {
+        remoteMergedCandidates: 1,
+        remoteStaleCandidates: 1,
+      },
+      remoteMerged: [
+        {
+          branch: 'feat\\unsafe|name',
+          proposedAction: 'delete',
+          approval: 'required',
+          rationale: 'needs\\review|soon',
+        },
+      ],
+      remoteStale: [
+        {
+          branch: 'docs\\stale|branch',
+          ageDays: 120,
+          proposedAction: 'review',
+          decision: 'keep',
+          notes: 'line1\\check|value\nline2',
+        },
+      ],
+    });
+
+    expect(markdown).toContain('feat\\\\unsafe\\|name');
+    expect(markdown).toContain('needs\\\\review\\|soon');
+    expect(markdown).toContain('docs\\\\stale\\|branch');
+    expect(markdown).toContain('line1\\\\check\\|value<br>line2');
+  });
 });

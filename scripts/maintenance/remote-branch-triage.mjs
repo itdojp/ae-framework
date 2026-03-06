@@ -52,7 +52,11 @@ export const parseArgs = (argv) => {
   return options;
 };
 
-const escapeCell = (value) => String(value ?? '').replace(/\|/g, '\\|');
+const escapeCell = (value) =>
+  String(value ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|')
+    .replace(/\r?\n/g, '<br>');
 
 const renderTable = (headers, rows) => {
   if (rows.length === 0) {
