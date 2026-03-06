@@ -32,6 +32,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - Repository layout policy: `maintenance/repo-layout-policy.md`
 - Code improvement plan: `maintenance/code-improvement-plan.md`
 - Branch cleanup runbook: `maintenance/branch-cleanup-runbook.md`
+- Remote branch triage runbook: `maintenance/remote-branch-triage-runbook.md`
 - Multi-agent safety policy: `agents/multi-agent-safety.md`
 - Subagent worktree runbook: `maintenance/subagent-worktree-runbook.md`
 - Worktree cleanup runbook: `maintenance/worktree-cleanup-runbook.md`
@@ -294,6 +295,7 @@ Claude CodeやMCPとの統合
 - [repo-layout-policy.md](./maintenance/repo-layout-policy.md) - ルート配置ルールと生成物配置方針
 - [code-improvement-plan.md](./maintenance/code-improvement-plan.md) - 型安全性/分割/テスト改善の実行計画
 - [worktree-cleanup-runbook.md](./maintenance/worktree-cleanup-runbook.md) - マージ済み作業worktreeの安全な削除手順
+- [remote-branch-triage-runbook.md](./maintenance/remote-branch-triage-runbook.md) - remote branch の triage と operator approval 手順
 - [phase0-inventory-2026-02-17.md](./maintenance/phase0-inventory-2026-02-17.md) - Phase 0棚卸しスナップショット
 - [workflow-inventory-2026-02-17.md](./maintenance/workflow-inventory-2026-02-17.md) - Phase 3向けCI workflow棚卸し（目的/入力/重複/必須任意）
 

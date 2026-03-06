@@ -2,6 +2,7 @@
 
 This runbook defines a safe, repeatable process for branch cleanup.
 For stale worktree cleanup, use `docs/maintenance/worktree-cleanup-runbook.md`.
+For remote branch review and approval flow, use `docs/maintenance/remote-branch-triage-runbook.md`.
 
 ## Scope
 
@@ -27,6 +28,9 @@ pnpm run maintenance:branch:inventory
 
 # Large repo or non-standard base
 node scripts/maintenance/branch-inventory.mjs --base origin/main --gh-pr-limit 2000
+
+# Render operator worksheet for remote cleanup
+pnpm run maintenance:branch:triage:render
 ```
 
 Outputs:
@@ -72,14 +76,18 @@ Remote deletion is not executed by default in automation scripts.
 Use remote deletion only after:
 
 1. inventory report review,
-2. confirmation that branches are merged,
-3. explicit operator approval.
+2. triage worksheet review,
+3. confirmation that branches are merged,
+4. explicit operator approval.
 
 When approved, run:
 
 ```bash
 node scripts/maintenance/branch-cleanup.mjs --scope remote --max 100 --apply
 ```
+
+The operator workflow and worksheet format are defined in
+`docs/maintenance/remote-branch-triage-runbook.md`.
 
 ## Operational checklist
 
