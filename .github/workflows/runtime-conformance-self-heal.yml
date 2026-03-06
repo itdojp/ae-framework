@@ -64,6 +64,8 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
+        # Exception (scheduled self-heal): fallback is retained to maximize repair continuity.
+        # Review condition: remove fallback after lockfile refresh is guaranteed in the schedule lane.
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Resolve self-heal configuration

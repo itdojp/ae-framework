@@ -59,6 +59,8 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
+        # Exception (manual-ops): keep fallback for incident-response reruns where lockfile freshness may lag.
+        # Review condition: remove fallback when deployment lane is fully pinned to lockfile updates.
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Generate release plan

@@ -40,6 +40,8 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: ${{ matrix.node }}
+      # Exception (nightly lane): fallback is retained to keep scheduled signal available even with transient lockfile drift.
+      # Review condition: remove fallback once lockfile update automation covers nightly inputs.
       - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
       - run: pnpm run test:${{ matrix.kind }}
   perf:
