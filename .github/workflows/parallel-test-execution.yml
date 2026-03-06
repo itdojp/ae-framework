@@ -65,7 +65,8 @@ jobs:
 
       - name: Install deps
         run: |
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          # CI reusable lane policy: fail fast when the lockfile is stale.
+          pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Create reports/logs directory
         run: |
@@ -128,7 +129,8 @@ jobs:
       
       - name: Install deps
         run: |
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          # CI reusable lane policy: fail fast when the lockfile is stale.
+          pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Create reports directory
         run: |
@@ -179,7 +181,8 @@ jobs:
       
       - name: Install deps
         run: |
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          # CI reusable lane policy: fail fast when the lockfile is stale.
+          pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Create reports directory
         run: |
@@ -222,7 +225,8 @@ jobs:
       
       - name: Install deps
         run: |
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          # CI reusable lane policy: fail fast when the lockfile is stale.
+          pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Run performance tests
         run: |
@@ -259,7 +263,8 @@ jobs:
       
       - name: Install deps
         run: |
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          # CI reusable lane policy: fail fast when the lockfile is stale.
+          pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
 
       - name: Download all test artifacts
@@ -330,7 +335,8 @@ jobs:
       
       - name: Install deps
         run: |
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          # CI reusable lane policy: fail fast when the lockfile is stale.
+          pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Retry failed tests with enhanced detection
         run: |
