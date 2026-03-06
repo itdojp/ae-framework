@@ -28,6 +28,7 @@ Generated triage worksheet:
 Key worksheet fields:
 
 - `githubPullRequests`: lookup availability, requested limit/base, matched PR count
+- GitHub PR lookup defaults to the inventory-derived base branch and ignores cross-repository PRs from forks
 - `remoteMerged[*].latestPr`: latest linked PR summary for each merged remote branch
 - `remoteMerged[*].deleteCommand`: operator-ready delete command
 - `remoteStale[*].riskBand`: low / standard / high risk bucket
@@ -49,6 +50,9 @@ pnpm run maintenance:branch:triage:render
 
 # Optional: disable GitHub PR lookup in offline/debug runs
 node scripts/maintenance/remote-branch-triage.mjs --gh-pr-limit 0
+
+# Optional: override auto-derived base branch filter
+node scripts/maintenance/remote-branch-triage.mjs --gh-pr-base release/2026-03
 ```
 
 ### 3) Review decisions

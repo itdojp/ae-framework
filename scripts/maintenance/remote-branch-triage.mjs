@@ -22,7 +22,7 @@ Options:
   --output-json <path> Triage JSON output path (default: ${DEFAULT_OUTPUT_JSON})
   --output-md <path>   Triage Markdown output path (default: ${DEFAULT_OUTPUT_MD})
   --gh-pr-limit <n>    Max PRs to inspect via gh (default: ${DEFAULT_GH_PR_LIMIT}, 0 disables lookup)
-  --gh-pr-base <name>  Optional GitHub PR base branch filter (default: none)
+  --gh-pr-base <name>  Optional GitHub PR base branch filter (default: auto-derived from inventory)
   --help               Show this help
 `);
 };
@@ -98,6 +98,7 @@ const runCommandSafe = (command, args) => {
 };
 
 const runGhSafe = (args) => runCommandSafe('gh', args);
+const runGitSafe = (args) => runCommandSafe('git', args);
 
 const shellQuote = (value) => `'${String(value).replace(/'/g, `'"'"'`)}'`;
 
@@ -156,10 +157,39 @@ export const groupPullRequestsByHeadRefName = (items) => {
   return byBranch;
 };
 
+const parseGitHubRemoteUrl = (value) => {
+  const match = String(value || '')
+    .trim()
+    .match(/github\.com[:/](?<owner>[^/]+)\/(?<repo>[^/]+?)(?:\.git)?$/i);
+  if (!match?.groups?.owner || !match?.groups?.repo) {
+    return {
+      owner: '',
+      name: '',
+    };
+  }
+  return {
+    owner: match.groups.owner,
+    name: match.groups.repo,
+  };
+};
+
+const loadRepositoryIdentity = (remoteName, { gitRunner = runGitSafe } = {}) => {
+  const result = gitRunner(['config', '--get', `remote.${remoteName}.url`]);
+  if (!result.ok) {
+    return {
+      owner: '',
+      name: '',
+    };
+  }
+  return parseGitHubRemoteUrl(result.output);
+};
+
 export const loadPullRequests = (
   {
     limit = DEFAULT_GH_PR_LIMIT,
     baseBranch = DEFAULT_GH_PR_BASE,
+    repositoryOwner = '',
+    repositoryName = '',
   } = {},
   { ghRunner = runGhSafe } = {},
 ) => {
@@ -183,7 +213,7 @@ export const loadPullRequests = (
     '--limit',
     String(limit),
     '--json',
-    'number,title,url,state,isDraft,mergedAt,closedAt,updatedAt,headRefName,baseRefName',
+    'number,title,url,state,isDraft,mergedAt,closedAt,updatedAt,headRefName,headRefOid,baseRefName,headRepository,headRepositoryOwner',
   ];
   if (baseBranch) {
     args.splice(6, 0, '--base', baseBranch);
@@ -205,6 +235,12 @@ export const loadPullRequests = (
   const items = JSON.parse(result.output || '[]')
     .filter((item) => item && item.headRefName)
     .filter((item) => !baseBranch || item.baseRefName === baseBranch)
+    .filter(
+      (item) =>
+        !repositoryOwner ||
+        !repositoryName ||
+        (item.headRepositoryOwner?.login === repositoryOwner && item.headRepository?.name === repositoryName),
+    )
     .map((item) => ({
       number: item.number,
       title: item.title || '',
@@ -215,6 +251,7 @@ export const loadPullRequests = (
       closedAt: item.closedAt || '',
       updatedAt: item.updatedAt || '',
       headRefName: item.headRefName,
+      headRefOid: item.headRefOid || '',
       baseRefName: item.baseRefName || '',
     }));
 
@@ -307,6 +344,23 @@ const formatLatestPrLabel = (latestPr) => {
 const renderSummaryCounts = (counts, order) =>
   order.map((key) => `${key}=${counts[key] || 0}`).join(', ');
 
+const lookupStatusState = (githubPullRequests) => {
+  if (githubPullRequests?.available) return 'enabled';
+  if (githubPullRequests?.disabled) return 'disabled';
+  return 'unavailable';
+};
+
+const formatLookupStatus = (githubPullRequests) => {
+  const state = lookupStatusState(githubPullRequests);
+  if (state === 'enabled') {
+    return `enabled (matched=${githubPullRequests.matchedItems}, base=${githubPullRequests.requestedBaseBranch || 'all'})`;
+  }
+  if (state === 'disabled') {
+    return 'disabled';
+  }
+  return `unavailable (${githubPullRequests?.reason || 'gh unavailable'})`;
+};
+
 const buildIssueCommentTemplate = (report) => {
   const prefixLines = report.summary.topPrefixes
     .map((item) => `- ${item.prefix}: ${item.count} (${item.examples.join(', ')})`)
@@ -323,7 +377,7 @@ const buildIssueCommentTemplate = (report) => {
 ### Top prefixes
 ${prefixLines || '- (none)'}
 
-### Approved remote delete commands
+### Remote delete commands (operator approval required)
 \`\`\`bash
 ${deleteLines || '# (none)'}
 \`\`\`
@@ -454,11 +508,7 @@ export const renderMarkdown = (report) => {
     item.examples.join(', '),
   ]);
   const deleteCommands = report.remoteMerged.map((item) => item.deleteCommand).join('\n') || '# (none)';
-  const lookupStatus = report.githubPullRequests.available
-    ? `enabled (matched=${report.githubPullRequests.matchedItems}, base=${report.githubPullRequests.requestedBaseBranch || 'all'})`
-    : report.githubPullRequests.disabled
-      ? 'disabled'
-      : `unavailable (${report.githubPullRequests.reason || 'gh unavailable'})`;
+  const lookupStatus = formatLookupStatus(report.githubPullRequests);
 
   return `# Remote Branch Triage Worksheet
 
@@ -492,7 +542,7 @@ ${renderTable(['branch', 'ageDays', 'risk', 'prState', 'latestPr', 'bases', 'pro
 - [ ] remote stale candidates に keep / archive / delete を記録した
 - [ ] remote delete 実行前に operator approval を取得した
 
-## Approved remote delete commands
+## Remote delete commands (operator approval required)
 
 \`\`\`bash
 ${deleteCommands}
@@ -500,9 +550,9 @@ ${deleteCommands}
 
 ## Issue/comment template
 
-\`\`\`md
+\`\`\`\`md
 ${report.templates.issueComment}
-\`\`\`
+\`\`\`\`
 
 ## Suggested commands
 
@@ -526,10 +576,13 @@ export const run = (argv = process.argv.slice(2)) => {
   const outputMdPath = path.resolve(options.outputMd);
 
   const inventory = JSON.parse(fs.readFileSync(inputJsonPath, 'utf8'));
+  const repositoryIdentity = loadRepositoryIdentity(inventory?.remote || 'origin');
   const ghPrBase = options.ghPrBase || deriveGhPrBaseBranch(inventory?.base || '', inventory?.remote || 'origin');
   const pullRequests = loadPullRequests({
     limit: options.ghPrLimit,
     baseBranch: ghPrBase,
+    repositoryOwner: repositoryIdentity.owner,
+    repositoryName: repositoryIdentity.name,
   });
   const report = buildTriageReport(inventory, {
     inputJsonPath: options.inputJson,
@@ -545,7 +598,7 @@ export const run = (argv = process.argv.slice(2)) => {
   console.log(`[remote-branch-triage] wrote ${outputJsonPath}`);
   console.log(`[remote-branch-triage] wrote ${outputMdPath}`);
   console.log(
-    `[remote-branch-triage] merged=${report.summary.remoteMergedCandidates} stale=${report.summary.remoteStaleCandidates} prLookup=${report.githubPullRequests.available ? 'enabled' : 'disabled'}`,
+    `[remote-branch-triage] merged=${report.summary.remoteMergedCandidates} stale=${report.summary.remoteStaleCandidates} prLookup=${lookupStatusState(report.githubPullRequests)}`,
   );
 };
 

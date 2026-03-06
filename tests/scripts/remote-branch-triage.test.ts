@@ -35,6 +35,66 @@ const buildPullRequestLookup = (items: Array<Record<string, unknown>>) => {
 };
 
 describe.sequential('remote-branch-triage script', () => {
+  it('filters cross-repository PRs when repository identity is provided', async () => {
+    const mod = await import(triageModuleUrl);
+    const report = mod.loadPullRequests(
+      {
+        limit: 10,
+        baseBranch: 'main',
+        repositoryOwner: 'itdojp',
+        repositoryName: 'ae-framework',
+      },
+      {
+        ghRunner: () => ({
+          ok: true,
+          output: JSON.stringify([
+            {
+              number: 10,
+              title: 'same repo branch',
+              url: 'https://example.test/pr/10',
+              state: 'MERGED',
+              isDraft: false,
+              mergedAt: '2026-03-06T09:00:00Z',
+              closedAt: '2026-03-06T09:00:00Z',
+              updatedAt: '2026-03-06T09:00:00Z',
+              headRefName: 'feat/shared-name',
+              headRefOid: 'aaaa',
+              baseRefName: 'main',
+              headRepository: { name: 'ae-framework' },
+              headRepositoryOwner: { login: 'itdojp' },
+            },
+            {
+              number: 11,
+              title: 'fork branch with same name',
+              url: 'https://example.test/pr/11',
+              state: 'OPEN',
+              isDraft: false,
+              mergedAt: '',
+              closedAt: '',
+              updatedAt: '2026-03-06T10:00:00Z',
+              headRefName: 'feat/shared-name',
+              headRefOid: 'bbbb',
+              baseRefName: 'main',
+              headRepository: { name: 'forked-ae-framework' },
+              headRepositoryOwner: { login: 'external-user' },
+            },
+          ]),
+        }),
+      },
+    );
+
+    expect(report.available).toBe(true);
+    expect(report.items).toHaveLength(1);
+    expect(report.items[0]).toEqual(
+      expect.objectContaining({
+        number: 10,
+        headRefName: 'feat/shared-name',
+        headRefOid: 'aaaa',
+      }),
+    );
+    expect(report.byHeadRefName.get('feat/shared-name')).toHaveLength(1);
+  });
+
   it('builds a structured report with PR linkage and triage classifications', async () => {
     const mod = await import(triageModuleUrl);
     const report = mod.buildTriageReport(
@@ -209,7 +269,7 @@ describe.sequential('remote-branch-triage script', () => {
 
       const markdown = readFileSync(outputMd, 'utf8');
       expect(markdown).toContain('GitHub PR lookup: disabled');
-      expect(markdown).toContain('Approved remote delete commands');
+      expect(markdown).toContain('Remote delete commands (operator approval required)');
       expect(markdown).toContain("git push 'origin' --delete 'feat/merged-a'");
       expect(markdown).toContain('Issue/comment template');
     } finally {
