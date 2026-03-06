@@ -61,7 +61,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Resolve security analyzer mode
         id: security_mode
