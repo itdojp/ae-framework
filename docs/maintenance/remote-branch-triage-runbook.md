@@ -25,6 +25,16 @@ Generated triage worksheet:
 - `tmp/maintenance/remote-branch-triage.json`
 - `tmp/maintenance/remote-branch-triage.md`
 
+Key worksheet fields:
+
+- `githubPullRequests`: lookup availability, requested limit/base, matched PR count
+- GitHub PR lookup defaults to the inventory-derived base branch and ignores cross-repository PRs from forks
+- `remoteMerged[*].latestPr`: latest linked PR summary for each merged remote branch
+- `remoteMerged[*].deleteCommand`: operator-ready delete command
+- `remoteStale[*].riskBand`: low / standard / high risk bucket
+- `remoteStale[*].prState`: `open`, `closed`, `merged`, `none`, `ambiguous`, or `unavailable`
+- `templates.issueComment`: reusable issue/PR comment template
+
 ## Commands
 
 ### 1) Refresh inventory
@@ -37,6 +47,12 @@ pnpm run maintenance:branch:inventory
 
 ```bash
 pnpm run maintenance:branch:triage:render
+
+# Optional: disable GitHub PR lookup in offline/debug runs
+node scripts/maintenance/remote-branch-triage.mjs --gh-pr-limit 0
+
+# Optional: override auto-derived base branch filter
+node scripts/maintenance/remote-branch-triage.mjs --gh-pr-base release/2026-03
 ```
 
 ### 3) Review decisions
@@ -44,7 +60,9 @@ pnpm run maintenance:branch:triage:render
 - `remoteMerged`:
   - default proposal: `delete`
   - requires operator approval before execution
+  - verify `latestPr`, `baseBranches`, and `deleteCommand` before apply
 - `remoteStale`:
+  - review `riskBand`, `prState`, and `proposedAction`
   - fill `decision` with one of `keep`, `archive`, `delete`
   - add `notes` explaining why the branch is retained or removed
 
@@ -73,11 +91,18 @@ pnpm run maintenance:branch:triage:render
 ### Remote stale candidates
 
 - `keep`:
+  - linked PR is still `open`
   - still referenced by an active issue, plan, or long-running experiment
 - `archive`:
+  - high-risk prefix (`feat/*`, `feature/*`, `fix/*`, `ops/*`, `policy/*`) or non-trivial history remains
   - keep for historical comparison, but do not use for active development
 - `delete`:
+  - low-risk prefix (`docs/*`, `chore/*`, `test/*`, `ci/*`, `types/*`)
   - no active owner, no active issue, and no operational dependency remains
+
+If `prState=ambiguous`, treat the worksheet row as branch-name reuse risk and keep manual review mandatory.
+
+If `githubPullRequests.available=false`, treat `proposedAction` as advisory only and keep manual review strict.
 
 ## Approval checklist
 

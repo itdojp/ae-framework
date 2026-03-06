@@ -80,6 +80,10 @@ Use remote deletion only after:
 3. confirmation that branches are merged,
 4. explicit operator approval.
 
+The preferred path is to copy the exact commands from
+`tmp/maintenance/remote-branch-triage.md` / `remoteMerged[*].deleteCommand`.
+Use the generic apply command only when the worksheet and target batch are still aligned.
+
 When approved, run:
 
 ```bash
