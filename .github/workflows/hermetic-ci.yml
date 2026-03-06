@@ -130,8 +130,8 @@ jobs:
           
       - name: Install dependencies (hermetic)
         run: |
-          # Use lockfile for hermetic builds
-          pnpm install --frozen-lockfile --prefer-offline || pnpm install --no-frozen-lockfile --prefer-offline
+          # Hermetic lane should fail fast on lockfile drift instead of self-healing it.
+          pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=true
           
       - name: Run hermetic tests
         run: |
@@ -204,7 +204,8 @@ jobs:
           node-version: '20'
           
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline || pnpm install --no-frozen-lockfile --prefer-offline
+        # Hermetic lane should fail fast on lockfile drift instead of self-healing it.
+        run: pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=true
         
       - name: Setup test isolation
         run: |
