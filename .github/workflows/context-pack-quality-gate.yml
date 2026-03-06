@@ -100,8 +100,8 @@ jobs:
           NPM_CONFIG_GLOBALCONFIG: /dev/null
         run: |
           if [ "${CONTEXT_PACK_STRICT}" = "true" ]; then
-            # Blocking mode must fail fast on lockfile drift.
-            pnpm install --frozen-lockfile --config.use-lockfile=true
+            # Keep lockfile reads enabled for pnpm CI strict mode; this does not permit committing package-lock.json.
+            pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
           else
             pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
           fi
