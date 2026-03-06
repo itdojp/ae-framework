@@ -121,7 +121,8 @@ jobs:
 
       - name: Install dependencies
         if: ${{ steps.flags.outputs.should_run == 'true' }}
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        # Required lane policy: detect lockfile drift immediately in reusable CI entry lanes.
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Determine heavy test cache key
         if: ${{ steps.flags.outputs.should_run == 'true' }}
