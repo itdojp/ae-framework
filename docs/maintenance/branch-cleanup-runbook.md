@@ -24,6 +24,9 @@ The cleanup scripts never delete branches that match:
 
 ```bash
 pnpm run maintenance:branch:inventory
+
+# Large repo or non-standard base
+node scripts/maintenance/branch-inventory.mjs --base origin/main --gh-pr-limit 2000
 ```
 
 Outputs:
@@ -38,6 +41,7 @@ Inventory では次も併せて確認する:
 - `detachedWorktreesOnBaseClean`: `HEAD` が base 上にあり clean な detached worktree
 
 `localPrMergedManualReview` は `gh` CLI で merged PR 情報を取得できる環境でのみ出力される。
+必要に応じて `--gh-pr-limit` で取得件数を増やし、`--gh-pr-base` で GitHub 側の base branch 名を明示できる。
 
 ### 2) Dry-run cleanup candidates
 

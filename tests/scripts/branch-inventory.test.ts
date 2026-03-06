@@ -25,22 +25,37 @@ describe.sequential('branch-inventory script', () => {
   it('collects PR-merged local branch candidates without touching linked worktrees', async () => {
     const mod = await import(branchInventoryModuleUrl);
     const localRefs = [
-      { name: 'main' },
-      { name: 'feat/pr-merged' },
-      { name: 'feat/already-merged' },
-      { name: 'feat/in-worktree' },
-      { name: 'release/1.0' },
+      { name: 'main', oid: 'mainoid' },
+      { name: 'feat/pr-merged', oid: 'abc123' },
+      { name: 'feat/pr-merged-reused', oid: 'local-tip' },
+      { name: 'feat/already-merged', oid: 'mergedoid' },
+      { name: 'feat/in-worktree', oid: 'worktreeoid' },
+      { name: 'release/1.0', oid: 'releaseoid' },
     ];
     const mergedLocal = new Set(['main', 'feat/already-merged']);
     const mergedPullRequests = {
       byHeadRefName: new Map([
         [
           'feat/pr-merged',
-          {
-            number: 2463,
-            mergedAt: '2026-03-06T10:00:00Z',
-            url: 'https://example.invalid/pr/2463',
-          },
+          [
+            {
+              number: 2463,
+              mergedAt: '2026-03-06T10:00:00Z',
+              url: 'https://example.invalid/pr/2463',
+              headRefOid: 'abc123',
+            },
+          ],
+        ],
+        [
+          'feat/pr-merged-reused',
+          [
+            {
+              number: 2462,
+              mergedAt: '2026-03-05T10:00:00Z',
+              url: 'https://example.invalid/pr/2462',
+              headRefOid: 'old-tip',
+            },
+          ],
         ],
       ]),
     };
@@ -61,7 +76,51 @@ describe.sequential('branch-inventory script', () => {
         number: 2463,
         mergedAt: '2026-03-06T10:00:00Z',
         url: 'https://example.invalid/pr/2463',
+        headRefOid: 'abc123',
       },
+    ]);
+  });
+
+  it('filters merged PR inventory by configured base branch and groups by head ref', async () => {
+    const mod = await import(branchInventoryModuleUrl);
+    const result = mod.loadMergedPullRequests(
+      {
+        limit: 50,
+        baseBranch: 'main',
+      },
+      {
+        ghRunner: () => ({
+          ok: true,
+          output: JSON.stringify([
+            {
+              number: 1,
+              title: 'keep',
+              url: 'https://example.invalid/pr/1',
+              mergedAt: '2026-03-06T10:00:00Z',
+              headRefName: 'feat/keep',
+              headRefOid: 'sha-keep',
+              baseRefName: 'main',
+            },
+            {
+              number: 2,
+              title: 'drop',
+              url: 'https://example.invalid/pr/2',
+              mergedAt: '2026-03-06T09:00:00Z',
+              headRefName: 'feat/keep',
+              headRefOid: 'sha-old',
+              baseRefName: 'release/1.0',
+            },
+          ]),
+        }),
+      },
+    );
+
+    expect(result.available).toBe(true);
+    expect(result.requestedBaseBranch).toBe('main');
+    expect(result.requestedLimit).toBe(50);
+    expect(result.items).toHaveLength(1);
+    expect(result.byHeadRefName.get('feat/keep')).toEqual([
+      expect.objectContaining({ number: 1, headRefOid: 'sha-keep', baseRefName: 'main' }),
     ]);
   });
 

@@ -12,6 +12,7 @@ const DEFAULT_OUTPUT_MD = 'tmp/maintenance/branch-inventory.md';
 const DEFAULT_STALE_DAYS = 90;
 const DEFAULT_TOP = 30;
 const DEFAULT_GH_PR_LIMIT = 1000;
+const DEFAULT_GH_PR_BASE = '';
 
 const PROTECTED_EXACT = new Set(['main', 'master', 'develop', 'staging']);
 const PROTECTED_PREFIXES = ['release/', 'hotfix/'];
@@ -26,6 +27,8 @@ Options:
   --output-md <path>   Markdown output path (default: ${DEFAULT_OUTPUT_MD})
   --stale-days <days>  Age threshold for stale branch candidates (default: ${DEFAULT_STALE_DAYS})
   --top <n>            Number of items to print in markdown sections (default: ${DEFAULT_TOP})
+  --gh-pr-limit <n>    Max merged PRs to inspect via gh (default: ${DEFAULT_GH_PR_LIMIT})
+  --gh-pr-base <name>  Explicit GitHub PR base branch filter (default: derived from --base)
   --help               Show this help
 `);
 };
@@ -38,6 +41,8 @@ export const parseArgs = (argv) => {
     outputMd: DEFAULT_OUTPUT_MD,
     staleDays: DEFAULT_STALE_DAYS,
     top: DEFAULT_TOP,
+    ghPrLimit: DEFAULT_GH_PR_LIMIT,
+    ghPrBase: DEFAULT_GH_PR_BASE,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -70,6 +75,14 @@ export const parseArgs = (argv) => {
       options.top = Number(argv[++i]);
       continue;
     }
+    if (arg === '--gh-pr-limit') {
+      options.ghPrLimit = Number(argv[++i]);
+      continue;
+    }
+    if (arg === '--gh-pr-base') {
+      options.ghPrBase = String(argv[++i] || '').trim();
+      continue;
+    }
     throw new Error(`Unknown argument: ${arg}`);
   }
 
@@ -80,6 +93,9 @@ export const parseArgs = (argv) => {
   }
   if (!Number.isInteger(options.top) || options.top < 1) {
     throw new Error('--top must be a positive integer');
+  }
+  if (!Number.isInteger(options.ghPrLimit) || options.ghPrLimit < 1) {
+    throw new Error('--gh-pr-limit must be a positive integer');
   }
   return options;
 };
@@ -117,7 +133,7 @@ export const parseRefs = (raw, remoteName) =>
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [name, dateIso, dateUnixRaw, upstream] = line.split('\t');
+      const [name, dateIso, dateUnixRaw, upstream, oid] = line.split('\t');
       const dateUnix = Number(dateUnixRaw || 0);
       const shortName = name.startsWith(`${remoteName}/`) ? name.slice(remoteName.length + 1) : name;
       return {
@@ -126,6 +142,7 @@ export const parseRefs = (raw, remoteName) =>
         dateIso,
         dateUnix: Number.isFinite(dateUnix) ? dateUnix : 0,
         upstream: upstream || '',
+        oid: oid || '',
       };
     });
 
@@ -151,22 +168,41 @@ export const markdownSection = (title, items, top, formatter) => {
   return `### ${title}\n\n${formatList(visible, formatter)}${tail}\n`;
 };
 
-const preferLatestMergedPr = (items) => {
+export const deriveGhPrBaseBranch = (baseRef, remoteName) => {
+  const value = String(baseRef || '').trim();
+  if (!value) return '';
+  if (value.startsWith('refs/heads/')) {
+    return value.slice('refs/heads/'.length);
+  }
+  const remotePrefix = `refs/remotes/${remoteName}/`;
+  if (value.startsWith(remotePrefix)) {
+    return value.slice(remotePrefix.length);
+  }
+  if (value.startsWith(`${remoteName}/`)) {
+    return value.slice(remoteName.length + 1);
+  }
+  return value;
+};
+
+const groupMergedPrsByHeadRefName = (items) => {
   const byBranch = new Map();
   for (const item of items) {
-    const current = byBranch.get(item.headRefName);
-    if (!current || String(item.mergedAt || '') > String(current.mergedAt || '')) {
-      byBranch.set(item.headRefName, item);
-    }
+    const current = byBranch.get(item.headRefName) || [];
+    current.push(item);
+    current.sort((a, b) => String(b.mergedAt || '').localeCompare(String(a.mergedAt || '')));
+    byBranch.set(item.headRefName, current);
   }
   return byBranch;
 };
 
 export const loadMergedPullRequests = (
-  { limit = DEFAULT_GH_PR_LIMIT } = {},
+  {
+    limit = DEFAULT_GH_PR_LIMIT,
+    baseBranch = DEFAULT_GH_PR_BASE,
+  } = {},
   { ghRunner = runGhSafe } = {},
 ) => {
-  const result = ghRunner([
+  const args = [
     'pr',
     'list',
     '--state',
@@ -174,33 +210,45 @@ export const loadMergedPullRequests = (
     '--limit',
     String(limit),
     '--json',
-    'number,title,url,mergedAt,headRefName',
-  ]);
+    'number,title,url,mergedAt,headRefName,headRefOid,baseRefName',
+  ];
+  if (baseBranch) {
+    args.splice(6, 0, '--base', baseBranch);
+  }
+
+  const result = ghRunner(args);
 
   if (!result.ok) {
     return {
       available: false,
       reason: result.message || result.output || 'gh unavailable',
+      requestedBaseBranch: baseBranch,
+      requestedLimit: limit,
       items: [],
       byHeadRefName: new Map(),
     };
   }
 
   const items = JSON.parse(result.output || '[]')
-    .filter((item) => item && item.headRefName)
+    .filter((item) => item && item.headRefName && item.headRefOid)
+    .filter((item) => !baseBranch || item.baseRefName === baseBranch)
     .map((item) => ({
       number: item.number,
       title: item.title || '',
       url: item.url || '',
       mergedAt: item.mergedAt || '',
       headRefName: item.headRefName,
+      headRefOid: item.headRefOid,
+      baseRefName: item.baseRefName || '',
     }));
 
   return {
     available: true,
     reason: '',
+    requestedBaseBranch: baseBranch,
+    requestedLimit: limit,
     items,
-    byHeadRefName: preferLatestMergedPr(items),
+    byHeadRefName: groupMergedPrsByHeadRefName(items),
   };
 };
 
@@ -317,13 +365,15 @@ export const collectLocalPrMergedCandidates = (
     .filter((ref) => !isProtected(ref.name))
     .filter((ref) => !linkedBranchSet.has(ref.name))
     .map((ref) => {
-      const pr = mergedPullRequests.byHeadRefName.get(ref.name);
+      const candidates = mergedPullRequests.byHeadRefName.get(ref.name) || [];
+      const pr = candidates.find((item) => item.headRefOid === ref.oid);
       if (!pr) return null;
       return {
         branch: ref.name,
         number: pr.number,
         mergedAt: pr.mergedAt,
         url: pr.url,
+        headRefOid: pr.headRefOid,
       };
     })
     .filter(Boolean)
@@ -345,12 +395,12 @@ export const buildInventoryReport = (
   const localRefRaw = gitRunner([
     'for-each-ref',
     'refs/heads',
-    '--format=%(refname:short)\t%(committerdate:iso8601)\t%(committerdate:unix)\t%(upstream:short)',
+    '--format=%(refname:short)\t%(committerdate:iso8601)\t%(committerdate:unix)\t%(upstream:short)\t%(objectname)',
   ]);
   const remoteRefRaw = gitRunner([
     'for-each-ref',
     `refs/remotes/${options.remote}`,
-    '--format=%(refname:short)\t%(committerdate:iso8601)\t%(committerdate:unix)\t%(upstream:short)',
+    '--format=%(refname:short)\t%(committerdate:iso8601)\t%(committerdate:unix)\t%(upstream:short)\t%(objectname)',
   ]);
   const worktreeRaw = gitRunner(['worktree', 'list', '--porcelain']);
 
@@ -364,7 +414,11 @@ export const buildInventoryReport = (
   const parsedWorktrees = parseWorktreePorcelain(worktreeRaw);
   const mergedLocal = parseBranchList(mergedLocalRaw);
   const mergedRemote = parseBranchList(mergedRemoteRaw);
-  const mergedPullRequests = mergedPullRequestsLoader();
+  const ghPrBaseBranch = options.ghPrBase || deriveGhPrBaseBranch(options.base, options.remote);
+  const mergedPullRequests = mergedPullRequestsLoader({
+    limit: options.ghPrLimit,
+    baseBranch: ghPrBaseBranch,
+  });
 
   const localMergedCandidates = localRefs
     .filter((ref) => mergedLocal.has(ref.name))
@@ -420,7 +474,9 @@ export const buildInventoryReport = (
     ghMergedPullRequests: {
       available: mergedPullRequests.available,
       reason: mergedPullRequests.reason,
-      scanned: mergedPullRequests.items.length,
+      requestedBaseBranch: mergedPullRequests.requestedBaseBranch,
+      requestedLimit: mergedPullRequests.requestedLimit,
+      matched: mergedPullRequests.items.length,
     },
     counts: {
       local: localRefs.length,
@@ -460,7 +516,11 @@ export const renderMarkdown = (report, options) => {
 - remote: \`${report.remote}\`
 - currentBranch: \`${report.currentBranch}\`
 - currentWorktreePath: \`${report.currentWorktreePath}\`
-- gh merged PR lookup: ${report.ghMergedPullRequests.available ? `enabled (${report.ghMergedPullRequests.scanned} PRs)` : `unavailable (${report.ghMergedPullRequests.reason})`}
+- gh merged PR lookup: ${
+    report.ghMergedPullRequests.available
+      ? `enabled (base=${report.ghMergedPullRequests.requestedBaseBranch || 'none'}, limit=${report.ghMergedPullRequests.requestedLimit}, matched=${report.ghMergedPullRequests.matched})`
+      : `unavailable (${report.ghMergedPullRequests.reason})`
+  }
 
 ## Counts
 
