@@ -61,8 +61,12 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        # Exception: automation-generated diffs can arrive before `pnpm-lock.yaml` refresh; review when upstream lockfile updates are mandatory.
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: |
+          # Keep lockfile reads enabled for pnpm CI strict mode; this does not permit committing package-lock.json.
+          pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Resolve security analyzer mode
         id: security_mode
