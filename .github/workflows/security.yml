@@ -113,6 +113,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
+        # Exception: automation-generated diffs can arrive before `pnpm-lock.yaml` refresh; review when upstream lockfile updates are mandatory.
         run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Audit dependencies
