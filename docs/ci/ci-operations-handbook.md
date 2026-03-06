@@ -48,8 +48,10 @@
 
 ### 3.3 `pnpm install --frozen-lockfile` が失敗
 
-- required-lane は `pnpm install` で `pnpm-lock.yaml` を更新し、差分を commit して `gh run rerun <runId> --failed`
-- `optional-pr` / `manual-ops` は例外 lane。fallback 実装があっても標準対応は同じく lockfile 更新を優先する
+- lane 判定は `docs/ci-policy.md` の Lockfile reproducibility を source of truth とし、`gh pr checks <PR番号> --required` に出る job は `required-lane`、`workflow_dispatch` 専用は `manual-ops`、それ以外で明示的に非必須化されたものだけを `optional-pr` と扱う
+- `required-lane` は `pnpm install` で `pnpm-lock.yaml` を更新し、差分を commit / push する
+- PR の lockfile 修正後は新しい `pull_request` run が自動生成されるため、その最新 run を確認する。`gh run rerun <runId> --failed` は push 後に新 run が作られない手動系 workflow や、最新 SHA に対する failed run の再試行時だけ使う
+- `optional-pr` / `manual-ops` は例外 lane（`optional-pr`: 明示的に非必須化された PR lane、`manual-ops`: 手動オペレーション専用 lane）。fallback 実装があっても標準対応は同じく lockfile 更新を優先する
 
 ### 3.4 429 / secondary rate limit
 

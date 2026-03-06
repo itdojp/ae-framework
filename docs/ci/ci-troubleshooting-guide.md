@@ -53,7 +53,7 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 | `Copilot Review Gate / gate` fail | 未解決レビューthread数、失敗runのconclusion | thread解消 → `gh run rerun <runId> --failed` |
 | `PR Self-Heal` が `blocked` | PRコメントの reason、`status:blocked` ラベル | 競合解消/失敗チェック修復後に手動rerun |
 | `auto-merge` が有効化されない | `AE_AUTO_MERGE*`、required checks、reviewDecision | `docs/ci/auto-merge.md` に沿って条件修正 |
-| `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` / frozen-lockfile fail | install step、`pnpm-lock.yaml`、`.npmrc` / workspace config の差分 | required-lane は `pnpm install` → lockfile 更新を commit → `gh run rerun <runId> --failed` |
+| `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` / frozen-lockfile fail | install step、`pnpm-lock.yaml`、`.npmrc` / workspace config の差分 | lane を required-lane / `optional-pr` / `manual-ops` に分類 → required-lane は lockfile 更新を commit / push → 最新 SHA の run を確認 |
 | `policy-gate` fail（`run-trace` / `enforce-context-pack`） | required label 有無、`trace-conformance` / `KvOnce Trace Validation` / `context-pack-e2e` の conclusion | ラベル付与後に対応 workflow を PR 文脈で rerun し、`policy-gate` を再評価 |
 | 429 / secondary rate limit | `gh-exec` retryログ、失敗タイミング | rerun優先、必要なら `AE_GH_THROTTLE_MS` と `AE_GH_RETRY_*` を調整 |
 | unified exec process 上限警告 | 長時間ジョブ数、同時セッション数 | 長時間セッション停止・既存セッション再利用・並列度を抑制 |
@@ -85,10 +85,9 @@ gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
   2. 必要なら `gate` / `verify-lite` を rerun
 
 ### 7.4 `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` / frozen-lockfile fail
-1. `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` は lockfile に記録された設定と現在の install 設定の不一致を示す。失敗 step が required-lane か `optional-pr` / `manual-ops` か確認する
-2. required-lane では `--no-frozen-lockfile` に切り替えず、ローカルで `pnpm install` を実行して `pnpm-lock.yaml` を更新する
-3. 差分を commit / push し、失敗 run を rerun する
-   - `gh run rerun <runId> --failed`
+1. `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` は lockfile に記録された設定と現在の install 設定の不一致を示す。lane 判定は `docs/ci-policy.md` を source of truth とし、`gh pr checks <PR番号> --required` に出る job は `required-lane`、`workflow_dispatch` 専用は `manual-ops`、それ以外で明示的に非必須化されたものだけを `optional-pr` と扱う
+2. `required-lane` では `--no-frozen-lockfile` に切り替えず、ローカルで `pnpm install` を実行して `pnpm-lock.yaml` を更新する
+3. 差分を commit / push したら、push で生成された最新 SHA の `pull_request` run を確認する。`gh run rerun <runId> --failed` は push 後に新 run が生成されない手動系 workflow、または最新 SHA に対する failed run の再試行時だけ使う
 4. `optional-pr` / `manual-ops` の fallback は一時運用。反復する場合も lockfile 更新で収束させる
 
 ### 7.5 ラベル起因の `policy-gate` fail
