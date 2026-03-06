@@ -96,10 +96,12 @@ jobs:
       - name: Install dependencies
         env:
           CONTEXT_PACK_STRICT: ${{ needs.gate.outputs.strict }}
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
         run: |
           if [ "${CONTEXT_PACK_STRICT}" = "true" ]; then
             # Blocking mode must fail fast on lockfile drift.
-            pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+            pnpm install --frozen-lockfile --config.use-lockfile=true
           else
             pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
           fi
