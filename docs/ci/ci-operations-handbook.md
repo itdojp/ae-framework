@@ -1,6 +1,6 @@
 # CI Operations Handbook
 
-最終更新: 2026-02-25
+最終更新: 2026-03-06
 
 目的: 日次運用で使う確認手順・再実行手順・停止判断を 1 ページで参照できるようにする。
 
@@ -24,6 +24,7 @@
    `gh run view <runId> --log-failed`
 2. 原因を分類する
    - 設定/権限（label・token・permissions）
+   - lockfile 不整合（`ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` / `pnpm install --frozen-lockfile` fail）
    - 実装不整合（workflow/script/doc drift）
    - 一時障害（429、network、runner）
 3. 修正後、失敗ジョブのみ再実行する  
@@ -45,7 +46,12 @@
 - docs-doctest 設定ドリフト検査
   - `node scripts/ci/check-docs-doctest-policy-sync.mjs`
 
-### 3.3 429 / secondary rate limit
+### 3.3 `pnpm install --frozen-lockfile` が失敗
+
+- required-lane は `pnpm install` で `pnpm-lock.yaml` を更新し、差分を commit して `gh run rerun <runId> --failed`
+- `optional-pr` / `manual-ops` は例外 lane。fallback 実装があっても標準対応は同じく lockfile 更新を優先する
+
+### 3.4 429 / secondary rate limit
 
 - 同一変更を短時間で連続 dispatch しない
 - 先に `rerun --failed` を使う

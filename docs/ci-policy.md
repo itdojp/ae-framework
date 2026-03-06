@@ -26,7 +26,10 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Lint baseline enforcement via `node scripts/quality/check-lint-summary.mjs`
   - TDD smoke validation via `node scripts/quality/tdd-smoke-check.mjs`
 - Copilot Review Gate（Copilotレビューの存在と未解決スレッドなし）
-- Lockfile reproducibility: required PR gates and any reusable workflows they invoke use `pnpm install --frozen-lockfile` (no `--no-frozen-lockfile` fallback)
+- Lockfile reproducibility:
+  - required lanes and any reusable workflows they invoke fail fast with `pnpm install --frozen-lockfile`
+  - fallback install (`--no-frozen-lockfile`) is limited to `optional-pr` / `manual-ops`
+  - each exception keeps inline workflow comments for both the reason and the review condition for removal
 - Optionally enable validate-artifacts-ajv / coverage-check as required
 
 ### Opt-in Labels
@@ -172,7 +175,10 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
   - `node scripts/quality/check-lint-summary.mjs` による lint ベースライン差分チェック
   - `node scripts/quality/tdd-smoke-check.mjs` による TDD スモーク検証
 - Copilot Review Gate（Copilotレビューの存在と未解決スレッドなし）
-- lockfile 再現性: 必須ゲートおよびその reusable workflow 経路では `pnpm install --frozen-lockfile` を使用し、`--no-frozen-lockfile` へフォールバックしない
+- lockfile 再現性:
+  - required-lane およびその reusable workflow 経路では `pnpm install --frozen-lockfile` で fail-fast させる
+  - `--no-frozen-lockfile` へのフォールバック例外は `optional-pr` / `manual-ops` に限定する
+  - 例外は workflow 内コメントに理由と見直し条件の両方を残す
 - 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
  - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
 
