@@ -104,7 +104,7 @@ export const buildTriageReport = (
   };
 };
 
-export const renderMarkdown = (report, inputJsonPath) => {
+export const renderMarkdown = (report) => {
   const mergedRows = report.remoteMerged.map((item) => [
     `\`${item.branch}\``,
     item.proposedAction,
@@ -122,7 +122,7 @@ export const renderMarkdown = (report, inputJsonPath) => {
   return `# Remote Branch Triage Worksheet
 
 - generatedAt: ${report.generatedAt}
-- source inventory: \`${inputJsonPath}\`
+- source inventory: \`${report.sourceInventory.path}\`
 - inventory generatedAt: ${report.sourceInventory.generatedAt}
 - base: \`${report.sourceInventory.base}\`
 - remote: \`${report.sourceInventory.remote}\`
@@ -170,7 +170,7 @@ export const run = (argv = process.argv.slice(2)) => {
   const report = buildTriageReport(inventory, {
     inputJsonPath: options.inputJson,
   });
-  const markdown = renderMarkdown(report, options.inputJson);
+  const markdown = renderMarkdown(report);
 
   fs.mkdirSync(path.dirname(outputJsonPath), { recursive: true });
   fs.mkdirSync(path.dirname(outputMdPath), { recursive: true });

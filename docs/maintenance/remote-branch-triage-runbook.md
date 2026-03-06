@@ -4,7 +4,7 @@ This runbook defines how to review and execute remote branch cleanup with operat
 
 Related:
 
-- Branch inventory: `docs/maintenance/branch-cleanup-runbook.md`
+- Branch cleanup: `docs/maintenance/branch-cleanup-runbook.md`
 - Worktree cleanup: `docs/maintenance/worktree-cleanup-runbook.md`
 
 ## Scope
