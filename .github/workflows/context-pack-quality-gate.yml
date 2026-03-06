@@ -103,6 +103,7 @@ jobs:
             # Keep lockfile reads enabled for pnpm CI strict mode; this does not permit committing package-lock.json.
             pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
           else
+            # Exception: automation-generated diffs can arrive before `pnpm-lock.yaml` refresh; review when upstream lockfile updates are mandatory.
             pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
           fi
       - name: Run Context Pack dependency boundary checks
