@@ -26,7 +26,14 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Lint baseline enforcement via `node scripts/quality/check-lint-summary.mjs`
   - TDD smoke validation via `node scripts/quality/tdd-smoke-check.mjs`
 - Copilot Review Gate（Copilotレビューの存在と未解決スレッドなし）
-- Lockfile reproducibility: required PR gates and any reusable workflows they invoke use `pnpm install --frozen-lockfile` (no `--no-frozen-lockfile` fallback)
+- Lockfile reproducibility:
+  - `required-lane` workflows and any reusable workflows they invoke fail fast with `pnpm install --frozen-lockfile`
+  - exception lane categories (source of truth for `--no-frozen-lockfile`):
+    - `required-lane`: merge-blocking PR checks listed in this section or returned by `gh pr checks <PR> --required`
+    - `optional-pr`: PR workflows/jobs that are explicitly documented as non-blocking and are not part of `gh pr checks --required` / branch protection required checks
+    - `manual-ops`: operator-only workflows/jobs triggered via `workflow_dispatch`, scheduled maintenance, or equivalent manual procedures
+  - fallback install (`--no-frozen-lockfile`) is limited to those exception lanes
+  - each exception keeps inline workflow comments for both the reason and the review condition for removal
 - Optionally enable validate-artifacts-ajv / coverage-check as required
 
 ### Opt-in Labels
@@ -172,7 +179,14 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
   - `node scripts/quality/check-lint-summary.mjs` による lint ベースライン差分チェック
   - `node scripts/quality/tdd-smoke-check.mjs` による TDD スモーク検証
 - Copilot Review Gate（Copilotレビューの存在と未解決スレッドなし）
-- lockfile 再現性: 必須ゲートおよびその reusable workflow 経路では `pnpm install --frozen-lockfile` を使用し、`--no-frozen-lockfile` へフォールバックしない
+- lockfile 再現性:
+  - `required-lane` およびその reusable workflow 経路では `pnpm install --frozen-lockfile` で fail-fast させる
+  - `--no-frozen-lockfile` の例外カテゴリ定義:
+    - `required-lane`: 本節の必須チェック、または `gh pr checks <PR番号> --required` に現れる merge-blocking check
+    - `optional-pr`: 明示的に非必須とされ、`gh pr checks --required` / branch protection required checks に含まれない PR workflow/job
+    - `manual-ops`: `workflow_dispatch`・定期保守・緊急運用として明示された workflow/job
+  - `--no-frozen-lockfile` へのフォールバック例外は上記カテゴリに限定する
+  - 例外は workflow 内コメントに理由と見直し条件の両方を残す
 - 必要に応じて validate-artifacts-ajv / coverage-check を必須化可能
  - カバレッジ運用とRequired化の詳細は `docs/quality/coverage-policy.md` を参照（しきい値の由来、ラベル/変数、main運用）
 

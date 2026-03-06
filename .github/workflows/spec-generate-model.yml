@@ -208,9 +208,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
       - name: Install dependencies
+        env:
+          TRACE_STRICT: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-trace') }}
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
         run: |
           pnpm fetch --prefer-offline
-          if pnpm install --frozen-lockfile; then
+          if [ "${TRACE_STRICT}" = "true" ]; then
+            # Keep lockfile reads enabled for pnpm CI strict mode; this does not permit committing package-lock.json.
+            pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=true
+          elif pnpm install --frozen-lockfile; then
             echo "pnpm install succeeded with --frozen-lockfile"
           else
             # Exception: automation-generated diffs can arrive before `pnpm-lock.yaml` refresh; review when upstream lockfile updates are mandatory.
