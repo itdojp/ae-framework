@@ -213,8 +213,8 @@ jobs:
         run: |
           pnpm fetch --prefer-offline
           if [ "${TRACE_STRICT}" = "true" ]; then
-            # Gate-bound trace runs must fail fast on lockfile drift.
-            pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true
+            # Keep lockfile reads enabled for pnpm CI strict mode; this does not permit committing package-lock.json.
+            pnpm install --frozen-lockfile --prefer-offline --config.use-lockfile=true --config.package-lock=true
           elif pnpm install --frozen-lockfile; then
             echo "pnpm install succeeded with --frozen-lockfile"
           else
