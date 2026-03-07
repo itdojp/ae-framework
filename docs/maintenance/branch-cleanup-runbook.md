@@ -41,7 +41,7 @@ pnpm run maintenance:branch:triage:reference-audit
 # Sync reviewed Batch B/C decisions into a derived manifest
 pnpm run maintenance:branch:triage:decision-sync
 
-# Classify reviewed rows into delete-ready / blocked / pending artifacts
+# Classify reviewed rows into delete-ready / blocked / pending / retained / missing-audit artifacts
 pnpm run maintenance:branch:triage:review-status
 ```
 

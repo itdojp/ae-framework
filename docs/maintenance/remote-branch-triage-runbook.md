@@ -179,6 +179,7 @@ Generated outputs:
 - `tmp/maintenance/remote-cleanup-review-status/summary.md`
 - `tmp/maintenance/remote-cleanup-review-status/issue-comment.md`
 - `tmp/maintenance/remote-cleanup-review-status/delete-ready.json`
+- `tmp/maintenance/remote-cleanup-review-status/delete-ready.md`
 - `tmp/maintenance/remote-cleanup-review-status/delete-ready.branches.txt`
 - `tmp/maintenance/remote-cleanup-review-status/delete-ready.branches.json`
 - `tmp/maintenance/remote-cleanup-review-status/delete-blocked.json`
@@ -188,11 +189,11 @@ Generated outputs:
 
 Status semantics:
 
-- `delete-ready`: `decision=delete` かつ open issue / automation / plan / code refs が未検出
-- `delete-blocked`: `decision=delete` だが active refs が残っている
+- `delete-ready`: `decision=delete` and no open issue / automation / plan / code refs detected
+- `delete-blocked`: `decision=delete` but active refs remain
 - `retained`: `decision=keep|archive`
-- `pending-review`: `decision` 未入力
-- `missing-audit`: reviewed manifest にはあるが reference audit に存在しない row
+- `pending-review`: `decision` not set
+- `missing-audit`: present in reviewed manifest but missing from reference audit
 
 ### 4) Execute approved delete batch
 

@@ -68,7 +68,7 @@ const writeFile = (targetPath, content) => {
 
 const startsWithLowRiskPrefix = (branch) => LOW_RISK_PREFIXES.some((prefix) => branch.startsWith(prefix));
 
-const classifyBatchId = (item) => {
+const deriveFallbackBatchId = (item) => {
   if (item.prState === 'ambiguous') return 'C';
   if (startsWithLowRiskPrefix(String(item.branch || ''))) return 'B';
   return '';
@@ -87,6 +87,7 @@ const normalizeAuditItems = (payload) =>
 const loadReferenceAudits = (referenceAuditDir, reviewedManifest) => {
   const triagePath = String(reviewedManifest?.reviewedDecisions?.sourceTriagePath || '');
   const inventory = reviewedManifest?.sourceInventory || {};
+  const reviewedDecisions = reviewedManifest?.reviewedDecisions || {};
   const audits = {};
 
   for (const filename of AUDIT_FILENAMES) {
@@ -96,6 +97,20 @@ const loadReferenceAudits = (referenceAuditDir, reviewedManifest) => {
     const sourceTriage = payload?.sourceTriage || {};
     if (triagePath && String(sourceTriage.path || '') !== triagePath) {
       throw new Error(`${filename} sourceTriage.path does not match reviewed manifest source triage`);
+    }
+    if (
+      reviewedDecisions?.generatedAt &&
+      String(sourceTriage.generatedAt || '') !== String(reviewedDecisions.generatedAt || '')
+    ) {
+      throw new Error(`${filename} sourceTriage.generatedAt does not match reviewed manifest source triage generatedAt`);
+    }
+    if (
+      inventory?.generatedAt &&
+      String(sourceTriage.inventoryGeneratedAt || '') !== String(inventory.generatedAt || '')
+    ) {
+      throw new Error(
+        `${filename} sourceTriage.inventoryGeneratedAt does not match reviewed manifest source inventory generatedAt`,
+      );
     }
     if (String(sourceTriage.base || '') !== String(inventory.base || '')) {
       throw new Error(`${filename} sourceTriage.base does not match reviewed manifest source inventory base`);
@@ -136,15 +151,26 @@ const summarizeByBatch = (items) => {
 const summarizeOverall = (items) =>
   Object.fromEntries(STATUS_ORDER.map((status) => [status, items.filter((item) => item.status === status).length]));
 
+const findAuditForBranch = (audits, branch) => {
+  for (const [batchId, auditBatch] of Object.entries(audits)) {
+    const auditItem = auditBatch?.itemsByBranch?.get(branch);
+    if (auditItem) {
+      return { batchId, audit: auditItem };
+    }
+  }
+  return { batchId: '', audit: null };
+};
+
 const buildReviewedStatus = (reviewedManifest, audits) => {
   const remoteStale = Array.isArray(reviewedManifest?.remoteStale) ? reviewedManifest.remoteStale : [];
   const items = [];
 
   for (const item of remoteStale) {
-    const batchId = classifyBatchId(item);
+    const branch = String(item.branch || '').trim();
+    const discovered = findAuditForBranch(audits, branch);
+    const batchId = discovered.batchId || deriveFallbackBatchId(item);
+    const audit = discovered.audit;
     if (!batchId) continue;
-
-    const audit = audits[batchId]?.itemsByBranch?.get(String(item.branch || '').trim()) || null;
     let status = 'pending-review';
 
     if (!audit) {

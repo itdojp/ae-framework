@@ -38,6 +38,7 @@ describe.sequential('remote-cleanup-review-status script', () => {
             },
             reviewedDecisions: {
               sourceTriagePath: '/tmp/remote-branch-triage.json',
+              generatedAt: '2026-03-08T00:00:00Z',
             },
             remoteStale: [
               { branch: 'docs/stale-a', branchOid: 'oid-a', prState: 'merged', decision: 'delete', notes: 'ready' },
@@ -60,6 +61,8 @@ describe.sequential('remote-cleanup-review-status script', () => {
             batch: { id: 'B', title: 'Low-risk stale branches' },
             sourceTriage: {
               path: '/tmp/remote-branch-triage.json',
+              generatedAt: '2026-03-08T00:00:00Z',
+              inventoryGeneratedAt: '2026-03-08T00:00:00Z',
               base: 'origin/main',
               remote: 'origin',
             },
@@ -110,6 +113,8 @@ describe.sequential('remote-cleanup-review-status script', () => {
             batch: { id: 'C', title: 'Ambiguous stale branches' },
             sourceTriage: {
               path: '/tmp/remote-branch-triage.json',
+              generatedAt: '2026-03-08T00:00:00Z',
+              inventoryGeneratedAt: '2026-03-08T00:00:00Z',
               base: 'origin/main',
               remote: 'origin',
             },
@@ -202,6 +207,7 @@ describe.sequential('remote-cleanup-review-status script', () => {
             },
             reviewedDecisions: {
               sourceTriagePath: '/tmp/expected-triage.json',
+              generatedAt: '2026-03-08T00:00:00Z',
             },
             remoteStale: [],
           },
@@ -217,6 +223,8 @@ describe.sequential('remote-cleanup-review-status script', () => {
             batch: { id: 'B', title: 'Low-risk stale branches' },
             sourceTriage: {
               path: '/tmp/other-triage.json',
+              generatedAt: '2026-03-08T00:00:00Z',
+              inventoryGeneratedAt: '2026-03-08T00:00:00Z',
               base: 'origin/main',
               remote: 'origin',
             },
@@ -240,6 +248,152 @@ describe.sequential('remote-cleanup-review-status script', () => {
 
       expect(result.status).not.toBe(0);
       expect(result.stderr || result.stdout).toContain('does not match reviewed manifest source triage');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('uses audit membership instead of recomputing batch membership from prefixes', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-review-status-'));
+    const reviewedManifestPath = join(sandbox, 'reviewed-triage.json');
+    const auditDir = join(sandbox, 'audit');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      mkdirSync(auditDir, { recursive: true });
+      writeFileSync(
+        reviewedManifestPath,
+        `${JSON.stringify(
+          {
+            sourceInventory: {
+              generatedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            reviewedDecisions: {
+              sourceTriagePath: '/tmp/remote-branch-triage.json',
+              generatedAt: '2026-03-08T00:00:00Z',
+            },
+            remoteStale: [
+              { branch: 'legacydocs/stale-a', branchOid: 'oid-a', prState: 'closed', decision: 'delete', notes: '' },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(auditDir, 'batch-b-low-risk-stale.audit.json'),
+        `${JSON.stringify(
+          {
+            batch: { id: 'B', title: 'Low-risk stale branches' },
+            sourceTriage: {
+              path: '/tmp/remote-branch-triage.json',
+              generatedAt: '2026-03-08T00:00:00Z',
+              inventoryGeneratedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            items: [
+              {
+                branch: 'legacydocs/stale-a',
+                branchOid: 'oid-a',
+                audit: {
+                  reviewHint: 'delete-candidate',
+                  openIssueRefs: [],
+                  repoRefs: [],
+                  repoRefSummary: { automation: 0, plan: 0, code: 0, history: 0 },
+                },
+              },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+
+      const result = spawnSync(
+        'node',
+        [scriptPath, '--reviewed-manifest-json', reviewedManifestPath, '--reference-audit-dir', auditDir, '--output-dir', outputDir],
+        {
+          cwd: repoRoot,
+          encoding: 'utf8',
+          timeout: 120_000,
+        },
+      );
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const deleteReady = JSON.parse(readFileSync(join(outputDir, 'delete-ready.json'), 'utf8'));
+      expect(deleteReady).toHaveLength(1);
+      expect(deleteReady[0].batchId).toBe('B');
+      expect(deleteReady[0].branch).toBe('legacydocs/stale-a');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects reference audits that do not match the reviewed manifest generatedAt values', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-review-status-'));
+    const reviewedManifestPath = join(sandbox, 'reviewed-triage.json');
+    const auditDir = join(sandbox, 'audit');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      mkdirSync(auditDir, { recursive: true });
+      writeFileSync(
+        reviewedManifestPath,
+        `${JSON.stringify(
+          {
+            sourceInventory: {
+              generatedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            reviewedDecisions: {
+              sourceTriagePath: '/tmp/remote-branch-triage.json',
+              generatedAt: '2026-03-08T00:00:00Z',
+            },
+            remoteStale: [],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(auditDir, 'batch-b-low-risk-stale.audit.json'),
+        `${JSON.stringify(
+          {
+            batch: { id: 'B', title: 'Low-risk stale branches' },
+            sourceTriage: {
+              path: '/tmp/remote-branch-triage.json',
+              generatedAt: '2026-03-07T23:59:59Z',
+              inventoryGeneratedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            items: [],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+
+      const result = spawnSync(
+        'node',
+        [scriptPath, '--reviewed-manifest-json', reviewedManifestPath, '--reference-audit-dir', auditDir, '--output-dir', outputDir],
+        {
+          cwd: repoRoot,
+          encoding: 'utf8',
+          timeout: 120_000,
+        },
+      );
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr || result.stdout).toContain('generatedAt');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
