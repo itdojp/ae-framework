@@ -184,6 +184,8 @@ describe.sequential('remote-cleanup-batches script', () => {
       expect(summary.batches.batchA.count).toBe(0);
       expect(summary.batches.batchB.count).toBe(1);
       expect(summary.batches.batchC.count).toBe(1);
+      expect(summary.batches.batchB.csvPath).toContain('batch-b-low-risk-stale.csv');
+      expect(summary.batches.batchC.csvPath).toContain('batch-c-ambiguous-stale.csv');
 
       const summaryMd = readFileSync(join(outputDir, 'summary.md'), 'utf8');
       expect(summaryMd).toContain('Batch A (merged): 0');
@@ -203,9 +205,14 @@ describe.sequential('remote-cleanup-batches script', () => {
       const batchACommands = readFileSync(join(outputDir, 'batch-a-merged.commands.sh'), 'utf8');
       expect(batchACommands).toBe('');
 
+      const batchBCsv = readFileSync(join(outputDir, 'batch-b-low-risk-stale.csv'), 'utf8');
+      expect(batchBCsv).toContain('branch,ageDays,branchOid,riskBand,prState,prMatchMode,latestPr,baseBranches,proposedAction,decision,notes');
+      expect(batchBCsv).toContain('docs/stale-a,180,oid-stale-a,low,closed,head-oid,#2402 (closed),main,delete-review,,review needed');
+
       const issueComment = readFileSync(join(outputDir, 'issue-comment.md'), 'utf8');
       expect(issueComment).toContain('Batch B (low-risk stale): 1');
       expect(issueComment).toContain('Batch C (ambiguous stale): 1');
+      expect(issueComment).toContain('batch-b-low-risk-stale.csv');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

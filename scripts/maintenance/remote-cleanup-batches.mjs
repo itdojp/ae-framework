@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { renderCsv } from './remote-cleanup-csv.mjs';
 import { LOW_RISK_PREFIXES, escapeCell, renderTable, shellQuote } from './remote-branch-triage.mjs';
 
 const DEFAULT_INPUT_JSON = 'tmp/maintenance/remote-branch-triage.json';
@@ -67,6 +68,7 @@ const buildBatch = ({ id, title, description, criteria, items, sourceTriage, out
   const jsonPath = path.join(outputDir, `${fileStem}.json`);
   const mdPath = path.join(outputDir, `${fileStem}.md`);
   const txtPath = path.join(outputDir, `${fileStem}.branches.txt`);
+  const csvPath = path.join(outputDir, `${fileStem}.csv`);
   const commandsPath = path.join(outputDir, `${fileStem}.commands.sh`);
 
   const payload = {
@@ -92,6 +94,7 @@ const buildBatch = ({ id, title, description, criteria, items, sourceTriage, out
     jsonPath,
     mdPath,
     txtPath,
+    csvPath,
     commandsPath,
     branchLines,
     commandLines,
@@ -224,6 +227,24 @@ const renderStaleMarkdown = (batch) => {
   )}\n`;
 };
 
+const renderStaleCsv = (batch) =>
+  renderCsv(
+    ['branch', 'ageDays', 'branchOid', 'riskBand', 'prState', 'prMatchMode', 'latestPr', 'baseBranches', 'proposedAction', 'decision', 'notes'],
+    batch.payload.items.map((item) => ({
+      branch: item.branch,
+      ageDays: String(item.ageDays ?? ''),
+      branchOid: item.branchOid || '',
+      riskBand: item.riskBand || '',
+      prState: item.prState || '',
+      prMatchMode: item.prMatchMode || '',
+      latestPr: formatLatestPrLabel(item.latestPr),
+      baseBranches: Array.isArray(item.baseBranches) ? item.baseBranches.join('|') : '',
+      proposedAction: item.proposedAction || '',
+      decision: item.decision || '',
+      notes: item.notes || '',
+    })),
+  );
+
 const renderSummaryMarkdown = (report, batches, { exampleLimit }) => {
   const examples = (items) => items.slice(0, exampleLimit).map((item) => `\`${item.branch}\``).join(', ') || '(none)';
 
@@ -232,12 +253,13 @@ const renderSummaryMarkdown = (report, batches, { exampleLimit }) => {
   files: \`${path.basename(batches.batchA.jsonPath)}\`, \`${path.basename(batches.batchA.mdPath)}\`, \`${path.basename(batches.batchA.txtPath)}\`, \`${path.basename(batches.batchA.commandsPath)}\`
 - Batch B (low-risk stale): ${batches.batchB.payload.count}  
   examples: ${examples(batches.batchB.payload.items)}  
-  files: \`${path.basename(batches.batchB.jsonPath)}\`, \`${path.basename(batches.batchB.mdPath)}\`, \`${path.basename(batches.batchB.txtPath)}\`
+  files: \`${path.basename(batches.batchB.jsonPath)}\`, \`${path.basename(batches.batchB.mdPath)}\`, \`${path.basename(batches.batchB.txtPath)}\`, \`${path.basename(batches.batchB.csvPath)}\`
 - Batch C (ambiguous stale): ${batches.batchC.payload.count}  
   examples: ${examples(batches.batchC.payload.items)}  
-  files: \`${path.basename(batches.batchC.jsonPath)}\`, \`${path.basename(batches.batchC.mdPath)}\`, \`${path.basename(batches.batchC.txtPath)}\`
+  files: \`${path.basename(batches.batchC.jsonPath)}\`, \`${path.basename(batches.batchC.mdPath)}\`, \`${path.basename(batches.batchC.txtPath)}\`, \`${path.basename(batches.batchC.csvPath)}\`
 \n## Notes\n\n- Batch A may be empty when current inventory has no remote merged candidates.
 - Batch B excludes \`prState=ambiguous\`; branch-name reuse risk is isolated into Batch C.
+- Edit \`batch-b-low-risk-stale.csv\` / \`batch-c-ambiguous-stale.csv\` for operator decisions and keep JSON as provenance.
 - No remote deletion is executed by this script. Execution remains gated by operator approval and \`branch-cleanup.mjs --apply\`.\n`;
 };
 
@@ -250,13 +272,16 @@ const renderIssueComment = (report, batches) => `Batch refresh from \`${report?.
 Artifacts written under \`${path.dirname(batches.batchA.jsonPath)}\`:
 - \`${path.basename(batches.batchA.mdPath)}\`
 - \`${path.basename(batches.batchB.mdPath)}\`
+- \`${path.basename(batches.batchB.csvPath)}\`
 - \`${path.basename(batches.batchC.mdPath)}\`
+- \`${path.basename(batches.batchC.csvPath)}\`
 - \`${path.basename(path.join(path.dirname(batches.batchA.jsonPath), 'summary.md'))}\`
 
 Notes:
 - Batch A contains operator-ready delete commands only when remoteMerged candidates exist.
 - Batch B is the review set for low-risk prefixes (${LOW_RISK_PREFIXES.join(', ')}), excluding ambiguous linkage.
 - Batch C isolates \`prState=ambiguous\` rows for manual inspection before any archive/delete decision.
+- CSV review sheets are the preferred editable input for Batch B / C decisions; JSON remains the provenance anchor.
 `;
 
 const writeFile = (targetPath, content) => {
@@ -282,6 +307,8 @@ export const run = (argv = process.argv.slice(2)) => {
     writeFile(batch.txtPath, `${batch.branchLines.join('\n')}${batch.branchLines.length ? '\n' : ''}`);
     if (batch.payload.batch.id === 'A') {
       writeFile(batch.commandsPath, `${batch.commandLines.join('\n')}${batch.commandLines.length ? '\n' : ''}`);
+    } else {
+      writeFile(batch.csvPath, renderStaleCsv(batch));
     }
   }
 
@@ -304,6 +331,7 @@ export const run = (argv = process.argv.slice(2)) => {
           jsonPath: batch.jsonPath,
           mdPath: batch.mdPath,
           txtPath: batch.txtPath,
+          csvPath: batch.payload.batch.id === 'A' ? '' : batch.csvPath,
           commandsPath: batch.payload.batch.id === 'A' ? batch.commandsPath : '',
         },
       ]),

@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseCsvRecords } from './remote-cleanup-csv.mjs';
 import { LOW_RISK_PREFIXES, renderTable } from './remote-branch-triage.mjs';
 
 const DEFAULT_INPUT_JSON = 'tmp/maintenance/remote-branch-triage.json';
@@ -9,8 +10,8 @@ const DEFAULT_BATCH_DIR = 'tmp/maintenance/remote-cleanup-batches';
 const DEFAULT_OUTPUT_DIR = 'tmp/maintenance/remote-cleanup-reviewed';
 const DECISION_VALUES = new Set(['', 'keep', 'archive', 'delete']);
 const REVIEW_BATCHES = [
-  { id: 'B', filename: 'batch-b-low-risk-stale.json', title: 'Low-risk stale branches' },
-  { id: 'C', filename: 'batch-c-ambiguous-stale.json', title: 'Ambiguous stale branches' },
+  { id: 'B', filename: 'batch-b-low-risk-stale.json', csvFilename: 'batch-b-low-risk-stale.csv', title: 'Low-risk stale branches' },
+  { id: 'C', filename: 'batch-c-ambiguous-stale.json', csvFilename: 'batch-c-ambiguous-stale.csv', title: 'Ambiguous stale branches' },
 ];
 
 const usage = () => {
@@ -87,38 +88,97 @@ const validateBatchProvenance = (payload, report, inputJsonPath, filename) => {
   }
 };
 
-const loadReviewedBatches = (batchDir, report, inputJsonPath) => {
+const normalizeReviewedItems = (batchItems, batch, sourcePath) => {
   const items = [];
   const seenBranches = new Set();
+  for (const item of batchItems) {
+    const branch = String(item?.branch || '').trim();
+    if (!branch) {
+      throw new Error(`${path.basename(sourcePath)} contains an item without branch`);
+    }
+    if (seenBranches.has(branch)) {
+      throw new Error(`${path.basename(sourcePath)} contains duplicate reviewed branch row: ${branch}`);
+    }
+    seenBranches.add(branch);
+    const decision = typeof item?.decision === 'string' ? item.decision.trim() : '';
+    if (!DECISION_VALUES.has(decision)) {
+      throw new Error(`${path.basename(sourcePath)} contains unsupported decision for ${branch}: ${decision}`);
+    }
+    items.push({
+      batchId: batch.id,
+      batchTitle: batch.title,
+      sourcePath,
+      branch,
+      branchOid: typeof item?.branchOid === 'string' ? item.branchOid.trim() : '',
+      decision,
+      notes: typeof item?.notes === 'string' ? item.notes : '',
+    });
+  }
+  return items;
+};
+
+const loadReviewedCsvItems = (csvPath, jsonItems) => {
+  const records = parseCsvRecords(fs.readFileSync(csvPath, 'utf8'));
+  const requiredHeaders = ['branch', 'branchOid', 'decision', 'notes'];
+  const recordHeaders = records.length > 0 ? Object.keys(records[0]) : [];
+  for (const header of requiredHeaders) {
+    if (!recordHeaders.includes(header)) {
+      throw new Error(`${path.basename(csvPath)} is missing required column: ${header}`);
+    }
+  }
+
+  const jsonByBranch = new Map(jsonItems.map((item) => [item.branch, item]));
+  const csvItems = [];
+  const seenBranches = new Set();
+
+  for (const record of records) {
+    const branch = String(record.branch || '').trim();
+    if (!branch) {
+      throw new Error(`${path.basename(csvPath)} contains an item without branch`);
+    }
+    if (seenBranches.has(branch)) {
+      throw new Error(`${path.basename(csvPath)} contains duplicate reviewed branch row: ${branch}`);
+    }
+    const expected = jsonByBranch.get(branch);
+    if (!expected) {
+      throw new Error(`${path.basename(csvPath)} contains unknown reviewed branch row: ${branch}`);
+    }
+    const branchOid = String(record.branchOid || '').trim();
+    if (branchOid && expected.branchOid && branchOid !== expected.branchOid) {
+      throw new Error(`${path.basename(csvPath)} branchOid mismatch for ${branch}: ${branchOid} != ${expected.branchOid}`);
+    }
+    const decision = String(record.decision || '').trim();
+    if (!DECISION_VALUES.has(decision)) {
+      throw new Error(`${path.basename(csvPath)} contains unsupported decision for ${branch}: ${decision}`);
+    }
+    seenBranches.add(branch);
+    csvItems.push({
+      ...expected,
+      sourcePath: csvPath,
+      decision,
+      notes: typeof record.notes === 'string' ? record.notes : '',
+    });
+  }
+
+  for (const item of jsonItems) {
+    if (!seenBranches.has(item.branch)) {
+      throw new Error(`${path.basename(csvPath)} is missing reviewed branch row: ${item.branch}`);
+    }
+  }
+
+  return csvItems;
+};
+
+const loadReviewedBatches = (batchDir, report, inputJsonPath) => {
+  const items = [];
   for (const batch of REVIEW_BATCHES) {
     const targetPath = path.join(batchDir, batch.filename);
     if (!fs.existsSync(targetPath)) continue;
     const payload = readJson(targetPath);
     validateBatchProvenance(payload, report, inputJsonPath, batch.filename);
-    const batchItems = Array.isArray(payload?.items) ? payload.items : [];
-    for (const item of batchItems) {
-      const branch = String(item?.branch || '').trim();
-      if (!branch) {
-        throw new Error(`${batch.filename} contains an item without branch`);
-      }
-      if (seenBranches.has(branch)) {
-        throw new Error(`${batch.filename} contains duplicate reviewed branch row: ${branch}`);
-      }
-      seenBranches.add(branch);
-      const decision = typeof item?.decision === 'string' ? item.decision.trim() : '';
-      if (!DECISION_VALUES.has(decision)) {
-        throw new Error(`${batch.filename} contains unsupported decision for ${branch}: ${decision}`);
-      }
-      items.push({
-        batchId: batch.id,
-        batchTitle: batch.title,
-        sourcePath: targetPath,
-        branch,
-        branchOid: typeof item?.branchOid === 'string' ? item.branchOid.trim() : '',
-        decision,
-        notes: typeof item?.notes === 'string' ? item.notes : '',
-      });
-    }
+    const batchItems = normalizeReviewedItems(Array.isArray(payload?.items) ? payload.items : [], batch, targetPath);
+    const csvPath = path.join(batchDir, batch.csvFilename);
+    items.push(...(fs.existsSync(csvPath) ? loadReviewedCsvItems(csvPath, batchItems) : batchItems));
   }
   if (items.length === 0) {
     throw new Error(`No reviewed batch rows found under ${batchDir}`);
@@ -224,6 +284,7 @@ const buildReviewMetadata = ({ inputJsonPath, batchDir, reviewedItems, summaryBy
   sourceTriagePath: inputJsonPath,
   sourceBatchDir: batchDir,
   sourceBatches: Array.from(new Set(reviewedItems.map((item) => path.basename(item.sourcePath)))),
+  reviewInputFormat: reviewedItems.some((item) => item.sourcePath.endsWith('.csv')) ? 'csv' : 'json',
   summaryByBatch,
 });
 
@@ -298,6 +359,8 @@ export const run = (argv = process.argv.slice(2)) => {
         generatedAt: merged.report.reviewedDecisions.generatedAt,
         sourceTriagePath: inputJsonPath,
         sourceBatchDir: batchDir,
+        sourceBatches: merged.report.reviewedDecisions.sourceBatches,
+        reviewInputFormat: merged.report.reviewedDecisions.reviewInputFormat,
         reviewedManifestPath,
         summaryByBatch: merged.summaryByBatch,
         appliedRows: merged.appliedRows,

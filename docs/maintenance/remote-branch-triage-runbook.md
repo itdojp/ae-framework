@@ -92,6 +92,7 @@ Generated review packs:
 - `tmp/maintenance/remote-cleanup-batches/batch-a-merged.*`
 - `tmp/maintenance/remote-cleanup-batches/batch-b-low-risk-stale.*`
 - `tmp/maintenance/remote-cleanup-batches/batch-c-ambiguous-stale.*`
+- Batch B / C では `*.csv` も生成される。operator は JSON ではなく CSV の `decision` / `notes` を編集する。
 
 Batch semantics:
 
@@ -159,6 +160,8 @@ Sync semantics:
 
 - Batch B / C `decision` and `notes` are copied back into `remoteStale[*]` by `branch`
 - `branchOid` mismatch is treated as a hard error to avoid syncing stale review input into a moved branch
+- `batch-b-low-risk-stale.csv` / `batch-c-ambiguous-stale.csv` が存在する場合は CSV の `decision` / `notes` を優先し、対応する JSON の provenance / row set と照合する
+- `reviewed-triage.json` / `summary.json` には `sourceBatches` と `reviewInputFormat` が残るため、どの review input で同期したかを監査できる
 - this step records reviewed decisions only; it does not execute any delete command
 
 ### 4) Execute approved delete batch
