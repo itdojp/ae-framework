@@ -73,6 +73,32 @@ node scripts/maintenance/remote-branch-triage.mjs --gh-pr-base release/2026-03
   - fill `decision` with one of `keep`, `archive`, `delete`
   - add `notes` explaining why the branch is retained or removed
 
+### 3.5) Render batch review packs
+
+```bash
+pnpm run maintenance:branch:triage:batches
+
+# Optional: render from an alternate worksheet or output directory
+node scripts/maintenance/remote-cleanup-batches.mjs \
+  --input-json tmp/maintenance/remote-branch-triage.json \
+  --output-dir tmp/maintenance/remote-cleanup-batches
+```
+
+Generated review packs:
+
+- `tmp/maintenance/remote-cleanup-batches/summary.json`
+- `tmp/maintenance/remote-cleanup-batches/summary.md`
+- `tmp/maintenance/remote-cleanup-batches/issue-comment.md`
+- `tmp/maintenance/remote-cleanup-batches/batch-a-merged.*`
+- `tmp/maintenance/remote-cleanup-batches/batch-b-low-risk-stale.*`
+- `tmp/maintenance/remote-cleanup-batches/batch-c-ambiguous-stale.*`
+
+Batch semantics:
+
+- Batch A: current `remoteMerged[*]` rows. Use the generated `*.commands.sh` only after operator approval.
+- Batch B: low-risk prefixes (`docs/`, `chore/`, `test/`, `ci/`, `types/`) excluding `prState=ambiguous`.
+- Batch C: `prState=ambiguous` rows isolated for manual inspection.
+
 ### 4) Execute approved delete batch
 
 ```bash

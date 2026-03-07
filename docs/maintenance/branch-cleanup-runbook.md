@@ -31,6 +31,9 @@ node scripts/maintenance/branch-inventory.mjs --base origin/main --gh-pr-limit 2
 
 # Render operator worksheet for remote cleanup
 pnpm run maintenance:branch:triage:render
+
+# Render Batch A/B/C review packs from the worksheet
+pnpm run maintenance:branch:triage:batches
 ```
 
 Outputs:

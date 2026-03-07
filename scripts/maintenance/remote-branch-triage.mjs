@@ -11,8 +11,8 @@ const DEFAULT_OUTPUT_MD = 'tmp/maintenance/remote-branch-triage.md';
 const DEFAULT_GH_PR_LIMIT = 1000;
 const DEFAULT_GH_PR_BASE = '';
 
-const LOW_RISK_PREFIXES = ['docs/', 'chore/', 'test/', 'ci/', 'types/'];
-const HIGH_RISK_PREFIXES = ['feat/', 'feature/', 'fix/', 'ops/', 'policy/'];
+export const LOW_RISK_PREFIXES = ['docs/', 'chore/', 'test/', 'ci/', 'types/'];
+export const HIGH_RISK_PREFIXES = ['feat/', 'feature/', 'fix/', 'ops/', 'policy/'];
 
 const usage = () => {
   console.log(`Usage: node scripts/maintenance/remote-branch-triage.mjs [options]
@@ -100,15 +100,15 @@ const runCommandSafe = (command, args) => {
 const runGhSafe = (args) => runCommandSafe('gh', args);
 const runGitSafe = (args) => runCommandSafe('git', args);
 
-const shellQuote = (value) => `'${String(value).replace(/'/g, `'"'"'`)}'`;
+export const shellQuote = (value) => `'${String(value).replace(/'/g, `'"'"'`)}'`;
 
-const escapeCell = (value) =>
+export const escapeCell = (value) =>
   String(value ?? '')
     .replace(/\\/g, '\\\\')
     .replace(/\|/g, '\\|')
     .replace(/\r?\n/g, '<br>');
 
-const renderTable = (headers, rows) => {
+export const renderTable = (headers, rows) => {
   if (rows.length === 0) {
     return '- (none)\n';
   }
