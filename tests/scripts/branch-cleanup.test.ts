@@ -22,6 +22,20 @@ const runGit = (cwd: string, args: string[]) => {
 };
 
 describe.sequential('branch-cleanup script', () => {
+  it('rejects fail-open reviewed input arguments', async () => {
+    const mod = await import(branchCleanupModuleUrl);
+
+    expect(() => mod.parseArgs(['--scope', 'remote', '--remote-manifest-json', ''])).toThrow(
+      '--remote-manifest-json requires a non-empty value',
+    );
+    expect(() =>
+      mod.parseArgs(['--scope', 'remote', '--remote-branches-file', '--apply']),
+    ).toThrow('--remote-branches-file requires a non-empty value');
+    expect(() => mod.parseArgs(['--scope', 'remote', '--remote-manifest-mode', 'merged'])).toThrow(
+      '--remote-manifest-mode requires --remote-manifest-json',
+    );
+  });
+
   it('parses reviewed branch lists from text and JSON input', async () => {
     const mod = await import(branchCleanupModuleUrl);
 
@@ -203,6 +217,62 @@ describe.sequential('branch-cleanup script', () => {
           selectionMode: 'triage-merged',
         }),
       ]);
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects reviewed manifests that do not record remote/base provenance', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-branch-cleanup-invalid-manifest-'));
+    const repoDir = join(sandbox, 'repo');
+    const reportPath = join(sandbox, 'branch-cleanup-report.json');
+    const triagePath = join(sandbox, 'remote-branch-triage.json');
+
+    try {
+      mkdirSync(repoDir, { recursive: true });
+      runGit(repoDir, ['init', '-b', 'main']);
+      runGit(repoDir, ['config', 'user.email', 'test@example.com']);
+      runGit(repoDir, ['config', 'user.name', 'Test User']);
+
+      writeFileSync(join(repoDir, 'README.md'), 'seed\n', 'utf8');
+      runGit(repoDir, ['add', 'README.md']);
+      runGit(repoDir, ['commit', '-m', 'init']);
+
+      writeFileSync(
+        triagePath,
+        `${JSON.stringify(
+          {
+            remoteMerged: [{ branch: 'docs/merged-b', branchOid: 'oid-1' }],
+            remoteStale: [],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+
+      const result = spawnSync(
+        'node',
+        [
+          branchCleanupScript,
+          '--base',
+          'main',
+          '--scope',
+          'remote',
+          '--remote-manifest-json',
+          triagePath,
+          '--output-json',
+          reportPath,
+        ],
+        {
+          cwd: repoDir,
+          encoding: 'utf8',
+          timeout: 120_000,
+        },
+      );
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('remote manifest is missing sourceInventory.remote/base');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

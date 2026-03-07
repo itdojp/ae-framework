@@ -96,6 +96,10 @@ node scripts/maintenance/branch-cleanup.mjs \
   --apply
 ```
 
+The reviewed manifest path is accepted only when the triage JSON still records
+`sourceInventory.remote` and `sourceInventory.base`, so the cleanup run stays
+bound to the reviewed environment.
+
 ### 5) Re-run inventory after delete
 
 ```bash

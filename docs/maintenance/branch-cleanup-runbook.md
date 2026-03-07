@@ -114,6 +114,7 @@ node scripts/maintenance/branch-cleanup.mjs \
 Safeguards:
 
 - `triage-merged` keeps the ancestry check and blocks branches no longer merged to `base`
+- triage manifest input must carry `sourceInventory.remote` and `sourceInventory.base`
 - manifest rows with `branchOid` block deletion when the current remote tip no longer matches
 - `--scope local` cannot be combined with reviewed remote inputs
 - protected branches remain excluded even when explicitly listed

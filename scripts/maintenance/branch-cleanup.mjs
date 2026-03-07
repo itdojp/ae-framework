@@ -15,6 +15,15 @@ const PROTECTED_EXACT = new Set(['main', 'master', 'develop', 'staging']);
 const PROTECTED_PREFIXES = ['release/', 'hotfix/'];
 const REMOTE_MANIFEST_MODES = new Set(['merged', 'stale-delete']);
 
+const readRequiredValue = (argv, index, flag) => {
+  const next = argv[index + 1];
+  const value = String(next || '').trim();
+  if (!value || value.startsWith('--')) {
+    throw new Error(`${flag} requires a non-empty value`);
+  }
+  return value;
+};
+
 const usage = () => {
   console.log(`Usage: node scripts/maintenance/branch-cleanup.mjs [options]
 
@@ -26,7 +35,7 @@ Options:
   --output-json <path>          JSON output path (default: ${DEFAULT_OUTPUT_JSON})
   --remote-manifest-json <path> Use remote-branch-triage JSON as reviewed delete manifest
   --remote-manifest-mode <mode> merged | stale-delete (default: ${DEFAULT_REMOTE_MANIFEST_MODE})
-  --remote-branches-file <path> Use explicit approved branch list (text or JSON array)
+  --remote-branches-file <path> Use explicit approved branch list (text, JSON array, or { branches: [...] })
   --apply                       Execute deletion (without this, dry-run only)
   --help                        Show this help
 `);
@@ -40,8 +49,11 @@ export const parseArgs = (argv) => {
     max: DEFAULT_MAX,
     outputJson: DEFAULT_OUTPUT_JSON,
     remoteManifestJson: '',
+    remoteManifestJsonProvided: false,
     remoteManifestMode: DEFAULT_REMOTE_MANIFEST_MODE,
+    remoteManifestModeProvided: false,
     remoteBranchesFile: '',
+    remoteBranchesFileProvided: false,
     apply: false,
   };
 
@@ -52,15 +64,18 @@ export const parseArgs = (argv) => {
       process.exit(0);
     }
     if (arg === '--base') {
-      options.base = String(argv[++i] || '').trim();
+      options.base = readRequiredValue(argv, i, '--base');
+      i += 1;
       continue;
     }
     if (arg === '--remote') {
-      options.remote = String(argv[++i] || '').trim();
+      options.remote = readRequiredValue(argv, i, '--remote');
+      i += 1;
       continue;
     }
     if (arg === '--scope') {
-      options.scope = String(argv[++i] || '').trim();
+      options.scope = readRequiredValue(argv, i, '--scope');
+      i += 1;
       continue;
     }
     if (arg === '--max') {
@@ -68,19 +83,26 @@ export const parseArgs = (argv) => {
       continue;
     }
     if (arg === '--output-json') {
-      options.outputJson = String(argv[++i] || '').trim();
+      options.outputJson = readRequiredValue(argv, i, '--output-json');
+      i += 1;
       continue;
     }
     if (arg === '--remote-manifest-json') {
-      options.remoteManifestJson = String(argv[++i] || '').trim();
+      options.remoteManifestJson = readRequiredValue(argv, i, '--remote-manifest-json');
+      options.remoteManifestJsonProvided = true;
+      i += 1;
       continue;
     }
     if (arg === '--remote-manifest-mode') {
-      options.remoteManifestMode = String(argv[++i] || '').trim();
+      options.remoteManifestMode = readRequiredValue(argv, i, '--remote-manifest-mode');
+      options.remoteManifestModeProvided = true;
+      i += 1;
       continue;
     }
     if (arg === '--remote-branches-file') {
-      options.remoteBranchesFile = String(argv[++i] || '').trim();
+      options.remoteBranchesFile = readRequiredValue(argv, i, '--remote-branches-file');
+      options.remoteBranchesFileProvided = true;
+      i += 1;
       continue;
     }
     if (arg === '--apply') {
@@ -104,7 +126,7 @@ export const parseArgs = (argv) => {
   if (!REMOTE_MANIFEST_MODES.has(options.remoteManifestMode)) {
     throw new Error('--remote-manifest-mode must be merged or stale-delete');
   }
-  if (!options.remoteManifestJson && options.remoteManifestMode !== DEFAULT_REMOTE_MANIFEST_MODE) {
+  if (options.remoteManifestModeProvided && !options.remoteManifestJsonProvided) {
     throw new Error('--remote-manifest-mode requires --remote-manifest-json');
   }
   if ((options.remoteManifestJson || options.remoteBranchesFile) && options.scope === 'local') {
@@ -214,19 +236,24 @@ const loadRemoteSelection = (options) => {
     const manifestRemote =
       report?.sourceInventory?.remote || report?.remoteName || report?.githubPullRequests?.remote || '';
     const manifestBase = report?.sourceInventory?.base || report?.base || '';
-    if (manifestRemote && manifestRemote !== options.remote) {
+    if (!manifestRemote || !manifestBase) {
+      throw new Error(
+        'remote manifest is missing sourceInventory.remote/base (or compatible fields); cannot use for remote cleanup',
+      );
+    }
+    if (manifestRemote !== options.remote) {
       throw new Error(
         `remote manifest remote mismatch: expected ${options.remote}, got ${manifestRemote}`,
       );
     }
-    if (manifestBase && manifestBase !== options.base) {
+    if (manifestBase !== options.base) {
       throw new Error(`remote manifest base mismatch: expected ${options.base}, got ${manifestBase}`);
     }
     return {
       mode: options.remoteManifestMode === 'merged' ? 'triage-merged' : 'triage-stale-delete',
       sourcePath: manifestPath,
-      expectedBase: manifestBase,
-      expectedRemote: manifestRemote,
+      expectedBase: options.base,
+      expectedRemote: options.remote,
       entries: selectRemoteCandidatesFromTriage(report, options.remoteManifestMode),
     };
   }
