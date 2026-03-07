@@ -69,7 +69,31 @@ node scripts/maintenance/remote-branch-triage.mjs --gh-pr-base release/2026-03
 ### 4) Execute approved delete batch
 
 ```bash
-node scripts/maintenance/branch-cleanup.mjs --scope remote --max 100 --apply
+# Reviewed merged rows
+node scripts/maintenance/branch-cleanup.mjs \
+  --scope remote \
+  --remote-manifest-json tmp/maintenance/remote-branch-triage.json \
+  --remote-manifest-mode merged \
+  --max 100 \
+  --apply
+
+# Reviewed stale rows with decision=delete
+node scripts/maintenance/branch-cleanup.mjs \
+  --scope remote \
+  --remote-manifest-json tmp/maintenance/remote-branch-triage.json \
+  --remote-manifest-mode stale-delete \
+  --max 100 \
+  --apply
+```
+
+If only a subset of rows is approved, materialize that subset into a branch list and run:
+
+```bash
+node scripts/maintenance/branch-cleanup.mjs \
+  --scope remote \
+  --remote-branches-file tmp/maintenance/approved-remote-branches.txt \
+  --max 100 \
+  --apply
 ```
 
 ### 5) Re-run inventory after delete

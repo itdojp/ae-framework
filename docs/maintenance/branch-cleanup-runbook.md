@@ -80,15 +80,43 @@ Use remote deletion only after:
 3. confirmation that branches are merged,
 4. explicit operator approval.
 
-The preferred path is to copy the exact commands from
-`tmp/maintenance/remote-branch-triage.md` / `remoteMerged[*].deleteCommand`.
-Use the generic apply command only when the worksheet and target batch are still aligned.
+The preferred path is to bind the delete scope to reviewed worksheet rows by using
+`tmp/maintenance/remote-branch-triage.json` or an explicit approved branch list.
+This avoids recomputing a wider batch at apply time.
 
 When approved, run:
 
 ```bash
-node scripts/maintenance/branch-cleanup.mjs --scope remote --max 100 --apply
+# Merged remote branches reviewed from the worksheet
+node scripts/maintenance/branch-cleanup.mjs \
+  --scope remote \
+  --remote-manifest-json tmp/maintenance/remote-branch-triage.json \
+  --remote-manifest-mode merged \
+  --max 100 \
+  --apply
+
+# Reviewed stale branches whose worksheet rows were marked decision=delete
+node scripts/maintenance/branch-cleanup.mjs \
+  --scope remote \
+  --remote-manifest-json tmp/maintenance/remote-branch-triage.json \
+  --remote-manifest-mode stale-delete \
+  --max 100 \
+  --apply
+
+# Explicit operator-approved subset (one branch per line, or JSON array)
+node scripts/maintenance/branch-cleanup.mjs \
+  --scope remote \
+  --remote-branches-file tmp/maintenance/approved-remote-branches.txt \
+  --max 100 \
+  --apply
 ```
+
+Safeguards:
+
+- `triage-merged` keeps the ancestry check and blocks branches no longer merged to `base`
+- manifest rows with `branchOid` block deletion when the current remote tip no longer matches
+- `--scope local` cannot be combined with reviewed remote inputs
+- protected branches remain excluded even when explicitly listed
 
 The operator workflow and worksheet format are defined in
 `docs/maintenance/remote-branch-triage-runbook.md`.
