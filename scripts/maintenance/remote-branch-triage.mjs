@@ -200,18 +200,21 @@ export const loadPullRequests = (
       reason: 'gh pr lookup disabled',
       requestedBaseBranch: baseBranch,
       requestedLimit: limit,
+      partialResults: false,
+      lookupCoverage: 'disabled',
       items: [],
       byHeadRefName: new Map(),
     };
   }
 
+  const queryLimit = limit + 1;
   const args = [
     'pr',
     'list',
     '--state',
     'all',
     '--limit',
-    String(limit),
+    String(queryLimit),
     '--json',
     'number,title,url,state,isDraft,mergedAt,closedAt,updatedAt,headRefName,headRefOid,baseRefName,headRepository,headRepositoryOwner',
   ];
@@ -227,12 +230,14 @@ export const loadPullRequests = (
       reason: result.message || result.output || 'gh unavailable',
       requestedBaseBranch: baseBranch,
       requestedLimit: limit,
+      partialResults: false,
+      lookupCoverage: 'unavailable',
       items: [],
       byHeadRefName: new Map(),
     };
   }
 
-  const items = JSON.parse(result.output || '[]')
+  const filteredItems = JSON.parse(result.output || '[]')
     .filter((item) => item && item.headRefName)
     .filter((item) => !baseBranch || item.baseRefName === baseBranch)
     .filter(
@@ -254,6 +259,8 @@ export const loadPullRequests = (
       headRefOid: item.headRefOid || '',
       baseRefName: item.baseRefName || '',
     }));
+  const partialResults = filteredItems.length > limit;
+  const items = filteredItems.slice(0, limit);
 
   return {
     available: true,
@@ -261,6 +268,8 @@ export const loadPullRequests = (
     reason: '',
     requestedBaseBranch: baseBranch,
     requestedLimit: limit,
+    partialResults,
+    lookupCoverage: partialResults ? 'truncated' : 'complete',
     items,
     byHeadRefName: groupPullRequestsByHeadRefName(items),
   };
@@ -393,6 +402,7 @@ const renderSummaryCounts = (counts, order) =>
   order.map((key) => `${key}=${counts[key] || 0}`).join(', ');
 
 const lookupStatusState = (githubPullRequests) => {
+  if (githubPullRequests?.available && githubPullRequests?.lookupCoverage === 'truncated') return 'partial';
   if (githubPullRequests?.available) return 'enabled';
   if (githubPullRequests?.disabled) return 'disabled';
   return 'unavailable';
@@ -400,8 +410,8 @@ const lookupStatusState = (githubPullRequests) => {
 
 const formatLookupStatus = (githubPullRequests) => {
   const state = lookupStatusState(githubPullRequests);
-  if (state === 'enabled') {
-    return `enabled (matched=${githubPullRequests.matchedItems}, base=${githubPullRequests.requestedBaseBranch || 'all'})`;
+  if (state === 'enabled' || state === 'partial') {
+    return `${state} (matched=${githubPullRequests.matchedItems}, base=${githubPullRequests.requestedBaseBranch || 'all'}, coverage=${githubPullRequests.lookupCoverage || 'complete'})`;
   }
   if (state === 'disabled') {
     return 'disabled';
@@ -419,6 +429,7 @@ const buildIssueCommentTemplate = (report) => {
 - generatedAt: ${report.generatedAt}
 - remote merged candidates: ${report.summary.remoteMergedCandidates}
 - remote stale candidates: ${report.summary.remoteStaleCandidates}
+- PR lookup coverage: ${report.githubPullRequests.lookupCoverage || 'unknown'}
 - stale risk bands: ${renderSummaryCounts(report.summary.staleByRiskBand, ['low', 'standard', 'high'])}
 - stale PR states: ${renderSummaryCounts(report.summary.staleByPrState, ['open', 'closed', 'merged', 'none', 'ambiguous', 'unavailable'])}
 - stale PR match modes: ${renderSummaryCounts(report.summary.staleByMatchMode, ['head-oid', 'branch-name-only', 'none'])}
@@ -444,6 +455,8 @@ export const buildTriageReport = (
       reason: 'gh pr lookup disabled',
       requestedBaseBranch: '',
       requestedLimit: 0,
+      partialResults: false,
+      lookupCoverage: 'disabled',
       items: [],
       byHeadRefName: new Map(),
     },
@@ -526,6 +539,8 @@ export const buildTriageReport = (
       reason: pullRequests?.reason || '',
       requestedBaseBranch: pullRequests?.requestedBaseBranch || '',
       requestedLimit: pullRequests?.requestedLimit ?? DEFAULT_GH_PR_LIMIT,
+      partialResults: Boolean(pullRequests?.partialResults),
+      lookupCoverage: pullRequests?.lookupCoverage || (prLookupAvailable ? 'complete' : 'unavailable'),
       matchedItems: Array.isArray(pullRequests?.items) ? pullRequests.items.length : 0,
     },
     summary,
@@ -571,6 +586,10 @@ export const renderMarkdown = (report) => {
   ]);
   const deleteCommands = report.remoteMerged.map((item) => item.deleteCommand).join('\n') || '# (none)';
   const lookupStatus = formatLookupStatus(report.githubPullRequests);
+  const lookupWarning =
+    report.githubPullRequests.lookupCoverage === 'truncated'
+      ? '> Warning: GitHub PR lookup hit the configured window limit. Treat `prState=none` as incomplete evidence until the lookup window is widened.\n'
+      : '';
 
   return `# Remote Branch Triage Worksheet
 
@@ -580,6 +599,7 @@ export const renderMarkdown = (report) => {
 - base: \`${report.sourceInventory.base}\`
 - remote: \`${report.sourceInventory.remote}\`
 - GitHub PR lookup: ${lookupStatus}
+${lookupWarning}
 
 ## Summary
 
