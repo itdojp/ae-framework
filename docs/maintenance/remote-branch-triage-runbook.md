@@ -161,6 +161,39 @@ Sync semantics:
 - `branchOid` mismatch is treated as a hard error to avoid syncing stale review input into a moved branch
 - this step records reviewed decisions only; it does not execute any delete command
 
+### 3.8) Render delete readiness status from reviewed decisions + reference audit
+
+```bash
+pnpm run maintenance:branch:triage:review-status
+
+# Optional: use alternate reviewed manifest / audit / output paths
+node scripts/maintenance/remote-cleanup-review-status.mjs \
+  --reviewed-manifest-json tmp/maintenance/remote-cleanup-reviewed/reviewed-triage.json \
+  --reference-audit-dir tmp/maintenance/remote-cleanup-reference-audit \
+  --output-dir tmp/maintenance/remote-cleanup-review-status
+```
+
+Generated outputs:
+
+- `tmp/maintenance/remote-cleanup-review-status/summary.json`
+- `tmp/maintenance/remote-cleanup-review-status/summary.md`
+- `tmp/maintenance/remote-cleanup-review-status/issue-comment.md`
+- `tmp/maintenance/remote-cleanup-review-status/delete-ready.json`
+- `tmp/maintenance/remote-cleanup-review-status/delete-ready.branches.txt`
+- `tmp/maintenance/remote-cleanup-review-status/delete-ready.branches.json`
+- `tmp/maintenance/remote-cleanup-review-status/delete-blocked.json`
+- `tmp/maintenance/remote-cleanup-review-status/pending-review.json`
+- `tmp/maintenance/remote-cleanup-review-status/retained.json`
+- `tmp/maintenance/remote-cleanup-review-status/missing-audit.json`
+
+Status semantics:
+
+- `delete-ready`: `decision=delete` かつ open issue / automation / plan / code refs が未検出
+- `delete-blocked`: `decision=delete` だが active refs が残っている
+- `retained`: `decision=keep|archive`
+- `pending-review`: `decision` 未入力
+- `missing-audit`: reviewed manifest にはあるが reference audit に存在しない row
+
 ### 4) Execute approved delete batch
 
 ```bash
@@ -177,6 +210,13 @@ node scripts/maintenance/branch-cleanup.mjs \
   --scope remote \
   --remote-manifest-json tmp/maintenance/remote-cleanup-reviewed/reviewed-triage.json \
   --remote-manifest-mode stale-delete \
+  --max 100 \
+  --apply
+
+# Narrow explicit subset rendered from delete-ready review status
+node scripts/maintenance/branch-cleanup.mjs \
+  --scope remote \
+  --remote-branches-file tmp/maintenance/remote-cleanup-review-status/delete-ready.branches.json \
   --max 100 \
   --apply
 ```

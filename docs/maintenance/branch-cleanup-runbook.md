@@ -40,6 +40,9 @@ pnpm run maintenance:branch:triage:reference-audit
 
 # Sync reviewed Batch B/C decisions into a derived manifest
 pnpm run maintenance:branch:triage:decision-sync
+
+# Classify reviewed rows into delete-ready / blocked / pending artifacts
+pnpm run maintenance:branch:triage:review-status
 ```
 
 Outputs:
@@ -109,6 +112,13 @@ node scripts/maintenance/branch-cleanup.mjs \
   --scope remote \
   --remote-manifest-json tmp/maintenance/remote-cleanup-reviewed/reviewed-triage.json \
   --remote-manifest-mode stale-delete \
+  --max 100 \
+  --apply
+
+# Explicit delete-ready subset rendered from reviewed status
+node scripts/maintenance/branch-cleanup.mjs \
+  --scope remote \
+  --remote-branches-file tmp/maintenance/remote-cleanup-review-status/delete-ready.branches.json \
   --max 100 \
   --apply
 
