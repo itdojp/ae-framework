@@ -234,6 +234,34 @@ describe.sequential('remote-cleanup-reference-audit script', () => {
       const issueComment = readFileSync(join(outputDir, 'issue-comment.md'), 'utf8');
       expect(issueComment).toContain('Batch B: total=3');
       expect(issueComment).toContain('Batch C: total=1');
+
+      const ignoredOutputDir = join(sandbox, 'out-ignored');
+      const ignoredResult = spawnSync(
+        'node',
+        [
+          scriptPath,
+          '--batch-dir',
+          batchDir,
+          '--output-dir',
+          ignoredOutputDir,
+          '--open-issues-json',
+          issuesPath,
+          '--ignore-issue-number',
+          '2469',
+        ],
+        {
+          cwd: repoDir,
+          encoding: 'utf8',
+          timeout: 120_000,
+        },
+      );
+
+      expect(ignoredResult.status, ignoredResult.stderr || ignoredResult.stdout).toBe(0);
+
+      const ignoredSummary = JSON.parse(readFileSync(join(ignoredOutputDir, 'summary.json'), 'utf8'));
+      expect(ignoredSummary.openIssues.ignoredIssueNumbers).toEqual([2469]);
+      expect(ignoredSummary.batches['batch-b-low-risk-stale'].summary.withOpenIssueRefs).toBe(0);
+      expect(ignoredSummary.batches['batch-c-ambiguous-stale'].summary.withOpenIssueRefs).toBe(0);
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

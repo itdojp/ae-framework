@@ -108,6 +108,12 @@ pnpm run maintenance:branch:triage:reference-audit
 node scripts/maintenance/remote-cleanup-reference-audit.mjs \
   --batch-dir tmp/maintenance/remote-cleanup-batches \
   --output-dir tmp/maintenance/remote-cleanup-reference-audit
+
+# Optional: ignore the tracking issue itself when its body/comment lists example branches
+node scripts/maintenance/remote-cleanup-reference-audit.mjs \
+  --batch-dir tmp/maintenance/remote-cleanup-batches \
+  --output-dir tmp/maintenance/remote-cleanup-reference-audit \
+  --ignore-issue-number 2469
 ```
 
 Generated audit outputs:

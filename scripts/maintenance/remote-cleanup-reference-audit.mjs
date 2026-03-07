@@ -32,6 +32,7 @@ Options:
   --owner <name>              GitHub owner for open issue lookup (default: ${DEFAULT_OWNER})
   --repo <name>               GitHub repo for open issue lookup (default: ${DEFAULT_REPO})
   --open-issues-json <path>   Offline JSON fixture for open issues/comments
+  --ignore-issue-number <n>   Ignore matching open issue numbers (repeatable)
   --match-limit <n>           Per-file / per-issue line match limit (default: ${DEFAULT_MATCH_LIMIT})
   --skip-open-issues          Skip GitHub open issue lookup
   --help                      Show this help
@@ -45,6 +46,7 @@ export const parseArgs = (argv) => {
     owner: DEFAULT_OWNER,
     repo: DEFAULT_REPO,
     openIssuesJson: '',
+    ignoreIssueNumbers: [],
     matchLimit: DEFAULT_MATCH_LIMIT,
     skipOpenIssues: false,
   };
@@ -73,6 +75,14 @@ export const parseArgs = (argv) => {
     }
     if (arg === '--open-issues-json') {
       options.openIssuesJson = String(argv[++i] || '').trim();
+      continue;
+    }
+    if (arg === '--ignore-issue-number') {
+      const value = Number(argv[++i]);
+      if (!Number.isInteger(value) || value < 1) {
+        throw new Error('--ignore-issue-number must be a positive integer');
+      }
+      options.ignoreIssueNumbers.push(value);
       continue;
     }
     if (arg === '--match-limit') {
@@ -223,11 +233,17 @@ export const loadOpenIssues = ({ owner, repo, openIssuesJson = '', skipOpenIssue
   };
 };
 
-export const scanOpenIssueReferences = (issuesResult, branches, { matchLimit = DEFAULT_MATCH_LIMIT } = {}) => {
+export const scanOpenIssueReferences = (
+  issuesResult,
+  branches,
+  { matchLimit = DEFAULT_MATCH_LIMIT, ignoreIssueNumbers = [] } = {},
+) => {
   const refsByBranch = new Map(branches.map((branch) => [branch, []]));
   if (!issuesResult.available) return refsByBranch;
+  const ignored = new Set(ignoreIssueNumbers);
 
   for (const item of issuesResult.items) {
+    if (ignored.has(item.number)) continue;
     for (const branch of branches) {
       if (String(item.title).includes(branch)) {
         refsByBranch.get(branch).push({
@@ -387,6 +403,7 @@ const renderSummaryMarkdown = (summary) => {
 - generatedAt: ${summary.generatedAt}
 - batch dir: \`${summary.source.batchDir}\`
 - open issue lookup: ${summary.openIssues.available ? summary.openIssues.reason : `disabled (${summary.openIssues.reason})`}
+- ignored issue numbers: ${summary.openIssues.ignoredIssueNumbers.length ? summary.openIssues.ignoredIssueNumbers.join(', ') : '(none)'}
 
 ${renderTable(
     ['batch', 'slug', 'title', 'total', 'openIssues', 'automation', 'plan', 'code', 'clearCandidates'],
@@ -404,6 +421,7 @@ ${lines.join('\n')}
 
 Notes:
 - clear means no open issue / automation / plan / code reference was detected in the current audit scope.
+- ignored issue numbers: ${summary.openIssues.ignoredIssueNumbers.length ? summary.openIssues.ignoredIssueNumbers.join(', ') : '(none)'}
 - keep-review remains required when open issue refs or automation refs exist.
 - manual-review remains required for ambiguous branches and any branch with plan/code references.
 `;
@@ -446,10 +464,13 @@ export const run = (argv = process.argv.slice(2)) => {
     openIssuesJson: options.openIssuesJson,
     skipOpenIssues: options.skipOpenIssues,
   });
-  const issueRefsByBranch = scanOpenIssueReferences(openIssues, branches, { matchLimit: options.matchLimit });
+  const filteredIssueRefsByBranch = scanOpenIssueReferences(openIssues, branches, {
+    matchLimit: options.matchLimit,
+    ignoreIssueNumbers: options.ignoreIssueNumbers,
+  });
 
   const audits = batchPayloads.map((entry) => {
-    const audit = buildBatchAudit(entry.payload, issueRefsByBranch, repoRefsByBranch);
+    const audit = buildBatchAudit(entry.payload, filteredIssueRefsByBranch, repoRefsByBranch);
     const slug = path.basename(entry.filename, '.json');
     return {
       slug,
@@ -473,6 +494,7 @@ export const run = (argv = process.argv.slice(2)) => {
       available: openIssues.available,
       reason: openIssues.reason,
       count: openIssues.items.length,
+      ignoredIssueNumbers: options.ignoreIssueNumbers,
     },
     batches: Object.fromEntries(
       audits.map((audit) => [
