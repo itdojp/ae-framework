@@ -29,7 +29,10 @@ Key worksheet fields:
 
 - `githubPullRequests`: lookup availability, requested limit/base, matched PR count
 - GitHub PR lookup defaults to the inventory-derived base branch and ignores cross-repository PRs from forks
+- `remoteMerged[*].branchOid` / `remoteStale[*].branchOid`: inventory-captured remote tip SHA used as linkage evidence
 - `remoteMerged[*].latestPr`: latest linked PR summary for each merged remote branch
+- `remoteMerged[*].prMatchMode` / `remoteStale[*].prMatchMode`: `head-oid`, `branch-name-only`, or `none`
+- `summary.staleByMatchMode`: stale branch counts grouped by linkage evidence quality
 - `remoteMerged[*].deleteCommand`: operator-ready delete command
 - `remoteStale[*].riskBand`: low / standard / high risk bucket
 - `remoteStale[*].prState`: `open`, `closed`, `merged`, `none`, `ambiguous`, or `unavailable`
@@ -60,9 +63,9 @@ node scripts/maintenance/remote-branch-triage.mjs --gh-pr-base release/2026-03
 - `remoteMerged`:
   - default proposal: `delete`
   - requires operator approval before execution
-  - verify `latestPr`, `baseBranches`, and `deleteCommand` before apply
+  - verify `branchOid`, `prMatchMode`, `latestPr`, `baseBranches`, and `deleteCommand` before apply
 - `remoteStale`:
-  - review `riskBand`, `prState`, and `proposedAction`
+  - review `branchOid`, `riskBand`, `prState`, `prMatchMode`, and `proposedAction`
   - fill `decision` with one of `keep`, `archive`, `delete`
   - add `notes` explaining why the branch is retained or removed
 
@@ -125,6 +128,8 @@ pnpm run maintenance:branch:triage:render
   - no active owner, no active issue, and no operational dependency remains
 
 If `prState=ambiguous`, treat the worksheet row as branch-name reuse risk and keep manual review mandatory.
+
+If `prMatchMode=branch-name-only`, do not treat `latestPr` as proven linkage; it is reference context only until OID evidence is confirmed.
 
 If `githubPullRequests.available=false`, treat `proposedAction` as advisory only and keep manual review strict.
 

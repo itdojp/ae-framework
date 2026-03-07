@@ -291,21 +291,67 @@ const summarizePrefixes = (items, top = 10) => {
     .slice(0, top);
 };
 
-const latestPullRequestSummary = (items) => {
+const normalizeRemoteMergedCandidates = (inventory) => {
+  const detailed = inventory?.candidates?.remoteMergedDetailed || [];
+  if (Array.isArray(detailed) && detailed.length > 0) {
+    return detailed.map((item) => ({
+      branch: item.branch,
+      oid: item.oid || '',
+    }));
+  }
+  return (inventory?.candidates?.remoteMerged || []).map((branch) => ({
+    branch,
+    oid: '',
+  }));
+};
+
+const normalizeRemoteStaleCandidates = (inventory) => {
+  const detailed = inventory?.candidates?.remoteStaleByAgeDetailed || [];
+  if (Array.isArray(detailed) && detailed.length > 0) {
+    return detailed.map((item) => ({
+      branch: item.branch,
+      oid: item.oid || '',
+      ageDays: item.ageDays,
+    }));
+  }
+  return (inventory?.candidates?.remoteStaleByAge || []).map((item) => ({
+    branch: item.branch,
+    oid: '',
+    ageDays: item.ageDays,
+  }));
+};
+
+const latestPullRequestSummary = (items, { branchOid = '' } = {}) => {
   if (!items || items.length === 0) {
     return {
       state: 'none',
       counts: { open: 0, closed: 0, merged: 0 },
       latest: null,
       baseBranches: [],
+      matchMode: 'none',
     };
   }
 
   const sorted = sortPullRequests(items);
   const counts = countBy(sorted, (item) => item.state, ['open', 'closed', 'merged']);
-  const baseBranches = [...new Set(sorted.map((item) => item.baseRefName).filter(Boolean))].sort();
-  const latest = sorted[0];
-  const state = sorted.length > 1 ? 'ambiguous' : latest.state;
+  const oid = String(branchOid || '').trim();
+  const exactMatches = oid ? sorted.filter((item) => item.headRefOid === oid) : [];
+  const matched = exactMatches.length > 0 ? exactMatches : sorted;
+  const baseBranches = [...new Set(matched.map((item) => item.baseRefName).filter(Boolean))].sort();
+  const latest = matched[0];
+  let state = latest.state;
+  let matchMode = oid ? 'head-oid' : 'branch-name-only';
+
+  if (oid) {
+    if (exactMatches.length === 0) {
+      state = 'ambiguous';
+      matchMode = 'branch-name-only';
+    } else if (exactMatches.length > 1) {
+      state = 'ambiguous';
+    }
+  } else if (sorted.length > 1) {
+    state = 'ambiguous';
+  }
 
   return {
     state,
@@ -320,8 +366,10 @@ const latestPullRequestSummary = (items) => {
       mergedAt: latest.mergedAt,
       closedAt: latest.closedAt,
       updatedAt: latest.updatedAt,
+      headRefOid: latest.headRefOid || '',
     },
     baseBranches,
+    matchMode,
   };
 };
 
@@ -373,6 +421,7 @@ const buildIssueCommentTemplate = (report) => {
 - remote stale candidates: ${report.summary.remoteStaleCandidates}
 - stale risk bands: ${renderSummaryCounts(report.summary.staleByRiskBand, ['low', 'standard', 'high'])}
 - stale PR states: ${renderSummaryCounts(report.summary.staleByPrState, ['open', 'closed', 'merged', 'none', 'ambiguous', 'unavailable'])}
+- stale PR match modes: ${renderSummaryCounts(report.summary.staleByMatchMode, ['head-oid', 'branch-name-only', 'none'])}
 
 ### Top prefixes
 ${prefixLines || '- (none)'}
@@ -402,32 +451,40 @@ export const buildTriageReport = (
 ) => {
   const remoteName = inventory?.remote || 'origin';
   const prLookupAvailable = Boolean(pullRequests?.available);
-  const remoteMerged = (inventory?.candidates?.remoteMerged || []).map((branch) => {
-    const prSummary = latestPullRequestSummary(pullRequests?.byHeadRefName?.get(branch) || []);
+  const remoteMerged = normalizeRemoteMergedCandidates(inventory).map((item) => {
+    const prSummary = latestPullRequestSummary(pullRequests?.byHeadRefName?.get(item.branch) || [], {
+      branchOid: item.oid,
+    });
     return {
-      branch,
-      prefix: prefixOfBranch(branch),
+      branch: item.branch,
+      branchOid: item.oid || '',
+      prefix: prefixOfBranch(item.branch),
       proposedAction: 'delete',
       approval: 'required',
       rationale: 'merged-to-base inventory candidate',
       prState: prLookupAvailable ? prSummary.state : 'unavailable',
+      prMatchMode: prSummary.matchMode,
       prCounts: prSummary.counts,
       latestPr: prSummary.latest,
       baseBranches: prSummary.baseBranches,
-      deleteCommand: `git push ${shellQuote(remoteName)} --delete ${shellQuote(branch)}`,
+      deleteCommand: `git push ${shellQuote(remoteName)} --delete ${shellQuote(item.branch)}`,
     };
   });
 
-  const remoteStale = (inventory?.candidates?.remoteStaleByAge || []).map((item) => {
+  const remoteStale = normalizeRemoteStaleCandidates(inventory).map((item) => {
     const riskBand = classifyRiskBand(item.branch);
-    const prSummary = latestPullRequestSummary(pullRequests?.byHeadRefName?.get(item.branch) || []);
+    const prSummary = latestPullRequestSummary(pullRequests?.byHeadRefName?.get(item.branch) || [], {
+      branchOid: item.oid,
+    });
     const prState = prLookupAvailable ? prSummary.state : 'unavailable';
     return {
       branch: item.branch,
+      branchOid: item.oid || '',
       prefix: prefixOfBranch(item.branch),
       ageDays: item.ageDays,
       riskBand,
       prState,
+      prMatchMode: prSummary.matchMode,
       prCounts: prSummary.counts,
       latestPr: prSummary.latest,
       baseBranches: prSummary.baseBranches,
@@ -451,6 +508,7 @@ export const buildTriageReport = (
       (item) => item.prState,
       ['open', 'closed', 'merged', 'none', 'ambiguous', 'unavailable'],
     ),
+    staleByMatchMode: countBy(remoteStale, (item) => item.prMatchMode, ['head-oid', 'branch-name-only', 'none']),
     topPrefixes: summarizePrefixes(remoteStale),
   };
 
@@ -485,7 +543,9 @@ export const buildTriageReport = (
 export const renderMarkdown = (report) => {
   const mergedRows = report.remoteMerged.map((item) => [
     `\`${item.branch}\``,
+    item.branchOid || '-',
     formatLatestPrLabel(item.latestPr),
+    item.prMatchMode,
     item.baseBranches.join(', ') || '-',
     item.prState,
     item.proposedAction,
@@ -494,8 +554,10 @@ export const renderMarkdown = (report) => {
   const staleRows = report.remoteStale.map((item) => [
     `\`${item.branch}\``,
     String(item.ageDays),
+    item.branchOid || '-',
     item.riskBand,
     item.prState,
+    item.prMatchMode,
     formatLatestPrLabel(item.latestPr),
     item.baseBranches.join(', ') || '-',
     item.proposedAction,
@@ -525,16 +587,17 @@ export const renderMarkdown = (report) => {
 - remote stale candidates: ${report.summary.remoteStaleCandidates}
 - stale risk bands: ${renderSummaryCounts(report.summary.staleByRiskBand, ['low', 'standard', 'high'])}
 - stale PR states: ${renderSummaryCounts(report.summary.staleByPrState, ['open', 'closed', 'merged', 'none', 'ambiguous', 'unavailable'])}
+- stale PR match modes: ${renderSummaryCounts(report.summary.staleByMatchMode, ['head-oid', 'branch-name-only', 'none'])}
 
 ### Top stale prefixes
 
 ${renderTable(['prefix', 'count', 'examples'], prefixRows)}
 ## Remote merged candidates (delete after operator approval)
 
-${renderTable(['branch', 'latestPr', 'bases', 'prState', 'proposed', 'approval'], mergedRows)}
+${renderTable(['branch', 'branchOid', 'latestPr', 'match', 'bases', 'prState', 'proposed', 'approval'], mergedRows)}
 ## Remote stale candidates (operator triage required)
 
-${renderTable(['branch', 'ageDays', 'risk', 'prState', 'latestPr', 'bases', 'proposed', 'decision', 'notes'], staleRows)}
+${renderTable(['branch', 'ageDays', 'branchOid', 'risk', 'prState', 'match', 'latestPr', 'bases', 'proposed', 'decision', 'notes'], staleRows)}
 ## Approval checklist
 
 - [ ] \`pnpm run maintenance:branch:inventory\` を再実行して最新 inventory を確認した
