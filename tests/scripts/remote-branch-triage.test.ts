@@ -111,6 +111,74 @@ describe.sequential('remote-branch-triage script', () => {
     expect(report.items.map((item: { number: number }) => item.number)).toEqual([1, 2]);
   });
 
+  it('uses the extra fetched row to backfill after repository filters', async () => {
+    const mod = await import(triageModuleUrl);
+    const report = mod.loadPullRequests(
+      {
+        limit: 2,
+        baseBranch: 'main',
+        repositoryOwner: 'itdojp',
+        repositoryName: 'ae-framework',
+      },
+      {
+        ghRunner: () => ({
+          ok: true,
+          output: JSON.stringify([
+            {
+              number: 20,
+              title: 'same repo newest',
+              url: 'https://example.test/pr/20',
+              state: 'MERGED',
+              isDraft: false,
+              mergedAt: '2026-03-06T11:00:00Z',
+              closedAt: '2026-03-06T11:00:00Z',
+              updatedAt: '2026-03-06T11:00:00Z',
+              headRefName: 'feat/same-one',
+              headRefOid: 'sha-20',
+              baseRefName: 'main',
+              headRepository: { name: 'ae-framework' },
+              headRepositoryOwner: { login: 'itdojp' },
+            },
+            {
+              number: 21,
+              title: 'fork row',
+              url: 'https://example.test/pr/21',
+              state: 'OPEN',
+              isDraft: false,
+              mergedAt: '',
+              closedAt: '',
+              updatedAt: '2026-03-06T10:00:00Z',
+              headRefName: 'feat/fork-row',
+              headRefOid: 'sha-21',
+              baseRefName: 'main',
+              headRepository: { name: 'ae-framework-fork' },
+              headRepositoryOwner: { login: 'external-user' },
+            },
+            {
+              number: 22,
+              title: 'same repo backfill',
+              url: 'https://example.test/pr/22',
+              state: 'CLOSED',
+              isDraft: false,
+              mergedAt: '',
+              closedAt: '2026-03-06T09:00:00Z',
+              updatedAt: '2026-03-06T09:00:00Z',
+              headRefName: 'feat/same-two',
+              headRefOid: 'sha-22',
+              baseRefName: 'main',
+              headRepository: { name: 'ae-framework' },
+              headRepositoryOwner: { login: 'itdojp' },
+            },
+          ]),
+        }),
+      },
+    );
+
+    expect(report.partialResults).toBe(false);
+    expect(report.lookupCoverage).toBe('complete');
+    expect(report.items.map((item: { number: number }) => item.number)).toEqual([20, 22]);
+  });
+
   it('filters cross-repository PRs when repository identity is provided', async () => {
     const mod = await import(triageModuleUrl);
     const report = mod.loadPullRequests(

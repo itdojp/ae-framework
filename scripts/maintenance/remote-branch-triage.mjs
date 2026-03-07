@@ -237,10 +237,7 @@ export const loadPullRequests = (
     };
   }
 
-  const rawItems = JSON.parse(result.output || '[]');
-  const partialResults = rawItems.length > limit;
-  const items = rawItems
-    .slice(0, limit)
+  const filteredItems = JSON.parse(result.output || '[]')
     .filter((item) => item && item.headRefName)
     .filter((item) => !baseBranch || item.baseRefName === baseBranch)
     .filter(
@@ -262,6 +259,8 @@ export const loadPullRequests = (
       headRefOid: item.headRefOid || '',
       baseRefName: item.baseRefName || '',
     }));
+  const partialResults = filteredItems.length > limit;
+  const items = filteredItems.slice(0, limit);
 
   return {
     available: true,
