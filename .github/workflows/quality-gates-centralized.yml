@@ -187,11 +187,17 @@ jobs:
             cat artifacts/quality/summary.json
             printf ' -->\n'
           } > artifacts/quality/comment-body.txt
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = fs.readFileSync('artifacts/quality/comment-body.txt', 'utf8');
+          fs.writeFileSync('artifacts/quality/comment-body.json', JSON.stringify({ body }));
+          NODE
           existing_id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .id' | head -n1 || true)
           if [ -n "$existing_id" ]; then
-            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing_id" -f body=@artifacts/quality/comment-body.txt
+            # Use --input with JSON payload so gh api posts file contents, not the literal path string.
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing_id" --input artifacts/quality/comment-body.json
           else
-            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body=@artifacts/quality/comment-body.txt
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --input artifacts/quality/comment-body.json
           fi
   types-tests:
     uses: ./.github/workflows/ci-core.yml
