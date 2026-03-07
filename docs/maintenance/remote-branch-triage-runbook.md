@@ -124,6 +124,9 @@ Generated audit outputs:
 - `tmp/maintenance/remote-cleanup-reference-audit/*.audit.json`
 - `tmp/maintenance/remote-cleanup-reference-audit/*.audit.md`
 
+Live issue lookup paginates open issues and per-issue comments before matching branch names.
+Use `--open-issues-json` when a fixed offline fixture is preferable for review or regression.
+
 Audit semantics:
 
 - `openIssueRefs`: current open issue / PR title, body, comment matches

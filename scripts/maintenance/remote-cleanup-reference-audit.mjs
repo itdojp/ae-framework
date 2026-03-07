@@ -117,6 +117,19 @@ const runGh = (args) => runCommand('gh', args);
 
 const readJson = (targetPath) => JSON.parse(fs.readFileSync(targetPath, 'utf8'));
 
+export const flattenPaginatedRestPages = (payload) => {
+  if (!Array.isArray(payload)) return [];
+  return payload.flatMap((entry) => (Array.isArray(entry) ? entry : [entry]));
+};
+
+const ensurePerPage = (endpoint) => {
+  const separator = endpoint.includes('?') ? '&' : '?';
+  return endpoint.includes('per_page=') ? endpoint : `${endpoint}${separator}per_page=100`;
+};
+
+const loadPaginatedGhItems = (endpoint, ghRunner = runGh) =>
+  flattenPaginatedRestPages(JSON.parse(ghRunner(['api', '--paginate', '--slurp', ensurePerPage(endpoint)])));
+
 const isHistoryPath = (relativePath) => HISTORY_PATTERNS.some((pattern) => pattern.test(relativePath));
 
 export const classifyRepoPath = (relativePath) => {
@@ -193,7 +206,13 @@ const normalizeOpenIssueFixture = (items) =>
         : [],
   }));
 
-export const loadOpenIssues = ({ owner, repo, openIssuesJson = '', skipOpenIssues = false } = {}) => {
+export const loadOpenIssues = ({
+  owner,
+  repo,
+  openIssuesJson = '',
+  skipOpenIssues = false,
+  ghRunner = runGh,
+} = {}) => {
   if (skipOpenIssues) {
     return {
       available: false,
@@ -210,11 +229,11 @@ export const loadOpenIssues = ({ owner, repo, openIssuesJson = '', skipOpenIssue
     };
   }
 
-  const baseItems = JSON.parse(runGh(['api', `repos/${owner}/${repo}/issues?state=open&per_page=100`]));
+  const baseItems = loadPaginatedGhItems(`repos/${owner}/${repo}/issues?state=open`, ghRunner);
   const items = baseItems.map((item) => {
     let comments = [];
     if (item.comments > 0 && item.comments_url) {
-      comments = JSON.parse(runGh(['api', item.comments_url]));
+      comments = loadPaginatedGhItems(item.comments_url, ghRunner);
     }
     return {
       number: item.number,

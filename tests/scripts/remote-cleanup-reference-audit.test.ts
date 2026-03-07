@@ -32,6 +32,62 @@ describe.sequential('remote-cleanup-reference-audit script', () => {
     expect(mod.classifyRepoPath('src/index.ts')).toBe('code');
     expect(mod.classifyRepoPath('docs/maintenance/branch-cleanup-report-2026-02-28.md')).toBe('history');
     expect(mod.classifyRepoPath('tmp/maintenance/out.json')).toBe('excluded');
+    expect(mod.flattenPaginatedRestPages([[{ id: 1 }], [{ id: 2 }], { id: 3 }])).toEqual([
+      { id: 1 },
+      { id: 2 },
+      { id: 3 },
+    ]);
+  });
+
+  it('paginates open issues and per-issue comments during live lookup', async () => {
+    const mod = await import(moduleUrl);
+    const ghCalls: string[] = [];
+    const ghRunner = (args: string[]) => {
+      ghCalls.push(args.join(' '));
+      const endpoint = args.at(-1);
+      if (String(endpoint).includes('/issues?state=open')) {
+        return JSON.stringify([
+          [
+            {
+              number: 100,
+              title: 'first page',
+              body: '',
+              html_url: 'https://example.invalid/issues/100',
+              comments: 0,
+            },
+          ],
+          [
+            {
+              number: 101,
+              title: 'second page',
+              body: '',
+              html_url: 'https://example.invalid/issues/101',
+              comments: 2,
+              comments_url: 'https://api.example.invalid/issues/101/comments',
+            },
+          ],
+        ]);
+      }
+      if (endpoint === 'https://api.example.invalid/issues/101/comments?per_page=100') {
+        return JSON.stringify([[{ body: 'branch mention', html_url: 'https://example.invalid/comment/1' }], []]);
+      }
+      throw new Error(`unexpected gh call: ${args.join(' ')}`);
+    };
+
+    const result = mod.loadOpenIssues({
+      owner: 'itdojp',
+      repo: 'ae-framework',
+      ghRunner,
+    });
+
+    expect(result.available).toBe(true);
+    expect(result.reason).toBe('live');
+    expect(result.items).toHaveLength(2);
+    expect(result.items[1].comments).toEqual([{ body: 'branch mention', html_url: 'https://example.invalid/comment/1' }]);
+    expect(ghCalls).toEqual([
+      'api --paginate --slurp repos/itdojp/ae-framework/issues?state=open&per_page=100',
+      'api --paginate --slurp https://api.example.invalid/issues/101/comments?per_page=100',
+    ]);
   });
 
   it('writes audit reports from batch packs and open issue fixtures', () => {
