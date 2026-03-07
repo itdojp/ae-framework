@@ -281,4 +281,67 @@ describe.sequential('remote-cleanup-decision-sync script', () => {
       rmSync(sandbox, { recursive: true, force: true });
     }
   });
+
+  it('rejects duplicate reviewed branch rows in batch input', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-decision-sync-'));
+    const inputJson = join(sandbox, 'remote-branch-triage.json');
+    const batchDir = join(sandbox, 'batches');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      mkdirSync(batchDir, { recursive: true });
+      writeFileSync(
+        inputJson,
+        `${JSON.stringify(
+          {
+            generatedAt: '2026-03-08T00:00:00Z',
+            sourceInventory: {
+              path: inputJson,
+              generatedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            remoteMerged: [],
+            remoteStale: [{ branch: 'docs/stale-a', branchOid: 'oid-a', prState: 'merged', decision: '', notes: '' }],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(batchDir, 'batch-b-low-risk-stale.json'),
+        `${JSON.stringify(
+          {
+            generatedAt: '2026-03-08T00:10:00Z',
+            sourceTriage: {
+              path: inputJson,
+              generatedAt: '2026-03-08T00:00:00Z',
+              inventoryGeneratedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            items: [
+              { branch: 'docs/stale-a', branchOid: 'oid-a', decision: 'keep', notes: '' },
+              { branch: 'docs/stale-a', branchOid: 'oid-a', decision: 'delete', notes: '' },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+
+      const result = spawnSync('node', [scriptPath, '--input-json', inputJson, '--batch-dir', batchDir, '--output-dir', outputDir], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 120_000,
+      });
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr || result.stdout).toContain('duplicate reviewed branch row');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
 });

@@ -80,15 +80,16 @@ const validateBatchProvenance = (payload, report, inputJsonPath, filename) => {
     throw new Error(`${filename} sourceTriage.inventoryGeneratedAt does not match source inventory`);
   }
   if (String(sourceTriage.base || '') !== String(reportSource.base || '')) {
-    throw new Error(`${filename} sourceTriage.base does not match source triage`);
+    throw new Error(`${filename} sourceTriage.base does not match source inventory base`);
   }
   if (String(sourceTriage.remote || '') !== String(reportSource.remote || '')) {
-    throw new Error(`${filename} sourceTriage.remote does not match source triage`);
+    throw new Error(`${filename} sourceTriage.remote does not match source inventory remote`);
   }
 };
 
 const loadReviewedBatches = (batchDir, report, inputJsonPath) => {
   const items = [];
+  const seenBranches = new Set();
   for (const batch of REVIEW_BATCHES) {
     const targetPath = path.join(batchDir, batch.filename);
     if (!fs.existsSync(targetPath)) continue;
@@ -100,6 +101,10 @@ const loadReviewedBatches = (batchDir, report, inputJsonPath) => {
       if (!branch) {
         throw new Error(`${batch.filename} contains an item without branch`);
       }
+      if (seenBranches.has(branch)) {
+        throw new Error(`${batch.filename} contains duplicate reviewed branch row: ${branch}`);
+      }
+      seenBranches.add(branch);
       const decision = typeof item?.decision === 'string' ? item.decision.trim() : '';
       if (!DECISION_VALUES.has(decision)) {
         throw new Error(`${batch.filename} contains unsupported decision for ${branch}: ${decision}`);
@@ -311,5 +316,10 @@ export const run = (argv = process.argv.slice(2)) => {
 
 const currentFilePath = fileURLToPath(import.meta.url);
 if (process.argv[1] && path.resolve(process.argv[1]) === currentFilePath) {
-  run();
+  try {
+    run();
+  } catch (error) {
+    console.error('[remote-cleanup-decision-sync] ERROR:', error instanceof Error ? error.message : error);
+    process.exit(1);
+  }
 }
