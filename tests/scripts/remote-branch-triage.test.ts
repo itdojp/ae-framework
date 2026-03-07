@@ -29,12 +29,88 @@ const buildPullRequestLookup = (items: Array<Record<string, unknown>>) => {
     reason: '',
     requestedBaseBranch: '',
     requestedLimit: 1000,
+    partialResults: false,
+    lookupCoverage: 'complete',
     items: sorted,
     byHeadRefName,
   };
 };
 
 describe.sequential('remote-branch-triage script', () => {
+  it('marks PR lookup coverage as truncated when the gh window is exhausted', async () => {
+    const mod = await import(triageModuleUrl);
+    const capturedArgs: string[][] = [];
+    const report = mod.loadPullRequests(
+      {
+        limit: 2,
+        baseBranch: 'main',
+      },
+      {
+        ghRunner: (args: string[]) => {
+          capturedArgs.push(args);
+          return {
+            ok: true,
+            output: JSON.stringify([
+              {
+                number: 1,
+                title: 'keep newest',
+                url: 'https://example.test/pr/1',
+                state: 'MERGED',
+                isDraft: false,
+                mergedAt: '2026-03-06T10:00:00Z',
+                closedAt: '2026-03-06T10:00:00Z',
+                updatedAt: '2026-03-06T10:00:00Z',
+                headRefName: 'feat/one',
+                headRefOid: 'sha-1',
+                baseRefName: 'main',
+                headRepository: { name: 'ae-framework' },
+                headRepositoryOwner: { login: 'itdojp' },
+              },
+              {
+                number: 2,
+                title: 'keep second',
+                url: 'https://example.test/pr/2',
+                state: 'CLOSED',
+                isDraft: false,
+                mergedAt: '',
+                closedAt: '2026-03-06T09:00:00Z',
+                updatedAt: '2026-03-06T09:00:00Z',
+                headRefName: 'feat/two',
+                headRefOid: 'sha-2',
+                baseRefName: 'main',
+                headRepository: { name: 'ae-framework' },
+                headRepositoryOwner: { login: 'itdojp' },
+              },
+              {
+                number: 3,
+                title: 'truncated remainder',
+                url: 'https://example.test/pr/3',
+                state: 'OPEN',
+                isDraft: false,
+                mergedAt: '',
+                closedAt: '',
+                updatedAt: '2026-03-06T08:00:00Z',
+                headRefName: 'feat/three',
+                headRefOid: 'sha-3',
+                baseRefName: 'main',
+                headRepository: { name: 'ae-framework' },
+                headRepositoryOwner: { login: 'itdojp' },
+              },
+            ]),
+          };
+        },
+      },
+    );
+
+    expect(capturedArgs[0]).toContain('--limit');
+    expect(capturedArgs[0]).toContain('3');
+    expect(report.available).toBe(true);
+    expect(report.partialResults).toBe(true);
+    expect(report.lookupCoverage).toBe('truncated');
+    expect(report.items).toHaveLength(2);
+    expect(report.items.map((item: { number: number }) => item.number)).toEqual([1, 2]);
+  });
+
   it('filters cross-repository PRs when repository identity is provided', async () => {
     const mod = await import(triageModuleUrl);
     const report = mod.loadPullRequests(
@@ -276,6 +352,7 @@ describe.sequential('remote-branch-triage script', () => {
     ]);
     expect(report.templates.issueComment).toContain('Remote branch triage summary');
     expect(report.sourceInventory.path).toBe('tmp/maintenance/branch-inventory.json');
+    expect(report.githubPullRequests.lookupCoverage).toBe('complete');
   });
 
   it('writes markdown and json outputs with gh lookup disabled', () => {
@@ -334,6 +411,8 @@ describe.sequential('remote-branch-triage script', () => {
           available: false,
           disabled: true,
           requestedLimit: 0,
+          partialResults: false,
+          lookupCoverage: 'disabled',
         }),
       );
 
@@ -363,6 +442,8 @@ describe.sequential('remote-branch-triage script', () => {
         reason: '',
         requestedBaseBranch: 'main',
         requestedLimit: 1000,
+        partialResults: true,
+        lookupCoverage: 'truncated',
         matchedItems: 2,
       },
       summary: {
@@ -412,5 +493,7 @@ describe.sequential('remote-branch-triage script', () => {
     expect(markdown).toContain('#2401 (closed)');
     expect(markdown).toContain('line1\\\\check\\|value<br>line2');
     expect(markdown).toContain('line1\\value|x');
+    expect(markdown).toContain('coverage=truncated');
+    expect(markdown).toContain('lookup hit the configured window limit');
   });
 });

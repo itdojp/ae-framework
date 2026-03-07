@@ -28,6 +28,7 @@ Generated triage worksheet:
 Key worksheet fields:
 
 - `githubPullRequests`: lookup availability, requested limit/base, matched PR count
+- `githubPullRequests.lookupCoverage` / `githubPullRequests.partialResults`: whether the GH lookup window was complete or truncated
 - GitHub PR lookup defaults to the inventory-derived base branch and ignores cross-repository PRs from forks
 - `remoteMerged[*].branchOid` / `remoteStale[*].branchOid`: inventory-captured remote tip SHA used as linkage evidence
 - `remoteMerged[*].latestPr`: latest linked PR summary for each merged remote branch
@@ -53,6 +54,9 @@ pnpm run maintenance:branch:triage:render
 
 # Optional: disable GitHub PR lookup in offline/debug runs
 node scripts/maintenance/remote-branch-triage.mjs --gh-pr-limit 0
+
+# Optional: widen the GH lookup window when coverage is reported as truncated
+node scripts/maintenance/remote-branch-triage.mjs --gh-pr-limit 2000
 
 # Optional: override auto-derived base branch filter
 node scripts/maintenance/remote-branch-triage.mjs --gh-pr-base release/2026-03
@@ -134,6 +138,8 @@ pnpm run maintenance:branch:triage:render
 If `prState=ambiguous`, treat the worksheet row as branch-name reuse risk and keep manual review mandatory.
 
 If `prMatchMode=branch-name-only`, do not treat `latestPr` as proven linkage; it is reference context only until OID evidence is confirmed.
+
+If `githubPullRequests.lookupCoverage=truncated`, treat every `prState=none` row as incomplete evidence until the lookup window is widened and the worksheet is regenerated.
 
 If `githubPullRequests.available=false`, treat `proposedAction` as advisory only and keep manual review strict.
 
