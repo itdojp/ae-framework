@@ -136,6 +136,31 @@ Audit semantics:
   - `manual-review` when no open issue/automation refs remain and plan/code refs still exist, or the row is ambiguous
   - `delete-candidate` / `archive-candidate` only when no active refs were found in the current audit scope
 
+### 3.7) Sync reviewed batch decisions back into a derived manifest
+
+```bash
+pnpm run maintenance:branch:triage:decision-sync
+
+# Optional: use alternate source / batch / output paths
+node scripts/maintenance/remote-cleanup-decision-sync.mjs \
+  --input-json tmp/maintenance/remote-branch-triage.json \
+  --batch-dir tmp/maintenance/remote-cleanup-batches \
+  --output-dir tmp/maintenance/remote-cleanup-reviewed
+```
+
+Generated outputs:
+
+- `tmp/maintenance/remote-cleanup-reviewed/reviewed-triage.json`
+- `tmp/maintenance/remote-cleanup-reviewed/summary.json`
+- `tmp/maintenance/remote-cleanup-reviewed/summary.md`
+- `tmp/maintenance/remote-cleanup-reviewed/issue-comment.md`
+
+Sync semantics:
+
+- Batch B / C `decision` and `notes` are copied back into `remoteStale[*]` by `branch`
+- `branchOid` mismatch is treated as a hard error to avoid syncing stale review input into a moved branch
+- this step records reviewed decisions only; it does not execute any delete command
+
 ### 4) Execute approved delete batch
 
 ```bash
@@ -150,7 +175,7 @@ node scripts/maintenance/branch-cleanup.mjs \
 # Reviewed stale rows with decision=delete
 node scripts/maintenance/branch-cleanup.mjs \
   --scope remote \
-  --remote-manifest-json tmp/maintenance/remote-branch-triage.json \
+  --remote-manifest-json tmp/maintenance/remote-cleanup-reviewed/reviewed-triage.json \
   --remote-manifest-mode stale-delete \
   --max 100 \
   --apply

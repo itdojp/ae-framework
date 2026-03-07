@@ -142,6 +142,7 @@
     "maintenance:branch:triage:render": "node scripts/maintenance/remote-branch-triage.mjs",
     "maintenance:branch:triage:batches": "node scripts/maintenance/remote-cleanup-batches.mjs",
     "maintenance:branch:triage:reference-audit": "node scripts/maintenance/remote-cleanup-reference-audit.mjs",
+    "maintenance:branch:triage:decision-sync": "node scripts/maintenance/remote-cleanup-decision-sync.mjs",
     "maintenance:branch:cleanup:dry-run": "node scripts/maintenance/branch-cleanup.mjs --scope both --max 200",
     "maintenance:branch:cleanup:apply:local": "node scripts/maintenance/branch-cleanup.mjs --scope local --max 200 --apply",
     "maintenance:worktree:cleanup:dry-run": "node scripts/maintenance/worktree-cleanup.mjs --prune --max 50",
