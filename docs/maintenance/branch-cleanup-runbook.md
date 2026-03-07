@@ -37,6 +37,9 @@ pnpm run maintenance:branch:triage:batches
 
 # Audit active issue / automation references before any remote delete decision
 pnpm run maintenance:branch:triage:reference-audit
+
+# Sync reviewed Batch B/C decisions into a derived manifest
+pnpm run maintenance:branch:triage:decision-sync
 ```
 
 Outputs:
@@ -87,7 +90,7 @@ Use remote deletion only after:
 4. explicit operator approval.
 
 The preferred path is to bind the delete scope to reviewed worksheet rows by using
-`tmp/maintenance/remote-branch-triage.json` or an explicit approved branch list.
+`tmp/maintenance/remote-cleanup-reviewed/reviewed-triage.json` or an explicit approved branch list.
 This avoids recomputing a wider batch at apply time.
 
 When approved, run:
@@ -104,7 +107,7 @@ node scripts/maintenance/branch-cleanup.mjs \
 # Reviewed stale branches whose worksheet rows were marked decision=delete
 node scripts/maintenance/branch-cleanup.mjs \
   --scope remote \
-  --remote-manifest-json tmp/maintenance/remote-branch-triage.json \
+  --remote-manifest-json tmp/maintenance/remote-cleanup-reviewed/reviewed-triage.json \
   --remote-manifest-mode stale-delete \
   --max 100 \
   --apply
