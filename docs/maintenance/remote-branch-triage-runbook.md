@@ -99,6 +99,43 @@ Batch semantics:
 - Batch B: low-risk prefixes (`docs/`, `chore/`, `test/`, `ci/`, `types/`) excluding `prState=ambiguous`.
 - Batch C: `prState=ambiguous` rows isolated for manual inspection.
 
+### 3.6) Audit active issue / automation references
+
+```bash
+pnpm run maintenance:branch:triage:reference-audit
+
+# Optional: audit an alternate batch directory or run offline with a fixture
+node scripts/maintenance/remote-cleanup-reference-audit.mjs \
+  --batch-dir tmp/maintenance/remote-cleanup-batches \
+  --output-dir tmp/maintenance/remote-cleanup-reference-audit
+
+# Optional: ignore the tracking issue itself when its body/comment lists example branches
+node scripts/maintenance/remote-cleanup-reference-audit.mjs \
+  --batch-dir tmp/maintenance/remote-cleanup-batches \
+  --output-dir tmp/maintenance/remote-cleanup-reference-audit \
+  --ignore-issue-number 2469
+```
+
+Generated audit outputs:
+
+- `tmp/maintenance/remote-cleanup-reference-audit/summary.json`
+- `tmp/maintenance/remote-cleanup-reference-audit/summary.md`
+- `tmp/maintenance/remote-cleanup-reference-audit/issue-comment.md`
+- `tmp/maintenance/remote-cleanup-reference-audit/*.audit.json`
+- `tmp/maintenance/remote-cleanup-reference-audit/*.audit.md`
+
+Live issue lookup paginates open issues and per-issue comments before matching branch names.
+Use `--open-issues-json` when a fixed offline fixture is preferable for review or regression.
+
+Audit semantics:
+
+- `openIssueRefs`: current open issue / PR title, body, comment matches
+- `repoRefs`: tracked repository references grouped as `automation`, `plan`, `code`, `history`
+- `reviewHint`:
+  - `keep-review` when open issue refs or automation refs exist, including ambiguous rows
+  - `manual-review` when no open issue/automation refs remain and plan/code refs still exist, or the row is ambiguous
+  - `delete-candidate` / `archive-candidate` only when no active refs were found in the current audit scope
+
 ### 4) Execute approved delete batch
 
 ```bash
