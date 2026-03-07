@@ -92,7 +92,7 @@ Generated review packs:
 - `tmp/maintenance/remote-cleanup-batches/batch-a-merged.*`
 - `tmp/maintenance/remote-cleanup-batches/batch-b-low-risk-stale.*`
 - `tmp/maintenance/remote-cleanup-batches/batch-c-ambiguous-stale.*`
-- Batch B / C では `*.csv` も生成される。operator は JSON ではなく CSV の `decision` / `notes` を編集する。
+- For Batch B and C, `*.csv` files are also generated; the operator should edit the `decision` and `notes` fields in the CSV rather than in the JSON.
 
 Batch semantics:
 
@@ -160,8 +160,8 @@ Sync semantics:
 
 - Batch B / C `decision` and `notes` are copied back into `remoteStale[*]` by `branch`
 - `branchOid` mismatch is treated as a hard error to avoid syncing stale review input into a moved branch
-- `batch-b-low-risk-stale.csv` / `batch-c-ambiguous-stale.csv` が存在する場合は CSV の `decision` / `notes` を優先し、対応する JSON の provenance / row set と照合する
-- `reviewed-triage.json` / `summary.json` には `sourceBatches` と `reviewInputFormat` が残るため、どの review input で同期したかを監査できる
+- If `batch-b-low-risk-stale.csv` / `batch-c-ambiguous-stale.csv` exist, prefer the CSV `decision` / `notes` values and reconcile them against the corresponding JSON provenance / row set
+- `reviewed-triage.json` / `summary.json` retain `sourceBatches` and `reviewInputFormat`, allowing you to audit which review input was used for the sync
 - this step records reviewed decisions only; it does not execute any delete command
 
 ### 4) Execute approved delete batch

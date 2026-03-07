@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseCsvRecords } from './remote-cleanup-csv.mjs';
+import { parseCsvRecords, parseCsvRows } from './remote-cleanup-csv.mjs';
 import { LOW_RISK_PREFIXES, renderTable } from './remote-branch-triage.mjs';
 
 const DEFAULT_INPUT_JSON = 'tmp/maintenance/remote-branch-triage.json';
@@ -118,13 +118,18 @@ const normalizeReviewedItems = (batchItems, batch, sourcePath) => {
 };
 
 const loadReviewedCsvItems = (csvPath, jsonItems) => {
-  const records = parseCsvRecords(fs.readFileSync(csvPath, 'utf8'));
+  const csvText = fs.readFileSync(csvPath, 'utf8');
+  const csvRows = parseCsvRows(csvText);
+  const headers = csvRows[0]?.map((header) => String(header || '').trim()) || [];
+  const records = parseCsvRecords(csvText);
   const requiredHeaders = ['branch', 'branchOid', 'decision', 'notes'];
-  const recordHeaders = records.length > 0 ? Object.keys(records[0]) : [];
   for (const header of requiredHeaders) {
-    if (!recordHeaders.includes(header)) {
+    if (!headers.includes(header)) {
       throw new Error(`${path.basename(csvPath)} is missing required column: ${header}`);
     }
+  }
+  if (records.length === 0 && jsonItems.length === 0) {
+    return [];
   }
 
   const jsonByBranch = new Map(jsonItems.map((item) => [item.branch, item]));
@@ -171,19 +176,33 @@ const loadReviewedCsvItems = (csvPath, jsonItems) => {
 
 const loadReviewedBatches = (batchDir, report, inputJsonPath) => {
   const items = [];
+  const sourcePaths = [];
+  let reviewInputFormat = 'json';
+  let foundBatchInput = false;
   for (const batch of REVIEW_BATCHES) {
     const targetPath = path.join(batchDir, batch.filename);
     if (!fs.existsSync(targetPath)) continue;
+    foundBatchInput = true;
     const payload = readJson(targetPath);
     validateBatchProvenance(payload, report, inputJsonPath, batch.filename);
     const batchItems = normalizeReviewedItems(Array.isArray(payload?.items) ? payload.items : [], batch, targetPath);
     const csvPath = path.join(batchDir, batch.csvFilename);
-    items.push(...(fs.existsSync(csvPath) ? loadReviewedCsvItems(csvPath, batchItems) : batchItems));
+    if (fs.existsSync(csvPath)) {
+      reviewInputFormat = 'csv';
+      sourcePaths.push(csvPath);
+      items.push(...loadReviewedCsvItems(csvPath, batchItems));
+    } else {
+      sourcePaths.push(targetPath);
+      items.push(...batchItems);
+    }
   }
   if (items.length === 0) {
+    if (foundBatchInput) {
+      return { items: [], sourcePaths, reviewInputFormat };
+    }
     throw new Error(`No reviewed batch rows found under ${batchDir}`);
   }
-  return items;
+  return { items, sourcePaths, reviewInputFormat };
 };
 
 const buildStaleIndex = (report) => {
@@ -279,12 +298,12 @@ const mergeReviewedDecisions = (report, reviewedItems) => {
   };
 };
 
-const buildReviewMetadata = ({ inputJsonPath, batchDir, reviewedItems, summaryByBatch }) => ({
+const buildReviewMetadata = ({ inputJsonPath, batchDir, sourceBatches, reviewInputFormat, summaryByBatch }) => ({
   generatedAt: new Date().toISOString(),
   sourceTriagePath: inputJsonPath,
   sourceBatchDir: batchDir,
-  sourceBatches: Array.from(new Set(reviewedItems.map((item) => path.basename(item.sourcePath)))),
-  reviewInputFormat: reviewedItems.some((item) => item.sourcePath.endsWith('.csv')) ? 'csv' : 'json',
+  sourceBatches: Array.from(new Set(sourceBatches.map((sourcePath) => path.basename(sourcePath)))),
+  reviewInputFormat,
   summaryByBatch,
 });
 
@@ -342,12 +361,13 @@ export const run = (argv = process.argv.slice(2)) => {
   const issueCommentPath = path.join(outputDir, 'issue-comment.md');
 
   const report = readJson(inputJsonPath);
-  const reviewedItems = loadReviewedBatches(batchDir, report, inputJsonPath);
-  const merged = mergeReviewedDecisions(report, reviewedItems);
+  const reviewedBatchInput = loadReviewedBatches(batchDir, report, inputJsonPath);
+  const merged = mergeReviewedDecisions(report, reviewedBatchInput.items);
   merged.report.reviewedDecisions = buildReviewMetadata({
     inputJsonPath,
     batchDir,
-    reviewedItems,
+    sourceBatches: reviewedBatchInput.sourcePaths,
+    reviewInputFormat: reviewedBatchInput.reviewInputFormat,
     summaryByBatch: merged.summaryByBatch,
   });
 

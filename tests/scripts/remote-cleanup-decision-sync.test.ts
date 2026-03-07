@@ -520,4 +520,73 @@ describe.sequential('remote-cleanup-decision-sync script', () => {
       rmSync(sandbox, { recursive: true, force: true });
     }
   });
+
+  it('accepts header-only CSV sheets when the corresponding batch JSON has zero items', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-decision-sync-'));
+    const inputJson = join(sandbox, 'remote-branch-triage.json');
+    const batchDir = join(sandbox, 'batches');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      mkdirSync(batchDir, { recursive: true });
+      writeFileSync(
+        inputJson,
+        `${JSON.stringify(
+          {
+            generatedAt: '2026-03-08T00:00:00Z',
+            sourceInventory: {
+              path: inputJson,
+              generatedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            remoteMerged: [],
+            remoteStale: [],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      for (const filename of ['batch-b-low-risk-stale', 'batch-c-ambiguous-stale']) {
+        writeFileSync(
+          join(batchDir, `${filename}.json`),
+          `${JSON.stringify(
+            {
+              generatedAt: '2026-03-08T00:10:00Z',
+              sourceTriage: {
+                path: inputJson,
+                generatedAt: '2026-03-08T00:00:00Z',
+                inventoryGeneratedAt: '2026-03-08T00:00:00Z',
+                base: 'origin/main',
+                remote: 'origin',
+              },
+              items: [],
+            },
+            null,
+            2,
+          )}\n`,
+          'utf8',
+        );
+        writeFileSync(join(batchDir, `${filename}.csv`), 'branch,branchOid,decision,notes\n', 'utf8');
+      }
+
+      const result = spawnSync('node', [scriptPath, '--input-json', inputJson, '--batch-dir', batchDir, '--output-dir', outputDir], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 120_000,
+      });
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      expect(result.stdout).toContain('rows=0');
+
+      const summary = JSON.parse(readFileSync(join(outputDir, 'summary.json'), 'utf8'));
+      expect(summary.sourceBatches).toContain('batch-b-low-risk-stale.csv');
+      expect(summary.sourceBatches).toContain('batch-c-ambiguous-stale.csv');
+      expect(summary.reviewInputFormat).toBe('csv');
+      expect(summary.appliedRows).toHaveLength(0);
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
 });

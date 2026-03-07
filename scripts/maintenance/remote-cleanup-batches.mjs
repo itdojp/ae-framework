@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderCsv } from './remote-cleanup-csv.mjs';
-import { LOW_RISK_PREFIXES, escapeCell, renderTable, shellQuote } from './remote-branch-triage.mjs';
+import { LOW_RISK_PREFIXES, renderTable, shellQuote } from './remote-branch-triage.mjs';
 
 const DEFAULT_INPUT_JSON = 'tmp/maintenance/remote-branch-triage.json';
 const DEFAULT_OUTPUT_DIR = 'tmp/maintenance/remote-cleanup-batches';
@@ -248,7 +248,7 @@ const renderStaleCsv = (batch) =>
 const renderSummaryMarkdown = (report, batches, { exampleLimit }) => {
   const examples = (items) => items.slice(0, exampleLimit).map((item) => `\`${item.branch}\``).join(', ') || '(none)';
 
-  return `# Remote Cleanup Batch Packs\n\n- generatedAt: ${new Date().toISOString()}\n- source triage: \`${report?.sourceInventory?.path || ''}\`\n- triage generatedAt: ${report?.generatedAt || ''}\n- base: \`${report?.sourceInventory?.base || ''}\`\n- remote: \`${report?.sourceInventory?.remote || ''}\`\n\n## Current triage counts\n\n- remote merged candidates: ${report?.summary?.remoteMergedCandidates || 0}\n- remote stale candidates: ${report?.summary?.remoteStaleCandidates || 0}\n- stale risk bands: ${JSON.stringify(report?.summary?.staleByRiskBand || {})}\n- stale PR states: ${JSON.stringify(report?.summary?.staleByPrState || {})}\n\n## Review packs\n\n- Batch A (merged): ${batches.batchA.payload.count}  
+  return `# Remote Cleanup Batch Packs\n\n- generatedAt: ${new Date().toISOString()}\n- source triage: \`${batches.batchA.payload.sourceTriage.path || ''}\`\n- triage generatedAt: ${report?.generatedAt || ''}\n- base: \`${report?.sourceInventory?.base || ''}\`\n- remote: \`${report?.sourceInventory?.remote || ''}\`\n\n## Current triage counts\n\n- remote merged candidates: ${report?.summary?.remoteMergedCandidates || 0}\n- remote stale candidates: ${report?.summary?.remoteStaleCandidates || 0}\n- stale risk bands: ${JSON.stringify(report?.summary?.staleByRiskBand || {})}\n- stale PR states: ${JSON.stringify(report?.summary?.staleByPrState || {})}\n\n## Review packs\n\n- Batch A (merged): ${batches.batchA.payload.count}  
   examples: ${examples(batches.batchA.payload.items)}  
   files: \`${path.basename(batches.batchA.jsonPath)}\`, \`${path.basename(batches.batchA.mdPath)}\`, \`${path.basename(batches.batchA.txtPath)}\`, \`${path.basename(batches.batchA.commandsPath)}\`
 - Batch B (low-risk stale): ${batches.batchB.payload.count}  

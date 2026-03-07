@@ -191,6 +191,7 @@ describe.sequential('remote-cleanup-batches script', () => {
       expect(summaryMd).toContain('Batch A (merged): 0');
       expect(summaryMd).toContain('Batch B (low-risk stale): 1');
       expect(summaryMd).toContain('Batch C (ambiguous stale): 1');
+      expect(summaryMd).toContain(`source triage: \`${inputPath}\``);
 
       const batchBMd = readFileSync(join(outputDir, 'batch-b-low-risk-stale.md'), 'utf8');
       expect(batchBMd).toContain('docs/stale-a');
