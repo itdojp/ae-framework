@@ -104,11 +104,20 @@ describe.sequential('remote-branch-triage script', () => {
         remote: 'origin',
         candidates: {
           remoteMerged: ['docs/merged-a'],
+          remoteMergedDetailed: [{ branch: 'docs/merged-a', oid: 'oid-merged' }],
           remoteStaleByAge: [
             { branch: 'docs/stale-a', ageDays: 160 },
             { branch: 'feat/stale-b', ageDays: 200 },
             { branch: 'feat/open-c', ageDays: 95 },
             { branch: 'ci/stale-d', ageDays: 140 },
+            { branch: 'feat/mismatch-e', ageDays: 130 },
+          ],
+          remoteStaleByAgeDetailed: [
+            { branch: 'docs/stale-a', oid: 'oid-docs', ageDays: 160 },
+            { branch: 'feat/stale-b', oid: 'oid-current-feature', ageDays: 200 },
+            { branch: 'feat/open-c', oid: 'oid-open', ageDays: 95 },
+            { branch: 'ci/stale-d', oid: 'oid-ci', ageDays: 140 },
+            { branch: 'feat/mismatch-e', oid: 'oid-current-mismatch', ageDays: 130 },
           ],
         },
       },
@@ -126,6 +135,7 @@ describe.sequential('remote-branch-triage script', () => {
             closedAt: '2026-03-06T09:00:00Z',
             updatedAt: '2026-03-06T09:00:00Z',
             headRefName: 'docs/merged-a',
+            headRefOid: 'oid-merged',
             baseRefName: 'main',
           },
           {
@@ -138,6 +148,7 @@ describe.sequential('remote-branch-triage script', () => {
             closedAt: '2026-03-01T09:00:00Z',
             updatedAt: '2026-03-01T09:00:00Z',
             headRefName: 'docs/stale-a',
+            headRefOid: 'oid-docs',
             baseRefName: 'main',
           },
           {
@@ -150,6 +161,7 @@ describe.sequential('remote-branch-triage script', () => {
             closedAt: '2026-03-04T09:00:00Z',
             updatedAt: '2026-03-04T09:00:00Z',
             headRefName: 'feat/stale-b',
+            headRefOid: 'oid-old-feature',
             baseRefName: 'main',
           },
           {
@@ -162,6 +174,7 @@ describe.sequential('remote-branch-triage script', () => {
             closedAt: '2026-03-05T12:00:00Z',
             updatedAt: '2026-03-05T12:00:00Z',
             headRefName: 'feat/stale-b',
+            headRefOid: 'oid-current-feature',
             baseRefName: 'main',
           },
           {
@@ -174,6 +187,20 @@ describe.sequential('remote-branch-triage script', () => {
             closedAt: '',
             updatedAt: '2026-03-05T09:00:00Z',
             headRefName: 'feat/open-c',
+            headRefOid: 'oid-open',
+            baseRefName: 'main',
+          },
+          {
+            number: 2402,
+            title: 'historical mismatch branch',
+            url: 'https://example.test/pr/2402',
+            state: 'closed',
+            isDraft: false,
+            mergedAt: '',
+            closedAt: '2026-03-02T09:00:00Z',
+            updatedAt: '2026-03-02T09:00:00Z',
+            headRefName: 'feat/mismatch-e',
+            headRefOid: 'oid-old-mismatch',
             baseRefName: 'main',
           },
         ]),
@@ -181,28 +208,71 @@ describe.sequential('remote-branch-triage script', () => {
     );
 
     expect(report.summary.remoteMergedCandidates).toBe(1);
-    expect(report.summary.remoteStaleCandidates).toBe(4);
-    expect(report.summary.staleByRiskBand).toEqual({ low: 2, standard: 0, high: 2 });
+    expect(report.summary.remoteStaleCandidates).toBe(5);
+    expect(report.summary.staleByRiskBand).toEqual({ low: 2, standard: 0, high: 3 });
     expect(report.summary.staleByPrState).toEqual({
       open: 1,
       closed: 1,
-      merged: 0,
+      merged: 1,
       none: 1,
       ambiguous: 1,
       unavailable: 0,
     });
+    expect(report.summary.staleByMatchMode).toEqual({
+      'head-oid': 3,
+      'branch-name-only': 1,
+      none: 1,
+    });
     expect(report.remoteMerged[0]).toEqual(
       expect.objectContaining({
         branch: 'docs/merged-a',
+        branchOid: 'oid-merged',
         prState: 'merged',
+        prMatchMode: 'head-oid',
         deleteCommand: "git push 'origin' --delete 'docs/merged-a'",
       }),
     );
     expect(report.remoteStale).toEqual([
-      expect.objectContaining({ branch: 'docs/stale-a', prState: 'closed', riskBand: 'low', proposedAction: 'delete-review' }),
-      expect.objectContaining({ branch: 'feat/stale-b', prState: 'ambiguous', riskBand: 'high', proposedAction: 'manual-review' }),
-      expect.objectContaining({ branch: 'feat/open-c', prState: 'open', riskBand: 'high', proposedAction: 'keep-review' }),
-      expect.objectContaining({ branch: 'ci/stale-d', prState: 'none', riskBand: 'low', proposedAction: 'delete-review' }),
+      expect.objectContaining({
+        branch: 'docs/stale-a',
+        branchOid: 'oid-docs',
+        prState: 'closed',
+        prMatchMode: 'head-oid',
+        riskBand: 'low',
+        proposedAction: 'delete-review',
+      }),
+      expect.objectContaining({
+        branch: 'feat/stale-b',
+        branchOid: 'oid-current-feature',
+        prState: 'merged',
+        prMatchMode: 'head-oid',
+        riskBand: 'high',
+        proposedAction: 'archive-review',
+      }),
+      expect.objectContaining({
+        branch: 'feat/open-c',
+        branchOid: 'oid-open',
+        prState: 'open',
+        prMatchMode: 'head-oid',
+        riskBand: 'high',
+        proposedAction: 'keep-review',
+      }),
+      expect.objectContaining({
+        branch: 'ci/stale-d',
+        branchOid: 'oid-ci',
+        prState: 'none',
+        prMatchMode: 'none',
+        riskBand: 'low',
+        proposedAction: 'delete-review',
+      }),
+      expect.objectContaining({
+        branch: 'feat/mismatch-e',
+        branchOid: 'oid-current-mismatch',
+        prState: 'ambiguous',
+        prMatchMode: 'branch-name-only',
+        riskBand: 'high',
+        proposedAction: 'manual-review',
+      }),
     ]);
     expect(report.templates.issueComment).toContain('Remote branch triage summary');
     expect(report.sourceInventory.path).toBe('tmp/maintenance/branch-inventory.json');
@@ -300,14 +370,17 @@ describe.sequential('remote-branch-triage script', () => {
         remoteStaleCandidates: 1,
         staleByRiskBand: { low: 1, standard: 0, high: 0 },
         staleByPrState: { open: 0, closed: 1, merged: 0, none: 0, ambiguous: 0, unavailable: 0 },
+        staleByMatchMode: { 'head-oid': 1, 'branch-name-only': 0, none: 0 },
         topPrefixes: [{ prefix: 'docs', count: 1, examples: ['docs\\unsafe|branch'] }],
       },
       remoteMerged: [
         {
           branch: 'feat\\unsafe|name',
+          branchOid: 'oid-unsafe',
           proposedAction: 'delete',
           approval: 'required',
           prState: 'merged',
+          prMatchMode: 'head-oid',
           baseBranches: ['main'],
           deleteCommand: "git push 'origin' --delete 'feat\\unsafe|name'",
           latestPr: { number: 2466, state: 'merged' },
@@ -317,8 +390,10 @@ describe.sequential('remote-branch-triage script', () => {
         {
           branch: 'docs\\stale|branch',
           ageDays: 120,
+          branchOid: 'oid-stale',
           riskBand: 'low',
           prState: 'closed',
+          prMatchMode: 'head-oid',
           latestPr: { number: 2401, state: 'closed' },
           baseBranches: ['main'],
           proposedAction: 'delete-review',

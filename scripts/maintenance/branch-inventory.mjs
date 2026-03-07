@@ -426,21 +426,30 @@ export const buildInventoryReport = (
     .filter((name) => name !== currentBranch && !isProtected(name))
     .sort();
 
-  const remoteMergedCandidates = remoteRefs
+  const remoteMergedCandidatesDetailed = remoteRefs
     .filter((ref) => mergedRemote.has(ref.name))
-    .map((ref) => ref.shortName)
-    .filter((name) => name !== 'HEAD' && !isProtected(name))
-    .sort();
+    .filter((ref) => ref.shortName !== 'HEAD' && !isProtected(ref.shortName))
+    .map((ref) => ({
+      branch: ref.shortName,
+      oid: ref.oid,
+    }))
+    .sort((a, b) => a.branch.localeCompare(b.branch));
+  const remoteMergedCandidates = remoteMergedCandidatesDetailed.map((item) => item.branch);
 
-  const remoteStaleCandidates = remoteRefs
+  const remoteStaleCandidatesDetailed = remoteRefs
     .filter((ref) => !mergedRemote.has(ref.name))
     .map((ref) => ({
       branch: ref.shortName,
+      oid: ref.oid,
       ageDays: Math.floor((nowUnix - ref.dateUnix) / 86400),
     }))
     .filter((item) => item.ageDays >= options.staleDays)
-    .filter((item) => !isProtected(item.branch))
-    .sort((a, b) => b.ageDays - a.ageDays);
+    .filter((item) => !isProtected(item.branch));
+  remoteStaleCandidatesDetailed.sort((a, b) => b.ageDays - a.ageDays || a.branch.localeCompare(b.branch));
+  const remoteStaleCandidates = remoteStaleCandidatesDetailed.map(({ branch, ageDays }) => ({
+    branch,
+    ageDays,
+  }));
 
   const worktreeInventory = collectWorktreeInventory(parsedWorktrees, {
     currentWorktreePath,
@@ -496,7 +505,9 @@ export const buildInventoryReport = (
       linkedWorktreeBranches: worktreeInventory.linkedBranches,
       detachedWorktreesOnBaseClean: worktreeInventory.detachedOnBaseClean,
       remoteMerged: remoteMergedCandidates,
+      remoteMergedDetailed: remoteMergedCandidatesDetailed,
       remoteStaleByAge: remoteStaleCandidates,
+      remoteStaleByAgeDetailed: remoteStaleCandidatesDetailed,
     },
     skipped: {
       detachedWorktrees: worktreeInventory.skippedDetached,

@@ -178,6 +178,79 @@ describe.sequential('branch-inventory script', () => {
     );
   });
 
+  it('includes remote candidate OIDs in detailed inventory sections', async () => {
+    const mod = await import(branchInventoryModuleUrl);
+    const gitRunner = (args: string[]) => {
+      const key = args.join(' ');
+      if (key === 'branch --show-current') return 'main';
+      if (key === 'rev-parse --show-toplevel') return '/repo';
+      if (
+        key ===
+        'for-each-ref refs/heads --format=%(refname:short)\t%(committerdate:iso8601)\t%(committerdate:unix)\t%(upstream:short)\t%(objectname)'
+      ) {
+        return 'main\t2026-03-07 00:00:00 +0900\t1772818800\t\tmainoid';
+      }
+      if (
+        key ===
+        'for-each-ref refs/remotes/origin --format=%(refname:short)\t%(committerdate:iso8601)\t%(committerdate:unix)\t%(upstream:short)\t%(objectname)'
+      ) {
+        return [
+          'origin/HEAD\t2026-03-07 00:00:00 +0900\t1772818800\t\tmainoid',
+          'origin/main\t2026-03-07 00:00:00 +0900\t1772818800\t\tmainoid',
+          'origin/feat/remote-merged\t2026-03-06 00:00:00 +0900\t1772732400\t\toid-merged',
+          'origin/docs/remote-stale\t2026-02-20 00:00:00 +0900\t1771513200\t\toid-stale',
+        ].join('\n');
+      }
+      if (key === 'worktree list --porcelain') {
+        return 'worktree /repo\nHEAD mainoid\nbranch refs/heads/main\n';
+      }
+      if (key === 'branch --format=%(refname:short) --merged origin/main') {
+        return 'main';
+      }
+      if (key === 'branch -r --format=%(refname:short) --merged origin/main') {
+        return ['origin/main', 'origin/feat/remote-merged'].join('\n');
+      }
+      throw new Error(`Unexpected git command: ${key}`);
+    };
+
+    const report = mod.buildInventoryReport(
+      {
+        base: 'origin/main',
+        remote: 'origin',
+        outputJson: 'tmp/maintenance/branch-inventory.json',
+        outputMd: 'tmp/maintenance/branch-inventory.md',
+        staleDays: 7,
+        top: 10,
+        ghPrLimit: 1000,
+        ghPrBase: '',
+      },
+      {
+        nowUnix: 1772905200,
+        generatedAt: '2026-03-07T03:00:00Z',
+        gitRunner,
+        mergedPullRequestsLoader: () => ({
+          available: false,
+          reason: 'disabled',
+          requestedBaseBranch: 'main',
+          requestedLimit: 1000,
+          items: [],
+          byHeadRefName: new Map(),
+        }),
+      },
+    );
+
+    expect(report.candidates.remoteMerged).toEqual(['feat/remote-merged']);
+    expect(report.candidates.remoteMergedDetailed).toEqual([
+      { branch: 'feat/remote-merged', oid: 'oid-merged' },
+    ]);
+    expect(report.candidates.remoteStaleByAge).toEqual([
+      expect.objectContaining({ branch: 'docs/remote-stale' }),
+    ]);
+    expect(report.candidates.remoteStaleByAgeDetailed).toEqual([
+      expect.objectContaining({ branch: 'docs/remote-stale', oid: 'oid-stale' }),
+    ]);
+  });
+
   it('writes inventory report with linked branches and detached base worktrees', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-branch-inventory-'));
     const repoDir = join(sandbox, 'repo');

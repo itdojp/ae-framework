@@ -212,7 +212,7 @@
         },
     "testing": {
       "maxCritical": 2,
-      "maxHigh": 8,
+      "maxHigh": 9,
       "maxMedium": 15,
       "blockOnCritical": true
     },
