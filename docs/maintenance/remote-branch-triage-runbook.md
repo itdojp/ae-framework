@@ -132,8 +132,8 @@ Audit semantics:
 - `openIssueRefs`: current open issue / PR title, body, comment matches
 - `repoRefs`: tracked repository references grouped as `automation`, `plan`, `code`, `history`
 - `reviewHint`:
-  - `keep-review` when open issue refs or automation refs exist
-  - `manual-review` when plan/code refs remain or the row is ambiguous
+  - `keep-review` when open issue refs or automation refs exist, including ambiguous rows
+  - `manual-review` when no open issue/automation refs remain and plan/code refs still exist, or the row is ambiguous
   - `delete-candidate` / `archive-candidate` only when no active refs were found in the current audit scope
 
 ### 4) Execute approved delete batch

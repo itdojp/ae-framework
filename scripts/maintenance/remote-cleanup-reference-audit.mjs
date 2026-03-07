@@ -10,6 +10,7 @@ const DEFAULT_OUTPUT_DIR = 'tmp/maintenance/remote-cleanup-reference-audit';
 const DEFAULT_OWNER = 'itdojp';
 const DEFAULT_REPO = 'ae-framework';
 const DEFAULT_MATCH_LIMIT = 3;
+const COMMAND_MAX_BUFFER = 16 * 1024 * 1024;
 
 const EXCLUDED_PREFIXES = ['tmp/', 'artifacts/', 'coverage/', 'dist/', 'node_modules/'];
 const HISTORY_PATTERNS = [
@@ -27,7 +28,7 @@ const usage = () => {
   console.log(`Usage: node scripts/maintenance/remote-cleanup-reference-audit.mjs [options]
 
 Options:
-  --batch-dir <path>          Directory containing batch-*.json files (default: ${DEFAULT_BATCH_DIR})
+  --batch-dir <path>          Directory containing review pack JSON files (default: ${DEFAULT_BATCH_DIR})
   --output-dir <path>         Output directory for audit reports (default: ${DEFAULT_OUTPUT_DIR})
   --owner <name>              GitHub owner for open issue lookup (default: ${DEFAULT_OWNER})
   --repo <name>               GitHub repo for open issue lookup (default: ${DEFAULT_REPO})
@@ -107,11 +108,22 @@ export const parseArgs = (argv) => {
 };
 
 const runCommand = (command, args, { cwd = process.cwd() } = {}) =>
-  execFileSync(command, args, {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trimEnd();
+  {
+    try {
+      return execFileSync(command, args, {
+        cwd,
+        encoding: 'utf8',
+        maxBuffer: COMMAND_MAX_BUFFER,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }).trimEnd();
+    } catch (error) {
+      const stdout = error && typeof error === 'object' && 'stdout' in error ? String(error.stdout || '') : '';
+      const stderr = error && typeof error === 'object' && 'stderr' in error ? String(error.stderr || '') : '';
+      throw new Error(
+        `${command} ${args.join(' ')} failed${stdout || stderr ? `\nstdout=${stdout}\nstderr=${stderr}` : ''}`,
+      );
+    }
+  };
 
 const runGh = (args) => runCommand('gh', args);
 
@@ -442,7 +454,7 @@ Notes:
 - clear means no open issue / automation / plan / code reference was detected in the current audit scope.
 - ignored issue numbers: ${summary.openIssues.ignoredIssueNumbers.length ? summary.openIssues.ignoredIssueNumbers.join(', ') : '(none)'}
 - keep-review remains required when open issue refs or automation refs exist.
-- manual-review remains required for ambiguous branches and any branch with plan/code references.
+- manual-review remains required for ambiguous branches and any branch with plan/code references once open issue / automation refs have cleared.
 `;
 };
 
