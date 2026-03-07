@@ -34,6 +34,9 @@ pnpm run maintenance:branch:triage:render
 
 # Render Batch A/B/C review packs from the worksheet
 pnpm run maintenance:branch:triage:batches
+
+# Audit active issue / automation references before any remote delete decision
+pnpm run maintenance:branch:triage:reference-audit
 ```
 
 Outputs:
