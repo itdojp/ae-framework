@@ -93,13 +93,14 @@ describe.sequential('remote-cleanup-batches script', () => {
           },
         ],
       },
-      { outputDir: '/tmp/remote-cleanup-batches' },
+      { outputDir: '/tmp/remote-cleanup-batches', sourceTriagePath: '/tmp/remote-branch-triage.json' },
     );
 
     expect(batches.batchA.payload.count).toBe(1);
     expect(batches.batchA.payload.items).toEqual([
       expect.objectContaining({ branch: 'docs/merged-a', deleteCommand: 'git push origin --delete docs/merged-a' }),
     ]);
+    expect(batches.batchA.payload.sourceTriage.path).toBe('/tmp/remote-branch-triage.json');
 
     expect(batches.batchB.payload.items.map((item: { branch: string }) => item.branch)).toEqual([
       'docs/stale-a',

@@ -100,15 +100,15 @@ const runCommandSafe = (command, args) => {
 const runGhSafe = (args) => runCommandSafe('gh', args);
 const runGitSafe = (args) => runCommandSafe('git', args);
 
-const shellQuote = (value) => `'${String(value).replace(/'/g, `'"'"'`)}'`;
+export const shellQuote = (value) => `'${String(value).replace(/'/g, `'"'"'`)}'`;
 
-const escapeCell = (value) =>
+export const escapeCell = (value) =>
   String(value ?? '')
     .replace(/\\/g, '\\\\')
     .replace(/\|/g, '\\|')
     .replace(/\r?\n/g, '<br>');
 
-const renderTable = (headers, rows) => {
+export const renderTable = (headers, rows) => {
   if (rows.length === 0) {
     return '- (none)\n';
   }

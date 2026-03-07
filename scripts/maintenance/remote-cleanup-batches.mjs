@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { LOW_RISK_PREFIXES } from './remote-branch-triage.mjs';
+import { LOW_RISK_PREFIXES, escapeCell, renderTable, shellQuote } from './remote-branch-triage.mjs';
 
 const DEFAULT_INPUT_JSON = 'tmp/maintenance/remote-branch-triage.json';
 const DEFAULT_OUTPUT_DIR = 'tmp/maintenance/remote-cleanup-batches';
@@ -55,23 +55,6 @@ export const parseArgs = (argv) => {
   return options;
 };
 
-const shellQuote = (value) => `'${String(value).replace(/'/g, `'"'"'`)}'`;
-
-const escapeCell = (value) =>
-  String(value ?? '')
-    .replace(/\\/g, '\\\\')
-    .replace(/\|/g, '\\|')
-    .replace(/\r?\n/g, '<br>');
-
-const renderTable = (headers, rows) => {
-  if (rows.length === 0) {
-    return '- (none)\n';
-  }
-  const head = `| ${headers.join(' | ')} |\n| ${headers.map(() => '---').join(' | ')} |`;
-  const body = rows.map((row) => `| ${row.map((cell) => escapeCell(cell)).join(' | ')} |`).join('\n');
-  return `${head}\n${body}\n`;
-};
-
 const startsWithAnyPrefix = (value, prefixes) => prefixes.some((prefix) => value.startsWith(prefix));
 
 const formatLatestPrLabel = (latestPr) => {
@@ -115,9 +98,9 @@ const buildBatch = ({ id, title, description, criteria, items, sourceTriage, out
   };
 };
 
-export const selectReviewBatches = (report, { outputDir }) => {
+export const selectReviewBatches = (report, { outputDir, sourceTriagePath = '' }) => {
   const sourceTriage = {
-    path: report?.sourceInventory?.path || '',
+    path: sourceTriagePath || '',
     generatedAt: report?.generatedAt || '',
     inventoryGeneratedAt: report?.sourceInventory?.generatedAt || '',
     base: report?.sourceInventory?.base || '',
@@ -286,7 +269,7 @@ export const run = (argv = process.argv.slice(2)) => {
   const inputJsonPath = path.resolve(options.inputJson);
   const outputDir = path.resolve(options.outputDir);
   const report = JSON.parse(fs.readFileSync(inputJsonPath, 'utf8'));
-  const batches = selectReviewBatches(report, { outputDir });
+  const batches = selectReviewBatches(report, { outputDir, sourceTriagePath: inputJsonPath });
 
   const summaryJsonPath = path.join(outputDir, 'summary.json');
   const summaryMdPath = path.join(outputDir, 'summary.md');
