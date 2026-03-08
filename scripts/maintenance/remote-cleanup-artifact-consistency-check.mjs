@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { LOW_RISK_PREFIXES } from './remote-branch-triage.mjs';
 
 const DEFAULT_TRIAGE_JSON = 'tmp/maintenance/remote-branch-triage.json';
 const DEFAULT_BATCH_DIR = 'tmp/maintenance/remote-cleanup-batches';
@@ -11,7 +12,6 @@ const DEFAULT_EXECUTION_PACK_DIR = 'tmp/maintenance/remote-cleanup-execution-pac
 const DEFAULT_POST_VERIFY_SUMMARY_JSON = 'tmp/maintenance/remote-cleanup-post-apply-verify/summary.json';
 const DEFAULT_REFRESH_AUDIT_SUMMARY_JSON = 'tmp/maintenance/remote-cleanup-refresh-audit/summary.json';
 const DEFAULT_OUTPUT_DIR = 'tmp/maintenance/remote-cleanup-artifact-consistency';
-const LOW_RISK_PREFIXES = ['docs/', 'chore/', 'test/', 'ci/', 'types/'];
 const REVIEW_STATUS_FILES = ['delete-ready', 'delete-blocked', 'pending-review', 'retained', 'missing-audit'];
 
 const usage = () => {
@@ -377,6 +377,10 @@ const validateExecutionPack = (artifacts, triageState, reviewStatusState) => {
   resolveSamePath(summary?.artifacts?.dryRunReportPath, artifacts.dryRunReportPath, 'execution-pack dryRunReportPath');
   resolveSamePath(summary?.artifacts?.commandsPath, path.join(artifacts.executionPackDir, 'commands.sh'), 'execution-pack commandsPath');
   resolveSamePath(summary?.artifacts?.applyCommandPath, path.join(artifacts.executionPackDir, 'apply-command.txt'), 'execution-pack applyCommandPath');
+  resolveSamePath(summary?.sourceInventory?.path, triageState.sourceInventory.path, 'execution-pack summary sourceInventory.path');
+  assert(String(summary?.sourceInventory?.generatedAt || '') === String(triageState.sourceInventory.generatedAt || ''), 'execution-pack summary sourceInventory.generatedAt mismatch');
+  assert(String(summary?.sourceInventory?.base || '') === String(triageState.sourceInventory.base || ''), 'execution-pack summary sourceInventory.base mismatch');
+  assert(String(summary?.sourceInventory?.remote || '') === String(triageState.sourceInventory.remote || ''), 'execution-pack summary sourceInventory.remote mismatch');
 
   const approvedBranches = ensureArray(approvedBranchList?.branches, 'execution-pack approved branches');
   resolveSamePath(approvedBranchList?.sourceReviewStatus?.dir, artifacts.reviewStatusDir, 'approved branches sourceReviewStatus.dir');
@@ -394,14 +398,8 @@ const validateExecutionPack = (artifacts, triageState, reviewStatusState) => {
   const dryRunSelection = ensureObject(dryRunReport?.remote?.selection, 'execution-pack dry-run selection');
   assert(String(dryRunSelection.mode || '') === 'branch-list', 'execution-pack dry-run selection.mode mismatch');
   resolveSamePath(dryRunSelection.sourcePath, artifacts.approvedBranchesPath, 'execution-pack dry-run selection.sourcePath');
-  const dryRunExpectedBase = String(dryRunSelection.expectedBase || '');
-  const dryRunExpectedRemote = String(dryRunSelection.expectedRemote || '');
-  if (dryRunExpectedBase) {
-    assert(dryRunExpectedBase === String(triageState.sourceInventory.base || ''), 'execution-pack dry-run expectedBase mismatch');
-  }
-  if (dryRunExpectedRemote) {
-    assert(dryRunExpectedRemote === String(triageState.sourceInventory.remote || ''), 'execution-pack dry-run expectedRemote mismatch');
-  }
+  assert(String(dryRunSelection.expectedBase || '') === '', 'execution-pack dry-run expectedBase should be empty for branch-list mode');
+  assert(String(dryRunSelection.expectedRemote || '') === '', 'execution-pack dry-run expectedRemote should be empty for branch-list mode');
   assert(Number(dryRunReport?.remote?.totalCandidates ?? -1) === approvedBranches.length, 'execution-pack dry-run totalCandidates mismatch');
   const plannedDetailed = ensureArray(dryRunReport?.remote?.plannedDetailed, 'execution-pack dry-run plannedDetailed');
   const blocked = ensureArray(dryRunReport?.remote?.blocked, 'execution-pack dry-run blocked');
@@ -542,8 +540,8 @@ const writeFile = (targetPath, content) => {
   fs.writeFileSync(targetPath, content, 'utf8');
 };
 
-const run = () => {
-  const options = parseArgs(process.argv.slice(2));
+export const run = (argv = process.argv.slice(2)) => {
+  const options = parseArgs(argv);
   const outputDir = path.resolve(options.outputDir);
   const artifacts = loadCoreArtifacts({
     ...options,
