@@ -309,6 +309,31 @@ pnpm run maintenance:branch:inventory
 pnpm run maintenance:branch:triage:render
 ```
 
+### 7) Audit the refreshed triage for cleanup closure
+
+```bash
+pnpm run maintenance:branch:cleanup:refresh-audit
+
+# Optional: use explicit post-verify / triage paths
+node scripts/maintenance/remote-cleanup-refresh-audit.mjs \
+  --post-verify-summary-json tmp/maintenance/remote-cleanup-post-apply-verify/summary.json \
+  --refreshed-triage-json tmp/maintenance/remote-branch-triage.json \
+  --output-dir tmp/maintenance/remote-cleanup-refresh-audit
+```
+
+Generated outputs:
+
+- `tmp/maintenance/remote-cleanup-refresh-audit/summary.json`
+- `tmp/maintenance/remote-cleanup-refresh-audit/summary.md`
+- `tmp/maintenance/remote-cleanup-refresh-audit/issue-comment.md`
+
+Interpretation:
+
+- `confirmed-removed`: a previously `verified-absent` branch no longer appears in refreshed `remoteMerged` / `remoteStale`
+- `reappeared-in-triage`: a previously `verified-absent` branch still appears in refreshed cleanup candidates and needs manual follow-up
+
+This step is a closure audit only. It performs no deletion.
+
 ## Triage policy
 
 ### Remote merged candidates
@@ -348,3 +373,4 @@ If `githubPullRequests.available=false`, treat `proposedAction` as advisory only
 - [ ] operator approval recorded before `--scope remote --apply`
 - [ ] post-apply verification archived
 - [ ] post-delete inventory re-run completed
+- [ ] refresh-audit bundle archived
