@@ -92,6 +92,7 @@ Generated review packs:
 - `tmp/maintenance/remote-cleanup-batches/batch-a-merged.*`
 - `tmp/maintenance/remote-cleanup-batches/batch-b-low-risk-stale.*`
 - `tmp/maintenance/remote-cleanup-batches/batch-c-ambiguous-stale.*`
+- For Batch B and C, `*.csv` files are also generated; the operator should edit the `decision` and `notes` fields in the CSV rather than in the JSON.
 
 Batch semantics:
 
@@ -159,6 +160,8 @@ Sync semantics:
 
 - Batch B / C `decision` and `notes` are copied back into `remoteStale[*]` by `branch`
 - `branchOid` mismatch is treated as a hard error to avoid syncing stale review input into a moved branch
+- If `batch-b-low-risk-stale.csv` / `batch-c-ambiguous-stale.csv` exist, prefer the CSV `decision` / `notes` values and reconcile them against the corresponding JSON provenance / row set
+- `reviewed-triage.json` / `summary.json` retain `sourceBatches` and `reviewInputFormat`, allowing you to audit which review input was used for the sync
 - this step records reviewed decisions only; it does not execute any delete command
 
 ### 3.8) Render delete readiness status from reviewed decisions + reference audit

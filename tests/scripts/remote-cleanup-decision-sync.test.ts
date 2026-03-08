@@ -157,6 +157,110 @@ describe.sequential('remote-cleanup-decision-sync script', () => {
     }
   });
 
+  it('prefers reviewed CSV sheets when present', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-decision-sync-'));
+    const inputJson = join(sandbox, 'remote-branch-triage.json');
+    const batchDir = join(sandbox, 'batches');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      mkdirSync(batchDir, { recursive: true });
+      writeFileSync(
+        inputJson,
+        `${JSON.stringify(
+          {
+            generatedAt: '2026-03-08T00:00:00Z',
+            sourceInventory: {
+              path: inputJson,
+              generatedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            remoteMerged: [],
+            remoteStale: [
+              { branch: 'docs/stale-a', branchOid: 'oid-a', prState: 'merged', decision: '', notes: '' },
+              { branch: 'feature/ambiguous-a', branchOid: 'oid-b', prState: 'ambiguous', decision: '', notes: '' },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(batchDir, 'batch-b-low-risk-stale.json'),
+        `${JSON.stringify(
+          {
+            generatedAt: '2026-03-08T00:10:00Z',
+            sourceTriage: {
+              path: inputJson,
+              generatedAt: '2026-03-08T00:00:00Z',
+              inventoryGeneratedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            items: [{ branch: 'docs/stale-a', branchOid: 'oid-a', decision: '', notes: '' }],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(batchDir, 'batch-c-ambiguous-stale.json'),
+        `${JSON.stringify(
+          {
+            generatedAt: '2026-03-08T00:10:00Z',
+            sourceTriage: {
+              path: inputJson,
+              generatedAt: '2026-03-08T00:00:00Z',
+              inventoryGeneratedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            items: [{ branch: 'feature/ambiguous-a', branchOid: 'oid-b', decision: '', notes: '' }],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(batchDir, 'batch-b-low-risk-stale.csv'),
+        'branch,branchOid,decision,notes\n' +
+          'docs/stale-a,oid-a,delete,\"safe to remove after review\"\n',
+        'utf8',
+      );
+      writeFileSync(
+        join(batchDir, 'batch-c-ambiguous-stale.csv'),
+        'branch,branchOid,decision,notes\n' +
+          'feature/ambiguous-a,oid-b,keep,\"name reused historically, retain\"\n',
+        'utf8',
+      );
+
+      const result = spawnSync('node', [scriptPath, '--input-json', inputJson, '--batch-dir', batchDir, '--output-dir', outputDir], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 120_000,
+      });
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const reviewedManifest = JSON.parse(readFileSync(join(outputDir, 'reviewed-triage.json'), 'utf8'));
+      expect(reviewedManifest.remoteStale[0].decision).toBe('delete');
+      expect(reviewedManifest.remoteStale[0].notes).toBe('safe to remove after review');
+      expect(reviewedManifest.remoteStale[1].decision).toBe('keep');
+      expect(reviewedManifest.remoteStale[1].notes).toBe('name reused historically, retain');
+
+      const summary = JSON.parse(readFileSync(join(outputDir, 'summary.json'), 'utf8'));
+      expect(summary.sourceBatches).toContain('batch-b-low-risk-stale.csv');
+      expect(summary.sourceBatches).toContain('batch-c-ambiguous-stale.csv');
+      expect(summary.reviewInputFormat).toBe('csv');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects reviewed batch rows when branchOid mismatches the source triage row', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-decision-sync-'));
     const inputJson = join(sandbox, 'remote-branch-triage.json');
@@ -340,6 +444,147 @@ describe.sequential('remote-cleanup-decision-sync script', () => {
 
       expect(result.status).not.toBe(0);
       expect(result.stderr || result.stdout).toContain('duplicate reviewed branch row');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects CSV review sheets that omit a reviewed branch row', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-decision-sync-'));
+    const inputJson = join(sandbox, 'remote-branch-triage.json');
+    const batchDir = join(sandbox, 'batches');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      mkdirSync(batchDir, { recursive: true });
+      writeFileSync(
+        inputJson,
+        `${JSON.stringify(
+          {
+            generatedAt: '2026-03-08T00:00:00Z',
+            sourceInventory: {
+              path: inputJson,
+              generatedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            remoteMerged: [],
+            remoteStale: [
+              { branch: 'docs/stale-a', branchOid: 'oid-a', prState: 'merged', decision: '', notes: '' },
+              { branch: 'types/stale-b', branchOid: 'oid-b', prState: 'closed', decision: '', notes: '' },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(batchDir, 'batch-b-low-risk-stale.json'),
+        `${JSON.stringify(
+          {
+            generatedAt: '2026-03-08T00:10:00Z',
+            sourceTriage: {
+              path: inputJson,
+              generatedAt: '2026-03-08T00:00:00Z',
+              inventoryGeneratedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            items: [
+              { branch: 'docs/stale-a', branchOid: 'oid-a', decision: '', notes: '' },
+              { branch: 'types/stale-b', branchOid: 'oid-b', decision: '', notes: '' },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(batchDir, 'batch-b-low-risk-stale.csv'),
+        'branch,branchOid,decision,notes\n' +
+          'docs/stale-a,oid-a,delete,\n',
+        'utf8',
+      );
+
+      const result = spawnSync('node', [scriptPath, '--input-json', inputJson, '--batch-dir', batchDir, '--output-dir', outputDir], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 120_000,
+      });
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr || result.stdout).toContain('is missing reviewed branch row');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts header-only CSV sheets when the corresponding batch JSON has zero items', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-decision-sync-'));
+    const inputJson = join(sandbox, 'remote-branch-triage.json');
+    const batchDir = join(sandbox, 'batches');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      mkdirSync(batchDir, { recursive: true });
+      writeFileSync(
+        inputJson,
+        `${JSON.stringify(
+          {
+            generatedAt: '2026-03-08T00:00:00Z',
+            sourceInventory: {
+              path: inputJson,
+              generatedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            remoteMerged: [],
+            remoteStale: [],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      for (const filename of ['batch-b-low-risk-stale', 'batch-c-ambiguous-stale']) {
+        writeFileSync(
+          join(batchDir, `${filename}.json`),
+          `${JSON.stringify(
+            {
+              generatedAt: '2026-03-08T00:10:00Z',
+              sourceTriage: {
+                path: inputJson,
+                generatedAt: '2026-03-08T00:00:00Z',
+                inventoryGeneratedAt: '2026-03-08T00:00:00Z',
+                base: 'origin/main',
+                remote: 'origin',
+              },
+              items: [],
+            },
+            null,
+            2,
+          )}\n`,
+          'utf8',
+        );
+        writeFileSync(join(batchDir, `${filename}.csv`), 'branch,branchOid,decision,notes\n', 'utf8');
+      }
+
+      const result = spawnSync('node', [scriptPath, '--input-json', inputJson, '--batch-dir', batchDir, '--output-dir', outputDir], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 120_000,
+      });
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      expect(result.stdout).toContain('rows=0');
+
+      const summary = JSON.parse(readFileSync(join(outputDir, 'summary.json'), 'utf8'));
+      expect(summary.sourceBatches).toContain('batch-b-low-risk-stale.csv');
+      expect(summary.sourceBatches).toContain('batch-c-ambiguous-stale.csv');
+      expect(summary.reviewInputFormat).toBe('csv');
+      expect(summary.appliedRows).toHaveLength(0);
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
