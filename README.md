@@ -1,4 +1,4 @@
-# ae-framework: Agentic SDLC Orchestrator & Spec/Verification Kit
+# ae-framework: Assurance Control Plane for Agent-Driven SDLC
 
 [![validate-artifacts-ajv](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml)
 [![testing-ddd-scripts](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml)
@@ -11,9 +11,10 @@
 
 ## English
 
-ae-framework is a project skeleton plus verification toolkit that **orchestrates agent-driven SDLC work**. It standardises specifications, verification, and CI automation so human/agent collaboration stays auditable and repeatable.
+ae-framework is an **assurance control plane for agent-driven SDLC**. It standardises specifications, verification, evidence, and CI/policy automation so human/agent collaboration stays auditable and repeatable even when the underlying coding agent changes.
 
 ### What this repository provides
+- **Assurance control plane**: Context Pack, formal/conformance summaries, artifact validation, policy gates, and PR/release automation that turn raw test runs into reviewable assurance evidence.
 - **Agentic SDLC orchestrator**: Ready-to-run GitHub Actions (PR verify / verify-lite, nightly heavy tests, Slack alerts) and CLI scripts that keep requirements, tests, and regression signals aligned.
 - **Spec & Verification Kit**: Traceable spec format, mutation/MBT/property verification pipelines, and formal runners for Alloy/TLA/SMT/Apalache/Kani/SPIN/CSP(cspx)/Lean4 with unified summaries.
 - **Project scaffolding & policies**: pnpm workspace layout, lint/test/type-coverage gates, label gating (typecov, flake), and TDD-friendly Git hooks.
@@ -21,9 +22,15 @@ ae-framework is a project skeleton plus verification toolkit that **orchestrates
 - **Agent integrations**: Playbooks and connectors for Claude Code / CodeX; JSON-first outputs and AJV validation to keep agent-produced artifacts safe.
 
 ### What this is not
+- Not a single-model code generator — code generation is one producer, not the system of record.
 - Not an agent runtime or IDE plugin — bring your own agent.
 - Not a general-purpose Next.js UI kit or design system starter.
 - Not a hosted CI/CD service — workflows are provided for self-hosted GitHub runners or forks.
+
+### Adoption profiles
+- **Baseline**: `verify:lite`, schema/AJV validation, PR gates for routine application delivery.
+- **Structured assurance**: Context Pack, property/MBT/conformance, richer traceability and change evidence.
+- **High-assurance critical core**: formal/model/proof lanes plus proof-carrying change packages for selected high-risk components.
 
 ### Quick start (local)
 ```bash
@@ -64,6 +71,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Current architecture snapshot: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Zero-based ideal redesign blueprint: `docs/architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - Product fit (what to input/output, which tools to use): `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- Assurance control plane positioning: `docs/product/ASSURANCE-CONTROL-PLANE.md`
+- Assurance model (claim / level / lane / evidence): `docs/quality/ASSURANCE-MODEL.md`
 - PR automation (Copilot -> auto-fix -> auto-merge): `docs/ci/pr-automation.md`
 - Release engineering (release verify / post-deploy): `docs/operate/release-engineering.md`
 - CI/quality gates: `docs/ci/phase2-ci-hardening-outline.md`, `docs/ci/label-gating.md`, `docs/ci/harness-taxonomy.md`
@@ -83,9 +92,10 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 
 ## Japanese
 
-ae-framework は **エージェント協調型のSDLCオーケストレーター兼「仕様・検証キット」** です。指示・仕様・検証の流れを標準化し、エージェントと開発者が同じルールで再現性のある品質管理を行えるようにします。
+ae-framework は **エージェント協調型開発の assurance control plane** です。基礎となる coding agent やモデルが変わっても、仕様・検証・証跡・policy gate を同じ契約で束ね、レビューと運用判断を再現可能にします。
 
 ### 提供するもの
+- **Assurance control plane**: Context Pack、形式検証/Conformance要約、artifact validation、policy gate、PR/release 自動化を束ね、単発のテスト実行結果を判断可能な証跡へ変換。
 - **SDLCオーケストレーター**: PR Verify／夜間ヘビーテスト／Slack通知などのGitHub ActionsとCLIスクリプトで、要件・テスト・退行検知を一元化。
 - **仕様・検証キット**: トレーサブルな仕様フォーマット、mutation/MBT/Propertyテストのパイプライン、`scripts/pipelines/compare-test-trends.mjs` によるトレンド比較。
 - **プロジェクト骨子とポリシー**: pnpmワークスペース、Lint/Test/型カバレッジのゲート、ラベルゲーティング（typecov・flake）、TDDフック。
@@ -93,9 +103,15 @@ ae-framework は **エージェント協調型のSDLCオーケストレーター
 - **エージェント統合指針**: Claude Code / CodeX 向けプレイブック、JSON成果物のAJV検証など、エージェント生成物を安全に扱うための手順。
 
 ### 提供しないもの
+- 単一モデル依存のコード生成専用ツール。codegen は producer の一つであり、SSOT は spec / contract / artifact に置く。
 - エージェント実行ランタイムやIDEプラグイン（各自のエージェントを利用）。
 - 汎用のNext.js UIスターターやデザインシステム配布物。
 - ホスト型CI/CDサービス（GitHub Actionsの定義を提供）。
+
+### 導入プロファイル
+- **Baseline**: `verify:lite`、schema/AJV、PRゲートで通常の業務アプリを安定化。
+- **Structured assurance**: Context Pack、property/MBT/conformance、change evidence を追加し、仕様と検証の対応を明示。
+- **High-assurance critical core**: 重要コンポーネントに対して formal/model/proof lane と proof-carrying change package を適用。
 
 ### すぐ試す
 ```bash
@@ -128,6 +144,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - 現行アーキテクチャ全体像: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - ゼロベース再設計の理想像: `docs/architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - 適用対象/入力/出力/ツール適性: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- Assurance control plane の位置付け: `docs/product/ASSURANCE-CONTROL-PLANE.md`
+- Assurance model（claim / level / lane / evidence）: `docs/quality/ASSURANCE-MODEL.md`
 - PR自動化（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
 - リリース運用（release verify / post-deploy verify）: `docs/operate/release-engineering.md`
 - CI/品質ゲート: `docs/ci/phase2-ci-hardening-outline.md`, `docs/ci/label-gating.md`, `docs/ci/harness-taxonomy.md`
