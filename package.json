@@ -142,6 +142,7 @@
     "maintenance:branch:triage:render": "node scripts/maintenance/remote-branch-triage.mjs",
     "maintenance:branch:triage:batches": "node scripts/maintenance/remote-cleanup-batches.mjs",
     "maintenance:branch:triage:reference-audit": "node scripts/maintenance/remote-cleanup-reference-audit.mjs",
+    "maintenance:branch:triage:ambiguous-evidence": "node scripts/maintenance/remote-cleanup-ambiguous-evidence.mjs",
     "maintenance:branch:triage:decision-sync": "node scripts/maintenance/remote-cleanup-decision-sync.mjs",
     "maintenance:branch:triage:review-status": "node scripts/maintenance/remote-cleanup-review-status.mjs",
     "maintenance:branch:triage:execution-pack": "node scripts/maintenance/remote-cleanup-execution-pack.mjs",
