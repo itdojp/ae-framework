@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "assurance-profile/v1",
+  "profileId": "inventory-consistency-v1",
+  "scope": {
+    "contextPackSources": [
+      "spec/context-pack/**/*.{yml,yaml,json}"
+    ],
+    "componentGlobs": [
+      "src/domain/**",
+      "src/services/**"
+    ]
+  },
+  "claims": [
+    {
+      "id": "no-negative-stock",
+      "statement": "Inventory never becomes negative after any accepted reservation command.",
+      "kind": "safety",
+      "criticality": "high",
+      "targetLevel": "A3",
+      "scopeRefs": {
+        "objectIds": [
+          "InventoryItem"
+        ],
+        "morphismIds": [
+          "ReserveInventory"
+        ],
+        "diagramIds": [
+          "D-1"
+        ],
+        "acceptanceTestIds": [
+          "AT-1"
+        ]
+      },
+      "requiredLanes": [
+        "spec",
+        "behavior",
+        "model"
+      ],
+      "requiredEvidenceKinds": [
+        "property",
+        "counterexample-closed",
+        "product-coproduct"
+      ]
+    }
+  ]
+}
