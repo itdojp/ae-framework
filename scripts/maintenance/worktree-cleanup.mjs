@@ -267,7 +267,39 @@ export const run = (argv = process.argv.slice(2)) => {
         ok: true,
         remote: '',
         output: '',
+        message: '',
       };
+  if (fetch.attempted && !fetch.ok) {
+    const report = {
+      generatedAt,
+      base: options.base,
+      apply: options.apply,
+      max: options.max,
+      fetch,
+      error: fetch.message,
+      prune: { attempted: false, ok: true, output: '' },
+      currentWorktreePath,
+      counts: {
+        total: 0,
+        candidates: 0,
+        planned: 0,
+        skipped: 0,
+        deleted: 0,
+        failed: 0,
+        prunable: 0,
+        locked: 0,
+      },
+      planned: [],
+      deleted: [],
+      failed: [],
+      skipped: [],
+    };
+    const outputPath = path.resolve(options.outputJson);
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+    console.log(`[worktree-cleanup] wrote ${outputPath}`);
+    throw new Error(fetch.message || 'failed to refresh remote-tracking refs');
+  }
 
   let pruneResult = { attempted: false, ok: true, output: '' };
   if (options.prune) {

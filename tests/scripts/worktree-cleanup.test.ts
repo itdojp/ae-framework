@@ -157,8 +157,50 @@ describe.sequential('worktree-cleanup script', () => {
         ok: true,
         remote: 'origin',
         output: '',
+        message: '',
       });
       expect(report.planned).toEqual([{ path: wtMergedDir, branch: 'feat/merged' }]);
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('persists fetch failure details before exiting', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-worktree-cleanup-fetch-fail-'));
+    const repoDir = join(sandbox, 'repo');
+    const reportPath = join(sandbox, 'worktree-cleanup-report.json');
+
+    try {
+      mkdirSync(repoDir, { recursive: true });
+      runGit(repoDir, ['init', '-b', 'main']);
+      runGit(repoDir, ['config', 'user.email', 'test@example.com']);
+      runGit(repoDir, ['config', 'user.name', 'Test User']);
+
+      writeFileSync(join(repoDir, 'README.md'), 'seed\n', 'utf8');
+      runGit(repoDir, ['add', 'README.md']);
+      runGit(repoDir, ['commit', '-m', 'init']);
+
+      const result = spawnSync(
+        'node',
+        [worktreeCleanupScript, '--base', 'origin/main', '--fetch', '--output-json', reportPath],
+        {
+          cwd: repoDir,
+          encoding: 'utf8',
+          timeout: 120_000,
+        },
+      );
+
+      expect(result.status).toBe(1);
+      const report = JSON.parse(readFileSync(reportPath, 'utf8'));
+      expect(report.fetch).toEqual(
+        expect.objectContaining({
+          attempted: true,
+          ok: false,
+          remote: 'origin',
+        }),
+      );
+      expect(report.error).toContain('failed to fetch remote origin');
+      expect(report.planned).toEqual([]);
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

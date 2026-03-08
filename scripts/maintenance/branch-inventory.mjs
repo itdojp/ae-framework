@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { refreshRemoteTrackingRefs } from './git-remote-refresh.mjs';
+import { deriveFetchRemotes, refreshRemoteTrackingRefsBatch } from './git-remote-refresh.mjs';
 import { parseWorktreePorcelain } from './worktree-cleanup.mjs';
 
 const DEFAULT_BASE_REF = 'origin/main';
@@ -30,7 +30,7 @@ Options:
   --top <n>            Number of items to print in markdown sections (default: ${DEFAULT_TOP})
   --gh-pr-limit <n>    Max merged PRs to inspect via gh (default: ${DEFAULT_GH_PR_LIMIT})
   --gh-pr-base <name>  Explicit GitHub PR base branch filter (default: derived from --base)
-  --fetch              Run 'git fetch --prune <remote>' before analysis
+  --fetch              Refresh the analysis remote(s) with 'git fetch --prune' before analysis
   --help               Show this help
 `);
 };
@@ -397,14 +397,64 @@ export const buildInventoryReport = (
     mergedPullRequestsLoader = loadMergedPullRequests,
   } = {},
 ) => {
+  const fetchRemotes = options.fetch ? deriveFetchRemotes(options.remote, options.base) : [];
   const fetch = options.fetch
-    ? refreshRemoteTrackingRefs(options.remote, { gitRunner: gitSafeRunner })
+    ? refreshRemoteTrackingRefsBatch(fetchRemotes, { gitRunner: gitSafeRunner })
     : {
         attempted: false,
         ok: true,
         remote: options.remote,
+        remotes: options.remote ? [options.remote] : [],
         output: '',
+        message: '',
       };
+  if (fetch.attempted && !fetch.ok) {
+    return {
+      generatedAt,
+      base: options.base,
+      remote: options.remote,
+      currentBranch: '',
+      currentWorktreePath: '',
+      protectedRules: {
+        exact: Array.from(PROTECTED_EXACT),
+        prefixes: PROTECTED_PREFIXES,
+      },
+      ghMergedPullRequests: {
+        available: false,
+        reason: 'skipped: fetch failed',
+        requestedBaseBranch: '',
+        requestedLimit: options.ghPrLimit,
+        matched: 0,
+      },
+      fetch,
+      error: fetch.message,
+      counts: {
+        local: 0,
+        remote: 0,
+        localMerged: 0,
+        remoteMerged: 0,
+        localMergedCandidates: 0,
+        localPrMergedCandidates: 0,
+        linkedWorktreeBranches: 0,
+        detachedWorktreesOnBaseClean: 0,
+        remoteMergedCandidates: 0,
+        remoteStaleCandidates: 0,
+      },
+      candidates: {
+        localMerged: [],
+        localPrMergedManualReview: [],
+        linkedWorktreeBranches: [],
+        detachedWorktreesOnBaseClean: [],
+        remoteMerged: [],
+        remoteMergedDetailed: [],
+        remoteStaleByAge: [],
+        remoteStaleByAgeDetailed: [],
+      },
+      skipped: {
+        detachedWorktrees: [],
+      },
+    };
+  }
   const currentBranch = gitRunner(['branch', '--show-current']);
   const currentWorktreePath = gitRunner(['rev-parse', '--show-toplevel']);
 
@@ -544,12 +594,13 @@ export const renderMarkdown = (report, options) => {
 - remote: \`${report.remote}\`
 - currentBranch: \`${report.currentBranch}\`
 - currentWorktreePath: \`${report.currentWorktreePath}\`
-- fetch: ${report.fetch.attempted ? `yes (${report.fetch.remote})` : 'no'}
+- fetch: ${report.fetch.attempted ? `${report.fetch.ok ? 'yes' : 'failed'} (${report.fetch.remote})` : 'no'}
 - gh merged PR lookup: ${
     report.ghMergedPullRequests.available
       ? `enabled (base=${report.ghMergedPullRequests.requestedBaseBranch || 'none'}, limit=${report.ghMergedPullRequests.requestedLimit}, matched=${report.ghMergedPullRequests.matched})`
       : `unavailable (${report.ghMergedPullRequests.reason})`
   }
+${report.error ? `- error: ${report.error}\n` : ''}
 
 ## Counts
 
@@ -616,6 +667,9 @@ export const run = (argv = process.argv.slice(2)) => {
   fs.mkdirSync(path.dirname(mdPath), { recursive: true });
   fs.writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
   fs.writeFileSync(mdPath, markdown, 'utf8');
+  if (report.fetch.attempted && !report.fetch.ok) {
+    throw new Error(report.fetch.message || 'failed to refresh remote-tracking refs');
+  }
 
   console.log(`[branch-inventory] wrote ${jsonPath}`);
   console.log(`[branch-inventory] wrote ${mdPath}`);

@@ -61,6 +61,7 @@ Notes:
 - Repeat in batches if required
 - detached worktree はこのコマンドでは削除対象に入らない
 - `--fetch` は `--base` から remote 名を導出し、`git fetch --prune <remote>` を先に実行する
+- fetch に失敗した場合は report JSON に `fetch.ok=false` と `error` を残して fail-close する
 
 ## Manual fallback commands
 

@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { refreshRemoteTrackingRefs } from './git-remote-refresh.mjs';
+import { deriveFetchRemotes, refreshRemoteTrackingRefsBatch } from './git-remote-refresh.mjs';
 
 const DEFAULT_BASE_REF = 'origin/main';
 const DEFAULT_REMOTE = 'origin';
@@ -37,7 +37,7 @@ Options:
   --remote-manifest-json <path> Use remote-branch-triage JSON as reviewed delete manifest
   --remote-manifest-mode <mode> merged | stale-delete (default: ${DEFAULT_REMOTE_MANIFEST_MODE})
   --remote-branches-file <path> Use explicit approved branch list (text, JSON array, or { branches: [...] })
-  --fetch                       Run 'git fetch --prune <remote>' before analysis
+  --fetch                       Refresh the analysis remote(s) with 'git fetch --prune' before analysis
   --apply                       Execute deletion (without this, dry-run only)
   --help                        Show this help
 `);
@@ -380,14 +380,73 @@ export const run = (argv = process.argv.slice(2)) => {
   const currentBranch = runGit(['branch', '--show-current']);
   const shouldLocal = options.scope === 'local' || options.scope === 'both';
   const shouldRemote = options.scope === 'remote' || options.scope === 'both';
+  const fetchRemotes = options.fetch ? deriveFetchRemotes(options.remote, options.base) : [];
   const fetch = options.fetch
-    ? refreshRemoteTrackingRefs(options.remote, { gitRunner: runGitSafe })
+    ? refreshRemoteTrackingRefsBatch(fetchRemotes, { gitRunner: runGitSafe })
     : {
         attempted: false,
         ok: true,
         remote: options.remote,
+        remotes: options.remote ? [options.remote] : [],
         output: '',
+        message: '',
       };
+  if (fetch.attempted && !fetch.ok) {
+    const report = {
+      generatedAt,
+      base: options.base,
+      remoteName: options.remote,
+      scope: options.scope,
+      apply: options.apply,
+      max: options.max,
+      currentBranch,
+      fetch,
+      error: fetch.message,
+      protectedRules: {
+        exact: Array.from(PROTECTED_EXACT),
+        prefixes: PROTECTED_PREFIXES,
+      },
+      local: {
+        totalCandidates: 0,
+        planned: [],
+        considered: [],
+        deleted: [],
+        failed: [],
+      },
+      remote: shouldRemote
+        ? {
+            selection: {
+              mode: 'disabled',
+              sourcePath: '',
+            },
+            totalCandidates: 0,
+            planned: [],
+            plannedDetailed: [],
+            blocked: [],
+            considered: [],
+            deleted: [],
+            failed: [],
+          }
+        : {
+            selection: {
+              mode: 'disabled',
+              sourcePath: '',
+            },
+            totalCandidates: 0,
+            planned: [],
+            plannedDetailed: [],
+            blocked: [],
+            considered: [],
+            deleted: [],
+            failed: [],
+          },
+    };
+    const outputPath = path.resolve(options.outputJson);
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+    console.log(`[branch-cleanup] wrote ${outputPath}`);
+    throw new Error(fetch.message || 'failed to refresh remote-tracking refs');
+  }
 
   const mergedLocal = new Set(
     parseBranchList(runGit(['branch', '--format=%(refname:short)', '--merged', options.base])),
