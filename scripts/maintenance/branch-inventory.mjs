@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { refreshRemoteTrackingRefs } from './git-remote-refresh.mjs';
 import { parseWorktreePorcelain } from './worktree-cleanup.mjs';
 
 const DEFAULT_BASE_REF = 'origin/main';
@@ -29,6 +30,7 @@ Options:
   --top <n>            Number of items to print in markdown sections (default: ${DEFAULT_TOP})
   --gh-pr-limit <n>    Max merged PRs to inspect via gh (default: ${DEFAULT_GH_PR_LIMIT})
   --gh-pr-base <name>  Explicit GitHub PR base branch filter (default: derived from --base)
+  --fetch              Run 'git fetch --prune <remote>' before analysis
   --help               Show this help
 `);
 };
@@ -43,6 +45,7 @@ export const parseArgs = (argv) => {
     top: DEFAULT_TOP,
     ghPrLimit: DEFAULT_GH_PR_LIMIT,
     ghPrBase: DEFAULT_GH_PR_BASE,
+    fetch: false,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -81,6 +84,10 @@ export const parseArgs = (argv) => {
     }
     if (arg === '--gh-pr-base') {
       options.ghPrBase = String(argv[++i] || '').trim();
+      continue;
+    }
+    if (arg === '--fetch') {
+      options.fetch = true;
       continue;
     }
     throw new Error(`Unknown argument: ${arg}`);
@@ -386,9 +393,18 @@ export const buildInventoryReport = (
     nowUnix = Math.floor(Date.now() / 1000),
     generatedAt = new Date().toISOString(),
     gitRunner = runGit,
+    gitSafeRunner = runGitSafe,
     mergedPullRequestsLoader = loadMergedPullRequests,
   } = {},
 ) => {
+  const fetch = options.fetch
+    ? refreshRemoteTrackingRefs(options.remote, { gitRunner: gitSafeRunner })
+    : {
+        attempted: false,
+        ok: true,
+        remote: options.remote,
+        output: '',
+      };
   const currentBranch = gitRunner(['branch', '--show-current']);
   const currentWorktreePath = gitRunner(['rev-parse', '--show-toplevel']);
 
@@ -487,6 +503,7 @@ export const buildInventoryReport = (
       requestedLimit: mergedPullRequests.requestedLimit,
       matched: mergedPullRequests.items.length,
     },
+    fetch,
     counts: {
       local: localRefs.length,
       remote: remoteRefs.length,
@@ -527,6 +544,7 @@ export const renderMarkdown = (report, options) => {
 - remote: \`${report.remote}\`
 - currentBranch: \`${report.currentBranch}\`
 - currentWorktreePath: \`${report.currentWorktreePath}\`
+- fetch: ${report.fetch.attempted ? `yes (${report.fetch.remote})` : 'no'}
 - gh merged PR lookup: ${
     report.ghMergedPullRequests.available
       ? `enabled (base=${report.ghMergedPullRequests.requestedBaseBranch || 'none'}, limit=${report.ghMergedPullRequests.requestedLimit}, matched=${report.ghMergedPullRequests.matched})`

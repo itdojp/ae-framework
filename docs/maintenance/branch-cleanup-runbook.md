@@ -29,6 +29,9 @@ pnpm run maintenance:branch:inventory
 # Large repo or non-standard base
 node scripts/maintenance/branch-inventory.mjs --base origin/main --gh-pr-limit 2000
 
+# Refresh origin/* before inventory when current remote-tracking refs may be stale
+node scripts/maintenance/branch-inventory.mjs --base origin/main --fetch
+
 # Render operator worksheet for remote cleanup
 pnpm run maintenance:branch:triage:render
 
@@ -66,6 +69,9 @@ Inventory では次も併せて確認する:
 
 ```bash
 pnpm run maintenance:branch:cleanup:dry-run
+
+# Refresh origin/* before classifying merged local / remote candidates
+node scripts/maintenance/branch-cleanup.mjs --base origin/main --scope both --fetch
 ```
 
 This prints planned delete commands and writes:
@@ -84,6 +90,7 @@ Notes:
 - Batch size default: 200 branches
 - Repeat in batches until target count is reached
 - `localPrMergedManualReview` に出た branch は、このコマンドでは削除されない
+- `--fetch` を付けると `git fetch --prune <remote>` を先に実行し、stale な `origin/*` 判定を避ける
 
 ## Remote branch cleanup policy
 

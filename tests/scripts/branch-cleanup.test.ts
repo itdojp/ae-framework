@@ -222,6 +222,69 @@ describe.sequential('branch-cleanup script', () => {
     }
   });
 
+  it('refreshes origin before local cleanup analysis when --fetch is set', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-branch-cleanup-fetch-'));
+    const originDir = join(sandbox, 'origin.git');
+    const repoDir = join(sandbox, 'repo');
+    const reportPath = join(sandbox, 'branch-cleanup-report.json');
+
+    try {
+      runGit(sandbox, ['init', '--bare', originDir]);
+      runGit(sandbox, ['clone', originDir, repoDir]);
+
+      runGit(repoDir, ['config', 'user.email', 'test@example.com']);
+      runGit(repoDir, ['config', 'user.name', 'Test User']);
+
+      writeFileSync(join(repoDir, 'README.md'), 'seed\n', 'utf8');
+      runGit(repoDir, ['add', 'README.md']);
+      runGit(repoDir, ['commit', '-m', 'init']);
+      runGit(repoDir, ['push', '-u', 'origin', 'HEAD:main']);
+
+      runGit(repoDir, ['checkout', '-b', 'docs/merged-a']);
+      writeFileSync(join(repoDir, 'merged-a.md'), 'A\n', 'utf8');
+      runGit(repoDir, ['add', 'merged-a.md']);
+      runGit(repoDir, ['commit', '-m', 'docs merged a']);
+      runGit(repoDir, ['push', '-u', 'origin', 'docs/merged-a']);
+      runGit(repoDir, ['checkout', 'main']);
+      runGit(repoDir, ['merge', '--ff-only', 'docs/merged-a']);
+      runGit(repoDir, ['push', 'origin', 'main']);
+
+      const result = spawnSync(
+        'node',
+        [
+          branchCleanupScript,
+          '--base',
+          'origin/main',
+          '--scope',
+          'local',
+          '--fetch',
+          '--output-json',
+          reportPath,
+        ],
+        {
+          cwd: repoDir,
+          encoding: 'utf8',
+          timeout: 120_000,
+        },
+      );
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      expect(result.stdout).toContain('fetch=ok remote=origin');
+      expect(result.stdout).toContain('DRYRUN local: git branch -d docs/merged-a');
+
+      const report = JSON.parse(readFileSync(reportPath, 'utf8'));
+      expect(report.fetch).toEqual({
+        attempted: true,
+        ok: true,
+        remote: 'origin',
+        output: '',
+      });
+      expect(report.local.planned).toEqual(['docs/merged-a']);
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects reviewed manifests that do not record remote/base provenance', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-branch-cleanup-invalid-manifest-'));
     const repoDir = join(sandbox, 'repo');

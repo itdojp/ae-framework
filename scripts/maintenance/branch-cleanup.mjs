@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { refreshRemoteTrackingRefs } from './git-remote-refresh.mjs';
 
 const DEFAULT_BASE_REF = 'origin/main';
 const DEFAULT_REMOTE = 'origin';
@@ -36,6 +37,7 @@ Options:
   --remote-manifest-json <path> Use remote-branch-triage JSON as reviewed delete manifest
   --remote-manifest-mode <mode> merged | stale-delete (default: ${DEFAULT_REMOTE_MANIFEST_MODE})
   --remote-branches-file <path> Use explicit approved branch list (text, JSON array, or { branches: [...] })
+  --fetch                       Run 'git fetch --prune <remote>' before analysis
   --apply                       Execute deletion (without this, dry-run only)
   --help                        Show this help
 `);
@@ -54,6 +56,7 @@ export const parseArgs = (argv) => {
     remoteManifestModeProvided: false,
     remoteBranchesFile: '',
     remoteBranchesFileProvided: false,
+    fetch: false,
     apply: false,
   };
 
@@ -103,6 +106,10 @@ export const parseArgs = (argv) => {
       options.remoteBranchesFile = readRequiredValue(argv, i, '--remote-branches-file');
       options.remoteBranchesFileProvided = true;
       i += 1;
+      continue;
+    }
+    if (arg === '--fetch') {
+      options.fetch = true;
       continue;
     }
     if (arg === '--apply') {
@@ -373,6 +380,14 @@ export const run = (argv = process.argv.slice(2)) => {
   const currentBranch = runGit(['branch', '--show-current']);
   const shouldLocal = options.scope === 'local' || options.scope === 'both';
   const shouldRemote = options.scope === 'remote' || options.scope === 'both';
+  const fetch = options.fetch
+    ? refreshRemoteTrackingRefs(options.remote, { gitRunner: runGitSafe })
+    : {
+        attempted: false,
+        ok: true,
+        remote: options.remote,
+        output: '',
+      };
 
   const mergedLocal = new Set(
     parseBranchList(runGit(['branch', '--format=%(refname:short)', '--merged', options.base])),
@@ -468,6 +483,7 @@ export const run = (argv = process.argv.slice(2)) => {
     apply: options.apply,
     max: options.max,
     currentBranch,
+    fetch,
     protectedRules: {
       exact: Array.from(PROTECTED_EXACT),
       prefixes: PROTECTED_PREFIXES,
@@ -481,6 +497,9 @@ export const run = (argv = process.argv.slice(2)) => {
   fs.writeFileSync(outputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 
   console.log(`[branch-cleanup] mode=${options.apply ? 'apply' : 'dry-run'} scope=${options.scope}`);
+  if (fetch.attempted) {
+    console.log(`[branch-cleanup] fetch=ok remote=${fetch.remote}`);
+  }
   console.log(
     `[branch-cleanup] local candidates=${localCandidates.length}, remote candidates=${remoteResult.totalCandidates}`,
   );

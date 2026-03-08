@@ -108,4 +108,59 @@ describe.sequential('worktree-cleanup script', () => {
       rmSync(sandbox, { recursive: true, force: true });
     }
   });
+
+  it('refreshes origin before worktree analysis when --fetch is set', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-worktree-cleanup-fetch-'));
+    const originDir = join(sandbox, 'origin.git');
+    const repoDir = join(sandbox, 'repo');
+    const wtMergedDir = join(sandbox, 'wt-merged');
+    const reportPath = join(sandbox, 'worktree-cleanup-report.json');
+
+    try {
+      runGit(sandbox, ['init', '--bare', originDir]);
+      runGit(sandbox, ['clone', originDir, repoDir]);
+      runGit(repoDir, ['config', 'user.email', 'test@example.com']);
+      runGit(repoDir, ['config', 'user.name', 'Test User']);
+
+      writeFileSync(join(repoDir, 'README.md'), 'seed\n', 'utf8');
+      runGit(repoDir, ['add', 'README.md']);
+      runGit(repoDir, ['commit', '-m', 'init']);
+      runGit(repoDir, ['push', '-u', 'origin', 'HEAD:main']);
+
+      runGit(repoDir, ['checkout', '-b', 'feat/merged']);
+      writeFileSync(join(repoDir, 'feature.txt'), 'feature\n', 'utf8');
+      runGit(repoDir, ['add', 'feature.txt']);
+      runGit(repoDir, ['commit', '-m', 'feat']);
+      runGit(repoDir, ['push', '-u', 'origin', 'feat/merged']);
+      runGit(repoDir, ['checkout', 'main']);
+      runGit(repoDir, ['merge', '--ff-only', 'feat/merged']);
+      runGit(repoDir, ['push', 'origin', 'main']);
+      runGit(repoDir, ['worktree', 'add', wtMergedDir, 'feat/merged']);
+
+      const result = spawnSync(
+        'node',
+        [worktreeCleanupScript, '--base', 'origin/main', '--fetch', '--output-json', reportPath],
+        {
+          cwd: repoDir,
+          encoding: 'utf8',
+          timeout: 120_000,
+        },
+      );
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      expect(result.stdout).toContain('fetch=ok remote=origin');
+      expect(result.stdout).toContain(`DRYRUN: git worktree remove "${wtMergedDir}"`);
+
+      const report = JSON.parse(readFileSync(reportPath, 'utf8'));
+      expect(report.fetch).toEqual({
+        attempted: true,
+        ok: true,
+        remote: 'origin',
+        output: '',
+      });
+      expect(report.planned).toEqual([{ path: wtMergedDir, branch: 'feat/merged' }]);
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
 });

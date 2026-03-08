@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { deriveRemoteFromBaseRef, refreshRemoteTrackingRefs } from './git-remote-refresh.mjs';
 
 const DEFAULT_BASE_REF = 'origin/main';
 const DEFAULT_MAX = 50;
@@ -18,6 +19,7 @@ Options:
   --base <ref>          Base ref to compare merge status (default: ${DEFAULT_BASE_REF})
   --max <n>             Max worktrees to process (default: ${DEFAULT_MAX})
   --output-json <path>  JSON output path (default: ${DEFAULT_OUTPUT_JSON})
+  --fetch               Run 'git fetch --prune <remote>' before analysis
   --apply               Execute deletion (without this, dry-run only)
   --prune               Run 'git worktree prune' before analysis
   --help                Show this help
@@ -29,6 +31,7 @@ const parseArgs = (argv) => {
     base: DEFAULT_BASE_REF,
     max: DEFAULT_MAX,
     outputJson: DEFAULT_OUTPUT_JSON,
+    fetch: false,
     apply: false,
     prune: false,
   };
@@ -49,6 +52,10 @@ const parseArgs = (argv) => {
     }
     if (arg === '--output-json') {
       options.outputJson = String(argv[++i] || '').trim();
+      continue;
+    }
+    if (arg === '--fetch') {
+      options.fetch = true;
       continue;
     }
     if (arg === '--apply') {
@@ -249,6 +256,18 @@ export const run = (argv = process.argv.slice(2)) => {
   const options = parseArgs(argv);
   const generatedAt = new Date().toISOString();
   const currentWorktreePath = runGit(['rev-parse', '--show-toplevel']);
+  const fetchRemote = options.fetch ? deriveRemoteFromBaseRef(options.base) : '';
+  if (options.fetch && !fetchRemote) {
+    throw new Error('--fetch requires a remote-tracking --base such as origin/main');
+  }
+  const fetch = options.fetch
+    ? refreshRemoteTrackingRefs(fetchRemote, { gitRunner: runGitSafe })
+    : {
+        attempted: false,
+        ok: true,
+        remote: '',
+        output: '',
+      };
 
   let pruneResult = { attempted: false, ok: true, output: '' };
   if (options.prune) {
@@ -289,6 +308,7 @@ export const run = (argv = process.argv.slice(2)) => {
     base: options.base,
     apply: options.apply,
     max: options.max,
+    fetch,
     prune: pruneResult,
     currentWorktreePath,
     counts: {
@@ -312,6 +332,9 @@ export const run = (argv = process.argv.slice(2)) => {
   fs.writeFileSync(outputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 
   console.log(`[worktree-cleanup] mode=${options.apply ? 'apply' : 'dry-run'} base=${options.base}`);
+  if (fetch.attempted) {
+    console.log(`[worktree-cleanup] fetch=ok remote=${fetch.remote}`);
+  }
   console.log(
     `[worktree-cleanup] total=${report.counts.total} candidates=${report.counts.candidates} planned=${report.counts.planned} deleted=${report.counts.deleted} failed=${report.counts.failed}`,
   );
