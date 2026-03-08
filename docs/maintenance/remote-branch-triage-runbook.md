@@ -252,10 +252,11 @@ Notes:
 
 - this step does not execute remote delete
 - `approved-remote-branches.json` is a self-contained copy of the reviewed delete-ready subset with provenance metadata
-- `commands.sh` runs the exact dry-run command only
-- `apply-command.txt` renders the exact apply command that stays scoped to the approved subset
+- `commands.sh` runs the exact dry-run command only, including `branch-cleanup.mjs --fetch`
+- `apply-command.txt` renders the exact apply command that stays scoped to the approved subset and also refreshes remote-tracking refs first
 - if `delete-ready` rows exceed `--max`, the script fails instead of generating a partial execution pack
 - run the generated dry-run command and archive `branch-cleanup-dry-run-report.json` before operator-approved apply
+- `summary.json` / `summary.md` also record the dry-run fetch provenance copied from `branch-cleanup-dry-run-report.json`
 
 ### 3.10) Validate artifact-chain consistency
 

@@ -168,12 +168,15 @@ After inventory + triage refresh, audit the refreshed candidate set before closi
 pnpm run maintenance:branch:cleanup:refresh-audit
 ```
 
+Execution-pack note:
+
+- `tmp/maintenance/remote-cleanup-execution-pack/commands.sh` and `apply-command.txt` include `branch-cleanup.mjs --fetch`
+- use the generated `branch-cleanup-dry-run-report.json` and execution-pack `summary.json` to confirm the fetch provenance before apply
 Then render the operator-facing closeout summary from the current artifact set:
 
 ```bash
 pnpm run maintenance:branch:cleanup:closeout-summary
 ```
-
 Safeguards:
 
 - `triage-merged` keeps the ancestry check and blocks branches no longer merged to `base`
