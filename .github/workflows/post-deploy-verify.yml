@@ -25,6 +25,11 @@ on:
         type: string
         required: false
         default: ""
+      release_tag:
+        description: "Optional release tag used to download quality-artifacts.tgz for assurance summary"
+        type: string
+        required: false
+        default: ""
       fail_on_verify_fail:
         description: "Fail workflow when verify result is fail"
         type: boolean
@@ -135,9 +140,30 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `${outputLines.join('\n')}\n`);
           NODE
 
+      - name: Download release quality artifacts (optional)
+        if: ${{ inputs.release_tag != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/release-quality-download
+          gh release download "${{ inputs.release_tag }}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "quality-artifacts.tgz" \
+            --dir artifacts/release-quality-download \
+            --clobber
+          tar -xzf artifacts/release-quality-download/quality-artifacts.tgz -C artifacts/release-quality-download
+
       - name: Append Step Summary
         if: always()
         run: |
+          assurance_summary_path=""
+          if [ -f artifacts/assurance/assurance-summary.md ]; then
+            assurance_summary_path="artifacts/assurance/assurance-summary.md"
+          elif [ -f artifacts/release-quality-download/artifacts/assurance/assurance-summary.md ]; then
+            assurance_summary_path="artifacts/release-quality-download/artifacts/assurance/assurance-summary.md"
+          fi
+
           {
             echo "## Post-deploy verify"
             echo "- environment: ${{ inputs.environment }}"
@@ -161,11 +187,10 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          if [ -f artifacts/assurance/assurance-summary.md ]; then
+          if [ -n "$assurance_summary_path" ]; then
             {
               echo ""
-              echo "### Assurance summary"
-              cat artifacts/assurance/assurance-summary.md
+              cat "$assurance_summary_path"
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
