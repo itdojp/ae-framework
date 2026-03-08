@@ -109,6 +109,7 @@ Comprehensive documentation for the agentic SDLC orchestrator and assurance cont
 
 ### Quality / Verification
 - Assurance model: `quality/ASSURANCE-MODEL.md`
+- Assurance lanes / independence rule: `quality/assurance-lanes.md`
 - Formal Quality Gates (DoD v0.2): `quality/formal-gates.md`
 - Ownership DoD: `quality/ownership-dod.md`
 - LLM first-pass review checklist: `quality/llm-first-review-checklist.md`

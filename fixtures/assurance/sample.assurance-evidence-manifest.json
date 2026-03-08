@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "assurance-evidence-manifest/v1",
+  "entries": [
+    {
+      "lane": "behavior",
+      "kind": "property",
+      "sourceKind": "source-derived",
+      "claimIds": [
+        "no-negative-stock"
+      ],
+      "artifactPath": "artifacts/testing/property-summary.json",
+      "generatorLineage": "property-harness",
+      "detail": "property suite passed"
+    },
+    {
+      "lane": "runtime",
+      "kind": "runtime-alert",
+      "sourceKind": "runtime-derived",
+      "claimIds": [
+        "no-negative-stock"
+      ],
+      "artifactPath": "artifacts/runtime/alerts/no-negative-stock.json",
+      "generatorLineage": "runtime-guard",
+      "detail": "runtime alert configuration reviewed"
+    }
+  ]
+}

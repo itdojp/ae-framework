@@ -2,6 +2,18 @@
   "schemaVersion": "1.0.0",
   "backend": "tlc",
   "spec": "spec/tla/DomainSpec.tla",
+  "claimIds": [
+    "no-negative-stock"
+  ],
+  "morphismIds": [
+    "ReserveInventory"
+  ],
+  "triageStatus": "resolved",
+  "replayCommand": "pnpm run model-check -- --spec spec/tla/DomainSpec.tla",
+  "suggestedContextChanges": {
+    "summary": "Strengthen the reservation precondition in the Context Pack.",
+    "contextPackSuggestionPath": "artifacts/context-pack/context-pack-suggestions.json"
+  },
   "violated": {
     "kind": "INVARIANT",
     "name": "Invariant",

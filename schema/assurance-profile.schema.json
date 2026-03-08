@@ -113,6 +113,10 @@
             "A4"
           ]
         },
+        "minIndependentSources": {
+          "type": "integer",
+          "minimum": 1
+        },
         "scopeRefs": {
           "$ref": "#/$defs/scopeRefs"
         },
@@ -141,12 +145,19 @@
               "unit",
               "integration",
               "property",
+              "conformance",
+              "mutation",
+              "fuzz",
+              "differential",
               "counterexample-closed",
               "product-coproduct",
               "natural-transformation",
               "model-check",
               "proof",
               "runtime-control",
+              "runtime-monitor",
+              "runtime-alert",
+              "runtime-rollout-guard",
               "waiver"
             ]
           },
