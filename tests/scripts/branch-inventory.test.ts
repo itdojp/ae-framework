@@ -124,6 +124,200 @@ describe.sequential('branch-inventory script', () => {
     ]);
   });
 
+  it('refreshes remote-tracking refs before inventory analysis when requested', async () => {
+    const mod = await import(branchInventoryModuleUrl);
+    const commands: string[] = [];
+    const gitRunner = (args: string[]) => {
+      commands.push(`git:${args.join(' ')}`);
+      const key = args.join(' ');
+      if (key === 'branch --show-current') return 'main';
+      if (key === 'rev-parse --show-toplevel') return '/repo';
+      if (
+        key ===
+        'for-each-ref refs/heads --format=%(refname:short)\t%(committerdate:iso8601)\t%(committerdate:unix)\t%(upstream:short)\t%(objectname)'
+      ) {
+        return 'main\t2026-03-07 00:00:00 +0900\t1772818800\t\tmainoid';
+      }
+      if (
+        key ===
+        'for-each-ref refs/remotes/origin --format=%(refname:short)\t%(committerdate:iso8601)\t%(committerdate:unix)\t%(upstream:short)\t%(objectname)'
+      ) {
+        return 'origin/main\t2026-03-07 00:00:00 +0900\t1772818800\t\tmainoid';
+      }
+      if (key === 'worktree list --porcelain') {
+        return 'worktree /repo\nHEAD mainoid\nbranch refs/heads/main\n';
+      }
+      if (key === 'branch --format=%(refname:short) --merged origin/main') {
+        return 'main';
+      }
+      if (key === 'branch -r --format=%(refname:short) --merged origin/main') {
+        return 'origin/main';
+      }
+      throw new Error(`Unexpected git command: ${key}`);
+    };
+    const gitSafeRunner = (args: string[]) => {
+      commands.push(`safe:${args.join(' ')}`);
+      if (args.join(' ') === 'fetch --prune origin') {
+        return { ok: true, output: 'fetched' };
+      }
+      throw new Error(`Unexpected safe git command: ${args.join(' ')}`);
+    };
+
+    const report = mod.buildInventoryReport(
+      {
+        base: 'origin/main',
+        remote: 'origin',
+        outputJson: 'tmp/maintenance/branch-inventory.json',
+        outputMd: 'tmp/maintenance/branch-inventory.md',
+        staleDays: 90,
+        top: 30,
+        ghPrLimit: 1000,
+        ghPrBase: '',
+        fetch: true,
+      },
+      {
+        gitRunner,
+        gitSafeRunner,
+        mergedPullRequestsLoader: () => ({
+          available: false,
+          reason: 'offline',
+          requestedBaseBranch: 'main',
+          requestedLimit: 1000,
+          items: [],
+          byHeadRefName: new Map(),
+        }),
+      },
+    );
+
+    expect(report.fetch).toEqual({
+      attempted: true,
+      ok: true,
+      remote: 'origin',
+      remotes: ['origin'],
+      output: 'fetched',
+      message: '',
+      details: [expect.objectContaining({ attempted: true, ok: true, remote: 'origin', output: 'fetched' })],
+    });
+    expect(commands[0]).toBe('safe:fetch --prune origin');
+  });
+
+  it('refreshes both analysis remote and base remote when they differ', async () => {
+    const mod = await import(branchInventoryModuleUrl);
+    const commands: string[] = [];
+    const gitRunner = (args: string[]) => {
+      commands.push(`git:${args.join(' ')}`);
+      const key = args.join(' ');
+      if (key === 'branch --show-current') return 'main';
+      if (key === 'rev-parse --show-toplevel') return '/repo';
+      if (
+        key ===
+        'for-each-ref refs/heads --format=%(refname:short)\t%(committerdate:iso8601)\t%(committerdate:unix)\t%(upstream:short)\t%(objectname)'
+      ) {
+        return 'main\t2026-03-07 00:00:00 +0900\t1772818800\t\tmainoid';
+      }
+      if (
+        key ===
+        'for-each-ref refs/remotes/origin --format=%(refname:short)\t%(committerdate:iso8601)\t%(committerdate:unix)\t%(upstream:short)\t%(objectname)'
+      ) {
+        return 'origin/main\t2026-03-07 00:00:00 +0900\t1772818800\t\tmainoid';
+      }
+      if (key === 'worktree list --porcelain') {
+        return 'worktree /repo\nHEAD mainoid\nbranch refs/heads/main\n';
+      }
+      if (key === 'branch --format=%(refname:short) --merged upstream/main') {
+        return 'main';
+      }
+      if (key === 'branch -r --format=%(refname:short) --merged upstream/main') {
+        return 'origin/main';
+      }
+      throw new Error(`Unexpected git command: ${key}`);
+    };
+    const gitSafeRunner = (args: string[]) => {
+      commands.push(`safe:${args.join(' ')}`);
+      const key = args.join(' ');
+      if (key === 'fetch --prune origin' || key === 'fetch --prune upstream') {
+        return { ok: true, output: key };
+      }
+      throw new Error(`Unexpected safe git command: ${key}`);
+    };
+
+    const report = mod.buildInventoryReport(
+      {
+        base: 'upstream/main',
+        remote: 'origin',
+        outputJson: 'tmp/maintenance/branch-inventory.json',
+        outputMd: 'tmp/maintenance/branch-inventory.md',
+        staleDays: 90,
+        top: 30,
+        ghPrLimit: 1000,
+        ghPrBase: '',
+        fetch: true,
+      },
+      {
+        gitRunner,
+        gitSafeRunner,
+        mergedPullRequestsLoader: () => ({
+          available: false,
+          reason: 'offline',
+          requestedBaseBranch: 'main',
+          requestedLimit: 1000,
+          items: [],
+          byHeadRefName: new Map(),
+        }),
+      },
+    );
+
+    expect(report.fetch).toEqual({
+      attempted: true,
+      ok: true,
+      remote: 'origin,upstream',
+      remotes: ['origin', 'upstream'],
+      output: ['fetch --prune origin', 'fetch --prune upstream'].join('\n'),
+      message: '',
+      details: [
+        expect.objectContaining({ remote: 'origin', ok: true }),
+        expect.objectContaining({ remote: 'upstream', ok: true }),
+      ],
+    });
+    expect(commands.slice(0, 2)).toEqual(['safe:fetch --prune origin', 'safe:fetch --prune upstream']);
+  });
+
+  it('returns a persisted error report when fetch fails', async () => {
+    const mod = await import(branchInventoryModuleUrl);
+    const report = mod.buildInventoryReport(
+      {
+        base: 'origin/main',
+        remote: 'origin',
+        outputJson: 'tmp/maintenance/branch-inventory.json',
+        outputMd: 'tmp/maintenance/branch-inventory.md',
+        staleDays: 90,
+        top: 30,
+        ghPrLimit: 1000,
+        ghPrBase: '',
+        fetch: true,
+      },
+      {
+        gitSafeRunner: () => ({
+          ok: false,
+          output: 'fatal: unable to access origin',
+          message: 'fetch failed',
+        }),
+      },
+    );
+
+    expect(report.error).toBe('failed to fetch remote origin: fatal: unable to access origin');
+    expect(report.fetch).toEqual(
+      expect.objectContaining({
+        attempted: true,
+        ok: false,
+        remote: 'origin',
+        message: 'failed to fetch remote origin: fatal: unable to access origin',
+      }),
+    );
+    expect(report.counts.local).toBe(0);
+    expect(report.candidates.remoteMerged).toEqual([]);
+  });
+
   it('collects detached clean worktrees on base separately from linked branches', async () => {
     const mod = await import(branchInventoryModuleUrl);
     const result = mod.collectWorktreeInventory(
