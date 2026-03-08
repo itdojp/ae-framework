@@ -23,10 +23,10 @@
 - GitHub Actions の出力書き込みは `printf` を使用し、`$GITHUB_OUTPUT` / `$GITHUB_ENV` への追記はシェル安全性を維持する。
 - 方針は `docs/ci-policy.md`、運用は `docs/ci/*` を一次情報として参照し、AGENTSに再掲しない。
 - subagent は read-only を保証しない。repo コンテキストを与えた時点で変更可能として扱う。
-- 本リポジトリでは、subagent を書き込み作業に使用しない。commit / push / PR 作成・更新 / issue 更新は main agent のみが行う。
+- 本リポジトリでは、subagent を書き込み作業に使用しない。commit / push / PR 作成・更新 / Issue 更新は main agent のみが行う。
 - subagent の用途は read-only 調査に限定する。repo に触れさせる場合も、隔離用 worktree を用意したうえで担当範囲を明示する。
 - subagent 完了後は `git status --short`、`git log -1`、`git diff --stat` を確認し、想定外変更があれば次の作業へ進まない。
-- subagent が無断で commit / push / PR 作成を行った場合、その差分は隔離対象として扱い、既定動作は「破棄候補」とする。採用する場合でも main agent が内容を再レビューして明示的に採用判断する。
+- subagent が無断で commit / push / PR 作成・更新 / Issue 更新を行った場合、その差分は隔離対象として扱い、既定動作は「破棄候補」とする。採用する場合でも main agent が内容を再レビューして明示的に採用判断する。
 
 ## Progressive Disclosure（参照順）
 
