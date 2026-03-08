@@ -14,6 +14,36 @@
     "spec": {
       "type": "string"
     },
+    "claimIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "morphismIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "triageStatus": {
+      "type": "string",
+      "enum": [
+        "open",
+        "resolved",
+        "accepted-risk"
+      ]
+    },
+    "replayCommand": {
+      "type": "string"
+    },
+    "suggestedContextChanges": {
+      "$ref": "#/$defs/suggestedContextChanges"
+    },
     "violated": {
       "$ref": "#/$defs/violatedProperty"
     },
@@ -88,6 +118,26 @@
         "state"
       ],
       "additionalProperties": true
+    },
+    "suggestedContextChanges": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "contextPackSuggestionPath": {
+          "type": "string"
+        },
+        "patchHintPaths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
     }
   }
 }

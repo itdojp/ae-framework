@@ -17,6 +17,7 @@
       "kind": "safety",
       "criticality": "high",
       "targetLevel": "A3",
+      "minIndependentSources": 2,
       "scopeRefs": {
         "objectIds": [
           "InventoryItem"

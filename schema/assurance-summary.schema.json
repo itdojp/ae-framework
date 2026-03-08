@@ -1,0 +1,437 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/assurance-summary.schema.json",
+  "title": "Assurance Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "metadata",
+    "inputs",
+    "summary",
+    "laneCoverage",
+    "claims",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "assurance-summary/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "$ref": "https://ae-framework/schema/artifact-metadata.schema.json"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assuranceProfile",
+        "contextPacks",
+        "verifyLiteSummary",
+        "formalSummaries",
+        "conformanceReport",
+        "counterexamples",
+        "evidenceManifests"
+      ],
+      "properties": {
+        "assuranceProfile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contextPacks": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "verifyLiteSummary": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "formalSummaries": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "conformanceReport": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "counterexamples": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "evidenceManifests": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimCount",
+        "satisfiedClaims",
+        "warningClaims",
+        "claimsMissingRequiredLanes",
+        "claimsMissingRequiredEvidenceKinds",
+        "unlinkedCounterexamples",
+        "warningCount"
+      ],
+      "properties": {
+        "claimCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "satisfiedClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warningClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "claimsMissingRequiredLanes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "claimsMissingRequiredEvidenceKinds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unlinkedCounterexamples": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warningCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "laneCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spec",
+        "behavior",
+        "adversarial",
+        "model",
+        "proof",
+        "runtime"
+      ],
+      "properties": {
+        "spec": { "$ref": "#/$defs/laneCoverage" },
+        "behavior": { "$ref": "#/$defs/laneCoverage" },
+        "adversarial": { "$ref": "#/$defs/laneCoverage" },
+        "model": { "$ref": "#/$defs/laneCoverage" },
+        "proof": { "$ref": "#/$defs/laneCoverage" },
+        "runtime": { "$ref": "#/$defs/laneCoverage" }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claimSummary"
+      },
+      "minItems": 1
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/warning"
+      }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "lane": {
+      "type": "string",
+      "enum": [
+        "spec",
+        "behavior",
+        "adversarial",
+        "model",
+        "proof",
+        "runtime"
+      ]
+    },
+    "sourceKind": {
+      "type": "string",
+      "enum": [
+        "spec-derived",
+        "source-derived",
+        "model-derived",
+        "runtime-derived",
+        "manual",
+        "unknown"
+      ]
+    },
+    "warningCode": {
+      "type": "string",
+      "enum": [
+        "all-evidence-derived-from-source",
+        "same-generator-lineage",
+        "missing-spec-derived-evidence",
+        "unresolved-critical-counterexample",
+        "insufficient-independent-lanes",
+        "context-pack-profile-mismatch",
+        "unknown-claim-ref",
+        "unlinked-counterexample",
+        "unrecognized-evidence-claim"
+      ]
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/warningCode"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimId": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "artifactPath": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "laneCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredClaims",
+        "observedClaims"
+      ],
+      "properties": {
+        "requiredClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observedClaims": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "counterexampleCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "open",
+        "resolved",
+        "acceptedRisk",
+        "total"
+      ],
+      "properties": {
+        "open": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "resolved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "acceptedRisk": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lane",
+        "kind",
+        "sourceKind",
+        "origin",
+        "status"
+      ],
+      "properties": {
+        "lane": {
+          "$ref": "#/$defs/lane"
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceKind": {
+          "$ref": "#/$defs/sourceKind"
+        },
+        "origin": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "observed",
+            "warning"
+          ]
+        },
+        "artifactPath": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "detail": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "claimRefs": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "generatorLineage": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "claimSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "statement",
+        "criticality",
+        "targetLevel",
+        "minIndependentSources",
+        "observedIndependentSources",
+        "requiredLanes",
+        "observedLanes",
+        "missingLanes",
+        "requiredEvidenceKinds",
+        "observedEvidenceKinds",
+        "missingEvidenceKinds",
+        "counterexamples",
+        "independenceWarnings",
+        "status",
+        "evidence"
+      ],
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "criticality": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "targetLevel": {
+          "type": "string",
+          "enum": [
+            "A0",
+            "A1",
+            "A2",
+            "A3",
+            "A4"
+          ]
+        },
+        "minIndependentSources": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "observedIndependentSources": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "requiredLanes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lane"
+          },
+          "uniqueItems": true
+        },
+        "observedLanes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lane"
+          },
+          "uniqueItems": true
+        },
+        "missingLanes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lane"
+          },
+          "uniqueItems": true
+        },
+        "requiredEvidenceKinds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "observedEvidenceKinds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "missingEvidenceKinds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "counterexamples": {
+          "$ref": "#/$defs/counterexampleCounts"
+        },
+        "independenceWarnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/warningCode"
+          },
+          "uniqueItems": true
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "satisfied",
+            "warning"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceItem"
+          }
+        }
+      }
+    }
+  }
+}

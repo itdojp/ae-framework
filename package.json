@@ -79,6 +79,7 @@
     "test:int": "vitest run --workspace configs/vitest/vitest.workspace.ts --project integration",
     "test:perf": "vitest run --workspace configs/vitest/vitest.workspace.ts --project performance --passWithNoTests",
     "verify:lite": "node scripts/admin/run-script-alias.mjs verify:lite",
+    "verify:assurance": "node scripts/assurance/aggregate-lanes.mjs",
     "change-package:generate": "node scripts/change-package/generate.mjs",
     "change-package:validate": "node scripts/change-package/validate.mjs",
     "context-pack:validate": "node scripts/context-pack/validate.mjs",
