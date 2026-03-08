@@ -239,6 +239,9 @@ jobs:
           SUMMARY_LANG: ${{ steps.lang.outputs.lang }}
         run: |
           if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; else printf "No renderer; keeping inline\n"; fi
+          if [ -f artifacts/summary/PR_SUMMARY.md ]; then
+            exit 0
+          fi
           node <<'JS'
           const fs=require("fs");
           function r(p){ try { return JSON.parse(fs.readFileSync(p,"utf-8")); } catch { return undefined; } }
@@ -248,13 +251,24 @@ jobs:
           const formal = formalObj.result || "n/a";
           const replay = c.replay || r("artifacts/domain/replay.summary.json") || {};
           const props = c.properties ? (Array.isArray(c.properties) ? c.properties : [c.properties]) : (r("artifacts/properties/summary.json") ? [r("artifacts/properties/summary.json")] : []);
+          const assurance = r("artifacts/assurance/assurance-summary.json") || {};
+          const assuranceSummary = assurance.summary && typeof assurance.summary === "object" ? assurance.summary : null;
+          const assuranceWarnings = Array.isArray(assurance.warnings)
+            ? [...new Set(assurance.warnings.map((warning) => warning?.code).filter(Boolean))]
+            : [];
           const traceIds = new Set();
           for (const a of c.adapters||[]) if (a?.traceId) traceIds.add(a.traceId);
           if (formalObj?.traceId) traceIds.add(formalObj.traceId);
           if (replay?.traceId) traceIds.add(replay.traceId);
           for (const p of props) if (p?.traceId) traceIds.add(p.traceId);
           const replayLine = replay.totalEvents!==undefined ? `Replay: ${replay.totalEvents} events, ${(replay.violatedInvariants||[]).length} violations` : "Replay: n/a";
-          const md = `## Quality Summary\n- Adapters:\n${adapters}\n- Formal: ${formal}\n- ${replayLine}\n- Trace IDs: ${Array.from(traceIds).join(", ")}`;
+          const assuranceLine = assuranceSummary
+            ? `Assurance: satisfied=${assuranceSummary.satisfiedClaims ?? "n/a"}/${assuranceSummary.claimCount ?? "n/a"}, warningClaims=${assuranceSummary.warningClaims ?? "n/a"}, warnings=${assuranceSummary.warningCount ?? "n/a"}`
+            : "Assurance: n/a";
+          const assuranceWarningsLine = assuranceSummary
+            ? `Assurance warning codes: ${assuranceWarnings.length ? assuranceWarnings.join(", ") : "none"}`
+            : null;
+          const md = `## Quality Summary\n- ${assuranceLine}\n${assuranceWarningsLine ? `- ${assuranceWarningsLine}\n` : ""}- Adapters:\n${adapters}\n- Formal: ${formal}\n- ${replayLine}\n- Trace IDs: ${Array.from(traceIds).join(", ")}`;
           fs.mkdirSync("artifacts/summary",{recursive:true});
           fs.writeFileSync("artifacts/summary/PR_SUMMARY.md", md);
           console.log(md);
