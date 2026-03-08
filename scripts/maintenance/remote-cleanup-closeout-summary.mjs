@@ -27,6 +27,15 @@ Options:
 `);
 };
 
+const readRequiredValue = (argv, index, flag) => {
+  const next = argv[index + 1];
+  const value = typeof next === 'string' ? next.trim() : '';
+  if (!value || value.startsWith('--')) {
+    throw new Error(`${flag} requires a value`);
+  }
+  return value;
+};
+
 export const parseArgs = (argv) => {
   const options = {
     reviewStatusSummaryJson: DEFAULT_REVIEW_STATUS_SUMMARY_JSON,
@@ -52,36 +61,43 @@ export const parseArgs = (argv) => {
       process.exit(0);
     }
     if (arg === '--review-status-summary-json') {
-      options.reviewStatusSummaryJson = String(argv[++index] || '').trim();
+      options.reviewStatusSummaryJson = readRequiredValue(argv, index, '--review-status-summary-json');
+      index += 1;
       continue;
     }
     if (arg === '--execution-pack-summary-json') {
-      options.executionPackSummaryJson = String(argv[++index] || '').trim();
+      options.executionPackSummaryJson = readRequiredValue(argv, index, '--execution-pack-summary-json');
       options.explicitOptional.executionPackSummaryJson = true;
+      index += 1;
       continue;
     }
     if (arg === '--ambiguous-evidence-summary-json') {
-      options.ambiguousEvidenceSummaryJson = String(argv[++index] || '').trim();
+      options.ambiguousEvidenceSummaryJson = readRequiredValue(argv, index, '--ambiguous-evidence-summary-json');
       options.explicitOptional.ambiguousEvidenceSummaryJson = true;
+      index += 1;
       continue;
     }
     if (arg === '--post-verify-summary-json') {
-      options.postVerifySummaryJson = String(argv[++index] || '').trim();
+      options.postVerifySummaryJson = readRequiredValue(argv, index, '--post-verify-summary-json');
       options.explicitOptional.postVerifySummaryJson = true;
+      index += 1;
       continue;
     }
     if (arg === '--refresh-audit-summary-json') {
-      options.refreshAuditSummaryJson = String(argv[++index] || '').trim();
+      options.refreshAuditSummaryJson = readRequiredValue(argv, index, '--refresh-audit-summary-json');
       options.explicitOptional.refreshAuditSummaryJson = true;
+      index += 1;
       continue;
     }
     if (arg === '--artifact-consistency-summary-json') {
-      options.artifactConsistencySummaryJson = String(argv[++index] || '').trim();
+      options.artifactConsistencySummaryJson = readRequiredValue(argv, index, '--artifact-consistency-summary-json');
       options.explicitOptional.artifactConsistencySummaryJson = true;
+      index += 1;
       continue;
     }
     if (arg === '--output-dir') {
-      options.outputDir = String(argv[++index] || '').trim();
+      options.outputDir = readRequiredValue(argv, index, '--output-dir');
+      index += 1;
       continue;
     }
     throw new Error(`Unknown argument: ${arg}`);
@@ -236,6 +252,7 @@ const normalizePostVerify = (summaryPath) => {
   const summary = readJson(summaryPath);
   const source = ensureObject(summary?.source, 'post-verify source');
   const counts = ensureObject(summary?.counts, 'post-verify counts');
+  const selection = ensureObject(summary?.selection || {}, 'post-verify selection');
 
   return {
     available: true,
@@ -246,6 +263,12 @@ const normalizePostVerify = (summaryPath) => {
     },
     remoteName: maybeString(summary?.remoteName).trim(),
     scope: maybeString(summary?.scope).trim(),
+    selection: {
+      mode: maybeString(selection.mode).trim(),
+      sourcePath: maybeString(selection.sourcePath).trim(),
+      expectedBase: maybeString(selection.expectedBase).trim(),
+      expectedRemote: maybeString(selection.expectedRemote).trim(),
+    },
     counts: {
       reportedDeleted: ensureCount(counts.reportedDeleted, 'post-verify counts.reportedDeleted'),
       verifiedAbsent: ensureCount(counts.verifiedAbsent, 'post-verify counts.verifiedAbsent'),
@@ -322,6 +345,40 @@ const loadOptionalSummary = (targetPath, explicit, label, loader) => {
   return loader(resolved);
 };
 
+const ensurePostVerifyMatchesExecutionPack = (postVerify, executionPack) => {
+  if (!executionPack.available || !postVerify.available) return;
+
+  if (postVerify.remoteName && postVerify.remoteName !== executionPack.sourceInventory.remote) {
+    throw new Error('post-verify remote does not match execution-pack source inventory remote');
+  }
+  if (postVerify.selection.expectedRemote && postVerify.selection.expectedRemote !== executionPack.sourceInventory.remote) {
+    throw new Error('post-verify expectedRemote does not match execution-pack source inventory remote');
+  }
+  if (postVerify.selection.expectedBase && postVerify.selection.expectedBase !== executionPack.sourceInventory.base) {
+    throw new Error('post-verify expectedBase does not match execution-pack source inventory base');
+  }
+
+  const trackedDeleteReady =
+    postVerify.counts.reportedDeleted +
+    postVerify.counts.failedDeletes +
+    postVerify.counts.blocked +
+    postVerify.counts.plannedButNotDeleted;
+  if (trackedDeleteReady !== executionPack.counts.deleteReady) {
+    throw new Error('post-verify tracked delete-ready rows do not match execution-pack delete-ready count');
+  }
+
+  const trackedPlanned =
+    postVerify.counts.reportedDeleted +
+    postVerify.counts.failedDeletes +
+    postVerify.counts.plannedButNotDeleted;
+  if (trackedPlanned !== executionPack.counts.dryRunPlanned) {
+    throw new Error('post-verify planned rows do not match execution-pack dry-run planned count');
+  }
+  if (postVerify.counts.blocked !== executionPack.counts.dryRunBlocked) {
+    throw new Error('post-verify blocked rows do not match execution-pack dry-run blocked count');
+  }
+};
+
 const validateConsistency = (reviewStatus, executionPack, ambiguousEvidence, postVerify, refreshAudit, artifactConsistency) => {
   if (executionPack.available) {
     if (executionPack.source.reviewedManifestPath !== reviewStatus.source.reviewedManifestPath) {
@@ -339,8 +396,21 @@ const validateConsistency = (reviewStatus, executionPack, ambiguousEvidence, pos
     throw new Error('ambiguous-evidence source triage does not match review-status summary');
   }
 
-  if (refreshAudit.available && postVerify.available && refreshAudit.source.postVerifySummaryPath !== postVerify.path) {
-    throw new Error('refresh-audit post-verify path does not match the selected post-verify summary');
+  ensurePostVerifyMatchesExecutionPack(postVerify, executionPack);
+
+  if (refreshAudit.available && !postVerify.available) {
+    throw new Error('refresh-audit requires a matching post-verify summary');
+  }
+  if (refreshAudit.available && postVerify.available) {
+    if (refreshAudit.counts.verifiedAbsentInput !== postVerify.counts.verifiedAbsent) {
+      throw new Error('refresh-audit verifiedAbsentInput does not match post-verify verifiedAbsent count');
+    }
+    if (
+      refreshAudit.counts.confirmedRemoved + refreshAudit.counts.reappearedInTriage !==
+      refreshAudit.counts.verifiedAbsentInput
+    ) {
+      throw new Error('refresh-audit counts do not sum to verifiedAbsentInput');
+    }
   }
 
   if (artifactConsistency.available) {

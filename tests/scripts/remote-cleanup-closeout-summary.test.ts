@@ -153,6 +153,9 @@ describe.sequential('remote-cleanup-closeout-summary script', () => {
       executionPackSummaryJson: 'tmp/maintenance/remote-cleanup-execution-pack/summary.json',
       outputDir: 'tmp/maintenance/remote-cleanup-closeout-summary',
     });
+    expect(() => mod.parseArgs(['--execution-pack-summary-json', '--output-dir', 'tmp/out'])).toThrow(
+      '--execution-pack-summary-json requires a value',
+    );
 
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-closeout-pending-'));
     const reviewStatusPath = join(sandbox, 'review-status.summary.json');
@@ -363,6 +366,44 @@ describe.sequential('remote-cleanup-closeout-summary script', () => {
     }
   });
 
+  it('accepts relocated refresh-audit artifacts when counts still match the selected post-verify summary', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-closeout-relocated-refresh-'));
+    const reviewStatusPath = join(sandbox, 'review-status.summary.json');
+    const executionPackPath = join(sandbox, 'execution-pack.summary.json');
+    const postVerifyPath = join(sandbox, 'post-verify.summary.json');
+    const refreshAuditPath = join(sandbox, 'relocated-refresh-audit.summary.json');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      writeJson(reviewStatusPath, createReviewStatusSummary());
+      writeJson(executionPackPath, createExecutionPackSummary());
+      writeJson(postVerifyPath, createPostVerifySummary());
+      writeJson(
+        refreshAuditPath,
+        createRefreshAuditSummary('/tmp/copied/post-verify.summary.json'),
+      );
+
+      const result = runScript([
+        '--review-status-summary-json',
+        reviewStatusPath,
+        '--execution-pack-summary-json',
+        executionPackPath,
+        '--post-verify-summary-json',
+        postVerifyPath,
+        '--refresh-audit-summary-json',
+        refreshAuditPath,
+        '--output-dir',
+        outputDir,
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const summary = JSON.parse(readFileSync(join(outputDir, 'summary.json'), 'utf8'));
+      expect(summary.nextAction).toBe('closeout-ready');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects inconsistent optional artifacts', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-closeout-mismatch-'));
     const reviewStatusPath = join(sandbox, 'review-status.summary.json');
@@ -393,6 +434,49 @@ describe.sequential('remote-cleanup-closeout-summary script', () => {
       ]);
       expect(result.status).not.toBe(0);
       expect(result.stderr || result.stdout).toContain('execution-pack source triage does not match review-status summary');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects stale post-verify summaries that do not match the current execution-pack counts', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-closeout-stale-post-verify-'));
+    const reviewStatusPath = join(sandbox, 'review-status.summary.json');
+    const executionPackPath = join(sandbox, 'execution-pack.summary.json');
+    const postVerifyPath = join(sandbox, 'post-verify.summary.json');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      writeJson(reviewStatusPath, createReviewStatusSummary());
+      writeJson(executionPackPath, createExecutionPackSummary());
+      writeJson(
+        postVerifyPath,
+        createPostVerifySummary({
+          counts: {
+            reportedDeleted: 1,
+            verifiedAbsent: 1,
+            stillPresent: 0,
+            failedDeletes: 0,
+            blocked: 0,
+            plannedButNotDeleted: 0,
+          },
+        }),
+      );
+
+      const result = runScript([
+        '--review-status-summary-json',
+        reviewStatusPath,
+        '--execution-pack-summary-json',
+        executionPackPath,
+        '--post-verify-summary-json',
+        postVerifyPath,
+        '--output-dir',
+        outputDir,
+      ]);
+      expect(result.status).not.toBe(0);
+      expect(result.stderr || result.stdout).toContain(
+        'post-verify tracked delete-ready rows do not match execution-pack delete-ready count',
+      );
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
