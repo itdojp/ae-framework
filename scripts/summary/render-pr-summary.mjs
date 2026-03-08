@@ -94,6 +94,12 @@ const assuranceWarningsLine = assuranceSummary
       )
     : t('Assurance warning codes: none', '保証 warning code: なし')
   : '';
+const assuranceDigestSegment = assuranceSummary
+  ? `${assuranceLine}${assuranceWarningsLine ? ` | ${assuranceWarningsLine}` : ''}`
+  : '';
+const assuranceDetailBlock = assuranceSummary
+  ? `- ${assuranceLine}\n${assuranceLaneLine ? `- ${assuranceLaneLine}\n` : ''}${assuranceWarningsLine ? `- ${assuranceWarningsLine}\n` : ''}`
+  : '';
 // Alloy temporal (from aggregate JSON if present)
 let alloyTemporalLine = '';
 try {
@@ -134,9 +140,9 @@ try {
 
 let md;
 if (mode === 'digest') {
-  md = `${coverageLine} | ${assuranceLine}${assuranceWarningsLine ? ` | ${assuranceWarningsLine}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${assuranceLine}\n${assuranceLaneLine ? `- ${assuranceLaneLine}\n` : ''}${assuranceWarningsLine ? `- ${assuranceWarningsLine}\n` : ''}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n${assuranceDetailBlock}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
 // Fallback: if formal is n/a, print presentCount from aggregate JSON
 try {

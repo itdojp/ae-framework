@@ -134,4 +134,35 @@ describe.sequential('render-pr-summary', () => {
       rmSync(sandbox, { recursive: true, force: true });
     }
   });
+
+  it('omits assurance placeholders when the assurance artifact is missing', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-no-assurance-'));
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'summary'), { recursive: true });
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'summary', 'combined.json'),
+        JSON.stringify(
+          {
+            adapters: [{ adapter: 'playwright', summary: '12/12 passed', status: 'ok' }],
+            formal: { result: 'pass' },
+            replay: { totalEvents: 2, violatedInvariants: [] },
+          },
+          null,
+          2,
+        ),
+      );
+
+      const result = runScript(sandbox, { SUMMARY_MODE: 'digest', SUMMARY_LANG: 'en' });
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
+      expect(output).not.toContain('Assurance: n/a');
+      expect(output).not.toContain('Assurance warning codes');
+      expect(output).not.toContain('保証: なし');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
 });

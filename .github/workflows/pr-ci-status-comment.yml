@@ -264,11 +264,14 @@ jobs:
           const replayLine = replay.totalEvents!==undefined ? `Replay: ${replay.totalEvents} events, ${(replay.violatedInvariants||[]).length} violations` : "Replay: n/a";
           const assuranceLine = assuranceSummary
             ? `Assurance: satisfied=${assuranceSummary.satisfiedClaims ?? "n/a"}/${assuranceSummary.claimCount ?? "n/a"}, warningClaims=${assuranceSummary.warningClaims ?? "n/a"}, warnings=${assuranceSummary.warningCount ?? "n/a"}`
-            : "Assurance: n/a";
+            : null;
           const assuranceWarningsLine = assuranceSummary
             ? `Assurance warning codes: ${assuranceWarnings.length ? assuranceWarnings.join(", ") : "none"}`
             : null;
-          const md = `## Quality Summary\n- ${assuranceLine}\n${assuranceWarningsLine ? `- ${assuranceWarningsLine}\n` : ""}- Adapters:\n${adapters}\n- Formal: ${formal}\n- ${replayLine}\n- Trace IDs: ${Array.from(traceIds).join(", ")}`;
+          const assuranceBlock = assuranceLine
+            ? `- ${assuranceLine}\n${assuranceWarningsLine ? `- ${assuranceWarningsLine}\n` : ""}`
+            : "";
+          const md = `## Quality Summary\n${assuranceBlock}- Adapters:\n${adapters}\n- Formal: ${formal}\n- ${replayLine}\n- Trace IDs: ${Array.from(traceIds).join(", ")}`;
           fs.mkdirSync("artifacts/summary",{recursive:true});
           fs.writeFileSync("artifacts/summary/PR_SUMMARY.md", md);
           console.log(md);
