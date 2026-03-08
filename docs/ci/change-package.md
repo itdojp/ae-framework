@@ -12,6 +12,7 @@ Change Package standardizes PR safety evidence into machine-readable artifacts:
 - `artifacts/change-package/change-package.md`
 - `artifacts/change-package/change-package-validation.json`
 - `artifacts/change-package/change-package-validation.md`
+- preview contract: `schema/change-package-v2.schema.json`
 
 Primary components:
 - Generator: `scripts/change-package/generate.mjs`
@@ -44,6 +45,22 @@ PR の安全性判断を diff 中心ではなく、証跡（evidence）中心で
 - `artifacts/change-package/change-package-validation.json|md`
   - schema 検証と required evidence 判定の結果
 
+### `change-package/v2`（Phase 1 preview contract）
+
+- スキーマ: `schema/change-package-v2.schema.json`
+- sample fixture: `fixtures/change-package/sample.change-package-v2.json`
+- 追加セクション:
+  - `assurance`
+  - `claims`
+  - `assumptions`
+  - `proofObligations`
+  - `counterexamples`
+  - `trustBoundary`
+  - `runtimeControls`
+  - `waivers`
+
+現時点では、v2 は schema/docs の先行導入です。既定の generator / validator / PR summary 連携は引き続き v1 を使用します。
+
 ## 3. 生成・検証コマンド
 
 ```bash
@@ -64,6 +81,11 @@ node scripts/change-package/validate.mjs \
   --schema schema/change-package.schema.json \
   --required-evidence verifyLiteSummary,policyGateSummary \
   --strict
+
+# v2 preview contract の schema validate
+node scripts/change-package/validate.mjs \
+  --file fixtures/change-package/sample.change-package-v2.json \
+  --schema schema/change-package-v2.schema.json
 ```
 
 ## 4. オプション（主なもの）
@@ -98,3 +120,4 @@ auto-merge 運用と連携する場合:
 - `risk:high` PR は Change Package の `missingRequiredLabels` / `exceptions` を優先確認する。  
 - `policy/risk-policy.yml` の更新時は、Change Package の判定結果が意図どおりかを fixture とテストで確認する。  
 - schema 変更時は `fixtures/change-package/sample.change-package.json` と `scripts/ci/validate-json.mjs` の検証対象を同時更新する。  
+- `change-package/v2` は preview 契約として扱い、v1 の既定運用を壊さない。dual-write / dual-validate は後続フェーズで導入する。
