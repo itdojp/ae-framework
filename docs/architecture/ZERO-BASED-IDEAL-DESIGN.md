@@ -31,6 +31,7 @@ and (3) migration principles to move from the current implementation to the targ
 - GitHub PR駆動の開発フローを継続
 - AIレビュー + 自動修正 + ゲート判定の監査可能性を維持
 - 証跡（artifacts）を契約として扱う
+- codegen は交換可能な producer とみなし、spec / verification / evidence / policy gate を束ねる assurance control plane を中核に置く
 
 ## 2. 設計原則（ゼロベース）
 
@@ -44,6 +45,8 @@ and (3) migration principles to move from the current implementation to the targ
    - 失敗原因の分類・復旧導線・SLO/MTTRを最初から仕様化する。
 5. Human Override with Trace
    - 人手例外は許可するが、必ず理由・期限・証跡リンクを残す。
+6. Assurance is Claim-Based
+   - 「何が保証されたか」を claim / level / lane / evidence 単位で説明できるようにする。
 
 ## 3. 理想アーキテクチャ（論理構成）
 
@@ -61,6 +64,8 @@ and (3) migration principles to move from the current implementation to the targ
   - artifacts生成/検証/保存、traceability集約
 - Observability Plane
   - 監査ログ、メトリクス、アラート、運用レポート
+
+この理想像でも、コード生成器やレビューAIは Execution Plane の producer として入れ替え可能である。差別化要因は、それらを横断して PR / release の assurance 判断を標準化する Control/Policy/Evidence Plane 側に置く。
 
 ### 3.2 コンポーネント（理想責務）
 
