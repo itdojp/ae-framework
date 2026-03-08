@@ -133,6 +133,50 @@ describe('policy-gate', () => {
     expect(result.errors).toHaveLength(0);
   });
 
+  it('fails high-risk assurance changes without enforce-assurance label', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['.github/workflows/verify-lite.yml'],
+      reviews: [
+        {
+          id: 212,
+          state: 'APPROVED',
+          submitted_at: '2026-03-09T00:05:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [checkRun('verify-lite')],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((item) => item.includes('missing required labels'))).toBe(true);
+  });
+
+  it('passes high-risk assurance changes when enforce-assurance is present and verify-lite is green', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'enforce-assurance' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['.github/workflows/verify-lite.yml'],
+      reviews: [
+        {
+          id: 213,
+          state: 'APPROVED',
+          submitted_at: '2026-03-09T00:10:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [checkRun('verify-lite')],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
   it('fails high-risk PR when KvOnce trace validation check fails', () => {
     const result = evaluatePolicyGate({
       policy,

@@ -251,6 +251,11 @@ jobs:
           node scripts/ci/validate-assurance-summary.mjs \
             artifacts/assurance/assurance-summary.json \
             schema/assurance-summary.schema.json
+      - name: Enforce assurance summary (strict; label-gated)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-assurance') }}
+        run: |
+          node scripts/ci/enforce-assurance-summary.mjs \
+            artifacts/assurance/assurance-summary.json
       - name: Resilience quick (label-gated, non-blocking)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-resilience') }}
         continue-on-error: true

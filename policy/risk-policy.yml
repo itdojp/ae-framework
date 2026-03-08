@@ -10,6 +10,7 @@ labels:
     - "run-security"
     - "run-ci-extended"
     - "run-trace"
+    - "enforce-assurance"
     - "enforce-artifacts"
     - "enforce-testing"
     - "enforce-context-pack"
@@ -107,6 +108,16 @@ label_requirements:
       - "tests/unit/pipelines/run-trace-conformance.integration.test.ts"
     require_labels:
       - "run-trace"
+  - id: "assurance-enforcement"
+    when_any_changed:
+      - ".github/workflows/verify-lite.yml"
+      - "schema/assurance-*.schema.json"
+      - "schema/counterexample.schema.json"
+      - "scripts/assurance/**"
+      - "scripts/ci/validate-assurance-summary.mjs"
+      - "scripts/ci/enforce-assurance-summary.mjs"
+    require_labels:
+      - "enforce-assurance"
 
 gate_checks:
   run-security:
@@ -123,6 +134,8 @@ gate_checks:
     - "testing-ddd"
   enforce-context-pack:
     - "context-pack-e2e"
+  enforce-assurance:
+    - "verify-lite"
   run-trace:
     - "trace-conformance"
     - "KvOnce Trace Validation"

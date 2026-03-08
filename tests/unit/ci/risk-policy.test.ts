@@ -42,6 +42,11 @@ describe('risk-policy', () => {
     expect(requiredLabels).toContain('run-trace');
   });
 
+  it('collects assurance enforcement label for assurance lane changes', () => {
+    const { requiredLabels } = collectRequiredLabels(policy, ['scripts/assurance/aggregate-lanes.mjs']);
+    expect(requiredLabels).toContain('enforce-assurance');
+  });
+
   it('returns check patterns for label-gated checks', () => {
     const patterns = getGateCheckPatternsForLabel(policy, 'enforce-context-pack');
     expect(patterns).toContain('context-pack-e2e');
@@ -51,6 +56,11 @@ describe('risk-policy', () => {
     const patterns = getGateCheckPatternsForLabel(policy, 'run-trace');
     expect(patterns).toContain('trace-conformance');
     expect(patterns).toContain('KvOnce Trace Validation');
+  });
+
+  it('returns verify-lite check pattern for enforce-assurance', () => {
+    const patterns = getGateCheckPatternsForLabel(policy, 'enforce-assurance');
+    expect(patterns).toContain('verify-lite');
   });
 
   it('respects high_risk.require_policy_labels toggle', () => {
