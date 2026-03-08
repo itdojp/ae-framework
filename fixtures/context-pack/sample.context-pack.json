@@ -85,11 +85,5 @@
   },
   "forbidden_changes": [
     "Remove ReserveInventory precondition checks."
-  ],
-  "assurance": {
-    "profile": "inventory-baseline-v1",
-    "claim_refs": [
-      "no-negative-stock"
-    ]
-  }
+  ]
 }
