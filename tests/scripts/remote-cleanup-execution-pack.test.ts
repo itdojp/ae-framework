@@ -161,6 +161,13 @@ describe.sequential('remote-cleanup-execution-pack script', () => {
       ]);
 
       const dryRunReport = JSON.parse(readFileSync(join(outputDir, 'branch-cleanup-dry-run-report.json'), 'utf8'));
+      expect(dryRunReport.fetch).toEqual(
+        expect.objectContaining({
+          attempted: true,
+          ok: true,
+          remote: 'origin',
+        }),
+      );
       expect(dryRunReport.remote.plannedDetailed).toEqual([
         expect.objectContaining({
           branch: 'docs/stale-a',
@@ -172,17 +179,171 @@ describe.sequential('remote-cleanup-execution-pack script', () => {
 
       const commands = readFileSync(join(outputDir, 'commands.sh'), 'utf8');
       expect(commands).toContain('approved-remote-branches.json');
+      expect(commands).toContain('--fetch');
       expect(commands).not.toContain('--apply');
 
       const applyCommand = readFileSync(join(outputDir, 'apply-command.txt'), 'utf8');
       expect(applyCommand).toContain('--apply');
+      expect(applyCommand).toContain('--fetch');
       expect(applyCommand).toContain('approved-remote-branches.json');
+
+      const summary = JSON.parse(readFileSync(join(outputDir, 'summary.json'), 'utf8'));
+      expect(summary.dryRun.fetch).toEqual({
+        attempted: true,
+        ok: true,
+        remote: 'origin',
+        remotes: ['origin'],
+      });
 
       const issueComment = readFileSync(join(outputDir, 'issue-comment.md'), 'utf8');
       expect(issueComment).toContain('delete-ready rows: 1');
+      expect(issueComment).toContain('dry-run fetch: ok (origin)');
       expect(issueComment).toContain('this step does not delete remote branches');
       expect(issueComment).toContain('commands.sh');
       expect(issueComment).toContain('apply-command.txt');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('refreshes stale remote-tracking refs before rendering the dry-run report', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-execution-pack-fetch-'));
+    const originDir = join(sandbox, 'origin.git');
+    const repoDir = join(sandbox, 'repo');
+    const writerDir = join(sandbox, 'writer');
+    const reviewStatusDir = join(sandbox, 'review-status');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      runGit(sandbox, ['init', '--bare', originDir]);
+      runGit(sandbox, ['clone', originDir, repoDir]);
+      runGit(sandbox, ['clone', originDir, writerDir]);
+      for (const cwd of [repoDir, writerDir]) {
+        runGit(cwd, ['config', 'user.email', 'test@example.com']);
+        runGit(cwd, ['config', 'user.name', 'Test User']);
+      }
+
+      writeFileSync(join(repoDir, 'README.md'), 'seed\n', 'utf8');
+      runGit(repoDir, ['add', 'README.md']);
+      runGit(repoDir, ['commit', '-m', 'init']);
+      runGit(repoDir, ['push', '-u', 'origin', 'HEAD:main']);
+
+      runGit(writerDir, ['fetch', 'origin', '--prune']);
+      runGit(writerDir, ['checkout', '-b', 'docs/stale-fetch', 'origin/main']);
+      writeFileSync(join(writerDir, 'stale-fetch.md'), 'stale\n', 'utf8');
+      runGit(writerDir, ['add', 'stale-fetch.md']);
+      runGit(writerDir, ['commit', '-m', 'docs stale fetch']);
+      runGit(writerDir, ['push', '-u', 'origin', 'docs/stale-fetch']);
+      const branchOid = runGit(writerDir, ['rev-parse', 'HEAD']);
+
+      mkdirSync(reviewStatusDir, { recursive: true });
+      const reviewedManifestPath = join(reviewStatusDir, 'reviewed-triage.json');
+      writeFileSync(
+        reviewedManifestPath,
+        `${JSON.stringify(
+          {
+            sourceInventory: {
+              path: '/tmp/remote-branch-triage.json',
+              generatedAt: '2026-03-08T00:00:00Z',
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            reviewedDecisions: {
+              sourceTriagePath: '/tmp/remote-branch-triage.json',
+              generatedAt: '2026-03-08T00:05:00Z',
+            },
+            remoteStale: [
+              {
+                branch: 'docs/stale-fetch',
+                branchOid,
+                decision: 'delete',
+                notes: 'approved',
+                prState: 'merged',
+              },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(reviewStatusDir, 'summary.json'),
+        `${JSON.stringify(
+          {
+            generatedAt: '2026-03-08T00:10:00Z',
+            source: {
+              reviewedManifestPath,
+              referenceAuditDir: join(reviewStatusDir, 'audit'),
+              sourceTriagePath: '/tmp/remote-branch-triage.json',
+            },
+            overall: {
+              'delete-ready': 1,
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(reviewStatusDir, 'delete-ready.json'),
+        `${JSON.stringify(
+          [
+            {
+              branch: 'docs/stale-fetch',
+              branchOid,
+              decision: 'delete',
+              prState: 'merged',
+              batchId: 'B',
+              notes: 'approved',
+            },
+          ],
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(reviewStatusDir, 'delete-ready.branches.json'),
+        `${JSON.stringify(
+          {
+            branches: [{ branch: 'docs/stale-fetch', branchOid, decision: 'delete', prState: 'merged' }],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+
+      const result = spawnSync(
+        'node',
+        [scriptPath, '--review-status-dir', reviewStatusDir, '--output-dir', outputDir, '--base', 'origin/main', '--remote', 'origin'],
+        {
+          cwd: repoDir,
+          encoding: 'utf8',
+          timeout: 120_000,
+        },
+      );
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const dryRunReport = JSON.parse(readFileSync(join(outputDir, 'branch-cleanup-dry-run-report.json'), 'utf8'));
+      expect(dryRunReport.fetch).toEqual(
+        expect.objectContaining({
+          attempted: true,
+          ok: true,
+          remote: 'origin',
+        }),
+      );
+      expect(dryRunReport.remote.plannedDetailed).toEqual([
+        expect.objectContaining({
+          branch: 'docs/stale-fetch',
+          branchOid,
+          actualOid: branchOid,
+          selectionMode: 'branch-list',
+        }),
+      ]);
+      expect(dryRunReport.remote.blocked).toEqual([]);
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

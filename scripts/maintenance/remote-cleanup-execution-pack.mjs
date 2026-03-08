@@ -179,7 +179,7 @@ const normalizeDeleteReadyRows = (deleteReady, deleteReadyBranches, reviewedMani
 const buildCommandLines = ({ branchCleanupScriptPath, approvedBranchListPath, outputDir, base, remote, max }) => {
   const dryRunReportPath = path.join(outputDir, 'branch-cleanup-dry-run-report.json');
   const applyReportPath = path.join(outputDir, 'branch-cleanup-apply-report.json');
-  const prefix = `${shellQuote(process.execPath)} ${shellQuote(branchCleanupScriptPath)} --scope remote --base ${shellQuote(base)} --remote ${shellQuote(remote)} --remote-branches-file ${shellQuote(approvedBranchListPath)} --max ${shellQuote(String(max))}`;
+  const prefix = `${shellQuote(process.execPath)} ${shellQuote(branchCleanupScriptPath)} --scope remote --base ${shellQuote(base)} --remote ${shellQuote(remote)} --remote-branches-file ${shellQuote(approvedBranchListPath)} --max ${shellQuote(String(max))} --fetch`;
   return {
     dryRunReportPath,
     applyReportPath,
@@ -220,6 +220,12 @@ const renderSummaryMarkdown = (summary) => {
     ['delete-ready rows', String(summary.deleteReady.count)],
     ['dry-run planned', String(summary.dryRun.planned)],
     ['dry-run blocked', String(summary.dryRun.blocked)],
+    [
+      'dry-run fetch',
+      summary.dryRun.fetch.attempted
+        ? `${summary.dryRun.fetch.ok ? 'ok' : 'failed'} (${summary.dryRun.fetch.remote})`
+        : 'not-requested',
+    ],
     ['base', summary.sourceInventory.base],
     ['remote', summary.sourceInventory.remote],
   ];
@@ -242,6 +248,11 @@ const renderIssueComment = (summary) => `Execution pack rendered from \`${summar
 - delete-ready rows: ${summary.deleteReady.count}
 - dry-run planned: ${summary.dryRun.planned}
 - dry-run blocked: ${summary.dryRun.blocked}
+- dry-run fetch: ${
+  summary.dryRun.fetch.attempted
+    ? `${summary.dryRun.fetch.ok ? 'ok' : 'failed'} (${summary.dryRun.fetch.remote})`
+    : 'not-requested'
+}
 
 Artifacts:
 - \`${path.basename(summary.artifacts.approvedBranchListPath)}\`
@@ -334,6 +345,12 @@ export const run = (argv = process.argv.slice(2)) => {
     dryRun: {
       planned: Array.isArray(dryRun.report?.remote?.plannedDetailed) ? dryRun.report.remote.plannedDetailed.length : 0,
       blocked: Array.isArray(dryRun.report?.remote?.blocked) ? dryRun.report.remote.blocked.length : 0,
+      fetch: {
+        attempted: Boolean(dryRun.report?.fetch?.attempted),
+        ok: Boolean(dryRun.report?.fetch?.ok),
+        remote: String(dryRun.report?.fetch?.remote || ''),
+        remotes: Array.isArray(dryRun.report?.fetch?.remotes) ? dryRun.report.fetch.remotes : [],
+      },
       stdout: dryRun.stdout,
     },
     artifacts: {

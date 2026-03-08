@@ -168,6 +168,11 @@ After inventory + triage refresh, audit the refreshed candidate set before closi
 pnpm run maintenance:branch:cleanup:refresh-audit
 ```
 
+Execution-pack note:
+
+- `tmp/maintenance/remote-cleanup-execution-pack/commands.sh` and `apply-command.txt` include `branch-cleanup.mjs --fetch`
+- use the generated `branch-cleanup-dry-run-report.json` and execution-pack `summary.json` to confirm the fetch provenance before apply
+
 Safeguards:
 
 - `triage-merged` keeps the ancestry check and blocks branches no longer merged to `base`
