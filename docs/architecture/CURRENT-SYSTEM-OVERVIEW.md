@@ -22,6 +22,14 @@ This document captures the implementation-aligned architecture of `ae-framework`
 - `cspx` 連携の契約（summary/result artifact）
 - 運用導線（ローカル実行、PRラベル実行、集約確認）
 
+本資料での位置付けは、ae-framework を **assurance control plane** として説明することです。個々の coding agent、テストランナー、formal tool は producer であり、ae-framework の中核価値は次を束ねる制御面にあります。
+
+- spec / contract の固定
+- verification lane の起動と集約
+- artifact validation
+- policy / review / merge gate
+- PR / release の判断材料の標準化
+
 前提（根拠）:
 - Node.js: `>=20.11 <23`（`package.json` `engines.node`）
 - pnpm: `10.0.0`（`package.json` `packageManager`）
@@ -36,6 +44,18 @@ This document captures the implementation-aligned architecture of `ae-framework`
 | 仕様・検証レイヤ | `spec/*`, `scripts/formal/*`, `tests/*` | 仕様検証、形式検証、テスト |
 | 成果物レイヤ | `artifacts/*`, `reports/*` | CI/ローカル結果、集約JSON/Markdown |
 | ドキュメントレイヤ | `docs/*` | 運用手順、契約、アーキテクチャ説明 |
+
+### 2.1 producer と control plane の分離
+
+| 区分 | 主な要素 | 役割 |
+| --- | --- | --- |
+| Producer | coding agent, AE-Spec compiler, unit/integration tests, formal runners, conformance tools | 仕様・コード・検証結果を生成する |
+| Control plane | Context Pack, artifact schemas, verify-lite summary, policy gate, change package, PR automation | 生成結果を contract と gate の観点で集約し、判断可能な証跡へ変換する |
+
+設計上の含意:
+- codegen は producer の一つであり、repo の SSOT は spec / contract / artifact に置く
+- heavy verification は常時 mandatory ではなく、risk/profile に応じて昇格させる
+- review / release の説明責任は raw log ではなく summary artifact に寄せる
 
 ## 3. 実行インタフェース
 
@@ -171,8 +191,10 @@ CI pin（再現性）:
 ## 8. 関連ドキュメント
 
 - 製品概要: `docs/product/OVERVIEW.md`
+- Assurance control plane の位置付け: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - 詳細説明: `docs/product/DETAIL.md`
 - 利用手順: `docs/product/USER-MANUAL.md`
+- Assurance model: `docs/quality/ASSURANCE-MODEL.md`
 - PR自動化運用: `docs/ci/pr-automation.md`
 - リリース運用: `docs/operate/release-engineering.md`
 - Formal運用: `docs/quality/formal-runbook.md`
