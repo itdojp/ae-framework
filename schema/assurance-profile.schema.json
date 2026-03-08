@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/assurance-profile.schema.json",
+  "title": "Assurance Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "profileId",
+    "scope",
+    "claims"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "assurance-profile/v1"
+    },
+    "profileId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "$ref": "#/$defs/scope"
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claim"
+      },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contextPackSources",
+        "componentGlobs"
+      ],
+      "properties": {
+        "contextPackSources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "componentGlobs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "statement",
+        "kind",
+        "criticality",
+        "targetLevel",
+        "requiredLanes",
+        "requiredEvidenceKinds"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "safety",
+            "liveness",
+            "security",
+            "compliance",
+            "performance",
+            "operability",
+            "data-integrity",
+            "availability",
+            "custom"
+          ]
+        },
+        "criticality": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "targetLevel": {
+          "type": "string",
+          "enum": [
+            "A0",
+            "A1",
+            "A2",
+            "A3",
+            "A4"
+          ]
+        },
+        "scopeRefs": {
+          "$ref": "#/$defs/scopeRefs"
+        },
+        "requiredLanes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "spec",
+              "behavior",
+              "adversarial",
+              "model",
+              "proof",
+              "runtime"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "requiredEvidenceKinds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "schema",
+              "unit",
+              "integration",
+              "property",
+              "counterexample-closed",
+              "product-coproduct",
+              "natural-transformation",
+              "model-check",
+              "proof",
+              "runtime-control",
+              "waiver"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "scopeRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "objectIds": {
+          "$ref": "#/$defs/idArray"
+        },
+        "morphismIds": {
+          "$ref": "#/$defs/idArray"
+        },
+        "diagramIds": {
+          "$ref": "#/$defs/idArray"
+        },
+        "acceptanceTestIds": {
+          "$ref": "#/$defs/idArray"
+        }
+      }
+    },
+    "idArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

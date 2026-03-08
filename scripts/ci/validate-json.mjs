@@ -76,6 +76,11 @@ const checks = [
     label: 'Context Pack v1 schema validation'
   },
   {
+    schema: 'schema/assurance-profile.schema.json',
+    fixtures: ['fixtures/assurance/sample.assurance-profile.json'],
+    label: 'Assurance profile schema validation'
+  },
+  {
     schema: 'schema/context-pack-functor-map.schema.json',
     fixtures: ['fixtures/context-pack/sample.functor-map.json'],
     label: 'Context Pack functor map schema validation'

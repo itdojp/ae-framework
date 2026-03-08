@@ -34,6 +34,7 @@
 
 ### 3.1 input
 
+- `schema/assurance-profile.schema.json`
 - `schema/codex-task-request.schema.json`
 - `schema/context-bundle.schema.json`
 - `schema/context-pack-v1.schema.json`
@@ -116,6 +117,7 @@
 
 ## 5. 現時点の未整備（次段階）
 
+- assurance contract は schema-first の先行導入段階であり、`assurance-summary` / `verify:assurance` / policy integration は後続 Issue で追加する。
 - `schemaVersion` は semver と `*/v1` 形式が混在している（統一規約は `docs/reference/SCHEMA-GOVERNANCE.md` で段階導入）。
 - Formal Summary は `v1` / `v2` の dual-write + dual-validate 期間として運用中（`v2`: `schemaVersion=formal-summary/v2`, `contractId=formal-summary.v2`）。
 - `report-envelope` は `schema/envelope.schema.json` と `schema/report-envelope.schema.json` の二系統が併存している。
