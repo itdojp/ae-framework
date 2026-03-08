@@ -121,6 +121,7 @@ main 実装済み:
 - Context Pack の optional `assurance.profile` / `claim_refs`
 - `change-package-v2` の claim/counterexample linkage
 - report-only `verify:assurance` summary generation
+- `verify-lite.yml` での report-only assurance summary 集約と artifact upload
 
 未実装または後続:
 - verify-lite / policy-gate への blocking integration

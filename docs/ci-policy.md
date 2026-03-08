@@ -140,6 +140,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
 
 ### test:ci lite / extended
 - `test:ci:lite`: entry point for Verify Lite locally. Runs types:check / lint / build / conformance report to mirror the PR blocking suite.
+- `verify-lite.yml` は report-only で `artifacts/assurance/assurance-summary.{json,md}` も生成し、lane coverage / independence warning を Required check の外側で可視化する。
 - `test:ci:extended`: runs Integration (`test:int`), property harness, `test:mbt:ci`, `pipelines:pact`, and finishes with `pipelines:mutation:quick` for local reproduction of the heavy suite.
 - `.github/workflows/ci-extended.yml`: triggered automatically on `main` pushes / nightly schedule, and opt-in for PRs via `run-ci-extended`. Use `run-integration` / `run-property` / `run-mbt` / `run-mutation` for subset execution.
 - Vitest-based stable profile remains available as `test:ci:stable` (used by Docker/Podman smoke images).
