@@ -304,7 +304,31 @@ The reviewed manifest path is accepted only when the triage JSON still records
 `sourceInventory.remote` and `sourceInventory.base`, so the cleanup run stays
 bound to the reviewed environment.
 
-### 5) Re-run inventory after delete
+### 5) Verify the apply report against live remote refs
+
+```bash
+pnpm run maintenance:branch:cleanup:post-verify
+
+# Optional: use an explicit branch-cleanup apply report path
+node scripts/maintenance/remote-cleanup-post-apply-verify.mjs \
+  --cleanup-report-json tmp/maintenance/branch-cleanup-report.json \
+  --output-dir tmp/maintenance/remote-cleanup-post-apply-verify
+```
+
+Generated outputs:
+
+- `tmp/maintenance/remote-cleanup-post-apply-verify/summary.json`
+- `tmp/maintenance/remote-cleanup-post-apply-verify/summary.md`
+- `tmp/maintenance/remote-cleanup-post-apply-verify/issue-comment.md`
+
+Interpretation:
+
+- `verified-absent`: branches reported as deleted and no longer present on the live remote
+- `still-present`: branches reported as deleted but still present on the live remote; investigate before continuing
+- `failed deletes`: branches already reported as failed by `branch-cleanup`
+- `planned but not deleted`: reviewed branches that were planned but neither deleted nor failed in the apply report
+
+### 6) Re-run inventory after delete
 
 ```bash
 pnpm run maintenance:branch:inventory
@@ -348,4 +372,5 @@ If `githubPullRequests.available=false`, treat `proposedAction` as advisory only
 - [ ] remote stale candidates classified with rationale
 - [ ] execution pack dry-run archived
 - [ ] operator approval recorded before `--scope remote --apply`
+- [ ] post-apply verification archived
 - [ ] post-delete inventory re-run completed
