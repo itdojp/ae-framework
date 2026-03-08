@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -146,6 +146,42 @@ describe.sequential('remote-cleanup-refresh-audit script', () => {
 
       expect(result.status).not.toBe(0);
       expect(result.stderr || result.stdout).toContain('post-verify summary is missing deleted rows');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects malformed refreshed triage payloads', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-refresh-audit-malformed-'));
+    const postVerifySummaryPath = join(sandbox, 'post-verify-summary.json');
+    const refreshedTriagePath = join(sandbox, 'remote-branch-triage.json');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      writeFileSync(
+        postVerifySummaryPath,
+        `${JSON.stringify(
+          {
+            deleted: [{ branch: 'docs/stale-a', status: 'verified-absent', actualOid: '' }],
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      writeFileSync(refreshedTriagePath, '{"remoteStale":[]}\n');
+
+      const result = spawnSync(
+        'node',
+        [scriptPath, '--post-verify-summary-json', postVerifySummaryPath, '--refreshed-triage-json', refreshedTriagePath, '--output-dir', outputDir],
+        {
+          cwd: repoRoot,
+          encoding: 'utf8',
+          timeout: 120_000,
+        },
+      );
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr || result.stdout).toContain('refreshed triage is missing remoteMerged[]');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

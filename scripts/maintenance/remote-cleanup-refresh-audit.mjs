@@ -78,14 +78,23 @@ const loadVerifiedAbsentBranches = (summary, summaryPath) => {
     .filter((item) => item.branch);
 };
 
+const ensureRefreshedTriagePayload = (triage, triagePath) => {
+  if (!Array.isArray(triage?.remoteMerged)) {
+    throw new Error(`refreshed triage is missing remoteMerged[]: ${triagePath}`);
+  }
+  if (!Array.isArray(triage?.remoteStale)) {
+    throw new Error(`refreshed triage is missing remoteStale[]: ${triagePath}`);
+  }
+};
+
 const buildRefreshedBranchSets = (triage) => {
   const merged = new Set(
-    (Array.isArray(triage?.remoteMerged) ? triage.remoteMerged : [])
+    triage.remoteMerged
       .map((item) => normalizeBranchName(item))
       .filter(Boolean),
   );
   const stale = new Set(
-    (Array.isArray(triage?.remoteStale) ? triage.remoteStale : [])
+    triage.remoteStale
       .map((item) => normalizeBranchName(item))
       .filter(Boolean),
   );
@@ -149,6 +158,7 @@ export const run = (argv = process.argv.slice(2)) => {
   const refreshedTriage = readJson(refreshedTriagePath);
 
   const verifiedAbsent = loadVerifiedAbsentBranches(postVerifySummary, postVerifySummaryPath);
+  ensureRefreshedTriagePayload(refreshedTriage, refreshedTriagePath);
   const refreshedBranches = buildRefreshedBranchSets(refreshedTriage);
   const audit = buildRefreshAudit(verifiedAbsent, refreshedBranches);
 
