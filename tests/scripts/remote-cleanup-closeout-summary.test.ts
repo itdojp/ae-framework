@@ -90,6 +90,8 @@ const createPostVerifySummary = (overrides = {}) => ({
     reportedDeleted: 2,
     verifiedAbsent: 2,
     stillPresent: 0,
+    presentOnRemote: 0,
+    recreatedRefs: 0,
     failedDeletes: 0,
     blocked: 0,
     plannedButNotDeleted: 0,
@@ -107,6 +109,9 @@ const createRefreshAuditSummary = (postVerifySummaryPath: string, overrides = {}
     verifiedAbsentInput: 2,
     confirmedRemoved: 2,
     reappearedInTriage: 0,
+    recreatedRefInput: 0,
+    recreatedRefInTriage: 0,
+    recreatedRefOutsideTriage: 0,
     refreshedRemoteMerged: 10,
     refreshedRemoteStale: 12,
   },
@@ -261,7 +266,9 @@ describe.sequential('remote-cleanup-closeout-summary script', () => {
           counts: {
             reportedDeleted: 2,
             verifiedAbsent: 1,
-            stillPresent: 1,
+            stillPresent: 0,
+            presentOnRemote: 1,
+            recreatedRefs: 1,
             failedDeletes: 0,
             blocked: 0,
             plannedButNotDeleted: 0,
@@ -284,6 +291,7 @@ describe.sequential('remote-cleanup-closeout-summary script', () => {
       const summary = JSON.parse(readFileSync(join(outputDir, 'summary.json'), 'utf8'));
       expect(summary.stage).toBe('post-apply-verify');
       expect(summary.nextAction).toBe('investigate-still-present');
+      expect(summary.reasons[0]).toContain('1 recreated');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
@@ -360,7 +368,7 @@ describe.sequential('remote-cleanup-closeout-summary script', () => {
 
       const issueComment = readFileSync(join(outputDir, 'issue-comment.md'), 'utf8');
       expect(issueComment).toContain('next action: closeout-ready');
-      expect(issueComment).toContain('refresh audit: confirmed=2, reappeared=0');
+      expect(issueComment).toContain('refresh audit: confirmed=2, reappeared=0, recreated=0');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
@@ -456,6 +464,8 @@ describe.sequential('remote-cleanup-closeout-summary script', () => {
             reportedDeleted: 1,
             verifiedAbsent: 1,
             stillPresent: 0,
+            presentOnRemote: 0,
+            recreatedRefs: 0,
             failedDeletes: 0,
             blocked: 0,
             plannedButNotDeleted: 0,

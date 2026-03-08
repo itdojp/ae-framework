@@ -102,12 +102,14 @@ describe.sequential('remote-cleanup-post-apply-verify script', () => {
         },
       );
       expect(result.status, result.stderr || result.stdout).toBe(0);
-      expect(result.stdout).toContain('deleted=1 verified=1 stillPresent=0');
+      expect(result.stdout).toContain('deleted=1 verified=1 stillPresent=0 presentOnRemote=0 recreated=0');
 
       const summary = JSON.parse(readFileSync(join(outputDir, 'summary.json'), 'utf8'));
       expect(summary.counts.reportedDeleted).toBe(1);
       expect(summary.counts.verifiedAbsent).toBe(1);
       expect(summary.counts.stillPresent).toBe(0);
+      expect(summary.counts.presentOnRemote).toBe(0);
+      expect(summary.counts.recreatedRefs).toBe(0);
       expect(summary.deleted).toEqual([
         expect.objectContaining({ branch: 'docs/stale-a', status: 'verified-absent' }),
       ]);
@@ -178,6 +180,7 @@ describe.sequential('remote-cleanup-post-apply-verify script', () => {
       expect(summary.counts.reportedDeleted).toBe(1);
       expect(summary.counts.verifiedAbsent).toBe(0);
       expect(summary.counts.stillPresent).toBe(1);
+      expect(summary.counts.presentOnRemote).toBe(1);
       expect(summary.counts.recreatedRefs).toBe(0);
       expect(summary.deleted).toEqual([
         expect.objectContaining({ branch: 'docs/stale-a', status: 'still-present', expectedOid: branchOid, actualOid: branchOid }),
@@ -254,12 +257,13 @@ describe.sequential('remote-cleanup-post-apply-verify script', () => {
         },
       );
       expect(result.status, result.stderr || result.stdout).toBe(0);
-      expect(result.stdout).toContain('recreated=1');
+      expect(result.stdout).toContain('stillPresent=0 presentOnRemote=1 recreated=1');
 
       const summary = JSON.parse(readFileSync(join(outputDir, 'summary.json'), 'utf8'));
       expect(summary.counts.reportedDeleted).toBe(1);
       expect(summary.counts.verifiedAbsent).toBe(0);
-      expect(summary.counts.stillPresent).toBe(1);
+      expect(summary.counts.stillPresent).toBe(0);
+      expect(summary.counts.presentOnRemote).toBe(1);
       expect(summary.counts.recreatedRefs).toBe(1);
       expect(summary.deleted).toEqual([
         expect.objectContaining({

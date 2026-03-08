@@ -94,8 +94,6 @@ const buildPlannedBranchMap = (report) => {
     if (!branch) continue;
     planned.set(branch, {
       expectedOid: String(item?.actualOid || item?.branchOid || '').trim(),
-      requestedOid: String(item?.branchOid || '').trim(),
-      plannedActualOid: String(item?.actualOid || '').trim(),
     });
   }
   return planned;
@@ -159,6 +157,7 @@ ${renderTable(['branch', 'status', 'expectedOid', 'actualOid'], deletedRows)}
 - reported deleted: ${summary.counts.reportedDeleted}
 - verified absent: ${summary.counts.verifiedAbsent}
 - still present: ${summary.counts.stillPresent}
+- present on remote: ${summary.counts.presentOnRemote}
 - recreated refs: ${summary.counts.recreatedRefs}
 - failed deletes: ${summary.counts.failedDeletes}
 - blocked: ${summary.counts.blocked}
@@ -170,6 +169,7 @@ const renderIssueComment = (summary) => `Post-apply verification from \`${summar
 - reported deleted: ${summary.counts.reportedDeleted}
 - verified absent: ${summary.counts.verifiedAbsent}
 - still present: ${summary.counts.stillPresent}
+- present on remote: ${summary.counts.presentOnRemote}
 - recreated refs: ${summary.counts.recreatedRefs}
 - failed deletes: ${summary.counts.failedDeletes}
 - blocked: ${summary.counts.blocked}
@@ -207,7 +207,8 @@ export const run = (argv = process.argv.slice(2)) => {
     counts: {
       reportedDeleted: verification.deletedStatus.length,
       verifiedAbsent: verification.deletedStatus.filter((item) => item.status === 'verified-absent').length,
-      stillPresent: verification.deletedStatus.filter((item) => item.status !== 'verified-absent').length,
+      stillPresent: verification.deletedStatus.filter((item) => item.status === 'still-present').length,
+      presentOnRemote: verification.deletedStatus.filter((item) => item.status !== 'verified-absent').length,
       recreatedRefs: verification.deletedStatus.filter((item) => item.status === 'recreated-ref').length,
       failedDeletes: failedDeletes.length,
       blocked: blocked.length,
@@ -221,7 +222,7 @@ export const run = (argv = process.argv.slice(2)) => {
 
   console.log(`[remote-cleanup-post-apply-verify] wrote ${path.join(outputDir, 'summary.json')}`);
   console.log(
-    `[remote-cleanup-post-apply-verify] deleted=${summary.counts.reportedDeleted} verified=${summary.counts.verifiedAbsent} stillPresent=${summary.counts.stillPresent} recreated=${summary.counts.recreatedRefs}`,
+    `[remote-cleanup-post-apply-verify] deleted=${summary.counts.reportedDeleted} verified=${summary.counts.verifiedAbsent} stillPresent=${summary.counts.stillPresent} presentOnRemote=${summary.counts.presentOnRemote} recreated=${summary.counts.recreatedRefs}`,
   );
 };
 

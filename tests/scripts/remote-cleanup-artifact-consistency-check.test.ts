@@ -351,6 +351,8 @@ const createFixture = (sandbox: string, options: { includePostApply?: boolean; i
         reportedDeleted: 1,
         verifiedAbsent: 1,
         stillPresent: 0,
+        presentOnRemote: 0,
+        recreatedRefs: 0,
         failedDeletes: 0,
         blocked: 0,
         plannedButNotDeleted: 0,
@@ -381,6 +383,9 @@ const createFixture = (sandbox: string, options: { includePostApply?: boolean; i
         verifiedAbsentInput: 1,
         confirmedRemoved: 1,
         reappearedInTriage: 0,
+        recreatedRefInput: 0,
+        recreatedRefInTriage: 0,
+        recreatedRefOutsideTriage: 0,
         refreshedRemoteMerged: 1,
         refreshedRemoteStale: 1,
       },
@@ -463,8 +468,19 @@ describe.sequential('remote-cleanup-artifact-consistency-check script', () => {
       expect(result.stdout).toContain('postApply=yes refresh=yes');
 
       const summary = JSON.parse(readFileSync(join(outputDir, 'summary.json'), 'utf8'));
-      expect(summary.optional.postApplyVerify.counts).toMatchObject({ reportedDeleted: 1, verifiedAbsent: 1, stillPresent: 0 });
-      expect(summary.optional.refreshAudit.counts).toMatchObject({ verifiedAbsentInput: 1, confirmedRemoved: 1, reappearedInTriage: 0 });
+      expect(summary.optional.postApplyVerify.counts).toMatchObject({
+        reportedDeleted: 1,
+        verifiedAbsent: 1,
+        stillPresent: 0,
+        presentOnRemote: 0,
+        recreatedRefs: 0,
+      });
+      expect(summary.optional.refreshAudit.counts).toMatchObject({
+        verifiedAbsentInput: 1,
+        confirmedRemoved: 1,
+        reappearedInTriage: 0,
+        recreatedRefInput: 0,
+      });
       const issueComment = readFileSync(join(outputDir, 'issue-comment.md'), 'utf8');
       expect(issueComment).toContain('post-apply verify: validated');
       expect(issueComment).toContain('refresh-audit: validated');
@@ -566,7 +582,7 @@ describe.sequential('remote-cleanup-artifact-consistency-check script', () => {
       );
 
       expect(result.status).not.toBe(0);
-      expect(result.stderr || result.stdout).toContain('post-apply verifiedAbsent+stillPresent mismatch');
+      expect(result.stderr || result.stdout).toContain('post-apply verifiedAbsent+presentOnRemote mismatch');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
