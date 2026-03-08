@@ -94,6 +94,7 @@ Comprehensive documentation for the agentic SDLC orchestrator & spec/verificatio
 - API Reference: `reference/API.md`
 - Schema governance ($id canonical URI policy): [SCHEMA-GOVERNANCE.md](./reference/SCHEMA-GOVERNANCE.md)
 - Contract catalog (input/decision/evidence/operation): [CONTRACT-CATALOG.md](./reference/CONTRACT-CATALOG.md)
+- Change Package v2 reference: `reference/change-package-v2.md`
 - Context Pack v1 validation guide: [context-pack.md](./spec/context-pack.md)
 - Spec & Verification Kit (minimal activation guide): `reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Legacy ExecPlan (6-phase, deprecated): `../plans/archive/legacy-6-phase.md`
@@ -247,6 +248,7 @@ Claude CodeやMCPとの統合
 - [API.md](./reference/API.md) - API仕様
 - [SCHEMA-GOVERNANCE.md](./reference/SCHEMA-GOVERNANCE.md) - schema `$id` canonical URI 方針
 - [CONTRACT-CATALOG.md](./reference/CONTRACT-CATALOG.md) - 契約カタログ（input/decision/evidence/operation）
+- [change-package-v2.md](./reference/change-package-v2.md) - proof-carrying change package v2 の契約と v1 との差分
 - [SPEC-VERIFICATION-KIT-MIN.md](./reference/SPEC-VERIFICATION-KIT-MIN.md) - Spec & Verification Kit（最小パッケージ・有効化手順）
 - [legacy-6-phase.md](../plans/archive/legacy-6-phase.md) - 旧6フェーズExecPlan（非推奨）
 

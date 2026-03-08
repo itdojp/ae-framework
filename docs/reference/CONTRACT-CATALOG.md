@@ -87,6 +87,7 @@
 ### 3.4 operation
 
 - `schema/change-package.schema.json`
+- `schema/change-package-v2.schema.json`
 - `schema/execplan.schema.json`
 - `schema/execution-plan-v1.schema.json`
 - `schema/run-manifest.schema.json`
@@ -119,6 +120,7 @@
 
 - assurance contract は schema-first の先行導入段階であり、`assurance-summary` / `verify:assurance` / policy integration は後続 Issue で追加する。
 - `schemaVersion` は semver と `*/v1` 形式が混在している（統一規約は `docs/reference/SCHEMA-GOVERNANCE.md` で段階導入）。
+- `change-package` は `v1` が現行 production contract、`v2` は proof-carrying 拡張の preview contract として併存している。
 - Formal Summary は `v1` / `v2` の dual-write + dual-validate 期間として運用中（`v2`: `schemaVersion=formal-summary/v2`, `contractId=formal-summary.v2`）。
 - `report-envelope` は `schema/envelope.schema.json` と `schema/report-envelope.schema.json` の二系統が併存している。
 - 次の artifact は専用 schema の明示運用が未完（要追加整理）:
