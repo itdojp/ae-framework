@@ -86,18 +86,44 @@ const validateCleanupReport = (report, reportPath) => {
   return remoteName;
 };
 
+const buildPlannedBranchMap = (report) => {
+  const plannedDetailed = Array.isArray(report?.remote?.plannedDetailed) ? report.remote.plannedDetailed : [];
+  const planned = new Map();
+  for (const item of plannedDetailed) {
+    const branch = String(item?.branch || '').trim();
+    if (!branch) continue;
+    planned.set(branch, {
+      expectedOid: String(item?.actualOid || item?.branchOid || '').trim(),
+    });
+  }
+  return planned;
+};
+
 const verifyDeletedBranches = (report, remoteRefs) => {
   const deleted = Array.isArray(report?.remote?.deleted) ? report.remote.deleted : [];
   const plannedDetailed = Array.isArray(report?.remote?.plannedDetailed) ? report.remote.plannedDetailed : [];
   const failed = Array.isArray(report?.remote?.failed) ? report.remote.failed : [];
   const deletedSet = new Set(deleted);
   const failedSet = new Set(failed.map((item) => item.branch));
+  const plannedByBranch = buildPlannedBranchMap(report);
 
-  const deletedStatus = deleted.map((branch) => ({
-    branch,
-    status: remoteRefs.has(branch) ? 'still-present' : 'verified-absent',
-    actualOid: remoteRefs.get(branch) || '',
-  }));
+  const deletedStatus = deleted.map((branch) => {
+    const liveOid = remoteRefs.get(branch) || '';
+    const planned = plannedByBranch.get(branch);
+    const expectedOid = planned?.expectedOid || '';
+
+    let status = 'verified-absent';
+    if (liveOid) {
+      status = expectedOid && expectedOid !== liveOid ? 'recreated-ref' : 'still-present';
+    }
+
+    return {
+      branch,
+      status,
+      expectedOid,
+      actualOid: liveOid,
+    };
+  });
 
   const notDeleted = plannedDetailed
     .map((item) => item.branch)
@@ -113,6 +139,7 @@ const renderSummaryMarkdown = (summary) => {
   const deletedRows = summary.deleted.map((item) => [
     `\`${item.branch}\``,
     item.status,
+    item.expectedOid || '-',
     item.actualOid || '-',
   ]);
 
@@ -123,13 +150,15 @@ const renderSummaryMarkdown = (summary) => {
 - remote: \`${summary.remoteName}\`
 - scope: \`${summary.scope}\`
 
-${renderTable(['branch', 'status', 'actualOid'], deletedRows)}
+${renderTable(['branch', 'status', 'expectedOid', 'actualOid'], deletedRows)}
 
 ## Totals
 
 - reported deleted: ${summary.counts.reportedDeleted}
 - verified absent: ${summary.counts.verifiedAbsent}
 - still present: ${summary.counts.stillPresent}
+- present on remote: ${summary.counts.presentOnRemote}
+- recreated refs: ${summary.counts.recreatedRefs}
 - failed deletes: ${summary.counts.failedDeletes}
 - blocked: ${summary.counts.blocked}
 - planned but not deleted: ${summary.counts.plannedButNotDeleted}
@@ -140,13 +169,16 @@ const renderIssueComment = (summary) => `Post-apply verification from \`${summar
 - reported deleted: ${summary.counts.reportedDeleted}
 - verified absent: ${summary.counts.verifiedAbsent}
 - still present: ${summary.counts.stillPresent}
+- present on remote: ${summary.counts.presentOnRemote}
+- recreated refs: ${summary.counts.recreatedRefs}
 - failed deletes: ${summary.counts.failedDeletes}
 - blocked: ${summary.counts.blocked}
 - planned but not deleted: ${summary.counts.plannedButNotDeleted}
 
 Notes:
 - this step performs no deletion
-- rerun branch inventory and remote triage after reviewing any still-present refs
+- branches marked \`recreated-ref\` were deleted from the original OID but now point to a different live OID
+- rerun branch inventory and remote triage after reviewing any still-present or recreated refs
 `;
 
 export const run = (argv = process.argv.slice(2)) => {
@@ -176,6 +208,8 @@ export const run = (argv = process.argv.slice(2)) => {
       reportedDeleted: verification.deletedStatus.length,
       verifiedAbsent: verification.deletedStatus.filter((item) => item.status === 'verified-absent').length,
       stillPresent: verification.deletedStatus.filter((item) => item.status === 'still-present').length,
+      presentOnRemote: verification.deletedStatus.filter((item) => item.status !== 'verified-absent').length,
+      recreatedRefs: verification.deletedStatus.filter((item) => item.status === 'recreated-ref').length,
       failedDeletes: failedDeletes.length,
       blocked: blocked.length,
       plannedButNotDeleted: verification.notDeleted.length,
@@ -188,7 +222,7 @@ export const run = (argv = process.argv.slice(2)) => {
 
   console.log(`[remote-cleanup-post-apply-verify] wrote ${path.join(outputDir, 'summary.json')}`);
   console.log(
-    `[remote-cleanup-post-apply-verify] deleted=${summary.counts.reportedDeleted} verified=${summary.counts.verifiedAbsent} stillPresent=${summary.counts.stillPresent}`,
+    `[remote-cleanup-post-apply-verify] deleted=${summary.counts.reportedDeleted} verified=${summary.counts.verifiedAbsent} stillPresent=${summary.counts.stillPresent} presentOnRemote=${summary.counts.presentOnRemote} recreated=${summary.counts.recreatedRefs}`,
   );
 };
 

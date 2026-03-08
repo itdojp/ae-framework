@@ -435,7 +435,8 @@ const validatePostApply = (artifacts, executionState) => {
   assert(Number(counts.failedDeletes) === failedDeletes.length, 'post-apply failedDeletes count mismatch');
   assert(Number(counts.blocked) === blocked.length, 'post-apply blocked count mismatch');
   assert(Number(counts.plannedButNotDeleted) === plannedButNotDeleted.length, 'post-apply plannedButNotDeleted count mismatch');
-  assert(Number(counts.verifiedAbsent) + Number(counts.stillPresent) === deleted.length, 'post-apply verifiedAbsent+stillPresent mismatch');
+  assert(Number(counts.presentOnRemote) === Number(counts.stillPresent) + Number(counts.recreatedRefs), 'post-apply presentOnRemote mismatch');
+  assert(Number(counts.verifiedAbsent) + Number(counts.presentOnRemote) === deleted.length, 'post-apply verifiedAbsent+presentOnRemote mismatch');
 
   const applyDeleted = ensureArray(cleanupReport?.remote?.deleted, 'cleanup report remote.deleted');
   const applyFailed = ensureArray(cleanupReport?.remote?.failed, 'cleanup report remote.failed');
@@ -469,12 +470,17 @@ const validateRefreshAudit = (artifacts, triageState, postApplyState) => {
   const refreshedStale = ensureArray(refreshedTriage?.remoteStale, 'refresh-audit refreshed triage remoteStale');
   const counts = ensureObject(summary?.counts, 'refresh-audit counts');
   const audit = ensureArray(summary?.audit, 'refresh-audit audit');
+  const recreated = ensureArray(summary?.recreated || [], 'refresh-audit recreated');
   const verifiedAbsentCount = countStatus(postApplyState.summary.deleted, 'verified-absent');
+  const recreatedCount = countStatus(postApplyState.summary.deleted, 'recreated-ref');
   assert(Number(counts.verifiedAbsentInput) === verifiedAbsentCount, 'refresh-audit verifiedAbsentInput mismatch');
   assert(Number(counts.confirmedRemoved) + Number(counts.reappearedInTriage) === Number(counts.verifiedAbsentInput), 'refresh-audit confirmed+reappeared mismatch');
+  assert(Number(counts.recreatedRefInput) === recreatedCount, 'refresh-audit recreatedRefInput mismatch');
+  assert(Number(counts.recreatedRefInTriage) + Number(counts.recreatedRefOutsideTriage) === Number(counts.recreatedRefInput), 'refresh-audit recreated counts mismatch');
   assert(Number(counts.refreshedRemoteMerged) === refreshedMerged.length, 'refresh-audit refreshedRemoteMerged mismatch');
   assert(Number(counts.refreshedRemoteStale) === refreshedStale.length, 'refresh-audit refreshedRemoteStale mismatch');
   assert(audit.length === Number(counts.verifiedAbsentInput), 'refresh-audit audit row count mismatch');
+  assert(recreated.length === Number(counts.recreatedRefInput), 'refresh-audit recreated row count mismatch');
 
   return { available: true, summary, refreshedTriagePath };
 };
@@ -492,13 +498,13 @@ const renderSummaryMarkdown = (summary) => {
   if (summary.optional.postApplyVerify.available) {
     rows.push([
       'post-apply deleted/verified/still-present',
-      `${summary.optional.postApplyVerify.counts.reportedDeleted} / ${summary.optional.postApplyVerify.counts.verifiedAbsent} / ${summary.optional.postApplyVerify.counts.stillPresent}`,
+      `${summary.optional.postApplyVerify.counts.reportedDeleted} / ${summary.optional.postApplyVerify.counts.verifiedAbsent} / ${summary.optional.postApplyVerify.counts.presentOnRemote}`,
     ]);
   }
   if (summary.optional.refreshAudit.available) {
     rows.push([
-      'refresh confirmed/reappeared',
-      `${summary.optional.refreshAudit.counts.confirmedRemoved} / ${summary.optional.refreshAudit.counts.reappearedInTriage}`,
+      'refresh confirmed/reappeared/recreated',
+      `${summary.optional.refreshAudit.counts.confirmedRemoved} / ${summary.optional.refreshAudit.counts.reappearedInTriage} / ${summary.optional.refreshAudit.counts.recreatedRefInput}`,
     ]);
   }
 
@@ -524,12 +530,12 @@ const renderIssueComment = (summary) => {
   ];
   if (summary.optional.postApplyVerify.available) {
     lines.push(
-      `- deleted/verified/still-present: ${summary.optional.postApplyVerify.counts.reportedDeleted}/${summary.optional.postApplyVerify.counts.verifiedAbsent}/${summary.optional.postApplyVerify.counts.stillPresent}`,
+      `- deleted/verified/present-on-remote: ${summary.optional.postApplyVerify.counts.reportedDeleted}/${summary.optional.postApplyVerify.counts.verifiedAbsent}/${summary.optional.postApplyVerify.counts.presentOnRemote}`,
     );
   }
   if (summary.optional.refreshAudit.available) {
     lines.push(
-      `- refresh confirmed/reappeared: ${summary.optional.refreshAudit.counts.confirmedRemoved}/${summary.optional.refreshAudit.counts.reappearedInTriage}`,
+      `- refresh confirmed/reappeared/recreated: ${summary.optional.refreshAudit.counts.confirmedRemoved}/${summary.optional.refreshAudit.counts.reappearedInTriage}/${summary.optional.refreshAudit.counts.recreatedRefInput}`,
     );
   }
   return `${lines.join('\n')}\n`;

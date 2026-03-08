@@ -280,6 +280,8 @@ const normalizePostVerify = (summaryPath) => {
       reportedDeleted: ensureCount(counts.reportedDeleted, 'post-verify counts.reportedDeleted'),
       verifiedAbsent: ensureCount(counts.verifiedAbsent, 'post-verify counts.verifiedAbsent'),
       stillPresent: ensureCount(counts.stillPresent, 'post-verify counts.stillPresent'),
+      presentOnRemote: ensureCount(counts.presentOnRemote, 'post-verify counts.presentOnRemote'),
+      recreatedRefs: ensureCount(counts.recreatedRefs, 'post-verify counts.recreatedRefs'),
       failedDeletes: ensureCount(counts.failedDeletes, 'post-verify counts.failedDeletes'),
       blocked: ensureCount(counts.blocked, 'post-verify counts.blocked'),
       plannedButNotDeleted: ensureCount(counts.plannedButNotDeleted, 'post-verify counts.plannedButNotDeleted'),
@@ -305,6 +307,9 @@ const normalizeRefreshAudit = (summaryPath) => {
       verifiedAbsentInput: ensureCount(counts.verifiedAbsentInput, 'refresh-audit counts.verifiedAbsentInput'),
       confirmedRemoved: ensureCount(counts.confirmedRemoved, 'refresh-audit counts.confirmedRemoved'),
       reappearedInTriage: ensureCount(counts.reappearedInTriage, 'refresh-audit counts.reappearedInTriage'),
+      recreatedRefInput: ensureCount(counts.recreatedRefInput, 'refresh-audit counts.recreatedRefInput'),
+      recreatedRefInTriage: ensureCount(counts.recreatedRefInTriage, 'refresh-audit counts.recreatedRefInTriage'),
+      recreatedRefOutsideTriage: ensureCount(counts.recreatedRefOutsideTriage, 'refresh-audit counts.recreatedRefOutsideTriage'),
       refreshedRemoteMerged: ensureCount(counts.refreshedRemoteMerged, 'refresh-audit counts.refreshedRemoteMerged'),
       refreshedRemoteStale: ensureCount(counts.refreshedRemoteStale, 'refresh-audit counts.refreshedRemoteStale'),
     },
@@ -418,6 +423,15 @@ const validateConsistency = (reviewStatus, executionPack, ambiguousEvidence, pos
     ) {
       throw new Error('refresh-audit counts do not sum to verifiedAbsentInput');
     }
+    if (refreshAudit.counts.recreatedRefInput !== postVerify.counts.recreatedRefs) {
+      throw new Error('refresh-audit recreatedRefInput does not match post-verify recreatedRefs count');
+    }
+    if (
+      refreshAudit.counts.recreatedRefInTriage + refreshAudit.counts.recreatedRefOutsideTriage !==
+      refreshAudit.counts.recreatedRefInput
+    ) {
+      throw new Error('refresh-audit recreated-ref counts do not sum to recreatedRefInput');
+    }
   }
 
   if (artifactConsistency.available) {
@@ -484,10 +498,14 @@ const classifyStage = ({ reviewStatus, executionPack, postVerify, refreshAudit }
   }
 
   if (postVerify.available) {
-    const unresolved = postVerify.counts.stillPresent + postVerify.counts.failedDeletes + postVerify.counts.plannedButNotDeleted + postVerify.counts.blocked;
+    const unresolved =
+      postVerify.counts.presentOnRemote +
+      postVerify.counts.failedDeletes +
+      postVerify.counts.plannedButNotDeleted +
+      postVerify.counts.blocked;
     if (unresolved > 0) {
       reasons.push(
-        `post-apply verification still has follow-up (${postVerify.counts.stillPresent} still present, ${postVerify.counts.failedDeletes} failed, ${postVerify.counts.plannedButNotDeleted} planned-not-deleted, ${postVerify.counts.blocked} blocked)`,
+        `post-apply verification still has follow-up (${postVerify.counts.stillPresent} still present, ${postVerify.counts.recreatedRefs} recreated, ${postVerify.counts.failedDeletes} failed, ${postVerify.counts.plannedButNotDeleted} planned-not-deleted, ${postVerify.counts.blocked} blocked)`,
       );
       return {
         stage: 'post-apply-verify',
@@ -506,8 +524,10 @@ const classifyStage = ({ reviewStatus, executionPack, postVerify, refreshAudit }
   }
 
   if (refreshAudit.available) {
-    if (refreshAudit.counts.reappearedInTriage > 0) {
-      reasons.push(`${refreshAudit.counts.reappearedInTriage} branches reappeared in refreshed triage`);
+    if (refreshAudit.counts.reappearedInTriage > 0 || refreshAudit.counts.recreatedRefInput > 0) {
+      reasons.push(
+        `${refreshAudit.counts.reappearedInTriage} branches reappeared in refreshed triage and ${refreshAudit.counts.recreatedRefInput} recreated refs remain under follow-up`,
+      );
       return {
         stage: 'refresh-audit',
         nextAction: 'investigate-still-present',
@@ -544,8 +564,8 @@ const renderArtifactRows = (summary) =>
     ['review-status', 'yes', String(summary.counts.reviewStatus.deleteReady), String(summary.counts.reviewStatus.pendingReview), path.basename(summary.artifacts.reviewStatus.path)],
     ['execution-pack', summary.artifacts.executionPack.available ? 'yes' : 'no', summary.artifacts.executionPack.available ? String(summary.counts.executionPack.dryRunPlanned) : '-', summary.artifacts.executionPack.available ? String(summary.counts.executionPack.dryRunBlocked) : '-', summary.artifacts.executionPack.available ? path.basename(summary.artifacts.executionPack.path) : '-'],
     ['ambiguous-evidence', summary.artifacts.ambiguousEvidence.available ? 'yes' : 'no', summary.artifacts.ambiguousEvidence.available ? String(summary.counts.ambiguousEvidence.total) : '-', summary.artifacts.ambiguousEvidence.available ? String(summary.counts.ambiguousEvidence.manualReview) : '-', summary.artifacts.ambiguousEvidence.available ? path.basename(summary.artifacts.ambiguousEvidence.path) : '-'],
-    ['post-apply-verify', summary.artifacts.postVerify.available ? 'yes' : 'no', summary.artifacts.postVerify.available ? String(summary.counts.postVerify.verifiedAbsent) : '-', summary.artifacts.postVerify.available ? String(summary.counts.postVerify.stillPresent) : '-', summary.artifacts.postVerify.available ? path.basename(summary.artifacts.postVerify.path) : '-'],
-    ['refresh-audit', summary.artifacts.refreshAudit.available ? 'yes' : 'no', summary.artifacts.refreshAudit.available ? String(summary.counts.refreshAudit.confirmedRemoved) : '-', summary.artifacts.refreshAudit.available ? String(summary.counts.refreshAudit.reappearedInTriage) : '-', summary.artifacts.refreshAudit.available ? path.basename(summary.artifacts.refreshAudit.path) : '-'],
+    ['post-apply-verify', summary.artifacts.postVerify.available ? 'yes' : 'no', summary.artifacts.postVerify.available ? String(summary.counts.postVerify.verifiedAbsent) : '-', summary.artifacts.postVerify.available ? String(summary.counts.postVerify.presentOnRemote) : '-', summary.artifacts.postVerify.available ? path.basename(summary.artifacts.postVerify.path) : '-'],
+    ['refresh-audit', summary.artifacts.refreshAudit.available ? 'yes' : 'no', summary.artifacts.refreshAudit.available ? String(summary.counts.refreshAudit.confirmedRemoved) : '-', summary.artifacts.refreshAudit.available ? String(summary.counts.refreshAudit.reappearedInTriage + summary.counts.refreshAudit.recreatedRefInput) : '-', summary.artifacts.refreshAudit.available ? path.basename(summary.artifacts.refreshAudit.path) : '-'],
     ['artifact-consistency', summary.artifacts.artifactConsistency.available ? 'yes' : 'no', summary.artifacts.artifactConsistency.available ? String(summary.counts.artifactConsistency.executionPack.approvedBranches) : '-', summary.artifacts.artifactConsistency.available ? String(summary.counts.artifactConsistency.executionPack.dryRunBlocked) : '-', summary.artifacts.artifactConsistency.available ? path.basename(summary.artifacts.artifactConsistency.path) : '-'],
   ];
 
@@ -611,12 +631,12 @@ const renderIssueComment = (summary) => {
   }
   if (summary.artifacts.postVerify.available) {
     lines.push(
-      `- post-apply verify: verified=${summary.counts.postVerify.verifiedAbsent}, still-present=${summary.counts.postVerify.stillPresent}, failed=${summary.counts.postVerify.failedDeletes}, planned-not-deleted=${summary.counts.postVerify.plannedButNotDeleted}`,
+      `- post-apply verify: verified=${summary.counts.postVerify.verifiedAbsent}, still-present=${summary.counts.postVerify.stillPresent}, recreated=${summary.counts.postVerify.recreatedRefs}, present-on-remote=${summary.counts.postVerify.presentOnRemote}, failed=${summary.counts.postVerify.failedDeletes}, planned-not-deleted=${summary.counts.postVerify.plannedButNotDeleted}`,
     );
   }
   if (summary.artifacts.refreshAudit.available) {
     lines.push(
-      `- refresh audit: confirmed=${summary.counts.refreshAudit.confirmedRemoved}, reappeared=${summary.counts.refreshAudit.reappearedInTriage}`,
+      `- refresh audit: confirmed=${summary.counts.refreshAudit.confirmedRemoved}, reappeared=${summary.counts.refreshAudit.reappearedInTriage}, recreated=${summary.counts.refreshAudit.recreatedRefInput}`,
     );
   }
   if (summary.artifacts.artifactConsistency.available) {
