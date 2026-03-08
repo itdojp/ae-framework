@@ -161,6 +161,14 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
+          if [ -f artifacts/assurance/assurance-summary.md ]; then
+            {
+              echo ""
+              echo "### Assurance summary"
+              cat artifacts/assurance/assurance-summary.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Rollback hook dry-run (optional)
         if: ${{ steps.assess.outputs.status == 'fail' && inputs.run_rollback_hook_dry_run == true }}
         run: |
