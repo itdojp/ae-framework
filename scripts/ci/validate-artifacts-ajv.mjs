@@ -19,6 +19,11 @@ export const DEFAULT_RULES = [
     patterns: ['artifacts/verify-lite/verify-lite-run-summary.json'],
   },
   {
+    id: 'assurance-summary',
+    schemaPath: 'schema/assurance-summary.schema.json',
+    patterns: ['artifacts/assurance/assurance-summary.json'],
+  },
+  {
     id: 'adapter-summary',
     schemaPath: 'docs/schemas/artifacts-adapter-summary.schema.json',
     patterns: [
