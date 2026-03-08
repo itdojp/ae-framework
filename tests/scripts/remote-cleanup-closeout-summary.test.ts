@@ -375,7 +375,7 @@ describe.sequential('remote-cleanup-closeout-summary script', () => {
 
       const issueComment = readFileSync(join(outputDir, 'issue-comment.md'), 'utf8');
       expect(issueComment).toContain('next action: closeout-ready');
-      expect(issueComment).toContain('execution-pack fetch: ok (origin)');
+      expect(issueComment).toContain('execution-pack dry-run fetch: ok (origin)');
       expect(issueComment).toContain('refresh audit: confirmed=2, reappeared=0');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });

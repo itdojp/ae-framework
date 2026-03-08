@@ -594,10 +594,10 @@ const renderIssueComment = (summary) => {
 
   if (summary.artifacts.executionPack.available) {
     lines.push(
-      `- execution pack: planned=${summary.counts.executionPack.dryRunPlanned}, blocked=${summary.counts.executionPack.dryRunBlocked}`,
+      `- execution-pack: planned=${summary.counts.executionPack.dryRunPlanned}, blocked=${summary.counts.executionPack.dryRunBlocked}`,
     );
     lines.push(
-      `- execution-pack fetch: ${
+      `- execution-pack dry-run fetch: ${
         summary.artifacts.executionPack.fetch.attempted
           ? `${summary.artifacts.executionPack.fetch.ok ? 'ok' : 'failed'} (${summary.artifacts.executionPack.fetch.remote})`
           : 'not-requested'
