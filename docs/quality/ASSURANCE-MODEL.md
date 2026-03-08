@@ -85,15 +85,15 @@ proof や model-check で閉じない部分を、feature flag / alert / rollout 
 
 ## 4. 現行実装との対応
 
-現時点で実装済み:
+現時点で main に実装済み:
 - Context Pack v1 とその拡張マップ群
 - verify-lite summary
 - formal summary / formal aggregate
 - policy gate / change package v1
-- assurance profile v1（schema/docs の Phase 1）
-- change-package v2（schema/docs の Phase 1）
 
 未実装または段階導入中:
+- assurance profile v1（schema/docs の Phase 1、PR #2509 で導入中）
+- change-package v2（schema/docs の Phase 1、PR #2510 で導入中）
 - `verify:assurance`
 - `assurance-summary` artifact
 - claim ごとの achieved level 集約
@@ -109,8 +109,12 @@ proof や model-check で閉じない部分を、feature flag / alert / rollout 
 
 ## 6. 関連契約
 
-- `schema/assurance-profile.schema.json`
-- `schema/change-package-v2.schema.json`
+main に存在する契約:
 - `schema/context-pack-v1.schema.json`
+- `schema/change-package.schema.json`
+
+段階導入中の契約:
+- `schema/assurance-profile.schema.json`（PR #2509）
+- `schema/change-package-v2.schema.json`（PR #2510）
 - `schema/verify-lite-run-summary.schema.json`（将来拡張候補）
 - `schema/policy-input-v1.schema.json` / `schema/policy-decision-v1.schema.json`（将来拡張候補）

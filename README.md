@@ -1,4 +1,4 @@
-# ae-framework: Agentic SDLC Orchestrator & Spec/Verification Kit
+# ae-framework: Assurance Control Plane for Agent-Driven SDLC
 
 [![validate-artifacts-ajv](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml)
 [![testing-ddd-scripts](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml)

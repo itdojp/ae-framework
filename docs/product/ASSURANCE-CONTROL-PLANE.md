@@ -85,7 +85,8 @@ Core value:
 - `schema/*.schema.json`
 - `scripts/ci/validate-artifacts-ajv.mjs`
 - `artifacts/verify-lite/verify-lite-run-summary.json`
-- `artifacts/hermetic-reports/formal/summary.json`
+- `artifacts/formal/formal-summary-v1.json`
+- `artifacts/hermetic-reports/formal/summary.json`（formal aggregate）
 - `artifacts/ci/policy-gate-summary.json`
 - `docs/ci/pr-automation.md`
 
