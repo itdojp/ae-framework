@@ -146,6 +146,7 @@
     "maintenance:branch:triage:decision-sync": "node scripts/maintenance/remote-cleanup-decision-sync.mjs",
     "maintenance:branch:triage:review-status": "node scripts/maintenance/remote-cleanup-review-status.mjs",
     "maintenance:branch:triage:execution-pack": "node scripts/maintenance/remote-cleanup-execution-pack.mjs",
+    "maintenance:branch:cleanup:closeout-summary": "node scripts/maintenance/remote-cleanup-closeout-summary.mjs",
     "maintenance:branch:cleanup:refresh-audit": "node scripts/maintenance/remote-cleanup-refresh-audit.mjs",
     "maintenance:branch:cleanup:post-verify": "node scripts/maintenance/remote-cleanup-post-apply-verify.mjs",
     "maintenance:branch:cleanup:dry-run": "node scripts/maintenance/branch-cleanup.mjs --scope both --max 200",

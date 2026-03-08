@@ -360,6 +360,37 @@ Interpretation:
 
 This step is a closure audit only. It performs no deletion.
 
+### 8) Render the final closeout summary bundle
+
+```bash
+pnpm run maintenance:branch:cleanup:closeout-summary
+
+# Optional: pass explicit artifact paths
+node scripts/maintenance/remote-cleanup-closeout-summary.mjs \
+  --review-status-summary-json tmp/maintenance/remote-cleanup-review-status/summary.json \
+  --execution-pack-summary-json tmp/maintenance/remote-cleanup-execution-pack/summary.json \
+  --ambiguous-evidence-summary-json tmp/maintenance/remote-cleanup-ambiguous-evidence/summary.json \
+  --post-verify-summary-json tmp/maintenance/remote-cleanup-post-apply-verify/summary.json \
+  --refresh-audit-summary-json tmp/maintenance/remote-cleanup-refresh-audit/summary.json \
+  --artifact-consistency-summary-json tmp/maintenance/remote-cleanup-artifact-consistency/summary.json \
+  --output-dir tmp/maintenance/remote-cleanup-closeout-summary
+```
+
+Generated outputs:
+
+- `tmp/maintenance/remote-cleanup-closeout-summary/summary.json`
+- `tmp/maintenance/remote-cleanup-closeout-summary/summary.md`
+- `tmp/maintenance/remote-cleanup-closeout-summary/issue-comment.md`
+
+Interpretation:
+
+- `review-pending`: pending review rows or missing audit rows still remain
+- `render-execution-pack`: review is complete, but no execution pack exists for delete-ready rows
+- `operator-apply`: execution pack is ready and apply is the next operator action
+- `investigate-still-present`: post-apply or refresh follow-up still shows unresolved branches
+- `refresh-triage`: post-apply verification is clean and inventory/triage refresh is the next step
+- `closeout-ready`: no remaining cleanup follow-up is visible in the current artifact set
+
 ## Triage policy
 
 ### Remote merged candidates
