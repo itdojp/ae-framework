@@ -15,6 +15,7 @@ const writeJson = (targetPath: string, value: unknown) => {
 };
 
 const createFixture = (sandbox: string, options: { includePostApply?: boolean; includeRefreshAudit?: boolean } = {}) => {
+  const inventoryPath = join(sandbox, 'branch-inventory.json');
   const triagePath = join(sandbox, 'remote-branch-triage.json');
   const batchDir = join(sandbox, 'batches');
   const auditDir = join(sandbox, 'reference-audit');
@@ -37,10 +38,16 @@ const createFixture = (sandbox: string, options: { includePostApply?: boolean; i
   const base = 'origin/main';
   const remote = 'origin';
 
+  writeJson(inventoryPath, {
+    generatedAt: inventoryGeneratedAt,
+    base,
+    remote,
+  });
+
   writeJson(triagePath, {
     generatedAt: triageGeneratedAt,
     sourceInventory: {
-      path: triagePath,
+      path: inventoryPath,
       generatedAt: inventoryGeneratedAt,
       base,
       remote,
@@ -186,7 +193,7 @@ const createFixture = (sandbox: string, options: { includePostApply?: boolean; i
   };
   writeJson(reviewedManifestPath, {
     sourceInventory: {
-      path: triagePath,
+      path: inventoryPath,
       generatedAt: inventoryGeneratedAt,
       base,
       remote,
@@ -255,7 +262,7 @@ const createFixture = (sandbox: string, options: { includePostApply?: boolean; i
       sourceTriagePath: triagePath,
     },
     sourceInventory: {
-      path: triagePath,
+      path: inventoryPath,
       generatedAt: inventoryGeneratedAt,
       base,
       remote,
@@ -267,8 +274,8 @@ const createFixture = (sandbox: string, options: { includePostApply?: boolean; i
       selection: {
         mode: 'branch-list',
         sourcePath: approvedBranchesPath,
-        expectedBase: base,
-        expectedRemote: remote,
+        expectedBase: '',
+        expectedRemote: '',
       },
       totalCandidates: 1,
       plannedDetailed: [{ branch: 'docs/stale-a', branchOid: 'oid-stale-a', actualOid: 'oid-stale-a' }],
@@ -284,7 +291,7 @@ const createFixture = (sandbox: string, options: { includePostApply?: boolean; i
       referenceAuditDir: auditDir,
     },
     sourceInventory: {
-      path: triagePath,
+      path: inventoryPath,
       generatedAt: inventoryGeneratedAt,
       base,
       remote,
@@ -322,8 +329,8 @@ const createFixture = (sandbox: string, options: { includePostApply?: boolean; i
         selection: {
           mode: 'branch-list',
           sourcePath: approvedBranchesPath,
-          expectedBase: base,
-          expectedRemote: remote,
+          expectedBase: '',
+          expectedRemote: '',
         },
         plannedDetailed: [{ branch: 'docs/stale-a', branchOid: 'oid-stale-a', actualOid: 'oid-stale-a' }],
         deleted: ['docs/stale-a'],

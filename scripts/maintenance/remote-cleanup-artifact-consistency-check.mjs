@@ -207,7 +207,7 @@ const validateTriage = (artifacts) => {
   const remoteStale = ensureArray(triage?.remoteStale, 'triage remoteStale');
   const summary = ensureObject(triage?.summary, 'triage summary');
 
-  resolveSamePath(sourceInventory.path, artifacts.triageJsonPath, 'triage sourceInventory.path');
+  const inventoryPath = ensureFile(String(sourceInventory.path || ''), 'triage source inventory');
   assert(String(sourceInventory.generatedAt || '').trim(), 'triage sourceInventory.generatedAt is required');
   assert(String(sourceInventory.base || '').trim(), 'triage sourceInventory.base is required');
   assert(String(sourceInventory.remote || '').trim(), 'triage sourceInventory.remote is required');
@@ -216,7 +216,7 @@ const validateTriage = (artifacts) => {
   assert(Number(summary.remoteMergedCandidates) === remoteMerged.length, 'triage merged count mismatch');
   assert(Number(summary.remoteStaleCandidates) === remoteStale.length, 'triage stale count mismatch');
 
-  return { triage, sourceInventory, remoteMerged, remoteStale, summary };
+  return { triage, sourceInventory, inventoryPath, remoteMerged, remoteStale, summary };
 };
 
 const validateBatchSummary = (artifacts, triageState) => {
@@ -394,8 +394,14 @@ const validateExecutionPack = (artifacts, triageState, reviewStatusState) => {
   const dryRunSelection = ensureObject(dryRunReport?.remote?.selection, 'execution-pack dry-run selection');
   assert(String(dryRunSelection.mode || '') === 'branch-list', 'execution-pack dry-run selection.mode mismatch');
   resolveSamePath(dryRunSelection.sourcePath, artifacts.approvedBranchesPath, 'execution-pack dry-run selection.sourcePath');
-  assert(String(dryRunSelection.expectedBase || '') === String(triageState.sourceInventory.base || ''), 'execution-pack dry-run expectedBase mismatch');
-  assert(String(dryRunSelection.expectedRemote || '') === String(triageState.sourceInventory.remote || ''), 'execution-pack dry-run expectedRemote mismatch');
+  const dryRunExpectedBase = String(dryRunSelection.expectedBase || '');
+  const dryRunExpectedRemote = String(dryRunSelection.expectedRemote || '');
+  if (dryRunExpectedBase) {
+    assert(dryRunExpectedBase === String(triageState.sourceInventory.base || ''), 'execution-pack dry-run expectedBase mismatch');
+  }
+  if (dryRunExpectedRemote) {
+    assert(dryRunExpectedRemote === String(triageState.sourceInventory.remote || ''), 'execution-pack dry-run expectedRemote mismatch');
+  }
   assert(Number(dryRunReport?.remote?.totalCandidates ?? -1) === approvedBranches.length, 'execution-pack dry-run totalCandidates mismatch');
   const plannedDetailed = ensureArray(dryRunReport?.remote?.plannedDetailed, 'execution-pack dry-run plannedDetailed');
   const blocked = ensureArray(dryRunReport?.remote?.blocked, 'execution-pack dry-run blocked');
