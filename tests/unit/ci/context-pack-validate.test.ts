@@ -43,6 +43,10 @@ diagrams:
       - property-test
 constraints:
   max_parallel_reservations: 8
+assurance:
+  profile: inventory-consistency-v1
+  claim_refs:
+    - no-negative-stock
 acceptance_tests:
   - id: AT-1
     scenario: Reserve succeeds when stock is available.

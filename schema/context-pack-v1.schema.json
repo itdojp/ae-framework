@@ -193,6 +193,29 @@
       "type": "object",
       "additionalProperties": true
     },
+    "assurance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "claim_refs"
+      ],
+      "properties": {
+        "profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claim_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
     "acceptance_tests": {
       "type": "array",
       "items": {

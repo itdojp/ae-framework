@@ -121,6 +121,7 @@ Comprehensive documentation for the agentic SDLC orchestrator and assurance cont
 - Verify-first failure comment design: `quality/verify-first-failure-comment-design.md`
 - Verify-first artifacts catalog: `quality/verify-first-artifacts-catalog.md`
 - Verify-first implementation runbook: `quality/verify-first-implementation-runbook.md`
+- Assurance profile / level: `quality/assurance-profile.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
 - Runbooks / Traceability / Runtime Contracts: see `./quality` and `./verify`
 - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
@@ -283,6 +284,7 @@ Claude CodeやMCPとの統合
 - [verify-first-failure-comment-design.md](./quality/verify-first-failure-comment-design.md) - 失敗診断テンプレをPR自動コメントに連携する設計案
 - [verify-first-artifacts-catalog.md](./quality/verify-first-artifacts-catalog.md) - Verify-first の最小成果物（SSOT/AC/NFR/Evidence）定義
 - [verify-first-implementation-runbook.md](./quality/verify-first-implementation-runbook.md) - Verify-first 実装運用の標準手順（Plan→Spec→Gate→Evidence）
+- [assurance-profile.md](./quality/assurance-profile.md) - assurance profile / level の入力契約（claim / level / lanes / evidence kinds）
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [run-manifest-freshness-contract.md](./quality/run-manifest-freshness-contract.md) - run-manifest鮮度判定契約（stale artifact 検出）
 - [issue-requirements-traceability.md](./quality/issue-requirements-traceability.md) - Issue要件ID起点の traceability 手順（extract/matrix/strict validate）
