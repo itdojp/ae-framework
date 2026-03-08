@@ -151,6 +151,12 @@ After remote apply, verify the report against live remote refs before rerunning 
 pnpm run maintenance:branch:cleanup:post-verify
 ```
 
+After inventory + triage refresh, audit the refreshed candidate set before closing the cleanup issue:
+
+```bash
+pnpm run maintenance:branch:cleanup:refresh-audit
+```
+
 Safeguards:
 
 - `triage-merged` keeps the ancestry check and blocks branches no longer merged to `base`
@@ -170,6 +176,7 @@ The operator workflow and worksheet format are defined in
 - [ ] Safe local cleanup executed in batches
 - [ ] Remote cleanup approved and executed (if needed)
 - [ ] Post-apply verification archived (if remote cleanup was executed)
+- [ ] Refresh-audit bundle archived (after inventory/triage refresh)
 - [ ] Cleanup result summary added to issue/PR comment
 
 ## Recommended cadence
