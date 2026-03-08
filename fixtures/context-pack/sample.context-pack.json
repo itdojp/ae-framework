@@ -2,14 +2,18 @@
   "version": 1,
   "name": "inventory-minimal-context-pack",
   "problem_statement": {
-    "goals": ["Keep inventory counts consistent."],
-    "non_goals": ["Implement pricing logic."]
+    "goals": [
+      "Keep inventory counts consistent."
+    ],
+    "non_goals": [
+      "Implement pricing logic."
+    ]
   },
   "domain_glossary": {
     "terms": [
       {
         "term": "inventory_item",
-        "ja": "在庫アイテム"
+        "ja": "\u5728\u5eab\u30a2\u30a4\u30c6\u30e0"
       }
     ]
   },
@@ -29,34 +33,63 @@
       "output": {
         "reserved": "boolean"
       },
-      "pre": ["quantity > 0"],
-      "post": ["reserved implies stock_decreased"],
-      "failures": ["OutOfStock"]
+      "pre": [
+        "quantity > 0"
+      ],
+      "post": [
+        "reserved implies stock_decreased"
+      ],
+      "failures": [
+        "OutOfStock"
+      ]
     }
   ],
   "diagrams": [
     {
       "id": "D-1",
       "statement": "ReserveInventory preserves non-negative stock.",
-      "verification": ["property-test"]
+      "verification": [
+        "property-test"
+      ]
     }
   ],
   "constraints": {
     "max_parallel_reservations": 8
   },
+  "assurance": {
+    "profile": "inventory-consistency-v1",
+    "claim_refs": [
+      "no-negative-stock"
+    ]
+  },
   "acceptance_tests": [
     {
       "id": "AT-1",
       "scenario": "Reserve succeeds when stock is available.",
-      "expected": ["reservation accepted"]
+      "expected": [
+        "reservation accepted"
+      ]
     }
   ],
   "coding_conventions": {
     "language": "TypeScript",
-    "directory": ["src/", "tests/"],
+    "directory": [
+      "src/",
+      "tests/"
+    ],
     "dependencies": {
-      "runtime": ["zod"]
+      "runtime": [
+        "zod"
+      ]
     }
   },
-  "forbidden_changes": ["Remove ReserveInventory precondition checks."]
+  "forbidden_changes": [
+    "Remove ReserveInventory precondition checks."
+  ],
+  "assurance": {
+    "profile": "inventory-baseline-v1",
+    "claim_refs": [
+      "no-negative-stock"
+    ]
+  }
 }
