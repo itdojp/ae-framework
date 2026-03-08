@@ -153,6 +153,23 @@ const maybeString = (value) => (value === null || value === undefined ? '' : Str
 
 const uniqueSorted = (values) => Array.from(new Set(values.filter(Boolean))).sort();
 
+const sortLanes = (values) =>
+  Array.from(new Set(values.filter(Boolean))).sort((left, right) => {
+    const leftIndex = LANE_ORDER.indexOf(left);
+    const rightIndex = LANE_ORDER.indexOf(right);
+    if (leftIndex >= 0 && rightIndex >= 0) {
+      return leftIndex - rightIndex;
+    }
+    if (leftIndex >= 0) return -1;
+    if (rightIndex >= 0) return 1;
+    return left.localeCompare(right);
+  });
+
+export function isExecutedAsMain(metaUrl, argvPath = process.argv[1]) {
+  if (!argvPath) return false;
+  return metaUrl === `file://${path.resolve(argvPath)}`;
+}
+
 const pushWarning = (warnings, code, message, extra = {}) => {
   if (!WARNING_CODES.has(code)) {
     throw new Error(`Unknown warning code: ${code}`);
@@ -482,7 +499,8 @@ const ingestConformanceReport = (summaryPath, claimStateMap, contextPackRefs, wa
   const summary = readJson(resolvedPath);
   const targetClaims = claimIdsForGlobalEvidence(claimStateMap, contextPackRefs);
   const runsAnalyzed = Number(summary.runsAnalyzed ?? 0);
-  if (!Number.isFinite(runsAnalyzed) || runsAnalyzed <= 0) return;
+  const status = maybeString(summary.status).toLowerCase();
+  if (!Number.isFinite(runsAnalyzed) || runsAnalyzed <= 0 || status !== 'success') return;
   const evidence = normalizeEvidenceEntry({
     lane: 'model',
     kind: 'conformance',
@@ -600,9 +618,9 @@ const ingestEvidenceManifest = (manifestPath, claimStateMap, warnings) => {
 
 const summarizeClaim = (claimState, warnings) => {
   const observedEvidence = claimState.evidence.filter((entry) => entry.status === 'observed');
-  const observedLanes = uniqueSorted(observedEvidence.map((entry) => entry.lane));
+  const observedLanes = sortLanes(observedEvidence.map((entry) => entry.lane));
   const observedEvidenceKinds = uniqueSorted(observedEvidence.map((entry) => entry.kind));
-  const missingLanes = uniqueSorted(
+  const missingLanes = sortLanes(
     claimState.requiredLanes.filter((lane) => !observedLanes.includes(lane)),
   );
   const missingEvidenceKinds = uniqueSorted(
@@ -746,6 +764,13 @@ export const run = (argv = process.argv.slice(2)) => {
   const assuranceProfilePath = ensureFile(options.assuranceProfile, 'Assurance profile');
   const assuranceProfile = readJson(assuranceProfilePath);
   const claims = ensureArray(assuranceProfile.claims ?? [], 'assurance profile claims');
+  const claimIds = claims.map((claim) => maybeString(claim?.id));
+  const duplicateClaimIds = uniqueSorted(
+    claimIds.filter((claimId, index) => claimId && claimIds.indexOf(claimId) !== index),
+  );
+  if (duplicateClaimIds.length > 0) {
+    throw new Error(`Assurance profile contains duplicate claim ids: ${duplicateClaimIds.join(', ')}`);
+  }
   const claimStateMap = new Map(claims.map((claim) => [claim.id, buildClaimState(claim)]));
 
   const contextPackRefs = collectContextPackReferences(
@@ -807,7 +832,7 @@ export const run = (argv = process.argv.slice(2)) => {
   return summary;
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isExecutedAsMain(import.meta.url, process.argv[1])) {
   try {
     run();
   } catch (error) {

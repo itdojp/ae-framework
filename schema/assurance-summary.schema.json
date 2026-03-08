@@ -84,7 +84,7 @@
       "properties": {
         "claimCount": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 1
         },
         "satisfiedClaims": {
           "type": "integer",

@@ -181,6 +181,10 @@ const runScript = (args: string[], cwd = repoRoot) =>
     cwd,
     encoding: 'utf8',
     timeout: 120_000,
+    env: {
+      ...process.env,
+      NODE_OPTIONS: '',
+    },
   });
 
 describe.sequential('assurance aggregate lanes script', () => {
@@ -261,7 +265,7 @@ describe.sequential('assurance aggregate lanes script', () => {
       expect(summary.claims[0]).toMatchObject({
         claimId: 'no-negative-stock',
         status: 'satisfied',
-        observedLanes: ['adversarial', 'behavior', 'model', 'proof', 'runtime', 'spec'],
+        observedLanes: ['spec', 'behavior', 'adversarial', 'model', 'proof', 'runtime'],
         missingLanes: [],
         observedEvidenceKinds: expect.arrayContaining(['property', 'product-coproduct', 'counterexample-closed']),
       });
@@ -328,6 +332,51 @@ describe.sequential('assurance aggregate lanes script', () => {
           'insufficient-independent-lanes',
         ]),
       );
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('fails fast when the assurance profile contains duplicate claim ids', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-aggregate-duplicate-claims-'));
+    const assuranceProfilePath = join(sandbox, 'assurance-profile.json');
+
+    try {
+      writeJson(assuranceProfilePath, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'duplicate-claims-v1',
+        scope: {
+          contextPackSources: ['spec/context-pack/**/*.json'],
+          componentGlobs: ['src/**'],
+        },
+        claims: [
+          {
+            id: 'duplicate-claim',
+            statement: 'First claim.',
+            kind: 'safety',
+            criticality: 'medium',
+            targetLevel: 'A1',
+            requiredLanes: ['spec'],
+            requiredEvidenceKinds: ['schema'],
+          },
+          {
+            id: 'duplicate-claim',
+            statement: 'Second claim.',
+            kind: 'safety',
+            criticality: 'medium',
+            targetLevel: 'A1',
+            requiredLanes: ['behavior'],
+            requiredEvidenceKinds: ['property'],
+          },
+        ],
+      });
+
+      const result = runScript([
+        '--assurance-profile',
+        assuranceProfilePath,
+      ]);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('duplicate claim ids');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
