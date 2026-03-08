@@ -23,6 +23,7 @@ const bdd = c.bdd || r('artifacts/bdd/scenarios.json') || {};
 const props = c.properties ? (Array.isArray(c.properties) ? c.properties : [c.properties]) : (r('artifacts/properties/summary.json') ? [r('artifacts/properties/summary.json')] : []);
 const cov = r('coverage/coverage-summary.json') || r('artifacts/coverage/coverage-summary.json');
 const ltlSug = r('artifacts/properties/ltl-suggestions.json');
+const assurance = r('artifacts/assurance/assurance-summary.json');
 let coverageLine = t('Coverage: n/a','カバレッジ: 不明');
 if (cov?.total?.lines && typeof cov.total.lines.pct === 'number') coverageLine = t(`Coverage: ${cov.total.lines.pct}%`, `カバレッジ: ${cov.total.lines.pct}%`);
 const traceIds = new Set();
@@ -57,6 +58,48 @@ const gwtLine = gwtCount
 const bddLine = bdd && (bdd.criteriaCount!==undefined || bdd.title)
   ? t(`BDD: ${bdd.criteriaCount ?? '?'} criteria (${bdd.title ?? 'Feature'})`, `BDD: 受入基準 ${bdd.criteriaCount ?? '?'}（${bdd.title ?? 'Feature'}）`)
   : t('BDD: n/a','BDD: なし');
+const laneOrder = ['spec', 'behavior', 'adversarial', 'model', 'proof', 'runtime'];
+const assuranceWarnings = Array.isArray(assurance?.warnings) ? assurance.warnings : [];
+const assuranceWarningCodes = Array.from(
+  new Set(
+    assuranceWarnings
+      .map((warning) => (warning?.code ? String(warning.code).trim() : ''))
+      .filter(Boolean),
+  ),
+);
+const assuranceSummary = assurance?.summary && typeof assurance.summary === 'object' ? assurance.summary : null;
+const assuranceLine = assuranceSummary
+  ? t(
+      `Assurance: satisfied=${assuranceSummary.satisfiedClaims ?? 'n/a'}/${assuranceSummary.claimCount ?? 'n/a'}, warningClaims=${assuranceSummary.warningClaims ?? 'n/a'}, warnings=${assuranceSummary.warningCount ?? 'n/a'}`,
+      `保証: 適合=${assuranceSummary.satisfiedClaims ?? 'n/a'}/${assuranceSummary.claimCount ?? 'n/a'}, 警告claim=${assuranceSummary.warningClaims ?? 'n/a'}, 警告=${assuranceSummary.warningCount ?? 'n/a'}`,
+    )
+  : t('Assurance: n/a', '保証: なし');
+const assuranceLaneLine = assurance?.laneCoverage
+  ? t(
+      `Assurance lanes: ${laneOrder
+        .filter((lane) => assurance.laneCoverage?.[lane])
+        .map((lane) => `${lane} ${assurance.laneCoverage[lane].observedClaims}/${assurance.laneCoverage[lane].requiredClaims}`)
+        .join(', ')}`,
+      `保証レーン: ${laneOrder
+        .filter((lane) => assurance.laneCoverage?.[lane])
+        .map((lane) => `${lane} ${assurance.laneCoverage[lane].observedClaims}/${assurance.laneCoverage[lane].requiredClaims}`)
+        .join(', ')}`,
+    )
+  : '';
+const assuranceWarningsLine = assuranceSummary
+  ? assuranceWarningCodes.length > 0
+    ? t(
+        `Assurance warning codes: ${assuranceWarningCodes.join(', ')}`,
+        `保証 warning code: ${assuranceWarningCodes.join(', ')}`,
+      )
+    : t('Assurance warning codes: none', '保証 warning code: なし')
+  : '';
+const assuranceDigestSegment = assuranceSummary
+  ? `${assuranceLine}${assuranceWarningsLine ? ` | ${assuranceWarningsLine}` : ''}`
+  : '';
+const assuranceDetailBlock = assuranceSummary
+  ? `- ${assuranceLine}\n${assuranceLaneLine ? `- ${assuranceLaneLine}\n` : ''}${assuranceWarningsLine ? `- ${assuranceWarningsLine}\n` : ''}`
+  : '';
 // Alloy temporal (from aggregate JSON if present)
 let alloyTemporalLine = '';
 try {
@@ -97,9 +140,9 @@ try {
 
 let md;
 if (mode === 'digest') {
-  md = `${coverageLine} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n${assuranceDetailBlock}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
 // Fallback: if formal is n/a, print presentCount from aggregate JSON
 try {
