@@ -55,7 +55,7 @@ for (const claim of claims) {
   if (independenceWarnings.length > 0) {
     violations.push(`claim ${claimId} independenceWarnings=${independenceWarnings.join(',')}`);
   }
-  if (Number.isFinite(openCounterexamples) && openCounterexamples > 0) {
+  if (openCounterexamples > 0) {
     violations.push(`claim ${claimId} openCounterexamples=${openCounterexamples}`);
   }
 }

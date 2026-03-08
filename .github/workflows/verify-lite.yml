@@ -4,6 +4,7 @@ on:
   pull_request:
     # NOTE: verify-lite is a required status check; keep the workflow running
     # even for docs-only PRs so the status is reported and merge gates pass.
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
   push:
     branches: [main]
     paths-ignore:

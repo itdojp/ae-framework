@@ -90,6 +90,65 @@ describe('enforce-assurance-summary CLI', () => {
     expect(result.stderr.toString()).toContain('claim no-negative-stock independenceWarnings=missing-spec-derived-evidence');
   });
 
+  it('fails when claimCount is zero', async () => {
+    const summaryPath = join(workdir, 'assurance-summary.json');
+    await writeFile(
+      summaryPath,
+      JSON.stringify({
+        summary: {
+          claimCount: 0,
+          warningClaims: 0,
+          claimsMissingRequiredLanes: 0,
+          claimsMissingRequiredEvidenceKinds: 0,
+          unlinkedCounterexamples: 0,
+          warningCount: 0,
+        },
+        claims: [],
+      }),
+    );
+
+    const result = spawnSync(process.execPath, [enforceScript, summaryPath], {
+      cwd: workdir,
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr.toString()).toContain('claimCount must be greater than zero');
+  });
+
+  it('fails when a claim still has open counterexamples', async () => {
+    const summaryPath = join(workdir, 'assurance-summary.json');
+    await writeFile(
+      summaryPath,
+      JSON.stringify({
+        summary: {
+          claimCount: 1,
+          warningClaims: 0,
+          claimsMissingRequiredLanes: 0,
+          claimsMissingRequiredEvidenceKinds: 0,
+          unlinkedCounterexamples: 0,
+          warningCount: 0,
+        },
+        claims: [
+          {
+            claimId: 'no-negative-stock',
+            status: 'satisfied',
+            missingLanes: [],
+            missingEvidenceKinds: [],
+            independenceWarnings: [],
+            counterexamples: {
+              open: 1,
+            },
+          },
+        ],
+      }),
+    );
+
+    const result = spawnSync(process.execPath, [enforceScript, summaryPath], {
+      cwd: workdir,
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr.toString()).toContain('claim no-negative-stock openCounterexamples=1');
+  });
+
   it('fails when the summary file does not exist', () => {
     const result = spawnSync(process.execPath, [enforceScript, 'missing.json'], {
       cwd: workdir,
