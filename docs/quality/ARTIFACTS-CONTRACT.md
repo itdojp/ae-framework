@@ -145,6 +145,7 @@ node scripts/ci/check-required-artifacts.mjs --strict
 ## 5. CI統合（段階導入）
 - `verify-lite.yml` に **non-blocking** で組み込み（観測フェーズ）
 - `verify-lite.yml` は `artifacts/verify-lite/verify-lite-run-summary.json` を入力に `artifacts/assurance/assurance-summary.{json,md}` を report-only で生成し、artifact upload と Step Summary に含める
+- `pr-ci-status-comment.yml` / `scripts/summary/render-pr-summary.mjs` は `artifacts/assurance/assurance-summary.json` が存在する場合、PR summary comment に assurance の要約（satisfied claims / warning claims / warning codes）を追記する
 - 厳格化する場合は `REQUIRED_ARTIFACTS_STRICT=1` を有効化  
   - 例: PRラベル `enforce-artifacts` を条件に strict モードを有効化
 - `validate-artifacts-ajv.yml` では strict（`enforce-artifacts`）時に `run-kvonce-conformance.sh`（trace artifacts）と `artifacts/verify-lite/verify-lite-run-summary.json` / `artifacts/report-envelope.json` / `artifacts/trace/report-envelope.json` を生成してから `artifacts:validate` を実行
