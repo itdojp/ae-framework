@@ -244,6 +244,12 @@ jobs:
           if [ -f artifacts/hermetic-reports/conformance/summary.json ]; then
             args+=(--conformance-report artifacts/hermetic-reports/conformance/summary.json)
           fi
+          if [ -f fixtures/counterexample/sample.counterexample.json ]; then
+            args+=(--counterexample fixtures/counterexample/sample.counterexample.json)
+          fi
+          if [ -f fixtures/assurance/sample.assurance-evidence-manifest.json ]; then
+            args+=(--evidence-manifest fixtures/assurance/sample.assurance-evidence-manifest.json)
+          fi
           pnpm -s run verify:assurance "${args[@]}"
       - name: Validate assurance summary schema (non-blocking)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
