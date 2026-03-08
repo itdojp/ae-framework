@@ -137,7 +137,33 @@ Audit semantics:
   - `manual-review` when no open issue/automation refs remain and plan/code refs still exist, or the row is ambiguous
   - `delete-candidate` / `archive-candidate` only when no active refs were found in the current audit scope
 
-### 3.7) Sync reviewed batch decisions back into a derived manifest
+### 3.7) Render a consolidated Batch C evidence bundle
+
+```bash
+pnpm run maintenance:branch:triage:ambiguous-evidence
+
+# Optional: use alternate batch / audit / output paths
+node scripts/maintenance/remote-cleanup-ambiguous-evidence.mjs \
+  --batch-json tmp/maintenance/remote-cleanup-batches/batch-c-ambiguous-stale.json \
+  --audit-json tmp/maintenance/remote-cleanup-reference-audit/batch-c-ambiguous-stale.audit.json \
+  --output-dir tmp/maintenance/remote-cleanup-ambiguous-evidence
+```
+
+Generated outputs:
+
+- `tmp/maintenance/remote-cleanup-ambiguous-evidence/summary.json`
+- `tmp/maintenance/remote-cleanup-ambiguous-evidence/summary.md`
+- `tmp/maintenance/remote-cleanup-ambiguous-evidence/issue-comment.md`
+- `tmp/maintenance/remote-cleanup-ambiguous-evidence/ambiguous-evidence.csv`
+
+Bundle semantics:
+
+- Validates that Batch C review pack provenance still matches the corresponding audit payload
+- Consolidates `prMatchMode`, `latestPr`, `baseBranches`, and reference-audit counts into one operator-facing sheet
+- Remains evidence-only; decisions stay in `batch-c-ambiguous-stale.csv`
+- Reduces branch-name reuse ambiguity before manual `keep` / `archive` / `delete` entry
+
+### 3.8) Sync reviewed batch decisions back into a derived manifest
 
 ```bash
 pnpm run maintenance:branch:triage:decision-sync
@@ -164,7 +190,7 @@ Sync semantics:
 - `reviewed-triage.json` / `summary.json` retain `sourceBatches` and `reviewInputFormat`, allowing you to audit which review input was used for the sync
 - this step records reviewed decisions only; it does not execute any delete command
 
-### 3.8) Render delete readiness status from reviewed decisions + reference audit
+### 3.9) Render delete readiness status from reviewed decisions + reference audit
 
 ```bash
 pnpm run maintenance:branch:triage:review-status
@@ -198,7 +224,7 @@ Status semantics:
 - `pending-review`: `decision` not set
 - `missing-audit`: present in reviewed manifest but missing from reference audit
 
-### 3.9) Render operator execution pack from delete-ready status
+### 3.10) Render operator execution pack from delete-ready status
 
 ```bash
 pnpm run maintenance:branch:triage:execution-pack

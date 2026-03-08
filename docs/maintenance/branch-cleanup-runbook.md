@@ -38,6 +38,9 @@ pnpm run maintenance:branch:triage:batches
 # Audit active issue / automation references before any remote delete decision
 pnpm run maintenance:branch:triage:reference-audit
 
+# Consolidate ambiguous Batch C evidence before manual review
+pnpm run maintenance:branch:triage:ambiguous-evidence
+
 # Sync reviewed Batch B/C decisions into a derived manifest
 pnpm run maintenance:branch:triage:decision-sync
 
