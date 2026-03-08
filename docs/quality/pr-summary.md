@@ -62,7 +62,7 @@ Implementation Notes
 - Trace IDs: inv-001, inv-007
 
 ### Aggregator Pseudo
-```ts
+```text
 type Summary = { coverage:number; failingGwt:string[]; adapters: {name:string; status:string; summary:string}[]; formal:string; traceIds:string[] };
 function aggregate(a:Artifacts): Summary { /* read artifacts/*/summary.json, formal/summary.json, properties/summary.json */ return {} as any }
 ```
