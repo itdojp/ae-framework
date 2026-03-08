@@ -59,12 +59,12 @@ const runGit = (args) =>
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trimEnd();
 
-const parseRemoteRefOids = (raw, remoteName) => {
+const parseLiveRemoteHeadOids = (raw) => {
   const refs = new Map();
   for (const line of raw.split('\n').map((item) => item.trim()).filter(Boolean)) {
     const [ref, oid] = line.split(/\s+/, 2);
-    if (!ref || !oid || !ref.startsWith(`${remoteName}/`) || ref === `${remoteName}/HEAD`) continue;
-    refs.set(ref.slice(remoteName.length + 1), oid);
+    if (!ref || !oid || !oid.startsWith('refs/heads/')) continue;
+    refs.set(oid.slice('refs/heads/'.length), ref);
   }
   return refs;
 };
@@ -121,7 +121,7 @@ const renderSummaryMarkdown = (summary) => {
 - generatedAt: ${summary.generatedAt}
 - cleanup report: \`${summary.source.cleanupReportPath}\`
 - remote: \`${summary.remoteName}\`
-- apply mode: \`${summary.scope}\`
+- scope: \`${summary.scope}\`
 
 ${renderTable(['branch', 'status', 'actualOid'], deletedRows)}
 
@@ -155,10 +155,7 @@ export const run = (argv = process.argv.slice(2)) => {
   const outputDir = path.resolve(options.outputDir);
   const report = readJson(cleanupReportPath);
   const remoteName = validateCleanupReport(report, cleanupReportPath);
-  const remoteRefs = parseRemoteRefOids(
-    runGit(['for-each-ref', '--format=%(refname:short) %(objectname)', `refs/remotes/${remoteName}`]),
-    remoteName,
-  );
+  const remoteRefs = parseLiveRemoteHeadOids(runGit(['ls-remote', '--heads', remoteName]));
   const verification = verifyDeletedBranches(report, remoteRefs);
   const failedDeletes = Array.isArray(report?.remote?.failed) ? report.remote.failed : [];
   const blocked = Array.isArray(report?.remote?.blocked) ? report.remote.blocked : [];

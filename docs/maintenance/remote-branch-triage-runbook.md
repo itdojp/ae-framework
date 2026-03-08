@@ -258,8 +258,8 @@ Generated outputs:
 
 Interpretation:
 
-- `verified absent`: branches reported as deleted and no longer present on the live remote
-- `still present`: branches reported as deleted but still present on the live remote; investigate before continuing
+- `verified-absent`: branches reported as deleted and no longer present on the live remote
+- `still-present`: branches reported as deleted but still present on the live remote; investigate before continuing
 - `failed deletes`: branches already reported as failed by `branch-cleanup`
 - `planned but not deleted`: reviewed branches that were planned but neither deleted nor failed in the apply report
 
