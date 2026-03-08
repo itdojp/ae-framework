@@ -50,6 +50,12 @@ const createExecutionPackSummary = (overrides = {}) => ({
   dryRun: {
     planned: 2,
     blocked: 0,
+    fetch: {
+      attempted: true,
+      ok: true,
+      remote: 'origin',
+      remotes: ['origin'],
+    },
     stdout: 'dry-run ok',
   },
   ...overrides,
@@ -245,6 +251,15 @@ describe.sequential('remote-cleanup-closeout-summary script', () => {
         dryRunPlanned: 2,
         dryRunBlocked: 0,
       });
+      expect(summary.artifacts.executionPack.fetch).toEqual({
+        attempted: true,
+        ok: true,
+        remote: 'origin',
+        remotes: ['origin'],
+      });
+
+      const markdown = readFileSync(join(outputDir, 'summary.md'), 'utf8');
+      expect(markdown).toContain('execution-pack dry-run fetch: ok (origin)');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
@@ -368,6 +383,7 @@ describe.sequential('remote-cleanup-closeout-summary script', () => {
 
       const issueComment = readFileSync(join(outputDir, 'issue-comment.md'), 'utf8');
       expect(issueComment).toContain('next action: closeout-ready');
+      expect(issueComment).toContain('execution-pack dry-run fetch: ok (origin)');
       expect(issueComment).toContain('refresh audit: confirmed=2, reappeared=0, recreated=0');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
