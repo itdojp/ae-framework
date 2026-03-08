@@ -96,6 +96,12 @@ The preferred path is to bind the delete scope to reviewed worksheet rows by usi
 `tmp/maintenance/remote-cleanup-reviewed/reviewed-triage.json` or an explicit approved branch list.
 This avoids recomputing a wider batch at apply time.
 
+Before `--apply`, render the operator-facing execution bundle:
+
+```bash
+pnpm run maintenance:branch:triage:execution-pack
+```
+
 When approved, run:
 
 ```bash
@@ -119,6 +125,13 @@ node scripts/maintenance/branch-cleanup.mjs \
 node scripts/maintenance/branch-cleanup.mjs \
   --scope remote \
   --remote-branches-file tmp/maintenance/remote-cleanup-review-status/delete-ready.branches.json \
+  --max 100 \
+  --apply
+
+# Preferred operator bundle rendered from reviewed status
+node scripts/maintenance/branch-cleanup.mjs \
+  --scope remote \
+  --remote-branches-file tmp/maintenance/remote-cleanup-execution-pack/approved-remote-branches.json \
   --max 100 \
   --apply
 

@@ -198,6 +198,36 @@ Status semantics:
 - `pending-review`: `decision` not set
 - `missing-audit`: present in reviewed manifest but missing from reference audit
 
+### 3.9) Render operator execution pack from delete-ready status
+
+```bash
+pnpm run maintenance:branch:triage:execution-pack
+
+# Optional: use alternate review-status / output paths
+node scripts/maintenance/remote-cleanup-execution-pack.mjs \
+  --review-status-dir tmp/maintenance/remote-cleanup-review-status \
+  --output-dir tmp/maintenance/remote-cleanup-execution-pack \
+  --base origin/main \
+  --remote origin \
+  --max 100
+```
+
+Generated outputs:
+
+- `tmp/maintenance/remote-cleanup-execution-pack/summary.json`
+- `tmp/maintenance/remote-cleanup-execution-pack/summary.md`
+- `tmp/maintenance/remote-cleanup-execution-pack/issue-comment.md`
+- `tmp/maintenance/remote-cleanup-execution-pack/approved-remote-branches.json`
+- `tmp/maintenance/remote-cleanup-execution-pack/branch-cleanup-dry-run-report.json`
+- `tmp/maintenance/remote-cleanup-execution-pack/commands.sh`
+
+Notes:
+
+- this step does not execute remote delete
+- `approved-remote-branches.json` is a self-contained copy of the reviewed delete-ready subset with provenance metadata
+- `commands.sh` renders the exact dry-run and apply commands that stay scoped to the approved subset
+- run the generated dry-run command and archive `branch-cleanup-dry-run-report.json` before operator-approved apply
+
 ### 4) Execute approved delete batch
 
 ```bash
@@ -221,6 +251,13 @@ node scripts/maintenance/branch-cleanup.mjs \
 node scripts/maintenance/branch-cleanup.mjs \
   --scope remote \
   --remote-branches-file tmp/maintenance/remote-cleanup-review-status/delete-ready.branches.json \
+  --max 100 \
+  --apply
+
+# Preferred operator bundle rendered from the execution pack
+node scripts/maintenance/branch-cleanup.mjs \
+  --scope remote \
+  --remote-branches-file tmp/maintenance/remote-cleanup-execution-pack/approved-remote-branches.json \
   --max 100 \
   --apply
 ```
@@ -281,5 +318,6 @@ If `githubPullRequests.available=false`, treat `proposedAction` as advisory only
 - [ ] triage worksheet rendered and archived
 - [ ] remote merged candidates confirmed
 - [ ] remote stale candidates classified with rationale
+- [ ] execution pack dry-run archived
 - [ ] operator approval recorded before `--scope remote --apply`
 - [ ] post-delete inventory re-run completed
