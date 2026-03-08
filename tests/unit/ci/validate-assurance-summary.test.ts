@@ -144,18 +144,42 @@ describe('validate-assurance-summary CLI', () => {
         evidenceManifests: [],
       },
       summary: {
-        claimCount: 0,
+        claimCount: 1,
         satisfiedClaims: 0,
-        warningClaims: 0,
-        claimsMissingRequiredLanes: 0,
-        claimsMissingRequiredEvidenceKinds: 0,
+        warningClaims: 1,
+        claimsMissingRequiredLanes: 1,
+        claimsMissingRequiredEvidenceKinds: 1,
         unlinkedCounterexamples: 0,
         warningCount: 0,
       },
       laneCoverage: {
         spec: { requiredClaims: 0, observedClaims: 0 },
       },
-      claims: [],
+      claims: [
+        {
+          claimId: 'no-negative-stock',
+          statement: 'Inventory never becomes negative.',
+          criticality: 'high',
+          targetLevel: 'A3',
+          minIndependentSources: 2,
+          observedIndependentSources: 0,
+          requiredLanes: ['spec'],
+          observedLanes: [],
+          missingLanes: ['spec'],
+          requiredEvidenceKinds: ['schema'],
+          observedEvidenceKinds: [],
+          missingEvidenceKinds: ['schema'],
+          counterexamples: {
+            open: 0,
+            resolved: 0,
+            acceptedRisk: 0,
+            total: 0,
+          },
+          independenceWarnings: [],
+          status: 'warning',
+          evidence: [],
+        },
+      ],
       warnings: [],
     };
     await writeFile(summaryPath, JSON.stringify(summary));
@@ -165,5 +189,6 @@ describe('validate-assurance-summary CLI', () => {
     });
     expect(result.status).toBe(1);
     expect(result.stderr.toString()).toContain('schema validation failed');
+    expect(result.stderr.toString()).toContain('/laneCoverage');
   });
 });
