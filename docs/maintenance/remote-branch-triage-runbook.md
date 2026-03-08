@@ -228,6 +228,7 @@ Notes:
 - `approved-remote-branches.json` is a self-contained copy of the reviewed delete-ready subset with provenance metadata
 - `commands.sh` runs the exact dry-run command only
 - `apply-command.txt` renders the exact apply command that stays scoped to the approved subset
+- if `delete-ready` rows exceed `--max`, the script fails instead of generating a partial execution pack
 - run the generated dry-run command and archive `branch-cleanup-dry-run-report.json` before operator-approved apply
 
 ### 4) Execute approved delete batch

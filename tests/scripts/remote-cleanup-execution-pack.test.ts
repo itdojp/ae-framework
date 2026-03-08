@@ -303,4 +303,131 @@ describe.sequential('remote-cleanup-execution-pack script', () => {
       rmSync(sandbox, { recursive: true, force: true });
     }
   });
+
+  it('rejects delete-ready rows that no longer match the reviewed manifest decision', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-execution-pack-stale-'));
+    const reviewStatusDir = join(sandbox, 'review-status');
+    const outputDir = join(sandbox, 'out');
+    const reviewedManifestPath = join(reviewStatusDir, 'reviewed-triage.json');
+
+    try {
+      mkdirSync(reviewStatusDir, { recursive: true });
+      writeFileSync(
+        reviewedManifestPath,
+        `${JSON.stringify(
+          {
+            sourceInventory: {
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            reviewedDecisions: {
+              sourceTriagePath: '/tmp/remote-branch-triage.json',
+            },
+            remoteStale: [{ branch: 'docs/stale-a', branchOid: 'oid-a', decision: 'keep' }],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(reviewStatusDir, 'summary.json'),
+        `${JSON.stringify(
+          {
+            source: {
+              reviewedManifestPath,
+              sourceTriagePath: '/tmp/remote-branch-triage.json',
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(join(reviewStatusDir, 'delete-ready.json'), '[{\"branch\":\"docs/stale-a\",\"branchOid\":\"oid-a\",\"decision\":\"delete\"}]\n', 'utf8');
+      writeFileSync(join(reviewStatusDir, 'delete-ready.branches.json'), '{"branches":[{"branch":"docs/stale-a","branchOid":"oid-a","decision":"delete"}]}\n', 'utf8');
+
+      const result = spawnSync('node', [scriptPath, '--review-status-dir', reviewStatusDir, '--output-dir', outputDir], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 120_000,
+      });
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr || result.stdout).toContain('no longer marked decision=delete');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('fails instead of rendering a partial pack when delete-ready rows exceed --max', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-execution-pack-max-'));
+    const reviewStatusDir = join(sandbox, 'review-status');
+    const outputDir = join(sandbox, 'out');
+    const reviewedManifestPath = join(reviewStatusDir, 'reviewed-triage.json');
+
+    try {
+      mkdirSync(reviewStatusDir, { recursive: true });
+      writeFileSync(
+        reviewedManifestPath,
+        `${JSON.stringify(
+          {
+            sourceInventory: {
+              base: 'origin/main',
+              remote: 'origin',
+            },
+            reviewedDecisions: {
+              sourceTriagePath: '/tmp/remote-branch-triage.json',
+            },
+            remoteStale: [
+              { branch: 'docs/stale-a', branchOid: 'oid-a', decision: 'delete' },
+              { branch: 'docs/stale-b', branchOid: 'oid-b', decision: 'delete' },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(reviewStatusDir, 'summary.json'),
+        `${JSON.stringify(
+          {
+            source: {
+              reviewedManifestPath,
+              sourceTriagePath: '/tmp/remote-branch-triage.json',
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        'utf8',
+      );
+      writeFileSync(
+        join(reviewStatusDir, 'delete-ready.json'),
+        '[{\"branch\":\"docs/stale-a\",\"branchOid\":\"oid-a\",\"decision\":\"delete\"},{\"branch\":\"docs/stale-b\",\"branchOid\":\"oid-b\",\"decision\":\"delete\"}]\n',
+        'utf8',
+      );
+      writeFileSync(
+        join(reviewStatusDir, 'delete-ready.branches.json'),
+        '{"branches":[{"branch":"docs/stale-a","branchOid":"oid-a","decision":"delete"},{"branch":"docs/stale-b","branchOid":"oid-b","decision":"delete"}]}\n',
+        'utf8',
+      );
+
+      const result = spawnSync(
+        'node',
+        [scriptPath, '--review-status-dir', reviewStatusDir, '--output-dir', outputDir, '--max', '1'],
+        {
+          cwd: repoRoot,
+          encoding: 'utf8',
+          timeout: 120_000,
+        },
+      );
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr || result.stdout).toContain('exceeds --max 1');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
 });

@@ -118,12 +118,17 @@ const validateReviewedManifest = ({ reviewedManifestPath, sourceTriagePath, base
   return reviewedManifest;
 };
 
-const normalizeDeleteReadyRows = (deleteReady, deleteReadyBranches) => {
+const normalizeDeleteReadyRows = (deleteReady, deleteReadyBranches, reviewedManifest) => {
   const rows = Array.isArray(deleteReady) ? deleteReady : [];
   const branches = Array.isArray(deleteReadyBranches?.branches) ? deleteReadyBranches.branches : [];
   if (branches.length === 0) {
     throw new Error('delete-ready branch list is empty; execution pack was not generated');
   }
+  const reviewedRows = new Map(
+    (Array.isArray(reviewedManifest?.remoteStale) ? reviewedManifest.remoteStale : [])
+      .map((item) => [String(item?.branch || '').trim(), item])
+      .filter(([branch]) => branch),
+  );
 
   const rowByBranch = new Map();
   for (const item of rows) {
@@ -147,13 +152,24 @@ const normalizeDeleteReadyRows = (deleteReady, deleteReadyBranches) => {
     if (!matched) {
       throw new Error(`delete-ready branch list references a branch not present in delete-ready.json: ${branch}`);
     }
+    const reviewedRow = reviewedRows.get(branch);
+    if (!reviewedRow) {
+      throw new Error(`delete-ready branch is missing from reviewed manifest remoteStale: ${branch}`);
+    }
+    if (String(reviewedRow?.decision || '').trim() !== 'delete') {
+      throw new Error(`delete-ready branch is no longer marked decision=delete in reviewed manifest: ${branch}`);
+    }
     const matchedOid = String(matched?.branchOid || '').trim();
+    const reviewedOid = String(reviewedRow?.branchOid || '').trim();
     if (branchOid && matchedOid && branchOid !== matchedOid) {
       throw new Error(`delete-ready branch OID mismatch for ${branch}`);
     }
+    if (matchedOid && reviewedOid && matchedOid !== reviewedOid) {
+      throw new Error(`delete-ready branch OID differs from reviewed manifest: ${branch}`);
+    }
     return {
       branch,
-      branchOid: branchOid || matchedOid,
+      branchOid: branchOid || matchedOid || reviewedOid,
       decision: String(entry?.decision || matched?.decision || '').trim(),
       prState: String(entry?.prState || matched?.prState || '').trim(),
     };
@@ -253,7 +269,12 @@ export const run = (argv = process.argv.slice(2)) => {
     base: options.base,
     remote: options.remote,
   });
-  const approvedBranches = normalizeDeleteReadyRows(artifacts.deleteReady, artifacts.deleteReadyBranches);
+  const approvedBranches = normalizeDeleteReadyRows(artifacts.deleteReady, artifacts.deleteReadyBranches, reviewedManifest);
+  if (approvedBranches.length > options.max) {
+    throw new Error(
+      `delete-ready branch count ${approvedBranches.length} exceeds --max ${options.max}; rerun with a larger --max to avoid partial execution`,
+    );
+  }
 
   const approvedBranchListPath = path.join(outputDir, 'approved-remote-branches.json');
   const commandsPath = path.join(outputDir, 'commands.sh');
