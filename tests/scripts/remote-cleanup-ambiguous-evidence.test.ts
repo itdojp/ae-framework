@@ -147,6 +147,7 @@ describe.sequential('remote-cleanup-ambiguous-evidence script', () => {
       const csv = readFileSync(join(outputDir, 'ambiguous-evidence.csv'), 'utf8');
       expect(csv).toContain('feature/ambiguous-a');
       expect(csv).toContain('#2401 (merged)');
+      expect(csv).toContain('main');
 
       const issueComment = readFileSync(join(outputDir, 'issue-comment.md'), 'utf8');
       expect(issueComment).toContain('Top rows:');
@@ -222,6 +223,45 @@ describe.sequential('remote-cleanup-ambiguous-evidence script', () => {
         branch: 'docs/ambiguous-b',
         reviewHint: 'manual-review',
       });
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects mismatched reported totals and invalid ageDays values', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-remote-cleanup-ambiguous-evidence-invalid-'));
+    const batchJsonPath = join(sandbox, 'batch-c.json');
+    const auditJsonPath = join(sandbox, 'batch-c.audit.json');
+    const outputDir = join(sandbox, 'out');
+
+    try {
+      const batchPayload = createBatchPayload();
+      batchPayload.count = 99;
+      const auditPayload = createAuditPayload();
+      writeFileSync(batchJsonPath, `${JSON.stringify(batchPayload, null, 2)}\n`);
+      writeFileSync(auditJsonPath, `${JSON.stringify(auditPayload, null, 2)}\n`);
+
+      const mismatchedTotal = spawnSync(
+        'node',
+        [scriptPath, '--batch-json', batchJsonPath, '--audit-json', auditJsonPath, '--output-dir', outputDir],
+        { cwd: repoRoot, encoding: 'utf8', timeout: 120_000 },
+      );
+
+      expect(mismatchedTotal.status).not.toBe(0);
+      expect(mismatchedTotal.stderr || mismatchedTotal.stdout).toContain('batch JSON count mismatch');
+
+      batchPayload.count = batchPayload.items.length;
+      batchPayload.items[0].ageDays = 'not-a-number';
+      writeFileSync(batchJsonPath, `${JSON.stringify(batchPayload, null, 2)}\n`);
+
+      const invalidAge = spawnSync(
+        'node',
+        [scriptPath, '--batch-json', batchJsonPath, '--audit-json', auditJsonPath, '--output-dir', outputDir],
+        { cwd: repoRoot, encoding: 'utf8', timeout: 120_000 },
+      );
+
+      expect(invalidAge.status).not.toBe(0);
+      expect(invalidAge.stderr || invalidAge.stdout).toContain('Invalid ageDays value for branch feature/ambiguous-a');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

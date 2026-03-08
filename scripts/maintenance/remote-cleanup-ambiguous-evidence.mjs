@@ -67,6 +67,8 @@ const formatLatestPr = (latestPr) => {
   return state ? `#${latestPr.number} (${state})` : `#${latestPr.number}`;
 };
 
+const formatAgeDays = (value) => (value === null ? '-' : String(value));
+
 const summarizeRepoRefs = (repoRefs) =>
   repoRefs.reduce(
     (accumulator, item) => {
@@ -98,6 +100,21 @@ const ensureBatchC = (payload, label) => {
   }
 };
 
+const validateReportedTotals = (batchPayload, auditPayload) => {
+  if (!Number.isInteger(batchPayload?.count) || batchPayload.count < 0) {
+    throw new Error('batch JSON count must be a non-negative integer');
+  }
+  if (batchPayload.count !== batchPayload.items.length) {
+    throw new Error(`batch JSON count mismatch: count=${batchPayload.count}, items=${batchPayload.items.length}`);
+  }
+  if (!Number.isInteger(auditPayload?.summary?.total) || auditPayload.summary.total < 0) {
+    throw new Error('audit JSON summary.total must be a non-negative integer');
+  }
+  if (auditPayload.summary.total !== auditPayload.items.length) {
+    throw new Error(`audit JSON summary.total mismatch: total=${auditPayload.summary.total}, items=${auditPayload.items.length}`);
+  }
+};
+
 const validateSourceTriage = (batchPayload, auditPayload) => {
   const expected = batchPayload.sourceTriage || {};
   const actual = auditPayload.sourceTriage || {};
@@ -119,6 +136,21 @@ const indexUniqueByBranch = (items, label) => {
   return byBranch;
 };
 
+const parseOptionalAgeDays = (branch, rawAgeDays) => {
+  if (rawAgeDays === undefined || rawAgeDays === null || rawAgeDays === '') return null;
+  if (typeof rawAgeDays === 'number') {
+    if (!Number.isFinite(rawAgeDays)) {
+      throw new Error(`Invalid ageDays value for branch ${branch}: ${rawAgeDays}`);
+    }
+    return rawAgeDays;
+  }
+  const parsedAgeDays = Number(rawAgeDays);
+  if (!Number.isFinite(parsedAgeDays)) {
+    throw new Error(`Invalid ageDays value for branch ${branch}: ${rawAgeDays}`);
+  }
+  return parsedAgeDays;
+};
+
 const buildEvidenceRows = (batchPayload, auditPayload) => {
   const batchByBranch = indexUniqueByBranch(batchPayload.items, 'batch JSON');
   const auditByBranch = indexUniqueByBranch(auditPayload.items, 'audit JSON');
@@ -134,8 +166,9 @@ const buildEvidenceRows = (batchPayload, auditPayload) => {
     const batchOid = String(batchItem.branchOid || '').trim();
     const auditOid = String(auditItem.branchOid || '').trim();
     if (batchOid !== auditOid) {
-      throw new Error(`branchOid mismatch for ${branch}`);
+      throw new Error(`branchOid mismatch for ${branch}: batch JSON has ${batchOid}, audit JSON has ${auditOid}`);
     }
+    const ageDays = parseOptionalAgeDays(branch, batchItem.ageDays);
 
     const issueRefs = Array.isArray(auditItem?.audit?.openIssueRefs) ? auditItem.audit.openIssueRefs : [];
     const repoRefs = Array.isArray(auditItem?.audit?.repoRefs) ? auditItem.audit.repoRefs : [];
@@ -146,7 +179,7 @@ const buildEvidenceRows = (batchPayload, auditPayload) => {
 
     rows.push({
       branch,
-      ageDays: Number(batchItem.ageDays || 0),
+      ageDays,
       branchOid: batchOid,
       riskBand: String(batchItem.riskBand || '').trim(),
       prState: String(batchItem.prState || '').trim(),
@@ -176,7 +209,7 @@ const countBy = (items, selector, keys) =>
 const renderSummaryMarkdown = (summary) => {
   const rows = summary.items.map((item) => [
     `\`${item.branch}\``,
-    String(item.ageDays),
+    formatAgeDays(item.ageDays),
     item.prMatchMode || '-',
     item.latestPrLabel,
     item.reviewHint,
@@ -263,13 +296,13 @@ const renderEvidenceCsv = (items) =>
     ],
     items.map((item) => ({
       branch: item.branch,
-      ageDays: String(item.ageDays),
+      ageDays: item.ageDays === null ? '' : String(item.ageDays),
       branchOid: item.branchOid,
       riskBand: item.riskBand,
       prState: item.prState,
       prMatchMode: item.prMatchMode,
       latestPr: item.latestPrLabel,
-      baseBranches: item.baseBranches.join(' '),
+      baseBranches: item.baseBranches.join('|'),
       proposedAction: item.proposedAction,
       reviewHint: item.reviewHint,
       openIssueCount: String(item.openIssueRefs.length),
@@ -291,6 +324,7 @@ export const run = (argv = process.argv.slice(2)) => {
   const auditPayload = readJson(auditJsonPath);
   ensureBatchC(batchPayload, 'batch JSON');
   ensureBatchC(auditPayload, 'audit JSON');
+  validateReportedTotals(batchPayload, auditPayload);
   validateSourceTriage(batchPayload, auditPayload);
 
   const items = buildEvidenceRows(batchPayload, auditPayload);
