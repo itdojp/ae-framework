@@ -249,6 +249,11 @@ describe('validate-artifacts-ajv', () => {
   });
 
   it('default rules include strict-required trace validation and trace envelope checks', () => {
+    const assuranceSummaryRule = DEFAULT_RULES.find((rule) => rule.id === 'assurance-summary');
+    expect(assuranceSummaryRule).toBeDefined();
+    expect(assuranceSummaryRule?.schemaPath).toBe('schema/assurance-summary.schema.json');
+    expect(assuranceSummaryRule?.patterns).toContain('artifacts/assurance/assurance-summary.json');
+
     const traceValidationRule = DEFAULT_RULES.find((rule) => rule.id === 'trace-validation');
     expect(traceValidationRule).toBeDefined();
     expect(traceValidationRule?.requiredWhenStrict).toBe(true);
