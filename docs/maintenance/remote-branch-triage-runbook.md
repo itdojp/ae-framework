@@ -257,6 +257,38 @@ Notes:
 - if `delete-ready` rows exceed `--max`, the script fails instead of generating a partial execution pack
 - run the generated dry-run command and archive `branch-cleanup-dry-run-report.json` before operator-approved apply
 
+### 3.10) Validate artifact-chain consistency
+
+```bash
+pnpm run maintenance:branch:cleanup:artifact-consistency
+
+# Optional: validate an alternate artifact chain
+node scripts/maintenance/remote-cleanup-artifact-consistency-check.mjs \
+  --triage-json tmp/maintenance/remote-branch-triage.json \
+  --batch-dir tmp/maintenance/remote-cleanup-batches \
+  --reference-audit-dir tmp/maintenance/remote-cleanup-reference-audit \
+  --reviewed-dir tmp/maintenance/remote-cleanup-reviewed \
+  --review-status-dir tmp/maintenance/remote-cleanup-review-status \
+  --execution-pack-dir tmp/maintenance/remote-cleanup-execution-pack \
+  --post-verify-summary-json tmp/maintenance/remote-cleanup-post-apply-verify/summary.json \
+  --refresh-audit-summary-json tmp/maintenance/remote-cleanup-refresh-audit/summary.json \
+  --output-dir tmp/maintenance/remote-cleanup-artifact-consistency
+```
+
+Generated outputs:
+
+- `tmp/maintenance/remote-cleanup-artifact-consistency/summary.json`
+- `tmp/maintenance/remote-cleanup-artifact-consistency/summary.md`
+- `tmp/maintenance/remote-cleanup-artifact-consistency/issue-comment.md`
+
+Validation scope:
+
+- required chain: `triage -> batches -> reference-audit -> reviewed -> review-status -> execution-pack`
+- optional chain: `post-apply-verify -> refresh-audit`
+- the command fails fast on path drift, base/remote drift, or count drift across the generated artifacts
+- run once after `execution-pack` to validate the pre-apply bundle
+- rerun after `post-verify` / `refresh-audit` when closure artifacts are present
+
 ### 4) Execute approved delete batch
 
 ```bash
@@ -396,6 +428,7 @@ If `githubPullRequests.available=false`, treat `proposedAction` as advisory only
 - [ ] remote merged candidates confirmed
 - [ ] remote stale candidates classified with rationale
 - [ ] execution pack dry-run archived
+- [ ] artifact consistency summary archived
 - [ ] operator approval recorded before `--scope remote --apply`
 - [ ] post-apply verification archived
 - [ ] post-delete inventory re-run completed
