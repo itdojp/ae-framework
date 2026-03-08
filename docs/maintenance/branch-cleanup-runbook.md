@@ -129,11 +129,10 @@ node scripts/maintenance/branch-cleanup.mjs \
   --apply
 
 # Preferred operator bundle rendered from reviewed status
-node scripts/maintenance/branch-cleanup.mjs \
-  --scope remote \
-  --remote-branches-file tmp/maintenance/remote-cleanup-execution-pack/approved-remote-branches.json \
-  --max 100 \
-  --apply
+bash tmp/maintenance/remote-cleanup-execution-pack/commands.sh
+
+# After operator approval, run the exact apply command rendered in the pack
+cat tmp/maintenance/remote-cleanup-execution-pack/apply-command.txt
 
 # Explicit operator-approved subset (one branch per line, or JSON array)
 node scripts/maintenance/branch-cleanup.mjs \

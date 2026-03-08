@@ -220,12 +220,14 @@ Generated outputs:
 - `tmp/maintenance/remote-cleanup-execution-pack/approved-remote-branches.json`
 - `tmp/maintenance/remote-cleanup-execution-pack/branch-cleanup-dry-run-report.json`
 - `tmp/maintenance/remote-cleanup-execution-pack/commands.sh`
+- `tmp/maintenance/remote-cleanup-execution-pack/apply-command.txt`
 
 Notes:
 
 - this step does not execute remote delete
 - `approved-remote-branches.json` is a self-contained copy of the reviewed delete-ready subset with provenance metadata
-- `commands.sh` renders the exact dry-run and apply commands that stay scoped to the approved subset
+- `commands.sh` runs the exact dry-run command only
+- `apply-command.txt` renders the exact apply command that stays scoped to the approved subset
 - run the generated dry-run command and archive `branch-cleanup-dry-run-report.json` before operator-approved apply
 
 ### 4) Execute approved delete batch
@@ -255,11 +257,10 @@ node scripts/maintenance/branch-cleanup.mjs \
   --apply
 
 # Preferred operator bundle rendered from the execution pack
-node scripts/maintenance/branch-cleanup.mjs \
-  --scope remote \
-  --remote-branches-file tmp/maintenance/remote-cleanup-execution-pack/approved-remote-branches.json \
-  --max 100 \
-  --apply
+bash tmp/maintenance/remote-cleanup-execution-pack/commands.sh
+
+# After operator approval, run the exact apply command rendered in the pack
+cat tmp/maintenance/remote-cleanup-execution-pack/apply-command.txt
 ```
 
 If only a subset of rows is approved, materialize that subset into a branch list and run:

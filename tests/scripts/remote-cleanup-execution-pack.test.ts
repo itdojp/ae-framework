@@ -172,11 +172,17 @@ describe.sequential('remote-cleanup-execution-pack script', () => {
 
       const commands = readFileSync(join(outputDir, 'commands.sh'), 'utf8');
       expect(commands).toContain('approved-remote-branches.json');
-      expect(commands).toContain('--apply');
+      expect(commands).not.toContain('--apply');
+
+      const applyCommand = readFileSync(join(outputDir, 'apply-command.txt'), 'utf8');
+      expect(applyCommand).toContain('--apply');
+      expect(applyCommand).toContain('approved-remote-branches.json');
 
       const issueComment = readFileSync(join(outputDir, 'issue-comment.md'), 'utf8');
       expect(issueComment).toContain('delete-ready rows: 1');
       expect(issueComment).toContain('this step does not delete remote branches');
+      expect(issueComment).toContain('commands.sh');
+      expect(issueComment).toContain('apply-command.txt');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
