@@ -31,7 +31,7 @@ Not in scope yet:
 - required evidence kinds
 - Context Pack 上の object / morphism / diagram / acceptance test 参照
 
-現時点では、**schema とドキュメント整備、および report-only の `verify:assurance` summary 生成**までを対象とします。`verify-lite` / `policy-gate` による blocking enforcement は後続フェーズです。
+現時点では、**schema とドキュメント整備、report-only の `verify:assurance` summary 生成、および Verify Lite での report-only 収集**までを対象とします。`policy-gate` を含む blocking enforcement は後続フェーズです。
 
 ## 2. スキーマ
 

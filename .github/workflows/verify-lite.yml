@@ -222,8 +222,9 @@ jobs:
           if npm run -s | grep -q "artifacts:aggregate"; then pnpm -s run artifacts:aggregate; fi
           node scripts/simulation/deterministic-runner.mjs || true
       - name: Aggregate assurance summary (report-only)
-        if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         continue-on-error: true
+        shell: bash
         run: |
           args=(
             --assurance-profile fixtures/assurance/sample.assurance-profile.json
@@ -242,7 +243,7 @@ jobs:
           if [ -f artifacts/hermetic-reports/conformance/summary.json ]; then
             args+=(--conformance-report artifacts/hermetic-reports/conformance/summary.json)
           fi
-          pnpm -s run verify:assurance "${args[@]}"
+          pnpm -s run verify:assurance -- "${args[@]}"
       - name: Validate assurance summary schema (non-blocking)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         continue-on-error: true
@@ -355,7 +356,7 @@ jobs:
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         run: |
           if [ -f artifacts/assurance/assurance-summary.md ]; then
-            echo '' >> "$GITHUB_STEP_SUMMARY"
+            echo '## Assurance Summary' >> "$GITHUB_STEP_SUMMARY"
             cat artifacts/assurance/assurance-summary.md >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Assurance summary not generated.' >> "$GITHUB_STEP_SUMMARY"

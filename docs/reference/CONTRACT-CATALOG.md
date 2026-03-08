@@ -98,7 +98,7 @@
 | artifact (path/pattern) | schema | producer (primary) | consumer (primary) |
 | --- | --- | --- | --- |
 | `artifacts/verify-lite/verify-lite-run-summary.json` | `schema/verify-lite-run-summary.schema.json` | `scripts/ci/write-verify-lite-summary.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-verify-lite-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
-| `artifacts/assurance/assurance-summary.json` | `schema/assurance-summary.schema.json` | `scripts/assurance/aggregate-lanes.mjs` | `scripts/ci/validate-assurance-summary.mjs`, `scripts/ci/validate-json.mjs`, future `verify-lite` / `policy-gate` integration |
+| `artifacts/assurance/assurance-summary.json` | `schema/assurance-summary.schema.json` | `scripts/assurance/aggregate-lanes.mjs`, `.github/workflows/verify-lite.yml` (report-only) | `scripts/ci/validate-assurance-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, future `policy-gate` integration |
 | `artifacts/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/publish-envelope.mjs` |
 | `artifacts/trace/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` (copy運用含む) | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/post-envelope-comment.mjs` |
 | `artifacts/formal/formal-summary-v1.json` | `schema/formal-summary-v1.schema.json` | `scripts/formal/generate-formal-summary-v1.mjs` (`--out`), `.github/workflows/verify-lite.yml`, `.github/workflows/formal-aggregate.yml` | `scripts/ci/validate-formal-summary-v1.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/generate-run-manifest.mjs` |
