@@ -192,6 +192,7 @@ const normalizeExecutionPack = (summaryPath) => {
   const sourceInventory = ensureObject(summary?.sourceInventory, 'execution-pack sourceInventory');
   const deleteReady = ensureObject(summary?.deleteReady, 'execution-pack deleteReady');
   const dryRun = ensureObject(summary?.dryRun, 'execution-pack dryRun');
+  const dryRunFetch = ensureObject(dryRun?.fetch || {}, 'execution-pack dryRun.fetch');
 
   return {
     available: true,
@@ -213,6 +214,12 @@ const normalizeExecutionPack = (summaryPath) => {
       deleteReady: ensureCount(deleteReady.count, 'execution-pack deleteReady.count'),
       dryRunPlanned: ensureCount(dryRun.planned, 'execution-pack dryRun.planned'),
       dryRunBlocked: ensureCount(dryRun.blocked, 'execution-pack dryRun.blocked'),
+    },
+    fetch: {
+      attempted: Boolean(dryRunFetch.attempted),
+      ok: Boolean(dryRunFetch.ok),
+      remote: maybeString(dryRunFetch.remote).trim(),
+      remotes: Array.isArray(dryRunFetch.remotes) ? dryRunFetch.remotes.map((item) => String(item)) : [],
     },
     raw: summary,
   };
@@ -544,6 +551,11 @@ const renderArtifactRows = (summary) =>
 
 const renderSummaryMarkdown = (summary) => {
   const artifactRows = renderArtifactRows(summary);
+  const executionPackFetch = summary.artifacts.executionPack.available
+    ? summary.artifacts.executionPack.fetch.attempted
+      ? `${summary.artifacts.executionPack.fetch.ok ? 'ok' : 'failed'} (${summary.artifacts.executionPack.fetch.remote})`
+      : 'not-requested'
+    : '-';
 
   return `# Remote Cleanup Closeout Summary
 
@@ -552,6 +564,7 @@ const renderSummaryMarkdown = (summary) => {
 - next action: \`${summary.nextAction}\`
 - source triage: \`${summary.source.reviewStatus.sourceTriagePath}\`
 - reviewed manifest: \`${summary.source.reviewStatus.reviewedManifestPath}\`
+- execution-pack dry-run fetch: ${executionPackFetch}
 
 ## Why this next action
 
@@ -581,7 +594,14 @@ const renderIssueComment = (summary) => {
 
   if (summary.artifacts.executionPack.available) {
     lines.push(
-      `- execution pack: planned=${summary.counts.executionPack.dryRunPlanned}, blocked=${summary.counts.executionPack.dryRunBlocked}`,
+      `- execution-pack: planned=${summary.counts.executionPack.dryRunPlanned}, blocked=${summary.counts.executionPack.dryRunBlocked}`,
+    );
+    lines.push(
+      `- execution-pack dry-run fetch: ${
+        summary.artifacts.executionPack.fetch.attempted
+          ? `${summary.artifacts.executionPack.fetch.ok ? 'ok' : 'failed'} (${summary.artifacts.executionPack.fetch.remote})`
+          : 'not-requested'
+      }`,
     );
   }
   if (summary.artifacts.ambiguousEvidence.available) {
@@ -671,6 +691,14 @@ export const run = (argv = process.argv.slice(2)) => {
       executionPack: {
         available: executionPack.available,
         path: executionPack.path || '',
+        fetch: executionPack.available
+          ? executionPack.fetch
+          : {
+              attempted: false,
+              ok: false,
+              remote: '',
+              remotes: [],
+            },
       },
       ambiguousEvidence: {
         available: ambiguousEvidence.available,

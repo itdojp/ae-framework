@@ -423,6 +423,7 @@ Interpretation:
 - `investigate-still-present`: post-apply or refresh follow-up still shows unresolved branches
 - `refresh-triage`: post-apply verification is clean and inventory/triage refresh is the next step
 - `closeout-ready`: no remaining cleanup follow-up is visible in the current artifact set
+- `closeout-provenance`: When an execution-pack is present, closeout artifacts also surface the dry-run fetch provenance carried from the execution-pack summary
 
 ## Triage policy
 
