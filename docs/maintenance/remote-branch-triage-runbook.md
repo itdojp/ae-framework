@@ -357,7 +357,8 @@ Generated outputs:
 Interpretation:
 
 - `verified-absent`: branches reported as deleted and no longer present on the live remote
-- `still-present`: branches reported as deleted but still present on the live remote; investigate before continuing
+- `still-present`: branches reported as deleted but still present on the same live OID; investigate before continuing
+- `recreated-ref`: branches reported as deleted, but the same branch name now points to a different live OID; treat as post-delete branch reuse and investigate before continuing
 - `failed deletes`: branches already reported as failed by `branch-cleanup`
 - `planned but not deleted`: reviewed branches that were planned but neither deleted nor failed in the apply report
 
@@ -390,6 +391,8 @@ Interpretation:
 
 - `confirmed-removed`: a previously `verified-absent` branch no longer appears in refreshed `remoteMerged` / `remoteStale`
 - `reappeared-in-triage`: a previously `verified-absent` branch still appears in refreshed cleanup candidates and needs manual follow-up
+- `recreated-ref-in-triage`: a post-delete recreated ref still appears in refreshed cleanup candidates and needs manual follow-up
+- `recreated-ref-outside-triage`: a post-delete recreated ref is not currently in refreshed cleanup candidates, but branch reuse still requires manual follow-up
 
 This step is a closure audit only. It performs no deletion.
 

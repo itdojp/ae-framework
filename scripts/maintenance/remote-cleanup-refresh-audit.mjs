@@ -65,14 +65,15 @@ const normalizeBranchName = (item) => {
   return String(item?.branch || '').trim();
 };
 
-const loadVerifiedAbsentBranches = (summary, summaryPath) => {
+const loadDeletedBranchesByStatus = (summary, summaryPath, acceptedStatuses) => {
   if (!Array.isArray(summary?.deleted)) {
     throw new Error(`post-verify summary is missing deleted rows: ${summaryPath}`);
   }
   return summary.deleted
-    .filter((item) => String(item?.status || '').trim() === 'verified-absent')
+    .filter((item) => acceptedStatuses.has(String(item?.status || '').trim()))
     .map((item) => ({
       branch: String(item?.branch || '').trim(),
+      expectedOid: String(item?.expectedOid || '').trim(),
       actualOid: String(item?.actualOid || '').trim(),
     }))
     .filter((item) => item.branch);
@@ -112,12 +113,40 @@ const buildRefreshAudit = (verifiedAbsent, refreshedBranches) =>
     };
   });
 
+const buildRecreatedAudit = (recreatedRefs, refreshedBranches) =>
+  recreatedRefs.map((item) => {
+    const inMerged = refreshedBranches.merged.has(item.branch);
+    const inStale = refreshedBranches.stale.has(item.branch);
+    return {
+      branch: item.branch,
+      status: inMerged || inStale ? 'recreated-ref-in-triage' : 'recreated-ref-outside-triage',
+      expectedOid: item.expectedOid || '',
+      actualOid: item.actualOid || '',
+      refreshedLocations: [inMerged ? 'remoteMerged' : '', inStale ? 'remoteStale' : ''].filter(Boolean),
+    };
+  });
+
 const renderSummaryMarkdown = (summary) => {
   const rows = summary.audit.map((item) => [
     `\`${item.branch}\``,
     item.status,
     item.refreshedLocations.join(', ') || '-',
   ]);
+  const recreatedRows = summary.recreated.map((item) => [
+    `\`${item.branch}\``,
+    item.status,
+    item.expectedOid || '-',
+    item.actualOid || '-',
+    item.refreshedLocations.join(', ') || '-',
+  ]);
+
+  const recreatedSection = summary.recreated.length
+    ? `## Recreated refs
+
+${renderTable(['branch', 'status', 'expectedOid', 'actualOid', 'refreshedLocations'], recreatedRows)}
+
+`
+    : '';
 
   return `# Remote Cleanup Refresh Audit
 
@@ -127,11 +156,14 @@ const renderSummaryMarkdown = (summary) => {
 
 ${renderTable(['branch', 'status', 'refreshedLocations'], rows)}
 
-## Totals
+${recreatedSection}## Totals
 
 - verified-absent input: ${summary.counts.verifiedAbsentInput}
 - confirmed removed: ${summary.counts.confirmedRemoved}
 - reappeared in triage: ${summary.counts.reappearedInTriage}
+- recreated-ref input: ${summary.counts.recreatedRefInput}
+- recreated-ref in triage: ${summary.counts.recreatedRefInTriage}
+- recreated-ref outside triage: ${summary.counts.recreatedRefOutsideTriage}
 - refreshed remote merged candidates: ${summary.counts.refreshedRemoteMerged}
 - refreshed remote stale candidates: ${summary.counts.refreshedRemoteStale}
 `;
@@ -141,12 +173,16 @@ const renderIssueComment = (summary) => `Refresh audit from \`${summary.source.r
 - verified-absent input: ${summary.counts.verifiedAbsentInput}
 - confirmed removed: ${summary.counts.confirmedRemoved}
 - reappeared in triage: ${summary.counts.reappearedInTriage}
+- recreated-ref input: ${summary.counts.recreatedRefInput}
+- recreated-ref in triage: ${summary.counts.recreatedRefInTriage}
+- recreated-ref outside triage: ${summary.counts.recreatedRefOutsideTriage}
 - refreshed remote merged candidates: ${summary.counts.refreshedRemoteMerged}
 - refreshed remote stale candidates: ${summary.counts.refreshedRemoteStale}
 
 Notes:
 - this step performs no deletion
 - branches marked \`reappeared-in-triage\` require manual follow-up before closing the cleanup batch
+- branches marked \`recreated-ref-*\` indicate post-delete branch reuse and also require manual follow-up
 `;
 
 export const run = (argv = process.argv.slice(2)) => {
@@ -157,10 +193,12 @@ export const run = (argv = process.argv.slice(2)) => {
   const postVerifySummary = readJson(postVerifySummaryPath);
   const refreshedTriage = readJson(refreshedTriagePath);
 
-  const verifiedAbsent = loadVerifiedAbsentBranches(postVerifySummary, postVerifySummaryPath);
+  const verifiedAbsent = loadDeletedBranchesByStatus(postVerifySummary, postVerifySummaryPath, new Set(['verified-absent']));
+  const recreatedRefs = loadDeletedBranchesByStatus(postVerifySummary, postVerifySummaryPath, new Set(['recreated-ref']));
   ensureRefreshedTriagePayload(refreshedTriage, refreshedTriagePath);
   const refreshedBranches = buildRefreshedBranchSets(refreshedTriage);
   const audit = buildRefreshAudit(verifiedAbsent, refreshedBranches);
+  const recreated = buildRecreatedAudit(recreatedRefs, refreshedBranches);
 
   const summary = {
     generatedAt: new Date().toISOString(),
@@ -169,10 +207,14 @@ export const run = (argv = process.argv.slice(2)) => {
       refreshedTriagePath,
     },
     audit,
+    recreated,
     counts: {
       verifiedAbsentInput: verifiedAbsent.length,
       confirmedRemoved: audit.filter((item) => item.status === 'confirmed-removed').length,
       reappearedInTriage: audit.filter((item) => item.status === 'reappeared-in-triage').length,
+      recreatedRefInput: recreated.length,
+      recreatedRefInTriage: recreated.filter((item) => item.status === 'recreated-ref-in-triage').length,
+      recreatedRefOutsideTriage: recreated.filter((item) => item.status === 'recreated-ref-outside-triage').length,
       refreshedRemoteMerged: Array.isArray(refreshedTriage?.remoteMerged) ? refreshedTriage.remoteMerged.length : 0,
       refreshedRemoteStale: Array.isArray(refreshedTriage?.remoteStale) ? refreshedTriage.remoteStale.length : 0,
     },
@@ -184,7 +226,7 @@ export const run = (argv = process.argv.slice(2)) => {
 
   console.log(`[remote-cleanup-refresh-audit] wrote ${path.join(outputDir, 'summary.json')}`);
   console.log(
-    `[remote-cleanup-refresh-audit] verifiedAbsent=${summary.counts.verifiedAbsentInput} confirmed=${summary.counts.confirmedRemoved} reappeared=${summary.counts.reappearedInTriage}`,
+    `[remote-cleanup-refresh-audit] verifiedAbsent=${summary.counts.verifiedAbsentInput} confirmed=${summary.counts.confirmedRemoved} reappeared=${summary.counts.reappearedInTriage} recreated=${summary.counts.recreatedRefInput}`,
   );
 };
 
