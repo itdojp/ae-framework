@@ -172,7 +172,11 @@ Execution-pack note:
 
 - `tmp/maintenance/remote-cleanup-execution-pack/commands.sh` and `apply-command.txt` include `branch-cleanup.mjs --fetch`
 - use the generated `branch-cleanup-dry-run-report.json` and execution-pack `summary.json` to confirm the fetch provenance before apply
+Then render the operator-facing closeout summary from the current artifact set:
 
+```bash
+pnpm run maintenance:branch:cleanup:closeout-summary
+```
 Safeguards:
 
 - `triage-merged` keeps the ancestry check and blocks branches no longer merged to `base`
@@ -194,6 +198,7 @@ The operator workflow and worksheet format are defined in
 - [ ] Remote cleanup approved and executed (if needed)
 - [ ] Post-apply verification archived (if remote cleanup was executed)
 - [ ] Refresh-audit bundle archived (after inventory/triage refresh)
+- [ ] Closeout summary archived and posted to the issue/PR
 - [ ] Cleanup result summary added to issue/PR comment
 
 ## Recommended cadence
