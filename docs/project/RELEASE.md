@@ -10,12 +10,15 @@ When publishing a release, the workflow `release-quality-artifacts` bundles qual
 - `artifacts/` (normalized adapter summaries, domain events, etc.)
 - `formal/summary.json` (if present)
 - `coverage/coverage-summary.json` (if present)
+- `artifacts/assurance/assurance-summary.json` / `.md` (if present)
 - `artifacts/summary/PR_SUMMARY.md`
 - `artifacts/summary/combined.json` (if present)
 
 Tips
 - Ensure CI ran `testing-ddd-scripts` and `coverage-check` before tagging.
 - Use labels to temporarily enforce gates on PRs: see `docs/ci/label-gating.md`.
+- `post-deploy-verify.yml` appends `artifacts/assurance/assurance-summary.md` to the Step Summary when the artifact is available.
+- When running `post-deploy-verify.yml` manually, set `release_tag` to download `quality-artifacts.tgz` from the target release if local assurance artifacts are not already present.
 
 ### Breaking schema changes (required)
 When changing machine-readable outputs (for example `schema/*.schema.json` consumers), follow this procedure in the same PR:
@@ -39,12 +42,15 @@ When changing machine-readable outputs (for example `schema/*.schema.json` consu
 - `artifacts/`（正規化されたアダプター要約、ドメインイベント等）
 - `formal/summary.json`（存在する場合）
 - `coverage/coverage-summary.json`（存在する場合）
+- `artifacts/assurance/assurance-summary.json` / `.md`（存在する場合）
 - `artifacts/summary/PR_SUMMARY.md`
 - `artifacts/summary/combined.json`（存在する場合）
 
 ヒント
 - タグ付け前に `testing-ddd-scripts` と `coverage-check` が CI で実行済みであることを確認してください。
 - 一時的にゲートを厳格化するには PR ラベルを使用できます。詳細は `docs/ci/label-gating.md` を参照してください。
+- `post-deploy-verify.yml` は assurance artifact が存在する場合、`artifacts/assurance/assurance-summary.md` を Step Summary に追記します。
+- `post-deploy-verify.yml` を手動実行する際にローカルの assurance artifact がない場合は、対象 release の `quality-artifacts.tgz` を取得するため `release_tag` を指定してください。
 
 ### 互換性破壊を伴うスキーマ変更（必須手順）
 機械可読出力（例: `schema/*.schema.json` の利用対象）を変更する場合は、同一PRで次を実施します。
