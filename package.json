@@ -147,6 +147,7 @@
     "maintenance:branch:triage:execution-pack": "node scripts/maintenance/remote-cleanup-execution-pack.mjs",
     "maintenance:branch:cleanup:refresh-audit": "node scripts/maintenance/remote-cleanup-refresh-audit.mjs",
     "maintenance:branch:cleanup:post-verify": "node scripts/maintenance/remote-cleanup-post-apply-verify.mjs",
+    "maintenance:branch:cleanup:artifact-consistency": "node scripts/maintenance/remote-cleanup-artifact-consistency-check.mjs",
     "maintenance:branch:cleanup:dry-run": "node scripts/maintenance/branch-cleanup.mjs --scope both --max 200",
     "maintenance:branch:cleanup:apply:local": "node scripts/maintenance/branch-cleanup.mjs --scope local --max 200 --apply",
     "maintenance:worktree:cleanup:dry-run": "node scripts/maintenance/worktree-cleanup.mjs --prune --max 50",
