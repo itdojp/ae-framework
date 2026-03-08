@@ -130,6 +130,12 @@ node scripts/maintenance/branch-cleanup.mjs \
   --apply
 ```
 
+After remote apply, verify the report against live remote refs before rerunning inventory:
+
+```bash
+pnpm run maintenance:branch:cleanup:post-verify
+```
+
 Safeguards:
 
 - `triage-merged` keeps the ancestry check and blocks branches no longer merged to `base`
@@ -148,6 +154,7 @@ The operator workflow and worksheet format are defined in
 - [ ] Dry-run output archived
 - [ ] Safe local cleanup executed in batches
 - [ ] Remote cleanup approved and executed (if needed)
+- [ ] Post-apply verification archived (if remote cleanup was executed)
 - [ ] Cleanup result summary added to issue/PR comment
 
 ## Recommended cadence
