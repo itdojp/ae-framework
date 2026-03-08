@@ -177,6 +177,9 @@ Then render the operator-facing closeout summary from the current artifact set:
 ```bash
 pnpm run maintenance:branch:cleanup:closeout-summary
 ```
+
+The closeout bundle carries the execution-pack dry-run fetch provenance forward, so the final issue/PR summary still shows whether the approved subset was rendered against refreshed remote-tracking refs.
+
 Safeguards:
 
 - `triage-merged` keeps the ancestry check and blocks branches no longer merged to `base`
