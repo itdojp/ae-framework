@@ -103,6 +103,9 @@ Before `--apply`, render the operator-facing execution bundle:
 
 ```bash
 pnpm run maintenance:branch:triage:execution-pack
+
+# Validate cross-artifact provenance and counts for the reviewed remote cleanup bundle
+pnpm run maintenance:branch:cleanup:artifact-consistency
 ```
 
 When approved, run:
@@ -180,6 +183,7 @@ The operator workflow and worksheet format are defined in
 - [ ] `localPrMergedManualReview` / `linkedWorktreeBranches` / `detachedWorktreesOnBaseClean` を確認した
 - [ ] Dry-run output archived
 - [ ] Safe local cleanup executed in batches
+- [ ] Remote cleanup artifact consistency summary archived
 - [ ] Remote cleanup approved and executed (if needed)
 - [ ] Post-apply verification archived (if remote cleanup was executed)
 - [ ] Refresh-audit bundle archived (after inventory/triage refresh)
