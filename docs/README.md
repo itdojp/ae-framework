@@ -144,7 +144,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Assurance onboarding checklist: `guides/assurance-onboarding-checklist.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
 - Runbooks / Traceability / Runtime Contracts: see `./quality` and `./verify`
-- Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
+- Coverage policy: `quality/coverage-policy.md`（しきい値の由来/ゲート適用の運用）
 - Formal runbook: `quality/formal-runbook.md`（ラベル/dispatch/要約/環境変数）
 - CSP verification (cspx runner): `quality/formal-csp.md`（使い方/成果物/実行結果例）
 - Usefulness evaluation: `quality/usefulness-evaluation.md`（4軸スコア算出/終了コード契約）
@@ -152,7 +152,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - PoC success criteria (#2409 first slice): `quality/poc-success-criteria-2409.md`（performance/reproducibility/cost/ops/exit）
 - PoC comparison template (TS baseline vs Go/Rust): `templates/quality/poc-comparison-metrics-template.md`
 - ADR template for adoption/rejection decision: `templates/quality/adr-poc-adoption-template.md`
-- CI policy: `ci-policy.md`（PR必須ゲート/opt-in/運用方針）
+- CI policy: `ci-policy.md`（PRコアゲート/opt-in/運用方針）
 - Docs Doctest policy: `ci/docs-doctest-policy.md`（PR軽量チェック + 週次全量チェック）
 - CI operations handbook: `ci/ci-operations-handbook.md`（日次確認/再実行/停止復帰）
 - CI troubleshooting guide: `ci/ci-troubleshooting-guide.md`（失敗分類/復旧runbook）
@@ -165,7 +165,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Workflow topology mapping (4 tracks): `ci/workflow-topology-mapping-2026-03-04.md`（56 workflows の4系統再配置案）
 - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）
 - CI docs boundary matrix: `ci/ci-doc-boundary-matrix.md`（方針文書とrunbookの責務境界）
-- Copilot Review Gate: `ci/copilot-review-gate.md`（レビュー必須化）
+- Copilot Review Gate: `ci/copilot-review-gate.md`（レビューゲート運用）
 - Copilot Auto Fix: `ci/copilot-auto-fix.md`（suggestion自動適用）
 - Codex Autopilot Lane: `ci/codex-autopilot-lane.md`（touchless merge の opt-in）
 - Auto Merge: `ci/auto-merge.md`（auto-merge自動有効化）
@@ -177,7 +177,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Automation Alerting: `ci/automation-alerting.md`（通知条件/テンプレート/重複抑止）
 - Automation SLO/MTTR: `ci/automation-slo-mttr.md`（成功率SLOと復旧時間MTTRの定義）
 - OTel/Artifacts/Gate Integration Plan: `ci/otel-artifacts-gate-integration-plan.md`（Issue #2380 の段階導入設計）
-- Trace Required Criteria: `ci/trace-required-criteria.md`（Go/No-Go基準/集計手順/preset昇格）
+- Trace criteria: `ci/trace-required-criteria.md`（Go/No-Go判定/集計手順/preset昇格）
 - Context Pack Gate Rollout: `ci/context-pack-gate-rollout.md`（non-blocking→blocking 段階導入）
 - Automation Permission Boundaries: `ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment の権限境界）
 - Workflow dispatch validation report (2026-02-12): `ci/workflow-dispatch-validation-2026-02-12.md`
@@ -306,10 +306,10 @@ Claude CodeやMCPとの統合
 - [llm-first-review-checklist.md](./quality/llm-first-review-checklist.md) - LLM一次レビューの標準チェック
 - [guarded-automation-template.md](./quality/guarded-automation-template.md) - Guarded automation 運用テンプレ
 - [incident-triage-template.md](./quality/incident-triage-template.md) - インシデント一次切り分けテンプレ
-- [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（Required/Optional）
+- [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（core/optional）
 - [doc-consistency-lint.md](./quality/doc-consistency-lint.md) - ドキュメント参照整合チェック（pnpm script / path）
 - [contract-taxonomy.md](./quality/contract-taxonomy.md) - contract 用語の基準（DbC / API / Artifacts）
-- [verify-first-gate-baseline.md](./quality/verify-first-gate-baseline.md) - Verify-first の最小Required/Opt-inゲート基準
+- [verify-first-gate-baseline.md](./quality/verify-first-gate-baseline.md) - Verify-first の最小 gate / opt-in 基準
 - [verify-first-failure-diagnostic-template.md](./quality/verify-first-failure-diagnostic-template.md) - CI失敗時の診断テンプレ（再現手順/Evidence）
 - [verify-first-failure-comment-design.md](./quality/verify-first-failure-comment-design.md) - 失敗診断テンプレをPR自動コメントに連携する設計案
 - [verify-first-artifacts-catalog.md](./quality/verify-first-artifacts-catalog.md) - Verify-first の最小成果物（SSOT/AC/NFR/Evidence）定義
@@ -335,7 +335,7 @@ Claude CodeやMCPとの統合
 - [worktree-cleanup-runbook.md](./maintenance/worktree-cleanup-runbook.md) - マージ済み作業worktreeの安全な削除手順
 - [remote-branch-triage-runbook.md](./maintenance/remote-branch-triage-runbook.md) - remote branch の triage と operator approval 手順
 - [phase0-inventory-2026-02-17.md](./maintenance/phase0-inventory-2026-02-17.md) - Phase 0棚卸しスナップショット
-- [workflow-inventory-2026-02-17.md](./maintenance/workflow-inventory-2026-02-17.md) - Phase 3向けCI workflow棚卸し（目的/入力/重複/必須任意）
+- [workflow-inventory-2026-02-17.md](./maintenance/workflow-inventory-2026-02-17.md) - Phase 3向けCI workflow棚卸し（目的/入力/重複/区分）
 
 ### 🧠 現行実装ベース全体像（推奨）
 - **[architecture/CURRENT-SYSTEM-OVERVIEW.md](./architecture/CURRENT-SYSTEM-OVERVIEW.md)** - 2026-03 時点の全体構成（CLI/CI/Formal/Artifacts）

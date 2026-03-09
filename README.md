@@ -220,7 +220,7 @@ When using `@ts-expect-error` comments, follow this structured format:
 const _example: number = 'type mismatch for policy example';
 ```
 
-**Required fields:**
+**Core fields:**
 - `owner:@username` - GitHub handle responsible for the suppression
 - `expires:YYYY-MM-DD` - Date when this suppression should be reviewed/removed
 - `reason: description` - Detailed explanation (minimum 12 characters)
