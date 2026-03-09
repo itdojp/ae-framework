@@ -93,6 +93,7 @@
 - `schema/change-package-v2.schema.json`
 - `schema/execplan.schema.json`
 - `schema/execution-plan-v1.schema.json`
+- `schema/plan-artifact.schema.json`
 - `schema/run-manifest.schema.json`
 
 ## 4. 主要 artifact の produced/consumed 対応
@@ -115,6 +116,7 @@
 | `artifacts/change-package/change-package.json` | `schema/change-package.schema.json` | `scripts/change-package/generate.mjs` | `scripts/change-package/validate.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/handoff/ae-handoff.json` | `schema/ae-handoff.schema.json` | `templates/comments/AE-HANDOFF.md`（manual/export）, `docs/agents/handoff.md` | `scripts/agents/validate-handoff.mjs`, future PR/Issue handoff consumers |
 | `artifacts/agents/hook-feedback.json` | `schema/hook-feedback.schema.json` | `scripts/agents/build-hook-feedback.mjs` | `docs/agents/hook-feedback.md`, Claude Code / CodeX continuation consumers |
+| `artifacts/plan/plan-artifact.json` | `schema/plan-artifact.schema.json` | `scripts/plan-artifact/generate.mjs` | `scripts/plan-artifact/validate.mjs`, `scripts/ci/policy-gate.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/policy-gate.yml` |
 | `artifacts/ci/policy-input-v1.json` | `schema/policy-input-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/policy-gate.mjs`, `scripts/ci/policy-shadow-compare.mjs`, `scripts/ci/validate-json.mjs` |
 | `artifacts/ci/policy-decision-js-v1.json`, `artifacts/ci/policy-decision-opa-v1.json` | `schema/policy-decision-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `scripts/ci/policy-shadow-compare.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/policy-shadow-compare.mjs`, `scripts/ci/validate-json.mjs` |
 | `artifacts/ci/policy-gate-summary.json` | `schema/policy-gate-summary-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/validate-policy-gate-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |

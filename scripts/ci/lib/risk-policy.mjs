@@ -62,6 +62,12 @@ function getMinHumanApprovals(policy) {
   return Math.trunc(value);
 }
 
+function isPlanArtifactRequired(policy) {
+  const value = policy?.high_risk?.require_plan_artifact;
+  if (typeof value === 'boolean') return value;
+  return true;
+}
+
 function isPolicyLabelRequirementEnabled(policy) {
   const value = policy?.high_risk?.require_policy_labels;
   if (typeof value === 'boolean') return value;
@@ -165,6 +171,7 @@ export {
   getGateCheckPatternsForLabel,
   getMinHumanApprovals,
   getOptionalGateLabels,
+  isPlanArtifactRequired,
   isPolicyLabelRequirementEnabled,
   getRequiredChecks,
   getRiskLabels,

@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/formal-runbook.md
+- docs/quality/formal-csp.md
+lastVerified: '2026-03-09'
+---
+
 # Agents Runbook: Formal Methods
 
 ## When to use

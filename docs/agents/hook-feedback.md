@@ -1,3 +1,10 @@
+---
+docRole: narrative
+lastVerified: '2026-03-10'
+owner: agent-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Hook Feedback Adapter
 
 既存の CI / evidence artifact を、Claude Code / CodeX がそのまま再入力できる短い feedback に正規化するための最小 adapter です。

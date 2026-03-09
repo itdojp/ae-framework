@@ -29,6 +29,10 @@ Primary components:
 PR の安全性判断を diff 中心ではなく、証跡（evidence）中心で扱うための標準成果物です。  
 `policy/risk-policy.yml` と変更差分を入力に、リスク判定・必要ラベル・再現コマンド・監視計画を機械可読で出力します。
 
+責務分離:
+- `plan-artifact/v1`: before-change review（何を変える予定か）
+- `change-package/v1`: after-change evidence（何が変わり、どの証跡が揃ったか）
+
 ## 2. 出力物
 
 - `artifacts/change-package/change-package.json`
@@ -106,8 +110,9 @@ node scripts/change-package/validate.mjs \
 
 1. Change Package 生成  
 2. Change Package 検証  
-3. PR summary コメント本文へ Change Package セクションを追記  
-4. artifact としてアップロード  
+3. commit 済み `artifacts/plan/plan-artifact.json` がある場合は schema validate
+4. PR summary コメント本文へ Change Package / Plan Artifact セクションを追記
+5. artifact としてアップロード
 
 これにより、`pr-summary:detailed` の場合は証跡と再現コマンドを詳細表示し、digest の場合は短い要約を表示します。
 
@@ -118,6 +123,7 @@ auto-merge 運用と連携する場合:
 ## 6. 運用指針
 
 - `risk:high` PR は Change Package の `missingRequiredLabels` / `exceptions` を優先確認する。  
+- `risk:high` PR は実装前に `artifacts/plan/plan-artifact.json|md` を commit し、`policy-gate` の事前レビュー契約を満たす。
 - `policy/risk-policy.yml` の更新時は、Change Package の判定結果が意図どおりかを fixture とテストで確認する。  
 - schema 変更時は `fixtures/change-package/sample.change-package.json` と `scripts/ci/validate-json.mjs` の検証対象を同時更新する。  
 - `change-package/v2` は preview 契約として扱い、v1 の既定運用を壊さない。dual-write / dual-validate は後続フェーズで導入する。

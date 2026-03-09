@@ -137,6 +137,10 @@ jobs:
         with:
           name: policy-gate-artifacts
           path: |
+            artifacts/plan/plan-artifact.json
+            artifacts/plan/plan-artifact.md
+            artifacts/plan/plan-artifact-validation.json
+            artifacts/plan/plan-artifact-validation.md
             artifacts/ci/risk-labeler-summary.json
             artifacts/ci/risk-labeler-summary.md
             artifacts/ci/policy-gate-summary.json

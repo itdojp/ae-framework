@@ -1,3 +1,12 @@
+---
+docRole: derived
+canonicalSource:
+- docs/spec/context-pack.md
+- docs/guides/context-pack-onboarding-checklist.md
+- docs/operations/context-pack-troubleshooting.md
+lastVerified: '2026-03-09'
+---
+
 # Agents Runbook: Context Pack
 
 ## When to use
