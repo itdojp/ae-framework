@@ -19,7 +19,7 @@ Operational runbook for generating, validating, and enforcing `artifacts/assuran
 対象:
 - `pnpm run verify:assurance` のローカル実行
 - `verify-lite.yml` における report-only 集約
-- `enforce-assurance` ラベル時の strict enforcement
+- `enforce-assurance` ラベル時の strict assurance enforcement
 - `artifacts/assurance/assurance-summary.{json,md}` の読み方
 - 失敗時の一次切り分け
 

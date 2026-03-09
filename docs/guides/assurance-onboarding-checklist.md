@@ -6,7 +6,7 @@
 
 ## 日本語
 
-新規プロジェクトへ assurance profile / summary / strict enforcement を導入するための最小チェックリストです。
+新規プロジェクトへ assurance profile / summary / strict assurance enforcement を導入するための最小チェックリストです。
 
 ### 前提条件
 - Node.js: `>=20.11 <23`
@@ -65,7 +65,7 @@ node scripts/ci/validate-assurance-summary.mjs \
   schema/assurance-summary.schema.json
 ```
 
-### 5. strict enforcement は high-risk PR のみ有効化
+### 5. strict assurance enforcement は high-risk PR のみ有効化
 - 通常 PR は report-only のまま運用する
 - `enforce-assurance` は high-risk change に限定する
 - strict 運用前に `warningClaims == 0` を確認する
@@ -89,6 +89,6 @@ node scripts/ci/validate-assurance-summary.mjs \
 
 ## English
 
-Minimal onboarding checklist for introducing assurance profile / summary / strict enforcement into a project.
+Minimal onboarding checklist for introducing assurance profile / summary / strict assurance enforcement into a project.
 
 See `docs/quality/assurance-operations-runbook.md` for operational details.

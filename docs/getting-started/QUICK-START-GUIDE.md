@@ -527,13 +527,13 @@ pnpm run verify:assurance \
 
 #### 3. High-Assurance PR
 
-高リスク PR に限って strict enforcement を有効化します。通常 PR は report-only のままです。
+高リスク PR に限って strict assurance enforcement を有効化します。通常 PR は report-only のままです。
 
 ```bash
 gh pr edit <PR番号> --add-label enforce-assurance
 ```
 
-このラベルにより、assurance enforcement（workflow の `Enforce assurance summary` ステップ）が `warningClaims`、`missingLanes`、`missingEvidenceKinds`、`unlinkedCounterexamples`、`openCounterexamples` などで strict fail するようになります。
+このラベルにより、workflow の `Enforce assurance summary (strict; label-gated)` ステップで strict assurance enforcement が有効化され、`warningClaims`、`missingLanes`、`missingEvidenceKinds`、`unlinkedCounterexamples`、`openCounterexamples` などで strict fail するようになります。
 
 一次情報:
 - `docs/quality/assurance-operations-runbook.md`
