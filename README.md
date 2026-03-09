@@ -30,7 +30,7 @@ flowchart TB
 
 - **Baseline** stabilises the harness layer with `first-run` / `verify:lite`.
 - **Structured assurance** connects Context Pack, property/MBT/conformance, and change evidence into the control plane.
-- **High-assurance critical core** strengthens the decision plane for selected high-risk changes with formal/model/proof lanes.
+- **High-assurance critical core** strengthens the control plane for selected high-risk changes with formal/model/proof lanes.
 
 ### What this repository provides
 - **Assurance control plane**: Context Pack, formal/conformance summaries, artifact validation, policy gates, and PR/release automation that turn raw test runs into reviewable assurance evidence.
@@ -132,7 +132,7 @@ flowchart TB
 
 - **Baseline** は `first-run` / `verify:lite` で harness layer を安定化させる段階です。
 - **Structured assurance** は Context Pack、property/MBT/conformance、change artifact を control plane に接続する段階です。
-- **High-assurance critical core** は selected high-risk change に対して decision plane を強化する段階です。
+- **High-assurance critical core** は selected high-risk change に対して control plane を強化する段階です。
 
 ### 提供するもの
 - **Assurance control plane**: Context Pack、形式検証/Conformance要約、artifact validation、policy gate、PR/release 自動化を束ね、単発のテスト実行結果を判断可能な証跡へ変換。

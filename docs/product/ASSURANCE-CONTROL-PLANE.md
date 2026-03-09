@@ -67,7 +67,7 @@ Core value:
 flowchart TB
   subgraph H[Harness layer]
     H1[lint / test / hooks]
-    H2[E2E / adapters / verification runners]
+    H2[E2E / adapters / runners]
   end
   subgraph C[Assurance control plane]
     C1[Context Pack / evidence aggregation]
@@ -98,7 +98,7 @@ flowchart TB
 - formal/model/proof lane
 - strict policy gate
 - proof-carrying change package
-- 役割: selected high-risk change に限定して decision plane を強化
+- 役割: selected high-risk change に限定して control plane を強化
 
 ## 6. 現行実装との対応
 

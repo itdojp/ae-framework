@@ -45,7 +45,7 @@ flowchart TB
 
 - **Baseline** keeps the harness stable.
 - **Structured assurance** adds evidence aggregation into the control plane.
-- **High-Assurance PR** strengthens the decision plane only for selected high-risk changes.
+- **High-Assurance PR** strengthens the control plane only for selected high-risk changes.
 
 #### 1. Baseline
 
@@ -529,7 +529,7 @@ flowchart TB
 
 - **Baseline** は harness layer を安定化させる段階です。
 - **Structured assurance** は evidence aggregation を control plane に接続する段階です。
-- **High-Assurance PR** は selected high-risk change に対してだけ decision plane を強化する段階です。
+- **High-Assurance PR** は selected high-risk change に対してだけ control plane を強化する段階です。
 
 #### 1. Baseline
 
