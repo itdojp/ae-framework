@@ -11,6 +11,7 @@
 | CI全体方針 | `docs/ci-policy.md` | `AGENTS.md`, `docs/agents/README.md` | Required checks / opt-in / 運用原則 |
 | CI運用手順 | `docs/ci/ci-operations-handbook.md` | `docs/agents/README.md` | 日次監視、再実行、復帰手順 |
 | CI障害復旧 | `docs/ci/ci-troubleshooting-guide.md` | `AGENTS.md` Decision Table | 失敗分類、復旧の標準手順 |
+| Claude Code 入口 | `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `policy/risk-policy.yml` | `CLAUDE.md`, `AGENTS.md`, `docs/agents/README.md` | Claude Code 向け導線、handoff / risk policy への入口 |
 | Risk/Label判定 | `policy/risk-policy.yml` | `AGENTS.md` Invariants | `risk:low/high`、required labels、gate条件 |
 | Slash Commands 実装 | `.github/workflows/agent-commands.yml` | `AGENTS.md`, `docs/agents/README.md` | 受理コマンド、付与ラベル、dispatch実装 |
 | Workflow権限境界 | `docs/ci/automation-permission-boundaries.md` | `AGENTS.md` Progressive Disclosure | `workflow_dispatch` / `issue_comment` の境界 |
@@ -20,11 +21,12 @@
 
 ## 記述ルール（ドリフト防止）
 
-1. `AGENTS.md` はルータ専用とし、詳細手順・列挙は保持しない。  
-2. `docs/agents/*` は一次情報への導線のみを持ち、ポリシー本文を複製しない。  
-3. 実装値（コマンド名、ラベル名、required checks）は一次情報ファイルを更新し、二次情報はリンクのみ更新する。  
-4. CI境界の詳細は `docs/ci/ci-doc-boundary-matrix.md` を参照し、相互リンクを維持する。  
-5. subagent 安全運用の詳細手順は `docs/agents/multi-agent-safety.md` と `docs/maintenance/subagent-worktree-runbook.md` に集約し、`AGENTS.md` には不変条件のみ記載する。  
+1. `AGENTS.md` はルータ専用とし、詳細手順・列挙は保持しない。
+2. `CLAUDE.md` は Claude Code 専用ルータとし、詳細説明やポリシー本文を再掲しない。
+3. `docs/agents/*` は一次情報への導線のみを持ち、ポリシー本文を複製しない。
+4. 実装値（コマンド名、ラベル名、required checks）は一次情報ファイルを更新し、二次情報はリンクのみ更新する。
+5. CI境界の詳細は `docs/ci/ci-doc-boundary-matrix.md` を参照し、相互リンクを維持する。
+6. subagent 安全運用の詳細手順は `docs/agents/multi-agent-safety.md` と `docs/maintenance/subagent-worktree-runbook.md` に集約し、`AGENTS.md` には不変条件のみ記載する。
 
 ## 変更時チェック
 
