@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+- docs/spec/context-pack.md
+- docs/quality/issue-requirements-traceability.md
+lastVerified: '2026-03-09'
+---
+
 # Agents Runbook: Spec
 
 ## When to use

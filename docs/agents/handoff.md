@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-09'
+owner: agent-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # AE-HANDOFF Protocol
 
 エージェント間ハンドオフ時の最小プロトコルです。  

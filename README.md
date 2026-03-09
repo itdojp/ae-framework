@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-09'
+---
+
 # ae-framework: Assurance Control Plane for Agent-Driven SDLC
 
 [![validate-artifacts-ajv](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml)
