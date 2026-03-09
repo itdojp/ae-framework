@@ -147,9 +147,10 @@ node scripts/ci/check-required-artifacts.mjs --strict
 ## 5. CI統合（段階導入）
 - `verify-lite.yml` に **non-blocking** で組み込み（観測フェーズ）
 - `verify-lite.yml` は `artifacts/verify-lite/verify-lite-run-summary.json` を入力に `artifacts/assurance/assurance-summary.{json,md}` を report-only で生成し、artifact upload と Step Summary に含める
-- `enforce-assurance` ラベル時は `scripts/ci/enforce-assurance-summary.mjs` が `artifacts/assurance/assurance-summary.json` を strict に検証する
+- `enforce-assurance` ラベル時は `verify-lite.yml` の `Enforce assurance summary (strict; label-gated)` ステップが `scripts/ci/enforce-assurance-summary.mjs` を呼び出し、`artifacts/assurance/assurance-summary.json` を strict に検証する
 - `pr-ci-status-comment.yml` / `scripts/summary/render-pr-summary.mjs` は `artifacts/assurance/assurance-summary.json` が存在する場合、PR summary comment に assurance の要約（satisfied claims / warning claims / warning codes）を追記する
-- `post-deploy-verify.yml` は release artifact bundle 内に `artifacts/assurance/assurance-summary.md` が存在する場合、Step Summary に assurance 要約を追記する
+- `post-deploy-verify.yml` は release artifact bundle 内に `artifacts/assurance/assurance-summary.md` が存在する場合、Step Summary に assurance 要約を追記する。これは optional / report-only であり、release verify の gate 判定は変えない
+- manual `post-deploy-verify.yml` で release 側の assurance summary を使う場合は、公開済み release asset `quality-artifacts.tgz` を取得するため `release_tag` が必要
 - 厳格化する場合は `REQUIRED_ARTIFACTS_STRICT=1` を有効化  
   - 例: PRラベル `enforce-artifacts` を条件に strict モードを有効化
 - `validate-artifacts-ajv.yml` では strict（`enforce-artifacts`）時に `run-kvonce-conformance.sh`（trace artifacts）と `artifacts/verify-lite/verify-lite-run-summary.json` / `artifacts/report-envelope.json` / `artifacts/trace/report-envelope.json` を生成してから `artifacts:validate` を実行
