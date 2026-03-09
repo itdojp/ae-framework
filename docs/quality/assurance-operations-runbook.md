@@ -63,17 +63,40 @@ pnpm run verify:lite
 ### Step 2: assurance summary を生成する
 
 ```bash
-pnpm run verify:assurance -- \
+pnpm run verify:assurance \
   --assurance-profile fixtures/assurance/sample.assurance-profile.json \
-  --context-pack fixtures/context-pack/sample.context-pack.json \
   --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
-  --formal-summary artifacts/formal/formal-summary-v1.json \
-  --formal-summary artifacts/formal/formal-summary-v2.json \
-  --conformance-report artifacts/hermetic-reports/conformance/summary.json \
-  --counterexample fixtures/counterexample/sample.counterexample.json \
-  --evidence-manifest fixtures/assurance/sample.assurance-evidence-manifest.json \
   --output-json artifacts/assurance/assurance-summary.json \
   --output-md artifacts/assurance/assurance-summary.md
+```
+
+追加の artifact を使う場合は、存在するファイルだけを渡します。
+
+```bash
+args=(
+  --assurance-profile fixtures/assurance/sample.assurance-profile.json
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json
+  --output-json artifacts/assurance/assurance-summary.json
+  --output-md artifacts/assurance/assurance-summary.md
+)
+if [ -f fixtures/context-pack/sample.context-pack.json ]; then
+  args+=(--context-pack fixtures/context-pack/sample.context-pack.json)
+fi
+for formal_summary in artifacts/formal/formal-summary-v1.json artifacts/formal/formal-summary-v2.json; do
+  if [ -f "$formal_summary" ]; then
+    args+=(--formal-summary "$formal_summary")
+  fi
+done
+if [ -f artifacts/hermetic-reports/conformance/summary.json ]; then
+  args+=(--conformance-report artifacts/hermetic-reports/conformance/summary.json)
+fi
+if [ -f fixtures/counterexample/sample.counterexample.json ]; then
+  args+=(--counterexample fixtures/counterexample/sample.counterexample.json)
+fi
+if [ -f fixtures/assurance/sample.assurance-evidence-manifest.json ]; then
+  args+=(--evidence-manifest fixtures/assurance/sample.assurance-evidence-manifest.json)
+fi
+pnpm run verify:assurance "${args[@]}"
 ```
 
 ### Step 3: schema を検証する
@@ -107,6 +130,7 @@ node scripts/ci/enforce-assurance-summary.mjs \
 strict step は少なくとも次を失敗条件として扱います。
 - `summary.claimCount < 1`
 - `summary.warningClaims > 0`
+- `summary.warningCount > 0`
 - `summary.claimsMissingRequiredLanes > 0`
 - `summary.claimsMissingRequiredEvidenceKinds > 0`
 - `summary.unlinkedCounterexamples > 0`
@@ -165,7 +189,7 @@ claim ごとに確認する項目:
 ## 8. PR 前チェックリスト
 
 - [ ] `pnpm run verify:lite` が通っている
-- [ ] `pnpm run verify:assurance -- ...` の出力を確認した
+- [ ] `pnpm run verify:assurance ...` の出力を確認した
 - [ ] `artifacts/assurance/assurance-summary.json` が schema-valid である
 - [ ] `enforce-assurance` を付ける理由を PR 本文または Issue に記録した
 - [ ] strict 運用時に warning / open counterexample を残していない

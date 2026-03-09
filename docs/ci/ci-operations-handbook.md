@@ -65,7 +65,8 @@
 ### 3.5 `enforce-assurance` が失敗
 
 - `artifacts/assurance/assurance-summary.json` が生成されているか確認する
-- `warningClaims` / `claimsMissingRequiredLanes` / `claimsMissingRequiredEvidenceKinds` / `unlinkedCounterexamples` を確認する
+- `warningCount` / `warningClaims` / `claimsMissingRequiredLanes` / `claimsMissingRequiredEvidenceKinds` / `unlinkedCounterexamples` を確認する
+- `claimCount` が `0` になっていないか確認する
 - claim ごとの `missingLanes` / `missingEvidenceKinds` / `counterexamples.open` を見て不足証跡を補う
 - 一次情報は `docs/quality/assurance-operations-runbook.md` を参照する
 

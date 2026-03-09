@@ -17,7 +17,7 @@
 ### 0. framework 側の fixture で疎通確認
 
 ```bash
-pnpm run verify:assurance -- \
+pnpm run verify:assurance \
   --assurance-profile fixtures/assurance/sample.assurance-profile.json \
   --context-pack fixtures/context-pack/sample.context-pack.json \
   --verify-lite-summary packages/envelope/__fixtures__/verify-lite-summary.json \
@@ -55,7 +55,7 @@ pnpm run verify:assurance -- \
 
 ```bash
 pnpm run verify:lite
-pnpm run verify:assurance -- \
+pnpm run verify:assurance \
   --assurance-profile path/to/assurance-profile.json \
   --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
   --output-json artifacts/assurance/assurance-summary.json \
