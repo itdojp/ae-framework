@@ -204,6 +204,11 @@ const checks = [
     label: 'Hook feedback schema validation'
   },
   {
+    schema: 'schema/harness-health.schema.json',
+    fixtures: ['fixtures/ci/sample.harness-health.json'],
+    label: 'Harness health schema validation'
+  },
+  {
     schema: 'schema/plan-artifact.schema.json',
     fixtures: ['fixtures/plan/sample.plan-artifact.json'],
     label: 'Plan Artifact schema validation'

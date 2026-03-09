@@ -1,0 +1,328 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/harness-health.schema.json",
+  "title": "Harness Health Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "generatedAt",
+    "repository",
+    "pullRequest",
+    "commitSha",
+    "workflow",
+    "runId",
+    "gates",
+    "severity",
+    "reasons",
+    "recommendedLabels",
+    "recommendedContextChanges",
+    "reproducibleHints"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "harness-health/v1"
+    },
+    "contractId": {
+      "const": "harness-health.v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repository": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[^/\\s]+/[^/\\s]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "pullRequest": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "commitSha": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "workflow": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "runId": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactsSchema",
+        "testingHarness",
+        "contextPack",
+        "runtimeConformance",
+        "ciExtended",
+        "uiE2E"
+      ],
+      "properties": {
+        "artifactsSchema": {
+          "$ref": "#/$defs/gate"
+        },
+        "testingHarness": {
+          "$ref": "#/$defs/gate"
+        },
+        "contextPack": {
+          "$ref": "#/$defs/gate"
+        },
+        "runtimeConformance": {
+          "$ref": "#/$defs/gate"
+        },
+        "ciExtended": {
+          "$ref": "#/$defs/gate"
+        },
+        "uiE2E": {
+          "$ref": "#/$defs/gate"
+        }
+      }
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "warn",
+        "critical"
+      ]
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "recommendedLabels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "recommendedContextChanges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/contextChange"
+      }
+    },
+    "reproducibleHints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reproducibleHint"
+      }
+    }
+  },
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "checks",
+        "checkCount"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "warn",
+            "fail",
+            "skip"
+          ]
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/check"
+          }
+        },
+        "checkCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "recommendedContextChanges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contextChange"
+          }
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "workflowName",
+        "status",
+        "conclusion",
+        "detailsUrl"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "workflowName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conclusion": {
+          "type": "string"
+        },
+        "detailsUrl": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "contextChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "changeType",
+        "targetId",
+        "rationale",
+        "suggestedCommand"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "changeType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "suggestedCommand": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "reproducibleHint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate",
+        "trace",
+        "seed",
+        "command"
+      ],
+      "properties": {
+        "gate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trace": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seed": {
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "command": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

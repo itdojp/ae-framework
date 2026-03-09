@@ -754,6 +754,7 @@ function buildHarnessHealthReport({
 
   return {
     schemaVersion: 'harness-health/v1',
+    contractId: 'harness-health.v1',
     generatedAt: toIsoNow(),
     repository: repo || null,
     pullRequest: prNumber ?? null,

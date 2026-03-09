@@ -86,6 +86,11 @@ export const DEFAULT_RULES = [
     patterns: ['artifacts/ci/policy-gate-summary.json'],
   },
   {
+    id: 'harness-health',
+    schemaPath: 'schema/harness-health.schema.json',
+    patterns: ['artifacts/ci/harness-health.json'],
+  },
+  {
     id: 'automation-observability-v1',
     schemaPath: 'schema/automation-observability-v1.schema.json',
     patterns: ['artifacts/ci/automation-report.json', 'artifacts/automation/*-report.json'],
