@@ -31,7 +31,7 @@ Not in scope yet:
 - required evidence kinds
 - Context Pack 上の object / morphism / diagram / acceptance test 参照
 
-現時点では、**schema とドキュメント整備、report-only の `verify:assurance` summary 生成、および Verify Lite での report-only 収集**までを対象とします。`policy-gate` を含む blocking enforcement は後続フェーズです。
+現時点では、**schema とドキュメント整備、report-only の `verify:assurance` summary 生成、および Verify Lite での report-only 収集**を基本とします。blocking enforcement は既定で無効のまま維持し、`enforce-assurance` ラベル時のみ Verify Lite で strict enforcement を有効化します。
 
 ## 2. スキーマ
 
@@ -115,10 +115,10 @@ assurance:
 ## 6. 現時点の非目標
 
 - `verify-lite-run-summary` への achieved level 集約
-- `verify-lite` / `policy-gate` への blocking enforcement
+- `policy-gate` が assurance artifact 自体を直接解釈して blocking 判定すること
 - `policy-input` / `policy-decision` への assurance 判定追加
 - 全 claim の formal proof
-- assurance 未設定 PR を blocking にすること
+- assurance 未設定 PR を既定で blocking にすること
 
 ## 7. 変更時の注意
 

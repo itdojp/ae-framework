@@ -4,6 +4,7 @@ on:
   pull_request:
     # NOTE: verify-lite is a required status check; keep the workflow running
     # even for docs-only PRs so the status is reported and merge gates pass.
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
   push:
     branches: [main]
     paths-ignore:
@@ -243,7 +244,13 @@ jobs:
           if [ -f artifacts/hermetic-reports/conformance/summary.json ]; then
             args+=(--conformance-report artifacts/hermetic-reports/conformance/summary.json)
           fi
-          pnpm -s run verify:assurance -- "${args[@]}"
+          if [ -f fixtures/counterexample/sample.counterexample.json ]; then
+            args+=(--counterexample fixtures/counterexample/sample.counterexample.json)
+          fi
+          if [ -f fixtures/assurance/sample.assurance-evidence-manifest.json ]; then
+            args+=(--evidence-manifest fixtures/assurance/sample.assurance-evidence-manifest.json)
+          fi
+          pnpm -s run verify:assurance "${args[@]}"
       - name: Validate assurance summary schema (non-blocking)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         continue-on-error: true
@@ -251,6 +258,11 @@ jobs:
           node scripts/ci/validate-assurance-summary.mjs \
             artifacts/assurance/assurance-summary.json \
             schema/assurance-summary.schema.json
+      - name: Enforce assurance summary (strict; label-gated)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-assurance') }}
+        run: |
+          node scripts/ci/enforce-assurance-summary.mjs \
+            artifacts/assurance/assurance-summary.json
       - name: Resilience quick (label-gated, non-blocking)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-resilience') }}
         continue-on-error: true
