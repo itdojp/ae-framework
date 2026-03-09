@@ -10,6 +10,11 @@ lastVerified: '2026-03-09'
 `AGENTS.md` から参照する、エージェント向けの索引です。  
 ここでは一次情報の場所のみを示し、方針本文の重複を避けます。
 
+## Root routers
+
+- `AGENTS.md`: 全エージェント共通の最小ルータ
+- `CLAUDE.md`: Claude Code 向けの最小ルータ
+
 ## ドメイン別 runbook
 
 - CI: `docs/agents/ci.md`

@@ -189,6 +189,11 @@ const checks = [
     label: 'Change Package v2 schema validation'
   },
   {
+    schema: 'schema/ae-handoff.schema.json',
+    fixtures: ['fixtures/agents/sample.ae-handoff.json'],
+    label: 'AE-HANDOFF schema validation'
+  },
+  {
     schema: 'schema/release-policy.schema.json',
     fixtures: ['fixtures/release/sample.release-policy.json', 'policy/release-policy.yml'],
     label: 'Release policy schema validation'

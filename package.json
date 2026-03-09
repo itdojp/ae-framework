@@ -82,6 +82,7 @@
     "verify:assurance": "node scripts/assurance/aggregate-lanes.mjs",
     "change-package:generate": "node scripts/change-package/generate.mjs",
     "change-package:validate": "node scripts/change-package/validate.mjs",
+    "handoff:validate": "node scripts/agents/validate-handoff.mjs",
     "context-pack:validate": "node scripts/context-pack/validate.mjs",
     "context-pack:verify-functor": "node scripts/context-pack/verify-functor.mjs",
     "context-pack:verify-natural-transformation": "node scripts/context-pack/verify-natural-transformation.mjs",

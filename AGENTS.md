@@ -56,5 +56,6 @@ lastVerified: '2026-03-09'
 ## Scope
 
 - このファイルは「入口（Router）」のみを保持する。
+- Claude Code 向けの専用入口は root `CLAUDE.md` とし、本ファイルは全エージェント共通ルータとして維持する。
 - 実行コマンド詳細、Slash Command一覧、ラベル詳細条件は一次情報へリンクし、ここでは列挙しない。
 - ドメイン別runbook追加は `docs/agents/*` で段階的に拡張する（関連: #2292）。
