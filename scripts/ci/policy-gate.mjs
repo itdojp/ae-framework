@@ -332,7 +332,7 @@ function evaluateCheckRequirement(entries, patterns) {
   };
 }
 
-function inspectPlanArtifact() {
+function inspectPlanArtifact(policyPath = DEFAULT_POLICY_PATH) {
   const absoluteInputPath = path.resolve(PLAN_ARTIFACT_PATH);
   const absoluteSchemaPath = path.resolve(PLAN_ARTIFACT_SCHEMA_PATH);
   const baseState = {
@@ -353,6 +353,7 @@ function inspectPlanArtifact() {
     const { report, payload } = validatePlanArtifactFile({
       inputPath: PLAN_ARTIFACT_PATH,
       schemaPath: PLAN_ARTIFACT_SCHEMA_PATH,
+      policyPath,
       outputJsonPath: PLAN_ARTIFACT_VALIDATION_JSON_PATH,
       outputMarkdownPath: PLAN_ARTIFACT_VALIDATION_MD_PATH,
     });
@@ -888,7 +889,7 @@ async function run(options = parseArgs(process.argv)) {
   const changedFiles = fetchChangedFiles(repo, prNumber);
   const reviews = fetchReviews(repo, prNumber);
   const statusRollup = fetchStatusRollup(repo, prNumber);
-  const planArtifact = inspectPlanArtifact();
+  const planArtifact = inspectPlanArtifact(options.policyPath);
 
   const evaluation = evaluatePolicyGate({
     policy,

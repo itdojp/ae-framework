@@ -161,9 +161,17 @@ function semanticValidation(payload, policy) {
 }
 
 export function validatePlanArtifactFile(options) {
-  const payload = readJsonFile(options.inputPath);
-  const schema = readJsonFile(options.schemaPath);
-  const policy = loadRiskPolicy(options.policyPath);
+  const normalizedOptions = {
+    inputPath: DEFAULT_INPUT_PATH,
+    schemaPath: DEFAULT_SCHEMA_PATH,
+    policyPath: DEFAULT_POLICY_PATH,
+    outputJsonPath: DEFAULT_OUTPUT_JSON_PATH,
+    outputMarkdownPath: DEFAULT_OUTPUT_MD_PATH,
+    ...(options || {}),
+  };
+  const payload = readJsonFile(normalizedOptions.inputPath);
+  const schema = readJsonFile(normalizedOptions.schemaPath);
+  const policy = loadRiskPolicy(normalizedOptions.policyPath);
   const schemaResult = runSchemaValidation(schema, payload);
   const semanticResult = schemaResult.ok ? semanticValidation(payload, policy) : { errors: [], warnings: [] };
   const errors = [...schemaResult.errors, ...semanticResult.errors];
@@ -173,9 +181,9 @@ export function validatePlanArtifactFile(options) {
     schemaVersion: 'plan-artifact-validation/v1',
     generatedAt: new Date().toISOString(),
     result,
-    inputPath: path.resolve(options.inputPath),
-    schemaPath: path.resolve(options.schemaPath),
-    policyPath: path.resolve(options.policyPath),
+    inputPath: path.resolve(normalizedOptions.inputPath),
+    schemaPath: path.resolve(normalizedOptions.schemaPath),
+    policyPath: path.resolve(normalizedOptions.policyPath),
     errors,
     warnings,
   };

@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
+import { validatePlanArtifactFile } from '../../../scripts/plan-artifact/validate.mjs';
 
 const repoRoot = process.cwd();
 const validateScript = resolve(repoRoot, 'scripts/plan-artifact/validate.mjs');
@@ -112,5 +113,19 @@ describe('plan-artifact validate', () => {
     const report = JSON.parse(await readFile(outputJsonPath, 'utf8')) as { result: string; errors: string[] };
     expect(report.result).toBe('pass');
     expect(report.errors).toHaveLength(0);
+  });
+
+  it('uses the default policy path for programmatic validation', async () => {
+    const workdir = await createWorkdir('plan-artifact-validate-default-policy-');
+    const inputPath = join(workdir, 'plan-artifact.json');
+    await writeFile(inputPath, await readFile(fixturePath, 'utf8'));
+
+    const { report } = validatePlanArtifactFile({
+      inputPath,
+      schemaPath,
+    });
+
+    expect(report.result).toBe('pass');
+    expect(report.policyPath).toBe(policyPath);
   });
 });
