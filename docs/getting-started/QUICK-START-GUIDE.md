@@ -28,6 +28,25 @@ This baseline gives you:
 
 ### ⚡ Three Adoption Levels
 
+#### How to read the three levels
+
+```mermaid
+flowchart TB
+  subgraph H[Harness layer]
+    H1[first-run / verify:lite]
+    H2[lint / test / hooks]
+  end
+  subgraph C[Assurance control plane]
+    C1[assurance summary / Context Pack]
+    C2[policy gate / release judgment]
+  end
+  H --> C
+```
+
+- **Baseline** keeps the harness stable.
+- **Structured assurance** adds evidence aggregation into the control plane.
+- **High-Assurance PR** strengthens the decision plane only for selected high-risk changes.
+
 #### 1. Baseline
 
 Use this when you want a reproducible local setup and the default report-only quality gates.
@@ -493,6 +512,25 @@ pnpm run first-run
 
 ### ⚡ 3段階の導入レベル
 
+#### 3段階の読み方
+
+```mermaid
+flowchart TB
+  subgraph H[Harness layer]
+    H1[first-run / verify:lite]
+    H2[lint / test / hooks]
+  end
+  subgraph C[Assurance control plane]
+    C1[assurance summary / Context Pack]
+    C2[policy gate / release judgment]
+  end
+  H --> C
+```
+
+- **Baseline** は harness layer を安定化させる段階です。
+- **Structured assurance** は evidence aggregation を control plane に接続する段階です。
+- **High-Assurance PR** は selected high-risk change に対してだけ decision plane を強化する段階です。
+
 #### 1. Baseline
 
 まずは再現可能なローカル導線を通します。
@@ -527,13 +565,13 @@ pnpm run verify:assurance \
 
 #### 3. High-Assurance PR
 
-高リスク PR に限って strict enforcement を有効化します。通常 PR は report-only のままです。
+高リスク PR に限って strict assurance enforcement を有効化します。通常 PR は report-only のままです。
 
 ```bash
 gh pr edit <PR番号> --add-label enforce-assurance
 ```
 
-このラベルにより、assurance enforcement（workflow の `Enforce assurance summary` ステップ）が `warningClaims`、`missingLanes`、`missingEvidenceKinds`、`unlinkedCounterexamples`、`openCounterexamples` などで strict fail するようになります。
+このラベルにより、workflow の `Enforce assurance summary (strict; label-gated)` ステップで strict assurance enforcement が有効化され、`warningClaims`、`missingLanes`、`missingEvidenceKinds`、`unlinkedCounterexamples`、`openCounterexamples` などで strict fail するようになります。
 
 一次情報:
 - `docs/quality/assurance-operations-runbook.md`
