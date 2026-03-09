@@ -1,3 +1,12 @@
+---
+docRole: derived
+canonicalSource:
+- docs/agents/agents-doc-boundary-matrix.md
+- docs/ci-policy.md
+- policy/risk-policy.yml
+lastVerified: '2026-03-09'
+---
+
 # AGENTS — ae-framework Router
 
 このファイルは、エージェント作業時の最小ルータです。  

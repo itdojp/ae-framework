@@ -6,6 +6,15 @@ import { fileURLToPath } from 'node:url';
 
 const DEFAULT_WORKFLOW_PATH = '.github/workflows/agent-commands.yml';
 const DEFAULT_OUTPUT_PATH = 'docs/agents/commands.md';
+const GENERATED_FRONT_MATTER = [
+  '---',
+  'docRole: derived',
+  'canonicalSource:',
+  '  - .github/workflows/agent-commands.yml',
+  "lastVerified: '2026-03-09'",
+  '---',
+  '',
+];
 const __filename = fileURLToPath(import.meta.url);
 
 function toSortedUnique(values) {
@@ -96,6 +105,7 @@ function extractLabelMetadata(workflowText) {
 
 function renderMarkdown({ prCommands, issueCommands, prLabels, issueLabels, dynamicLabels }) {
   const lines = [
+    ...GENERATED_FRONT_MATTER,
     '# Agent Commands Catalog',
     '',
     '> この文書は `.github/workflows/agent-commands.yml` から自動生成されます。手動編集しないでください。',

@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-09'
+owner: agent-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Agent Documentation Boundary Matrix
 
 最終更新: 2026-03-06

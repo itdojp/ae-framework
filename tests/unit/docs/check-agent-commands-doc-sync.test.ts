@@ -69,6 +69,8 @@ describe('check-agent-commands-doc-sync', () => {
 
   it('renders generated catalog content from workflow', () => {
     const catalog = buildCatalogFromWorkflow(SAMPLE_WORKFLOW);
+    expect(catalog).toContain('docRole: derived');
+    expect(catalog).toContain('.github/workflows/agent-commands.yml');
     expect(catalog).toContain('## PR向け Slash Commands');
     expect(catalog).toContain('`/run-qa`');
     expect(catalog).toContain('`status:in-progress`');

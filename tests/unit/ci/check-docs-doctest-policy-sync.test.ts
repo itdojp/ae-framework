@@ -51,6 +51,8 @@ function createWorkflowYaml(options: WorkflowFixtureOptions = {}): string {
     indexSteps.push('      - name: Validate docs-doctest policy sync');
     indexSteps.push('        run: node scripts/ci/check-docs-doctest-policy-sync.mjs');
   }
+  indexSteps.push('      - name: Check documentation consistency');
+  indexSteps.push('        run: node scripts/docs/check-doc-consistency-all.mjs');
   if (includeChangedDocsStep) {
     indexSteps.push('      - name: Detect changed markdown files (PR only)');
     indexSteps.push(`        id: ${changedDocsStepId}`);
