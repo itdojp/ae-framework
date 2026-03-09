@@ -291,7 +291,7 @@ Claude CodeやMCPとの統合
 - [verify-first-artifacts-catalog.md](./quality/verify-first-artifacts-catalog.md) - Verify-first の最小成果物（SSOT/AC/NFR/Evidence）定義
 - [verify-first-implementation-runbook.md](./quality/verify-first-implementation-runbook.md) - Verify-first 実装運用の標準手順（Plan→Spec→Gate→Evidence）
 - [assurance-profile.md](./quality/assurance-profile.md) - assurance profile / level の入力契約（claim / level / lanes / evidence kinds）
-- [assurance-operations-runbook.md](./quality/assurance-operations-runbook.md) - assurance summary の生成・strict enforcement・障害切り分け手順
+- [assurance-operations-runbook.md](./quality/assurance-operations-runbook.md) - assurance summary の生成・strict assurance enforcement・障害切り分け手順
 - [assurance-onboarding-checklist.md](./guides/assurance-onboarding-checklist.md) - 新規プロジェクトへ assurance profile を導入する最小チェックリスト
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [run-manifest-freshness-contract.md](./quality/run-manifest-freshness-contract.md) - run-manifest鮮度判定契約（stale artifact 検出）
