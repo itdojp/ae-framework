@@ -5,6 +5,10 @@
 複数のCIゲート（artifacts schema / testing harness / context-pack / runtime conformance / CI Extended / UI E2E）を横断し、失敗を同一フォーマットで要約して次アクションを出す。
 
 - 出力: `artifacts/ci/harness-health.json`, `artifacts/ci/harness-health.md`
+- Schema: `schema/harness-health.schema.json`
+- Validation:
+  - `scripts/ci/validate-artifacts-ajv.mjs`
+  - `scripts/ci/validate-json.mjs`
 - 生成ポイント:
   - PR: `.github/workflows/pr-ci-status-comment.yml` の `summarize` job
   - 週次: `.github/workflows/ci-extended.yml` の schedule 実行
@@ -14,6 +18,7 @@
 主要フィールド:
 
 - `commitSha`, `workflow`, `runId`
+- `contractId` (`harness-health.v1`)
 - `gates.{artifactsSchema|testingHarness|contextPack|runtimeConformance|ciExtended|uiE2E}.status` (`ok|warn|fail|skip`)
 - `severity` (`ok|warn|critical`)
 - `reasons[]`
