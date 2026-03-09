@@ -73,6 +73,7 @@ pnpm run verify:lite
 - [ ] Context Pack 系 6 コマンドが成功
 - [ ] `context-pack-suggestions.{json,md}` で `recommendedContextChanges` を確認済み
 - [ ] `verify:lite` で Context Pack 関連 step が想定通り
+- [ ] assurance を導入する場合、`assurance.profile` / `claim_refs` を設定し `docs/guides/assurance-onboarding-checklist.md` を実施済み
 - [ ] report に不要な差分ノイズを持ち込んでいない
 - [ ] `evidencePaths` が stale path ではない
 

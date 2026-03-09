@@ -98,7 +98,7 @@
 | artifact (path/pattern) | schema | producer (primary) | consumer (primary) |
 | --- | --- | --- | --- |
 | `artifacts/verify-lite/verify-lite-run-summary.json` | `schema/verify-lite-run-summary.schema.json` | `scripts/ci/write-verify-lite-summary.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-verify-lite-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
-| `artifacts/assurance/assurance-summary.json` | `schema/assurance-summary.schema.json` | `scripts/assurance/aggregate-lanes.mjs`, `.github/workflows/verify-lite.yml` (report-only) | `scripts/ci/validate-assurance-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, future `policy-gate` integration |
+| `artifacts/assurance/assurance-summary.json` | `schema/assurance-summary.schema.json` | `scripts/assurance/aggregate-lanes.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-assurance-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/enforce-assurance-summary.mjs`, `scripts/summary/render-pr-summary.mjs` |
 | `artifacts/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/publish-envelope.mjs` |
 | `artifacts/trace/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` (copy運用含む) | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/post-envelope-comment.mjs` |
 | `artifacts/formal/formal-summary-v1.json` | `schema/formal-summary-v1.schema.json` | `scripts/formal/generate-formal-summary-v1.mjs` (`--out`), `.github/workflows/verify-lite.yml`, `.github/workflows/formal-aggregate.yml` | `scripts/ci/validate-formal-summary-v1.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/generate-run-manifest.mjs` |
@@ -120,7 +120,7 @@
 
 ## 5. 現時点の未整備（次段階）
 
-- assurance contract は段階導入中であり、`verify:assurance` は report-only、policy integration は後続 Issue で追加する。
+- assurance contract は段階導入中であり、既定運用は report-only、strict enforcement は `enforce-assurance` ラベル時の Verify Lite に限定される。
 - `schemaVersion` は semver と `*/v1` 形式が混在している（統一規約は `docs/reference/SCHEMA-GOVERNANCE.md` で段階導入）。
 - `change-package` は `v1` が現行 production contract、`v2` は proof-carrying 拡張の preview contract として併存している。
 - Formal Summary は `v1` / `v2` の dual-write + dual-validate 期間として運用中（`v2`: `schemaVersion=formal-summary/v2`, `contractId=formal-summary.v2`）。

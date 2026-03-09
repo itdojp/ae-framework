@@ -33,6 +33,7 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `run-spec` | fail-fast spec validation | `spec-validation.yml` | `/run-spec` で付与 |
 | `run-trace` | KvOnce trace validation を required gate 対象として再評価 | `spec-generate-model.yml`（checks: `trace-conformance`, `KvOnce Trace Validation`） | 高リスクPRで `policy-gate` が参照（fork PRは `trace-conformance` で判定） |
 | `run-drift` | codegen drift detection | `codegen-drift-check.yml` | `/run-drift` で付与 |
+| `enforce-assurance` | assurance summary を strict 判定 | `verify-lite.yml` 内 `Enforce assurance summary (strict; label-gated)` | high-risk PR のみ推奨。運用手順は `docs/quality/assurance-operations-runbook.md` |
 | `enforce-bdd-lint` | BDD lint を strict 化 | `verify-lite.yml` | `/enforce-bdd-lint` で付与 |
 | `enforce-verify-lite-lint` | verify-lite lint baseline を enforce | `verify-lite.yml` | PRラベルで制御 |
 | `enforce-context-pack` | Context Pack E2E を strict 化 | `context-pack-quality-gate.yml` | Phase C までの段階導入で利用 |

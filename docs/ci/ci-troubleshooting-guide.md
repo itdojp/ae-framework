@@ -51,6 +51,7 @@ Purpose: Provide a short, deterministic path to diagnose common CI failures.
 | 症状 | 一次確認 | runbook |
 | --- | --- | --- |
 | `Copilot Review Gate / gate` fail | 未解決レビューthread数、失敗runのconclusion | thread解消 → `gh run rerun <runId> --failed` |
+| `enforce-assurance` fail | `artifacts/assurance/assurance-summary.json` の `warningClaims` / `missingLanes` / `missingEvidenceKinds` / `counterexamples.open` | `docs/quality/assurance-operations-runbook.md` に沿って不足 lane / evidence を補完 |
 | `PR Self-Heal` が `blocked` | PRコメントの reason、`status:blocked` ラベル | 競合解消/失敗チェック修復後に手動rerun |
 | `auto-merge` が有効化されない | `AE_AUTO_MERGE*`、required checks、reviewDecision | `docs/ci/auto-merge.md` に沿って条件修正 |
 | `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` / frozen-lockfile fail | install step、`pnpm-lock.yaml`、`.npmrc` / workspace config の差分 | lane を required-lane / `optional-pr` / `manual-ops` に分類 → required-lane は lockfile 更新を commit / push → 最新 SHA の run を確認 |
@@ -138,6 +139,7 @@ gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
 
 ## References
 - `docs/ci/ci-baseline-checklist.md`
+- `docs/quality/assurance-operations-runbook.md`
 - `docs/ci/automation-observability.md`
 - `docs/ci/automation-alerting.md`
 - `docs/ci/automation-failure-policies.md`
