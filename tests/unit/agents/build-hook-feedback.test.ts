@@ -128,6 +128,83 @@ describe('build-hook-feedback CLI', () => {
         },
       ],
     });
+    await writeJson('artifacts/assurance/assurance-summary.json', {
+      schemaVersion: 'assurance-summary/v1',
+      generatedAt: '2026-03-09T00:00:00.000Z',
+      metadata: {},
+      inputs: {
+        assuranceProfile: 'fixtures/assurance/sample.assurance-profile.json',
+        contextPacks: [],
+        verifyLiteSummary: 'artifacts/verify-lite/verify-lite-run-summary.json',
+        formalSummaries: [],
+        conformanceReport: null,
+        counterexamples: [],
+        evidenceManifests: [],
+      },
+      summary: {
+        claimCount: 1,
+        satisfiedClaims: 0,
+        warningClaims: 1,
+        claimsMissingRequiredLanes: 1,
+        claimsMissingRequiredEvidenceKinds: 1,
+        unlinkedCounterexamples: 1,
+        warningCount: 2,
+      },
+      laneCoverage: {
+        spec: { requiredClaims: 1, observedClaims: 1 },
+        behavior: { requiredClaims: 1, observedClaims: 0 },
+        adversarial: { requiredClaims: 0, observedClaims: 0 },
+        model: { requiredClaims: 1, observedClaims: 0 },
+        proof: { requiredClaims: 0, observedClaims: 0 },
+        runtime: { requiredClaims: 0, observedClaims: 0 },
+      },
+      claims: [
+        {
+          claimId: 'inventory-safe',
+          statement: 'inventory remains safe',
+          criticality: 'high',
+          targetLevel: 'A2',
+          minIndependentSources: 2,
+          observedIndependentSources: 1,
+          requiredLanes: ['spec', 'behavior', 'model'],
+          observedLanes: ['spec'],
+          missingLanes: ['behavior', 'model'],
+          requiredEvidenceKinds: ['property'],
+          observedEvidenceKinds: [],
+          missingEvidenceKinds: ['property'],
+          counterexamples: { open: 1, resolved: 0, acceptedRisk: 0, total: 1 },
+          independenceWarnings: [],
+          status: 'warning',
+          evidence: [],
+        },
+      ],
+      warnings: [],
+    });
+    await writeJson('artifacts/e2e/ui-e2e-summary.json', {
+      schemaVersion: 'ui-e2e-summary/v1',
+      generatedAt: '2026-03-09T00:00:00.000Z',
+      status: 'error',
+      baseUrl: 'http://127.0.0.1:3100',
+      summary: { total: 1, passed: 0, failed: 1, skipped: 0, ariaSnapshotCount: 0 },
+      scenarios: [
+        {
+          id: 'semantic-form',
+          title: 'semantic form',
+          status: 'fail',
+          startedAt: '2026-03-09T00:00:00.000Z',
+          finishedAt: '2026-03-09T00:00:01.000Z',
+          durationMs: 1000,
+          url: 'http://127.0.0.1:3100/ja/e2e/semantic-form',
+          semanticChecks: ['submit status exposed'],
+          diagnostics: [{ kind: 'semantic', message: 'status missing', ariaSnapshotPath: null }],
+          ariaSnapshotPath: null,
+        },
+      ],
+      artifacts: {
+        ariaSnapshotsDir: 'artifacts/e2e/ui-aria-snapshots',
+        adapterSummaryPath: 'artifacts/e2e/summary.json',
+      },
+    });
 
     const { result, outputJsonPath, outputMdPath } = runBuild();
     expect(result.status).toBe(0);
@@ -138,20 +215,33 @@ describe('build-hook-feedback CLI', () => {
       reproCommands: string[];
       evidence: Array<{ id: string }>;
       blockingReasons: string[];
+      source: { assuranceSummaryPath: string | null; uiE2ESummaryPath: string | null };
     };
     expect(validate(report), JSON.stringify(validate.errors)).toBe(true);
     expect(report.status).toBe('blocked');
     expect(report.blockingReasons.some((entry) => entry.includes('Missing required labels'))).toBe(true);
+    expect(report.blockingReasons.some((entry) => entry.includes('Assurance summary warnings'))).toBe(true);
+    expect(report.blockingReasons.some((entry) => entry.includes('UI semantic E2E status=error'))).toBe(true);
     expect(report.nextActions.some((entry) => entry.includes('fix failing verify-lite steps'))).toBe(true);
     expect(report.nextActions.some((entry) => entry.includes('run-ci-extended'))).toBe(true);
+    expect(report.nextActions.some((entry) => entry.includes('pnpm run verify:assurance'))).toBe(true);
+    expect(report.nextActions.some((entry) => entry.includes('pnpm run ui-e2e:semantic'))).toBe(true);
     expect(report.reproCommands).toContain('pnpm run verify:lite');
     expect(report.reproCommands).toContain('pnpm run test:ci:extended');
     expect(report.reproCommands).toContain('pnpm run context-pack:verify-functor');
+    expect(report.reproCommands).toContain('pnpm run verify:assurance');
+    expect(report.reproCommands).toContain('pnpm run ui-e2e:semantic');
     expect(report.evidence.some((entry) => entry.id === 'harnessHealth')).toBe(true);
+    expect(report.evidence.some((entry) => entry.id === 'assuranceSummary')).toBe(true);
+    expect(report.evidence.some((entry) => entry.id === 'uiE2ESummary')).toBe(true);
+    expect(report.source.assuranceSummaryPath).toBe('artifacts/assurance/assurance-summary.json');
+    expect(report.source.uiE2ESummaryPath).toBe('artifacts/e2e/ui-e2e-summary.json');
 
     const markdown = await readFile(outputMdPath, 'utf8');
     expect(markdown).toContain('# Hook Feedback');
     expect(markdown).toContain('## Repro commands');
+    expect(markdown).toContain('assurance-summary');
+    expect(markdown).toContain('ui-e2e-summary');
   });
 
   it('builds warn feedback and falls back to verify-lite command when no repro command is present', async () => {
@@ -205,6 +295,8 @@ describe('build-hook-feedback CLI', () => {
     expect(report.reproCommands).toEqual(['pnpm run verify:lite']);
     expect(report.nextActions[0]).toContain('incomplete verify-lite steps');
     expect(report.source.contextPackSuggestionsPath).toBeNull();
+    expect(report.source.assuranceSummaryPath).toBeNull();
+    expect(report.source.uiE2ESummaryPath).toBeNull();
   });
 
   it('merges canonical evidence status and includes harness suggested commands in repro commands', async () => {

@@ -103,7 +103,9 @@
         "verifyLiteSummaryPath",
         "harnessHealthPath",
         "changePackagePath",
-        "contextPackSuggestionsPath"
+        "contextPackSuggestionsPath",
+        "assuranceSummaryPath",
+        "uiE2ESummaryPath"
       ],
       "properties": {
         "verifyLiteSummaryPath": {
@@ -119,6 +121,28 @@
           "minLength": 1
         },
         "contextPackSuggestionsPath": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "assuranceSummaryPath": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "uiE2ESummaryPath": {
           "oneOf": [
             {
               "type": "string",
