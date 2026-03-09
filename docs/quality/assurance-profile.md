@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- schema/assurance-profile.schema.json
+- docs/quality/ASSURANCE-MODEL.md
+lastVerified: '2026-03-10'
+---
 # Assurance Profile v1
 
 > Language / 言語: English | 日本語

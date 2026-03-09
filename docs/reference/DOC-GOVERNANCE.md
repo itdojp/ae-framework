@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-09'
+lastVerified: '2026-03-10'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -40,7 +40,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `derived`: 一次情報を要約・導線化した文書。canonicalSource を必須とする。
 - `narrative`: 背景説明・概要・導入文章。規範語の使用は warning 対象とする。
 
-## 4. 初期適用範囲
+## 4. 現在の適用範囲
 
 現時点の lint 対象は次です。
 
@@ -49,8 +49,8 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/README.md`
 - `docs/reference/DOC-GOVERNANCE.md`
 - `docs/agents/*.md`
-
-後続フェーズで `docs/product/*`、`docs/quality/*` へ拡張します。
+- `docs/product/*.md`
+- `docs/quality/*.md`
 
 ## 5. Validation
 

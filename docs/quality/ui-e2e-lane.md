@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: ui-e2e
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # UI Semantic E2E Lane
 
 最小の UI semantic E2E lane です。スクリーンショット依存ではなく、role/name と ARIA tree を証跡として残します。

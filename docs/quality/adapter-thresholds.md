@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- policy/quality.json
+- docs/ci/harness-taxonomy.md
+lastVerified: '2026-03-10'
+---
 # Adapter Thresholds — Lighthouse/Perf/A11y (Label-Gated)
 
 Purpose（決定）

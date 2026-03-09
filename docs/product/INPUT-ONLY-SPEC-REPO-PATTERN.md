@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+- docs/strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md
+- docs/spec/context-pack.md
+- docs/reference/CLI-COMMANDS-REFERENCE.md
+lastVerified: '2026-03-10'
+---
 # Input-Only Spec Repository Pattern（入力のみリポジトリ・パターン）
 
 > Language / 言語: English | 日本語

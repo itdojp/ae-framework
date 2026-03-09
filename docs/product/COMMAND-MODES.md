@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/reference/CLI-COMMANDS-REFERENCE.md
+- scripts/project/help.mjs
+lastVerified: '2026-03-10'
+---
 # ae-framework コマンド体系（実行モード別）
 
 > Language / 言語: English | 日本語

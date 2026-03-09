@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: formal-methods
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Formal Runbook (low-impact start)
 
 > 🌍 Language / 言語: English | 日本語

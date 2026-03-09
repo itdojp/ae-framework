@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci/branch-protection-operations.md
+- docs/reference/CLI-COMMANDS-REFERENCE.md
+- docs/quality/formal-runbook.md
+lastVerified: '2026-03-10'
+---
 # ae-framework 典型的な利用シナリオ（Use Cases）
 
 > Language / 言語: English | 日本語

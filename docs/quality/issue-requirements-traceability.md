@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/verify-first-implementation-runbook.md
+- docs/reference/CONTRACT-CATALOG.md
+lastVerified: '2026-03-10'
+---
 # Issue Requirements Traceability (LG-*/REQ-*)
 
 Issue本文を一次ソースとして、要件ID抽出 → matrix 生成 → strict validate までを標準CLIで実行する手順です。

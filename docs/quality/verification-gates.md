@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- policy/risk-policy.yml
+- policy/quality.json
+lastVerified: '2026-03-10'
+---
 # Verification Gates Guide
 
 > 🌍 Language / 言語: English | 日本語

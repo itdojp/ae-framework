@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+- docs/getting-started/QUICK-START-GUIDE.md
+- .github/workflows/verify-lite.yml
+- package.json
+lastVerified: '2026-03-10'
+---
 # ae-framework Minimal Adoption（最小導入パッケージ）
 
 > Language / 言語: English | 日本語

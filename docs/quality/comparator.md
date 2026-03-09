@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-10'
+---
 # Comparator Utilities
 
 This document describes the shared comparator utility used for threshold parsing, comparisons, and strictest-merge decisions.

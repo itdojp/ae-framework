@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/verify-first-implementation-runbook.md
+- docs/product/MINIMAL-ADOPTION.md
+lastVerified: '2026-03-10'
+---
 # Ownership & Adoption Sample Flow
 
 Purpose: Provide a minimal end-to-end flow that teams can follow when adopting ae-framework for AI-assisted changes.

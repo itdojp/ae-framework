@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-10'
+---
 # Incident Triage Template
 
 Purpose: Provide a minimal, repeatable format for incident triage in AI-assisted development.

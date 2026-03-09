@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/verify-first-implementation-runbook.md
+- docs/quality/ARTIFACTS-CONTRACT.md
+lastVerified: '2026-03-10'
+---
 # Verify-first Failure Diagnostic Template
 
 > PR/CI 失敗時の最小診断テンプレート（再現手順付き）

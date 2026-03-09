@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/verify-first-implementation-runbook.md
+- policy/risk-policy.yml
+lastVerified: '2026-03-10'
+---
 # Verify-first 最小Quality Gate基準（Required / Opt-in）
 
 > Language / 言語: English | 日本語

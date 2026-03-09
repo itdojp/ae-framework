@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/reference/CLI-COMMANDS-REFERENCE.md
+- package.json
+lastVerified: '2026-03-10'
+---
 # ae-framework 利用マニュアル
 
 > Language / 言語: English | 日本語

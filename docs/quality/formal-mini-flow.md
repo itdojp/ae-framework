@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/formal-runbook.md
+- docs/quality/formal-tools-setup.md
+lastVerified: '2026-03-10'
+---
 # Formal Mini Flow: 反例 → 失敗テスト → 修正 → 緑
 
 目的

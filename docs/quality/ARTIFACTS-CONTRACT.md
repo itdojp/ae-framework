@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: quality-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Artifacts/Reports 契約（Required / Optional）
 
 > Language / 言語: English | 日本語

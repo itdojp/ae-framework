@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- schema/counterexample.schema.json
+- docs/quality/ASSURANCE-MODEL.md
+lastVerified: '2026-03-10'
+---
 # Counterexample → GWT Format (Spec & Examples)
 
 > 🌍 Language / 言語: English | 日本語

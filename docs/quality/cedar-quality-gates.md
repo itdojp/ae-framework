@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- policy/quality.json
+- docs/quality/verification-gates.md
+lastVerified: '2026-03-10'
+---
 ## Cedar Policies Quality Gates (report-only)
 
 This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` files and produces a non-blocking summary.
