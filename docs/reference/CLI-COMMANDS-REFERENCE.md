@@ -250,6 +250,9 @@ ae domain-model --language --sources "glossary.md"
 # optional: --trace-bundle artifacts/observability/trace-bundle.json
 # outputs: artifacts/release/post-deploy-verify.{json,md}
 # status: pass | warn | fail, with rollbackRecommended
+# note: fixtures/release/sample.* are for local CLI validation only; workflow_dispatch rejects them
+# note: omitting --synthetic-checks or --trace-bundle can surface as missingEvidence, but a provided unreadable path fails the command
+# note: workflow input release_tag is not a CLI flag; it is used only by post-deploy-verify.yml to append optional assurance summary output
 ```
 
 ### Integration Testing (Phase 2.3)
@@ -591,6 +594,9 @@ ae release verify --policy policy/release-policy.yml \
 # 任意: --trace-bundle artifacts/observability/trace-bundle.json
 # 出力: artifacts/release/post-deploy-verify.{json,md}
 # 判定: pass | warn | fail（rollbackRecommended を返却）
+# 注: fixtures/release/sample.* はローカル CLI 検証用であり、workflow_dispatch では拒否される
+# 注: --synthetic-checks / --trace-bundle は未指定なら missingEvidence になり得るが、指定したパスが読めない場合はコマンドが失敗する
+# 注: workflow input の release_tag は CLI 引数ではなく、post-deploy-verify.yml が optional な assurance summary を追記するために使う
 ```
 
 ### Integration Testing
