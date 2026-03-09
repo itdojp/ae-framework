@@ -24,6 +24,7 @@ required_checks:
 high_risk:
   min_human_approvals: 1
   require_policy_labels: true
+  require_plan_artifact: true
   fail_when_required_gate_is_pending: false
 
 low_risk:

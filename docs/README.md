@@ -159,6 +159,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - PR automation runbook: `ci/pr-automation.md`（Copilot→auto-fix→auto-merge）
 - Review topology matrix validation: `ci/review-topology-matrix.md`（solo/team/override の比較検証）
 - Change Package runbook: `ci/change-package.md`（証跡パッケージ生成/検証/PR要約連携）
+- Plan Artifact runbook: `ci/plan-artifact.md`（high-risk PR の事前レビュー契約）
 - Workflow role matrix: `ci/workflow-role-matrix.md`（core / optional / report の責務整理）
 - Workflow topology mapping (4 tracks): `ci/workflow-topology-mapping-2026-03-04.md`（56 workflows の4系統再配置案）
 - Opt-in controls: `ci/OPT-IN-CONTROLS.md`（ラベル/Slash/dispatchの一覧）

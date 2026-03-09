@@ -319,7 +319,20 @@ jobs:
             --schema schema/change-package.schema.json \
             --output-json artifacts/change-package/change-package-validation.json \
             --output-md artifacts/change-package/change-package-validation.md
-      - name: Append Change Package to PR summary
+      - name: Validate Plan Artifact
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          if [ -f artifacts/plan/plan-artifact.json ]; then
+            node scripts/plan-artifact/validate.mjs \
+              --file artifacts/plan/plan-artifact.json \
+              --schema schema/plan-artifact.schema.json \
+              --output-json artifacts/plan/plan-artifact-validation.json \
+              --output-md artifacts/plan/plan-artifact-validation.md
+          else
+            printf '%s\n' 'Plan Artifact not present in this PR branch; skipping append.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Append Change Package and Plan Artifact to PR summary
         if: ${{ always() }}
         run: |
           if [ -f artifacts/change-package/change-package.md ]; then
@@ -329,6 +342,14 @@ jobs:
           if [ -f artifacts/change-package/change-package-validation.md ]; then
             printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
             cat artifacts/change-package/change-package-validation.md >> artifacts/summary/PR_SUMMARY.md
+          fi
+          if [ -f artifacts/plan/plan-artifact.md ]; then
+            printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
+            cat artifacts/plan/plan-artifact.md >> artifacts/summary/PR_SUMMARY.md
+          fi
+          if [ -f artifacts/plan/plan-artifact-validation.md ]; then
+            printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
+            cat artifacts/plan/plan-artifact-validation.md >> artifacts/summary/PR_SUMMARY.md
           fi
       - name: Upload harness health artifact
         if: ${{ always() }}
@@ -340,7 +361,7 @@ jobs:
             artifacts/ci/harness-health.md
           if-no-files-found: warn
           retention-days: 14
-      - name: Upload change-package artifact
+      - name: Upload change-package and plan-artifact artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
@@ -350,6 +371,10 @@ jobs:
             artifacts/change-package/change-package.md
             artifacts/change-package/change-package-validation.json
             artifacts/change-package/change-package-validation.md
+            artifacts/plan/plan-artifact.json
+            artifacts/plan/plan-artifact.md
+            artifacts/plan/plan-artifact-validation.json
+            artifacts/plan/plan-artifact-validation.md
           if-no-files-found: warn
           retention-days: 14
       - name: Post or update PR comment
