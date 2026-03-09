@@ -83,6 +83,7 @@
 - `schema/spec-validation-report.schema.json`
 - `schema/trace-bundle.schema.json`
 - `schema/trace-bundle-summary.schema.json`
+- `schema/ui-e2e-summary.schema.json`
 - `schema/usefulness-evaluation-report.schema.json`
 - `schema/verify-lite-run-summary.schema.json`
 
@@ -119,6 +120,8 @@
 | `artifacts/ci/automation-report.json` | `schema/automation-observability-v1.schema.json` | `scripts/ci/lib/automation-report.mjs`, `.github/workflows/codex-autopilot-lane.yml` | `scripts/ci/validate-automation-report.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/ci/pr-state-v1.json` | `schema/pr-state-v1.schema.json` | `scripts/ci/codex-autopilot-lane.mjs` | `scripts/ci/validate-json.mjs`, `docs/ci/codex-autopilot-lane.md` |
 | `artifacts/ci/execution-plan-v1.json` | `schema/execution-plan-v1.schema.json` | `scripts/ci/codex-autopilot-lane.mjs` | `scripts/ci/validate-json.mjs`, `docs/ci/codex-autopilot-lane.md` |
+| `artifacts/e2e/ui-e2e-summary.json` | `schema/ui-e2e-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs`, `.github/workflows/parallel-test-execution.yml` | `scripts/ci/build-harness-health.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
+| `artifacts/e2e/summary.json` | `docs/schemas/artifacts-adapter-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, future adapter-summary aggregators |
 
 ## 5. 現時点の未整備（次段階）
 

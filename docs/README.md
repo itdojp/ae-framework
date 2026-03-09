@@ -125,6 +125,7 @@ Comprehensive documentation for the agentic SDLC orchestrator and assurance cont
 - Verify-first implementation runbook: `quality/verify-first-implementation-runbook.md`
 - Assurance profile / level: `quality/assurance-profile.md`
 - Assurance operations runbook: `quality/assurance-operations-runbook.md`
+- UI semantic E2E lane: `quality/ui-e2e-lane.md`
 - Assurance onboarding checklist: `guides/assurance-onboarding-checklist.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
 - Runbooks / Traceability / Runtime Contracts: see `./quality` and `./verify`

@@ -28,8 +28,14 @@ export const DEFAULT_RULES = [
     schemaPath: 'docs/schemas/artifacts-adapter-summary.schema.json',
     patterns: [
       'artifacts/adapters/**/summary.json',
+      'artifacts/e2e/summary.json',
       'artifacts/lighthouse/**/summary.json',
     ],
+  },
+  {
+    id: 'ui-e2e-summary',
+    schemaPath: 'schema/ui-e2e-summary.schema.json',
+    patterns: ['artifacts/e2e/ui-e2e-summary.json'],
   },
   {
     id: 'report-envelope',

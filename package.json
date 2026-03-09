@@ -246,6 +246,7 @@
     "test:container": "vitest run tests/container/",
     "test:phase3.2": "vitest run tests/testing/",
     "test:playwright": "vitest run tests/testing/playwright-integration.test.ts",
+    "ui-e2e:semantic": "node scripts/e2e/run-ui-e2e-semantic.mjs",
     "test:intelligent": "vitest run tests/testing/intelligent-test-selection.test.ts",
     "playwright:install": "playwright install",
     "e2e:demo": "tsx -e \"import { PlaywrightIntegration } from './src/testing/playwright-integration.js'; console.log('Playwright E2E demo ready');\"",

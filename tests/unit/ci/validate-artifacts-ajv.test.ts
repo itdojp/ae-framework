@@ -273,5 +273,13 @@ describe('validate-artifacts-ajv', () => {
     expect(benchCompareRule).toBeDefined();
     expect(benchCompareRule?.schemaPath).toBe('schema/bench-compare.schema.json');
     expect(benchCompareRule?.patterns).toContain('artifacts/bench-compare.json');
+
+    const uiE2ESummaryRule = DEFAULT_RULES.find((rule) => rule.id === 'ui-e2e-summary');
+    expect(uiE2ESummaryRule).toBeDefined();
+    expect(uiE2ESummaryRule?.schemaPath).toBe('schema/ui-e2e-summary.schema.json');
+    expect(uiE2ESummaryRule?.patterns).toContain('artifacts/e2e/ui-e2e-summary.json');
+
+    const adapterSummaryRule = DEFAULT_RULES.find((rule) => rule.id === 'adapter-summary');
+    expect(adapterSummaryRule?.patterns).toContain('artifacts/e2e/summary.json');
   });
 });

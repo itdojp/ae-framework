@@ -135,7 +135,10 @@ ae-framework ui-scaffold --components
 ae-framework ui-scaffold --state
 ae-framework ui-scaffold --tokens
 
-# E2E 実行（apps/web）
+# 実装済みの semantic UI E2E lane
+pnpm run ui-e2e:semantic
+
+# 従来の Playwright 実験系
 pnpm --filter @ae-framework/web exec playwright test --reporter=list
 
 # 任意: Lighthouse CI（ページURLを環境で指定）

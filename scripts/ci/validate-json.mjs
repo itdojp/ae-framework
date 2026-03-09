@@ -194,6 +194,11 @@ const checks = [
     label: 'AE-HANDOFF schema validation'
   },
   {
+    schema: 'schema/ui-e2e-summary.schema.json',
+    fixtures: ['fixtures/e2e/sample.ui-e2e-summary.json'],
+    label: 'UI E2E summary schema validation'
+  },
+  {
     schema: 'schema/release-policy.schema.json',
     fixtures: ['fixtures/release/sample.release-policy.json', 'policy/release-policy.yml'],
     label: 'Release policy schema validation'
