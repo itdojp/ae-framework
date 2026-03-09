@@ -28,6 +28,25 @@ This baseline gives you:
 
 ### ⚡ Three Adoption Levels
 
+#### How to read the three levels
+
+```mermaid
+flowchart TB
+  subgraph H[Harness layer]
+    H1[first-run / verify:lite]
+    H2[lint / test / hooks]
+  end
+  subgraph C[Assurance control plane]
+    C1[assurance summary / Context Pack]
+    C2[policy gate / release judgment]
+  end
+  H --> C
+```
+
+- **Baseline** keeps the harness stable.
+- **Structured assurance** adds evidence aggregation into the control plane.
+- **High-Assurance PR** strengthens the control plane only for selected high-risk changes.
+
 #### 1. Baseline
 
 Use this when you want a reproducible local setup and the default report-only quality gates.
@@ -492,6 +511,25 @@ pnpm run first-run
 - `artifacts/first-run/**` と `artifacts/verify-lite/**` の証跡生成
 
 ### ⚡ 3段階の導入レベル
+
+#### 3段階の読み方
+
+```mermaid
+flowchart TB
+  subgraph H[Harness layer]
+    H1[first-run / verify:lite]
+    H2[lint / test / hooks]
+  end
+  subgraph C[Assurance control plane]
+    C1[assurance summary / Context Pack]
+    C2[policy gate / release judgment]
+  end
+  H --> C
+```
+
+- **Baseline** は harness layer を安定化させる段階です。
+- **Structured assurance** は evidence aggregation を control plane に接続する段階です。
+- **High-Assurance PR** は selected high-risk change に対してだけ control plane を強化する段階です。
 
 #### 1. Baseline
 
