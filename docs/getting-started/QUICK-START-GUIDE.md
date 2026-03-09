@@ -6,48 +6,78 @@
 
 ## English
 
-**Get started with ae-framework in Claude Code**
-**Run a reproducible local setup first, then expand to automation**
+**Get started with ae-framework as an assurance control plane**
+**Run the reproducible local path first, then opt into stricter gates only when needed**
 
 ### ✅ Implemented / Reproducible Path
 
-Use the following path as the baseline that is aligned with current scripts in this repository:
+Current baseline aligned with the repository implementation:
 
 ```bash
 corepack enable
 corepack prepare pnpm@10.0.0 --activate
 pnpm install
 pnpm run first-run
-pnpm run codex:quickstart
+pnpm run verify:lite
 ```
 
-> The conversation transcripts and metrics later in this document are illustrative examples.
+This baseline gives you:
+- environment validation via `first-run`
+- required CI-equivalent local verification via `verify:lite`
+- reproducible evidence under `artifacts/verify-lite/**`
 
-### ⚡ 5-Minute Quick Setup
+### ⚡ Three Adoption Levels
 
-> Notes:
-> - Command examples are executable on the current repository checkout.
-> - Conversation transcripts shown later are illustrative examples, not guaranteed verbatim output.
+#### 1. Baseline
 
-#### 1. Enable ae-framework in Claude Code
-
-**ae-framework is already integrated with Claude Code!**
+Use this when you want a reproducible local setup and the default report-only quality gates.
 
 ```bash
-# 1. Clone and setup ae-framework in your project
-git clone https://github.com/itdojp/ae-framework.git
-cd ae-framework
-corepack enable
-corepack prepare pnpm@10.0.0 --activate
-pnpm install
-
-# 2. Auto-recognized by Claude Code
-# Intent Agent available as Task Tool
+pnpm run first-run
+pnpm run verify:lite
 ```
 
-`npm install` is intentionally blocked in this repository because workspace dependencies use pnpm (`workspace:*`).
+Check:
+- `artifacts/first-run/**`
+- `artifacts/verify-lite/verify-lite-run-summary.json`
 
-**Configuration Check (Optional):**
+#### 2. Structured Assurance
+
+Use this when you want claim/lane/evidence aggregation for a project or PR.
+
+```bash
+pnpm run verify:assurance \
+  --assurance-profile fixtures/assurance/sample.assurance-profile.json \
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
+  --output-json artifacts/assurance/assurance-summary.json \
+  --output-md artifacts/assurance/assurance-summary.md
+```
+
+Check:
+- `artifacts/assurance/assurance-summary.json`
+- `artifacts/assurance/assurance-summary.md`
+
+#### 3. High-Assurance PR
+
+Use this only for high-risk PRs. The default path remains report-only.
+
+```bash
+gh pr edit <PR_NUMBER> --add-label enforce-assurance
+```
+
+This enables the strict Verify Lite step that fails on warning claims, missing lanes/evidence, unlinked counterexamples, or open counterexamples.
+
+Operational details:
+- `docs/quality/assurance-operations-runbook.md`
+- `docs/guides/assurance-onboarding-checklist.md`
+- `docs/ci/OPT-IN-CONTROLS.md`
+
+### Claude Code / MCP Integration
+
+Claude Code integration is optional. The current repository baseline does not require MCP server setup to run `first-run`, `verify:lite`, or `verify:assurance`.
+
+Optional configuration example:
+
 ```json
 {
   "mcpServers": {
@@ -60,30 +90,7 @@ pnpm install
 }
 ```
 
-#### 2. Immediate Basic Functionality
-
-Simply talk to Claude Code like this:
-
-```
-"Please create a login feature using ae-framework"
-```
-
-**→ Intent Task Adapter automatically executes complete 6-phase development!**
-
-**Claude Code Execution Example:**
-```
-User: Create a login feature
-
-Claude Code: Starting requirement analysis with ae-framework Intent Agent...
-
-✅ Intent Analysis Complete - 8 requirements identified
-📋 Next steps:
-  • Review identified requirements for completeness
-  • Proceed to Phase 2 (Formal Specification)
-  • Create domain model from requirements
-
-[Automatically executes Phases 2-6]
-```
+> The conversation transcripts and large auto-generation examples later in this document are illustrative reference material. They do not define the current minimum reproducible path.
 
 ---
 
@@ -462,8 +469,8 @@ Enter in Claude Code:
 
 ## Japanese
 
-**Claude Code で今すぐ始める ae-framework！**
-**最初に再現可能なローカル手順を完了し、その後に自動化へ拡張**
+**ae-framework を assurance control plane として導入する最短ガイド**
+**最初に再現可能なローカル導線を通し、その後に必要な保証レベルだけを追加します**
 
 ### ✅ 現在実装に整合する最短導線
 
@@ -472,28 +479,66 @@ corepack enable
 corepack prepare pnpm@10.0.0 --activate
 pnpm install
 pnpm run first-run
-pnpm run codex:quickstart
+pnpm run verify:lite
 ```
 
-> この文書内の会話ログや数値は、実装イメージを示す例です。
+この baseline で確認できること:
+- `first-run` による環境確認
+- `verify:lite` による required 相当のローカル検証
+- `artifacts/verify-lite/**` の証跡生成
 
-### ⚡ 5分で始める最短セットアップ
+### ⚡ 3段階の導入レベル
 
-#### 1. Claude Code で ae-framework を有効化
+#### 1. Baseline
 
-**ae-framework は Claude Code と統合済み！**
+まずは再現可能なローカル導線を通します。
 
 ```bash
-# 1. プロジェクトにae-frameworkをクローン・セットアップ
-git clone https://github.com/itdojp/ae-framework.git
-cd ae-framework
-pnpm install
-
-# 2. Claude Code で自動認識
-# Intent Agent が Task Tool として利用可能
+pnpm run first-run
+pnpm run verify:lite
 ```
 
-**設定確認 (オプション):**
+確認対象:
+- `artifacts/first-run/**`
+- `artifacts/verify-lite/verify-lite-run-summary.json`
+
+#### 2. Structured Assurance
+
+claim / lane / evidence を集約したい場合に追加します。
+
+```bash
+pnpm run verify:assurance \
+  --assurance-profile fixtures/assurance/sample.assurance-profile.json \
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
+  --output-json artifacts/assurance/assurance-summary.json \
+  --output-md artifacts/assurance/assurance-summary.md
+```
+
+確認対象:
+- `artifacts/assurance/assurance-summary.json`
+- `artifacts/assurance/assurance-summary.md`
+
+#### 3. High-Assurance PR
+
+高リスク PR に限って strict enforcement を有効化します。通常 PR は report-only のままです。
+
+```bash
+gh pr edit <PR番号> --add-label enforce-assurance
+```
+
+このラベルにより、Verify Lite の strict step が `warningClaims`、`missingLanes`、`missingEvidenceKinds`、`unlinkedCounterexamples`、`openCounterexamples` などで fail します。
+
+一次情報:
+- `docs/quality/assurance-operations-runbook.md`
+- `docs/guides/assurance-onboarding-checklist.md`
+- `docs/ci/OPT-IN-CONTROLS.md`
+
+### Claude Code / MCP 連携
+
+Claude Code や MCP server の設定はオプションです。現在の baseline では、`first-run`、`verify:lite`、`verify:assurance` の実行に MCP 設定は必須ではありません。
+
+任意設定例:
+
 ```json
 {
   "mcpServers": {
@@ -506,30 +551,7 @@ pnpm install
 }
 ```
 
-#### 2. 即座に使える基本機能
-
-Claude Code で以下のように話しかけるだけ：
-
-```
-「ae-frameworkを使ってログイン機能を作ってください」
-```
-
-**→ Intent Task Adapter が自動実行して6フェーズで完全開発！**
-
-**Claude Code での実行例:**
-```
-User: ログイン機能を作ってください
-
-Claude Code: ae-frameworkのIntent Agentで要件分析を開始します...
-
-✅ Intent Analysis Complete - 8 requirements identified
-📋 Next steps:
-  • Review identified requirements for completeness
-  • Proceed to Phase 2 (Formal Specification)
-  • Create domain model from requirements
-
-[自動的にPhase 2-6も実行]
-```
+> この文書の後半にある会話ログや大きな自動生成例は参考イメージです。現行の最小再現導線そのものではありません。
 
 ---
 
