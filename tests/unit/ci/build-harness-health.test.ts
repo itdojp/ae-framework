@@ -118,6 +118,7 @@ describe('build-harness-health', () => {
           reason: 'conformance verify failed',
         },
         heavyTrendSummary: { highestSeverity: 'critical' },
+        uiE2ESummary: { status: 'error' },
       },
       extraReasons: ['synthetic reason'],
     });
@@ -132,6 +133,7 @@ describe('build-harness-health', () => {
     expect(report.recommendedLabels).toContain('run-trace');
     expect(report.recommendedLabels).toContain('autopilot:on');
     expect(report.recommendedLabels).toContain('run-ci-extended');
+    expect(report.recommendedLabels).toContain('run-e2e');
     expect(report.recommendedLabels).not.toContain('enforce-testing');
     expect(report.recommendedContextChanges).toHaveLength(1);
     expect(report.recommendedContextChanges[0]?.file).toBe('spec/context-pack/functor-map.json');
@@ -173,6 +175,7 @@ describe('build-harness-health', () => {
         contextPackSuggestions: null,
         runtimeConformance: null,
         heavyTrendSummary: null,
+        uiE2ESummary: null,
       },
       extraReasons: ['PR checks could not be loaded via gh: rate limited'],
     });
@@ -219,11 +222,36 @@ describe('build-harness-health', () => {
         contextPackSuggestions: null,
         runtimeConformance: null,
         heavyTrendSummary: null,
+        uiE2ESummary: null,
       },
       extraReasons: [],
     });
 
     expect(report.gates.runtimeConformance.status).toBe('skip');
+  });
+
+  it('evaluates ui e2e local artifact warn/ok paths', () => {
+    const warnGate = evaluateGateFromLocalArtifacts(
+      { id: 'uiE2E' },
+      { uiE2ESummary: { status: 'warn' } },
+    );
+    expect(warnGate.status).toBe('warn');
+    expect(warnGate.reasons[0]).toContain('warn');
+
+    const okGate = evaluateGateFromLocalArtifacts(
+      { id: 'uiE2E' },
+      { uiE2ESummary: { status: 'ok' } },
+    );
+    expect(okGate.status).toBe('ok');
+  });
+
+  it('treats unknown ui e2e local artifact status as warn', () => {
+    const gate = evaluateGateFromLocalArtifacts(
+      { id: 'uiE2E' },
+      { uiE2ESummary: { status: 'mystery' } },
+    );
+    expect(gate.status).toBe('warn');
+    expect(gate.reasons[0]).toContain('mystery');
   });
 
   it('renders detailed markdown with reasons and hints', () => {
@@ -239,6 +267,7 @@ describe('build-harness-health', () => {
           contextPack: { status: 'skip', checkCount: 0 },
           runtimeConformance: { status: 'skip', checkCount: 0 },
           ciExtended: { status: 'ok', checkCount: 1 },
+          uiE2E: { status: 'warn', checkCount: 1 },
         },
         reasons: ['Testing harness: pending checks'],
         recommendedLabels: ['enforce-testing'],
@@ -270,5 +299,6 @@ describe('build-harness-health', () => {
     expect(markdown).toContain('enforce-testing');
     expect(markdown).toContain('TRACE_ID=TRACE-1');
     expect(markdown).toContain('spec/context-pack/natural-transformations.json');
+    expect(markdown).toContain('| uiE2E | warn | 1 |');
   });
 });

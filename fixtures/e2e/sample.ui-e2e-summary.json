@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "ui-e2e-summary/v1",
+  "generatedAt": "2026-03-09T12:30:00.000Z",
+  "status": "ok",
+  "baseUrl": "http://127.0.0.1:3100",
+  "summary": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "ariaSnapshotCount": 2
+  },
+  "scenarios": [
+    {
+      "id": "health-overview",
+      "title": "Health page exposes operational status",
+      "status": "pass",
+      "startedAt": "2026-03-09T12:30:00.000Z",
+      "finishedAt": "2026-03-09T12:30:01.000Z",
+      "durationMs": 1000,
+      "url": "http://127.0.0.1:3100/ja/health",
+      "semanticChecks": [
+        "Health Status heading is visible"
+      ],
+      "diagnostics": [],
+      "ariaSnapshotPath": "artifacts/e2e/ui-aria-snapshots/health-overview-success.txt"
+    },
+    {
+      "id": "semantic-form",
+      "title": "Semantic form validates and submits accessibly",
+      "status": "pass",
+      "startedAt": "2026-03-09T12:30:01.000Z",
+      "finishedAt": "2026-03-09T12:30:02.000Z",
+      "durationMs": 1000,
+      "url": "http://127.0.0.1:3100/ja/e2e/semantic-form",
+      "semanticChecks": [
+        "Success status is exposed after submit"
+      ],
+      "diagnostics": [],
+      "ariaSnapshotPath": "artifacts/e2e/ui-aria-snapshots/semantic-form-success.txt"
+    }
+  ],
+  "artifacts": {
+    "ariaSnapshotsDir": "artifacts/e2e/ui-aria-snapshots",
+    "adapterSummaryPath": "artifacts/e2e/summary.json"
+  }
+}

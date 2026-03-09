@@ -184,15 +184,20 @@ jobs:
           # CI reusable lane policy: fail fast when the lockfile is stale.
           pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
+      - name: Install Playwright Chromium
+        run: |
+          pnpm exec playwright install --with-deps chromium
+
       - name: Create reports directory
         run: |
           mkdir -p reports
           mkdir -p logs
+          mkdir -p artifacts/e2e
 
       - name: Run E2E tests
         run: |
           printf "%s\n" "🎭 Starting E2E test suite..."
-          pnpm run test:playwright
+          pnpm run ui-e2e:semantic
         timeout-minutes: 40
 
       - name: Upload E2E test results
@@ -203,6 +208,7 @@ jobs:
           path: |
             reports/
             logs/
+            artifacts/e2e/
             playwright-report/
           retention-days: 30
 

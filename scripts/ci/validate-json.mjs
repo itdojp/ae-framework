@@ -194,6 +194,11 @@ const checks = [
     label: 'AE-HANDOFF schema validation'
   },
   {
+    schema: 'schema/ui-e2e-summary.schema.json',
+    fixtures: ['fixtures/e2e/sample.ui-e2e-summary.json'],
+    label: 'UI E2E summary schema validation'
+  },
+  {
     schema: 'schema/hook-feedback.schema.json',
     fixtures: ['fixtures/agents/sample.hook-feedback.json'],
     label: 'Hook feedback schema validation'

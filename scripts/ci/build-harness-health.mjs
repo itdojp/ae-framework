@@ -85,6 +85,16 @@ const GATE_DEFINITIONS = [
       || /^ci[- ]extended(\.yml)?$/i.test(check.workflowName)
     ),
   },
+  {
+    id: 'uiE2E',
+    title: 'UI E2E',
+    recommendedLabels: ['run-e2e'],
+    defaultCommands: ['pnpm exec playwright install --with-deps chromium && pnpm run ui-e2e:semantic'],
+    matcher: (check) => (
+      check.name === 'E2E Tests'
+      || (/parallel test execution/i.test(check.workflowName) && /e2e/i.test(check.name))
+    ),
+  },
 ];
 
 function toIsoNow() {
@@ -355,6 +365,7 @@ function buildLocalArtifactsSnapshot() {
     contextPackSuggestions: readJsonIfExists('artifacts/context-pack/context-pack-suggestions.json'),
     runtimeConformance: readJsonIfExists('artifacts/automation/runtime-conformance-self-heal-report.json'),
     heavyTrendSummary: readJsonIfExists('reports/heavy-test-trends-history/summary.json'),
+    uiE2ESummary: readJsonIfExists('artifacts/e2e/ui-e2e-summary.json'),
   };
 }
 
@@ -505,6 +516,39 @@ function evaluateGateFromLocalArtifacts(gateDefinition, localArtifacts) {
       return {
         status: 'warn',
         reasons: ['CI Extended: heavy trend summary reached warning severity.'],
+      };
+    }
+    return {
+      status: 'ok',
+      reasons: [],
+    };
+  }
+
+  if (gateDefinition.id === 'uiE2E') {
+    const summary = localArtifacts.uiE2ESummary;
+    if (!summary || summary._parseError) {
+      return {
+        status: 'skip',
+        reasons: [],
+      };
+    }
+    const status = String(summary.status || '').toLowerCase();
+    if (status === 'error') {
+      return {
+        status: 'fail',
+        reasons: [`UI E2E: semantic lane status=${status}.`],
+      };
+    }
+    if (status === 'warn') {
+      return {
+        status: 'warn',
+        reasons: [`UI E2E: semantic lane status=${status}.`],
+      };
+    }
+    if (status !== 'ok') {
+      return {
+        status: 'warn',
+        reasons: [`UI E2E: semantic lane status=${status || 'unknown'}.`],
       };
     }
     return {

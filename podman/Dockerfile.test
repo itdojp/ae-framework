@@ -64,7 +64,7 @@ COPY vitest.config.ts ./vitest.config.ts
 COPY configs/vitest.ci.config.ts ./configs/vitest.ci.config.ts
 COPY tsconfig.json ./tsconfig.json
 COPY configs/jest.a11y.config.cjs ./configs/jest.a11y.config.cjs
-COPY configs/lighthouserc.js ./configs/lighthouserc.js
+COPY configs/lighthouserc.cjs ./configs/lighthouserc.cjs
 COPY configs/stryker.config.js ./configs/stryker.config.js
 COPY eslint.config.js ./eslint.config.js
 COPY tests/_setup/ ./tests/_setup/

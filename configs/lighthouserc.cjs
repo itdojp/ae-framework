@@ -1,5 +1,53 @@
 const fs = require('fs');
 const path = require('path');
+const DEFAULT_LIGHTHOUSE_URLS = [
+  'http://localhost:3000/ja/health',
+  'http://localhost:3000/ja/e2e/semantic-form'
+];
+
+function remapLegacyLighthouseUrl(rawUrl) {
+  try {
+    const parsedUrl = new URL(rawUrl);
+
+    // Phase 6 web app currently serves the audited pages under locale-prefixed routes.
+    if (parsedUrl.pathname === '/') {
+      parsedUrl.pathname = '/ja/e2e/semantic-form';
+      return parsedUrl.toString();
+    }
+
+    if (parsedUrl.pathname === '/health') {
+      parsedUrl.pathname = '/ja/health';
+      return parsedUrl.toString();
+    }
+
+    return parsedUrl.toString();
+  } catch {
+    return null;
+  }
+}
+
+function resolveCollectUrls(configuredUrls) {
+  const normalizedUrls = (configuredUrls || [])
+    .map(remapLegacyLighthouseUrl)
+    .filter(Boolean);
+
+  return normalizedUrls.length > 0
+    ? Array.from(new Set(normalizedUrls))
+    : DEFAULT_LIGHTHOUSE_URLS;
+}
+
+function buildCollectConfig(lighthouseGate) {
+  return {
+    startServerCommand: 'HOSTNAME=127.0.0.1 PORT=3000 pnpm --filter @ae-framework/web start',
+    startServerReadyPattern: 'Ready in',
+    startServerReadyTimeout: 30000,
+    numberOfRuns: lighthouseGate?.config?.numberOfRuns || 3,
+    url: resolveCollectUrls(lighthouseGate?.config?.urls),
+    settings: {
+      chromeFlags: '--no-sandbox --disable-dev-shm-usage --disable-gpu'
+    }
+  };
+}
 
 /**
  * Load quality policy from centralized configuration
@@ -39,14 +87,7 @@ function loadLighthouseConfig() {
     
     return {
       ci: {
-        collect: {
-          staticDistDir: './apps/web/dist',
-          numberOfRuns: lighthouseGate.config?.numberOfRuns || 3,
-          url: lighthouseGate.config?.urls || [
-            'http://localhost:3000',
-            'http://localhost:3000/health'
-          ]
-        },
+        collect: buildCollectConfig(lighthouseGate),
         assert: {
           assertions: {
             'categories:performance': lighthouseGate.enforcement === 'off' ? 'off' : 
@@ -86,14 +127,7 @@ function loadLighthouseConfig() {
 function getDefaultConfig() {
   return {
     ci: {
-      collect: {
-        staticDistDir: './apps/web/dist',
-        numberOfRuns: 3,
-        url: [
-          'http://localhost:3000',
-          'http://localhost:3000/health'
-        ]
-      },
+      collect: buildCollectConfig(),
       assert: {
         assertions: {
           'categories:performance': ['warn', { minScore: 0.8 }],

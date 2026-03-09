@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/ui-e2e-summary.schema.json",
+  "title": "UI Semantic E2E Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "status",
+    "baseUrl",
+    "summary",
+    "scenarios",
+    "artifacts"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "ui-e2e-summary/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ok", "warn", "error"]
+    },
+    "baseUrl": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "passed", "failed", "skipped", "ariaSnapshotCount"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 1 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "skipped": { "type": "integer", "minimum": 0 },
+        "ariaSnapshotCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "status",
+          "startedAt",
+          "finishedAt",
+          "durationMs",
+          "url",
+          "semanticChecks",
+          "diagnostics",
+          "ariaSnapshotPath"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "enum": ["pass", "fail", "skip"] },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "finishedAt": { "type": "string", "format": "date-time" },
+          "durationMs": { "type": "integer", "minimum": 0 },
+          "url": { "type": "string", "minLength": 1 },
+          "semanticChecks": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "diagnostics": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "message", "ariaSnapshotPath"],
+              "properties": {
+                "kind": { "type": "string", "enum": ["semantic"] },
+                "message": { "type": "string", "minLength": 1 },
+                "ariaSnapshotPath": {
+                  "oneOf": [
+                    { "type": "string", "minLength": 1 },
+                    { "type": "null" }
+                  ]
+                }
+              }
+            }
+          },
+          "ariaSnapshotPath": {
+            "oneOf": [
+              { "type": "string", "minLength": 1 },
+              { "type": "null" }
+            ]
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ariaSnapshotsDir", "adapterSummaryPath"],
+      "properties": {
+        "ariaSnapshotsDir": { "type": "string", "minLength": 1 },
+        "adapterSummaryPath": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
