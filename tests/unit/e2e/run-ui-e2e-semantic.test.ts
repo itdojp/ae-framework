@@ -38,6 +38,7 @@ describe('run-ui-e2e-semantic helpers', () => {
     const summary = buildUiE2ESummary({
       baseUrl: 'http://127.0.0.1:3100',
       ariaDir: 'artifacts/e2e/ui-aria-snapshots',
+      adapterSummaryPath: 'artifacts/custom/ui-summary.json',
       generatedAt: '2026-03-09T12:30:00.000Z',
       scenarios: [
         {
@@ -65,6 +66,7 @@ describe('run-ui-e2e-semantic helpers', () => {
     const markdown = renderMarkdown(summary);
 
     expect(summary.status).toBe('error');
+    expect(summary.artifacts.adapterSummaryPath).toBe('artifacts/custom/ui-summary.json');
     expect(adapterSummary.adapter).toBe('ui-e2e');
     expect(adapterSummary.status).toBe('error');
     expect(adapterSummary.details[0]?.diagnostics[0]).toContain('Timed out waiting');

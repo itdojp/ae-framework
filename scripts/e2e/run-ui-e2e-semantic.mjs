@@ -231,7 +231,13 @@ async function runScenario(page, scenario, baseUrl, ariaDir) {
   }
 }
 
-export function buildUiE2ESummary({ baseUrl, scenarios, ariaDir, generatedAt = new Date().toISOString() }) {
+export function buildUiE2ESummary({
+  baseUrl,
+  scenarios,
+  ariaDir,
+  adapterSummaryPath = DEFAULT_ADAPTER_SUMMARY,
+  generatedAt = new Date().toISOString(),
+}) {
   const passed = scenarios.filter((scenario) => scenario.status === 'pass').length;
   const failed = scenarios.filter((scenario) => scenario.status === 'fail').length;
   const skipped = scenarios.filter((scenario) => scenario.status === 'skip').length;
@@ -251,7 +257,7 @@ export function buildUiE2ESummary({ baseUrl, scenarios, ariaDir, generatedAt = n
     scenarios,
     artifacts: {
       ariaSnapshotsDir: ariaDir,
-      adapterSummaryPath: path.relative(process.cwd(), path.resolve(DEFAULT_ADAPTER_SUMMARY)) || DEFAULT_ADAPTER_SUMMARY,
+      adapterSummaryPath: path.relative(process.cwd(), path.resolve(adapterSummaryPath)) || adapterSummaryPath,
     },
   };
 }
@@ -343,7 +349,7 @@ function createScenarios() {
   ];
 }
 
-async function startServerIfNeeded(options) {
+async function startServerIfNeeded(options, onSpawn = () => {}) {
   if (options.skipServer || options.baseUrl) {
     return {
       baseUrl: options.baseUrl || `http://${options.host}:${options.port}`,
@@ -364,6 +370,7 @@ async function startServerIfNeeded(options) {
       stdio: 'inherit',
     },
   );
+  onSpawn(serverProcess);
 
   const baseUrl = `http://${options.host}:${options.port}`;
   await waitForServer(`${baseUrl}/api/health`);
@@ -390,7 +397,9 @@ async function runMain(argv = process.argv) {
   let serverProcess = null;
   const browser = await chromium.launch({ headless: true });
   try {
-    const server = await startServerIfNeeded(options);
+    const server = await startServerIfNeeded(options, (processHandle) => {
+      serverProcess = processHandle;
+    });
     serverProcess = server.serverProcess;
     const baseUrl = server.baseUrl;
     const scenarios = [];
@@ -405,8 +414,8 @@ async function runMain(argv = process.argv) {
       baseUrl,
       scenarios,
       ariaDir: path.relative(process.cwd(), ariaDir) || ariaDir,
+      adapterSummaryPath,
     });
-    summary.artifacts.adapterSummaryPath = path.relative(process.cwd(), adapterSummaryPath) || adapterSummaryPath;
     const adapterSummary = toAdapterSummary(summary, adapterSummaryPath);
 
     fs.writeFileSync(outputJsonPath, `${JSON.stringify(summary, null, 2)}\n`);

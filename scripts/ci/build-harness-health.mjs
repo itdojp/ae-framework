@@ -89,7 +89,7 @@ const GATE_DEFINITIONS = [
     id: 'uiE2E',
     title: 'UI E2E',
     recommendedLabels: ['run-e2e'],
-    defaultCommands: ['pnpm exec playwright install chromium && pnpm run ui-e2e:semantic'],
+    defaultCommands: ['pnpm exec playwright install --with-deps chromium && pnpm run ui-e2e:semantic'],
     matcher: (check) => (
       check.name === 'E2E Tests'
       || (/parallel test execution/i.test(check.workflowName) && /e2e/i.test(check.name))
@@ -543,6 +543,12 @@ function evaluateGateFromLocalArtifacts(gateDefinition, localArtifacts) {
       return {
         status: 'warn',
         reasons: [`UI E2E: semantic lane status=${status}.`],
+      };
+    }
+    if (status !== 'ok') {
+      return {
+        status: 'warn',
+        reasons: [`UI E2E: semantic lane status=${status || 'unknown'}.`],
       };
     }
     return {

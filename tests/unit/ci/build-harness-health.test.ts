@@ -245,6 +245,15 @@ describe('build-harness-health', () => {
     expect(okGate.status).toBe('ok');
   });
 
+  it('treats unknown ui e2e local artifact status as warn', () => {
+    const gate = evaluateGateFromLocalArtifacts(
+      { id: 'uiE2E' },
+      { uiE2ESummary: { status: 'mystery' } },
+    );
+    expect(gate.status).toBe('warn');
+    expect(gate.reasons[0]).toContain('mystery');
+  });
+
   it('renders detailed markdown with reasons and hints', () => {
     const markdown = renderMarkdown(
       {
