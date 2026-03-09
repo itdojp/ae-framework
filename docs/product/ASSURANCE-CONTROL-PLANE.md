@@ -61,22 +61,44 @@ Core value:
 
 この分離により、基礎となる agent や solver が変わっても、判断面の契約を継続利用できます。
 
+### 4.1 二層モデル
+
+```mermaid
+flowchart TB
+  subgraph H[Harness layer]
+    H1[lint / test / hooks]
+    H2[E2E / adapters / runners]
+  end
+  subgraph C[Assurance control plane]
+    C1[Context Pack / evidence aggregation]
+    C2[policy gate / review / release judgment]
+  end
+  H --> C
+```
+
+- Harness layer は「実行して結果を出す層」です。
+- Assurance control plane は「結果を契約化し、判断可能な artifact に変換する層」です。
+- ae-framework の差別化は前者の個別機能ではなく、後者の判断面契約を固定できる点にあります。
+
 ## 5. 導入プロファイル
 
 ### Baseline
 - `verify:lite`
 - schema/AJV validation
 - PR gate
+- 役割: harness layer の最小安定化
 
 ### Structured assurance
 - Context Pack
 - property / MBT / conformance
 - change evidence の整理
+- 役割: control plane に仕様と検証の対応を供給
 
 ### High-assurance critical core
 - formal/model/proof lane
 - strict policy gate
 - proof-carrying change package
+- 役割: selected high-risk change に限定して control plane を強化
 
 ## 6. 現行実装との対応
 
