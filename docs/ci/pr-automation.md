@@ -28,12 +28,13 @@ Primary sources:
 PR運用を以下の形に収束させます。
 
 - (1) PR作成
-- (2) GitHub AIレビュー
-- (3) レビュー対応（auto-fix）
-- (4) マージ操作の省略（auto-merge）
+- (2) high-risk の場合は plan artifact を commit
+- (3) GitHub AIレビュー
+- (4) レビュー対応（auto-fix）
+- (5) マージ操作の省略（auto-merge）
 
 ゴール:
-- (2)の後に(3)を自動化し、(4)の人手操作を省略する
+- (3)の後に(4)を自動化し、(5)の人手操作を省略する
 - ただし品質ゲート（Branch protection の Required checks）は維持する
 
 非ゴール:
@@ -213,10 +214,15 @@ Settings（Repository）で次を確認してください。
 ## 4. PR作者の運用手順（最短）
 
 1. PR作成（必要なら opt-in ラベルを付与）
-2. PR画面の Copilot パネルからレビューを実行し、レビューが `submitted` されるのを待つ
-3. `Copilot Auto Fix` の実行結果コメントを確認（marker: `<!-- AE-COPILOT-AUTO-FIX v1 -->`）
-4. `Copilot Review Gate / gate` が green であることを確認（未解決スレッドは Resolve）
-5. 条件が揃うと `PR Maintenance` が auto-merge を有効化し、GitHubが自動マージします（marker: `<!-- AE-AUTO-MERGE-STATUS v1 -->`）
+2. `risk:high` の場合は `artifacts/plan/plan-artifact.json|md` を commit し、`policy-gate` が `missing required plan artifact` で落ちない状態にする
+3. PR画面の Copilot パネルからレビューを実行し、レビューが `submitted` されるのを待つ
+4. `Copilot Auto Fix` の実行結果コメントを確認（marker: `<!-- AE-COPILOT-AUTO-FIX v1 -->`）
+5. `Copilot Review Gate / gate` と `Policy Gate / policy-gate` が green であることを確認（未解決スレッドは Resolve）
+6. 条件が揃うと `PR Maintenance` が auto-merge を有効化し、GitHubが自動マージします（marker: `<!-- AE-AUTO-MERGE-STATUS v1 -->`）
+
+補足:
+- `PR Maintenance` は commit 済み `artifacts/plan/plan-artifact.json` がある場合、schema validate 結果を PR summary に追記します。
+- plan artifact は人手の事前レビュー契約であり、Change Package は実装後の証跡契約です。
 
 ### 4.1 マージ後の release verify 導線
 

@@ -11,6 +11,25 @@ function checkRun(name: string, conclusion: string = 'SUCCESS') {
   };
 }
 
+function planArtifactState(overrides: Record<string, unknown> = {}) {
+  return {
+    path: '/workspace/artifacts/plan/plan-artifact.json',
+    schemaPath: '/workspace/schema/plan-artifact.schema.json',
+    present: true,
+    result: 'pass',
+    validationErrors: [],
+    warnings: [],
+    riskSelected: 'risk:high',
+    source: {
+      repository: 'itdojp/ae-framework',
+      prNumber: 2535,
+      baseRef: 'main',
+      headRef: 'feat/2535-plan-artifact',
+    },
+    ...overrides,
+  };
+}
+
 describe('policy-gate', () => {
   const policy = loadRiskPolicy('policy/risk-policy.yml');
 
@@ -54,10 +73,71 @@ describe('policy-gate', () => {
       changedFiles: ['package.json'],
       reviews: [],
       statusRollup: [checkRun('verify-lite')],
+      planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(false);
     expect(result.errors.some((item) => item.includes('human approvals are insufficient'))).toBe(true);
     expect(result.errors.some((item) => item.includes('missing required labels'))).toBe(true);
+  });
+
+  it('fails high-risk PR when required plan artifact is missing', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'run-security' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['package.json'],
+      reviews: [
+        {
+          id: 99,
+          state: 'APPROVED',
+          submitted_at: '2026-03-09T00:00:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [
+        checkRun('verify-lite'),
+        checkRun('Security Scanning'),
+      ],
+      planArtifact: {
+        present: false,
+        result: 'missing',
+        validationErrors: [],
+        warnings: [],
+      },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('missing required plan artifact: artifacts/plan/plan-artifact.json');
+  });
+
+  it('fails high-risk PR when required plan artifact validation fails', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'run-security' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['package.json'],
+      reviews: [
+        {
+          id: 101,
+          state: 'APPROVED',
+          submitted_at: '2026-03-09T00:00:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [
+        checkRun('verify-lite'),
+        checkRun('Security Scanning'),
+      ],
+      planArtifact: planArtifactState({
+        result: 'fail',
+        validationErrors: ['risk.selected must be risk:high'],
+      }),
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('plan artifact validation failed: risk.selected must be risk:high');
   });
 
   it('passes high-risk PR when approvals, labels, and required gates are green', () => {
@@ -81,6 +161,7 @@ describe('policy-gate', () => {
         checkRun('Security Scanning'),
         checkRun('testing-ddd'),
       ],
+      planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
@@ -103,6 +184,7 @@ describe('policy-gate', () => {
         },
       ],
       statusRollup: [checkRun('verify-lite')],
+      planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(false);
     expect(result.errors).toContain('required gate check not green for label run-trace (missing)');
@@ -128,6 +210,7 @@ describe('policy-gate', () => {
         checkRun('verify-lite'),
         checkRun('trace-conformance'),
       ],
+      planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
@@ -150,6 +233,7 @@ describe('policy-gate', () => {
         },
       ],
       statusRollup: [checkRun('verify-lite')],
+      planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(false);
     expect(result.errors.some((item) => item.includes('missing required labels'))).toBe(true);
@@ -172,6 +256,7 @@ describe('policy-gate', () => {
         },
       ],
       statusRollup: [checkRun('verify-lite')],
+      planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
@@ -197,6 +282,7 @@ describe('policy-gate', () => {
         checkRun('verify-lite'),
         checkRun('KvOnce Trace Validation', 'FAILURE'),
       ],
+      planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(false);
     expect(result.errors).toContain('required gate check not green for label run-trace (failure)');
@@ -217,6 +303,7 @@ describe('policy-gate', () => {
         checkRun('testing-ddd'),
       ],
       reviewTopology: 'solo',
+      planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
@@ -246,6 +333,7 @@ describe('policy-gate', () => {
       ],
       reviewTopology: 'team',
       approvalOverride: '2',
+      planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(false);
     expect(result.errors.some((item) => item.includes('required 2, got 1'))).toBe(true);
@@ -297,6 +385,7 @@ describe('policy-gate', () => {
           checkRun('Security Scanning'),
           checkRun('testing-ddd'),
         ],
+        planArtifact: planArtifactState(),
       });
       expect(result.reviewTopology).toBe('team');
       expect(result.effectiveMinApprovals).toBe(1);
@@ -333,10 +422,30 @@ describe('policy-gate', () => {
         },
       ],
       statusRollup: [checkRun('verify-lite')],
+      planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
     expect(result.warnings.some((item) => item.includes('policy labels missing'))).toBe(true);
+  });
+
+  it('warns instead of failing for invalid optional plan artifact on low-risk PR', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      planArtifact: planArtifactState({
+        result: 'fail',
+        validationErrors: ['missing rollbackPlan'],
+      }),
+    });
+    expect(result.ok).toBe(true);
+    expect(result.warnings.some((item) => item.includes('plan artifact validation failed'))).toBe(true);
   });
 
   it('treats Japanese acceptance headings as valid template section', () => {
@@ -377,6 +486,21 @@ describe('policy-gate', () => {
         missingRequiredLabels: [],
         requiredCheckResults: [],
         gateCheckResults: [],
+        planArtifact: {
+          path: '/workspace/artifacts/plan/plan-artifact.json',
+          schemaPath: '/workspace/schema/plan-artifact.schema.json',
+          present: true,
+          result: 'pass',
+          validationErrors: [],
+          warnings: [],
+          riskSelected: 'risk:high',
+          source: {
+            repository: 'itdojp/ae-framework',
+            prNumber: 2406,
+          },
+          required: true,
+          errors: [],
+        },
       },
     });
 

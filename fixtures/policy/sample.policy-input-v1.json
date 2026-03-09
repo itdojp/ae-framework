@@ -22,6 +22,7 @@
     "highRisk": {
       "minHumanApprovals": 1,
       "requirePolicyLabels": true,
+      "requirePlanArtifact": true,
       "failWhenRequiredGateIsPending": false
     },
     "classification": {
@@ -63,4 +64,3 @@
     "approvalOverride": ""
   }
 }
-

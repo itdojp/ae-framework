@@ -194,6 +194,11 @@ const checks = [
     label: 'AE-HANDOFF schema validation'
   },
   {
+    schema: 'schema/plan-artifact.schema.json',
+    fixtures: ['fixtures/plan/sample.plan-artifact.json'],
+    label: 'Plan Artifact schema validation'
+  },
+  {
     schema: 'schema/release-policy.schema.json',
     fixtures: ['fixtures/release/sample.release-policy.json', 'policy/release-policy.yml'],
     label: 'Release policy schema validation'
