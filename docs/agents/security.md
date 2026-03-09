@@ -1,3 +1,12 @@
+---
+docRole: derived
+canonicalSource:
+- SECURITY.md
+- docs/ci/automation-permission-boundaries.md
+- docs/ci/OPT-IN-CONTROLS.md
+lastVerified: '2026-03-09'
+---
+
 # Agents Runbook: Security
 
 ## When to use

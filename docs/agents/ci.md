@@ -1,3 +1,12 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci-policy.md
+- docs/ci/ci-operations-handbook.md
+- docs/ci/ci-troubleshooting-guide.md
+lastVerified: '2026-03-09'
+---
+
 # Agents Runbook: CI
 
 ## When to use

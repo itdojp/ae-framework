@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+  - .github/workflows/agent-commands.yml
+lastVerified: '2026-03-09'
+---
+
 # Agent Commands Catalog
 
 > この文書は `.github/workflows/agent-commands.yml` から自動生成されます。手動編集しないでください。

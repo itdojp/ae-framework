@@ -13,6 +13,7 @@ const AGENT_COMMANDS_SYNC_SCRIPT = path.resolve(__dirname, 'check-agent-commands
 const RUNBOOK_COMMAND_SCRIPT = path.resolve(__dirname, 'check-runbook-command-blocks.mjs');
 const DOC_TODO_MARKER_SCRIPT = path.resolve(__dirname, 'check-doc-todo-markers.mjs');
 const CONTRACT_CATALOG_SCRIPT = path.resolve(__dirname, 'check-contract-catalog-coverage.mjs');
+const DOC_GOVERNANCE_SCRIPT = path.resolve(__dirname, 'check-doc-governance.mjs');
 
 function hasOption(args, longName, shortName) {
   return args.some((arg) => arg === longName || (shortName && arg === shortName) || arg.startsWith(`${longName}=`));
@@ -81,7 +82,11 @@ export function main(argv = process.argv) {
   if (todoMarkerStatus !== 0) {
     return todoMarkerStatus;
   }
-  return runNodeScript(CONTRACT_CATALOG_SCRIPT, filterArgsForCiIndex(args));
+  const contractCatalogStatus = runNodeScript(CONTRACT_CATALOG_SCRIPT, filterArgsForCiIndex(args));
+  if (contractCatalogStatus !== 0) {
+    return contractCatalogStatus;
+  }
+  return runNodeScript(DOC_GOVERNANCE_SCRIPT, filterArgsForCiIndex(args));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {

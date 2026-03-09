@@ -15,7 +15,7 @@ export const REQUIRED_WORKFLOW_PATHS = [
   'docs/README.md',
   'docs/**',
   'scripts/doctest.ts',
-  'scripts/docs/check-doc-consistency.mjs',
+  'scripts/docs/*.mjs',
   'scripts/ci/check-docs-doctest-policy-sync.mjs',
   '.github/workflows/docs-doctest.yml',
   'package.json',
@@ -23,6 +23,7 @@ export const REQUIRED_WORKFLOW_PATHS = [
 ];
 
 const SYNC_CHECK_COMMAND = 'node scripts/ci/check-docs-doctest-policy-sync.mjs';
+const DOC_CONSISTENCY_COMMAND = 'node scripts/docs/check-doc-consistency-all.mjs';
 
 export function readUtf8(filePath) {
   try {
@@ -195,6 +196,10 @@ export function validateWorkflowConfig(workflowConfig, errors) {
     indexSteps,
     'Detect changed markdown files (PR only)'
   );
+  const { step: indexDocConsistencyStep } = findStepByName(
+    indexSteps,
+    'Check documentation consistency'
+  );
   const { step: changedDocsRunStep, index: changedDocsRunPos } = findStepByName(
     indexSteps,
     'Run doctest (changed markdown in PR)'
@@ -223,6 +228,16 @@ export function validateWorkflowConfig(workflowConfig, errors) {
       errors
     );
     ensureContains(changedDocsStep.run, 'git diff --name-only', 'changed-docs step must run git diff', errors);
+  }
+  if (!indexDocConsistencyStep) {
+    errors.push('doctest-index must include "Check documentation consistency" step');
+  } else {
+    ensureContains(
+      indexDocConsistencyStep.run,
+      DOC_CONSISTENCY_COMMAND,
+      'doctest-index doc consistency step must execute aggregated checker',
+      errors
+    );
   }
 
   if (!changedDocsRunStep) {
