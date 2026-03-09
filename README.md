@@ -13,6 +13,25 @@
 
 ae-framework is an **assurance control plane for agent-driven SDLC**. It standardises specifications, verification, evidence, and CI/policy automation so human/agent collaboration stays auditable and repeatable even when the underlying coding agent changes.
 
+### Two-layer model
+
+```mermaid
+flowchart TB
+  subgraph H[Harness layer]
+    H1[lint / test / hooks]
+    H2[E2E / adapters / runners]
+  end
+  subgraph C[Assurance control plane]
+    C1[Context Pack / evidence aggregation]
+    C2[policy gate / review / release judgment]
+  end
+  H --> C
+```
+
+- **Baseline** stabilises the harness layer with `first-run` / `verify:lite`.
+- **Structured assurance** connects Context Pack, property/MBT/conformance, and change evidence into the control plane.
+- **High-assurance critical core** strengthens the control plane for selected high-risk changes with formal/model/proof lanes.
+
 ### What this repository provides
 - **Assurance control plane**: Context Pack, formal/conformance summaries, artifact validation, policy gates, and PR/release automation that turn raw test runs into reviewable assurance evidence.
 - **Agentic SDLC orchestrator**: Ready-to-run GitHub Actions (PR verify / verify-lite, nightly heavy tests, Slack alerts) and CLI scripts that keep requirements, tests, and regression signals aligned.
@@ -95,6 +114,25 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 ## Japanese
 
 ae-framework は **エージェント協調型開発の assurance control plane** です。基礎となる coding agent やモデルが変わっても、仕様・検証・証跡・policy gate を同じ契約で束ね、レビューと運用判断を再現可能にします。
+
+### 二層モデル
+
+```mermaid
+flowchart TB
+  subgraph H[Harness layer]
+    H1[lint / test / hooks]
+    H2[E2E / adapters / runners]
+  end
+  subgraph C[Assurance control plane]
+    C1[Context Pack / evidence aggregation]
+    C2[policy gate / review / release judgment]
+  end
+  H --> C
+```
+
+- **Baseline** は `first-run` / `verify:lite` で harness layer を安定化させる段階です。
+- **Structured assurance** は Context Pack、property/MBT/conformance、change artifact を control plane に接続する段階です。
+- **High-assurance critical core** は selected high-risk change に対して control plane を強化する段階です。
 
 ### 提供するもの
 - **Assurance control plane**: Context Pack、形式検証/Conformance要約、artifact validation、policy gate、PR/release 自動化を束ね、単発のテスト実行結果を判断可能な証跡へ変換。
