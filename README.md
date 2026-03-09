@@ -225,6 +225,8 @@ const _example: number = 'type mismatch for policy example';
 - `expires:YYYY-MM-DD` - Date when this suppression should be reviewed/removed
 - `reason: description` - Detailed explanation (minimum 12 characters)
 
+Each suppression entry still carries all three fields.
+
 **Examples:**
 ```typescript
 // @ts-expect-error owner:@alice expires:2027-12-31 reason: narrowing todo for complex union

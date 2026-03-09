@@ -306,7 +306,7 @@ Claude CodeやMCPとの統合
 - [llm-first-review-checklist.md](./quality/llm-first-review-checklist.md) - LLM一次レビューの標準チェック
 - [guarded-automation-template.md](./quality/guarded-automation-template.md) - Guarded automation 運用テンプレ
 - [incident-triage-template.md](./quality/incident-triage-template.md) - インシデント一次切り分けテンプレ
-- [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（core/optional）
+- [ARTIFACTS-CONTRACT.md](./quality/ARTIFACTS-CONTRACT.md) - 成果物契約（core / optional）
 - [doc-consistency-lint.md](./quality/doc-consistency-lint.md) - ドキュメント参照整合チェック（pnpm script / path）
 - [contract-taxonomy.md](./quality/contract-taxonomy.md) - contract 用語の基準（DbC / API / Artifacts）
 - [verify-first-gate-baseline.md](./quality/verify-first-gate-baseline.md) - Verify-first の最小 gate / opt-in 基準
