@@ -102,6 +102,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Claude Code Workflow: `integrations/CLAUDECODE-WORKFLOW.md`
 - CodeX Integration (PoC/MCP/Adapter): `integrations/CODEX-INTEGRATION.md`
 - Codex boundary + vendor-neutral core: `integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md`
+- Hook feedback adapter: `agents/hook-feedback.md`
 
 ### Reference
 - CLI Commands: `reference/CLI-COMMANDS-REFERENCE.md`

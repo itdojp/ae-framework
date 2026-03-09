@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/hook-feedback.schema.json",
+  "title": "Hook Feedback",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "status",
+    "blockingReasons",
+    "nextActions",
+    "reproCommands",
+    "evidence",
+    "source"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "hook-feedback/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "warn",
+        "blocked"
+      ]
+    },
+    "blockingReasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "nextActions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "reproCommands": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "path",
+          "description",
+          "present",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "present": {
+            "type": "boolean"
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verifyLiteSummaryPath",
+        "harnessHealthPath",
+        "changePackagePath",
+        "contextPackSuggestionsPath"
+      ],
+      "properties": {
+        "verifyLiteSummaryPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "harnessHealthPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "changePackagePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contextPackSuggestionsPath": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "blocked"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "blockingReasons": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "warn"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "blockingReasons": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

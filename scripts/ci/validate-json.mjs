@@ -194,6 +194,11 @@ const checks = [
     label: 'AE-HANDOFF schema validation'
   },
   {
+    schema: 'schema/hook-feedback.schema.json',
+    fixtures: ['fixtures/agents/sample.hook-feedback.json'],
+    label: 'Hook feedback schema validation'
+  },
+  {
     schema: 'schema/plan-artifact.schema.json',
     fixtures: ['fixtures/plan/sample.plan-artifact.json'],
     label: 'Plan Artifact schema validation'
