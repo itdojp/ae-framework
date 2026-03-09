@@ -30,7 +30,7 @@ CI enforcement remains report-only by default. `enforce-assurance` enables the s
 - provenance minimum
 - counterexample linkage convention
 
-詳細な achieved level 判定は後続フェーズで追加します。既定運用は report-only ですが、`enforce-assurance` ラベル時は assurance enforcement の strict 判定を有効化します。
+詳細な achieved level 判定は後続フェーズで追加します。既定運用は report-only ですが、`enforce-assurance` ラベル時は strict assurance enforcement ステップを有効化します。
 
 ## 2. Canonical validation lanes
 

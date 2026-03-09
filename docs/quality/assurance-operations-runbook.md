@@ -117,7 +117,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 
 ### 5.2 strict assurance enforcement の発火条件
 
-- PR に `enforce-assurance` ラベルが付いている場合のみ、workflow の `Enforce assurance summary` ステップで strict assurance enforcement を有効化します。
+- PR に `enforce-assurance` ラベルが付いている場合のみ、`verify-lite.yml` の `Enforce assurance summary (strict; label-gated)` ステップで strict assurance enforcement を有効化します。
 - `pull_request` の `labeled` / `unlabeled` / `ready_for_review` で Verify Lite を再評価するため、ラベル操作後も同一 PR 上で再実行されます。
 
 ### 5.3 strict assurance enforcement のローカル再現
