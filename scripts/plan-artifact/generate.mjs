@@ -258,6 +258,14 @@ function normalizeStringArray(values) {
   return [...new Set(values.map((item) => String(item || '').trim()).filter(Boolean))];
 }
 
+function requireTrimmedString(value, fieldName) {
+  const normalized = String(value || '').trim();
+  if (!normalized) {
+    throw new Error(`${fieldName} is required and must be non-empty`);
+  }
+  return normalized;
+}
+
 function buildPlanArtifact(options) {
   const input = readJsonFile(options.inputPath);
   const policy = loadRiskPolicy(options.policyPath);
@@ -272,8 +280,8 @@ function buildPlanArtifact(options) {
     contractId: 'plan-artifact.v1',
     generatedAt: new Date().toISOString(),
     source: resolveSource(options, input),
-    goal: String(input?.goal || '').trim(),
-    scope: String(input?.scope || '').trim(),
+    goal: requireTrimmedString(input?.goal, 'goal'),
+    scope: requireTrimmedString(input?.scope, 'scope'),
     risk: {
       selected: selectedRisk,
       requiresHumanApproval: minHumanApprovals > 0,
@@ -282,7 +290,7 @@ function buildPlanArtifact(options) {
     assumptions: normalizeNamedText(input?.assumptions, 'A'),
     filesExpectedToChange: normalizeFilesExpected(input?.filesExpectedToChange),
     verificationPlan: normalizeVerificationPlan(input?.verificationPlan),
-    rollbackPlan: String(input?.rollbackPlan || '').trim(),
+    rollbackPlan: requireTrimmedString(input?.rollbackPlan, 'rollbackPlan'),
     requiredHumanInput: normalizeStringArray(input?.requiredHumanInput),
     notes: normalizeStringArray(input?.notes),
   };

@@ -6,6 +6,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { DEFAULT_POLICY_PATH, getRiskLabels, loadRiskPolicy } from '../ci/lib/risk-policy.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const DEFAULT_INPUT_PATH = 'artifacts/plan/plan-artifact.json';
@@ -19,6 +20,7 @@ function parseArgs(argv = process.argv) {
     schemaPath: DEFAULT_SCHEMA_PATH,
     outputJsonPath: DEFAULT_OUTPUT_JSON_PATH,
     outputMarkdownPath: DEFAULT_OUTPUT_MD_PATH,
+    policyPath: DEFAULT_POLICY_PATH,
     help: false,
   };
 
@@ -57,6 +59,14 @@ function parseArgs(argv = process.argv) {
       options.schemaPath = arg.slice('--schema='.length);
       continue;
     }
+    if (arg === '--policy') {
+      options.policyPath = readValue('--policy');
+      continue;
+    }
+    if (arg.startsWith('--policy=')) {
+      options.policyPath = arg.slice('--policy='.length);
+      continue;
+    }
     if (arg === '--output-json') {
       options.outputJsonPath = readValue('--output-json');
       continue;
@@ -87,6 +97,7 @@ function printHelp() {
       + 'Options:\n'
       + `  --file <path>                 input JSON (default: ${DEFAULT_INPUT_PATH})\n`
       + `  --schema <path>               schema path (default: ${DEFAULT_SCHEMA_PATH})\n`
+      + `  --policy <path>               risk policy path (default: ${DEFAULT_POLICY_PATH})\n`
       + `  --output-json <path>          output JSON report (default: ${DEFAULT_OUTPUT_JSON_PATH})\n`
       + `  --output-md <path>            output Markdown report (default: ${DEFAULT_OUTPUT_MD_PATH})\n`
       + '  --help, -h                    show help\n',
@@ -125,9 +136,18 @@ function runSchemaValidation(schema, payload) {
   };
 }
 
-function semanticWarnings(payload) {
+function semanticValidation(payload, policy) {
+  const errors = [];
   const warnings = [];
-  if (payload?.risk?.selected === 'risk:high' && (!Array.isArray(payload.requiredHumanInput) || payload.requiredHumanInput.length === 0)) {
+  const riskLabels = getRiskLabels(policy);
+  const selectedRisk = String(payload?.risk?.selected || '').trim();
+  if (selectedRisk !== riskLabels.low && selectedRisk !== riskLabels.high) {
+    errors.push(`risk.selected must be ${riskLabels.low} or ${riskLabels.high}`);
+  }
+  if (
+    selectedRisk === riskLabels.high
+    && (!Array.isArray(payload.requiredHumanInput) || payload.requiredHumanInput.length === 0)
+  ) {
     warnings.push('high-risk plan artifact has no requiredHumanInput entries');
   }
   if (Array.isArray(payload?.verificationPlan)) {
@@ -137,22 +157,26 @@ function semanticWarnings(payload) {
       }
     }
   }
-  return warnings;
+  return { errors, warnings };
 }
 
 export function validatePlanArtifactFile(options) {
   const payload = readJsonFile(options.inputPath);
   const schema = readJsonFile(options.schemaPath);
+  const policy = loadRiskPolicy(options.policyPath);
   const schemaResult = runSchemaValidation(schema, payload);
-  const warnings = schemaResult.ok ? semanticWarnings(payload) : [];
-  const result = schemaResult.ok ? (warnings.length > 0 ? 'warn' : 'pass') : 'fail';
+  const semanticResult = schemaResult.ok ? semanticValidation(payload, policy) : { errors: [], warnings: [] };
+  const errors = [...schemaResult.errors, ...semanticResult.errors];
+  const warnings = errors.length === 0 ? semanticResult.warnings : [];
+  const result = errors.length > 0 ? 'fail' : (warnings.length > 0 ? 'warn' : 'pass');
   const report = {
     schemaVersion: 'plan-artifact-validation/v1',
     generatedAt: new Date().toISOString(),
     result,
     inputPath: path.resolve(options.inputPath),
     schemaPath: path.resolve(options.schemaPath),
-    errors: schemaResult.errors,
+    policyPath: path.resolve(options.policyPath),
+    errors,
     warnings,
   };
   return { report, payload };
@@ -165,6 +189,7 @@ function renderMarkdown(report) {
     `- result: ${report.result.toUpperCase()}`,
     `- input: \`${report.inputPath}\``,
     `- schema: \`${report.schemaPath}\``,
+    `- policy: \`${report.policyPath}\``,
     '',
   ];
   if (report.errors.length > 0) {

@@ -332,7 +332,7 @@ jobs:
           else
             printf '%s\n' 'Plan Artifact not present in this PR branch; skipping append.' >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Append Change Package to PR summary
+      - name: Append Change Package and Plan Artifact to PR summary
         if: ${{ always() }}
         run: |
           if [ -f artifacts/change-package/change-package.md ]; then
@@ -361,7 +361,7 @@ jobs:
             artifacts/ci/harness-health.md
           if-no-files-found: warn
           retention-days: 14
-      - name: Upload change-package artifact
+      - name: Upload change-package and plan-artifact artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:

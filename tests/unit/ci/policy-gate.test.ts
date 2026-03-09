@@ -111,6 +111,35 @@ describe('policy-gate', () => {
     expect(result.errors).toContain('missing required plan artifact: artifacts/plan/plan-artifact.json');
   });
 
+  it('fails high-risk PR when required plan artifact validation fails', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'run-security' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['package.json'],
+      reviews: [
+        {
+          id: 101,
+          state: 'APPROVED',
+          submitted_at: '2026-03-09T00:00:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [
+        checkRun('verify-lite'),
+        checkRun('Security Scanning'),
+      ],
+      planArtifact: planArtifactState({
+        result: 'fail',
+        validationErrors: ['risk.selected must be risk:high'],
+      }),
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('plan artifact validation failed: risk.selected must be risk:high');
+  });
+
   it('passes high-risk PR when approvals, labels, and required gates are green', () => {
     const result = evaluatePolicyGate({
       policy,

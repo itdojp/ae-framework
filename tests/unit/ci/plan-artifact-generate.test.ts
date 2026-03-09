@@ -85,4 +85,53 @@ describe('plan-artifact generate', () => {
     expect(markdown).toContain('## Plan Artifact');
     expect(markdown).toContain('### Verification plan');
   });
+
+  it('fails fast when goal is empty', async () => {
+    const workdir = await createWorkdir('plan-artifact-generate-empty-goal-');
+    const inputPath = join(workdir, 'plan-artifact.input.json');
+    const eventPath = join(workdir, 'event.json');
+    const outputJsonPath = join(workdir, 'artifacts', 'plan', 'plan-artifact.json');
+    const outputMarkdownPath = join(workdir, 'artifacts', 'plan', 'plan-artifact.md');
+
+    await mkdir(join(workdir, 'artifacts', 'plan'), { recursive: true });
+    await writeFile(inputPath, `${JSON.stringify({
+      goal: '   ',
+      scope: 'Add schema, scripts, and policy-gate wiring.',
+      risk: { selected: 'risk:high' },
+      assumptions: ['Artifacts can be committed to the PR branch.'],
+      filesExpectedToChange: ['schema/plan-artifact.schema.json'],
+      verificationPlan: [
+        {
+          name: 'Run contract tests',
+          command: 'pnpm exec vitest run tests/contracts/plan-artifact-contract.test.ts',
+        }
+      ],
+      rollbackPlan: 'Revert schema, scripts, and docs.',
+      requiredHumanInput: ['approval=plan-review']
+    }, null, 2)}\n`);
+    await writeFile(eventPath, `${JSON.stringify({
+      repository: { full_name: 'itdojp/ae-framework' },
+      pull_request: {
+        number: 2535,
+        base: { ref: 'main' },
+        head: { ref: 'feat/2535-plan-artifact' }
+      }
+    }, null, 2)}\n`);
+
+    const result = spawnSync(process.execPath, [
+      scriptPath,
+      '--policy', policyPath,
+      '--input', inputPath,
+      '--event-path', eventPath,
+      '--output-json', outputJsonPath,
+      '--output-md', outputMarkdownPath,
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      env: { ...process.env, GITHUB_EVENT_PATH: '' },
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('goal is required and must be non-empty');
+  });
 });

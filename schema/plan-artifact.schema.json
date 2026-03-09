@@ -129,7 +129,7 @@
       "properties": {
         "selected": {
           "type": "string",
-          "enum": ["risk:low", "risk:high"]
+          "minLength": 1
         },
         "requiresHumanApproval": {
           "type": "boolean"
