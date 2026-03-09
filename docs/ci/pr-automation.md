@@ -222,6 +222,9 @@ Settings（Repository）で次を確認してください。
 
 - PRマージ後の運用判定は `post-deploy-verify.yml`（workflow_dispatch）で実施します。
 - ローカル再現は `pnpm run ae-framework -- release verify ...`（または `ae release verify`）を使用します。
+- `release_tag` は、release asset `quality-artifacts.tgz` から assurance summary を取得して Step Summary に追記したい場合だけ指定します。
+- assurance summary は optional / report-only であり、`post-deploy-verify.json` の gate 判定そのものは変えません。
+- `release-quality-artifacts` を manual 実行しただけでは Actions artifact しか作られないため、`release_tag` で参照できるのは公開済み release asset がある場合だけです。
 - 手順詳細: `docs/operate/release-engineering.md`
 
 ## 5. トラブルシューティング
