@@ -206,4 +206,62 @@ describe('build-hook-feedback CLI', () => {
     expect(report.nextActions[0]).toContain('incomplete verify-lite steps');
     expect(report.source.contextPackSuggestionsPath).toBeNull();
   });
+
+  it('merges canonical evidence status and includes harness suggested commands in repro commands', async () => {
+    await writeJson('artifacts/verify-lite/verify-lite-run-summary.json', {
+      schemaVersion: '1.0.0',
+      timestamp: '2026-03-09T00:00:00.000Z',
+      metadata: { generatedAt: '2026-03-09T00:00:00.000Z', generator: 'test', toolVersions: {} },
+      flags: { install: '', noFrozen: false, keepLintLog: false, enforceLint: false, runMutation: false },
+      steps: {
+        lint: { status: 'failure' },
+      },
+      artifacts: {},
+    });
+    await writeJson('artifacts/ci/harness-health.json', {
+      schemaVersion: 'harness-health/v1',
+      generatedAt: '2026-03-09T00:00:00.000Z',
+      severity: 'warn',
+      reasons: [],
+      recommendedLabels: [],
+      recommendedContextChanges: [
+        {
+          file: 'spec/context-pack/functor-map.json',
+          changeType: 'update',
+          targetId: 'ReserveInventory',
+          suggestedCommand: 'pnpm run context-pack:verify-functor',
+        },
+      ],
+      reproducibleHints: [],
+      gates: {},
+    });
+    await writeJson('artifacts/change-package/change-package.json', {
+      schemaVersion: 'change-package/v1',
+      risk: { selected: 'risk:low', missingRequiredLabels: [] },
+      evidence: {
+        items: [
+          {
+            id: 'verifyLiteSummary',
+            path: 'artifacts/verify-lite/verify-lite-run-summary.json',
+            description: 'verify-lite run summary',
+            present: true,
+            status: null,
+          },
+        ],
+      },
+      reproducibility: { commands: [] },
+      exceptions: [],
+    });
+
+    const { result, outputJsonPath } = runBuild();
+    expect(result.status).toBe(0);
+
+    const report = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
+      reproCommands: string[];
+      evidence: Array<{ path: string; status: string | null }>;
+    };
+    const verifyEvidence = report.evidence.find((entry) => entry.path === 'artifacts/verify-lite/verify-lite-run-summary.json');
+    expect(verifyEvidence?.status).toBe('failure');
+    expect(report.reproCommands).toContain('pnpm run context-pack:verify-functor');
+  });
 });

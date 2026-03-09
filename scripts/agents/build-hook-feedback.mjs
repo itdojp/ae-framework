@@ -94,7 +94,7 @@ function deriveStatus({ harnessHealth, verifyLiteSummary, changePackage, context
   const suggestionCount = Array.isArray(contextPackSuggestions?.recommendedContextChanges)
     ? contextPackSuggestions.recommendedContextChanges.length
     : 0;
-  const contextStatus = typeof contextPackSuggestions?.status === 'string' ? contextPackSuggestions.status : 'ok';
+  const contextStatus = typeof contextPackSuggestions?.status === 'string' ? contextPackSuggestions.status : 'pass';
 
   if (severity === 'critical' || verifySummary.failingSteps.length > 0) {
     return 'blocked';
@@ -103,7 +103,7 @@ function deriveStatus({ harnessHealth, verifyLiteSummary, changePackage, context
     severity === 'warn'
     || verifySummary.pendingSteps.length > 0
     || exceptionCount > 0
-    || (suggestionCount > 0 && contextStatus !== 'success')
+    || (suggestionCount > 0 && contextStatus !== 'pass')
   ) {
     return 'warn';
   }
@@ -201,6 +201,9 @@ function buildReproCommands({ changePackage, harnessHealth, contextPackSuggestio
     ...(Array.isArray(harnessHealth?.reproducibleHints)
       ? harnessHealth.reproducibleHints.map((hint) => hint?.command)
       : []),
+    ...(Array.isArray(harnessHealth?.recommendedContextChanges)
+      ? harnessHealth.recommendedContextChanges.map((change) => change?.suggestedCommand)
+      : []),
     ...(Array.isArray(contextPackSuggestions?.recommendedContextChanges)
       ? contextPackSuggestions.recommendedContextChanges.map((change) => change?.suggestedCommand)
       : []),
@@ -216,7 +219,24 @@ function addEvidenceItem(items, item) {
   if (!item || typeof item.path !== 'string' || !item.path.trim()) {
     return;
   }
-  if (items.some((candidate) => candidate.path === item.path)) {
+  const existing = items.find((candidate) => candidate.path === item.path);
+  if (existing) {
+    if ((!existing.id || existing.id === 'evidence') && typeof item.id === 'string' && item.id.trim()) {
+      existing.id = item.id.trim();
+    }
+    if (
+      (!existing.description || existing.description === 'referenced evidence')
+      && typeof item.description === 'string'
+      && item.description.trim()
+    ) {
+      existing.description = item.description.trim();
+    }
+    if (typeof item.present === 'boolean') {
+      existing.present = Boolean(existing.present) || item.present;
+    }
+    if (typeof item.status === 'string' && item.status.trim()) {
+      existing.status = item.status.trim();
+    }
     return;
   }
   items.push(item);
