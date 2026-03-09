@@ -41,13 +41,22 @@ lastVerified: '2026-03-10'
 pnpm run hook-feedback:build \
   --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
   --harness-health artifacts/ci/harness-health.json \
+  --change-package artifacts/change-package/change-package.json
+```
+
+`context-pack-suggestions` / `assurance-summary` / `ui-e2e-summary` が無い場合は省略できます。
+
+## Optional inputs example
+
+```bash
+pnpm run hook-feedback:build \
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
+  --harness-health artifacts/ci/harness-health.json \
   --change-package artifacts/change-package/change-package.json \
   --context-pack-suggestions artifacts/context-pack/context-pack-suggestions.json \
   --assurance-summary artifacts/assurance/assurance-summary.json \
   --ui-e2e-summary artifacts/e2e/ui-e2e-summary.json
 ```
-
-`context-pack-suggestions` / `assurance-summary` / `ui-e2e-summary` が無い場合は省略できます。
 
 ## Claude Code hook command example
 

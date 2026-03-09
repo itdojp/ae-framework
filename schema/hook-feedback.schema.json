@@ -103,9 +103,7 @@
         "verifyLiteSummaryPath",
         "harnessHealthPath",
         "changePackagePath",
-        "contextPackSuggestionsPath",
-        "assuranceSummaryPath",
-        "uiE2ESummaryPath"
+        "contextPackSuggestionsPath"
       ],
       "properties": {
         "verifyLiteSummaryPath": {
