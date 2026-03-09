@@ -104,6 +104,8 @@ proof や model-check で閉じない部分を、feature flag / alert / rollout 
 - assurance profile v1
 - change-package v2
 - report-only `verify:assurance` summary generation
+- `enforce-assurance` ラベル時の Verify Lite strict enforcement
+- PR / release / post-deploy summary への assurance 表示
 
 未実装または段階導入中:
 - claim ごとの achieved level 集約

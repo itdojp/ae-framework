@@ -62,6 +62,14 @@
 - 先に `rerun --failed` を使う
 - 必要に応じて `AE_GH_THROTTLE_MS` を引き上げる（既定 250ms）
 
+### 3.5 `enforce-assurance` が失敗
+
+- `artifacts/assurance/assurance-summary.json` が生成されているか確認する
+- `warningCount` / `warningClaims` / `claimsMissingRequiredLanes` / `claimsMissingRequiredEvidenceKinds` / `unlinkedCounterexamples` を確認する
+- `claimCount` が `0` になっていないか確認する
+- claim ごとの `missingLanes` / `missingEvidenceKinds` / `counterexamples.open` を見て不足証跡を補う
+- 一次情報は `docs/quality/assurance-operations-runbook.md` を参照する
+
 ## 4. 停止・復帰（Fail-safe）
 
 ### 4.1 自動化停止（緊急）
@@ -98,3 +106,4 @@
 - `docs/ci/copilot-review-gate.md`
 - `docs/ci/docs-doctest-policy.md`
 - `docs/ci/automation-failure-policies.md`
+- `docs/quality/assurance-operations-runbook.md`

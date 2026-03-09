@@ -124,6 +124,8 @@ Comprehensive documentation for the agentic SDLC orchestrator and assurance cont
 - Verify-first artifacts catalog: `quality/verify-first-artifacts-catalog.md`
 - Verify-first implementation runbook: `quality/verify-first-implementation-runbook.md`
 - Assurance profile / level: `quality/assurance-profile.md`
+- Assurance operations runbook: `quality/assurance-operations-runbook.md`
+- Assurance onboarding checklist: `guides/assurance-onboarding-checklist.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
 - Runbooks / Traceability / Runtime Contracts: see `./quality` and `./verify`
 - Coverage policy: `quality/coverage-policy.md`（しきい値の由来/Required化の運用）
@@ -288,6 +290,8 @@ Claude CodeやMCPとの統合
 - [verify-first-artifacts-catalog.md](./quality/verify-first-artifacts-catalog.md) - Verify-first の最小成果物（SSOT/AC/NFR/Evidence）定義
 - [verify-first-implementation-runbook.md](./quality/verify-first-implementation-runbook.md) - Verify-first 実装運用の標準手順（Plan→Spec→Gate→Evidence）
 - [assurance-profile.md](./quality/assurance-profile.md) - assurance profile / level の入力契約（claim / level / lanes / evidence kinds）
+- [assurance-operations-runbook.md](./quality/assurance-operations-runbook.md) - assurance summary の生成・strict enforcement・障害切り分け手順
+- [assurance-onboarding-checklist.md](./guides/assurance-onboarding-checklist.md) - 新規プロジェクトへ assurance profile を導入する最小チェックリスト
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [run-manifest-freshness-contract.md](./quality/run-manifest-freshness-contract.md) - run-manifest鮮度判定契約（stale artifact 検出）
 - [issue-requirements-traceability.md](./quality/issue-requirements-traceability.md) - Issue要件ID起点の traceability 手順（extract/matrix/strict validate）

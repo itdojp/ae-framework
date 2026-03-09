@@ -12,11 +12,13 @@ Current scope:
 - schema and fixture validation
 - optional references from Context Pack v1
 - documentation of level semantics
+- report-only `verify:assurance` aggregation
+- Verify Lite collection of assurance summary
+- label-gated strict enforcement via `enforce-assurance`
 
 Not in scope yet:
-- automated evaluation
-- verify-lite / policy-gate integration
-- blocking enforcement
+- full achieved-level automation
+- direct `policy-gate` interpretation of assurance summary
 
 ---
 
@@ -31,7 +33,7 @@ Not in scope yet:
 - required evidence kinds
 - Context Pack 上の object / morphism / diagram / acceptance test 参照
 
-現時点では、**schema とドキュメント整備、report-only の `verify:assurance` summary 生成、および Verify Lite での report-only 収集**を基本とします。blocking enforcement は既定で無効のまま維持し、`enforce-assurance` ラベル時のみ Verify Lite で strict enforcement を有効化します。
+現時点では、**schema とドキュメント整備、`verify:assurance` による summary 生成、Verify Lite での assurance 収集、および `enforce-assurance` ラベル時の strict enforcement** までを実装済みとします。通常 PR は report-only のまま維持し、strict 化は label-gated でのみ有効化します。
 
 ## 2. スキーマ
 
@@ -74,7 +76,7 @@ Not in scope yet:
 | `A3` | 反例探索やモデル検査で critical claim を閉じている | model-check, counterexample-closed |
 | `A4` | proof-carrying な厳密保証を持つ | proof |
 
-この表は Phase 1 のドキュメント定義です。実際の `achievedLevel` 集約ロジックは後続フェーズで追加します。
+この表は Phase 1/2 の暫定定義です。`verify:assurance` は lane / evidence / warning を集約しますが、最終的な `achievedLevel` 自動判定はまだ後続フェーズです。
 
 ## 4. claim の設計指針
 
@@ -114,7 +116,7 @@ assurance:
 
 ## 6. 現時点の非目標
 
-- `verify-lite-run-summary` への achieved level 集約
+- `verify-lite-run-summary` 自体へ achieved level を書き戻すこと
 - `policy-gate` が assurance artifact 自体を直接解釈して blocking 判定すること
 - `policy-input` / `policy-decision` への assurance 判定追加
 - 全 claim の formal proof
@@ -126,3 +128,4 @@ assurance:
 - 新しい schema を追加したため、`docs/reference/CONTRACT-CATALOG.md` を同時に更新する
 - sample fixture を変更する場合は `tests/contracts/assurance-profile-contract.test.ts` を更新する
 - lane taxonomy は `docs/quality/assurance-lanes.md` を SSOT とし、本書では入力契約への接続だけを記述する
+- 実行手順と strict / report-only の使い分けは `docs/quality/assurance-operations-runbook.md` を正とする

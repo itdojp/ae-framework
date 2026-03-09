@@ -73,6 +73,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Product fit (what to input/output, which tools to use): `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - Assurance control plane positioning: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance model (claim / level / lane / evidence): `docs/quality/ASSURANCE-MODEL.md`
+- Assurance operations runbook: `docs/quality/assurance-operations-runbook.md`
+- Assurance onboarding checklist: `docs/guides/assurance-onboarding-checklist.md`
 - PR automation (Copilot -> auto-fix -> auto-merge): `docs/ci/pr-automation.md`
 - Release engineering (release verify / post-deploy): `docs/operate/release-engineering.md`
 - CI/quality gates: `docs/ci/phase2-ci-hardening-outline.md`, `docs/ci/label-gating.md`, `docs/ci/harness-taxonomy.md`

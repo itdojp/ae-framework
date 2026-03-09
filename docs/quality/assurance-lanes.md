@@ -30,7 +30,7 @@ CI enforcement remains report-only by default. `enforce-assurance` enables stric
 - provenance minimum
 - counterexample linkage convention
 
-詳細な achieved level 判定は後続フェーズで追加します。blocking enforcement は既定では無効で、`enforce-assurance` ラベル時のみ有効です。
+詳細な achieved level 判定は後続フェーズで追加します。既定運用は report-only ですが、`enforce-assurance` ラベル時は Verify Lite の strict enforcement を有効化します。
 
 ## 2. Canonical validation lanes
 
@@ -123,6 +123,7 @@ main 実装済み:
 - report-only `verify:assurance` summary generation
 - `verify-lite.yml` での report-only assurance summary 集約と artifact upload
 - `enforce-assurance` ラベル時の Verify Lite strict enforcement
+- PR summary / release summary への assurance 表示
 
 未実装または後続:
 - 全 producer の claim-level linkage 自動解決
@@ -132,6 +133,7 @@ main 実装済み:
 
 - `docs/quality/ASSURANCE-MODEL.md`
 - `docs/quality/assurance-profile.md`
+- `docs/quality/assurance-operations-runbook.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`
 - `docs/guides/COUNTEREXAMPLE-SCHEMA.md`
 - `docs/spec/context-pack.md`
