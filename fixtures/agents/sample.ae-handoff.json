@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "ae-handoff/v1",
+  "generatedAt": "2026-03-09T09:00:00.000Z",
+  "handoffTarget": "A",
+  "goal": "policy-gate の fail 原因を解消し、required checks を green 化する",
+  "currentStatus": "risk-label mismatch は解消済み。review gate が pending。",
+  "nextActions": [
+    {
+      "order": 1,
+      "summary": "gate job ログを確認する",
+      "command": "gh pr checks 1234 --required"
+    },
+    {
+      "order": 2,
+      "summary": "必要なら workflow_dispatch で再評価する",
+      "command": "gh workflow run policy-gate.yml"
+    }
+  ],
+  "commandsRun": [
+    "gh pr checks 1234 --required"
+  ],
+  "artifacts": [
+    {
+      "path": "artifacts/ci/policy-gate-summary.json",
+      "description": "latest policy-gate summary"
+    }
+  ],
+  "risksRollbackNote": "workflow 変更時は revert PR で即時復旧可能",
+  "blockers": [
+    {
+      "summary": "human approval 1件待ち",
+      "kind": "human"
+    }
+  ],
+  "changePackageRef": null
+}
