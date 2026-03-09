@@ -57,6 +57,7 @@
 - `schema/codex-task-response.schema.json`
 - `schema/conformance-report.schema.json`
 - `schema/conformance-verify-result.schema.json`
+- `schema/hook-feedback.schema.json`
 - `schema/issue-traceability-matrix.schema.json`
 - `schema/policy-decision-v1.schema.json`
 - `schema/pr-state-v1.schema.json`
@@ -115,6 +116,7 @@
 | `artifacts/hermetic-reports/trace/**/kvonce-validation.json` | `schema/trace-validation.schema.json` | `scripts/trace/run-kvonce-conformance.sh` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/render-trace-summary.mjs` |
 | `artifacts/change-package/change-package.json` | `schema/change-package.schema.json` | `scripts/change-package/generate.mjs` | `scripts/change-package/validate.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/handoff/ae-handoff.json` | `schema/ae-handoff.schema.json` | `templates/comments/AE-HANDOFF.md`（manual/export）, `docs/agents/handoff.md` | `scripts/agents/validate-handoff.mjs`, future PR/Issue handoff consumers |
+| `artifacts/agents/hook-feedback.json` | `schema/hook-feedback.schema.json` | `scripts/agents/build-hook-feedback.mjs` | `docs/agents/hook-feedback.md`, Claude Code / CodeX continuation consumers |
 | `artifacts/plan/plan-artifact.json` | `schema/plan-artifact.schema.json` | `scripts/plan-artifact/generate.mjs` | `scripts/plan-artifact/validate.mjs`, `scripts/ci/policy-gate.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/policy-gate.yml` |
 | `artifacts/ci/policy-input-v1.json` | `schema/policy-input-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/policy-gate.mjs`, `scripts/ci/policy-shadow-compare.mjs`, `scripts/ci/validate-json.mjs` |
 | `artifacts/ci/policy-decision-js-v1.json`, `artifacts/ci/policy-decision-opa-v1.json` | `schema/policy-decision-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `scripts/ci/policy-shadow-compare.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/policy-shadow-compare.mjs`, `scripts/ci/validate-json.mjs` |

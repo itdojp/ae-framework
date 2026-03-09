@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "hook-feedback/v1",
+  "generatedAt": "2026-03-09T12:00:00.000Z",
+  "status": "blocked",
+  "blockingReasons": [
+    "Testing harness: 1 failing reproducibility records.",
+    "Change Package: Missing required labels: run-ci-extended",
+    "Context Pack suggestions pending: 1 change(s)"
+  ],
+  "nextActions": [
+    "Run `pnpm run verify:lite` and fix failing verify-lite steps: lint, traceability.",
+    "Update `spec/context-pack/functor-map.json` for `ReserveInventory` (add) and rerun `pnpm run context-pack:verify-functor`.",
+    "Add missing required labels (run-ci-extended) and rerun the gated workflows."
+  ],
+  "reproCommands": [
+    "pnpm run verify:lite",
+    "pnpm run test:ci:extended",
+    "pnpm run context-pack:verify-functor"
+  ],
+  "evidence": [
+    {
+      "id": "verifyLiteSummary",
+      "path": "artifacts/verify-lite/verify-lite-run-summary.json",
+      "description": "verify-lite run summary",
+      "present": true,
+      "status": "failure"
+    },
+    {
+      "id": "harnessHealth",
+      "path": "artifacts/ci/harness-health.json",
+      "description": "harness health summary",
+      "present": true,
+      "status": "critical"
+    },
+    {
+      "id": "changePackage",
+      "path": "artifacts/change-package/change-package.json",
+      "description": "change package evidence bundle",
+      "present": true,
+      "status": "risk:high"
+    },
+    {
+      "id": "contextPackSuggestions",
+      "path": "artifacts/context-pack/context-pack-suggestions.json",
+      "description": "context-pack suggestion summary",
+      "present": true,
+      "status": "fail"
+    }
+  ],
+  "source": {
+    "verifyLiteSummaryPath": "artifacts/verify-lite/verify-lite-run-summary.json",
+    "harnessHealthPath": "artifacts/ci/harness-health.json",
+    "changePackagePath": "artifacts/change-package/change-package.json",
+    "contextPackSuggestionsPath": "artifacts/context-pack/context-pack-suggestions.json"
+  }
+}

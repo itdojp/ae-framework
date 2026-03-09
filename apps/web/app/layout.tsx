@@ -5,6 +5,8 @@ import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'ae-framework | AI-Enhanced Development Framework',
   description: 'Production-ready AI-enhanced development framework with Phase 6 UI/UX automation',

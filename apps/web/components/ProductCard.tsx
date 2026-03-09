@@ -26,6 +26,8 @@ export function ProductCard({
   onDelete, 
   showActions = true 
 }: ProductCardProps) {
+  const statusLabel = product.active ? 'Active' : 'Inactive';
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-4">
@@ -38,8 +40,8 @@ export function ProductCard({
           </p>
         </div>
         
-        <Badge variant={getStatusVariant(product.active)}>
-          { product.active }
+        <Badge variant={getStatusVariant(statusLabel)}>
+          { statusLabel }
         </Badge>
       </div>
 
@@ -53,7 +55,7 @@ export function ProductCard({
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Category:</span>
           <span className="text-gray-900 font-medium">
-            {new Date(product.category).toLocaleDateString()}
+            {product.category}
           </span>
         </div>
         <div className="flex justify-between text-sm">
