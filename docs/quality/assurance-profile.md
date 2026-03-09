@@ -14,7 +14,7 @@ Current scope:
 - documentation of level semantics
 - report-only `verify:assurance` aggregation
 - Verify Lite collection of assurance summary
-- label-gated strict enforcement via `enforce-assurance`
+- label-gated strict assurance enforcement via `enforce-assurance`
 
 Not in scope yet:
 - full achieved-level automation
@@ -33,7 +33,7 @@ Not in scope yet:
 - required evidence kinds
 - Context Pack 上の object / morphism / diagram / acceptance test 参照
 
-現時点では、**schema とドキュメント整備、`verify:assurance` による summary 生成、Verify Lite での assurance 収集、および `enforce-assurance` ラベル時の strict enforcement** までを実装済みとします。通常 PR は report-only のまま維持し、strict 化は label-gated でのみ有効化します。
+現時点では、**schema とドキュメント整備、`verify:assurance` による summary 生成、Verify Lite での assurance 収集、および `enforce-assurance` ラベル時の strict assurance enforcement** までを実装済みとします。通常 PR は report-only のまま維持し、strict 化は label-gated でのみ有効化します。
 
 ## 2. スキーマ
 
@@ -121,6 +121,10 @@ assurance:
 - `policy-input` / `policy-decision` への assurance 判定追加
 - 全 claim の formal proof
 - assurance 未設定 PR を既定で blocking にすること
+
+補足:
+- strict 化されるのは `verify-lite.yml` の `Enforce assurance summary (strict; label-gated)` ステップです。
+- `enforce-assurance` ラベルを付けない通常 PR では、assurance summary は report-only のまま扱います。
 
 ## 7. 変更時の注意
 
