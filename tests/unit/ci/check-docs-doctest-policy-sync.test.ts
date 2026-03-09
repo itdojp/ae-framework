@@ -25,6 +25,8 @@ type WorkflowFixtureOptions = {
   fullIf?: string;
   includeIndexSyncStep?: boolean;
   includeFullSyncStep?: boolean;
+  includeIndexDocConsistencyStep?: boolean;
+  indexDocConsistencyCommand?: string;
   includeChangedDocsStep?: boolean;
   includeChangedDocsRunStep?: boolean;
   changedDocsStepId?: string;
@@ -37,6 +39,8 @@ function createWorkflowYaml(options: WorkflowFixtureOptions = {}): string {
     fullIf = "${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.full) }}",
     includeIndexSyncStep = true,
     includeFullSyncStep = true,
+    includeIndexDocConsistencyStep = true,
+    indexDocConsistencyCommand = 'node scripts/docs/check-doc-consistency-all.mjs',
     includeChangedDocsStep = true,
     includeChangedDocsRunStep = true,
     changedDocsStepId = 'changed-docs',
@@ -51,8 +55,10 @@ function createWorkflowYaml(options: WorkflowFixtureOptions = {}): string {
     indexSteps.push('      - name: Validate docs-doctest policy sync');
     indexSteps.push('        run: node scripts/ci/check-docs-doctest-policy-sync.mjs');
   }
-  indexSteps.push('      - name: Check documentation consistency');
-  indexSteps.push('        run: node scripts/docs/check-doc-consistency-all.mjs');
+  if (includeIndexDocConsistencyStep) {
+    indexSteps.push('      - name: Check documentation consistency');
+    indexSteps.push(`        run: ${indexDocConsistencyCommand}`);
+  }
   if (includeChangedDocsStep) {
     indexSteps.push('      - name: Detect changed markdown files (PR only)');
     indexSteps.push(`        id: ${changedDocsStepId}`);
@@ -243,6 +249,51 @@ describe('check-docs-doctest-policy-sync', () => {
       const result = runDocsDoctestPolicySyncCheck(paths);
       expect(result.exitCode).toBe(1);
       expect(result.errors.some((error) => error.includes('changed-docs step id mismatch'))).toBe(true);
+    });
+  });
+
+  it('reports missing documentation consistency step as validation errors', () => {
+    withTempDir((dir) => {
+      const paths = writeFixtureFiles(
+        dir,
+        defaultPackageRaw(),
+        createWorkflowYaml({
+          includeIndexDocConsistencyStep: false,
+        })
+      );
+
+      const result = runDocsDoctestPolicySyncCheck(paths);
+      expect(result.exitCode).toBe(1);
+      expect(
+        result.errors.some((error) =>
+          error.includes('doctest-index must include "Check documentation consistency" step')
+        )
+      ).toBe(true);
+    });
+  });
+
+  it('reports wrong documentation consistency command as validation errors', () => {
+    withTempDir((dir) => {
+      const paths = writeFixtureFiles(
+        dir,
+        defaultPackageRaw(),
+        createWorkflowYaml({
+          indexDocConsistencyCommand: 'node scripts/docs/check-doc-consistency.mjs',
+        })
+      );
+
+      const result = runDocsDoctestPolicySyncCheck(paths);
+      expect(result.exitCode).toBe(1);
+      expect(
+        result.errors.some((error) =>
+          error.includes('doctest-index doc consistency step must execute aggregated checker')
+        )
+      ).toBe(true);
+      expect(
+        result.errors.some((error) =>
+          error.includes('node scripts/docs/check-doc-consistency-all.mjs')
+        )
+      ).toBe(true);
     });
   });
 

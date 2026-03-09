@@ -95,15 +95,13 @@ function collectGovernedDocs(rootDir) {
 }
 
 function extractFrontMatter(raw) {
-  if (!raw.startsWith('---\n')) {
-    return { data: null, body: raw, parseError: null };
+  const source = String(raw ?? '');
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/u.exec(source);
+  if (!match) {
+    return { data: null, body: source, parseError: null };
   }
-  const closingIndex = raw.indexOf('\n---\n', 4);
-  if (closingIndex < 0) {
-    return { data: null, body: raw, parseError: null };
-  }
-  const yamlBlock = raw.slice(4, closingIndex);
-  const body = raw.slice(closingIndex + 5);
+  const yamlBlock = match[1];
+  const body = source.slice(match[0].length);
   try {
     const data = parseFrontMatterMapping(yamlBlock);
     return { data, body, parseError: null };
