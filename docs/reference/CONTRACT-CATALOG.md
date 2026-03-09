@@ -120,7 +120,7 @@
 
 ## 5. 現時点の未整備（次段階）
 
-- assurance contract は段階導入中であり、既定運用は report-only、strict enforcement は `enforce-assurance` ラベル時の Verify Lite に限定される。
+- assurance contract は段階導入中であり、既定運用は report-only、strict assurance enforcement は `enforce-assurance` ラベル時の Verify Lite に限定される。
 - `schemaVersion` は semver と `*/v1` 形式が混在している（統一規約は `docs/reference/SCHEMA-GOVERNANCE.md` で段階導入）。
 - `change-package` は `v1` が現行 production contract、`v2` は proof-carrying 拡張の preview contract として併存している。
 - Formal Summary は `v1` / `v2` の dual-write + dual-validate 期間として運用中（`v2`: `schemaVersion=formal-summary/v2`, `contractId=formal-summary.v2`）。
