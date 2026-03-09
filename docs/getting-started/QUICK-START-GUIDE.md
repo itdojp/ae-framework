@@ -12,19 +12,19 @@
 ### ✅ Implemented / Reproducible Path
 
 Current baseline aligned with the repository implementation:
+From the repository root after cloning this repository, run:
 
 ```bash
 corepack enable
 corepack prepare pnpm@10.0.0 --activate
 pnpm install
 pnpm run first-run
-pnpm run verify:lite
 ```
 
 This baseline gives you:
 - environment validation via `first-run`
-- required CI-equivalent local verification via `verify:lite`
-- reproducible evidence under `artifacts/verify-lite/**`
+- required CI-equivalent local verification via `first-run -> verify:lite`
+- reproducible evidence under `artifacts/first-run/**` and `artifacts/verify-lite/**`
 
 ### ⚡ Three Adoption Levels
 
@@ -34,12 +34,13 @@ Use this when you want a reproducible local setup and the default report-only qu
 
 ```bash
 pnpm run first-run
-pnpm run verify:lite
 ```
 
 Check:
 - `artifacts/first-run/**`
 - `artifacts/verify-lite/verify-lite-run-summary.json`
+
+Run `pnpm run verify:lite` separately only when you want to refresh the Verify Lite evidence without rerunning the full `first-run` flow.
 
 #### 2. Structured Assurance
 
@@ -53,6 +54,8 @@ pnpm run verify:assurance \
   --output-md artifacts/assurance/assurance-summary.md
 ```
 
+Note: This example assumes you have already run the Baseline so that `artifacts/verify-lite/verify-lite-run-summary.json` exists. If you only want a profile-only aggregation, omit `--verify-lite-summary`.
+
 Check:
 - `artifacts/assurance/assurance-summary.json`
 - `artifacts/assurance/assurance-summary.md`
@@ -65,7 +68,7 @@ Use this only for high-risk PRs. The default path remains report-only.
 gh pr edit <PR_NUMBER> --add-label enforce-assurance
 ```
 
-This enables the strict Verify Lite step that fails on warning claims, missing lanes/evidence, unlinked counterexamples, or open counterexamples.
+This enables the strict assurance enforcement step that fails when the aggregated assurance summary reports warning claims, missing lanes/evidence, unlinked counterexamples, or open counterexamples.
 
 Operational details:
 - `docs/quality/assurance-operations-runbook.md`
@@ -474,18 +477,19 @@ Enter in Claude Code:
 
 ### ✅ 現在実装に整合する最短導線
 
+このリポジトリを clone してリポジトリルートに移動した後、次を実行します。
+
 ```bash
 corepack enable
 corepack prepare pnpm@10.0.0 --activate
 pnpm install
 pnpm run first-run
-pnpm run verify:lite
 ```
 
 この baseline で確認できること:
 - `first-run` による環境確認
-- `verify:lite` による required 相当のローカル検証
-- `artifacts/verify-lite/**` の証跡生成
+- `first-run -> verify:lite` による required 相当のローカル検証
+- `artifacts/first-run/**` と `artifacts/verify-lite/**` の証跡生成
 
 ### ⚡ 3段階の導入レベル
 
@@ -495,12 +499,13 @@ pnpm run verify:lite
 
 ```bash
 pnpm run first-run
-pnpm run verify:lite
 ```
 
 確認対象:
 - `artifacts/first-run/**`
 - `artifacts/verify-lite/verify-lite-run-summary.json`
+
+`first-run` を再実行せずに Verify Lite の証跡だけを更新したい場合に限り、`pnpm run verify:lite` を個別に実行します。
 
 #### 2. Structured Assurance
 
@@ -514,6 +519,8 @@ pnpm run verify:assurance \
   --output-md artifacts/assurance/assurance-summary.md
 ```
 
+注: この例は Baseline 実行後で `artifacts/verify-lite/verify-lite-run-summary.json` が存在する前提です。profile だけを集約したい場合は `--verify-lite-summary` を省略してください。
+
 確認対象:
 - `artifacts/assurance/assurance-summary.json`
 - `artifacts/assurance/assurance-summary.md`
@@ -526,7 +533,7 @@ pnpm run verify:assurance \
 gh pr edit <PR番号> --add-label enforce-assurance
 ```
 
-このラベルにより、Verify Lite の strict step が `warningClaims`、`missingLanes`、`missingEvidenceKinds`、`unlinkedCounterexamples`、`openCounterexamples` などで fail します。
+このラベルにより、assurance enforcement（workflow の `Enforce assurance summary` ステップ）が `warningClaims`、`missingLanes`、`missingEvidenceKinds`、`unlinkedCounterexamples`、`openCounterexamples` などで strict fail するようになります。
 
 一次情報:
 - `docs/quality/assurance-operations-runbook.md`

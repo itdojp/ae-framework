@@ -15,7 +15,7 @@
 - **pnpm**: 10.0.0（`package.json` の `packageManager` と一致させる）
 - **TypeScript**: 5.9.x 以上
 - **Git**: 2.0 or higher
-- **Playwright**: 1.47.0 or higher (for E2E testing)
+- **Playwright**: 1.47.0 or higher (optional, for E2E testing)
 
 #### Recommended Environment
 - **OS**: Linux, macOS, Windows (WSL2 recommended)
@@ -52,26 +52,19 @@ pnpm run ci:lockfile:verify
 
 注: このプロジェクトは pnpm を前提としています。
 
-#### 3. Phase 6 Playwright Setup
-
-Install Playwright browsers for E2E testing and visual regression testing:
-
-```bash
-npx playwright install
-```
-
-#### 4. Baseline Verification
+#### 3. Baseline Verification
 
 ```bash
 pnpm run first-run
-pnpm run verify:lite
 ```
 
 Check:
 - `artifacts/first-run/**`
 - `artifacts/verify-lite/verify-lite-run-summary.json`
 
-#### 5. Assurance Summary (Optional)
+Run `pnpm run verify:lite` separately only when you want to refresh the Verify Lite evidence without rerunning the full `first-run` flow.
+
+#### 4. Assurance Summary (Optional)
 
 ```bash
 pnpm run verify:assurance \
@@ -84,9 +77,19 @@ node scripts/ci/validate-assurance-summary.mjs \
   schema/assurance-summary.schema.json
 ```
 
+This example assumes the Baseline has already produced `artifacts/verify-lite/verify-lite-run-summary.json`. If you only need a profile-only aggregation, omit `--verify-lite-summary`.
+
 For project onboarding and strict/report-only operations:
 - `docs/guides/assurance-onboarding-checklist.md`
 - `docs/quality/assurance-operations-runbook.md`
+
+#### 5. Phase 6 Playwright Setup (Optional)
+
+Install Playwright browsers only when you need E2E testing or visual regression testing:
+
+```bash
+npx playwright install
+```
 
 #### 6. Git Hooks Setup (Optional)
 
@@ -173,9 +176,10 @@ Configuration file example for using MCP Server in Claude Code:
 
 ```bash
 pnpm run first-run
-pnpm run verify:lite
 # Confirm no errors appear and verify-lite summary is generated
 ```
+
+Run `pnpm run verify:lite` separately only when you want to refresh Verify Lite evidence after the initial `first-run`.
 
 #### 2. Assurance Verification (Optional)
 
@@ -189,6 +193,8 @@ node scripts/ci/validate-assurance-summary.mjs \
   artifacts/assurance/assurance-summary.json \
   schema/assurance-summary.schema.json
 ```
+
+If you have not generated `artifacts/verify-lite/verify-lite-run-summary.json`, omit `--verify-lite-summary` and run a profile-only aggregation.
 
 #### 3. Test Execution
 
@@ -447,7 +453,7 @@ Regular updates are recommended to get the latest features and fixes.
 - **pnpm**: 10.0.0（`package.json` の `packageManager` と一致）
 - **TypeScript**: 5.5.0 以上
 - **Git**: 2.0 以上
-- **Playwright**: 1.47.0 以上 (E2Eテスト用)
+- **Playwright**: 1.47.0 以上 (任意、E2Eテスト用)
 
 #### 推奨環境
 - **OS**: Linux, macOS, Windows (WSL2推奨)
@@ -486,12 +492,13 @@ pnpm run ci:lockfile:verify
 
 ```bash
 pnpm run first-run
-pnpm run verify:lite
 ```
 
 確認対象:
 - `artifacts/first-run/**`
 - `artifacts/verify-lite/verify-lite-run-summary.json`
+
+`first-run` を再実行せずに Verify Lite の証跡だけを更新したい場合に限り、`pnpm run verify:lite` を個別に実行します。
 
 #### 4. Assurance Summary（任意）
 
@@ -505,6 +512,8 @@ node scripts/ci/validate-assurance-summary.mjs \
   artifacts/assurance/assurance-summary.json \
   schema/assurance-summary.schema.json
 ```
+
+この例は Baseline 実行後で `artifacts/verify-lite/verify-lite-run-summary.json` が存在する前提です。profile だけを集約したい場合は `--verify-lite-summary` を省略してください。
 
 運用詳細:
 - `docs/guides/assurance-onboarding-checklist.md`
@@ -609,9 +618,10 @@ Claude Code で MCP Server も使用する場合の設定ファイル例：
 
 ```bash
 pnpm run first-run
-pnpm run verify:lite
 # エラーが出ず、verify-lite summary が生成されることを確認
 ```
+
+初回の `first-run` 後に Verify Lite の証跡だけを更新したい場合に限り、`pnpm run verify:lite` を個別に実行します。
 
 #### 2. Assurance の確認（任意）
 
@@ -625,6 +635,8 @@ node scripts/ci/validate-assurance-summary.mjs \
   artifacts/assurance/assurance-summary.json \
   schema/assurance-summary.schema.json
 ```
+
+`artifacts/verify-lite/verify-lite-run-summary.json` がまだない場合は、`--verify-lite-summary` を省略して profile-only の集約として実行できます。
 
 #### 3. テストの実行
 
