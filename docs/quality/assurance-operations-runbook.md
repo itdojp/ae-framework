@@ -115,19 +115,19 @@ node scripts/ci/validate-assurance-summary.mjs \
 - PR summary comment は `artifacts/assurance/assurance-summary.json` が存在する場合に、claim summary を追記します。
 - release/post-deploy summary は `artifacts/assurance/assurance-summary.md` が存在する場合に要約を追記します。
 
-### 5.2 strict enforcement の発火条件
+### 5.2 strict assurance enforcement の発火条件
 
-- PR に `enforce-assurance` ラベルが付いている場合のみ、Verify Lite の strict step を有効化します。
+- PR に `enforce-assurance` ラベルが付いている場合のみ、workflow の `Enforce assurance summary` ステップで strict assurance enforcement を有効化します。
 - `pull_request` の `labeled` / `unlabeled` / `ready_for_review` で Verify Lite を再評価するため、ラベル操作後も同一 PR 上で再実行されます。
 
-### 5.3 strict step のローカル再現
+### 5.3 strict assurance enforcement のローカル再現
 
 ```bash
 node scripts/ci/enforce-assurance-summary.mjs \
   artifacts/assurance/assurance-summary.json
 ```
 
-strict step は少なくとも次を失敗条件として扱います。
+strict assurance enforcement は少なくとも次を失敗条件として扱います。
 - `summary.claimCount < 1`
 - `summary.warningClaims > 0`
 - `summary.warningCount > 0`
