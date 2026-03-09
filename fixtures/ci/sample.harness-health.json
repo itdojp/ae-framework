@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "harness-health/v1",
+  "contractId": "harness-health.v1",
+  "generatedAt": "2026-03-10T00:00:00.000Z",
+  "repository": "itdojp/ae-framework",
+  "pullRequest": 2550,
+  "commitSha": "0123456789abcdef0123456789abcdef01234567",
+  "workflow": "PR Maintenance",
+  "runId": 22800000001,
+  "gates": {
+    "artifactsSchema": {
+      "status": "ok",
+      "checks": [
+        {
+          "name": "validate-artifacts / run",
+          "workflowName": "Spec Validation",
+          "status": "COMPLETED",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://example.test/checks/artifacts"
+        }
+      ],
+      "checkCount": 1
+    },
+    "testingHarness": {
+      "status": "warn",
+      "checks": [
+        {
+          "name": "testing-ddd",
+          "workflowName": "testing-ddd-scripts.yml",
+          "status": "IN_PROGRESS",
+          "conclusion": "",
+          "detailsUrl": null
+        }
+      ],
+      "checkCount": 1
+    },
+    "contextPack": {
+      "status": "warn",
+      "checks": [],
+      "checkCount": 0,
+      "recommendedContextChanges": [
+        {
+          "file": "spec/context-pack/functor-map.json",
+          "changeType": "add",
+          "targetId": "ReserveInventory",
+          "rationale": "Functor mapping is missing for ReserveInventory",
+          "suggestedCommand": "pnpm run context-pack:verify-functor"
+        }
+      ]
+    },
+    "runtimeConformance": {
+      "status": "fail",
+      "checks": [],
+      "checkCount": 0
+    },
+    "ciExtended": {
+      "status": "skip",
+      "checks": [],
+      "checkCount": 0
+    },
+    "uiE2E": {
+      "status": "ok",
+      "checks": [
+        {
+          "name": "E2E Tests",
+          "workflowName": "Parallel Test Execution",
+          "status": "COMPLETED",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://example.test/checks/e2e"
+        }
+      ],
+      "checkCount": 1
+    }
+  },
+  "severity": "critical",
+  "reasons": [
+    "Context Pack: suggestion report flagged unresolved functor mappings.",
+    "Runtime Conformance: conformance verify failed."
+  ],
+  "recommendedLabels": [
+    "enforce-context-pack",
+    "run-trace",
+    "autopilot:on"
+  ],
+  "recommendedContextChanges": [
+    {
+      "file": "spec/context-pack/functor-map.json",
+      "changeType": "add",
+      "targetId": "ReserveInventory",
+      "rationale": "Functor mapping is missing for ReserveInventory",
+      "suggestedCommand": "pnpm run context-pack:verify-functor"
+    }
+  ],
+  "reproducibleHints": [
+    {
+      "gate": "testingHarness",
+      "trace": "TRACE-42",
+      "seed": 20260310,
+      "command": "TRACE_ID=TRACE-42 pnpm run test:replay:focus --silent"
+    },
+    {
+      "gate": "runtimeConformance",
+      "trace": null,
+      "seed": null,
+      "command": "gh workflow run runtime-conformance-self-heal.yml --repo <owner/repo> -f trace_input=samples/conformance/sample-traces.json -f apply_fixes=false -f dry_run=true"
+    }
+  ]
+}

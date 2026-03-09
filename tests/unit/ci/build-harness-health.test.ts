@@ -124,6 +124,7 @@ describe('build-harness-health', () => {
     });
 
     expect(report.severity).toBe('critical');
+    expect(report.contractId).toBe('harness-health.v1');
     expect(report.gates.artifactsSchema.status).toBe('fail');
     expect(report.gates.testingHarness.status).toBe('fail');
     expect(report.gates.contextPack.status).toBe('warn');
@@ -181,6 +182,7 @@ describe('build-harness-health', () => {
     });
 
     expect(report.severity).toBe('warn');
+    expect(report.contractId).toBe('harness-health.v1');
     expect(report.reasons[0]).toContain('rate limited');
   });
 
