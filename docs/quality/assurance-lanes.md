@@ -14,7 +14,7 @@ Current scope:
 - minimum provenance rule
 - counterexample linkage convention
 
-CI enforcement remains report-only by default. `enforce-assurance` enables strict Verify Lite enforcement for assurance-aware PRs.
+CI enforcement remains report-only by default. `enforce-assurance` enables the strict assurance enforcement step for assurance-aware PRs.
 
 ---
 
@@ -30,7 +30,7 @@ CI enforcement remains report-only by default. `enforce-assurance` enables stric
 - provenance minimum
 - counterexample linkage convention
 
-詳細な achieved level 判定は後続フェーズで追加します。既定運用は report-only ですが、`enforce-assurance` ラベル時は Verify Lite の strict enforcement を有効化します。
+詳細な achieved level 判定は後続フェーズで追加します。既定運用は report-only ですが、`enforce-assurance` ラベル時は strict assurance enforcement ステップを有効化します。
 
 ## 2. Canonical validation lanes
 
@@ -122,7 +122,7 @@ main 実装済み:
 - `change-package-v2` の claim/counterexample linkage
 - report-only `verify:assurance` summary generation
 - `verify-lite.yml` での report-only assurance summary 集約と artifact upload
-- `enforce-assurance` ラベル時の Verify Lite strict enforcement
+- `enforce-assurance` ラベル時の strict assurance enforcement
 - PR summary / release summary への assurance 表示
 
 未実装または後続:
