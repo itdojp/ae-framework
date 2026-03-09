@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci/pr-automation.md
+- policy/risk-policy.yml
+lastVerified: '2026-03-09'
+---
+
 # Agents Runbook: Pull Request
 
 ## When to use

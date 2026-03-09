@@ -8,6 +8,18 @@ const DEFAULT_WORKFLOW_PATH = '.github/workflows/agent-commands.yml';
 const DEFAULT_OUTPUT_PATH = 'docs/agents/commands.md';
 const __filename = fileURLToPath(import.meta.url);
 
+function buildGeneratedFrontMatter(lastVerified = new Date().toISOString().slice(0, 10)) {
+  return [
+    '---',
+    'docRole: derived',
+    'canonicalSource:',
+    '  - .github/workflows/agent-commands.yml',
+    `lastVerified: '${lastVerified}'`,
+    '---',
+    '',
+  ];
+}
+
 function toSortedUnique(values) {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
 }
@@ -96,6 +108,7 @@ function extractLabelMetadata(workflowText) {
 
 function renderMarkdown({ prCommands, issueCommands, prLabels, issueLabels, dynamicLabels }) {
   const lines = [
+    ...buildGeneratedFrontMatter(),
     '# Agent Commands Catalog',
     '',
     '> この文書は `.github/workflows/agent-commands.yml` から自動生成されます。手動編集しないでください。',
@@ -252,6 +265,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
 }
 
 export {
+  buildGeneratedFrontMatter,
   buildCatalogFromWorkflow,
   extractIssueCommands,
   extractLabelMetadata,

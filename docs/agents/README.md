@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/agents/agents-doc-boundary-matrix.md
+lastVerified: '2026-03-09'
+---
+
 # Agent Docs Index
 
 `AGENTS.md` から参照する、エージェント向けの索引です。  

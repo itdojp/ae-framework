@@ -4,8 +4,11 @@
 `check:doc-consistency` runs the following validators:
 - `scripts/docs/check-doc-consistency.mjs`
 - `scripts/docs/check-ci-doc-index-consistency.mjs`
+- `scripts/docs/check-agent-commands-doc-sync.mjs`
 - `scripts/docs/check-runbook-command-blocks.mjs`
 - `scripts/docs/check-doc-todo-markers.mjs`
+- `scripts/docs/check-contract-catalog-coverage.mjs`
+- `scripts/docs/check-doc-governance.mjs`
 
 Together they validate that onboarding + CI operation docs stay aligned with the implementation and remain executable as runbooks.
 
@@ -15,8 +18,10 @@ Checks:
 - `docs/README.md` から辿れる `docs/ci/*` / `docs/quality/*` の主要ドキュメントも既定スコープで検証する。
 - `docs/README.md` / `docs/ci-policy.md` include the canonical CI operation links.
 - CI reference sections in `docs/ci-policy.md` avoid duplicate entries.
+- `docs/agents/commands.md` stays synchronized with `.github/workflows/agent-commands.yml`.
 - CI runbook の shell code block を `bash -n` で構文検証する。
 - `docs/ci/*` の TODO/FIXME マーカーが Issue 参照付きであることを検証する（`TODO(#<issue>)` / `FIXME(#<issue>)`）。
+- governed docs の `docRole` / `canonicalSource` / `lastVerified` front matter を検証する。
 
 Current default targets:
 - Base: `../../README.md`, `../README.md`, Getting Started, User Manual, Integrations
@@ -41,7 +46,7 @@ pnpm run check:doc-consistency -- --docs README.md,docs/README.md
 ```
 
 Note:
-- `--format json` または `--docs` 指定時は互換性のため `check-doc-consistency.mjs` のみを実行します（他の3 validator はスキップ）。
+- `--format json` または `--docs` 指定時は互換性のため `check-doc-consistency.mjs` のみを実行します（他の validator はスキップ）。
 - CI索引チェックを併せて実行する場合は `pnpm run check:ci-doc-index-consistency` を利用してください。
 
 CI index only:
@@ -70,4 +75,4 @@ The checker intentionally ignores:
 If a new docs section needs additional exclusions, update `scripts/docs/check-doc-consistency.mjs` and add a unit test under `tests/unit/docs/`.
 
 ## CI Integration
-`Verify Lite` runs the checker before docs-only detection so broken references are caught early even on markdown-only changes.
+`Verify Lite` と `Docs Doctest` は `check-doc-consistency-all.mjs` を実行します。これにより broken references に加えて contract catalog / doc governance も required lane で検出されます。

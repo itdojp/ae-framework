@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import path from 'node:path';
 
 import {
+  buildGeneratedFrontMatter,
   buildCatalogFromWorkflow,
   extractIssueCommands,
   extractLabelMetadata,
@@ -69,9 +70,16 @@ describe('check-agent-commands-doc-sync', () => {
 
   it('renders generated catalog content from workflow', () => {
     const catalog = buildCatalogFromWorkflow(SAMPLE_WORKFLOW);
+    expect(catalog).toContain('docRole: derived');
+    expect(catalog).toContain('.github/workflows/agent-commands.yml');
+    expect(catalog).toContain("lastVerified: '");
     expect(catalog).toContain('## PR向け Slash Commands');
     expect(catalog).toContain('`/run-qa`');
     expect(catalog).toContain('`status:in-progress`');
+  });
+
+  it('builds generated front matter with supplied verification date', () => {
+    expect(buildGeneratedFrontMatter('2026-03-09')).toContain("lastVerified: '2026-03-09'");
   });
 
   it('parses CLI options', () => {

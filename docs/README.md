@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-09'
+---
+
 # 📚 ae-framework Documentation / ドキュメント
 
 > 🌍 Language / 言語: English | 日本語
@@ -7,6 +12,14 @@
 ## English
 
 Comprehensive documentation for the agentic SDLC orchestrator and assurance control plane.
+
+### Trust tiers
+
+- `ssot`: normative source of truth
+- `derived`: guide/router derived from one or more canonical sources
+- `narrative`: explanatory overview; not the primary normative source
+
+See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 
 ### Current implementation snapshot (recommended first read)
 - System overview (implementation-aligned): `architecture/CURRENT-SYSTEM-OVERVIEW.md`
@@ -93,6 +106,7 @@ Comprehensive documentation for the agentic SDLC orchestrator and assurance cont
 ### Reference
 - CLI Commands: `reference/CLI-COMMANDS-REFERENCE.md`
 - API Reference: `reference/API.md`
+- Document governance front matter: `reference/DOC-GOVERNANCE.md`
 - Schema governance ($id canonical URI policy): [SCHEMA-GOVERNANCE.md](./reference/SCHEMA-GOVERNANCE.md)
 - Contract catalog (input/decision/evidence/operation): [CONTRACT-CATALOG.md](./reference/CONTRACT-CATALOG.md)
 - Change Package v2 reference: `reference/change-package-v2.md`
@@ -170,6 +184,14 @@ For the complete navigation with highlights, see the Japanese section below (sam
 ---
 
 > エージェント協調型SDLCオーケストレーター兼 assurance control plane の包括的ドキュメント
+
+## 信頼階層（trust tiers）
+
+- `ssot`: 規範文書
+- `derived`: 一次情報から導出したガイド/ルータ
+- `narrative`: 背景説明・導入文章
+
+front matter の仕様と lint ルールは `reference/DOC-GOVERNANCE.md` を参照してください。
 
 ## 🚀 はじめに
 
