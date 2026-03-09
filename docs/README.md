@@ -89,6 +89,7 @@ Comprehensive documentation for the agentic SDLC orchestrator and assurance cont
 - Claude Code Workflow: `integrations/CLAUDECODE-WORKFLOW.md`
 - CodeX Integration (PoC/MCP/Adapter): `integrations/CODEX-INTEGRATION.md`
 - Codex boundary + vendor-neutral core: `integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md`
+- Hook feedback adapter: `agents/hook-feedback.md`
 
 ### Reference
 - CLI Commands: `reference/CLI-COMMANDS-REFERENCE.md`

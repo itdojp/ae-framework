@@ -26,6 +26,10 @@ pnpm run codex:quickstart
 > - Within `run-adapters` runs, a11y/perf/lighthouse are report-only by default and enforced only when PR labels (`enforce-a11y`, `enforce-perf`, `enforce-lh`) are set.
 > - Coverage enforcement is handled by dedicated coverage workflows/policies.
 > - See `docs/quality/adapter-thresholds.md` for the authoritative gate behavior.
+>
+> Optional feedback adapter:
+> - `pnpm run hook-feedback:build --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json --harness-health artifacts/ci/harness-health.json --change-package artifacts/change-package/change-package.json`
+> - See `docs/agents/hook-feedback.md` for the hook command example and JSON/Markdown outputs.
 
 ### 📋 Table of Contents
 

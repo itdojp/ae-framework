@@ -83,6 +83,7 @@
     "change-package:generate": "node scripts/change-package/generate.mjs",
     "change-package:validate": "node scripts/change-package/validate.mjs",
     "handoff:validate": "node scripts/agents/validate-handoff.mjs",
+    "hook-feedback:build": "node scripts/agents/build-hook-feedback.mjs",
     "context-pack:validate": "node scripts/context-pack/validate.mjs",
     "context-pack:verify-functor": "node scripts/context-pack/verify-functor.mjs",
     "context-pack:verify-natural-transformation": "node scripts/context-pack/verify-natural-transformation.mjs",

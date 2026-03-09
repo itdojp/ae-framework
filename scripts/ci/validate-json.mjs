@@ -194,6 +194,11 @@ const checks = [
     label: 'AE-HANDOFF schema validation'
   },
   {
+    schema: 'schema/hook-feedback.schema.json',
+    fixtures: ['fixtures/agents/sample.hook-feedback.json'],
+    label: 'Hook feedback schema validation'
+  },
+  {
     schema: 'schema/release-policy.schema.json',
     fixtures: ['fixtures/release/sample.release-policy.json', 'policy/release-policy.yml'],
     label: 'Release policy schema validation'
