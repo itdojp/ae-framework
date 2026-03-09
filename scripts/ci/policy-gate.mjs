@@ -4,6 +4,10 @@ import path from 'node:path';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import micromatch from 'micromatch';
+import {
+  renderMarkdown as renderPlanArtifactValidationMarkdown,
+  validatePlanArtifactFile,
+} from '../plan-artifact/validate.mjs';
 import { execGhJson } from './lib/gh-exec.mjs';
 import { normalizeLabelNames } from './lib/automation-guards.mjs';
 import {
@@ -12,6 +16,7 @@ import {
   getGateCheckPatternsForLabel,
   getMinHumanApprovals,
   getOptionalGateLabels,
+  isPlanArtifactRequired,
   isPolicyLabelRequirementEnabled,
   getRequiredChecks,
   getRiskLabels,
@@ -26,6 +31,10 @@ const SUMMARY_SCHEMA_VERSION = 'policy-gate-summary/v1';
 const SUMMARY_CONTRACT_ID = 'policy-gate-summary.v1';
 const POLICY_INPUT_PATH = 'artifacts/ci/policy-input-v1.json';
 const POLICY_DECISION_PATH = 'artifacts/ci/policy-decision-js-v1.json';
+const PLAN_ARTIFACT_PATH = 'artifacts/plan/plan-artifact.json';
+const PLAN_ARTIFACT_SCHEMA_PATH = 'schema/plan-artifact.schema.json';
+const PLAN_ARTIFACT_VALIDATION_JSON_PATH = 'artifacts/plan/plan-artifact-validation.json';
+const PLAN_ARTIFACT_VALIDATION_MD_PATH = 'artifacts/plan/plan-artifact-validation.md';
 const VALID_REVIEW_TOPOLOGIES = new Set(['team', 'solo']);
 
 function parseArgs(argv) {
@@ -323,6 +332,136 @@ function evaluateCheckRequirement(entries, patterns) {
   };
 }
 
+function inspectPlanArtifact() {
+  const absoluteInputPath = path.resolve(PLAN_ARTIFACT_PATH);
+  const absoluteSchemaPath = path.resolve(PLAN_ARTIFACT_SCHEMA_PATH);
+  const baseState = {
+    path: absoluteInputPath,
+    schemaPath: absoluteSchemaPath,
+    present: false,
+    result: 'missing',
+    validationErrors: [],
+    warnings: [],
+    riskSelected: null,
+    source: null,
+  };
+  if (!fs.existsSync(absoluteInputPath)) {
+    return baseState;
+  }
+
+  try {
+    const { report, payload } = validatePlanArtifactFile({
+      inputPath: PLAN_ARTIFACT_PATH,
+      schemaPath: PLAN_ARTIFACT_SCHEMA_PATH,
+      outputJsonPath: PLAN_ARTIFACT_VALIDATION_JSON_PATH,
+      outputMarkdownPath: PLAN_ARTIFACT_VALIDATION_MD_PATH,
+    });
+    const markdown = renderPlanArtifactValidationMarkdown(report);
+    ensureDirectory(PLAN_ARTIFACT_VALIDATION_JSON_PATH);
+    fs.writeFileSync(PLAN_ARTIFACT_VALIDATION_JSON_PATH, `${JSON.stringify(report, null, 2)}\n`);
+    ensureDirectory(PLAN_ARTIFACT_VALIDATION_MD_PATH);
+    fs.writeFileSync(PLAN_ARTIFACT_VALIDATION_MD_PATH, markdown);
+
+    const source = payload?.source && typeof payload.source === 'object'
+      ? {
+        repository: String(payload.source.repository || '').trim() || null,
+        prNumber: Number.isFinite(Number(payload.source.prNumber))
+          ? Math.trunc(Number(payload.source.prNumber))
+          : null,
+        baseRef: String(payload.source.baseRef || '').trim() || null,
+        headRef: String(payload.source.headRef || '').trim() || null,
+      }
+      : null;
+
+    return {
+      ...baseState,
+      present: true,
+      result: report.result,
+      validationErrors: Array.isArray(report.errors) ? report.errors : [],
+      warnings: Array.isArray(report.warnings) ? report.warnings : [],
+      riskSelected: String(payload?.risk?.selected || '').trim() || null,
+      source,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const report = {
+      schemaVersion: 'plan-artifact-validation/v1',
+      generatedAt: new Date().toISOString(),
+      result: 'fail',
+      inputPath: absoluteInputPath,
+      schemaPath: absoluteSchemaPath,
+      errors: [message],
+      warnings: [],
+    };
+    const markdown = renderPlanArtifactValidationMarkdown(report);
+    ensureDirectory(PLAN_ARTIFACT_VALIDATION_JSON_PATH);
+    fs.writeFileSync(PLAN_ARTIFACT_VALIDATION_JSON_PATH, `${JSON.stringify(report, null, 2)}\n`);
+    ensureDirectory(PLAN_ARTIFACT_VALIDATION_MD_PATH);
+    fs.writeFileSync(PLAN_ARTIFACT_VALIDATION_MD_PATH, markdown);
+    return {
+      ...baseState,
+      present: true,
+      result: 'fail',
+      validationErrors: [message],
+    };
+  }
+}
+
+function evaluatePlanArtifactRequirement(policy, isHighRisk, planArtifact) {
+  const riskLabels = getRiskLabels(policy);
+  const required = isHighRisk && isPlanArtifactRequired(policy);
+  const normalized = planArtifact && typeof planArtifact === 'object'
+    ? {
+      path: String(planArtifact.path || path.resolve(PLAN_ARTIFACT_PATH)),
+      schemaPath: String(planArtifact.schemaPath || path.resolve(PLAN_ARTIFACT_SCHEMA_PATH)),
+      present: Boolean(planArtifact.present),
+      result: String(planArtifact.result || (planArtifact.present ? 'fail' : 'missing')),
+      validationErrors: Array.isArray(planArtifact.validationErrors) ? planArtifact.validationErrors : [],
+      warnings: Array.isArray(planArtifact.warnings) ? planArtifact.warnings : [],
+      riskSelected: String(planArtifact.riskSelected || '').trim() || null,
+      source: planArtifact.source && typeof planArtifact.source === 'object' ? planArtifact.source : null,
+    }
+    : {
+      path: path.resolve(PLAN_ARTIFACT_PATH),
+      schemaPath: path.resolve(PLAN_ARTIFACT_SCHEMA_PATH),
+      present: false,
+      result: 'missing',
+      validationErrors: [],
+      warnings: [],
+      riskSelected: null,
+      source: null,
+    };
+
+  const errors = [];
+  const warnings = [];
+
+  if (required && !normalized.present) {
+    errors.push(`missing required plan artifact: ${PLAN_ARTIFACT_PATH}`);
+  }
+  if (normalized.present) {
+    if (normalized.result === 'fail') {
+      if (required) {
+        errors.push(`plan artifact validation failed: ${normalized.validationErrors.join('; ') || 'unknown error'}`);
+      } else {
+        warnings.push(`plan artifact validation failed (optional for low-risk PR): ${normalized.validationErrors.join('; ') || 'unknown error'}`);
+      }
+    }
+    if (required && normalized.riskSelected && normalized.riskSelected !== riskLabels.high) {
+      errors.push(`plan artifact risk.selected must be ${riskLabels.high}, found ${normalized.riskSelected}`);
+    }
+    for (const warning of normalized.warnings) {
+      warnings.push(`plan artifact: ${warning}`);
+    }
+  }
+
+  return {
+    ...normalized,
+    required,
+    errors,
+    warnings,
+  };
+}
+
 function hasTemplateSection(body, sectionName) {
   if (!body) return false;
   const escaped = sectionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -343,6 +482,7 @@ function evaluatePolicyGate({
   statusRollup,
   reviewTopology,
   approvalOverride,
+  planArtifact,
 }) {
   const errors = [];
   const warnings = [];
@@ -397,6 +537,9 @@ function evaluatePolicyGate({
   const highRiskLabel = riskLabels.high;
   const isHighRisk = selectedRiskLabel === highRiskLabel || inferred.level === highRiskLabel;
   const gateCheckResults = [];
+  const planArtifactEvaluation = evaluatePlanArtifactRequirement(policy, isHighRisk, planArtifact);
+  errors.push(...planArtifactEvaluation.errors);
+  warnings.push(...planArtifactEvaluation.warnings);
 
   if (isHighRisk) {
     if (approvals < minApprovals) {
@@ -453,6 +596,7 @@ function evaluatePolicyGate({
     missingRequiredLabels,
     requiredCheckResults,
     gateCheckResults,
+    planArtifact: planArtifactEvaluation,
   };
 }
 
@@ -483,6 +627,18 @@ function buildMarkdownSummary(prNumber, evaluation) {
   }
   if (evaluation.missingRequiredLabels.length > 0) {
     lines.push(`- missing required labels: ${evaluation.missingRequiredLabels.join(', ')}`);
+  }
+  if (evaluation.planArtifact) {
+    lines.push(`- plan artifact: ${evaluation.planArtifact.result}${evaluation.planArtifact.required ? ' (required)' : ' (optional)'}`);
+    if (evaluation.planArtifact.present) {
+      lines.push(`  - path: ${evaluation.planArtifact.path}`);
+      if (evaluation.planArtifact.riskSelected) {
+        lines.push(`  - declared risk: ${evaluation.planArtifact.riskSelected}`);
+      }
+      if (evaluation.planArtifact.source?.repository && evaluation.planArtifact.source?.prNumber) {
+        lines.push(`  - declared source: ${evaluation.planArtifact.source.repository}#${evaluation.planArtifact.source.prNumber}`);
+      }
+    }
   }
 
   if (evaluation.requiredCheckResults.length > 0) {
@@ -583,6 +739,7 @@ function buildPolicyInputPolicy(policy) {
     highRisk: {
       minHumanApprovals: getMinHumanApprovals(policy),
       requirePolicyLabels: isPolicyLabelRequirementEnabled(policy),
+      requirePlanArtifact: isPlanArtifactRequired(policy),
       failWhenRequiredGateIsPending: isPendingGateFailureEnabled(policy),
     },
     classification: {
@@ -731,6 +888,7 @@ async function run(options = parseArgs(process.argv)) {
   const changedFiles = fetchChangedFiles(repo, prNumber);
   const reviews = fetchReviews(repo, prNumber);
   const statusRollup = fetchStatusRollup(repo, prNumber);
+  const planArtifact = inspectPlanArtifact();
 
   const evaluation = evaluatePolicyGate({
     policy,
@@ -740,6 +898,7 @@ async function run(options = parseArgs(process.argv)) {
     statusRollup,
     reviewTopology: process.env.AE_REVIEW_TOPOLOGY,
     approvalOverride: process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
+    planArtifact,
   });
 
   const now = new Date().toISOString();

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   collectRequiredLabels,
   getGateCheckPatternsForLabel,
+  isPlanArtifactRequired,
   getRiskLabels,
   inferRiskLevel,
   isPolicyLabelRequirementEnabled,
@@ -73,5 +74,17 @@ describe('risk-policy', () => {
       },
     };
     expect(isPolicyLabelRequirementEnabled(relaxedPolicy)).toBe(false);
+  });
+
+  it('respects high_risk.require_plan_artifact toggle', () => {
+    expect(isPlanArtifactRequired(policy)).toBe(true);
+    const relaxedPolicy = {
+      ...policy,
+      high_risk: {
+        ...(policy.high_risk || {}),
+        require_plan_artifact: false,
+      },
+    };
+    expect(isPlanArtifactRequired(relaxedPolicy)).toBe(false);
   });
 });

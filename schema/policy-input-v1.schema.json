@@ -103,11 +103,13 @@
           "properties": {
             "minHumanApprovals": { "type": "integer", "minimum": 0 },
             "requirePolicyLabels": { "type": "boolean" },
+            "requirePlanArtifact": { "type": "boolean" },
             "failWhenRequiredGateIsPending": { "type": "boolean" }
           },
           "required": [
             "minHumanApprovals",
             "requirePolicyLabels",
+            "requirePlanArtifact",
             "failWhenRequiredGateIsPending"
           ]
         },
@@ -247,4 +249,3 @@
     }
   }
 }
-

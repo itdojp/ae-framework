@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "plan-artifact/v1",
+  "contractId": "plan-artifact.v1",
+  "generatedAt": "2026-03-09T00:00:00.000Z",
+  "source": {
+    "repository": "itdojp/ae-framework",
+    "prNumber": 2535,
+    "baseRef": "main",
+    "headRef": "feat/2535-plan-artifact"
+  },
+  "goal": "Introduce plan-artifact/v1 for high-risk PR planning review.",
+  "scope": "Add schema, generator, validator, policy-gate integration, and operator docs.",
+  "risk": {
+    "selected": "risk:high",
+    "requiresHumanApproval": true,
+    "minHumanApprovals": 1
+  },
+  "assumptions": [
+    {
+      "id": "A1",
+      "text": "Contributors can commit plan artifacts under artifacts/plan in the PR branch."
+    },
+    {
+      "id": "A2",
+      "text": "policy-gate runs after checkout and dependency installation, so validator execution is available."
+    }
+  ],
+  "filesExpectedToChange": [
+    "schema/plan-artifact.schema.json",
+    "scripts/plan-artifact/generate.mjs",
+    "scripts/plan-artifact/validate.mjs",
+    ".github/workflows/policy-gate.yml"
+  ],
+  "verificationPlan": [
+    {
+      "id": "V1",
+      "name": "Schema fixture validation",
+      "command": "node scripts/ci/validate-json.mjs",
+      "expectedEvidence": [
+        "fixtures/plan/sample.plan-artifact.json"
+      ]
+    },
+    {
+      "id": "V2",
+      "name": "Policy gate regression tests",
+      "command": "pnpm exec vitest run tests/unit/ci/policy-gate.test.ts",
+      "expectedEvidence": [
+        "artifacts/ci/policy-gate-summary.json"
+      ]
+    }
+  ],
+  "rollbackPlan": "Revert schema, scripts, workflow wiring, and docs for plan-artifact/v1.",
+  "requiredHumanInput": [
+    "approval=plan-review"
+  ],
+  "notes": [
+    "Change Package remains the after-change artifact; this artifact is for before-change review."
+  ]
+}
