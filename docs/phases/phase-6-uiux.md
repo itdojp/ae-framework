@@ -323,7 +323,7 @@ Perf:     75%
 ```
 
 ### 2. UI Component Specifications
-```typescript
+```text
 interface ComponentSpec {
   name: string;
   type: 'form' | 'list' | 'detail' | 'navigation' | 'layout';
@@ -351,7 +351,7 @@ interface ComponentState {
 ```
 
 ### 3. State Architecture
-```typescript
+```text
 interface StateArchitecture {
   pattern: 'redux' | 'zustand' | 'context' | 'swr' | 'tanstack-query';
   stores: StoreDefinition[];
@@ -370,7 +370,7 @@ interface StoreDefinition {
 ```
 
 ### 4. CRUD UI Scaffolds
-```typescript
+```text
 // Auto-generated from Domain Model + User Stories
 interface CRUDScaffold {
   entity: string; // from Phase 5 Domain Model
@@ -527,7 +527,7 @@ Feature: Optimistic UI Updates
 - CI workflow: `.github/workflows/phase6-validation.yml`
 
 ### Interface Definition
-```typescript
+```text
 export interface Phase6TaskAdapter {
   generateComponentHierarchy(domainModel: DomainModel): ComponentTree;
   designStateArchitecture(userStories: UserStory[]): StateArchitecture;
@@ -569,7 +569,7 @@ export interface A11yReport {
 ```
 
 ### Implementation Skeleton (proposal)
-```typescript
+```text
 // src/agents/phase6-ui-task-adapter.ts
 // NOTE: This is a future-phase proposal and not the current production path.
 import { FormalAgent, FormalAgentConfig } from './formal-agent.js';
