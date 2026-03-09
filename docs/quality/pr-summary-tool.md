@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/ARTIFACTS-CONTRACT.md
+- docs/ci/pr-automation.md
+lastVerified: '2026-03-10'
+---
 # PR Summary Tool I/O Spec (#407)
 
 > 🌍 Language / 言語: English | 日本語

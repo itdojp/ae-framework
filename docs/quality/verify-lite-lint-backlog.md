@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-10'
+---
 # Verify Lite Lint Backlog 分析（Issue #1019）
 
 > 🌍 Language / 言語: 日本語 (English TL;DR included inline)

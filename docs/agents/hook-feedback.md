@@ -1,8 +1,9 @@
 ---
-docRole: narrative
+docRole: derived
+canonicalSource:
+- docs/ci/pr-automation.md
+- docs/integrations/CODEX-CONTINUATION-CONTRACT.md
 lastVerified: '2026-03-10'
-owner: agent-ops
-verificationCommand: pnpm -s run check:doc-consistency
 ---
 
 # Hook Feedback Adapter

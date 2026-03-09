@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md
+- docs/quality/verify-first-implementation-runbook.md
+lastVerified: '2026-03-10'
+---
 # Usefulness Evaluation Report
 
 `evaluate:usefulness` は、ae-framework 導入効果を 4 軸で定量化し、JSON/Markdown でレポート化する標準コマンドです。

@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/formal-runbook.md
+- docs/quality/formal-tools-setup.md
+lastVerified: '2026-03-10'
+---
 # Formal Verification Ops Guidelines
 
 フォーマル検証を運用する際の **推奨パターン / 命名 / 証跡 / CI 分割** を整理したガイドです。

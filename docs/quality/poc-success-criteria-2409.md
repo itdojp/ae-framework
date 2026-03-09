@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/verify-first-implementation-runbook.md
+- docs/quality/verification-gates.md
+lastVerified: '2026-03-10'
+---
 # PoC成功基準（#2409 first slice: TS baseline vs Go/Rust）
 
 目的:

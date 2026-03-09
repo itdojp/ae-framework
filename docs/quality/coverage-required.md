@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/coverage-policy.md
+- policy/quality.json
+lastVerified: '2026-03-10'
+---
 # Coverage Required — 運用ガイド（ブランチ保護）
 
 目的

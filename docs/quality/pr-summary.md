@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/pr-summary-tool.md
+- docs/quality/ARTIFACTS-CONTRACT.md
+lastVerified: '2026-03-10'
+---
 # PR Summary Aggregation (One Page)
 
 > 🌍 Language / 言語: English | 日本語

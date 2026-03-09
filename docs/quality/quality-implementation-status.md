@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-10'
+---
 # Quality Implementation Status Report
 
 > 🌍 Language / 言語: English | 日本語

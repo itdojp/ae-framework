@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- policy/risk-policy.yml
+- policy/quality.json
+lastVerified: '2026-03-10'
+---
 # Ownership DoD (Definition of Done)
 
 Purpose: Define ownership requirements for AI-assisted changes so teams can explain, support, and roll back safely.

@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-10'
+---
 # Progress Summary (artifacts/progress/summary.json)
 
 Progress summary aggregates the latest progress, quality, and traceability signals into a single JSON file.

@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
+- docs/quality/formal-runbook.md
+lastVerified: '2026-03-10'
+---
 # ae-framework 詳細説明資料
 
 > Language / 言語: English | 日本語

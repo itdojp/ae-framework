@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/verify-first-implementation-runbook.md
+- docs/ci/pr-automation.md
+lastVerified: '2026-03-10'
+---
 # Verify-first Failure Diagnostic PR Comment Design
 
 > `verify-first-failure-diagnostic-template.md` を PR 自動コメントに接続するための設計案

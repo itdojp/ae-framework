@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/ASSURANCE-MODEL.md
+- docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
+- package.json
+lastVerified: '2026-03-10'
+---
 # ae-framework 適用ガイド: プロダクト別の入力・出力・ツール適性
 
 > Language / 言語: English | 日本語

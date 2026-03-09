@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/formal-runbook.md
+- README.md
+lastVerified: '2026-03-10'
+---
 # Formal Tools Setup
 
 This guide outlines local setup for formal verification tools used alongside AE-Framework. All steps are optional; CI remains label-gated.

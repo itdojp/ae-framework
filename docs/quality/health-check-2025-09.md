@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/verification-gates.md
+- docs/ci/ci-troubleshooting-guide.md
+lastVerified: '2026-03-10'
+---
 # Repository Health Check — 2025-09-05
 
 > 🌍 Language / 言語: English | 日本語

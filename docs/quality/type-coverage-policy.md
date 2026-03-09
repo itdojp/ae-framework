@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- policy/quality.json
+- docs/quality/verification-gates.md
+lastVerified: '2026-03-10'
+---
 # Type Coverage Policy (TSDoc)
 
 > 🌍 Language / 言語: English | 日本語

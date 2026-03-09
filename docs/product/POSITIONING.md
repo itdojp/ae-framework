@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-10'
+---
 # ae-framework の位置づけ（比較と導入指針）
 
 > Language / 言語: English | 日本語

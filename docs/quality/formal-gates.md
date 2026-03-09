@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/formal-runbook.md
+- policy/risk-policy.yml
+lastVerified: '2026-03-10'
+---
 # Formal Quality Gates (v0.2 DoD)
 
 > 🌍 Language / 言語: English | 日本語

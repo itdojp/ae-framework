@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-10'
+---
 # ae-framework Self-Improvement Project - Complete Summary
 
 > 🌍 Language / 言語: English | 日本語

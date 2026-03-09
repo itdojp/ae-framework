@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci/pr-automation.md
+- policy/risk-policy.yml
+lastVerified: '2026-03-10'
+---
 # LLM First-Pass Review Checklist
 
 Purpose: Provide a consistent, human-approved checklist for the first-pass review of AI-assisted changes before merge.

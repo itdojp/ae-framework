@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/reference/CONTRACT-CATALOG.md
+- docs/quality/ARTIFACTS-CONTRACT.md
+lastVerified: '2026-03-10'
+---
 # Contract Taxonomy（DbC / API Contract / Artifacts Contract）
 
 > 🌍 Language / 言語: English | 日本語

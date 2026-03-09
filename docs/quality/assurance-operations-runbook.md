@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/ASSURANCE-MODEL.md
+- docs/quality/ARTIFACTS-CONTRACT.md
+lastVerified: '2026-03-10'
+---
 # Assurance Operations Runbook
 
 > Language / 言語: English | 日本語

@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/ASSURANCE-MODEL.md
+- docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
+lastVerified: '2026-03-10'
+---
 # Assurance Control Plane
 
 > Language / 言語: English | 日本語
