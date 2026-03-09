@@ -16,11 +16,11 @@
   "schemaVersion": "ae-handoff/v1",
   "generatedAt": "2026-03-09T09:00:00.000Z",
   "handoffTarget": "A",
-  "goal": "",
-  "currentStatus": "",
+  "goal": "TODO",
+  "currentStatus": "TODO",
   "nextActions": [
-    { "order": 1, "summary": "", "command": null },
-    { "order": 2, "summary": "", "command": null }
+    { "order": 1, "summary": "TODO", "command": null },
+    { "order": 2, "summary": "TODO", "command": null }
   ],
   "commandsRun": [
     "command here"
