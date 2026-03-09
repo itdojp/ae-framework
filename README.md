@@ -201,7 +201,7 @@ legacyApi.unsafeMethod(data);
 ## Documentation / ドキュメント
 
 - Full navigation: `docs/README.md`
-- Quick starts: `docs/getting-started/QUICK-START-GUIDE.md`, `docs/getting-started/PHASE-6-GETTING-STARTED.md`
+- Quick starts: `docs/getting-started/QUICK-START-GUIDE.md` (baseline -> structured assurance -> high-assurance PR), `docs/getting-started/PHASE-6-GETTING-STARTED.md`
 - CLI Reference: `docs/reference/CLI-COMMANDS-REFERENCE.md`, API: `docs/reference/API.md`
 
 ## 🤝 Contributing / 貢献
