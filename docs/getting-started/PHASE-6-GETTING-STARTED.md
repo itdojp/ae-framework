@@ -74,7 +74,7 @@ Claude Code: Generating UI components using Phase 6 UI Task Adapter...
 
 #### 2. CLI Execution
 
-```bash
+```text
 # Main command
 ae-framework ui-scaffold --components --tokens --a11y
 
@@ -135,7 +135,7 @@ ae-framework/
 ### 🚀 Development Workflow
 
 #### 1. Project Initialization
-```bash
+```text
 # Install dependencies
 pnpm install
 
