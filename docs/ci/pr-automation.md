@@ -67,6 +67,7 @@ PR運用を以下の形に収束させます。
 - `PR Maintenance`（`.github/workflows/pr-ci-status-comment.yml`）
   - 条件成立時に `gh pr merge --auto --squash` を実行し、GitHub auto-merge を有効化
   - 実マージは GitHub が実施（条件成立時）
+  - `summarize` job は同一 head SHA の successful `verify-lite-report` を取得できた場合、`artifacts/agents/hook-feedback.{json,md}` を report-only 生成し、PR summary に追記
 
 注意:
 - GitHub リポジトリ設定で "Allow auto-merge" が無効な場合、`gh pr merge --auto` は失敗します。
