@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const ROOT_DOCS = ['README.md', 'AGENTS.md', 'docs/README.md'];
 const GOVERNED_EXTRA_DOCS = ['docs/reference/DOC-GOVERNANCE.md'];
-const GOVERNED_PREFIX_DIRS = ['docs/agents', 'docs/getting-started', 'docs/guides', 'docs/integrations', 'docs/operate', 'docs/product', 'docs/project', 'docs/quality'];
+const GOVERNED_PREFIX_DIRS = ['docs/agents', 'docs/getting-started', 'docs/guides', 'docs/integrations', 'docs/operate', 'docs/product', 'docs/project', 'docs/quality', 'docs/reference'];
 const DOC_ROLE_VALUES = new Set(['ssot', 'derived', 'narrative']);
 const NARRATIVE_NORMATIVE_PATTERNS = [
   /\bmust\b/giu,
@@ -79,7 +79,7 @@ function printHelp() {
 }
 
 function collectGovernedDocs(rootDir) {
-  const docs = [...ROOT_DOCS, ...GOVERNED_EXTRA_DOCS];
+  const docs = new Set([...ROOT_DOCS, ...GOVERNED_EXTRA_DOCS]);
   for (const dir of GOVERNED_PREFIX_DIRS) {
     const absoluteDir = path.join(rootDir, dir);
     if (!existsSync(absoluteDir)) {
@@ -89,9 +89,11 @@ function collectGovernedDocs(rootDir) {
       .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
       .map((entry) => `${dir}/${entry.name}`)
       .sort();
-    docs.push(...entries);
+    for (const entry of entries) {
+      docs.add(entry);
+    }
   }
-  return docs;
+  return [...docs];
 }
 
 function extractFrontMatter(raw) {

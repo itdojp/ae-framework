@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Agent 統合・高度検証 拡張案（#1198）
 
 ## 目的

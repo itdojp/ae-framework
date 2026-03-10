@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # AE Framework API Reference
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -11,7 +17,7 @@
 ### Public API (npm)
 The published package currently exposes a minimal surface:
 
-```typescript
+```text
 import { createServer, DomainServices, Infra } from 'ae-framework';
 ```
 
@@ -37,7 +43,7 @@ ae-framework/
 
 Class for loading and managing Steering Documents.
 
-```typescript
+```text
 import { SteeringLoader } from 'ae-framework/utils';
 
 const loader = new SteeringLoader(projectRoot?: string);
@@ -53,7 +59,7 @@ await loader.hasSteeringDocuments(): Promise<boolean>
 
 #### Usage Example
 
-```typescript
+```text
 const loader = new SteeringLoader();
 
 // Load specific document
@@ -73,7 +79,7 @@ const context = await loader.getSteeringContext();
 
 Class for managing project phase state.
 
-```typescript
+```text
 import { PhaseStateManager, PhaseType } from 'ae-framework/utils';
 
 const manager = new PhaseStateManager(projectRoot?: string);
@@ -96,7 +102,7 @@ await manager.resetPhase(phase: PhaseType): Promise<void>
 
 #### Type Definitions
 
-```typescript
+```text
 type PhaseType = 'intent' | 'formal' | 'test' | 'code' | 'verify' | 'operate';
 
 interface PhaseState {
@@ -124,7 +130,7 @@ interface PhaseStatus {
 
 #### Usage Example
 
-```typescript
+```text
 const manager = new PhaseStateManager();
 
 // Initialize project
@@ -150,7 +156,7 @@ console.log(`Project progress: ${progress}%`);
 
 Service class for managing approval workflows.
 
-```typescript
+```text
 import { ApprovalService } from 'ae-framework/services';
 
 const service = new ApprovalService(projectRoot?: string, phaseStateManager?: PhaseStateManager);
@@ -176,7 +182,7 @@ service.on('approval:partial', handler)
 
 #### Type Definitions
 
-```typescript
+```text
 interface ApprovalPolicy {
   requireMultipleApprovers?: boolean;
   minApprovers?: number;
@@ -206,7 +212,7 @@ interface ApprovalRequest {
 
 #### Usage Example
 
-```typescript
+```text
 const service = new ApprovalService();
 
 // Set policy
@@ -239,7 +245,7 @@ await service.approve('code', 'Tech Lead', 'LGTM');
 
 Class for managing and executing Slash Commands.
 
-```typescript
+```text
 import { SlashCommandManager } from 'ae-framework/commands';
 
 const manager = new SlashCommandManager(projectRoot?: string);
@@ -253,7 +259,7 @@ manager.getCommands(): SlashCommand[]
 
 #### Type Definitions
 
-```typescript
+```text
 interface SlashCommand {
   name: string;
   description: string;
@@ -283,7 +289,7 @@ interface CommandContext {
 
 #### Usage Example
 
-```typescript
+```text
 const manager = new SlashCommandManager();
 
 // Execute single command
@@ -319,7 +325,7 @@ allCommands.forEach(cmd => {
 
 Agent for requirements analysis and intent extraction.
 
-```typescript
+```text
 import { IntentAgent } from 'ae-framework/agents';
 
 const agent = new IntentAgent();
@@ -339,7 +345,7 @@ await agent.generateAcceptanceCriteria(requirement: Requirement): Promise<Accept
 
 Agent for generating and managing formal specifications.
 
-```typescript
+```text
 import { FormalAgent } from 'ae-framework/agents';
 
 const agent = new FormalAgent();
@@ -357,7 +363,7 @@ await agent.generateERDiagram(request: ERRequest): Promise<ERDiagram>
 
 Agent for automatic test generation.
 
-```typescript
+```text
 import { TestGenerationAgent } from 'ae-framework/agents';
 
 const agent = new TestGenerationAgent();
@@ -375,7 +381,7 @@ await agent.generatePerformanceTests(request: PerformanceTestRequest): Promise<P
 
 Agent for code generation.
 
-```typescript
+```text
 import { CodeGenerationAgent } from 'ae-framework/agents';
 
 const agent = new CodeGenerationAgent();
@@ -391,7 +397,7 @@ await agent.optimizeCode(code: string): Promise<OptimizedCode>
 
 Agent for implementation verification.
 
-```typescript
+```text
 import { VerifyAgent } from 'ae-framework/agents';
 
 const agent = new VerifyAgent();
@@ -409,7 +415,7 @@ await agent.validateContracts(): Promise<ContractValidation>
 
 Agent for deployment and operations management.
 
-```typescript
+```text
 import { OperateAgent } from 'ae-framework/agents';
 
 const agent = new OperateAgent();
@@ -426,7 +432,7 @@ await agent.runDiagnostics(): Promise<DiagnosticsReport>
 
 ### Intent Server
 
-```typescript
+```text
 // Start as MCP Server
 pnpm run intent-agent
 
@@ -455,7 +461,7 @@ pnpm run intent-agent
 
 ### Test Generation Server
 
-```typescript
+```text
 // Start as MCP Server
 pnpm run mcp:test-gen
 
@@ -480,7 +486,7 @@ pnpm run mcp:test-gen
 
 ### Creating Custom Agents
 
-```typescript
+```text
 import { BaseAgent } from 'ae-framework/agents';
 
 export class CustomAgent extends BaseAgent {
@@ -519,7 +525,7 @@ export class CustomAgent extends BaseAgent {
 
 ### Adding Custom Slash Commands
 
-```typescript
+```text
 import { SlashCommandManager } from 'ae-framework/commands';
 
 class ExtendedCommandManager extends SlashCommandManager {
@@ -556,7 +562,7 @@ class ExtendedCommandManager extends SlashCommandManager {
 
 ### Implementing Custom Approval Conditions
 
-```typescript
+```text
 import { ApprovalService } from 'ae-framework/services';
 
 const service = new ApprovalService();
@@ -668,7 +674,7 @@ ae-framework/
 
 Steering Documentsの読み込みと管理を行うクラス。
 
-```typescript
+```text
 import { SteeringLoader } from 'ae-framework/utils';
 
 const loader = new SteeringLoader(projectRoot?: string);
@@ -684,7 +690,7 @@ await loader.hasSteeringDocuments(): Promise<boolean>
 
 #### 使用例
 
-```typescript
+```text
 const loader = new SteeringLoader();
 
 // 特定のドキュメントを読み込む
@@ -713,7 +719,7 @@ const context = await loader.getSteeringContext();
 ### 公開API（npm）
 公開パッケージのトップレベルは最小構成です。
 
-```typescript
+```text
 import { createServer, DomainServices, Infra } from 'ae-framework';
 ```
 
@@ -733,7 +739,7 @@ ae-framework/
 ### 例: SteeringLoader
 ステアリングドキュメント（product/architecture/standards）を読み込み、文脈を生成します。
 
-```typescript
+```text
 const loader = new SteeringLoader();
 const doc = await loader.loadDocument('product');
 const all = await loader.loadAllDocuments();

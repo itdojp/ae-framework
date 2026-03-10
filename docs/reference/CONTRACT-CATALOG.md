@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Contract Catalog (Issue #2406 Foundation)
 
 > Language / 言語: English | 日本語
