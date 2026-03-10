@@ -189,7 +189,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 - **Maintainability Metrics**: Component complexity (<10), Unused CSS rate (<5%), Design token usage (≥95%)
 
 #### Telemetry Output Example
-```bash
+```text
 📊 OpenTelemetry initialized for ae-framework Phase 6
    Service: ae-framework v1.0.0
    Environment: development
@@ -619,7 +619,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 - **保守性メトリクス**: コンポーネント複雑度(<10)、未使用CSS率(<5%)、デザイントークン使用率(≥95%)
 
 #### テレメトリ出力例
-```bash
+```text
 📊 OpenTelemetry initialized for ae-framework Phase 6
    Service: ae-framework v1.0.0
    Environment: development
