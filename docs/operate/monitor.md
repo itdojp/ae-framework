@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: observability-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Operate: Runtime Conformance Monitor (Draft)
 
 ## Purpose
