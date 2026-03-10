@@ -17,7 +17,7 @@ lastVerified: '2026-03-10'
 
 ### ✅ Implemented / Reproducible Path
 
-```bash
+```text
 pnpm install
 pnpm run build
 pnpm run verify:lite
@@ -212,7 +212,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 - **English (en)**: Fallback
 
 #### Translation File Examples
-```json
+```text
 // messages/ja.json
 {
   "Navigation": {
@@ -264,7 +264,7 @@ node scripts/check-a11y-threshold.js --critical=0 --warnings=5
 ### 📚 Storybook Integration
 
 #### Auto-generated Stories
-```typescript
+```text
 // stories/Product.stories.tsx
 import type { Meta, StoryObj } from '@storybook/react';
 import { ProductForm } from '../apps/web/components/ProductForm';
@@ -311,7 +311,7 @@ export const WithInitialData: Story = {
 ### 🧪 E2E Testing
 
 #### Auto-generated Tests
-```typescript
+```text
 // __e2e__/products.spec.ts
 import { test, expect } from '@playwright/test';
 
@@ -353,7 +353,7 @@ test.describe('Product Management', () => {
 - ✅ **Build Success**: Successful build of all packages
 
 #### Automated Quality Monitoring
-```bash
+```text
 # Run all quality gates
 pnpm run quality:gates
 
@@ -642,7 +642,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 - **英語 (en)**: フォールバック
 
 #### 翻訳ファイル例
-```json
+```text
 // messages/ja.json
 {
   "Navigation": {
@@ -694,7 +694,7 @@ node scripts/check-a11y-threshold.js --critical=0 --warnings=5
 ### 📚 Storybook統合
 
 #### 自動生成されるストーリー
-```typescript
+```text
 // stories/Product.stories.tsx
 import type { Meta, StoryObj } from '@storybook/react';
 import { ProductForm } from '../apps/web/components/ProductForm';
@@ -741,7 +741,7 @@ export const WithInitialData: Story = {
 ### 🧪 E2Eテスト
 
 #### 自動生成されるテスト
-```typescript
+```text
 // __e2e__/products.spec.ts
 import { test, expect } from '@playwright/test';
 
