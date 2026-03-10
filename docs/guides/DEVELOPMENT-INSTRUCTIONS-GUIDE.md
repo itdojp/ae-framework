@@ -49,7 +49,7 @@ Quality Requirements:
 ```
 
 **Expected Automatic Execution Flow:**
-```bash
+```text
 📊 OpenTelemetry initialized for ae-framework Phase 6
    Service: ecommerce-management v1.0.0
    Environment: development
@@ -125,7 +125,7 @@ Phase 6: "Please generate UI components"
 ```
 
 **Expected Output:**
-```bash
+```text
 📊 OpenTelemetry initialized for ae-framework Phase 6
    Service: inventory-management v1.0.0
    Environment: development
@@ -176,7 +176,7 @@ Phase 6: "Please generate UI components"
 ```
 
 **Expected Output:**
-```bash
+```text
 🔍 Impact Analysis Complete:
   • Modified Entities: Product (added review-related fields)
   • New Entities: Review, ReviewImage
@@ -234,7 +234,7 @@ ae-framework ui-scaffold --components --tokens --a11y
 ```
 
 **Expected Output:**
-```bash
+```text
 ✅ Generated UI scaffold files (per entity):
   • apps/web/app/<entity>/page.tsx
   • apps/web/app/<entity>/new/page.tsx
@@ -425,7 +425,7 @@ ae-framework ui-scaffold --components --storybook --i18n --a11y
 ```
 
 **Expected Output:**
-```bash
+```text
 📊 OpenTelemetry Dashboard Generated:
   • Real-time metrics display
   • Performance monitoring widgets  
@@ -694,7 +694,7 @@ Phase 6 UI/UX & Frontend Delivery実装済みのae-frameworkで実際に開発�
 ```
 
 **期待される自動実行フロー:**
-```bash
+```text
 📊 OpenTelemetry initialized for ae-framework Phase 6
    Service: ecommerce-management v1.0.0
    Environment: development

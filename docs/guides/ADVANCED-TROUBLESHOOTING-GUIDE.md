@@ -583,7 +583,7 @@ ae-framework integration run --suites test-dependencies.json --respect-dependenc
 
 ### システム全体の停止
 
-```bash
+```text
 # すべてのae-frameworkプロセスを停止
 pkill -f "ae-framework"
 
