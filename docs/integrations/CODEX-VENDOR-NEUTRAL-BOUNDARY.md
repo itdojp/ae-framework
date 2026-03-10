@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+  - README.md
+  - docs/agents/hook-feedback.md
+lastVerified: '2026-03-10'
+---
+
 # Codex連携の責務境界と Vendor-neutral 最小コア
 
 > 🌍 Language / 言語: English | 日本語

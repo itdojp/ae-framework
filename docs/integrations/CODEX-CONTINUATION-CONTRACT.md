@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+  - docs/agents/hook-feedback.md
+  - docs/quality/ARTIFACTS-CONTRACT.md
+lastVerified: '2026-03-10'
+---
+
 # CodeX Continuation Contract (No Human Bottleneck v1)
 
 > Language / 言語: English | 日本語

@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/spec/context-pack.md
+- schema/context-pack-v1.schema.json
+lastVerified: '2026-03-10'
+---
 # Context Pack Onboarding Checklist
 
 > 🌍 Language / 言語: English | 日本語

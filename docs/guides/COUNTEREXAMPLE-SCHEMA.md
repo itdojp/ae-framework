@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- schema/counterexample.schema.json
+- docs/reference/CONTRACT-CATALOG.md
+lastVerified: '2026-03-10'
+---
 # Counterexample Schema (JSON)
 
 ## Purpose
