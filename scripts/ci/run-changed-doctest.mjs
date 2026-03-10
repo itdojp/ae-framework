@@ -4,12 +4,23 @@ import process from 'node:process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const MAX_DOCTEST_ARG_BYTES = 24 * 1024;
+
+function isHexSha(value) {
+  return /^[0-9a-f]{7,40}$/iu.test(String(value ?? ''));
+}
+
+function isUnsafeRevisionValue(value) {
+  return typeof value !== 'string' || value.length === 0 || value.startsWith('-');
+}
+
 export function parseArgs(argv = process.argv) {
   const options = {
     baseRef: 'origin/main',
     baseSha: '',
     fetchMissing: false,
     rootDir: process.cwd(),
+    errors: [],
     unknown: [],
   };
 
@@ -19,7 +30,7 @@ export function parseArgs(argv = process.argv) {
 
     if (arg === '--base-ref') {
       if (!next || next.startsWith('-')) {
-        options.unknown.push(arg);
+        options.errors.push('--base-ref requires a value');
       } else {
         options.baseRef = next;
         index += 1;
@@ -27,12 +38,17 @@ export function parseArgs(argv = process.argv) {
       continue;
     }
     if (arg.startsWith('--base-ref=')) {
-      options.baseRef = arg.slice('--base-ref='.length);
+      const value = arg.slice('--base-ref='.length);
+      if (isUnsafeRevisionValue(value)) {
+        options.errors.push('--base-ref requires a non-option value');
+      } else {
+        options.baseRef = value;
+      }
       continue;
     }
     if (arg === '--base-sha') {
       if (!next || next.startsWith('-')) {
-        options.unknown.push(arg);
+        options.errors.push('--base-sha requires a value');
       } else {
         options.baseSha = next;
         index += 1;
@@ -40,7 +56,12 @@ export function parseArgs(argv = process.argv) {
       continue;
     }
     if (arg.startsWith('--base-sha=')) {
-      options.baseSha = arg.slice('--base-sha='.length);
+      const value = arg.slice('--base-sha='.length);
+      if (!isHexSha(value)) {
+        options.errors.push('--base-sha must be a hex commit SHA');
+      } else {
+        options.baseSha = value;
+      }
       continue;
     }
     if (arg === '--fetch-missing') {
@@ -90,6 +111,9 @@ export function fetchBaseSha(rootDir, baseSha) {
 }
 
 export function listChangedMarkdown(rootDir, baseTarget) {
+  if (isUnsafeRevisionValue(baseTarget)) {
+    throw new Error('base target must be a non-option git revision');
+  }
   const stdout = execFileSync(
     'git',
     ['diff', '--name-only', baseTarget, 'HEAD', '--', '*.md', '**/*.md'],
@@ -98,16 +122,44 @@ export function listChangedMarkdown(rootDir, baseTarget) {
   return parseChangedMarkdownOutput(stdout);
 }
 
+export function batchFilesForDoctest(files, maxArgBytes = MAX_DOCTEST_ARG_BYTES) {
+  const batches = [];
+  let current = [];
+  let currentBytes = 0;
+
+  for (const file of files) {
+    const fileBytes = Buffer.byteLength(`${file}\0`, 'utf8');
+    if (current.length > 0 && currentBytes + fileBytes > maxArgBytes) {
+      batches.push(current);
+      current = [];
+      currentBytes = 0;
+    }
+    current.push(file);
+    currentBytes += fileBytes;
+  }
+
+  if (current.length > 0) {
+    batches.push(current);
+  }
+
+  return batches;
+}
+
 export function runDoctest(rootDir, files) {
-  execFileSync('pnpm', ['-s', 'tsx', 'scripts/doctest.ts', ...files], {
-    cwd: rootDir,
-    stdio: 'inherit',
-    env: { ...process.env, DOCTEST_ENFORCE: process.env.DOCTEST_ENFORCE || '1' },
-  });
+  for (const batch of batchFilesForDoctest(files)) {
+    execFileSync('pnpm', ['-s', 'tsx', 'scripts/doctest.ts', ...batch], {
+      cwd: rootDir,
+      stdio: 'inherit',
+      env: { ...process.env, DOCTEST_ENFORCE: process.env.DOCTEST_ENFORCE || '1' },
+    });
+  }
 }
 
 export function main(argv = process.argv) {
   const options = parseArgs(argv);
+  if (options.errors.length > 0) {
+    throw new Error(options.errors.join('; '));
+  }
   if (options.unknown.length > 0) {
     throw new Error(`unknown arguments: ${options.unknown.join(', ')}`);
   }
