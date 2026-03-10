@@ -200,7 +200,10 @@ const checks = [
   },
   {
     schema: 'schema/hook-feedback.schema.json',
-    fixtures: ['fixtures/agents/sample.hook-feedback.json'],
+    fixtures: [
+      'fixtures/agents/sample.hook-feedback.json',
+      'fixtures/agents/sample.hook-feedback-partial.json',
+    ],
     label: 'Hook feedback schema validation'
   },
   {

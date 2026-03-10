@@ -14,6 +14,8 @@ const DEFAULT_UI_E2E_SUMMARY_PATH = 'artifacts/e2e/ui-e2e-summary.json';
 const DEFAULT_OUTPUT_JSON_PATH = 'artifacts/agents/hook-feedback.json';
 const DEFAULT_OUTPUT_MD_PATH = 'artifacts/agents/hook-feedback.md';
 const FALLBACK_REPRO_COMMAND = 'pnpm run verify:lite';
+const HARNESS_HEALTH_REPRO_COMMAND = 'node scripts/ci/build-harness-health.mjs';
+const CHANGE_PACKAGE_REPRO_COMMAND = 'pnpm run change-package:generate';
 const ASSURANCE_REPRO_COMMAND = 'pnpm run verify:assurance';
 const UI_E2E_REPRO_COMMAND = 'pnpm run ui-e2e:semantic';
 
@@ -146,8 +148,20 @@ function summarizeUiE2E(uiE2ESummary) {
   };
 }
 
+function summarizeMissingCoreArtifacts({ harnessHealth, changePackage }) {
+  const missing = [];
+  if (!harnessHealth) {
+    missing.push('harness-health');
+  }
+  if (!changePackage) {
+    missing.push('change-package');
+  }
+  return missing;
+}
+
 function deriveStatus({ harnessHealth, verifyLiteSummary, changePackage, contextPackSuggestions, assuranceSummary, uiE2ESummary }) {
   const verifySummary = summarizeVerifyLite(verifyLiteSummary);
+  const missingCoreArtifacts = summarizeMissingCoreArtifacts({ harnessHealth, changePackage });
   const assurance = summarizeAssuranceSummary(assuranceSummary);
   const uiE2E = summarizeUiE2E(uiE2ESummary);
   const severity = typeof harnessHealth?.severity === 'string' ? harnessHealth.severity : 'ok';
@@ -161,7 +175,8 @@ function deriveStatus({ harnessHealth, verifyLiteSummary, changePackage, context
     return 'blocked';
   }
   if (
-    severity === 'warn'
+    missingCoreArtifacts.length > 0
+    || severity === 'warn'
     || verifySummary.pendingSteps.length > 0
     || exceptionCount > 0
     || (suggestionCount > 0 && contextStatus !== 'pass')
@@ -182,10 +197,14 @@ function buildBlockingReasons({
   uiE2ESummary,
 }) {
   const verifySummary = summarizeVerifyLite(verifyLiteSummary);
+  const missingCoreArtifacts = summarizeMissingCoreArtifacts({ harnessHealth, changePackage });
   const assurance = summarizeAssuranceSummary(assuranceSummary);
   const uiE2E = summarizeUiE2E(uiE2ESummary);
   const reasons = [];
 
+  for (const artifactName of missingCoreArtifacts) {
+    reasons.push(`Missing artifact: ${artifactName}`);
+  }
   if (Array.isArray(harnessHealth?.reasons)) {
     reasons.push(...harnessHealth.reasons);
   }
@@ -247,10 +266,21 @@ function buildNextActions({
   uiE2ESummary,
 }) {
   const verifySummary = summarizeVerifyLite(verifyLiteSummary);
+  const missingCoreArtifacts = summarizeMissingCoreArtifacts({ harnessHealth, changePackage });
   const assurance = summarizeAssuranceSummary(assuranceSummary);
   const uiE2E = summarizeUiE2E(uiE2ESummary);
   const actions = [];
 
+  if (missingCoreArtifacts.includes('harness-health')) {
+    actions.push(
+      `Generate \`artifacts/ci/harness-health.json\` with \`${HARNESS_HEALTH_REPRO_COMMAND}\` when gate-level guidance is needed.`,
+    );
+  }
+  if (missingCoreArtifacts.includes('change-package')) {
+    actions.push(
+      `Generate \`artifacts/change-package/change-package.json\` with \`${CHANGE_PACKAGE_REPRO_COMMAND}\` when risk/evidence packaging is needed.`,
+    );
+  }
   if (verifySummary.failingSteps.length > 0) {
     actions.push(`Run \`${FALLBACK_REPRO_COMMAND}\` and fix failing verify-lite steps: ${verifySummary.failingSteps.join(', ')}.`);
   }
@@ -305,9 +335,12 @@ function buildNextActions({
 }
 
 function buildReproCommands({ changePackage, harnessHealth, contextPackSuggestions, assuranceSummary, uiE2ESummary }) {
+  const missingCoreArtifacts = summarizeMissingCoreArtifacts({ harnessHealth, changePackage });
   const assurance = summarizeAssuranceSummary(assuranceSummary);
   const uiE2E = summarizeUiE2E(uiE2ESummary);
   const commands = uniqueNonEmpty([
+    ...(missingCoreArtifacts.includes('harness-health') ? [HARNESS_HEALTH_REPRO_COMMAND] : []),
+    ...(missingCoreArtifacts.includes('change-package') ? [CHANGE_PACKAGE_REPRO_COMMAND] : []),
     ...(Array.isArray(changePackage?.reproducibility?.commands) ? changePackage.reproducibility.commands : []),
     ...(Array.isArray(harnessHealth?.reproducibleHints)
       ? harnessHealth.reproducibleHints.map((hint) => hint?.command)
@@ -396,43 +429,43 @@ function buildEvidence({
     id: 'harnessHealth',
     path: harnessHealthPath,
     description: 'harness health summary',
-    present: true,
-    status: typeof harnessHealth?.severity === 'string' ? harnessHealth.severity : null,
+    present: Boolean(harnessHealth),
+    status: typeof harnessHealth?.severity === 'string' ? harnessHealth.severity : 'missing',
   });
   addEvidenceItem(items, {
     id: 'changePackage',
     path: changePackagePath,
     description: 'change package evidence bundle',
-    present: true,
-    status: typeof changePackage?.risk?.selected === 'string' ? changePackage.risk.selected : null,
+    present: Boolean(changePackage),
+    status: typeof changePackage?.risk?.selected === 'string' ? changePackage.risk.selected : 'missing',
   });
-  if (contextPackSuggestionsPath && contextPackSuggestions) {
+  if (contextPackSuggestionsPath) {
     addEvidenceItem(items, {
       id: 'contextPackSuggestions',
       path: contextPackSuggestionsPath,
       description: 'context-pack suggestion summary',
-      present: true,
-      status: typeof contextPackSuggestions?.status === 'string' ? contextPackSuggestions.status : null,
+      present: Boolean(contextPackSuggestions),
+      status: typeof contextPackSuggestions?.status === 'string' ? contextPackSuggestions.status : 'missing',
     });
   }
-  if (assuranceSummaryPath && assuranceSummary) {
+  if (assuranceSummaryPath) {
     const assurance = summarizeAssuranceSummary(assuranceSummary);
     addEvidenceItem(items, {
       id: 'assuranceSummary',
       path: assuranceSummaryPath,
       description: 'assurance summary',
-      present: true,
-      status: assurance.hasWarnings ? 'warn' : 'ok',
+      present: Boolean(assuranceSummary),
+      status: assuranceSummary ? (assurance.hasWarnings ? 'warn' : 'ok') : 'missing',
     });
   }
-  if (uiE2ESummaryPath && uiE2ESummary) {
+  if (uiE2ESummaryPath) {
     const uiE2E = summarizeUiE2E(uiE2ESummary);
     addEvidenceItem(items, {
       id: 'uiE2ESummary',
       path: uiE2ESummaryPath,
       description: 'UI semantic E2E summary',
-      present: true,
-      status: uiE2E.status,
+      present: Boolean(uiE2ESummary),
+      status: uiE2ESummary ? uiE2E.status : 'missing',
     });
   }
 
@@ -447,6 +480,7 @@ export function buildHookFeedbackArtifact({
   assuranceSummary,
   uiE2ESummary,
   source,
+  evidenceSource = source,
   now = new Date().toISOString(),
 }) {
   const status = deriveStatus({
@@ -486,12 +520,12 @@ export function buildHookFeedbackArtifact({
       uiE2ESummary,
     }),
     evidence: buildEvidence({
-      verifyLiteSummaryPath: source.verifyLiteSummaryPath,
-      harnessHealthPath: source.harnessHealthPath,
-      changePackagePath: source.changePackagePath,
-      contextPackSuggestionsPath: source.contextPackSuggestionsPath,
-      assuranceSummaryPath: source.assuranceSummaryPath,
-      uiE2ESummaryPath: source.uiE2ESummaryPath,
+      verifyLiteSummaryPath: evidenceSource.verifyLiteSummaryPath,
+      harnessHealthPath: evidenceSource.harnessHealthPath,
+      changePackagePath: evidenceSource.changePackagePath,
+      contextPackSuggestionsPath: evidenceSource.contextPackSuggestionsPath,
+      assuranceSummaryPath: evidenceSource.assuranceSummaryPath,
+      uiE2ESummaryPath: evidenceSource.uiE2ESummaryPath,
       verifyLiteSummary,
       changePackage,
       harnessHealth,
@@ -537,8 +571,8 @@ export function renderMarkdown(artifact) {
 
   lines.push('', '## Source artifacts');
   lines.push(`- verify-lite: \`${artifact.source.verifyLiteSummaryPath}\``);
-  lines.push(`- harness-health: \`${artifact.source.harnessHealthPath}\``);
-  lines.push(`- change-package: \`${artifact.source.changePackagePath}\``);
+  lines.push(`- harness-health: \`${artifact.source.harnessHealthPath ?? 'n/a'}\``);
+  lines.push(`- change-package: \`${artifact.source.changePackagePath ?? 'n/a'}\``);
   lines.push(`- context-pack suggestions: \`${artifact.source.contextPackSuggestionsPath ?? 'n/a'}\``);
   lines.push(`- assurance-summary: \`${artifact.source.assuranceSummaryPath ?? 'n/a'}\``);
   lines.push(`- ui-e2e-summary: \`${artifact.source.uiE2ESummaryPath ?? 'n/a'}\``);
@@ -657,8 +691,8 @@ function printHelp() {
       + '  node scripts/agents/build-hook-feedback.mjs [options]\n\n'
       + 'Options:\n'
       + `  --verify-lite-summary <path>       Verify Lite summary path (default: ${DEFAULT_VERIFY_LITE_SUMMARY_PATH})\n`
-      + `  --harness-health <path>            Harness health path (default: ${DEFAULT_HARNESS_HEALTH_PATH})\n`
-      + `  --change-package <path>            Change Package path (default: ${DEFAULT_CHANGE_PACKAGE_PATH})\n`
+      + `  --harness-health <path>            Optional harness health path (default: ${DEFAULT_HARNESS_HEALTH_PATH})\n`
+      + `  --change-package <path>            Optional Change Package path (default: ${DEFAULT_CHANGE_PACKAGE_PATH})\n`
       + `  --context-pack-suggestions <path>  Optional Context Pack suggestions path (default: ${DEFAULT_CONTEXT_PACK_SUGGESTIONS_PATH})\n`
       + `  --assurance-summary <path>         Optional assurance summary path (default: ${DEFAULT_ASSURANCE_SUMMARY_PATH})\n`
       + `  --ui-e2e-summary <path>            Optional UI E2E summary path (default: ${DEFAULT_UI_E2E_SUMMARY_PATH})\n`
@@ -698,8 +732,8 @@ export function run(argv = process.argv) {
   const outputMarkdownPath = path.resolve(options.outputMarkdownPath);
 
   const verifyLiteSummary = readJsonRequired(verifyLiteSummaryPath, 'verify-lite summary');
-  const harnessHealth = readJsonRequired(harnessHealthPath, 'harness-health');
-  const changePackage = readJsonRequired(changePackagePath, 'change-package');
+  const harnessHealth = readJsonOptional(harnessHealthPath, 'harness-health');
+  const changePackage = readJsonOptional(changePackagePath, 'change-package');
   const contextPackSuggestions = contextPackSuggestionsPath
     ? readJsonOptional(contextPackSuggestionsPath, 'context-pack suggestions')
     : null;
@@ -719,8 +753,12 @@ export function run(argv = process.argv) {
     uiE2ESummary,
     source: {
       verifyLiteSummaryPath: path.relative(process.cwd(), verifyLiteSummaryPath) || path.basename(verifyLiteSummaryPath),
-      harnessHealthPath: path.relative(process.cwd(), harnessHealthPath) || path.basename(harnessHealthPath),
-      changePackagePath: path.relative(process.cwd(), changePackagePath) || path.basename(changePackagePath),
+      harnessHealthPath: harnessHealth
+        ? path.relative(process.cwd(), harnessHealthPath) || path.basename(harnessHealthPath)
+        : null,
+      changePackagePath: changePackage
+        ? path.relative(process.cwd(), changePackagePath) || path.basename(changePackagePath)
+        : null,
       contextPackSuggestionsPath: contextPackSuggestions
         ? path.relative(process.cwd(), contextPackSuggestionsPath) || path.basename(contextPackSuggestionsPath)
         : null,
@@ -728,6 +766,20 @@ export function run(argv = process.argv) {
         ? path.relative(process.cwd(), assuranceSummaryPath) || path.basename(assuranceSummaryPath)
         : null,
       uiE2ESummaryPath: uiE2ESummary
+        ? path.relative(process.cwd(), uiE2ESummaryPath) || path.basename(uiE2ESummaryPath)
+        : null,
+    },
+    evidenceSource: {
+      verifyLiteSummaryPath: path.relative(process.cwd(), verifyLiteSummaryPath) || path.basename(verifyLiteSummaryPath),
+      harnessHealthPath: path.relative(process.cwd(), harnessHealthPath) || path.basename(harnessHealthPath),
+      changePackagePath: path.relative(process.cwd(), changePackagePath) || path.basename(changePackagePath),
+      contextPackSuggestionsPath: contextPackSuggestionsPath
+        ? path.relative(process.cwd(), contextPackSuggestionsPath) || path.basename(contextPackSuggestionsPath)
+        : null,
+      assuranceSummaryPath: assuranceSummaryPath
+        ? path.relative(process.cwd(), assuranceSummaryPath) || path.basename(assuranceSummaryPath)
+        : null,
+      uiE2ESummaryPath: uiE2ESummaryPath
         ? path.relative(process.cwd(), uiE2ESummaryPath) || path.basename(uiE2ESummaryPath)
         : null,
     },

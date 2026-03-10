@@ -356,4 +356,82 @@ describe('build-hook-feedback CLI', () => {
     expect(verifyEvidence?.status).toBe('failure');
     expect(report.reproCommands).toContain('pnpm run context-pack:verify-functor');
   });
+
+  it('builds warn feedback when harness-health and change-package are missing', async () => {
+    await writeJson('artifacts/verify-lite/verify-lite-run-summary.json', {
+      schemaVersion: '1.0.0',
+      timestamp: '2026-03-09T00:00:00.000Z',
+      metadata: { generatedAt: '2026-03-09T00:00:00.000Z', generator: 'test', toolVersions: {} },
+      flags: { install: '', noFrozen: false, keepLintLog: false, enforceLint: false, runMutation: false },
+      steps: {
+        lint: { status: 'success' },
+        build: { status: 'success' },
+      },
+      artifacts: {
+        lintSummary: null,
+        lintLog: null,
+        mutationSummary: null,
+        mutationSurvivors: null,
+        conformanceSummary: null,
+        conformanceSummaryMarkdown: null,
+      },
+    });
+
+    const { result, outputJsonPath, outputMdPath } = runBuild();
+    expect(result.status).toBe(0);
+
+    const report = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
+      status: string;
+      blockingReasons: string[];
+      nextActions: string[];
+      reproCommands: string[];
+      evidence: Array<{ id: string; present: boolean; status: string | null; path: string }>;
+      source: {
+        verifyLiteSummaryPath: string;
+        harnessHealthPath: string | null;
+        changePackagePath: string | null;
+        contextPackSuggestionsPath: string | null;
+        assuranceSummaryPath: string | null;
+        uiE2ESummaryPath: string | null;
+      };
+    };
+    expect(validate(report), JSON.stringify(validate.errors)).toBe(true);
+    expect(report.status).toBe('warn');
+    expect(report.blockingReasons).toContain('Missing artifact: harness-health');
+    expect(report.blockingReasons).toContain('Missing artifact: change-package');
+    expect(report.nextActions).toContain(
+      'Generate `artifacts/ci/harness-health.json` with `node scripts/ci/build-harness-health.mjs` when gate-level guidance is needed.',
+    );
+    expect(report.nextActions).toContain(
+      'Generate `artifacts/change-package/change-package.json` with `pnpm run change-package:generate` when risk/evidence packaging is needed.',
+    );
+    expect(report.reproCommands).toContain('node scripts/ci/build-harness-health.mjs');
+    expect(report.reproCommands).toContain('pnpm run change-package:generate');
+    expect(report.source.verifyLiteSummaryPath).toBe('artifacts/verify-lite/verify-lite-run-summary.json');
+    expect(report.source.harnessHealthPath).toBeNull();
+    expect(report.source.changePackagePath).toBeNull();
+    expect(report.source.contextPackSuggestionsPath).toBeNull();
+    expect(report.source.assuranceSummaryPath).toBeNull();
+    expect(report.source.uiE2ESummaryPath).toBeNull();
+    expect(report.evidence).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'harnessHealth',
+          path: 'artifacts/ci/harness-health.json',
+          present: false,
+          status: 'missing',
+        }),
+        expect.objectContaining({
+          id: 'changePackage',
+          path: 'artifacts/change-package/change-package.json',
+          present: false,
+          status: 'missing',
+        }),
+      ]),
+    );
+
+    const markdown = await readFile(outputMdPath, 'utf8');
+    expect(markdown).toContain('harness-health: `n/a`');
+    expect(markdown).toContain('change-package: `n/a`');
+  });
 });
