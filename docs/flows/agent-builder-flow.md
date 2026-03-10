@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: delivery-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Agent Builder フロー（最小実行）
 
 ## 目的
