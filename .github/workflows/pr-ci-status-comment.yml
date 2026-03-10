@@ -338,11 +338,12 @@ jobs:
               repo,
               workflow_id: 'verify-lite.yml',
               event: 'pull_request',
-              per_page: 20,
+              head_sha: headSha,
+              status: 'completed',
+              per_page: 1,
             });
             const run = (data.workflow_runs || []).find((candidate) =>
               candidate.head_sha === headSha
-              && candidate.status === 'completed'
               && candidate.conclusion === 'success'
             );
             if (!run) {
@@ -399,7 +400,7 @@ jobs:
           else
             printf '%s\n' 'Plan Artifact not present in this PR branch; skipping append.' >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Append Change Package and Plan Artifact to PR summary
+      - name: Append Change Package, Plan Artifact, and Hook Feedback to PR summary
         if: ${{ always() }}
         run: |
           if [ -f artifacts/change-package/change-package.md ]; then
