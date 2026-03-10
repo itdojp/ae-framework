@@ -1,3 +1,12 @@
+---
+docRole: derived
+canonicalSource:
+  - README.md
+  - docs/guides/assurance-onboarding-checklist.md
+  - docs/quality/assurance-operations-runbook.md
+lastVerified: '2026-03-10'
+---
+
 # AE Framework Setup Guide
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)

@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+  - docs/phases/phase-6-uiux.md
+lastVerified: '2026-03-10'
+---
+
 # 🎨 Phase 6: UI/UX & Frontend Delivery Quick Start
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
