@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+  - docs/agents/hook-feedback.md
+  - docs/quality/ARTIFACTS-CONTRACT.md
+lastVerified: '2026-03-10'
+---
+
 # Claude Code Integration Guide - AE Framework Integration (Implemented + Roadmap)
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)

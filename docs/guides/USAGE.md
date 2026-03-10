@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- README.md
+- docs/getting-started/QUICK-START-GUIDE.md
+lastVerified: '2026-03-10'
+---
 # AE Framework Usage Guide
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -149,7 +156,7 @@ pnpm run intent-agent
 ```
 
 #### Direct Execution (Development/Testing)
-```typescript
+```text
 import { IntentAgent } from './src/agents/intent-agent.js';
 
 const agent = new IntentAgent();
@@ -185,7 +192,7 @@ console.log('User stories:', result.userStories);
 ### Key Features
 
 #### 1. Requirements Extraction from Natural Language
-```typescript
+```text
 const requirements = await agent.extractFromNaturalLanguage(`
   The system needs to provide the following features:
   - User authentication (JWT method)
@@ -196,7 +203,7 @@ const requirements = await agent.extractFromNaturalLanguage(`
 ```
 
 #### 2. Ambiguity Detection
-```typescript
+```text
 const ambiguities = await agent.detectAmbiguities([
   {
     type: 'text',
@@ -207,7 +214,7 @@ const ambiguities = await agent.detectAmbiguities([
 ```
 
 #### 3. Domain Model Generation
-```typescript
+```text
 const domainModel = await agent.buildDomainModelFromRequirements(
   requirements,
   { domain: 'e-commerce' }
@@ -245,7 +252,7 @@ pnpm run model-check
 ### Practical Examples
 
 #### 1. Automatic TLA+ Specification Generation
-```typescript
+```text
 import { FormalAgent } from './src/agents/formal-agent.js';
 
 const agent = new FormalAgent();
@@ -262,7 +269,7 @@ console.log('TLA+ specification:', spec.content);
 ```
 
 #### 2. State Transition Diagram Generation
-```typescript
+```text
 const stateDiagram = await agent.generateStateDiagram([
   'idle', 'loading', 'success', 'error'
 ], [
@@ -273,7 +280,7 @@ const stateDiagram = await agent.generateStateDiagram([
 ```
 
 #### 3. Formal Verification Execution
-```typescript
+```text
 const verification = await agent.verifySpecification(spec, {
   checkDeadlock: true,
   checkLiveness: true,
@@ -342,7 +349,7 @@ pnpm run agent:test
 
 #### 1. Phase 3.1: Sequential Reasoning Engine Usage
 
-```typescript
+```text
 import { SequentialInferenceEngine } from './src/engines/sequential-inference-engine.js';
 import { DependencyAnalyzer } from './src/analysis/dependency-analyzer.js';
 
@@ -374,7 +381,7 @@ console.log('Impact scope:', dependencyResult.impactAnalysis);
 
 #### 2. Phase 3.2: Playwright E2E Test Auto-generation
 
-```typescript
+```text
 import { PlaywrightIntegration } from './src/testing/playwright-integration.js';
 
 const playwright = new PlaywrightIntegration(engine);
@@ -519,7 +526,7 @@ pnpm run intent-agent
 ```
 
 #### 直接実行（開発・テスト用）
-```typescript
+```text
 import { IntentAgent } from './src/agents/intent-agent.js';
 
 const agent = new IntentAgent();
@@ -555,7 +562,7 @@ console.log('ユーザーストーリー:', result.userStories);
 ### 主要機能
 
 #### 1. 自然言語からの要件抽出
-```typescript
+```text
 const requirements = await agent.extractFromNaturalLanguage(`
   システムは以下の機能を提供する必要がある：
   - ユーザー認証（JWT方式）
@@ -566,7 +573,7 @@ const requirements = await agent.extractFromNaturalLanguage(`
 ```
 
 #### 2. 曖昧性の検出
-```typescript
+```text
 const ambiguities = await agent.detectAmbiguities([
   {
     type: 'text',
@@ -577,7 +584,7 @@ const ambiguities = await agent.detectAmbiguities([
 ```
 
 #### 3. ドメインモデルの生成
-```typescript
+```text
 const domainModel = await agent.buildDomainModelFromRequirements(
   requirements,
   { domain: 'e-commerce' }

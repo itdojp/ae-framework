@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci/pr-automation.md
+- docs/project/GOVERNANCE.md
+lastVerified: '2026-03-10'
+---
 # Thread -> Repo -> CI Flow Guide (Plan -> Spec Normalization)
 
 > Language / 言語: English | 日本語
