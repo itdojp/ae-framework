@@ -20,6 +20,11 @@ interface CodeBlock {
   line: number;
 }
 
+interface FenceInfo {
+  language: string;
+  modifiers: string[];
+}
+
 interface LinkCheck {
   url: string;
   file: string;
@@ -57,6 +62,17 @@ class DocumentationTester {
     /href="([^"]+)"/g,           // HTML href attributes
   ];
   private readonly EXTERNAL_URL_PATTERN = /^https?:\/\//;
+
+  parseFenceInfo(rawInfo: string): FenceInfo {
+    const tokens = String(rawInfo ?? '')
+      .trim()
+      .split(/\s+/u)
+      .filter(Boolean);
+    return {
+      language: tokens[0] || '',
+      modifiers: tokens.slice(1),
+    };
+  }
 
   async runDocTests(patternInput: string | string[] = 'docs/**/*.md'): Promise<DocTestResult> {
     console.log('📚 Running documentation tests...');
@@ -133,7 +149,10 @@ class DocumentationTester {
           } else {
             // Start of code block
             inCodeBlock = true;
-            currentLanguage = line.slice(3).trim();
+            const fenceInfo = this.parseFenceInfo(line.slice(3));
+            currentLanguage = fenceInfo.modifiers.includes('no-doctest')
+              ? ''
+              : fenceInfo.language;
             blockStartLine = i + 1;
           }
         } else if (inCodeBlock) {

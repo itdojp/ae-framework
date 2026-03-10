@@ -1,6 +1,6 @@
 # Docs Doctest Policy
 
-最終更新: 2026-02-25
+最終更新: 2026-03-10
 
 ## 目的
 
@@ -23,6 +23,8 @@ Workflow: `.github/workflows/docs-doctest.yml`
 3. 全量結果の確認が必要な場合は `workflow_dispatch` で `full=true` を指定して再実行する
 4. `scripts/ci/check-docs-doctest-policy-sync.mjs` を先行実行し、workflow / package script / policy の整合ドリフトを早期検出する
 5. docs governance / contract catalog / generated agent commands sync は `check-doc-consistency-all.mjs` 経由で同じレーンに集約する
+6. doc governance 拡張や front matter 追加で markdown を changed-files 対象へ入れる場合は、PR 前に changed-markdown doctest をローカルで再現する
+7. 説明用 snippet / 出力例 / 擬似 payload は `text` fence を基本とし、言語情報を残したい場合のみ `no-doctest` modifier を明示する
 
 ## 失敗時の対応手順（runbook）
 
@@ -32,8 +34,10 @@ Workflow: `.github/workflows/docs-doctest.yml`
    - `Invalid Links` の失敗: リンク先の修正または URL 更新
 3. ローカル再現する
    - index 失敗時: `DOCTEST_ENFORCE=1 pnpm run test:doctest:index`
+   - changed-markdown 失敗時: `DOCTEST_ENFORCE=1 pnpm run test:doctest:pr-changed -- --base-ref origin/main`
    - full 失敗時: `DOCTEST_ENFORCE=1 pnpm run test:doctest:full`
-4. 修正後、同一 run の `Re-run failed jobs` か、PR へ追 commit を push して再実行する
+4. 失敗した code block が説明用であれば `text` へ変更する。言語情報を残したい場合は ```` ```typescript no-doctest ```` のように modifier を付ける
+5. 修正後、同一 run の `Re-run failed jobs` か、PR へ追 commit を push して再実行する
 
 ## ローカル実行コマンド
 
@@ -42,5 +46,6 @@ node scripts/ci/check-docs-doctest-policy-sync.mjs
 pnpm run check:doc-consistency
 pnpm run check:ci-doc-index-consistency
 DOCTEST_ENFORCE=1 pnpm run test:doctest:index
+DOCTEST_ENFORCE=1 pnpm run test:doctest:pr-changed -- --base-ref origin/main
 DOCTEST_ENFORCE=1 pnpm run test:doctest:full
 ```

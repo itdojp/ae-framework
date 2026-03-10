@@ -58,3 +58,11 @@ verificationCommand: pnpm ...   # ssot のとき必須
 node scripts/docs/check-doc-governance.mjs
 pnpm -s run check:doc-consistency
 ```
+
+governance 対象を新規ディレクトリへ拡張する場合は、front matter 追加後に changed-markdown doctest も実行する。
+
+```bash
+DOCTEST_ENFORCE=1 pnpm run test:doctest:pr-changed -- --base-ref origin/main
+```
+
+説明用 snippet / 出力例 / 擬似 payload は `text` fence を基本とし、言語情報を残したい場合だけ `no-doctest` modifier を使う。
