@@ -43,9 +43,12 @@
 - まず `doctest-index` か `doctest-full` かを判別する
 - ローカル再現
   - index: `DOCTEST_ENFORCE=1 pnpm run test:doctest:index`
+  - changed-markdown: `DOCTEST_ENFORCE=1 pnpm run test:doctest:pr-changed -- --base-ref origin/main`
   - full: `DOCTEST_ENFORCE=1 pnpm run test:doctest:full`
 - docs-doctest 設定ドリフト検査
   - `node scripts/ci/check-docs-doctest-policy-sync.mjs`
+- front matter 追加だけでも changed-markdown doctest 対象が増えるため、governance 拡張 PR では preflight を必須とする
+- 説明用 snippet / 出力例 / 擬似 payload は `text` または `no-doctest` 付き fence を使い、実行可能な `bash` / `typescript` / `javascript` fence を安易に追加しない
 
 ### 3.3 `pnpm install --frozen-lockfile` が失敗
 

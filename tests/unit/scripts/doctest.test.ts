@@ -80,4 +80,35 @@ describe('DocumentationTester', () => {
       rmSync(runnerTempDir, { recursive: true, force: true });
     }
   });
+
+  it('skips code blocks marked with no-doctest modifier', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'doctest-fixture-skip-'));
+    const runnerTempDir = join(process.cwd(), 'tmp', 'doctest');
+
+    try {
+      writeFileSync(
+        join(fixtureDir, 'sample.md'),
+        [
+          '# Sample',
+          '',
+          '```typescript no-doctest',
+          'const broken: = ;',
+          '```',
+          '',
+          '```bash',
+          'echo "ok"',
+          '```',
+        ].join('\n')
+      );
+
+      const tester = new DocumentationTester();
+      const result = await tester.runDocTests(join(fixtureDir, '*.md'));
+
+      expect(result.codeBlocks.total).toBe(1);
+      expect(result.codeBlocks.failed).toBe(0);
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(runnerTempDir, { recursive: true, force: true });
+    }
+  });
 });
