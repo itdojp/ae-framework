@@ -74,7 +74,7 @@ See the Japanese sections for full architecture details, call flows, and best pr
 
 ### 🏗️ ハイブリッド統合システム
 
-```typescript
+```text
 export interface HybridIntentConfig {
   enableCLI: boolean;                    // CLI統合
   enableMCPServer: boolean;              // MCP Server統合  
@@ -120,7 +120,7 @@ export class HybridIntentSystem {
 
 ### 🔧 インターフェース定義
 
-```typescript
+```text
 // Claude Code → AE Framework
 interface TaskRequest {
   description: string;      // タスクの説明
@@ -141,7 +141,7 @@ interface TaskResponse {
 
 ### 🎯 Task Adapterアーキテクチャ
 
-```typescript
+```text
 // src/cli/index.ts - 各フェーズのTask Handler
 class AEFrameworkCLI {
   public naturalLanguageHandler: TaskHandler;    // Phase 2: 要件構造化
@@ -163,7 +163,7 @@ class AEFrameworkCLI {
 
 ### 🔄 プロアクティブガイダンス
 
-```typescript
+```text
 interface ProactiveGuidanceContext {
   recentFiles: string[];     // 最近変更されたファイル
   recentActions: string[];   // 最近の行動
@@ -189,7 +189,7 @@ interface ProactiveGuidanceResult {
 **Task Adapter**: Intent Task Adapter  
 **主要機能**: ユーザー意図の分析と要件抽出
 
-```typescript
+```text
 // 呼び出し例
 const request: TaskRequest = {
   description: "プロジェクト要件の意図分析",
@@ -225,7 +225,7 @@ const response: TaskResponse = {
 **Task Adapter**: Natural Language Task Adapter  
 **主要機能**: 自然言語要件の構造化と分析
 
-```typescript
+```text
 // 呼び出し例
 const request: TaskRequest = {
   description: "自然言語要件の構造化",
@@ -279,7 +279,7 @@ const response: TaskResponse = {
 **Task Adapter**: User Stories Task Adapter  
 **主要機能**: アジャイル開発用ユーザーストーリー生成
 
-```typescript
+```text
 // 呼び出し例
 const request: TaskRequest = {
   description: "ユーザーストーリーの自動生成",
@@ -337,7 +337,7 @@ const response: TaskResponse = {
 **Task Adapter**: Validation Task Adapter  
 **主要機能**: 要件・ストーリー・仕様の品質検証
 
-```typescript
+```text
 // 呼び出し例
 const request: TaskRequest = {
   description: "要件とストーリーの整合性検証",
@@ -397,7 +397,7 @@ const response: TaskResponse = {
 **Task Adapter**: Domain Modeling Task Adapter  
 **主要機能**: ドメイン駆動設計（DDD）によるモデリング
 
-```typescript
+```text
 // 呼び出し例
 const request: TaskRequest = {
   description: "ドメインモデルの設計",
@@ -484,7 +484,7 @@ const response: TaskResponse = {
 **Task Adapter**: UI Generation Task Adapter  
 **主要機能**: React+Next.js完全自動生成
 
-```typescript
+```text
 // 呼び出し例
 const request: TaskRequest = {
   description: "React UIコンポーネントの自動生成",
@@ -828,7 +828,7 @@ AE Framework Phase 6:
 ### 🔧 最適化設定
 
 #### パフォーマンス調整
-```typescript
+```text
 // 高速化設定
 const optimizedConfig = {
   // 並列処理の最大数
@@ -846,7 +846,7 @@ const optimizedConfig = {
 ```
 
 #### 品質重視設定
-```typescript
+```text
 // 品質重視設定
 const qualityConfig = {
   // 詳細検証有効化
@@ -877,7 +877,7 @@ Error: Task Tool integration not available
 ```
 
 **原因と解決**:
-```typescript
+```text
 // 原因: Claude Code統合が無効
 enableClaudeCodeIntegration: false
 
@@ -899,7 +899,7 @@ Warning: Task execution timeout (>300s)
 ```
 
 **原因と解決**:
-```typescript
+```text
 // 原因: 大量の要件による処理負荷
 // 解決: バッチサイズ制限
 const processingConfig = {
@@ -917,7 +917,7 @@ Warning: Generated UI failed quality gates
 ```
 
 **解決方法**:
-```typescript
+```text
 // 品質設定の調整
 const uiQualityConfig = {
   accessibilityLevel: 'WCAG_AA',    // アクセシビリティレベル
@@ -958,7 +958,7 @@ npx ae-framework resource-usage
 ```
 
 #### ログ出力設定
-```typescript
+```text
 // デバッグログ有効化
 const debugConfig = {
   logLevel: 'debug',
