@@ -49,7 +49,10 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/README.md`
 - `docs/reference/DOC-GOVERNANCE.md`
 - `docs/agents/*.md`
+- `docs/getting-started/*.md`
+- `docs/operate/*.md`
 - `docs/product/*.md`
+- `docs/project/*.md`
 - `docs/quality/*.md`
 
 ## 5. Validation

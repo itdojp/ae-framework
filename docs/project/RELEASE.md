@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: release-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Release Guide (Quality Artifacts) / リリース手順（品質エビデンス）
 
 > 🌍 Language / 言語: English | 日本語

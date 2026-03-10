@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: observability-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Telemetry-as-Context（Trace Bundle v1）
 
 運用テレメトリを `ae conformance verify` の入力へ接続するために、まず Trace Bundle を生成します。  

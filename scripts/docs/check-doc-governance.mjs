@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const ROOT_DOCS = ['README.md', 'AGENTS.md', 'docs/README.md'];
 const GOVERNED_EXTRA_DOCS = ['docs/reference/DOC-GOVERNANCE.md'];
-const GOVERNED_PREFIX_DIRS = ['docs/agents', 'docs/product', 'docs/quality'];
+const GOVERNED_PREFIX_DIRS = ['docs/agents', 'docs/getting-started', 'docs/operate', 'docs/product', 'docs/project', 'docs/quality'];
 const DOC_ROLE_VALUES = new Set(['ssot', 'derived', 'narrative']);
 const NARRATIVE_NORMATIVE_PATTERNS = [
   /\bmust\b/giu,

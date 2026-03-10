@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: release-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Release Engineering (Policy v1 / Post-deploy Verify)
 
 Issue: `#2288`
