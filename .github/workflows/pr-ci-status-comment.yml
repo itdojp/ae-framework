@@ -31,6 +31,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
+  actions: read
   contents: read
   issues: write
   pull-requests: write
@@ -319,6 +320,73 @@ jobs:
             --schema schema/change-package.schema.json \
             --output-json artifacts/change-package/change-package-validation.json \
             --output-md artifacts/change-package/change-package-validation.md
+      - name: Resolve verify-lite run for current head SHA
+        id: verify-lite-run
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const headSha = context.payload.pull_request?.head?.sha;
+            if (!headSha) {
+              core.notice('No pull_request head SHA found; skipping verify-lite artifact lookup.');
+              core.setOutput('run_id', '');
+              return;
+            }
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: 'verify-lite.yml',
+              event: 'pull_request',
+              head_sha: headSha,
+              status: 'completed',
+              per_page: 1,
+            });
+            const run = (data.workflow_runs || []).find((candidate) =>
+              candidate.head_sha === headSha
+              && candidate.conclusion === 'success'
+            );
+            if (!run) {
+              core.notice(`No successful verify-lite run found for ${headSha}.`);
+              core.setOutput('run_id', '');
+              return;
+            }
+            core.notice(`Using verify-lite run ${run.id} for ${headSha}.`);
+            core.setOutput('run_id', String(run.id));
+      - name: Download verify-lite report artifact
+        if: ${{ steps.verify-lite-run.outputs.run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: verify-lite-report
+          path: artifacts/downloaded/verify-lite-report
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.verify-lite-run.outputs.run_id }}
+      - name: Build hook feedback (report-only)
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          verify_lite_summary="artifacts/downloaded/verify-lite-report/artifacts/verify-lite/verify-lite-run-summary.json"
+          assurance_summary="artifacts/downloaded/verify-lite-report/artifacts/assurance/assurance-summary.json"
+          if [ ! -f "$verify_lite_summary" ]; then
+            printf '%s\n' 'Verify Lite report artifact not available for this head SHA; skipped hook-feedback generation.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          args=(
+            --verify-lite-summary "$verify_lite_summary"
+            --harness-health artifacts/ci/harness-health.json
+            --change-package artifacts/change-package/change-package.json
+          )
+          if [ -f artifacts/context-pack/context-pack-suggestions.json ]; then
+            args+=(--context-pack-suggestions artifacts/context-pack/context-pack-suggestions.json)
+          fi
+          if [ -f "$assurance_summary" ]; then
+            args+=(--assurance-summary "$assurance_summary")
+          fi
+          if [ -f artifacts/e2e/ui-e2e-summary.json ]; then
+            args+=(--ui-e2e-summary artifacts/e2e/ui-e2e-summary.json)
+          fi
+          pnpm -s run hook-feedback:build "${args[@]}"
       - name: Validate Plan Artifact
         if: ${{ always() }}
         continue-on-error: true
@@ -332,7 +400,7 @@ jobs:
           else
             printf '%s\n' 'Plan Artifact not present in this PR branch; skipping append.' >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Append Change Package and Plan Artifact to PR summary
+      - name: Append Change Package, Plan Artifact, and Hook Feedback to PR summary
         if: ${{ always() }}
         run: |
           if [ -f artifacts/change-package/change-package.md ]; then
@@ -350,6 +418,10 @@ jobs:
           if [ -f artifacts/plan/plan-artifact-validation.md ]; then
             printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
             cat artifacts/plan/plan-artifact-validation.md >> artifacts/summary/PR_SUMMARY.md
+          fi
+          if [ -f artifacts/agents/hook-feedback.md ]; then
+            printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
+            cat artifacts/agents/hook-feedback.md >> artifacts/summary/PR_SUMMARY.md
           fi
       - name: Upload harness health artifact
         if: ${{ always() }}
@@ -375,6 +447,16 @@ jobs:
             artifacts/plan/plan-artifact.md
             artifacts/plan/plan-artifact-validation.json
             artifacts/plan/plan-artifact-validation.md
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload hook-feedback artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: hook-feedback-pr-${{ github.event.pull_request.number }}
+          path: |
+            artifacts/agents/hook-feedback.json
+            artifacts/agents/hook-feedback.md
           if-no-files-found: warn
           retention-days: 14
       - name: Post or update PR comment

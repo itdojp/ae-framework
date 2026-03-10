@@ -254,6 +254,11 @@ describe('validate-artifacts-ajv', () => {
     expect(assuranceSummaryRule?.schemaPath).toBe('schema/assurance-summary.schema.json');
     expect(assuranceSummaryRule?.patterns).toContain('artifacts/assurance/assurance-summary.json');
 
+    const hookFeedbackRule = DEFAULT_RULES.find((rule) => rule.id === 'hook-feedback');
+    expect(hookFeedbackRule).toBeDefined();
+    expect(hookFeedbackRule?.schemaPath).toBe('schema/hook-feedback.schema.json');
+    expect(hookFeedbackRule?.patterns).toContain('artifacts/agents/hook-feedback.json');
+
     const harnessHealthRule = DEFAULT_RULES.find((rule) => rule.id === 'harness-health');
     expect(harnessHealthRule).toBeDefined();
     expect(harnessHealthRule?.schemaPath).toBe('schema/harness-health.schema.json');

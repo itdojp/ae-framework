@@ -24,6 +24,11 @@ export const DEFAULT_RULES = [
     patterns: ['artifacts/assurance/assurance-summary.json'],
   },
   {
+    id: 'hook-feedback',
+    schemaPath: 'schema/hook-feedback.schema.json',
+    patterns: ['artifacts/agents/hook-feedback.json'],
+  },
+  {
     id: 'adapter-summary',
     schemaPath: 'docs/schemas/artifacts-adapter-summary.schema.json',
     patterns: [
