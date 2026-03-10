@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: development-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # AE-Spec Validation System
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
