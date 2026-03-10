@@ -23,6 +23,8 @@ lastVerified: '2026-03-10'
 - `artifacts/ci/harness-health.json`
 - `artifacts/change-package/change-package.json`
 - `artifacts/context-pack/context-pack-suggestions.json`（存在時のみ）
+- `artifacts/assurance/assurance-summary.json`（存在時のみ）
+- `artifacts/e2e/ui-e2e-summary.json`（存在時のみ）
 
 ## Contract fields
 
@@ -39,11 +41,22 @@ lastVerified: '2026-03-10'
 pnpm run hook-feedback:build \
   --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
   --harness-health artifacts/ci/harness-health.json \
-  --change-package artifacts/change-package/change-package.json \
-  --context-pack-suggestions artifacts/context-pack/context-pack-suggestions.json
+  --change-package artifacts/change-package/change-package.json
 ```
 
-`context-pack-suggestions` が無い場合は省略できます。
+`context-pack-suggestions` / `assurance-summary` / `ui-e2e-summary` が無い場合は省略できます。
+
+## Optional inputs example
+
+```bash
+pnpm run hook-feedback:build \
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
+  --harness-health artifacts/ci/harness-health.json \
+  --change-package artifacts/change-package/change-package.json \
+  --context-pack-suggestions artifacts/context-pack/context-pack-suggestions.json \
+  --assurance-summary artifacts/assurance/assurance-summary.json \
+  --ui-e2e-summary artifacts/e2e/ui-e2e-summary.json
+```
 
 ## Claude Code hook command example
 
@@ -76,5 +89,7 @@ jq '{status, blockingReasons, nextActions, reproCommands}' artifacts/agents/hook
 ## Notes
 
 - `reproCommands[]` は最低1件出力されます。入力 artifact に command が無い場合は `pnpm run verify:lite` を fallback とします。
+- `assurance-summary` がある場合は `warningClaims` / `missingLanes` / `missingEvidenceKinds` / `unlinkedCounterexamples` / `openCounterexamples` を `blockingReasons` と `nextActions` に反映します。
+- `ui-e2e-summary` がある場合は `status` と failed scenario id を `blockingReasons` と `nextActions` に反映します。
 - `status=blocked` / `warn` の場合は `blockingReasons[]` を必須とします。
 - この adapter は既存 artifact を再構成するだけで、元の gate 判定を上書きしません。

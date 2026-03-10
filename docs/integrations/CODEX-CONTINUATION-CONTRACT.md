@@ -120,6 +120,18 @@ pnpm run hook-feedback:build \
 - 出力 Markdown: `artifacts/agents/hook-feedback.md`
 - continuation 側は `status`, `blockingReasons`, `nextActions`, `reproCommands` を優先して読む
 - `context-pack-suggestions` が存在する場合は `--context-pack-suggestions artifacts/context-pack/context-pack-suggestions.json` を追加する
+- `assurance-summary` / `ui-e2e-summary` が存在する場合は optional input として追加し、continuation の `blockingReasons` / `nextActions` / `reproCommands` を具体化する
+
+利用可能な optional input を含める場合は、次の variant を使います。
+
+```bash
+pnpm run hook-feedback:build \
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
+  --harness-health artifacts/ci/harness-health.json \
+  --change-package artifacts/change-package/change-package.json \
+  --assurance-summary artifacts/assurance/assurance-summary.json \
+  --ui-e2e-summary artifacts/e2e/ui-e2e-summary.json
+```
 
 ### 4.2 Adapter 実装の正規化ルール（v1）
 

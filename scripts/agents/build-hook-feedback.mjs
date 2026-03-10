@@ -9,9 +9,13 @@ const DEFAULT_VERIFY_LITE_SUMMARY_PATH = 'artifacts/verify-lite/verify-lite-run-
 const DEFAULT_HARNESS_HEALTH_PATH = 'artifacts/ci/harness-health.json';
 const DEFAULT_CHANGE_PACKAGE_PATH = 'artifacts/change-package/change-package.json';
 const DEFAULT_CONTEXT_PACK_SUGGESTIONS_PATH = 'artifacts/context-pack/context-pack-suggestions.json';
+const DEFAULT_ASSURANCE_SUMMARY_PATH = 'artifacts/assurance/assurance-summary.json';
+const DEFAULT_UI_E2E_SUMMARY_PATH = 'artifacts/e2e/ui-e2e-summary.json';
 const DEFAULT_OUTPUT_JSON_PATH = 'artifacts/agents/hook-feedback.json';
 const DEFAULT_OUTPUT_MD_PATH = 'artifacts/agents/hook-feedback.md';
 const FALLBACK_REPRO_COMMAND = 'pnpm run verify:lite';
+const ASSURANCE_REPRO_COMMAND = 'pnpm run verify:assurance';
+const UI_E2E_REPRO_COMMAND = 'pnpm run ui-e2e:semantic';
 
 function uniqueNonEmpty(values) {
   const seen = new Set();
@@ -87,8 +91,65 @@ function summarizeVerifyLite(summary) {
   };
 }
 
-function deriveStatus({ harnessHealth, verifyLiteSummary, changePackage, contextPackSuggestions }) {
+function summarizeAssuranceSummary(assuranceSummary) {
+  const summary = assuranceSummary && typeof assuranceSummary === 'object' ? assuranceSummary.summary ?? {} : {};
+  const warningClaims = Number.isFinite(summary.warningClaims) ? Number(summary.warningClaims) : 0;
+  const warningCount = Number.isFinite(summary.warningCount) ? Number(summary.warningCount) : 0;
+  const missingLanes = Number.isFinite(summary.claimsMissingRequiredLanes)
+    ? Number(summary.claimsMissingRequiredLanes)
+    : 0;
+  const missingEvidenceKinds = Number.isFinite(summary.claimsMissingRequiredEvidenceKinds)
+    ? Number(summary.claimsMissingRequiredEvidenceKinds)
+    : 0;
+  const unlinkedCounterexamples = Number.isFinite(summary.unlinkedCounterexamples)
+    ? Number(summary.unlinkedCounterexamples)
+    : 0;
+  const openCounterexamples = Array.isArray(assuranceSummary?.claims)
+    ? assuranceSummary.claims.reduce((total, claim) => {
+      if (!claim || typeof claim !== 'object') {
+        return total;
+      }
+      const open = Number.isFinite(claim?.counterexamples?.open) ? Number(claim.counterexamples.open) : 0;
+      return total + open;
+    }, 0)
+    : 0;
+
+  return {
+    warningClaims,
+    warningCount,
+    missingLanes,
+    missingEvidenceKinds,
+    unlinkedCounterexamples,
+    openCounterexamples,
+    hasWarnings:
+      warningClaims > 0
+      || warningCount > 0
+      || missingLanes > 0
+      || missingEvidenceKinds > 0
+      || unlinkedCounterexamples > 0
+      || openCounterexamples > 0,
+  };
+}
+
+function summarizeUiE2E(uiE2ESummary) {
+  const status = typeof uiE2ESummary?.status === 'string' ? uiE2ESummary.status : null;
+  const scenarios = Array.isArray(uiE2ESummary?.scenarios) ? uiE2ESummary.scenarios : [];
+  const failedScenarioIds = scenarios
+    .filter((scenario) => scenario?.status === 'fail')
+    .map((scenario) => (typeof scenario?.id === 'string' ? scenario.id.trim() : ''))
+    .filter(Boolean);
+
+  return {
+    status,
+    failedScenarioIds,
+    hasIssues: status === 'warn' || status === 'error' || failedScenarioIds.length > 0,
+  };
+}
+
+function deriveStatus({ harnessHealth, verifyLiteSummary, changePackage, contextPackSuggestions, assuranceSummary, uiE2ESummary }) {
   const verifySummary = summarizeVerifyLite(verifyLiteSummary);
+  const assurance = summarizeAssuranceSummary(assuranceSummary);
+  const uiE2E = summarizeUiE2E(uiE2ESummary);
   const severity = typeof harnessHealth?.severity === 'string' ? harnessHealth.severity : 'ok';
   const exceptionCount = Array.isArray(changePackage?.exceptions) ? changePackage.exceptions.length : 0;
   const suggestionCount = Array.isArray(contextPackSuggestions?.recommendedContextChanges)
@@ -104,14 +165,25 @@ function deriveStatus({ harnessHealth, verifyLiteSummary, changePackage, context
     || verifySummary.pendingSteps.length > 0
     || exceptionCount > 0
     || (suggestionCount > 0 && contextStatus !== 'pass')
+    || assurance.hasWarnings
+    || uiE2E.hasIssues
   ) {
     return 'warn';
   }
   return 'ok';
 }
 
-function buildBlockingReasons({ verifyLiteSummary, harnessHealth, changePackage, contextPackSuggestions }) {
+function buildBlockingReasons({
+  verifyLiteSummary,
+  harnessHealth,
+  changePackage,
+  contextPackSuggestions,
+  assuranceSummary,
+  uiE2ESummary,
+}) {
   const verifySummary = summarizeVerifyLite(verifyLiteSummary);
+  const assurance = summarizeAssuranceSummary(assuranceSummary);
+  const uiE2E = summarizeUiE2E(uiE2ESummary);
   const reasons = [];
 
   if (Array.isArray(harnessHealth?.reasons)) {
@@ -137,6 +209,20 @@ function buildBlockingReasons({ verifyLiteSummary, harnessHealth, changePackage,
   if (suggestions.length > 0) {
     reasons.push(`Context Pack suggestions pending: ${suggestions.length} change(s)`);
   }
+  if (assurance.hasWarnings) {
+    reasons.push(
+      `Assurance summary warnings: warningClaims=${assurance.warningClaims}, `
+        + `warningCount=${assurance.warningCount}, missingLanes=${assurance.missingLanes}, `
+        + `missingEvidenceKinds=${assurance.missingEvidenceKinds}, unlinkedCounterexamples=${assurance.unlinkedCounterexamples}, `
+        + `openCounterexamples=${assurance.openCounterexamples}`,
+    );
+  }
+  if (uiE2E.hasIssues) {
+    const scenarioSummary = uiE2E.failedScenarioIds.length > 0
+      ? ` failed scenarios: ${uiE2E.failedScenarioIds.join(', ')}`
+      : '';
+    reasons.push(`UI semantic E2E status=${uiE2E.status ?? 'unknown'}.${scenarioSummary}`.trim());
+  }
 
   return uniqueNonEmpty(reasons).slice(0, 10);
 }
@@ -151,8 +237,18 @@ function toActionSentence(change) {
   return `Update \`${file}\`${targetId}${changeType}${command}.`;
 }
 
-function buildNextActions({ status, verifyLiteSummary, harnessHealth, changePackage, contextPackSuggestions }) {
+function buildNextActions({
+  status,
+  verifyLiteSummary,
+  harnessHealth,
+  changePackage,
+  contextPackSuggestions,
+  assuranceSummary,
+  uiE2ESummary,
+}) {
   const verifySummary = summarizeVerifyLite(verifyLiteSummary);
+  const assurance = summarizeAssuranceSummary(assuranceSummary);
+  const uiE2E = summarizeUiE2E(uiE2ESummary);
   const actions = [];
 
   if (verifySummary.failingSteps.length > 0) {
@@ -183,6 +279,19 @@ function buildNextActions({ status, verifyLiteSummary, harnessHealth, changePack
   if (recommendedLabels.length > 0) {
     actions.push(`If opt-in reruns are needed, apply labels: ${recommendedLabels.join(', ')}.`);
   }
+  if (assurance.hasWarnings) {
+    actions.push(
+      `Run \`${ASSURANCE_REPRO_COMMAND}\` and resolve assurance warnings `
+        + `(warningClaims=${assurance.warningClaims}, missingLanes=${assurance.missingLanes}, `
+        + `missingEvidenceKinds=${assurance.missingEvidenceKinds}, openCounterexamples=${assurance.openCounterexamples}).`,
+    );
+  }
+  if (uiE2E.hasIssues) {
+    const scenarioSummary = uiE2E.failedScenarioIds.length > 0
+      ? ` for scenarios: ${uiE2E.failedScenarioIds.join(', ')}`
+      : '';
+    actions.push(`Run \`${UI_E2E_REPRO_COMMAND}\` and inspect UI semantic E2E evidence${scenarioSummary}.`);
+  }
 
   if (actions.length === 0) {
     if (status === 'ok') {
@@ -195,7 +304,9 @@ function buildNextActions({ status, verifyLiteSummary, harnessHealth, changePack
   return uniqueNonEmpty(actions).slice(0, 10);
 }
 
-function buildReproCommands({ changePackage, harnessHealth, contextPackSuggestions }) {
+function buildReproCommands({ changePackage, harnessHealth, contextPackSuggestions, assuranceSummary, uiE2ESummary }) {
+  const assurance = summarizeAssuranceSummary(assuranceSummary);
+  const uiE2E = summarizeUiE2E(uiE2ESummary);
   const commands = uniqueNonEmpty([
     ...(Array.isArray(changePackage?.reproducibility?.commands) ? changePackage.reproducibility.commands : []),
     ...(Array.isArray(harnessHealth?.reproducibleHints)
@@ -207,6 +318,8 @@ function buildReproCommands({ changePackage, harnessHealth, contextPackSuggestio
     ...(Array.isArray(contextPackSuggestions?.recommendedContextChanges)
       ? contextPackSuggestions.recommendedContextChanges.map((change) => change?.suggestedCommand)
       : []),
+    ...(assurance.hasWarnings ? [ASSURANCE_REPRO_COMMAND] : []),
+    ...(uiE2E.hasIssues ? [UI_E2E_REPRO_COMMAND] : []),
   ]);
 
   if (commands.length === 0) {
@@ -247,10 +360,14 @@ function buildEvidence({
   harnessHealthPath,
   changePackagePath,
   contextPackSuggestionsPath,
+  assuranceSummaryPath,
+  uiE2ESummaryPath,
   verifyLiteSummary,
   changePackage,
   harnessHealth,
   contextPackSuggestions,
+  assuranceSummary,
+  uiE2ESummary,
 }) {
   const items = [];
 
@@ -298,6 +415,26 @@ function buildEvidence({
       status: typeof contextPackSuggestions?.status === 'string' ? contextPackSuggestions.status : null,
     });
   }
+  if (assuranceSummaryPath && assuranceSummary) {
+    const assurance = summarizeAssuranceSummary(assuranceSummary);
+    addEvidenceItem(items, {
+      id: 'assuranceSummary',
+      path: assuranceSummaryPath,
+      description: 'assurance summary',
+      present: true,
+      status: assurance.hasWarnings ? 'warn' : 'ok',
+    });
+  }
+  if (uiE2ESummaryPath && uiE2ESummary) {
+    const uiE2E = summarizeUiE2E(uiE2ESummary);
+    addEvidenceItem(items, {
+      id: 'uiE2ESummary',
+      path: uiE2ESummaryPath,
+      description: 'UI semantic E2E summary',
+      present: true,
+      status: uiE2E.status,
+    });
+  }
 
   return items;
 }
@@ -307,26 +444,60 @@ export function buildHookFeedbackArtifact({
   harnessHealth,
   changePackage,
   contextPackSuggestions,
+  assuranceSummary,
+  uiE2ESummary,
   source,
   now = new Date().toISOString(),
 }) {
-  const status = deriveStatus({ verifyLiteSummary, harnessHealth, changePackage, contextPackSuggestions });
+  const status = deriveStatus({
+    verifyLiteSummary,
+    harnessHealth,
+    changePackage,
+    contextPackSuggestions,
+    assuranceSummary,
+    uiE2ESummary,
+  });
   return {
     schemaVersion: 'hook-feedback/v1',
     generatedAt: now,
     status,
-    blockingReasons: buildBlockingReasons({ verifyLiteSummary, harnessHealth, changePackage, contextPackSuggestions }),
-    nextActions: buildNextActions({ status, verifyLiteSummary, harnessHealth, changePackage, contextPackSuggestions }),
-    reproCommands: buildReproCommands({ changePackage, harnessHealth, contextPackSuggestions }),
+    blockingReasons: buildBlockingReasons({
+      verifyLiteSummary,
+      harnessHealth,
+      changePackage,
+      contextPackSuggestions,
+      assuranceSummary,
+      uiE2ESummary,
+    }),
+    nextActions: buildNextActions({
+      status,
+      verifyLiteSummary,
+      harnessHealth,
+      changePackage,
+      contextPackSuggestions,
+      assuranceSummary,
+      uiE2ESummary,
+    }),
+    reproCommands: buildReproCommands({
+      changePackage,
+      harnessHealth,
+      contextPackSuggestions,
+      assuranceSummary,
+      uiE2ESummary,
+    }),
     evidence: buildEvidence({
       verifyLiteSummaryPath: source.verifyLiteSummaryPath,
       harnessHealthPath: source.harnessHealthPath,
       changePackagePath: source.changePackagePath,
       contextPackSuggestionsPath: source.contextPackSuggestionsPath,
+      assuranceSummaryPath: source.assuranceSummaryPath,
+      uiE2ESummaryPath: source.uiE2ESummaryPath,
       verifyLiteSummary,
       changePackage,
       harnessHealth,
       contextPackSuggestions,
+      assuranceSummary,
+      uiE2ESummary,
     }),
     source,
   };
@@ -369,6 +540,8 @@ export function renderMarkdown(artifact) {
   lines.push(`- harness-health: \`${artifact.source.harnessHealthPath}\``);
   lines.push(`- change-package: \`${artifact.source.changePackagePath}\``);
   lines.push(`- context-pack suggestions: \`${artifact.source.contextPackSuggestionsPath ?? 'n/a'}\``);
+  lines.push(`- assurance-summary: \`${artifact.source.assuranceSummaryPath ?? 'n/a'}\``);
+  lines.push(`- ui-e2e-summary: \`${artifact.source.uiE2ESummaryPath ?? 'n/a'}\``);
   return `${lines.join('\n')}\n`;
 }
 
@@ -378,6 +551,8 @@ export function parseArgs(argv = process.argv) {
     harnessHealthPath: DEFAULT_HARNESS_HEALTH_PATH,
     changePackagePath: DEFAULT_CHANGE_PACKAGE_PATH,
     contextPackSuggestionsPath: DEFAULT_CONTEXT_PACK_SUGGESTIONS_PATH,
+    assuranceSummaryPath: DEFAULT_ASSURANCE_SUMMARY_PATH,
+    uiE2ESummaryPath: DEFAULT_UI_E2E_SUMMARY_PATH,
     outputJsonPath: DEFAULT_OUTPUT_JSON_PATH,
     outputMarkdownPath: DEFAULT_OUTPUT_MD_PATH,
     help: false,
@@ -433,6 +608,24 @@ export function parseArgs(argv = process.argv) {
       options.contextPackSuggestionsPath = arg.slice('--context-pack-suggestions='.length);
       continue;
     }
+    if (arg === '--assurance-summary') {
+      options.assuranceSummaryPath = readValue(next, '--assurance-summary');
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--assurance-summary=')) {
+      options.assuranceSummaryPath = arg.slice('--assurance-summary='.length);
+      continue;
+    }
+    if (arg === '--ui-e2e-summary') {
+      options.uiE2ESummaryPath = readValue(next, '--ui-e2e-summary');
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--ui-e2e-summary=')) {
+      options.uiE2ESummaryPath = arg.slice('--ui-e2e-summary='.length);
+      continue;
+    }
     if (arg === '--output-json') {
       options.outputJsonPath = readValue(next, '--output-json');
       index += 1;
@@ -467,6 +660,8 @@ function printHelp() {
       + `  --harness-health <path>            Harness health path (default: ${DEFAULT_HARNESS_HEALTH_PATH})\n`
       + `  --change-package <path>            Change Package path (default: ${DEFAULT_CHANGE_PACKAGE_PATH})\n`
       + `  --context-pack-suggestions <path>  Optional Context Pack suggestions path (default: ${DEFAULT_CONTEXT_PACK_SUGGESTIONS_PATH})\n`
+      + `  --assurance-summary <path>         Optional assurance summary path (default: ${DEFAULT_ASSURANCE_SUMMARY_PATH})\n`
+      + `  --ui-e2e-summary <path>            Optional UI E2E summary path (default: ${DEFAULT_UI_E2E_SUMMARY_PATH})\n`
       + `  --output-json <path>               Output JSON path (default: ${DEFAULT_OUTPUT_JSON_PATH})\n`
       + `  --output-md <path>                 Output Markdown path (default: ${DEFAULT_OUTPUT_MD_PATH})\n`
       + '  --help, -h                         Show help\n',
@@ -493,6 +688,12 @@ export function run(argv = process.argv) {
   const contextPackSuggestionsPath = options.contextPackSuggestionsPath
     ? path.resolve(options.contextPackSuggestionsPath)
     : null;
+  const assuranceSummaryPath = options.assuranceSummaryPath
+    ? path.resolve(options.assuranceSummaryPath)
+    : null;
+  const uiE2ESummaryPath = options.uiE2ESummaryPath
+    ? path.resolve(options.uiE2ESummaryPath)
+    : null;
   const outputJsonPath = path.resolve(options.outputJsonPath);
   const outputMarkdownPath = path.resolve(options.outputMarkdownPath);
 
@@ -502,18 +703,32 @@ export function run(argv = process.argv) {
   const contextPackSuggestions = contextPackSuggestionsPath
     ? readJsonOptional(contextPackSuggestionsPath, 'context-pack suggestions')
     : null;
+  const assuranceSummary = assuranceSummaryPath
+    ? readJsonOptional(assuranceSummaryPath, 'assurance summary')
+    : null;
+  const uiE2ESummary = uiE2ESummaryPath
+    ? readJsonOptional(uiE2ESummaryPath, 'ui-e2e summary')
+    : null;
 
   const artifact = buildHookFeedbackArtifact({
     verifyLiteSummary,
     harnessHealth,
     changePackage,
     contextPackSuggestions,
+    assuranceSummary,
+    uiE2ESummary,
     source: {
       verifyLiteSummaryPath: path.relative(process.cwd(), verifyLiteSummaryPath) || path.basename(verifyLiteSummaryPath),
       harnessHealthPath: path.relative(process.cwd(), harnessHealthPath) || path.basename(harnessHealthPath),
       changePackagePath: path.relative(process.cwd(), changePackagePath) || path.basename(changePackagePath),
       contextPackSuggestionsPath: contextPackSuggestions
         ? path.relative(process.cwd(), contextPackSuggestionsPath) || path.basename(contextPackSuggestionsPath)
+        : null,
+      assuranceSummaryPath: assuranceSummary
+        ? path.relative(process.cwd(), assuranceSummaryPath) || path.basename(assuranceSummaryPath)
+        : null,
+      uiE2ESummaryPath: uiE2ESummary
+        ? path.relative(process.cwd(), uiE2ESummaryPath) || path.basename(uiE2ESummaryPath)
         : null,
     },
   });

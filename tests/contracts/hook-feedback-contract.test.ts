@@ -35,4 +35,18 @@ describe('hook-feedback contract', () => {
     expect(validate(invalidFixture)).toBe(false);
     expect(validate.errors?.some((entry) => entry.instancePath === '/blockingReasons')).toBe(true);
   });
+
+  it('keeps v1 source assurance and ui e2e paths optional', () => {
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    const legacyFixture = structuredClone(fixture) as {
+      source: Record<string, unknown>;
+    };
+
+    delete legacyFixture.source.assuranceSummaryPath;
+    delete legacyFixture.source.uiE2ESummaryPath;
+
+    expect(validate(legacyFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
 });

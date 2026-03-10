@@ -45,12 +45,28 @@
       "description": "context-pack suggestion summary",
       "present": true,
       "status": "fail"
+    },
+    {
+      "id": "assuranceSummary",
+      "path": "artifacts/assurance/assurance-summary.json",
+      "description": "assurance summary",
+      "present": true,
+      "status": "warn"
+    },
+    {
+      "id": "uiE2ESummary",
+      "path": "artifacts/e2e/ui-e2e-summary.json",
+      "description": "UI semantic E2E summary",
+      "present": true,
+      "status": "warn"
     }
   ],
   "source": {
     "verifyLiteSummaryPath": "artifacts/verify-lite/verify-lite-run-summary.json",
     "harnessHealthPath": "artifacts/ci/harness-health.json",
     "changePackagePath": "artifacts/change-package/change-package.json",
-    "contextPackSuggestionsPath": "artifacts/context-pack/context-pack-suggestions.json"
+    "contextPackSuggestionsPath": "artifacts/context-pack/context-pack-suggestions.json",
+    "assuranceSummaryPath": "artifacts/assurance/assurance-summary.json",
+    "uiE2ESummaryPath": "artifacts/e2e/ui-e2e-summary.json"
   }
 }
