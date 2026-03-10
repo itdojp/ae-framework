@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "hook-feedback/v1",
+  "generatedAt": "2026-03-10T12:00:00.000Z",
+  "status": "warn",
+  "blockingReasons": [
+    "Missing artifact: harness-health",
+    "Missing artifact: change-package"
+  ],
+  "nextActions": [
+    "Generate `artifacts/ci/harness-health.json` with `node scripts/ci/build-harness-health.mjs` when gate-level guidance is needed.",
+    "Generate `artifacts/change-package/change-package.json` with `pnpm run change-package:generate` when risk/evidence packaging is needed."
+  ],
+  "reproCommands": [
+    "node scripts/ci/build-harness-health.mjs",
+    "pnpm run change-package:generate"
+  ],
+  "evidence": [
+    {
+      "id": "verifyLiteSummary",
+      "path": "artifacts/verify-lite/verify-lite-run-summary.json",
+      "description": "verify-lite run summary",
+      "present": true,
+      "status": "available"
+    },
+    {
+      "id": "harnessHealth",
+      "path": "artifacts/ci/harness-health.json",
+      "description": "harness health summary",
+      "present": false,
+      "status": "missing"
+    },
+    {
+      "id": "changePackage",
+      "path": "artifacts/change-package/change-package.json",
+      "description": "change package evidence bundle",
+      "present": false,
+      "status": "missing"
+    },
+    {
+      "id": "contextPackSuggestions",
+      "path": "artifacts/context-pack/context-pack-suggestions.json",
+      "description": "context-pack suggestion summary",
+      "present": false,
+      "status": "missing"
+    },
+    {
+      "id": "assuranceSummary",
+      "path": "artifacts/assurance/assurance-summary.json",
+      "description": "assurance summary",
+      "present": false,
+      "status": "missing"
+    },
+    {
+      "id": "uiE2ESummary",
+      "path": "artifacts/e2e/ui-e2e-summary.json",
+      "description": "UI semantic E2E summary",
+      "present": false,
+      "status": "missing"
+    }
+  ],
+  "source": {
+    "verifyLiteSummaryPath": "artifacts/verify-lite/verify-lite-run-summary.json",
+    "harnessHealthPath": null,
+    "changePackagePath": null,
+    "contextPackSuggestionsPath": null,
+    "assuranceSummaryPath": null,
+    "uiE2ESummaryPath": null
+  }
+}

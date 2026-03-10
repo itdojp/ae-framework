@@ -28,7 +28,8 @@ pnpm run codex:quickstart
 > - See `docs/quality/adapter-thresholds.md` for the authoritative gate behavior.
 >
 > Optional feedback adapter:
-> - `pnpm run hook-feedback:build --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json --harness-health artifacts/ci/harness-health.json --change-package artifacts/change-package/change-package.json`
+> - `pnpm run hook-feedback:build --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json`
+> - Missing `harness-health` / `change-package` are surfaced as `blockingReasons`, `nextActions`, and `evidence.present=false` instead of failing the builder.
 > - See `docs/agents/hook-feedback.md` for the hook command example and JSON/Markdown outputs.
 
 ### 📋 Table of Contents

@@ -10,6 +10,9 @@ const schema = JSON.parse(
 const fixture = JSON.parse(
   readFileSync(resolve('fixtures/agents/sample.hook-feedback.json'), 'utf8'),
 ) as Record<string, unknown>;
+const partialFixture = JSON.parse(
+  readFileSync(resolve('fixtures/agents/sample.hook-feedback-partial.json'), 'utf8'),
+) as Record<string, unknown>;
 
 describe('hook-feedback contract', () => {
   it('validates the sample hook feedback fixture', () => {
@@ -18,6 +21,14 @@ describe('hook-feedback contract', () => {
     const validate = ajv.compile(schema);
 
     expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('validates the partial-input hook feedback fixture', () => {
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+
+    expect(validate(partialFixture), JSON.stringify(validate.errors)).toBe(true);
   });
 
   it('rejects blocked feedback without blocking reasons', () => {

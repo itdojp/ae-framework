@@ -100,10 +100,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "verifyLiteSummaryPath",
-        "harnessHealthPath",
-        "changePackagePath",
-        "contextPackSuggestionsPath"
+        "verifyLiteSummaryPath"
       ],
       "properties": {
         "verifyLiteSummaryPath": {
@@ -111,12 +108,26 @@
           "minLength": 1
         },
         "harnessHealthPath": {
-          "type": "string",
-          "minLength": 1
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "changePackagePath": {
-          "type": "string",
-          "minLength": 1
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "contextPackSuggestionsPath": {
           "oneOf": [
