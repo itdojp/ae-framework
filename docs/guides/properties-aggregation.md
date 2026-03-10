@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/ARTIFACTS-CONTRACT.md
+- docs/reference/CONTRACT-CATALOG.md
+lastVerified: '2026-03-10'
+---
 # Property Results Aggregation Patterns (#406)
 
 > 🌍 Language / 言語: English | 日本語

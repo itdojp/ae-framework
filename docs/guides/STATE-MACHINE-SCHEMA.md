@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- schema/state-machine.schema.json
+- docs/reference/CONTRACT-CATALOG.md
+lastVerified: '2026-03-10'
+---
 # State Machine Schema (JSON)
 
 ## Purpose

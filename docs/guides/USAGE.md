@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- README.md
+- docs/getting-started/QUICK-START-GUIDE.md
+lastVerified: '2026-03-10'
+---
 # AE Framework Usage Guide
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)

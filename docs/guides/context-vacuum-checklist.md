@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/spec/context-pack.md
+- docs/ci/ci-troubleshooting-guide.md
+lastVerified: '2026-03-10'
+---
 # Context Vacuum Checklist
 
 > 🌍 Language / 言語: English | 日本語
