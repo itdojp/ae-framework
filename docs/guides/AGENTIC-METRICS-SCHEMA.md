@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- schema/agentic-metrics.schema.json
+- docs/reference/CONTRACT-CATALOG.md
+lastVerified: '2026-03-10'
+---
 # Agentic Metrics Schema (JSON)
 
 ## Purpose

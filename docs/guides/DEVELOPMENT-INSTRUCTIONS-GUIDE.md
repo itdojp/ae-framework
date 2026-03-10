@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- AGENTS.md
+- docs/agents/README.md
+lastVerified: '2026-03-10'
+---
 # AE Framework Development Instructions Guide
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)

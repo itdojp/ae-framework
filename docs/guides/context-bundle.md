@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- schema/context-bundle.schema.json
+- docs/spec/context-pack.md
+lastVerified: '2026-03-10'
+---
 # Context Bundle Guide
 
 > 🌍 Language / 言語: English | 日本語

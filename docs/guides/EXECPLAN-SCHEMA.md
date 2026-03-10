@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- schema/execplan.schema.json
+- docs/reference/CONTRACT-CATALOG.md
+lastVerified: '2026-03-10'
+---
 # ExecPlan Schema (JSON)
 
 ## Purpose

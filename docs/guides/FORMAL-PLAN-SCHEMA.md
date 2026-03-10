@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- schema/formal-plan.schema.json
+- docs/reference/CONTRACT-CATALOG.md
+lastVerified: '2026-03-10'
+---
 # Formal Plan Schema (formal.yaml)
 
 This document defines the `formal.yaml` contract exchanged between the **Planning** and **Coding** stages of `ae formal:auto`.

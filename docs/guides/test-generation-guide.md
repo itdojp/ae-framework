@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/assurance-lanes.md
+- docs/reference/CLI-COMMANDS-REFERENCE.md
+lastVerified: '2026-03-10'
+---
 # Test Generation Agent User Guide
 
 > 🌍 Language / 言語: English | 日本語
