@@ -11,6 +11,8 @@ const tempRoots: string[] = [];
 function makeRoot() {
   const rootDir = mkdtempSync(path.join(tmpdir(), 'ae-doc-governance-'));
   mkdirSync(path.join(rootDir, 'docs', 'agents'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'getting-started'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'guides'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'operate'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'product'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'project'), { recursive: true });
@@ -151,6 +153,29 @@ describe('check-doc-governance', () => {
       '# Monitor',
       '',
     ].join('\n'));
+    writeMarkdown(rootDir, 'docs/getting-started/SETUP.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - README.md',
+      '  - docs/quality/assurance-operations-runbook.md',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Setup',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/quality/assurance-operations-runbook.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: quality-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Assurance Ops',
+      '',
+    ].join('\n'));
 
     const result = withCapturedOutput(() => main([
       'node',
@@ -162,7 +187,7 @@ describe('check-doc-governance', () => {
 
     expect(result.exitCode).toBe(0);
     const payload = JSON.parse(result.stdout);
-    expect(payload.docsScanned).toBe(8);
+    expect(payload.docsScanned).toBe(10);
     expect(payload.failures).toEqual([]);
     expect(payload.warnings).toHaveLength(1);
     expect(payload.warnings[0].markdownPath).toBe('README.md');
@@ -245,6 +270,40 @@ describe('check-doc-governance', () => {
       '# Release Engineering',
       '',
     ].join('\n'));
+    writeMarkdown(rootDir, 'docs/getting-started/QUICK-START-GUIDE.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - README.md',
+      '  - docs/guides/assurance-onboarding-checklist.md',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Quick Start',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/guides/assurance-onboarding-checklist.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/quality/assurance-operations-runbook.md',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Onboarding',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/quality/assurance-operations-runbook.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: quality-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Assurance Ops',
+      '',
+    ].join('\n'));
 
     const result = withCapturedOutput(() => main([
       'node',
@@ -258,7 +317,7 @@ describe('check-doc-governance', () => {
     const payload = JSON.parse(result.stdout);
     expect(payload.failures).toEqual([]);
     expect(payload.warnings).toHaveLength(0);
-    expect(payload.docsScanned).toBe(7);
+    expect(payload.docsScanned).toBe(9);
   });
 
   it('fails when a derived doc omits canonicalSource', () => {

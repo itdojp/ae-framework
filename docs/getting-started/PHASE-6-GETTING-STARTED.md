@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+  - docs/phases/phase-6-uiux.md
+lastVerified: '2026-03-10'
+---
+
 # 🎨 Phase 6: UI/UX & Frontend Delivery Quick Start
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -10,7 +17,7 @@
 
 ### ✅ Implemented / Reproducible Path
 
-```bash
+```text
 pnpm install
 pnpm run build
 pnpm run verify:lite
@@ -67,7 +74,7 @@ Claude Code: Generating UI components using Phase 6 UI Task Adapter...
 
 #### 2. CLI Execution
 
-```bash
+```text
 # Main command
 ae-framework ui-scaffold --components --tokens --a11y
 
@@ -128,7 +135,7 @@ ae-framework/
 ### 🚀 Development Workflow
 
 #### 1. Project Initialization
-```bash
+```text
 # Install dependencies
 pnpm install
 
@@ -182,7 +189,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 - **Maintainability Metrics**: Component complexity (<10), Unused CSS rate (<5%), Design token usage (≥95%)
 
 #### Telemetry Output Example
-```bash
+```text
 📊 OpenTelemetry initialized for ae-framework Phase 6
    Service: ae-framework v1.0.0
    Environment: development
@@ -205,7 +212,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 - **English (en)**: Fallback
 
 #### Translation File Examples
-```json
+```text
 // messages/ja.json
 {
   "Navigation": {
@@ -257,7 +264,7 @@ node scripts/check-a11y-threshold.js --critical=0 --warnings=5
 ### 📚 Storybook Integration
 
 #### Auto-generated Stories
-```typescript
+```text
 // stories/Product.stories.tsx
 import type { Meta, StoryObj } from '@storybook/react';
 import { ProductForm } from '../apps/web/components/ProductForm';
@@ -304,7 +311,7 @@ export const WithInitialData: Story = {
 ### 🧪 E2E Testing
 
 #### Auto-generated Tests
-```typescript
+```text
 // __e2e__/products.spec.ts
 import { test, expect } from '@playwright/test';
 
@@ -346,7 +353,7 @@ test.describe('Product Management', () => {
 - ✅ **Build Success**: Successful build of all packages
 
 #### Automated Quality Monitoring
-```bash
+```text
 # Run all quality gates
 pnpm run quality:gates
 
@@ -612,7 +619,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 - **保守性メトリクス**: コンポーネント複雑度(<10)、未使用CSS率(<5%)、デザイントークン使用率(≥95%)
 
 #### テレメトリ出力例
-```bash
+```text
 📊 OpenTelemetry initialized for ae-framework Phase 6
    Service: ae-framework v1.0.0
    Environment: development
@@ -635,7 +642,7 @@ DISABLE_TELEMETRY=true ae-framework ui-scaffold --components
 - **英語 (en)**: フォールバック
 
 #### 翻訳ファイル例
-```json
+```text
 // messages/ja.json
 {
   "Navigation": {
@@ -687,7 +694,7 @@ node scripts/check-a11y-threshold.js --critical=0 --warnings=5
 ### 📚 Storybook統合
 
 #### 自動生成されるストーリー
-```typescript
+```text
 // stories/Product.stories.tsx
 import type { Meta, StoryObj } from '@storybook/react';
 import { ProductForm } from '../apps/web/components/ProductForm';
@@ -734,7 +741,7 @@ export const WithInitialData: Story = {
 ### 🧪 E2Eテスト
 
 #### 自動生成されるテスト
-```typescript
+```text
 // __e2e__/products.spec.ts
 import { test, expect } from '@playwright/test';
 
