@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+  - README.md
+  - docs/agents/commands.md
+lastVerified: '2026-03-10'
+---
+
 # Claude Code で ae-framework を使った開発ワークフロー
 
 > 🌍 Language / 言語: 日本語 | English

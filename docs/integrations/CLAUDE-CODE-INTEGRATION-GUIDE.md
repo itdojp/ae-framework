@@ -1,3 +1,12 @@
+---
+docRole: derived
+canonicalSource:
+  - README.md
+  - docs/agents/commands.md
+  - docs/agents/hook-feedback.md
+lastVerified: '2026-03-10'
+---
+
 # Claude Code統合ガイド - AE Framework完全連携
 
 > 🌍 Language / 言語: 日本語 | English

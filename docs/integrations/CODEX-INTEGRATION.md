@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+  - README.md
+  - docs/agents/commands.md
+lastVerified: '2026-03-10'
+---
+
 # CodeX Integration Guide (PoC → MCP → Adapter)
 
 > 🌍 Language / 言語: English | 日本語
