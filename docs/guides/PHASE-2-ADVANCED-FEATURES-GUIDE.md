@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
+- README.md
+lastVerified: '2026-03-10'
+---
 # Phase 2 Advanced Features Guide
 
 > 🌍 Language / 言語: 日本語 | English

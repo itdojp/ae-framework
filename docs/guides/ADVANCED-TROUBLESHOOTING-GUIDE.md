@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci/ci-troubleshooting-guide.md
+- docs/ci/ci-operations-handbook.md
+lastVerified: '2026-03-10'
+---
 # Advanced Troubleshooting Guide
 
 > 🌍 Language / 言語: English | 日本語
@@ -583,7 +590,7 @@ ae-framework integration run --suites test-dependencies.json --respect-dependenc
 
 ### システム全体の停止
 
-```bash
+```text
 # すべてのae-frameworkプロセスを停止
 pkill -f "ae-framework"
 

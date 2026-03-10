@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+  - README.md
+  - docs/reference/DOC-GOVERNANCE.md
+lastVerified: '2026-03-10'
+---
+
 # AE Framework Integration Guide
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)

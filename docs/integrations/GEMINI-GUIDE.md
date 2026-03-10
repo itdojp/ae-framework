@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+  - README.md
+  - docs/reference/SPEC-VERIFICATION-KIT-MIN.md
+lastVerified: '2026-03-10'
+---
+
 # Gemini Code Assist Guide (draft)
 
 ## 目的

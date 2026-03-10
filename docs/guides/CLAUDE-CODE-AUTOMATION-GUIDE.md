@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci/pr-automation.md
+- docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md
+lastVerified: '2026-03-10'
+---
 # Claude Code自動実行ガイド
 
 > 🌍 Language / 言語: 日本語 | English
