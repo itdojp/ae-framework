@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci/pr-automation.md
+- docs/quality/ARTIFACTS-CONTRACT.md
+lastVerified: '2026-03-10'
+---
 # コード生成ドリフト検出 入門ガイド
 
 > 🌍 Language / 言語: 日本語 | English

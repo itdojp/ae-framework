@@ -318,7 +318,7 @@ describe('check-doc-governance', () => {
     const payload = JSON.parse(result.stdout);
     expect(payload.failures).toEqual([]);
     expect(payload.warnings).toHaveLength(0);
-    expect(payload.docsScanned).toBe(9);
+    expect(payload.docsScanned).toBe(10);
   });
 
   it('governs docs/integrations files', () => {
@@ -412,6 +412,111 @@ describe('check-doc-governance', () => {
     expect(payload.failures).toEqual([]);
     expect(payload.warnings).toHaveLength(0);
     expect(payload.docsScanned).toBe(7);
+  });
+
+  it('governs docs/guides files', () => {
+    const rootDir = makeRoot();
+
+    writeMarkdown(rootDir, 'README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Root',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'AGENTS.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/agents/agents-doc-boundary-matrix.md',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Agents',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Docs',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: agent-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Matrix',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: docs-governance',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Governance',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/guides/USAGE.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - README.md',
+      '  - docs/getting-started/QUICK-START-GUIDE.md',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Usage',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/getting-started/QUICK-START-GUIDE.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - README.md',
+      '  - docs/quality/assurance-operations-runbook.md',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Quick Start',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/quality/assurance-operations-runbook.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: quality-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Assurance Ops',
+      '',
+    ].join('\n'));
+
+    const result = withCapturedOutput(() => main([
+      'node',
+      'scripts/docs/check-doc-governance.mjs',
+      '--root',
+      rootDir,
+      '--format=json',
+    ]));
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.failures).toEqual([]);
+    expect(payload.warnings).toHaveLength(0);
+    expect(payload.docsScanned).toBe(8);
   });
 
   it('fails when a derived doc omits canonicalSource', () => {

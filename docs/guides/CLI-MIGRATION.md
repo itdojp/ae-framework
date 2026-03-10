@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/reference/CLI-COMMANDS-REFERENCE.md
+- README.md
+lastVerified: '2026-03-10'
+---
 # CLI Entry Migration Guide (Issue #1006)
 
 This guide documents the migration from legacy `pnpm run` scripts to the consolidated runner entry points and the `ae entry` command.

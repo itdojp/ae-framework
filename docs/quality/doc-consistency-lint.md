@@ -22,7 +22,7 @@ Together they validate that onboarding + CI operation docs stay aligned with the
 Checks:
 - `pnpm run <script>` references exist in `package.json`.
 - Local file/path references in markdown links and inline code resolve to real files/directories.
-- `docs/README.md` から辿れる `docs/ci/*` / `docs/quality/*` の主要ドキュメントに加え、`docs/getting-started/*` / `docs/integrations/*` / `docs/operate/*` / `docs/product/*` / `docs/project/*` の trust-tier front matter も既定スコープで検証する。
+- `docs/README.md` から辿れる `docs/ci/*` / `docs/quality/*` の主要ドキュメントに加え、`docs/getting-started/*` / `docs/guides/*` / `docs/integrations/*` / `docs/operate/*` / `docs/product/*` / `docs/project/*` の trust-tier front matter も既定スコープで検証する。
 - `docs/README.md` / `docs/ci-policy.md` include the canonical CI operation links.
 - CI reference sections in `docs/ci-policy.md` avoid duplicate entries.
 - `docs/agents/commands.md` stays synchronized with `.github/workflows/agent-commands.yml`.
