@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-10'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # ExecPlan 再設計（方針と仕分け）
 
 ## 目的
