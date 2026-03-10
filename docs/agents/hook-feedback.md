@@ -16,6 +16,7 @@ lastVerified: '2026-03-10'
 - Markdown: `artifacts/agents/hook-feedback.md`
 - Schema: `schema/hook-feedback.schema.json`
 - Builder: `node scripts/agents/build-hook-feedback.mjs`
+- PR Maintenance (`.github/workflows/pr-ci-status-comment.yml`) は、同一 head SHA の `verify-lite-report` artifact を取得できた場合に report-only で自動生成します
 
 ## Inputs
 
@@ -86,6 +87,7 @@ jq '{status, blockingReasons, nextActions, reproCommands}' artifacts/agents/hook
 
 - `reproCommands[]` は最低1件出力されます。入力 artifact に command が無い場合は `pnpm run verify:lite` を fallback とします。
 - `harness-health` / `change-package` が無い場合は `status=warn` となり、生成コマンドを `nextActions` / `reproCommands` に追加します。
+- `pr-ci-status-comment.yml` の `summarize` job は、最新 successful `verify-lite.yml` run の `verify-lite-report` を取得できた場合だけ `hook-feedback` を自動生成します。
 - `assurance-summary` がある場合は `warningClaims` / `missingLanes` / `missingEvidenceKinds` / `unlinkedCounterexamples` / `openCounterexamples` を `blockingReasons` と `nextActions` に反映します。
 - `ui-e2e-summary` がある場合は `status` と failed scenario id を `blockingReasons` と `nextActions` に反映します。
 - `status=blocked` / `warn` の場合は `blockingReasons[]` を必須とします。
