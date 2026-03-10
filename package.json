@@ -356,6 +356,7 @@
     "test:doctest:docs": "tsx scripts/doctest.ts 'docs/**/*.md'",
     "test:doctest:full": "tsx scripts/doctest.ts 'docs/**/*.md'",
     "test:doctest:readme": "tsx scripts/doctest.ts 'README.md'",
+    "test:doctest:pr-changed": "node scripts/ci/run-changed-doctest.mjs",
     "test:diff": "tsx scripts/diff-generate.ts",
     "test:randomize": "vitest run tests/utils/test-randomizer.spec.ts",
     "test:quality": "pnpm run test:golden && pnpm run test:metamorphic && pnpm run test:cli:fuzz && pnpm run test:contracts && pnpm run test:doctest && pnpm run test:randomize",

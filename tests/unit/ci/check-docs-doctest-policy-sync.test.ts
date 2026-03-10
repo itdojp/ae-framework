@@ -27,9 +27,9 @@ type WorkflowFixtureOptions = {
   includeFullSyncStep?: boolean;
   includeIndexDocConsistencyStep?: boolean;
   indexDocConsistencyCommand?: string;
-  includeChangedDocsStep?: boolean;
   includeChangedDocsRunStep?: boolean;
-  changedDocsStepId?: string;
+  changedDocsRunCommand?: string;
+  changedDocsRunIf?: string;
 };
 
 function createWorkflowYaml(options: WorkflowFixtureOptions = {}): string {
@@ -41,9 +41,9 @@ function createWorkflowYaml(options: WorkflowFixtureOptions = {}): string {
     includeFullSyncStep = true,
     includeIndexDocConsistencyStep = true,
     indexDocConsistencyCommand = 'node scripts/docs/check-doc-consistency-all.mjs',
-    includeChangedDocsStep = true,
     includeChangedDocsRunStep = true,
-    changedDocsStepId = 'changed-docs',
+    changedDocsRunCommand = 'node scripts/ci/run-changed-doctest.mjs --base-sha "${{ github.event.pull_request.base.sha }}" --fetch-missing',
+    changedDocsRunIf = "${{ github.event_name == 'pull_request' }}",
   } = options;
   const pathLines = paths.map((entry) => `      - '${entry}'`);
   const indexSteps: string[] = [];
@@ -59,20 +59,10 @@ function createWorkflowYaml(options: WorkflowFixtureOptions = {}): string {
     indexSteps.push('      - name: Check documentation consistency');
     indexSteps.push(`        run: ${indexDocConsistencyCommand}`);
   }
-  if (includeChangedDocsStep) {
-    indexSteps.push('      - name: Detect changed markdown files (PR only)');
-    indexSteps.push(`        id: ${changedDocsStepId}`);
-    indexSteps.push('        if: "${{ github.event_name == \'pull_request\' }}"');
-    indexSteps.push('        run: |');
-    indexSteps.push('          git fetch --no-tags --depth=1 origin "${BASE_SHA}"');
-    indexSteps.push("          git diff --name-only \"${BASE_SHA}\" HEAD -- '*.md' '**/*.md'");
-  }
   if (includeChangedDocsRunStep) {
     indexSteps.push('      - name: Run doctest (changed markdown in PR)');
-    indexSteps.push(
-      "        if: \"${{ github.event_name == 'pull_request' && steps.changed-docs.outputs.files != '' }}\""
-    );
-    indexSteps.push('        run: xargs -0 pnpm -s tsx scripts/doctest.ts');
+    indexSteps.push(`        if: "${changedDocsRunIf}"`);
+    indexSteps.push(`        run: ${changedDocsRunCommand}`);
   }
 
   fullSteps.push('      - name: Install dependencies');
@@ -118,10 +108,12 @@ function writeFixtureFiles(dir: string, packageRaw = '{"scripts":{}}', workflowR
     '',
     '差分 Markdown を pull_request で検証する。',
     'workflow_dispatch(full=true) で full 実行できる。',
+    '説明用 snippet は no-doctest または text fence を使う。',
     '',
     '## 失敗時の対応手順（runbook）',
     '',
     '`node scripts/ci/check-docs-doctest-policy-sync.mjs` を実行して同期状態を確認する。',
+    '`DOCTEST_ENFORCE=1 pnpm run test:doctest:pr-changed -- --base-ref origin/main` で changed-markdown を再現する。',
   ].join('\n');
 
   writeFileSync(workflowPath, workflowRaw);
@@ -136,6 +128,7 @@ function defaultPackageRaw() {
     scripts: {
       'test:doctest:index': "tsx scripts/doctest.ts '{README.md,docs/README.md}'",
       'test:doctest:full': "tsx scripts/doctest.ts 'docs/**/*.md'",
+      'test:doctest:pr-changed': 'node scripts/ci/run-changed-doctest.mjs',
     },
   });
 }
@@ -216,13 +209,29 @@ describe('check-docs-doctest-policy-sync', () => {
     });
   });
 
-  it('reports missing changed-docs step as validation errors', () => {
+  it('reports changed-docs run condition mismatch as validation errors', () => {
     withTempDir((dir) => {
       const paths = writeFixtureFiles(
         dir,
         defaultPackageRaw(),
         createWorkflowYaml({
-          includeChangedDocsStep: false,
+          changedDocsRunIf: "${{ github.event_name == 'pull_request' && false }}",
+        })
+      );
+
+      const result = runDocsDoctestPolicySyncCheck(paths);
+      expect(result.exitCode).toBe(1);
+      expect(result.errors.some((error) => error.includes('changed-docs doctest step condition mismatch'))).toBe(true);
+    });
+  });
+
+  it('reports changed-docs run command mismatch as validation errors', () => {
+    withTempDir((dir) => {
+      const paths = writeFixtureFiles(
+        dir,
+        defaultPackageRaw(),
+        createWorkflowYaml({
+          changedDocsRunCommand: 'pnpm -s tsx scripts/doctest.ts docs/**/*.md',
         })
       );
 
@@ -230,25 +239,9 @@ describe('check-docs-doctest-policy-sync', () => {
       expect(result.exitCode).toBe(1);
       expect(
         result.errors.some((error) =>
-          error.includes('doctest-index must include "Detect changed markdown files (PR only)" step')
+          error.includes('changed-docs doctest step must invoke reusable runner script')
         )
       ).toBe(true);
-    });
-  });
-
-  it('reports changed-docs id mismatch as validation errors', () => {
-    withTempDir((dir) => {
-      const paths = writeFixtureFiles(
-        dir,
-        defaultPackageRaw(),
-        createWorkflowYaml({
-          changedDocsStepId: 'changed-markdown',
-        })
-      );
-
-      const result = runDocsDoctestPolicySyncCheck(paths);
-      expect(result.exitCode).toBe(1);
-      expect(result.errors.some((error) => error.includes('changed-docs step id mismatch'))).toBe(true);
     });
   });
 

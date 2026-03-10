@@ -16,6 +16,7 @@ export const REQUIRED_WORKFLOW_PATHS = [
   'docs/**',
   'scripts/doctest.ts',
   'scripts/docs/*.mjs',
+  'scripts/ci/run-changed-doctest.mjs',
   'scripts/ci/check-docs-doctest-policy-sync.mjs',
   '.github/workflows/docs-doctest.yml',
   'package.json',
@@ -24,6 +25,7 @@ export const REQUIRED_WORKFLOW_PATHS = [
 
 const SYNC_CHECK_COMMAND = 'node scripts/ci/check-docs-doctest-policy-sync.mjs';
 const DOC_CONSISTENCY_COMMAND = 'node scripts/docs/check-doc-consistency-all.mjs';
+const CHANGED_DOCTEST_COMMAND = 'node scripts/ci/run-changed-doctest.mjs --base-sha "${{ github.event.pull_request.base.sha }}" --fetch-missing';
 
 export function readUtf8(filePath) {
   try {
@@ -192,43 +194,14 @@ export function validateWorkflowConfig(workflowConfig, errors) {
     errors.push('doctest-full sync step must run after Install dependencies');
   }
 
-  const { step: changedDocsStep, index: changedDocsPos } = findStepByName(
-    indexSteps,
-    'Detect changed markdown files (PR only)'
-  );
   const { step: indexDocConsistencyStep } = findStepByName(
     indexSteps,
     'Check documentation consistency'
   );
-  const { step: changedDocsRunStep, index: changedDocsRunPos } = findStepByName(
+  const { step: changedDocsRunStep } = findStepByName(
     indexSteps,
     'Run doctest (changed markdown in PR)'
   );
-
-  if (!changedDocsStep) {
-    errors.push('doctest-index must include "Detect changed markdown files (PR only)" step');
-  } else {
-    ensureEqual(changedDocsStep.id, 'changed-docs', 'changed-docs step id mismatch', errors);
-    ensureEqual(
-      normalizeExpression(changedDocsStep.if),
-      "${{ github.event_name == 'pull_request' }}",
-      'changed-docs step condition mismatch',
-      errors
-    );
-    ensureContains(
-      changedDocsStep.run,
-      'git fetch --no-tags --depth=1 origin "${BASE_SHA}"',
-      'changed-docs step must fetch base SHA in shallow checkout',
-      errors
-    );
-    ensureContains(
-      changedDocsStep.run,
-      "-- '*.md' '**/*.md'",
-      'changed-docs step must include root and nested markdown pathspec',
-      errors
-    );
-    ensureContains(changedDocsStep.run, 'git diff --name-only', 'changed-docs step must run git diff', errors);
-  }
   if (!indexDocConsistencyStep) {
     errors.push('doctest-index must include "Check documentation consistency" step');
   } else {
@@ -245,20 +218,16 @@ export function validateWorkflowConfig(workflowConfig, errors) {
   } else {
     ensureEqual(
       normalizeExpression(changedDocsRunStep.if),
-      "${{ github.event_name == 'pull_request' && steps.changed-docs.outputs.files != '' }}",
+      "${{ github.event_name == 'pull_request' }}",
       'changed-docs doctest step condition mismatch',
       errors
     );
     ensureContains(
       changedDocsRunStep.run,
-      'xargs -0 pnpm -s tsx scripts/doctest.ts',
-      'changed-docs doctest step must invoke scripts/doctest.ts',
+      CHANGED_DOCTEST_COMMAND,
+      'changed-docs doctest step must invoke reusable runner script',
       errors
     );
-  }
-
-  if (changedDocsPos >= 0 && changedDocsRunPos >= 0 && changedDocsPos > changedDocsRunPos) {
-    errors.push('"Detect changed markdown files (PR only)" must run before changed markdown doctest step');
   }
 }
 
@@ -281,6 +250,18 @@ export function validatePackageScripts(scripts, errors) {
     ensureContains(fullScript, 'scripts/doctest.ts', 'test:doctest:full must invoke scripts/doctest.ts', errors);
     ensureContains(fullScript, 'docs/**/*.md', 'test:doctest:full must target docs/**/*.md', errors);
   }
+
+  const changedScript = scripts['test:doctest:pr-changed'];
+  if (typeof changedScript !== 'string') {
+    errors.push('package.json scripts.test:doctest:pr-changed is missing');
+  } else {
+    ensureContains(
+      changedScript,
+      'node scripts/ci/run-changed-doctest.mjs',
+      'test:doctest:pr-changed must invoke changed-doctest runner',
+      errors
+    );
+  }
 }
 
 export function validatePolicyDoc(policy, errors) {
@@ -296,6 +277,18 @@ export function validatePolicyDoc(policy, errors) {
     policy,
     'check-docs-doctest-policy-sync.mjs',
     'docs-doctest policy must include sync checker local command',
+    errors
+  );
+  ensureContains(
+    policy,
+    'test:doctest:pr-changed',
+    'docs-doctest policy must include changed-markdown local command',
+    errors
+  );
+  ensureContains(
+    policy,
+    'no-doctest',
+    'docs-doctest policy must describe no-doctest modifier usage',
     errors
   );
 }
