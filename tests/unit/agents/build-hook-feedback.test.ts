@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { buildHookFeedbackArtifact } from '../../../scripts/agents/build-hook-feedback.mjs';
 
 const scriptPath = resolve(process.cwd(), 'scripts/agents/build-hook-feedback.mjs');
 const schemaPath = resolve(process.cwd(), 'schema/hook-feedback.schema.json');
@@ -433,5 +434,49 @@ describe('build-hook-feedback CLI', () => {
     const markdown = await readFile(outputMdPath, 'utf8');
     expect(markdown).toContain('harness-health: `n/a`');
     expect(markdown).toContain('change-package: `n/a`');
+  });
+
+  it('keeps missing core evidence entries when buildHookFeedbackArtifact uses default evidenceSource', () => {
+    const artifact = buildHookFeedbackArtifact({
+      verifyLiteSummary: {
+        schemaVersion: '1.0.0',
+        steps: {
+          lint: { status: 'success' },
+          build: { status: 'success' },
+        },
+      },
+      harnessHealth: null,
+      changePackage: null,
+      contextPackSuggestions: null,
+      assuranceSummary: null,
+      uiE2ESummary: null,
+      source: {
+        verifyLiteSummaryPath: 'artifacts/verify-lite/verify-lite-run-summary.json',
+        harnessHealthPath: null,
+        changePackagePath: null,
+        contextPackSuggestionsPath: null,
+        assuranceSummaryPath: null,
+        uiE2ESummaryPath: null,
+      },
+      now: '2026-03-10T12:00:00.000Z',
+    });
+
+    expect(validate(artifact), JSON.stringify(validate.errors)).toBe(true);
+    expect(artifact.evidence).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'harnessHealth',
+          path: 'artifacts/ci/harness-health.json',
+          present: false,
+          status: 'missing',
+        }),
+        expect.objectContaining({
+          id: 'changePackage',
+          path: 'artifacts/change-package/change-package.json',
+          present: false,
+          status: 'missing',
+        }),
+      ]),
+    );
   });
 });

@@ -472,6 +472,23 @@ function buildEvidence({
   return items;
 }
 
+function normalizeEvidenceSource(source = {}, evidenceSource = source) {
+  return {
+    verifyLiteSummaryPath: evidenceSource.verifyLiteSummaryPath ?? source.verifyLiteSummaryPath ?? DEFAULT_VERIFY_LITE_SUMMARY_PATH,
+    harnessHealthPath: evidenceSource.harnessHealthPath ?? source.harnessHealthPath ?? DEFAULT_HARNESS_HEALTH_PATH,
+    changePackagePath: evidenceSource.changePackagePath ?? source.changePackagePath ?? DEFAULT_CHANGE_PACKAGE_PATH,
+    contextPackSuggestionsPath:
+      evidenceSource.contextPackSuggestionsPath
+      ?? source.contextPackSuggestionsPath
+      ?? DEFAULT_CONTEXT_PACK_SUGGESTIONS_PATH,
+    assuranceSummaryPath:
+      evidenceSource.assuranceSummaryPath
+      ?? source.assuranceSummaryPath
+      ?? DEFAULT_ASSURANCE_SUMMARY_PATH,
+    uiE2ESummaryPath: evidenceSource.uiE2ESummaryPath ?? source.uiE2ESummaryPath ?? DEFAULT_UI_E2E_SUMMARY_PATH,
+  };
+}
+
 export function buildHookFeedbackArtifact({
   verifyLiteSummary,
   harnessHealth,
@@ -483,6 +500,7 @@ export function buildHookFeedbackArtifact({
   evidenceSource = source,
   now = new Date().toISOString(),
 }) {
+  const normalizedEvidenceSource = normalizeEvidenceSource(source, evidenceSource);
   const status = deriveStatus({
     verifyLiteSummary,
     harnessHealth,
@@ -520,12 +538,12 @@ export function buildHookFeedbackArtifact({
       uiE2ESummary,
     }),
     evidence: buildEvidence({
-      verifyLiteSummaryPath: evidenceSource.verifyLiteSummaryPath,
-      harnessHealthPath: evidenceSource.harnessHealthPath,
-      changePackagePath: evidenceSource.changePackagePath,
-      contextPackSuggestionsPath: evidenceSource.contextPackSuggestionsPath,
-      assuranceSummaryPath: evidenceSource.assuranceSummaryPath,
-      uiE2ESummaryPath: evidenceSource.uiE2ESummaryPath,
+      verifyLiteSummaryPath: normalizedEvidenceSource.verifyLiteSummaryPath,
+      harnessHealthPath: normalizedEvidenceSource.harnessHealthPath,
+      changePackagePath: normalizedEvidenceSource.changePackagePath,
+      contextPackSuggestionsPath: normalizedEvidenceSource.contextPackSuggestionsPath,
+      assuranceSummaryPath: normalizedEvidenceSource.assuranceSummaryPath,
+      uiE2ESummaryPath: normalizedEvidenceSource.uiE2ESummaryPath,
       verifyLiteSummary,
       changePackage,
       harnessHealth,
