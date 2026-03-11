@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: development-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # AE-Spec Validation System
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -41,7 +48,7 @@ Automatically runs on:
 
 Defines validation rules and thresholds:
 
-```json
+```text
 {
   "quality_gates": {
     "max_errors": 0,
@@ -236,7 +243,7 @@ node dist/cli.js validate -i ../../.ae/spec-validation.config.json
 ### VS Code
 
 Add to `.vscode/tasks.json`:
-```json
+```text
 {
   "label": "Validate Current Spec",
   "type": "shell",
@@ -335,7 +342,7 @@ AE-Framework には、開発ライフサイクル全体を通してAE-Specファ
 
 品質閾値は`.ae/spec-validation.config.json`で設定：
 
-```json
+```text
 {
   "thresholds": {
     "errors": 0,           // エラー許容数（0推奨）
@@ -402,7 +409,7 @@ jobs:
 
 ## スクリプト
 
-```json
+```text
 {
   "scripts": {
     "validate:specs": "./scripts/validate-specs.sh",
@@ -437,7 +444,7 @@ echo "✅ AE-Spec検証が完了しました。"
 
 ### 基本設定
 
-```json
+```text
 {
   "validation": {
     "enabled": true,
@@ -461,7 +468,7 @@ echo "✅ AE-Spec検証が完了しました。"
 
 ### 高度な設定
 
-```json
+```text
 {
   "validation": {
     "customRules": [
@@ -489,7 +496,7 @@ echo "✅ AE-Spec検証が完了しました。"
 
 `.vscode/tasks.json` に追加：
 
-```json
+```text
 {
   "label": "現在の仕様を検証",
   "type": "shell",

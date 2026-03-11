@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: development-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Circuit Breaker Pattern Implementation
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -29,7 +36,7 @@ The Circuit Breaker pattern acts as a protective wrapper around potentially unre
 
 ## Architecture
 
-```typescript
+```text
 ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
 │  Application Code   │───▶│   Circuit Breaker   │───▶│  Protected Service  │
 ├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
@@ -54,7 +61,7 @@ The Circuit Breaker pattern acts as a protective wrapper around potentially unre
 
 ### Creating a Circuit Breaker
 
-```typescript
+```text
 import { CircuitBreaker } from '../utils/circuit-breaker.js';
 
 const breaker = new CircuitBreaker('api-service', {
@@ -68,7 +75,7 @@ const breaker = new CircuitBreaker('api-service', {
 
 ### Executing Operations
 
-```typescript
+```text
 // Async operation
 const result = await breaker.execute(async () => {
   const response = await fetch('https://api.example.com/data');
@@ -83,7 +90,7 @@ const result = breaker.executeSync(() => {
 
 ### With Fallback
 
-```typescript
+```text
 const breaker = new CircuitBreaker('api-service', {
   failureThreshold: 3,
   fallback: () => ({
@@ -100,7 +107,7 @@ const breaker = new CircuitBreaker('api-service', {
 
 The framework provides pre-configured circuit breakers for common scenarios:
 
-```typescript
+```text
 import { aeFrameworkCircuitBreakers } from '../integration/circuit-breaker-integration.js';
 
 // Agent communication
@@ -121,7 +128,7 @@ const resourceBreaker = aeFrameworkCircuitBreakers.getResourceCircuitBreaker('fi
 
 ### High-level Execution Methods
 
-```typescript
+```text
 // Execute agent operation with protection
 const agentResult = await aeFrameworkCircuitBreakers.executeAgentOperation(
   'intent-agent',
@@ -153,7 +160,7 @@ const transitionResult = await aeFrameworkCircuitBreakers.executePhaseTransition
 
 ### Decorator Pattern
 
-```typescript
+```text
 import { WithCircuitBreaker } from '../integration/circuit-breaker-integration.js';
 
 class ApiService {
@@ -227,7 +234,7 @@ pnpm run circuit-breaker:reset -- -n "my-service"
 
 ## Configuration Options
 
-```typescript
+```text
 interface CircuitBreakerOptions {
   /** Failure threshold to open circuit (default: 5) */
   failureThreshold: number;
@@ -254,7 +261,7 @@ interface CircuitBreakerOptions {
 
 ### Framework-specific Defaults
 
-```typescript
+```text
 // Agent communication
 {
   failureThreshold: 5,
@@ -300,7 +307,7 @@ interface CircuitBreakerOptions {
 
 ### Statistics
 
-```typescript
+```text
 interface CircuitBreakerStats {
   state: CircuitState;
   failureCount: number;
@@ -321,7 +328,7 @@ console.log('Circuit Breaker Statistics:', stats);
 
 ### Health Reporting
 
-```typescript
+```text
 const healthReport = breaker.generateHealthReport();
 console.log('Health Report:', {
   name: healthReport.name,
@@ -334,7 +341,7 @@ console.log('Health Report:', {
 
 ### Framework Health Status
 
-```typescript
+```text
 const frameworkHealth = aeFrameworkCircuitBreakers.getFrameworkHealthStatus();
 console.log('Framework Health:', {
   overall: frameworkHealth.overall, // 'healthy' | 'degraded' | 'critical'
@@ -347,7 +354,7 @@ console.log('Framework Health:', {
 
 ### Circuit Breaker Events
 
-```typescript
+```text
 breaker.on('circuitOpened', (event) => {
   console.log(`Circuit opened: ${event.name} after ${event.failureCount} failures`);
 });
@@ -375,7 +382,7 @@ breaker.on('callRejected', (event) => {
 
 ### Framework Integration Events
 
-```typescript
+```text
 aeFrameworkCircuitBreakers.on('agentOperationFailed', (event) => {
   console.log(`Agent operation failed: ${event.agentName}`, event.error);
 });
@@ -397,7 +404,7 @@ aeFrameworkCircuitBreakers.on('circuitBreakerOpened', (event) => {
 
 ### Retry with Circuit Breaker
 
-```typescript
+```text
 import { CircuitBreakerUtils } from '../integration/circuit-breaker-integration.js';
 
 const result = await CircuitBreakerUtils.executeWithRetryAndCircuitBreaker(
@@ -415,7 +422,7 @@ const result = await CircuitBreakerUtils.executeWithRetryAndCircuitBreaker(
 
 ### Timeout with Circuit Breaker
 
-```typescript
+```text
 const result = await CircuitBreakerUtils.executeWithTimeoutAndCircuitBreaker(
   async () => {
     return await slowOperation();
@@ -427,7 +434,7 @@ const result = await CircuitBreakerUtils.executeWithTimeoutAndCircuitBreaker(
 
 ### Bulk Operations
 
-```typescript
+```text
 const results = await CircuitBreakerUtils.executeBulkWithCircuitBreaker(
   items,
   async (item) => {
@@ -445,7 +452,7 @@ const results = await CircuitBreakerUtils.executeBulkWithCircuitBreaker(
 
 ### Framework-specific Errors
 
-```typescript
+```text
 import {
   AgentCommunicationError,
   StateManagementError,
@@ -464,7 +471,7 @@ throw new ResourceExhaustionError('Insufficient memory for large specification p
 
 ### Error Filtering
 
-```typescript
+```text
 const breaker = new CircuitBreaker('selective-breaker', {
   failureThreshold: 3,
   expectedErrors: [ExternalServiceError, ResourceExhaustionError],
@@ -477,7 +484,7 @@ const breaker = new CircuitBreaker('selective-breaker', {
 
 ### 1. Choose Appropriate Thresholds
 
-```typescript
+```text
 // For critical services - fail fast
 const criticalBreaker = new CircuitBreaker('critical-service', {
   failureThreshold: 2,
@@ -493,7 +500,7 @@ const optionalBreaker = new CircuitBreaker('optional-service', {
 
 ### 2. Implement Meaningful Fallbacks
 
-```typescript
+```text
 const userServiceBreaker = new CircuitBreaker('user-service', {
   fallback: (userId) => ({
     id: userId,
@@ -515,7 +522,7 @@ const recommendationBreaker = new CircuitBreaker('recommendation-service', {
 
 ### 3. Monitor and Alert
 
-```typescript
+```text
 // Set up monitoring for critical circuit breakers
 circuitBreakerManager.on('circuitOpened', (event) => {
   if (event.name.includes('critical')) {
@@ -541,7 +548,7 @@ app.get('/health/circuit-breakers', (req, res) => {
 
 ### 4. Testing Circuit Breakers
 
-```typescript
+```text
 // Unit tests
 describe('Circuit Breaker Integration', () => {
   it('should protect agent operations', async () => {
@@ -574,7 +581,7 @@ describe('End-to-End Circuit Breaker', () => {
 
 ### 5. Gradual Rollout
 
-```typescript
+```text
 // Feature flag integration
 const shouldUseCircuitBreaker = featureFlags.isEnabled('circuit-breaker-rollout');
 
@@ -613,7 +620,7 @@ const executeWithOptionalProtection = async (operation) => {
 
 ### Debugging
 
-```typescript
+```text
 // Enable debug logging
 breaker.on('operationSuccess', (event) => {
   console.debug(`✅ ${event.name}: ${event.duration}ms`);
@@ -657,7 +664,7 @@ console.log('Health report:', breaker.generateHealthReport());
 
 ### State Management
 
-```typescript
+```text
 // Protect state operations with circuit breakers
 const enhancedStateManager = {
   async saveSSOT(key, data) {
@@ -671,7 +678,7 @@ const enhancedStateManager = {
 
 ### Agent Communication
 
-```typescript
+```text
 // Protect agent interactions
 const protectedAgent = {
   async processIntent(input) {
@@ -685,7 +692,7 @@ const protectedAgent = {
 
 ### External APIs
 
-```typescript
+```text
 // Protect external service calls
 const githubApi = {
   async getRepository(owner, repo) {
@@ -728,7 +735,7 @@ This Circuit Breaker implementation provides comprehensive fault tolerance for t
 
 ### 中核コンポーネント
 
-```typescript
+```text
 interface CircuitBreakerConfig {
   failureThreshold: number;          // 障害閾値
   successThreshold: number;          // 成功閾値
@@ -746,7 +753,7 @@ enum CircuitState {
 
 ### AE-Framework統合
 
-```typescript
+```text
 // フレームワーク固有のサーキットブレーカー設定
 const aeFrameworkCircuitBreakers = {
   intentAgent: new CircuitBreaker('intent-agent', {
@@ -769,7 +776,7 @@ const aeFrameworkCircuitBreakers = {
 
 ### 基本的な保護
 
-```typescript
+```text
 // エージェント操作の保護
 async function executeProtectedAgentOperation(agentName: string, operation: () => Promise<any>) {
   const breaker = aeFrameworkCircuitBreakers.getAgentCircuitBreaker(agentName);
@@ -788,7 +795,7 @@ async function executeProtectedAgentOperation(agentName: string, operation: () =
 
 ### 状態管理の保護
 
-```typescript
+```text
 // 状態操作を保護
 const protectedStateManager = {
   async saveSSOT(key: string, data: any) {
@@ -812,7 +819,7 @@ const protectedStateManager = {
 
 ### ヘルス監視
 
-```typescript
+```text
 // フレームワークヘルス状態
 interface FrameworkHealthStatus {
   overall: 'healthy' | 'degraded' | 'critical';
@@ -834,7 +841,7 @@ app.get('/health/circuit-breakers', (req, res) => {
 
 ### イベント監視
 
-```typescript
+```text
 // サーキットブレーカーイベントの監視
 circuitBreakerManager.on('circuitOpened', (event) => {
   logger.warn('サーキットブレーカーが開きました', {
@@ -872,7 +879,7 @@ circuitBreakerManager.on('circuitClosed', (event) => {
 
 ### フォールバック戦略
 
-```typescript
+```text
 // 段階的フォールバック
 const userServiceBreaker = new CircuitBreaker('user-service', {
   fallback: async () => {
@@ -914,7 +921,7 @@ const userServiceBreaker = new CircuitBreaker('user-service', {
 
 ### デバッグ
 
-```typescript
+```text
 // デバッグログを有効化
 breaker.on('operationSuccess', (event) => {
   console.debug(`✅ ${event.name}: ${event.duration}ms`);

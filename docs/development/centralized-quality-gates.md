@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: development-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Centralized Quality Gates System
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -53,7 +60,7 @@ The centralized policy (`policy/quality.json`) defines:
 
 Each quality gate is defined with:
 
-```json
+```text
 {
   "gateName": {
     "description": "Human-readable description",
@@ -135,7 +142,7 @@ node scripts/run-quality-gates.cjs --help
 
 ### TypeScript Integration
 
-```typescript
+```text
 import { 
   loadQualityPolicy, 
   getQualityGate, 
@@ -184,7 +191,7 @@ jobs:
 
 The policy loader applies environment-specific overrides using a dot-notation path system:
 
-```json
+```text
 {
   "environments": {
     "development": {
@@ -235,7 +242,7 @@ The system includes robust error handling:
 ### Adding New Quality Gates
 
 1. **Update Policy Configuration**:
-```json
+```text
 {
   "quality": {
     "myCustomGate": {
@@ -252,7 +259,7 @@ The system includes robust error handling:
 ```
 
 2. **Implement Gate Runner**:
-```javascript
+```text
 // In scripts/run-quality-gates.cjs
 case 'myCustomGate':
   command = 'pnpm run <your-custom-check>'; // user-defined example
@@ -260,7 +267,7 @@ case 'myCustomGate':
 ```
 
 3. **Add Script**:
-```json
+```text
 {
   "scripts": {
     "quality:custom": "node scripts/run-quality-gates.cjs --gates=myCustomGate"
@@ -272,7 +279,7 @@ case 'myCustomGate':
 
 Simply update the `policy/quality.json` file:
 
-```json
+```text
 {
   "quality": {
     "coverage": {
@@ -291,7 +298,7 @@ All tools and workflows will automatically use the new thresholds.
 
 Add or modify environment overrides:
 
-```json
+```text
 {
   "environments": {
     "staging": {
@@ -465,7 +472,7 @@ scripts/
 
 各品質ゲートは以下で定義されます：
 
-```json
+```text
 {
   "gateName": {
     "description": "人間可読な説明",
@@ -547,7 +554,7 @@ node scripts/run-quality-gates.cjs --help
 
 #### TypeScript統合
 
-```typescript
+```text
 import { 
   loadQualityPolicy, 
   getQualityGate, 
@@ -596,7 +603,7 @@ jobs:
 
 ポリシーローダーはドット記法パスシステムを使用して環境固有のオーバーライドを適用します：
 
-```json
+```text
 {
   "environments": {
     "development": {
@@ -647,7 +654,7 @@ jobs:
 #### 新しい品質ゲートの追加
 
 1. **ポリシー設定の更新**:
-```json
+```text
 {
   "quality": {
     "myCustomGate": {
@@ -664,7 +671,7 @@ jobs:
 ```
 
 2. **ゲートランナーの実装**:
-```javascript
+```text
 // scripts/run-quality-gates.cjs内で
 case 'myCustomGate':
   command = 'pnpm run <your-custom-check>'; // user-defined example
@@ -672,7 +679,7 @@ case 'myCustomGate':
 ```
 
 3. **NPMスクリプトの追加**:
-```json
+```text
 {
   "scripts": {
     "quality:custom": "node scripts/run-quality-gates.cjs --gates=myCustomGate"
@@ -684,7 +691,7 @@ case 'myCustomGate':
 
 単純に`policy/quality.json`ファイルを更新：
 
-```json
+```text
 {
   "quality": {
     "coverage": {
@@ -703,7 +710,7 @@ case 'myCustomGate':
 
 環境オーバーライドを追加または変更：
 
-```json
+```text
 {
   "environments": {
     "staging": {

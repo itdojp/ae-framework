@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: development-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Enhanced State Manager
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -25,7 +32,7 @@ The Enhanced State Manager builds upon the basic PhaseStateManager to provide:
 
 ### Core Components
 
-```typescript
+```text
 ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
 │  EnhancedStateCLI   │───▶│ EnhancedStateManager │───▶│   Storage Layer     │
 ├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
@@ -59,7 +66,7 @@ Examples:
 - `validation_rules_2025-01-20T10:30:45.456Z`
 
 #### Data Structure
-```typescript
+```text
 interface StateEntry<T> {
   id: string;                    // Unique identifier
   logicalKey: string;           // Business identifier
@@ -87,7 +94,7 @@ interface StateEntry<T> {
 The Enhanced State Manager specializes in managing AE-IR (AI-Enhanced Intermediate Representation) data as the single source of truth.
 
 #### Save SSOT Data
-```typescript
+```text
 const key = await stateManager.saveSSOT('user_specification', aeir, {
   phase: 'phase-5',
   tags: { environment: 'production', version: '2.1.0' },
@@ -97,7 +104,7 @@ const key = await stateManager.saveSSOT('user_specification', aeir, {
 ```
 
 #### Load SSOT Data
-```typescript
+```text
 // Load latest version
 const latestSpec = await stateManager.loadSSOT('user_specification');
 
@@ -106,7 +113,7 @@ const version2 = await stateManager.loadSSOT('user_specification', 2);
 ```
 
 #### Version Management
-```typescript
+```text
 // Get all versions
 const versions = await stateManager.getVersions('user_specification');
 console.log(versions);
@@ -121,7 +128,7 @@ console.log(versions);
 
 Atomic operations ensure data consistency during complex workflows.
 
-```typescript
+```text
 // Begin transaction
 const txId = await stateManager.beginTransaction();
 
@@ -146,7 +153,7 @@ try {
 
 Create compressed snapshots for backup, recovery, or phase transitions.
 
-```typescript
+```text
 // Create snapshot of entire phase
 const snapshotId = await stateManager.createSnapshot('phase-5');
 
@@ -162,7 +169,7 @@ console.log(`Snapshot contains ${Object.keys(snapshot).length} entries`);
 
 The system provides specialized handling for failure artifacts that trigger CEGIS workflows.
 
-```typescript
+```text
 // Define failure artifact
 const failureArtifact: FailureArtifact = {
   id: `validation_failure_${Date.now()}`,
@@ -184,7 +191,7 @@ await stateManager.persistFailureArtifact(failureArtifact);
 ```
 
 #### Event Handling for CEGIS
-```typescript
+```text
 // Listen for CEGIS triggers
 stateManager.on('failureArtifactPersisted', (event) => {
   if (event.cegis_trigger) {
@@ -211,7 +218,7 @@ stateManager.on('failure_compilation', (artifact) => {
 
 Large data is automatically compressed based on configurable thresholds.
 
-```typescript
+```text
 const stateManager = new EnhancedStateManager(projectRoot, {
   enableCompression: true,
   compressionThreshold: 1024, // 1KB threshold
@@ -223,7 +230,7 @@ const stateManager = new EnhancedStateManager(projectRoot, {
 
 Automatic cleanup of expired entries based on TTL (Time To Live).
 
-```typescript
+```text
 const stateManager = new EnhancedStateManager(projectRoot, {
   defaultTTL: 604800,    // 7 days default TTL
   gcInterval: 3600,      // Run GC every hour
@@ -289,7 +296,7 @@ ae-framework enhanced-state import -i "state-backup.json"
 
 ## Configuration Options
 
-```typescript
+```text
 interface StorageOptions {
   databasePath?: string;          // Default: '.ae/enhanced-state.db'
   enableCompression?: boolean;    // Default: true
@@ -314,7 +321,7 @@ const stateManager = new EnhancedStateManager(projectRoot, {
 
 ### Phase-Aware Storage
 
-```typescript
+```text
 // Phase 1: Intent
 await stateManager.saveSSOT('intent_analysis', intentData, {
   phase: 'phase-1',
@@ -336,7 +343,7 @@ await stateManager.saveSSOT('domain_model', domainModel, {
 
 ### Failure Handling Across Phases
 
-```typescript
+```text
 // Phase-specific failure handling
 const phases = ['phase-1', 'phase-2', 'phase-3', 'phase-4', 'phase-5', 'phase-6'];
 
@@ -364,7 +371,7 @@ phases.forEach(phase => {
 
 ### Core Events
 
-```typescript
+```text
 // Lifecycle events
 stateManager.on('stateManagerInitialized', () => {
   console.log('Enhanced State Manager ready');
@@ -413,7 +420,7 @@ stateManager.on('versionsCleanedUp', (event) => {
 
 ### CEGIS-Specific Events
 
-```typescript
+```text
 // Main CEGIS trigger
 stateManager.on('failureArtifactPersisted', (event) => {
   if (event.cegis_trigger) {
@@ -434,7 +441,7 @@ stateManager.on('failure_generation', handleGenerationFailure);
 
 ### 1. Logical Key Naming
 
-```typescript
+```text
 // Good: Use hierarchical naming
 'domain.user.specification'
 'api.authentication.definition'
@@ -446,7 +453,7 @@ stateManager.on('failure_generation', handleGenerationFailure);
 
 ### 2. Phase Management
 
-```typescript
+```text
 // Always specify phase for better organization
 await stateManager.saveSSOT('specification', data, {
   phase: getCurrentPhase(),
@@ -457,7 +464,7 @@ await stateManager.saveSSOT('specification', data, {
 
 ### 3. Transaction Usage
 
-```typescript
+```text
 // Use transactions for related operations
 const txId = await stateManager.beginTransaction();
 try {
@@ -475,7 +482,7 @@ try {
 
 ### 4. Failure Artifact Design
 
-```typescript
+```text
 // Provide rich context for CEGIS
 const failureArtifact: FailureArtifact = {
   id: `${type}_${phase}_${timestamp}`,
@@ -503,7 +510,7 @@ const failureArtifact: FailureArtifact = {
 
 ### 5. Resource Management
 
-```typescript
+```text
 // Always shutdown properly
 process.on('SIGINT', async () => {
   console.log('Shutting down Enhanced State Manager...');
@@ -540,7 +547,7 @@ process.on('SIGTERM', async () => {
 
 ### Statistics Monitoring
 
-```typescript
+```text
 const stats = stateManager.getStatistics();
 console.log('Enhanced State Manager Statistics:', {
   totalEntries: stats.totalEntries,
@@ -554,7 +561,7 @@ console.log('Enhanced State Manager Statistics:', {
 
 ### Health Checks
 
-```typescript
+```text
 // Periodic health check
 setInterval(async () => {
   const stats = stateManager.getStatistics();
@@ -587,7 +594,7 @@ ae-framework enhanced-state export -o "$BACKUP_DIR/state_$TIMESTAMP.json"
 
 ### State Migration
 
-```typescript
+```text
 // Migrate between environments
 async function migrateState(fromEnv: string, toEnv: string) {
   const sourceManager = new EnhancedStateManager(`/data/${fromEnv}`);
@@ -631,7 +638,7 @@ This Enhanced State Manager provides a robust foundation for managing complex st
 
 ### 中核コンポーネント
 
-```typescript
+```text
 ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
 │  EnhancedStateCLI   │───▶│ EnhancedStateManager │───▶│   ストレージ層       │
 ├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
@@ -645,7 +652,7 @@ This Enhanced State Manager provides a robust foundation for managing complex st
 
 ### 主要インターフェース
 
-```typescript
+```text
 interface EnhancedStateManager {
   // SSOT 管理
   saveSSOT(logicalKey: string, value: any): Promise<string>;
@@ -673,7 +680,7 @@ interface EnhancedStateManager {
 
 ### SSOT（Single Source of Truth）管理
 
-```typescript
+```text
 // AE-IR仕様をSSOTとして保存
 const version = await stateManager.saveSSOT('user-management', {
   entities: ['User', 'Profile', 'Settings'],
@@ -695,7 +702,7 @@ const specificVersion = await stateManager.loadSSOT('user-management', version);
 
 ### トランザクションサポート
 
-```typescript
+```text
 // アトミック操作の例
 const txId = stateManager.beginTransaction();
 
@@ -718,7 +725,7 @@ try {
 
 ### EventBus統合（CEGIS）
 
-```typescript
+```text
 // CEGISイベントリスナーの設定
 stateManager.on('ssot:saved', (event) => {
   console.log('SSOT保存:', event.logicalKey, event.version);
@@ -806,7 +813,7 @@ ae-framework enhanced-state monitor-events
 
 ### パフォーマンス最適化
 
-```typescript
+```text
 // 設定可能なパフォーマンスオプション
 const stateManager = new EnhancedStateManager('./data', {
   compressionThreshold: 1024 * 10,     // 10KB以上で圧縮
@@ -820,7 +827,7 @@ const stateManager = new EnhancedStateManager('./data', {
 
 ### エラーハンドリング
 
-```typescript
+```text
 // 包括的なエラーハンドリング
 try {
   const result = await stateManager.loadSSOT('non-existent-key');
@@ -842,7 +849,7 @@ try {
 
 ### 統計監視
 
-```typescript
+```text
 const stats = stateManager.getStatistics();
 console.log('拡張状態管理統計:', {
   総エントリ数: stats.totalEntries,
@@ -856,7 +863,7 @@ console.log('拡張状態管理統計:', {
 
 ### ヘルスチェック
 
-```typescript
+```text
 // 定期ヘルスチェック
 setInterval(async () => {
   const stats = stateManager.getStatistics();
@@ -889,7 +896,7 @@ ae-framework enhanced-state export -o "$BACKUP_DIR/state_$TIMESTAMP.json"
 
 ### 状態の移行
 
-```typescript
+```text
 // 環境間の移行
 async function migrateState(fromEnv: string, toEnv: string) {
   const sourceManager = new EnhancedStateManager(`/data/${fromEnv}`);

@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: development-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Deterministic Code Generation & Drift Detection
 
 > 🌍 Language / 言語: English | 日本語
@@ -37,7 +44,7 @@ The system consists of:
 
 ### Core Components
 
-```typescript
+```text
 // Deterministic Code Generator
 export class DeterministicCodeGenerator {
   async generate(): Promise<CodegenManifest>
@@ -141,7 +148,7 @@ The `scripts/codegen-tools.sh` script provides convenient batch operations:
 
 ### Generation Options
 
-```typescript
+```text
 interface CodegenOptions {
   inputPath: string;                    // AE-IR JSON file
   outputDir: string;                   // Output directory
@@ -155,7 +162,7 @@ interface CodegenOptions {
 
 ### Drift Detection Config
 
-```typescript
+```text
 interface DriftConfig {
   codeDir: string;                     // Generated code directory
   specPath: string;                    // AE-IR specification file
@@ -301,7 +308,7 @@ generated/database/
 
 Each generated directory contains a `.codegen-manifest.json` file:
 
-```json
+```text
 {
   "metadata": {
     "generatedAt": "2025-01-20T10:00:00Z",
@@ -410,7 +417,7 @@ pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/types -t types
 ### Build System Integration
 Add to your build pipeline:
 
-```json
+```text
 {
   "scripts": {
     "prebuild": "pnpm codegen:drift && pnpm codegen:validate",

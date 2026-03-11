@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: development-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # エージェント連携セットアップ手順（GitHub駆動・人手介在ゼロ）
 
 本ドキュメントは、複数エージェント（PM/設計/実装）がGitHub上のシグナルのみで、計画→実装→レビュー→マージ→レポートまで自律連携するためのセットアップ手順です。前提として、各エージェントは同一PC（WSL上のUbuntu）で別ワークスペースとして稼働します。
