@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+  - docs/reference/SCHEMA-GOVERNANCE.md
+  - docs/reference/SPEC-VERIFICATION-KIT-EXTENSIONS.md
+lastVerified: '2026-03-11'
+---
+
 # Natural Language → AE‑Spec → IR → Code Workflow (CodeX / Claude Code)
 
 > 🌍 Language / 言語: English | 日本語
