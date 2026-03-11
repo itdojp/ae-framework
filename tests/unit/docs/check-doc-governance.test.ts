@@ -1975,7 +1975,16 @@ describe('check-doc-governance', () => {
 
   it('governs specialized top-level docs files', () => {
     const rootDir = makeRoot();
+    mkdirSync(path.join(rootDir, 'docs', 'TLA+'), { recursive: true });
+    mkdirSync(path.join(rootDir, 'docs', 'adapters'), { recursive: true });
+    mkdirSync(path.join(rootDir, 'docs', 'agent-builder'), { recursive: true });
+    mkdirSync(path.join(rootDir, 'docs', 'cheatsheets'), { recursive: true });
+    mkdirSync(path.join(rootDir, 'docs', 'ci'), { recursive: true });
     mkdirSync(path.join(rootDir, 'docs', 'codex'), { recursive: true });
+    mkdirSync(path.join(rootDir, 'docs', 'internal'), { recursive: true });
+    mkdirSync(path.join(rootDir, 'docs', 'quality'), { recursive: true });
+    mkdirSync(path.join(rootDir, 'docs', 'resilience'), { recursive: true });
+    mkdirSync(path.join(rootDir, 'docs', 'roadmap'), { recursive: true });
 
     writeMarkdown(rootDir, 'README.md', [
       '---',
@@ -2028,6 +2037,68 @@ describe('check-doc-governance', () => {
       '# Governance',
       '',
     ].join('\n'));
+    writeMarkdown(rootDir, 'docs/ci/label-gating.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: ci-governance',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Label gating',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/quality/adapter-thresholds.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: quality-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Adapter thresholds',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/TLA+/kv-once-poc.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# TLA+ PoC',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/adapters/adapter-template.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/quality/adapter-thresholds.md',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Adapter Template',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/agent-builder/poc.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Agent Builder PoC',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/cheatsheets/ci-labels-cheatsheet.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/ci/label-gating.md',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Cheatsheet',
+      '',
+    ].join('\n'));
     writeMarkdown(rootDir, 'docs/codex/ae-playbook.md', [
       '---',
       'docRole: ssot',
@@ -2037,6 +2108,37 @@ describe('check-doc-governance', () => {
       '---',
       '',
       '# Playbook',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/internal/autopilot-operations.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: autopilot-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Autopilot Operations',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/resilience/scope1.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: resilience',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Resilience Scope',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/roadmap/TESTING-DDD-ROADMAP.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Roadmap',
       '',
     ].join('\n'));
 
@@ -2052,7 +2154,7 @@ describe('check-doc-governance', () => {
     const payload = JSON.parse(result.stdout);
     expect(payload.failures).toEqual([]);
     expect(payload.warnings).toHaveLength(0);
-    expect(payload.docsScanned).toBe(6);
+    expect(payload.docsScanned).toBe(15);
   });
 
   it('fails when a derived doc omits canonicalSource', () => {
