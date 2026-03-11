@@ -687,6 +687,7 @@ describe('check-doc-governance', () => {
 
     expect(result.exitCode).toBe(0);
     const payload = JSON.parse(result.stdout);
+    expect(payload.docsScanned).toBe(6);
     expect(payload.failures).toEqual([]);
     expect(payload.warnings).toEqual([]);
   });
