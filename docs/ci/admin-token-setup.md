@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # ADMIN_TOKEN Setup Guide (Fine-grained PAT)
 
 このドキュメントは、Branch Protection のプリセット適用ワークフローで使用する `ADMIN_TOKEN` の作成・登録手順をまとめたものです。通常のCIやPR作成では使用しません。

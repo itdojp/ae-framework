@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # CI Baseline Checklist
 
 Purpose: Provide a minimal checklist to confirm the CI baseline is healthy without running heavy suites.

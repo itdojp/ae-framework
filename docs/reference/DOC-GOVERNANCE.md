@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-11'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -49,6 +49,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/README.md`
 - `docs/reference/DOC-GOVERNANCE.md`
 - `docs/agents/*.md`
+- `docs/ci/*.md`
 - `docs/development/*.md`
 - `docs/flows/*.md`
 - `docs/getting-started/*.md`

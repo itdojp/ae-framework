@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Automation Permission Boundaries
 
 PR自動化ワークフローにおける `workflow_dispatch` / `issue_comment` 起点の権限境界を整理します。

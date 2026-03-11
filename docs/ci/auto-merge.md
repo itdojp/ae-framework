@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Auto Merge（GitHub Auto-merge の自動有効化）
 
 > Language / 言語: English | 日本語

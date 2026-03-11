@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Plan Artifact
 
 `plan-artifact/v1` は high-risk PR の**事前レビュー契約**です。

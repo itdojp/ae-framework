@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # CI Environment Setup (Quick)
 
 Purpose: Minimal environment notes to reproduce CI locally without heavy suites.

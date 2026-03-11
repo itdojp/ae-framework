@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Automation Rollback Runbook
 
 PR 自動化を手動運用へ安全に戻すための runbook です。  

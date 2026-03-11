@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Automation SLO / MTTR Definitions
 
 PR 自動化運用で使用する SLO / MTTR の定義をまとめる。

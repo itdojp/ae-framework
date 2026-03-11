@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Review Topology Matrix Validation
 
 `policy-gate` の承認要件切替（`AE_REVIEW_TOPOLOGY` / `AE_POLICY_MIN_HUMAN_APPROVALS`）が

@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Heavy Test Trend Visualization PoC
 
 heavy-test トレンドの履歴 (`reports/heavy-test-trends-history/*.json`) を整形して可視化するためのアイデアをまとめます。

@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Codex Autopilot Lane
 
 `Codex Autopilot Lane` は、`autopilot:on` ラベル付きPRを対象に、レビュー対応から auto-merge 有効化までを自動で進める opt-in レーンです。
