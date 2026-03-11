@@ -60,6 +60,8 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/codex/*.md`
 - `docs/contributing/*.md`
 - `docs/development/*.md`
+- `docs/ddd/*.md`
+- `docs/examples/*.md`
 - `docs/flows/*.md`
 - `docs/getting-started/*.md`
 - `docs/guides/*.md`

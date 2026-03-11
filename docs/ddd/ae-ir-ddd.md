@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: architecture
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # AE-IR: Optional DDD Fields (Backward-Compatible)
 
 > 🌍 Language / 言語: English | 日本語

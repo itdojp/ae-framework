@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Full E2E Demo: Spec → Tests → Runtime
 
 このドキュメントは、`ae-framework` のサンプル資産を組み合わせて「仕様→テスト→コード→検証」までを一貫して再現する手順をまとめたものです。Verify Lite / Mutation Quick / Pact / MBT / BDD を連携させたいときの素振り用チェックリストとして利用できます。
