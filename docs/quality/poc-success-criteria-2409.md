@@ -65,6 +65,7 @@ lastVerified: '2026-03-10'
 - 比較計測結果: `docs/templates/quality/poc-comparison-metrics-template.md` を使用して記録。
 - 判定記録: `docs/templates/quality/adr-poc-adoption-template.md` を使用して ADR 化。
 - TS baseline 実行コマンド: `pnpm exec tsx src/cli.ts bench`
+- 補足: `src/cli.ts` は `benchmark-report/v1` 互換を維持する legacy compatibility shim。メインCLIの canonical entrypoint は `src/cli/index.ts`、ベンチマーク専用CLIは `src/cli/benchmark-cli.ts`（`ae-benchmark`）。
 - TS baseline 出力: `artifacts/bench.json`（機械可読） / `artifacts/bench.md`（人間可読）
 - 実行ログ: コマンド、使用コミットSHA、計測日時、実行環境（CPU/メモリ/OS/ランタイム）を必ず添付。
 

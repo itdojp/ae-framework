@@ -61,6 +61,7 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 - `ae-server`: サーバー起動（`src/cli/server-runner.ts`）
 
 上記とは別に、メインCLI（`src/cli/index.ts`）は **サブコマンド** を登録しており、開発時は `pnpm run ae-framework -- <command>` 形式で呼び出せます。
+`src/cli.ts` と `src/runner/main.ts` は legacy compatibility shim であり、主に `benchmark-report/v1` など旧導線互換のために残しています。新規の user-facing command はここへ追加しません。
 
 代表的なサブコマンド（定義元）は以下です。
 

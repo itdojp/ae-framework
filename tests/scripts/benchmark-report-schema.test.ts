@@ -10,7 +10,9 @@ const repoRoot = resolve('.');
 const schemaPath = resolve(repoRoot, 'schema/benchmark-report.schema.json');
 const schema = JSON.parse(readFileSync(schemaPath, 'utf8'));
 const tsxBin = resolve(repoRoot, 'node_modules/.bin/tsx');
-const cliEntry = resolve(repoRoot, 'src/cli.ts');
+// benchmark-report/v1 is currently emitted through the legacy compatibility
+// shim until benchmark artifact generation is migrated to a canonical CLI path.
+const legacyBenchShimEntry = resolve(repoRoot, 'src/cli.ts');
 
 function createValidator() {
   const ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -31,7 +33,7 @@ describe.sequential('benchmark report schema', () => {
       };
       delete env.VITEST;
 
-      const runResult = spawnSync(tsxBin, [cliEntry, 'bench'], {
+      const runResult = spawnSync(tsxBin, [legacyBenchShimEntry, 'bench'], {
         cwd: tempDir,
         encoding: 'utf8',
         timeout: 120_000,
