@@ -19,6 +19,7 @@ export const ALLOWED_ROOT_ENTRIES = new Set([
   '.nycrc.json',
   '.tool-versions',
   'AGENTS.md',
+  'CLAUDE.md',
   'CONTRIBUTING.md',
   'LICENSE',
   'README.md',
@@ -86,6 +87,10 @@ export const FORBIDDEN_ROOT_PATTERNS = [
   { pattern: /^tmp$/, reason: 'temporary directory in repository root' },
 ];
 
+export const WARNING_ROOT_PATTERNS = [
+  { pattern: /^dist$/, reason: 'local build output directory in repository root; keep untracked and clean before review' },
+];
+
 /**
  * Classify repository root entries into blocking violations and non-blocking warnings.
  *
@@ -107,6 +112,12 @@ export function scanRootLayout(entries, options = {}) {
     const forbidden = FORBIDDEN_ROOT_PATTERNS.find(({ pattern }) => pattern.test(entry));
     if (forbidden) {
       violations.push({ entry, reason: forbidden.reason, type: 'forbidden_pattern' });
+      continue;
+    }
+
+    const warningPattern = WARNING_ROOT_PATTERNS.find(({ pattern }) => pattern.test(entry));
+    if (warningPattern) {
+      warnings.push({ entry, reason: warningPattern.reason, type: 'warning_pattern' });
       continue;
     }
 
