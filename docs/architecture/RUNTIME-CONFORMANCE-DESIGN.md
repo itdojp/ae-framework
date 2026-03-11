@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: architecture-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Runtime Conformance Design Document
 
 > 🌍 Language / 言語: English | 日本語
@@ -140,7 +146,7 @@ Runtime Conformance provides:
 - Integration with existing validation frameworks
 
 **Interface**:
-```typescript
+```text
 interface ContractEngine {
   generateContracts(spec: AEIR): Promise<RuntimeContract[]>;
   evaluateContract(contract: RuntimeContract, context: ExecutionContext): Promise<ContractResult>;
@@ -184,7 +190,7 @@ interface ContractResult {
 - Integration with application middleware
 
 **Interface**:
-```typescript
+```text
 interface MonitorOrchestrator {
   startMonitoring(config: MonitoringConfig): Promise<void>;
   stopMonitoring(): Promise<void>;
@@ -228,7 +234,7 @@ interface MonitorTarget {
 - Integration with alerting and repair systems
 
 **Interface**:
-```typescript
+```text
 interface ViolationDetector {
   detectViolations(results: ContractResult[]): Promise<Violation[]>;
   classifyViolation(violation: Violation): Promise<ViolationClassification>;
@@ -263,7 +269,7 @@ interface ViolationType {
 #### 4.1.1 Domain Invariants
 Generated from AE-IR invariants:
 
-```typescript
+```text
 // Example: User email uniqueness
 const emailUniquenessContract: RuntimeContract = {
   id: 'user_email_unique',
@@ -282,7 +288,7 @@ const emailUniquenessContract: RuntimeContract = {
 #### 4.1.2 API Contracts
 Generated from API specifications:
 
-```typescript
+```text
 // Example: Order creation precondition
 const orderCreationContract: RuntimeContract = {
   id: 'order_creation_precondition',
@@ -305,7 +311,7 @@ const orderCreationContract: RuntimeContract = {
 #### 4.1.3 Business Rules
 Custom business logic validation:
 
-```typescript
+```text
 // Example: Inventory reservation
 const inventoryReservationContract: RuntimeContract = {
   id: 'inventory_reservation_rule',
@@ -351,7 +357,7 @@ const inventoryReservationContract: RuntimeContract = {
 - CLI integration for manual contract management
 
 **Deliverables**:
-```bash
+```text
 # CLI commands (current implementation)
 pnpm run ae-framework -- conformance sample --rules configs/samples/sample-rules.json
 pnpm run ae-framework -- conformance verify --input configs/samples/sample-data.json --rules configs/samples/sample-rules.json
@@ -374,7 +380,7 @@ pnpm run ae-framework -- conformance report --format both
 - Advanced reporting and dashboards
 
 **Deliverables**:
-```bash
+```text
 # Advanced CLI commands for Phase 8 (roadmap; not in current CLI)
 # conformance analyze / predict / adapt / repair
 ```
@@ -383,7 +389,7 @@ pnpm run ae-framework -- conformance report --format both
 
 ### 6.1 Contract Engine Implementation
 
-```typescript
+```text
 /**
  * Core Contract Engine for Runtime Conformance
  */
@@ -537,7 +543,7 @@ export class ContractEngine {
 
 ### 6.2 Monitor Orchestrator Implementation
 
-```typescript
+```text
 /**
  * Monitor Orchestrator for coordinating runtime monitoring
  */
@@ -644,7 +650,7 @@ export class MonitorOrchestrator {
 ### 7.2 Testing Strategy
 
 **Contract Testing**:
-```typescript
+```text
 describe('ContractEngine', () => {
   test('should evaluate simple invariant contracts', async () => {
     const contract = createTestContract('user_email_unique');
@@ -673,7 +679,7 @@ describe('ContractEngine', () => {
 
 ### 8.1 Enhanced Quality Configuration
 
-```json
+```text
 {
   "runtime_conformance": {
     "description": "Runtime contract checking and conformance monitoring",
@@ -733,7 +739,7 @@ describe('ContractEngine', () => {
 ### 10.1 Deployment
 
 **Production Deployment**:
-```bash
+```text
 # Deploy monitoring infrastructure
 kubectl apply -f k8s/runtime-conformance/
 

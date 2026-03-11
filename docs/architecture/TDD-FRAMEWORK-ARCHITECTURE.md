@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # ae-framework TDD Architecture Documentation
 
 > 🌍 Language / 言語: English | 日本語
@@ -122,7 +126,7 @@ graph TB
 - リアルタイム監視と介入
 - ワークフロー統合 (IDE, VCS, CI)
 
-```typescript
+```text
 interface HybridTDDConfig {
   enableCLI: boolean;
   enableMCPServer: boolean;
@@ -147,7 +151,7 @@ interface HybridTDDConfig {
 - コード分析とテスト提案
 - 継続的コンプライアンス監視
 
-```typescript
+```text
 interface TDDTask {
   type: 'validate' | 'guide' | 'enforce' | 'analyze';
   description: string;
@@ -171,7 +175,7 @@ interface TDDTask {
 - プロアクティブガイダンス提供
 - Claude Code環境での最適化
 
-```typescript
+```text
 export interface TaskResponse {
   summary: string;
   analysis: string;
@@ -200,7 +204,7 @@ export interface TaskResponse {
 4. `check_red_green_cycle`: RED-GREEN-REFACTORサイクル確認
 5. `suggest_test_structure`: コードに基づくテスト構造提案
 
-```typescript
+```text
 interface TDDAnalysis {
   phase: string;
   violations: TDDViolation[];
@@ -215,7 +219,7 @@ interface TDDAnalysis {
 **役割**: コマンドライン環境でのTDD実行とバリデーション
 
 **主要コマンド**:
-```bash
+```text
 ae-framework check --phase 3-tests    # フェーズ検証
 ae-framework guard                     # TDDガード実行
 ae-framework next                      # 次フェーズへの移行
@@ -300,7 +304,7 @@ sequenceDiagram
 ## 設定とカスタマイズ
 
 ### Agent Configuration
-```typescript
+```text
 const tddConfig: TDDAgentConfig = {
   strictMode: true,              // 厳格モード
   coverageThreshold: 80,         // カバレッジ閾値
@@ -311,7 +315,7 @@ const tddConfig: TDDAgentConfig = {
 ```
 
 ### Hybrid System Configuration
-```typescript
+```text
 const hybridConfig: HybridTDDConfig = {
   enableCLI: true,                      // CLI機能有効化
   enableMCPServer: true,                // MCPサーバー有効化
@@ -361,7 +365,7 @@ const hybridConfig: HybridTDDConfig = {
 ## 拡張ポイント
 
 ### Custom Guards
-```typescript
+```text
 interface Guard {
   name: string;
   description: string;

@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: architecture-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # ae-framework Current System Overview (2026-03)
 
 > Language / 言語: English | 日本語

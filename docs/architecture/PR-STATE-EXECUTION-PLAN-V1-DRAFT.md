@@ -1,3 +1,9 @@
+---
+docRole: derived
+canonicalSource:
+- docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
+lastVerified: '2026-03-11'
+---
 # PR State / Execution Plan v1 Draft
 
 対象Issue: `#2405`  

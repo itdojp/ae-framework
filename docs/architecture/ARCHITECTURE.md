@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # ae-framework アーキテクチャ図
 
 > 🌍 Language / 言語: 日本語 | English

@@ -1,3 +1,9 @@
+---
+docRole: derived
+canonicalSource:
+- docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
+lastVerified: '2026-03-11'
+---
 # ae-framework 新機能ガイド
 
 > 🌍 Language / 言語: 日本語 | English
@@ -25,7 +31,7 @@ ae-frameworkに以下の強力な新機能が追加されました：
 プロジェクトの方向性と共通理解を管理する中央集権的なドキュメントシステムです。
 
 ### セットアップ
-```bash
+```text
 # Steering Documentsディレクトリの作成
 mkdir -p .ae/steering
 
@@ -38,7 +44,7 @@ touch .ae/steering/standards.md     # コーディング標準
 ### ドキュメント構造
 
 #### product.md - プロダクトビジョン
-```markdown
+```text
 # Product Vision
 
 ## Vision Statement
@@ -58,7 +64,7 @@ touch .ae/steering/standards.md     # コーディング標準
 ```
 
 #### architecture.md - アーキテクチャ決定
-```markdown
+```text
 # Architecture Decisions
 
 ## Technology Stack
@@ -75,7 +81,7 @@ touch .ae/steering/standards.md     # コーディング標準
 ```
 
 #### standards.md - コーディング標準
-```markdown
+```text
 # Coding Standards
 
 ## Naming Conventions
@@ -95,14 +101,14 @@ touch .ae/steering/standards.md     # コーディング標準
 ### カスタムドキュメント
 プロジェクト固有のドキュメントも追加可能：
 
-```bash
+```text
 # カスタムドキュメントの追加
 echo "# Security Guidelines" > .ae/steering/security.md
 echo "# API Design Principles" > .ae/steering/api-design.md
 ```
 
 ### プログラマティックアクセス
-```typescript
+```text
 import { SteeringLoader } from 'ae-framework/utils';
 
 const loader = new SteeringLoader();
@@ -127,7 +133,7 @@ const context = await loader.getSteeringContext();
 ### CLI使用方法
 
 #### プロジェクトの初期化
-```bash
+```text
 # 新規プロジェクトの開始
 ae-phase init --name "My Awesome Project"
 
@@ -136,7 +142,7 @@ ae-phase init --name "Quick Prototype" --no-approvals
 ```
 
 #### 状態の確認
-```bash
+```text
 # 簡易ステータス
 ae-phase status
 
@@ -148,7 +154,7 @@ ae-phase timeline
 ```
 
 #### フェーズの管理
-```bash
+```text
 # フェーズの開始
 ae-phase start intent
 
@@ -166,7 +172,7 @@ ae-phase artifacts intent
 ```
 
 #### リセット機能
-```bash
+```text
 # 特定フェーズのリセット
 ae-phase reset intent --force
 
@@ -175,7 +181,7 @@ ae-phase reset --force
 ```
 
 ### プログラマティックアクセス
-```typescript
+```text
 import { PhaseStateManager } from 'ae-framework/utils';
 
 const manager = new PhaseStateManager();
@@ -206,7 +212,7 @@ const timeline = await manager.getPhaseTimeline();
 ### CLI使用方法
 
 #### 承認リクエスト
-```bash
+```text
 # 承認をリクエスト
 ae-approve request intent --user "Developer" --summary "Requirements ready for review"
 
@@ -218,7 +224,7 @@ ae-approve reject intent --user "Manager" --reason "Missing security requirement
 ```
 
 #### 承認状態の確認
-```bash
+```text
 # 保留中の承認一覧
 ae-approve pending
 
@@ -230,7 +236,7 @@ ae-approve history intent
 ```
 
 #### ポリシー設定
-```bash
+```text
 # 複数承認者の要求
 ae-approve set-policy code --multiple --min-approvers 2
 
@@ -249,7 +255,7 @@ ae-approve set-policy test --auto-test --auto-security
 - **security-scan**: セキュリティスキャンが通過した場合
 
 #### デフォルトポリシー
-```typescript
+```text
 {
   'intent': { minApprovers: 1, timeoutHours: 48 },
   'formal': { minApprovers: 1, timeoutHours: 48 },
@@ -277,7 +283,7 @@ ae-approve set-policy test --auto-test --auto-security
 ```
 
 ### プログラマティックアクセス
-```typescript
+```text
 import { ApprovalService } from 'ae-framework/services';
 
 const service = new ApprovalService();
@@ -315,7 +321,7 @@ service.on('approval:completed', ({ phase, approvedBy }) => {
 すべてのae-framework機能に統一されたコマンドインターフェースを提供します。
 
 ### インタラクティブモード
-```bash
+```text
 # インタラクティブモードの起動
 ae-slash interactive
 
@@ -331,7 +337,7 @@ ae-slash i
 ### コマンド実行
 
 #### 単一コマンド
-```bash
+```text
 # コマンドの実行
 ae-slash exec "/init My Project"
 ae-slash exec "/status"
@@ -339,7 +345,7 @@ ae-slash exec "/intent User must be able to login"
 ```
 
 #### コマンドシーケンス
-```bash
+```text
 # 複数コマンドの連続実行
 ae-slash sequence /init /status /next
 
@@ -348,7 +354,7 @@ ae-slash sequence "/init My App" /complete /approve /next
 ```
 
 #### テキストからのコマンド抽出
-```bash
+```text
 # 自然言語からコマンドを抽出
 ae-slash parse "Please /init the project and then /status to check"
 ```
@@ -390,7 +396,7 @@ ae-slash parse "Please /init the project and then /status to check"
 ### コマンド例
 
 #### プロジェクト開始から実装まで
-```bash
+```text
 # インタラクティブモードで
 ae-slash i
 
@@ -411,14 +417,14 @@ ae> /verify
 ```
 
 #### Steering Documents活用
-```bash
+```text
 ae> /steering load product
 ae> /steering context
 ae> /intent [要件がproduct.mdのビジョンに基づいて解析される]
 ```
 
 ### プログラマティックアクセス
-```typescript
+```text
 import { SlashCommandManager } from 'ae-framework/commands';
 
 const manager = new SlashCommandManager();
@@ -447,7 +453,7 @@ const commands = manager.parseCommandFromText(
 
 ### 完全なプロジェクトサイクル
 
-```bash
+```text
 # 1. プロジェクトの初期化とSteering Documents作成
 mkdir my-project && cd my-project
 ae-phase init --name "My SaaS Platform"
@@ -477,7 +483,7 @@ ae-slash exec /next
 
 ### CI/CDパイプラインとの統合
 
-```yaml
+```text
 # .github/workflows/ae-framework.yml
 name: ae-framework Workflow
 
@@ -534,7 +540,7 @@ jobs:
 ## 🆘 トラブルシューティング
 
 ### Phase State関連
-```bash
+```text
 # 状態ファイルの確認
 cat .ae/phase-state.json
 
@@ -547,7 +553,7 @@ ae-phase start intent
 ```
 
 ### Approval関連
-```bash
+```text
 # 期限切れ承認のクリーンアップ
 ae-approve check-expired
 
@@ -559,7 +565,7 @@ ae-approve set-policy intent --timeout 48
 ```
 
 ### Slash Commands関連
-```bash
+```text
 # コマンドリストの確認
 ae-slash list
 

@@ -11,6 +11,7 @@ const tempRoots: string[] = [];
 function makeRoot() {
   const rootDir = mkdtempSync(path.join(tmpdir(), 'ae-doc-governance-'));
   mkdirSync(path.join(rootDir, 'docs', 'agents'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'architecture'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'ci'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'contributing'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'development'), { recursive: true });
@@ -860,6 +861,96 @@ describe('check-doc-governance', () => {
     expect(payload.failures).toEqual([]);
     expect(payload.warnings).toHaveLength(0);
     expect(payload.docsScanned).toBe(14);
+  });
+
+  it('governs docs/architecture files', () => {
+    const rootDir = makeRoot();
+
+    writeMarkdown(rootDir, 'README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Root',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'AGENTS.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/agents/agents-doc-boundary-matrix.md',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Agents',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Docs',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: agent-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Matrix',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: docs-governance',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Governance',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/architecture/CURRENT-SYSTEM-OVERVIEW.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: architecture-docs',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Current Overview',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/architecture/ARCHITECTURE.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Architecture',
+      '',
+    ].join('\n'));
+
+    const result = withCapturedOutput(() => main([
+      'node',
+      'scripts/docs/check-doc-governance.mjs',
+      '--root',
+      rootDir,
+      '--format=json',
+    ]));
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.failures).toEqual([]);
+    expect(payload.warnings).toHaveLength(0);
+    expect(payload.docsScanned).toBe(7);
   });
 
   it('governs docs/guides files', () => {

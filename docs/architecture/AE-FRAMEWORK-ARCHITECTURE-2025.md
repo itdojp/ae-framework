@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # AE Framework Architecture 2025
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -528,7 +532,7 @@ graph TB
 
 ### 📊 Achieved Quality Metrics
 
-```json
+```text
 {
   "system_status": "production_ready",
   "implementation_completion": "100%",
