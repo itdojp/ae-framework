@@ -1,3 +1,10 @@
+---
+docRole: derived
+lastVerified: '2026-03-11'
+canonicalSource:
+- docs/operate/monitor.md
+- docs/operate/telemetry-as-context.md
+---
 # Runtime Guard ダッシュボード連携メモ
 
 ## 目的

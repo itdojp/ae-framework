@@ -50,19 +50,25 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/reference/DOC-GOVERNANCE.md`
 - `docs/agents/*.md`
 - `docs/ci/*.md`
+- `docs/contributing/*.md`
 - `docs/development/*.md`
 - `docs/flows/*.md`
 - `docs/getting-started/*.md`
 - `docs/guides/*.md`
 - `docs/integrations/*.md`
 - `docs/maintenance/*.md`
+- `docs/observability/*.md`
 - `docs/operate/*.md`
+- `docs/operations/*.md`
 - `docs/product/*.md`
 - `docs/project/*.md`
 - `docs/quality/*.md`
 - `docs/reference/*.md`
+- `docs/samples/*.md`
+- `docs/spec/*.md`
 - `docs/strategy/*.md`
 - `docs/trace/*.md`
+- `docs/troubleshooting/*.md`
 - `docs/verify/*.md`
 - `docs/workflows/*.md`
 

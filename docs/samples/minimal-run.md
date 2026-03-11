@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # Minimal Pipeline Run (Spec → Tests → Code → Verify → Operate)
 
 ## ゴール
