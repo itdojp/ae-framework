@@ -1,3 +1,9 @@
+/**
+ * Legacy compatibility router behind `src/cli.ts`.
+ *
+ * New user-facing commands belong in `src/cli/index.ts` or dedicated CLIs
+ * such as `src/cli/benchmark-cli.ts`.
+ */
 import { cac } from 'cac';
 import { safeExit } from '../utils/safe-exit.js';
 import { tddGuard } from '../commands/tdd/guard.js';

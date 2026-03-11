@@ -18,6 +18,9 @@ verificationCommand: pnpm -s run check:doc-consistency
 - CLI binaries: `ae` and `ae-framework` (same entry).
 - Dev (TypeScript) execution in this repo: `pnpm run ae-framework -- <command>`
 - Installed usage: `pnpm exec ae <command>` or `npx ae-framework <command>`
+- Canonical main CLI entrypoint in this repo: `src/cli/index.ts`
+- Dedicated benchmark CLI: `src/cli/benchmark-cli.ts` (`ae-benchmark`)
+- Legacy compatibility shim: `src/cli.ts` -> `src/runner/main.ts` (kept for compatibility flows such as `benchmark-report/v1`; do not add new commands there)
 
 ### Output and Exit Code Contract (Baseline)
 - Standard result text is printed to `stdout`.
@@ -454,6 +457,9 @@ ae setup list
 - CLI バイナリは `ae` / `ae-framework`（同一エントリ）
 - リポジトリ開発時: `pnpm run ae-framework -- <command>`
 - インストール後: `pnpm exec ae <command>` / `npx ae-framework <command>`
+- このリポジトリでの canonical なメインCLI入口は `src/cli/index.ts`
+- ベンチマーク専用CLIは `src/cli/benchmark-cli.ts`（`ae-benchmark`）
+- `src/cli.ts` -> `src/runner/main.ts` は legacy compatibility shim であり、`benchmark-report/v1` 互換などの既存導線のために残しています。新規コマンドの追加先にはしません
 
 ### 出力/終了コード契約（ベースライン）
 - 通常の実行結果は `stdout` に出力します。
