@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # Verify Lite 実行サマリ (2025-10-07)
 
 - 対象ブランチ: `feature/enhanced-state-survivor-round3`

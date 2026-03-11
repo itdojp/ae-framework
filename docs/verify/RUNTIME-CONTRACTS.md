@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 ## Runtime Contracts from Formal Specs (Week 3)
 
 > 🌍 Language / 言語: English | 日本語
@@ -36,7 +40,7 @@ This document outlines an opt-in path to generate runtime contracts (e.g., Zod s
 
 Minimal example (TypeScript):
 
-```ts
+```text
 type GeneratedFile = { path: string; content: string };
 
 async function generateContractsSkeleton(formalSpec: string): Promise<GeneratedFile[]> {

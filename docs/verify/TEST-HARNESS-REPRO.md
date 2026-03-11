@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: verify-first
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Test Harness Repro Guide
 
 ## 目的
