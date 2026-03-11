@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: formal-methods
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # TLA+ を全面活用する ae-framework 構成案
 
 ## 全体アーキテクチャ
@@ -66,7 +73,7 @@ ae-framework/
 
 ## GitHub Actions サンプル
 
-```yaml
+```yaml no-doctest
 name: spec-driven-pipeline
 
 on:
@@ -131,7 +138,7 @@ jobs:
 ## ミニサンプル
 
 `spec/formal/10_abstract/KvOnce.tla`
-```tla
+```tla no-doctest
 --------------------------- MODULE KvOnce ---------------------------
 EXTENDS Naturals, Sequences
 
@@ -156,7 +163,7 @@ THEOREM Safety == Spec => []NoOverwrite
 ```
 
 `spec/formal/mappings/KvOnce.impl.json`
-```json
+```json no-doctest
 {
   "stateMap": {
     "store[k].written": "db.objects[k] != null",
@@ -218,7 +225,7 @@ THEOREM Safety == Spec => []NoOverwrite
 
 ### 実行ヒント
 
-```bash
+```bash no-doctest
 # KvOnce 抽象仕様を TLC で検証（非破壊）
 pnpm run spec:kv-once:tlc
 

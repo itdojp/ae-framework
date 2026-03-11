@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
+
 # Roadmap: Testing + DDD Intake Plan (#406–#411)
 
 English / 日本語 (summary)

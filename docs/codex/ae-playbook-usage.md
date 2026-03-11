@@ -1,3 +1,12 @@
+---
+docRole: derived
+canonicalSource:
+- docs/codex/ae-playbook.md
+- scripts/codex/ae-playbook.mjs
+- codex/ae.playbook.yaml
+lastVerified: '2026-03-11'
+---
+
 # CodeX CLI 0.38 × ae‑framework プレイブック実行ガイド
 
 本書は、CodeX CLI 0.38 から ae‑framework のプレイブックを実行し、セットアップ→軽量QA→Spec/IR→Sim→Formal（任意）→Coverage/Adapters 検出→PRサマリ反映までを一気通貫で動かすための実践ガイドです。

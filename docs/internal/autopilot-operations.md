@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: autopilot-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Autopilot Operations Runbook
 
 ## 目的
@@ -20,7 +27,7 @@
 
 `scripts/ci/automation-rollback.sh` を使用する。
 
-```bash
+```bash no-doctest
 GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh <merge|write|freeze>
 ```
 
@@ -30,7 +37,7 @@ GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh <merge|write|freez
 
 状態確認:
 
-```bash
+```bash no-doctest
 GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh status
 ```
 
@@ -41,7 +48,7 @@ GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh status
 3. `Copilot Review Gate` / `PR Maintenance` / `Codex Autopilot Lane` のrunを監視
 4. 再発があれば直ちに `write` へ戻す
 
-```bash
+```bash no-doctest
 GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh unfreeze
 ```
 
@@ -53,7 +60,7 @@ GH_REPO=itdojp/ae-framework scripts/ci/automation-rollback.sh unfreeze
   - `ci-stability`（CI復旧対象）
 - 手動巻き戻し:
 
-```bash
+```bash no-doctest
 gh issue edit <pr-number> --repo itdojp/ae-framework --remove-label status:blocked --remove-label ci-stability
 ```
 

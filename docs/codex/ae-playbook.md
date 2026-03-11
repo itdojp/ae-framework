@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: codex-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # CodeX CLI 0.38 × ae-framework プレイブック設計（最小版）
 
 目的

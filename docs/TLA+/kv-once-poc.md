@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
+
 # KvOnce TLA+ PoC メモ
 
 ## 目的
@@ -17,7 +22,7 @@
 ## 実行方法
 ローカルで TLC / Apalache を実行する場合:
 
-```bash
+```bash no-doctest
 # TLC
 pnpm run spec:kv-once:tlc
 
