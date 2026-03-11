@@ -1,6 +1,6 @@
 # Repository Layout Policy (Issue #2031 / Phase 0)
 
-最終更新: 2026-02-23
+最終更新: 2026-03-11
 
 ## 1. 目的
 
@@ -25,7 +25,7 @@
 
 ### 3.1 ルート配置を許容する項目
 
-- メタ/規約: `README.md`, `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `AGENTS.md`
+- メタ/規約: `README.md`, `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `AGENTS.md`, `CLAUDE.md`
 - パッケージ/ビルド: `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `tsconfig.json`, `eslint.config.js`
 - 開発設定: `.github/`, `.devcontainer/`, `.ae/`, `.gitignore` など dotfiles
 - ソース/テスト/仕様: `src/`, `tests/`, `spec/`, `schema/`, `docs/`
@@ -33,7 +33,15 @@
 - 運用成果物（追跡対象のみ）: `artifacts/`（契約済みファイルに限定）
 - 生成物ディレクトリ（原則 `.gitignore` 管理）: `reports/`, `coverage/`, `temp-reports/`
 
-### 3.2 ルート配置を禁止する項目（原則）
+### 3.2 ローカル限定で現れ得る項目（非ブロッキング warning）
+
+- `dist/`
+  - `pnpm run build` 等のローカルビルドで生成される出力先
+  - CI の clean checkout では存在しない前提
+  - 追跡対象ではないため、レビュー前には clean に戻す
+  - `check-root-layout` では warning 扱いに留める
+
+### 3.3 ルート配置を禁止する項目（原則）
 
 - 単発実行生成物:
   - `cegis-report-*.json`
@@ -42,6 +50,8 @@
   - `conformance-results.json`, `verify-lite-run-summary.json`, `verify-lite-lint-summary.json`, `verify-lite-lint.log`
 - 実行キャッシュ/一時物:
   - `node_modules/`, `test-results/`, `test-results-run/`, `tmp/`
+- ローカル品質生成物:
+  - `coverage/`
 - 日次/手動検証メモの生ファイル（ルート直下）
 
 ## 4. 生成物マップ（Phase 0時点）
@@ -52,6 +62,7 @@
 | Conformance結果 | `ae conformance verify` | `artifacts/conformance/conformance-results.json` | 既定出力先は `artifacts/` 配下。ルート出力は違反 |
 | Integration CLI生成物 | `ae integration run` | `artifacts/integration/test-results/**` | 既定出力先は `artifacts/` 配下。`generated-*.json` 等のルート出力は禁止 |
 | Verify Lite lint要約 | `scripts/ci/run-verify-lite-local.sh` | `artifacts/verify-lite/verify-lite-lint-summary.json` | ルート禁止。`artifacts/verify-lite/` に保存 |
+| Local build output | `pnpm run build` | `dist/` | 非追跡。ルート warning 扱い、レビュー前に clean を推奨 |
 | Coverage | `pnpm run coverage`, `pnpm run test:coverage` | `coverage/` | 非追跡（生成物） |
 | レポート集約 | quality/verify系 | `reports/`, `artifacts/hermetic-reports/` | 原則非追跡（必要成果物のみ残す） |
 
