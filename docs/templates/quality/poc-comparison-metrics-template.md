@@ -114,6 +114,11 @@
 # TS baseline（機械可読: artifacts/bench.json）
 pnpm exec tsx src/cli.ts bench
 
+# 注記:
+# - `src/cli.ts` は `benchmark-report/v1` 互換を維持する legacy compatibility shim
+# - メインCLIの canonical entrypoint は `src/cli/index.ts`
+# - ベンチマーク専用CLIは `src/cli/benchmark-cli.ts`（`ae-benchmark`）
+
 # TS baseline の主要指標抽出例
 jq '.metrics | {p95, errorRate, coldStartMs, peakRssMb}' artifacts/bench.json
 

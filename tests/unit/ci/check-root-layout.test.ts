@@ -82,6 +82,33 @@ describe('check-root-layout', () => {
     expect(result.warnings).toHaveLength(0);
   });
 
+  it('treats CLAUDE.md as an allowed root entry', () => {
+    const result = scanRootLayout([
+      'CLAUDE.md',
+      'README.md',
+      'src',
+    ]);
+
+    expect(result.violations).toHaveLength(0);
+    expect(result.warnings).toHaveLength(0);
+  });
+
+  it('reports dist as a non-blocking local build warning', () => {
+    const result = scanRootLayout([
+      'dist',
+      'src',
+    ]);
+
+    expect(result.violations).toHaveLength(0);
+    expect(result.warnings).toEqual([
+      expect.objectContaining({
+        entry: 'dist',
+        type: 'warning_pattern',
+        reason: 'local build output directory in repository root; keep untracked and clean before review',
+      }),
+    ]);
+  });
+
   it('supports per-entry override for local checks', () => {
     const result = scanRootLayout(
       [

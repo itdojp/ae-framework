@@ -163,6 +163,9 @@ pnpm run test:int
 ## 5. CLI利用の基本
 実行モードの使い分けは `docs/product/COMMAND-MODES.md` を参照してください。
 
+メインCLIの canonical entrypoint は `src/cli/index.ts` です。<br>
+ベンチマークは `src/cli/benchmark-cli.ts`（`ae-benchmark`）を利用し、`src/cli.ts` は `benchmark-report/v1` 互換用の legacy shim としてのみ残しています。
+
 ### 5.1 開発時のCLI確認
 ```bash
 pnpm run ae-framework -- --help
