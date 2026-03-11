@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # P0: npx-first, scoped TDD guard, deterministic seed, bench+QA
 
 > 🌍 Language / 言語: English | 日本語
@@ -41,7 +45,7 @@ AE_SEED=42 npx ae bench
 
 ### 設定ファイル (config/ae.config.ts)
 
-```typescript
+```text
 export default {
   mode: 'copilot', // 'copilot' | 'delegated'
   tddGuard: {
@@ -101,7 +105,7 @@ $ AE_SKIP_GUARD=1 npx ae tdd:guard
 
 ### 生成されるベンチマークレポート例
 
-```markdown
+```text
 # Bench Report
 - Date: 2025-08-24T22:34:25.405Z
 - Node: v20.19.4
@@ -145,7 +149,7 @@ echo 'export default { tddGuard: { ciOnly: true } }' > config/ae.config.ts
 ```
 
 ### ファイルスコープ調整
-```typescript
+```text
 // config/ae.config.ts
 export default {
   tddGuard: {

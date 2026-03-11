@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: context-pack-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Context Pack Troubleshooting Runbook
 
 > 🌍 Language / 言語: English | 日本語

@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # Windows Installation Troubleshooting Guide
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)

@@ -12,19 +12,25 @@ function makeRoot() {
   const rootDir = mkdtempSync(path.join(tmpdir(), 'ae-doc-governance-'));
   mkdirSync(path.join(rootDir, 'docs', 'agents'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'ci'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'contributing'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'development'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'flows'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'getting-started'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'guides'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'integrations'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'maintenance'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'observability'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'operate'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'operations'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'product'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'project'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'quality'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'reference'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'samples'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'spec'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'strategy'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'trace'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'troubleshooting'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'verify'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'workflows'), { recursive: true });
   tempRoots.push(rootDir);
@@ -690,6 +696,170 @@ describe('check-doc-governance', () => {
     expect(payload.failures).toEqual([]);
     expect(payload.warnings).toHaveLength(0);
     expect(payload.docsScanned).toBe(7);
+  });
+
+  it('governs remaining small docs directories', () => {
+    const rootDir = makeRoot();
+
+    writeMarkdown(rootDir, 'README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Root',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'AGENTS.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/agents/agents-doc-boundary-matrix.md',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Agents',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Docs',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: agent-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Matrix',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: docs-governance',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Governance',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/contributing/PR_TEMPLATE.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# PR Template',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/operations/context-pack-troubleshooting.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: context-pack-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Context Pack Troubleshooting',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/observability/runtime-guard-dashboard.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/operate/monitor.md',
+      '  - docs/operate/telemetry-as-context.md',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Runtime Guard Dashboard',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/troubleshooting/WINDOWS-INSTALLATION.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Windows Troubleshooting',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/samples/minimal-run.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Minimal Run',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/spec/context-pack.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: context-pack-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Context Pack',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/spec/registry.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: docs-governance',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Spec Registry',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/operate/monitor.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: observability-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Monitor',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/operate/telemetry-as-context.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: observability-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Telemetry as Context',
+      '',
+    ].join('\n'));
+
+    const result = withCapturedOutput(() => main([
+      'node',
+      'scripts/docs/check-doc-governance.mjs',
+      '--root',
+      rootDir,
+      '--format=json',
+    ]));
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.failures).toEqual([]);
+    expect(payload.warnings).toHaveLength(0);
+    expect(payload.docsScanned).toBe(14);
   });
 
   it('governs docs/guides files', () => {
