@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
 # CodeX CI/Docs Enhancements Summary (2025-08-27)
 
 > 🌍 Language / 言語: English | 日本語
@@ -30,7 +34,7 @@ No functional code changes are introduced in this commit; it adds documentation 
 - その他: 既存の `ae-ci` などは今回の補助機能追加による挙動変更なし
 
 ## Local Verification Tips
-```bash
+```bash no-doctest
 # Formal のみ最短（TLA+ / OpenAPI / モデルチェック）
 pnpm run build
 CODEX_RUN_FORMAL=1 pnpm run codex:quickstart

@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
 # 🔬 Research – 調査・研究ドキュメント
 
 > 🌍 Language / 言語: 日本語 | English

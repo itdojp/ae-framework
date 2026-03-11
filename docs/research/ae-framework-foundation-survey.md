@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: research
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # AE Framework 基礎調査（Formal Methods × AI）
 
 > 🌍 Language / 言語: 日本語 | English
@@ -80,7 +86,7 @@ flowchart LR
 ## 4. 手順（サンプル）
 
 ### 4.1 NL→BDD（テンプレ）
-```gherkin
+```gherkin no-doctest
 # features/authentication.feature
 Feature: User Authentication
   In order to protect accounts
@@ -104,7 +110,7 @@ G( invalidPassword -> X not authenticated )
 > 実際には Alloy6 の時間演算子（`always/eventually/until` 等）や TLA+ のアクション/不変量で厳密化。
 
 ### 4.3 TLA+ スケルトン（抜粋）
-```tla
+```tla no-doctest
 ---- MODULE Auth ----
 EXTENDS Naturals, Sequences
 
@@ -155,7 +161,7 @@ THEOREM InvIsInvariant == Spec => []Inv
 ## 6. CI/品質ゲート（サンプル）
 
 ### 6.1 GitHub Actions（抜粋）
-```yaml
+```yaml no-doctest
 name: verify
 on:
   pull_request:
@@ -191,7 +197,7 @@ jobs:
 ---
 
 ## 7. 使い方（最小ワークフロー）
-```bash
+```bash no-doctest
 # Install
 npm install ae-framework
 

@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
 # Research Survey for ae-framework (Issue 1062)
 
 ## Snapshot
