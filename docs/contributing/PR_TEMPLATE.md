@@ -4,6 +4,8 @@
 
 ## 🎯 目的（P0改修）
 
+> 注記（現行実装）: この文書は P0 時点の historical proposal です。現行の canonical main CLI entrypoint は `src/cli/index.ts`、ベンチマーク専用CLIは `src/cli/benchmark-cli.ts` です。`src/cli.ts` / `src/runner/main.ts` は legacy compatibility shim として扱います。現行CLIの SSOT は `docs/reference/CLI-COMMANDS-REFERENCE.md` を参照してください。
+
 - **npx ファースト運用**: グローバルインストール前提の排除
 - **スコープ限定TDD ガード**: 対象範囲限定 + オプトアウト環境変数 + CI限定オプション
 - **決定的実行**: 乱数シード（AE_SEED）による再現可能なベンチマーク
@@ -177,10 +179,11 @@ sed -i '/npx ae-framework.*ae tdd:guard/d' .husky/pre-commit
 ## 📊 実装内容
 
 ### 新規追加ファイル
-- `src/cli.ts` - メインCLIエントリポイント
+- `src/cli/index.ts` - canonical なメインCLIエントリポイント
+- `src/cli.ts` - legacy compatibility shim
 - `src/core/config.ts` - zod設定スキーマ + 読み込み
 - `src/core/seed.ts` - AE_SEED環境変数処理
-- `src/runner/main.ts` - cac CLIルーター
+- `src/runner/main.ts` - legacy `cac` compatibility router
 - `src/commands/tdd/guard.ts` - スコープ限定TDDガード
 - `src/commands/bench/run.ts` - tinybench + アーティファクト生成
 - `src/commands/qa/run.ts` - カバレッジ閾値強制
