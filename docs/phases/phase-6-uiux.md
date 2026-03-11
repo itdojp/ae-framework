@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: phase-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Phase 6: UI/UX & Frontend Delivery
 
 > 🌍 Language / 言語: 日本語 | English
@@ -52,7 +58,7 @@ Phase 6 turns user stories and domain models into production‑ready UI/UX via a
 - Perf (Lighthouse) ≥ 75%
 
 ### Operational Hints
-```bash
+```text
 # Scaffold components/state/tokens
 ae-framework ui-scaffold --components
 ae-framework ui-scaffold --state
@@ -129,7 +135,7 @@ Design Systems統合、アクセシビリティ確保、パフォーマンス最
 - Perf（Lighthouse）≥ 75%
 
 ### 運用ヒント（コマンド）
-```bash
+```text
 # コンポーネント/状態/トークンのスキャフォールド
 ae-framework ui-scaffold --components
 ae-framework ui-scaffold --state
@@ -307,7 +313,7 @@ Perf:     75%
 ## 📤 Outputs (フェーズ出力)
 
 ### 1. Design Tokens
-```json
+```text
 {
   "colors": {
     "primary": { "50": "#eff6ff", "500": "#3b82f6", "900": "#1e3a8a" },
@@ -401,7 +407,7 @@ interface CRUDScaffold {
 ## 🚪 Quality Gates
 
 ### v1 初期閾値（MVP段階）
-```yaml
+```text
 accessibility:
   critical_violations: 0        # Critical Accessibility violations must be 0
   warning_violations: ≤5        # Warning violations should be ≤5
@@ -422,7 +428,7 @@ code_quality:
 ```
 
 ### v2 監視目標（成熟段階）
-```yaml
+```text
 enhanced_quality:
   test_coverage: ≥90%          # Enhanced test coverage ≥90%
   a11y_score: ≥95%            # Enhanced accessibility score ≥95%
