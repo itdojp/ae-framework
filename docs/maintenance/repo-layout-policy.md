@@ -56,6 +56,20 @@
 
 ## 4. 生成物マップ（Phase 0時点）
 
+### 4.1 `artifacts/` の分類
+
+`artifacts/` は単一用途のディレクトリではなく、現時点では次の 4 類型を含む。
+
+| 類型 | 例 | 既定の扱い | 主な責務 |
+|---|---|---|---|
+| runtime output | `artifacts/verify-lite/**`, `artifacts/assurance/**`, `artifacts/release/**`, `artifacts/ci/**`, `artifacts/context-pack/**`, `artifacts/trace/**`, `artifacts/observability/**` | 原則 non-tracked | 実行結果、CI要約、運用判定の出力 |
+| committed contract artifact | `artifacts/types/**`, `artifacts/contracts/**`, `artifacts/domain/**`, `artifacts/plan/**`, `artifacts/api/**`, `artifacts/bdd/**`, `artifacts/properties/**`, `artifacts/repros/**`, `artifacts/public-types.current.d.ts` | tracked | 契約・サンプル・回帰基準として repo で参照する成果物 |
+| reference snapshot | `artifacts/bench.json`, `artifacts/bench.md`, `artifacts/bench-1.json`, `artifacts/bench-2.json`, `artifacts/types-gate-ci-validation.md`, `artifacts/types-hardening-validation.md`, `artifacts/recovery-verify.md` | tracked | ベースライン比較や過去判断の参照資料 |
+| archive | `artifacts/archive/**` | tracked | 過去実行の記録保存、監査用のスナップショット |
+| local debug archive | `artifacts/codex/**` | ignored by default | codex/autopilot 系のローカル・CI調査出力。監査用に残す場合は `artifacts/archive/**` へ昇格させる |
+
+`docs/quality/ARTIFACTS-CONTRACT.md` は **contract / validation rule** を定義し、本書は **配置・追跡方針** を定義する。runtime output を commit 対象に昇格する場合は、両文書を同時に更新する。
+
 | 種別 | 代表コマンド/実行経路 | 代表出力 | 取扱い |
 |---|---|---|---|
 | CEGISレポート | `src/cegis/auto-fix-engine.ts` | `temp-reports/cegis/cegis-report-*.json` | ルート直下への出力は禁止。必要時のみ `AE_CEGIS_REPORT_DIR` で変更 |
