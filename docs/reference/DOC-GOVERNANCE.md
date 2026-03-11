@@ -56,6 +56,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/flows/*.md`
 - `docs/getting-started/*.md`
 - `docs/guides/*.md`
+- `docs/handoff/*.md`
 - `docs/integrations/*.md`
 - `docs/maintenance/*.md`
 - `docs/observability/*.md`
