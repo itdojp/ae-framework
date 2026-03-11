@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: repo-maintenance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Subagent Worktree Runbook
 
 最終更新: 2026-03-06

@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # TODO Triage Backlog (2026-03-01)
 
 Issue: #2359 (refreshed after #2333 close)

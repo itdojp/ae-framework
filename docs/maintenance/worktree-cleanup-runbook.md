@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: repo-maintenance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Worktree Cleanup Runbook
 
 This runbook defines a safe process to remove stale local worktrees that are already merged.

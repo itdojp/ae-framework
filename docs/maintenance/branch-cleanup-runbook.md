@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: repo-maintenance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Branch Cleanup Runbook
 
 This runbook defines a safe, repeatable process for branch cleanup.

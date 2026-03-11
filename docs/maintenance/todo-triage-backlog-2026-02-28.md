@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # TODO Triage Backlog (2026-02-28)
 
 Issue: #2322

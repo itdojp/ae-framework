@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: repo-maintenance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Public Types Sync Runbook
 
 This runbook defines the reproducible steps to keep `api/public-types.d.ts` aligned with current implementation.

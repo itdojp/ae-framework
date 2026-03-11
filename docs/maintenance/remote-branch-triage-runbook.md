@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: repo-maintenance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Remote Branch Triage Runbook
 
 This runbook defines how to review and execute remote branch cleanup with operator approval.

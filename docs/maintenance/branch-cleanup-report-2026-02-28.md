@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # Branch Cleanup Report (2026-02-28)
 
 ## Scope

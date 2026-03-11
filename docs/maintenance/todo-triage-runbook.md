@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: repo-maintenance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # TODO/FIXME/XXX Triage Runbook
 
 This runbook defines how to inventory and triage TODO markers into actionable backlog items.
