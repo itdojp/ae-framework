@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Automation Observability
 
 PR自動化系スクリプトの実行結果は、共通フォーマット `ae-automation-report/v1` で出力されます。

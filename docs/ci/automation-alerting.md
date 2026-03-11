@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Automation Alerting
 
 `automation-observability-weekly` の集計結果から、重大な運用異常を通知するための仕様。

@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Automation Profiles（PR自動化プロファイル）
 
 PR自動化（Copilot Review Gate / Copilot Auto Fix / Auto Merge / Policy Gate）の設定を、Repository Variables 1つで段階的に切り替えるための運用ガイドです。

@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # OTel標準化・Artifacts出力・検証/ゲート統合設計（Issue #2380）
 
 最終更新: 2026-03-02

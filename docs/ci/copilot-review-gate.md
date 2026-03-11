@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Copilot Review Gate
 
 目的: PR をマージする前に、GitHub Copilot によるコードレビューが存在し、その指摘（スレッド）が解決済みであることを必須化します。

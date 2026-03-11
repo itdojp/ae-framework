@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Branch Protection Operations (One-person + AI friendly)
 
 このリポジトリでは、運用状況に応じて main ブランチの保護設定を JSON プリセットで切替できるよう、次の仕組みを用意しています。

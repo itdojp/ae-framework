@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: docs-governance
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Automation Failure Policies and Comment Templates
 
 PR 自動化ワークフローの fail-open / fail-closed 方針と、運用で参照するコメントテンプレートを定義します。
