@@ -248,6 +248,7 @@ legacyApi.unsafeMethod(data);
 - Full navigation: `docs/README.md`
 - Quick starts: `docs/getting-started/QUICK-START-GUIDE.md` (baseline -> structured assurance -> high-assurance PR), `docs/getting-started/PHASE-6-GETTING-STARTED.md`
 - CLI Reference: `docs/reference/CLI-COMMANDS-REFERENCE.md`, API: `docs/reference/API.md`
+- CLI entrypoints in this repo: main CLI `src/cli/index.ts` (`ae` / `ae-framework`), benchmark CLI `src/cli/benchmark-cli.ts` (`ae-benchmark`), legacy compatibility shim `src/cli.ts`
 
 ## 🤝 Contributing / 貢献
 
