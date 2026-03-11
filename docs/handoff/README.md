@@ -116,7 +116,7 @@ Prereqs: Node 20 (>= 20.11), corepack-enabled pnpm.
 
 ## Known Constraints / Intentional Exceptions
 
-- execSync-based handlers (e.g., GuardRunner) keep `error: any` in catch blocks where stdout/stderr is needed for context.
+- execSync-based handlers (e.g., GuardRunner) keep `error: any` in catch blocks where stdout/stderr are needed for context.
 - Some CLI commands may require environment/services (e.g., integration orchestrator) not exercised in unit tests; smoke commands above avoid external dependencies.
 
 ## Suggested Next Steps
