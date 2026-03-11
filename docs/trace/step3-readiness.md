@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # Trace Step3 Readiness (2025-10-09)
 
 ## 完了済みの前提条件

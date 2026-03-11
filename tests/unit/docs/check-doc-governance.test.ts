@@ -24,6 +24,7 @@ function makeRoot() {
   mkdirSync(path.join(rootDir, 'docs', 'quality'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'reference'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'strategy'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'trace'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'workflows'), { recursive: true });
   tempRoots.push(rootDir);
   return rootDir;
@@ -492,6 +493,96 @@ describe('check-doc-governance', () => {
       '---',
       '',
       '# Branch Cleanup Report',
+      '',
+    ].join('\n'));
+
+    const result = withCapturedOutput(() => main([
+      'node',
+      'scripts/docs/check-doc-governance.mjs',
+      '--root',
+      rootDir,
+      '--format=json',
+    ]));
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.failures).toEqual([]);
+    expect(payload.warnings).toHaveLength(0);
+    expect(payload.docsScanned).toBe(7);
+  });
+
+  it('governs docs/trace files', () => {
+    const rootDir = makeRoot();
+
+    writeMarkdown(rootDir, 'README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Root',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'AGENTS.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/agents/agents-doc-boundary-matrix.md',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Agents',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Docs',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: agent-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Matrix',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: docs-governance',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Governance',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/trace/REPORT_ENVELOPE.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-11',
+      'owner: trace-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Report Envelope',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/trace/multi-domain-roadmap.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-11',
+      '---',
+      '',
+      '# Trace Roadmap',
       '',
     ].join('\n'));
 

@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: trace-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Inventory Trace Schema (Draft)
 
 ## 目的

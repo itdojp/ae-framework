@@ -62,6 +62,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/quality/*.md`
 - `docs/reference/*.md`
 - `docs/strategy/*.md`
+- `docs/trace/*.md`
 - `docs/workflows/*.md`
 
 ## 5. Validation

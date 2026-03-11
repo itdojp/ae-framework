@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # Multi-domain Trace & Refinement Roadmap
 
 Issue refs: #1011 / #997 / #1003
