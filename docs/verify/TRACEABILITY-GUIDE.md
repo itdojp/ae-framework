@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 ## Traceability Guide: Linking Feature Scenarios → Tests/Implementation/Formal Specs
 
 > 🌍 Language / 言語: English | 日本語
@@ -27,7 +31,7 @@ The CI builds a traceability matrix (CSV + JSON) and posts a PR summary.
 
 Use either tags or a stable ID slug to give each Scenario a durable handle.
 
-```gherkin
+```text
 @checkout @happy
 Scenario: Checkout succeeds with in-stock items
   Given cart has 3 in-stock items
@@ -43,7 +47,7 @@ Recommendations:
 
 In test files, add a short reference comment or string literal that includes the scenario title, slug, or tags.
 
-```ts
+```text
 // Scenario: checkout-succeeds-with-in-stock-items @checkout @happy
 describe('Checkout', () => {
   it('checkout succeeds with in-stock items', async () => {
@@ -61,7 +65,7 @@ Any of the following will link in CI:
 
 Add a single-line reference near the main entry points for the feature flow.
 
-```ts
+```text
 // Scenario: checkout-succeeds-with-in-stock-items @checkout
 export async function placeOrder(input: PlaceOrderInput) {
   // ...
@@ -75,13 +79,13 @@ For UI components, prefer referencing the scenario in Storybook stories or Playw
 For TLA+ or Alloy, add a comment with the scenario slug or tag near the relevant property/predicate.
 
 TLA+ example:
-```tla
+```text
 \* Scenario: checkout-succeeds-with-in-stock-items @checkout
 THEOREM NoNegativeInventory == [] (Inventory >= 0)
 ```
 
 Alloy example:
-```alloy
+```text
 // Scenario: checkout-succeeds-with-in-stock-items @checkout
 assert NoNegativeInventory { all it: Item | it.stock >= 0 }
 ```
