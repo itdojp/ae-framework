@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
 # Issue: Standardize Spec Tooling (OpenAPI) and JIT Domain Assets
 
 > 🌍 Language / 言語: English | 日本語
