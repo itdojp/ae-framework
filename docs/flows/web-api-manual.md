@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: delivery-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Web API + DB フロー（人間のみで回す場合）
 
 ## 前提
