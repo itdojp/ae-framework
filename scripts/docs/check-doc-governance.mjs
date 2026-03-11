@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const ROOT_DOCS = ['README.md', 'AGENTS.md', 'docs/README.md'];
 const GOVERNED_EXTRA_DOCS = ['docs/reference/DOC-GOVERNANCE.md'];
-const GOVERNED_PREFIX_DIRS = ['docs/agents', 'docs/agents/recipes', 'docs/architecture', 'docs/ci', 'docs/contributing', 'docs/development', 'docs/flows', 'docs/getting-started', 'docs/guides', 'docs/handoff', 'docs/integrations', 'docs/maintenance', 'docs/observability', 'docs/operate', 'docs/operations', 'docs/phases', 'docs/product', 'docs/project', 'docs/quality', 'docs/reference', 'docs/samples', 'docs/spec', 'docs/strategy', 'docs/testing', 'docs/trace', 'docs/trace/grafana', 'docs/troubleshooting', 'docs/verify', 'docs/workflows'];
+const GOVERNED_PREFIX_DIRS = ['docs/TLA+', 'docs/adapters', 'docs/agent-builder', 'docs/agents', 'docs/agents/recipes', 'docs/architecture', 'docs/cheatsheets', 'docs/ci', 'docs/codex', 'docs/contributing', 'docs/development', 'docs/flows', 'docs/getting-started', 'docs/guides', 'docs/handoff', 'docs/integrations', 'docs/internal', 'docs/maintenance', 'docs/observability', 'docs/operate', 'docs/operations', 'docs/phases', 'docs/product', 'docs/project', 'docs/quality', 'docs/reference', 'docs/resilience', 'docs/roadmap', 'docs/samples', 'docs/spec', 'docs/strategy', 'docs/testing', 'docs/trace', 'docs/trace/grafana', 'docs/troubleshooting', 'docs/verify', 'docs/workflows'];
 const DOC_ROLE_VALUES = new Set(['ssot', 'derived', 'narrative']);
 const NARRATIVE_NORMATIVE_PATTERNS = [
   /\bmust\b/giu,

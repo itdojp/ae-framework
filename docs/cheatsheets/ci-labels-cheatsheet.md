@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci/label-gating.md
+lastVerified: '2026-03-11'
+---
+
 # CI Labels — Cheatsheet
 
 > 🌍 Language / 言語: English | 日本語

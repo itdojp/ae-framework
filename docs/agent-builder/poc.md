@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
+
 # Agent Builder PoC (最小手順)
 
 ## 目的
@@ -11,12 +16,12 @@
 ## 実行
 
 ### 最小PoC（推奨）
-```bash
+```bash no-doctest
 npm run demo:ab-poc
 ```
 
 ### 直接実行
-```bash
+```bash no-doctest
 node scripts/agent-builder/flow-runner.mjs \
   --flow fixtures/flow/sample.flow.json \
   --summary packages/envelope/__fixtures__/verify-lite-summary.json \

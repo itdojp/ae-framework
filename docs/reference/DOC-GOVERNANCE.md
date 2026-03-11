@@ -48,10 +48,15 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `AGENTS.md`
 - `docs/README.md`
 - `docs/reference/DOC-GOVERNANCE.md`
+- `docs/TLA+/*.md`
+- `docs/adapters/*.md`
+- `docs/agent-builder/*.md`
 - `docs/agents/*.md`
 - `docs/agents/recipes/*.md`
 - `docs/architecture/*.md`
+- `docs/cheatsheets/*.md`
 - `docs/ci/*.md`
+- `docs/codex/*.md`
 - `docs/contributing/*.md`
 - `docs/development/*.md`
 - `docs/flows/*.md`
@@ -59,6 +64,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/guides/*.md`
 - `docs/handoff/*.md`
 - `docs/integrations/*.md`
+- `docs/internal/*.md`
 - `docs/maintenance/*.md`
 - `docs/observability/*.md`
 - `docs/operate/*.md`
@@ -67,6 +73,8 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/product/*.md`
 - `docs/project/*.md`
 - `docs/quality/*.md`
+- `docs/resilience/*.md`
+- `docs/roadmap/*.md`
 - `docs/reference/*.md`
 - `docs/samples/*.md`
 - `docs/spec/*.md`

@@ -1,3 +1,10 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/adapter-thresholds.md
+lastVerified: '2026-03-11'
+---
+
 # Adapter Template — Minimal Outline
 
 This document provides a minimal outline for implementing an adapter with thresholds.

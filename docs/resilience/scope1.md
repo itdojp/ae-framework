@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: resilience
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Resilience Scope 1 — Baseline Verification
 
 Purpose
