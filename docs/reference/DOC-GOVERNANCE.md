@@ -69,6 +69,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/samples/*.md`
 - `docs/spec/*.md`
 - `docs/strategy/*.md`
+- `docs/testing/*.md`
 - `docs/trace/*.md`
 - `docs/troubleshooting/*.md`
 - `docs/verify/*.md`

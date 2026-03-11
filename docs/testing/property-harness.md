@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: testing-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Property-based Testing Harness (Proposal for #406)
 
 > 🌍 Language / 言語: English | 日本語
@@ -11,7 +17,7 @@ Requirements
 - Output should be CI-friendly and aggregated in PR summary.
 
 Harness Outline (pseudo)
-```ts
+```text
 // no dependency requirement in core; can be in adapter/package
 import fc from 'fast-check';
 
