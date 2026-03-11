@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: product-strategy
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Codex と ae-framework の責務境界（Verify-first 戦略）
 
 > Language / 言語: English | 日本語
