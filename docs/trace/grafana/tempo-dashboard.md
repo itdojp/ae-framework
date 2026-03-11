@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: trace-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Grafana/Tempo Playbook for KvOnce Traces
 
 Issue refs: #1036 / #1038 / #1011

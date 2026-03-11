@@ -34,6 +34,7 @@ function makeRoot() {
   mkdirSync(path.join(rootDir, 'docs', 'strategy'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'testing'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'trace'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'trace', 'grafana'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'troubleshooting'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'verify'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'workflows'), { recursive: true });
@@ -834,6 +835,87 @@ describe('check-doc-governance', () => {
       '---',
       '',
       '# Handoff',
+      '',
+    ].join('\n'));
+
+    const result = withCapturedOutput(() => main([
+      'node',
+      'scripts/docs/check-doc-governance.mjs',
+      '--root',
+      rootDir,
+      '--format=json',
+    ]));
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.docsScanned).toBe(6);
+    expect(payload.failures).toEqual([]);
+    expect(payload.warnings).toEqual([]);
+  });
+
+  it('governs docs/trace/grafana files', () => {
+    const rootDir = makeRoot();
+
+    writeMarkdown(rootDir, 'README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Root',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'AGENTS.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/agents/agents-doc-boundary-matrix.md',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Agents',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Docs',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: agent-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Matrix',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: docs-governance',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Governance',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/trace/grafana/tempo-dashboard.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: trace-docs',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Tempo Dashboard',
       '',
     ].join('\n'));
 
