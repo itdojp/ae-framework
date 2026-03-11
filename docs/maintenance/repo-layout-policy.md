@@ -15,7 +15,7 @@
 1. **ルート直下は最小化する**  
    ルートには「プロジェクトメタ情報」「ビルド設定」「主要エントリ」のみを置く。
 2. **生成物は生成物ディレクトリへ集約する**  
-   実行時に生成されるファイルは `artifacts/`・`reports/`・`coverage/`・`temp-reports/` 配下に限定する。
+   実行時に生成されるファイルは原則 `artifacts/`・`reports/`・`temp-reports/` 配下に限定する。`dist/` はローカル build 出力、`coverage/` はローカル品質出力として扱う documented exception であり、いずれも review 前に clean に戻す。
 3. **再生成可能なものは原則コミットしない**  
    例外は「契約成果物（fixtures / golden / reference snapshot）」として明示されたもののみ。
 4. **1 PR = 1責務で整理する**  
@@ -31,7 +31,7 @@
 - ソース/テスト/仕様: `src/`, `tests/`, `spec/`, `schema/`, `docs/`
 - 補助ディレクトリ: `scripts/`, `config/`, `configs/`, `packages/`, `apps/`, `samples/`, `fixtures/`
 - 運用成果物（追跡対象のみ）: `artifacts/`（契約済みファイルに限定）
-- 生成物ディレクトリ（原則 `.gitignore` 管理）: `reports/`, `coverage/`, `temp-reports/`
+- 生成物ディレクトリ（原則 `.gitignore` 管理）: `reports/`, `temp-reports/`
 
 ### 3.2 ローカル限定で現れ得る項目（非ブロッキング warning）
 
@@ -86,7 +86,7 @@
 
 ## 6. 運用ルール
 
-1. 新規コマンドを追加する際は、出力先を `artifacts/`・`reports/`・`coverage/`・`temp-reports/` のいずれかに固定する。  
+1. 新規コマンドを追加する際は、出力先を原則 `artifacts/`・`reports/`・`temp-reports/` のいずれかに固定する。`coverage/` はテストツール既定出力としてのみ例外扱いとする。
 2. ルート直下へ生成する実装は受け入れない（既存実装は段階的に解消）。  
 3. Cleanupコマンド（`pnpm run clean:root-safe` / `pnpm run clean:project`）で除去できることを保証する。  
 4. `verify-lite` / `pr-verify` / `ci-core` でルート汚染検知を必須ゲートとして維持する。  
