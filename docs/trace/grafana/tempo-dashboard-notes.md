@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: 2026-03-11
+---
+
 # Tempo Dashboard Notes (Draft)
 
 Issue: #1038 / #1011
