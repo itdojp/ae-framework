@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # TODO Marker Inventory Summary
 
 - generatedAt: 2026-02-28T23:08:00.405Z
