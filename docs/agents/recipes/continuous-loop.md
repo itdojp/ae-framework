@@ -1,3 +1,14 @@
+---
+docRole: derived
+canonicalSource:
+- docs/integrations/CODEX-CONTINUATION-CONTRACT.md
+- schema/codex-task-response.schema.json
+- docs/ci-policy.md
+- policy/risk-policy.yml
+- docs/ci/codex-autopilot-lane.md
+lastVerified: '2026-03-11'
+---
+
 # Recipe: Continuous Loop Contract (CodeX)
 
 ## When to use
@@ -24,15 +35,15 @@
 
 ## Commands
 
-```bash
+```bash no-doctest
 pnpm -s run verify:lite
 ```
 
-```bash
+```bash no-doctest
 gh pr checks <PR_NUMBER> --required
 ```
 
-```bash
+```bash no-doctest
 echo '{"description":"validate API","subagent_type":"validation","context":{}}' | pnpm run codex:adapter
 ```
 
@@ -40,7 +51,7 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 
 ### Unblocked (continue)
 
-```json
+```json no-doctest
 {
   "summary": "Validation completed without blockers",
   "analysis": "Schema and traceability checks passed for the current scope.",
@@ -58,7 +69,7 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 
 ### Blocked (justified)
 
-```json
+```json no-doctest
 {
   "summary": "Blocked: missing policy labels for autopilot lane",
   "analysis": "Risk policy requires labels before auto-merge lane can continue.",

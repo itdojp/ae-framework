@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+- .github/workflows/spec-validation.yml
+- docs/spec/context-pack.md
+lastVerified: '2026-03-11'
+---
+
 # Recipe: Spec / IR / Drift
 
 ## When to use
@@ -11,19 +19,19 @@
 
 ## Commands
 
-```bash
+```bash no-doctest
 pnpm -s run spec:lint
 ```
 
-```bash
+```bash no-doctest
 pnpm -s run spec:validate
 ```
 
-```bash
+```bash no-doctest
 pnpm -s run spec:codegen
 ```
 
-```bash
+```bash no-doctest
 git status --short
 ```
 

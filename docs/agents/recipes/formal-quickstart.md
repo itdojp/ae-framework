@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+- docs/quality/formal-runbook.md
+- docs/quality/formal-tools-setup.md
+lastVerified: '2026-03-11'
+---
+
 # Recipe: Formal Quickstart
 
 ## When to use
@@ -11,15 +19,15 @@
 
 ## Commands
 
-```bash
+```bash no-doctest
 pnpm -s run tools:formal:check
 ```
 
-```bash
+```bash no-doctest
 pnpm -s run verify:formal
 ```
 
-```bash
+```bash no-doctest
 pnpm -s run formal:summary
 ```
 

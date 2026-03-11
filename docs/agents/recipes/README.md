@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: agent-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Agent Prompt Pack (Recipes)
 
 `docs/agents/recipes/*` は、頻出の検証作業を短い手順で再現するための定型レシピです。
