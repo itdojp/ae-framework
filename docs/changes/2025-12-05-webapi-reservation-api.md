@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
 # Web API 予約リポジトリ実装とプロパティテスト整備 (2025-12-05)
 
 ## 目的

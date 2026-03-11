@@ -2157,6 +2157,96 @@ describe('check-doc-governance', () => {
     expect(payload.docsScanned).toBe(15);
   });
 
+  it('governs changes and research docs files', () => {
+    const rootDir = makeRoot();
+    mkdirSync(path.join(rootDir, 'docs', 'changes'), { recursive: true });
+    mkdirSync(path.join(rootDir, 'docs', 'research'), { recursive: true });
+
+    writeMarkdown(rootDir, 'README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-12',
+      '---',
+      '',
+      '# Root',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'AGENTS.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/agents/agents-doc-boundary-matrix.md',
+      'lastVerified: 2026-03-12',
+      '---',
+      '',
+      '# Agents',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-12',
+      '---',
+      '',
+      '# Docs',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-12',
+      'owner: agent-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Matrix',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-12',
+      'owner: docs-governance',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Governance',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/changes/2025-08-27-codex-ci-enhancements.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-12',
+      '---',
+      '',
+      '# Change log',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/research/README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-12',
+      '---',
+      '',
+      '# Research',
+      '',
+    ].join('\n'));
+
+    const result = withCapturedOutput(() => main([
+      'node',
+      'scripts/docs/check-doc-governance.mjs',
+      '--root',
+      rootDir,
+      '--format=json',
+    ]));
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.failures).toEqual([]);
+    expect(payload.warnings).toHaveLength(0);
+    expect(payload.docsScanned).toBe(7);
+  });
+
   it('fails when a derived doc omits canonicalSource', () => {
     const rootDir = makeRoot();
 

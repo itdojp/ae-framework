@@ -54,6 +54,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/agents/*.md`
 - `docs/agents/recipes/*.md`
 - `docs/architecture/*.md`
+- `docs/changes/*.md`
 - `docs/cheatsheets/*.md`
 - `docs/ci/*.md`
 - `docs/codex/*.md`
@@ -73,6 +74,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/product/*.md`
 - `docs/project/*.md`
 - `docs/quality/*.md`
+- `docs/research/*.md`
 - `docs/resilience/*.md`
 - `docs/roadmap/*.md`
 - `docs/reference/*.md`
