@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: phase-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Frontend Foundation - Technical Specifications
 
 > Phase 6 UI/UX基盤の技術仕様とブラウザサポート行列
@@ -67,7 +73,7 @@
 - **Fallback Strategy**: English fallback for missing translations
 
 ### Supported Locales
-```typescript
+```text
 const supportedLocales = [
   'ja',    // Japanese (default)
   'en',    // English
@@ -89,7 +95,7 @@ messages/
 ```
 
 ### Sample Translation Keys
-```json
+```text
 {
   "HomePage": {
     "title": "ae-framework",
@@ -169,7 +175,7 @@ graph TD
 ## 🚀 Development Workflow
 
 ### Local Development
-```bash
+```text
 # Install dependencies
 pnpm install
 
@@ -187,7 +193,7 @@ pnpm run dev:storybook
 ```
 
 ### Production Build
-```bash
+```text
 # Build all packages in correct order
 pnpm run build:frontend
 
@@ -196,7 +202,7 @@ pnpm run build:storybook
 ```
 
 ### Quality Assurance
-```bash
+```text
 # Run ESLint with accessibility checks
 pnpm run lint:frontend
 

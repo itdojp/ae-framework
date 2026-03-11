@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: phase-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Phase 2: Natural Language Requirements
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -43,7 +49,7 @@ The interface should be user-friendly.
 ```
 
 **Structured Output:**
-```typescript
+```text
 interface RequirementAnalysisResult {
   functional: FunctionalRequirement[];    // 2 requirements
   nonFunctional: NonFunctionalRequirement[]; // 2 requirements  
@@ -61,7 +67,7 @@ interface RequirementAnalysisResult {
 Systematic classification of requirements by type and priority:
 
 **Category Types:**
-```typescript
+```text
 enum RequirementType {
   FUNCTIONAL = 'functional',
   NON_FUNCTIONAL = 'non_functional', 
@@ -86,7 +92,7 @@ Identifying and resolving ambiguous or incomplete requirements:
 - **Assumptions**: Implicit requirements
 
 **Resolution Process:**
-```typescript
+```text
 interface AmbiguityResolution {
   original: string;
   issues: AmbiguityIssue[];
@@ -98,7 +104,7 @@ interface AmbiguityResolution {
 #### 3.1 DbC extraction (pre/post/invariant)
 For each requirement or use-case, extract Design by Contract (DbC) statements with stable IDs.
 
-```typescript
+```text
 interface DbcExtractionItem {
   id: string; // PRE-*, POST-*, INV-*
   requirementRef: string;
@@ -143,7 +149,7 @@ Ensuring completeness and consistency of requirements:
 Converting natural language requirements to formal specifications:
 
 **Specification Types:**
-```typescript
+```text
 interface FormalSpecification {
   tlaPlus: TLASpecification;      // TLA+ formal specification
   contracts: ContractSpec[];      // Pre/post conditions
@@ -184,7 +190,7 @@ Creating comprehensive requirement documentation:
 ### CLI Command Examples
 
 #### Requirements Analysis
-```bash
+```text
 # Analyze natural language requirements
 ae-framework phase-2 --analyze --source="requirements.txt"
 
@@ -197,7 +203,7 @@ ae-framework phase-2 --analyze --source="requirements.txt"
 ```
 
 #### Requirement Validation
-```bash
+```text
 # Validate requirements completeness and consistency
 ae-framework phase-2 --validate --source="requirements.md"
 
@@ -210,7 +216,7 @@ ae-framework phase-2 --validate --source="requirements.md"
 ```
 
 #### Formal Specification Generation
-```bash
+```text
 # Generate formal specifications
 ae-framework phase-2 --formal --source="validated-requirements.json"
 
@@ -247,7 +253,7 @@ The Natural Language Task Adapter automatically suggests interventions in these 
 ### TypeScript Interfaces
 
 #### RequirementAnalysisResult
-```typescript
+```text
 interface RequirementAnalysisResult {
   functional: FunctionalRequirement[];
   nonFunctional: NonFunctionalRequirement[];
@@ -259,7 +265,7 @@ interface RequirementAnalysisResult {
 ```
 
 #### FormalSpecification
-```typescript
+```text
 interface FormalSpecification {
   tlaPlus: TLASpecification;
   contracts: ContractSpecification[];
@@ -357,7 +363,7 @@ Claude Code: Natural Language Task Adapterを実行中...
 ビジネスエンティティとその関係性を特定：
 
 **抽出される情報:**
-```typescript
+```text
 interface BusinessEntity {
   name: string;
   type: 'core' | 'supporting';
@@ -402,7 +408,7 @@ interface BusinessEntity {
 
 最小出力例:
 
-```yaml
+```text
 dbc:
   - id: PRE-ORDER-001
     type: precondition
@@ -456,7 +462,7 @@ dbc:
 ## CLI コマンド使用例
 
 ### 基本的な要件分析
-```bash
+```text
 # 要件ドキュメントの分析
 ae-framework natural-language --analyze --sources="requirements.md"
 
@@ -469,7 +475,7 @@ ae-framework natural-language --analyze --sources="requirements.md"
 ```
 
 ### エンティティ抽出
-```bash
+```text
 # ビジネスエンティティの抽出
 ae-framework natural-language --extract-entities --sources="requirements.md"
 
@@ -482,7 +488,7 @@ ae-framework natural-language --extract-entities --sources="requirements.md"
 ```
 
 ### 完全性検証
-```bash
+```text
 # 要件の完全性チェック
 ae-framework natural-language --validate-completeness --sources="requirements.md"
 
@@ -520,7 +526,7 @@ Natural Language Task Adapterは、以下の状況で自動的に介入を提案
 ## TypeScript インターフェース
 
 ### TaskRequest
-```typescript
+```text
 interface TaskRequest {
   description: string;
   prompt: string;
@@ -529,7 +535,7 @@ interface TaskRequest {
 ```
 
 ### TaskResponse
-```typescript
+```text
 interface TaskResponse {
   summary: string;
   analysis: string;
@@ -541,7 +547,7 @@ interface TaskResponse {
 ```
 
 ### ProcessedRequirements
-```typescript
+```text
 interface ProcessedRequirements {
   structured: RequirementDocument[];
   summary: string;
@@ -571,19 +577,19 @@ Phase 2完了後は、以下のフェーズに進みます：
 ### よくある問題と解決策
 
 **問題: 要件の抽出精度が低い**
-```bash
+```text
 # より詳細な要件パターンを使用
 ae-framework natural-language --analyze --sources="detailed-requirements.md"
 ```
 
 **問題: エンティティの関係性が不明確**
-```bash
+```text
 # エンティティ抽出の再実行
 ae-framework natural-language --extract-entities --sources="updated-requirements.md"
 ```
 
 **問題: 完全性スコアが低い**
-```bash
+```text
 # ギャップ分析の実行
 ae-framework natural-language --validate-completeness --sources="all-requirements.md"
 ```
@@ -593,7 +599,7 @@ ae-framework natural-language --validate-completeness --sources="all-requirement
 ### 要件パターンのカスタマイズ
 要件抽出パターンは`src/agents/natural-language-task-adapter.ts`で設定可能：
 
-```typescript
+```text
 const requirementPatterns = [
   /^\\s*[-*+]\\s+(.+)/,                    // Markdown bullet points
   /^\\s*\\d+[\\.\\)]\\s+(.+)/,            // Numbered lists
@@ -606,7 +612,7 @@ const requirementPatterns = [
 ### 検証閾値の調整
 完全性検証の閾値は設定可能：
 
-```typescript
+```text
 const COMPLETENESS_THRESHOLDS = {
   critical: 50,    // 進行をブロックする閾値
   warning: 70,     // 警告を表示する閾値

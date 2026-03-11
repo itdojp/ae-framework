@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: phase-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Phase 4: Validation
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -35,7 +41,7 @@ Claude Code: Validating with Validation Task Adapter...
 Completeness and consistency check for functional and non-functional requirements:
 
 **Validation Items:**
-```typescript
+```text
 interface ValidationResult {
   isValid: boolean;
   score: number;                    // Overall score: 85%
@@ -53,7 +59,7 @@ interface ValidationResult {
 - Overall: 85%
 
 **Example Detected Issues:**
-```typescript
+```text
 interface ValidationIssue {
   id: string;                       // REQ001
   type: 'error' | 'warning' | 'info';
@@ -184,7 +190,7 @@ Comprehensive quality assessment across multiple phases:
 ### CLI Command Examples
 
 #### Requirements Validation
-```bash
+```text
 # Validate requirements completeness and consistency
 ae-framework validate --requirements --sources="requirements.md"
 
@@ -197,7 +203,7 @@ ae-framework validate --requirements --sources="requirements.md"
 ```
 
 #### User Stories Validation
-```bash
+```text
 # Validate user stories quality
 ae-framework validate --stories --sources="user-stories.md"
 
@@ -210,7 +216,7 @@ ae-framework validate --stories --sources="user-stories.md"
 ```
 
 #### Traceability Validation
-```bash
+```text
 # Validate traceability from requirements to code
 ae-framework validate --traceability --sources="all-artifacts/"
 
@@ -223,7 +229,7 @@ ae-framework validate --traceability --sources="all-artifacts/"
 ```
 
 #### Completeness Validation
-```bash
+```text
 # Validate completeness across all phases
 ae-framework validate --completeness --sources="project/"
 
@@ -268,7 +274,7 @@ The Validation Task Adapter automatically suggests interventions in these situat
 ### TypeScript Interfaces
 
 #### ValidationResult
-```typescript
+```text
 interface ValidationResult {
   isValid: boolean;
   score: number;
@@ -279,7 +285,7 @@ interface ValidationResult {
 ```
 
 #### ValidationIssue
-```typescript
+```text
 interface ValidationIssue {
   id: string;
   type: 'error' | 'warning' | 'info';
@@ -292,7 +298,7 @@ interface ValidationIssue {
 ```
 
 #### CoverageReport
-```typescript
+```text
 interface CoverageReport {
   functional: number;      // Functional requirements coverage
   nonFunctional: number;   // Non-functional requirements coverage
@@ -305,7 +311,7 @@ interface CoverageReport {
 ### Validation Level Configuration
 
 #### Basic Validation
-```typescript
+```text
 const basicValidation = {
   requirements: true,
   stories: true,
@@ -315,7 +321,7 @@ const basicValidation = {
 ```
 
 #### Comprehensive Validation
-```typescript
+```text
 const comprehensiveValidation = {
   requirements: true,
   stories: true,
@@ -341,19 +347,19 @@ After Phase 4 completion, proceed to these phases:
 #### Common Issues and Solutions
 
 **Issue: Low validation score**
-```bash
+```text
 # Detailed issue analysis
 ae-framework validate --requirements --completeness --sources="all/"
 ```
 
 **Issue: Incomplete traceability**
-```bash
+```text
 # Rebuild traceability matrix
 ae-framework validate --traceability --sources="artifacts/"
 ```
 
 **Issue: Multiple cross-validation issues**
-```bash
+```text
 # Phased validation approach
 ae-framework validate --requirements
 ae-framework validate --stories
@@ -363,7 +369,7 @@ ae-framework validate --traceability
 ### Configuration and Customization
 
 #### Validation Threshold Adjustment
-```typescript
+```text
 const validationThresholds = {
   critical: 50,      // Threshold to block progress
   warning: 70,       // Threshold to display warnings
@@ -373,7 +379,7 @@ const validationThresholds = {
 ```
 
 #### Custom Validation Rules
-```typescript
+```text
 const customValidationRules = {
   requirementFormat: /^REQ-\d{3}:/,
   storyFormat: /^US-\d{3}:/,
@@ -415,7 +421,7 @@ Claude Code: Validation Task Adapterで検証中...
 機能・非機能要件の完全性と一貫性チェック：
 
 **検証項目:**
-```typescript
+```text
 interface ValidationResult {
   isValid: boolean;
   score: number;                    // 総合スコア: 85%
@@ -433,7 +439,7 @@ interface ValidationResult {
 - 全体: 85%
 
 **検出される問題例:**
-```typescript
+```text
 interface ValidationIssue {
   id: string;                       // REQ001
   type: 'error' | 'warning' | 'info';
@@ -564,7 +570,7 @@ interface ValidationIssue {
 ## CLI コマンド使用例
 
 ### 要件検証
-```bash
+```text
 # 要件の完全性と一貫性を検証
 ae-framework validate --requirements --sources="requirements.md"
 
@@ -577,7 +583,7 @@ ae-framework validate --requirements --sources="requirements.md"
 ```
 
 ### ユーザーストーリー検証
-```bash
+```text
 # ユーザーストーリーの品質検証
 ae-framework validate --stories --sources="user-stories.md"
 
@@ -590,7 +596,7 @@ ae-framework validate --stories --sources="user-stories.md"
 ```
 
 ### トレーサビリティ検証
-```bash
+```text
 # 要件からコードまでの追跡可能性を検証
 ae-framework validate --traceability --sources="all-artifacts/"
 
@@ -603,7 +609,7 @@ ae-framework validate --traceability --sources="all-artifacts/"
 ```
 
 ### 完全性検証
-```bash
+```text
 # 全フェーズの完全性を検証
 ae-framework validate --completeness --sources="project/"
 
@@ -648,7 +654,7 @@ Validation Task Adapterは、以下の状況で自動的に介入を提案しま
 ## TypeScript インターフェース
 
 ### ValidationResult
-```typescript
+```text
 interface ValidationResult {
   isValid: boolean;
   score: number;
@@ -659,7 +665,7 @@ interface ValidationResult {
 ```
 
 ### ValidationIssue
-```typescript
+```text
 interface ValidationIssue {
   id: string;
   type: 'error' | 'warning' | 'info';
@@ -672,7 +678,7 @@ interface ValidationIssue {
 ```
 
 ### CoverageReport
-```typescript
+```text
 interface CoverageReport {
   functional: number;      // 機能要件カバレッジ
   nonFunctional: number;   // 非機能要件カバレッジ
@@ -685,7 +691,7 @@ interface CoverageReport {
 ## 検証レベルの設定
 
 ### 基本検証
-```typescript
+```text
 const basicValidation = {
   requirements: true,
   stories: true,
@@ -695,7 +701,7 @@ const basicValidation = {
 ```
 
 ### 包括的検証
-```typescript
+```text
 const comprehensiveValidation = {
   requirements: true,
   stories: true,
@@ -721,19 +727,19 @@ Phase 4完了後は、以下のフェーズに進みます：
 ### よくある問題と解決策
 
 **問題: 検証スコアが低い**
-```bash
+```text
 # 詳細な問題分析
 ae-framework validate --requirements --completeness --sources="all/"
 ```
 
 **問題: トレーサビリティが不完全**
-```bash
+```text
 # トレーサビリティマトリックスの再構築
 ae-framework validate --traceability --sources="artifacts/"
 ```
 
 **問題: クロス検証で多数の問題**
-```bash
+```text
 # フェーズ別の段階的検証
 ae-framework validate --requirements
 ae-framework validate --stories
@@ -743,7 +749,7 @@ ae-framework validate --traceability
 ## 設定とカスタマイズ
 
 ### 検証閾値の調整
-```typescript
+```text
 const validationThresholds = {
   critical: 50,      // 進行をブロックする閾値
   warning: 70,       // 警告を表示する閾値
@@ -753,7 +759,7 @@ const validationThresholds = {
 ```
 
 ### カスタム検証ルール
-```typescript
+```text
 const customValidationRules = {
   requirementFormat: /^REQ-\d{3}:/,
   storyFormat: /^US-\d{3}:/,

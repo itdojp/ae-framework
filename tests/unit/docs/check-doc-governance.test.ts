@@ -23,6 +23,7 @@ function makeRoot() {
   mkdirSync(path.join(rootDir, 'docs', 'observability'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'operate'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'operations'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'phases'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'product'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'project'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'quality'), { recursive: true });
@@ -607,6 +608,87 @@ describe('check-doc-governance', () => {
     expect(payload.failures).toEqual([]);
     expect(payload.warnings).toHaveLength(0);
     expect(payload.docsScanned).toBe(7);
+  });
+
+  it('governs docs/phases files', () => {
+    const rootDir = makeRoot();
+
+    writeMarkdown(rootDir, 'README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Root',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'AGENTS.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/agents/agents-doc-boundary-matrix.md',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Agents',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/README.md', [
+      '---',
+      'docRole: narrative',
+      'lastVerified: 2026-03-10',
+      '---',
+      '',
+      '# Docs',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: agent-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Matrix',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: docs-governance',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Governance',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/phases/PHASE-4-VALIDATION.md', [
+      '---',
+      'docRole: ssot',
+      'lastVerified: 2026-03-10',
+      'owner: phase-docs',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Validation',
+      '',
+    ].join('\n'));
+
+    const result = withCapturedOutput(() => main([
+      'node',
+      'scripts/docs/check-doc-governance.mjs',
+      '--root',
+      rootDir,
+      '--format=json',
+    ]));
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.docsScanned).toBe(6);
+    expect(payload.failures).toEqual([]);
+    expect(payload.warnings).toEqual([]);
   });
 
   it('governs docs/verify files', () => {

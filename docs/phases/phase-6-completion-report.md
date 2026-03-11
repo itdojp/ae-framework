@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: 2026-03-11
+---
 # Phase 6 Status Report (Current Baseline)
 
 > 🌍 Language / 言語: English | 日本語
@@ -31,7 +35,7 @@ It replaces older "100% completed" claims that mixed implemented features and ro
 
 ## Reproducible commands
 
-```bash
+```text
 pnpm install
 pnpm run build
 pnpm run ae-framework -- ui-scaffold --components --tokens

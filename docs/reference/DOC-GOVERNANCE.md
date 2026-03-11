@@ -61,6 +61,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/observability/*.md`
 - `docs/operate/*.md`
 - `docs/operations/*.md`
+- `docs/phases/*.md`
 - `docs/product/*.md`
 - `docs/project/*.md`
 - `docs/quality/*.md`
