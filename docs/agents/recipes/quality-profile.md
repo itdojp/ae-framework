@@ -1,3 +1,12 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci-policy.md
+- docs/ci/OPT-IN-CONTROLS.md
+- policy/risk-policy.yml
+lastVerified: '2026-03-11'
+---
+
 # Recipe: Quality Profile
 
 ## When to use
@@ -12,15 +21,15 @@
 
 ## Commands
 
-```bash
+```bash no-doctest
 gh pr view <PR_NUMBER> --json labels,files
 ```
 
-```bash
+```bash no-doctest
 gh pr comment <PR_NUMBER> --body '/review strict'
 ```
 
-```bash
+```bash no-doctest
 gh pr comment <PR_NUMBER> --body '/run-security'
 ```
 

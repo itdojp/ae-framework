@@ -1,3 +1,11 @@
+---
+docRole: derived
+canonicalSource:
+- docs/ci-policy.md
+- .github/workflows/verify-lite.yml
+lastVerified: '2026-03-11'
+---
+
 # Recipe: Verify Lite
 
 ## When to use
@@ -11,11 +19,11 @@
 
 ## Commands
 
-```bash
+```bash no-doctest
 pnpm -s run verify:lite
 ```
 
-```bash
+```bash no-doctest
 gh pr checks <PR_NUMBER> --required
 ```
 
