@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: testing-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Flaky Test Triage (CI)
 
 Purpose: Provide a minimal, repeatable checklist to diagnose flaky tests without expanding CI cost.

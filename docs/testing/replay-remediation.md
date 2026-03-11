@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: testing-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Replay Remediation Spec (#411)
 
 > 🌍 Language / 言語: English | 日本語
@@ -6,7 +12,7 @@ Purpose
 - Provide a minimal, machine-readable suggestion when replay violates invariants.
 
 Schema (example)
-```json
+```text
 {
   "traceId": "inv-007",
   "violatedInvariant": "allocated <= onHand",

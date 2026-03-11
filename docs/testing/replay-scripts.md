@@ -1,9 +1,15 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: testing-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Replay Test Scripts & CI (#411)
 
 > 🌍 Language / 言語: English | 日本語
 
 Package Scripts (example)
-```json
+```text
 {
   "scripts": {
     "test:replay": "node scripts/replay.js",
@@ -13,7 +19,7 @@ Package Scripts (example)
 ```
 
 CI Snippet
-```yaml
+```text
 name: replay-tests
 on: [push, pull_request]
 jobs:
@@ -36,7 +42,7 @@ Notes
 - `REPLAY_ONHAND_MIN`: minimum onHand value for invariant (default `0`).
 
 Example
-```bash
+```text
 REPLAY_DISABLE=allocated_le_onhand npm run test:replay
 REPLAY_ONHAND_MIN=5 npm run test:replay
 ```

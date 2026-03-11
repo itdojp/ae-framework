@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: testing-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Replay Coverage Metrics (#411)
 
 > 🌍 Language / 言語: English | 日本語
@@ -11,7 +17,7 @@ Artifact
 - Include in PR sidecar JSON `artifacts/summary/combined.json` under key `replay`.
 
 Computation (pseudo)
-```ts
+```text
 const events = load('artifacts/domain/events.json');
 const byType: Record<string, number> = {};
 for (const e of events) byType[e.name] = (byType[e.name] || 0) + 1;

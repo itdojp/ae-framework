@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: testing-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Parallel Execution Strategy
 
 > 🌍 Language / 言語: English | 日本語
@@ -39,7 +45,7 @@ Note: `test:e2e` is an alias to `test:phase3.2:core` (Playwright integration + v
 ### 3. Execution Strategies
 
 #### GitHub Actions Matrix Strategy
-```yaml
+```text
 strategy:
   fail-fast: false
   matrix:
@@ -47,7 +53,7 @@ strategy:
 ```
 
 #### Local Parallel Coordination
-```bash
+```text
 # Run all test suites in parallel with optimal resource allocation
 pnpm run test:parallel
 
@@ -78,12 +84,12 @@ Additionally, a manual workflow is available for ad-hoc runs:
 ### Local Development
 
 #### Quick Parallel Run
-```bash
+```text
 pnpm run test:parallel
 ```
 
 #### Podman-based Execution (Docker Desktop fallback)
-```bash
+```text
 # Unit suite via container runtime (Podman preferred, Docker fallback)
 bash scripts/docker/run-unit.sh
 
@@ -93,7 +99,7 @@ pnpm run podman:smoke
 > ℹ️ Docker Desktop を使う場合も `scripts/docker/run-unit.sh` は `docker compose` へ自動フォールバックします。
 
 #### Manual Coordination
-```bash
+```text
 # Start parallel coordinator with custom settings
 node scripts/parallel-test-coordinator.mjs
 ```
@@ -156,7 +162,7 @@ node scripts/parallel-test-coordinator.mjs
 ## Configuration
 
 ### Environment Variables
-```bash
+```text
 # Maximum concurrent test containers
 MAX_TEST_CONCURRENCY=4
 
@@ -179,7 +185,7 @@ AE_PARALLEL_EXCLUDE_SUITES=e2e,flake-detection
 ```
 
 ### Podman Compose Override
-```yaml
+```text
 # podman/compose.override.yaml (create alongside podman/compose.*.yaml)
 # docker-compose.override.yml (Docker Desktop users can mirror the same settings)
 services:
@@ -228,7 +234,7 @@ services:
 - **Solution**: Review test isolation and shared resource usage
 
 ### Debugging Commands
-```bash
+```text
 # Check Podman resources (or `docker` if you use Docker Desktop)
 podman system df
 

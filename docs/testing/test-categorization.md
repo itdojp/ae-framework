@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: testing-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Test Categorization Strategy
 
 > 🌍 Language / 言語: English | 日本語

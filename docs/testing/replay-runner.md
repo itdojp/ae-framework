@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: 2026-03-11
+owner: testing-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # Replay Runner — Environment Options
 
 The replay runner (`scripts/testing/replay-runner.mjs`) supports environment variables to flexibly control checks in CI/local runs.
