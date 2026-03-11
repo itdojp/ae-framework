@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: testing
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Domain Events → Contracts & Replay
 
 > 🌍 Language / 言語: English | 日本語
@@ -19,7 +26,7 @@ Artifacts
 - `artifacts/properties/summary.json` — keep {seed, runs, version} when replay uses property-based exploration
 
 Zod Contract Sketch
-```ts
+```ts no-doctest
 import { z } from 'zod';
 
 export const DomainEvent = z.object({
@@ -32,7 +39,7 @@ export type DomainEventT = z.infer<typeof DomainEvent>;
 ```
 
 Replay Test Sketch
-```ts
+```text
 import { expect, describe, it } from 'vitest';
 import { DomainEvent } from './contracts';
 

@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: testing
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # BDD Lint: Aggregate Root Commands Only
 
 > 🌍 Language / 言語: English | 日本語

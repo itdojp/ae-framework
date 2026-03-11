@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Property Harness Usage (scripts/testing/property-harness.mjs)
 
 > 🌍 Language / 言語: English | 日本語
