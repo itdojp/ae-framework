@@ -1,3 +1,9 @@
+---
+docRole: derived
+canonicalSource:
+- docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
+lastVerified: '2026-03-11'
+---
 # Zero-Based Ideal Design Blueprint (2026-03)
 
 > Language / 言語: English | 日本語

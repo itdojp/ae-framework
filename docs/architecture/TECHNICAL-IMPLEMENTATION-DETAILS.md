@@ -1,3 +1,9 @@
+---
+docRole: derived
+canonicalSource:
+- docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
+lastVerified: '2026-03-11'
+---
 # 🔧 AE Framework Technical Implementation Details
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -36,7 +42,7 @@ Technical implementation details of ae-framework's core integration system:
 
 #### Architecture Overview
 
-```typescript
+```text
 interface HybridIntegrationSystem {
   intentAnalyzer: IntentAnalysisEngine;
   naturalLanguageProcessor: NLPEngine;
@@ -70,7 +76,7 @@ Technical integration with Claude Code for enhanced development workflow:
 
 #### Task Tool Architecture
 
-```typescript
+```text
 interface TaskToolIntegration {
   adapters: TaskAdapter[];
   executionEngine: TaskExecutionEngine;
@@ -95,7 +101,7 @@ Comprehensive implementation of the 6-phase agent system:
 
 #### Agent Hierarchy
 
-```typescript
+```text
 abstract class BaseAgent {
   protected config: AgentConfig;
   protected stateManager: StateManager;
@@ -144,7 +150,7 @@ Advanced communication patterns between agents:
 
 #### Message Passing System
 
-```typescript
+```text
 interface AgentMessage {
   from: AgentType;
   to: AgentType;
@@ -169,7 +175,7 @@ Advanced auto-fix system for intelligent code repair:
 
 #### Core CEGIS Engine
 
-```typescript
+```text
 interface CEGISEngine {
   synthesizer: CodeSynthesizer;
   verifier: CodeVerifier;
@@ -220,7 +226,7 @@ Implementation of runtime conformance checking for quality assurance:
 
 #### Conformance Architecture
 
-```typescript
+```text
 interface ConformanceSystem {
   monitors: ConformanceMonitor[];
   validators: ConformanceValidator[];
@@ -268,7 +274,7 @@ Comprehensive state management for complex development workflows:
 
 #### State Management Stack
 
-```typescript
+```text
 interface StateManagementSystem {
   stateStore: StateStore;
   eventStore: EventStore;
@@ -298,7 +304,7 @@ interface StateManagementSystem {
 
 Advanced event sourcing implementation:
 
-```typescript
+```text
 interface EventSourcingSystem {
   eventStore: EventStore;
   projections: Projection[];
@@ -359,7 +365,7 @@ ae-frameworkの中核となる統合システムの技術実装詳細：
 - ✅ **Flake Management**: 自動検出・隔離・回復システム
 
 #### アーキテクチャパターン
-```typescript
+```text
 // コアインターフェース定義
 interface HybridIntegrationSystem {
   // Claude Code Task Tool統合
@@ -406,7 +412,7 @@ export class HybridTDDSystem implements HybridIntegrationSystem {
 ```
 
 #### Request Routing System
-```typescript
+```text
 interface RequestRouter {
   analyzeRequest(request: SystemRequest): Promise<RouteInfo>;
 }
@@ -431,7 +437,7 @@ class IntelligentRouter implements RequestRouter {
 **✅ 2025年実装完了**: Claude Code統合は完全実装され、自然言語指示から高品質なReactアプリケーション生成まで一貫したワークフローを提供します。
 
 #### Task Tool Adapter 実装
-```typescript
+```text
 export class TaskToolAdapter {
   constructor(
     private claudeAPI: ClaudeAPIClient,
@@ -465,7 +471,7 @@ export class TaskToolAdapter {
 ```
 
 #### Context Management
-```typescript
+```text
 interface ContextManager {
   buildContext(params: ContextParams): Promise<ExecutionContext>;
   updateContext(context: ExecutionContext, update: ContextUpdate): Promise<void>;
@@ -497,7 +503,7 @@ class IntelligentContextManager implements ContextManager {
 ### 🔌 MCP Server 統合
 
 #### MCP Server Architecture
-```typescript
+```text
 // MCPサーバー基底クラス
 export abstract class BaseMCPServer {
   protected tools: Map<string, MCPTool> = new Map();
@@ -558,7 +564,7 @@ export class IntentAnalysisMCPServer extends BaseMCPServer {
 ### 🧠 Agent Architecture
 
 #### Base Agent Interface
-```typescript
+```text
 interface AIAgent {
   id: string;
   phase: PhaseType;
@@ -604,7 +610,7 @@ abstract class BaseAgent implements AIAgent {
 ```
 
 #### Specialized Agent Implementation
-```typescript
+```text
 // Phase 1: Intent Agent
 export class IntentAgent extends BaseAgent {
   constructor(config: AgentConfig, aiService: AIService) {
@@ -693,7 +699,7 @@ export class UIGenerationAgent extends BaseAgent {
 ### 🔄 Agent Coordination
 
 #### Multi-Agent Orchestration
-```typescript
+```text
 interface AgentOrchestrator {
   coordinatePhaseExecution(
     phase: PhaseType,
@@ -777,7 +783,7 @@ export class IntelligentOrchestrator implements AgentOrchestrator {
 CEGIS (Counter-Example Guided Inductive Synthesis) システムは、失敗アーティファクトを基にした自動コード修復機能です。
 
 #### 失敗アーティファクトスキーマ
-```typescript
+```text
 // 標準化された失敗アーティファクトスキーマ
 export const FailureArtifactSchema = z.object({
   id: z.string().uuid(),
@@ -849,7 +855,7 @@ export class FailureArtifactFactory {
 ```
 
 #### 自動修復エンジン
-```typescript
+```text
 export class AutoFixEngine {
   constructor(
     private strategies: Map<FailureCategory, FixStrategy[]> = new Map(),
@@ -939,7 +945,7 @@ export class AutoFixEngine {
 ```
 
 #### CLIインターフェース
-```typescript
+```text
 // ae fix コマンド実装
 export class AEFixCLI {
   async execute(args: string[]): Promise<void> {
@@ -1000,7 +1006,7 @@ export class AEFixCLI {
 ランタイム適合性検証システムは、本番環境での契約違反や仕様ドリフトをリアルタイムで検出します。
 
 #### 適合性ガード
-```typescript
+```text
 // Zodベースのランタイム検証ガード
 export class ConformanceGuard<T> {
   constructor(
@@ -1107,7 +1113,7 @@ export class ConformanceGuard<T> {
 ```
 
 #### Express/Fastifyミドルウェア
-```typescript
+```text
 // Expressミドルウェア実装
 export class ExpressConformanceMiddleware {
   constructor(private config: MiddlewareConfig = defaultMiddlewareConfig) {}
@@ -1194,7 +1200,7 @@ export class ExpressConformanceMiddleware {
 ```
 
 #### ファクトリーパターン
-```typescript
+```text
 // ガードファクトリー
 export class GuardFactory {
   // APIリクエスト用ガード（厳格）
@@ -1240,7 +1246,7 @@ export class GuardFactory {
 ```
 
 #### デコレーターサポート
-```typescript
+```text
 // 自動メソッド検証デコレーター
 export function ValidateInput<T>(guard: ConformanceGuard<T>) {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
@@ -1306,7 +1312,7 @@ export function ValidateOutput<T>(guard: ConformanceGuard<T>) {
 ### 💾 State Management Architecture
 
 #### Phase State Manager
-```typescript
+```text
 interface PhaseState {
   phaseId: PhaseType;
   status: PhaseStatus;
@@ -1360,7 +1366,7 @@ export class StateManager {
 ```
 
 #### Storage Adapter Implementation
-```typescript
+```text
 interface StorageAdapter {
   save<T>(key: string, data: T): Promise<void>;
   load<T>(key: string): Promise<T | null>;
@@ -1415,7 +1421,7 @@ export class SQLiteStorageAdapter implements StorageAdapter {
 ### 📊 OpenTelemetry Integration
 
 #### Telemetry Service Implementation
-```typescript
+```text
 import { trace, metrics, Tracer, Meter } from '@opentelemetry/api';
 import { logs, Logger } from '@opentelemetry/api-logs';
 
@@ -1517,7 +1523,7 @@ export class TelemetryService {
   - バッチ観測のコールバックで属性を `Record<string, string|number|boolean>` として明示
   - 例外時のロギングは `error-utils` の `toMessage` を用いて安全に整形
 
-```typescript
+```text
 // 簡易属性型と観測結果インタフェース
 type Attrs = Record<string, string | number | boolean>;
 interface MinimalObservableResult {
@@ -1544,7 +1550,7 @@ this.meter.addBatchObservableCallback((observableResult: MinimalObservableResult
 ```
 
 #### Quality Metrics Collection
-```typescript
+```text
 interface QualityMetrics {
   overallScore: number;
   codeQuality: CodeQualityMetrics;
@@ -1591,7 +1597,7 @@ export class QualityMetricsCollector {
 ### 🛡️ Quality Gates Implementation
 
 #### TDD Guard System
-```typescript
+```text
 export class TDDGuard {
   constructor(
     private testRunner: TestRunner,
@@ -1662,7 +1668,7 @@ export class TDDGuard {
 ```
 
 #### Accessibility Guard
-```typescript
+```text
 export class AccessibilityGuard {
   constructor(
     private axeRunner: AxeRunner,
@@ -1741,7 +1747,7 @@ export class AccessibilityGuard {
 **ae-framework Phase 6**は2025年に完全実装されており、ドメインモデルから高品質なReact+Next.js UIを30秒以内で自動生成できます。
 
 #### 実装済み機能
-```typescript
+```text
 // Phase 6 完全実装済み機能一覧
 interface Phase6Implementation {
   // ✅ UI自動生成システム
@@ -1772,7 +1778,7 @@ interface Phase6Implementation {
 ```
 
 #### Phase 6 品質メトリクス達成状況
-```json
+```text
 {
   "implementation_status": "100% complete",
   "quality_metrics": {
@@ -1794,7 +1800,7 @@ interface Phase6Implementation {
 ```
 
 #### UI生成パイプライン実装
-```typescript
+```text
 export class UIScaffoldGenerator {
   constructor(
     private templateEngine: HandlebarsTemplateEngine,
@@ -1846,7 +1852,7 @@ export class UIScaffoldGenerator {
 #### 実装済み品質機能
 
 ##### 1. Golden/Approval Testing ✅
-```typescript
+```text
 // tests/golden/codegen-snapshot.test.ts - 実装済み
 export class GoldenTestManager {
   async captureSnapshot(generatedArtifact: GeneratedArtifact): Promise<GoldenSnapshot> {
@@ -1874,7 +1880,7 @@ export class GoldenTestManager {
 ```
 
 ##### 2. Metamorphic Testing ✅
-```typescript
+```text
 // tests/metamorphic/invariant-preservation.test.ts - 実装済み
 export class MetamorphicTestEngine {
   async testInvariantPreservation(
@@ -1908,7 +1914,7 @@ export class MetamorphicTestEngine {
 ```
 
 ##### 3. CLI Robustness & Fuzzing ✅
-```typescript
+```text
 // tests/cli/fuzz.spec.ts - 実装済み
 export class CLIFuzzTester {
   async performFuzzTesting(iterations: number = 25): Promise<FuzzTestResult> {
@@ -1953,7 +1959,7 @@ export class CLIFuzzTester {
 ```
 
 #### 品質メトリクス統合
-```json
+```text
 {
   "quality_system_status": "fully_implemented",
   "coverage_metrics": {
@@ -1984,7 +1990,7 @@ export class CLIFuzzTester {
 ### ⚡ Performance Optimization System
 
 #### Parallel Processing Engine
-```typescript
+```text
 export class ParallelProcessingEngine {
   constructor(
     private workerPool: WorkerPool,
@@ -2042,7 +2048,7 @@ export class ParallelUIGenerator {
 ```
 
 #### Resource Pool Management
-```typescript
+```text
 interface ResourcePool<T> {
   acquire(): Promise<T>;
   release(resource: T): Promise<void>;
@@ -2098,7 +2104,7 @@ export class AIServicePool implements ResourcePool<AIServiceClient> {
 ### 🔐 Security Architecture
 
 #### Input Validation System
-```typescript
+```text
 export class SecurityValidator {
   private sanitizers: Map<string, InputSanitizer> = new Map();
   private validators: Map<string, InputValidator> = new Map();
@@ -2164,7 +2170,7 @@ export class SecurityValidator {
 ```
 
 #### API Security
-```typescript
+```text
 export class APISecurityManager {
   constructor(
     private rateLimiter: RateLimiter,
@@ -2221,7 +2227,7 @@ export class APISecurityManager {
 Issue #127の改善により、ae-frameworkは「速くて落ちない」CI/CDパイプラインを実現しています。
 
 #### Pipeline Layer Design
-```typescript
+```text
 interface CIPipelineLayer {
   name: string;
   timeout: number;
@@ -2263,7 +2269,7 @@ export const CI_LAYERS: CIPipelineLayer[] = [
 ```
 
 #### Reusable CI Core Workflow
-```yaml
+```text
 # .github/workflows/common/ci-core.yml
 name: ci-core
 on:
@@ -2292,7 +2298,7 @@ jobs:
 ```
 
 #### Workflow Lint System
-```typescript
+```text
 export class WorkflowLintManager {
   constructor(
     private actionlintPath: string = '/usr/local/bin/actionlint'
@@ -2340,7 +2346,7 @@ export class WorkflowLintManager {
 ### 🧪 Vitest Projects-Based Test Separation
 
 #### Project Configuration
-```typescript
+```text
 // vitest.config.ts
 import { defineConfig } from 'vitest/config'
 
@@ -2385,7 +2391,7 @@ export default defineConfig({
 ```
 
 #### Resource Leak Detection System
-```typescript
+```text
 // tests/_setup/afterEach.integration.ts
 import 'why-is-node-running'
 import { afterEach, beforeEach } from 'vitest'
@@ -2423,7 +2429,7 @@ afterEach(async () => {
 ```
 
 #### Test Execution Scripts
-```json
+```text
 {
   "scripts": {
     "test": "vitest run",
@@ -2442,7 +2448,7 @@ afterEach(async () => {
 ### ⚡ Code-Enforced Performance Thresholds
 
 #### Budget Configuration
-```typescript
+```text
 // config/performance-budgets.json
 interface PerformanceBudgets {
   budgets: {
@@ -2472,7 +2478,7 @@ interface PerformanceBudgets {
 ```
 
 #### Budget Validator Implementation
-```typescript
+```text
 export class PerformanceBudgetValidator {
   constructor(private configPath: string = './config/performance-budgets.json') {
     this.config = this.loadConfig();
@@ -2512,7 +2518,7 @@ export class PerformanceBudgetValidator {
 ```
 
 #### Automated Budget Enforcement
-```typescript
+```text
 // tests/perf/budgets.test.ts
 describe('Performance Budgets Enforcement', () => {
   it('should meet system startup time budget', async () => {
@@ -2539,7 +2545,7 @@ describe('Performance Budgets Enforcement', () => {
 ### 🔍 Automated Flaky Test Management
 
 #### Flake Detection Workflow
-```yaml
+```text
 # .github/workflows/flake-detect.yml
 name: Flake Stability Schedule
 on:
@@ -2566,7 +2572,7 @@ jobs:
 ```
 
 #### Isolation Manager System
-```typescript
+```text
 export class FlakeIsolationManager {
   constructor() {
     this.flakeConfigPath = './config/flaky-tests.json';
@@ -2632,7 +2638,7 @@ export class FlakeIsolationManager {
 Flake maintenance is scheduled in the same workflow via the `mode: maintenance` job.
 
 #### Script Integration
-```json
+```text
 {
   "scripts": {
     "flake:isolate": "node scripts/flake-isolation-manager.cjs isolate",
@@ -2652,7 +2658,7 @@ Flake maintenance is scheduled in the same workflow via the `mode: maintenance` 
 ### 🚀 CI/CD Pipeline Implementation
 
 #### GitHub Actions Workflow
-```yaml
+```text
 # .github/workflows/ae-framework-ci.yml
 name: AE Framework CI/CD
 
@@ -2725,7 +2731,7 @@ jobs:
 ```
 
 #### Container Deployment
-```typescript
+```text
 // Dockerfile
 FROM node:20-alpine AS builder
 
@@ -2753,7 +2759,7 @@ CMD ["node", "dist/index.js"]
 ```
 
 #### Monitoring and Alerting
-```typescript
+```text
 export class ProductionMonitoring {
   constructor(
     private telemetry: TelemetryService,
@@ -2915,7 +2921,7 @@ ae-frameworkの技術実装は、以下の特徴により次世代のAI駆動開
 
 ### 📊 品質メトリクス達成状況
 
-```json
+```text
 {
   "implementation_completion": "100%",
   "quality_achievements": {

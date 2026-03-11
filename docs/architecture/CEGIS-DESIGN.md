@@ -1,3 +1,9 @@
+---
+docRole: ssot
+lastVerified: '2026-03-11'
+owner: architecture-docs
+verificationCommand: pnpm -s run check:doc-consistency
+---
 # CEGIS (Counterexample-Guided Inductive Synthesis) Design Document
 
 > 🌍 Language / 言語: English | 日本語
@@ -126,7 +132,7 @@ CEGIS provides:
 - Support for incremental refinement
 
 **Interface**:
-```typescript
+```text
 interface CEGISSynthesizer {
   synthesize(spec: AEIR, constraints: SynthesisConstraints): Promise<SynthesisResult>;
   repair(counterexample: Counterexample, context: RepairContext): Promise<RepairPlan>;
@@ -152,7 +158,7 @@ interface SynthesisResult {
 - **Property-Based Testing**: Automated test generation and execution
 
 **Interface**:
-```typescript
+```text
 interface CEGISVerifier {
   verify(code: GeneratedCode, spec: AEIR): Promise<VerificationResult>;
   monitor(runtime: RuntimeContext): Promise<MonitoringResult>;
@@ -182,7 +188,7 @@ interface Counterexample {
 - **Heuristic Development**: Build domain-specific repair strategies
 
 **Interface**:
-```typescript
+```text
 interface CEGISLearner {
   learn(counterexample: Counterexample, repair: SuccessfulRepair): Promise<LearningResult>;
   inferRule(pattern: FailurePattern): Promise<RepairRule>;
@@ -240,7 +246,7 @@ interface RepairRule {
 
 Extend AE-IR format to include repair annotations:
 
-```json
+```text
 {
   "version": "1.1.0",
   "repair": {
@@ -262,7 +268,7 @@ Extend AE-IR format to include repair annotations:
 
 Enhance quality.json with CEGIS configuration:
 
-```json
+```text
 {
   "cegis": {
     "description": "Counterexample-Guided Inductive Synthesis",
@@ -286,7 +292,7 @@ Enhance quality.json with CEGIS configuration:
 
 Current CLI uses the `fix` command group:
 
-```bash
+```text
 # Apply fixes from failure artifacts
 pnpm run ae-framework -- fix apply --input failures.json --output .ae/auto-fix --dry-run
 
@@ -306,7 +312,7 @@ Roadmap (not in current CLI): monitor/repair/learn workflows for continuous coun
 
 ### 5.1 Core CEGIS Engine
 
-```typescript
+```text
 /**
  * Core CEGIS Engine Implementation
  * Integrates synthesis, verification, and learning components
@@ -447,7 +453,7 @@ export class CEGISEngine {
 
 ### 5.2 Counterexample Database Schema
 
-```typescript
+```text
 interface CounterexampleSchema {
   // Primary identification
   id: string;
@@ -516,7 +522,7 @@ interface RepairAttempt {
 - Convergence time (CEGIS loop iterations)
 
 **Monitoring Implementation**:
-```typescript
+```text
 interface CEGISMetrics {
   repairSuccessRate: number;
   averageRepairTime: number;

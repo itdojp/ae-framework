@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-11'
+---
 # ae-framework-v2 Core System Re-implementation - Final Summary
 
 > 🌍 Language / 言語: English | 日本語
@@ -72,7 +76,7 @@ Following the config/ae-framework-v2.yml specification, we successfully complete
 ## 🔧 Technical Implementation Highlights
 
 ### Unified Agent Architecture
-```typescript
+```text
 // Domain-driven agent system with unified processing
 export class UnifiedAgent {
   async processTask(task: AgentTask): Promise<TaskResult> {
@@ -82,7 +86,7 @@ export class UnifiedAgent {
 ```
 
 ### Optimized Service Layer
-```typescript
+```text
 // Performance-optimized service management
 export class UnifiedServiceManager {
   async executeTask(task: ServiceTask): Promise<ServiceResult> {
