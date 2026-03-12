@@ -86,7 +86,7 @@ tracked reference snapshot / archive の再配置計画と inventory は `docs/m
 | Verify Lite lint要約 | `scripts/ci/run-verify-lite-local.sh` | `artifacts/verify-lite/verify-lite-lint-summary.json` | ルート禁止。`artifacts/verify-lite/` に保存 |
 | Local build output | `pnpm run build` | `dist/` | 非追跡。ルート warning 扱い、レビュー前に clean を推奨 |
 | Coverage | `pnpm run coverage`, `pnpm run test:coverage` | `coverage/` | 非追跡（生成物） |
-| レポート集約 | quality/verify系 | `reports/`, `artifacts/hermetic-reports/`, `artifacts/validation-results/` | 原則非追跡（必要成果物のみ残す）。tracked baseline は `artifacts/reference/{validation-results,hermetic-reports}/**` に置く |
+| レポート集約 | quality/verify系 | `reports/`, `artifacts/hermetic-reports/`, `artifacts/validation-results/` | 原則非追跡（必要成果物のみ残す）。tracked baseline は `artifacts/reference/{validation-results,hermetic-reports}/**` に置く。空ディレクトリ placeholder は追跡せず、必要なサブディレクトリは各 script / workflow が都度生成する |
 
 ## 5. 分類ルール（safe-remove / needs-review / keep）
 
