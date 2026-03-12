@@ -113,6 +113,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Contract catalog (input/decision/evidence/operation): `docs/reference/CONTRACT-CATALOG.md`
 - Spec & Verification Kit (minimal activation guide): `docs/reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Connectors & agent workflows: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `docs/integrations/CODEX-INTEGRATION.md`
+- License scope and notice management: `LICENSE`, `LICENSE-SCOPE.md`, `TRADEMARKS.md`, `THIRD_PARTY_NOTICES.md`
 
 ---
 
@@ -206,6 +207,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - 契約カタログ（input/decision/evidence/operation）: `docs/reference/CONTRACT-CATALOG.md`
 - Spec & Verification Kit（最小パッケージ・有効化手順）: `docs/reference/SPEC-VERIFICATION-KIT-MIN.md`
 - エージェント統合: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`, `docs/integrations/CODEX-INTEGRATION.md`
+- ライセンス適用範囲と notice 管理: `LICENSE`, `LICENSE-SCOPE.md`, `TRADEMARKS.md`, `THIRD_PARTY_NOTICES.md`
 
 ---
 
