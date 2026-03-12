@@ -1,10 +1,15 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # ae-framework Quick Start Guide
 
 > 🌍 Language / 言語: English | 日本語
 
 ## 📦 インストール
 
-```bash
+```bash no-doctest
 # リポジトリのクローン
 git clone https://github.com/itdojp/ae-framework.git
 cd ae-framework
@@ -24,7 +29,7 @@ npm link
 
 ### Step 1: プロジェクトの初期化
 
-```bash
+```bash no-doctest
 # 新しいプロジェクトディレクトリを作成
 mkdir my-awesome-project
 cd my-awesome-project
@@ -35,7 +40,7 @@ ae-phase init --name 'My Awesome Project'
 
 ### Step 2: Steering Documentsの作成
 
-```bash
+```bash no-doctest
 # Steering Documentsディレクトリを作成
 mkdir -p .ae/steering
 
@@ -87,7 +92,7 @@ EOF
 
 ### Step 3: インタラクティブ開発の開始
 
-```bash
+```bash no-doctest
 # Slash Commandsのインタラクティブモードを起動
 ae-slash interactive
 ```
@@ -116,7 +121,7 @@ ae> /timeline
 
 ### Step 4: 承認ワークフローの活用
 
-```bash
+```bash no-doctest
 # 別のターミナルで承認状態を確認
 ae-approve pending
 
@@ -161,7 +166,7 @@ ae-approve history formal
 
 ### 1. 要件定義（Intent Phase）
 
-```bash
+```bash no-doctest
 ae-slash i
 ae> /intent Create a REST API for user management
 ae> /intent Users can register with email and password
@@ -173,7 +178,7 @@ ae> /next
 
 ### 2. 仕様作成（Formal Phase）
 
-```bash
+```bash no-doctest
 ae> /formal openapi
 # OpenAPI仕様が生成される
 ae> /complete api-spec.yaml
@@ -183,7 +188,7 @@ ae> /next
 
 ### 3. テスト作成（Test Phase）
 
-```bash
+```bash no-doctest
 ae> /test src/user-controller.ts unit
 # ユニットテストが生成される
 ae> /complete user-controller.test.ts
@@ -192,7 +197,7 @@ ae> /next
 
 ### 4. 実装（Code Phase）
 
-```bash
+```bash no-doctest
 ae> /code user-controller.test.ts
 # テストを満たすコードが生成される
 ae> /complete src/user-controller.ts
@@ -201,7 +206,7 @@ ae> /next
 
 ### 5. 検証（Verify Phase）
 
-```bash
+```bash no-doctest
 ae> /verify
 # 全テストとカバレッジチェック
 ae> /complete verification-report.md
@@ -210,7 +215,7 @@ ae> /next
 
 ### 6. 運用（Operate Phase）
 
-```bash
+```bash no-doctest
 ae> /operate deploy production
 # デプロイメント実行
 ae> /operate monitor
@@ -221,7 +226,7 @@ ae> /operate monitor
 
 ### 1. エイリアスを活用
 
-```bash
+```bash no-doctest
 ae-slash i
 ae> /s      # /status のエイリアス
 ae> /i      # /intent のエイリアス
@@ -231,14 +236,14 @@ ae> /a      # /approve のエイリアス
 
 ### 2. コマンドシーケンスでワークフローを自動化
 
-```bash
+```bash no-doctest
 # 一連のコマンドを一度に実行
 ae-slash sequence "/init MyProject" "/complete" "/approve" "/next"
 ```
 
 ### 3. Steering Documentsを最新に保つ
 
-```bash
+```bash no-doctest
 # Steering Documentsの確認
 ae-slash exec "/steering"
 
@@ -250,7 +255,7 @@ ae> /steering context
 
 ### 4. 承認ポリシーのカスタマイズ
 
-```bash
+```bash no-doctest
 # 重要なフェーズに複数承認者を設定
 ae-approve set-policy code --multiple --min-approvers 2
 
@@ -262,7 +267,7 @@ ae-approve set-policy test --auto-test --auto-security
 
 ### プロジェクトが見つからない
 
-```bash
+```bash no-doctest
 # 状態ファイルの確認
 ls -la .ae/phase-state.json
 
@@ -273,7 +278,7 @@ ae-phase init --name "My Project"
 
 ### コマンドが認識されない
 
-```bash
+```bash no-doctest
 # 利用可能なコマンドを確認
 ae-slash list
 
@@ -283,7 +288,7 @@ ae-slash help /intent
 
 ### 承認が期限切れ
 
-```bash
+```bash no-doctest
 # 期限切れ承認のクリーンアップ
 ae-approve check-expired
 

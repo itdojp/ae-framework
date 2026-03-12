@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Container-Based Verification - Phase 3
 
 > 🌍 Language / 言語: English | 日本語
@@ -36,7 +41,7 @@ src/mcp-server/
 
 The system uses an abstract `ContainerEngine` base class that both Podman and Docker implementations extend:
 
-```typescript
+```typescript no-doctest
 abstract class ContainerEngine {
   // Container lifecycle
   abstract createContainer(config: ContainerConfig): Promise<string>;
@@ -56,7 +61,7 @@ abstract class ContainerEngine {
 
 ### Direct Agent Usage
 
-```typescript
+```typescript no-doctest
 import { ContainerAgent } from './src/agents/container-agent.js';
 
 const agent = new ContainerAgent({
@@ -81,7 +86,7 @@ console.log('Verification result:', result.success);
 
 Start the container MCP server:
 
-```bash
+```bash no-doctest
 npm run container:server
 ```
 
@@ -101,7 +106,7 @@ Available MCP tools:
 
 The container system integrates with the existing `VerifyAgent`:
 
-```typescript
+```typescript no-doctest
 import { VerifyAgent } from './src/agents/verify-agent.js';
 
 const agent = new VerifyAgent({ 
@@ -145,7 +150,7 @@ await agent.runFullVerification({
 
 ### Building Images
 
-```bash
+```bash no-doctest
 # Build individual language images
 await agent.buildVerificationImage({
   language: 'rust',
@@ -182,7 +187,7 @@ await agent.buildVerificationImage({
 
 The system automatically detects and prefers Podman for security, falling back to Docker if Podman is unavailable:
 
-```typescript
+```typescript no-doctest
 // Auto-detect preferred engine
 const engine = await ContainerEngineFactory.createPreferredEngine();
 
@@ -197,7 +202,7 @@ const docker = await ContainerEngineFactory.createEngine('docker');
 
 Jobs track the complete verification lifecycle:
 
-```typescript
+```typescript no-doctest
 interface VerificationJob {
   id: string;
   name: string;
@@ -212,7 +217,7 @@ interface VerificationJob {
 
 ### Job Operations
 
-```typescript
+```typescript no-doctest
 // List all jobs
 const jobs = await agent.listJobs();
 
@@ -230,7 +235,7 @@ await agent.cancelJob('job-id');
 
 ### Cleanup Operations
 
-```typescript
+```typescript no-doctest
 // Automatic cleanup (default)
 const agent = new ContainerAgent({ autoCleanup: true });
 
@@ -244,7 +249,7 @@ await agent.cleanup({
 
 ### Resource Limits
 
-```typescript
+```typescript no-doctest
 const agent = new ContainerAgent({
   maxConcurrentContainers: 10,
   resourceLimits: {
@@ -258,7 +263,7 @@ const agent = new ContainerAgent({
 
 ### Agent Configuration
 
-```typescript
+```typescript no-doctest
 interface ContainerAgentConfig {
   preferredEngine?: 'docker' | 'podman';
   autoCleanup?: boolean;
@@ -278,7 +283,7 @@ interface ContainerAgentConfig {
 
 ### Container Configuration
 
-```typescript
+```typescript no-doctest
 interface ContainerConfig {
   name: string;
   image: string;
@@ -304,7 +309,7 @@ interface ContainerConfig {
 
 Project code is mounted read-only, results written to separate output volumes:
 
-```typescript
+```typescript no-doctest
 volumes: [
   {
     source: '/path/to/project',
@@ -323,7 +328,7 @@ volumes: [
 
 ### Health Checks
 
-```typescript
+```typescript no-doctest
 const status = await agent.getStatus();
 console.log('System Health:', status.data.health);
 console.log('Engine:', status.data.engine);
@@ -334,7 +339,7 @@ console.log('Active Jobs:', status.data.jobs.active);
 
 The system emits events for monitoring:
 
-```typescript
+```typescript no-doctest
 agent.on('jobStarted', ({ jobId, name }) => {
   console.log(`Started: ${name} (${jobId})`);
 });
@@ -348,7 +353,7 @@ agent.on('jobCompleted', ({ jobId, status, duration }) => {
 
 Run container system tests:
 
-```bash
+```bash no-doctest
 # Run all container tests
 npm run test:container
 
@@ -379,7 +384,7 @@ npx vitest tests/container/container-agent.test.ts
 ### Common Issues
 
 **Container Engine Not Found**
-```bash
+```bash no-doctest
 # Install Podman (preferred)
 sudo apt install podman
 
@@ -388,7 +393,7 @@ curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
 ```
 
 **Permission Denied**
-```bash
+```bash no-doctest
 # For Podman (rootless)
 podman system reset
 loginctl enable-linger $USER
@@ -407,7 +412,7 @@ sudo usermod -aG docker $USER && newgrp docker
 
 Enable detailed logging:
 
-```typescript
+```typescript no-doctest
 const agent = new ContainerAgent({
   logLevel: 'debug',
   containerConfig: {

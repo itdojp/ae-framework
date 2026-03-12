@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Phase 3.1 API Reference Guide
 
 > 🌍 Language / 言語: English | 日本語
@@ -29,7 +34,7 @@ This document provides a comprehensive API reference for Phase 3.1 Evidence-base
 
 #### Constructor
 
-```typescript
+```typescript no-doctest
 new SequentialInferenceEngine(options?: {
   maxSteps?: number;
   defaultTimeout?: number;
@@ -46,7 +51,7 @@ new SequentialInferenceEngine(options?: {
 
 ##### processComplexQuery()
 
-```typescript
+```typescript no-doctest
 async processComplexQuery(query: ComplexQuery): Promise<InferenceResult>
 ```
 
@@ -58,7 +63,7 @@ Processes a complex query through multiple inference steps.
 **Returns:** Promise\<InferenceResult\>
 
 **Example:**
-```typescript
+```typescript no-doctest
 const result = await engine.processComplexQuery({
   id: 'query-001',
   description: 'Analyze system dependencies',
@@ -74,7 +79,7 @@ const result = await engine.processComplexQuery({
 
 ##### executeInferenceStep()
 
-```typescript
+```typescript no-doctest
 async executeInferenceStep(
   step: InferenceStep, 
   context: ExecutionContext
@@ -91,7 +96,7 @@ Executes a single inference step with given context.
 
 ##### analyzeDeepDependencies()
 
-```typescript
+```typescript no-doctest
 async analyzeDeepDependencies(
   analysis: DependencyAnalysisRequest
 ): Promise<DependencyResult>
@@ -106,7 +111,7 @@ Performs deep dependency analysis using inference engine.
 
 ##### evaluateImpactScope()
 
-```typescript
+```typescript no-doctest
 async evaluateImpactScope(changes: ChangeSet): Promise<ImpactAnalysis>
 ```
 
@@ -136,7 +141,7 @@ The Sequential Inference Engine extends EventEmitter and emits the following eve
 
 #### Constructor
 
-```typescript
+```typescript no-doctest
 new ProblemDecomposer()
 ```
 
@@ -144,7 +149,7 @@ new ProblemDecomposer()
 
 ##### decompose()
 
-```typescript
+```typescript no-doctest
 async decompose(problem: Problem): Promise<DecompositionResult>
 ```
 
@@ -156,7 +161,7 @@ Decomposes a complex problem into manageable sub-problems.
 **Returns:** Promise\<DecompositionResult\>
 
 **Example:**
-```typescript
+```typescript no-doctest
 const result = await decomposer.decompose({
   id: 'problem-001',
   title: 'System Optimization',
@@ -171,7 +176,7 @@ const result = await decomposer.decompose({
 
 ##### registerDecompositionStrategy()
 
-```typescript
+```typescript no-doctest
 registerDecompositionStrategy(
   domain: string, 
   strategy: (problem: Problem) => SubProblem[]
@@ -186,7 +191,7 @@ Registers a custom decomposition strategy for a specific domain.
 
 ##### registerComplexityAnalyzer()
 
-```typescript
+```typescript no-doctest
 registerComplexityAnalyzer(
   domain: string, 
   analyzer: (problem: Problem) => number
@@ -205,7 +210,7 @@ Registers a custom complexity analyzer for a specific domain.
 
 #### Constructor
 
-```typescript
+```typescript no-doctest
 new SolutionComposer()
 ```
 
@@ -213,7 +218,7 @@ new SolutionComposer()
 
 ##### compose()
 
-```typescript
+```typescript no-doctest
 async compose(
   subSolutions: SubSolution[], 
   decompositionResult: DecompositionResult,
@@ -232,7 +237,7 @@ Composes sub-solutions into a complete solution.
 
 ##### registerCompositionStrategy()
 
-```typescript
+```typescript no-doctest
 registerCompositionStrategy(strategy: CompositionStrategy): void
 ```
 
@@ -243,7 +248,7 @@ Registers a custom composition strategy.
 
 ##### registerValidator()
 
-```typescript
+```typescript no-doctest
 registerValidator(
   name: string, 
   validator: (result: any, context: CompositionContext) => Promise<ValidationResult[]>
@@ -262,7 +267,7 @@ Registers a custom validator.
 
 #### Constructor
 
-```typescript
+```typescript no-doctest
 new ValidationOrchestrator(options?: {
   maxConcurrentValidations?: number;
   defaultTimeout?: number;
@@ -274,7 +279,7 @@ new ValidationOrchestrator(options?: {
 
 ##### createValidationPlan()
 
-```typescript
+```typescript no-doctest
 async createValidationPlan(
   target: any,
   context: ValidationContext,
@@ -297,7 +302,7 @@ Creates a validation plan for the given target.
 
 ##### executeValidationPlan()
 
-```typescript
+```typescript no-doctest
 async executeValidationPlan(
   planId: string,
   target: any,
@@ -316,7 +321,7 @@ Executes a validation plan.
 
 ##### registerValidator()
 
-```typescript
+```typescript no-doctest
 registerValidator(validator: Validator): void
 ```
 
@@ -335,7 +340,7 @@ Registers a custom validator.
 
 #### Constructor
 
-```typescript
+```typescript no-doctest
 new DependencyAnalyzer(options?: {
   cacheSize?: number;
   cacheTTL?: number;
@@ -354,7 +359,7 @@ new DependencyAnalyzer(options?: {
 
 ##### analyzeDependencies()
 
-```typescript
+```typescript no-doctest
 async analyzeDependencies(
   request: DependencyAnalysisRequest
 ): Promise<DependencyAnalysisResult>
@@ -368,7 +373,7 @@ Performs comprehensive dependency analysis.
 **Returns:** Promise\<DependencyAnalysisResult\>
 
 **Example:**
-```typescript
+```typescript no-doctest
 const result = await analyzer.analyzeDependencies({
   id: 'analysis-001',
   projectRoot: '/path/to/project',
@@ -385,7 +390,7 @@ console.log(`Modularity score: ${result.metrics.modularityScore}`);
 
 ##### analyzeImpact()
 
-```typescript
+```typescript no-doctest
 async analyzeImpact(request: ImpactAnalysisRequest): Promise<ImpactAnalysis>
 ```
 
@@ -397,7 +402,7 @@ Analyzes the impact of proposed changes.
 **Returns:** Promise\<ImpactAnalysis\>
 
 **Example:**
-```typescript
+```typescript no-doctest
 const impact = await analyzer.analyzeImpact({
   id: 'impact-001',
   changes: [
@@ -416,7 +421,7 @@ const impact = await analyzer.analyzeImpact({
 
 ##### getExecution()
 
-```typescript
+```typescript no-doctest
 getExecution(executionId: string): ValidationExecution | undefined
 ```
 
@@ -429,7 +434,7 @@ Gets the current execution status.
 
 ##### cancelExecution()
 
-```typescript
+```typescript no-doctest
 async cancelExecution(executionId: string): Promise<boolean>
 ```
 
@@ -450,7 +455,7 @@ The Dependency Analyzer extends EventEmitter and emits:
 - `cacheHit`: Emitted when cache is hit
 
 **Event Data Examples:**
-```typescript
+```typescript no-doctest
 analyzer.on('analysisStarted', (request: DependencyAnalysisRequest) => {
   console.log(`Analysis started: ${request.id}`);
 });
@@ -485,7 +490,7 @@ All major components extend Node.js EventEmitter and follow consistent event nam
 
 #### Event Handler Registration
 
-```typescript
+```typescript no-doctest
 // Single event
 component.on('eventName', (data) => { /* handle event */ });
 
@@ -505,7 +510,7 @@ component.removeListener('eventName', handler);
 
 All events include consistent metadata:
 
-```typescript
+```typescript no-doctest
 interface EventData {
   timestamp: Date;
   component: string;
@@ -521,7 +526,7 @@ interface EventData {
 
 ### System Configuration
 
-```typescript
+```typescript no-doctest
 interface SystemConfig {
   // Performance settings
   performance: {
@@ -550,7 +555,7 @@ interface SystemConfig {
 
 ### Configuration Loading
 
-```typescript
+```typescript no-doctest
 import { loadConfig } from './config/loader.js';
 
 // Load configuration
@@ -569,7 +574,7 @@ const engine = new SequentialInferenceEngine(config.performance);
 
 #### Base Error Classes
 
-```typescript
+```typescript no-doctest
 class AEFrameworkError extends Error {
   constructor(
     message: string,
@@ -602,7 +607,7 @@ class InferenceError extends AEFrameworkError {
 
 #### Error Handling Patterns
 
-```typescript
+```typescript no-doctest
 try {
   const result = await analyzer.analyzeDependencies(request);
   return result;
@@ -625,7 +630,7 @@ try {
 
 ### Retry Mechanisms
 
-```typescript
+```typescript no-doctest
 // Automatic retry with exponential backoff
 const retryConfig = {
   maxRetries: 3,
@@ -648,7 +653,7 @@ const result = await withRetry(
 
 #### ComplexQuery
 
-```typescript
+```typescript no-doctest
 export interface ComplexQuery {
   id: string;
   description: string;
@@ -661,7 +666,7 @@ export interface ComplexQuery {
 
 #### Problem
 
-```typescript
+```typescript no-doctest
 export interface Problem {
   id: string;
   title: string;
@@ -678,7 +683,7 @@ export interface Problem {
 
 #### DependencyAnalysisRequest
 
-```typescript
+```typescript no-doctest
 export interface DependencyAnalysisRequest {
   id: string;
   projectRoot: string;
@@ -703,7 +708,7 @@ export type DependencyAnalysisType =
 
 #### Results Types
 
-```typescript
+```typescript no-doctest
 export interface DependencyAnalysisResult {
   requestId: string;
   graph: DependencyGraph;
@@ -736,7 +741,7 @@ export interface InferenceResult {
 
 ### Complete Analysis Workflow
 
-```typescript
+```typescript no-doctest
 import { 
   SequentialInferenceEngine,
   DependencyAnalyzer,
@@ -882,7 +887,7 @@ performCompleteAnalysis('/path/to/project')
 
 ### Custom Strategy Registration
 
-```typescript
+```typescript no-doctest
 // Register custom decomposition strategy
 problemDecomposer.registerDecompositionStrategy('data_science', (problem) => {
   return [
@@ -941,7 +946,7 @@ validationOrchestrator.registerValidator({
 
 ### Monitoring and Metrics
 
-```typescript
+```typescript no-doctest
 // Set up comprehensive monitoring
 function setupMonitoring(components: {
   analyzer: DependencyAnalyzer;

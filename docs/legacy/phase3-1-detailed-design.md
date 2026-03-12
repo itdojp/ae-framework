@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Phase 3.1 Evidence-based Validation System - 詳細設計ドキュメント
 
 > 🌍 Language / 言語: 日本語 | English
@@ -39,6 +44,7 @@ Phase 3.1では、Evidence-based Validation Systemの基盤として、以下の
 ### 全体アーキテクチャ
 
 ```mermaid
+%% no-doctest
 graph TB
     UI[User Interface] --> SCM[Slash Command Manager]
     SCM --> EC[Extended Commands]
@@ -96,7 +102,7 @@ graph TB
 ### 核心コンポーネント
 
 #### 1. InferenceStep インターフェース
-```typescript
+```typescript no-doctest
 interface InferenceStep {
   id: string;
   type: 'analyze' | 'validate' | 'synthesize' | 'decide';
@@ -109,7 +115,7 @@ interface InferenceStep {
 ```
 
 #### 2. 推論プロセス管理
-```typescript
+```typescript no-doctest
 class SequentialInferenceEngine {
   // 複雑クエリの処理
   async processComplexQuery(query: ComplexQuery): Promise<InferenceResult>
@@ -128,6 +134,7 @@ class SequentialInferenceEngine {
 ### 推論ステップの処理フロー
 
 ```mermaid
+%% no-doctest
 sequenceDiagram
     participant C as Client
     participant SIE as Sequential Inference Engine
@@ -168,7 +175,7 @@ sequenceDiagram
 ### 主要コンポーネント
 
 #### 1. Problem Decomposer (問題分解器)
-```typescript
+```typescript no-doctest
 class ProblemDecomposer {
   // 問題を分解して実行計画を作成
   async decompose(problem: Problem): Promise<DecompositionResult>
@@ -189,7 +196,7 @@ class ProblemDecomposer {
 - `optimization`: 最適化問題の分解
 
 #### 2. Solution Composer (解決策統合器)
-```typescript
+```typescript no-doctest
 class SolutionComposer {
   // サブ解決策を統合して完全な解決策を作成
   async compose(subSolutions: SubSolution[], decomposition: DecompositionResult): Promise<CompositeSolution>
@@ -209,7 +216,7 @@ class SolutionComposer {
 - `hybrid`: ハイブリッド統合
 
 #### 3. Validation Orchestrator (検証オーケストレーター)
-```typescript
+```typescript no-doctest
 class ValidationOrchestrator extends EventEmitter {
   // 検証計画の作成
   async createValidationPlan(target: any, context: ValidationContext): Promise<ValidationPlan>
@@ -225,6 +232,7 @@ class ValidationOrchestrator extends EventEmitter {
 ### 問題解決プロセスフロー
 
 ```mermaid
+%% no-doctest
 graph LR
     A[Problem Input] --> B[Problem Decomposer]
     B --> C[Sub-Problems]
@@ -265,7 +273,7 @@ graph LR
 ### 核心機能
 
 #### 1. 依存関係グラフ構築
-```typescript
+```typescript no-doctest
 interface DependencyGraph {
   nodes: DependencyNode[];
   edges: Edge[];
@@ -285,7 +293,7 @@ interface DependencyGraph {
 - **影響コンポーネント**の特定
 
 #### 3. メトリクス計算
-```typescript
+```typescript no-doctest
 interface DependencyMetrics {
   totalNodes: number;
   totalEdges: number;
@@ -301,7 +309,7 @@ interface DependencyMetrics {
 ```
 
 #### 4. リスク評価
-```typescript
+```typescript no-doctest
 interface DependencyRiskAssessment {
   overallRisk: 'low' | 'medium' | 'high' | 'critical';
   riskFactors: RiskFactor[];
@@ -324,6 +332,7 @@ interface DependencyRiskAssessment {
 ### 依存関係分析フロー
 
 ```mermaid
+%% no-doctest
 graph TB
     A[Analysis Request] --> B[Validation]
     B --> C[Cache Check]
@@ -381,7 +390,7 @@ Analysis Request → Graph Construction → Analysis Execution → Metrics Calcu
 
 ### Sequential推論エンジン API
 
-```typescript
+```typescript no-doctest
 // 複雑クエリの処理
 processComplexQuery(query: ComplexQuery): Promise<InferenceResult>
 
@@ -394,7 +403,7 @@ evaluateImpactScope(changes: ChangeSet): Promise<ImpactAnalysis>
 
 ### 問題分解器 API
 
-```typescript
+```typescript no-doctest
 // 問題分解
 decompose(problem: Problem): Promise<DecompositionResult>
 
@@ -407,7 +416,7 @@ registerComplexityAnalyzer(domain: string, analyzer: ComplexityAnalyzer): void
 
 ### 依存関係分析器 API
 
-```typescript
+```typescript no-doctest
 // 依存関係分析
 analyzeDependencies(request: DependencyAnalysisRequest): Promise<DependencyAnalysisResult>
 
@@ -462,7 +471,7 @@ cancelExecution(executionId: string): Promise<boolean>
 ### キャッシュ戦略
 
 #### 1. 多層キャッシュ
-```typescript
+```typescript no-doctest
 // L1: インメモリキャッシュ (高速アクセス)
 // L2: 実行結果キャッシュ (セッション間持続)
 // L3: メタデータキャッシュ (頻繁アクセスデータ)
@@ -490,7 +499,7 @@ cancelExecution(executionId: string): Promise<boolean>
 ### 入力検証
 
 #### 1. リクエスト検証
-```typescript
+```typescript no-doctest
 private validateAnalysisRequest(request: DependencyAnalysisRequest): void {
   if (!request.id) throw new Error('Analysis request ID is required');
   if (!request.projectRoot) throw new Error('Project root path is required');
@@ -560,7 +569,7 @@ Total: 50+ individual test cases
 
 #### 3. モッキング戦略
 
-```typescript
+```typescript no-doctest
 // ファイルシステムモック
 const mockFs = {
   readFile: vi.fn(),

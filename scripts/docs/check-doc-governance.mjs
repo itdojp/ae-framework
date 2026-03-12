@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const ROOT_DOCS = ['README.md', 'AGENTS.md', 'docs/README.md'];
 const GOVERNED_EXTRA_DOCS = ['docs/reference/DOC-GOVERNANCE.md'];
-const RECURSIVE_GOVERNED_PREFIX_DIRS = new Set(['docs/templates']);
+const RECURSIVE_GOVERNED_PREFIX_DIRS = new Set(['docs/legacy', 'docs/templates']);
 const GOVERNED_PREFIX_DIRS = [
   'docs/TLA+',
   'docs/adapters',
@@ -34,6 +34,7 @@ const GOVERNED_PREFIX_DIRS = [
   'docs/infra',
   'docs/integrations',
   'docs/internal',
+  'docs/legacy',
   'docs/maintenance',
   'docs/observability',
   'docs/operate',
@@ -65,6 +66,7 @@ const NARRATIVE_NORMATIVE_PATTERNS = [
   /禁止/gu,
   /必須/gu,
 ];
+const NARRATIVE_WARNING_EXEMPT_PREFIXES = ['docs/legacy/'];
 
 function parseArgs(argv = process.argv) {
   const options = {
@@ -272,6 +274,9 @@ function stripCodeBlocks(body) {
 }
 
 function checkNarrativeWarnings(markdownPath, body) {
+  if (NARRATIVE_WARNING_EXEMPT_PREFIXES.some((prefix) => markdownPath.startsWith(prefix))) {
+    return [];
+  }
   const warnings = [];
   const plainBody = stripCodeBlocks(body);
   const lines = plainBody.split(/\r?\n/u);
