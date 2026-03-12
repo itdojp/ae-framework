@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: benchmark-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Req2Run Benchmark Integration — Environment Setup
 
 > 🌍 Language / 言語: English | 日本語
@@ -29,7 +36,7 @@ ae-framework can consume the Req2Run benchmark problems from:
 Reference: `src/benchmark/req2run/runners/BenchmarkRunner.ts` uses `process.env.REQ2RUN_BENCHMARK_REPO || '/tmp/req2run-benchmark'`.
 
 ## Install and Build
-```bash
+```bash no-doctest
 corepack enable
 pnpm install --frozen-lockfile
 pnpm run build
@@ -38,7 +45,7 @@ pnpm run build
 ## Quick Run (Local)
 Basic integration run with default config and reports written under `reports/benchmark`:
 
-```bash
+```bash no-doctest
 # Option 1: use a local clone
 export REQ2RUN_BENCHMARK_REPO="$HOME/dev/req2run-benchmark"
 
@@ -60,7 +67,7 @@ Artifacts and reports:
 ## CI Integration (Minimal)
 Add a step before running the benchmark to ensure the repository is present:
 
-```yaml
+```yaml no-doctest
 - name: Prepare Req2Run repository
   run: |
     git clone --depth 1 https://github.com/itdojp/req2run-benchmark /tmp/req2run-benchmark || true
@@ -84,7 +91,7 @@ The CI profile writes results to `reports/benchmark` and shortens execution for 
 ## Custom Configuration
 You can generate and pass a benchmark config file:
 
-```bash
+```bash no-doctest
 pnpm benchmark:init               # writes ./configs/benchmark-config.json
 pnpm benchmark -- --config ./configs/benchmark-config.json
 ```

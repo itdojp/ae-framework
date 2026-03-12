@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-12'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -56,6 +56,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/architecture/*.md`
 - `docs/articles/*.md`
 - `docs/articles/zenn/*.md`
+- `docs/benchmark/*.md`
 - `docs/changes/*.md`
 - `docs/cheatsheets/*.md`
 - `docs/ci/*.md`
