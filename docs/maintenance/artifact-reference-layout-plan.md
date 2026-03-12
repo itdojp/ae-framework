@@ -15,7 +15,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 `pnpm run maintenance:artifact:inventory` の最新出力では、tracked artifact は以下に分類される。
 
 - committed contract artifact: `artifacts/types/**`, `artifacts/contracts/**`, `artifacts/domain/**`, `artifacts/plan/**`, `artifacts/api/**`, `artifacts/bdd/**`, `artifacts/properties/**`, `artifacts/repros/**`, `artifacts/public-types.current.d.ts`
-- reference snapshot: `artifacts/reference/benchmarks/*`, `artifacts/reference/verify/*`, root 直下の `artifacts/types-*.md` に加え、`artifacts/hermetic-reports/**`, `artifacts/validation-results/**`
+- reference snapshot: `artifacts/reference/benchmarks/*`, `artifacts/reference/verify/*`, `artifacts/reference/types/*` に加え、`artifacts/hermetic-reports/**`, `artifacts/validation-results/**`
 - archive: `artifacts/archive/**`
 - local debug archive: `artifacts/codex/**`
 
@@ -38,23 +38,25 @@ verificationCommand: pnpm run maintenance:artifact:inventory
   - `artifacts/reference/verify/recovery-verify.md`
   - `artifacts/reference/verify/verify-lite-lint-summary.json`
   - status: normalized in `PR #2632` (tracked by `Issue #2631`)
+- type/reference validation snapshots
+  - `artifacts/reference/types/types-gate-ci-validation.md`
+  - `artifacts/reference/types/types-hardening-validation.md`
+  - status: normalization tracked under `Issue #2633`
 
 ### Move to `artifacts/reference/**`
-- type/reference validation snapshots
-  - `artifacts/types-gate-ci-validation.md`
-  - `artifacts/types-hardening-validation.md`
-  - target: `artifacts/reference/types/*`
 - hermetic/validation snapshots
   - `artifacts/hermetic-reports/**`
   - `artifacts/validation-results/**`
   - target: `artifacts/reference/hermetic-reports/**`, `artifacts/reference/validation-results/**`
 
 ## Consumer Impact
-現時点の root-level tracked snapshot の consumer は大半が docs / examples / archive 内リンクであり、runtime consumer は限定的である。benchmark baseline については本 PR で `artifacts/reference/benchmarks/*` へ移動済みである。
+現時点の root-level tracked snapshot の consumer は大半が docs / examples / archive 内リンクであり、runtime consumer は限定的である。benchmark baseline については `PR #2629`、verification snapshot については `PR #2632` で `artifacts/reference/*` へ移動済みである。
 
 - `artifacts/reference/benchmarks/bench.json`: `src/commands/bench/run.ts`, benchmark schema tests, benchmark comparison docs/templates
 - `artifacts/reference/benchmarks/bench.md`: benchmark human-readable report docs
 - `artifacts/reference/verify/verify.md`: `src/commands/verify/run.ts`, archive 参照、notes 参照
+- `artifacts/reference/types/types-gate-ci-validation.md`: notes 参照、layout docs 参照
+- `artifacts/reference/types/types-hardening-validation.md`: notes 参照、layout docs 参照
 - `artifacts/public-types.current.d.ts`: `scripts/api/check-types.mjs`, type hardening docs
 
 このため、最初の実移動は **docs / tests / script output path** の更新を伴うが、branch protection や runtime contract への影響は限定的と見込む。
@@ -69,6 +71,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 3. move verification snapshots into `artifacts/reference/verify/*`
    - completed in `PR #2632` (tracked by `Issue #2631`)
 4. move type/reference snapshots into `artifacts/reference/types/*`
+   - tracked under `Issue #2633`
 5. move tracked hermetic / validation snapshots into `artifacts/reference/{hermetic-reports,validation-results}/**`
 
 ## Validation

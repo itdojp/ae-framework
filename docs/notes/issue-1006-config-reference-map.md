@@ -16,7 +16,7 @@ Track where candidate config files are referenced so relocation can update both 
 
 ### configs/api-extractor.json (moved in PR #1534)
 - `package.json` (files list includes `configs/api-extractor.json`)
-- `artifacts/types-gate-ci-validation.md` (link/reference)
+- `artifacts/reference/types/types-gate-ci-validation.md` (link/reference)
 
 ### configs/benchmark-config.json (moved in PR #1533)
 - `src/cli/benchmark-cli.ts` (default `./configs/benchmark-config.json`)
@@ -51,14 +51,14 @@ Track where candidate config files are referenced so relocation can update both 
 ### tsconfig.types.json (moved in PR #1545)
 - `package.json` (`api:emit`, type extraction)
 - `scripts/api/check-types.mjs`
-- `artifacts/types-hardening-validation.md`
+- `artifacts/reference/types/types-hardening-validation.md`
 
 ### tsconfig.verify.json (moved in PR #1547)
 - `package.json` (`types:check`, type-coverage)
 - `src/commands/verify/run.ts` (primary verify path)
 - `docs/quality/type-coverage-policy.md`
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
-- `artifacts/reference/verify/verify.md`, `artifacts/types-gate-ci-validation.md`
+- `artifacts/reference/verify/verify.md`, `artifacts/reference/types/types-gate-ci-validation.md`
 
 ### configs/vitest/vitest.workspace.ts (moved in PR #1538)
 - `package.json` (`test:unit`, `test:int`, `test:perf`)
