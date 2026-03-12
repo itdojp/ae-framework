@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 
 const PNPM_BIN = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const PUBLIC_TYPES_CURRENT_PATH = 'artifacts/reference/types/public-types.current.d.ts';
 const stripShebang = (content) => content.replace(/^#!.*(?:\r?\n)?/gm, '');
 
 function run(cmd, args) {
@@ -32,7 +33,7 @@ for (const f of files) {
   current += `// ---- ${rel} ----\n${txt}\n`;
 }
 
-await writeFile('artifacts/public-types.current.d.ts', current);
+await writeFile(PUBLIC_TYPES_CURRENT_PATH, current);
 
 // 4) 簡易 diff（存在しなければ「初回」扱い）
 if (!snap) {
