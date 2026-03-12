@@ -64,6 +64,7 @@ lastVerified: '2026-03-11'
 - 既存 schema は汎用契約として維持
 - 新規 schema は PR 自動化専用契約として導入
 - 移行期間は dual-write / dual-validate を前提とする
+- delivery-layer 全体との境界整理は `docs/architecture/DELIVERY-CONTRACT-COMPATIBILITY-MATRIX.md` を正とする
 
 ## 5. サンプル
 
