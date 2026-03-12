@@ -121,6 +121,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Runtime Conformance Design: `architecture/RUNTIME-CONFORMANCE-DESIGN.md`
 - Zero-based ideal redesign: `architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - PR state / execution plan v1 draft: `architecture/PR-STATE-EXECUTION-PLAN-V1-DRAFT.md`
+- Delivery contract consumer inventory: `architecture/DELIVERY-CONTRACT-CONSUMER-INVENTORY.md`
 
 ### Quality / Verification
 - Assurance model: `quality/ASSURANCE-MODEL.md`
@@ -292,6 +293,7 @@ Claude CodeやMCPとの統合
 - **🆕 [RUNTIME-CONFORMANCE-DESIGN.md](./architecture/RUNTIME-CONFORMANCE-DESIGN.md)** ⭐ **NEW** - Runtime Conformance設計
 - **🆕 [ZERO-BASED-IDEAL-DESIGN.md](./architecture/ZERO-BASED-IDEAL-DESIGN.md)** ⭐ **NEW** - ゼロベース再設計（理想アーキテクチャ + 技術再選定）
 - **🆕 [PR-STATE-EXECUTION-PLAN-V1-DRAFT.md](./architecture/PR-STATE-EXECUTION-PLAN-V1-DRAFT.md)** ⭐ **NEW** - PR状態機械と実行計画の v1 契約ドラフト（Issue #2405）
+- **🆕 [DELIVERY-CONTRACT-CONSUMER-INVENTORY.md](./architecture/DELIVERY-CONTRACT-CONSUMER-INVENTORY.md)** ⭐ **NEW** - delivery-layer 契約導入前の consumer inventory
 - [ARCHITECTURE.md](./architecture/ARCHITECTURE.md) - システムアーキテクチャ
 - [NEW_FEATURES.md](./architecture/NEW_FEATURES.md) - 新機能仕様
 
