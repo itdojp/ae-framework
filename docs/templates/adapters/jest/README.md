@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: templates-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Jest Adapter Templates (Examples)
 
 This page shows minimal examples to aggregate Jest test results into JSON suitable for PR summaries.
@@ -6,14 +13,14 @@ This page shows minimal examples to aggregate Jest test results into JSON suitab
 - Keep JSON in `artifacts/adapters/jest/summary.json` for summary scripts.
 
 Minimal CI snippet:
-```yaml
+```yaml no-doctest
 - name: Aggregate Jest artifacts
   run: node scripts/adapters/aggregate-artifacts.mjs || true
   if: always()
 ```
 
 Minimal JSON shape (`artifacts/adapters/jest/summary.json`):
-```json
+```json no-doctest
 {
   "adapter": "jest",
   "summary": "passed=120 failed=0",

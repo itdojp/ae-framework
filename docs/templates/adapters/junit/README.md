@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: templates-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # JUnit Adapter Templates (Examples)
 
 This page shows minimal examples to aggregate JUnit results into JSON suitable for PR summaries.
@@ -7,14 +14,14 @@ This page shows minimal examples to aggregate JUnit results into JSON suitable f
 - Aggregate via `scripts/adapters/aggregate-artifacts.mjs`
 
 Minimal CI snippet:
-```yaml
+```yaml no-doctest
 - name: Aggregate JUnit artifacts
   run: node scripts/adapters/aggregate-artifacts.mjs || true
   if: always()
 ```
 
 Minimal JSON shape (`artifacts/adapters/junit/summary.json`):
-```json
+```json no-doctest
 {
   "tool": "junit",
   "summary": { "passed": 120, "failed": 0, "skipped": 3 },

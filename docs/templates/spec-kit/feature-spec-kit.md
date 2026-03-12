@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: templates-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Spec Kit: Feature
 
 ## 1) Intent / 目的
@@ -16,7 +23,7 @@
 - 入出力の型/構造:
 
 ## 5) Gherkin (Behavior)
-```gherkin
+```gherkin no-doctest
 Feature: <feature>
   Scenario: <scenario>
     Given ...

@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: templates-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Domain Plug-in Template (Minimal)
 
 This template describes how to create a Domain Plug-in for ae-framework.

@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: templates-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # ajv Validation Failures: Examples & Messaging (#408)
 
 > 🌍 Language / 言語: English | 日本語
