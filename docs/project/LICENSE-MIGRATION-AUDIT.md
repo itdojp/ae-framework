@@ -16,7 +16,8 @@ verificationCommand: pnpm run license:audit:scope -- --output-json artifacts/ref
 
 - root `LICENSE` は MIT
 - root `package.json` に `license` field は未設定
-- root には `NOTICE` / `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` は未作成
+- root には `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を追加済み
+- root `NOTICE` は未作成
 - `artifacts/**`, `fixtures/**`, `test-cassettes/**` は first-party 固定ではなく、由来確認が必要な条件付きディレクトリとして扱う
 
 ## 監査コマンド
@@ -49,7 +50,7 @@ pnpm run license:audit:scope -- \
 
 ## 次段階
 
-1. `LICENSE-SCOPE.md` のドラフト化
-2. `TRADEMARKS.md` と `THIRD_PARTY_NOTICES.md` の骨子作成
-3. `artifacts/**`, `fixtures/**`, `test-cassettes/**` の由来を棚卸し
+1. `artifacts/**`, `fixtures/**`, `test-cassettes/**` の由来を棚卸し
+2. `NOTICE` の要否と草案を整理する
+3. `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を監査結果で具体化する
 4. その後に Apache-2.0 切替可否を判断する
