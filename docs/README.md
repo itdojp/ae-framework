@@ -121,6 +121,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Runtime Conformance Design: `architecture/RUNTIME-CONFORMANCE-DESIGN.md`
 - Zero-based ideal redesign: `architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - PR state / execution plan v1 draft: `architecture/PR-STATE-EXECUTION-PLAN-V1-DRAFT.md`
+- Plan Artifact v2 migration plan: `architecture/PLAN-ARTIFACT-V2-MIGRATION-PLAN.md`
 - Delivery contract consumer inventory: `architecture/DELIVERY-CONTRACT-CONSUMER-INVENTORY.md`
 - Delivery contract compatibility matrix: `architecture/DELIVERY-CONTRACT-COMPATIBILITY-MATRIX.md`
 
