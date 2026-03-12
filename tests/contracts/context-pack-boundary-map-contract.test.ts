@@ -58,4 +58,25 @@ describe('context-pack boundary map contract', () => {
     expect(validate(invalidFixture)).toBe(false);
     expect(validate.errors?.some((entry) => entry.instancePath === '/slices/0')).toBe(true);
   });
+
+  it('rejects empty produces or consumes arrays', () => {
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    const invalidFixture = structuredClone(fixture) as {
+      slices: Array<Record<string, unknown>>;
+    };
+
+    invalidFixture.slices = [
+      {
+        id: 'empty-producer',
+        produces: [],
+      },
+    ];
+
+    expect(validate(invalidFixture)).toBe(false);
+    expect(
+      validate.errors?.some((entry) => entry.instancePath === '/slices/0/produces' || entry.instancePath === '/slices/0'),
+    ).toBe(true);
+  });
 });

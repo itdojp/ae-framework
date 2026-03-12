@@ -435,6 +435,7 @@ function validateBoundaryMap(metadata, slices, violations) {
           direction: 'consumes',
           message: `slice '${sliceId}' consumes ${ref.kind} '${ref.refId}' but the ref does not exist in context-pack sources`,
         });
+        continue;
       }
 
       if (!ref.upstream || ref.upstream.type !== 'slice') {

@@ -158,12 +158,14 @@
         },
         "produces": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "$ref": "#/$defs/boundaryRef"
           }
         },
         "consumes": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "$ref": "#/$defs/consumedRef"
           }
