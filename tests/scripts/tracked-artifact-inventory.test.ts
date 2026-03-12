@@ -15,6 +15,7 @@ describe('tracked-artifact-inventory', () => {
       outputMd: 'tmp/out.md',
     });
     expect(() => parseArgs(['--output-json'])).toThrow('--output-json requires a value');
+    expect(() => parseArgs(['--output-json', '--output-md'])).toThrow('--output-json requires a value');
   });
 
   it('classifies tracked artifacts by current taxonomy', () => {
@@ -22,13 +23,19 @@ describe('tracked-artifact-inventory', () => {
     expect(classifyArtifact('artifacts/archive/2025/manual-verify.md')).toBe('archive');
     expect(classifyArtifact('artifacts/codex/2026-02-03/env.txt')).toBe('local-debug-archive');
     expect(classifyArtifact('artifacts/bench.json')).toBe('reference-snapshot');
+    expect(classifyArtifact('artifacts/reference/benchmarks/bench.json')).toBe('reference-snapshot');
   });
 
-  it('proposes normalized placement for root-level reference snapshots', () => {
+  it('proposes normalized placement for root-level reference snapshots and keeps normalized ones stable', () => {
     expect(proposePlacement('artifacts/bench.json')).toEqual({
       action: 'move',
       target: 'artifacts/reference/benchmarks/bench.json',
       rationale: 'tracked benchmark baseline at root should move under reference snapshots',
+    });
+    expect(proposePlacement('artifacts/reference/benchmarks/bench.json')).toEqual({
+      action: 'keep',
+      target: 'artifacts/reference/benchmarks/bench.json',
+      rationale: 'normalized reference snapshot',
     });
     expect(proposePlacement('artifacts/verify.md')).toEqual({
       action: 'move',

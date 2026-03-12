@@ -2,6 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export const DEFAULT_OUTPUT_JSON = 'tmp/maintenance/tracked-artifact-inventory.json';
 export const DEFAULT_OUTPUT_MD = 'tmp/maintenance/tracked-artifact-inventory.md';
@@ -19,7 +20,15 @@ const COMMITTED_CONTRACT_PREFIXES = [
 const COMMITTED_CONTRACT_EXACT = new Set(['artifacts/public-types.current.d.ts']);
 const ARCHIVE_PREFIXES = ['artifacts/archive/'];
 const LOCAL_DEBUG_PREFIXES = ['artifacts/codex/'];
-const REFERENCE_PREFIXES = ['artifacts/hermetic-reports/', 'artifacts/validation-results/'];
+const REFERENCE_PREFIXES = ['artifacts/reference/', 'artifacts/hermetic-reports/', 'artifacts/validation-results/'];
+
+const readOptionValue = (argv, index, flag) => {
+  const value = String(argv[index + 1] || '').trim();
+  if (!value || value.startsWith('-')) {
+    throw new Error(`${flag} requires a value`);
+  }
+  return value;
+};
 
 export const parseArgs = (argv) => {
   const options = {
@@ -32,17 +41,13 @@ export const parseArgs = (argv) => {
       continue;
     }
     if (arg === '--output-json') {
-      options.outputJson = String(argv[++i] || '').trim();
-      if (!options.outputJson) {
-        throw new Error('--output-json requires a value');
-      }
+      options.outputJson = readOptionValue(argv, i, '--output-json');
+      i += 1;
       continue;
     }
     if (arg === '--output-md') {
-      options.outputMd = String(argv[++i] || '').trim();
-      if (!options.outputMd) {
-        throw new Error('--output-md requires a value');
-      }
+      options.outputMd = readOptionValue(argv, i, '--output-md');
+      i += 1;
       continue;
     }
     if (arg === '--help' || arg === '-h') {
@@ -77,6 +82,9 @@ export const proposePlacement = (artifactPath) => {
   if (category === 'committed-contract') {
     return { action: 'keep', target: normalized, rationale: 'consumer-facing committed contract artifact' };
   }
+  if (normalized.startsWith('artifacts/reference/')) {
+    return { action: 'keep', target: normalized, rationale: 'normalized reference snapshot' };
+  }
   if (normalized.startsWith('artifacts/hermetic-reports/')) {
     return {
       action: 'move',
@@ -99,7 +107,7 @@ export const proposePlacement = (artifactPath) => {
       rationale: 'tracked benchmark baseline at root should move under reference snapshots',
     };
   }
-  if (basename.startsWith('types-') || basename === 'public-types.current.d.ts') {
+  if (basename.startsWith('types-')) {
     return {
       action: 'move',
       target: `artifacts/reference/types/${basename}`,
@@ -210,7 +218,9 @@ export const main = (argv = process.argv) => {
   return 0;
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const __filename = fileURLToPath(import.meta.url);
+
+if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
   try {
     process.exitCode = main(process.argv);
   } catch (error) {
