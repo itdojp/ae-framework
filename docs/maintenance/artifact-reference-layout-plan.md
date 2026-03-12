@@ -7,7 +7,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 # Artifact Reference Layout Plan
 
 ## Summary
-`artifacts/` の tracked ファイルは、現状では `repo-layout-policy` 上の 5 類型に分類できる。reference snapshot の実移動は完了しており、本メモの残件は runtime output namespace に残った tracked placeholder の扱いだけである。
+`artifacts/` は `repo-layout-policy` 上では 5 類型に整理されているが、本メモの対象となる tracked artifact はそのうち 4 類型である。reference snapshot の実移動は完了しており、本メモの残件は runtime output namespace に残った tracked placeholder の扱いだけである。
 
 この文書は `Issue #2585` の planning memo として、tracked artifact inventory と小粒 PR の投入順を定義する。
 
