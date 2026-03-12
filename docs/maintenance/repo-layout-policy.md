@@ -68,9 +68,9 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 | 類型 | 例 | 既定の扱い | 主な責務 |
 |---|---|---|---|
-| runtime output | `artifacts/verify-lite/**`, `artifacts/assurance/**`, `artifacts/release/**`, `artifacts/ci/**`, `artifacts/context-pack/**`, `artifacts/trace/**`, `artifacts/observability/**` | 原則 non-tracked | 実行結果、CI要約、運用判定の出力 |
+| runtime output | `artifacts/verify-lite/**`, `artifacts/assurance/**`, `artifacts/release/**`, `artifacts/ci/**`, `artifacts/context-pack/**`, `artifacts/trace/**`, `artifacts/observability/**`, `artifacts/validation-results/**` | 原則 non-tracked | 実行結果、CI要約、運用判定の出力 |
 | committed contract artifact | `artifacts/types/**`, `artifacts/contracts/**`, `artifacts/domain/**`, `artifacts/plan/**`, `artifacts/api/**`, `artifacts/bdd/**`, `artifacts/properties/**`, `artifacts/repros/**`, `artifacts/public-types.current.d.ts` | tracked | 契約・サンプル・回帰基準として repo で参照する成果物 |
-| reference snapshot | `artifacts/reference/benchmarks/bench.json`, `artifacts/reference/benchmarks/bench.md`, `artifacts/reference/benchmarks/bench-1.json`, `artifacts/reference/benchmarks/bench-2.json`, `artifacts/reference/verify/verify.md`, `artifacts/reference/verify/recovery-verify.md`, `artifacts/reference/verify/verify-lite-lint-summary.json`, `artifacts/reference/types/types-gate-ci-validation.md`, `artifacts/reference/types/types-hardening-validation.md` | tracked | ベースライン比較や過去判断の参照資料 |
+| reference snapshot | `artifacts/reference/benchmarks/bench.json`, `artifacts/reference/benchmarks/bench.md`, `artifacts/reference/benchmarks/bench-1.json`, `artifacts/reference/benchmarks/bench-2.json`, `artifacts/reference/verify/verify.md`, `artifacts/reference/verify/recovery-verify.md`, `artifacts/reference/verify/verify-lite-lint-summary.json`, `artifacts/reference/types/types-gate-ci-validation.md`, `artifacts/reference/types/types-hardening-validation.md`, `artifacts/reference/validation-results/summary.json` | tracked | ベースライン比較や過去判断の参照資料 |
 | archive | `artifacts/archive/**` | tracked | 過去実行の記録保存、監査用のスナップショット |
 | local debug archive | `artifacts/codex/**` | ignored by default | codex/autopilot 系のローカル・CI調査出力。監査用に残す場合は `artifacts/archive/**` へ昇格させる |
 
@@ -86,7 +86,7 @@ tracked reference snapshot / archive の再配置計画と inventory は `docs/m
 | Verify Lite lint要約 | `scripts/ci/run-verify-lite-local.sh` | `artifacts/verify-lite/verify-lite-lint-summary.json` | ルート禁止。`artifacts/verify-lite/` に保存 |
 | Local build output | `pnpm run build` | `dist/` | 非追跡。ルート warning 扱い、レビュー前に clean を推奨 |
 | Coverage | `pnpm run coverage`, `pnpm run test:coverage` | `coverage/` | 非追跡（生成物） |
-| レポート集約 | quality/verify系 | `reports/`, `artifacts/hermetic-reports/` | 原則非追跡（必要成果物のみ残す） |
+| レポート集約 | quality/verify系 | `reports/`, `artifacts/hermetic-reports/`, `artifacts/validation-results/` | 原則非追跡（必要成果物のみ残す）。tracked baseline は `artifacts/reference/validation-results/**` に置く |
 
 ## 5. 分類ルール（safe-remove / needs-review / keep）
 

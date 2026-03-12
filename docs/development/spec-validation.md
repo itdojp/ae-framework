@@ -283,7 +283,7 @@ The validation system tracks:
 - Time to fix validation problems
 - Quality trend over time
 
-Results are stored in `artifacts/validation-results/` directory and uploaded as CI artifacts for analysis.
+Results are stored in `artifacts/validation-results/` directory and uploaded as CI artifacts for analysis. Tracked reference snapshots live under `artifacts/reference/validation-results/`.
 
 ---
 
@@ -537,4 +537,4 @@ echo "✅ AE-Spec検証が完了しました。"
 - 検証問題の修正時間
 - 時系列での品質トレンド
 
-結果は `artifacts/validation-results/` ディレクトリに保存され、分析用にCIアーティファクトとしてアップロードされます。
+結果は `artifacts/validation-results/` ディレクトリに保存され、分析用にCIアーティファクトとしてアップロードされます。tracked な参照スナップショットは `artifacts/reference/validation-results/` に配置します。

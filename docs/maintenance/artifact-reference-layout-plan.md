@@ -15,7 +15,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 `pnpm run maintenance:artifact:inventory` の最新出力では、tracked artifact は以下に分類される。
 
 - committed contract artifact: `artifacts/types/**`, `artifacts/contracts/**`, `artifacts/domain/**`, `artifacts/plan/**`, `artifacts/api/**`, `artifacts/bdd/**`, `artifacts/properties/**`, `artifacts/repros/**`, `artifacts/public-types.current.d.ts`
-- reference snapshot: `artifacts/reference/benchmarks/*`, `artifacts/reference/verify/*`, `artifacts/reference/types/*` に加え、`artifacts/hermetic-reports/**`, `artifacts/validation-results/**`
+- reference snapshot: `artifacts/reference/benchmarks/*`, `artifacts/reference/verify/*`, `artifacts/reference/types/*`, `artifacts/reference/validation-results/*` に加え、`artifacts/hermetic-reports/**`
 - archive: `artifacts/archive/**`
 - local debug archive: `artifacts/codex/**`
 
@@ -44,10 +44,9 @@ verificationCommand: pnpm run maintenance:artifact:inventory
   - status: normalization tracked under `Issue #2633`
 
 ### Move to `artifacts/reference/**`
-- hermetic/validation snapshots
+- hermetic snapshots
   - `artifacts/hermetic-reports/**`
-  - `artifacts/validation-results/**`
-  - target: `artifacts/reference/hermetic-reports/**`, `artifacts/reference/validation-results/**`
+  - target: `artifacts/reference/hermetic-reports/**`
 
 ## Consumer Impact
 現時点の root-level tracked snapshot の consumer は大半が docs / examples / archive 内リンクであり、runtime consumer は限定的である。benchmark baseline については `PR #2629`、verification snapshot については `PR #2632` で `artifacts/reference/*` へ移動済みである。
@@ -58,6 +57,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 - `artifacts/reference/types/types-gate-ci-validation.md`: notes 参照、layout docs 参照
 - `artifacts/reference/types/types-hardening-validation.md`: notes 参照、layout docs 参照
 - `artifacts/public-types.current.d.ts`: `scripts/api/check-types.mjs`, type hardening docs
+- `artifacts/reference/validation-results/summary.json`: spec validation docs と inventory 参照。runtime output は `scripts/validate-specs.sh` が `artifacts/validation-results/` を継続利用
 
 このため、最初の実移動は **docs / tests / script output path** の更新を伴うが、branch protection や runtime contract への影響は限定的と見込む。
 
@@ -72,7 +72,9 @@ verificationCommand: pnpm run maintenance:artifact:inventory
    - completed in `PR #2632` (tracked by `Issue #2631`)
 4. move type/reference snapshots into `artifacts/reference/types/*`
    - tracked under `Issue #2633`
-5. move tracked hermetic / validation snapshots into `artifacts/reference/{hermetic-reports,validation-results}/**`
+5. move tracked validation snapshots into `artifacts/reference/validation-results/**`
+   - completed in `PR #2637` (tracked by `Issue #2636`)
+6. move tracked hermetic snapshots into `artifacts/reference/hermetic-reports/**`
 
 ## Validation
 - `pnpm run maintenance:artifact:inventory`

@@ -67,6 +67,16 @@ describe('tracked-artifact-inventory', () => {
       target: 'artifacts/reference/types/types-hardening-validation.md',
       rationale: 'normalized reference snapshot',
     });
+    expect(proposePlacement('artifacts/validation-results/summary.json')).toEqual({
+      action: 'move',
+      target: 'artifacts/reference/validation-results/summary.json',
+      rationale: 'tracked validation snapshot outside runtime output namespace',
+    });
+    expect(proposePlacement('artifacts/reference/validation-results/summary.json')).toEqual({
+      action: 'keep',
+      target: 'artifacts/reference/validation-results/summary.json',
+      rationale: 'normalized reference snapshot',
+    });
     expect(proposePlacement('artifacts/public-types.current.d.ts')).toEqual({
       action: 'keep',
       target: 'artifacts/public-types.current.d.ts',
