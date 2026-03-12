@@ -223,4 +223,30 @@ describe('context-pack boundary map validate CLI', () => {
     expect(report.summary.cycleViolations).toBe(1);
     expect(report.violations.some((entry: { type: string }) => entry.type === 'boundary-slice-cycle')).toBe(true);
   });
+
+  it('escapes backslashes in markdown report cells', async () => {
+    await writeContextPack();
+    await writeMap({
+      schemaVersion: 'context-pack-boundary-map/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      slices: [
+        {
+          id: 'reservation-flow',
+          consumes: [
+            {
+              kind: 'object',
+              refId: 'Inventory\\\\Item',
+              upstream: { type: 'slice', sliceId: 'inventory-item-model' },
+            },
+          ],
+        },
+      ],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+
+    const markdown = await readFile(reportMarkdownPath(), 'utf8');
+    expect(markdown).toContain('Inventory\\\\\\\\Item');
+  });
 });

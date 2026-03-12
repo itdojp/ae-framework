@@ -525,6 +525,7 @@ function summarizeViolations(violations, stats = {}) {
 
 function escapeMarkdownTableCell(value) {
   return String(value ?? '')
+    .replace(/\\/g, '\\\\')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
