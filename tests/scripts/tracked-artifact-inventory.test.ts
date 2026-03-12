@@ -87,6 +87,16 @@ describe('tracked-artifact-inventory', () => {
       target: 'artifacts/reference/hermetic-reports/formal/alloy-summary.json',
       rationale: 'normalized reference snapshot',
     });
+    expect(proposePlacement('artifacts/hermetic-reports/formal/smt-summary.json')).toEqual({
+      action: 'move',
+      target: 'artifacts/reference/hermetic-reports/formal/smt-summary.json',
+      rationale: 'tracked reference snapshot outside runtime output namespace',
+    });
+    expect(proposePlacement('artifacts/reference/hermetic-reports/formal/smt-summary.json')).toEqual({
+      action: 'keep',
+      target: 'artifacts/reference/hermetic-reports/formal/smt-summary.json',
+      rationale: 'normalized reference snapshot',
+    });
     expect(proposePlacement('artifacts/public-types.current.d.ts')).toEqual({
       action: 'keep',
       target: 'artifacts/public-types.current.d.ts',
