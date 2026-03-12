@@ -15,7 +15,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 `pnpm run maintenance:artifact:inventory` の最新出力では、tracked artifact は以下に分類される。
 
 - committed contract artifact: `artifacts/types/**`, `artifacts/contracts/**`, `artifacts/domain/**`, `artifacts/plan/**`, `artifacts/api/**`, `artifacts/bdd/**`, `artifacts/properties/**`, `artifacts/repros/**`, `artifacts/public-types.current.d.ts`
-- reference snapshot: `artifacts/reference/benchmarks/*`, `artifacts/reference/verify/*`, `artifacts/reference/types/*`, `artifacts/reference/validation-results/*`, `artifacts/reference/hermetic-reports/formal/*` に加え、`artifacts/hermetic-reports/**` の残余 tracked file
+- reference snapshot: `artifacts/reference/benchmarks/*`, `artifacts/reference/verify/*`, `artifacts/reference/types/*`, `artifacts/reference/validation-results/*`, `artifacts/reference/hermetic-reports/formal/*`, `artifacts/reference/hermetic-reports/*.md` に加え、`artifacts/hermetic-reports/.gitkeep`
 - archive: `artifacts/archive/**`
 - local debug archive: `artifacts/codex/**`
 
@@ -47,8 +47,9 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 - hermetic snapshots
   - formal tracked summary: `artifacts/reference/hermetic-reports/formal/*`
     - status: normalized in `PR #2639` (tracked by `Issue #2638`)
-  - remaining tracked markdown/archive: `artifacts/hermetic-reports/*.md`, `.gitkeep`
-  - target: `artifacts/reference/hermetic-reports/**`
+  - tracked markdown snapshot: `artifacts/reference/hermetic-reports/*.md`
+    - status: normalized in `PR #2641` (tracked by `Issue #2640`)
+  - remaining tracked placeholder: `artifacts/hermetic-reports/.gitkeep`
 
 ## Consumer Impact
 現時点の root-level tracked snapshot の consumer は大半が docs / examples / archive 内リンクであり、runtime consumer は限定的である。benchmark baseline については `PR #2629`、verification snapshot については `PR #2632` で `artifacts/reference/*` へ移動済みである。
@@ -61,6 +62,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 - `artifacts/public-types.current.d.ts`: `scripts/api/check-types.mjs`, type hardening docs
 - `artifacts/reference/validation-results/summary.json`: spec validation docs と inventory 参照。runtime output は `scripts/validate-specs.sh` が `artifacts/validation-results/` を継続利用
 - `artifacts/reference/hermetic-reports/formal/*.json`: tracked formal baseline。runtime output は formal / trace scripts が `artifacts/hermetic-reports/**` を継続利用
+- `artifacts/reference/hermetic-reports/*.md`: historical hermetic reference snapshot。runtime output は `artifacts/hermetic-reports/**` を継続利用
 
 このため、最初の実移動は **docs / tests / script output path** の更新を伴うが、branch protection や runtime contract への影響は限定的と見込む。
 
@@ -79,7 +81,9 @@ verificationCommand: pnpm run maintenance:artifact:inventory
    - completed in `PR #2637` (tracked by `Issue #2636`)
 6. move tracked formal hermetic snapshots into `artifacts/reference/hermetic-reports/formal/*`
    - completed in `PR #2639` (tracked by `Issue #2638`)
-7. move remaining tracked hermetic markdown/archive snapshots into `artifacts/reference/hermetic-reports/**`
+7. move tracked top-level hermetic markdown snapshots into `artifacts/reference/hermetic-reports/*`
+   - completed in `PR #2641` (tracked by `Issue #2640`)
+8. decide whether `artifacts/hermetic-reports/.gitkeep` should be removed or retained as documented runtime placeholder
 
 ## Validation
 - `pnpm run maintenance:artifact:inventory`
