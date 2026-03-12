@@ -72,11 +72,11 @@ pnpm run benchmark:list
 
 # Generate config
 pnpm run benchmark:init
+```
 
 #### Environment Setup
 
 For repository location and CI preparation of the Req2Run benchmark, see `req2run-environment-setup.md`.
-```
 
 ### Configuration
 
