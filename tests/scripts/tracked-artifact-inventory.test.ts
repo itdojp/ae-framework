@@ -42,6 +42,11 @@ describe('tracked-artifact-inventory', () => {
       target: 'artifacts/reference/verify/verify.md',
       rationale: 'tracked verification snapshot should move under reference snapshots',
     });
+    expect(proposePlacement('artifacts/reference/verify/verify.md')).toEqual({
+      action: 'keep',
+      target: 'artifacts/reference/verify/verify.md',
+      rationale: 'normalized reference snapshot',
+    });
     expect(proposePlacement('artifacts/public-types.current.d.ts')).toEqual({
       action: 'keep',
       target: 'artifacts/public-types.current.d.ts',

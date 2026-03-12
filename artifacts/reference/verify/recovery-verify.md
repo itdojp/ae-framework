@@ -44,7 +44,7 @@
   ae
   ```
 - **Verify Command**: ✅ Exit 0 (with expected linting issues)
-  - Generated: `artifacts/verify.md`
+  - Generated: `artifacts/reference/verify/verify.md`
   - Duration: 17.3s
   - Status: ❌ Some verification steps failed (TypeScript/ESLint - non-blocking)
   - **Key**: Build system works, verification pipeline functional
@@ -54,7 +54,7 @@
 ## 2. Record/Replay Functionality
 
 ### Record Mode Test
-```bash
+```text
 $ AE_RECORDER_MODE=record node dist/src/cli.js agent:complete --prompt "Hello ae"
 [ae][agent] Mode: RECORD (cassettes -> artifacts/cassettes)
 [ae][agent] Provider: rec(echo) 
@@ -63,7 +63,7 @@ Output: [echo] Hello ae
 ```
 
 ### Replay Mode Test
-```bash
+```text
 $ AE_RECORDER_MODE=replay node dist/src/cli.js agent:complete --prompt "Hello ae"  
 [ae][agent] Mode: REPLAY (cassettes <- artifacts/cassettes)
 [ae][agent] Provider: rec(echo)
@@ -93,7 +93,7 @@ Mean: 0.0394ms, Hz: 27,317,280.99
 ```
 
 ### Comparison Results
-```json
+```text
 {
   "tol": 0.05,
   "tolSource": "arg",
@@ -119,7 +119,7 @@ Mean: 0.0394ms, Hz: 27,317,280.99
 ## 4. Flake Detection (5 Runs)
 
 ### Test Execution
-```bash
+```text
 $ node dist/src/cli.js qa:flake --times 5 --timeoutMs 180000 --workers 50% --pattern "tests/**"
 [ae][flake] Running tests 5 times to detect flakiness...
 [ae][flake] Package manager: pnpm

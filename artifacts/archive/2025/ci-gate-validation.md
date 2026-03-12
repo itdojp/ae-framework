@@ -49,7 +49,7 @@ PR #227 マージ後の「CIゲート（verify 必須）＋ Nightly 監視」機
 - **結果**: ❌ **EXIT CODE 1** 
 - **所要時間**: 17.8s
 - **失敗ステップ**: 2個 (TypeScript + ESLint)
-- **レポート生成**: ✅ `artifacts/verify.md` 正常出力
+- **レポート生成**: ✅ `artifacts/reference/verify/verify.md` 正常出力
 
 ### LLM Replay スモークテスト  
 - **コマンド**: `AE_RECORDER_MODE=replay npx tsx src/cli.ts agent:complete --prompt "Hello, ae!"`
