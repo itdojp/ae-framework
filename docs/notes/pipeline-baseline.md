@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Pipeline Baseline (2025-10-05)
 
 ## 目的

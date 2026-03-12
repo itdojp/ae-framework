@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Spec-driven CI Roadmap (Draft)
 
 ## 目的

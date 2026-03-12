@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Step Summary Layout (Spec / Verify Lite / Trace)
 
 Issue refs: #1097 / #1096 / #1038

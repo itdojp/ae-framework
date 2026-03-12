@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue #1047 / #1053 現状整理メモ
 
 ## ゴール

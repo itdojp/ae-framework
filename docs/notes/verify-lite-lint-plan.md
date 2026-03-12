@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Verify Lite Lint Backlog (2025-10-04)
 
 ## 集計ハイライト

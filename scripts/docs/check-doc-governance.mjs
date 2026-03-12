@@ -36,6 +36,7 @@ const GOVERNED_PREFIX_DIRS = [
   'docs/internal',
   'docs/legacy',
   'docs/maintenance',
+  'docs/notes',
   'docs/observability',
   'docs/operate',
   'docs/operations',
@@ -66,7 +67,7 @@ const NARRATIVE_NORMATIVE_PATTERNS = [
   /禁止/gu,
   /必須/gu,
 ];
-const NARRATIVE_WARNING_EXEMPT_PREFIXES = ['docs/legacy/'];
+const NARRATIVE_WARNING_EXEMPT_PREFIXES = ['docs/legacy/', 'docs/notes/'];
 
 function parseArgs(argv = process.argv) {
   const options = {

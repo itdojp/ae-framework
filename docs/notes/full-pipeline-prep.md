@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Full Pipeline Prep Plan
 
 Issue refs: #1038 / #1097

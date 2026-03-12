@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # E2E Demo: Inventory Reservation (BDD / Pact / Property / MBT)
 
 ## 目的

@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue #1225: Security Upgrade Plan (2026-01-06)
 
 ## 目的

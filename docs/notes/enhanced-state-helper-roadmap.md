@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # EnhancedStateManager Helper 展開ロードマップ
 
 ## 目的

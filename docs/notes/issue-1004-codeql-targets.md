@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue #1004: CodeQL Alert Triage Targets (2026-01-03)
 
 This note captures the current open CodeQL alerts related to Issue #1004 so fixes can be planned in small PRs.

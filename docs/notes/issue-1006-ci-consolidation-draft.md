@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue #1006: CI Consolidation Strategy v1 (Month 2)
 
 ## ステータス

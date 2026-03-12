@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue Progress Snapshot (2025-10-16)
 
 | Issue | Theme | Status | Latest Notes |

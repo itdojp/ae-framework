@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue 1006: Config Reference Map (Phase 2 draft)
 
 ## Snapshot

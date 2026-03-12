@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Tinypool + Node.js 20 Fallback Evaluation (2025-10-01)
 
 ## 背景
