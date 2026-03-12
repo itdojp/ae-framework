@@ -69,6 +69,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/getting-started/*.md`
 - `docs/guides/*.md`
 - `docs/handoff/*.md`
+- `docs/infra/*.md`
 - `docs/integrations/*.md`
 - `docs/internal/*.md`
 - `docs/maintenance/*.md`

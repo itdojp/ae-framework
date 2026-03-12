@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: infra-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Local Stack Foundation 比較記録テンプレート（最小）
 
 このテンプレートは `#2409` のローカルスタック基盤確認向けに限定し、詳細分析（長時間負荷・統計比較・回帰判定）は `#2414` 側のPoC docsに委譲する。
