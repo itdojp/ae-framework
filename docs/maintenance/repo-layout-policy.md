@@ -76,6 +76,8 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 `docs/quality/ARTIFACTS-CONTRACT.md` は **contract / validation rule** を定義し、本書は **配置・追跡方針** を定義する。runtime output を commit 対象に昇格する場合は、両文書を同時に更新する。
 
+tracked reference snapshot / archive の再配置計画と inventory は `docs/maintenance/artifact-reference-layout-plan.md` を参照する。
+
 | 種別 | 代表コマンド/実行経路 | 代表出力 | 取扱い |
 |---|---|---|---|
 | CEGISレポート | `src/cegis/auto-fix-engine.ts` | `temp-reports/cegis/cegis-report-*.json` | ルート直下への出力は禁止。必要時のみ `AE_CEGIS_REPORT_DIR` で変更 |
