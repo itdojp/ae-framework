@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: infra-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # #2409 Local Stack Foundation PoC 手順
 
 ## 目的
@@ -38,7 +45,7 @@
 
 ## 起動手順
 
-```bash
+```bash no-doctest
 cd infra/poc/stack
 cp .env.example .env
 docker compose up -d
@@ -49,7 +56,7 @@ docker compose ps
 
 ## 疎通確認手順
 
-```bash
+```bash no-doctest
 cd infra/poc/stack
 set -a; . ./.env; set +a
 
@@ -69,7 +76,7 @@ docker compose logs --no-color minio-init
 
 ## 停止・クリーンアップ
 
-```bash
+```bash no-doctest
 cd infra/poc/stack
 
 # コンテナ/ネットワークのみ停止
@@ -81,7 +88,7 @@ docker compose down --volumes --remove-orphans
 
 ## 静的確認（Compose解決結果）
 
-```bash
+```bash no-doctest
 cd infra/poc/stack
 
 # Docker Compose
