@@ -178,15 +178,7 @@
       ],
       "properties": {
         "path": {
-          "oneOf": [
-            {
-              "type": "string",
-              "minLength": 1
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/$defs/nullablePath"
         },
         "present": {
           "type": "boolean"
@@ -196,6 +188,20 @@
         }
       }
     },
+    "nonEmptyPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nullablePath": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nonEmptyPath"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "inputRefRequired": {
       "allOf": [
         {
@@ -203,6 +209,12 @@
         },
         {
           "properties": {
+            "path": {
+              "$ref": "#/$defs/nonEmptyPath"
+            },
+            "present": {
+              "const": true
+            },
             "required": {
               "const": true
             }
@@ -221,6 +233,30 @@
               "const": false
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "present": {
+                  "const": true
+                },
+                "path": {
+                  "$ref": "#/$defs/nonEmptyPath"
+                }
+              }
+            },
+            {
+              "properties": {
+                "present": {
+                  "const": false
+                },
+                "path": {
+                  "type": "null"
+                }
+              }
+            }
+          ]
         }
       ]
     },
@@ -235,18 +271,10 @@
       ],
       "properties": {
         "path": {
-          "oneOf": [
-            {
-              "type": "string",
-              "minLength": 1
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "$ref": "#/$defs/nonEmptyPath"
         },
         "present": {
-          "type": "boolean"
+          "const": true
         },
         "required": {
           "const": false

@@ -368,11 +368,12 @@ function summarizeExecutionHealth(verifyLite, harnessHealth, formalSummary, bloc
   const failedFormalResults = Array.isArray(formalSummary.payload?.results)
     ? formalSummary.payload.results.filter((entry) => entry?.status === 'failed').length
     : 0;
+  const warnFormalStatus = formalStatus === 'unknown' || formalStatus === 'skipped' || formalStatus === 'missing';
 
   let status = 'pass';
   if (verifyLiteCounts.failed > 0 || harnessSeverity === 'critical' || formalStatus === 'failed' || failedFormalResults > 0) {
     status = 'fail';
-  } else if (verifyLiteCounts.warned > 0 || harnessSeverity === 'warn' || formalStatus === 'unknown') {
+  } else if (verifyLiteCounts.warned > 0 || harnessSeverity === 'warn' || warnFormalStatus) {
     status = 'warn';
   }
 
@@ -412,6 +413,15 @@ function summarizeExecutionHealth(verifyLite, harnessHealth, formalSummary, bloc
       'formal-summary-failed',
       'fail',
       'Formal summary reports failed results.',
+      formalSummary.path,
+    );
+  } else if (warnFormalStatus) {
+    pushBlocker(
+      blockers,
+      'executionHealth',
+      'formal-summary-not-executed',
+      'warn',
+      'Formal summary is unavailable or did not execute successfully.',
       formalSummary.path,
     );
   }

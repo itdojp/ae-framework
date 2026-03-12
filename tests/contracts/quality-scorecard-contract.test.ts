@@ -36,4 +36,31 @@ describe('quality-scorecard contract', () => {
     expect(validate(invalidFixture)).toBe(false);
     expect(validate.errors?.some((entry) => entry.instancePath === '')).toBe(true);
   });
+
+  it('rejects required inputs marked missing', () => {
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    ajv.addSchema(metadataSchema);
+    const validate = ajv.compile(schema);
+    const invalidFixture = structuredClone(fixture) as {
+      inputs: {
+        verifyLiteSummary: {
+          path: string | null;
+          present: boolean;
+          required: boolean;
+        };
+      };
+    };
+
+    invalidFixture.inputs.verifyLiteSummary = {
+      path: null,
+      present: false,
+      required: true,
+    };
+
+    expect(validate(invalidFixture)).toBe(false);
+    expect(
+      validate.errors?.some((entry) => entry.instancePath.startsWith('/inputs/verifyLiteSummary')),
+    ).toBe(true);
+  });
 });

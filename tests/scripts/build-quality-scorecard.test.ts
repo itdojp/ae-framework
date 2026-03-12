@@ -304,4 +304,48 @@ describe.sequential('build-quality-scorecard', () => {
       rmSync(sandbox, { recursive: true, force: true });
     }
   });
+
+  it('downgrades execution health when formal summary is skipped', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-quality-scorecard-formal-skipped-'));
+    const verifyLitePath = join(sandbox, 'artifacts', 'verify-lite', 'verify-lite-run-summary.json');
+    const reportEnvelopePath = join(sandbox, 'artifacts', 'report-envelope.json');
+    const assuranceSummaryPath = join(sandbox, 'artifacts', 'assurance', 'assurance-summary.json');
+    const formalSummaryPath = join(sandbox, 'artifacts', 'formal', 'formal-summary-v2.json');
+    const outJson = join(sandbox, 'artifacts', 'quality', 'quality-scorecard.json');
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'verify-lite'), { recursive: true });
+      mkdirSync(join(sandbox, 'artifacts', 'assurance'), { recursive: true });
+      mkdirSync(join(sandbox, 'artifacts', 'formal'), { recursive: true });
+      writeFileSync(verifyLitePath, `${JSON.stringify(createVerifyLiteSummary(), null, 2)}\n`);
+      writeFileSync(reportEnvelopePath, `${JSON.stringify(createReportEnvelope(), null, 2)}\n`);
+      writeFileSync(assuranceSummaryPath, `${JSON.stringify(createAssuranceSummary(), null, 2)}\n`);
+      writeFileSync(formalSummaryPath, `${JSON.stringify(createFormalSummary('skipped'), null, 2)}\n`);
+
+      const result = spawnSync('node', [
+        scriptPath,
+        '--verify-lite-summary', verifyLitePath,
+        '--report-envelope', reportEnvelopePath,
+        '--assurance-summary', assuranceSummaryPath,
+        '--formal-summary', formalSummaryPath,
+        '--output-json', outJson,
+      ], { cwd: sandbox, encoding: 'utf8', timeout: 120_000 });
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const payload = JSON.parse(readFileSync(outJson, 'utf8')) as {
+        summary: { overallStatus: string };
+        dimensions: { executionHealth: { status: string } };
+        blockers: Array<{ code: string; severity: string }>;
+      };
+
+      expect(payload.dimensions.executionHealth.status).toBe('warn');
+      expect(payload.summary.overallStatus).toBe('warn');
+      expect(payload.blockers).toContainEqual(expect.objectContaining({
+        code: 'formal-summary-not-executed',
+        severity: 'warn',
+      }));
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
 });
