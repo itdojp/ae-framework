@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "notice-readiness-audit/v1",
+  "generatedAt": "2026-03-13T00:00:00.000Z",
+  "inputs": {
+    "scopeAuditPath": "artifacts/reference/legal/license-scope-audit.json",
+    "conditionalAuditPath": "artifacts/reference/legal/conditional-asset-audit.json",
+    "repositoryLicense": "MIT License",
+    "packageLicenseField": null,
+    "nestedNoticeFilesCount": 0,
+    "conditionalOriginClassCounts": {
+      "committed-contract-artifact": 10,
+      "tracked-reference-snapshot": 2,
+      "tracked-archive": 1,
+      "test-fixture": 3,
+      "test-cassette": 1
+    }
+  },
+  "evidence": {
+    "nestedNoticeFiles": [],
+    "unclassifiedConditionalFiles": []
+  },
+  "readiness": {
+    "status": "draft-ready",
+    "recommendedAction": "prepare-draft-only",
+    "blockers": [],
+    "cutoverPrerequisites": [
+      "Review contributor and legal feasibility before changing LICENSE.",
+      "Update root LICENSE and package.json license field together on cutover.",
+      "Approve the root NOTICE text before publishing Apache-2.0 as the repository-standard license."
+    ]
+  },
+  "proposedRootNotice": {
+    "status": "draft-only",
+    "reviewRequired": true,
+    "title": "ae-framework",
+    "lines": [
+      "ae-framework",
+      "Copyright (c) ae-framework contributors.",
+      "This product includes software developed by the ae-framework contributors."
+    ]
+  }
+}

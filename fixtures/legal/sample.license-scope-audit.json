@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "license-scope-audit/v1",
+  "generatedAt": "2026-03-13T00:00:00.000Z",
+  "repositoryLicense": "MIT License",
+  "packageLicenseField": null,
+  "contributorInventory": [
+    {
+      "commits": 10,
+      "author": "Alice <alice@example.com>"
+    }
+  ],
+  "trackedFilesSummary": {
+    "total": 10,
+    "firstParty": 5,
+    "firstPartyRoot": 2,
+    "legalRoot": 1,
+    "conditional": 2,
+    "other": 0
+  },
+  "conditionalBreakdown": {
+    "artifacts": 1,
+    "fixtures": 1,
+    "test-cassettes": 0
+  },
+  "nestedNoticeFiles": [],
+  "otherTrackedFiles": []
+}

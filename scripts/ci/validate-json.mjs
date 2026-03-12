@@ -245,6 +245,11 @@ const checks = [
     schema: 'schema/formal-summary-v2.schema.json',
     fixtures: ['fixtures/formal/sample.formal-summary-v2.json'],
     label: 'Formal summary v2 schema validation'
+  },
+  {
+    schema: 'schema/notice-readiness-audit.schema.json',
+    fixtures: ['fixtures/legal/sample.notice-readiness-audit.json'],
+    label: 'Notice readiness audit schema validation'
   }
 ];
 

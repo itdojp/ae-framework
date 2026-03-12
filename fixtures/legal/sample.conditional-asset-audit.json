@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "conditional-asset-audit/v1",
+  "generatedAt": "2026-03-13T00:00:00.000Z",
+  "summary": {
+    "total": 4,
+    "byScope": {
+      "artifacts": 2,
+      "fixtures": 1,
+      "test-cassettes": 1
+    },
+    "byOriginClass": {
+      "committed-contract-artifact": 1,
+      "tracked-reference-snapshot": 1,
+      "test-fixture": 1,
+      "test-cassette": 1
+    },
+    "nestedNoticeFiles": 0
+  },
+  "nestedNoticeFiles": [],
+  "items": [
+    {
+      "path": "artifacts/reference/types/public-types.current.d.ts",
+      "scope": "artifacts",
+      "originClass": "tracked-reference-snapshot",
+      "nestedNotice": false
+    },
+    {
+      "path": "artifacts/plan/plan-artifact.json",
+      "scope": "artifacts",
+      "originClass": "committed-contract-artifact",
+      "nestedNotice": false
+    },
+    {
+      "path": "fixtures/legal/sample.notice-readiness-audit.json",
+      "scope": "fixtures",
+      "originClass": "test-fixture",
+      "nestedNotice": false
+    },
+    {
+      "path": "test-cassettes/Custom_directory_test.json",
+      "scope": "test-cassettes",
+      "originClass": "test-cassette",
+      "nestedNotice": false
+    }
+  ]
+}
