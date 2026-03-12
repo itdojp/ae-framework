@@ -121,6 +121,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Runtime Conformance Design: `architecture/RUNTIME-CONFORMANCE-DESIGN.md`
 - Zero-based ideal redesign: `architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - PR state / execution plan v1 draft: `architecture/PR-STATE-EXECUTION-PLAN-V1-DRAFT.md`
+- Plan Artifact v2 migration plan: `architecture/PLAN-ARTIFACT-V2-MIGRATION-PLAN.md`
 
 ### Quality / Verification
 - Assurance model: `quality/ASSURANCE-MODEL.md`
