@@ -15,6 +15,7 @@ describe('tracked-artifact-inventory', () => {
       outputMd: 'tmp/out.md',
     });
     expect(() => parseArgs(['--output-json'])).toThrow('--output-json requires a value');
+    expect(() => parseArgs(['--output-json', '--output-md'])).toThrow('--output-json requires a value');
   });
 
   it('classifies tracked artifacts by current taxonomy', () => {
