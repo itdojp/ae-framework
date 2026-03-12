@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { renderMarkdown } from '../../../scripts/agents/create-handoff.mjs';
 
 const scriptPath = resolve(process.cwd(), 'scripts/agents/create-handoff.mjs');
 const schemaPath = resolve(process.cwd(), 'schema/ae-handoff.schema.json');
@@ -93,6 +94,8 @@ describe('create-handoff CLI', () => {
     expect(handoff.artifacts.some((entry) => entry.path === 'artifacts/agents/hook-feedback.json')).toBe(true);
     expect(handoff.artifacts.some((entry) => entry.path === 'artifacts/assurance/assurance-summary.json')).toBe(true);
     expect(handoff.blockers.some((entry) => entry.summary.includes('Missing required labels'))).toBe(true);
+    expect((handoff as { nextActions: Array<{ command: string | null }> }).nextActions[1]?.command)
+      .toBe('pnpm run context-pack:verify-functor');
     expect(markdown).toContain('## AE-HANDOFF');
     expect(markdown).toContain('prepare deterministic handoff package');
   });
@@ -156,5 +159,52 @@ describe('create-handoff CLI', () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr.toString()).toContain('hook-feedback not found');
+  });
+
+  it('normalizes whitespace-only target and current-status overrides', async () => {
+    await writeFixture('artifacts/agents/hook-feedback.json', hookFeedbackFixturePath);
+
+    const { result, outputJsonPath } = runCreate([
+      '--target',
+      '   ',
+      '--current-status',
+      '   ',
+    ]);
+
+    expect(result.status).toBe(0);
+
+    const handoff = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
+      handoffTarget: string | null;
+      currentStatus: string;
+    };
+
+    expect(handoff.handoffTarget).toBeNull();
+    expect(handoff.currentStatus).not.toBe('');
+  });
+
+  it('renders markdown with safe fences when payload contains backticks', () => {
+    const markdown = renderMarkdown({
+      schemaVersion: 'ae-handoff/v1',
+      generatedAt: '2026-03-12T13:00:00.000Z',
+      handoffTarget: 'A',
+      goal: 'stabilize ```json fenced payload',
+      currentStatus: 'rerun `pnpm -s run verify:lite` after updating `docs/example.md`',
+      nextActions: [
+        {
+          order: 1,
+          summary: 'rerun `pnpm -s run verify:lite`',
+          command: 'pnpm -s run verify:lite',
+        },
+      ],
+      commandsRun: ['node -e \"console.log(`ok`)\"'],
+      artifacts: [{ path: 'artifacts/example`trace`.json', description: 'example with backticks' }],
+      risksRollbackNote: null,
+      blockers: [],
+      changePackageRef: null,
+    });
+
+    expect(markdown).toContain('````json');
+    expect(markdown).toContain('``artifacts/example`trace`.json``');
+    expect(markdown).toContain('``node -e \"console.log(`ok`)\"``');
   });
 });

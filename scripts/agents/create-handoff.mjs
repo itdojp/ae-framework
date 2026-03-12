@@ -50,6 +50,32 @@ function uniqueNonEmpty(values) {
   return result;
 }
 
+function normalizeOptionalText(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const normalized = value.trim();
+  return normalized || null;
+}
+
+function maxBacktickRun(text) {
+  const input = typeof text === 'string' ? text : String(text ?? '');
+  const matches = input.match(/`+/g) ?? [];
+  return matches.reduce((max, run) => Math.max(max, run.length), 0);
+}
+
+function wrapInlineCode(text) {
+  const content = typeof text === 'string' ? text : String(text ?? '');
+  const fence = '`'.repeat(Math.max(1, maxBacktickRun(content) + 1));
+  return `${fence}${content}${fence}`;
+}
+
+function renderFencedCodeBlock(language, text) {
+  const content = typeof text === 'string' ? text : String(text ?? '');
+  const fence = '`'.repeat(Math.max(3, maxBacktickRun(content) + 1));
+  return `${fence}${language}\n${content}\n${fence}`;
+}
+
 function relativeOrNull(absolutePath) {
   if (!absolutePath) {
     return null;
@@ -151,7 +177,8 @@ function parseAction(action) {
     return null;
   }
 
-  const commandMatch = text.match(/`([^`]+)`/);
+  const commandMatches = Array.from(text.matchAll(/`([^`]+)`/g));
+  const commandMatch = commandMatches.at(-1);
   return {
     summary: text.replace(/`([^`]+)`/g, '$1').trim(),
     command: commandMatch?.[1]?.trim() ?? null,
@@ -380,7 +407,7 @@ export function renderMarkdown(handoff) {
   const artifactList = handoff.artifacts.length > 0
     ? handoff.artifacts.map((artifact) => {
         const description = artifact.description ? ` (${artifact.description})` : '';
-        return `\`${artifact.path}\`${description}`;
+        return `${wrapInlineCode(artifact.path)}${description}`;
       }).join(', ')
     : 'n/a';
   const blockerList = handoff.blockers.length > 0
@@ -395,16 +422,16 @@ export function renderMarkdown(handoff) {
   ];
 
   for (const action of handoff.nextActions) {
-    const commandSuffix = action.command ? ` — \`${action.command}\`` : '';
+    const commandSuffix = action.command ? ` — ${wrapInlineCode(action.command)}` : '';
     lines.push(`  ${action.order}. ${action.summary}${commandSuffix}`);
   }
 
-  lines.push(`- Commands run: ${handoff.commandsRun.map((command) => `\`${command}\``).join(', ')}`);
+  lines.push(`- Commands run: ${handoff.commandsRun.map((command) => wrapInlineCode(command)).join(', ')}`);
   lines.push(`- Artifacts: ${artifactList}`);
   lines.push(`- Risks / Rollback note: ${handoff.risksRollbackNote ?? 'n/a'}`);
   lines.push(`- Blockers: ${blockerList}`);
   lines.push(`- Change Package: ${handoff.changePackageRef ?? 'n/a'}`);
-  lines.push('', '```json', JSON.stringify(handoff, null, 2), '```', '');
+  lines.push('', renderFencedCodeBlock('json', JSON.stringify(handoff, null, 2)), '');
   return `${lines.join('\n')}\n`;
 }
 
@@ -573,7 +600,13 @@ export function parseArgs(argv = process.argv.slice(2)) {
     throw new Error(`unknown option: ${arg}`);
   }
 
-  if (!options.help && (!options.goal || !options.goal.trim())) {
+  options.goal = normalizeOptionalText(options.goal);
+  options.target = normalizeOptionalText(options.target);
+  options.currentStatus = normalizeOptionalText(options.currentStatus);
+  options.changePackageRef = normalizeOptionalText(options.changePackageRef);
+  options.risksRollbackNote = normalizeOptionalText(options.risksRollbackNote);
+
+  if (!options.help && !options.goal) {
     throw new Error('--goal is required');
   }
 
@@ -712,13 +745,13 @@ export function buildHandoffArtifact({ options, hookFeedbackBundle, now = new Da
     schemaVersion: 'ae-handoff/v1',
     generatedAt: now,
     handoffTarget: options.target ?? null,
-    goal: options.goal.trim(),
+    goal: options.goal,
     currentStatus: (options.currentStatus ?? buildCurrentStatus({
       hookFeedback,
       verifyLiteSummary,
       assuranceSummary,
       policyGateSummary,
-    })).trim(),
+    })),
     nextActions: buildNextActions({
       nextActions,
       commandsRun,
