@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 export const FIRST_PARTY_PREFIXES = [
   '.ae/',
@@ -71,6 +72,12 @@ function normalizePath(value) {
   return value.replace(/\\/g, '/').replace(/^\.\/+/, '');
 }
 
+function compareCodePointOrder(left, right) {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
 export function classifyTrackedPath(filePath) {
   const normalized = normalizePath(filePath);
   if (FIRST_PARTY_ROOT_FILES.includes(normalized)) {
@@ -122,10 +129,9 @@ export function listTrackedFiles(rootDir) {
   const output = runGit(rootDir, ['ls-files', '-z']);
   return output
     .split('\0')
-    .map((entry) => entry.trim())
-    .filter(Boolean)
+    .filter((entry) => entry !== '')
     .map(normalizePath)
-    .sort((left, right) => left.localeCompare(right));
+    .sort(compareCodePointOrder);
 }
 
 function readOptionalText(rootDir, relativePath) {
@@ -136,11 +142,21 @@ function readOptionalText(rootDir, relativePath) {
   return fs.readFileSync(absolutePath, 'utf8');
 }
 
+function isNestedNoticeFile(filePath) {
+  const normalized = normalizePath(filePath);
+  if (!normalized.includes('/')) {
+    return false;
+  }
+  const baseName = path.basename(normalized).toUpperCase();
+  return NOTICE_BASENAMES.some((prefix) => baseName.startsWith(prefix));
+}
+
 export function buildLicenseScopeAudit({
   trackedFiles,
   shortlogText,
   packageJson,
   rootLicenseText,
+  generatedAt = new Date().toISOString(),
 }) {
   const categorized = {
     firstParty: [],
@@ -165,10 +181,7 @@ export function buildLicenseScopeAudit({
     }
   }
 
-  const nestedNotices = trackedFiles.filter((filePath) => {
-    const baseName = path.basename(filePath).toUpperCase();
-    return NOTICE_BASENAMES.some((prefix) => baseName === prefix || baseName.startsWith(`${prefix}.`));
-  });
+  const nestedNotices = trackedFiles.filter(isNestedNoticeFile);
 
   const conditionalBreakdown = Object.fromEntries(
     CONDITIONAL_PREFIXES.map((prefix) => [
@@ -183,7 +196,7 @@ export function buildLicenseScopeAudit({
 
   return {
     schemaVersion: 'license-scope-audit/v1',
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     repositoryLicense: rootLicenseSummary,
     packageLicenseField: packageJson?.license ?? null,
     contributorInventory: parseShortlog(shortlogText),
@@ -199,6 +212,16 @@ export function buildLicenseScopeAudit({
     nestedNoticeFiles: nestedNotices,
     otherTrackedFiles: categorized.other,
   };
+}
+
+export function resolveGeneratedAt(sourceDateEpoch = process.env.SOURCE_DATE_EPOCH) {
+  if (sourceDateEpoch == null || sourceDateEpoch === '') {
+    return new Date().toISOString();
+  }
+  if (!/^\d+$/.test(sourceDateEpoch)) {
+    throw new Error('SOURCE_DATE_EPOCH must be an integer number of seconds');
+  }
+  return new Date(Number(sourceDateEpoch) * 1000).toISOString();
 }
 
 export function buildMarkdownReport(audit) {
@@ -332,6 +355,7 @@ export function run(argv = process.argv) {
     shortlogText,
     packageJson,
     rootLicenseText,
+    generatedAt: resolveGeneratedAt(),
   });
 
   if (options.outputJson) {
@@ -350,7 +374,14 @@ export function run(argv = process.argv) {
   return 0;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+export function isExecutedAsMain(importMetaUrl, argvPath = process.argv[1]) {
+  if (!argvPath) {
+    return false;
+  }
+  return importMetaUrl === pathToFileURL(path.resolve(argvPath)).href;
+}
+
+if (isExecutedAsMain(import.meta.url, process.argv[1])) {
   try {
     process.exit(run(process.argv));
   } catch (error) {

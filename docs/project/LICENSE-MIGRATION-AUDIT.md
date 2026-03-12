@@ -27,6 +27,8 @@ pnpm run license:audit:scope -- \
   --output-md artifacts/reference/legal/license-scope-audit.md
 ```
 
+`SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると、`generatedAt` を固定して再現可能な snapshot を得る。
+
 ## 監査観点
 
 1. tracked file を以下に分類する
@@ -34,7 +36,7 @@ pnpm run license:audit:scope -- \
    - first-party root files
    - conditional (`artifacts/**`, `fixtures/**`, `test-cassettes/**`)
    - other
-2. tracked な nested `LICENSE*` / `NOTICE*` / `COPYING*` を列挙する
+2. root legal files を除いた tracked な nested `LICENSE*` / `NOTICE*` / `COPYING*` を列挙する
 3. `git shortlog -sne --all` から contributor inventory を生成する
 4. root `LICENSE` と `package.json` の現行値を記録する
 
