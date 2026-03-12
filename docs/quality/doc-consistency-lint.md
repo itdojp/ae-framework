@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/reference/DOC-GOVERNANCE.md
 - scripts/docs/check-doc-consistency-all.mjs
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-12'
 ---
 # Doc Consistency Lint
 
