@@ -87,6 +87,7 @@
     "handoff:create": "node scripts/agents/create-handoff.mjs",
     "handoff:validate": "node scripts/agents/validate-handoff.mjs",
     "hook-feedback:build": "node scripts/agents/build-hook-feedback.mjs",
+    "license:audit:scope": "node scripts/legal/inventory-license-scope.mjs",
     "quality:scorecard:v1": "node scripts/quality/build-quality-scorecard.mjs",
     "quality:scorecard:validate": "node scripts/ci/validate-quality-scorecard.mjs",
     "context-pack:validate": "node scripts/context-pack/validate.mjs",
