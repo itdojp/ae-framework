@@ -7,6 +7,8 @@ import { err, ok, isErr, type Result } from '../../core/result.js';
 import type { AppError } from '../../core/errors.js';
 
 const execAsync = promisify(exec);
+const VERIFY_ARTIFACT_DIR = path.join('artifacts', 'reference', 'verify');
+const VERIFY_REPORT_PATH = path.join(VERIFY_ARTIFACT_DIR, 'verify.md');
 
 async function hasBin(bin: string): Promise<boolean> {
   // a) Check node_modules/.bin/<bin>
@@ -83,7 +85,7 @@ async function getVerifyConfigPath(): Promise<string> {
 
 export async function verifyRun(): Promise<Result<{ logs: string[]; duration: string }, AppError>> {
   console.log('[ae][verify] Starting verification pipeline...');
-  await mkdir('artifacts/reference/verify', { recursive: true });
+  await mkdir(VERIFY_ARTIFACT_DIR, { recursive: true });
   
   const logs: string[] = [];
   let success = true;
@@ -440,8 +442,8 @@ ${logs.join('\n\n')}
 `;
 
   try {
-    await writeFile('artifacts/reference/verify/verify.md', report);
-    console.log(`[ae][verify] Verification report generated -> artifacts/reference/verify/verify.md`);
+    await writeFile(VERIFY_REPORT_PATH, report);
+    console.log(`[ae][verify] Verification report generated -> ${VERIFY_REPORT_PATH}`);
   } catch (error) {
     console.error(`[ae][verify] Failed to write report: ${error instanceof Error ? error.message : String(error)}`);
   }

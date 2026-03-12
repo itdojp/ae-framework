@@ -37,7 +37,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
   - `artifacts/reference/verify/verify.md`
   - `artifacts/reference/verify/recovery-verify.md`
   - `artifacts/reference/verify/verify-lite-lint-summary.json`
-  - status: normalized in current slice
+  - status: normalized in `PR #2632` (tracked by `Issue #2631`)
 
 ### Move to `artifacts/reference/**`
 - type/reference validation snapshots
@@ -67,7 +67,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 2. move root-level benchmark snapshots into `artifacts/reference/benchmarks/*`
    - completed in `PR #2629`
 3. move verification snapshots into `artifacts/reference/verify/*`
-   - in progress via `Issue #2631`
+   - completed in `PR #2632` (tracked by `Issue #2631`)
 4. move type/reference snapshots into `artifacts/reference/types/*`
 5. move tracked hermetic / validation snapshots into `artifacts/reference/{hermetic-reports,validation-results}/**`
 
