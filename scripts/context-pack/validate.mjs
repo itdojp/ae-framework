@@ -13,6 +13,7 @@ const DEFAULT_SCHEMA_PATH = 'schema/context-pack-v1.schema.json';
 const DEFAULT_REPORT_JSON = 'artifacts/context-pack/context-pack-validate-report.json';
 const DEFAULT_REPORT_MD = 'artifacts/context-pack/context-pack-validate-report.md';
 const NON_CONTEXT_PACK_SCHEMA_VERSIONS = new Set([
+  'context-pack-boundary-map/v1',
   'context-pack-functor-map/v1',
   'context-pack-natural-transformation/v1',
   'context-pack-product-coproduct/v1',

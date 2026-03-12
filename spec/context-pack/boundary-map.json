@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "context-pack-boundary-map/v1",
+  "contextPackSources": [
+    "spec/context-pack/**/*.{yml,yaml,json}"
+  ],
+  "slices": [
+    {
+      "id": "inventory-item-model",
+      "description": "Own the aggregate boundary for InventoryItem.",
+      "produces": [
+        {
+          "kind": "object",
+          "refId": "InventoryItem"
+        }
+      ]
+    },
+    {
+      "id": "reservation-flow",
+      "description": "Own the reservation use case and its externally visible evidence.",
+      "consumes": [
+        {
+          "kind": "object",
+          "refId": "InventoryItem",
+          "upstream": {
+            "type": "slice",
+            "sliceId": "inventory-item-model"
+          }
+        },
+        {
+          "kind": "forbidden-change",
+          "refId": "Remove ReserveInventory precondition checks.",
+          "upstream": {
+            "type": "context-pack"
+          }
+        }
+      ],
+      "produces": [
+        {
+          "kind": "morphism",
+          "refId": "ReserveInventory"
+        },
+        {
+          "kind": "diagram",
+          "refId": "D-1"
+        },
+        {
+          "kind": "acceptance-test",
+          "refId": "AT-1"
+        }
+      ]
+    }
+  ]
+}
