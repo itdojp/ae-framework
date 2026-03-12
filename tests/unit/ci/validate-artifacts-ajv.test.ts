@@ -264,6 +264,11 @@ describe('validate-artifacts-ajv', () => {
     expect(harnessHealthRule?.schemaPath).toBe('schema/harness-health.schema.json');
     expect(harnessHealthRule?.patterns).toContain('artifacts/ci/harness-health.json');
 
+    const qualityScorecardRule = DEFAULT_RULES.find((rule) => rule.id === 'quality-scorecard');
+    expect(qualityScorecardRule).toBeDefined();
+    expect(qualityScorecardRule?.schemaPath).toBe('schema/quality-scorecard.schema.json');
+    expect(qualityScorecardRule?.patterns).toContain('artifacts/quality/quality-scorecard.json');
+
     const traceValidationRule = DEFAULT_RULES.find((rule) => rule.id === 'trace-validation');
     expect(traceValidationRule).toBeDefined();
     expect(traceValidationRule?.requiredWhenStrict).toBe(true);

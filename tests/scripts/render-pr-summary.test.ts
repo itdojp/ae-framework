@@ -78,6 +78,54 @@ describe.sequential('render-pr-summary', () => {
     }
   });
 
+  it('renders quality scorecard when the artifact exists', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-scorecard-'));
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'summary'), { recursive: true });
+      mkdirSync(join(sandbox, 'artifacts', 'quality'), { recursive: true });
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'summary', 'combined.json'),
+        JSON.stringify(
+          {
+            adapters: [{ adapter: 'playwright', summary: '12/12 passed', status: 'ok' }],
+            formal: { result: 'pass' },
+            replay: { totalEvents: 2, violatedInvariants: [] },
+          },
+          null,
+          2,
+        ),
+      );
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'quality', 'quality-scorecard.json'),
+        JSON.stringify(
+          {
+            summary: {
+              overallStatus: 'warn',
+              overallScore: 78,
+            },
+            blockers: [
+              { dimension: 'policyReadiness', code: 'policy-gate-warning' },
+            ],
+          },
+          null,
+          2,
+        ),
+      );
+
+      const result = runScript(sandbox, { SUMMARY_MODE: 'digest', SUMMARY_LANG: 'en' });
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
+      expect(output).toContain('Quality Scorecard: warn 78/100');
+      expect(output).toContain('Quality blockers: policyReadiness:policy-gate-warning');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('renders assurance section in detailed Japanese mode', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-detailed-'));
 

@@ -24,6 +24,7 @@ const props = c.properties ? (Array.isArray(c.properties) ? c.properties : [c.pr
 const cov = r('coverage/coverage-summary.json') || r('artifacts/coverage/coverage-summary.json');
 const ltlSug = r('artifacts/properties/ltl-suggestions.json');
 const assurance = r('artifacts/assurance/assurance-summary.json');
+const qualityScorecard = r('artifacts/quality/quality-scorecard.json');
 let coverageLine = t('Coverage: n/a','カバレッジ: 不明');
 if (cov?.total?.lines && typeof cov.total.lines.pct === 'number') coverageLine = t(`Coverage: ${cov.total.lines.pct}%`, `カバレッジ: ${cov.total.lines.pct}%`);
 const traceIds = new Set();
@@ -100,6 +101,22 @@ const assuranceDigestSegment = assuranceSummary
 const assuranceDetailBlock = assuranceSummary
   ? `- ${assuranceLine}\n${assuranceLaneLine ? `- ${assuranceLaneLine}\n` : ''}${assuranceWarningsLine ? `- ${assuranceWarningsLine}\n` : ''}`
   : '';
+const qualityScorecardSummary = qualityScorecard?.summary && typeof qualityScorecard.summary === 'object'
+  ? qualityScorecard.summary
+  : null;
+const qualityScorecardBlockers = Array.isArray(qualityScorecard?.blockers) ? qualityScorecard.blockers : [];
+const qualityScorecardLine = qualityScorecardSummary
+  ? t(
+      `Quality Scorecard: ${qualityScorecardSummary.overallStatus ?? 'n/a'} ${qualityScorecardSummary.overallScore ?? 'n/a'}/100`,
+      `品質スコアカード: ${qualityScorecardSummary.overallStatus ?? 'n/a'} ${qualityScorecardSummary.overallScore ?? 'n/a'}/100`,
+    )
+  : '';
+const qualityScorecardBlockersLine = qualityScorecardSummary
+  ? t(
+      `Quality blockers: ${qualityScorecardBlockers.length ? qualityScorecardBlockers.map((entry) => `${entry.dimension}:${entry.code}`).join(', ') : 'none'}`,
+      `品質 blocker: ${qualityScorecardBlockers.length ? qualityScorecardBlockers.map((entry) => `${entry.dimension}:${entry.code}`).join(', ') : 'なし'}`,
+    )
+  : '';
 // Alloy temporal (from aggregate JSON if present)
 let alloyTemporalLine = '';
 try {
@@ -140,9 +157,9 @@ try {
 
 let md;
 if (mode === 'digest') {
-  md = `${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${qualityScorecardLine ? `${qualityScorecardLine}${qualityScorecardBlockersLine ? ` | ${qualityScorecardBlockersLine}` : ''} | ` : ''}${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n- ${coverageLine}\n${assuranceDetailBlock}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n${qualityScorecardLine ? `- ${qualityScorecardLine}\n${qualityScorecardBlockersLine ? `- ${qualityScorecardBlockersLine}\n` : ''}` : ''}- ${coverageLine}\n${assuranceDetailBlock}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
 // Fallback: if formal is n/a, print presentCount from aggregate JSON
 try {

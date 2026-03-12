@@ -1,0 +1,374 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/quality-scorecard.schema.json",
+  "title": "Quality Scorecard v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "generatedAt",
+    "metadata",
+    "reportOnly",
+    "inputs",
+    "summary",
+    "dimensions",
+    "blockers"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "quality-scorecard/v1"
+    },
+    "contractId": {
+      "const": "quality-scorecard.v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "$ref": "https://ae-framework/schema/artifact-metadata.schema.json"
+    },
+    "reportOnly": {
+      "type": "boolean"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verifyLiteSummary",
+        "reportEnvelope",
+        "assuranceSummary",
+        "harnessHealth",
+        "policyGateSummary",
+        "benchCompare",
+        "formalSummary"
+      ],
+      "properties": {
+        "verifyLiteSummary": {
+          "$ref": "#/$defs/inputRefRequired"
+        },
+        "reportEnvelope": {
+          "$ref": "#/$defs/inputRefRequired"
+        },
+        "assuranceSummary": {
+          "$ref": "#/$defs/inputRefOptional"
+        },
+        "harnessHealth": {
+          "$ref": "#/$defs/inputRefOptional"
+        },
+        "policyGateSummary": {
+          "$ref": "#/$defs/inputRefOptional"
+        },
+        "benchCompare": {
+          "$ref": "#/$defs/inputRefOptional"
+        },
+        "formalSummary": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/formalSummaryRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "overallStatus",
+        "overallScore",
+        "availableDimensions",
+        "missingDimensions",
+        "blockerCount"
+      ],
+      "properties": {
+        "overallStatus": {
+          "$ref": "#/$defs/status"
+        },
+        "overallScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "availableDimensions": {
+          "$ref": "#/$defs/dimensionNameArray"
+        },
+        "missingDimensions": {
+          "$ref": "#/$defs/dimensionNameArray"
+        },
+        "blockerCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactIntegrity",
+        "assuranceCoverage",
+        "executionHealth",
+        "policyReadiness",
+        "performanceRegression"
+      ],
+      "properties": {
+        "artifactIntegrity": {
+          "$ref": "#/$defs/dimension"
+        },
+        "assuranceCoverage": {
+          "$ref": "#/$defs/dimension"
+        },
+        "executionHealth": {
+          "$ref": "#/$defs/dimension"
+        },
+        "policyReadiness": {
+          "$ref": "#/$defs/dimension"
+        },
+        "performanceRegression": {
+          "$ref": "#/$defs/dimension"
+        }
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/blocker"
+      }
+    }
+  },
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "warn",
+        "fail",
+        "missing"
+      ]
+    },
+    "dimensionName": {
+      "type": "string",
+      "enum": [
+        "artifactIntegrity",
+        "assuranceCoverage",
+        "executionHealth",
+        "policyReadiness",
+        "performanceRegression"
+      ]
+    },
+    "dimensionNameArray": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dimensionName"
+      },
+      "uniqueItems": true
+    },
+    "inputRefBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "present",
+        "required"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/nullablePath"
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "nonEmptyPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nullablePath": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nonEmptyPath"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "inputRefRequired": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/inputRefBase"
+        },
+        {
+          "properties": {
+            "path": {
+              "$ref": "#/$defs/nonEmptyPath"
+            },
+            "present": {
+              "const": true
+            },
+            "required": {
+              "const": true
+            }
+          }
+        }
+      ]
+    },
+    "inputRefOptional": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/inputRefBase"
+        },
+        {
+          "properties": {
+            "required": {
+              "const": false
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "present": {
+                  "const": true
+                },
+                "path": {
+                  "$ref": "#/$defs/nonEmptyPath"
+                }
+              }
+            },
+            {
+              "properties": {
+                "present": {
+                  "const": false
+                },
+                "path": {
+                  "type": "null"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "formalSummaryRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "present",
+        "required",
+        "schemaVersion"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/nonEmptyPath"
+        },
+        "present": {
+          "const": true
+        },
+        "required": {
+          "const": false
+        },
+        "schemaVersion": {
+          "type": "string",
+          "enum": [
+            "formal-summary/v1",
+            "formal-summary/v2"
+          ]
+        }
+      }
+    },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "score",
+        "weight",
+        "summary",
+        "details"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "score": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "details": {
+          "type": "object"
+        }
+      }
+    },
+    "blocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dimension",
+        "code",
+        "severity",
+        "message",
+        "artifactPath"
+      ],
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/dimensionName"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "warn",
+            "fail"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactPath": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

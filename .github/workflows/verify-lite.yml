@@ -256,6 +256,42 @@ jobs:
           node scripts/ci/validate-assurance-summary.mjs \
             artifacts/assurance/assurance-summary.json \
             schema/assurance-summary.schema.json
+      - name: Aggregate quality scorecard (report-only)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          args=(
+            --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json
+            --report-envelope artifacts/report-envelope.json
+            --output-json artifacts/quality/quality-scorecard.json
+            --output-md artifacts/quality/quality-scorecard.md
+          )
+          if [ -f artifacts/assurance/assurance-summary.json ]; then
+            args+=(--assurance-summary artifacts/assurance/assurance-summary.json)
+          fi
+          if [ -f artifacts/ci/harness-health.json ]; then
+            args+=(--harness-health artifacts/ci/harness-health.json)
+          fi
+          if [ -f artifacts/ci/policy-gate-summary.json ]; then
+            args+=(--policy-gate-summary artifacts/ci/policy-gate-summary.json)
+          fi
+          if [ -f artifacts/bench-compare.json ]; then
+            args+=(--bench-compare artifacts/bench-compare.json)
+          fi
+          for formal_summary in artifacts/formal/formal-summary-v2.json artifacts/formal/formal-summary-v1.json; do
+            if [ -f "$formal_summary" ]; then
+              args+=(--formal-summary "$formal_summary")
+            fi
+          done
+          pnpm -s run quality:scorecard:v1 "${args[@]}"
+      - name: Validate quality scorecard schema (non-blocking)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        continue-on-error: true
+        run: |
+          node scripts/ci/validate-quality-scorecard.mjs \
+            artifacts/quality/quality-scorecard.json \
+            schema/quality-scorecard.schema.json
       - name: Enforce assurance summary (strict; label-gated)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-assurance') }}
         run: |
@@ -342,6 +378,8 @@ jobs:
             artifacts/report-envelope.json
             artifacts/assurance/assurance-summary.json
             artifacts/assurance/assurance-summary.md
+            artifacts/quality/quality-scorecard.json
+            artifacts/quality/quality-scorecard.md
             artifacts/formal/formal-summary-v1.json
             artifacts/formal/formal-summary-v2.json
             artifacts/hermetic-reports/conformance/summary.json
@@ -370,6 +408,15 @@ jobs:
             cat artifacts/assurance/assurance-summary.md >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Assurance summary not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Append quality scorecard
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        run: |
+          if [ -f artifacts/quality/quality-scorecard.md ]; then
+            echo '## Quality Scorecard' >> "$GITHUB_STEP_SUMMARY"
+            cat artifacts/quality/quality-scorecard.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Quality scorecard not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Append lint summary (top rules)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
