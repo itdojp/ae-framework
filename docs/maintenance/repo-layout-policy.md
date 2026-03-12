@@ -64,7 +64,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ### 4.1 `artifacts/` の分類
 
-`artifacts/` は単一用途のディレクトリではなく、現時点では次の 4 類型を含む。
+`artifacts/` は単一用途のディレクトリではなく、現時点では次の 5 類型を含む。
 
 | 類型 | 例 | 既定の扱い | 主な責務 |
 |---|---|---|---|
