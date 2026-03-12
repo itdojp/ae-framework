@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
 # ae-framework 全体のエージェント/MCPサーバー化提案
 
 > 🌍 Language / 言語: 日本語 | English
@@ -32,7 +36,7 @@ ae-frameworkの6フェーズすべてをMCPサーバー/サブエージェント
 
 **役割**: 要件の明確化と仕様の自動生成
 
-```typescript
+```typescript no-doctest
 interface IntentAgent {
   // 自然言語から要件を抽出
   extractRequirements(userInput: string): Requirements;
@@ -49,7 +53,7 @@ interface IntentAgent {
 ```
 
 **MCPツール例**:
-```json
+```json no-doctest
 {
   "name": "analyze_requirements",
   "description": "Analyze and structure user requirements",
@@ -67,7 +71,7 @@ interface IntentAgent {
 
 **役割**: 形式仕様の自動生成と検証
 
-```typescript
+```typescript no-doctest
 interface FormalAgent {
   // TLA+仕様を生成
   generateTLASpec(requirements: Requirements): TLASpecification;
@@ -116,7 +120,7 @@ Formal Agent: "認証フローの形式仕様を作成します：
 
 **役割**: 包括的なテスト戦略の立案と実装
 
-```typescript
+```typescript no-doctest
 interface TestAgent {
   // テストケースを自動生成
   generateTestCases(spec: Specification): TestCase[];
@@ -136,7 +140,7 @@ interface TestAgent {
 ```
 
 **実装例**:
-```typescript
+```typescript no-doctest
 // テストエージェントが自動生成するテスト
 describe('Payment Processing', () => {
   // 正常系
@@ -166,7 +170,7 @@ describe('Payment Processing', () => {
 
 **役割**: 仕様準拠のコード生成と最適化
 
-```typescript
+```typescript no-doctest
 interface CodeAgent {
   // 仕様からコード生成
   generateCode(spec: Specification, tests: TestCase[]): SourceCode;
@@ -189,7 +193,7 @@ interface CodeAgent {
 ```
 Code Agent: "テストから以下の実装を推論しました：
 
-```typescript
+```typescript no-doctest
 class PaymentService {
   async processPayment(amount: number, cardToken: string) {
     // 1. 金額検証（テストから推論）
@@ -222,7 +226,7 @@ class PaymentService {
 
 **役割**: 包括的な品質検証と改善提案
 
-```typescript
+```typescript no-doctest
 interface VerifyAgent {
   // トレーサビリティ検証
   verifyTraceability(artifacts: ProjectArtifacts): TraceabilityMatrix;
@@ -277,7 +281,7 @@ Verify Agent: "## 検証レポート
 
 **役割**: 本番環境の自動管理と最適化
 
-```typescript
+```typescript no-doctest
 interface OperateAgent {
   // デプロイメント戦略決定
   planDeployment(system: System, environment: Environment): DeploymentPlan;
@@ -326,7 +330,7 @@ Operate Agent: "🚨 異常検知アラート
 
 全フェーズを統括する**マスターエージェント**:
 
-```typescript
+```typescript no-doctest
 interface OrchestratorAgent {
   // プロジェクト全体の管理
   manageProject(requirements: string): ProjectPlan;

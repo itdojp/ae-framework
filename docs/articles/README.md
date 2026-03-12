@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
 # Articles Index
 
 > 🌍 Language / 言語: English | 日本語

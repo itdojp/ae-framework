@@ -1,3 +1,7 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
 # ae-framework: AI-Driven TDD Development Automation - Complete 6-Phase Automation from Requirements to Implementation
 
 > 🌍 Language / 言語: English | 日本語
@@ -29,7 +33,7 @@ Seeing is believing. Let's experience the power of ae-framework hands-on.
 
 ### Installation and Initial Setup
 
-```bash
+```bash no-doctest
 # Node.js 20+ required
 npm install -g ae-framework
 
@@ -40,7 +44,7 @@ cd todo-app
 
 ### Complete Automation from Natural Language Requirements to Implementation
 
-```bash
+```bash no-doctest
 # 1. Describe requirements in natural language
 echo "Users can add, edit, delete, and mark TODOs as complete.
 Priority setting and deadline features are also required." > requirements.txt
@@ -59,7 +63,7 @@ ae-framework feature requirements.txt
 
 ### Execution Results
 
-```bash
+```bash no-doctest
 🎯 Phase 1: Intent Analysis Complete - 8 requirements identified
 📋 Phase 2: Requirements Processing Complete
 👤 Phase 3: User Stories Generated - 12 stories created
@@ -99,7 +103,7 @@ graph LR
 
 **TDD** is a development methodology proposed by Kent Beck in the 1990s, based on the "RED-GREEN-REFACTOR" cycle:
 
-```bash
+```bash no-doctest
 # ae-framework's TDD enforcement system
 git commit -m "Add new feature"
 ❌ TDD Guard: Test files do not exist
@@ -115,7 +119,7 @@ ae-framework refactor       # REFACTOR phase - Code improvement
 
 **BDD** is a methodology proposed by Dan North in 2006, evolving from TDD. It uses Domain-Specific Language (DSL) with Gherkin syntax:
 
-```gherkin
+```gherkin no-doctest
 # Auto-generated BDD specifications
 Feature: User Authentication
   As a system user
@@ -133,7 +137,7 @@ Feature: User Authentication
 
 **Formal methods** using mathematically rigorous specification description:
 
-```typescript
+```typescript no-doctest
 // Auto-conversion from Z-notation style specs to TypeScript types
 interface UserAccount {
   // Formal constraint: ∀ user: User • user.email ∈ ValidEmailAddress
@@ -177,7 +181,7 @@ graph TD
 - **Formal Specification Layer**: Mathematical constraint guarantees
 
 **3. Automatic Consistency Verification**
-```typescript
+```typescript no-doctest
 // Automatic consistency check between BDD specs, TDD tests, and formal specs
 class SpecificationValidator {
   validateConsistency(
@@ -195,7 +199,7 @@ class SpecificationValidator {
 
 Real-time quality metrics with OpenTelemetry:
 
-```typescript
+```typescript no-doctest
 📊 Real-time Quality Dashboard
 ├── Test Coverage: 95.2% ↗️
 ├── Performance Score: 87.3% ↗️
@@ -206,7 +210,7 @@ Real-time quality metrics with OpenTelemetry:
 
 ### 4. **Complete Claude Code Integration**
 
-```bash
+```bash no-doctest
 # Just tell Claude Code:
 "Create a blog system with authentication"
 
@@ -227,7 +231,7 @@ ae-framework is based on the following design principles:
 
 #### 1. **Unified Agent Architecture**
 
-```typescript
+```typescript no-doctest
 // Traditional: Fragmented individual agents
 class IntentAgent { /* Intent analysis only */ }
 class TestAgent { /* Test generation only */ }
@@ -246,7 +250,7 @@ class UnifiedAgent {
 
 #### 2. **Thorough Application of Domain-Driven Design**
 
-```typescript
+```typescript no-doctest
 // Domain model drives entire development
 export interface TaskDomain {
   entities: Entity[];
@@ -265,7 +269,7 @@ export interface TaskDomain {
 
 #### 3. **Gradual Quality Improvement System**
 
-```typescript
+```typescript no-doctest
 interface QualityGates {
   phase0: { coverage: 80, typeErrors: 0 };
   phase1: { coverage: 82, complexity: 8 };
@@ -317,7 +321,7 @@ ae-framework integrates and utilizes established techniques that have been resea
 
 #### CEGIS Implementation in ae-framework
 
-```typescript
+```typescript no-doctest
 // Automatic code correction from failed tests
 class CEGISAutoFixer {
   async fixFailedTest(testResult: FailedTest): Promise<CodeFix> {
@@ -344,7 +348,7 @@ class CEGISAutoFixer {
 
 **Property-Based Testing** originated with QuickCheck (Haskell) developed by Koen Claessen and John Hughes in 1999. It's a method that describes and tests properties that systems should satisfy, rather than individual test cases.
 
-```typescript
+```typescript no-doctest
 // Auto-generate property tests from domain models
 describe('UserEntity Properties', () => {
   // Academic property: ∀ email ∈ ValidEmails • isValid(User(email)) = true
@@ -374,7 +378,7 @@ describe('UserEntity Properties', () => {
 
 **Runtime Conformance Verification** is based on the concept of runtime contracts (Design by Contract). It evolved from the design principles of the Eiffel language proposed by Bertrand Meyer in 1988.
 
-```typescript
+```typescript no-doctest
 // Auto-verify specification compliance at runtime
 const UserSchema = z.object({
   id: z.string().uuid(),
@@ -409,7 +413,7 @@ function transfer(from: Account, to: Account, amount: number) {
 
 **Metamorphic Testing** is a method proposed by T.Y. Chen in 1998 that verifies relationships (metamorphic relations) of "how outputs change when inputs are transformed." It's gaining attention as a solution to the oracle problem.
 
-```typescript
+```typescript no-doctest
 // Auto-verify invariants (Metamorphic Relations)
 test('sort operation metamorphic properties', () => {
   const original = generateRandomArray();
@@ -459,7 +463,7 @@ Latest benchmark results (January 2025):
 
 ### Actual Processing Speed (8-problem benchmark)
 
-```bash
+```bash no-doctest
 📊 Benchmark Results Summary
 ============================
 ⏱️  Total Time: 305ms (all 8 problems)
@@ -525,7 +529,7 @@ export const TodoItem = ({ todo }: TodoItemProps) => {
 
 ### Traditional Development
 
-```bash
+```bash no-doctest
 # 1 week to 1 month process
 1. Read and understand requirement specifications (1-3 days)
 2. Architecture design (1-2 days)
@@ -538,7 +542,7 @@ export const TodoItem = ({ todo }: TodoItemProps) => {
 
 ### Development with ae-framework
 
-```bash
+```bash no-doctest
 # 30 minutes to 2 hours process
 ae-framework feature "User authentication and TODO management system"
 
@@ -605,7 +609,7 @@ ae-framework is not just a tool. It's **a platform to maximize developer creativ
 
 ### Start Now
 
-```bash
+```bash no-doctest
 # Start ae-framework in 5 minutes
 npm install -g ae-framework
 ae-framework init my-awesome-app --tdd
