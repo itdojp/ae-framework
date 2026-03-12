@@ -2172,7 +2172,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Root',
@@ -2183,7 +2183,7 @@ describe('check-doc-governance', () => {
       'docRole: derived',
       'canonicalSource:',
       '  - docs/agents/agents-doc-boundary-matrix.md',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Agents',
@@ -2192,7 +2192,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Docs',
@@ -2201,7 +2201,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: agent-ops',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2212,7 +2212,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: docs-governance',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2223,7 +2223,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/changes/2025-08-27-codex-ci-enhancements.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Change log',
@@ -2232,7 +2232,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/research/README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Research',
@@ -2491,7 +2491,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Root',
@@ -2502,7 +2502,7 @@ describe('check-doc-governance', () => {
       'docRole: derived',
       'canonicalSource:',
       '  - docs/agents/agents-doc-boundary-matrix.md',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Agents',
@@ -2511,7 +2511,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Docs',
@@ -2520,7 +2520,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: agent-ops',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2531,7 +2531,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: docs-governance',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2542,7 +2542,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/ddd/ae-ir-ddd.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: architecture',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2553,7 +2553,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/ddd/events.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: testing',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2564,7 +2564,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/examples/full-e2e-demo.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Full E2E Demo',
@@ -2573,7 +2573,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/examples/replay-runner.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Replay Runner',
@@ -2601,7 +2601,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Root',
@@ -2612,7 +2612,7 @@ describe('check-doc-governance', () => {
       'docRole: derived',
       'canonicalSource:',
       '  - docs/agents/agents-doc-boundary-matrix.md',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Agents',
@@ -2621,7 +2621,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Docs',
@@ -2630,7 +2630,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: agent-ops',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2641,7 +2641,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: docs-governance',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2652,7 +2652,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/articles/README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Articles',
@@ -2661,7 +2661,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/articles/zenn/zenn-article-ae-framework.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Zenn Article',
@@ -2670,7 +2670,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/proposals/agent-architecture-proposal.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Proposal',
@@ -2698,7 +2698,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Root',
@@ -2709,7 +2709,7 @@ describe('check-doc-governance', () => {
       'docRole: derived',
       'canonicalSource:',
       '  - docs/agents/agents-doc-boundary-matrix.md',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Agents',
@@ -2718,7 +2718,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Docs',
@@ -2727,7 +2727,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: agent-ops',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2738,7 +2738,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: docs-governance',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2749,7 +2749,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/benchmark/README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Benchmark',
@@ -2758,7 +2758,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/benchmark/req2run-environment-setup.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: benchmark-ops',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2769,7 +2769,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/benchmark/req2run-integration-issues.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Integration Issues',
@@ -2797,7 +2797,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Root',
@@ -2808,7 +2808,7 @@ describe('check-doc-governance', () => {
       'docRole: derived',
       'canonicalSource:',
       '  - docs/agents/agents-doc-boundary-matrix.md',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Agents',
@@ -2817,7 +2817,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Docs',
@@ -2826,7 +2826,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: agent-ops',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2837,7 +2837,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: docs-governance',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2848,7 +2848,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/infra/container-runtime.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: infra-ops',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2859,7 +2859,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/infra/podman-shared-runner.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: infra-ops',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2889,7 +2889,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Root',
@@ -2900,7 +2900,7 @@ describe('check-doc-governance', () => {
       'docRole: derived',
       'canonicalSource:',
       '  - docs/agents/agents-doc-boundary-matrix.md',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Agents',
@@ -2909,7 +2909,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/README.md', [
       '---',
       'docRole: narrative',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       '---',
       '',
       '# Docs',
@@ -2918,7 +2918,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: agent-ops',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2929,7 +2929,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: docs-governance',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',
@@ -2940,7 +2940,7 @@ describe('check-doc-governance', () => {
     writeMarkdown(rootDir, 'docs/templates/spec-kit/feature-spec-kit.md', [
       '---',
       'docRole: ssot',
-      'lastVerified: 2026-03-12',
+      "lastVerified: '2026-03-12'",
       'owner: templates-ops',
       'verificationCommand: pnpm -s run check:doc-consistency',
       '---',

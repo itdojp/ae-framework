@@ -8,7 +8,56 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const ROOT_DOCS = ['README.md', 'AGENTS.md', 'docs/README.md'];
 const GOVERNED_EXTRA_DOCS = ['docs/reference/DOC-GOVERNANCE.md'];
-const GOVERNED_PREFIX_DIRS = ['docs/TLA+', 'docs/adapters', 'docs/agent-builder', 'docs/agents', 'docs/agents/recipes', 'docs/architecture', 'docs/articles', 'docs/articles/zenn', 'docs/benchmark', 'docs/changes', 'docs/cheatsheets', 'docs/ci', 'docs/codex', 'docs/contributing', 'docs/ddd', 'docs/development', 'docs/examples', 'docs/flows', 'docs/getting-started', 'docs/guides', 'docs/handoff', 'docs/infra', 'docs/integrations', 'docs/internal', 'docs/maintenance', 'docs/observability', 'docs/operate', 'docs/operations', 'docs/phases', 'docs/product', 'docs/project', 'docs/proposals', 'docs/quality', 'docs/reference', 'docs/research', 'docs/resilience', 'docs/roadmap', 'docs/samples', 'docs/spec', 'docs/strategy', 'docs/templates', 'docs/templates/adapters', 'docs/templates/blueprint', 'docs/templates/ci', 'docs/templates/domain-plugin', 'docs/templates/quality', 'docs/templates/spec-kit', 'docs/testing', 'docs/trace', 'docs/trace/grafana', 'docs/troubleshooting', 'docs/verify', 'docs/workflows'];
+const RECURSIVE_GOVERNED_PREFIX_DIRS = new Set(['docs/templates']);
+const GOVERNED_PREFIX_DIRS = [
+  'docs/TLA+',
+  'docs/adapters',
+  'docs/agent-builder',
+  'docs/agents',
+  'docs/agents/recipes',
+  'docs/architecture',
+  'docs/articles',
+  'docs/articles/zenn',
+  'docs/benchmark',
+  'docs/changes',
+  'docs/cheatsheets',
+  'docs/ci',
+  'docs/codex',
+  'docs/contributing',
+  'docs/ddd',
+  'docs/development',
+  'docs/examples',
+  'docs/flows',
+  'docs/getting-started',
+  'docs/guides',
+  'docs/handoff',
+  'docs/infra',
+  'docs/integrations',
+  'docs/internal',
+  'docs/maintenance',
+  'docs/observability',
+  'docs/operate',
+  'docs/operations',
+  'docs/phases',
+  'docs/product',
+  'docs/project',
+  'docs/proposals',
+  'docs/quality',
+  'docs/reference',
+  'docs/research',
+  'docs/resilience',
+  'docs/roadmap',
+  'docs/samples',
+  'docs/spec',
+  'docs/strategy',
+  'docs/templates',
+  'docs/testing',
+  'docs/trace',
+  'docs/trace/grafana',
+  'docs/troubleshooting',
+  'docs/verify',
+  'docs/workflows',
+];
 const DOC_ROLE_VALUES = new Set(['ssot', 'derived', 'narrative']);
 const NARRATIVE_NORMATIVE_PATTERNS = [
   /\bmust\b/giu,
@@ -85,15 +134,45 @@ function collectGovernedDocs(rootDir) {
     if (!existsSync(absoluteDir)) {
       continue;
     }
-    const entries = readdirSync(absoluteDir, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
-      .map((entry) => `${dir}/${entry.name}`)
+    const entries = (
+      RECURSIVE_GOVERNED_PREFIX_DIRS.has(dir)
+        ? collectMarkdownFiles(absoluteDir)
+        : readdirSync(absoluteDir, { withFileTypes: true })
+          .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+          .map((entry) => path.join(absoluteDir, entry.name))
+    )
+      .map((entry) => path.relative(rootDir, entry).replaceAll(path.sep, '/'))
       .sort();
     for (const entry of entries) {
       docs.add(entry);
     }
   }
   return [...docs];
+}
+
+function collectMarkdownFiles(rootDir) {
+  const markdownFiles = [];
+  const pending = [rootDir];
+
+  while (pending.length > 0) {
+    const currentDir = pending.pop();
+    if (!currentDir) {
+      continue;
+    }
+    const entries = readdirSync(currentDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const absolutePath = path.join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        pending.push(absolutePath);
+        continue;
+      }
+      if (entry.isFile() && entry.name.endsWith('.md')) {
+        markdownFiles.push(absolutePath);
+      }
+    }
+  }
+
+  return markdownFiles;
 }
 
 function extractFrontMatter(raw) {
