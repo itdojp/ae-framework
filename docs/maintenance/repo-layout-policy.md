@@ -1,12 +1,12 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-12'
 owner: repo-maintenance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
 # Repository Layout Policy (Issue #2031 / Phase 0)
 
-最終更新: 2026-03-11
+最終更新: 2026-03-12
 
 ## 1. 目的
 
@@ -70,7 +70,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 |---|---|---|---|
 | runtime output | `artifacts/verify-lite/**`, `artifacts/assurance/**`, `artifacts/release/**`, `artifacts/ci/**`, `artifacts/context-pack/**`, `artifacts/trace/**`, `artifacts/observability/**`, `artifacts/validation-results/**` | 原則 non-tracked | 実行結果、CI要約、運用判定の出力 |
 | committed contract artifact | `artifacts/types/**`, `artifacts/contracts/**`, `artifacts/domain/**`, `artifacts/plan/**`, `artifacts/api/**`, `artifacts/bdd/**`, `artifacts/properties/**`, `artifacts/repros/**` | tracked | 契約・サンプル・回帰基準として repo で参照する成果物 |
-| reference snapshot | `artifacts/reference/benchmarks/bench.json`, `artifacts/reference/benchmarks/bench.md`, `artifacts/reference/benchmarks/bench-1.json`, `artifacts/reference/benchmarks/bench-2.json`, `artifacts/reference/verify/verify.md`, `artifacts/reference/verify/recovery-verify.md`, `artifacts/reference/verify/verify-lite-lint-summary.json`, `artifacts/reference/types/types-gate-ci-validation.md`, `artifacts/reference/types/types-hardening-validation.md`, `artifacts/reference/types/public-types.current.d.ts`, `artifacts/reference/validation-results/summary.json` | tracked | ベースライン比較や過去判断の参照資料 |
+| reference snapshot | `artifacts/reference/benchmarks/bench.json`, `artifacts/reference/benchmarks/bench.md`, `artifacts/reference/benchmarks/bench-1.json`, `artifacts/reference/benchmarks/bench-2.json`, `artifacts/reference/verify/verify.md`, `artifacts/reference/verify/recovery-verify.md`, `artifacts/reference/verify/verify-lite-lint-summary.json`, `artifacts/reference/types/types-gate-ci-validation.md`, `artifacts/reference/types/types-hardening-validation.md`, `artifacts/reference/types/public-types.current.d.ts`, `artifacts/reference/validation-results/summary.json`, `artifacts/reference/hermetic-reports/formal/alloy-summary.json`, `artifacts/reference/hermetic-reports/formal/smt-summary.json` | tracked | ベースライン比較や過去判断の参照資料 |
 | archive | `artifacts/archive/**` | tracked | 過去実行の記録保存、監査用のスナップショット |
 | local debug archive | `artifacts/codex/**` | ignored by default | codex/autopilot 系のローカル・CI調査出力。監査用に残す場合は `artifacts/archive/**` へ昇格させる |
 

@@ -15,7 +15,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 `pnpm run maintenance:artifact:inventory` の最新出力では、tracked artifact は以下に分類される。
 
 - committed contract artifact: `artifacts/types/**`, `artifacts/contracts/**`, `artifacts/domain/**`, `artifacts/plan/**`, `artifacts/api/**`, `artifacts/bdd/**`, `artifacts/properties/**`, `artifacts/repros/**`
-- reference snapshot: `artifacts/reference/benchmarks/*`, `artifacts/reference/verify/*`, `artifacts/reference/types/*`, `artifacts/reference/validation-results/*` に加え、`artifacts/hermetic-reports/**`
+- reference snapshot: `artifacts/reference/benchmarks/*`, `artifacts/reference/verify/*`, `artifacts/reference/types/*`, `artifacts/reference/validation-results/*`, `artifacts/reference/hermetic-reports/formal/*` に加え、`artifacts/hermetic-reports/**` の残余 tracked file
 - archive: `artifacts/archive/**`
 - local debug archive: `artifacts/codex/**`
 
@@ -45,7 +45,9 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 
 ### Move to `artifacts/reference/**`
 - hermetic snapshots
-  - `artifacts/hermetic-reports/**`
+  - formal tracked summary: `artifacts/reference/hermetic-reports/formal/*`
+    - status: normalized in `PR #2639` (tracked by `Issue #2638`)
+  - remaining tracked markdown/archive: `artifacts/hermetic-reports/*.md`, `.gitkeep`
   - target: `artifacts/reference/hermetic-reports/**`
 
 ## Consumer Impact
@@ -58,6 +60,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 - `artifacts/reference/types/types-hardening-validation.md`: notes 参照、layout docs 参照
 - `artifacts/reference/types/public-types.current.d.ts`: `scripts/api/check-types.mjs`, type hardening docs
 - `artifacts/reference/validation-results/summary.json`: spec validation docs と inventory 参照。runtime output は `scripts/validate-specs.sh` が `artifacts/validation-results/` を継続利用
+- `artifacts/reference/hermetic-reports/formal/*.json`: tracked formal baseline。runtime output は formal / trace scripts が `artifacts/hermetic-reports/**` を継続利用
 
 このため、最初の実移動は **docs / tests / script output path** の更新を伴うが、branch protection や runtime contract への影響は限定的と見込む。
 
@@ -75,7 +78,10 @@ verificationCommand: pnpm run maintenance:artifact:inventory
    - `public-types.current.d.ts` tracked under `Issue #2642`
 5. move tracked validation snapshots into `artifacts/reference/validation-results/**`
    - completed in `PR #2637` (tracked by `Issue #2636`)
-6. move tracked hermetic snapshots into `artifacts/reference/hermetic-reports/**`
+6. move tracked formal hermetic snapshots into `artifacts/reference/hermetic-reports/formal/*`
+   - completed in `PR #2639` (tracked by `Issue #2638`)
+7. move remaining tracked hermetic markdown/archive snapshots into `artifacts/reference/hermetic-reports/**`
+   - tracked under `Issue #2640`
 
 ## Validation
 - `pnpm run maintenance:artifact:inventory`
