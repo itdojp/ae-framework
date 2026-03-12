@@ -3,6 +3,7 @@ import {
   buildConditionalAssetAudit,
   classifyConditionalOrigin,
   renderMarkdownReport,
+  resolveGeneratedAt,
 } from '../../scripts/legal/inventory-conditional-assets.mjs';
 
 describe('conditional asset audit', () => {
@@ -14,6 +15,9 @@ describe('conditional asset audit', () => {
     );
     expect(classifyConditionalOrigin('artifacts/archive/2025/example.md')).toBe('tracked-archive');
     expect(classifyConditionalOrigin('artifacts/plan/plan-artifact.json')).toBe('committed-contract-artifact');
+    expect(classifyConditionalOrigin('artifacts/tmp/untracked-output.json')).toBe(
+      'runtime-output-or-unclassified',
+    );
   });
 
   it('builds summary counts and nested notice inventory', () => {
@@ -29,6 +33,7 @@ describe('conditional asset audit', () => {
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
+    expect(audit.generatedAt).toBe('2026-03-13T00:00:00.000Z');
     expect(audit.summary.total).toBe(6);
     expect(audit.summary.byScope).toEqual({
       fixtures: 1,
@@ -73,5 +78,38 @@ describe('conditional asset audit', () => {
     expect(markdown).toContain('- artifacts: 1');
     expect(markdown).toContain('- tracked-reference-snapshot: 1');
     expect(markdown).toContain('`fixtures/agents/sample.ae-handoff.json`');
+  });
+
+  it('escapes markdown table cells in rendered items', () => {
+    const markdown = renderMarkdownReport({
+      generatedAt: '2026-03-13T00:00:00.000Z',
+      summary: {
+        total: 1,
+        byScope: { artifacts: 1 },
+        byOriginClass: { 'runtime-output-or-unclassified': 1 },
+        nestedNoticeFiles: 0,
+      },
+      nestedNoticeFiles: [],
+      items: [
+        {
+          path: 'artifacts/tmp/a|b`c.json',
+          scope: 'artifacts',
+          originClass: 'runtime-output-or-unclassified',
+          nestedNotice: false,
+        },
+      ],
+    });
+
+    expect(markdown).toContain('`artifacts/tmp/a\\|b\\`c.json`');
+  });
+
+  it('resolves generatedAt from SOURCE_DATE_EPOCH seconds', () => {
+    expect(resolveGeneratedAt('0')).toBe('1970-01-01T00:00:00.000Z');
+  });
+
+  it('rejects invalid SOURCE_DATE_EPOCH values', () => {
+    expect(() => resolveGeneratedAt('not-a-number')).toThrow(
+      'SOURCE_DATE_EPOCH must be an integer number of seconds',
+    );
   });
 });

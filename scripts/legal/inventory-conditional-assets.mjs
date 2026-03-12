@@ -5,10 +5,22 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { classifyArtifact } from '../maintenance/tracked-artifact-inventory.mjs';
 
 export const CONDITIONAL_PREFIXES = ['artifacts/', 'fixtures/', 'test-cassettes/'];
 export const NOTICE_BASENAMES = ['LICENSE', 'NOTICE', 'COPYING'];
+export const COMMITTED_CONTRACT_PREFIXES = [
+  'artifacts/api/',
+  'artifacts/bdd/',
+  'artifacts/contracts/',
+  'artifacts/domain/',
+  'artifacts/plan/',
+  'artifacts/properties/',
+  'artifacts/repros/',
+  'artifacts/types/',
+];
+export const TRACKED_REFERENCE_PREFIXES = ['artifacts/reference/'];
+export const TRACKED_ARCHIVE_PREFIXES = ['artifacts/archive/'];
+export const LOCAL_DEBUG_PREFIXES = ['artifacts/codex/'];
 
 function normalizePath(value) {
   return String(value || '').replace(/\\/g, '/').replace(/^\.\/+/, '');
@@ -53,19 +65,19 @@ export function classifyConditionalOrigin(filePath) {
     return 'unclassified';
   }
 
-  const artifactClass = classifyArtifact(normalized);
-  switch (artifactClass) {
-    case 'committed-contract':
-      return 'committed-contract-artifact';
-    case 'reference-snapshot':
-      return 'tracked-reference-snapshot';
-    case 'archive':
-      return 'tracked-archive';
-    case 'local-debug-archive':
-      return 'local-debug-archive';
-    default:
-      return 'runtime-output-or-unclassified';
+  if (COMMITTED_CONTRACT_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+    return 'committed-contract-artifact';
   }
+  if (TRACKED_REFERENCE_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+    return 'tracked-reference-snapshot';
+  }
+  if (TRACKED_ARCHIVE_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+    return 'tracked-archive';
+  }
+  if (LOCAL_DEBUG_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+    return 'local-debug-archive';
+  }
+  return 'runtime-output-or-unclassified';
 }
 
 function isNestedNoticeFile(filePath) {
@@ -114,6 +126,25 @@ export function buildConditionalAssetAudit({
   };
 }
 
+export function resolveGeneratedAt(sourceDateEpoch = process.env.SOURCE_DATE_EPOCH) {
+  if (sourceDateEpoch == null || sourceDateEpoch === '') {
+    return new Date().toISOString();
+  }
+  if (!/^\d+$/.test(sourceDateEpoch)) {
+    throw new Error('SOURCE_DATE_EPOCH must be an integer number of seconds');
+  }
+  return new Date(Number(sourceDateEpoch) * 1000).toISOString();
+}
+
+const escapeTableCell = (value) =>
+  String(value ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\|/g, '\\|')
+    .replace(/\r?\n/g, '<br>');
+
+const codeCell = (value) => `\`${escapeTableCell(value)}\``;
+
 export function renderMarkdownReport(audit) {
   const lines = [
     '# Conditional Asset Provenance Audit',
@@ -144,7 +175,9 @@ export function renderMarkdownReport(audit) {
 
   lines.push('', '## Items', '', '| Path | Scope | Origin class | Nested notice |', '| --- | --- | --- | --- |');
   for (const item of audit.items) {
-    lines.push(`| \`${item.path}\` | ${item.scope} | ${item.originClass} | ${item.nestedNotice ? 'yes' : 'no'} |`);
+    lines.push(
+      `| ${codeCell(item.path)} | ${escapeTableCell(item.scope)} | ${escapeTableCell(item.originClass)} | ${item.nestedNotice ? 'yes' : 'no'} |`,
+    );
   }
   return `${lines.join('\n')}\n`;
 }
@@ -221,6 +254,7 @@ export function run(argv = process.argv) {
   const rootDir = path.resolve(options.root);
   const audit = buildConditionalAssetAudit({
     trackedFiles: listConditionalTrackedFiles(rootDir),
+    generatedAt: resolveGeneratedAt(),
   });
 
   if (options.outputJson) {

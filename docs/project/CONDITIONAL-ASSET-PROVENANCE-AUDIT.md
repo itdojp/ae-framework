@@ -22,6 +22,8 @@ pnpm run license:audit:conditional -- \
   --output-md artifacts/reference/legal/conditional-asset-audit.md
 ```
 
+`SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると、`generatedAt` を固定して再現可能な snapshot を得る。
+
 ## 出力
 
 - `artifacts/reference/legal/conditional-asset-audit.json`
