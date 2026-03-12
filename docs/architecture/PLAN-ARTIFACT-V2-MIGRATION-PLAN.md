@@ -76,7 +76,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 2. その consumer が `v1` では表現できない追加フィールドを必要とする
 3. producer / validator / consumer の最低 1 本ずつが同一 PR で接続される
 4. dual-write または adapter migration が文書化される
-5. `validate-json` または `validate-artifacts-ajv` に追加される
+5. `node scripts/ci/validate-json.mjs` または `scripts/ci/validate-artifacts-ajv.mjs` に追加される
 6. `CONTRACT-CATALOG` と一次文書が同時更新される
 
 ## 6. migration 方針

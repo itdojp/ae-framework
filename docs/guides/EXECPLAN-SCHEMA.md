@@ -36,3 +36,4 @@ Each step should include:
 - Keep `inputs`/`outputs` aligned with Spec Kit and Blueprint artifacts.
 - Use `commands[].run` for reproducible CLI snippets.
 - `execplan.schema.json` は汎用契約、`execution-plan-v1.schema.json` は PR自動化向けの専用契約（Issue #2405）として併存運用する。
+- delivery-layer 拡張時の責務分離は `docs/architecture/DELIVERY-CONTRACT-COMPATIBILITY-MATRIX.md` を参照する。

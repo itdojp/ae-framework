@@ -153,6 +153,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 - `docs/reference/SCHEMA-GOVERNANCE.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`
+- `docs/architecture/DELIVERY-CONTRACT-COMPATIBILITY-MATRIX.md`
 - `scripts/ci/validate-artifacts-ajv.mjs`
 - `scripts/ci/validate-formal-summary-v1.mjs`
 - `scripts/ci/validate-formal-summary-v2.mjs`
