@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Intent Agent
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -28,7 +33,7 @@ The Intent Agent handles the crucial first phase of ae-framework by:
 
 ### Core Components
 
-```typescript
+```typescript no-doctest
 IntentAgent
 ├── Requirements Processing
 │   ├── Source Extraction
@@ -69,12 +74,12 @@ The Intent Agent is exposed as an MCP (Model Context Protocol) server, providing
 ### Running the Intent Agent
 
 #### As MCP Server
-```bash
+```bash no-doctest
 npm run intent-agent
 ```
 
 #### Direct Usage
-```typescript
+```typescript no-doctest
 import { IntentAgent, IntentAnalysisRequest } from './src/agents/intent-agent.js';
 
 const agent = new IntentAgent();
@@ -105,7 +110,7 @@ const result = await agent.analyzeIntent(request);
 The Intent Agent can process various types of requirement sources:
 
 #### Text Sources
-```typescript
+```typescript no-doctest
 {
   type: 'text',
   content: 'The system should allow users to search for products',
@@ -119,7 +124,7 @@ The Intent Agent can process various types of requirement sources:
 ```
 
 #### Document Sources
-```typescript
+```typescript no-doctest
 {
   type: 'document',
   content: `
@@ -135,7 +140,7 @@ Requirements Document
 ```
 
 #### Conversation Sources
-```typescript
+```typescript no-doctest
 {
   type: 'conversation',
   content: `
@@ -152,7 +157,7 @@ Customer: I want to be notified when items are available
 ```
 
 #### Issue/Ticket Sources
-```typescript
+```typescript no-doctest
 {
   type: 'issue',
   content: `
@@ -175,7 +180,7 @@ As a customer, I want to reserve inventory items so that I can ensure availabili
 
 Provide domain context to improve analysis quality:
 
-```typescript
+```typescript no-doctest
 const context: ProjectContext = {
   domain: 'E-commerce Inventory Management',
   existingSystem: true,
@@ -221,7 +226,7 @@ const context: ProjectContext = {
 
 The `analyzeIntent` method returns a comprehensive analysis:
 
-```typescript
+```typescript no-doctest
 interface IntentAnalysisResult {
   requirements: Requirement[];           // Structured requirements
   userStories: UserStory[];             // Generated user stories
@@ -238,7 +243,7 @@ interface IntentAnalysisResult {
 
 ### Requirements Structure
 
-```typescript
+```typescript no-doctest
 interface Requirement {
   id: string;                          // Unique identifier (REQ-001)
   type: 'functional' | 'non-functional' | 'business' | 'technical';
@@ -255,7 +260,7 @@ interface Requirement {
 
 ### User Stories
 
-```typescript
+```typescript no-doctest
 interface UserStory {
   id: string;                          // US-001
   title: string;                       // Short descriptive title
@@ -273,7 +278,7 @@ interface UserStory {
 
 ### Domain Model
 
-```typescript
+```typescript no-doctest
 interface DomainModel {
   entities: Entity[];                  // Domain entities
   relationships: Relationship[];       // Entity relationships
@@ -291,7 +296,7 @@ interface Entity {
 
 ### Ambiguity Detection
 
-```typescript
+```typescript no-doctest
 interface Ambiguity {
   text: string;                       // Ambiguous text
   type: 'vague' | 'conflicting' | 'incomplete' | 'undefined';
@@ -315,7 +320,7 @@ The agent validates requirement completeness across essential categories:
 - Security
 - Usability
 
-```typescript
+```typescript no-doctest
 const validation = await agent.validateCompleteness(requirements);
 // Returns: { complete: boolean, missing: string[], coverage: number }
 ```
@@ -348,7 +353,7 @@ Analyzes stakeholder concerns to identify:
 ## Specification Template Generation
 
 ### Gherkin Scenarios
-```gherkin
+```gherkin no-doctest
 Feature: Inventory Reservation
   Scenario: Reserve available item
     Given an item is available in inventory
@@ -358,7 +363,7 @@ Feature: Inventory Reservation
 ```
 
 ### OpenAPI Specification
-```yaml
+```yaml no-doctest
 openapi: 3.0.0
 info:
   title: Inventory API
@@ -375,7 +380,7 @@ paths:
 ```
 
 ### AsyncAPI Specification
-```yaml
+```yaml no-doctest
 asyncapi: 2.0.0
 info:
   title: Inventory Events
@@ -388,7 +393,7 @@ channels:
 ```
 
 ### GraphQL Schema
-```graphql
+```graphql no-doctest
 type Query {
   inventory: [InventoryItem!]!
   reservations: [Reservation!]!
@@ -471,7 +476,7 @@ The Intent Agent serves as the foundation for the entire ae-framework workflow:
 The Intent Agent provides comprehensive error handling:
 
 ### Input Validation Errors
-```typescript
+```typescript no-doctest
 // Invalid source type
 throw new Error('Unsupported source type: unknown');
 
@@ -483,7 +488,7 @@ throw new Error('Analysis depth must be basic, detailed, or comprehensive');
 ```
 
 ### Processing Errors
-```typescript
+```typescript no-doctest
 // Natural language processing failures
 throw new Error('Failed to extract requirements from text');
 
@@ -495,7 +500,7 @@ throw new Error('Ambiguity analysis failed for source');
 ```
 
 ### MCP Server Errors
-```typescript
+```typescript no-doctest
 // Tool execution errors
 throw new McpError(ErrorCode.InternalError, 'Analysis failed');
 
@@ -506,24 +511,24 @@ throw new McpError(ErrorCode.MethodNotFound, 'Unknown tool');
 ## Testing
 
 ### Unit Tests
-```bash
+```bash no-doctest
 npm test -- --grep "IntentAgent"
 ```
 
 ### Integration Tests
-```bash
+```bash no-doctest
 npm run bdd -- --tags @intent-agent
 ```
 
 ### Property-Based Tests
-```bash
+```bash no-doctest
 npm run pbt -- --grep "intent-agent"
 ```
 
 ## Configuration
 
 ### Environment Variables
-```bash
+```bash no-doctest
 # Log level for Intent Agent
 INTENT_AGENT_LOG_LEVEL=debug
 
@@ -535,7 +540,7 @@ MAX_CONCURRENT_ANALYSES=5
 ```
 
 ### Analysis Configuration
-```typescript
+```typescript no-doctest
 interface AnalysisConfig {
   enableCaching: boolean;           // Cache analysis results
   maxSourceSize: number;           // Maximum source content size
@@ -565,13 +570,13 @@ interface AnalysisConfig {
 - **Solution**: Facilitate stakeholder meetings to resolve conflicts
 
 ### Debug Mode
-```bash
+```bash no-doctest
 DEBUG=intent-agent:* npm run intent-agent
 ```
 
 ### Logging
 The Intent Agent uses structured logging for troubleshooting:
-```typescript
+```typescript no-doctest
 logger.info('Starting intent analysis', { 
   sourceCount: sources.length,
   analysisDepth,
@@ -674,7 +679,7 @@ For questions and support:
 
 ### 中核コンポーネント
 
-```typescript
+```typescript no-doctest
 IntentAgent
 ├── 要件処理
 │   ├── ソース抽出
@@ -715,12 +720,12 @@ IntentAgent
 ### インテント・エージェントの実行
 
 #### MCP サーバーとして
-```bash
+```bash no-doctest
 npm run intent-agent
 ```
 
 #### 直接使用
-```typescript
+```typescript no-doctest
 import { IntentAgent, IntentAnalysisRequest } from './src/agents/intent-agent.js';
 
 const agent = new IntentAgent();

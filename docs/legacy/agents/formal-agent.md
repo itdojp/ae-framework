@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Formal Agent - Phase 2 of ae-framework
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -43,7 +48,7 @@ The Formal Agent consists of two main components:
 
 The Formal Agent requires the following key dependencies:
 
-```json
+```json no-doctest
 {
   "dependencies": {
     "zod": "^3.23.8",
@@ -54,7 +59,7 @@ The Formal Agent requires the following key dependencies:
 
 ### Running the Formal Agent
 
-```bash
+```bash no-doctest
 # Start the MCP server
 npm run formal-agent
 
@@ -80,7 +85,7 @@ npm run model-check
 
 The `FormalAgent` class provides the main functionality:
 
-```typescript
+```typescript no-doctest
 import { FormalAgent } from './src/agents/formal-agent.js';
 
 // Initialize with configuration
@@ -125,7 +130,7 @@ Generate formal specifications from requirements.
 - `options` (object): Generation options
 
 **Example:**
-```json
+```json no-doctest
 {
   "requirements": "A concurrent inventory system with atomic reservations",
   "type": "tla+",
@@ -188,7 +193,7 @@ Generate UML/sequence diagrams from specifications.
 TLA+ is used for specifying and verifying concurrent and distributed systems.
 
 **Example Output:**
-```tla
+```tla no-doctest
 ----------------------------- MODULE Inventory -----------------------------
 EXTENDS Naturals, Sequences, FiniteSets
 
@@ -220,7 +225,7 @@ LivenessProperty == <>[](\A o \in orders: reserved[o] > 0)
 Alloy is used for structural modeling and constraint solving.
 
 **Example Output:**
-```alloy
+```alloy no-doctest
 sig Order {
     id: String,
     items: set Item,
@@ -252,7 +257,7 @@ pred ValidReservation[o: Order] {
 Z notation provides mathematical precision for specification.
 
 **Example Output:**
-```z
+```z no-doctest
 [ORDER, ITEM]
 
 Stock == ℕ
@@ -292,7 +297,7 @@ The agent generates comprehensive OpenAPI specifications with:
 - Example data
 
 **Example Output:**
-```yaml
+```yaml no-doctest
 openapi: 3.0.3
 info:
   title: Inventory Management API
@@ -346,7 +351,7 @@ components:
 
 For event-driven architectures:
 
-```yaml
+```yaml no-doctest
 asyncapi: 2.6.0
 info:
   title: Inventory Events API
@@ -375,7 +380,7 @@ components:
 
 For graph-based APIs:
 
-```graphql
+```graphql no-doctest
 type Query {
   inventory(itemId: ID!): InventoryItem
   reservation(orderId: ID!): Reservation
@@ -417,7 +422,7 @@ The agent generates formal state machine definitions with:
 - Visual diagrams
 
 **Example:**
-```typescript
+```typescript no-doctest
 {
   "name": "OrderProcessing",
   "states": [
@@ -461,7 +466,7 @@ The agent generates formal state machine definitions with:
 The agent generates comprehensive contract specifications:
 
 ### Preconditions
-```typescript
+```typescript no-doctest
 // Before method execution
 {
   type: "precondition",
@@ -471,7 +476,7 @@ The agent generates comprehensive contract specifications:
 ```
 
 ### Postconditions
-```typescript
+```typescript no-doctest
 // After method execution
 {
   type: "postcondition", 
@@ -481,7 +486,7 @@ The agent generates comprehensive contract specifications:
 ```
 
 ### Invariants
-```typescript
+```typescript no-doctest
 // Always true
 {
   type: "invariant",
@@ -501,7 +506,7 @@ The agent performs multi-level validation:
 3. **Formal Verification**: Mathematical property verification
 
 **Validation Output:**
-```typescript
+```typescript no-doctest
 {
   "status": "valid",
   "errors": [],
@@ -519,7 +524,7 @@ The agent performs multi-level validation:
 
 Formal verification of specifications:
 
-```typescript
+```typescript no-doctest
 {
   "specification": "spec_123",
   "properties": [
@@ -602,7 +607,7 @@ note right of Confirmed : Invariant: payment.isValid()
 
 The Formal Agent supports comprehensive configuration:
 
-```typescript
+```typescript no-doctest
 const config: FormalAgentConfig = {
   outputFormat: 'tla+',           // Default specification format
   validationLevel: 'comprehensive', // Validation thoroughness
@@ -673,7 +678,7 @@ Inventory Reservation System Requirements:
 The Formal Agent provides comprehensive error reporting:
 
 ### Specification Errors
-```typescript
+```typescript no-doctest
 {
   "type": "syntax_error",
   "message": "TLA+ specification must include MODULE declaration",
@@ -683,7 +688,7 @@ The Formal Agent provides comprehensive error reporting:
 ```
 
 ### Validation Warnings
-```typescript
+```typescript no-doctest
 {
   "type": "completeness_warning", 
   "message": "Consider adding temporal properties",
@@ -692,7 +697,7 @@ The Formal Agent provides comprehensive error reporting:
 ```
 
 ### Model Checking Errors
-```typescript
+```typescript no-doctest
 {
   "type": "property_violation",
   "message": "Safety property violated",
@@ -740,7 +745,7 @@ The Formal Agent provides comprehensive error reporting:
 ### Debug Mode
 
 Enable detailed logging:
-```bash
+```bash no-doctest
 DEBUG=formal-agent npm run formal-agent
 ```
 
@@ -799,12 +804,12 @@ The Formal Agent represents a significant step forward in bridging the gap betwe
 ### フォーマル・エージェントの実行
 
 #### MCPサーバーとして
-```bash
+```bash no-doctest
 npm run formal-agent
 ```
 
 #### 直接統合
-```typescript
+```typescript no-doctest
 import { FormalAgent, FormalSpecificationRequest } from './src/agents/formal-agent.js';
 
 const agent = new FormalAgent();
@@ -847,7 +852,7 @@ const result = await agent.generateFormalSpecifications(request);
 ## 生成される成果物
 
 ### TLA+仕様
-```tla
+```tla no-doctest
 EXTENDS Naturals, Sequences
 
 VARIABLES users, sessions, permissions
@@ -862,7 +867,7 @@ Safety == \A user \in sessions : IsAuthenticated(user)
 ```
 
 ### OpenAPI仕様
-```yaml
+```yaml no-doctest
 openapi: 3.0.0
 info:
   title: ユーザー管理API
@@ -884,7 +889,7 @@ paths:
 ```
 
 ### 状態機械定義
-```typescript
+```typescript no-doctest
 interface AuthenticationStateMachine {
   states: ['未認証', '認証中', '認証済み', 'エラー'];
   transitions: [
@@ -899,7 +904,7 @@ interface AuthenticationStateMachine {
 ## 検証機能
 
 ### プロパティ検証
-```typescript
+```typescript no-doctest
 // 安全性プロパティ
 const safetyProperty = {
   name: 'データ整合性',
@@ -916,7 +921,7 @@ const livenessProperty = {
 ```
 
 ### モデルチェック結果
-```typescript
+```typescript no-doctest
 interface ModelCheckResult {
   property: string;
   satisfied: boolean;
@@ -965,7 +970,7 @@ interface ModelCheckResult {
 ### デバッグモード
 
 詳細ログを有効化：
-```bash
+```bash no-doctest
 DEBUG=formal-agent npm run formal-agent
 ```
 

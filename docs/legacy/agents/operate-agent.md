@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Operate Agent - Phase 6 of ae-framework
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -41,7 +46,7 @@ src/mcp-server/operate-server.ts   # MCP server wrapper
 
 The Operate Agent is configured through the `OperateAgentConfig` interface:
 
-```typescript
+```typescript no-doctest
 interface OperateAgentConfig {
   deploymentConfig: DeploymentConfig;
   monitoringConfig: MonitoringConfig;
@@ -56,7 +61,7 @@ interface OperateAgentConfig {
 
 ### Example Configuration
 
-```typescript
+```typescript no-doctest
 const config: OperateAgentConfig = {
   deploymentConfig: {
     cicdProvider: 'github-actions',
@@ -92,7 +97,7 @@ Orchestrate application deployments with various strategies.
 - `healthCheckTimeout` (optional): Health check timeout in seconds
 
 **Example:**
-```json
+```json no-doctest
 {
   "environment": "production",
   "version": "v1.2.3",
@@ -195,7 +200,7 @@ Run security scans and compliance checks.
 
 ### Starting the MCP Server
 
-```bash
+```bash no-doctest
 # Production mode
 npm run operate:server
 
@@ -205,7 +210,7 @@ npm run operate:dev
 
 ### Direct Agent Usage
 
-```typescript
+```typescript no-doctest
 import { OperateAgent } from './src/agents/operate-agent.js';
 
 const agent = new OperateAgent(config);
@@ -419,7 +424,7 @@ src/mcp-server/operate-server.ts   # MCPサーバーラッパー
 
 ### 主要クラス
 
-```typescript
+```typescript no-doctest
 class OperateAgent {
   // デプロイ管理
   async deployApplication(config: DeploymentConfig): Promise<DeploymentResult>;
@@ -443,7 +448,7 @@ class OperateAgent {
 
 ### デプロイオーケストレーション
 
-```typescript
+```typescript no-doctest
 // ブルーグリーンデプロイ
 const deploymentResult = await operateAgent.deployApplication({
   strategy: 'blue-green',
@@ -462,7 +467,7 @@ console.log('デプロイ結果:', deploymentResult);
 
 ### パフォーマンス監視
 
-```typescript
+```typescript no-doctest
 // パフォーマンス分析の実行
 const analysis = await operateAgent.analyzePerformance({
   timeRange: '1h',
@@ -482,7 +487,7 @@ if (analysis.recommendations.length > 0) {
 
 ### インシデント管理
 
-```typescript
+```typescript no-doctest
 // インシデントの作成と追跡
 const incident = await operateAgent.createIncident({
   title: 'API応答時間増大',
@@ -506,7 +511,7 @@ await operateAgent.resolveIncident(incident.id, {
 
 ### デプロイ設定
 
-```typescript
+```typescript no-doctest
 interface DeploymentConfig {
   strategy: 'blue-green' | 'canary' | 'rolling';
   application: string;
@@ -527,7 +532,7 @@ interface DeploymentConfig {
 
 ### 監視設定
 
-```typescript
+```typescript no-doctest
 interface MonitoringConfig {
   services: string[];
   metrics: string[];
@@ -558,7 +563,7 @@ interface MonitoringConfig {
 
 ### ツール使用例
 
-```typescript
+```typescript no-doctest
 // MCPクライアントから使用
 const result = await mcpClient.callTool('deploy_application', {
   strategy: 'canary',
@@ -579,7 +584,7 @@ const result = await mcpClient.callTool('deploy_application', {
 
 ### CI/CDパイプライン
 
-```yaml
+```yaml no-doctest
 # GitHub Actionsでの使用例
 - name: AE Framework本番デプロイ
   run: |

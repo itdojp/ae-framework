@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Phase 3.1 Evidence-based Validation System - Documentation Index
 
 > 🌍 Language / 言語: English | 日本語
@@ -149,6 +154,7 @@ This directory contains comprehensive documentation for Phase 3.1 of the Evidenc
 ## Document Relationships
 
 ```mermaid
+%% no-doctest
 graph TB
     A[Detailed Design] --> B[Technical Specifications]
     A --> C[API Reference]

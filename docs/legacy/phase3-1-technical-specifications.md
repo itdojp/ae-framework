@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Phase 3.1 Technical Specifications
 
 > 🌍 Language / 言語: English | 日本語
@@ -56,6 +61,7 @@
 ### Module Dependencies
 
 ```mermaid
+%% no-doctest
 graph TB
     A[Sequential Inference Engine] --> B[Problem Decomposer]
     C[Dependency Analyzer] --> A
@@ -78,7 +84,7 @@ graph TB
 
 #### Class Specification
 
-```typescript
+```typescript no-doctest
 export class SequentialInferenceEngine {
   private stepHandlers: Map<string, StepHandler>;
   private executionContexts: Map<string, ExecutionContext>;
@@ -115,7 +121,7 @@ export class SequentialInferenceEngine {
 
 #### Problem Decomposer Specification
 
-```typescript
+```typescript no-doctest
 export class ProblemDecomposer {
   private decompositionStrategies: Map<string, DecompositionStrategy>;
   private complexityAnalyzers: Map<string, ComplexityAnalyzer>;
@@ -135,7 +141,7 @@ export class ProblemDecomposer {
 
 #### Solution Composer Specification
 
-```typescript
+```typescript no-doctest
 export class SolutionComposer {
   private strategies: Map<string, CompositionStrategy>;
   private validators: Map<string, Validator>;
@@ -157,7 +163,7 @@ export class SolutionComposer {
 
 #### Validation Orchestrator Specification
 
-```typescript
+```typescript no-doctest
 export class ValidationOrchestrator extends EventEmitter {
   private validators: Map<string, Validator>;
   private activeExecutions: Map<string, ValidationExecution>;
@@ -194,7 +200,7 @@ export class ValidationOrchestrator extends EventEmitter {
 
 #### Class Specification
 
-```typescript
+```typescript no-doctest
 export class DependencyAnalyzer extends EventEmitter {
   private inferenceEngine: SequentialInferenceEngine;
   private problemDecomposer: ProblemDecomposer;
@@ -221,7 +227,7 @@ export class DependencyAnalyzer extends EventEmitter {
 
 #### Metrics Calculated
 
-```typescript
+```typescript no-doctest
 interface DependencyMetrics {
   totalNodes: number;
   totalEdges: number;
@@ -243,7 +249,7 @@ interface DependencyMetrics {
 ### Core Interfaces
 
 #### ComplexQuery Interface
-```typescript
+```typescript no-doctest
 export interface ComplexQuery {
   id: string;
   description: string;
@@ -255,7 +261,7 @@ export interface ComplexQuery {
 ```
 
 #### Problem Interface
-```typescript
+```typescript no-doctest
 export interface Problem {
   id: string;
   title: string;
@@ -271,7 +277,7 @@ export interface Problem {
 ```
 
 #### DependencyAnalysisRequest Interface
-```typescript
+```typescript no-doctest
 export interface DependencyAnalysisRequest {
   id: string;
   projectRoot: string;
@@ -287,7 +293,7 @@ export interface DependencyAnalysisRequest {
 ### Event Interfaces
 
 #### Analysis Events
-```typescript
+```typescript no-doctest
 // Sequential Inference Engine Events
 'stepStarted': { step: InferenceStep, context: ExecutionContext }
 'stepCompleted': { step: InferenceStep, result: StepResult }
@@ -320,7 +326,7 @@ export interface DependencyAnalysisRequest {
 **Time Complexity**: O(V + E)  
 **Space Complexity**: O(V)
 
-```typescript
+```typescript no-doctest
 private async detectCircularDependencies(graph: DependencyGraph): Promise<CircularDependency[]> {
   const cycles: CircularDependency[] = [];
   const visited = new Set<string>();
@@ -368,7 +374,7 @@ private async detectCircularDependencies(graph: DependencyGraph): Promise<Circul
 **Formula**: Newman's modularity algorithm  
 **Range**: 0.0 (low modularity) to 1.0 (high modularity)
 
-```typescript
+```typescript no-doctest
 private calculateModularityScore(graph: DependencyGraph): number {
   const totalEdges = graph.edges.length;
   if (totalEdges === 0) return 1.0;
@@ -385,7 +391,7 @@ private calculateModularityScore(graph: DependencyGraph): number {
 **Algorithm**: Dynamic Programming approach  
 **Time Complexity**: O(V + E)
 
-```typescript
+```typescript no-doctest
 private findCriticalPath(graph: DependencyGraph): string[] {
   const lengths = new Map<string, number>();
   const visited = new Set<string>();
@@ -422,7 +428,7 @@ private findCriticalPath(graph: DependencyGraph): string[] {
 ### Caching Implementation
 
 #### Multi-level Cache Strategy
-```typescript
+```typescript no-doctest
 class CacheManager {
   private l1Cache: Map<string, any>;           // In-memory cache
   private l2Cache: Map<string, any>;           // Session cache
@@ -463,7 +469,7 @@ class CacheManager {
 ### Error Handling Implementation
 
 #### Retry Mechanism with Exponential Backoff
-```typescript
+```typescript no-doctest
 private async executeWithRetry<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
@@ -534,7 +540,7 @@ private async executeWithRetry<T>(
 ### Input Validation
 
 #### File Path Security
-```typescript
+```typescript no-doctest
 private validateProjectPath(path: string): boolean {
   // Prevent directory traversal
   const normalizedPath = path.normalize(path);
@@ -552,7 +558,7 @@ private validateProjectPath(path: string): boolean {
 ```
 
 #### Request Sanitization
-```typescript
+```typescript no-doctest
 private sanitizeAnalysisRequest(request: DependencyAnalysisRequest): DependencyAnalysisRequest {
   return {
     ...request,
@@ -567,7 +573,7 @@ private sanitizeAnalysisRequest(request: DependencyAnalysisRequest): DependencyA
 ### Resource Protection
 
 #### Rate Limiting
-```typescript
+```typescript no-doctest
 class RateLimiter {
   private requests: Map<string, number[]> = new Map();
   private readonly windowSize: number = 60000; // 1 minute
@@ -592,7 +598,7 @@ class RateLimiter {
 ```
 
 #### Memory Protection
-```typescript
+```typescript no-doctest
 class MemoryGuard {
   private readonly maxMemoryUsage: number;
   private currentUsage: number = 0;
@@ -657,7 +663,7 @@ class MemoryGuard {
 5. **Edge Case Tests**: Boundary conditions and error scenarios
 
 #### Test Data Management
-```typescript
+```typescript no-doctest
 // Test data factories
 export const createMockProblem = (overrides?: Partial<Problem>): Problem => ({
   id: 'test-problem-001',
@@ -706,7 +712,7 @@ export const createMockDependencyGraph = (nodeCount: number = 5): DependencyGrap
 ### Configuration Management
 
 #### Environment Variables
-```bash
+```bash no-doctest
 # Performance Configuration
 AE_MAX_CONCURRENT_ANALYSES=5
 AE_CACHE_SIZE=50
@@ -730,7 +736,7 @@ AE_ENABLE_CACHE_METRICS=true
 ```
 
 #### Configuration Schema
-```typescript
+```typescript no-doctest
 export interface SystemConfiguration {
   performance: {
     maxConcurrentAnalyses: number;
@@ -762,7 +768,7 @@ export interface SystemConfiguration {
 ### Monitoring and Observability
 
 #### Health Check Endpoints
-```typescript
+```typescript no-doctest
 // System health monitoring
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -787,7 +793,7 @@ interface HealthStatus {
 ```
 
 #### Metrics Collection
-```typescript
+```typescript no-doctest
 // Performance metrics
 interface PerformanceMetrics {
   analysisCount: number;
