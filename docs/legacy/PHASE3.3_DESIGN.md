@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Phase 3.3: パフォーマンス最適化とシステム統合
 
 > 🌍 Language / 言語: 日本語 | English

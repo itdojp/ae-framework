@@ -25,6 +25,7 @@ function makeRoot() {
   mkdirSync(path.join(rootDir, 'docs', 'handoff'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'infra'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'integrations'), { recursive: true });
+  mkdirSync(path.join(rootDir, 'docs', 'legacy', 'agents'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'maintenance'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'observability'), { recursive: true });
   mkdirSync(path.join(rootDir, 'docs', 'operate'), { recursive: true });
@@ -2960,6 +2961,98 @@ describe('check-doc-governance', () => {
     expect(result.exitCode).toBe(0);
     const payload = JSON.parse(result.stdout);
     expect(payload.docsScanned).toBe(6);
+    expect(payload.failures).toEqual([]);
+    expect(payload.warnings).toEqual([]);
+  });
+
+  it('governs docs/legacy files recursively without narrative warnings', () => {
+    const rootDir = makeRoot();
+
+    writeMarkdown(rootDir, 'README.md', [
+      '---',
+      'docRole: narrative',
+      "lastVerified: '2026-03-12'",
+      '---',
+      '',
+      '# Root',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'AGENTS.md', [
+      '---',
+      'docRole: derived',
+      'canonicalSource:',
+      '  - docs/agents/agents-doc-boundary-matrix.md',
+      "lastVerified: '2026-03-12'",
+      '---',
+      '',
+      '# Agents',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/README.md', [
+      '---',
+      'docRole: narrative',
+      "lastVerified: '2026-03-12'",
+      '---',
+      '',
+      '# Docs',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/agents/agents-doc-boundary-matrix.md', [
+      '---',
+      'docRole: ssot',
+      "lastVerified: '2026-03-12'",
+      'owner: agent-ops',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Matrix',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/reference/DOC-GOVERNANCE.md', [
+      '---',
+      'docRole: ssot',
+      "lastVerified: '2026-03-12'",
+      'owner: docs-governance',
+      'verificationCommand: pnpm -s run check:doc-consistency',
+      '---',
+      '',
+      '# Governance',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/legacy/QUICK_START.md', [
+      '---',
+      'docRole: narrative',
+      "lastVerified: '2026-03-12'",
+      '---',
+      '',
+      '# Quick Start',
+      '',
+      'This archived guide must preserve its original wording.',
+      '',
+    ].join('\n'));
+    writeMarkdown(rootDir, 'docs/legacy/agents/verify-agent.md', [
+      '---',
+      'docRole: narrative',
+      "lastVerified: '2026-03-12'",
+      '---',
+      '',
+      '# Verify Agent',
+      '',
+      'This historical note required additional follow-up at the time.',
+      '',
+    ].join('\n'));
+
+    const result = withCapturedOutput(() => main([
+      'node',
+      'scripts/docs/check-doc-governance.mjs',
+      '--root',
+      rootDir,
+      '--format=json',
+    ]));
+
+    expect(result.exitCode).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.docsScanned).toBe(7);
     expect(payload.failures).toEqual([]);
     expect(payload.warnings).toEqual([]);
   });

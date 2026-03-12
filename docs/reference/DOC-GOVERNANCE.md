@@ -72,6 +72,7 @@ verificationCommand: pnpm ...   # ssot のとき必須
 - `docs/infra/*.md`
 - `docs/integrations/*.md`
 - `docs/internal/*.md`
+- `docs/legacy/**/*.md`
 - `docs/maintenance/*.md`
 - `docs/observability/*.md`
 - `docs/operate/*.md`
@@ -108,5 +109,7 @@ governance 対象を新規ディレクトリへ拡張する場合は、front mat
 ```bash
 DOCTEST_ENFORCE=1 pnpm run test:doctest:pr-changed -- --base-ref origin/main
 ```
+
+`docs/legacy/**/*.md` は archival narrative として扱う。front matter は必須だが、歴史的文脈を保持するため narrative wording warning の対象外とする。
 
 説明用 snippet / 出力例 / 擬似 payload は `text` fence を基本とし、言語情報を残したい場合だけ `no-doctest` modifier を使う。

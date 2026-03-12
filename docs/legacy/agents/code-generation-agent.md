@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Code Generation Agent
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -48,7 +53,7 @@ The Code Generation Agent is a Phase 4 component of the ae-framework that automa
 
 ### As a Standalone Agent
 
-```typescript
+```typescript no-doctest
 import { CodeGenerationAgent } from './src/agents/code-generation-agent';
 
 const agent = new CodeGenerationAgent();
@@ -74,7 +79,7 @@ console.log('Test coverage:', result.coverage);
 
 ### As an MCP Server
 
-```bash
+```bash no-doctest
 # Start the MCP server
 npm run mcp:code
 
@@ -106,7 +111,7 @@ Phase 1: Intent → Phase 2: Formal → Phase 3: Tests → **Phase 4: Code** →
 
 ### Workflow Example
 
-```bash
+```bash no-doctest
 # 1. Generate tests from requirements (Phase 3)
 npm run agent:test
 
@@ -137,7 +142,7 @@ npm test
 
 ### Code Generation Options
 
-```typescript
+```typescript no-doctest
 {
   language: 'typescript',        // Target language
   framework: 'fastify',          // Framework for API generation
@@ -155,7 +160,7 @@ npm test
 
 ### Performance Metrics
 
-```typescript
+```typescript no-doctest
 {
   targetResponseTime: 100,       // Target response time in ms
   targetMemoryUsage: 512,        // Target memory in MB
@@ -167,7 +172,7 @@ npm test
 
 ### Generate API from OpenAPI
 
-```typescript
+```typescript no-doctest
 const openApiSpec = fs.readFileSync('api.yaml', 'utf-8');
 
 const result = await agent.generateFromOpenAPI(openApiSpec, {
@@ -185,7 +190,7 @@ for (const file of result.files) {
 
 ### Refactor Existing Code
 
-```typescript
+```typescript no-doctest
 const code = fs.readFileSync('src/legacy.ts', 'utf-8');
 
 const result = await agent.refactorCode(code, {
@@ -274,13 +279,13 @@ console.log('Metrics:', result.metrics);
 
 ### MCPサーバーとして実行
 
-```bash
+```bash no-doctest
 npm run code-generation-agent
 ```
 
 ### 直接統合
 
-```typescript
+```typescript no-doctest
 import { CodeGenerationAgent } from './src/agents/code-generation-agent.js';
 
 const agent = new CodeGenerationAgent();
@@ -300,7 +305,7 @@ console.log('生成されたコード:', implementation);
 
 ### API生成例
 
-```typescript
+```typescript no-doctest
 // OpenAPI仕様から生成されたFastifyルート
 export async function createUser(
   request: FastifyRequest<{ Body: CreateUserRequest }>,
@@ -324,7 +329,7 @@ export async function createUser(
 
 ### デザインパターン適用例
 
-```typescript
+```typescript no-doctest
 // Factoryパターンを適用
 export class DatabaseConnectionFactory {
   private static instance: DatabaseConnectionFactory;
@@ -357,7 +362,7 @@ export class DatabaseConnectionFactory {
 
 ### 基本設定
 
-```typescript
+```typescript no-doctest
 interface CodeGenerationConfig {
   language: 'typescript' | 'javascript' | 'python' | 'go' | 'rust';
   framework?: string;
@@ -375,7 +380,7 @@ interface CodeGenerationConfig {
 
 ### パフォーマンス指標
 
-```typescript
+```typescript no-doctest
 {
   targetResponseTime: 100,       // ターゲット応答時間（ms）
   targetMemoryUsage: 512,        // ターゲットメモリ（MB）
@@ -387,7 +392,7 @@ interface CodeGenerationConfig {
 
 ### OpenAPIからのAPI生成
 
-```typescript
+```typescript no-doctest
 const openApiSpec = fs.readFileSync('api.yaml', 'utf-8');
 
 const result = await agent.generateFromOpenAPI(openApiSpec, {
@@ -405,7 +410,7 @@ for (const file of result.files) {
 
 ### 既存コードのリファクタリング
 
-```typescript
+```typescript no-doctest
 const code = fs.readFileSync('src/legacy.ts', 'utf-8');
 
 const result = await agent.refactorCode(code, {

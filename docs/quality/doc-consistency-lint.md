@@ -22,13 +22,14 @@ Together they validate that onboarding + CI operation docs stay aligned with the
 Checks:
 - `pnpm run <script>` references exist in `package.json`.
 - Local file/path references in markdown links and inline code resolve to real files/directories.
-- `docs/README.md` から辿れる `docs/ci/*` / `docs/quality/*` の主要ドキュメントに加え、`docs/TLA+/*` / `docs/adapters/*` / `docs/agent-builder/*` / `docs/agents/recipes/*` / `docs/architecture/*` / `docs/articles/*` / `docs/articles/zenn/*` / `docs/benchmark/*` / `docs/changes/*` / `docs/cheatsheets/*` / `docs/codex/*` / `docs/contributing/*` / `docs/ddd/*` / `docs/development/*` / `docs/examples/*` / `docs/flows/*` / `docs/getting-started/*` / `docs/guides/*` / `docs/handoff/*` / `docs/infra/*` / `docs/integrations/*` / `docs/internal/*` / `docs/maintenance/*` / `docs/observability/*` / `docs/operate/*` / `docs/operations/*` / `docs/phases/*` / `docs/product/*` / `docs/project/*` / `docs/proposals/*` / `docs/reference/*` / `docs/research/*` / `docs/resilience/*` / `docs/roadmap/*` / `docs/samples/*` / `docs/spec/*` / `docs/strategy/*` / `docs/templates/**/*.md` / `docs/testing/*` / `docs/trace/*` / `docs/trace/grafana/*` / `docs/troubleshooting/*` / `docs/verify/*` / `docs/workflows/*` の trust-tier front matter も既定スコープで検証する。
+- `docs/README.md` から辿れる `docs/ci/*` / `docs/quality/*` の主要ドキュメントに加え、`docs/TLA+/*` / `docs/adapters/*` / `docs/agent-builder/*` / `docs/agents/recipes/*` / `docs/architecture/*` / `docs/articles/*` / `docs/articles/zenn/*` / `docs/benchmark/*` / `docs/changes/*` / `docs/cheatsheets/*` / `docs/codex/*` / `docs/contributing/*` / `docs/ddd/*` / `docs/development/*` / `docs/examples/*` / `docs/flows/*` / `docs/getting-started/*` / `docs/guides/*` / `docs/handoff/*` / `docs/infra/*` / `docs/integrations/*` / `docs/internal/*` / `docs/legacy/**/*.md` / `docs/maintenance/*` / `docs/observability/*` / `docs/operate/*` / `docs/operations/*` / `docs/phases/*` / `docs/product/*` / `docs/project/*` / `docs/proposals/*` / `docs/reference/*` / `docs/research/*` / `docs/resilience/*` / `docs/roadmap/*` / `docs/samples/*` / `docs/spec/*` / `docs/strategy/*` / `docs/templates/**/*.md` / `docs/testing/*` / `docs/trace/*` / `docs/trace/grafana/*` / `docs/troubleshooting/*` / `docs/verify/*` / `docs/workflows/*` の trust-tier front matter も既定スコープで検証する。
 - `docs/README.md` / `docs/ci-policy.md` include the canonical CI operation links.
 - CI reference sections in `docs/ci-policy.md` avoid duplicate entries.
 - `docs/agents/commands.md` stays synchronized with `.github/workflows/agent-commands.yml`.
 - CI runbook の shell code block を `bash -n` で構文検証する。
 - `docs/ci/*` の TODO/FIXME マーカーが Issue 参照付きであることを検証する（`TODO(#<issue>)` / `FIXME(#<issue>)`）。
 - governed docs の `docRole` / `canonicalSource` / `lastVerified` front matter を検証する。
+- `docs/legacy/**/*.md` は archival narrative として扱い、歴史的文言に対する narrative warning は除外する。
 
 Current default targets:
 - Base: `../../README.md`, `../README.md`, Getting Started, User Manual, Integrations

@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Verify Agent Documentation
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
@@ -56,7 +61,7 @@ The MCP server exposes the agent's capabilities as tools that can be used by AI 
 
 The following npm scripts are available:
 
-```bash
+```bash no-doctest
 # Start MCP server
 npm run verify:server
 
@@ -89,7 +94,7 @@ Run comprehensive verification suite including all test types, coverage, linting
 - `strictMode` (optional): Stop verification on first failure (default: false)
 
 **Example:**
-```json
+```json no-doctest
 {
   "projectPath": "/path/to/project",
   "verificationTypes": ["tests", "coverage", "linting", "security"],
@@ -223,7 +228,7 @@ Tests are automatically categorized based on file naming patterns:
 
 Add verification steps to your CI/CD pipeline:
 
-```yaml
+```yaml no-doctest
 # GitHub Actions example
 - name: Run Verification Suite
   run: npm run verify:all
@@ -243,7 +248,7 @@ Add verification steps to your CI/CD pipeline:
 
 Configure pre-commit hooks to run verification:
 
-```json
+```json no-doctest
 {
   "husky": {
     "hooks": {
@@ -258,7 +263,7 @@ Configure pre-commit hooks to run verification:
 
 The MCP server can be integrated with Claude Desktop and other MCP-compatible clients:
 
-```json
+```json no-doctest
 {
   "mcpServers": {
     "ae-framework-verify": {
@@ -276,7 +281,7 @@ The MCP server can be integrated with Claude Desktop and other MCP-compatible cl
 
 All verification operations return structured results:
 
-```typescript
+```typescript no-doctest
 interface VerificationResult {
   passed: boolean;
   results: VerificationCheck[];
@@ -290,7 +295,7 @@ interface VerificationResult {
 
 ### Coverage Report
 
-```typescript
+```typescript no-doctest
 interface CoverageReport {
   line: number;        // Line coverage percentage
   branch: number;      // Branch coverage percentage
@@ -302,7 +307,7 @@ interface CoverageReport {
 
 ### Quality Metrics
 
-```typescript
+```typescript no-doctest
 interface QualityMetrics {
   complexity: number;      // Cyclomatic complexity
   maintainability: number; // Maintainability index
@@ -378,13 +383,13 @@ Track verification metrics over time:
 
 Enable debug logging:
 
-```bash
+```bash no-doctest
 DEBUG=verify-agent npm run verify:server
 ```
 
 Use verbose output for detailed information:
 
-```bash
+```bash no-doctest
 npm run verify:all -- --verbose
 ```
 
@@ -454,7 +459,7 @@ MCPサーバーは、AIアシスタントや他のシステムで使用できる
 
 ### 包括的検証サポート
 
-```typescript
+```typescript no-doctest
 interface VerificationRequest {
   projectPath: string;
   verificationTypes: VerificationType[];
@@ -478,13 +483,13 @@ type VerificationType =
 
 ### MCPサーバーとして実行
 
-```bash
+```bash no-doctest
 npm run verify-agent
 ```
 
 ### 直接統合
 
-```typescript
+```typescript no-doctest
 import { VerifyAgent } from './src/agents/verify-agent.js';
 
 const agent = new VerifyAgent();
@@ -505,7 +510,7 @@ console.log('検証結果:', result);
 
 ### テスト設定
 
-```typescript
+```typescript no-doctest
 interface TestOptions {
   pattern: string;              // テストファイルパターン
   timeout: number;              // テストタイムアウト（ms）
@@ -520,7 +525,7 @@ interface TestOptions {
 
 ### セキュリティ設定
 
-```typescript
+```typescript no-doctest
 interface SecurityOptions {
   auditLevel: 'low' | 'moderate' | 'high' | 'critical';
   excludeDevDependencies: boolean;
@@ -532,7 +537,7 @@ interface SecurityOptions {
 
 ### 基本検証結果
 
-```typescript
+```typescript no-doctest
 interface VerificationResult {
   overall: 'passed' | 'failed' | 'warning';
   timestamp: Date;
@@ -555,7 +560,7 @@ interface VerificationResult {
 
 ### テスト結果
 
-```json
+```json no-doctest
 {
   "tests": {
     "status": "passed",
@@ -578,7 +583,7 @@ interface VerificationResult {
 
 ### セキュリティ結果
 
-```json
+```json no-doctest
 {
   "security": {
     "status": "warning",
@@ -614,7 +619,7 @@ interface VerificationResult {
 
 ### ツール使用例
 
-```typescript
+```typescript no-doctest
 // MCPクライアントから使用
 const result = await mcpClient.callTool('verify_project', {
   projectPath: '/path/to/project',
@@ -637,7 +642,7 @@ const result = await mcpClient.callTool('verify_project', {
 
 ### 継続的統合
 
-```yaml
+```yaml no-doctest
 # GitHub Actionsでの使用例
 - name: AE Framework検証
   run: |
@@ -658,7 +663,7 @@ const result = await mcpClient.callTool('verify_project', {
 
 ### デバッグ
 
-```bash
+```bash no-doctest
 # 詳細ログで実行
 DEBUG=verify-agent npm run verify-agent
 
@@ -670,7 +675,7 @@ npm run verify-agent -- --types tests --verbose
 
 ### カスタム検証器の追加
 
-```typescript
+```typescript no-doctest
 // カスタム検証器の実装
 class CustomSecurityVerifier implements Verifier {
   async verify(options: VerificationOptions): Promise<VerificationResult> {

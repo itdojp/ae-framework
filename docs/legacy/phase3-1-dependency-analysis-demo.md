@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Phase 3.1 Dependency Analysis System Demo
 
 > 🌍 Language / 言語: English | 日本語
@@ -16,7 +21,7 @@ The Phase 3.1 Dependency Analysis System has been successfully implemented as pa
 ### 2. Core Features
 
 #### Dependency Analysis
-```typescript
+```typescript no-doctest
 // Analyze project dependencies
 const result = await analyzer.analyzeDependencies({
   id: 'analysis-001',
@@ -28,7 +33,7 @@ const result = await analyzer.analyzeDependencies({
 ```
 
 #### Impact Analysis
-```typescript
+```typescript no-doctest
 // Analyze impact of proposed changes
 const impact = await analyzer.analyzeImpact({
   id: 'impact-001',
@@ -58,7 +63,7 @@ const impact = await analyzer.analyzeImpact({
 ### 4. Key Interfaces
 
 #### DependencyAnalysisResult
-```typescript
+```typescript no-doctest
 interface DependencyAnalysisResult {
   requestId: string;
   graph: DependencyGraph;
@@ -73,7 +78,7 @@ interface DependencyAnalysisResult {
 ```
 
 #### DependencyMetrics
-```typescript
+```typescript no-doctest
 interface DependencyMetrics {
   totalNodes: number;
   totalEdges: number;
@@ -145,7 +150,7 @@ With Phase 3.1 complete, the next phase will focus on:
 
 ## Usage Example
 
-```typescript
+```typescript no-doctest
 import { DependencyAnalyzer } from './src/analysis/dependency-analyzer.js';
 
 // Initialize analyzer
