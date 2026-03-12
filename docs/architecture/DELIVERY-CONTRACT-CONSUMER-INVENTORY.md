@@ -21,8 +21,8 @@ verificationCommand: pnpm -s run check:doc-consistency
 | --- | --- | --- | --- |
 | `execplan` | fixture / future generic producers | `scripts/ci/validate-json.mjs`, `docs/guides/EXECPLAN-SCHEMA.md` | 汎用 execution DAG |
 | `execution-plan-v1` | `scripts/ci/codex-autopilot-lane.mjs` | `docs/ci/codex-autopilot-lane.md`, `scripts/ci/validate-json.mjs` | PR 自動化専用 plan |
-| `plan-artifact/v1` | `scripts/plan-artifact/generate.mjs` | `scripts/plan-artifact/validate.mjs`, `scripts/ci/policy-gate.mjs`, `pr-ci-status-comment` | high-risk PR review / rollback / verification 要件 |
-| `ae-handoff/v1` | `scripts/agents/create-handoff.mjs` | `scripts/agents/validate-handoff.mjs`, future PR/Issue handoff consumer | resumable handoff |
+| `plan-artifact/v1` | `scripts/plan-artifact/generate.mjs` | `scripts/plan-artifact/validate.mjs`, `scripts/ci/policy-gate.mjs`, `.github/workflows/pr-ci-status-comment.yml` | high-risk PR review / rollback / verification 要件 |
+| `ae-handoff/v1` | `scripts/agents/create-handoff.mjs`, `templates/comments/AE-HANDOFF.md`（manual/export）, `docs/agents/handoff.md` | `scripts/agents/validate-handoff.mjs`, future PR/Issue handoff consumer | resumable handoff |
 
 ### 2.2 evidence / verification
 
@@ -32,7 +32,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 | `assurance-summary` | `scripts/assurance/aggregate-lanes.mjs`, `verify-lite.yml` | `enforce-assurance`, `quality-scorecard`, `render-pr-summary`, `hook-feedback` | structured assurance evidence |
 | `formal-summary-v1/v2` | `scripts/formal/generate-formal-summary-v1.mjs` | `validate-formal-summary-*`, `quality-scorecard`, run-manifest generation | formal evidence aggregation |
 | `trace-validation` | `scripts/trace/run-kvonce-conformance.sh` ほか | `validate-artifacts-ajv`, `render-trace-summary` | trace-based conformance evidence |
-| `quality-scorecard/v1` | `scripts/quality/build-quality-scorecard.mjs`, `verify-lite.yml` | `validate-quality-scorecard`, `render-pr-summary`, `pr-ci-status-comment` | 横断 quality 集約 |
+| `quality-scorecard/v1` | `scripts/quality/build-quality-scorecard.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-quality-scorecard.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` | 横断 quality 集約 |
 
 ## 3. `#2579` 提案との重複点
 
