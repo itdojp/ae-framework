@@ -400,7 +400,7 @@ jobs:
           else
             printf '%s\n' 'Plan Artifact not present in this PR branch; skipping append.' >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Append Change Package, Plan Artifact, and Hook Feedback to PR summary
+      - name: Append Change Package, Plan Artifact, Hook Feedback, and Quality Scorecard to PR summary
         if: ${{ always() }}
         run: |
           if [ -f artifacts/change-package/change-package.md ]; then
@@ -422,6 +422,10 @@ jobs:
           if [ -f artifacts/agents/hook-feedback.md ]; then
             printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
             cat artifacts/agents/hook-feedback.md >> artifacts/summary/PR_SUMMARY.md
+          fi
+          if [ -f artifacts/downloaded/verify-lite-report/artifacts/quality/quality-scorecard.md ]; then
+            printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
+            cat artifacts/downloaded/verify-lite-report/artifacts/quality/quality-scorecard.md >> artifacts/summary/PR_SUMMARY.md
           fi
       - name: Upload harness health artifact
         if: ${{ always() }}

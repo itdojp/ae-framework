@@ -96,6 +96,11 @@ export const DEFAULT_RULES = [
     patterns: ['artifacts/ci/harness-health.json'],
   },
   {
+    id: 'quality-scorecard',
+    schemaPath: 'schema/quality-scorecard.schema.json',
+    patterns: ['artifacts/quality/quality-scorecard.json'],
+  },
+  {
     id: 'automation-observability-v1',
     schemaPath: 'schema/automation-observability-v1.schema.json',
     patterns: ['artifacts/ci/automation-report.json', 'artifacts/automation/*-report.json'],

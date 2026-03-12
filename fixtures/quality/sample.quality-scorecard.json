@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "quality-scorecard/v1",
+  "contractId": "quality-scorecard.v1",
+  "generatedAt": "2026-03-12T00:00:00.000Z",
+  "metadata": {
+    "generatedAtUtc": "2026-03-12T00:00:00.000Z",
+    "generatedAtLocal": "2026-03-12T09:00:00.000+09:00",
+    "timezoneOffset": "+09:00",
+    "gitCommit": "0123456789abcdef0123456789abcdef01234567",
+    "branch": "main",
+    "runner": {
+      "name": "local",
+      "os": "linux",
+      "arch": "x64",
+      "ci": false
+    },
+    "toolVersions": {
+      "node": "v22.0.0"
+    }
+  },
+  "reportOnly": true,
+  "inputs": {
+    "verifyLiteSummary": {
+      "path": "artifacts/verify-lite/verify-lite-run-summary.json",
+      "present": true,
+      "required": true
+    },
+    "reportEnvelope": {
+      "path": "artifacts/report-envelope.json",
+      "present": true,
+      "required": true
+    },
+    "assuranceSummary": {
+      "path": "fixtures/assurance/sample.assurance-summary.json",
+      "present": true,
+      "required": false
+    },
+    "harnessHealth": {
+      "path": "fixtures/ci/sample.harness-health.json",
+      "present": true,
+      "required": false
+    },
+    "policyGateSummary": {
+      "path": "fixtures/policy-gate/sample.policy-gate-summary-v1.json",
+      "present": true,
+      "required": false
+    },
+    "benchCompare": {
+      "path": null,
+      "present": false,
+      "required": false
+    },
+    "formalSummary": {
+      "path": "fixtures/formal/sample.formal-summary-v2.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "formal-summary/v2"
+    }
+  },
+  "summary": {
+    "overallStatus": "fail",
+    "overallScore": 64,
+    "availableDimensions": [
+      "artifactIntegrity",
+      "assuranceCoverage",
+      "executionHealth",
+      "policyReadiness"
+    ],
+    "missingDimensions": [
+      "performanceRegression"
+    ],
+    "blockerCount": 2
+  },
+  "dimensions": {
+    "artifactIntegrity": {
+      "status": "pass",
+      "score": 100,
+      "weight": 25,
+      "summary": "Required artifacts are present and readable.",
+      "details": {
+        "requiredArtifactCount": 2,
+        "presentRequiredArtifacts": 2,
+        "reportEnvelopeSource": "verify-lite"
+      }
+    },
+    "assuranceCoverage": {
+      "status": "pass",
+      "score": 100,
+      "weight": 25,
+      "summary": "Assurance summary reports satisfied claims without coverage blockers.",
+      "details": {
+        "claimCount": 1,
+        "satisfiedClaims": 1,
+        "warningClaims": 0,
+        "warningCount": 0,
+        "claimsMissingRequiredLanes": 0,
+        "claimsMissingRequiredEvidenceKinds": 0,
+        "unlinkedCounterexamples": 0,
+        "openCounterexamples": 0
+      }
+    },
+    "executionHealth": {
+      "status": "fail",
+      "score": 0,
+      "weight": 25,
+      "summary": "Harness health reports critical issues even though verify-lite and formal summaries are present.",
+      "details": {
+        "verifyLiteFailedSteps": 0,
+        "verifyLiteWarnSteps": 0,
+        "harnessSeverity": "critical",
+        "formalStatus": "ok",
+        "failedFormalResults": 0
+      }
+    },
+    "policyReadiness": {
+      "status": "fail",
+      "score": 0,
+      "weight": 15,
+      "summary": "Policy gate summary reports blocking errors and missing required labels.",
+      "details": {
+        "ok": false,
+        "approvals": 0,
+        "effectiveMinApprovals": 1,
+        "missingRequiredLabels": [
+          "run-security"
+        ],
+        "errorCount": 1,
+        "warningCount": 1
+      }
+    },
+    "performanceRegression": {
+      "status": "missing",
+      "score": null,
+      "weight": 10,
+      "summary": "bench-compare artifact is not available for this run.",
+      "details": {
+        "candidateCount": 0,
+        "failingCandidates": 0,
+        "missingReason": "bench-compare artifact not available"
+      }
+    }
+  },
+  "blockers": [
+    {
+      "dimension": "executionHealth",
+      "code": "harness-health-critical",
+      "severity": "fail",
+      "message": "Harness health severity is critical.",
+      "artifactPath": "fixtures/ci/sample.harness-health.json"
+    },
+    {
+      "dimension": "policyReadiness",
+      "code": "policy-gate-not-ready",
+      "severity": "fail",
+      "message": "Policy gate summary reports blocking errors or missing required labels.",
+      "artifactPath": "fixtures/policy-gate/sample.policy-gate-summary-v1.json"
+    }
+  ]
+}
