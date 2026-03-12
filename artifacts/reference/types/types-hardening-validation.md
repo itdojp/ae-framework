@@ -54,7 +54,7 @@ This report validates the implementation of Types T5/T6/T7 hardening measures ac
 
 **Files:**
 - `api/public-types.d.ts` - baseline snapshot
-- `artifacts/public-types.current.d.ts` - current build
+- `artifacts/reference/types/public-types.current.d.ts` - current build
 - `scripts/api/snapshot-types.mjs` - snapshot generator
 - `scripts/api/check-types.mjs` - diff validator
 
