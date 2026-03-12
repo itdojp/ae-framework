@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Mutation Coverage Improvement Plan (Week2)
 
 ## 残存サバイバー対応計画（2026-01-23 更新）

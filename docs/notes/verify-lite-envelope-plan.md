@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Verify Lite → Envelope 変換プラン
 
 ## 現状整理

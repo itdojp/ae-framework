@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue #1225: Code Scanning Open Alerts Snapshot (2026-01-03)
 
 This note captures the current GitHub code-scanning open alerts so we can triage and prioritize fixes.

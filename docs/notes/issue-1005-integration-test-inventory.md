@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue 1005: Integration Test Inventory (Phase 1)
 
 ## Snapshot

@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue #1006: Script Migration Plan (2026-01-08)
 
 ## Goal

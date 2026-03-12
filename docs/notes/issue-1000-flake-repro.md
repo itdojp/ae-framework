@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue 1000: Flake 再現チェックリスト
 
 Integration テストの flake を再現・固定するための最小手順を整理します。詳細なヘルパー利用法は `docs/testing/integration-runtime-helpers.md` を参照してください。

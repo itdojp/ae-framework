@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue 1071: Codex SDK Evaluation (Draft)
 
 ## Snapshot

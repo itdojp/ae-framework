@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # EnhancedStateManager 再構築で得たナレッジ
 
 ## ブランチ運用

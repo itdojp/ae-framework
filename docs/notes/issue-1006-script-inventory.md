@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue #1006: Script Inventory (2026-01-23)
 
 ## 概要
@@ -98,7 +103,7 @@
 - validate-tdd
 
 ## 再生成
-```bash
+```bash no-doctest
 node scripts/admin/generate-script-inventory.mjs docs/notes/issue-1006-script-inventory.md
 ```
 

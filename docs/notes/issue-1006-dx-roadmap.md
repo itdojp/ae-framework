@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Issue #1006: DX Roadmap v1 (Month 3)
 
 ## ステータス

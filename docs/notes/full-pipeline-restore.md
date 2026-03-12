@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # Week1: フルパイプライン復元メモ
 
 ## ブランチ/ベースコミット
