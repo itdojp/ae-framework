@@ -46,7 +46,7 @@ Track where candidate config files are referenced so relocation can update both 
 - `package.json` (`build` script)
 - `src/commands/verify/run.ts` (fallback for verify)
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
-- `artifacts/recovery-verify.md`
+- `artifacts/reference/verify/recovery-verify.md`
 
 ### tsconfig.types.json (moved in PR #1545)
 - `package.json` (`api:emit`, type extraction)
@@ -58,7 +58,7 @@ Track where candidate config files are referenced so relocation can update both 
 - `src/commands/verify/run.ts` (primary verify path)
 - `docs/quality/type-coverage-policy.md`
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
-- `artifacts/verify.md`, `artifacts/types-gate-ci-validation.md`
+- `artifacts/reference/verify/verify.md`, `artifacts/types-gate-ci-validation.md`
 
 ### configs/vitest/vitest.workspace.ts (moved in PR #1538)
 - `package.json` (`test:unit`, `test:int`, `test:perf`)

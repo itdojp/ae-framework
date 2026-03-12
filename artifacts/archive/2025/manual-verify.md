@@ -34,7 +34,7 @@
 
 ### 3. Verification Pipeline (`verify`)
 - **Status**: ❌ FAILED (Exit Code: 1)
-- **Generated**: ✅ `artifacts/verify.md` (8.4s duration)
+- **Generated**: ✅ `artifacts/reference/verify/verify.md` (8.4s duration)
 - **Results**:
   - TypeScript Types: ❌ FAILED (exit 2) - Multiple type errors in excluded files
   - ESLint: ❌ FAILED (exit 2) - No eslint.config.js found

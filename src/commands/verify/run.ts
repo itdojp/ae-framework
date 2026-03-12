@@ -83,7 +83,7 @@ async function getVerifyConfigPath(): Promise<string> {
 
 export async function verifyRun(): Promise<Result<{ logs: string[]; duration: string }, AppError>> {
   console.log('[ae][verify] Starting verification pipeline...');
-  await mkdir('artifacts', { recursive: true });
+  await mkdir('artifacts/reference/verify', { recursive: true });
   
   const logs: string[] = [];
   let success = true;
@@ -440,8 +440,8 @@ ${logs.join('\n\n')}
 `;
 
   try {
-    await writeFile('artifacts/verify.md', report);
-    console.log(`[ae][verify] Verification report generated -> artifacts/verify.md`);
+    await writeFile('artifacts/reference/verify/verify.md', report);
+    console.log(`[ae][verify] Verification report generated -> artifacts/reference/verify/verify.md`);
   } catch (error) {
     console.error(`[ae][verify] Failed to write report: ${error instanceof Error ? error.message : String(error)}`);
   }

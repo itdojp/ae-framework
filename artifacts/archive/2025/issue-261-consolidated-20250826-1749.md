@@ -110,7 +110,7 @@
 
 - **Issue**: [#261](https://github.com/itdojp/ae-framework/issues/261)
 - **詳細レポート**: [artifacts/archive/2025/status-20250826-1344.md](https://github.com/itdojp/ae-framework/blob/main/artifacts/archive/2025/status-20250826-1344.md)
-- **Verify結果**: [artifacts/verify.md](https://github.com/itdojp/ae-framework/blob/main/artifacts/verify.md)
+- **Verify結果**: [artifacts/reference/verify/verify.md](https://github.com/itdojp/ae-framework/blob/main/artifacts/reference/verify/verify.md)
 - **コミット**: [4304993a322eb006fe2088aa227e70f5283eea99](https://github.com/itdojp/ae-framework/commit/4304993a322eb006fe2088aa227e70f5283eea99)
 
 ---

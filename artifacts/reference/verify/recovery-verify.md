@@ -44,7 +44,7 @@
   ae
   ```
 - **Verify Command**: ✅ Exit 0 (with expected linting issues)
-  - Generated: `artifacts/verify.md`
+  - Generated: `artifacts/reference/verify/verify.md`
   - Duration: 17.3s
   - Status: ❌ Some verification steps failed (TypeScript/ESLint - non-blocking)
   - **Key**: Build system works, verification pipeline functional
