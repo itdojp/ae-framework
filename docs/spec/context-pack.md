@@ -59,6 +59,9 @@ pnpm run context-pack:verify-natural-transformation
 # Product/Coproduct（入力契約 + 失敗variant網羅）マッピングを検証
 pnpm run context-pack:verify-product-coproduct
 
+# Slice-level produces/consumes 境界を検証
+pnpm run context-pack:verify-boundary-map
+
 # Phase5+（Pullback/Pushout・Monoidal・Kleisli）テンプレを検証
 pnpm run context-pack:verify-phase5
 
@@ -95,6 +98,13 @@ node scripts/context-pack/verify-product-coproduct.mjs \
   --schema schema/context-pack-product-coproduct.schema.json \
   --report-json artifacts/context-pack/context-pack-product-coproduct-report.json \
   --report-md artifacts/context-pack/context-pack-product-coproduct-report.md
+
+# Boundary Map を直接検証（マップ・レポート先を上書き）
+node scripts/context-pack/verify-boundary-map.mjs \
+  --map spec/context-pack/boundary-map.json \
+  --schema schema/context-pack-boundary-map.schema.json \
+  --report-json artifacts/context-pack/context-pack-boundary-map-report.json \
+  --report-md artifacts/context-pack/context-pack-boundary-map-report.md
 
 # Phase5+テンプレを直接検証（マップ・レポート先を上書き）
 node scripts/context-pack/verify-phase5-templates.mjs \
@@ -240,6 +250,61 @@ node scripts/assurance/aggregate-lanes.mjs \
 }
 ```
 
+### Boundary Map 検証（Issue #2648）
+- 入力:
+  - `spec/context-pack/boundary-map.json`（`schema/context-pack-boundary-map.schema.json`）
+  - `spec/context-pack/**/*.{yml,yaml,json}` の `objects[].id` / `morphisms[].id` / `diagrams[].id` / `acceptance_tests[].id` / `forbidden_changes`
+- 検査内容:
+  - `slices[].produces` / `slices[].consumes` が既存 Context Pack ref と整合しているか検証
+  - `consumes[].upstream.type=slice` の場合、参照先 slice が実在し、対象 ref を実際に produce しているか検証
+  - 同一 `kind/refId` を複数 slice が produce していないか検証
+  - slice 間依存グラフの循環を検出
+- 失敗時:
+  - `boundary-ref-missing`
+  - `boundary-upstream-slice-missing`
+  - `boundary-upstream-producer-missing`
+  - `boundary-producer-duplicate`
+  - `boundary-slice-cycle`
+  などの種別を JSON/Markdown レポートに出力
+
+### Boundary Map 記述例（最小）
+```json
+{
+  "schemaVersion": "context-pack-boundary-map/v1",
+  "contextPackSources": ["spec/context-pack/**/*.{yml,yaml,json}"],
+  "slices": [
+    {
+      "id": "inventory-item-model",
+      "produces": [
+        {
+          "kind": "object",
+          "refId": "InventoryItem"
+        }
+      ]
+    },
+    {
+      "id": "reservation-flow",
+      "consumes": [
+        {
+          "kind": "object",
+          "refId": "InventoryItem",
+          "upstream": {
+            "type": "slice",
+            "sliceId": "inventory-item-model"
+          }
+        }
+      ],
+      "produces": [
+        {
+          "kind": "morphism",
+          "refId": "ReserveInventory"
+        }
+      ]
+    }
+  ]
+}
+```
+
 ### Phase 5+ テンプレ検証（Issue #2252）
 - 入力:
   - `spec/context-pack/phase5-templates.json`（`schema/context-pack-phase5-templates.schema.json`）
@@ -305,6 +370,8 @@ node scripts/assurance/aggregate-lanes.mjs \
 - Markdown (Natural Transformation): `artifacts/context-pack/context-pack-natural-transformation-report.md`
 - JSON (Product/Coproduct): `artifacts/context-pack/context-pack-product-coproduct-report.json`
 - Markdown (Product/Coproduct): `artifacts/context-pack/context-pack-product-coproduct-report.md`
+- JSON (Boundary Map): `artifacts/context-pack/context-pack-boundary-map-report.json`
+- Markdown (Boundary Map): `artifacts/context-pack/context-pack-boundary-map-report.md`
 - JSON (Phase5+): `artifacts/context-pack/context-pack-phase5-report.json`
 - Markdown (Phase5+): `artifacts/context-pack/context-pack-phase5-report.md`
 - Verify Lite summary: `artifacts/verify-lite/verify-lite-run-summary.json`
@@ -341,6 +408,9 @@ node scripts/assurance/aggregate-lanes.mjs \
 - `ambiguous-dto-key`: 曖昧DTOキーの使用
 - `coproduct-variant-missing` / `coproduct-variant-unknown`: failure variant の過不足
 - `coproduct-evidence-missing`: variant の証跡パス不足
+- `boundary-ref-missing`: Context Pack ref 未定義
+- `boundary-upstream-slice-missing` / `boundary-upstream-producer-missing`: upstream produce/consume 不整合
+- `boundary-producer-duplicate` / `boundary-slice-cycle`: slice 境界定義の重複・循環
 - `*-template-duplicate`: Phase5+ テンプレ ID 重複
 - `kleisli-boundary-overlap` / `kleisli-impure-boundary-missing`: Kleisli 境界不整合
 - `phase5-evidence-missing`: Phase5+ 証跡パス不足
@@ -369,6 +439,7 @@ pnpm run context-pack:validate
 pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
+pnpm run context-pack:verify-boundary-map
 pnpm run context-pack:verify-phase5
 pnpm run context-pack:deps
 node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
@@ -388,6 +459,8 @@ pnpm run verify:lite
 - `artifacts/context-pack/context-pack-natural-transformation-report.md`
 - `artifacts/context-pack/context-pack-product-coproduct-report.json`
 - `artifacts/context-pack/context-pack-product-coproduct-report.md`
+- `artifacts/context-pack/context-pack-boundary-map-report.json`
+- `artifacts/context-pack/context-pack-boundary-map-report.md`
 - `artifacts/context-pack/context-pack-phase5-report.json`
 - `artifacts/context-pack/context-pack-phase5-report.md`
 - `artifacts/verify-lite/verify-lite-run-summary.json` (`steps.contextPackValidation`, `steps.contextPackFunctorValidation`, `steps.contextPackNaturalTransformationValidation`, `steps.contextPackProductCoproductValidation`, `steps.contextPackPhase5Validation`)

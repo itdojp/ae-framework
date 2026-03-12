@@ -44,6 +44,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 - `schema/codex-task-request.schema.json`
 - `schema/context-bundle.schema.json`
 - `schema/context-pack-v1.schema.json`
+- `schema/context-pack-boundary-map.schema.json`
 - `schema/context-pack-functor-map.schema.json`
 - `schema/context-pack-natural-transformation.schema.json`
 - `schema/context-pack-phase5-templates.schema.json`
