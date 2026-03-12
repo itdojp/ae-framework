@@ -17,7 +17,6 @@ const COMMITTED_CONTRACT_PREFIXES = [
   'artifacts/repros/',
   'artifacts/types/',
 ];
-const COMMITTED_CONTRACT_EXACT = new Set(['artifacts/public-types.current.d.ts']);
 const ARCHIVE_PREFIXES = ['artifacts/archive/'];
 const LOCAL_DEBUG_PREFIXES = ['artifacts/codex/'];
 const REFERENCE_PREFIXES = ['artifacts/reference/', 'artifacts/hermetic-reports/', 'artifacts/validation-results/'];
@@ -63,7 +62,6 @@ export const parseArgs = (argv) => {
 
 export const classifyArtifact = (artifactPath) => {
   const normalized = String(artifactPath || '').replaceAll(path.sep, '/');
-  if (COMMITTED_CONTRACT_EXACT.has(normalized)) return 'committed-contract';
   if (COMMITTED_CONTRACT_PREFIXES.some((prefix) => normalized.startsWith(prefix))) return 'committed-contract';
   if (ARCHIVE_PREFIXES.some((prefix) => normalized.startsWith(prefix))) return 'archive';
   if (LOCAL_DEBUG_PREFIXES.some((prefix) => normalized.startsWith(prefix))) return 'local-debug-archive';
@@ -111,6 +109,13 @@ export const proposePlacement = (artifactPath) => {
     return {
       action: 'move',
       target: `artifacts/reference/types/${basename}`,
+      rationale: 'tracked type/reference snapshot should live under a typed reference namespace',
+    };
+  }
+  if (basename === 'public-types.current.d.ts') {
+    return {
+      action: 'move',
+      target: 'artifacts/reference/types/public-types.current.d.ts',
       rationale: 'tracked type/reference snapshot should live under a typed reference namespace',
     };
   }

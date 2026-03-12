@@ -108,9 +108,14 @@ describe('tracked-artifact-inventory', () => {
       rationale: 'normalized reference snapshot',
     });
     expect(proposePlacement('artifacts/public-types.current.d.ts')).toEqual({
+      action: 'move',
+      target: 'artifacts/reference/types/public-types.current.d.ts',
+      rationale: 'tracked type/reference snapshot should live under a typed reference namespace',
+    });
+    expect(proposePlacement('artifacts/reference/types/public-types.current.d.ts')).toEqual({
       action: 'keep',
-      target: 'artifacts/public-types.current.d.ts',
-      rationale: 'consumer-facing committed contract artifact',
+      target: 'artifacts/reference/types/public-types.current.d.ts',
+      rationale: 'normalized reference snapshot',
     });
   });
 
