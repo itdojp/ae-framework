@@ -99,10 +99,10 @@ jobs:
         run: node dist/src/cli/index.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/**"
       - name: Bench (run set)
         run: |
-          rm -f artifacts/bench.json artifacts/bench-ts-run*.json artifacts/bench-ts-runset.txt artifacts/bench-ts-compare.json || true
+          rm -f artifacts/reference/benchmarks/bench.json artifacts/reference/benchmarks/bench.md artifacts/bench-ts-run*.json artifacts/bench-ts-runset.txt artifacts/bench-ts-compare.json || true
           for i in 1 2; do
             AE_SEED=321 node dist/src/cli/index.js bench
-            cp artifacts/bench.json "artifacts/bench-ts-run${i}.json"
+            cp artifacts/reference/benchmarks/bench.json "artifacts/bench-ts-run${i}.json"
           done
       - name: Build bench runset
         run: |

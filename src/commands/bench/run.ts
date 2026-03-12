@@ -27,8 +27,12 @@ export async function benchRun() {
   const iterations = Math.max(1, Math.trunc(cfg.bench.iterations));
   const warmupMs = Math.max(0, Math.trunc(cfg.bench.warmupMs));
 
-  // Ensure artifacts directory exists
-  await mkdir('artifacts', { recursive: true });
+  const benchmarkArtifactsDir = 'artifacts/reference/benchmarks';
+  const benchmarkJsonPath = `${benchmarkArtifactsDir}/bench.json`;
+  const benchmarkMarkdownPath = `${benchmarkArtifactsDir}/bench.md`;
+
+  // Ensure benchmark artifact directory exists
+  await mkdir(benchmarkArtifactsDir, { recursive: true });
 
   const bench = new Bench({
     iterations,
@@ -144,7 +148,7 @@ export async function benchRun() {
   };
 
   // Write JSON report
-  await writeFile('artifacts/bench.json', JSON.stringify(payload, null, 2));
+  await writeFile(benchmarkJsonPath, JSON.stringify(payload, null, 2));
 
   // Write Markdown report
   const markdown = `# Bench Report
@@ -162,7 +166,7 @@ export async function benchRun() {
 ${summary.map(s => `| ${s.name} | ${s.meanMs.toFixed(3)} | ${s.p95.toFixed(3)} | ${s.sdMs.toFixed(3)} | ${s.errorRate.toFixed(2)} | ${s.hz.toFixed(1)} |`).join('\n')}
 `;
 
-  await writeFile('artifacts/bench.md', markdown);
+  await writeFile(benchmarkMarkdownPath, markdown);
 
-  console.log('[ae:bench] artifacts generated -> artifacts/bench.{json,md}');
+  console.log(`[ae:bench] artifacts generated -> ${benchmarkArtifactsDir}/bench.{json,md}`);
 }

@@ -12,7 +12,7 @@ export const GeminiResp = z.object({
   response: z.unknown()
 }).passthrough();
 
-// Benchmark JSON schema for parsing artifacts/bench.json
+// Benchmark JSON schema for parsing artifacts/reference/benchmarks/bench.json
 export const BenchmarkResult = z.object({
   schemaVersion: z.literal('benchmark-report/v1'),
   summary: z.array(z.object({
