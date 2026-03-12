@@ -46,7 +46,7 @@
 | `api/public.api.md` | ✅ | Present | API report baseline |
 
 **Key Configuration Excerpts:**
-```javascript
+```text
 // eslint.config.js (lines 31-38)
 '@typescript-eslint/ban-ts-comment': ['error', {
   'ts-ignore': true,           // completely banned
@@ -104,13 +104,13 @@ Missing required format: owner:@username expires:YYYY-MM-DD reason:description
 ```
 
 **Example Non-Compliant:**
-```typescript
+```text
 // ❌ VIOLATION: Missing policy metadata
 // @ts-expect-error -- TODO: describe why
 ```
 
 **Required Format:**
-```typescript
+```text
 // ✅ COMPLIANT
 // @ts-expect-error owner:@alice expires:2025-12-31 reason: narrowing todo for complex union
 ```
@@ -170,10 +170,10 @@ node dist/src/cli.js qa:flake --times 5 --workers 50% --pattern "tests/**"
 
 ## Related Documentation
 
-- **[T5/T6/T7 Implementation Validation Report](./archive/2025/types-t5-t6-t7-implementation-validation.md)** - Initial implementation validation from PR #244-246 merges
-- **[API Extractor Configuration](../configs/api-extractor.json)** - T7 breaking change detection setup
-- **[ESLint Type Policy](../eslint.config.js)** - T5 comment banning rules
-- **[@ts-expect-error Policy Checker](../scripts/ci/check-expect-error.mjs)** - T5 enforcement script
+- **[T5/T6/T7 Implementation Validation Report](../../archive/2025/types-t5-t6-t7-implementation-validation.md)** - Initial implementation validation from PR #244-246 merges
+- **[API Extractor Configuration](../../../configs/api-extractor.json)** - T7 breaking change detection setup
+- **[ESLint Type Policy](../../../eslint.config.js)** - T5 comment banning rules
+- **[@ts-expect-error Policy Checker](../../../scripts/ci/check-expect-error.mjs)** - T5 enforcement script
 
 ---
 
