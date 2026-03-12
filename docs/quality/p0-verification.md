@@ -33,18 +33,18 @@ Options:
 ## 2. Benchmark Command (Default Seed)
 
 [ae:bench] running with seed=12345, iterations=30, warmup=300ms
-[ae:bench] artifacts generated -> artifacts/bench.{json,md}
+[ae:bench] artifacts generated -> artifacts/reference/benchmarks/bench.{json,md}
 
 ## 3. Benchmark Command (AE_SEED=42)
 
 [ae:bench] running with seed=42, iterations=30, warmup=300ms
-[ae:bench] artifacts generated -> artifacts/bench.{json,md}
+[ae:bench] artifacts generated -> artifacts/reference/benchmarks/bench.{json,md}
 
 ## 4. TDD Guard (AE_SKIP_GUARD=1)
 
 [ae:tdd:guard] skipped by AE_SKIP_GUARD=1
 
-## 5. Generated Benchmark Report (artifacts/bench.md)
+## 5. Generated Benchmark Report (artifacts/reference/benchmarks/bench.md)
 
 # Bench Report
 - Date: 2025-08-24T22:34:25.405Z

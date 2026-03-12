@@ -118,7 +118,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 - `checksum match rate` = `schemaVersion + summary + metrics` を正規化（summaryはname順、JSON keyを安定化）したハッシュの一致件数 / run件数（%）
 
 ```text no-doctest
-# TS baseline（機械可読: artifacts/bench.json）
+# TS baseline（機械可読: artifacts/reference/benchmarks/bench.json）
 pnpm exec tsx src/cli.ts bench
 
 # 注記:
@@ -127,7 +127,7 @@ pnpm exec tsx src/cli.ts bench
 # - ベンチマーク専用CLIは `src/cli/benchmark-cli.ts`（`ae-benchmark`）
 
 # TS baseline の主要指標抽出例
-jq '.metrics | {p95, errorRate, coldStartMs, peakRssMb}' artifacts/bench.json
+jq '.metrics | {p95, errorRate, coldStartMs, peakRssMb}' artifacts/reference/benchmarks/bench.json
 
 # Go / Rust candidate（同一シナリオ・同一入力で実行）
 <go-benchmark-command>
@@ -149,8 +149,8 @@ node scripts/quality/bench-compare.mjs \
   --out-md artifacts/bench-compare.md
 ```
 
-- TS baseline raw result: `artifacts/bench.json`（schema: `schema/benchmark-report.schema.json`）
-- TS baseline summarized report: `artifacts/bench.md`
+- TS baseline raw result: `artifacts/reference/benchmarks/bench.json`（schema: `schema/benchmark-report.schema.json`）
+- TS baseline summarized report: `artifacts/reference/benchmarks/bench.md`
 - candidate raw result: `<path/to/bench-go-or-rust-results>`
 - comparison json: `artifacts/bench-compare.json`（schema: `schema/bench-compare.schema.json`）
 - comparison markdown: `artifacts/bench-compare.md`

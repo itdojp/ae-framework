@@ -19,7 +19,7 @@ const COMMITTED_CONTRACT_PREFIXES = [
 const COMMITTED_CONTRACT_EXACT = new Set(['artifacts/public-types.current.d.ts']);
 const ARCHIVE_PREFIXES = ['artifacts/archive/'];
 const LOCAL_DEBUG_PREFIXES = ['artifacts/codex/'];
-const REFERENCE_PREFIXES = ['artifacts/hermetic-reports/', 'artifacts/validation-results/'];
+const REFERENCE_PREFIXES = ['artifacts/reference/', 'artifacts/hermetic-reports/', 'artifacts/validation-results/'];
 
 export const parseArgs = (argv) => {
   const options = {
@@ -76,6 +76,9 @@ export const proposePlacement = (artifactPath) => {
   }
   if (category === 'committed-contract') {
     return { action: 'keep', target: normalized, rationale: 'consumer-facing committed contract artifact' };
+  }
+  if (normalized.startsWith('artifacts/reference/')) {
+    return { action: 'keep', target: normalized, rationale: 'normalized reference snapshot' };
   }
   if (normalized.startsWith('artifacts/hermetic-reports/')) {
     return {

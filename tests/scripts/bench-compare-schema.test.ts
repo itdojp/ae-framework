@@ -128,7 +128,7 @@ describe.sequential('bench-compare schema', () => {
       schemaVersion: 'bench-compare/v1',
       generatedAt: '2026-03-04T00:00:00.000Z',
       baseline: {
-        path: 'artifacts/bench.json',
+        path: 'artifacts/reference/benchmarks/bench.json',
         metrics: {
           p95: 10,
           errorRate: 0.1,

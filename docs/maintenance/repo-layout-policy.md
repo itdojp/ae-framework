@@ -70,7 +70,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 |---|---|---|---|
 | runtime output | `artifacts/verify-lite/**`, `artifacts/assurance/**`, `artifacts/release/**`, `artifacts/ci/**`, `artifacts/context-pack/**`, `artifacts/trace/**`, `artifacts/observability/**` | 原則 non-tracked | 実行結果、CI要約、運用判定の出力 |
 | committed contract artifact | `artifacts/types/**`, `artifacts/contracts/**`, `artifacts/domain/**`, `artifacts/plan/**`, `artifacts/api/**`, `artifacts/bdd/**`, `artifacts/properties/**`, `artifacts/repros/**`, `artifacts/public-types.current.d.ts` | tracked | 契約・サンプル・回帰基準として repo で参照する成果物 |
-| reference snapshot | `artifacts/bench.json`, `artifacts/bench.md`, `artifacts/bench-1.json`, `artifacts/bench-2.json`, `artifacts/types-gate-ci-validation.md`, `artifacts/types-hardening-validation.md`, `artifacts/recovery-verify.md` | tracked | ベースライン比較や過去判断の参照資料 |
+| reference snapshot | `artifacts/reference/benchmarks/bench.json`, `artifacts/reference/benchmarks/bench.md`, `artifacts/reference/benchmarks/bench-1.json`, `artifacts/reference/benchmarks/bench-2.json`, `artifacts/types-gate-ci-validation.md`, `artifacts/types-hardening-validation.md`, `artifacts/recovery-verify.md` | tracked | ベースライン比較や過去判断の参照資料 |
 | archive | `artifacts/archive/**` | tracked | 過去実行の記録保存、監査用のスナップショット |
 | local debug archive | `artifacts/codex/**` | ignored by default | codex/autopilot 系のローカル・CI調査出力。監査用に残す場合は `artifacts/archive/**` へ昇格させる |
 

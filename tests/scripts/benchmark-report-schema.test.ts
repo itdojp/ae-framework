@@ -41,7 +41,7 @@ describe.sequential('benchmark report schema', () => {
       });
       expect(runResult.status, runResult.stderr || runResult.stdout).toBe(0);
 
-      const outputPath = join(tempDir, 'artifacts', 'bench.json');
+      const outputPath = join(tempDir, 'artifacts', 'reference', 'benchmarks', 'bench.json');
       expect(existsSync(outputPath)).toBe(true);
 
       const payload = JSON.parse(readFileSync(outputPath, 'utf8')) as Record<string, unknown>;

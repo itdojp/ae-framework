@@ -91,12 +91,12 @@ Commands:
 # ベンチマーク実行
 $ npx ae bench
 [ae:bench] running with seed=12345, iterations=30, warmup=300ms
-[ae:bench] artifacts generated -> artifacts/bench.{json,md}
+[ae:bench] artifacts generated -> artifacts/reference/benchmarks/bench.{json,md}
 
 # 決定的実行
 $ AE_SEED=42 npx ae bench  
 [ae:bench] running with seed=42, iterations=30, warmup=300ms
-[ae:bench] artifacts generated -> artifacts/bench.{json,md}
+[ae:bench] artifacts generated -> artifacts/reference/benchmarks/bench.{json,md}
 
 # TDD ガード オプトアウト
 $ AE_SKIP_GUARD=1 npx ae tdd:guard

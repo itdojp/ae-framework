@@ -22,13 +22,19 @@ describe('tracked-artifact-inventory', () => {
     expect(classifyArtifact('artifacts/archive/2025/manual-verify.md')).toBe('archive');
     expect(classifyArtifact('artifacts/codex/2026-02-03/env.txt')).toBe('local-debug-archive');
     expect(classifyArtifact('artifacts/bench.json')).toBe('reference-snapshot');
+    expect(classifyArtifact('artifacts/reference/benchmarks/bench.json')).toBe('reference-snapshot');
   });
 
-  it('proposes normalized placement for root-level reference snapshots', () => {
+  it('proposes normalized placement for root-level reference snapshots and keeps normalized paths stable', () => {
     expect(proposePlacement('artifacts/bench.json')).toEqual({
       action: 'move',
       target: 'artifacts/reference/benchmarks/bench.json',
       rationale: 'tracked benchmark baseline at root should move under reference snapshots',
+    });
+    expect(proposePlacement('artifacts/reference/benchmarks/bench.json')).toEqual({
+      action: 'keep',
+      target: 'artifacts/reference/benchmarks/bench.json',
+      rationale: 'normalized reference snapshot',
     });
     expect(proposePlacement('artifacts/verify.md')).toEqual({
       action: 'move',
@@ -44,7 +50,7 @@ describe('tracked-artifact-inventory', () => {
 
   it('builds inventory summary and markdown output', () => {
     const report = buildInventory([
-      'artifacts/bench.json',
+      'artifacts/reference/benchmarks/bench.json',
       'artifacts/archive/2025/manual-verify.md',
       'artifacts/types/index.d.ts',
       'artifacts/codex/2026-02-03/env.txt',
@@ -56,14 +62,13 @@ describe('tracked-artifact-inventory', () => {
       archive: 1,
       'committed-contract': 1,
       'local-debug-archive': 1,
-      moveCount: 1,
-      keepCount: 3,
+      keepCount: 4,
     });
-    expect(report.topLevelTracked.map((item) => item.path)).toEqual(['artifacts/bench.json']);
+    expect(report.topLevelTracked).toEqual([]);
 
     const markdown = renderMarkdown(report);
     expect(markdown).toContain('# Tracked Artifact Inventory');
-    expect(markdown).toContain('artifacts/bench.json');
-    expect(markdown).toContain('artifacts/reference/benchmarks/bench.json');
+    expect(markdown).toContain('## Move candidates');
+    expect(markdown).not.toContain('tracked benchmark baseline at root should move under reference snapshots');
   });
 });
