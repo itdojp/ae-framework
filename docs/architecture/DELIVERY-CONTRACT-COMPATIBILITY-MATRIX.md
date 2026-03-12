@@ -1,7 +1,7 @@
 ---
 docRole: ssot
 lastVerified: '2026-03-12'
-owner: architecture
+owner: architecture-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
 # Delivery Contract Compatibility Matrix
