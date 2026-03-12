@@ -7,7 +7,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 # Artifact Reference Layout Plan
 
 ## Summary
-`artifacts/` の tracked ファイルは、現状でも `repo-layout-policy` 上は 4 類型に分類できるが、reference snapshot が `artifacts/reference/` と補助サブディレクトリの双方に分散している。
+`artifacts/` の tracked ファイルは、現状では `repo-layout-policy` 上の 5 類型に分類できる。reference snapshot の実移動は完了しており、本メモの残件は runtime output namespace に残った tracked placeholder の扱いだけである。
 
 この文書は `Issue #2585` の planning memo として、tracked artifact inventory と小粒 PR の投入順を定義する。
 
@@ -15,7 +15,7 @@ verificationCommand: pnpm run maintenance:artifact:inventory
 `pnpm run maintenance:artifact:inventory` の最新出力では、tracked artifact は以下に分類される。
 
 - committed contract artifact: `artifacts/types/**`, `artifacts/contracts/**`, `artifacts/domain/**`, `artifacts/plan/**`, `artifacts/api/**`, `artifacts/bdd/**`, `artifacts/properties/**`, `artifacts/repros/**`
-- reference snapshot: `artifacts/reference/benchmarks/*`, `artifacts/reference/verify/*`, `artifacts/reference/types/*`, `artifacts/reference/validation-results/*`, `artifacts/reference/hermetic-reports/formal/*`, `artifacts/reference/hermetic-reports/*.md` に加え、`artifacts/hermetic-reports/.gitkeep`
+- reference snapshot: `artifacts/reference/benchmarks/*`, `artifacts/reference/verify/*`, `artifacts/reference/types/*`, `artifacts/reference/validation-results/*`, `artifacts/reference/hermetic-reports/formal/*`, `artifacts/reference/hermetic-reports/*.md`
 - archive: `artifacts/archive/**`
 - local debug archive: `artifacts/codex/**`
 
@@ -49,7 +49,11 @@ verificationCommand: pnpm run maintenance:artifact:inventory
     - status: normalized in `PR #2639` (tracked by `Issue #2638`)
   - tracked markdown snapshot: `artifacts/reference/hermetic-reports/*.md`
     - status: normalized in `PR #2641` (tracked by `Issue #2640`)
-  - remaining tracked placeholder: `artifacts/hermetic-reports/.gitkeep`
+
+### Runtime output namespace policy
+- `artifacts/hermetic-reports/.gitkeep` は追跡しない
+  - rationale: formal / trace scripts と workflows が `mkdir -p` / recursive mkdir で必要なサブディレクトリを都度生成する
+  - tracked reference snapshot は `artifacts/reference/hermetic-reports/**` に集約済み
 
 ## Consumer Impact
 現時点の root-level tracked snapshot の consumer は大半が docs / examples / archive 内リンクであり、runtime consumer は限定的である。benchmark baseline については `PR #2629`、verification snapshot については `PR #2632` で `artifacts/reference/*` へ移動済みである。
@@ -84,7 +88,8 @@ verificationCommand: pnpm run maintenance:artifact:inventory
    - completed in `PR #2639` (tracked by `Issue #2638`)
 7. move tracked top-level hermetic markdown snapshots into `artifacts/reference/hermetic-reports/*`
    - completed in `PR #2641` (tracked by `Issue #2640`)
-8. decide whether `artifacts/hermetic-reports/.gitkeep` should be removed or retained as documented runtime placeholder
+8. remove tracked `.gitkeep` placeholder under `artifacts/hermetic-reports/` and document on-demand directory creation
+   - completed in `Issue #2644`
 
 ## Validation
 - `pnpm run maintenance:artifact:inventory`
