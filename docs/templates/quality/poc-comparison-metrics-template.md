@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: templates-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # PoC比較計測テンプレート（TS baseline vs Go/Rust）
 
 用途:
@@ -110,7 +117,7 @@
 - `CV = stddev / mean`（runCount >= 2 のとき算出、1件時は `null`）
 - `checksum match rate` = `schemaVersion + summary + metrics` を正規化（summaryはname順、JSON keyを安定化）したハッシュの一致件数 / run件数（%）
 
-```text
+```text no-doctest
 # TS baseline（機械可読: artifacts/bench.json）
 pnpm exec tsx src/cli.ts bench
 

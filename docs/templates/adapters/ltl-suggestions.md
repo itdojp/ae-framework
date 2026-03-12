@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: templates-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # LTL Suggestions (report-only)
 
 - Generator: `scripts/bdd/ltl-suggest.mjs`
@@ -7,7 +14,7 @@
 
 CI snippet (warn when count > 0):
 
-```yaml
+```yaml no-doctest
 - name: LTL suggestions (warn-only)
   run: |
     if [ -f artifacts/properties/ltl-suggestions.json ]; then \

@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: templates-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Adapter CI Examples
 
 This note consolidates adapter-related CI snippets and where to place artifacts.
@@ -8,7 +15,7 @@ This note consolidates adapter-related CI snippets and where to place artifacts.
 
 Minimal snippet:
 
-```yaml
+```yaml no-doctest
 name: adapters-quick
 on: [pull_request]
 jobs:

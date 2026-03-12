@@ -1,3 +1,10 @@
+---
+docRole: ssot
+lastVerified: '2026-03-12'
+owner: templates-ops
+verificationCommand: pnpm -s run check:doc-consistency
+---
+
 # Plan -> Spec Normalization Sample
 
 > This file is an example filled from `plan-to-spec-normalization-template.md`.
