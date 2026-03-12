@@ -1,3 +1,8 @@
+---
+docRole: narrative
+lastVerified: '2026-03-12'
+---
+
 # AE Framework Benchmark Integration
 
 ## 🌍 Language / 言語
@@ -26,7 +31,7 @@ The AE Framework Benchmark Integration provides comprehensive performance evalua
 
 The benchmark system is integrated into AE Framework:
 
-```bash
+```bash no-doctest
 # Install AE Framework with benchmark capabilities
 pnpm add ae-framework
 
@@ -36,7 +41,7 @@ pnpm run build:cli
 
 #### Basic Usage
 
-```bash
+```bash no-doctest
 # List available benchmark problems
 ae-benchmark list
 
@@ -55,7 +60,7 @@ ae-benchmark run --config configs/benchmark-config.json
 
 #### Scripts
 
-```bash
+```bash no-doctest
 # Quick benchmark execution
 pnpm run benchmark:basic
 
@@ -79,7 +84,7 @@ For repository location and CI preparation of the Req2Run benchmark, see `req2ru
 
 The system provides sensible defaults for different use cases:
 
-```typescript
+```typescript no-doctest
 import { 
   DEFAULT_BENCHMARK_CONFIG,
   getConfigForDifficulty,
@@ -97,7 +102,7 @@ const ciConfig = getCIConfig();
 
 Create a `configs/benchmark-config.json` file:
 
-```json
+```json no-doctest
 {
   "problems": [
     {
@@ -141,7 +146,7 @@ Create a `configs/benchmark-config.json` file:
 
 The benchmark system integrates with all 6 AE Framework phases:
 
-```typescript
+```typescript no-doctest
 class Req2RunBenchmarkRunner {
   async runBenchmark(problemId: string): Promise<BenchmarkResult> {
     // Phase 1: Intent Analysis
@@ -171,7 +176,7 @@ class Req2RunBenchmarkRunner {
 
 The system collects comprehensive metrics:
 
-```typescript
+```typescript no-doctest
 interface BenchmarkMetrics {
   overallScore: number;              // 0-100 total score
   functionalCoverage: number;        // % of requirements met
@@ -243,7 +248,7 @@ Overall Score = (
 
 #### GitHub Actions
 
-```yaml
+```yaml no-doctest
 name: Benchmark Evaluation
 on:
   push:
@@ -269,7 +274,7 @@ jobs:
 
 The system automatically detects performance regressions:
 
-```bash
+```bash no-doctest
 # Compare with baseline
 ae-benchmark run --baseline ./baseline-results.json
 
@@ -282,19 +287,19 @@ ae-benchmark run --fail-on-regression 10%
 #### Common Issues
 
 1. **Timeout Errors**
-   ```bash
+   ```bash no-doctest
    # Increase timeout for complex problems
    ae-benchmark run --timeout 600000  # 10 minutes
    ```
 
 2. **Memory Limitations**
-   ```bash
+   ```bash no-doctest
    # Adjust memory limits
    ae-benchmark run --config config-high-memory.json
    ```
 
 3. **コンテナ実行 (Podman/Docker) の問題**
-   ```bash
+   ```bash no-doctest
    # Podman が起動しているか確認
    podman ps --filter "name=ae-framework"
    # コンテナ隔離 (Podman/Docker) を無効化してデバッグ
@@ -303,7 +308,7 @@ ae-benchmark run --fail-on-regression 10%
 
 #### Debug Mode
 
-```bash
+```bash no-doctest
 # Enable verbose logging
 DEBUG=ae-framework:benchmark ae-benchmark run
 
@@ -322,7 +327,7 @@ ae-benchmark run --save-artifacts ./debug-artifacts/
 
 #### Resource Management
 
-```typescript
+```typescript no-doctest
 // Configure resource limits
 const config = {
   execution: {
@@ -346,7 +351,7 @@ const config = {
 
 #### Extending Evaluation Metrics
 
-```typescript
+```typescript no-doctest
 // Custom metric evaluator
 class CustomEvaluator implements MetricEvaluator {
   async evaluate(application: any, spec: RequirementSpec): Promise<number> {
@@ -379,7 +384,7 @@ AE Frameworkベンチマーク統合は、[Req2Run-Benchmark](https://github.com
 
 ベンチマークシステムはAE Frameworkに統合されています：
 
-```bash
+```bash no-doctest
 # ベンチマーク機能付きAE Frameworkをインストール
 pnpm add ae-framework
 
@@ -389,7 +394,7 @@ pnpm run build:cli
 
 #### 基本的な使用方法
 
-```bash
+```bash no-doctest
 # 利用可能なベンチマーク問題をリスト
 ae-benchmark list
 
@@ -408,7 +413,7 @@ ae-benchmark run --config configs/benchmark-config.json
 
 #### NPMスクリプト
 
-```bash
+```bash no-doctest
 # クイックベンチマーク実行
 pnpm run benchmark:basic
 
@@ -428,7 +433,7 @@ pnpm run benchmark:init
 
 システムは様々な用途に対応する適切なデフォルトを提供します：
 
-```typescript
+```typescript no-doctest
 import { 
   DEFAULT_BENCHMARK_CONFIG,
   getConfigForDifficulty,
@@ -446,7 +451,7 @@ const ciConfig = getCIConfig();
 
 `configs/benchmark-config.json`ファイルを作成：
 
-```json
+```json no-doctest
 {
   "problems": [
     {
@@ -476,7 +481,7 @@ const ciConfig = getCIConfig();
 
 ベンチマークシステムはAE Frameworkの全6フェーズと統合されます：
 
-```typescript
+```typescript no-doctest
 class Req2RunBenchmarkRunner {
   async runBenchmark(problemId: string): Promise<BenchmarkResult> {
     // フェーズ1: 意図分析
@@ -536,20 +541,20 @@ class Req2RunBenchmarkRunner {
 #### よくある問題
 
 1. **タイムアウトエラー**
-   ```bash
+   ```bash no-doctest
    # 複雑な問題のタイムアウトを増加
    ae-benchmark run --timeout 600000  # 10分
    ```
 
 2. **メモリ制限**
-   ```bash
+   ```bash no-doctest
    # メモリ制限を調整
    ae-benchmark run --config config-high-memory.json
    ```
 
 #### デバッグモード
 
-```bash
+```bash no-doctest
 # 詳細ログを有効化
 DEBUG=ae-framework:benchmark ae-benchmark run
 
