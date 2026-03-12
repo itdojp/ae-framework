@@ -58,8 +58,6 @@ Track where candidate config files are referenced so relocation can update both 
 - `src/commands/verify/run.ts` (primary verify path)
 - `docs/quality/type-coverage-policy.md`
 - `docs/reference/CLI-COMMANDS-REFERENCE.md`
-- `artifacts/reference/verify/verify.md`, `artifacts/types-gate-ci-validation.md`
-- `artifacts/verify.md`, `artifacts/types-gate-ci-validation.md`
 - `artifacts/reference/verify/verify.md`, `artifacts/reference/types/types-gate-ci-validation.md`
 
 ### configs/vitest/vitest.workspace.ts (moved in PR #1538)

@@ -57,6 +57,16 @@ describe('tracked-artifact-inventory', () => {
       target: 'artifacts/reference/types/types-gate-ci-validation.md',
       rationale: 'normalized reference snapshot',
     });
+    expect(proposePlacement('artifacts/types-hardening-validation.md')).toEqual({
+      action: 'move',
+      target: 'artifacts/reference/types/types-hardening-validation.md',
+      rationale: 'tracked type/reference snapshot should live under a typed reference namespace',
+    });
+    expect(proposePlacement('artifacts/reference/types/types-hardening-validation.md')).toEqual({
+      action: 'keep',
+      target: 'artifacts/reference/types/types-hardening-validation.md',
+      rationale: 'normalized reference snapshot',
+    });
     expect(proposePlacement('artifacts/public-types.current.d.ts')).toEqual({
       action: 'keep',
       target: 'artifacts/public-types.current.d.ts',
