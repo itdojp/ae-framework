@@ -28,6 +28,27 @@ describe('contributor license readiness audit', () => {
     expect(audit.readiness.status).toBe('repo-facts-ready');
   });
 
+
+  it('does not classify arbitrary agent substrings as bot-like and still detects noreply without angle brackets', () => {
+    const audit = buildContributorLicenseReadinessAudit({
+      scopeAudit: {
+        repositoryLicense: 'MIT License',
+        packageLicenseField: 'MIT',
+        contributorInventory: [
+          { author: 'Jane Management <jane@magenta.dev>', commits: 5 },
+          { author: 'jane 12345+alice@users.noreply.github.com', commits: 1 },
+          { author: 'release-agent <bot@example.com>', commits: 2 },
+        ],
+      },
+      scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    });
+
+    expect(audit.summary.humanLikeCount).toBe(2);
+    expect(audit.summary.botLikeCount).toBe(1);
+    expect(audit.summary.noreplyCount).toBe(1);
+  });
+
   it('renders markdown with escaped author cells', () => {
     const markdown = renderMarkdownReport({
       schemaVersion: 'contributor-license-readiness-audit/v1',
