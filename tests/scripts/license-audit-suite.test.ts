@@ -64,6 +64,23 @@ describe('license audit suite', () => {
     );
   });
 
+  it('normalizes a relative outputDir against rootDir', () => {
+    const plan = buildLicenseAuditSuitePlan({
+      rootDir: '/repo',
+      outputDir: 'tmp/legal',
+    });
+
+    expect(plan[0].outputs.json).toBe('/repo/tmp/legal/license-scope-audit.json');
+    expect(plan[2].args).toEqual(
+      expect.arrayContaining([
+        '--scope-audit',
+        'tmp/legal/license-scope-audit.json',
+        '--conditional-audit',
+        'tmp/legal/conditional-asset-audit.json',
+      ]),
+    );
+  });
+
   it('runs all legal audit steps with the same environment', () => {
     const calls = [];
     const spawnSyncImpl = vi.fn((cmd, args, options) => {
