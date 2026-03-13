@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "contributor-license-readiness-audit/v1",
+  "generatedAt": "2026-03-13T00:00:00.000Z",
+  "inputs": {
+    "scopeAuditPath": "artifacts/reference/legal/license-scope-audit.json",
+    "repositoryLicense": "MIT License",
+    "packageLicenseField": "MIT",
+    "contributorCount": 3
+  },
+  "summary": {
+    "humanLikeCount": 2,
+    "botLikeCount": 1,
+    "noreplyCount": 1,
+    "topContributorCommits": 10
+  },
+  "contributors": [
+    {
+      "author": "Alice <alice@example.com>",
+      "commits": 10,
+      "kind": "human-like",
+      "usesNoreply": false
+    },
+    {
+      "author": "alice <12345+alice@users.noreply.github.com>",
+      "commits": 3,
+      "kind": "human-like",
+      "usesNoreply": true
+    },
+    {
+      "author": "ae-framework-bot <bot@example.com>",
+      "commits": 2,
+      "kind": "bot-like",
+      "usesNoreply": false
+    }
+  ],
+  "readiness": {
+    "status": "repo-facts-ready",
+    "recommendedAction": "human-legal-review",
+    "legalDecisionRequired": true,
+    "notes": [
+      "Repo facts do not establish relicensing authority.",
+      "Noreply or bot identities may require manual normalization before legal review."
+    ]
+  }
+}
