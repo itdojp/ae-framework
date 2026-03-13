@@ -20,10 +20,16 @@ describe('apache-license-cutover-readiness-audit contract', () => {
     expect(validate(fixture)).toBe(true);
   });
 
-  it('requires at least one human review reason', () => {
+  it('requires at least one human review reason unless status is ready', () => {
     const invalid = structuredClone(fixture);
     invalid.readiness.humanReviewReasons = [];
     expect(validate(invalid)).toBe(false);
     expect(validate.errors?.some((error) => error.instancePath === '/readiness/humanReviewReasons')).toBe(true);
+
+    const readyFixture = structuredClone(fixture);
+    readyFixture.readiness.status = 'ready';
+    readyFixture.readiness.recommendedAction = 'prepare-cutover-pr';
+    readyFixture.readiness.humanReviewReasons = [];
+    expect(validate(readyFixture)).toBe(true);
   });
 });

@@ -11,7 +11,8 @@ function readJsonFile(filePath) {
 }
 
 function relativePosix(rootDir, filePath) {
-  return path.relative(rootDir, filePath).replace(/\\/g, '/');
+  const relative = path.relative(rootDir, filePath).replace(/\\/g, '/');
+  return relative.length > 0 ? relative : '.';
 }
 
 function addBlocker(blockers, code, reason) {
@@ -33,9 +34,16 @@ export function buildApacheLicenseCutoverReadinessAudit({
   const repositoryLicense = scopeAudit.repositoryLicense ?? null;
   const packageLicenseField = scopeAudit.packageLicenseField ?? null;
   const nestedNoticeFilesCount = Array.isArray(scopeAudit.nestedNoticeFiles) ? scopeAudit.nestedNoticeFiles.length : 0;
-  const unclassifiedConditionalFilesCount = Array.isArray(noticeReadinessAudit?.evidence?.unclassifiedConditionalFiles)
+  const unclassifiedConditionalFilesFromNotice = Array.isArray(noticeReadinessAudit?.evidence?.unclassifiedConditionalFiles)
     ? noticeReadinessAudit.evidence.unclassifiedConditionalFiles.length
     : 0;
+  const unclassifiedConditionalFilesFromAudit = Array.isArray(conditionalAudit?.items)
+    ? conditionalAudit.items.filter((item) => item?.originClass === 'runtime-output-or-unclassified').length
+    : 0;
+  const unclassifiedConditionalFilesCount = Math.max(
+    unclassifiedConditionalFilesFromNotice,
+    unclassifiedConditionalFilesFromAudit,
+  );
 
   if (!repositoryLicense || !/mit/i.test(repositoryLicense)) {
     addBlocker(blockers, 'repository-license-baseline-missing', 'Repository LICENSE baseline is not clearly MIT before Apache-2.0 cutover review.');
@@ -59,18 +67,19 @@ export function buildApacheLicenseCutoverReadinessAudit({
   const contributorBotLikeCount = Number.isInteger(contributorSummary.botLikeCount) ? contributorSummary.botLikeCount : 0;
   const contributorNoreplyCount = Number.isInteger(contributorSummary.noreplyCount) ? contributorSummary.noreplyCount : 0;
 
-  const humanReviewReasons = [
-    'Repo facts do not establish relicensing authority.',
-    'Contributor identities require human/legal review before relicensing approval.',
-  ];
+  const status = blockers.length > 0 ? 'blocked' : (contributorReadiness.legalDecisionRequired === false ? 'ready' : 'human-review-required');
+  const recommendedAction = blockers.length > 0 ? 'resolve-blockers' : (status === 'ready' ? 'prepare-cutover-pr' : 'legal-review');
+  const humanReviewReasons = status === 'ready'
+    ? []
+    : [
+        'Repo facts do not establish relicensing authority.',
+        'Contributor identities require human/legal review before relicensing approval.',
+      ];
   for (const note of Array.isArray(contributorReadiness.notes) ? contributorReadiness.notes : []) {
-    if (typeof note === 'string' && note.trim().length > 0 && !humanReviewReasons.includes(note)) {
+    if (status !== 'ready' && typeof note === 'string' && note.trim().length > 0 && !humanReviewReasons.includes(note)) {
       humanReviewReasons.push(note);
     }
   }
-
-  const status = blockers.length > 0 ? 'blocked' : (contributorReadiness.legalDecisionRequired === false ? 'ready' : 'human-review-required');
-  const recommendedAction = blockers.length > 0 ? 'resolve-blockers' : (status === 'ready' ? 'prepare-cutover-pr' : 'legal-review');
 
   return {
     schemaVersion: 'apache-license-cutover-readiness-audit/v1',
@@ -105,14 +114,6 @@ export function buildApacheLicenseCutoverReadinessAudit({
     },
   };
 }
-
-const escapeTableCell = (value) =>
-  String(value ?? '')
-    .replace(/\\/g, '\\\\')
-    .replace(/`/g, '\\`')
-    .replace(/\|/g, '\\|')
-    .replace(/\r?\n/g, '<br>');
-
 export function renderMarkdownReport(audit) {
   const lines = [
     '# Apache License Cutover Readiness Audit',

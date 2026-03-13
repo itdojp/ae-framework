@@ -88,7 +88,7 @@
         "humanReviewReasons": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 },
-          "minItems": 1
+          "minItems": 0
         },
         "cutoverPrerequisites": {
           "type": "array",
@@ -98,4 +98,37 @@
       }
     }
   }
+,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "readiness": {
+            "properties": {
+              "status": { "const": "ready" }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "readiness": {
+            "properties": {
+              "humanReviewReasons": { "maxItems": 0 }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "readiness": {
+            "properties": {
+              "humanReviewReasons": { "minItems": 1 }
+            }
+          }
+        }
+      }
+    }
+  ]
+
 }

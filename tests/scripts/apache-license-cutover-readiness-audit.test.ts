@@ -36,6 +36,55 @@ const sampleContributorAudit = {
 };
 
 describe('buildApacheLicenseCutoverReadinessAudit', () => {
+
+  it('derives unclassified blockers from conditional audit even if notice evidence is stale', () => {
+    const audit = buildApacheLicenseCutoverReadinessAudit({
+      scopeAudit: sampleScopeAudit,
+      conditionalAudit: {
+        items: [
+          { path: 'artifacts/raw.bin', originClass: 'runtime-output-or-unclassified' },
+        ],
+      },
+      noticeReadinessAudit: {
+        readiness: { status: 'draft-ready' },
+        evidence: { unclassifiedConditionalFiles: [] },
+      },
+      contributorReadinessAudit: sampleContributorAudit,
+      scopeAuditPath: 'scope.json',
+      conditionalAuditPath: 'conditional.json',
+      noticeReadinessAuditPath: 'notice.json',
+      contributorReadinessAuditPath: 'contributors.json',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    });
+
+    expect(audit.readiness.status).toBe('blocked');
+    expect(audit.summary.unclassifiedConditionalFilesCount).toBe(1);
+    expect(audit.readiness.blockers.some((blocker) => blocker.code === 'conditional-origin-unclassified')).toBe(true);
+  });
+
+  it('omits human review reasons when the audit is ready', () => {
+    const audit = buildApacheLicenseCutoverReadinessAudit({
+      scopeAudit: sampleScopeAudit,
+      conditionalAudit: sampleConditionalAudit,
+      noticeReadinessAudit: sampleNoticeAudit,
+      contributorReadinessAudit: {
+        summary: sampleContributorAudit.summary,
+        readiness: {
+          legalDecisionRequired: false,
+          notes: [],
+        },
+      },
+      scopeAuditPath: 'scope.json',
+      conditionalAuditPath: 'conditional.json',
+      noticeReadinessAuditPath: 'notice.json',
+      contributorReadinessAuditPath: 'contributors.json',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    });
+
+    expect(audit.readiness.status).toBe('ready');
+    expect(audit.readiness.humanReviewReasons).toEqual([]);
+  });
+
   it('returns human-review-required when blockers are cleared but legal review remains', () => {
     const audit = buildApacheLicenseCutoverReadinessAudit({
       scopeAudit: sampleScopeAudit,
