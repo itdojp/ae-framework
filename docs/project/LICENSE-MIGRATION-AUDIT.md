@@ -15,7 +15,7 @@ verificationCommand: pnpm run license:audit:scope -- --output-json artifacts/ref
 ## 現状
 
 - root `LICENSE` は MIT
-- root `package.json` に `license` field は未設定
+- root `package.json` の `license` field は `MIT`
 - root には `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を追加済み
 - root `NOTICE` は未作成
 - `artifacts/**`, `fixtures/**`, `test-cassettes/**` は first-party 固定ではなく、由来確認が必要な条件付きディレクトリとして扱う
