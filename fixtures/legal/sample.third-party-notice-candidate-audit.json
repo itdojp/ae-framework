@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "third-party-notice-candidate-audit/v1",
+  "generatedAt": "2026-03-13T00:00:00.000Z",
+  "inputs": {
+    "trackedFilesScanned": 320,
+    "vendorLikeSegments": [
+      "vendor",
+      "vendored",
+      "third_party",
+      "third-party",
+      "upstream",
+      "external"
+    ],
+    "nestedNoticePattern": "^(LICENSE|NOTICE|COPYING)([._-].+|\\.[A-Za-z0-9]+)?$"
+  },
+  "summary": {
+    "nestedNoticeFileCount": 0,
+    "vendoredPathCount": 1,
+    "submoduleCount": 0,
+    "status": "review-required"
+  },
+  "evidence": {
+    "nestedNoticeFiles": [],
+    "vendoredPathCandidates": [
+      {
+        "path": "src/vendor",
+        "segment": "vendor",
+        "sampleFile": "src/vendor/example.ts"
+      }
+    ],
+    "submodules": []
+  },
+  "review": {
+    "requiresIndividualNoticeReview": true,
+    "reasons": [
+      "vendored-path-candidates-present"
+    ]
+  }
+}

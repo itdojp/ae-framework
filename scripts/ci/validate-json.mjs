@@ -255,6 +255,11 @@ const checks = [
     schema: 'schema/contributor-license-readiness-audit.schema.json',
     fixtures: ['fixtures/legal/sample.contributor-license-readiness-audit.json'],
     label: 'Contributor license readiness audit schema validation'
+  },
+  {
+    schema: 'schema/third-party-notice-candidate-audit.schema.json',
+    fixtures: ['fixtures/legal/sample.third-party-notice-candidate-audit.json'],
+    label: 'Third-party notice candidate audit schema validation'
   }
 ];
 

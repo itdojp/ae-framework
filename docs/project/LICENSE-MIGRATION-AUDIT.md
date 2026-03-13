@@ -36,6 +36,12 @@ pnpm run license:audit:conditional -- \
   --output-md artifacts/reference/legal/conditional-asset-audit.md
 ```
 
+```bash
+pnpm run license:audit:third-party -- \
+  --output-json artifacts/reference/legal/third-party-notice-candidate-audit.json \
+  --output-md artifacts/reference/legal/third-party-notice-candidate-audit.md
+```
+
 ## 監査観点
 
 1. tracked file を以下に分類する
@@ -46,6 +52,7 @@ pnpm run license:audit:conditional -- \
 2. root legal files を除いた tracked な nested `LICENSE*` / `NOTICE*` / `COPYING*` を列挙する
 3. `git shortlog -sne --all` から contributor inventory を生成する
 4. root `LICENSE` と `package.json` の現行値を記録する
+5. tracked nested legal file / vendored path / submodule の有無を deterministic に列挙する
 
 ## 第一スライスの判断
 
@@ -59,11 +66,12 @@ pnpm run license:audit:conditional -- \
 1. `artifacts/**`, `fixtures/**`, `test-cassettes/**` の由来を棚卸し
 2. `NOTICE` の要否と草案を `pnpm run license:audit:notice` で整理する
 3. contributor identity を `pnpm run license:audit:contributors` で factual input として固定する
-4. `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を監査結果で具体化する
-5. その後に Apache-2.0 切替可否を判断する
+4. third-party / upstream notice candidate を `pnpm run license:audit:third-party` で factual input として固定する
+5. `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を監査結果で具体化する
+6. その後に Apache-2.0 切替可否を判断する
 
 ## 関連ドキュメント
 
 - `docs/project/NOTICE-READINESS-AUDIT.md`
-
 - `docs/project/CONTRIBUTOR-LICENSE-READINESS.md`
+- `docs/project/THIRD-PARTY-NOTICE-CANDIDATES-AUDIT.md`
