@@ -159,8 +159,9 @@ export function runLicenseAuditSuite({
   env = process.env,
   spawnSyncImpl = spawnSync,
 }) {
-  const plan = buildLicenseAuditSuitePlan({ rootDir, outputDir });
-  fs.mkdirSync(outputDir, { recursive: true });
+  const resolvedOutputDir = outputDir ?? path.join(rootDir, 'artifacts/reference/legal');
+  const plan = buildLicenseAuditSuitePlan({ rootDir, outputDir: resolvedOutputDir });
+  fs.mkdirSync(resolvedOutputDir, { recursive: true });
 
   for (const step of plan) {
     const result = spawnSyncImpl(process.execPath, step.args, {
@@ -171,15 +172,16 @@ export function runLicenseAuditSuite({
     if (result.status !== 0) {
       const stderr = String(result.stderr || '').trim();
       const stdout = String(result.stdout || '').trim();
+      const cause = result.error instanceof Error ? result.error.message : '';
       throw new Error(
-        `legal audit step failed (${step.key})${stderr ? `: ${stderr}` : stdout ? `: ${stdout}` : ''}`,
+        `legal audit step failed (${step.key})${stderr ? `: ${stderr}` : stdout ? `: ${stdout}` : cause ? `: ${cause}` : ''}`,
       );
     }
   }
 
   return {
     rootDir,
-    outputDir,
+    outputDir: resolvedOutputDir,
     sourceDateEpoch: env.SOURCE_DATE_EPOCH ?? null,
     steps: plan.map((step) => ({
       key: step.key,

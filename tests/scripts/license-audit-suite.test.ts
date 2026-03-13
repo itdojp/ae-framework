@@ -1,3 +1,5 @@
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import {
   buildLicenseAuditSuitePlan,
@@ -84,6 +86,19 @@ describe('license audit suite', () => {
     expect(summary.steps).toHaveLength(6);
   });
 
+  it('defaults outputDir when omitted', () => {
+    const spawnSyncImpl = vi.fn(() => ({ status: 0, stdout: '', stderr: '' }));
+    const rootDir = path.join(os.tmpdir(), 'ae-license-audit-suite-default-output');
+
+    const summary = runLicenseAuditSuite({
+      rootDir,
+      spawnSyncImpl,
+    });
+
+    expect(summary.outputDir).toBe(path.join(rootDir, 'artifacts/reference/legal'));
+    expect(spawnSyncImpl.mock.calls[0][1]).toContain('artifacts/reference/legal/license-scope-audit.json');
+  });
+
   it('fails fast when a step fails', () => {
     const spawnSyncImpl = vi
       .fn()
@@ -98,5 +113,22 @@ describe('license audit suite', () => {
         spawnSyncImpl,
       }),
     ).toThrow('legal audit step failed (conditional): boom');
+  });
+
+  it('includes spawn errors when a step cannot start', () => {
+    const spawnSyncImpl = vi.fn(() => ({
+      status: null,
+      stdout: '',
+      stderr: '',
+      error: new Error('spawn EACCES'),
+    }));
+
+    expect(() =>
+      runLicenseAuditSuite({
+        rootDir: '/repo',
+        outputDir: '/tmp/ae-license-audit-suite-tests',
+        spawnSyncImpl,
+      }),
+    ).toThrow('legal audit step failed (scope): spawn EACCES');
   });
 });
