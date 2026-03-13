@@ -187,14 +187,10 @@ export function buildThirdPartyNoticeCandidateAudit({
   };
 }
 
-const escapeTableCell = (value) =>
-  String(value ?? '')
-    .replace(/\|/g, '\\|')
-    .replace(/\r?\n/g, '<br>');
-
 const escapeHtml = (value) =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
+    .replace(/\\/g, '&#92;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
