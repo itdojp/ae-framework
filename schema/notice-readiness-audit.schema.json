@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/notice-readiness-audit.schema.json",
+  "title": "Notice Readiness Audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "inputs",
+    "evidence",
+    "readiness",
+    "proposedRootNotice"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "notice-readiness-audit/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scopeAuditPath",
+        "conditionalAuditPath",
+        "repositoryLicense",
+        "packageLicenseField",
+        "nestedNoticeFilesCount",
+        "conditionalOriginClassCounts"
+      ],
+      "properties": {
+        "scopeAuditPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conditionalAuditPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repositoryLicense": {
+          "type": ["string", "null"]
+        },
+        "packageLicenseField": {
+          "type": ["string", "null"]
+        },
+        "nestedNoticeFilesCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "conditionalOriginClassCounts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nestedNoticeFiles",
+        "unclassifiedConditionalFiles"
+      ],
+      "properties": {
+        "nestedNoticeFiles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "unclassifiedConditionalFiles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "recommendedAction",
+        "blockers",
+        "cutoverPrerequisites"
+      ],
+      "properties": {
+        "status": {
+          "enum": ["draft-ready", "needs-review"]
+        },
+        "recommendedAction": {
+          "enum": ["prepare-draft-only", "review-and-draft"]
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "reason"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "cutoverPrerequisites": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "proposedRootNotice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reviewRequired",
+        "title",
+        "lines"
+      ],
+      "properties": {
+        "status": {
+          "const": "draft-only"
+        },
+        "reviewRequired": {
+          "const": true
+        },
+        "title": {
+          "const": "ae-framework"
+        },
+        "lines": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

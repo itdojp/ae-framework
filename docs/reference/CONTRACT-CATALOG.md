@@ -87,6 +87,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 - `schema/envelope.schema.json`
 - `schema/formal-summary-v1.schema.json`
 - `schema/formal-summary-v2.schema.json`
+- `schema/notice-readiness-audit.schema.json`
 - `schema/quality-scorecard.schema.json`
 - `schema/report-envelope.schema.json`
 - `schema/spec-validation-report.schema.json`
@@ -131,6 +132,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 | `artifacts/ci/policy-gate-summary.json` | `schema/policy-gate-summary-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/validate-policy-gate-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/ci/harness-health.json` | `schema/harness-health.schema.json` | `scripts/ci/build-harness-health.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/ci-extended.yml` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/change-package/generate.mjs` |
 | `artifacts/quality/quality-scorecard.json` | `schema/quality-scorecard.schema.json` | `scripts/quality/build-quality-scorecard.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-quality-scorecard.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
+| `artifacts/reference/legal/notice-readiness-audit.json` | `schema/notice-readiness-audit.schema.json` | `scripts/legal/build-notice-readiness.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/NOTICE-READINESS-AUDIT.md`, operator/legal review before `NOTICE` cutover |
 | `artifacts/ci/automation-report.json` | `schema/automation-observability-v1.schema.json` | `scripts/ci/lib/automation-report.mjs`, `.github/workflows/codex-autopilot-lane.yml` | `scripts/ci/validate-automation-report.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/ci/pr-state-v1.json` | `schema/pr-state-v1.schema.json` | `scripts/ci/codex-autopilot-lane.mjs` | `scripts/ci/validate-json.mjs`, `docs/ci/codex-autopilot-lane.md` |
 | `artifacts/ci/execution-plan-v1.json` | `schema/execution-plan-v1.schema.json` | `scripts/ci/codex-autopilot-lane.mjs` | `scripts/ci/validate-json.mjs`, `docs/ci/codex-autopilot-lane.md` |

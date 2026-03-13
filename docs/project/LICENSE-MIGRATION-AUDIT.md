@@ -57,6 +57,10 @@ pnpm run license:audit:conditional -- \
 ## 次段階
 
 1. `artifacts/**`, `fixtures/**`, `test-cassettes/**` の由来を棚卸し
-2. `NOTICE` の要否と草案を整理する
+2. `NOTICE` の要否と草案を `pnpm run license:audit:notice` で整理する
 3. `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を監査結果で具体化する
 4. その後に Apache-2.0 切替可否を判断する
+
+## 関連ドキュメント
+
+- `docs/project/NOTICE-READINESS-AUDIT.md`
