@@ -29,6 +29,13 @@ pnpm run license:audit:approval -- \
   --output-md artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.md
 ```
 
+For the final pre-cutover run, prefer the wrapper command below so the factual audits and approval audit are regenerated from the same HEAD in one step.
+
+```bash
+SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- \
+  --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md
+```
+
 ## What it checks
 
 1. The approval record contains a valid `head SHA`.
