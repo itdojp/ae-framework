@@ -76,3 +76,4 @@ pnpm run license:audit:third-party -- \
 - `docs/project/CONTRIBUTOR-LICENSE-READINESS.md`
 - `docs/project/THIRD-PARTY-NOTICE-CANDIDATES-AUDIT.md`
 - `docs/project/APACHE-LICENSE-CUTOVER-PLAYBOOK.md`
+- `docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md`

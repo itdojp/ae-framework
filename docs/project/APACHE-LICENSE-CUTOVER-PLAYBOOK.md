@@ -71,7 +71,7 @@ SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:cutover -- --scope-audit
 
 ### 2. Freeze the legal decision inputs
 
-Review the generated Markdown reports and record explicit human approval for:
+Review the generated Markdown reports and record explicit human approval in `docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md` for:
 
 - contributor/relicensing authority
 - root `NOTICE` text
@@ -124,4 +124,5 @@ If the cutover PR is merged and must be reverted, revert the full cutover change
 
 - `README.md` and `CONTRIBUTING.md` should only change in the actual cutover PR, not earlier. Their wording is part of the externally visible license statement.
 - `NOTICE` should not be added before the cutover PR. The approved draft can exist in `docs/project/NOTICE-READINESS-AUDIT.md`, but the root file should only appear when the license switch is executed.
+- Human sign-off should be captured in `docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md` before the cutover PR is opened.
 - This playbook does not decide legal feasibility. It only fixes the execution procedure once approvals exist.
