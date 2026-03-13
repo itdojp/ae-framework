@@ -30,6 +30,12 @@ pnpm run license:audit:scope -- \
 
 `SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると、`generatedAt` を固定して再現可能な snapshot を得る。
 
+```bash
+pnpm run license:audit:conditional -- \
+  --output-json artifacts/reference/legal/conditional-asset-audit.json \
+  --output-md artifacts/reference/legal/conditional-asset-audit.md
+```
+
 ## 監査観点
 
 1. tracked file を以下に分類する
