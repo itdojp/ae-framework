@@ -92,6 +92,7 @@
     "license:audit:conditional": "node scripts/legal/inventory-conditional-assets.mjs",
     "license:audit:notice": "node scripts/legal/build-notice-readiness.mjs",
     "license:audit:contributors": "node scripts/legal/build-contributor-license-readiness.mjs",
+    "license:audit:third-party": "node scripts/legal/build-third-party-notice-candidate-audit.mjs",
     "quality:scorecard:v1": "node scripts/quality/build-quality-scorecard.mjs",
     "quality:scorecard:validate": "node scripts/ci/validate-quality-scorecard.mjs",
     "context-pack:validate": "node scripts/context-pack/validate.mjs",

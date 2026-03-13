@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/third-party-notice-candidate-audit.schema.json",
+  "title": "Third-Party Notice Candidate Audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "inputs",
+    "summary",
+    "evidence",
+    "review"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "third-party-notice-candidate-audit/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trackedFilesScanned",
+        "vendorLikeSegments",
+        "nestedNoticePattern"
+      ],
+      "properties": {
+        "trackedFilesScanned": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vendorLikeSegments": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "nestedNoticePattern": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nestedNoticeFileCount",
+        "vendoredPathCount",
+        "submoduleCount",
+        "status"
+      ],
+      "properties": {
+        "nestedNoticeFileCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vendoredPathCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "submoduleCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "status": {
+          "enum": ["no-candidates", "review-required"]
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nestedNoticeFiles",
+        "vendoredPathCandidates",
+        "submodules"
+      ],
+      "properties": {
+        "nestedNoticeFiles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "vendoredPathCandidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "segment", "sampleFile"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "segment": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sampleFile": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "submodules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "url"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "url": {
+                "type": ["string", "null"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiresIndividualNoticeReview",
+        "reasons"
+      ],
+      "properties": {
+        "requiresIndividualNoticeReview": {
+          "type": "boolean"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
