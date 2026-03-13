@@ -43,6 +43,24 @@ describe('license cutover preflight', () => {
     );
   });
 
+  it('normalizes a relative outputDir against rootDir', () => {
+    const plan = buildLicenseCutoverPreflightPlan({
+      rootDir: '/repo',
+      outputDir: 'tmp/legal',
+      approvalRecord: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+    });
+
+    expect(plan.outputDir).toBe('/repo/tmp/legal');
+    expect(plan.approval.args).toEqual(
+      expect.arrayContaining([
+        '--cutover-readiness-audit',
+        'tmp/legal/apache-license-cutover-readiness-audit.json',
+        '--output-json',
+        'tmp/legal/apache-license-cutover-approval-readiness-audit.json',
+      ]),
+    );
+  });
+
   it('runs the full suite and then approval with the same environment', () => {
     const spawnSyncImpl = vi.fn(() => ({ status: 0, stdout: '', stderr: '' }));
     const runLicenseAuditSuiteImpl = vi.fn(() => ({

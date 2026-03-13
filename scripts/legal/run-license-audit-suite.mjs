@@ -70,12 +70,15 @@ export function buildLicenseAuditSuitePlan({
   rootDir,
   outputDir = path.join(rootDir, 'artifacts/reference/legal'),
 }) {
+  const resolvedOutputDir = path.isAbsolute(outputDir)
+    ? outputDir
+    : path.resolve(rootDir, outputDir);
   const outputsByKey = Object.fromEntries(
     AUDIT_STEPS.map((step) => [
       step.key,
       {
-        json: path.join(outputDir, step.outputs[0]),
-        md: path.join(outputDir, step.outputs[1]),
+        json: path.join(resolvedOutputDir, step.outputs[0]),
+        md: path.join(resolvedOutputDir, step.outputs[1]),
       },
     ]),
   );

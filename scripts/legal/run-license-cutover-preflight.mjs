@@ -19,14 +19,17 @@ export function buildLicenseCutoverPreflightPlan({
   outputDir = path.join(rootDir, 'artifacts/reference/legal'),
   approvalRecord = DEFAULT_APPROVAL_RECORD,
 }) {
+  const resolvedOutputDir = path.isAbsolute(outputDir)
+    ? outputDir
+    : path.resolve(rootDir, outputDir);
   const approvalRecordPath = path.resolve(rootDir, approvalRecord);
-  const cutoverReadinessAuditPath = path.join(outputDir, 'apache-license-cutover-readiness-audit.json');
-  const approvalAuditJsonPath = path.join(outputDir, 'apache-license-cutover-approval-readiness-audit.json');
-  const approvalAuditMdPath = path.join(outputDir, 'apache-license-cutover-approval-readiness-audit.md');
+  const cutoverReadinessAuditPath = path.join(resolvedOutputDir, 'apache-license-cutover-readiness-audit.json');
+  const approvalAuditJsonPath = path.join(resolvedOutputDir, 'apache-license-cutover-approval-readiness-audit.json');
+  const approvalAuditMdPath = path.join(resolvedOutputDir, 'apache-license-cutover-approval-readiness-audit.md');
 
   return {
     rootDir,
-    outputDir,
+    outputDir: resolvedOutputDir,
     approvalRecordPath,
     approval: {
       script: APPROVAL_SCRIPT,
