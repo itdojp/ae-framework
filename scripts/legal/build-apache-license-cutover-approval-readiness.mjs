@@ -19,6 +19,14 @@ const REQUIRED_AUDIT_KEYS = [
   ['cutoverReadinessAuditPath', 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json'],
 ];
 
+const REQUIRED_APPROVAL_ITEMS = [
+  'Contributor / relicensing authority review',
+  'Root `NOTICE` text approval',
+  'Trademark boundary review',
+  'Third-party notice review',
+  'Apache-2.0 cutover readiness audit review',
+];
+
 function readJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
@@ -63,6 +71,35 @@ function parseBulletMap(sectionText) {
   return result;
 }
 
+function splitMarkdownTableRow(line) {
+  const cells = [];
+  let current = '';
+  let escaped = false;
+
+  for (let index = 1; index < line.length - 1; index += 1) {
+    const character = line[index];
+    if (escaped) {
+      current += character;
+      escaped = false;
+      continue;
+    }
+    if (character === '\\') {
+      escaped = true;
+      current += character;
+      continue;
+    }
+    if (character === '|') {
+      cells.push(stripInlineFormatting(current));
+      current = '';
+      continue;
+    }
+    current += character;
+  }
+
+  cells.push(stripInlineFormatting(current));
+  return cells;
+}
+
 function parseApprovalTable(sectionText) {
   const lines = sectionText
     .split('\n')
@@ -71,16 +108,15 @@ function parseApprovalTable(sectionText) {
   const rows = [];
   for (const line of lines) {
     if (/^\|\s*-+\s*\|/u.test(line)) continue;
-    const cells = line
-      .split('|')
-      .slice(1, -1)
-      .map((cell) => stripInlineFormatting(cell));
-    if (cells.length !== 5) continue;
+    const cells = splitMarkdownTableRow(line);
     if (cells[0] === 'Item' && cells[1] === 'Required reviewer / owner') continue;
+    if (cells.length !== 5) {
+      throw new Error(`approval table row is malformed: ${line}`);
+    }
     rows.push({
       item: cells[0],
       requiredReviewer: cells[1],
-      decision: cells[2],
+      decision: cells[2] || 'pending',
       date: cells[3] || null,
       evidenceNote: cells[4] || null,
     });
@@ -133,12 +169,13 @@ export function parseApprovalRecord(markdown) {
     normalizedDecision: normalizeDecision(item.decision, `approval row ${item.item}`),
   }));
   const decisionRecordRaw = parseBulletMap(getSection(markdown, 'Decision Record'));
+  const approvedForCutoverRaw = decisionRecordRaw['approved for cutover'] ?? decisionRecordRaw['approved for cutover PR'];
   return {
     auditBaseline,
     approvalItems,
     decisionRecord: {
       overallDecision: normalizeDecision(decisionRecordRaw['overall decision'], 'overall decision'),
-      approvedForCutover: normalizeBooleanLike(decisionRecordRaw['approved for cutover'], 'approved for cutover'),
+      approvedForCutover: normalizeBooleanLike(approvedForCutoverRaw, 'approved for cutover'),
       decisionDate: stripInlineFormatting(decisionRecordRaw['decision date']) || null,
       approvingOwner: stripInlineFormatting(decisionRecordRaw['approving owner']) || null,
       legalReviewer: stripInlineFormatting(decisionRecordRaw['legal reviewer']) || null,
@@ -162,7 +199,7 @@ export function buildApacheLicenseCutoverApprovalReadinessAudit({
     const value = stripInlineFormatting(approvalRecord.auditBaseline[label]);
     if (!value) {
       addBlocker(blockers, 'missing-audit-path', `${label} is missing from the approval record.`);
-      auditArtifactPaths[key] = '';
+      auditArtifactPaths[key] = null;
     } else {
       auditArtifactPaths[key] = value;
     }
@@ -181,9 +218,14 @@ export function buildApacheLicenseCutoverApprovalReadinessAudit({
   const rejectedItems = approvalRecord.approvalItems
     .filter((item) => item.normalizedDecision === 'rejected')
     .map((item) => item.item);
+  const presentApprovalItems = new Set(approvalRecord.approvalItems.map((item) => item.item));
+  const missingRequiredItems = REQUIRED_APPROVAL_ITEMS.filter((item) => !presentApprovalItems.has(item));
 
   if (rejectedItems.length > 0) {
     addBlocker(blockers, 'approval-rejected', `${rejectedItems.length} approval items are rejected.`);
+  }
+  if (missingRequiredItems.length > 0) {
+    addBlocker(blockers, 'missing-required-approval-items', `${missingRequiredItems.length} required approval items are missing from the record.`);
   }
   if (approvalRecord.decisionRecord.overallDecision === 'rejected') {
     addBlocker(blockers, 'overall-decision-rejected', 'overall decision is rejected.');
@@ -234,11 +276,11 @@ export function buildApacheLicenseCutoverApprovalReadinessAudit({
       auditArtifactPaths,
     },
     summary: {
-      requiredApprovalCount: approvalRecord.approvalItems.length,
+      requiredApprovalCount: REQUIRED_APPROVAL_ITEMS.length,
       approvedCount: approvedItems.length,
       pendingCount: pendingItems.length,
       rejectedCount: rejectedItems.length,
-      missingAuditPathCount: Object.values(auditArtifactPaths).filter((value) => value.length === 0).length,
+      missingAuditPathCount: Object.values(auditArtifactPaths).filter((value) => value == null).length,
       blockerCount: blockers.length,
     },
     approvalItems: approvalRecord.approvalItems,

@@ -57,7 +57,7 @@ Do not open or merge the actual cutover PR while any of the following remain tru
 ## Decision Record
 
 - overall decision: pending
-- approved for cutover PR: no
+- approved for cutover: no
 - decision date:
 - approving owner:
 - legal reviewer:
