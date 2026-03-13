@@ -7,7 +7,7 @@ import {
 describe('notice readiness audit', () => {
   const baseScopeAudit = {
     repositoryLicense: 'MIT License',
-    packageLicenseField: null,
+    packageLicenseField: 'MIT',
     nestedNoticeFiles: [],
   };
 
@@ -84,7 +84,7 @@ describe('notice readiness audit', () => {
         scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
         conditionalAuditPath: 'artifacts/reference/legal/conditional-asset-audit.json',
         repositoryLicense: 'MIT License',
-        packageLicenseField: null,
+        packageLicenseField: 'MIT',
         nestedNoticeFilesCount: 1,
         conditionalOriginClassCounts: {
           'runtime-output-or-unclassified': 1,

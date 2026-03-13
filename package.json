@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "AI-Agent Enabled Framework with TDD enforcement",
   "private": false,
+  "license": "MIT",
   "type": "module",
   "types": "dist/src/index.d.ts",
   "bin": {

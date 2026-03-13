@@ -38,14 +38,14 @@ describe('license scope inventory helpers', () => {
         'vendor/LICENSE-MIT',
       ],
       shortlogText: '  10 Alice <alice@example.com>\n  2 Bob <bob@example.com>\n',
-      packageJson: { license: null },
+      packageJson: { license: 'MIT' },
       rootLicenseText: 'MIT License\n\nCopyright (c) 2024 itdojp\n',
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
     expect(audit.generatedAt).toBe('2026-03-13T00:00:00.000Z');
     expect(audit.repositoryLicense).toBe('MIT License');
-    expect(audit.packageLicenseField).toBeNull();
+    expect(audit.packageLicenseField).toBe('MIT');
     expect(audit.trackedFilesSummary.total).toBe(8);
     expect(audit.trackedFilesSummary.firstPartyRoot).toBe(1);
     expect(audit.trackedFilesSummary.firstParty).toBe(1);
@@ -68,7 +68,7 @@ describe('license scope inventory helpers', () => {
     const markdown = buildMarkdownReport({
       generatedAt: '2026-03-13T00:00:00.000Z',
       repositoryLicense: 'MIT License',
-      packageLicenseField: null,
+      packageLicenseField: 'MIT',
       trackedFilesSummary: {
         total: 7,
         firstParty: 1,
