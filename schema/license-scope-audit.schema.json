@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/license-scope-audit.schema.json",
+  "title": "License Scope Audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "gitHeadSha",
+    "repositoryLicense",
+    "packageLicenseField",
+    "contributorInventory",
+    "trackedFilesSummary",
+    "conditionalBreakdown",
+    "nestedNoticeFiles",
+    "otherTrackedFiles"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "license-scope-audit/v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "gitHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "repositoryLicense": { "type": ["string", "null"] },
+    "packageLicenseField": { "type": ["string", "null"] },
+    "contributorInventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["commits", "author"],
+        "properties": {
+          "commits": { "type": "integer", "minimum": 0 },
+          "author": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "trackedFilesSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "firstParty", "firstPartyRoot", "legalRoot", "conditional", "other"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "firstParty": { "type": "integer", "minimum": 0 },
+        "firstPartyRoot": { "type": "integer", "minimum": 0 },
+        "legalRoot": { "type": "integer", "minimum": 0 },
+        "conditional": { "type": "integer", "minimum": 0 },
+        "other": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "conditionalBreakdown": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifacts", "fixtures", "test-cassettes"],
+      "properties": {
+        "artifacts": { "type": "integer", "minimum": 0 },
+        "fixtures": { "type": "integer", "minimum": 0 },
+        "test-cassettes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "nestedNoticeFiles": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "otherTrackedFiles": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

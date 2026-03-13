@@ -6,12 +6,14 @@ import {
 
 describe('notice readiness audit', () => {
   const baseScopeAudit = {
+    gitHeadSha: '1111111111111111111111111111111111111111',
     repositoryLicense: 'MIT License',
     packageLicenseField: 'MIT',
     nestedNoticeFiles: [],
   };
 
   const baseConditionalAudit = {
+    gitHeadSha: '1111111111111111111111111111111111111111',
     summary: {
       byOriginClass: {
         'committed-contract-artifact': 2,
@@ -33,12 +35,41 @@ describe('notice readiness audit', () => {
       conditionalAudit: baseConditionalAudit,
       scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
       conditionalAuditPath: 'artifacts/reference/legal/conditional-asset-audit.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
     expect(audit.readiness.status).toBe('draft-ready');
+    expect(audit.gitHeadSha).toBe('1111111111111111111111111111111111111111');
     expect(audit.readiness.blockers).toHaveLength(0);
     expect(audit.proposedRootNotice.lines[0]).toBe('ae-framework');
+  });
+
+  it('rejects mismatched input gitHeadSha values', () => {
+    expect(() =>
+      buildNoticeReadinessAudit({
+        scopeAudit: baseScopeAudit,
+        conditionalAudit: {
+          ...baseConditionalAudit,
+          gitHeadSha: '2222222222222222222222222222222222222222',
+        },
+        scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
+        conditionalAuditPath: 'artifacts/reference/legal/conditional-asset-audit.json',
+        generatedAt: '2026-03-13T00:00:00.000Z',
+      }),
+    ).toThrow('scope and conditional audits must share the same gitHeadSha');
+  });
+
+  it('rejects missing input gitHeadSha values', () => {
+    expect(() =>
+      buildNoticeReadinessAudit({
+        scopeAudit: { ...baseScopeAudit, gitHeadSha: null },
+        conditionalAudit: baseConditionalAudit,
+        scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
+        conditionalAuditPath: 'artifacts/reference/legal/conditional-asset-audit.json',
+        generatedAt: '2026-03-13T00:00:00.000Z',
+      }),
+    ).toThrow('scope audit gitHeadSha is required');
   });
 
   it('adds blockers for nested notices and unclassified conditional assets', () => {
@@ -48,6 +79,7 @@ describe('notice readiness audit', () => {
         nestedNoticeFiles: ['vendor/NOTICE.txt'],
       },
       conditionalAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
         summary: {
           byOriginClass: {
             'runtime-output-or-unclassified': 1,
@@ -62,6 +94,7 @@ describe('notice readiness audit', () => {
       },
       scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
       conditionalAuditPath: 'artifacts/reference/legal/conditional-asset-audit.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
@@ -80,6 +113,7 @@ describe('notice readiness audit', () => {
     const markdown = renderMarkdownReport({
       schemaVersion: 'notice-readiness-audit/v1',
       generatedAt: '2026-03-13T00:00:00.000Z',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       inputs: {
         scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
         conditionalAuditPath: 'artifacts/reference/legal/conditional-asset-audit.json',
@@ -118,6 +152,7 @@ describe('notice readiness audit', () => {
     });
 
     expect(markdown).toContain('# Notice Readiness Audit');
+    expect(markdown).toContain('- gitHeadSha: 1111111111111111111111111111111111111111');
     expect(markdown).toContain('| Nested notice file |');
     expect(markdown).toContain('`artifacts/tmp/a\\|b.json`');
     expect(markdown).toContain('## Proposed root NOTICE draft');

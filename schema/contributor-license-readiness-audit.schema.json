@@ -7,6 +7,7 @@
   "required": [
     "schemaVersion",
     "generatedAt",
+    "gitHeadSha",
     "inputs",
     "summary",
     "contributors",
@@ -15,6 +16,7 @@
   "properties": {
     "schemaVersion": { "const": "contributor-license-readiness-audit/v1" },
     "generatedAt": { "type": "string", "format": "date-time" },
+    "gitHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "inputs": {
       "type": "object",
       "additionalProperties": false,

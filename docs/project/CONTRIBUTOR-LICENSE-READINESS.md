@@ -27,7 +27,7 @@ pnpm run license:audit:contributors -- \
   --output-md artifacts/reference/legal/contributor-license-readiness-audit.md
 ```
 
-`SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると `generatedAt` を固定できる。
+`SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると `generatedAt` を固定できる。出力 JSON / Markdown には `gitHeadSha` も含まれ、scope audit と同一 head かを比較できる。
 
 ## 出力の見方
 

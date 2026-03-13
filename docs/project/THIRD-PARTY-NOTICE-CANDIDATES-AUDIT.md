@@ -19,6 +19,8 @@ verificationCommand: pnpm run license:audit:third-party -- --output-json artifac
 - JSON: `artifacts/reference/legal/third-party-notice-candidate-audit.json`
 - Markdown: `artifacts/reference/legal/third-party-notice-candidate-audit.md`
 
+両方の出力には `gitHeadSha` が含まれ、third-party candidate 棚卸しの baseline SHA を固定できる。
+
 ## What the audit checks
 
 - nested `LICENSE` / `NOTICE` / `COPYING` 候補

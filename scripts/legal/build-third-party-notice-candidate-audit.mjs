@@ -5,7 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { resolveGeneratedAt } from './inventory-license-scope.mjs';
+import { normalizeRequiredGitHeadSha, resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
 import { CONDITIONAL_PREFIXES } from './inventory-conditional-assets.mjs';
 
 export const VENDOR_LIKE_SEGMENTS = [
@@ -145,6 +145,7 @@ export function listSubmodules(rootDir) {
 export function buildThirdPartyNoticeCandidateAudit({
   trackedFiles,
   submodules,
+  gitHeadSha,
   generatedAt = new Date().toISOString(),
 }) {
   const nestedNoticeFiles = trackedFiles.filter(isNestedNoticeCandidate);
@@ -164,6 +165,7 @@ export function buildThirdPartyNoticeCandidateAudit({
   return {
     schemaVersion: 'third-party-notice-candidate-audit/v1',
     generatedAt,
+    gitHeadSha: normalizeRequiredGitHeadSha(gitHeadSha),
     inputs: {
       trackedFilesScanned: trackedFiles.length,
       vendorLikeSegments: [...VENDOR_LIKE_SEGMENTS],
@@ -202,6 +204,7 @@ export function renderMarkdownReport(audit) {
     '# Third-Party Notice Candidate Audit',
     '',
     `- generatedAt: ${audit.generatedAt}`,
+    `- gitHeadSha: ${audit.gitHeadSha ?? 'missing'}`,
     `- tracked files scanned: ${audit.inputs.trackedFilesScanned}`,
     `- status: ${audit.summary.status}`,
     '',
@@ -314,6 +317,7 @@ export function run(argv = process.argv) {
   const audit = buildThirdPartyNoticeCandidateAudit({
     trackedFiles: listTrackedFiles(rootDir),
     submodules: listSubmodules(rootDir),
+    gitHeadSha: resolveGitHeadSha(rootDir),
     generatedAt: resolveGeneratedAt(),
   });
 

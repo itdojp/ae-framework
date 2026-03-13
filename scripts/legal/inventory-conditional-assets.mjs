@@ -5,6 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { normalizeRequiredGitHeadSha, resolveGitHeadSha } from './inventory-license-scope.mjs';
 
 export const CONDITIONAL_PREFIXES = ['artifacts/', 'fixtures/', 'test-cassettes/'];
 export const NOTICE_BASENAMES = ['LICENSE', 'NOTICE', 'COPYING'];
@@ -97,8 +98,21 @@ function summarizeBy(items, selector) {
   }, {});
 }
 
+function buildScopeSummary(items) {
+  const counts = {
+    artifacts: 0,
+    fixtures: 0,
+    'test-cassettes': 0,
+  };
+  for (const item of items) {
+    counts[item.scope] += 1;
+  }
+  return counts;
+}
+
 export function buildConditionalAssetAudit({
   trackedFiles,
+  gitHeadSha,
   generatedAt = new Date().toISOString(),
 }) {
   const items = trackedFiles.map((filePath) => {
@@ -115,9 +129,10 @@ export function buildConditionalAssetAudit({
   return {
     schemaVersion: 'conditional-asset-audit/v1',
     generatedAt,
+    gitHeadSha: normalizeRequiredGitHeadSha(gitHeadSha),
     summary: {
       total: items.length,
-      byScope: summarizeBy(items, (item) => item.scope),
+      byScope: buildScopeSummary(items),
       byOriginClass: summarizeBy(items, (item) => item.originClass),
       nestedNoticeFiles: items.filter((item) => item.nestedNotice).length,
     },
@@ -150,6 +165,7 @@ export function renderMarkdownReport(audit) {
     '# Conditional Asset Provenance Audit',
     '',
     `- generatedAt: ${audit.generatedAt}`,
+    `- gitHeadSha: ${audit.gitHeadSha ?? 'missing'}`,
     `- total: ${audit.summary.total}`,
     '',
     '## By scope',
@@ -254,6 +270,7 @@ export function run(argv = process.argv) {
   const rootDir = path.resolve(options.root);
   const audit = buildConditionalAssetAudit({
     trackedFiles: listConditionalTrackedFiles(rootDir),
+    gitHeadSha: resolveGitHeadSha(rootDir),
     generatedAt: resolveGeneratedAt(),
   });
 

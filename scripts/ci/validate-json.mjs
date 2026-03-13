@@ -247,6 +247,16 @@ const checks = [
     label: 'Formal summary v2 schema validation'
   },
   {
+    schema: 'schema/license-scope-audit.schema.json',
+    fixtures: ['fixtures/legal/sample.license-scope-audit.json'],
+    label: 'License scope audit schema validation'
+  },
+  {
+    schema: 'schema/conditional-asset-audit.schema.json',
+    fixtures: ['fixtures/legal/sample.conditional-asset-audit.json'],
+    label: 'Conditional asset audit schema validation'
+  },
+  {
     schema: 'schema/notice-readiness-audit.schema.json',
     fixtures: ['fixtures/legal/sample.notice-readiness-audit.json'],
     label: 'Notice readiness audit schema validation'
@@ -260,6 +270,11 @@ const checks = [
     schema: 'schema/third-party-notice-candidate-audit.schema.json',
     fixtures: ['fixtures/legal/sample.third-party-notice-candidate-audit.json'],
     label: 'Third-party notice candidate audit schema validation'
+  },
+  {
+    schema: 'schema/apache-license-cutover-readiness-audit.schema.json',
+    fixtures: ['fixtures/legal/sample.apache-license-cutover-readiness-audit.json'],
+    label: 'Apache license cutover readiness audit schema validation'
   }
 ];
 

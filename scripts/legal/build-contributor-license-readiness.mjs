@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { resolveGeneratedAt } from './inventory-license-scope.mjs';
+import { normalizeRequiredGitHeadSha, resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
 
 function readJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -29,6 +29,7 @@ function usesNoreply(author) {
 export function buildContributorLicenseReadinessAudit({
   scopeAudit,
   scopeAuditPath,
+  gitHeadSha,
   generatedAt = new Date().toISOString(),
 }) {
   const contributorInventory = Array.isArray(scopeAudit.contributorInventory)
@@ -50,6 +51,14 @@ export function buildContributorLicenseReadinessAudit({
   return {
     schemaVersion: 'contributor-license-readiness-audit/v1',
     generatedAt,
+    gitHeadSha: (() => {
+      const scopeGitHeadSha = normalizeRequiredGitHeadSha(scopeAudit?.gitHeadSha, 'scope audit gitHeadSha');
+      const currentGitHeadSha = gitHeadSha == null ? null : normalizeRequiredGitHeadSha(gitHeadSha, 'repository HEAD');
+      if (currentGitHeadSha && scopeGitHeadSha !== currentGitHeadSha) {
+        throw new Error('scope audit gitHeadSha does not match the current repository HEAD');
+      }
+      return currentGitHeadSha ?? scopeGitHeadSha;
+    })(),
     inputs: {
       scopeAuditPath,
       repositoryLicense: scopeAudit.repositoryLicense ?? null,
@@ -89,6 +98,7 @@ export function renderMarkdownReport(audit) {
     '# Contributor License Readiness Audit',
     '',
     `- generatedAt: ${audit.generatedAt}`,
+    `- gitHeadSha: ${audit.gitHeadSha ?? 'missing'}`,
     `- repository license: ${audit.inputs.repositoryLicense ?? 'missing'}`,
     `- package.json license: ${audit.inputs.packageLicenseField ?? 'missing'}`,
     `- contributor count: ${audit.inputs.contributorCount}`,
@@ -192,6 +202,7 @@ export function run(argv = process.argv) {
   const audit = buildContributorLicenseReadinessAudit({
     scopeAudit: readJsonFile(scopeAuditPath),
     scopeAuditPath: path.relative(rootDir, scopeAuditPath).replace(/\\/g, '/'),
+    gitHeadSha: resolveGitHeadSha(rootDir),
     generatedAt: resolveGeneratedAt(),
   });
 

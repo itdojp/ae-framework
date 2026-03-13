@@ -28,7 +28,7 @@ pnpm run license:audit:scope -- \
   --output-md artifacts/reference/legal/license-scope-audit.md
 ```
 
-`SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると、`generatedAt` を固定して再現可能な snapshot を得る。
+`SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると、`generatedAt` を固定して再現可能な snapshot を得る。各 legal audit artifact は `gitHeadSha` も出力するため、同一 head で生成した監査結果だけを比較対象にできる。
 
 ```bash
 pnpm run license:audit:conditional -- \
@@ -53,6 +53,7 @@ pnpm run license:audit:third-party -- \
 3. `git shortlog -sne --all` から contributor inventory を生成する
 4. root `LICENSE` と `package.json` の現行値を記録する
 5. tracked nested legal file / vendored path / submodule の有無を deterministic に列挙する
+6. 以降の notice / contributor / cutover readiness 監査では、入力 audit の `gitHeadSha` が一致していることを前提条件にする
 
 ## 第一スライスの判断
 

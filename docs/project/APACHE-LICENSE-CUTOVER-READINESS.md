@@ -30,7 +30,7 @@ pnpm run license:audit:cutover -- \
   --output-md artifacts/reference/legal/apache-license-cutover-readiness-audit.md
 ```
 
-`SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると `generatedAt` を固定できる。
+`SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると `generatedAt` を固定できる。入力 audit の `gitHeadSha` が一致しない場合、この監査は fail-fast する。
 
 ## 判定規則
 
