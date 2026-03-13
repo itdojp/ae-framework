@@ -16,6 +16,7 @@ describe('third-party notice candidate audit', () => {
     expect(isNestedNoticeCandidate('src/vendor/LICENSE-MIT')).toBe(true);
     expect(isNestedNoticeCandidate('docs/project/LICENSE-MIGRATION-AUDIT.md')).toBe(false);
     expect(isNestedNoticeCandidate('artifacts/reference/legal/LICENSE-THIRD-PARTY.txt')).toBe(false);
+    expect(isNestedNoticeCandidate('test-cassettes/provider/LICENSE.txt')).toBe(false);
   });
 
   it('collects vendored path candidates by exact segment', () => {
@@ -77,7 +78,8 @@ describe('third-party notice candidate audit', () => {
       },
     });
 
-    expect(markdown).toContain('`src/vendor/a\\|b.ts`');
+    expect(markdown).toContain('<code>src/vendor/a|b.ts</code>');
+    expect(markdown).toContain('<code>src/vendor</code>');
   });
 
   it('lists submodules from .gitmodules', () => {
@@ -92,6 +94,17 @@ describe('third-party notice candidate audit', () => {
       expect(listSubmodules(root)).toEqual([
         { path: 'vendor/example', url: 'https://example.com/repo.git' },
       ]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('fails when .gitmodules exists but cannot be parsed', () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'ae-third-party-submodule-invalid-'));
+    try {
+      execFileSync('git', ['init'], { cwd: root, stdio: 'ignore' });
+      writeFileSync(path.join(root, '.gitmodules'), '[submodule "vendor/example"\n\tpath = vendor/example\n');
+      expect(() => listSubmodules(root)).toThrow();
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
