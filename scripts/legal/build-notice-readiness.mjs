@@ -17,15 +17,6 @@ function ensureStringArray(value, label) {
   return value;
 }
 
-function getOriginClassCount(summary, key) {
-  const counts = summary?.byOriginClass;
-  if (!counts || typeof counts !== 'object') {
-    return 0;
-  }
-  const value = counts[key];
-  return Number.isInteger(value) && value >= 0 ? value : 0;
-}
-
 function buildDraftNoticeLines() {
   return [
     'ae-framework',
