@@ -34,7 +34,6 @@
         "repositoryLicense",
         "packageLicenseField",
         "nestedNoticeFilesCount",
-        "ignoredNestedNoticeFilesCount",
         "conditionalOriginClassCounts"
       ],
       "properties": {
@@ -74,7 +73,6 @@
       "additionalProperties": false,
       "required": [
         "nestedNoticeFiles",
-        "ignoredNestedNoticeFiles",
         "unclassifiedConditionalFiles"
       ],
       "properties": {

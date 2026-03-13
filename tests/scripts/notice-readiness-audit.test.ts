@@ -144,6 +144,36 @@ describe('notice readiness audit', () => {
     ]);
   });
 
+  it('stays draft-ready when nested notice files are ignored first-party paths only', () => {
+    const audit = buildNoticeReadinessAudit({
+      scopeAudit: {
+        ...baseScopeAudit,
+        nestedNoticeFiles: [
+          'docs/project/LICENSE-MIGRATION-AUDIT.md',
+          'schema/notice-readiness-audit.schema.json',
+          'tests/contracts/notice-readiness-audit-contract.test.ts',
+          'fixtures/legal/LICENSE-fixture.txt',
+        ],
+      },
+      conditionalAudit: baseConditionalAudit,
+      scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
+      conditionalAuditPath: 'artifacts/reference/legal/conditional-asset-audit.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    });
+
+    expect(audit.readiness.status).toBe('draft-ready');
+    expect(audit.inputs.nestedNoticeFilesCount).toBe(0);
+    expect(audit.inputs.ignoredNestedNoticeFilesCount).toBeGreaterThan(0);
+    expect(audit.evidence.nestedNoticeFiles).toEqual([]);
+    expect(audit.evidence.ignoredNestedNoticeFiles).toEqual([
+      'docs/project/LICENSE-MIGRATION-AUDIT.md',
+      'schema/notice-readiness-audit.schema.json',
+      'tests/contracts/notice-readiness-audit-contract.test.ts',
+      'fixtures/legal/LICENSE-fixture.txt',
+    ]);
+  });
+
   it('renders markdown with draft NOTICE and evidence tables', () => {
     const markdown = renderMarkdownReport({
       schemaVersion: 'notice-readiness-audit/v1',

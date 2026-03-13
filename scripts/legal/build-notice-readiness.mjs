@@ -4,7 +4,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { normalizeRequiredGitHeadSha, resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
+import {
+  CONDITIONAL_PREFIXES,
+  FIRST_PARTY_PREFIXES,
+  normalizeRequiredGitHeadSha,
+  resolveGeneratedAt,
+  resolveGitHeadSha,
+} from './inventory-license-scope.mjs';
 
 function readJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -26,12 +32,9 @@ function buildDraftNoticeLines() {
 }
 
 const NON_REVIEW_RELEVANT_NESTED_NOTICE_PREFIXES = [
-  'docs/',
-  'tests/',
-  'schema/',
-  'fixtures/',
-  'test-cassettes/',
-  'artifacts/',
+  ...FIRST_PARTY_PREFIXES.filter((prefix) => prefix === 'schema/' || prefix === 'tests/'),
+  'docs/project/',
+  `${CONDITIONAL_PREFIXES.find((prefix) => prefix === 'fixtures/') ?? 'fixtures/'}legal/`,
 ];
 
 function isReviewRelevantNestedNoticeFile(filePath) {
