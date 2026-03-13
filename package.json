@@ -91,6 +91,8 @@
     "license:audit:scope": "node scripts/legal/inventory-license-scope.mjs",
     "license:audit:conditional": "node scripts/legal/inventory-conditional-assets.mjs",
     "license:audit:notice": "node scripts/legal/build-notice-readiness.mjs",
+    "license:audit:contributors": "node scripts/legal/build-contributor-license-readiness.mjs",
+    "license:audit:cutover": "node scripts/legal/build-apache-license-cutover-readiness.mjs",
     "quality:scorecard:v1": "node scripts/quality/build-quality-scorecard.mjs",
     "quality:scorecard:validate": "node scripts/ci/validate-quality-scorecard.mjs",
     "context-pack:validate": "node scripts/context-pack/validate.mjs",
