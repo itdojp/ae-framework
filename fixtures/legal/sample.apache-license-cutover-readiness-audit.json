@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "apache-license-cutover-readiness-audit/v1",
+  "generatedAt": "2026-03-13T00:00:00.000Z",
+  "inputs": {
+    "scopeAuditPath": "artifacts/reference/legal/license-scope-audit.json",
+    "conditionalAuditPath": "artifacts/reference/legal/conditional-asset-audit.json",
+    "noticeReadinessAuditPath": "artifacts/reference/legal/notice-readiness-audit.json",
+    "contributorReadinessAuditPath": "artifacts/reference/legal/contributor-license-readiness-audit.json",
+    "repositoryLicense": "MIT License",
+    "packageLicenseField": "MIT"
+  },
+  "summary": {
+    "blockerCount": 0,
+    "humanReviewRequired": true,
+    "nestedNoticeFilesCount": 0,
+    "unclassifiedConditionalFilesCount": 0,
+    "contributorHumanLikeCount": 2,
+    "contributorBotLikeCount": 1,
+    "contributorNoreplyCount": 1
+  },
+  "readiness": {
+    "status": "human-review-required",
+    "recommendedAction": "legal-review",
+    "blockers": [],
+    "humanReviewReasons": [
+      "Repo facts do not establish relicensing authority.",
+      "Contributor identities require human/legal review before relicensing approval."
+    ],
+    "cutoverPrerequisites": [
+      "Resolve any notice/provenance blockers before changing LICENSE.",
+      "Approve the relicensing decision through human/legal review.",
+      "Update root LICENSE, package.json license field, and NOTICE in the same cutover change."
+    ]
+  }
+}

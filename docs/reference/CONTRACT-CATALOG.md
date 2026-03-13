@@ -90,6 +90,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 - `schema/notice-readiness-audit.schema.json`
 - `schema/contributor-license-readiness-audit.schema.json`
 - `schema/third-party-notice-candidate-audit.schema.json`
+- `schema/apache-license-cutover-readiness-audit.schema.json`
 - `schema/quality-scorecard.schema.json`
 - `schema/report-envelope.schema.json`
 - `schema/spec-validation-report.schema.json`
@@ -137,6 +138,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 | `artifacts/reference/legal/notice-readiness-audit.json` | `schema/notice-readiness-audit.schema.json` | `scripts/legal/build-notice-readiness.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/NOTICE-READINESS-AUDIT.md`, operator/legal review before `NOTICE` cutover |
 | `artifacts/reference/legal/contributor-license-readiness-audit.json` | `schema/contributor-license-readiness-audit.schema.json` | `scripts/legal/build-contributor-license-readiness.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/CONTRIBUTOR-LICENSE-READINESS.md`, human/legal contributor review before relicensing |
 | `artifacts/reference/legal/third-party-notice-candidate-audit.json` | `schema/third-party-notice-candidate-audit.schema.json` | `scripts/legal/build-third-party-notice-candidate-audit.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/THIRD-PARTY-NOTICE-CANDIDATES-AUDIT.md`, human/legal review before third-party notice cutover |
+| `artifacts/reference/legal/apache-license-cutover-readiness-audit.json` | `schema/apache-license-cutover-readiness-audit.schema.json` | `scripts/legal/build-apache-license-cutover-readiness.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/APACHE-LICENSE-CUTOVER-READINESS.md`, final cutover readiness review before replacing `LICENSE` |
 | `artifacts/ci/automation-report.json` | `schema/automation-observability-v1.schema.json` | `scripts/ci/lib/automation-report.mjs`, `.github/workflows/codex-autopilot-lane.yml` | `scripts/ci/validate-automation-report.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/ci/pr-state-v1.json` | `schema/pr-state-v1.schema.json` | `scripts/ci/codex-autopilot-lane.mjs` | `scripts/ci/validate-json.mjs`, `docs/ci/codex-autopilot-lane.md` |
 | `artifacts/ci/execution-plan-v1.json` | `schema/execution-plan-v1.schema.json` | `scripts/ci/codex-autopilot-lane.mjs` | `scripts/ci/validate-json.mjs`, `docs/ci/codex-autopilot-lane.md` |

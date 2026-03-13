@@ -6,6 +6,7 @@ import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { resolveGeneratedAt } from './inventory-license-scope.mjs';
+import { CONDITIONAL_PREFIXES } from './inventory-conditional-assets.mjs';
 
 export const VENDOR_LIKE_SEGMENTS = [
   'vendor',
@@ -16,7 +17,7 @@ export const VENDOR_LIKE_SEGMENTS = [
   'external',
 ];
 export const NESTED_NOTICE_PATTERN = /^(LICENSE|NOTICE|COPYING)([._-].+|\.[A-Za-z0-9]+)?$/;
-export const DOC_PREFIXES = ['docs/', 'fixtures/', 'artifacts/', 'tests/'];
+export const EXCLUDED_PREFIXES = ['docs/', 'tests/', ...CONDITIONAL_PREFIXES];
 
 function normalizePath(value) {
   return String(value).replace(/\\/g, '/').replace(/^\.\/+/, '');
@@ -28,15 +29,31 @@ function compareCodePointOrder(left, right) {
   return 0;
 }
 
-function runGit(rootDir, args, { allowFailure = false } = {}) {
+function runGit(rootDir, args) {
   const result = spawnSync('git', args, {
     cwd: rootDir,
     encoding: 'utf8',
   });
-  if (result.status !== 0 && !allowFailure) {
+  if (result.status !== 0) {
     throw new Error(result.stderr?.trim() || 'git command failed');
   }
   return result;
+}
+
+function runGitAllowNoMatch(rootDir, args) {
+  const result = spawnSync('git', args, {
+    cwd: rootDir,
+    encoding: 'utf8',
+  });
+  if (result.status === 0) {
+    return result;
+  }
+  const stdout = String(result.stdout || '').trim();
+  const stderr = String(result.stderr || '').trim();
+  if (result.status === 1 && stdout === '' && stderr === '') {
+    return result;
+  }
+  throw new Error(stderr || 'git command failed');
 }
 
 export function listTrackedFiles(rootDir) {
@@ -53,7 +70,7 @@ export function isNestedNoticeCandidate(filePath) {
   if (!normalized.includes('/')) {
     return false;
   }
-  if (DOC_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+  if (EXCLUDED_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
     return false;
   }
   const baseName = path.basename(normalized);
@@ -90,15 +107,13 @@ export function listSubmodules(rootDir) {
     return [];
   }
 
-  const pathResult = runGit(
+  const pathResult = runGitAllowNoMatch(
     rootDir,
     ['config', '-f', '.gitmodules', '--get-regexp', '^submodule\..*\.path$'],
-    { allowFailure: true },
   );
-  const urlResult = runGit(
+  const urlResult = runGitAllowNoMatch(
     rootDir,
     ['config', '-f', '.gitmodules', '--get-regexp', '^submodule\..*\.url$'],
-    { allowFailure: true },
   );
 
   const urls = new Map();
@@ -152,7 +167,7 @@ export function buildThirdPartyNoticeCandidateAudit({
     inputs: {
       trackedFilesScanned: trackedFiles.length,
       vendorLikeSegments: [...VENDOR_LIKE_SEGMENTS],
-      nestedNoticePattern: '^(LICENSE|NOTICE|COPYING)([._-].+|\\.[A-Za-z0-9]+)?$',
+      nestedNoticePattern: NESTED_NOTICE_PATTERN.source,
     },
     summary: {
       nestedNoticeFileCount: nestedNoticeFiles.length,
@@ -174,12 +189,17 @@ export function buildThirdPartyNoticeCandidateAudit({
 
 const escapeTableCell = (value) =>
   String(value ?? '')
-    .replace(/\\/g, '\\\\')
-    .replace(/`/g, '\\`')
     .replace(/\|/g, '\\|')
     .replace(/\r?\n/g, '<br>');
 
-const codeCell = (value) => `\`${escapeTableCell(value)}\``;
+const escapeHtml = (value) =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+const codeCell = (value) => `<code>${escapeHtml(value).replace(/\r?\n/g, '<br>')}</code>`;
 
 export function renderMarkdownReport(audit) {
   const lines = [
