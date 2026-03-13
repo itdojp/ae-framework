@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/apache-license-cutover-approval-readiness-audit.schema.json",
+  "title": "Apache License Cutover Approval Readiness Audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "gitHeadSha",
+    "inputs",
+    "summary",
+    "approvalItems",
+    "decisionRecord",
+    "readiness"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "apache-license-cutover-approval-readiness-audit/v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "gitHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approvalRecordPath",
+        "cutoverReadinessAuditPath",
+        "approvalRecordHeadSha",
+        "cutoverReadinessGitHeadSha",
+        "auditArtifactPaths"
+      ],
+      "properties": {
+        "approvalRecordPath": { "type": "string", "minLength": 1 },
+        "cutoverReadinessAuditPath": { "type": "string", "minLength": 1 },
+        "approvalRecordHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "cutoverReadinessGitHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "auditArtifactPaths": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "licenseScopeAuditPath",
+            "conditionalAssetAuditPath",
+            "noticeReadinessAuditPath",
+            "contributorReadinessAuditPath",
+            "thirdPartyNoticeCandidateAuditPath",
+            "cutoverReadinessAuditPath"
+          ],
+          "properties": {
+            "licenseScopeAuditPath": { "type": ["string", "null"], "minLength": 1 },
+            "conditionalAssetAuditPath": { "type": ["string", "null"], "minLength": 1 },
+            "noticeReadinessAuditPath": { "type": ["string", "null"], "minLength": 1 },
+            "contributorReadinessAuditPath": { "type": ["string", "null"], "minLength": 1 },
+            "thirdPartyNoticeCandidateAuditPath": { "type": ["string", "null"], "minLength": 1 },
+            "cutoverReadinessAuditPath": { "type": ["string", "null"], "minLength": 1 }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredApprovalCount",
+        "approvedCount",
+        "pendingCount",
+        "rejectedCount",
+        "missingAuditPathCount",
+        "blockerCount"
+      ],
+      "properties": {
+        "requiredApprovalCount": { "type": "integer", "minimum": 0 },
+        "approvedCount": { "type": "integer", "minimum": 0 },
+        "pendingCount": { "type": "integer", "minimum": 0 },
+        "rejectedCount": { "type": "integer", "minimum": 0 },
+        "missingAuditPathCount": { "type": "integer", "minimum": 0 },
+        "blockerCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "approvalItems": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item", "requiredReviewer", "decision", "date", "evidenceNote", "normalizedDecision"],
+        "properties": {
+          "item": { "type": "string", "minLength": 1 },
+          "requiredReviewer": { "type": "string", "minLength": 1 },
+          "decision": { "type": "string", "minLength": 1 },
+          "date": { "type": ["string", "null"] },
+          "evidenceNote": { "type": ["string", "null"] },
+          "normalizedDecision": { "enum": ["approved", "pending", "rejected"] }
+        }
+      }
+    },
+    "decisionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "overallDecision",
+        "approvedForCutover",
+        "decisionDate",
+        "approvingOwner",
+        "legalReviewer",
+        "notes"
+      ],
+      "properties": {
+        "overallDecision": { "enum": ["approved", "pending", "rejected"] },
+        "approvedForCutover": { "type": "boolean" },
+        "decisionDate": { "type": ["string", "null"] },
+        "approvingOwner": { "type": ["string", "null"] },
+        "legalReviewer": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "recommendedAction",
+        "blockers",
+        "pendingItems",
+        "approvedItems"
+      ],
+      "properties": {
+        "status": { "enum": ["blocked", "human-review-required", "ready"] },
+        "recommendedAction": { "enum": ["resolve-record-gaps", "obtain-approvals", "open-cutover-pr"] },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "reason"],
+            "properties": {
+              "code": { "type": "string", "minLength": 1 },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "pendingItems": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "approvedItems": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

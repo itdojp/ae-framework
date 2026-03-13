@@ -31,9 +31,12 @@ This playbook covers the coordinated change set below.
 
 The cutover PR should not start until all factual audits are regenerated from the same head SHA and reviewed.
 
-### Required factual audits
+### Required factual and approval audits
 
-- `pnpm run license:audit:all`
+- Baseline audit refresh: `pnpm run license:audit:all`
+- Approval record validation: `pnpm run license:audit:approval`
+- Recommended final preflight before opening the cutover PR:
+  - `pnpm run license:audit:precutover -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md`
 
 ### Required human review
 
@@ -46,7 +49,8 @@ The cutover PR should not start until all factual audits are regenerated from th
 
 The cutover remains blocked if any of the following hold.
 
-- `apache-license-cutover-readiness-audit/v1` is not `ready`
+- `apache-license-cutover-readiness-audit/v1` is `blocked`
+- `apache-license-cutover-approval-readiness-audit/v1` is not `ready`
 - `third-party-notice-candidate-audit/v1` reports `review-required`
 - root `NOTICE` text is not approved
 - contributor/legal review is incomplete
@@ -54,6 +58,8 @@ The cutover remains blocked if any of the following hold.
 ## Execution sequence
 
 ### 1. Regenerate all factual audits from a single head SHA
+
+Use the suite command while the approval record is still being prepared.
 
 ```text
 SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:all
@@ -67,6 +73,14 @@ Review the generated Markdown reports and record explicit human approval in `doc
 - root `NOTICE` text
 - third-party notice candidates, if any
 - trademark scope
+
+Once the record is complete, run the final preflight command. It regenerates the six factual audits and then validates the approval record against the resulting cutover readiness audit.
+
+```text
+SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md
+```
+
+Use `--output-dir <path>` if the legal artifacts need to be generated into a non-default directory.
 
 ### 3. Prepare the cutover patch as one PR
 
@@ -85,7 +99,7 @@ The actual cutover PR should update the following in one changeset.
 node scripts/ci/validate-json.mjs
 pnpm -s run check:doc-consistency
 pnpm -s run check:ci-doc-index-consistency
-pnpm run license:audit:all
+SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md
 ```
 
 ### 5. Post-merge verification

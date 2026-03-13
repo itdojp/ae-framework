@@ -275,6 +275,11 @@ const checks = [
     schema: 'schema/apache-license-cutover-readiness-audit.schema.json',
     fixtures: ['fixtures/legal/sample.apache-license-cutover-readiness-audit.json'],
     label: 'Apache license cutover readiness audit schema validation'
+  },
+  {
+    schema: 'schema/apache-license-cutover-approval-readiness-audit.schema.json',
+    fixtures: ['fixtures/legal/sample.apache-license-cutover-approval-readiness-audit.json'],
+    label: 'Apache license cutover approval readiness audit schema validation'
   }
 ];
 

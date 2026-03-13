@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "apache-license-cutover-approval-readiness-audit/v1",
+  "generatedAt": "2026-03-13T00:00:00.000Z",
+  "gitHeadSha": "1111111111111111111111111111111111111111",
+  "inputs": {
+    "approvalRecordPath": "docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md",
+    "cutoverReadinessAuditPath": "artifacts/reference/legal/apache-license-cutover-readiness-audit.json",
+    "approvalRecordHeadSha": "1111111111111111111111111111111111111111",
+    "cutoverReadinessGitHeadSha": "1111111111111111111111111111111111111111",
+    "auditArtifactPaths": {
+      "licenseScopeAuditPath": "artifacts/reference/legal/license-scope-audit.json",
+      "conditionalAssetAuditPath": "artifacts/reference/legal/conditional-asset-audit.json",
+      "noticeReadinessAuditPath": "artifacts/reference/legal/notice-readiness-audit.json",
+      "contributorReadinessAuditPath": "artifacts/reference/legal/contributor-license-readiness-audit.json",
+      "thirdPartyNoticeCandidateAuditPath": "artifacts/reference/legal/third-party-notice-candidate-audit.json",
+      "cutoverReadinessAuditPath": "artifacts/reference/legal/apache-license-cutover-readiness-audit.json"
+    }
+  },
+  "summary": {
+    "requiredApprovalCount": 5,
+    "approvedCount": 5,
+    "pendingCount": 0,
+    "rejectedCount": 0,
+    "missingAuditPathCount": 0,
+    "blockerCount": 0
+  },
+  "approvalItems": [
+    {
+      "item": "Contributor / relicensing authority review",
+      "requiredReviewer": "project owner + legal reviewer",
+      "decision": "approved",
+      "date": "2026-03-13",
+      "evidenceNote": "Linked to legal memo LEG-001.",
+      "normalizedDecision": "approved"
+    },
+    {
+      "item": "Root `NOTICE` text approval",
+      "requiredReviewer": "legal reviewer",
+      "decision": "approved",
+      "date": "2026-03-13",
+      "evidenceNote": "NOTICE draft v3 approved.",
+      "normalizedDecision": "approved"
+    },
+    {
+      "item": "Trademark boundary review",
+      "requiredReviewer": "brand / trademark owner",
+      "decision": "approved",
+      "date": "2026-03-13",
+      "evidenceNote": "Trademark scope reviewed.",
+      "normalizedDecision": "approved"
+    },
+    {
+      "item": "Third-party notice review",
+      "requiredReviewer": "legal reviewer",
+      "decision": "approved",
+      "date": "2026-03-13",
+      "evidenceNote": "No third-party blockers.",
+      "normalizedDecision": "approved"
+    },
+    {
+      "item": "Apache-2.0 cutover readiness audit review",
+      "requiredReviewer": "project owner",
+      "decision": "approved",
+      "date": "2026-03-13",
+      "evidenceNote": "Cutover readiness audit status=human-review-required; approvals recorded.",
+      "normalizedDecision": "approved"
+    }
+  ],
+  "decisionRecord": {
+    "overallDecision": "approved",
+    "approvedForCutover": true,
+    "decisionDate": "2026-03-13",
+    "approvingOwner": "project-owner@example.com",
+    "legalReviewer": "legal-reviewer@example.com",
+    "notes": "Ready to open the cutover PR once NOTICE text is committed in the same change."
+  },
+  "readiness": {
+    "status": "ready",
+    "recommendedAction": "open-cutover-pr",
+    "blockers": [],
+    "pendingItems": [],
+    "approvedItems": [
+      "Contributor / relicensing authority review",
+      "Root `NOTICE` text approval",
+      "Trademark boundary review",
+      "Third-party notice review",
+      "Apache-2.0 cutover readiness audit review"
+    ]
+  }
+}

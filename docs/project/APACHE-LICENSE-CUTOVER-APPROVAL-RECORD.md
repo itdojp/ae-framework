@@ -50,14 +50,15 @@ Record the exact commit and audit artifacts reviewed for the decision.
 Do not open or merge the actual cutover PR while any of the following remain true.
 
 - any row above is still `pending`
-- `apache-license-cutover-readiness-audit/v1` is not `ready`
+- `apache-license-cutover-readiness-audit/v1` is `blocked`
+- `apache-license-cutover-approval-readiness-audit/v1` is not `ready`
 - `third-party-notice-candidate-audit/v1` is `review-required`
 - approved `NOTICE` text is not attached or linked
 
 ## Decision Record
 
 - overall decision: pending
-- approved for cutover PR: no
+- approved for cutover: no
 - decision date:
 - approving owner:
 - legal reviewer:

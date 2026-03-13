@@ -37,6 +37,15 @@ SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:all
 
 `SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると、全 audit の `generatedAt` を固定して再現可能な snapshot を得る。各 legal audit artifact は `gitHeadSha` も出力するため、同一 head で生成した監査結果だけを比較対象にできる。
 
+completed approval record が揃った後の最終 preflight は以下を使う。
+
+```bash
+SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- \
+  --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md
+```
+
+`license:audit:precutover` は `license:audit:all` を再実行した後、同じ output directory 上で `license:audit:approval` を実行する。
+
 ## 監査観点
 
 1. tracked file を以下に分類する
@@ -63,8 +72,9 @@ SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:all
 2. `NOTICE` の要否と草案を `pnpm run license:audit:all` の `notice` / `cutover` 出力で整理する
 3. contributor identity を `pnpm run license:audit:all` の `contributors` 出力で factual input として固定する
 4. third-party / upstream notice candidate を `pnpm run license:audit:all` の `third-party` 出力で factual input として固定する
-5. `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を監査結果で具体化する
-6. その後に Apache-2.0 切替可否を判断する
+5. cutover approval record の completeness を `pnpm run license:audit:approval` で機械検証し、最終 preflight は `pnpm run license:audit:precutover` で再現可能にする
+6. `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を監査結果で具体化する
+7. その後に Apache-2.0 切替可否を判断する
 
 ## 関連ドキュメント
 
@@ -73,3 +83,4 @@ SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:all
 - `docs/project/THIRD-PARTY-NOTICE-CANDIDATES-AUDIT.md`
 - `docs/project/APACHE-LICENSE-CUTOVER-PLAYBOOK.md`
 - `docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md`
+- `docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-READINESS.md`
