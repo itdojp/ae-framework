@@ -82,6 +82,35 @@ describe('third-party notice candidate audit', () => {
     expect(markdown).toContain('<code>src/vendor</code>');
   });
 
+  it('renders backslashes safely inside code cells', () => {
+    const markdown = renderMarkdownReport({
+      schemaVersion: 'third-party-notice-candidate-audit/v1',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+      inputs: {
+        trackedFilesScanned: 1,
+        vendorLikeSegments: ['vendor'],
+        nestedNoticePattern: 'pattern',
+      },
+      summary: {
+        nestedNoticeFileCount: 1,
+        vendoredPathCount: 0,
+        submoduleCount: 0,
+        status: 'review-required',
+      },
+      evidence: {
+        nestedNoticeFiles: ['vendor\\\\LICENSE'],
+        vendoredPathCandidates: [],
+        submodules: [],
+      },
+      review: {
+        requiresIndividualNoticeReview: true,
+        reasons: ['nested-legal-files-present'],
+      },
+    });
+
+    expect(markdown).toContain('<code>vendor&#92;&#92;LICENSE</code>');
+  });
+
   it('lists submodules from .gitmodules', () => {
     const root = mkdtempSync(path.join(tmpdir(), 'ae-third-party-submodule-'));
     try {
