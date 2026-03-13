@@ -62,7 +62,7 @@
       "requiredReviewer": "project owner",
       "decision": "approved",
       "date": "2026-03-13",
-      "evidenceNote": "Cutover readiness audit status=ready.",
+      "evidenceNote": "Cutover readiness audit status=human-review-required; approvals recorded.",
       "normalizedDecision": "approved"
     }
   ],

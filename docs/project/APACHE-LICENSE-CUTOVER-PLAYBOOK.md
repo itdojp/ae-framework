@@ -52,7 +52,7 @@ The cutover PR should not start until all factual audits are regenerated from th
 
 The cutover remains blocked if any of the following hold.
 
-- `apache-license-cutover-readiness-audit/v1` is not `ready`
+- `apache-license-cutover-readiness-audit/v1` is `blocked`
 - `apache-license-cutover-approval-readiness-audit/v1` is not `ready`
 - `third-party-notice-candidate-audit/v1` reports `review-required`
 - root `NOTICE` text is not approved

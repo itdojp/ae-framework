@@ -41,7 +41,7 @@ function buildApprovalRecordMarkdown({
     ['Root `NOTICE` text approval', 'legal reviewer', 'approved', '2026-03-13', 'NOTICE-v3'],
     ['Trademark boundary review', 'brand / trademark owner', 'approved', '2026-03-13', 'TM-review'],
     ['Third-party notice review', 'legal reviewer', 'approved', '2026-03-13', 'No blockers'],
-    ['Apache-2.0 cutover readiness audit review', 'project owner', 'approved', '2026-03-13', 'status=ready'],
+    ['Apache-2.0 cutover readiness audit review', 'project owner', 'approved', '2026-03-13', 'status=human-review-required; approvals recorded'],
   ],
   overallDecision = 'approved',
   approvedForCutover = 'yes',
@@ -83,14 +83,14 @@ ${decisionRows.map((row) => `| ${row.join(' | ')} |`).join('\n')}
 }
 
 describe('apache license cutover approval readiness audit', () => {
-  it('parses the approval record and builds a ready audit', () => {
+  it('parses the approval record and builds a ready audit after human approvals close the loop', () => {
     const approvalRecord = parseApprovalRecord(buildApprovalRecordMarkdown());
     const audit = buildApacheLicenseCutoverApprovalReadinessAudit({
       approvalRecord,
       approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
       cutoverReadinessAudit: {
         gitHeadSha: '1111111111111111111111111111111111111111',
-        readiness: { status: 'ready' },
+        readiness: { status: 'human-review-required' },
       },
       cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
       gitHeadSha: '1111111111111111111111111111111111111111',
@@ -100,6 +100,24 @@ describe('apache license cutover approval readiness audit', () => {
     expect(audit.readiness.status).toBe('ready');
     expect(audit.summary.approvedCount).toBe(5);
     expect(audit.summary.pendingCount).toBe(0);
+  });
+
+  it('blocks when cutover readiness still has factual blockers', () => {
+    const approvalRecord = parseApprovalRecord(buildApprovalRecordMarkdown());
+    const audit = buildApacheLicenseCutoverApprovalReadinessAudit({
+      approvalRecord,
+      approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+      cutoverReadinessAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
+        readiness: { status: 'blocked' },
+      },
+      cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    });
+
+    expect(audit.readiness.status).toBe('blocked');
+    expect(audit.readiness.blockers.map((item) => item.code)).toContain('cutover-readiness-blocked');
   });
 
   it('returns human-review-required while approvals remain pending', () => {
@@ -122,7 +140,7 @@ describe('apache license cutover approval readiness audit', () => {
       approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
       cutoverReadinessAudit: {
         gitHeadSha: '1111111111111111111111111111111111111111',
-        readiness: { status: 'ready' },
+        readiness: { status: 'human-review-required' },
       },
       cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
       gitHeadSha: '1111111111111111111111111111111111111111',
@@ -161,7 +179,7 @@ describe('apache license cutover approval readiness audit', () => {
       approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
       cutoverReadinessAudit: {
         gitHeadSha: '1111111111111111111111111111111111111111',
-        readiness: { status: 'ready' },
+        readiness: { status: 'human-review-required' },
       },
       cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
       gitHeadSha: '1111111111111111111111111111111111111111',
@@ -184,7 +202,7 @@ describe('apache license cutover approval readiness audit', () => {
       approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
       cutoverReadinessAudit: {
         gitHeadSha: '1111111111111111111111111111111111111111',
-        readiness: { status: 'ready' },
+        readiness: { status: 'human-review-required' },
       },
       cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
       gitHeadSha: '1111111111111111111111111111111111111111',
@@ -204,7 +222,7 @@ describe('apache license cutover approval readiness audit', () => {
       approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
       cutoverReadinessAudit: {
         gitHeadSha: '2222222222222222222222222222222222222222',
-        readiness: { status: 'ready' },
+        readiness: { status: 'human-review-required' },
       },
       cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
       gitHeadSha: '1111111111111111111111111111111111111111',
@@ -219,7 +237,7 @@ describe('apache license cutover approval readiness audit', () => {
       approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
       cutoverReadinessAudit: {
         gitHeadSha: '1111111111111111111111111111111111111111',
-        readiness: { status: 'ready' },
+        readiness: { status: 'human-review-required' },
       },
       cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
       gitHeadSha: '1111111111111111111111111111111111111111',
@@ -246,7 +264,7 @@ describe('apache license cutover approval readiness audit', () => {
     fs.writeFileSync(cutoverAuditPath, JSON.stringify({
       schemaVersion: 'apache-license-cutover-readiness-audit/v1',
       gitHeadSha,
-      readiness: { status: 'ready' },
+      readiness: { status: 'human-review-required' },
     }, null, 2));
 
     const exitCode = run([
