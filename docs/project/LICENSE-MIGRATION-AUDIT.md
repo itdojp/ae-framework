@@ -68,8 +68,9 @@ pnpm run license:audit:third-party -- \
 2. `NOTICE` の要否と草案を `pnpm run license:audit:notice` で整理する
 3. contributor identity を `pnpm run license:audit:contributors` で factual input として固定する
 4. third-party / upstream notice candidate を `pnpm run license:audit:third-party` で factual input として固定する
-5. `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を監査結果で具体化する
-6. その後に Apache-2.0 切替可否を判断する
+5. cutover approval record の completeness を `pnpm run license:audit:approval` で機械検証できる状態にする
+6. `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を監査結果で具体化する
+7. その後に Apache-2.0 切替可否を判断する
 
 ## 関連ドキュメント
 
@@ -78,3 +79,4 @@ pnpm run license:audit:third-party -- \
 - `docs/project/THIRD-PARTY-NOTICE-CANDIDATES-AUDIT.md`
 - `docs/project/APACHE-LICENSE-CUTOVER-PLAYBOOK.md`
 - `docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md`
+- `docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-READINESS.md`

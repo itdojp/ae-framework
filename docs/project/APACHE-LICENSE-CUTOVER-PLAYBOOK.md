@@ -31,7 +31,7 @@ This playbook covers the coordinated change set below.
 
 The cutover PR should not start until all factual audits are regenerated from the same head SHA and reviewed.
 
-### Required factual audits
+### Required factual and approval audits
 
 - `pnpm run license:audit:scope`
 - `pnpm run license:audit:conditional`
@@ -39,6 +39,7 @@ The cutover PR should not start until all factual audits are regenerated from th
 - `pnpm run license:audit:contributors`
 - `pnpm run license:audit:third-party`
 - `pnpm run license:audit:cutover`
+- `pnpm run license:audit:approval`
 
 ### Required human review
 
@@ -52,6 +53,7 @@ The cutover PR should not start until all factual audits are regenerated from th
 The cutover remains blocked if any of the following hold.
 
 - `apache-license-cutover-readiness-audit/v1` is not `ready`
+- `apache-license-cutover-approval-readiness-audit/v1` is not `ready`
 - `third-party-notice-candidate-audit/v1` reports `review-required`
 - root `NOTICE` text is not approved
 - contributor/legal review is incomplete
@@ -78,6 +80,12 @@ Review the generated Markdown reports and record explicit human approval in `doc
 - third-party notice candidates, if any
 - trademark scope
 
+Then validate the completed record against the current head SHA and the cutover readiness audit.
+
+```text
+pnpm run license:audit:approval -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md --cutover-readiness-audit artifacts/reference/legal/apache-license-cutover-readiness-audit.json --output-json artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.json --output-md artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.md
+```
+
 ### 3. Prepare the cutover patch as one PR
 
 The actual cutover PR should update the following in one changeset.
@@ -101,6 +109,7 @@ pnpm run license:audit:notice -- --scope-audit artifacts/reference/legal/license
 pnpm run license:audit:contributors -- --scope-audit artifacts/reference/legal/license-scope-audit.json --output-json artifacts/reference/legal/contributor-license-readiness-audit.json --output-md artifacts/reference/legal/contributor-license-readiness-audit.md
 pnpm run license:audit:third-party -- --output-json artifacts/reference/legal/third-party-notice-candidate-audit.json --output-md artifacts/reference/legal/third-party-notice-candidate-audit.md
 pnpm run license:audit:cutover -- --scope-audit artifacts/reference/legal/license-scope-audit.json --conditional-audit artifacts/reference/legal/conditional-asset-audit.json --notice-readiness-audit artifacts/reference/legal/notice-readiness-audit.json --contributor-readiness-audit artifacts/reference/legal/contributor-license-readiness-audit.json --output-json artifacts/reference/legal/apache-license-cutover-readiness-audit.json --output-md artifacts/reference/legal/apache-license-cutover-readiness-audit.md
+pnpm run license:audit:approval -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md --cutover-readiness-audit artifacts/reference/legal/apache-license-cutover-readiness-audit.json --output-json artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.json --output-md artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.md
 ```
 
 ### 5. Post-merge verification
