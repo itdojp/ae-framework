@@ -58,7 +58,11 @@ export function buildApacheLicenseCutoverReadinessAudit({
   const blockers = [];
   const repositoryLicense = scopeAudit.repositoryLicense ?? null;
   const packageLicenseField = scopeAudit.packageLicenseField ?? null;
-  const nestedNoticeFilesCount = Array.isArray(scopeAudit.nestedNoticeFiles) ? scopeAudit.nestedNoticeFiles.length : 0;
+  const nestedNoticeFilesCount = Number.isInteger(noticeReadinessAudit?.inputs?.nestedNoticeFilesCount)
+    ? noticeReadinessAudit.inputs.nestedNoticeFilesCount
+    : (Array.isArray(noticeReadinessAudit?.evidence?.nestedNoticeFiles)
+        ? noticeReadinessAudit.evidence.nestedNoticeFiles.length
+        : (Array.isArray(scopeAudit.nestedNoticeFiles) ? scopeAudit.nestedNoticeFiles.length : 0));
   const unclassifiedConditionalFilesFromNotice = Array.isArray(noticeReadinessAudit?.evidence?.unclassifiedConditionalFiles)
     ? noticeReadinessAudit.evidence.unclassifiedConditionalFiles.length
     : 0;

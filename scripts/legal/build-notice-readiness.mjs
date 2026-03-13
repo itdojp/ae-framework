@@ -4,7 +4,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { normalizeRequiredGitHeadSha, resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
+import {
+  CONDITIONAL_PREFIXES,
+  FIRST_PARTY_PREFIXES,
+  normalizeRequiredGitHeadSha,
+  resolveGeneratedAt,
+  resolveGitHeadSha,
+} from './inventory-license-scope.mjs';
 
 function readJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -23,6 +29,16 @@ function buildDraftNoticeLines() {
     'Copyright (c) ae-framework contributors.',
     'This product includes software developed by the ae-framework contributors.',
   ];
+}
+
+const NON_REVIEW_RELEVANT_NESTED_NOTICE_PREFIXES = [
+  ...FIRST_PARTY_PREFIXES.filter((prefix) => prefix === 'schema/' || prefix === 'tests/'),
+  'docs/project/',
+  `${CONDITIONAL_PREFIXES.find((prefix) => prefix === 'fixtures/') ?? 'fixtures/'}legal/`,
+];
+
+function isReviewRelevantNestedNoticeFile(filePath) {
+  return !NON_REVIEW_RELEVANT_NESTED_NOTICE_PREFIXES.some((prefix) => filePath.startsWith(prefix));
 }
 
 function resolveCommonGitHeadSha({ scopeAudit, conditionalAudit, gitHeadSha }) {
@@ -50,16 +66,18 @@ export function buildNoticeReadinessAudit({
   generatedAt = new Date().toISOString(),
 }) {
   const nestedNoticeFiles = ensureStringArray(scopeAudit.nestedNoticeFiles ?? [], 'nestedNoticeFiles');
+  const reviewRelevantNestedNoticeFiles = nestedNoticeFiles.filter(isReviewRelevantNestedNoticeFile);
+  const ignoredNestedNoticeFiles = nestedNoticeFiles.filter((filePath) => !isReviewRelevantNestedNoticeFile(filePath));
   const unclassifiedConditionalFiles = (conditionalAudit.items ?? [])
     .filter((item) => item?.originClass === 'runtime-output-or-unclassified')
     .map((item) => item.path)
     .filter((value) => typeof value === 'string');
 
   const blockers = [];
-  if (nestedNoticeFiles.length > 0) {
+  if (reviewRelevantNestedNoticeFiles.length > 0) {
     blockers.push({
       code: 'nested-notice-review-required',
-      reason: `${nestedNoticeFiles.length} tracked nested notice files require review before final NOTICE text is approved.`,
+      reason: `${reviewRelevantNestedNoticeFiles.length} tracked nested notice files require review before final NOTICE text is approved.`,
     });
   }
   if (unclassifiedConditionalFiles.length > 0) {
@@ -78,11 +96,13 @@ export function buildNoticeReadinessAudit({
       conditionalAuditPath,
       repositoryLicense: scopeAudit.repositoryLicense ?? null,
       packageLicenseField: scopeAudit.packageLicenseField ?? null,
-      nestedNoticeFilesCount: nestedNoticeFiles.length,
+      nestedNoticeFilesCount: reviewRelevantNestedNoticeFiles.length,
+      ignoredNestedNoticeFilesCount: ignoredNestedNoticeFiles.length,
       conditionalOriginClassCounts: conditionalAudit.summary?.byOriginClass ?? {},
     },
     evidence: {
-      nestedNoticeFiles,
+      nestedNoticeFiles: reviewRelevantNestedNoticeFiles,
+      ignoredNestedNoticeFiles,
       unclassifiedConditionalFiles,
     },
     readiness: {
@@ -128,6 +148,7 @@ export function renderMarkdownReport(audit) {
     `- scope audit: ${audit.inputs.scopeAuditPath}`,
     `- conditional audit: ${audit.inputs.conditionalAuditPath}`,
     `- nested notice files: ${audit.inputs.nestedNoticeFilesCount}`,
+    `- ignored nested notice files: ${audit.inputs.ignoredNestedNoticeFilesCount}`,
     '',
     '## Conditional origin classes',
   ];
@@ -156,6 +177,15 @@ export function renderMarkdownReport(audit) {
   } else {
     lines.push('| Nested notice file |', '| --- |');
     for (const filePath of audit.evidence.nestedNoticeFiles) {
+      lines.push(`| ${codeCell(filePath)} |`);
+    }
+  }
+
+  if (audit.evidence.ignoredNestedNoticeFiles.length === 0) {
+    lines.push('- ignoredNestedNoticeFiles: none');
+  } else {
+    lines.push('', '| Ignored nested notice file |', '| --- |');
+    for (const filePath of audit.evidence.ignoredNestedNoticeFiles) {
       lines.push(`| ${codeCell(filePath)} |`);
     }
   }

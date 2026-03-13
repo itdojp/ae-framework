@@ -16,6 +16,7 @@ verificationCommand: pnpm run license:audit:notice -- --scope-audit artifacts/re
 
 - 既存の factual audit をもとに root `NOTICE` の draft-only 文面を固定する
 - nested notice と conditional assets の review が残っているかを明示する
+- ただし、`docs/` / `tests/` / `schema/` / `fixtures/` / `artifacts/` / `test-cassettes/` 配下の first-party audit/test 文書は nested notice blocker から除外する
 - `LICENSE` 切替前に確認すべき cutover prerequisites を記録する
 
 ## 実行コマンド
@@ -32,11 +33,13 @@ pnpm run license:audit:notice -- \
 
 ## 判定規則
 
-- `nestedNoticeFiles` が 1 件でもあれば `needs-review`
+- review relevant な `nestedNoticeFiles` が 1 件でもあれば `needs-review`
 - `runtime-output-or-unclassified` が 1 件でもあれば `needs-review`
 - 上記 blocker が 0 件なら `draft-ready`
 
 `draft-ready` は root `NOTICE` をすぐ有効化できることを意味しない。`LICENSE` 差し替え前の draft-only 準備完了を意味する。
+
+監査結果には `ignoredNestedNoticeFilesCount` も含まれ、first-party audit/test 文書由来の notice-like filename が何件除外されたかを追跡できる。
 
 ## Proposed root NOTICE draft
 

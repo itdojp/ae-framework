@@ -18,10 +18,14 @@ const sampleConditionalAudit = {
 
 const sampleNoticeAudit = {
   gitHeadSha: '1111111111111111111111111111111111111111',
+  inputs: {
+    nestedNoticeFilesCount: 0,
+  },
   readiness: {
     status: 'draft-ready',
   },
   evidence: {
+    nestedNoticeFiles: [],
     unclassifiedConditionalFiles: [],
   },
 };
@@ -125,8 +129,14 @@ describe('buildApacheLicenseCutoverReadinessAudit', () => {
       conditionalAudit: sampleConditionalAudit,
       noticeReadinessAudit: {
         gitHeadSha: '1111111111111111111111111111111111111111',
+        inputs: {
+          nestedNoticeFilesCount: 1,
+        },
         readiness: { status: 'needs-review' },
-        evidence: { unclassifiedConditionalFiles: ['artifacts/foo.bin'] },
+        evidence: {
+          nestedNoticeFiles: ['vendor/NOTICE'],
+          unclassifiedConditionalFiles: ['artifacts/foo.bin'],
+        },
       },
       contributorReadinessAudit: sampleContributorAudit,
       scopeAuditPath: 'scope.json',
@@ -140,6 +150,41 @@ describe('buildApacheLicenseCutoverReadinessAudit', () => {
     expect(audit.readiness.recommendedAction).toBe('resolve-blockers');
     expect(audit.summary.blockerCount).toBeGreaterThanOrEqual(3);
     expect(audit.readiness.blockers.some((blocker) => blocker.code === 'package-license-field-not-mit')).toBe(true);
+  });
+
+  it('uses notice readiness filtered nested notice count instead of raw scope audit file names', () => {
+    const audit = buildApacheLicenseCutoverReadinessAudit({
+      scopeAudit: {
+        ...sampleScopeAudit,
+        nestedNoticeFiles: [
+          'docs/project/NOTICE-READINESS-AUDIT.md',
+          'tests/contracts/notice-readiness-audit-contract.test.ts',
+        ],
+      },
+      conditionalAudit: sampleConditionalAudit,
+      noticeReadinessAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
+        inputs: {
+          nestedNoticeFilesCount: 0,
+        },
+        readiness: { status: 'draft-ready' },
+        evidence: {
+          nestedNoticeFiles: [],
+          unclassifiedConditionalFiles: [],
+        },
+      },
+      contributorReadinessAudit: sampleContributorAudit,
+      scopeAuditPath: 'scope.json',
+      conditionalAuditPath: 'conditional.json',
+      noticeReadinessAuditPath: 'notice.json',
+      contributorReadinessAuditPath: 'contributors.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    });
+
+    expect(audit.summary.nestedNoticeFilesCount).toBe(0);
+    expect(audit.readiness.blockers.some((blocker) => blocker.code === 'nested-notice-review-required')).toBe(false);
+    expect(audit.readiness.status).toBe('human-review-required');
   });
 
   it('renders a markdown report', () => {

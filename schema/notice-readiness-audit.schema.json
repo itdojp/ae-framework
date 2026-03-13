@@ -55,6 +55,10 @@
           "type": "integer",
           "minimum": 0
         },
+        "ignoredNestedNoticeFilesCount": {
+          "type": "integer",
+          "minimum": 0
+        },
         "conditionalOriginClassCounts": {
           "type": "object",
           "additionalProperties": {
@@ -73,6 +77,13 @@
       ],
       "properties": {
         "nestedNoticeFiles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "ignoredNestedNoticeFiles": {
           "type": "array",
           "items": {
             "type": "string",
