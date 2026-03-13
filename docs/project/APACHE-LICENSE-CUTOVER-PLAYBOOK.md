@@ -33,13 +33,10 @@ The cutover PR should not start until all factual audits are regenerated from th
 
 ### Required factual and approval audits
 
-- `pnpm run license:audit:scope`
-- `pnpm run license:audit:conditional`
-- `pnpm run license:audit:notice`
-- `pnpm run license:audit:contributors`
-- `pnpm run license:audit:third-party`
-- `pnpm run license:audit:cutover`
-- `pnpm run license:audit:approval`
+- Baseline audit refresh: `pnpm run license:audit:all`
+- Approval record validation: `pnpm run license:audit:approval`
+- Recommended final preflight before opening the cutover PR:
+  - `pnpm run license:audit:precutover -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md`
 
 ### Required human review
 
@@ -62,13 +59,10 @@ The cutover remains blocked if any of the following hold.
 
 ### 1. Regenerate all factual audits from a single head SHA
 
+Use the suite command while the approval record is still being prepared.
+
 ```text
-SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:scope -- --output-json artifacts/reference/legal/license-scope-audit.json --output-md artifacts/reference/legal/license-scope-audit.md
-SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:conditional -- --output-json artifacts/reference/legal/conditional-asset-audit.json --output-md artifacts/reference/legal/conditional-asset-audit.md
-SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:notice -- --scope-audit artifacts/reference/legal/license-scope-audit.json --conditional-audit artifacts/reference/legal/conditional-asset-audit.json --output-json artifacts/reference/legal/notice-readiness-audit.json --output-md artifacts/reference/legal/notice-readiness-audit.md
-SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:contributors -- --scope-audit artifacts/reference/legal/license-scope-audit.json --output-json artifacts/reference/legal/contributor-license-readiness-audit.json --output-md artifacts/reference/legal/contributor-license-readiness-audit.md
-SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:third-party -- --output-json artifacts/reference/legal/third-party-notice-candidate-audit.json --output-md artifacts/reference/legal/third-party-notice-candidate-audit.md
-SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:cutover -- --scope-audit artifacts/reference/legal/license-scope-audit.json --conditional-audit artifacts/reference/legal/conditional-asset-audit.json --notice-readiness-audit artifacts/reference/legal/notice-readiness-audit.json --contributor-readiness-audit artifacts/reference/legal/contributor-license-readiness-audit.json --output-json artifacts/reference/legal/apache-license-cutover-readiness-audit.json --output-md artifacts/reference/legal/apache-license-cutover-readiness-audit.md
+SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:all
 ```
 
 ### 2. Freeze the legal decision inputs
@@ -80,11 +74,13 @@ Review the generated Markdown reports and record explicit human approval in `doc
 - third-party notice candidates, if any
 - trademark scope
 
-Then validate the completed record against the current head SHA and the cutover readiness audit.
+Once the record is complete, run the final preflight command. It regenerates the six factual audits and then validates the approval record against the resulting cutover readiness audit.
 
 ```text
-pnpm run license:audit:approval -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md --cutover-readiness-audit artifacts/reference/legal/apache-license-cutover-readiness-audit.json --output-json artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.json --output-md artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.md
+SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md
 ```
+
+Use `--output-dir <path>` if the legal artifacts need to be generated into a non-default directory.
 
 ### 3. Prepare the cutover patch as one PR
 
@@ -103,13 +99,7 @@ The actual cutover PR should update the following in one changeset.
 node scripts/ci/validate-json.mjs
 pnpm -s run check:doc-consistency
 pnpm -s run check:ci-doc-index-consistency
-pnpm run license:audit:scope -- --output-json artifacts/reference/legal/license-scope-audit.json --output-md artifacts/reference/legal/license-scope-audit.md
-pnpm run license:audit:conditional -- --output-json artifacts/reference/legal/conditional-asset-audit.json --output-md artifacts/reference/legal/conditional-asset-audit.md
-pnpm run license:audit:notice -- --scope-audit artifacts/reference/legal/license-scope-audit.json --conditional-audit artifacts/reference/legal/conditional-asset-audit.json --output-json artifacts/reference/legal/notice-readiness-audit.json --output-md artifacts/reference/legal/notice-readiness-audit.md
-pnpm run license:audit:contributors -- --scope-audit artifacts/reference/legal/license-scope-audit.json --output-json artifacts/reference/legal/contributor-license-readiness-audit.json --output-md artifacts/reference/legal/contributor-license-readiness-audit.md
-pnpm run license:audit:third-party -- --output-json artifacts/reference/legal/third-party-notice-candidate-audit.json --output-md artifacts/reference/legal/third-party-notice-candidate-audit.md
-pnpm run license:audit:cutover -- --scope-audit artifacts/reference/legal/license-scope-audit.json --conditional-audit artifacts/reference/legal/conditional-asset-audit.json --notice-readiness-audit artifacts/reference/legal/notice-readiness-audit.json --contributor-readiness-audit artifacts/reference/legal/contributor-license-readiness-audit.json --output-json artifacts/reference/legal/apache-license-cutover-readiness-audit.json --output-md artifacts/reference/legal/apache-license-cutover-readiness-audit.md
-pnpm run license:audit:approval -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md --cutover-readiness-audit artifacts/reference/legal/apache-license-cutover-readiness-audit.json --output-json artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.json --output-md artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.md
+SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md
 ```
 
 ### 5. Post-merge verification
