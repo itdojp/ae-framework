@@ -133,6 +133,68 @@ describe('apache license cutover approval readiness audit', () => {
     expect(audit.readiness.pendingItems).toContain('Contributor / relicensing authority review');
   });
 
+  it('accepts the legacy approved for cutover PR key', () => {
+    const approvalRecord = parseApprovalRecord(buildApprovalRecordMarkdown().replace(
+      '- approved for cutover: yes',
+      '- approved for cutover PR: yes',
+    ));
+
+    expect(approvalRecord.decisionRecord.approvedForCutover).toBe(true);
+  });
+
+  it('fails fast when an approval table row is malformed', () => {
+    expect(() => parseApprovalRecord(buildApprovalRecordMarkdown({
+      decisionRows: [
+        ['Contributor / relicensing authority review', 'project owner + legal reviewer', 'approved', '2026-03-13', 'contains \\| pipe'],
+      ],
+    }).replace('contains \\| pipe', 'contains | pipe'))).toThrow('approval table row is malformed');
+  });
+
+  it('blocks when required approval items are missing from the table', () => {
+    const approvalRecord = parseApprovalRecord(buildApprovalRecordMarkdown({
+      decisionRows: [
+        ['Contributor / relicensing authority review', 'project owner + legal reviewer', 'approved', '2026-03-13', 'LEG-001'],
+      ],
+    }));
+    const audit = buildApacheLicenseCutoverApprovalReadinessAudit({
+      approvalRecord,
+      approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+      cutoverReadinessAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
+        readiness: { status: 'ready' },
+      },
+      cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    });
+
+    expect(audit.readiness.status).toBe('blocked');
+    expect(audit.readiness.blockers.map((item) => item.code)).toContain('missing-required-approval-items');
+    expect(audit.summary.requiredApprovalCount).toBe(5);
+  });
+
+  it('keeps blocked outputs schema-valid when audit paths are missing', () => {
+    const markdown = buildApprovalRecordMarkdown().replace(
+      '- `artifacts/reference/legal/conditional-asset-audit.json`: artifacts/reference/legal/conditional-asset-audit.json',
+      '- `artifacts/reference/legal/conditional-asset-audit.json`:',
+    );
+    const approvalRecord = parseApprovalRecord(markdown);
+    const audit = buildApacheLicenseCutoverApprovalReadinessAudit({
+      approvalRecord,
+      approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+      cutoverReadinessAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
+        readiness: { status: 'ready' },
+      },
+      cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    });
+
+    expect(audit.inputs.auditArtifactPaths.conditionalAssetAuditPath).toBeNull();
+    expect(audit.readiness.status).toBe('blocked');
+  });
+
   it('fails fast when approval record sha mismatches current head', () => {
     const approvalRecord = parseApprovalRecord(buildApprovalRecordMarkdown({
       headSha: '2222222222222222222222222222222222222222',

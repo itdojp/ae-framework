@@ -45,12 +45,12 @@
             "cutoverReadinessAuditPath"
           ],
           "properties": {
-            "licenseScopeAuditPath": { "type": "string", "minLength": 1 },
-            "conditionalAssetAuditPath": { "type": "string", "minLength": 1 },
-            "noticeReadinessAuditPath": { "type": "string", "minLength": 1 },
-            "contributorReadinessAuditPath": { "type": "string", "minLength": 1 },
-            "thirdPartyNoticeCandidateAuditPath": { "type": "string", "minLength": 1 },
-            "cutoverReadinessAuditPath": { "type": "string", "minLength": 1 }
+            "licenseScopeAuditPath": { "type": ["string", "null"], "minLength": 1 },
+            "conditionalAssetAuditPath": { "type": ["string", "null"], "minLength": 1 },
+            "noticeReadinessAuditPath": { "type": ["string", "null"], "minLength": 1 },
+            "contributorReadinessAuditPath": { "type": ["string", "null"], "minLength": 1 },
+            "thirdPartyNoticeCandidateAuditPath": { "type": ["string", "null"], "minLength": 1 },
+            "cutoverReadinessAuditPath": { "type": ["string", "null"], "minLength": 1 }
           }
         }
       }
