@@ -42,6 +42,7 @@ describe('notice readiness audit', () => {
     expect(audit.readiness.status).toBe('draft-ready');
     expect(audit.gitHeadSha).toBe('1111111111111111111111111111111111111111');
     expect(audit.readiness.blockers).toHaveLength(0);
+    expect(audit.inputs.ignoredNestedNoticeFilesCount).toBe(0);
     expect(audit.proposedRootNotice.lines[0]).toBe('ae-framework');
   });
 
@@ -109,6 +110,40 @@ describe('notice readiness audit', () => {
     ]);
   });
 
+  it('ignores first-party audit and documentation notice-like filenames', () => {
+    const audit = buildNoticeReadinessAudit({
+      scopeAudit: {
+        ...baseScopeAudit,
+        nestedNoticeFiles: [
+          'docs/project/LICENSE-MIGRATION-AUDIT.md',
+          'schema/notice-readiness-audit.schema.json',
+          'tests/contracts/license-scope-audit-contract.test.ts',
+          'vendor/NOTICE.txt',
+        ],
+      },
+      conditionalAudit: baseConditionalAudit,
+      scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
+      conditionalAuditPath: 'artifacts/reference/legal/conditional-asset-audit.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    });
+
+    expect(audit.evidence.nestedNoticeFiles).toEqual(['vendor/NOTICE.txt']);
+    expect(audit.evidence.ignoredNestedNoticeFiles).toEqual([
+      'docs/project/LICENSE-MIGRATION-AUDIT.md',
+      'schema/notice-readiness-audit.schema.json',
+      'tests/contracts/license-scope-audit-contract.test.ts',
+    ]);
+    expect(audit.inputs.nestedNoticeFilesCount).toBe(1);
+    expect(audit.inputs.ignoredNestedNoticeFilesCount).toBe(3);
+    expect(audit.readiness.blockers).toEqual([
+      {
+        code: 'nested-notice-review-required',
+        reason: '1 tracked nested notice files require review before final NOTICE text is approved.',
+      },
+    ]);
+  });
+
   it('renders markdown with draft NOTICE and evidence tables', () => {
     const markdown = renderMarkdownReport({
       schemaVersion: 'notice-readiness-audit/v1',
@@ -120,12 +155,14 @@ describe('notice readiness audit', () => {
         repositoryLicense: 'MIT License',
         packageLicenseField: 'MIT',
         nestedNoticeFilesCount: 1,
+        ignoredNestedNoticeFilesCount: 1,
         conditionalOriginClassCounts: {
           'runtime-output-or-unclassified': 1,
         },
       },
       evidence: {
         nestedNoticeFiles: ['vendor/NOTICE.txt'],
+        ignoredNestedNoticeFiles: ['docs/project/LICENSE-MIGRATION-AUDIT.md'],
         unclassifiedConditionalFiles: ['artifacts/tmp/a|b.json'],
       },
       readiness: {
@@ -154,6 +191,7 @@ describe('notice readiness audit', () => {
     expect(markdown).toContain('# Notice Readiness Audit');
     expect(markdown).toContain('- gitHeadSha: 1111111111111111111111111111111111111111');
     expect(markdown).toContain('| Nested notice file |');
+    expect(markdown).toContain('| Ignored nested notice file |');
     expect(markdown).toContain('`artifacts/tmp/a\\|b.json`');
     expect(markdown).toContain('## Proposed root NOTICE draft');
     expect(markdown).toContain('This product includes software developed by the ae-framework contributors.');

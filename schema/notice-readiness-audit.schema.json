@@ -34,6 +34,7 @@
         "repositoryLicense",
         "packageLicenseField",
         "nestedNoticeFilesCount",
+        "ignoredNestedNoticeFilesCount",
         "conditionalOriginClassCounts"
       ],
       "properties": {
@@ -55,6 +56,10 @@
           "type": "integer",
           "minimum": 0
         },
+        "ignoredNestedNoticeFilesCount": {
+          "type": "integer",
+          "minimum": 0
+        },
         "conditionalOriginClassCounts": {
           "type": "object",
           "additionalProperties": {
@@ -69,10 +74,18 @@
       "additionalProperties": false,
       "required": [
         "nestedNoticeFiles",
+        "ignoredNestedNoticeFiles",
         "unclassifiedConditionalFiles"
       ],
       "properties": {
         "nestedNoticeFiles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "ignoredNestedNoticeFiles": {
           "type": "array",
           "items": {
             "type": "string",

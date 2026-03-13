@@ -37,7 +37,8 @@ pnpm run license:audit:cutover -- \
 - `blocked`
   - MIT baseline が欠落
   - notice readiness が `draft-ready` ではない
-  - nested notice review または unclassified conditional asset が残る
+  - notice readiness audit が review-relevant と判定した nested notice review が残る
+  - unclassified conditional asset が残る
 - `human-review-required`
   - factual blocker は解消済みだが、relicensing authority の判断が人手レビューに残る
 - `ready`
