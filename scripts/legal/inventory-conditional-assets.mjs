@@ -5,7 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { resolveGitHeadSha } from './inventory-license-scope.mjs';
+import { normalizeRequiredGitHeadSha, resolveGitHeadSha } from './inventory-license-scope.mjs';
 
 export const CONDITIONAL_PREFIXES = ['artifacts/', 'fixtures/', 'test-cassettes/'];
 export const NOTICE_BASENAMES = ['LICENSE', 'NOTICE', 'COPYING'];
@@ -98,6 +98,18 @@ function summarizeBy(items, selector) {
   }, {});
 }
 
+function buildScopeSummary(items) {
+  const counts = {
+    artifacts: 0,
+    fixtures: 0,
+    'test-cassettes': 0,
+  };
+  for (const item of items) {
+    counts[item.scope] += 1;
+  }
+  return counts;
+}
+
 export function buildConditionalAssetAudit({
   trackedFiles,
   gitHeadSha,
@@ -117,10 +129,10 @@ export function buildConditionalAssetAudit({
   return {
     schemaVersion: 'conditional-asset-audit/v1',
     generatedAt,
-    gitHeadSha: gitHeadSha ?? null,
+    gitHeadSha: normalizeRequiredGitHeadSha(gitHeadSha),
     summary: {
       total: items.length,
-      byScope: summarizeBy(items, (item) => item.scope),
+      byScope: buildScopeSummary(items),
       byOriginClass: summarizeBy(items, (item) => item.originClass),
       nestedNoticeFiles: items.filter((item) => item.nestedNotice).length,
     },

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
+import { normalizeRequiredGitHeadSha, resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
 
 function readJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -26,17 +26,19 @@ function buildDraftNoticeLines() {
 }
 
 function resolveCommonGitHeadSha({ scopeAudit, conditionalAudit, gitHeadSha }) {
-  const inputShas = [scopeAudit?.gitHeadSha, conditionalAudit?.gitHeadSha].filter(
-    (value) => typeof value === 'string' && value.length > 0,
-  );
+  const inputShas = [
+    normalizeRequiredGitHeadSha(scopeAudit?.gitHeadSha, 'scope audit gitHeadSha'),
+    normalizeRequiredGitHeadSha(conditionalAudit?.gitHeadSha, 'conditional audit gitHeadSha'),
+  ];
   const unique = [...new Set(inputShas)];
   if (unique.length > 1) {
     throw new Error('scope and conditional audits must share the same gitHeadSha');
   }
-  if (gitHeadSha && unique.length === 1 && unique[0] !== gitHeadSha) {
+  const currentGitHeadSha = gitHeadSha == null ? null : normalizeRequiredGitHeadSha(gitHeadSha, 'repository HEAD');
+  if (currentGitHeadSha && unique[0] !== currentGitHeadSha) {
     throw new Error('input audits gitHeadSha does not match the current repository HEAD');
   }
-  return gitHeadSha ?? unique[0] ?? null;
+  return currentGitHeadSha ?? unique[0];
 }
 
 export function buildNoticeReadinessAudit({

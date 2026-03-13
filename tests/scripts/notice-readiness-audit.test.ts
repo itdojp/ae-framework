@@ -60,6 +60,18 @@ describe('notice readiness audit', () => {
     ).toThrow('scope and conditional audits must share the same gitHeadSha');
   });
 
+  it('rejects missing input gitHeadSha values', () => {
+    expect(() =>
+      buildNoticeReadinessAudit({
+        scopeAudit: { ...baseScopeAudit, gitHeadSha: null },
+        conditionalAudit: baseConditionalAudit,
+        scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
+        conditionalAuditPath: 'artifacts/reference/legal/conditional-asset-audit.json',
+        generatedAt: '2026-03-13T00:00:00.000Z',
+      }),
+    ).toThrow('scope audit gitHeadSha is required');
+  });
+
   it('adds blockers for nested notices and unclassified conditional assets', () => {
     const audit = buildNoticeReadinessAudit({
       scopeAudit: {

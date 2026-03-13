@@ -45,11 +45,13 @@ describe('buildApacheLicenseCutoverReadinessAudit', () => {
     const audit = buildApacheLicenseCutoverReadinessAudit({
       scopeAudit: sampleScopeAudit,
       conditionalAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
         items: [
           { path: 'artifacts/raw.bin', originClass: 'runtime-output-or-unclassified' },
         ],
       },
       noticeReadinessAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
         readiness: { status: 'draft-ready' },
         evidence: { unclassifiedConditionalFiles: [] },
       },
@@ -74,6 +76,7 @@ describe('buildApacheLicenseCutoverReadinessAudit', () => {
       conditionalAudit: sampleConditionalAudit,
       noticeReadinessAudit: sampleNoticeAudit,
       contributorReadinessAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
         summary: sampleContributorAudit.summary,
         readiness: {
           legalDecisionRequired: false,
@@ -121,6 +124,7 @@ describe('buildApacheLicenseCutoverReadinessAudit', () => {
       },
       conditionalAudit: sampleConditionalAudit,
       noticeReadinessAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
         readiness: { status: 'needs-review' },
         evidence: { unclassifiedConditionalFiles: ['artifacts/foo.bin'] },
       },
@@ -173,5 +177,21 @@ describe('buildApacheLicenseCutoverReadinessAudit', () => {
         generatedAt: '2026-03-13T00:00:00.000Z',
       }),
     ).toThrow('input audits must share the same gitHeadSha');
+  });
+
+  it('rejects missing input gitHeadSha values', () => {
+    expect(() =>
+      buildApacheLicenseCutoverReadinessAudit({
+        scopeAudit: { ...sampleScopeAudit, gitHeadSha: null },
+        conditionalAudit: sampleConditionalAudit,
+        noticeReadinessAudit: sampleNoticeAudit,
+        contributorReadinessAudit: sampleContributorAudit,
+        scopeAuditPath: 'scope.json',
+        conditionalAuditPath: 'conditional.json',
+        noticeReadinessAuditPath: 'notice.json',
+        contributorReadinessAuditPath: 'contributors.json',
+        generatedAt: '2026-03-13T00:00:00.000Z',
+      }),
+    ).toThrow('scope audit gitHeadSha is required');
   });
 });

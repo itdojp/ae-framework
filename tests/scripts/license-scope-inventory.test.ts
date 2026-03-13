@@ -67,6 +67,17 @@ describe('license scope inventory helpers', () => {
     });
   });
 
+  it('rejects missing gitHeadSha', () => {
+    expect(() =>
+      buildLicenseScopeAudit({
+        trackedFiles: [],
+        shortlogText: '',
+        packageJson: { license: 'MIT' },
+        rootLicenseText: 'MIT License',
+      }),
+    ).toThrow('gitHeadSha is required');
+  });
+
   it('renders markdown report', () => {
     const markdown = buildMarkdownReport({
       generatedAt: '2026-03-13T00:00:00.000Z',

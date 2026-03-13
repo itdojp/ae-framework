@@ -91,4 +91,18 @@ describe('contributor license readiness audit', () => {
     expect(markdown).toContain('- gitHeadSha: 1111111111111111111111111111111111111111');
     expect(markdown).toContain('## Readiness notes');
   });
+
+  it('rejects missing scope audit gitHeadSha', () => {
+    expect(() =>
+      buildContributorLicenseReadinessAudit({
+        scopeAudit: {
+          repositoryLicense: 'MIT License',
+          packageLicenseField: 'MIT',
+          contributorInventory: [],
+        },
+        scopeAuditPath: 'artifacts/reference/legal/license-scope-audit.json',
+        generatedAt: '2026-03-13T00:00:00.000Z',
+      }),
+    ).toThrow('scope audit gitHeadSha is required');
+  });
 });

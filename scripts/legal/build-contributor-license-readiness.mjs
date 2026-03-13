@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
+import { normalizeRequiredGitHeadSha, resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
 
 function readJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -51,15 +51,14 @@ export function buildContributorLicenseReadinessAudit({
   return {
     schemaVersion: 'contributor-license-readiness-audit/v1',
     generatedAt,
-    gitHeadSha:
-      typeof scopeAudit?.gitHeadSha === 'string' && scopeAudit.gitHeadSha.length > 0
-        ? (() => {
-            if (gitHeadSha && scopeAudit.gitHeadSha !== gitHeadSha) {
-              throw new Error('scope audit gitHeadSha does not match the current repository HEAD');
-            }
-            return scopeAudit.gitHeadSha;
-          })()
-        : (gitHeadSha ?? null),
+    gitHeadSha: (() => {
+      const scopeGitHeadSha = normalizeRequiredGitHeadSha(scopeAudit?.gitHeadSha, 'scope audit gitHeadSha');
+      const currentGitHeadSha = gitHeadSha == null ? null : normalizeRequiredGitHeadSha(gitHeadSha, 'repository HEAD');
+      if (currentGitHeadSha && scopeGitHeadSha !== currentGitHeadSha) {
+        throw new Error('scope audit gitHeadSha does not match the current repository HEAD');
+      }
+      return currentGitHeadSha ?? scopeGitHeadSha;
+    })(),
     inputs: {
       scopeAuditPath,
       repositoryLicense: scopeAudit.repositoryLicense ?? null,

@@ -38,9 +38,9 @@ describe('conditional asset audit', () => {
     expect(audit.gitHeadSha).toBe('1111111111111111111111111111111111111111');
     expect(audit.summary.total).toBe(6);
     expect(audit.summary.byScope).toEqual({
+      artifacts: 4,
       fixtures: 1,
       'test-cassettes': 1,
-      artifacts: 4,
     });
     expect(audit.summary.byOriginClass['tracked-reference-snapshot']).toBe(2);
     expect(audit.summary.nestedNoticeFiles).toBe(1);
@@ -53,7 +53,7 @@ describe('conditional asset audit', () => {
       gitHeadSha: '1111111111111111111111111111111111111111',
       summary: {
         total: 2,
-        byScope: { artifacts: 1, fixtures: 1 },
+        byScope: { artifacts: 1, fixtures: 1, 'test-cassettes': 0 },
         byOriginClass: {
           'tracked-reference-snapshot': 1,
           'test-fixture': 1,
@@ -90,7 +90,7 @@ describe('conditional asset audit', () => {
       gitHeadSha: '1111111111111111111111111111111111111111',
       summary: {
         total: 1,
-        byScope: { artifacts: 1 },
+        byScope: { artifacts: 1, fixtures: 0, 'test-cassettes': 0 },
         byOriginClass: { 'runtime-output-or-unclassified': 1 },
         nestedNoticeFiles: 0,
       },
@@ -116,5 +116,26 @@ describe('conditional asset audit', () => {
     expect(() => resolveGeneratedAt('not-a-number')).toThrow(
       'SOURCE_DATE_EPOCH must be an integer number of seconds',
     );
+  });
+
+  it('always emits all scope keys and rejects missing gitHeadSha', () => {
+    expect(
+      buildConditionalAssetAudit({
+        trackedFiles: ['fixtures/agents/sample.ae-handoff.json'],
+        gitHeadSha: '1111111111111111111111111111111111111111',
+        generatedAt: '2026-03-13T00:00:00.000Z',
+      }).summary.byScope,
+    ).toEqual({
+      artifacts: 0,
+      fixtures: 1,
+      'test-cassettes': 0,
+    });
+
+    expect(() =>
+      buildConditionalAssetAudit({
+        trackedFiles: [],
+        generatedAt: '2026-03-13T00:00:00.000Z',
+      }),
+    ).toThrow('gitHeadSha is required');
   });
 });

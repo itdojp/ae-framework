@@ -52,6 +52,16 @@ describe('third-party notice candidate audit', () => {
     ]);
   });
 
+  it('rejects missing gitHeadSha', () => {
+    expect(() =>
+      buildThirdPartyNoticeCandidateAudit({
+        trackedFiles: [],
+        submodules: [],
+        generatedAt: '2026-03-13T00:00:00.000Z',
+      }),
+    ).toThrow('gitHeadSha is required');
+  });
+
   it('renders markdown with escaped table cells', () => {
     const markdown = renderMarkdownReport({
       schemaVersion: 'third-party-notice-candidate-audit/v1',

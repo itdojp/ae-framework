@@ -5,7 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-import { resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
+import { normalizeRequiredGitHeadSha, resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
 import { CONDITIONAL_PREFIXES } from './inventory-conditional-assets.mjs';
 
 export const VENDOR_LIKE_SEGMENTS = [
@@ -165,7 +165,7 @@ export function buildThirdPartyNoticeCandidateAudit({
   return {
     schemaVersion: 'third-party-notice-candidate-audit/v1',
     generatedAt,
-    gitHeadSha: gitHeadSha ?? null,
+    gitHeadSha: normalizeRequiredGitHeadSha(gitHeadSha),
     inputs: {
       trackedFilesScanned: trackedFiles.length,
       vendorLikeSegments: [...VENDOR_LIKE_SEGMENTS],
