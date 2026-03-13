@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/contributor-license-readiness-audit.schema.json",
+  "title": "Contributor License Readiness Audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "inputs",
+    "summary",
+    "contributors",
+    "readiness"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "contributor-license-readiness-audit/v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scopeAuditPath",
+        "repositoryLicense",
+        "packageLicenseField",
+        "contributorCount"
+      ],
+      "properties": {
+        "scopeAuditPath": { "type": "string", "minLength": 1 },
+        "repositoryLicense": { "type": ["string", "null"] },
+        "packageLicenseField": { "type": ["string", "null"] },
+        "contributorCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "humanLikeCount",
+        "botLikeCount",
+        "noreplyCount",
+        "topContributorCommits"
+      ],
+      "properties": {
+        "humanLikeCount": { "type": "integer", "minimum": 0 },
+        "botLikeCount": { "type": "integer", "minimum": 0 },
+        "noreplyCount": { "type": "integer", "minimum": 0 },
+        "topContributorCommits": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "contributors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["author", "commits", "kind", "usesNoreply"],
+        "properties": {
+          "author": { "type": "string", "minLength": 1 },
+          "commits": { "type": "integer", "minimum": 0 },
+          "kind": { "enum": ["human-like", "bot-like", "unknown"] },
+          "usesNoreply": { "type": "boolean" }
+        }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "recommendedAction",
+        "legalDecisionRequired",
+        "notes"
+      ],
+      "properties": {
+        "status": { "const": "repo-facts-ready" },
+        "recommendedAction": { "const": "human-legal-review" },
+        "legalDecisionRequired": { "const": true },
+        "notes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

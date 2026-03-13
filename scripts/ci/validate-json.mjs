@@ -250,6 +250,11 @@ const checks = [
     schema: 'schema/notice-readiness-audit.schema.json',
     fixtures: ['fixtures/legal/sample.notice-readiness-audit.json'],
     label: 'Notice readiness audit schema validation'
+  },
+  {
+    schema: 'schema/contributor-license-readiness-audit.schema.json',
+    fixtures: ['fixtures/legal/sample.contributor-license-readiness-audit.json'],
+    label: 'Contributor license readiness audit schema validation'
   }
 ];
 
