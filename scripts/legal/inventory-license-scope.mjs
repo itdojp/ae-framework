@@ -125,6 +125,14 @@ function runGit(rootDir, args) {
   return result.stdout;
 }
 
+export function resolveGitHeadSha(rootDir) {
+  const head = runGit(rootDir, ['rev-parse', 'HEAD']).trim();
+  if (!/^[0-9a-f]{40}$/i.test(head)) {
+    throw new Error('failed to resolve git HEAD SHA');
+  }
+  return head.toLowerCase();
+}
+
 export function listTrackedFiles(rootDir) {
   const output = runGit(rootDir, ['ls-files', '-z']);
   return output
@@ -156,6 +164,7 @@ export function buildLicenseScopeAudit({
   shortlogText,
   packageJson,
   rootLicenseText,
+  gitHeadSha,
   generatedAt = new Date().toISOString(),
 }) {
   const categorized = {
@@ -197,6 +206,7 @@ export function buildLicenseScopeAudit({
   return {
     schemaVersion: 'license-scope-audit/v1',
     generatedAt,
+    gitHeadSha: gitHeadSha ?? null,
     repositoryLicense: rootLicenseSummary,
     packageLicenseField: packageJson?.license ?? null,
     contributorInventory: parseShortlog(shortlogText),
@@ -229,6 +239,7 @@ export function buildMarkdownReport(audit) {
     '# License Migration Audit',
     '',
     `- GeneratedAt: ${audit.generatedAt}`,
+    `- gitHeadSha: ${audit.gitHeadSha ?? 'missing'}`,
     `- Repository license: ${audit.repositoryLicense ?? 'missing'}`,
     `- package.json license: ${audit.packageLicenseField ?? 'missing'}`,
     '',
@@ -355,6 +366,7 @@ export function run(argv = process.argv) {
     shortlogText,
     packageJson,
     rootLicenseText,
+    gitHeadSha: resolveGitHeadSha(rootDir),
     generatedAt: resolveGeneratedAt(),
   });
 

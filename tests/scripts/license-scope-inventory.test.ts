@@ -5,6 +5,7 @@ import {
   classifyTrackedPath,
   parseShortlog,
   resolveGeneratedAt,
+  resolveGitHeadSha,
 } from '../../scripts/legal/inventory-license-scope.mjs';
 
 describe('license scope inventory helpers', () => {
@@ -40,10 +41,12 @@ describe('license scope inventory helpers', () => {
       shortlogText: '  10 Alice <alice@example.com>\n  2 Bob <bob@example.com>\n',
       packageJson: { license: 'MIT' },
       rootLicenseText: 'MIT License\n\nCopyright (c) 2024 itdojp\n',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
     expect(audit.generatedAt).toBe('2026-03-13T00:00:00.000Z');
+    expect(audit.gitHeadSha).toBe('1111111111111111111111111111111111111111');
     expect(audit.repositoryLicense).toBe('MIT License');
     expect(audit.packageLicenseField).toBe('MIT');
     expect(audit.trackedFilesSummary.total).toBe(8);
@@ -67,6 +70,7 @@ describe('license scope inventory helpers', () => {
   it('renders markdown report', () => {
     const markdown = buildMarkdownReport({
       generatedAt: '2026-03-13T00:00:00.000Z',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       repositoryLicense: 'MIT License',
       packageLicenseField: 'MIT',
       trackedFilesSummary: {
@@ -88,6 +92,7 @@ describe('license scope inventory helpers', () => {
     });
 
     expect(markdown).toContain('# License Migration Audit');
+    expect(markdown).toContain('- gitHeadSha: 1111111111111111111111111111111111111111');
     expect(markdown).toContain('- Repository license: MIT License');
     expect(markdown).toContain('- legal root files: 1');
     expect(markdown).toContain('- artifacts: 1');
@@ -103,5 +108,9 @@ describe('license scope inventory helpers', () => {
     expect(() => resolveGeneratedAt('2026-03-13')).toThrow(
       'SOURCE_DATE_EPOCH must be an integer number of seconds',
     );
+  });
+
+  it('resolves git head sha from the repository', () => {
+    expect(resolveGitHeadSha(process.cwd())).toMatch(/^[0-9a-f]{40}$/);
   });
 });

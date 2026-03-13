@@ -7,6 +7,7 @@
   "required": [
     "schemaVersion",
     "generatedAt",
+    "gitHeadSha",
     "inputs",
     "summary",
     "readiness"
@@ -14,6 +15,7 @@
   "properties": {
     "schemaVersion": { "const": "apache-license-cutover-readiness-audit/v1" },
     "generatedAt": { "type": "string", "format": "date-time" },
+    "gitHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "inputs": {
       "type": "object",
       "additionalProperties": false,

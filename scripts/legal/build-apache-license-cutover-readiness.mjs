@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { resolveGeneratedAt } from './inventory-license-scope.mjs';
+import { resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
 
 function readJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -19,6 +19,29 @@ function addBlocker(blockers, code, reason) {
   blockers.push({ code, reason });
 }
 
+function resolveCommonGitHeadSha({
+  scopeAudit,
+  conditionalAudit,
+  noticeReadinessAudit,
+  contributorReadinessAudit,
+  gitHeadSha,
+}) {
+  const inputShas = [
+    scopeAudit?.gitHeadSha,
+    conditionalAudit?.gitHeadSha,
+    noticeReadinessAudit?.gitHeadSha,
+    contributorReadinessAudit?.gitHeadSha,
+  ].filter((value) => typeof value === 'string' && value.length > 0);
+  const unique = [...new Set(inputShas)];
+  if (unique.length > 1) {
+    throw new Error('input audits must share the same gitHeadSha');
+  }
+  if (gitHeadSha && unique.length === 1 && unique[0] !== gitHeadSha) {
+    throw new Error('input audits gitHeadSha does not match the current repository HEAD');
+  }
+  return gitHeadSha ?? unique[0] ?? null;
+}
+
 export function buildApacheLicenseCutoverReadinessAudit({
   scopeAudit,
   conditionalAudit,
@@ -28,6 +51,7 @@ export function buildApacheLicenseCutoverReadinessAudit({
   conditionalAuditPath,
   noticeReadinessAuditPath,
   contributorReadinessAuditPath,
+  gitHeadSha,
   generatedAt = new Date().toISOString(),
 }) {
   const blockers = [];
@@ -84,6 +108,13 @@ export function buildApacheLicenseCutoverReadinessAudit({
   return {
     schemaVersion: 'apache-license-cutover-readiness-audit/v1',
     generatedAt,
+    gitHeadSha: resolveCommonGitHeadSha({
+      scopeAudit,
+      conditionalAudit,
+      noticeReadinessAudit,
+      contributorReadinessAudit,
+      gitHeadSha,
+    }),
     inputs: {
       scopeAuditPath,
       conditionalAuditPath,
@@ -119,6 +150,7 @@ export function renderMarkdownReport(audit) {
     '# Apache License Cutover Readiness Audit',
     '',
     `- generatedAt: ${audit.generatedAt}`,
+    `- gitHeadSha: ${audit.gitHeadSha ?? 'missing'}`,
     `- status: ${audit.readiness.status}`,
     `- recommended action: ${audit.readiness.recommendedAction}`,
     `- repository license: ${audit.inputs.repositoryLicense ?? 'missing'}`,
@@ -271,6 +303,7 @@ export function run(argv = process.argv) {
     conditionalAuditPath: relativePosix(rootDir, conditionalAuditPath),
     noticeReadinessAuditPath: relativePosix(rootDir, noticeReadinessAuditPath),
     contributorReadinessAuditPath: relativePosix(rootDir, contributorReadinessAuditPath),
+    gitHeadSha: resolveGitHeadSha(rootDir),
     generatedAt: resolveGeneratedAt(),
   });
 

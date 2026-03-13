@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/conditional-asset-audit.schema.json",
+  "title": "Conditional Asset Audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "gitHeadSha",
+    "summary",
+    "nestedNoticeFiles",
+    "items"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "conditional-asset-audit/v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "gitHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "byScope", "byOriginClass", "nestedNoticeFiles"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "byScope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["artifacts", "fixtures", "test-cassettes"],
+          "properties": {
+            "artifacts": { "type": "integer", "minimum": 0 },
+            "fixtures": { "type": "integer", "minimum": 0 },
+            "test-cassettes": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "byOriginClass": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "nestedNoticeFiles": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "nestedNoticeFiles": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "scope", "originClass", "nestedNotice"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "scope": { "enum": ["artifacts", "fixtures", "test-cassettes"] },
+          "originClass": {
+            "enum": [
+              "committed-contract-artifact",
+              "tracked-reference-snapshot",
+              "tracked-archive",
+              "local-debug-archive",
+              "runtime-output-or-unclassified",
+              "test-fixture",
+              "test-cassette",
+              "unclassified"
+            ]
+          },
+          "nestedNotice": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

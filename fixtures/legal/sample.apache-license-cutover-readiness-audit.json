@@ -31,5 +31,6 @@
       "Approve the relicensing decision through human/legal review.",
       "Update root LICENSE, package.json license field, and NOTICE in the same cutover change."
     ]
-  }
+  },
+  "gitHeadSha": "1111111111111111111111111111111111111111"
 }

@@ -5,16 +5,19 @@ import {
 } from '../../scripts/legal/build-apache-license-cutover-readiness.mjs';
 
 const sampleScopeAudit = {
+  gitHeadSha: '1111111111111111111111111111111111111111',
   repositoryLicense: 'MIT License',
   packageLicenseField: 'MIT',
   nestedNoticeFiles: [],
 };
 
 const sampleConditionalAudit = {
+  gitHeadSha: '1111111111111111111111111111111111111111',
   items: [],
 };
 
 const sampleNoticeAudit = {
+  gitHeadSha: '1111111111111111111111111111111111111111',
   readiness: {
     status: 'draft-ready',
   },
@@ -24,6 +27,7 @@ const sampleNoticeAudit = {
 };
 
 const sampleContributorAudit = {
+  gitHeadSha: '1111111111111111111111111111111111111111',
   summary: {
     humanLikeCount: 2,
     botLikeCount: 1,
@@ -54,10 +58,12 @@ describe('buildApacheLicenseCutoverReadinessAudit', () => {
       conditionalAuditPath: 'conditional.json',
       noticeReadinessAuditPath: 'notice.json',
       contributorReadinessAuditPath: 'contributors.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
     expect(audit.readiness.status).toBe('blocked');
+    expect(audit.gitHeadSha).toBe('1111111111111111111111111111111111111111');
     expect(audit.summary.unclassifiedConditionalFilesCount).toBe(1);
     expect(audit.readiness.blockers.some((blocker) => blocker.code === 'conditional-origin-unclassified')).toBe(true);
   });
@@ -78,6 +84,7 @@ describe('buildApacheLicenseCutoverReadinessAudit', () => {
       conditionalAuditPath: 'conditional.json',
       noticeReadinessAuditPath: 'notice.json',
       contributorReadinessAuditPath: 'contributors.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
@@ -95,6 +102,7 @@ describe('buildApacheLicenseCutoverReadinessAudit', () => {
       conditionalAuditPath: 'artifacts/reference/legal/conditional-asset-audit.json',
       noticeReadinessAuditPath: 'artifacts/reference/legal/notice-readiness-audit.json',
       contributorReadinessAuditPath: 'artifacts/reference/legal/contributor-license-readiness-audit.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
@@ -140,12 +148,30 @@ describe('buildApacheLicenseCutoverReadinessAudit', () => {
       conditionalAuditPath: 'conditional.json',
       noticeReadinessAuditPath: 'notice.json',
       contributorReadinessAuditPath: 'contributors.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
     const markdown = renderMarkdownReport(audit);
     expect(markdown).toContain('# Apache License Cutover Readiness Audit');
+    expect(markdown).toContain('- gitHeadSha: 1111111111111111111111111111111111111111');
     expect(markdown).toContain('- status: human-review-required');
     expect(markdown).toContain('- contributor noreply: 1');
+  });
+
+  it('rejects mismatched input gitHeadSha values', () => {
+    expect(() =>
+      buildApacheLicenseCutoverReadinessAudit({
+        scopeAudit: sampleScopeAudit,
+        conditionalAudit: { ...sampleConditionalAudit, gitHeadSha: '2222222222222222222222222222222222222222' },
+        noticeReadinessAudit: sampleNoticeAudit,
+        contributorReadinessAudit: sampleContributorAudit,
+        scopeAuditPath: 'scope.json',
+        conditionalAuditPath: 'conditional.json',
+        noticeReadinessAuditPath: 'notice.json',
+        contributorReadinessAuditPath: 'contributors.json',
+        generatedAt: '2026-03-13T00:00:00.000Z',
+      }),
+    ).toThrow('input audits must share the same gitHeadSha');
   });
 });

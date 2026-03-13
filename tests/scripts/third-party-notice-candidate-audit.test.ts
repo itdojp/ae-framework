@@ -36,9 +36,11 @@ describe('third-party notice candidate audit', () => {
     const audit = buildThirdPartyNoticeCandidateAudit({
       trackedFiles: ['src/vendor/example.ts', 'src/vendor/LICENSE-MIT'],
       submodules: [{ path: 'vendor/submodule', url: 'https://example.com/submodule.git' }],
+      gitHeadSha: '1111111111111111111111111111111111111111',
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
+    expect(audit.gitHeadSha).toBe('1111111111111111111111111111111111111111');
     expect(audit.summary.status).toBe('review-required');
     expect(audit.summary.nestedNoticeFileCount).toBe(1);
     expect(audit.summary.vendoredPathCount).toBe(1);
@@ -54,6 +56,7 @@ describe('third-party notice candidate audit', () => {
     const markdown = renderMarkdownReport({
       schemaVersion: 'third-party-notice-candidate-audit/v1',
       generatedAt: '2026-03-13T00:00:00.000Z',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       inputs: {
         trackedFilesScanned: 2,
         vendorLikeSegments: ['vendor'],
@@ -79,6 +82,7 @@ describe('third-party notice candidate audit', () => {
     });
 
     expect(markdown).toContain('<code>src/vendor/a|b.ts</code>');
+    expect(markdown).toContain('- gitHeadSha: 1111111111111111111111111111111111111111');
     expect(markdown).toContain('<code>src/vendor</code>');
   });
 
@@ -86,6 +90,7 @@ describe('third-party notice candidate audit', () => {
     const markdown = renderMarkdownReport({
       schemaVersion: 'third-party-notice-candidate-audit/v1',
       generatedAt: '2026-03-13T00:00:00.000Z',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       inputs: {
         trackedFilesScanned: 1,
         vendorLikeSegments: ['vendor'],

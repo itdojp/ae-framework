@@ -87,6 +87,8 @@ verificationCommand: pnpm -s run check:doc-consistency
 - `schema/envelope.schema.json`
 - `schema/formal-summary-v1.schema.json`
 - `schema/formal-summary-v2.schema.json`
+- `schema/license-scope-audit.schema.json`
+- `schema/conditional-asset-audit.schema.json`
 - `schema/notice-readiness-audit.schema.json`
 - `schema/contributor-license-readiness-audit.schema.json`
 - `schema/third-party-notice-candidate-audit.schema.json`
@@ -135,6 +137,8 @@ verificationCommand: pnpm -s run check:doc-consistency
 | `artifacts/ci/policy-gate-summary.json` | `schema/policy-gate-summary-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/validate-policy-gate-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/ci/harness-health.json` | `schema/harness-health.schema.json` | `scripts/ci/build-harness-health.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/ci-extended.yml` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/change-package/generate.mjs` |
 | `artifacts/quality/quality-scorecard.json` | `schema/quality-scorecard.schema.json` | `scripts/quality/build-quality-scorecard.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-quality-scorecard.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
+| `artifacts/reference/legal/license-scope-audit.json` | `schema/license-scope-audit.schema.json` | `scripts/legal/inventory-license-scope.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/LICENSE-MIGRATION-AUDIT.md`, downstream legal audit builders |
+| `artifacts/reference/legal/conditional-asset-audit.json` | `schema/conditional-asset-audit.schema.json` | `scripts/legal/inventory-conditional-assets.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/CONDITIONAL-ASSET-PROVENANCE-AUDIT.md`, downstream legal audit builders |
 | `artifacts/reference/legal/notice-readiness-audit.json` | `schema/notice-readiness-audit.schema.json` | `scripts/legal/build-notice-readiness.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/NOTICE-READINESS-AUDIT.md`, operator/legal review before `NOTICE` cutover |
 | `artifacts/reference/legal/contributor-license-readiness-audit.json` | `schema/contributor-license-readiness-audit.schema.json` | `scripts/legal/build-contributor-license-readiness.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/CONTRIBUTOR-LICENSE-READINESS.md`, human/legal contributor review before relicensing |
 | `artifacts/reference/legal/third-party-notice-candidate-audit.json` | `schema/third-party-notice-candidate-audit.schema.json` | `scripts/legal/build-third-party-notice-candidate-audit.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/THIRD-PARTY-NOTICE-CANDIDATES-AUDIT.md`, human/legal review before third-party notice cutover |

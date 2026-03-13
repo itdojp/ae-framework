@@ -35,5 +35,6 @@
     "reasons": [
       "vendored-path-candidates-present"
     ]
-  }
+  },
+  "gitHeadSha": "1111111111111111111111111111111111111111"
 }

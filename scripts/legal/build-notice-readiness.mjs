@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { resolveGeneratedAt } from './inventory-license-scope.mjs';
+import { resolveGeneratedAt, resolveGitHeadSha } from './inventory-license-scope.mjs';
 
 function readJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -25,11 +25,26 @@ function buildDraftNoticeLines() {
   ];
 }
 
+function resolveCommonGitHeadSha({ scopeAudit, conditionalAudit, gitHeadSha }) {
+  const inputShas = [scopeAudit?.gitHeadSha, conditionalAudit?.gitHeadSha].filter(
+    (value) => typeof value === 'string' && value.length > 0,
+  );
+  const unique = [...new Set(inputShas)];
+  if (unique.length > 1) {
+    throw new Error('scope and conditional audits must share the same gitHeadSha');
+  }
+  if (gitHeadSha && unique.length === 1 && unique[0] !== gitHeadSha) {
+    throw new Error('input audits gitHeadSha does not match the current repository HEAD');
+  }
+  return gitHeadSha ?? unique[0] ?? null;
+}
+
 export function buildNoticeReadinessAudit({
   scopeAudit,
   conditionalAudit,
   scopeAuditPath,
   conditionalAuditPath,
+  gitHeadSha,
   generatedAt = new Date().toISOString(),
 }) {
   const nestedNoticeFiles = ensureStringArray(scopeAudit.nestedNoticeFiles ?? [], 'nestedNoticeFiles');
@@ -55,6 +70,7 @@ export function buildNoticeReadinessAudit({
   return {
     schemaVersion: 'notice-readiness-audit/v1',
     generatedAt,
+    gitHeadSha: resolveCommonGitHeadSha({ scopeAudit, conditionalAudit, gitHeadSha }),
     inputs: {
       scopeAuditPath,
       conditionalAuditPath,
@@ -100,6 +116,7 @@ export function renderMarkdownReport(audit) {
     '# Notice Readiness Audit',
     '',
     `- generatedAt: ${audit.generatedAt}`,
+    `- gitHeadSha: ${audit.gitHeadSha ?? 'missing'}`,
     `- repository license: ${audit.inputs.repositoryLicense ?? 'missing'}`,
     `- package.json license: ${audit.inputs.packageLicenseField ?? 'missing'}`,
     `- readiness: ${audit.readiness.status}`,
@@ -244,6 +261,7 @@ export function run(argv = process.argv) {
     conditionalAudit: readJsonFile(conditionalAuditPath),
     scopeAuditPath: path.relative(rootDir, scopeAuditPath).replace(/\\/g, '/'),
     conditionalAuditPath: path.relative(rootDir, conditionalAuditPath).replace(/\\/g, '/'),
+    gitHeadSha: resolveGitHeadSha(rootDir),
     generatedAt: resolveGeneratedAt(),
   });
 

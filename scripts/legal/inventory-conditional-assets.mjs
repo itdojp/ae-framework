@@ -5,6 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { resolveGitHeadSha } from './inventory-license-scope.mjs';
 
 export const CONDITIONAL_PREFIXES = ['artifacts/', 'fixtures/', 'test-cassettes/'];
 export const NOTICE_BASENAMES = ['LICENSE', 'NOTICE', 'COPYING'];
@@ -99,6 +100,7 @@ function summarizeBy(items, selector) {
 
 export function buildConditionalAssetAudit({
   trackedFiles,
+  gitHeadSha,
   generatedAt = new Date().toISOString(),
 }) {
   const items = trackedFiles.map((filePath) => {
@@ -115,6 +117,7 @@ export function buildConditionalAssetAudit({
   return {
     schemaVersion: 'conditional-asset-audit/v1',
     generatedAt,
+    gitHeadSha: gitHeadSha ?? null,
     summary: {
       total: items.length,
       byScope: summarizeBy(items, (item) => item.scope),
@@ -150,6 +153,7 @@ export function renderMarkdownReport(audit) {
     '# Conditional Asset Provenance Audit',
     '',
     `- generatedAt: ${audit.generatedAt}`,
+    `- gitHeadSha: ${audit.gitHeadSha ?? 'missing'}`,
     `- total: ${audit.summary.total}`,
     '',
     '## By scope',
@@ -254,6 +258,7 @@ export function run(argv = process.argv) {
   const rootDir = path.resolve(options.root);
   const audit = buildConditionalAssetAudit({
     trackedFiles: listConditionalTrackedFiles(rootDir),
+    gitHeadSha: resolveGitHeadSha(rootDir),
     generatedAt: resolveGeneratedAt(),
   });
 

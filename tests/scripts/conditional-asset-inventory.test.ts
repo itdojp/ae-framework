@@ -30,10 +30,12 @@ describe('conditional asset audit', () => {
         'artifacts/plan/plan-artifact.json',
         'artifacts/reference/legal/LICENSE-THIRD-PARTY.txt',
       ],
+      gitHeadSha: '1111111111111111111111111111111111111111',
       generatedAt: '2026-03-13T00:00:00.000Z',
     });
 
     expect(audit.generatedAt).toBe('2026-03-13T00:00:00.000Z');
+    expect(audit.gitHeadSha).toBe('1111111111111111111111111111111111111111');
     expect(audit.summary.total).toBe(6);
     expect(audit.summary.byScope).toEqual({
       fixtures: 1,
@@ -48,6 +50,7 @@ describe('conditional asset audit', () => {
   it('renders markdown report', () => {
     const markdown = renderMarkdownReport({
       generatedAt: '2026-03-13T00:00:00.000Z',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       summary: {
         total: 2,
         byScope: { artifacts: 1, fixtures: 1 },
@@ -75,6 +78,7 @@ describe('conditional asset audit', () => {
     });
 
     expect(markdown).toContain('# Conditional Asset Provenance Audit');
+    expect(markdown).toContain('- gitHeadSha: 1111111111111111111111111111111111111111');
     expect(markdown).toContain('- artifacts: 1');
     expect(markdown).toContain('- tracked-reference-snapshot: 1');
     expect(markdown).toContain('`fixtures/agents/sample.ae-handoff.json`');
@@ -83,6 +87,7 @@ describe('conditional asset audit', () => {
   it('escapes markdown table cells in rendered items', () => {
     const markdown = renderMarkdownReport({
       generatedAt: '2026-03-13T00:00:00.000Z',
+      gitHeadSha: '1111111111111111111111111111111111111111',
       summary: {
         total: 1,
         byScope: { artifacts: 1 },
