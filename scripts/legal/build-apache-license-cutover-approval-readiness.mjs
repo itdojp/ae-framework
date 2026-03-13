@@ -205,8 +205,13 @@ export function buildApacheLicenseCutoverApprovalReadinessAudit({
     }
   }
 
-  if (cutoverReadinessAudit?.readiness?.status !== 'ready') {
-    addBlocker(blockers, 'cutover-readiness-not-ready', 'apache-license-cutover-readiness-audit/v1 must be ready before final approval.');
+  const cutoverReadinessStatus = cutoverReadinessAudit?.readiness?.status ?? null;
+  if (cutoverReadinessStatus === 'blocked') {
+    addBlocker(
+      blockers,
+      'cutover-readiness-blocked',
+      'apache-license-cutover-readiness-audit/v1 is blocked and must clear factual blockers before final approval.',
+    );
   }
 
   const approvedItems = approvalRecord.approvalItems

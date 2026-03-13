@@ -43,16 +43,16 @@ SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- \
 3. All required audit artifact paths are filled in.
 4. The approval table has no unsupported decision values.
 5. The decision block is consistent with the table rows.
-6. `approved for cutover: yes` is only allowed when all required approval rows are approved and the cutover readiness audit is `ready`.
+6. `approved for cutover: yes` is only allowed when all required approval rows are approved and the cutover readiness audit is not `blocked`.
 
 ## Status meanings
 
 - `blocked`
-  - the approval record is incomplete, contradictory, or SHA-mismatched
+  - the approval record is incomplete, contradictory, SHA-mismatched, or the cutover readiness audit still has factual blockers
 - `human-review-required`
   - the record is structurally valid, but approvals are still pending
 - `ready`
-  - the record is complete and internally consistent, and the cutover PR can be opened from an approval-record perspective
+  - the record is complete and internally consistent, and the cutover PR can be opened from an approval-record perspective even if the upstream cutover readiness audit remains `human-review-required`
 
 ## Related documents
 
