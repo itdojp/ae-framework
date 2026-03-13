@@ -13,7 +13,7 @@ function readJsonFile(filePath) {
 function classifyContributor(author) {
   const value = String(author || '');
   const lower = value.toLowerCase();
-  if (/\bbot\b/.test(lower) || lower.includes('claude code') || lower.includes('agent')) {
+  if (/\bbot\b/.test(lower) || /\bclaude code\b/.test(lower) || /(^|[^a-z])agent([^a-z]|$)/.test(lower)) {
     return 'bot-like';
   }
   if (value.trim().length === 0) {
@@ -23,7 +23,7 @@ function classifyContributor(author) {
 }
 
 function usesNoreply(author) {
-  return /@users\.noreply\.github\.com>/i.test(String(author || ''));
+  return /@users\.noreply\.github\.com(?:>|$)/i.test(String(author || ''));
 }
 
 export function buildContributorLicenseReadinessAudit({
