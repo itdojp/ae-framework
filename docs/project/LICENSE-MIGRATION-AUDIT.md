@@ -3,7 +3,7 @@ docRole: ssot
 canonicalSource: docs/project/LICENSE-MIGRATION-AUDIT.md
 lastVerified: "2026-03-13"
 owner: project-docs
-verificationCommand: pnpm run license:audit:scope -- --output-json artifacts/reference/legal/license-scope-audit.json --output-md artifacts/reference/legal/license-scope-audit.md
+verificationCommand: pnpm run license:audit:all
 ---
 
 # License Migration Audit
@@ -23,24 +23,19 @@ verificationCommand: pnpm run license:audit:scope -- --output-json artifacts/ref
 ## 監査コマンド
 
 ```bash
-pnpm run license:audit:scope -- \
-  --output-json artifacts/reference/legal/license-scope-audit.json \
-  --output-md artifacts/reference/legal/license-scope-audit.md
+SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:all
 ```
 
-`SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると、`generatedAt` を固定して再現可能な snapshot を得る。各 legal audit artifact は `gitHeadSha` も出力するため、同一 head で生成した監査結果だけを比較対象にできる。
+`license:audit:all` は以下の 6 audit を `artifacts/reference/legal/*` へ順番に再生成する。
 
-```bash
-pnpm run license:audit:conditional -- \
-  --output-json artifacts/reference/legal/conditional-asset-audit.json \
-  --output-md artifacts/reference/legal/conditional-asset-audit.md
-```
+- `license:audit:scope`
+- `license:audit:conditional`
+- `license:audit:notice`
+- `license:audit:contributors`
+- `license:audit:third-party`
+- `license:audit:cutover`
 
-```bash
-pnpm run license:audit:third-party -- \
-  --output-json artifacts/reference/legal/third-party-notice-candidate-audit.json \
-  --output-md artifacts/reference/legal/third-party-notice-candidate-audit.md
-```
+`SOURCE_DATE_EPOCH=<unix-seconds>` を指定すると、全 audit の `generatedAt` を固定して再現可能な snapshot を得る。各 legal audit artifact は `gitHeadSha` も出力するため、同一 head で生成した監査結果だけを比較対象にできる。
 
 ## 監査観点
 
@@ -65,9 +60,9 @@ pnpm run license:audit:third-party -- \
 ## 次段階
 
 1. `artifacts/**`, `fixtures/**`, `test-cassettes/**` の由来を棚卸し
-2. `NOTICE` の要否と草案を `pnpm run license:audit:notice` で整理する
-3. contributor identity を `pnpm run license:audit:contributors` で factual input として固定する
-4. third-party / upstream notice candidate を `pnpm run license:audit:third-party` で factual input として固定する
+2. `NOTICE` の要否と草案を `pnpm run license:audit:all` の `notice` / `cutover` 出力で整理する
+3. contributor identity を `pnpm run license:audit:all` の `contributors` 出力で factual input として固定する
+4. third-party / upstream notice candidate を `pnpm run license:audit:all` の `third-party` 出力で factual input として固定する
 5. `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を監査結果で具体化する
 6. その後に Apache-2.0 切替可否を判断する
 
