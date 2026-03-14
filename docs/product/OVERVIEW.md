@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
 - README.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-14'
 ---
 # ae-framework 概要説明資料
 
@@ -13,10 +13,10 @@ lastVerified: '2026-03-10'
 
 ## English (Summary)
 
-ae-framework is an agentic SDLC orchestrator and spec verification kit that standardizes requirements, tests, and CI quality gates.
+ae-framework is an assurance control plane for agent-driven SDLC that standardizes specifications, verification, evidence, and CI/policy judgment.
 
-- Purpose: align requirements, verification, and CI automation for auditable development
-- Key capabilities: spec registry, verification pipelines, quality gates, GitHub Actions workflows
+- Purpose: align requirements, verification, evidence, and CI automation for auditable development
+- Key capabilities: contract/spec registry, verification aggregation, policy gates, GitHub Actions workflows
 - Delivery: project skeleton, CLI tooling, scripts, and templates for automation
 - Non-goals: hosted CI/CD service, agent runtime, or IDE plugin
 - Prerequisites: Node.js >=20.11 and <23, pnpm 10.0.0, GitHub Actions environment
@@ -26,7 +26,7 @@ ae-framework is an agentic SDLC orchestrator and spec verification kit that stan
 ## 日本語
 
 ### 1. 目的と位置づけ
-ae-framework は、エージェント協調型のSDLCを実行するための「オーケストレーター兼 仕様・検証キット」です。要求から検証までの流れを標準化し、監査可能で再現性のある品質管理を実現します。
+ae-framework は、エージェント協調型のSDLCを実行するための **assurance control plane** です。要求から検証、証跡、PR / release 判断までの流れを標準化し、監査可能で再現性のある品質管理を実現します。
 
 ### 2. 解決する課題
 - 要件・仕様・テスト・CIの断絶による品質管理の不整合
@@ -35,13 +35,15 @@ ae-framework は、エージェント協調型のSDLCを実行するための「
 
 ### 3. 提供価値
 - 仕様と検証の一貫運用を可能にするスクリプトとワークフロー
-- 品質ゲートやトレーサビリティの可視化
+- 品質ゲート、証跡、トレーサビリティの可視化
 - 小さなPR単位での可逆運用とCI最適化
 
 ### 4. 主な構成要素
 - GitHub Actions を中心としたCIワークフロー群
 - CLIとスクリプトによる仕様・検証・品質の自動化
-- 仕様レジストリ、検証結果、アーティファクト集約の仕組み
+- `assurance-summary`、`quality-scorecard`、`hook-feedback`、`ae-handoff` などの判断用 artifact
+- `Context Pack` / `boundary-map` / `change-package` を使った仕様レジストリと検証結果の集約
+- `policy-gate`、`gate`、release/post-deploy summary による判断面の自動化
 - Claude Code / CodeX などのエージェント統合の導線
 
 ### 5. 対象ユーザーと利用シーン
@@ -66,15 +68,19 @@ ae-framework は、エージェント協調型のSDLCを実行するための「
 2. 開発フック: `pnpm run setup-hooks`
 3. 最小検証: `pnpm run lint` と `pnpm run test:fast`
 
-### 9. 現行全体像（2026-02-09 時点）
+### 9. 現行全体像（2026-03-14 時点）
 - **主要バイナリ**: `ae` / `ae-framework`、`ae-phase`、`ae-approve`、`ae-slash`、`ae-ui`、`ae-sbom`、`ae-resilience`、`ae-benchmark`、`ae-server`
-- **運用方式**: `verify-lite` を必須ゲート、重い検証はラベル/dispatch で opt-in 実行（`.github/workflows/`）
+- **Required checks**: `verify-lite`、`policy-gate`、`gate` を main branch の日常PRゲートとして運用
+- **運用方式**: `verify-lite` を基準ゲートとし、重い検証はラベル/dispatch で opt-in 実行（`.github/workflows/`）
 - **形式検証スタック**: `verify:formal` で conformance/Alloy/TLA/SMT/Apalache/Kani/SPIN/CSP/Lean4 を非ブロッキング統合
 - **CSP 拡張連携**: `verify:csp` が `cspx` を優先利用し、`csp-summary.json` と `cspx-result.json` を契約化（`schema_version=0.1` 前提）
-- **集約の可観測性**: `formal-aggregate` が `backend/status/resultStatus/exitCode` をPR向けに集約表示
+- **assurance control plane**: `artifacts/assurance/assurance-summary.json`、`artifacts/quality/quality-scorecard.json`、`artifacts/agents/hook-feedback.json`、`artifacts/handoff/ae-handoff.json` を判断用 artifact として生成
+- **Context Pack 境界管理**: `spec/context-pack/boundary-map.json` と `artifacts/context-pack/context-pack-boundary-map-report.json` で slice 依存と循環を検証
+- **ポリシー評価**: `policy-gate.yml` が JS decision と OPA shadow compare を併記し、`AE_POLICY_ENGINE_MODE` で段階移行
+- **集約の可観測性**: `formal-aggregate` が `backend/status/resultStatus/exitCode` をPR向けに集約表示し、`automation-observability-weekly` が SLO / MTTR を継続観測
 - **エージェント/MCP**: `src/mcp-server/*` に intent/test-generation/verify/spec-synthesis 等のサーバ実装
 - **フロントエンド基盤**: `apps/web`、`apps/storybook`、`packages/ui`、`packages/design-tokens`
-- **成果物の代表例**: `artifacts/hermetic-reports/formal/*.json`、`artifacts/hermetic-reports/conformance/summary.json`、`artifacts/progress/summary.json`、`reports/quality-gates/*`
+- **成果物の代表例**: `artifacts/hermetic-reports/formal/*.json`、`artifacts/hermetic-reports/conformance/summary.json`、`artifacts/quality/quality-scorecard.json`、`artifacts/agents/hook-feedback.json`、`artifacts/handoff/ae-handoff.json`
 - **設定体系**: `ae-framework.yml`（フェーズ/ガード）と `ae.config.*`（mode/ガード詳細）の二系統
 - **公開境界**: npm export は `dist/src/index.js`、CLIは `bin` で公開（`package.json`）
 

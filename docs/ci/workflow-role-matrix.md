@@ -1,12 +1,12 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-14'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
 # Workflow Role Matrix (core / optional / report)
 
-最終更新: 2026-02-25
+最終更新: 2026-03-14
 
 対象: `.github/workflows/*.yml` の運用責務整理（Issue #2031 / Phase 3）
 
@@ -28,7 +28,8 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 補足:
 
-- 2026-02-24 時点の main branch Required checks は `verify-lite`, `gate` の 2 つ
+- 2026-03-14 時点の main branch Required checks は `verify-lite`, `policy-gate`, `gate` の 3 つ
+- `gate` は `copilot-review-gate.yml` が出す status check 名
 - Copilot Auto Fix 後の gate 再評価 dispatch は `copilot-review-gate.yml` ではなく `agent-commands.yml` が担当
 
 ## 3. 現行マッピング（主要workflow）
@@ -38,6 +39,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 | Workflow | 主目的 | 実行トリガ |
 |---|---|---|
 | `verify-lite.yml` | 軽量必須ゲート（型/ビルド/基本検証） | PR / push / dispatch |
+| `policy-gate.yml` | Required checks / risk policy / OPA shadow compare の判定 | PR / review / push / dispatch |
 | `copilot-review-gate.yml` | Copilotレビュー存在/解決確認 | PR / review / dispatch |
 | `ci.yml` | 総合オーケストレーション入口 | PR / push / schedule / dispatch |
 | `ci-fast.yml` | 高速検証バッチ | call / dispatch |
