@@ -7,6 +7,10 @@
     "cutoverReadinessAuditPath": "artifacts/reference/legal/apache-license-cutover-readiness-audit.json",
     "approvalRecordHeadSha": "1111111111111111111111111111111111111111",
     "cutoverReadinessGitHeadSha": "1111111111111111111111111111111111111111",
+    "currentGitHeadSha": "1111111111111111111111111111111111111111",
+    "approvalSnapshotMatchesCurrentHead": true,
+    "changedFilesSinceApproval": [],
+    "unexpectedChangedFilesSinceApproval": [],
     "auditArtifactPaths": {
       "licenseScopeAuditPath": "artifacts/reference/legal/license-scope-audit.json",
       "conditionalAssetAuditPath": "artifacts/reference/legal/conditional-asset-audit.json",
@@ -22,6 +26,8 @@
     "pendingCount": 0,
     "rejectedCount": 0,
     "missingAuditPathCount": 0,
+    "changedFilesSinceApprovalCount": 0,
+    "unexpectedChangedFilesSinceApprovalCount": 0,
     "blockerCount": 0
   },
   "approvalItems": [

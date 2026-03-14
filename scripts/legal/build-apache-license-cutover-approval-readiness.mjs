@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import {
   normalizeRequiredGitHeadSha,
@@ -27,6 +28,29 @@ const REQUIRED_APPROVAL_ITEMS = [
   'Apache-2.0 cutover readiness audit review',
 ];
 
+const CUTOVER_ALLOWED_EXACT_PATHS = new Set([
+  'LICENSE',
+  'NOTICE',
+  'package.json',
+  'README.md',
+  'CONTRIBUTING.md',
+  'LICENSE-SCOPE.md',
+  'TRADEMARKS.md',
+  'THIRD_PARTY_NOTICES.md',
+  'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+  'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-READINESS.md',
+  'docs/project/APACHE-LICENSE-CUTOVER-PLAYBOOK.md',
+  'schema/apache-license-cutover-approval-readiness-audit.schema.json',
+  'fixtures/legal/sample.apache-license-cutover-approval-readiness-audit.json',
+  'scripts/legal/build-apache-license-cutover-approval-readiness.mjs',
+  'tests/scripts/apache-license-cutover-approval-readiness-audit.test.ts',
+]);
+
+const CUTOVER_ALLOWED_PREFIXES = [
+  'docs/project/',
+  'artifacts/reference/legal/',
+];
+
 function readJsonFile(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
@@ -38,6 +62,29 @@ function relativePosix(rootDir, filePath) {
 
 function addBlocker(blockers, code, reason) {
   blockers.push({ code, reason });
+}
+
+function isCutoverAllowedPath(filePath) {
+  return CUTOVER_ALLOWED_EXACT_PATHS.has(filePath)
+    || CUTOVER_ALLOWED_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+}
+
+function listChangedFilesBetweenShas(rootDir, fromSha, toSha) {
+  const result = spawnSync('git', ['diff', '--name-only', `${fromSha}..${toSha}`], {
+    cwd: rootDir,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    const stderr = String(result.stderr || '').trim();
+    const stdout = String(result.stdout || '').trim();
+    throw new Error(
+      `git diff --name-only failed for approval drift inventory${stderr ? `: ${stderr}` : stdout ? `: ${stdout}` : ''}`,
+    );
+  }
+  return String(result.stdout || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
 }
 
 function getSection(markdown, heading) {
@@ -149,17 +196,13 @@ function escapeMarkdownCell(value) {
     .replace(/\n/g, '<br>');
 }
 
-function resolveCommonGitHeadSha({ approvalRecordHeadSha, cutoverReadinessAudit, gitHeadSha }) {
-  const approvalSha = normalizeRequiredGitHeadSha(approvalRecordHeadSha, 'approval record head SHA');
+function resolveAuditGitHeadSha({ cutoverReadinessAudit, gitHeadSha }) {
   const cutoverSha = normalizeRequiredGitHeadSha(cutoverReadinessAudit?.gitHeadSha, 'cutover readiness audit gitHeadSha');
-  if (approvalSha !== cutoverSha) {
-    throw new Error('approval record head SHA does not match cutover readiness audit gitHeadSha');
-  }
   const currentGitHeadSha = gitHeadSha == null ? null : normalizeRequiredGitHeadSha(gitHeadSha, 'repository HEAD');
-  if (currentGitHeadSha && currentGitHeadSha !== approvalSha) {
-    throw new Error('approval record head SHA does not match the current repository HEAD');
+  if (currentGitHeadSha && currentGitHeadSha !== cutoverSha) {
+    throw new Error('cutover readiness audit gitHeadSha does not match the current repository HEAD');
   }
-  return currentGitHeadSha ?? approvalSha;
+  return currentGitHeadSha ?? cutoverSha;
 }
 
 export function parseApprovalRecord(markdown) {
@@ -190,10 +233,30 @@ export function buildApacheLicenseCutoverApprovalReadinessAudit({
   cutoverReadinessAudit,
   cutoverReadinessAuditPath,
   gitHeadSha,
+  changedFilesSinceApproval,
   generatedAt = new Date().toISOString(),
 }) {
   const blockers = [];
   const auditArtifactPaths = {};
+  const approvalRecordHeadSha = normalizeRequiredGitHeadSha(approvalRecord.auditBaseline['head SHA'], 'approval record head SHA');
+  const cutoverReadinessGitHeadSha = normalizeRequiredGitHeadSha(cutoverReadinessAudit?.gitHeadSha, 'cutover readiness audit gitHeadSha');
+  const currentGitHeadSha = resolveAuditGitHeadSha({
+    cutoverReadinessAudit,
+    gitHeadSha,
+  });
+  const approvalSnapshotMatchesCurrentHead = approvalRecordHeadSha === currentGitHeadSha;
+  const changedFilesProvided = Array.isArray(changedFilesSinceApproval);
+  if (!approvalSnapshotMatchesCurrentHead && !changedFilesProvided) {
+    throw new Error('changedFilesSinceApproval is required when approval snapshot head SHA differs from the current HEAD');
+  }
+  const normalizedChangedFiles = [...new Set(
+    (changedFilesSinceApproval ?? [])
+      .map((filePath) => String(filePath ?? '').trim())
+      .filter((filePath) => filePath.length > 0),
+  )].sort();
+  const unexpectedChangedFilesSinceApproval = approvalSnapshotMatchesCurrentHead
+    ? []
+    : normalizedChangedFiles.filter((filePath) => !isCutoverAllowedPath(filePath));
 
   for (const [key, label] of REQUIRED_AUDIT_KEYS) {
     const value = stripInlineFormatting(approvalRecord.auditBaseline[label]);
@@ -244,6 +307,13 @@ export function buildApacheLicenseCutoverApprovalReadinessAudit({
   if (approvalRecord.decisionRecord.overallDecision === 'approved' && !approvalRecord.decisionRecord.approvedForCutover) {
     addBlocker(blockers, 'approved-decision-without-cutover-flag', 'overall decision approved requires approved for cutover=yes.');
   }
+  if (!approvalSnapshotMatchesCurrentHead && unexpectedChangedFilesSinceApproval.length > 0) {
+    addBlocker(
+      blockers,
+      'approval-snapshot-diverged-outside-cutover-scope',
+      `approval snapshot differs from the current HEAD outside the allowed cutover scope: ${unexpectedChangedFilesSinceApproval.join(', ')}`,
+    );
+  }
   if (approvalRecord.decisionRecord.approvedForCutover) {
     if (!approvalRecord.decisionRecord.decisionDate) {
       addBlocker(blockers, 'missing-decision-date', 'decision date is required once the cutover is approved.');
@@ -268,16 +338,16 @@ export function buildApacheLicenseCutoverApprovalReadinessAudit({
   return {
     schemaVersion: 'apache-license-cutover-approval-readiness-audit/v1',
     generatedAt,
-    gitHeadSha: resolveCommonGitHeadSha({
-      approvalRecordHeadSha: approvalRecord.auditBaseline['head SHA'],
-      cutoverReadinessAudit,
-      gitHeadSha,
-    }),
+    gitHeadSha: currentGitHeadSha,
     inputs: {
       approvalRecordPath,
       cutoverReadinessAuditPath,
-      approvalRecordHeadSha: normalizeRequiredGitHeadSha(approvalRecord.auditBaseline['head SHA'], 'approval record head SHA'),
-      cutoverReadinessGitHeadSha: normalizeRequiredGitHeadSha(cutoverReadinessAudit?.gitHeadSha, 'cutover readiness audit gitHeadSha'),
+      approvalRecordHeadSha,
+      cutoverReadinessGitHeadSha,
+      currentGitHeadSha,
+      approvalSnapshotMatchesCurrentHead,
+      changedFilesSinceApproval: normalizedChangedFiles,
+      unexpectedChangedFilesSinceApproval,
       auditArtifactPaths,
     },
     summary: {
@@ -286,6 +356,8 @@ export function buildApacheLicenseCutoverApprovalReadinessAudit({
       pendingCount: pendingItems.length,
       rejectedCount: rejectedItems.length,
       missingAuditPathCount: Object.values(auditArtifactPaths).filter((value) => value == null).length,
+      changedFilesSinceApprovalCount: normalizedChangedFiles.length,
+      unexpectedChangedFilesSinceApprovalCount: unexpectedChangedFilesSinceApproval.length,
       blockerCount: blockers.length,
     },
     approvalItems: approvalRecord.approvalItems,
@@ -314,6 +386,8 @@ export function renderMarkdownReport(audit) {
     `- cutover readiness audit: ${audit.inputs.cutoverReadinessAuditPath}`,
     `- approval record head SHA: ${audit.inputs.approvalRecordHeadSha}`,
     `- cutover readiness gitHeadSha: ${audit.inputs.cutoverReadinessGitHeadSha}`,
+    `- current repository HEAD: ${audit.inputs.currentGitHeadSha}`,
+    `- approval snapshot matches current HEAD: ${audit.inputs.approvalSnapshotMatchesCurrentHead ? 'yes' : 'no'}`,
     '',
     '## Summary',
     `- required approvals: ${audit.summary.requiredApprovalCount}`,
@@ -321,12 +395,36 @@ export function renderMarkdownReport(audit) {
     `- pending: ${audit.summary.pendingCount}`,
     `- rejected: ${audit.summary.rejectedCount}`,
     `- missing audit paths: ${audit.summary.missingAuditPathCount}`,
+    `- changed files since approval: ${audit.summary.changedFilesSinceApprovalCount}`,
+    `- unexpected changed files since approval: ${audit.summary.unexpectedChangedFilesSinceApprovalCount}`,
     `- blockers: ${audit.summary.blockerCount}`,
+    '',
+    '## Changed files since approval',
+  ];
+
+  if (audit.inputs.changedFilesSinceApproval.length === 0) {
+    lines.push('- none');
+  } else {
+    for (const filePath of audit.inputs.changedFilesSinceApproval) {
+      lines.push(`- ${filePath}`);
+    }
+  }
+
+  lines.push('', '## Unexpected changed files since approval');
+  if (audit.inputs.unexpectedChangedFilesSinceApproval.length === 0) {
+    lines.push('- none');
+  } else {
+    for (const filePath of audit.inputs.unexpectedChangedFilesSinceApproval) {
+      lines.push(`- ${filePath}`);
+    }
+  }
+
+  lines.push(
     '',
     '## Approval items',
     '| Item | Required reviewer / owner | Decision | Date | Evidence / note |',
     '| --- | --- | --- | --- | --- |',
-  ];
+  );
 
   for (const item of audit.approvalItems) {
     lines.push(`| ${escapeMarkdownCell(item.item)} | ${escapeMarkdownCell(item.requiredReviewer)} | ${escapeMarkdownCell(item.decision)} | ${escapeMarkdownCell(item.date ?? '')} | ${escapeMarkdownCell(item.evidenceNote ?? '')} |`);
@@ -436,6 +534,10 @@ export function run(argv = process.argv) {
   const approvalRecord = parseApprovalRecord(fs.readFileSync(approvalRecordPath, 'utf8'));
   const cutoverReadinessAudit = readJsonFile(cutoverReadinessAuditPath);
   const gitHeadSha = resolveGitHeadSha(rootDir);
+  const approvalRecordHeadSha = normalizeRequiredGitHeadSha(approvalRecord.auditBaseline['head SHA'], 'approval record head SHA');
+  const changedFilesSinceApproval = gitHeadSha === approvalRecordHeadSha
+    ? []
+    : listChangedFilesBetweenShas(rootDir, approvalRecordHeadSha, gitHeadSha);
   const generatedAt = resolveGeneratedAt();
   const audit = buildApacheLicenseCutoverApprovalReadinessAudit({
     approvalRecord,
@@ -443,6 +545,7 @@ export function run(argv = process.argv) {
     cutoverReadinessAudit,
     cutoverReadinessAuditPath: relativePosix(rootDir, cutoverReadinessAuditPath),
     gitHeadSha,
+    changedFilesSinceApproval,
     generatedAt,
   });
 
