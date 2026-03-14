@@ -6,9 +6,9 @@ verificationCommand: pnpm -s run check:doc-consistency
 ---
 # Workflow Inventory (Issue #2031 / Phase 3)
 
-最終更新: 2026-03-14
+最終更新: 2026-03-14（snapshot baseline: 2026-02-24）
 
-対象: `.github/workflows/*.yml`（current: 56 files）
+対象: `.github/workflows/*.yml`（snapshot: 51 files / current: 56 files）
 
 注記（2026-03-14）:
 - 本書は Phase 3 時点の inventory snapshot を残すための historical note です。
@@ -103,13 +103,14 @@ flowchart TD
 
 補足:
 - `ci.yml` は entry workflow として reusable workflow を起動するハブ
-- required checks は `verify-lite` と `gate` のみで、`ci.yml` 配下ジョブは merge blocking の必須条件ではない
+- current-state の required checks は `verify-lite`、`policy-gate`、`gate` であり、`ci.yml` 配下 job は merge blocking の必須条件ではない
 
 ## 5. 必須/任意/レポート分類（運用上の整理）
 
 `core`（常時運用の中心）:
 
 - `verify-lite.yml`（Required）
+- `policy-gate.yml`（Required）
 - `copilot-review-gate.yml`（Required）
 - `ci.yml`（総合入口）
 - `ci-fast.yml` / `pr-verify.yml` / `verify.yml`（主要検証）
