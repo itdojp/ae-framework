@@ -1,7 +1,7 @@
 ---
 docRole: ssot
 canonicalSource: docs/project/LICENSE-MIGRATION-AUDIT.md
-lastVerified: "2026-03-13"
+lastVerified: "2026-03-14"
 owner: project-docs
 verificationCommand: pnpm run license:audit:all
 ---
@@ -10,14 +10,14 @@ verificationCommand: pnpm run license:audit:all
 
 ## 目的
 
-`#2623` の Apache-2.0 移行前に、現行ライセンス状態と条件付きディレクトリの扱いを事実ベースで固定する。
+`#2623` / `#2673` の Apache-2.0 cutover を支えた pre-cutover factual audit を記録する。
 
 ## 現状
 
-- root `LICENSE` は MIT
-- root `package.json` の `license` field は `MIT`
-- root には `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を追加済み
-- root `NOTICE` は未作成
+- root `LICENSE` は Apache-2.0
+- root `package.json` の `license` field は `Apache-2.0`
+- root `NOTICE` は追加済み
+- root には `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を配置済み
 - `artifacts/**`, `fixtures/**`, `test-cassettes/**` は first-party 固定ではなく、由来確認が必要な条件付きディレクトリとして扱う
 
 ## 監査コマンド
@@ -59,14 +59,13 @@ SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- \
 5. tracked nested legal file / vendored path / submodule の有無を deterministic に列挙する
 6. 以降の notice / contributor / cutover readiness 監査では、入力 audit の `gitHeadSha` が一致していることを前提条件にする
 
-## 第一スライスの判断
+## Pre-cutover audit notes
 
-- いきなり `LICENSE` を Apache-2.0 に差し替えない
-- 先に監査結果で scope / conditional / nested notice を固定する
-- contributor 観点の可否は repo 事実からは断定しない
-- legal conclusion ではなく、実装側で扱える factual inventory を先に揃える
+- `license:audit:all` と `license:audit:precutover` は pre-cutover head での factual evidence を固定するための監査である
+- actual cutover 後の branch head では `apache-license-cutover-readiness-audit/v1` が MIT baseline 前提のため blocked になる
+- そのため cutover PR では、直前の pre-cutover head で取得した audit evidence を approval record と合わせて参照する
 
-## 次段階
+## 記録した実施順序
 
 1. `artifacts/**`, `fixtures/**`, `test-cassettes/**` の由来を棚卸し
 2. `NOTICE` の要否と草案を `pnpm run license:audit:all` の `notice` / `cutover` 出力で整理する
@@ -74,7 +73,7 @@ SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- \
 4. third-party / upstream notice candidate を `pnpm run license:audit:all` の `third-party` 出力で factual input として固定する
 5. cutover approval record の completeness を `pnpm run license:audit:approval` で機械検証し、最終 preflight は `pnpm run license:audit:precutover` で再現可能にする
 6. `LICENSE-SCOPE.md` / `TRADEMARKS.md` / `THIRD_PARTY_NOTICES.md` を監査結果で具体化する
-7. その後に Apache-2.0 切替可否を判断する
+7. human/legal approval 完了後に actual cutover を実行する
 
 ## 関連ドキュメント
 

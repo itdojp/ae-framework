@@ -1,7 +1,7 @@
 ---
 docRole: ssot
 canonicalSource: docs/project/NOTICE-READINESS-AUDIT.md
-lastVerified: "2026-03-13"
+lastVerified: "2026-03-14"
 owner: project-docs
 verificationCommand: pnpm run license:audit:notice -- --scope-audit artifacts/reference/legal/license-scope-audit.json --conditional-audit artifacts/reference/legal/conditional-asset-audit.json --output-json artifacts/reference/legal/notice-readiness-audit.json --output-md artifacts/reference/legal/notice-readiness-audit.md
 ---
@@ -10,11 +10,11 @@ verificationCommand: pnpm run license:audit:notice -- --scope-audit artifacts/re
 
 ## 目的
 
-`#2623` の Apache-2.0 切替可否判断に先立ち、root `NOTICE` を追加してよい状態かを事実ベースで整理する。
+`#2623` / `#2673` の actual cutover で root `NOTICE` を追加する根拠になった事実ベース監査を記録する。
 
 この監査は legal conclusion を出さない。目的は以下に限定する。
 
-- 既存の factual audit をもとに root `NOTICE` の draft-only 文面を固定する
+- 既存の factual audit をもとに root `NOTICE` の承認済み文面を固定する
 - nested notice と conditional assets の review が残っているかを明示する
 - ただし、`docs/` / `tests/` / `schema/` / `fixtures/` / `artifacts/` / `test-cassettes/` 配下の first-party audit/test 文書は nested notice blocker から除外する
 - `LICENSE` 切替前に確認すべき cutover prerequisites を記録する
@@ -37,13 +37,13 @@ pnpm run license:audit:notice -- \
 - `runtime-output-or-unclassified` が 1 件でもあれば `needs-review`
 - 上記 blocker が 0 件なら `draft-ready`
 
-`draft-ready` は root `NOTICE` をすぐ有効化できることを意味しない。`LICENSE` 差し替え前の draft-only 準備完了を意味する。
+`draft-ready` は root `NOTICE` を即時有効化できることを意味しない。pre-cutover head で actual cutover に進める準備が整ったことを意味する。
 
 監査結果には `ignoredNestedNoticeFilesCount` も含まれ、first-party audit/test 文書由来の notice-like filename が何件除外されたかを追跡できる。
 
-## Proposed root NOTICE draft
+## Approved root NOTICE text
 
-監査結果には次の draft-only 文面を含める。
+監査結果には次の承認済み文面を含める。
 
 ```text
 ae-framework
@@ -51,7 +51,7 @@ Copyright (c) ae-framework contributors.
 This product includes software developed by the ae-framework contributors.
 ```
 
-この文面は root `NOTICE` の候補であり、`LICENSE` が Apache-2.0 へ切り替わるまで有効ではない。
+この文面は root `NOTICE` の承認済みテキストであり、actual cutover changeset で採用した。
 
 ## 関連資料
 

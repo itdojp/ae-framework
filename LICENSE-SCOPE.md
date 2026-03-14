@@ -1,14 +1,14 @@
 # License Scope
 
-As of 2026-03-13, the repository-wide standard license remains the MIT License defined in `LICENSE`.
+As of 2026-03-14, the repository-wide standard license is Apache-2.0 as defined in `LICENSE`.
 
 This document records scope-management rules for first-party, conditional, and excluded assets. It does not by itself change the effective license of any file.
 
 ## Current baseline
 
-- Repository standard license: MIT (`LICENSE`)
-- Proposed Apache-2.0 migration: tracked in `Issue #2623`
-- Factual scope audit: `artifacts/reference/legal/license-scope-audit.json`
+- Repository standard license: Apache-2.0 (`LICENSE`)
+- Apache-2.0 cutover execution: tracked in `Issue #2673`
+- Factual scope audit input: `artifacts/reference/legal/license-scope-audit.json`
 
 ## First-party scope
 

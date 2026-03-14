@@ -1,7 +1,7 @@
 ---
 docRole: ssot
 canonicalSource: docs/project/APACHE-LICENSE-CUTOVER-PLAYBOOK.md
-lastVerified: '2026-03-13'
+lastVerified: '2026-03-14'
 owner: project-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -91,22 +91,23 @@ The actual cutover PR should update the following in one changeset.
 - switch root `package.json` `license` from `MIT` to `Apache-2.0`
 - update `README.md` summary if wording still mentions the old default license
 - update `CONTRIBUTING.md` if inbound/outbound text still references the old default license
-- regenerate the factual audits from the cutover head SHA
+- attach the successful pre-cutover audit bundle generated from the immediate pre-change head SHA
 
 ### 4. Validate the cutover PR
+
+Run the preflight command on the immediate pre-cutover head before applying the license switch patch. After the patch is applied, validate the PR with the usual repository checks and attach the previously successful preflight output as evidence.
 
 ```text
 node scripts/ci/validate-json.mjs
 pnpm -s run check:doc-consistency
 pnpm -s run check:ci-doc-index-consistency
-SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md
 ```
 
 ### 5. Post-merge verification
 
 - confirm GitHub license detection reports Apache-2.0 on the repository page
 - confirm `LICENSE-SCOPE.md`, `TRADEMARKS.md`, and `THIRD_PARTY_NOTICES.md` still match the merged head
-- confirm the cutover readiness audit remains `ready` on the merged commit
+- confirm the merged legal files still match the approved pre-cutover evidence and rollback plan
 
 ## Rollback
 
@@ -124,4 +125,5 @@ If the cutover PR is merged and must be reverted, revert the full cutover change
 - `README.md` and `CONTRIBUTING.md` should only change in the actual cutover PR, not earlier. Their wording is part of the externally visible license statement.
 - `NOTICE` should not be added before the cutover PR. The approved draft can exist in `docs/project/NOTICE-READINESS-AUDIT.md`, but the root file should only appear when the license switch is executed.
 - Human sign-off should be captured in `docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md` before the cutover PR is opened.
+- `license:audit:precutover` is a pre-change gate. Once root `LICENSE` and `package.json` switch away from MIT, the resulting branch head is no longer expected to satisfy the pre-cutover readiness baseline.
 - This playbook does not decide legal feasibility. It only fixes the execution procedure once approvals exist.

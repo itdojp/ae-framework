@@ -259,7 +259,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 📄 License / ライセンス
 
-MIT License - see [LICENSE](LICENSE).
+Apache-2.0 - see [LICENSE](LICENSE). Scope, trademark, and third-party notice handling are documented in [LICENSE-SCOPE.md](LICENSE-SCOPE.md), [TRADEMARKS.md](TRADEMARKS.md), and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## 🙏 Acknowledgments
 
