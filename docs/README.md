@@ -103,6 +103,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - CodeX Integration (PoC/MCP/Adapter): `integrations/CODEX-INTEGRATION.md`
 - Codex boundary + vendor-neutral core: `integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md`
 - Hook feedback adapter: `agents/hook-feedback.md`
+- AE handoff sidecar: `agents/handoff.md`
 
 ### Reference
 - CLI Commands: `reference/CLI-COMMANDS-REFERENCE.md`
@@ -144,6 +145,8 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Assurance profile / level: `quality/assurance-profile.md`
 - Assurance operations runbook: `quality/assurance-operations-runbook.md`
 - Quality scorecard: `quality/quality-scorecard.md`
+- Automation observability: `ci/automation-observability.md`
+- Reason codes registry: `ci/reason-codes.md`
 - UI semantic E2E lane: `quality/ui-e2e-lane.md`
 - Assurance onboarding checklist: `guides/assurance-onboarding-checklist.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
