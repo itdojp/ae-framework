@@ -39,6 +39,12 @@ const CUTOVER_ALLOWED_EXACT_PATHS = new Set([
   'THIRD_PARTY_NOTICES.md',
   'docs/agents/commands.md',
   'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+  'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-READINESS.md',
+  'docs/project/APACHE-LICENSE-CUTOVER-PLAYBOOK.md',
+  'schema/apache-license-cutover-approval-readiness-audit.schema.json',
+  'fixtures/legal/sample.apache-license-cutover-approval-readiness-audit.json',
+  'scripts/legal/build-apache-license-cutover-approval-readiness.mjs',
+  'tests/scripts/apache-license-cutover-approval-readiness-audit.test.ts',
 ]);
 
 const CUTOVER_ALLOWED_PREFIXES = [

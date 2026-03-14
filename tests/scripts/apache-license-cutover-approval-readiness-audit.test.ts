@@ -236,6 +236,7 @@ describe('apache license cutover approval readiness audit', () => {
         'TRADEMARKS.md',
         'THIRD_PARTY_NOTICES.md',
         'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+        'scripts/legal/build-apache-license-cutover-approval-readiness.mjs',
         'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
       ],
       generatedAt: '2026-03-13T00:00:00.000Z',

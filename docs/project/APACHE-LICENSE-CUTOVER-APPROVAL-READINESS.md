@@ -40,7 +40,7 @@ SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- \
 
 1. The approval record contains a valid `head SHA`.
 2. The cutover readiness audit `gitHeadSha` and the current repository `HEAD` match.
-3. If the approval record `head SHA` differs from the current `HEAD`, the changed files between them are limited to cutover-allowed paths (`LICENSE`, `NOTICE`, `package.json`, outward-facing legal docs, `docs/project/**`, and `artifacts/reference/legal/**`).
+3. If the approval record `head SHA` differs from the current `HEAD`, the changed files between them are limited to cutover-allowed paths (`LICENSE`, `NOTICE`, `package.json`, outward-facing legal docs, `docs/project/**`, `artifacts/reference/legal/**`) and the approval-readiness infrastructure files that support the cutover gate itself.
 4. All required audit artifact paths are filled in.
 5. The approval table has no unsupported decision values.
 6. The decision block is consistent with the table rows.

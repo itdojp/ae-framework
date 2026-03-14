@@ -74,7 +74,7 @@ Review the generated Markdown reports and record explicit human approval in `doc
 - third-party notice candidates, if any
 - trademark scope
 
-Once the record is complete, run the final preflight command. It regenerates the six factual audits and then validates the approval record against the resulting cutover readiness audit. If the approval snapshot `head SHA` is older than the current cutover branch `HEAD`, the diff must stay within the cutover-allowed files only.
+Once the record is complete, run the final preflight command. It regenerates the six factual audits and then validates the approval record against the resulting cutover readiness audit. If the approval snapshot `head SHA` is older than the current cutover branch `HEAD`, the diff must stay within the cutover-allowed files and the approval-readiness infrastructure files only.
 
 ```text
 SOURCE_DATE_EPOCH=<unix-seconds> pnpm run license:audit:precutover -- --approval-record docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md
