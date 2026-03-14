@@ -128,7 +128,7 @@ flowchart TB
 | 軽量PRゲート | `artifacts/verify-lite/verify-lite-run-summary.json` | PRの最小合否判断 |
 | report-only 健全性集約 | `artifacts/quality/quality-scorecard.json` | verify-lite / policy / optional assurance・formal を横断して overall status を把握 |
 | 仕様変換 | `.ae/ae-ir.json` | 仕様の機械可読SSOT |
-| Context Pack 境界検証 | `artifacts/context-pack/context-pack-boundary-map-report.json` | slice 依存、consume edge、循環の確認 |
+| Context Pack 境界検証（任意実行） | `artifacts/context-pack/context-pack-boundary-map-report.json` | `pnpm run context-pack:verify-boundary-map` 実行時の slice 依存、consume edge、循環の確認 |
 | Conformance | `artifacts/hermetic-reports/conformance/summary.json` | `schemaErrors` / `invariantViolations` |
 | assurance 集約 | `artifacts/assurance/assurance-summary.json` | lane coverage / warning claim / missing evidence kinds を確認 |
 | 形式検証集約 | `artifacts/hermetic-reports/formal/summary.json` | 各ツールの `status` を横断確認 |

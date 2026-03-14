@@ -75,7 +75,7 @@ ae-framework は、エージェント協調型のSDLCを実行するための **
 - **形式検証スタック**: `verify:formal` で conformance/Alloy/TLA/SMT/Apalache/Kani/SPIN/CSP/Lean4 を非ブロッキング統合
 - **CSP 拡張連携**: `verify:csp` が `cspx` を優先利用し、`csp-summary.json` と `cspx-result.json` を契約化（`schema_version=0.1` 前提）
 - **assurance control plane**: `artifacts/assurance/assurance-summary.json`、`artifacts/quality/quality-scorecard.json`、`artifacts/agents/hook-feedback.json`、`artifacts/handoff/ae-handoff.json` を判断用 artifact として生成
-- **Context Pack 境界管理**: `spec/context-pack/boundary-map.json` と `artifacts/context-pack/context-pack-boundary-map-report.json` で slice 依存と循環を検証
+- **Context Pack 境界管理**: `spec/context-pack/boundary-map.json` と `pnpm run context-pack:verify-boundary-map` により、slice 依存と循環を任意実行で検証
 - **ポリシー評価**: `policy-gate.yml` が JS decision と OPA shadow compare を併記し、`AE_POLICY_ENGINE_MODE` で段階移行
 - **集約の可観測性**: `formal-aggregate` が `backend/status/resultStatus/exitCode` をPR向けに集約表示し、`automation-observability-weekly` が SLO / MTTR を継続観測
 - **エージェント/MCP**: `src/mcp-server/*` に intent/test-generation/verify/spec-synthesis 等のサーバ実装

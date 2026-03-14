@@ -122,7 +122,7 @@ This document captures the implementation-aligned architecture of `ae-framework`
 - `policy-gate.yml` は `policy-decision-js-v1.json` と `policy-decision-opa-v1.json` を併記し、`AE_POLICY_ENGINE_MODE=shadow|shadow_strict` で OPA 移行を段階運用します。
 - `policy-gate.yml` は `policy/risk-policy.yml` の `required_checks` を常時評価し、`gate_checks` は high-risk 判定時に評価します。`run-trace` に紐づく `trace-conformance` / `KvOnce Trace Validation` も high-risk 条件を満たした場合のみゲート対象です。
 - `codex-autopilot-lane.yml` は non-suggestion 指摘を fail-closed で扱い、`AE_AUTOPILOT_ACTIONABLE_COMMAND` 設定時のみ自動処理へ進みます。
-- `automation-observability-weekly.yml` は `artifacts/ci/automation-report.json` を基準に SLO / MTTR を週次観測します。
+- `automation-observability-weekly.yml` は GitHub Actions run log 上の `[ae-automation-report]` 行を集約し、週次 summary から SLO / MTTR を観測します。
 
 ## 5. 形式検証スタック（拡張後）
 
@@ -167,7 +167,7 @@ CI pin（再現性）:
 | assurance 集約 | `artifacts/assurance/assurance-summary.json`, `artifacts/assurance/assurance-summary.md` |
 | quality 集約 | `artifacts/quality/quality-scorecard.json`, `artifacts/quality/quality-scorecard.md` |
 | continuation / handoff | `artifacts/agents/hook-feedback.json`, `artifacts/handoff/ae-handoff.json` |
-| Context Pack 境界検証 | `artifacts/context-pack/context-pack-boundary-map-report.json`, `artifacts/context-pack/context-pack-boundary-map-report.md` |
+| Context Pack 境界検証（任意実行） | `artifacts/context-pack/context-pack-boundary-map-report.json`, `artifacts/context-pack/context-pack-boundary-map-report.md` |
 | 形式検証の総覧 | `artifacts/hermetic-reports/formal/summary.json` |
 | Conformance要約 | `artifacts/hermetic-reports/conformance/summary.json` |
 | CSP要約 | `artifacts/hermetic-reports/formal/csp-summary.json` |

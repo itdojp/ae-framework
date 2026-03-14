@@ -39,7 +39,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 | Workflow | 主目的 | 実行トリガ |
 |---|---|---|
 | `verify-lite.yml` | 軽量必須ゲート（型/ビルド/基本検証） | PR / push / dispatch |
-| `policy-gate.yml` | Required checks / risk policy / OPA shadow compare の判定 | PR / review / push / dispatch |
+| `policy-gate.yml` | Required checks / risk policy / OPA shadow compare の判定 | PR / review / workflow_run / dispatch |
 | `copilot-review-gate.yml` | Copilotレビュー存在/解決確認 | PR / review / dispatch |
 | `ci.yml` | 総合オーケストレーション入口 | PR / push / schedule / dispatch |
 | `ci-fast.yml` | 高速検証バッチ | call / dispatch |
