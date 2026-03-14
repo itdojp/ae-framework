@@ -26,6 +26,10 @@
         "cutoverReadinessAuditPath",
         "approvalRecordHeadSha",
         "cutoverReadinessGitHeadSha",
+        "currentGitHeadSha",
+        "approvalSnapshotMatchesCurrentHead",
+        "changedFilesSinceApproval",
+        "unexpectedChangedFilesSinceApproval",
         "auditArtifactPaths"
       ],
       "properties": {
@@ -33,6 +37,16 @@
         "cutoverReadinessAuditPath": { "type": "string", "minLength": 1 },
         "approvalRecordHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
         "cutoverReadinessGitHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "currentGitHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "approvalSnapshotMatchesCurrentHead": { "type": "boolean" },
+        "changedFilesSinceApproval": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "unexpectedChangedFilesSinceApproval": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
         "auditArtifactPaths": {
           "type": "object",
           "additionalProperties": false,
@@ -64,6 +78,8 @@
         "pendingCount",
         "rejectedCount",
         "missingAuditPathCount",
+        "changedFilesSinceApprovalCount",
+        "unexpectedChangedFilesSinceApprovalCount",
         "blockerCount"
       ],
       "properties": {
@@ -72,6 +88,8 @@
         "pendingCount": { "type": "integer", "minimum": 0 },
         "rejectedCount": { "type": "integer", "minimum": 0 },
         "missingAuditPathCount": { "type": "integer", "minimum": 0 },
+        "changedFilesSinceApprovalCount": { "type": "integer", "minimum": 0 },
+        "unexpectedChangedFilesSinceApprovalCount": { "type": "integer", "minimum": 0 },
         "blockerCount": { "type": "integer", "minimum": 0 }
       }
     },

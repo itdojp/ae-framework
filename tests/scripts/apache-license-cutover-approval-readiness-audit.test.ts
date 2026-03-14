@@ -213,21 +213,62 @@ describe('apache license cutover approval readiness audit', () => {
     expect(audit.readiness.status).toBe('blocked');
   });
 
-  it('fails fast when approval record sha mismatches current head', () => {
+  it('allows approval snapshot drift when the changed files stay within cutover scope', () => {
     const approvalRecord = parseApprovalRecord(buildApprovalRecordMarkdown({
       headSha: '2222222222222222222222222222222222222222',
     }));
-    expect(() => buildApacheLicenseCutoverApprovalReadinessAudit({
+    const audit = buildApacheLicenseCutoverApprovalReadinessAudit({
       approvalRecord,
       approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
       cutoverReadinessAudit: {
-        gitHeadSha: '2222222222222222222222222222222222222222',
+        gitHeadSha: '1111111111111111111111111111111111111111',
         readiness: { status: 'human-review-required' },
       },
       cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
       gitHeadSha: '1111111111111111111111111111111111111111',
+      changedFilesSinceApproval: [
+        'LICENSE',
+        'NOTICE',
+        'package.json',
+        'README.md',
+        'CONTRIBUTING.md',
+        'LICENSE-SCOPE.md',
+        'TRADEMARKS.md',
+        'THIRD_PARTY_NOTICES.md',
+        'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+        'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
+      ],
       generatedAt: '2026-03-13T00:00:00.000Z',
-    })).toThrow('approval record head SHA does not match the current repository HEAD');
+    });
+
+    expect(audit.readiness.status).toBe('ready');
+    expect(audit.inputs.approvalSnapshotMatchesCurrentHead).toBe(false);
+    expect(audit.summary.unexpectedChangedFilesSinceApprovalCount).toBe(0);
+  });
+
+  it('blocks when approval snapshot drift includes non-cutover files', () => {
+    const approvalRecord = parseApprovalRecord(buildApprovalRecordMarkdown({
+      headSha: '2222222222222222222222222222222222222222',
+    }));
+    const audit = buildApacheLicenseCutoverApprovalReadinessAudit({
+      approvalRecord,
+      approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+      cutoverReadinessAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
+        readiness: { status: 'human-review-required' },
+      },
+      cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
+      changedFilesSinceApproval: [
+        'LICENSE',
+        'src/index.ts',
+      ],
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    });
+
+    expect(audit.readiness.status).toBe('blocked');
+    expect(audit.readiness.blockers.map((item) => item.code)).toContain('approval-snapshot-diverged-outside-cutover-scope');
+    expect(audit.inputs.unexpectedChangedFilesSinceApproval).toEqual(['src/index.ts']);
   });
 
   it('renders a markdown report', () => {
