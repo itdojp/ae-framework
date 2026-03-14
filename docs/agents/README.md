@@ -2,7 +2,7 @@
 docRole: derived
 canonicalSource:
 - docs/agents/agents-doc-boundary-matrix.md
-lastVerified: '2026-03-12'
+lastVerified: '2026-03-14'
 ---
 
 # Agent Docs Index
@@ -32,7 +32,10 @@ lastVerified: '2026-03-12'
 - CI運用: `docs/ci/ci-operations-handbook.md`
 - CI障害復旧: `docs/ci/ci-troubleshooting-guide.md`
 - PR自動化運用: `docs/ci/pr-automation.md`
+- Codex Autopilot Lane: `docs/ci/codex-autopilot-lane.md`
+- Automation reason codes: `docs/ci/reason-codes.md`
 - Prompt Pack（検証プロンプト集）: `docs/agents/recipes/README.md`
+- Continuous Loop Contract: `docs/agents/recipes/continuous-loop.md`
 - Handoff標準プロトコル / builder / validator: `docs/agents/handoff.md`
 - Hook feedback adapter: `docs/agents/hook-feedback.md`
 - 権限境界: `docs/ci/automation-permission-boundaries.md`
