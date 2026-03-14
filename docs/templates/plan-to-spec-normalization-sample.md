@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-12'
+lastVerified: '2026-03-14'
 owner: templates-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -87,8 +87,12 @@ verificationCommand: pnpm -s run check:doc-consistency
 - Required gates:
   - [x] lint
   - [x] test
-  - [x] review gate
   - [x] verify-lite
+  - [x] policy-gate
+  - [x] gate
+- Local preflight / repository checks:
+  - [x] lint
+  - [x] test
 - Optional gates (opt-in):
   - [ ] formal
   - [ ] security
@@ -105,15 +109,15 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 | Contract ID | Type | Verification (test/gate) | Evidence |
 | --- | --- | --- | --- |
-| PRE-001 | precondition | Copilot Review Gate / checklist review | PR review thread |
+| PRE-001 | precondition | checklist review + `gate` | PR review thread |
 | POST-001 | postcondition | verify-lite summary確認 | `artifacts/verify-lite/verify-lite-run-summary.json` |
-| INV-001 | invariant | Required gate確認（review gate + verify-lite） | Required checks status |
+| INV-001 | invariant | Required gate確認（`verify-lite` + `policy-gate` + `gate`） | Required checks status, `artifacts/ci/policy-gate-summary.json` |
 
 ## 6. Evidence Contract / 証跡契約
 
 - Required evidence:
   - CI run URL: PRごとに記録
-  - Gate result summary path: `artifacts/verify-lite/verify-lite-run-summary.json`
+  - Gate result summary path: `artifacts/verify-lite/verify-lite-run-summary.json`, `artifacts/ci/policy-gate-summary.json`
   - Reproduction command(s): `pnpm types:check && pnpm lint && pnpm build`
 - Optional evidence:
   - Formal report path: `artifacts/hermetic-reports/formal/summary.json`
@@ -124,9 +128,9 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 | Plan or Contract item | Spec artifact | Gate / Check | Evidence |
 | --- | --- | --- | --- |
-| Thread->Repo手順の定義 | `docs/guides/THREAD-REPO-CI-FLOW.md` | review gate | PR review thread |
+| Thread->Repo手順の定義 | `docs/guides/THREAD-REPO-CI-FLOW.md` | gate | PR review thread |
 | テンプレ適用例の追加 | `docs/templates/plan-to-spec-normalization-sample.md` | verify-lite | CI summary artifact |
-| PRE-001 / POST-001 / INV-001 | `docs/templates/plan-to-spec-normalization-template.md` | review gate + verify-lite | Required checks status |
+| PRE-001 / POST-001 / INV-001 | `docs/templates/plan-to-spec-normalization-template.md` | `verify-lite` + `policy-gate` + `gate` | Required checks status, `artifacts/ci/policy-gate-summary.json` |
 
 ## 8. Delivery Checklist / 実行チェックリスト
 

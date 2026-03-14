@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-12'
+lastVerified: '2026-03-14'
 ---
 
 # Issue #1006: CI Consolidation Strategy v1 (Month 2)
@@ -24,7 +24,8 @@ lastVerified: '2026-03-12'
 - docs/ci/branch-protection-operations.md
 
 ## 制約
-- required checks を維持（Verify Lite / verify-lite, Copilot Review Gate / gate）
+- draft 作成時の historical required checks は `Verify Lite / verify-lite`, `Copilot Review Gate / gate`
+- current-state の main Required checks は `verify-lite`, `policy-gate`, `gate` であり、将来の統合検討でもこの 3 context を壊さない
 - workflow_call で呼び出されるパイプラインの互換性維持
 - schedule/manual の監査系を削減する場合は実行意図と通知を維持
 - 既存のレポート/アーティファクト出力の互換性維持
@@ -97,7 +98,7 @@ lastVerified: '2026-03-12'
 
 ## ロールバック指針
 - 1 PR 1 統合を厳守し、各 PR は revert で巻き戻せるようにする
-- required checks 名称は変更しない（verify-lite/gate の name を維持）
+- current-state の required check 名称は変更しない（`verify-lite` / `policy-gate` / `gate` の context を維持）
 - 既存のアーティファクト名・summary comment を維持し、差分が出た場合は同 PR で修正
 
 ## 残オープン事項

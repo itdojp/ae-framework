@@ -4,7 +4,7 @@ canonicalSource:
 - docs/ci/branch-protection-operations.md
 - docs/reference/CLI-COMMANDS-REFERENCE.md
 - docs/quality/formal-runbook.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-14'
 ---
 # ae-framework 典型的な利用シナリオ（Use Cases）
 
@@ -40,7 +40,7 @@ pnpm exec ae --help
 ```
 
 ### 0.3 CI（GitHub Actions）
-主要ワークフローは `.github/workflows/*` に定義されています。PR運用では `Verify Lite / verify-lite` と `Copilot Review Gate / gate` を基本ゲートとする前提が一般的です。
+主要ワークフローは `.github/workflows/*` に定義されています。PR運用では `Verify Lite / verify-lite`、`Policy Gate / policy-gate`、`Copilot Review Gate / gate` を current main baseline の基本ゲートとする前提が一般的です。
 
 ---
 
