@@ -272,6 +272,24 @@ describe('apache license cutover approval readiness audit', () => {
     expect(audit.inputs.unexpectedChangedFilesSinceApproval).toEqual(['src/index.ts']);
   });
 
+  it('requires changedFilesSinceApproval when the approval snapshot head differs from the current HEAD', () => {
+    const approvalRecord = parseApprovalRecord(buildApprovalRecordMarkdown({
+      headSha: '2222222222222222222222222222222222222222',
+    }));
+
+    expect(() => buildApacheLicenseCutoverApprovalReadinessAudit({
+      approvalRecord,
+      approvalRecordPath: 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+      cutoverReadinessAudit: {
+        gitHeadSha: '1111111111111111111111111111111111111111',
+        readiness: { status: 'human-review-required' },
+      },
+      cutoverReadinessAuditPath: 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
+      gitHeadSha: '1111111111111111111111111111111111111111',
+      generatedAt: '2026-03-13T00:00:00.000Z',
+    })).toThrow('changedFilesSinceApproval is required');
+  });
+
   it('renders a markdown report', () => {
     const approvalRecord = parseApprovalRecord(buildApprovalRecordMarkdown());
     const audit = buildApacheLicenseCutoverApprovalReadinessAudit({
@@ -327,5 +345,85 @@ describe('apache license cutover approval readiness audit', () => {
     expect(exitCode).toBe(0);
     expect(JSON.parse(fs.readFileSync(outputJson, 'utf8')).schemaVersion).toBe('apache-license-cutover-approval-readiness-audit/v1');
     expect(fs.readFileSync(outputMd, 'utf8')).toContain('Apache License Cutover Approval Readiness Audit');
+  });
+
+  it('computes allowed approval drift from git history in the cli runner', () => {
+    const rootDir = makeTempDir();
+    const approvalRecordPath = path.join(rootDir, 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md');
+    const cutoverAuditPath = path.join(rootDir, 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json');
+    const outputJson = path.join(rootDir, 'artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.json');
+
+    const approvalHeadSha = initGitRepo(rootDir);
+    fs.mkdirSync(path.dirname(approvalRecordPath), { recursive: true });
+    fs.mkdirSync(path.dirname(cutoverAuditPath), { recursive: true });
+    fs.writeFileSync(approvalRecordPath, buildApprovalRecordMarkdown({ headSha: approvalHeadSha }));
+    fs.writeFileSync(path.join(rootDir, 'LICENSE'), 'placeholder\n');
+    execFileSync('git', ['add', 'LICENSE', 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md'], { cwd: rootDir, stdio: 'ignore' });
+    execFileSync('git', ['commit', '-m', 'allowed cutover drift'], { cwd: rootDir, stdio: 'ignore' });
+    const currentHeadSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: rootDir, encoding: 'utf8' }).trim();
+    fs.writeFileSync(cutoverAuditPath, JSON.stringify({
+      schemaVersion: 'apache-license-cutover-readiness-audit/v1',
+      gitHeadSha: currentHeadSha,
+      readiness: { status: 'human-review-required' },
+    }, null, 2));
+
+    const exitCode = run([
+      'node',
+      'scripts/legal/build-apache-license-cutover-approval-readiness.mjs',
+      '--root',
+      rootDir,
+      '--approval-record',
+      'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+      '--cutover-readiness-audit',
+      'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
+      '--output-json',
+      'artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.json',
+    ]);
+
+    expect(exitCode).toBe(0);
+    const audit = JSON.parse(fs.readFileSync(outputJson, 'utf8'));
+    expect(audit.readiness.status).toBe('ready');
+    expect(audit.inputs.approvalSnapshotMatchesCurrentHead).toBe(false);
+    expect(audit.summary.unexpectedChangedFilesSinceApprovalCount).toBe(0);
+  });
+
+  it('blocks disallowed approval drift discovered from git history in the cli runner', () => {
+    const rootDir = makeTempDir();
+    const approvalRecordPath = path.join(rootDir, 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md');
+    const cutoverAuditPath = path.join(rootDir, 'artifacts/reference/legal/apache-license-cutover-readiness-audit.json');
+    const outputJson = path.join(rootDir, 'artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.json');
+
+    const approvalHeadSha = initGitRepo(rootDir);
+    fs.mkdirSync(path.dirname(approvalRecordPath), { recursive: true });
+    fs.mkdirSync(path.dirname(cutoverAuditPath), { recursive: true });
+    fs.mkdirSync(path.join(rootDir, 'src'), { recursive: true });
+    fs.writeFileSync(approvalRecordPath, buildApprovalRecordMarkdown({ headSha: approvalHeadSha }));
+    fs.writeFileSync(path.join(rootDir, 'src/index.ts'), 'export const changed = true;\n');
+    execFileSync('git', ['add', 'src/index.ts', 'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md'], { cwd: rootDir, stdio: 'ignore' });
+    execFileSync('git', ['commit', '-m', 'disallowed drift'], { cwd: rootDir, stdio: 'ignore' });
+    const currentHeadSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: rootDir, encoding: 'utf8' }).trim();
+    fs.writeFileSync(cutoverAuditPath, JSON.stringify({
+      schemaVersion: 'apache-license-cutover-readiness-audit/v1',
+      gitHeadSha: currentHeadSha,
+      readiness: { status: 'human-review-required' },
+    }, null, 2));
+
+    const exitCode = run([
+      'node',
+      'scripts/legal/build-apache-license-cutover-approval-readiness.mjs',
+      '--root',
+      rootDir,
+      '--approval-record',
+      'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
+      '--cutover-readiness-audit',
+      'artifacts/reference/legal/apache-license-cutover-readiness-audit.json',
+      '--output-json',
+      'artifacts/reference/legal/apache-license-cutover-approval-readiness-audit.json',
+    ]);
+
+    expect(exitCode).toBe(0);
+    const audit = JSON.parse(fs.readFileSync(outputJson, 'utf8'));
+    expect(audit.readiness.status).toBe('blocked');
+    expect(audit.inputs.unexpectedChangedFilesSinceApproval).toEqual(['src/index.ts']);
   });
 });

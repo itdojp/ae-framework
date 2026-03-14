@@ -1,7 +1,7 @@
 ---
 docRole: ssot
 canonicalSource: docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-READINESS.md
-lastVerified: '2026-03-13'
+lastVerified: '2026-03-14'
 owner: project-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
