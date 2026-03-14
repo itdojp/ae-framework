@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import {
   normalizeRequiredGitHeadSha,
@@ -37,7 +37,6 @@ const CUTOVER_ALLOWED_EXACT_PATHS = new Set([
   'LICENSE-SCOPE.md',
   'TRADEMARKS.md',
   'THIRD_PARTY_NOTICES.md',
-  'docs/agents/commands.md',
   'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-RECORD.md',
   'docs/project/APACHE-LICENSE-CUTOVER-APPROVAL-READINESS.md',
   'docs/project/APACHE-LICENSE-CUTOVER-PLAYBOOK.md',
@@ -71,11 +70,18 @@ function isCutoverAllowedPath(filePath) {
 }
 
 function listChangedFilesBetweenShas(rootDir, fromSha, toSha) {
-  const output = execFileSync('git', ['diff', '--name-only', `${fromSha}..${toSha}`], {
+  const result = spawnSync('git', ['diff', '--name-only', `${fromSha}..${toSha}`], {
     cwd: rootDir,
     encoding: 'utf8',
   });
-  return output
+  if (result.status !== 0) {
+    const stderr = String(result.stderr || '').trim();
+    const stdout = String(result.stdout || '').trim();
+    throw new Error(
+      `git diff --name-only failed for approval drift inventory${stderr ? `: ${stderr}` : stdout ? `: ${stdout}` : ''}`,
+    );
+  }
+  return String(result.stdout || '')
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
@@ -227,7 +233,7 @@ export function buildApacheLicenseCutoverApprovalReadinessAudit({
   cutoverReadinessAudit,
   cutoverReadinessAuditPath,
   gitHeadSha,
-  changedFilesSinceApproval = [],
+  changedFilesSinceApproval,
   generatedAt = new Date().toISOString(),
 }) {
   const blockers = [];
@@ -238,12 +244,16 @@ export function buildApacheLicenseCutoverApprovalReadinessAudit({
     cutoverReadinessAudit,
     gitHeadSha,
   });
+  const approvalSnapshotMatchesCurrentHead = approvalRecordHeadSha === currentGitHeadSha;
+  const changedFilesProvided = Array.isArray(changedFilesSinceApproval);
+  if (!approvalSnapshotMatchesCurrentHead && !changedFilesProvided) {
+    throw new Error('changedFilesSinceApproval is required when approval snapshot head SHA differs from the current HEAD');
+  }
   const normalizedChangedFiles = [...new Set(
-    changedFilesSinceApproval
+    (changedFilesSinceApproval ?? [])
       .map((filePath) => String(filePath ?? '').trim())
       .filter((filePath) => filePath.length > 0),
   )].sort();
-  const approvalSnapshotMatchesCurrentHead = approvalRecordHeadSha === currentGitHeadSha;
   const unexpectedChangedFilesSinceApproval = approvalSnapshotMatchesCurrentHead
     ? []
     : normalizedChangedFiles.filter((filePath) => !isCutoverAllowedPath(filePath));
