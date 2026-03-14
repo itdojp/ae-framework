@@ -1,6 +1,6 @@
 # Trademarks
 
-As of 2026-03-13, no trademark license is granted by `LICENSE` or by any repository-standard software license that may be adopted later.
+As of 2026-03-14, Apache-2.0 in `LICENSE` does not grant any trademark license.
 
 ## Covered identifiers
 

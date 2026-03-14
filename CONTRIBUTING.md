@@ -36,9 +36,9 @@
 
 ### Inbound / outbound licensing policy
 - Unless explicitly agreed otherwise, contributions intended for first-party project assets are submitted under the repository-standard license in effect at merge time.
-- As of 2026-03-13, the repository-standard license is MIT (`LICENSE`).
+- The repository-standard license is Apache-2.0 (`LICENSE`).
 - License-scope, trademark, and third-party notice handling are documented in `LICENSE-SCOPE.md`, `TRADEMARKS.md`, and `THIRD_PARTY_NOTICES.md`.
-- The proposed Apache-2.0 migration remains under review in `Issue #2623`; do not assume it is effective until `LICENSE` is actually changed.
+- Use `LICENSE`, `NOTICE`, and the root legal companion documents as the authoritative current-state policy.
 
 pnpm setup:
 ```bash
@@ -86,9 +86,9 @@ This is a monorepo; prefer `pnpm --filter` for workspace commands (e.g., `pnpm -
 
 ### contribution の inbound / outbound 方針
 - 明示的な別合意がない限り、first-party project asset 向けの contribution は、merge 時点で有効な repository-standard license の下で提出されるものとして扱います。
-- 2026-03-13 時点の repository-standard license は MIT (`LICENSE`) です。
+- repository-standard license は Apache-2.0 (`LICENSE`) です。
 - ライセンス適用範囲、商標、third-party notice の扱いは `LICENSE-SCOPE.md`、`TRADEMARKS.md`、`THIRD_PARTY_NOTICES.md` に記載します。
-- Apache-2.0 への変更提案は `Issue #2623` で検討中であり、`LICENSE` が実際に更新されるまでは有効化されていません。
+- 現行方針は `LICENSE`、`NOTICE`、および root legal companion documents を authoritative source として扱ってください。
 
 pnpm の導入:
 ```bash
