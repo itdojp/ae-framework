@@ -501,6 +501,7 @@
     "why-is-node-running": "^3.2.2"
   },
   "files": [
+    "NOTICE",
     "dist/**",
     "scripts/ci/check-package-manager.mjs",
     "templates/**",
