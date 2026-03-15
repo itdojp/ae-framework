@@ -104,9 +104,9 @@ This document captures the implementation-aligned architecture of `ae-framework`
 
 | 種別 | 代表ワークフロー | 目的 |
 | --- | --- | --- |
-| 必須軽量ゲート | `verify-lite.yml`, `coverage-check.yml`, `workflow-lint.yml` | 日常PRの安定ゲート |
+| 必須 baseline ゲート | `verify-lite.yml` | 日常PRの最小 verification baseline と required artifact 生成 |
 | 必須ポリシーゲート | `policy-gate.yml` | risk/topology/approval 方針の判定（team/solo 切替対応、required checks評価） |
-| レビューゲート | `copilot-review-gate.yml` | Copilotレビュー存在 + スレッド解決確認 |
+| 必須レビューゲート | `copilot-review-gate.yml` | `gate` check として Copilotレビュー存在 + スレッド解決確認 |
 | レビュー対応（auto-fix） | `copilot-auto-fix.yml` | Copilot suggestion をPRへ自動適用（コミット/push）+ スレッド解決（任意） |
 | touchless運用レーン | `codex-autopilot-lane.yml` | `autopilot:on` PRの収束ループ（update-branch / auto-fix / gate再実行 / auto-merge試行） |
 | 自動マージ（auto-merge） | `pr-ci-status-comment.yml` | 条件成立時に auto-merge を自動有効化し、人手マージを省略（任意） |
@@ -163,7 +163,7 @@ CI pin（再現性）:
 
 | 用途 | 代表ファイル |
 | --- | --- |
-| Required gate の最小判定 | `artifacts/verify-lite/verify-lite-run-summary.json`, `artifacts/ci/policy-gate-summary.json` |
+| Required gate の最小判定 | `artifacts/verify-lite/verify-lite-run-summary.json`, `artifacts/ci/policy-gate-summary.json`, `gate` check run |
 | assurance 集約 | `artifacts/assurance/assurance-summary.json`, `artifacts/assurance/assurance-summary.md` |
 | quality 集約 | `artifacts/quality/quality-scorecard.json`, `artifacts/quality/quality-scorecard.md` |
 | continuation / handoff | `artifacts/agents/hook-feedback.json`, `artifacts/handoff/ae-handoff.json` |
