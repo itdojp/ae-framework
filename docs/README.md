@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-12'
+lastVerified: '2026-03-14'
 ---
 
 # 📚 ae-framework Documentation / ドキュメント
@@ -157,6 +157,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Usefulness evaluation: `quality/usefulness-evaluation.md`（4軸スコア算出/終了コード契約）
 - Issue requirements traceability: `quality/issue-requirements-traceability.md`（extract-ids/matrix/strict validate）
 - PoC success criteria (#2409 first slice): `quality/poc-success-criteria-2409.md`（performance/reproducibility/cost/ops/exit）
+- Local stack foundation PoC (#2409): `infra/local-stack-foundation-poc.md`（Go/Rust + NATS + PostgreSQL + S3 の比較手順）
 - PoC comparison template (TS baseline vs Go/Rust): `templates/quality/poc-comparison-metrics-template.md`
 - ADR template for adoption/rejection decision: `templates/quality/adr-poc-adoption-template.md`
 - CI policy: `ci-policy.md`（PRコアゲート/opt-in/運用方針）
@@ -183,6 +184,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Automation Observability: `ci/automation-observability.md`（共通JSON/Step Summary出力）
 - Automation Alerting: `ci/automation-alerting.md`（通知条件/テンプレート/重複抑止）
 - Automation SLO/MTTR: `ci/automation-slo-mttr.md`（成功率SLOと復旧時間MTTRの定義）
+- Automation reason codes: `ci/reason-codes.md`（失敗分類の安定キー）
 - OTel/Artifacts/Gate Integration Plan: `ci/otel-artifacts-gate-integration-plan.md`（Issue #2380 の段階導入設計）
 - Trace criteria: `ci/trace-required-criteria.md`（Go/No-Go判定/集計手順/preset昇格）
 - Context Pack Gate Rollout: `ci/context-pack-gate-rollout.md`（non-blocking→blocking 段階導入）

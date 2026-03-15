@@ -33,6 +33,7 @@ Tips
 ### Breaking schema changes (required)
 When changing machine-readable outputs (for example `schema/*.schema.json` consumers), follow this procedure in the same PR:
 1. Bump the schema version marker (for example `schemaVersion` major for backward-incompatible changes).
+   - Use the contract family's existing compatibility boundary: semver families bump `schemaVersion`, contract-style families introduce a new `<contract>/vN` line and matching `contractId`.
 2. Apply `dual-write + dual-validate` during migration when consumers exist on both old and new contracts.
 3. Update contract tests and schema validation scripts so CI fails on invalid payloads and passes on expected payloads.
 4. Add a compatibility note in release notes with:
@@ -67,7 +68,7 @@ When changing machine-readable outputs (for example `schema/*.schema.json` consu
 
 ### 互換性破壊を伴うスキーマ変更（必須手順）
 機械可読出力（例: `schema/*.schema.json` の利用対象）を変更する場合は、同一PRで次を実施します。
-1. スキーマのバージョン識別子を更新する（後方互換性を破る場合は `schemaVersion` の major を更新）。
+1. 契約系列に応じた互換境界を更新する（semver 系列は `schemaVersion` を更新し、contract-style 系列は新しい `<contract>/vN` と対応する `contractId` を導入する）。
 2. 旧/新の利用者が併存する期間は `dual-write + dual-validate` を運用する。
 3. 契約テストとスキーマ検証スクリプトを更新し、想定外ペイロードをCIで検出できる状態にする。
 4. リリースノートに互換性注記を追加する。

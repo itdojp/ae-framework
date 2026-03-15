@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-14'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -78,6 +78,7 @@ These URLs are branch/path-coupled and are not stable schema identifiers.
 - `contractId` is a stable contract family identifier (example: `pr-state.v1`, `execution-plan.v1`) and should be fixed by schema `const` when present.
 - New machine-readable artifacts should include at least one explicit compatibility key (`schemaVersion` or `contractId`); include both when the producer has long-lived consumers.
 - Mixed version expression inside one contract family is forbidden. Choose one migration target and keep dual-read compatibility during transition.
+- Release / migration notes must describe the boundary change in the contract family's own style. Do not force a contract-style family into semver just to satisfy release bookkeeping.
 
 ### 9. Dual-write / dual-validate migration rules
 
@@ -177,6 +178,7 @@ These URLs are branch/path-coupled and are not stable schema identifiers.
 - `contractId` は契約系列の安定識別子（例: `pr-state.v1`, `execution-plan.v1`）であり、存在する場合は schema 側で `const` 固定します。
 - 新規の機械可読成果物は、互換境界キー（`schemaVersion` または `contractId`）を最低1つ持つこと。長期消費される成果物は両方を持つことを推奨します。
 - 同一契約系列内で版表現を混在させないこと。移行時は dual-read 互換期間を明示します。
+- リリースノートや移行注記では、契約系列が採用している版表現で互換境界を説明します。release 手順のためだけに contract-style 系列を semver へ変換しないでください。
 
 ### 9. dual-write / dual-validate 運用ルール
 

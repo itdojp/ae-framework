@@ -1,14 +1,19 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-14'
 owner: repo-maintenance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
 # Workflow Inventory (Issue #2031 / Phase 3)
 
-最終更新: 2026-02-24
+最終更新: 2026-03-14（snapshot baseline: 2026-02-24）
 
-対象: `.github/workflows/*.yml`（51 files）
+対象: `.github/workflows/*.yml`（snapshot: 51 files / current: 56 files）
+
+注記（2026-03-14）:
+- 本書は Phase 3 時点の inventory snapshot を残すための historical note です。
+- current-state の運用責務は `docs/ci/workflow-role-matrix.md`、4系統トポロジは `docs/ci/workflow-topology-mapping-2026-03-04.md` を優先してください。
+- main branch の current Required checks は `verify-lite`、`policy-gate`、`gate` です。
 
 ## 1. 調査方法
 
@@ -20,19 +25,20 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## 2. 必須/任意の現状（main branch protection 基準）
 
-main の Required checks は次の 2 つのみ。
+main の current Required checks は次の 3 つです。
 
 | Required check context | 対応 workflow | 判定 |
 |---|---|---|
 | `verify-lite` | `verify-lite.yml` | 必須 |
+| `policy-gate` | `policy-gate.yml` | 必須 |
 | `gate` | `copilot-review-gate.yml` | 必須 |
 
 補足:
 
-- 上記以外の workflow は、実行されても merge blocking の必須条件ではない（2026-02-24 時点）。
+- 4系統トポロジと current-state の責務整理は `docs/ci/workflow-role-matrix.md` と `docs/ci/workflow-topology-mapping-2026-03-04.md` を優先する。
 - ただし個別 workflow 内で failure を返す場合、運用上の判断で対応対象になる。
 
-## 3. workflow_dispatch 入力棚卸し（主要運用フロー）
+## 3. workflow_dispatch 入力棚卸し（2026-02-24 snapshot）
 
 `workflow_dispatch` 対応 workflow の入力一覧:
 
@@ -97,13 +103,14 @@ flowchart TD
 
 補足:
 - `ci.yml` は entry workflow として reusable workflow を起動するハブ
-- required checks は `verify-lite` と `gate` のみで、`ci.yml` 配下ジョブは merge blocking の必須条件ではない
+- current-state の required checks は `verify-lite`、`policy-gate`、`gate` であり、`ci.yml` 配下 job は merge blocking の必須条件ではない
 
 ## 5. 必須/任意/レポート分類（運用上の整理）
 
 `core`（常時運用の中心）:
 
 - `verify-lite.yml`（Required）
+- `policy-gate.yml`（Required）
 - `copilot-review-gate.yml`（Required）
 - `ci.yml`（総合入口）
 - `ci-fast.yml` / `pr-verify.yml` / `verify.yml`（主要検証）
@@ -122,7 +129,7 @@ flowchart TD
 - `automation-observability-weekly.yml`, `adapter-thresholds.yml`
 - `branch-protection-apply.yml`, `release-quality-artifacts.yml`, `triage.yml`
 
-## 6. 全 workflow 一覧（イベント別）
+## 6. 全 workflow 一覧（イベント別 / historical snapshot）
 
 ### 6.1 `pull_request`（22）
 
