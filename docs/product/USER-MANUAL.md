@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/reference/CLI-COMMANDS-REFERENCE.md
 - package.json
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-14'
 ---
 # ae-framework 利用マニュアル
 
@@ -153,7 +153,7 @@ pnpm run test:int
 
 ### 4.4 CI運用の基本
 - PR作成時に verify-lite を基本ゲートとします
-- Branch protection の Required checks では、`Verify Lite / verify-lite` と `Copilot Review Gate / gate` を必須化する運用が想定されています（詳細: `docs/ci/branch-protection-operations.md`, `docs/ci/copilot-review-gate.md`）
+- Branch protection の Required checks では、`Verify Lite / verify-lite`、`Policy Gate / policy-gate`、`Copilot Review Gate / gate` を必須化する運用が current-state の main baseline です（詳細: `docs/ci/branch-protection-operations.md`, `docs/ci/copilot-review-gate.md`）
 - （任意）Copilot suggestion の自動適用（auto-fix）を有効化できます（プロジェクト単位のRepository Variables）。詳細: `docs/ci/copilot-auto-fix.md`
 - （任意）auto-merge を自動有効化し、人手マージを省略する運用にできます（プロジェクト単位のRepository Variables）。詳細: `docs/ci/auto-merge.md`
 - PR 自動化（Copilot→auto-fix→auto-merge）の運用全体像: `docs/ci/pr-automation.md`

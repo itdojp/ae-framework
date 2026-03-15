@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-12'
+lastVerified: '2026-03-14'
 owner: templates-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -75,11 +75,13 @@ Plan (thread/conversation asset) を repository SSOT に正規化するための
 
 ## 5. Verification Plan / 検証計画
 
-- Required gates:
+- Required gates（current main baseline。branch protection に応じて調整）:
+  - [ ] verify-lite
+  - [ ] policy-gate
+  - [ ] gate
+- Local preflight / repository checks:
   - [ ] lint
   - [ ] test
-  - [ ] review gate
-  - [ ] verify-lite
 - Optional gates (opt-in):
   - [ ] formal
   - [ ] security
@@ -97,14 +99,14 @@ Plan (thread/conversation asset) を repository SSOT に正規化するための
 | Contract ID | Type | Verification (test/gate) | Evidence |
 | --- | --- | --- | --- |
 | PRE-* | precondition | 例: request validation / negative tests | 例: `tests/**`, CI logs |
-| POST-* | postcondition | 例: integration assertions / state assertions | 例: `artifacts/**` |
-| INV-* | invariant | 例: property tests / runtime conformance / DB constraints | 例: `reports/**` |
+| POST-* | postcondition | 例: integration assertions / state assertions / `verify-lite` | 例: `artifacts/verify-lite/**`, `artifacts/**` |
+| INV-* | invariant | 例: property tests / runtime conformance / `policy-gate` / `gate` | 例: `artifacts/ci/**`, PR review thread, `reports/**` |
 
 ## 6. Evidence Contract / 証跡契約
 
 - Required evidence:
   - CI run URL:
-  - Gate result summary path:
+  - Gate result summary path(s): `artifacts/verify-lite/verify-lite-run-summary.json`, `artifacts/ci/policy-gate-summary.json`
   - Reproduction command(s):
 - Optional evidence:
   - Formal report path:
@@ -115,7 +117,7 @@ Plan (thread/conversation asset) を repository SSOT に正規化するための
 
 | Plan or Contract item | Spec artifact | Gate / Check | Evidence |
 | --- | --- | --- | --- |
-| 例: タスクA | `spec/example-spec.md` | `verify-lite` | `artifacts/verify-lite/verify-lite-run-summary.json` |
+| 例: タスクA | `spec/example-spec.md` | `verify-lite` / `policy-gate` / `gate` | `artifacts/verify-lite/verify-lite-run-summary.json`, `artifacts/ci/policy-gate-summary.json`, PR review thread |
 | 例: PRE-001（入力制約） | `spec/example-feature-spec.md` | `unit` | `tests/**` |
 |  |  |  |  |
 

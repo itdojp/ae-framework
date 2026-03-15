@@ -4,7 +4,7 @@ canonicalSource:
 - docs/getting-started/QUICK-START-GUIDE.md
 - .github/workflows/verify-lite.yml
 - package.json
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-14'
 ---
 # ae-framework Minimal Adoption（最小導入パッケージ）
 
@@ -41,11 +41,13 @@ pnpm run verify:lite
 ### 3.2 PR運用（最小ゲート）
 - Required checks:
   - `Verify Lite / verify-lite`
+  - `Policy Gate / policy-gate`
   - `Copilot Review Gate / gate`
 - 根拠: `docs/ci/branch-protection-operations.md`, `docs/ci/copilot-review-gate.md`
 
 ### 3.3 成果物（最小）
 - `artifacts/verify-lite/verify-lite-run-summary.json`
+- `artifacts/ci/policy-gate-summary.json`
 - `artifacts/report-envelope.json`
 
 > 補足: verify-lite ではサマリ/エンベロープのスキーマ検証が既に組み込まれています（`.github/workflows/verify-lite.yml`）。
@@ -72,7 +74,7 @@ pnpm run verify:lite
 ## 5. 目的別の導入パス（最小→拡張）
 
 ### 5.1 PR運用の標準化（最小）
-- Required checks を verify-lite + Copilot gate に統一
+- Required checks を `verify-lite` + `policy-gate` + `gate` に統一
 - 追加検証は opt-in（`run-security`, `run-formal`, `run-resilience` など）
 - （任意）Copilot→auto-fix→auto-merge により、レビュー対応とマージ操作を段階的に自動化できます（Repository Variables）。詳細: `docs/ci/pr-automation.md`
 
