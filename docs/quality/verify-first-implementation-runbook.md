@@ -100,7 +100,7 @@ PR自動コメントへの連携案は `docs/quality/verify-first-failure-commen
 ### Codex連携なし
 
 - 同じフローをCLI/CIのみで再現可能であることを要件とする  
-- 最低限 `verify-lite` と review gate を通過できる運用を維持する
+- 最低限 `verify-lite` / `policy-gate` / `gate` を通過できる運用を維持する
 
 ## 5. チェックリスト
 

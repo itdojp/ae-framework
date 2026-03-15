@@ -75,7 +75,7 @@ verificationCommand: pnpm -s run check:doc-consistency
   - 検証条件（どのゲートで何を判定するか）
 
 ### Step 2: CI（機械判定）
-- 最小セットの品質ゲートを実行（例: `verify-lite`, review gate）
+- 最小セットの品質ゲートを実行（例: `verify-lite`, `policy-gate`, `gate`）
 - 必要に応じて opt-in で重い検証を追加
 - 失敗時は診断と再現手順を Evidence として残す
 
