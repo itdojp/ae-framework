@@ -1,0 +1,12 @@
+{
+  "name": "itdojp/ae-framework",
+  "description": "AI-enhanced development framework that turns natural language into formal specs and production-grade code with agentic pipelines and quality gates.",
+  "accepts": [
+    {
+      "network": "eip155:8453",
+      "asset": "USDC",
+      "address": "YOUR_WALLET_ADDRESS"
+    }
+  ],
+  "resources": []
+}
