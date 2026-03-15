@@ -34,7 +34,7 @@ verificationCommand: pnpm -s run check:doc-consistency
   - C-1: 既存CI構成を壊さない。
   - C-2: ドキュメント変更のみで完結する。
 - Assumptions:
-  - A-1: verify-lite と review gate が運用中である。
+  - A-1: `verify-lite` / `policy-gate` / `gate` が current main baseline として運用中である。
   - A-2: PR本文にトレーサビリティ欄を記載できる。
 
 ### 2.1 Design by Contract (DbC) / 契約条件
@@ -43,7 +43,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 | ID | Statement | Violation behavior |
 | --- | --- | --- |
-| PRE-001 | PR本文に対象の Plan URL と関連 Spec path が記載されていること。 | review gate で差し戻し、PRコメントで不足項目を明示する。 |
+| PRE-001 | PR本文に対象の Plan URL と関連 Spec path が記載されていること。 | `gate` で差し戻し、PRコメントで不足項目を明示する。 |
 
 - Postconditions（POST-*）:
 
@@ -55,7 +55,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 | ID | Statement | Enforcement location（どこで担保するか） | Violation behavior |
 | --- | --- | --- | --- |
-| INV-001 | Required gates（verify-lite/review gate）の確認を省略しないこと。 | PRテンプレチェック + review gate。 | `do-not-merge` の維持。 |
+| INV-001 | Required gates（`verify-lite` / `policy-gate` / `gate`）の確認を省略しないこと。 | PRテンプレチェック + `gate`。 | `do-not-merge` の維持。 |
 
 ## 3. Acceptance Criteria (AC) / 受入基準
 
@@ -85,8 +85,6 @@ verificationCommand: pnpm -s run check:doc-consistency
 ## 5. Verification Plan / 検証計画
 
 - Required gates:
-  - [x] lint
-  - [x] test
   - [x] verify-lite
   - [x] policy-gate
   - [x] gate

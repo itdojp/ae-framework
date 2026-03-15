@@ -44,7 +44,7 @@ pnpm exec ae --help
 
 ---
 
-## 1. PR運用（最頻出）: verify-lite + Copilot Review Gate で最小ゲートを回す
+## 1. PR運用（最頻出）: verify-lite + policy-gate + Copilot Review Gate で最小ゲートを回す
 
 ### 目的
 レビューと軽量検証を最短で回し、マージ条件（必須チェック）を満たした状態で取り込む。
