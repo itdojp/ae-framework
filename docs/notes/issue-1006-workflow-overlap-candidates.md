@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-12'
+lastVerified: '2026-03-14'
 ---
 
 # Issue 1006: Workflow Overlap Candidates (Phase 1.5 draft)
@@ -9,6 +9,7 @@ lastVerified: '2026-03-12'
 - Commit: worktree
 - Updated: 2026-01-27
 - Source: docs/notes/issue-1006-workflow-inventory.md
+- Current-state note (2026-03-14): main の Required checks は `verify-lite` / `policy-gate` / `gate`。以下の snapshot 節は 2026-01-14 時点の historical baseline を保持する。
 
 ## Required checks snapshot (main protection)
 - Date: 2026-01-14
@@ -91,11 +92,11 @@ lastVerified: '2026-03-12'
 - Identify 1-2 lowest-risk consolidation moves (docs-only or wiring reuse).
 
 ## Trigger class map (draft)
-分類は上記のトリガー記載に基づく。required checks は `verify-lite`/`gate` を維持する前提。
+分類は上記のトリガー記載に基づく。draft 作成時は `verify-lite`/`gate` を前提にしていたが、current-state の main Required checks は `verify-lite`/`policy-gate`/`gate` である。
 
 | Group | Trigger class | Notes (consolidation constraints) |
 | --- | --- | --- |
-| CI / verification core | PR gate + push + manual | required checks を含むため、統合時は `verify-lite`/`gate` を維持 |
+| CI / verification core | PR gate + push + manual | current-state の required checks（`verify-lite`/`policy-gate`/`gate`）を維持 |
 | Spec / artifact validation | PR gate + push + workflow_call + manual | spec-validation を主ゲートとして維持済み |
 | Formal verification | label-gate + manual + tag | `run-formal` ラベルで実行、手動/タグを分離維持 |
 | Flake / stability | schedule + manual + PR/push | スケジュールの重複を削減しやすい |
@@ -131,6 +132,6 @@ These are proposals to reduce overlap without changing required checks or safety
    - ✅ Completed: `ci.yml` を workflow_call で再利用できるよう mode 入力を追加。
 
 ## Readiness checklist
-- Confirm which workflows are required by branch protection.
+- Confirm which workflows are required by branch protection (`verify-lite`, `policy-gate`, `gate`).
 - Confirm whether any workflow is used by external automation or documentation.
 - Verify that consolidated workflows still publish the same summary comments/artifacts.
