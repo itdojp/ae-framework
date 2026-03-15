@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-14'
 owner: architecture-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -12,7 +12,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## English (Summary)
 
-This document captures the implementation-aligned architecture of `ae-framework` as of 2026-03-03, including review-topology aware policy gates, Codex autopilot orchestration, trace-required check integration, release verify operations, and the expanded formal-verification stack with CSP (`cspx`) integration.
+This document captures the implementation-aligned architecture of `ae-framework` as of 2026-03-14, including review-topology aware policy gates, OPA shadow-compare migration, assurance/quality aggregation artifacts, handoff adapters, trace-required check integration, release verify operations, and the expanded formal-verification stack with CSP (`cspx`) integration.
 
 ---
 
@@ -56,7 +56,7 @@ This document captures the implementation-aligned architecture of `ae-framework`
 | 区分 | 主な要素 | 役割 |
 | --- | --- | --- |
 | Producer | coding agent, AE-Spec compiler, unit/integration tests, formal runners, conformance tools | 仕様・コード・検証結果を生成する |
-| Control plane | Context Pack, artifact schemas, verify-lite summary, policy gate, change package, PR automation | 生成結果を contract と gate の観点で集約し、判断可能な証跡へ変換する |
+| Control plane | Context Pack, artifact schemas, verify-lite summary, assurance summary, quality scorecard, policy gate, hook feedback / handoff, PR automation | 生成結果を contract と gate の観点で集約し、判断可能な証跡へ変換する |
 
 設計上の含意:
 - codegen は producer の一つであり、repo の SSOT は spec / contract / artifact に置く
@@ -119,8 +119,10 @@ This document captures the implementation-aligned architecture of `ae-framework`
 補足:
 - `formal-verify.yml` は non-blocking 設計。必要時のみ `enforce-formal` で Apalache の `ran/ok` をゲート化。
 - `policy-gate.yml` の approval 評価は `AE_REVIEW_TOPOLOGY` / `AE_POLICY_MIN_HUMAN_APPROVALS` で切替可能。
+- `policy-gate.yml` は `policy-decision-js-v1.json` と `policy-decision-opa-v1.json` を併記し、`AE_POLICY_ENGINE_MODE=shadow|shadow_strict` で OPA 移行を段階運用します。
 - `policy-gate.yml` は `policy/risk-policy.yml` の `required_checks` を常時評価し、`gate_checks` は high-risk 判定時に評価します。`run-trace` に紐づく `trace-conformance` / `KvOnce Trace Validation` も high-risk 条件を満たした場合のみゲート対象です。
 - `codex-autopilot-lane.yml` は non-suggestion 指摘を fail-closed で扱い、`AE_AUTOPILOT_ACTIONABLE_COMMAND` 設定時のみ自動処理へ進みます。
+- `automation-observability-weekly.yml` は GitHub Actions run log 上の `[ae-automation-report]` 行を集約し、週次 summary から SLO / MTTR を観測します。
 
 ## 5. 形式検証スタック（拡張後）
 
@@ -161,15 +163,21 @@ CI pin（再現性）:
 
 | 用途 | 代表ファイル |
 | --- | --- |
+| Required gate の最小判定 | `artifacts/verify-lite/verify-lite-run-summary.json`, `artifacts/ci/policy-gate-summary.json` |
+| assurance 集約 | `artifacts/assurance/assurance-summary.json`, `artifacts/assurance/assurance-summary.md` |
+| quality 集約 | `artifacts/quality/quality-scorecard.json`, `artifacts/quality/quality-scorecard.md` |
+| continuation / handoff | `artifacts/agents/hook-feedback.json`, `artifacts/handoff/ae-handoff.json` |
+| Context Pack 境界検証（任意実行） | `artifacts/context-pack/context-pack-boundary-map-report.json`, `artifacts/context-pack/context-pack-boundary-map-report.md` |
 | 形式検証の総覧 | `artifacts/hermetic-reports/formal/summary.json` |
 | Conformance要約 | `artifacts/hermetic-reports/conformance/summary.json` |
 | CSP要約 | `artifacts/hermetic-reports/formal/csp-summary.json` |
 | CSP詳細 | `artifacts/hermetic-reports/formal/cspx-result.json` |
 | Apalache要約 | `artifacts/hermetic-reports/formal/apalache-summary.json` |
 | PR向け形式集約 | `artifacts/formal/formal-aggregate.json`, `artifacts/formal/formal-aggregate.md` |
-| Policy Gate要約 | `artifacts/ci/policy-gate-summary.json`, `artifacts/ci/policy-gate-summary.md` |
+| Policy Gate要約 / shadow compare | `artifacts/ci/policy-gate-summary.json`, `artifacts/ci/policy-gate-summary.md`, `artifacts/ci/policy-shadow-compare-v1.json` |
 | Autopilot契約成果物 | `artifacts/ci/pr-state-v1.json`, `artifacts/ci/execution-plan-v1.json` |
 | Risk label要約 | `artifacts/ci/risk-labeler-summary.json`, `artifacts/ci/risk-labeler-summary.md` |
+| 自動化観測 | `artifacts/ci/automation-report.json` |
 | Trace検証成果物 | `artifacts/kvonce-trace-summary.json`, `artifacts/kvonce-trace-envelope.json`, `artifacts/automation/kvonce-trace-validation-report.json` |
 
 ## 7. 運用開始の最短導線
@@ -207,12 +215,12 @@ CI pin（再現性）:
 - CSP詳細: `docs/quality/formal-csp.md`
 - 全ドキュメント索引: `docs/README.md`
 
-## 9. 更新サマリ（2026-03-03）
+## 9. 更新サマリ（2026-03-14）
 
 更新内容:
 - `codex-autopilot-lane.yml` の収束フロー（actionable非suggestion対応を含む）を CIモデルへ統合
 - `policy/risk-policy.yml` の trace-required 条件（`run-trace` + gate_checks）を明示
-- 主要成果物に policy/risk/trace の実運用ファイルを追加
+- 主要成果物に assurance / quality / hook-feedback / handoff / policy-shadow-compare / automation-report を追加
 - PR運用導線を required checks 起点に更新
 
 一次情報（実装ソース）:

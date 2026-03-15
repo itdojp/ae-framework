@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ASSURANCE-MODEL.md
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-14'
 ---
 # Assurance Control Plane
 
@@ -93,11 +93,14 @@ flowchart TB
 - `verify:lite`
 - schema/AJV validation
 - PR gate
+- `quality-scorecard` の report-only 集約
 - 役割: harness layer の最小安定化
 
 ### Structured assurance
 - Context Pack
 - property / MBT / conformance
+- `assurance-summary`
+- `hook-feedback` / `ae-handoff`
 - change evidence の整理
 - 役割: control plane に仕様と検証の対応を供給
 
@@ -111,18 +114,26 @@ flowchart TB
 
 現時点で既に存在する control plane 要素:
 - `docs/spec/context-pack.md`
+- `spec/context-pack/boundary-map.json`
 - `schema/*.schema.json`
+- `scripts/context-pack/verify-boundary-map.mjs`
 - `scripts/ci/validate-artifacts-ajv.mjs`
 - `artifacts/verify-lite/verify-lite-run-summary.json`
+- `artifacts/assurance/assurance-summary.json`
+- `artifacts/quality/quality-scorecard.json`
+- `artifacts/agents/hook-feedback.json`
+- `artifacts/handoff/ae-handoff.json`
 - `artifacts/formal/formal-summary-v1.json`
 - `artifacts/hermetic-reports/formal/summary.json`（formal aggregate）
 - `artifacts/ci/policy-gate-summary.json`
+- `artifacts/ci/policy-decision-js-v1.json`, `artifacts/ci/policy-decision-opa-v1.json`
+- `artifacts/ci/automation-report.json`
 - `docs/ci/pr-automation.md`
 
-段階導入中の要素:
-- assurance profile / level
+条件付きまたは preview 扱いの要素:
+- strict assurance enforcement（`enforce-assurance` ラベル時のみ）
 - proof-carrying change package v2
-- independent validation lanes
+- formal / trace / security などの opt-in heavy lane
 
 ## 7. 判断面で重視すること
 
