@@ -27,6 +27,7 @@
 - Follow existing code style
 - Add tests for new features
 - Update documentation
+- When changing `schema/*.schema.json` or machine-readable artifacts, update `docs/reference/CONTRACT-CATALOG.md` and `docs/reference/SCHEMA-GOVERNANCE.md` in the same PR
 
 ### Package Manager Policy (pnpm)
 - Node.js: 20.x (per `package.json#engines`)
@@ -77,6 +78,7 @@ This is a monorepo; prefer `pnpm --filter` for workspace commands (e.g., `pnpm -
 - 既存のコードスタイルに従う
 - 新機能にはテストを追加
 - ドキュメントを更新
+- `schema/*.schema.json` や機械可読 artifact を変更する場合は、同一PRで `docs/reference/CONTRACT-CATALOG.md` と `docs/reference/SCHEMA-GOVERNANCE.md` も更新する
 
 ### パッケージマネージャ方針（pnpm）
 - Node.js: 20.x 系（`package.json#engines` 準拠）
