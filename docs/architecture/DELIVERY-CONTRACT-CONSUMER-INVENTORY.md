@@ -29,7 +29,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 | Contract | Primary producer | Primary consumer | 用途 |
 | --- | --- | --- | --- |
 | `verify-lite-run-summary` | `verify-lite.yml`, `scripts/ci/write-verify-lite-summary.mjs` | `assurance`, `quality-scorecard`, `report-envelope`, `hook-feedback`, onboarding docs | baseline verification summary |
-| `assurance-summary` | `scripts/assurance/aggregate-lanes.mjs`, `verify-lite.yml` | `enforce-assurance`, `quality-scorecard`, `render-pr-summary`, `hook-feedback` | structured assurance evidence |
+| `assurance-summary` | `scripts/assurance/aggregate-lanes.mjs`, `verify-lite.yml` | `enforce-assurance`, `quality-scorecard`, `render-pr-summary`, `hook-feedback`, `scripts/agents/create-handoff.mjs` | structured assurance evidence |
 | `formal-summary-v1/v2` | `scripts/formal/generate-formal-summary-v1.mjs` | `validate-formal-summary-*`, `quality-scorecard`, run-manifest generation | formal evidence aggregation |
 | `trace-validation` | `scripts/trace/run-kvonce-conformance.sh` ほか | `validate-artifacts-ajv`, `render-trace-summary` | trace-based conformance evidence |
 | `quality-scorecard/v1` | `scripts/quality/build-quality-scorecard.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-quality-scorecard.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` | 横断 quality 集約 |
