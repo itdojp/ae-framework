@@ -130,7 +130,7 @@ main 実装済み:
 - report-only `verify:assurance` summary generation
 - `verify-lite.yml` での report-only assurance summary 集約と artifact upload
 - `enforce-assurance` ラベル時の strict assurance enforcement
-- PR summary / release summary への assurance 表示
+- PR summary / release summary / post-deploy summary への assurance 表示
 
 未実装または後続:
 - 全 producer の claim-level linkage 自動解決
