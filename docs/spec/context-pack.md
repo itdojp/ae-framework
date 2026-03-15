@@ -137,9 +137,9 @@ node scripts/assurance/aggregate-lanes.mjs \
 # （required artifact gate には含めない）
 
 # strict assurance enforcement をローカル再現
+# Verify Lite の strict step は `enforce-assurance` label で有効化される
 node scripts/ci/enforce-assurance-summary.mjs \
-  --summary artifacts/assurance/assurance-summary.json \
-  --policy policy/risk-policy.yml
+  artifacts/assurance/assurance-summary.json
 ```
 
 ### 依存境界ルール検証（Issue #2278）
