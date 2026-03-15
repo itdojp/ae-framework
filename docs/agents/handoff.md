@@ -87,7 +87,7 @@ pnpm run handoff:create -- \
 ```md
 ## AE-HANDOFF
 - Goal: policy-gateのfail原因を解消し、required checksをgreen化する
-- Current status: risk-label mismatchは解消済み。review gateがpending。
+- Current status: risk-label mismatchは解消済み。gate が pending。
 - Next actions:
   1. gate jobログ確認
   2. 必要ならworkflow_dispatchで再評価
@@ -106,7 +106,7 @@ pnpm run handoff:create -- \
   "generatedAt": "2026-03-09T09:00:00.000Z",
   "handoffTarget": "A",
   "goal": "policy-gateのfail原因を解消し、required checksをgreen化する",
-  "currentStatus": "risk-label mismatchは解消済み。review gateがpending。",
+  "currentStatus": "risk-label mismatchは解消済み。gate が pending。",
   "nextActions": [
     {
       "order": 1,

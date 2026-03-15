@@ -48,7 +48,8 @@ Codex がなくても再現可能であることを最小要件とする。
   - `pnpm run test:fast`
 - CI 実行:
   - `verify-lite`（required）
-  - review gate（required）
+  - `policy-gate`（required）
+  - `gate`（required, Copilot Review Gate）
   - opt-in jobs（formal/security/adapters/qa）
 - 成果物契約:
   - `docs/quality/ARTIFACTS-CONTRACT.md`
@@ -60,7 +61,7 @@ Codex がなくても再現可能であることを最小要件とする。
 | --- | --- | --- | --- |
 | Required gate 失敗 | fail-closed | 常時 | 修正して再実行、例外時は理由記録 |
 | Opt-in gate 失敗 | fail-open 可能 | 非必須運用時のみ | 失敗理由とフォローアップIssue起票 |
-| review gate 未解決 | fail-closed | 常時 | コメント解消または根拠付き応答 |
+| `gate` 未解決 | fail-closed | 常時 | コメント解消または根拠付き応答 |
 | 外部依存不調（SaaS/API） | fail-open 可能 | 代替検証が可能な場合 | 代替実行ログと制限事項を記録 |
 
 ## 5. 利用者向け判断ガイド

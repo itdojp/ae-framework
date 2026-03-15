@@ -49,7 +49,7 @@ Plan（会話資産）を直接実装の正にせず、repo 上の Spec を SSOT
   - Traceability Map
 
 ### Step 2: CI で機械判定
-- Required gates（例: lint/test/review gate/verify-lite）を実行。
+- Required gates（current main baseline: `verify-lite` / `policy-gate` / `gate`）を実行。
 - 必要に応じて formal/security/adapters/qa を opt-in 実行。
 
 ### Step 3: Evidence を固定
@@ -64,7 +64,7 @@ Plan（会話資産）を直接実装の正にせず、repo 上の Spec を SSOT
 
 ## 5. 失敗時の再実行手順
 
-1. 失敗ゲートを特定（例: review gate / verify-lite）。  
+1. 失敗ゲートを特定（例: `gate` / `policy-gate` / `verify-lite`）。
 2. 関連する Spec/AC/NFR の差分を確認。  
 3. 必要なら Plan から再抽出し、正規化テンプレートの該当欄を更新。  
 4. ローカル再現（可能な範囲）後に push。  
