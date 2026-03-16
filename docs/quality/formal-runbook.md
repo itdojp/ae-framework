@@ -301,7 +301,8 @@ Field リファレンス（抜粋）
 - `artifacts/formal/formal-summary-v1.json`
   - `results[]`: normalized result entry（`status` / `reason` / `code` / `logPath` など）
 - `artifacts/formal/formal-summary-v2.json`
-  - `results[]`: v2 normalized result entry（`schemaVersion=formal-summary/v2`、`contractId=formal-summary.v2`）
+  - top-level: `schemaVersion=formal-summary/v2`, `contractId=formal-summary.v2`
+  - `results[]`: v2 normalized result entry（`status` / `reason` / `code` / `logPath` など）
 - `formal/summary.json`
   - legacy compatibility input。current canonical path ではない
 - `conformance/summary.json`
