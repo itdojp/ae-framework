@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: 2026-03-11
+lastVerified: 2026-03-16
 owner: testing-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -30,4 +30,4 @@ Schema (example)
 
 Notes
 - This object can be consumed by `ae fix` or external tooling.
-- Keep format stable and small; link to `formal/summary.json` in PR summary.
+- Keep format stable and small; link `artifacts/domain/replay.summary.json` in PR summary, and add `artifacts/formal/formal-summary-v1.json` or `artifacts/formal/formal-summary-v2.json` when formal evidence is present.
