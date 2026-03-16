@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-16'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -67,7 +67,7 @@ ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main \
 ```
 
 ## 運用指針（レビューを外す代替ガード）
-- Branch protection: Required checks を維持（`verify-lite` + `policy-gate` を推奨。既存運用では `gate` 併用）
+- Branch protection: Required checks は `verify-lite` / `policy-gate` / `gate` の3つを維持
 - `PR Verify / verify` を Required に含めない（verify-lite 運用時）
 - Auto-merge を許可（Checks が緑になれば自動マージ）
 - ラベルで強制ゲートを任意化（`enforce-coverage`, `enforce-typecov` など）
