@@ -295,10 +295,15 @@ Keys quick reference（aggregate JSON）
   - jq 例: `jq '.info.ranOk.apalache' artifacts/formal/formal-aggregate.json`
 
 Field リファレンス（抜粋）
+- `artifacts/hermetic-reports/formal/summary.json`
+  - `present`: 各セクションの有無（conformance/smt/alloy/tla/apalache/kani/spin/csp/lean など）
+  - `conformance` / `smt` / `alloy` / `tla` / `apalache`: 各ランナーのサマリ（存在時）
+- `artifacts/formal/formal-summary-v1.json`
+  - `results[]`: normalized result entry（`status` / `reason` / `code` / `logPath` など）
+- `artifacts/formal/formal-summary-v2.json`
+  - `results[]`: v2 normalized result entry（`schemaVersion=formal-summary/v2`、`contractId=formal-summary.v2`）
 - `formal/summary.json`
-  - `timestamp`: 集計時刻（ISO8601）
-  - `present`: 各セクションの有無（conformance/smt/alloy/tla）
-  - `conformance` / `smt` / `alloy` / `tla`: 各ランナーのサマリ（存在時）
+  - legacy compatibility input。current canonical path ではない
 - `conformance/summary.json`
   - `input`: 入力イベントファイル（相対パス）
   - `events`: イベント数
