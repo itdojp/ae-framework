@@ -15,7 +15,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 When publishing a release, the workflow `release-quality-artifacts` bundles quality evidence:
 - `artifacts/` (normalized adapter summaries, domain events, replay outputs, `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json`, and `artifacts/hermetic-reports/**`)
-- `formal/summary.json` (if present via legacy compatibility producer)
+- `formal/summary.json` (if present; legacy path)
 - `coverage/coverage-summary.json` (if present)
 - `artifacts/assurance/assurance-summary.json` / `.md` (if present)
 - `artifacts/quality/quality-scorecard.json` / `.md` (if present)
@@ -29,7 +29,7 @@ Tips
 - `quality-scorecard.{json,md}` is the report-only cross-gate aggregate for verify-lite / policy / optional assurance/formal/harness evidence. Treat it as release evidence, not as a release-blocking gate by itself.
 - When running `post-deploy-verify.yml` manually, set `release_tag` to download `quality-artifacts.tgz` from the target release if local assurance artifacts are not already present.
 - `release-quality-artifacts` run via `workflow_dispatch` uploads an Actions artifact named `quality-artifacts`; it does not publish a GitHub Release asset. `release_tag` works only with a published release asset `quality-artifacts.tgz`.
-- Current canonical formal evidence lives under `artifacts/formal/*.json` and `artifacts/hermetic-reports/formal/summary.json`; `formal/summary.json` is retained only as a legacy fallback input for workflows that have not been fully normalized yet.
+- Current canonical formal evidence lives under `artifacts/formal/*.json` and `artifacts/hermetic-reports/formal/summary.json`; `formal/summary.json` is retained only as a legacy fallback input when already present.
 
 ### Breaking schema changes (required)
 When changing machine-readable outputs (for example `schema/*.schema.json` consumers), follow this procedure in the same PR:
@@ -52,7 +52,7 @@ When changing machine-readable outputs (for example `schema/*.schema.json` consu
 
 リリース公開時、ワークフロー `release-quality-artifacts` は以下の品質エビデンスを同梱します：
 - `artifacts/`（正規化されたアダプター要約、ドメインイベント、リプレイ結果、`artifacts/formal/formal-summary-v1.json`、`artifacts/formal/formal-summary-v2.json`、`artifacts/hermetic-reports/**` を含む）
-- `formal/summary.json`（legacy compatibility producer が出力した場合）
+- `formal/summary.json`（存在する場合。legacy path）
 - `coverage/coverage-summary.json`（存在する場合）
 - `artifacts/assurance/assurance-summary.json` / `.md`（存在する場合）
 - `artifacts/quality/quality-scorecard.json` / `.md`（存在する場合）
@@ -66,7 +66,7 @@ When changing machine-readable outputs (for example `schema/*.schema.json` consu
 - `quality-scorecard.{json,md}` は verify-lite / policy / optional assurance/formal/harness を横断した report-only 集約です。release evidence として同梱されますが、それ自体で release verify の gate 判定を変更するものではありません。
 - `post-deploy-verify.yml` を手動実行する際にローカルの assurance artifact がない場合は、対象 release の `quality-artifacts.tgz` を取得するため `release_tag` を指定してください。
 - `release-quality-artifacts` を `workflow_dispatch` で手動実行した場合は Actions artifact `quality-artifacts` が生成されるだけで、GitHub Release asset は作成されません。`release_tag` が参照できるのは公開済み release asset `quality-artifacts.tgz` のみです。
-- current canonical な formal evidence は `artifacts/formal/*.json` と `artifacts/hermetic-reports/formal/summary.json` です。`formal/summary.json` は未正規化 workflow 向けの legacy fallback としてのみ扱ってください。
+- current canonical な formal evidence は `artifacts/formal/*.json` と `artifacts/hermetic-reports/formal/summary.json` です。`formal/summary.json` は既に存在する場合にのみ扱う legacy fallback path です。
 
 ### 互換性破壊を伴うスキーマ変更（必須手順）
 機械可読出力（例: `schema/*.schema.json` の利用対象）を変更する場合は、同一PRで次を実施します。
