@@ -9,12 +9,14 @@ import { safeExit } from '../utils/safe-exit.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const DISCOVERY_SCRIPT_PATH = ['scripts', 'discovery-pack', 'validate.mjs'];
+const DISCOVERY_VALIDATE_SCRIPT_PATH = ['scripts', 'discovery-pack', 'validate.mjs'];
+const DISCOVERY_COMPILE_SCRIPT_PATH = ['scripts', 'discovery-pack', 'compile.mjs'];
 const DISCOVERY_SCHEMA_PATH = ['schema', 'discovery-pack-v1.schema.json'];
 
 const hasDiscoveryAssets = (candidateRoot: string) =>
   fs.existsSync(path.join(candidateRoot, 'package.json')) &&
-  fs.existsSync(path.join(candidateRoot, ...DISCOVERY_SCRIPT_PATH)) &&
+  fs.existsSync(path.join(candidateRoot, ...DISCOVERY_VALIDATE_SCRIPT_PATH)) &&
+  fs.existsSync(path.join(candidateRoot, ...DISCOVERY_COMPILE_SCRIPT_PATH)) &&
   fs.existsSync(path.join(candidateRoot, ...DISCOVERY_SCHEMA_PATH));
 
 const enumerateCandidateRoots = (startPath: string) => {
@@ -42,12 +44,13 @@ export const resolveDiscoveryToolPaths = (
   const repoRoot = candidates.find(hasDiscoveryAssets);
   if (!repoRoot) {
     throw new Error(
-      'Could not locate discovery-pack validate assets (package.json, scripts/discovery-pack/validate.mjs, schema/discovery-pack-v1.schema.json)',
+      'Could not locate discovery-pack assets (package.json, scripts/discovery-pack/{validate,compile}.mjs, schema/discovery-pack-v1.schema.json)',
     );
   }
   return {
     repoRoot,
-    discoveryValidateScript: path.join(repoRoot, ...DISCOVERY_SCRIPT_PATH),
+    discoveryValidateScript: path.join(repoRoot, ...DISCOVERY_VALIDATE_SCRIPT_PATH),
+    discoveryCompileScript: path.join(repoRoot, ...DISCOVERY_COMPILE_SCRIPT_PATH),
     discoverySchemaPath: path.join(repoRoot, ...DISCOVERY_SCHEMA_PATH),
   };
 };
@@ -149,6 +152,37 @@ export const createDiscoveryCommand = () => {
         args.push('--fail-on', rule);
       }
       runNodeScript(discoveryValidateScript, args);
+    });
+
+  discovery
+    .command('compile')
+    .description('Compile Discovery Pack inputs into plan-spec or context-pack scaffold artifacts')
+    .requiredOption('--target <target>', 'plan-spec | context-pack-scaffold')
+    .option('--sources <glob>', 'Source glob (repeatable, comma-separated supported)', collectSourceValues, [])
+    .option('--output-dir <dir>', 'Output directory', 'artifacts/discovery-pack')
+    .option(
+      '--include-status <status>',
+      'Repeatable include-status value: hypothesis, reviewed, approved, rejected, deferred',
+      collectListValues,
+      [],
+    )
+    .action((options) => {
+      const { discoveryCompileScript, discoverySchemaPath } = resolveDiscoveryToolPaths();
+      const args = [
+        '--target',
+        options.target,
+        '--schema',
+        discoverySchemaPath,
+        '--output-dir',
+        options.outputDir,
+      ];
+      for (const source of options.sources as string[]) {
+        args.push('--sources', source);
+      }
+      for (const status of options.includeStatus as string[]) {
+        args.push('--include-status', status);
+      }
+      runNodeScript(discoveryCompileScript, args);
     });
 
   return discovery;

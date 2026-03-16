@@ -104,4 +104,107 @@ describe('discovery command e2e', () => {
     expect(result.stdout).toContain('--strict-approved');
     expect(result.stdout).toContain('--fail-on <rule>');
   });
+
+  it('compiles plan-spec and passes it to tests:scaffold', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ae-discovery-compile-'));
+    try {
+      mkdirSync(join(dir, 'spec', 'discovery-pack', 'flows'), { recursive: true });
+      mkdirSync(join(dir, 'spec', 'discovery-pack', 'sources'), { recursive: true });
+      writeFileSync(join(dir, 'spec', 'discovery-pack', 'sources', 'interview.md'), '# note\n', 'utf8');
+      writeFileSync(join(dir, 'spec', 'discovery-pack', 'flows', 'approval-as-is.mmd'), 'flowchart TD\n  A-->B\n', 'utf8');
+      writeFileSync(
+        join(dir, 'spec', 'discovery-pack', 'index.yaml'),
+        [
+          'version: 1',
+          'profile: rdra-lite',
+          'sources:',
+          '  - id: SRC-1',
+          '    kind: interview-note',
+          '    path: spec/discovery-pack/sources/interview.md',
+          'actors:',
+          '  - id: ACTOR-1',
+          '    status: approved',
+          '    title: Operator',
+          '    source_refs: [SRC-1]',
+          '    traces_to: []',
+          'external_systems: []',
+          'goals:',
+          '  - id: GOAL-1',
+          '    status: approved',
+          '    title: Avoid overselling',
+          '    statement: Approval should only proceed when stock can be reserved.',
+          '    source_refs: [SRC-1]',
+          '    traces_to: []',
+          'requirements:',
+          '  - id: REQ-1',
+          '    status: approved',
+          '    title: Check reservation feasibility',
+          '    statement: Approval must confirm reservation feasibility before final approval.',
+          '    source_refs: [SRC-1]',
+          '    traces_to: [GOAL-1]',
+          'business_use_cases:',
+          '  - id: BUC-1',
+          '    status: approved',
+          '    title: Approve reservation request',
+          '    statement: The operator confirms a request only when reservation is feasible.',
+          '    actor_ids: [ACTOR-1]',
+          '    primary_goal_ids: [GOAL-1]',
+          '    source_refs: [SRC-1]',
+          '    traces_to: [REQ-1]',
+          'flows:',
+          '  - id: FLOW-1',
+          '    status: approved',
+          '    title: Approval flow',
+          '    mermaid_path: spec/discovery-pack/flows/approval-as-is.mmd',
+          '    source_refs: [SRC-1]',
+          '    traces_to: [BUC-1]',
+          'decisions: []',
+          'assumptions: []',
+          'open_questions: []',
+          '',
+        ].join('\n'),
+        'utf8',
+      );
+
+      const compileResult = runCli(
+        [
+          'discovery',
+          'compile',
+          '--target',
+          'plan-spec',
+          '--sources',
+          'spec/discovery-pack/**/*.{yml,yaml,json}',
+        ],
+        dir,
+      );
+      expect(compileResult.status).toBe(0);
+      expect(compileResult.stdout).toContain('[discovery-pack] compile completed');
+
+      const scaffoldResult = runCli(
+        [
+          'tests:scaffold',
+          '--input',
+          'artifacts/discovery-pack/plan-to-spec-normalized.md',
+          '--spec-id',
+          'approve-reservation',
+          '--out',
+          'tests/generated/spec-kit/approve-reservation',
+          '--overwrite',
+        ],
+        dir,
+      );
+      expect(scaffoldResult.status).toBe(0);
+      expect(readFileSync(join(dir, 'tests', 'generated', 'spec-kit', 'approve-reservation', 'bdd', 'approve-reservation.feature'), 'utf8')).toContain('Feature: approve-reservation');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('shows help for discovery compile', () => {
+    const result = runCli(['discovery', 'compile', '--help']);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Compile Discovery Pack inputs');
+    expect(result.stdout).toContain('--target <target>');
+    expect(result.stdout).toContain('--include-status <status>');
+  });
 });
