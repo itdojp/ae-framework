@@ -76,7 +76,13 @@ node scripts/context-pack/validate.mjs \
   --sources 'spec/context-pack/**/*.{yml,yaml,json}' \
   --schema schema/context-pack-v1.schema.json \
   --report-json artifacts/context-pack/context-pack-validate-report.json \
-  --report-md artifacts/context-pack/context-pack-validate-report.md
+  --report-md artifacts/context-pack/context-pack-validate-report.md \
+  --discovery-pack 'spec/discovery-pack/**/*.{yml,yaml,json}'
+
+# Discovery Pack まで trace を延長する場合の最小例
+node scripts/context-pack/validate.mjs \
+  --sources 'spec/context-pack/**/*.{yml,yaml,json}' \
+  --discovery-pack 'spec/discovery-pack/**/*.{yml,yaml,json}'
 
 # Functorマッピングを直接検証（マップ・レポート先を上書き）
 node scripts/context-pack/verify-functor.mjs \
@@ -141,6 +147,21 @@ node scripts/assurance/aggregate-lanes.mjs \
 node scripts/ci/enforce-assurance-summary.mjs \
   artifacts/assurance/assurance-summary.json
 ```
+
+### Discovery Pack upstream（optional）
+- pack-level:
+  - `upstream.discovery_pack.path`
+  - `upstream.discovery_pack.profile`
+- element-level:
+  - `morphisms[].upstream_refs`
+  - `acceptance_tests[].upstream_refs`
+  - `diagrams[].upstream_refs`（任意）
+- `upstream_refs` の対象:
+  - `goal_ids`
+  - `requirement_ids`
+  - `business_use_case_ids`
+  - `decision_ids`
+- validate に `--discovery-pack` を渡すと、Context Pack 側の `upstream_refs` と Discovery Pack ID の整合を検証し、approved Discovery 要素の未マップも warning として集計します。
 
 ### 依存境界ルール検証（Issue #2278）
 - ルール定義: `configs/context-pack/dependency-rules.json`
@@ -365,6 +386,16 @@ node scripts/ci/enforce-assurance-summary.mjs \
 ### 出力（artifacts）
 - JSON: `artifacts/context-pack/context-pack-validate-report.json`
 - Markdown: `artifacts/context-pack/context-pack-validate-report.md`
+- `--discovery-pack` を指定した場合、validate report は `warnings` に
+  - `upstream-refs-missing`
+  - `unmapped-approved-requirement`
+  - `unmapped-approved-business-use-case`
+  - `discovery-pack-profile-mismatch`
+  を追加し、`errors` に
+  - `discovery-pack-source-missing`
+  - `discovery-pack-source-ambiguous`
+  - `upstream-ref-missing`
+  を追加します
 - JSON (Dependency boundary): `artifacts/context-pack/deps-summary.json`
 - Markdown (Dependency boundary): `artifacts/context-pack/deps-summary.md`
 - JSON (Suggestions): `artifacts/context-pack/context-pack-suggestions.json`
@@ -416,6 +447,11 @@ node scripts/ci/enforce-assurance-summary.mjs \
 - `boundary-ref-missing`: Context Pack ref 未定義
 - `boundary-upstream-slice-missing` / `boundary-upstream-producer-missing`: upstream produce/consume 不整合
 - `boundary-producer-duplicate` / `boundary-slice-cycle`: slice 境界定義の重複・循環
+- `discovery-pack-source-missing` / `discovery-pack-source-ambiguous`: Discovery Pack upstream の解決失敗
+- `upstream-ref-missing`: `upstream_refs` が Discovery Pack ID を参照できない
+- `upstream-refs-missing`: `morphisms` / `acceptance_tests` の `upstream_refs` 欠落
+- `unmapped-approved-requirement` / `unmapped-approved-business-use-case`: approved Discovery 要素の未マップ
+- `discovery-pack-profile-mismatch`: Context Pack 宣言 profile と Discovery Pack 実体の不一致
 - `*-template-duplicate`: Phase5+ テンプレ ID 重複
 - `kleisli-boundary-overlap` / `kleisli-impure-boundary-missing`: Kleisli 境界不整合
 - `phase5-evidence-missing`: Phase5+ 証跡パス不足

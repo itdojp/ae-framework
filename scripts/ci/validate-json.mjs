@@ -80,7 +80,10 @@ const checks = [
   },
   {
     schema: 'schema/context-pack-v1.schema.json',
-    fixtures: ['fixtures/context-pack/sample.context-pack.json'],
+    fixtures: [
+      'fixtures/context-pack/sample.context-pack.json',
+      'fixtures/context-pack/sample.context-pack.discovery-upstream.json',
+    ],
     label: 'Context Pack v1 schema validation'
   },
   {

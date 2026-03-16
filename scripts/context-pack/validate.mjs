@@ -3,10 +3,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { globSync } from 'glob';
-import yaml from 'yaml';
+
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { globSync } from 'glob';
+import yaml from 'yaml';
 
 const DEFAULT_SOURCES = ['spec/context-pack/**/*.{yml,yaml,json}'];
 const DEFAULT_SCHEMA_PATH = 'schema/context-pack-v1.schema.json';
@@ -19,6 +20,12 @@ const NON_CONTEXT_PACK_SCHEMA_VERSIONS = new Set([
   'context-pack-product-coproduct/v1',
   'context-pack-phase5-templates/v1',
 ]);
+const DISCOVERY_SECTIONS = {
+  goal_ids: 'goals',
+  requirement_ids: 'requirements',
+  business_use_case_ids: 'business_use_cases',
+  decision_ids: 'decisions',
+};
 
 const normalizePath = (value) => value.replace(/\\/g, '/');
 const toRelativePath = (absolutePath) => normalizePath(path.relative(process.cwd(), absolutePath) || '.');
@@ -30,12 +37,39 @@ Usage:
   node scripts/context-pack/validate.mjs [options]
 
 Options:
-  --sources <glob>      Source glob (repeatable, comma-separated supported)
-  --schema <path>       JSON Schema path (default: ${DEFAULT_SCHEMA_PATH})
-  --report-json <path>  JSON report path (default: ${DEFAULT_REPORT_JSON})
-  --report-md <path>    Markdown report path (default: ${DEFAULT_REPORT_MD})
-  --help, -h            Show this help
+  --sources <glob>          Source glob (repeatable, comma-separated supported)
+  --schema <path>           JSON Schema path (default: ${DEFAULT_SCHEMA_PATH})
+  --report-json <path>      JSON report path (default: ${DEFAULT_REPORT_JSON})
+  --report-md <path>        Markdown report path (default: ${DEFAULT_REPORT_MD})
+  --discovery-pack <glob>   Discovery Pack source path/glob for upstream ref validation
+  --help, -h                Show this help
 `);
+}
+
+function splitSourcePatterns(rawValue) {
+  const chunks = [];
+  let buffer = '';
+  let braceDepth = 0;
+  for (const char of rawValue) {
+    if (char === '{') {
+      braceDepth += 1;
+      buffer += char;
+      continue;
+    }
+    if (char === '}') {
+      braceDepth = Math.max(0, braceDepth - 1);
+      buffer += char;
+      continue;
+    }
+    if (char === ',' && braceDepth === 0) {
+      chunks.push(buffer);
+      buffer = '';
+      continue;
+    }
+    buffer += char;
+  }
+  chunks.push(buffer);
+  return chunks;
 }
 
 function parseArgs(argv) {
@@ -44,40 +78,15 @@ function parseArgs(argv) {
     schemaPath: DEFAULT_SCHEMA_PATH,
     reportJsonPath: DEFAULT_REPORT_JSON,
     reportMarkdownPath: DEFAULT_REPORT_MD,
+    discoveryPackSources: [],
     help: false,
   };
 
-  const splitSourcePatterns = (rawValue) => {
-    const chunks = [];
-    let buffer = '';
-    let braceDepth = 0;
-    for (const char of rawValue) {
-      if (char === '{') {
-        braceDepth += 1;
-        buffer += char;
-        continue;
-      }
-      if (char === '}') {
-        braceDepth = Math.max(0, braceDepth - 1);
-        buffer += char;
-        continue;
-      }
-      if (char === ',' && braceDepth === 0) {
-        chunks.push(buffer);
-        buffer = '';
-        continue;
-      }
-      buffer += char;
-    }
-    chunks.push(buffer);
-    return chunks;
-  };
-
-  const appendSources = (rawValue) => {
+  const appendSources = (target, rawValue) => {
     for (const token of splitSourcePatterns(rawValue)) {
       const trimmed = token.trim();
       if (trimmed.length > 0) {
-        options.sources.push(trimmed);
+        target.push(trimmed);
       }
     }
   };
@@ -94,12 +103,12 @@ function parseArgs(argv) {
       if (!next || next.startsWith('-')) {
         throw new Error('missing value for --sources');
       }
-      appendSources(next);
+      appendSources(options.sources, next);
       index += 1;
       continue;
     }
     if (arg.startsWith('--sources=')) {
-      appendSources(arg.slice('--sources='.length));
+      appendSources(options.sources, arg.slice('--sources='.length));
       continue;
     }
     if (arg === '--schema') {
@@ -138,6 +147,18 @@ function parseArgs(argv) {
       options.reportMarkdownPath = arg.slice('--report-md='.length);
       continue;
     }
+    if (arg === '--discovery-pack') {
+      if (!next || next.startsWith('-')) {
+        throw new Error('missing value for --discovery-pack');
+      }
+      appendSources(options.discoveryPackSources, next);
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--discovery-pack=')) {
+      appendSources(options.discoveryPackSources, arg.slice('--discovery-pack='.length));
+      continue;
+    }
     throw new Error(`unknown option: ${arg}`);
   }
 
@@ -164,7 +185,7 @@ function loadSchema(schemaPath) {
   return { schema, resolvedSchema };
 }
 
-function parseContextPackFile(sourcePath) {
+function parseStructuredFile(sourcePath) {
   const raw = fs.readFileSync(sourcePath, 'utf8');
   const lowerPath = sourcePath.toLowerCase();
   if (lowerPath.endsWith('.yaml') || lowerPath.endsWith('.yml')) {
@@ -194,26 +215,41 @@ function buildMarkdownReport(report) {
     `- Valid files: ${report.validFiles}`,
     `- Invalid files: ${report.invalidFiles}`,
     `- Skipped files: ${report.skippedFiles}`,
+    `- Warning count: ${report.warnings.length}`,
     '',
     '## Source Patterns',
     ...report.sourcePatterns.map((pattern) => `- \`${pattern}\``),
     '',
   ];
 
+  lines.push('## Errors', '');
   if (report.errors.length === 0) {
-    lines.push('## Errors', '', 'No validation errors.');
-    return `${lines.join('\n')}\n`;
+    lines.push('No validation errors.', '');
+  } else {
+    lines.push('| File | Type | Path | Message |', '| --- | --- | --- | --- |');
+    for (const error of report.errors) {
+      const file = escapeMarkdownTableCell(error.file);
+      const type = escapeMarkdownTableCell(error.type);
+      const instancePath = escapeMarkdownTableCell(error.instancePath || '/');
+      const message = escapeMarkdownTableCell(error.message);
+      lines.push(`| ${file} | ${type} | ${instancePath} | ${message} |`);
+    }
+    lines.push('');
   }
 
-  lines.push('## Errors', '', '| File | Type | Path | Message |', '| --- | --- | --- | --- |');
-  for (const error of report.errors) {
-    const file = escapeMarkdownTableCell(error.file);
-    const type = escapeMarkdownTableCell(error.type);
-    const instancePath = escapeMarkdownTableCell(error.instancePath || '/');
-    const message = escapeMarkdownTableCell(error.message);
-    lines.push(
-      `| ${file} | ${type} | ${instancePath} | ${message} |`
-    );
+  lines.push('## Warnings', '');
+  if (report.warnings.length === 0) {
+    lines.push('No validation warnings.', '');
+  } else {
+    lines.push('| File | Type | Path | Message |', '| --- | --- | --- | --- |');
+    for (const warning of report.warnings) {
+      const file = escapeMarkdownTableCell(warning.file);
+      const type = escapeMarkdownTableCell(warning.type);
+      const instancePath = escapeMarkdownTableCell(warning.instancePath || '/');
+      const message = escapeMarkdownTableCell(warning.message);
+      lines.push(`| ${file} | ${type} | ${instancePath} | ${message} |`);
+    }
+    lines.push('');
   }
 
   return `${lines.join('\n')}\n`;
@@ -228,6 +264,253 @@ function writeReport(report, jsonPath, markdownPath) {
   fs.writeFileSync(resolvedMarkdownPath, buildMarkdownReport(report));
 }
 
+function buildDiscoveryIdIndex(payload) {
+  const index = {
+    goals: new Set(),
+    requirements: new Set(),
+    business_use_cases: new Set(),
+    decisions: new Set(),
+    approvedGoals: new Set(),
+    approvedRequirements: new Set(),
+    approvedBusinessUseCases: new Set(),
+  };
+
+  const register = (section, key) => {
+    const entries = Array.isArray(payload?.[section]) ? payload[section] : [];
+    for (const entry of entries) {
+      const id = typeof entry?.id === 'string' ? entry.id.trim() : '';
+      if (!id) {
+        continue;
+      }
+      index[key].add(id);
+      if (entry?.status === 'approved') {
+        if (section === 'goals') index.approvedGoals.add(id);
+        if (section === 'requirements') index.approvedRequirements.add(id);
+        if (section === 'business_use_cases') index.approvedBusinessUseCases.add(id);
+      }
+    }
+  };
+
+  register('goals', 'goals');
+  register('requirements', 'requirements');
+  register('business_use_cases', 'business_use_cases');
+  register('decisions', 'decisions');
+  return index;
+}
+
+function hasAnyUpstreamRefs(payload) {
+  const sections = ['morphisms', 'acceptance_tests', 'diagrams'];
+  return sections.some((section) =>
+    (Array.isArray(payload?.[section]) ? payload[section] : []).some((entry) => entry?.upstream_refs),
+  );
+}
+
+function resolveDiscoveryPackCandidates(options, payload) {
+  const candidates = [];
+  for (const raw of options.discoveryPackSources) {
+    candidates.push(raw);
+  }
+  const declaredPath = payload?.upstream?.discovery_pack?.path;
+  if (typeof declaredPath === 'string' && declaredPath.trim()) {
+    candidates.push(declaredPath.trim());
+  }
+  return Array.from(new Set(candidates));
+}
+
+function resolveDiscoveryPackFile(candidates) {
+  const matches = new Set();
+  for (const candidate of candidates) {
+    if (candidate.includes('*') || candidate.includes('{')) {
+      for (const file of globSync(candidate, { nodir: true })) {
+        matches.add(path.resolve(file));
+      }
+      continue;
+    }
+    const resolvedCandidate = path.resolve(candidate);
+    if (fs.existsSync(resolvedCandidate)) {
+      matches.add(resolvedCandidate);
+    }
+  }
+  return Array.from(matches).sort((a, b) => a.localeCompare(b));
+}
+
+function loadDiscoveryPack(resolvedPath, cache) {
+  if (cache.has(resolvedPath)) {
+    return cache.get(resolvedPath);
+  }
+  const payload = parseStructuredFile(resolvedPath);
+  const loaded = {
+    payload,
+    index: buildDiscoveryIdIndex(payload),
+  };
+  cache.set(resolvedPath, loaded);
+  return loaded;
+}
+
+function pushProblem(list, problem) {
+  list.push(problem);
+}
+
+function collectUpstreamIds(upstreamRefs) {
+  if (!upstreamRefs || typeof upstreamRefs !== 'object') {
+    return [];
+  }
+  const entries = [];
+  for (const [field, section] of Object.entries(DISCOVERY_SECTIONS)) {
+    const ids = Array.isArray(upstreamRefs[field]) ? upstreamRefs[field] : [];
+    for (const id of ids) {
+      if (typeof id === 'string' && id.trim()) {
+        entries.push({ field, section, id: id.trim() });
+      }
+    }
+  }
+  return entries;
+}
+
+function validateContextPackUpstream(payload, relativePath, options, errors, warnings, discoveryPackCache) {
+  const hasUpstreamConfig = Boolean(payload?.upstream?.discovery_pack);
+  const shouldValidateUpstream = hasUpstreamConfig || hasAnyUpstreamRefs(payload) || options.discoveryPackSources.length > 0;
+  if (!shouldValidateUpstream) {
+    return;
+  }
+
+  const candidates = resolveDiscoveryPackCandidates(options, payload);
+  if (candidates.length === 0) {
+    pushProblem(errors, {
+      file: relativePath,
+      type: 'discovery-pack-source-missing',
+      instancePath: '/upstream/discovery_pack',
+      schemaPath: '',
+      keyword: 'upstream',
+      message: 'Context Pack uses discovery upstream refs but no Discovery Pack source was provided',
+    });
+    return;
+  }
+
+  const matches = resolveDiscoveryPackFile(candidates);
+  if (matches.length === 0) {
+    pushProblem(errors, {
+      file: relativePath,
+      type: 'discovery-pack-source-missing',
+      instancePath: '/upstream/discovery_pack/path',
+      schemaPath: '',
+      keyword: 'upstream',
+      message: `No Discovery Pack files matched: ${candidates.join(', ')}`,
+    });
+    return;
+  }
+  if (matches.length !== 1) {
+    pushProblem(errors, {
+      file: relativePath,
+      type: 'discovery-pack-source-ambiguous',
+      instancePath: '/upstream/discovery_pack/path',
+      schemaPath: '',
+      keyword: 'upstream',
+      message: `Expected exactly one Discovery Pack source, matched ${matches.length}`,
+    });
+    return;
+  }
+
+  let discoveryPayload;
+  let discoveryIds;
+  try {
+    const loaded = loadDiscoveryPack(matches[0], discoveryPackCache);
+    discoveryPayload = loaded.payload;
+    discoveryIds = loaded.index;
+  } catch (error) {
+    pushProblem(errors, {
+      file: relativePath,
+      type: 'discovery-pack-parse',
+      instancePath: '/upstream/discovery_pack/path',
+      schemaPath: '',
+      keyword: 'parse',
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+
+  const referenced = {
+    goals: new Set(),
+    requirements: new Set(),
+    business_use_cases: new Set(),
+    decisions: new Set(),
+  };
+
+  const enforceRefs = (sectionName, entries, requireRefs) => {
+    entries.forEach((entry, index) => {
+      const instancePathBase = `/${sectionName}/${index}`;
+      const entryId = typeof entry?.id === 'string' ? entry.id : `${sectionName}[${index}]`;
+      const upstreamRefs = entry?.upstream_refs;
+      if (requireRefs && (!upstreamRefs || typeof upstreamRefs !== 'object')) {
+        pushProblem(warnings, {
+          file: relativePath,
+          type: 'upstream-refs-missing',
+          instancePath: `${instancePathBase}/upstream_refs`,
+          schemaPath: '',
+          keyword: 'upstream_refs',
+          message: `${entryId} is missing upstream_refs`,
+        });
+        return;
+      }
+      for (const ref of collectUpstreamIds(upstreamRefs)) {
+        referenced[ref.section].add(ref.id);
+        if (!discoveryIds[ref.section].has(ref.id)) {
+          pushProblem(errors, {
+            file: relativePath,
+            type: 'upstream-ref-missing',
+            instancePath: `${instancePathBase}/upstream_refs/${ref.field}`,
+            schemaPath: '',
+            keyword: 'upstream_refs',
+            message: `${entryId} references unknown Discovery Pack ID ${ref.id}`,
+          });
+        }
+      }
+    });
+  };
+
+  enforceRefs('morphisms', Array.isArray(payload?.morphisms) ? payload.morphisms : [], true);
+  enforceRefs('acceptance_tests', Array.isArray(payload?.acceptance_tests) ? payload.acceptance_tests : [], true);
+  enforceRefs('diagrams', Array.isArray(payload?.diagrams) ? payload.diagrams : [], false);
+
+  for (const id of discoveryIds.approvedRequirements) {
+    if (!referenced.requirements.has(id)) {
+      pushProblem(warnings, {
+        file: relativePath,
+        type: 'unmapped-approved-requirement',
+        instancePath: '/morphisms',
+        schemaPath: '',
+        keyword: 'upstream_refs',
+        message: `Approved Discovery requirement ${id} is not mapped from any Context Pack morphism/acceptance test/diagram`,
+      });
+    }
+  }
+  for (const id of discoveryIds.approvedBusinessUseCases) {
+    if (!referenced.business_use_cases.has(id)) {
+      pushProblem(warnings, {
+        file: relativePath,
+        type: 'unmapped-approved-business-use-case',
+        instancePath: '/morphisms',
+        schemaPath: '',
+        keyword: 'upstream_refs',
+        message: `Approved Discovery business use case ${id} is not mapped from any Context Pack element`,
+      });
+    }
+  }
+  if (hasUpstreamConfig) {
+    const declaredProfile = payload.upstream.discovery_pack.profile;
+    if (typeof declaredProfile === 'string' && declaredProfile.trim() && declaredProfile !== discoveryPayload?.profile) {
+      pushProblem(warnings, {
+        file: relativePath,
+        type: 'discovery-pack-profile-mismatch',
+        instancePath: '/upstream/discovery_pack/profile',
+        schemaPath: '',
+        keyword: 'profile',
+        message: `Declared discovery profile ${declaredProfile} does not match source profile ${discoveryPayload?.profile ?? '(missing)'}`,
+      });
+    }
+  }
+}
+
 function validateContextPacks(options) {
   const { schema, resolvedSchema } = loadSchema(options.schemaPath);
   const ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -236,6 +519,8 @@ function validateContextPacks(options) {
 
   const sourceFiles = discoverSources(options.sources);
   const errors = [];
+  const warnings = [];
+  const discoveryPackCache = new Map();
   let validFiles = 0;
   let skippedFiles = 0;
 
@@ -254,7 +539,7 @@ function validateContextPacks(options) {
     const relativePath = toRelativePath(sourcePath);
     let payload;
     try {
-      payload = parseContextPackFile(sourcePath);
+      payload = parseStructuredFile(sourcePath);
     } catch (error) {
       errors.push({
         file: relativePath,
@@ -292,6 +577,7 @@ function validateContextPacks(options) {
     }
 
     validFiles += 1;
+    validateContextPackUpstream(payload, relativePath, options, errors, warnings, discoveryPackCache);
   }
 
   const report = {
@@ -303,8 +589,9 @@ function validateContextPacks(options) {
     validFiles,
     invalidFiles: sourceFiles.length - validFiles - skippedFiles,
     skippedFiles,
-    status: errors.length === 0 ? 'pass' : 'fail',
+    status: errors.length > 0 ? 'fail' : warnings.length > 0 ? 'warn' : 'pass',
     errors,
+    warnings,
   };
 
   writeReport(report, options.reportJsonPath, options.reportMarkdownPath);
@@ -314,6 +601,10 @@ function validateContextPacks(options) {
   if (errors.length > 0) {
     process.stderr.write(`[context-pack] validation failed (${errors.length} error(s))\n`);
     return 2;
+  }
+  if (warnings.length > 0) {
+    process.stdout.write(`[context-pack] validation completed with warnings (${warnings.length} warning(s))\n`);
+    return 0;
   }
   process.stdout.write(`[context-pack] validation passed (${validFiles} file(s))\n`);
   return 0;

@@ -1,0 +1,119 @@
+{
+  "version": 1,
+  "name": "inventory-discovery-upstream-context-pack",
+  "upstream": {
+    "discovery_pack": {
+      "path": "fixtures/discovery-pack/rdra-lite-sample.yaml",
+      "profile": "rdra-lite",
+      "source_patterns": [
+        "fixtures/discovery-pack/**/*.{yml,yaml,json}"
+      ]
+    }
+  },
+  "problem_statement": {
+    "goals": [
+      "Orders and reservations should not exceed available inventory."
+    ],
+    "non_goals": [
+      "Implement pricing logic."
+    ]
+  },
+  "domain_glossary": {
+    "terms": [
+      {
+        "term": "inventory_item",
+        "ja": "在庫アイテム"
+      }
+    ]
+  },
+  "objects": [
+    {
+      "id": "InventoryItem",
+      "kind": "aggregate"
+    }
+  ],
+  "morphisms": [
+    {
+      "id": "ReserveInventory",
+      "input": {
+        "itemId": "string",
+        "quantity": "number"
+      },
+      "output": {
+        "reserved": "boolean"
+      },
+      "pre": [
+        "quantity > 0"
+      ],
+      "post": [
+        "reserved implies stock_decreased"
+      ],
+      "failures": [
+        "OutOfStock"
+      ],
+      "upstream_refs": {
+        "goal_ids": [
+          "GOAL-PREVENT-OVERSELL"
+        ],
+        "requirement_ids": [
+          "REQ-CHECK-STOCK-FIRST"
+        ],
+        "business_use_case_ids": [
+          "BUC-RESERVE-INVENTORY"
+        ],
+        "decision_ids": [
+          "DEC-ERP-SOR"
+        ]
+      }
+    }
+  ],
+  "diagrams": [
+    {
+      "id": "D-1",
+      "statement": "ReserveInventory preserves non-negative stock.",
+      "verification": [
+        "property-test"
+      ],
+      "upstream_refs": {
+        "business_use_case_ids": [
+          "BUC-RESERVE-INVENTORY"
+        ]
+      }
+    }
+  ],
+  "constraints": {
+    "max_parallel_reservations": 8
+  },
+  "acceptance_tests": [
+    {
+      "id": "AT-1",
+      "scenario": "Reserve succeeds when stock is available.",
+      "expected": [
+        "reservation accepted"
+      ],
+      "upstream_refs": {
+        "requirement_ids": [
+          "REQ-CHECK-STOCK-FIRST"
+        ],
+        "business_use_case_ids": [
+          "BUC-RESERVE-INVENTORY"
+        ]
+      }
+    }
+  ],
+  "coding_conventions": {
+    "language": "TypeScript",
+    "directory": [
+      "src/",
+      "tests/"
+    ],
+    "dependencies": {
+      "runtime": [
+        "zod"
+      ]
+    }
+  },
+  "forbidden_changes": [
+    "Remove ReserveInventory precondition checks."
+  ]
+}
