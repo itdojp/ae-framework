@@ -14,6 +14,8 @@ jobs:
           npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d "artifacts/*/summary.json" --strict=false
       - name: Validate formal summary
         run: |
+          if [ -f artifacts/formal/formal-summary-v1.json ]; then node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json; fi
+          if [ -f artifacts/formal/formal-summary-v2.json ]; then node scripts/ci/validate-formal-summary-v2.mjs artifacts/formal/formal-summary-v2.json schema/formal-summary-v2.schema.json; fi
           if [ -f formal/summary.json ]; then npx ajv -s docs/schemas/formal-summary.schema.json -d formal/summary.json --strict=false; fi
       - name: Validate property summaries
         run: |
