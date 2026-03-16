@@ -64,7 +64,8 @@ node scripts/ci/validate-formal-summary-v2.mjs artifacts/formal/formal-summary-v
 npx ajv -s docs/schemas/formal-summary.schema.json -d formal/summary.json --strict=false
 ```
 Fixes
-- Ensure required fields (e.g., `result`, `violations`) exist and types match
+- For Formal Summary v1/v2, ensure `results[].status` is one of the allowed values and required `reason` / `code` fields are present (nullable where allowed) and `results[].status` matches the schema
+- If your workflow still emits `formal/summary.json`, treat it as a legacy compatibility input only
 - Keep messages short; link to logs under `artifacts/codex/*.tlc.log.txt`
 
 ### Properties Summary (array vs object)
