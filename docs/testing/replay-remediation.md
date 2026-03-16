@@ -30,4 +30,4 @@ Schema (example)
 
 Notes
 - This object can be consumed by `ae fix` or external tooling.
-- Keep format stable and small; link `artifacts/domain/replay.summary.json` in PR summary, and add `artifacts/formal/formal-summary-v1.json` or `artifacts/formal/formal-summary-v2.json` when formal evidence is present.
+- Keep format stable and small; link `artifacts/domain/replay.summary.json` in PR summary, and use `formal/summary.json` for traceId-aligned formal evidence. `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` are additional overall formal status evidence only.

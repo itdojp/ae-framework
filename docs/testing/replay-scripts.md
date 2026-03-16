@@ -35,7 +35,7 @@ jobs:
 
 Notes
 - Emit invariant violations with `traceId` and link to `artifacts/domain/replay.summary.json`.
-- When formal evidence is attached, also link `artifacts/formal/formal-summary-v1.json` or `artifacts/formal/formal-summary-v2.json`.
+- When traceId-aligned formal evidence is attached, link `formal/summary.json`. `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` can be attached as additional overall formal status evidence.
 - Keep implementation outside core to avoid dependency bloat.
 
 ## Env Options

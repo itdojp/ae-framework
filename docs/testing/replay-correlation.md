@@ -13,8 +13,7 @@ Goal
 
 Inputs
 - `artifacts/domain/replay.summary.json`
-- `artifacts/formal/formal-summary-v1.json`
-- `artifacts/formal/formal-summary-v2.json`
+- `formal/summary.json`
 
 Correlation JSON (example)
 ```text
@@ -28,5 +27,5 @@ Correlation JSON (example)
 
 PR Integration
 - Include a brief line in PR summary, e.g., `Replay/Formal: OK/OK for inv-001`.
-- Prefer `artifacts/formal/formal-summary-v2.json` when both v1/v2 exist; use v1 as fallback during dual-write.
+- `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` can be attached separately as overall formal status artifacts, but they are not the traceId correlation input in this workflow.
 - Optionally merge into `artifacts/summary/combined.json` under `correlation` key.
