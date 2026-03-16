@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-12'
+lastVerified: '2026-03-16'
 owner: templates-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -25,7 +25,11 @@ Validate (examples)
 # Adapter summary
 npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d artifacts/*/summary.json --strict=false
 
-# Formal summary
+# Canonical formal summaries
+node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json
+node scripts/ci/validate-formal-summary-v2.mjs artifacts/formal/formal-summary-v2.json schema/formal-summary-v2.schema.json
+
+# Legacy compatibility input (only if emitted)
 npx ajv -s docs/schemas/formal-summary.schema.json -d formal/summary.json --strict=false
 
 # Property summary (single or each element when array)

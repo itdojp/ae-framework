@@ -14,7 +14,7 @@ jobs:
         run: npm run test:replay --silent || true
       - name: BDD lint (#410)
         run: npm run bdd:lint --silent || true
-      - name: Formal GWT format (#407)
+      - name: Formal GWT format (#407; legacy formal/summary.json compatibility)
         run: |
           if [ -f formal/summary.json ]; then node scripts/formal/format-counterexamples.mjs; fi
       - name: Aggregate artifacts (#408)
