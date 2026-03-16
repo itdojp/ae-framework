@@ -78,6 +78,78 @@
         "rowsMissingContextPackLinks": {
           "type": "integer",
           "minimum": 0
+        },
+        "discoveryGoalIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "discoveryRequirementIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "discoveryBusinessUseCaseIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "discoveryDecisionIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mappedDiscoveryGoalIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mappedDiscoveryRequirementIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mappedDiscoveryBusinessUseCaseIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mappedDiscoveryDecisionIds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unmappedApprovedDiscoveryRequirements": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unmappedApprovedDiscoveryBusinessUseCases": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolvedDiscoveryGoalRefs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolvedDiscoveryRequirementRefs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolvedDiscoveryBusinessUseCaseRefs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolvedDiscoveryDecisionRefs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "morphismsMissingUpstreamRefs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "acceptanceTestsMissingUpstreamRefs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "diagramsMissingUpstreamRefs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rowsMissingDiscoveryLinks": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },
@@ -114,6 +186,22 @@
             "items": { "type": "string" }
           },
           "acceptanceTestId": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "discoveryGoalIds": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "discoveryRequirementIds": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "discoveryBusinessUseCaseIds": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "discoveryDecisionIds": {
             "type": "array",
             "items": { "type": "string" }
           },

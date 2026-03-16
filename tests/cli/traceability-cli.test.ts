@@ -24,6 +24,24 @@ let buildTraceabilityMatrix: (
     missingMorphismLinks: number;
     missingAcceptanceTestLinks: number;
     rowsMissingContextPackLinks: number;
+    discoveryGoalIds?: number;
+    discoveryRequirementIds?: number;
+    discoveryBusinessUseCaseIds?: number;
+    discoveryDecisionIds?: number;
+    mappedDiscoveryGoalIds?: number;
+    mappedDiscoveryRequirementIds?: number;
+    mappedDiscoveryBusinessUseCaseIds?: number;
+    mappedDiscoveryDecisionIds?: number;
+    unmappedApprovedDiscoveryRequirements?: number;
+    unmappedApprovedDiscoveryBusinessUseCases?: number;
+    unresolvedDiscoveryGoalRefs?: number;
+    unresolvedDiscoveryRequirementRefs?: number;
+    unresolvedDiscoveryBusinessUseCaseRefs?: number;
+    unresolvedDiscoveryDecisionRefs?: number;
+    morphismsMissingUpstreamRefs?: number;
+    acceptanceTestsMissingUpstreamRefs?: number;
+    diagramsMissingUpstreamRefs?: number;
+    rowsMissingDiscoveryLinks?: number;
   };
   rows: Array<{
     requirementId: string;
@@ -33,6 +51,10 @@ let buildTraceabilityMatrix: (
     diagramId: string[];
     morphismId: string[];
     acceptanceTestId: string[];
+    discoveryGoalIds?: string[];
+    discoveryRequirementIds?: string[];
+    discoveryBusinessUseCaseIds?: string[];
+    discoveryDecisionIds?: string[];
   }>;
 };
 
@@ -151,5 +173,79 @@ describe('traceability cli helpers', () => {
     expect(matrix.summary.missingMorphismLinks).toBe(1);
     expect(matrix.summary.missingAcceptanceTestLinks).toBe(1);
     expect(matrix.summary.rowsMissingContextPackLinks).toBe(1);
+  });
+
+  it('aggregates discovery refs and unmapped approved requirements from context-pack matches', () => {
+    const matrix = buildTraceabilityMatrix(
+      ['LG-1', 'LG-2'],
+      [
+        { path: '/repo/tests/a.test.ts', content: 'LG-1 MOR-A AT-A' },
+        { path: '/repo/tests/b.test.ts', content: 'LG-2 MOR-B AT-B' },
+      ],
+      [
+        { path: '/repo/src/a.ts', content: 'LG-1 MOR-A AT-A' },
+        { path: '/repo/src/b.ts', content: 'LG-2 MOR-B AT-B' },
+      ],
+      '/repo',
+      {
+        diagramIds: [],
+        morphismIds: ['MOR-A', 'MOR-B'],
+        acceptanceTestIds: ['AT-A', 'AT-B'],
+        diagramDiscoveryRefs: {},
+        morphismDiscoveryRefs: {
+          'MOR-A': {
+            goalIds: ['G-1'],
+            requirementIds: ['REQ-1'],
+            businessUseCaseIds: ['BUC-1'],
+            decisionIds: [],
+          },
+          'MOR-B': {
+            goalIds: [],
+            requirementIds: ['REQ-2'],
+            businessUseCaseIds: [],
+            decisionIds: ['DEC-1'],
+          },
+        },
+        acceptanceTestDiscoveryRefs: {
+          'AT-A': {
+            goalIds: [],
+            requirementIds: ['REQ-1'],
+            businessUseCaseIds: [],
+            decisionIds: [],
+          },
+        },
+        discoverySummary: {
+          tracked: true,
+          goalIds: ['G-1'],
+          requirementIds: ['REQ-1', 'REQ-2', 'REQ-3'],
+          businessUseCaseIds: ['BUC-1'],
+          decisionIds: ['DEC-1'],
+          mappedGoalIds: ['G-1'],
+          mappedRequirementIds: ['REQ-1', 'REQ-2'],
+          mappedBusinessUseCaseIds: ['BUC-1'],
+          mappedDecisionIds: ['DEC-1'],
+          approvedRequirementIds: ['REQ-1', 'REQ-2', 'REQ-3'],
+          approvedBusinessUseCaseIds: ['BUC-1'],
+          unmappedApprovedRequirements: 1,
+          unmappedApprovedBusinessUseCases: 0,
+          unresolvedGoalRefs: 0,
+          unresolvedRequirementRefs: 0,
+          unresolvedBusinessUseCaseRefs: 0,
+          unresolvedDecisionRefs: 0,
+          morphismsMissingUpstreamRefs: 0,
+          acceptanceTestsMissingUpstreamRefs: 1,
+          diagramsMissingUpstreamRefs: 0,
+        },
+      },
+    );
+
+    expect(matrix.summary.discoveryRequirementIds).toBe(3);
+    expect(matrix.summary.mappedDiscoveryRequirementIds).toBe(2);
+    expect(matrix.summary.unmappedApprovedDiscoveryRequirements).toBe(1);
+    expect(matrix.summary.rowsMissingDiscoveryLinks).toBe(0);
+    expect(matrix.rows[0]?.discoveryGoalIds).toEqual(['G-1']);
+    expect(matrix.rows[0]?.discoveryRequirementIds).toEqual(['REQ-1']);
+    expect(matrix.rows[0]?.discoveryBusinessUseCaseIds).toEqual(['BUC-1']);
+    expect(matrix.rows[1]?.discoveryDecisionIds).toEqual(['DEC-1']);
   });
 });

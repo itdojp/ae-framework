@@ -2,6 +2,70 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ae-framework/schema/context-pack-v1.schema.json",
   "title": "Context Pack v1",
+  "$defs": {
+    "discoveryPackUpstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "upstreamRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "goal_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "requirement_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "business_use_case_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "decision_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  },
   "type": "object",
   "additionalProperties": true,
   "required": [
@@ -157,6 +221,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "upstream_refs": {
+            "$ref": "#/$defs/upstreamRefs"
           }
         }
       }
@@ -185,6 +252,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "upstream_refs": {
+            "$ref": "#/$defs/upstreamRefs"
           }
         }
       }
@@ -216,6 +286,15 @@
         }
       }
     },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "discovery_pack": {
+          "$ref": "#/$defs/discoveryPackUpstream"
+        }
+      }
+    },
     "acceptance_tests": {
       "type": "array",
       "items": {
@@ -240,6 +319,9 @@
             "items": {
               "type": "string"
             }
+          },
+          "upstream_refs": {
+            "$ref": "#/$defs/upstreamRefs"
           }
         }
       }

@@ -31,6 +31,7 @@ ae traceability matrix \
   --tests "tests/**/*" \
   --code "src/**/*" \
   --context-pack "spec/context-pack/**/*.{yml,yaml,json}" \
+  --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}" \
   --format json \
   --output docs/specs/ISSUE-TRACEABILITY-MATRIX.json
 
@@ -40,6 +41,7 @@ ae traceability matrix \
   --tests "tests/**/*" \
   --code "src/**/*" \
   --context-pack "spec/context-pack/**/*.{yml,yaml,json}" \
+  --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}" \
   --format md \
   --output docs/specs/ISSUE-TRACEABILITY-MATRIX.md
 ```
@@ -47,6 +49,13 @@ ae traceability matrix \
 `linked=true` の条件は「当該 requirement ID が tests と code の両方に存在すること」です。
 
 `--context-pack` を指定した場合は Context Pack の `diagrams[].id` / `morphisms[].id` / `acceptance_tests[].id` も matrix の列に出力されます。
+
+`--discovery-pack` を併用した場合は、Context Pack の `upstream_refs` を起点に Discovery Pack の `goal_ids` / `requirement_ids` / `business_use_case_ids` / `decision_ids` を行ごとに集約します。summary には以下が追加されます。
+
+- `mappedDiscovery*`: Context Pack から実際に参照された Discovery Pack ID 数
+- `unmappedApprovedDiscoveryRequirements` / `unmappedApprovedDiscoveryBusinessUseCases`: approved だが Context Pack へ未マップの数
+- `unresolvedDiscovery*Refs`: Context Pack の `upstream_refs` が Discovery Pack 上で解決できない参照数
+- `rowsMissingDiscoveryLinks`: tests/code まで連結できた requirement 行のうち、Discovery Pack upstream が 1 つも付かない行数
 
 ### タグ付け規約（Phase 1）
 
@@ -74,6 +83,8 @@ ae validate --traceability --strict --sources docs/specs/ISSUE-TRACEABILITY-MATR
 - `ae validate --traceability --strict` の Missing Trace Links で、`reason` に欠落種別（`no diagram ID link` など）が出る
 - matrix `summary.rowsMissingContextPackLinks` が、Context Pack 観点で不足している要件行数
 - `summary.missingDiagramLinks` / `summary.missingMorphismLinks` / `summary.missingAcceptanceTestLinks` で不足件数を内訳確認できる
+- `summary.unmappedApprovedDiscoveryRequirements` / `summary.unmappedApprovedDiscoveryBusinessUseCases` は、Discovery Pack 起点で Context Pack に着地していない approved 要素
+- `summary.unresolvedDiscovery*Refs` は、Context Pack `upstream_refs` の参照切れ
 
 ## 出力スキーマ
 

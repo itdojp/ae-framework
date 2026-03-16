@@ -64,12 +64,115 @@ forbidden_changes:
   - Remove ReserveInventory precondition checks.
 `;
 
+const VALID_DISCOVERY_PACK_YAML = `version: 1
+profile: rdra-lite
+sources:
+  - id: SRC-1
+    kind: markdown
+    path: docs/discovery.md
+actors: []
+external_systems: []
+goals:
+  - id: GOAL-1
+    status: approved
+    title: Keep checkout traceable.
+    source_refs: [SRC-1]
+    traces_to: []
+requirements:
+  - id: REQ-1
+    status: approved
+    title: Reserve inventory on checkout.
+    source_refs: [SRC-1]
+    traces_to: []
+business_use_cases:
+  - id: BUC-1
+    status: approved
+    title: Complete checkout.
+    source_refs: [SRC-1]
+    traces_to: []
+flows: []
+decisions:
+  - id: DEC-1
+    status: reviewed
+    title: Validate before submit.
+    source_refs: [SRC-1]
+    traces_to: []
+assumptions: []
+open_questions: []
+`;
+
+const VALID_CONTEXT_PACK_WITH_DISCOVERY_YAML = `version: 1
+name: inventory-discovery-context-pack
+upstream:
+  discovery_pack:
+    path: spec/discovery-pack/sample.yaml
+    profile: rdra-lite
+problem_statement:
+  goals:
+    - Keep inventory counts consistent.
+  non_goals:
+    - Implement pricing logic.
+domain_glossary:
+  terms:
+    - term: inventory_item
+      ja: 在庫アイテム
+objects:
+  - id: InventoryItem
+    kind: aggregate
+morphisms:
+  - id: ReserveInventory
+    input:
+      itemId: string
+      quantity: number
+    output:
+      reserved: boolean
+    pre:
+      - quantity > 0
+    post:
+      - reserved implies stock_decreased
+    failures:
+      - OutOfStock
+    upstream_refs:
+      goal_ids: [GOAL-1]
+      requirement_ids: [REQ-1]
+      business_use_case_ids: [BUC-1]
+      decision_ids: [DEC-1]
+diagrams:
+  - id: D-1
+    statement: ReserveInventory preserves non-negative stock.
+    verification:
+      - property-test
+acceptance_tests:
+  - id: AT-1
+    scenario: Reserve succeeds when stock is available.
+    expected:
+      - reservation accepted
+    upstream_refs:
+      requirement_ids: [REQ-1]
+constraints:
+  max_parallel_reservations: 8
+assurance:
+  profile: inventory-consistency-v1
+  claim_refs:
+    - no-negative-stock
+coding_conventions:
+  language: TypeScript
+  directory:
+    - src/
+    - tests/
+  dependencies:
+    runtime:
+      - zod
+forbidden_changes:
+  - Remove ReserveInventory precondition checks.
+`;
+
 describe('context-pack validate CLI', () => {
   let workdir: string;
   let sourcesDir: string;
   let reportDir: string;
 
-  const runValidate = (sourcesPattern: string) =>
+  const runValidate = (sourcesPattern: string, extraArgs: string[] = []) =>
     spawnSync(
       process.execPath,
       [
@@ -82,6 +185,7 @@ describe('context-pack validate CLI', () => {
         join(reportDir, 'context-pack-validate-report.json'),
         '--report-md',
         join(reportDir, 'context-pack-validate-report.md'),
+        ...extraArgs,
       ],
       {
         cwd: workdir,
@@ -381,6 +485,87 @@ describe('context-pack validate CLI', () => {
     const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
     expect(report.status).toBe('fail');
     expect(report.errors.some((entry: { keyword: string }) => entry.keyword === 'const')).toBe(true);
+  });
+
+  it('passes with discovery upstream refs when the source pack matches', async () => {
+    const discoveryDir = join(workdir, 'spec', 'discovery-pack');
+    await mkdir(discoveryDir, { recursive: true });
+    await writeFile(join(discoveryDir, 'sample.yaml'), VALID_DISCOVERY_PACK_YAML, 'utf8');
+    await writeFile(join(sourcesDir, 'valid.yaml'), VALID_CONTEXT_PACK_WITH_DISCOVERY_YAML, 'utf8');
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'), [
+      '--discovery-pack',
+      join(discoveryDir, '*.{yaml,yml,json}'),
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr.toString('utf8')).toBe('');
+
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.status).toBe('pass');
+    expect(report.warnings).toEqual([]);
+  });
+
+  it('warns when approved discovery requirements are unmapped', async () => {
+    const discoveryDir = join(workdir, 'spec', 'discovery-pack');
+    await mkdir(discoveryDir, { recursive: true });
+    await writeFile(
+      join(discoveryDir, 'sample.yaml'),
+      VALID_DISCOVERY_PACK_YAML.replace(
+        'requirements:\n  - id: REQ-1\n    status: approved\n    title: Reserve inventory on checkout.\n    source_refs: [SRC-1]\n    traces_to: []\n',
+        [
+          'requirements:',
+          '  - id: REQ-1',
+          '    status: approved',
+          '    title: Reserve inventory on checkout.',
+          '    source_refs: [SRC-1]',
+          '    traces_to: []',
+          '  - id: REQ-2',
+          '    status: approved',
+          '    title: Additional approved requirement.',
+          '    source_refs: [SRC-1]',
+          '    traces_to: []',
+          '',
+        ].join('\n'),
+      ),
+      'utf8',
+    );
+    await writeFile(join(sourcesDir, 'valid.yaml'), VALID_CONTEXT_PACK_WITH_DISCOVERY_YAML, 'utf8');
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'), [
+      '--discovery-pack',
+      join(discoveryDir, '*.{yaml,yml,json}'),
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout.toString('utf8')).toContain('validation completed with warnings');
+
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.status).toBe('warn');
+    expect(report.warnings.some((entry: { type: string }) => entry.type === 'unmapped-approved-requirement')).toBe(true);
+  });
+
+  it('fails when upstream refs point to unknown discovery IDs', async () => {
+    const discoveryDir = join(workdir, 'spec', 'discovery-pack');
+    await mkdir(discoveryDir, { recursive: true });
+    await writeFile(join(discoveryDir, 'sample.yaml'), VALID_DISCOVERY_PACK_YAML, 'utf8');
+    await writeFile(
+      join(sourcesDir, 'invalid-upstream.yaml'),
+      VALID_CONTEXT_PACK_WITH_DISCOVERY_YAML.replace('requirement_ids: [REQ-1]', 'requirement_ids: [REQ-404]'),
+      'utf8',
+    );
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'), [
+      '--discovery-pack',
+      join(discoveryDir, '*.{yaml,yml,json}'),
+    ]);
+
+    expect(result.status).toBe(2);
+    expect(result.stderr.toString('utf8')).toContain('validation failed');
+
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.errors.some((entry: { type: string }) => entry.type === 'upstream-ref-missing')).toBe(true);
   });
 
   it('escapes markdown table cells in validation report', async () => {
