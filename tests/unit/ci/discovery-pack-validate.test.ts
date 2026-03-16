@@ -156,6 +156,20 @@ describe('discovery-pack validate CLI', () => {
     expect(report.summary.strictApprovedViolations).toBe(1);
   });
 
+  it('escapes backslashes in markdown report cells', async () => {
+    await writeFile(
+      join(sourceDir, 'index.yaml'),
+      VALID_DISCOVERY_PACK.replace('traces_to: [GOAL-1]', 'traces_to: [GOAL-1\\\\|trace]'),
+      'utf8',
+    );
+
+    const result = runValidate();
+    expect(result.status).toBe(1);
+
+    const markdown = await readFile(join(reportDir, 'discovery-pack-validate-report.md'), 'utf8');
+    expect(markdown).toMatch(/GOAL-1\\+\|trace/);
+  });
+
   it('returns exit code 2 when no files match the provided sources', () => {
     const result = spawnSync(
       process.execPath,

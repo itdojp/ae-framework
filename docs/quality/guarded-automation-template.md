@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/ci/pr-automation.md
 - policy/risk-policy.yml
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-16'
 ---
 # Guarded Automation Template
 
@@ -25,13 +25,14 @@ Purpose: Define what automation may do, and where humans must decide, for AI-ass
 - Sign off on threshold changes (coverage/perf/a11y)
 
 ## Evidence required before merge
-- PR summary with verification results
+- PR summary with `verify-lite` / `policy-gate` / `gate` results
 - Links to artifacts (reports, traces, trends)
 - Rollback plan if behavior changes
 
 ## Gate policy (minimum)
-- Verify Lite must be green
-- Copilot review gate must be satisfied
+- `verify-lite` must be green
+- `policy-gate` must be green
+- `gate` (`Copilot Review Gate`) must be green
 - Any required label-gates must be satisfied
 
 ## Exception handling
