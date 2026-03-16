@@ -568,6 +568,29 @@ describe('context-pack validate CLI', () => {
     expect(report.errors.some((entry: { type: string }) => entry.type === 'upstream-ref-missing')).toBe(true);
   });
 
+  it('does not treat a missing declared discovery path as an ambiguous source when one real CLI source exists', async () => {
+    const discoveryDir = join(workdir, 'spec', 'discovery-pack');
+    await mkdir(discoveryDir, { recursive: true });
+    await writeFile(join(discoveryDir, 'sample.yaml'), VALID_DISCOVERY_PACK_YAML, 'utf8');
+    await writeFile(
+      join(sourcesDir, 'valid.yaml'),
+      VALID_CONTEXT_PACK_WITH_DISCOVERY_YAML.replace(
+        'path: spec/discovery-pack/sample.yaml',
+        'path: spec/discovery-pack/missing.yaml',
+      ),
+      'utf8',
+    );
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'), [
+      '--discovery-pack',
+      join(discoveryDir, '*.{yaml,yml,json}'),
+    ]);
+
+    expect(result.status).toBe(0);
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.errors.some((entry: { type: string }) => entry.type === 'discovery-pack-source-ambiguous')).toBe(false);
+  });
+
   it('escapes markdown table cells in validation report', async () => {
     const dangerousName = 'invalid|<tag>.json';
     await writeFile(join(sourcesDir, dangerousName), '<invalid-json>', 'utf8');

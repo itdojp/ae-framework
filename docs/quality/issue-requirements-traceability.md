@@ -55,7 +55,7 @@ ae traceability matrix \
 - `mappedDiscovery*`: Context Pack から実際に参照された Discovery Pack ID 数
 - `unmappedApprovedDiscoveryRequirements` / `unmappedApprovedDiscoveryBusinessUseCases`: approved だが Context Pack へ未マップの数
 - `unresolvedDiscovery*Refs`: Context Pack の `upstream_refs` が Discovery Pack 上で解決できない参照数
-- `rowsMissingDiscoveryLinks`: tests/code まで連結できた requirement 行のうち、Discovery Pack upstream が 1 つも付かない行数
+- `rowsMissingDiscoveryLinks`: `linked=true` の requirement 行のうち、Discovery Pack upstream が 1 つも付かない行数
 
 ### タグ付け規約（Phase 1）
 

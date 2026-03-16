@@ -248,4 +248,58 @@ describe('traceability cli helpers', () => {
     expect(matrix.rows[0]?.discoveryBusinessUseCaseIds).toEqual(['BUC-1']);
     expect(matrix.rows[1]?.discoveryDecisionIds).toEqual(['DEC-1']);
   });
+
+  it('counts rowsMissingDiscoveryLinks only for linked requirements', () => {
+    const matrix = buildTraceabilityMatrix(
+      ['LG-1', 'LG-2'],
+      [
+        { path: '/repo/tests/a.test.ts', content: 'LG-1 MOR-A' },
+      ],
+      [
+        { path: '/repo/src/a.ts', content: 'LG-1 MOR-A' },
+      ],
+      '/repo',
+      {
+        diagramIds: [],
+        morphismIds: ['MOR-A'],
+        acceptanceTestIds: [],
+        diagramDiscoveryRefs: {},
+        morphismDiscoveryRefs: {
+          'MOR-A': {
+            goalIds: [],
+            requirementIds: [],
+            businessUseCaseIds: [],
+            decisionIds: [],
+          },
+        },
+        acceptanceTestDiscoveryRefs: {},
+        discoverySummary: {
+          tracked: true,
+          goalIds: [],
+          requirementIds: [],
+          businessUseCaseIds: [],
+          decisionIds: [],
+          mappedGoalIds: [],
+          mappedRequirementIds: [],
+          mappedBusinessUseCaseIds: [],
+          mappedDecisionIds: [],
+          approvedRequirementIds: [],
+          approvedBusinessUseCaseIds: [],
+          unmappedApprovedRequirements: 0,
+          unmappedApprovedBusinessUseCases: 0,
+          unresolvedGoalRefs: 0,
+          unresolvedRequirementRefs: 0,
+          unresolvedBusinessUseCaseRefs: 0,
+          unresolvedDecisionRefs: 0,
+          morphismsMissingUpstreamRefs: 0,
+          acceptanceTestsMissingUpstreamRefs: 0,
+          diagramsMissingUpstreamRefs: 1,
+        },
+      },
+    );
+
+    expect(matrix.rows[0]?.linked).toBe(true);
+    expect(matrix.rows[1]?.linked).toBe(false);
+    expect(matrix.summary.rowsMissingDiscoveryLinks).toBe(1);
+  });
 });
