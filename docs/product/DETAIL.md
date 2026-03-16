@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
 - docs/quality/formal-runbook.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-16'
 ---
 # ae-framework 詳細説明資料
 
@@ -95,7 +95,7 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 #### CIと品質ゲート
 主要ワークフローは `.github/workflows/` に集約されています。
 
-- 代表的なゲート: `verify-lite.yml`, `coverage-check.yml`, `workflow-lint.yml`
+- current main の代表的な PR ゲート: `verify-lite.yml`, `policy-gate.yml`, `copilot-review-gate.yml`
 - 形式検証: `formal-verify.yml`, `formal-aggregate.yml`
 - セキュリティ: `security.yml`, `sbom-generation.yml`
 - その他: `ci-fast.yml`, `ci-extended.yml`, `pr-verify.yml`
@@ -136,7 +136,7 @@ ae-framework は、エージェント協調型SDLCを支える「仕様・検証
 
 ### 4.2 CIフロー（例）
 1. PR作成
-2. `verify-lite` を中心に軽量ゲートを通過
+2. `verify-lite` / `policy-gate` / `gate` を中心に軽量ゲートを通過
 3. 必要に応じて `run-formal` ラベルまたは `workflow_dispatch` で `formal-verify` を実行
 4. 必要なら `enforce-formal` ラベルで Apalache `ran/ok` をゲート化
 
