@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: 2026-03-11
+lastVerified: 2026-03-16
 owner: testing-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -34,7 +34,8 @@ jobs:
 ```
 
 Notes
-- Emit invariant violations with `traceId` and link to `formal/summary.json` when applicable.
+- Emit invariant violations with `traceId` and link to `artifacts/domain/replay.summary.json`.
+- When traceId-aligned formal evidence is attached, link `formal/summary.json`. `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` can be attached as additional overall formal status evidence.
 - Keep implementation outside core to avoid dependency bloat.
 
 ## Env Options
