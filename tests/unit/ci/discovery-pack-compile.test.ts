@@ -64,7 +64,7 @@ business_use_cases:
     actor_ids: [ACTOR-1]
     primary_goal_ids: [GOAL-1]
     source_refs: [SRC-1]
-    traces_to: [REQ-1]
+    traces_to: [REQ-1, REQ-2]
 flows:
   - id: FLOW-1
     status: approved
@@ -214,6 +214,9 @@ describe('discovery-pack compile CLI', () => {
     addFormats(ajv);
     const validate = ajv.compile(contextPackSchema);
     expect(validate(scaffold)).toBe(true);
+    expect(scaffold.morphisms[0].pre).toContain('Approval must confirm reservation feasibility before final approval.');
+    expect(scaffold.morphisms[0].pre).not.toContain('Operator should see a rejection reason code.');
+    expect(scaffold.acceptance_tests[0].expected).not.toContain('Operator should see a rejection reason code.');
   });
 
   it('fails with exit code 2 when multiple discovery packs match compile sources', async () => {
