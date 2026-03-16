@@ -2,7 +2,7 @@
 docRole: derived
 canonicalSource:
   - docs/phases/phase-6-uiux.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-16'
 ---
 
 # 🎨 Phase 6: UI/UX & Frontend Delivery Quick Start
@@ -29,7 +29,7 @@ pnpm run codex:quickstart
 > Current enforcement status (as of 2026-02-18):
 > - Adapter threshold jobs in `.github/workflows/adapter-thresholds.yml` run only when the PR has the `run-adapters` label.
 > - Within `run-adapters` runs, a11y/perf/lighthouse are **report-only by default** and become blocking only with labels (`enforce-a11y`, `enforce-perf`, `enforce-lh`).
-> - Coverage is validated by dedicated workflows (for example `coverage-check.yml`) and policy may differ by workflow/label.
+> - The daily PR baseline on `main` remains `verify-lite` / `policy-gate` / `gate`; coverage is handled by dedicated workflows (for example `coverage-check.yml`) and policy may differ by workflow/label.
 > - See `docs/quality/adapter-thresholds.md` for the exact gate behavior.
 
 ### 📋 Overview
@@ -459,7 +459,7 @@ pnpm run codex:quickstart
 > 現行の強制ポリシー（2026-02-18時点）:
 > - `.github/workflows/adapter-thresholds.yml` のアダプタしきい値ジョブは、PRに `run-adapters` ラベルがある場合のみ実行されます。
 > - `run-adapters` 実行時、a11y/perf/lighthouse は既定で **report-only** であり、ラベル（`enforce-a11y`/`enforce-perf`/`enforce-lh`）付与時のみブロッキングになります。
-> - Coverage は専用workflow（例: `coverage-check.yml`）側で判定され、workflow/ラベルにより挙動が変わります。
+> - `main` の日常PR baseline は `verify-lite` / `policy-gate` / `gate` で、Coverage は専用workflow（例: `coverage-check.yml`）側で判定されます。詳細なポリシーは workflow/ラベルごとに変わります。
 > - 詳細は `docs/quality/adapter-thresholds.md` を参照してください。
 
 ### 📋 概要
