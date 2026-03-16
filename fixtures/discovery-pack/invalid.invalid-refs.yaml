@@ -1,0 +1,42 @@
+version: 1
+profile: rdra-lite
+sources:
+  - id: SRC-INTERVIEW-01
+    kind: interview-note
+    title: Warehouse stakeholder interview
+    path: fixtures/discovery-pack/sources/warehouse-stakeholder-interview.md
+actors:
+  - id: ACTOR-WAREHOUSE-CLERK
+    status: approved
+    title: Warehouse Clerk
+    source_refs:
+      - SRC-MISSING
+    traces_to:
+      - GOAL-MISSING
+external_systems: []
+goals: []
+requirements:
+  - id: REQ-STOCK-CHECK
+    status: approved
+    title: Check stock
+    statement: Check stock before approval.
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to: []
+business_use_cases:
+  - id: BUC-APPROVE-RESERVATION
+    status: approved
+    title: Approve reservation
+    statement: Approve a feasible reservation.
+    actor_ids:
+      - ACTOR-MISSING
+    primary_goal_ids:
+      - GOAL-MISSING
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - REQ-STOCK-CHECK
+flows: []
+decisions: []
+assumptions: []
+open_questions: []

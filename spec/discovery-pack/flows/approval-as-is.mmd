@@ -1,0 +1,6 @@
+flowchart TD
+  Operator[Order Operator] --> Console[Approval Console]
+  Console --> ReserveCheck[Reservation feasibility check]
+  ReserveCheck --> Decision{Feasible?}
+  Decision -- Yes --> Approve[Approve request]
+  Decision -- No --> Reject[Reject approval]

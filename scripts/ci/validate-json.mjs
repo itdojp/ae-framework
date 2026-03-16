@@ -71,6 +71,14 @@ const checks = [
     label: 'Context Bundle schema validation'
   },
   {
+    schema: 'schema/discovery-pack-v1.schema.json',
+    fixtures: [
+      'fixtures/discovery-pack/minimal.yaml',
+      'fixtures/discovery-pack/rdra-lite-sample.yaml',
+    ],
+    label: 'Discovery Pack v1 schema validation'
+  },
+  {
     schema: 'schema/context-pack-v1.schema.json',
     fixtures: ['fixtures/context-pack/sample.context-pack.json'],
     label: 'Context Pack v1 schema validation'

@@ -1,0 +1,60 @@
+version: 1
+profile: rdra-lite
+sources:
+  - id: SRC-INTERVIEW-01
+    kind: interview-note
+    title: Warehouse stakeholder interview
+    path: fixtures/discovery-pack/sources/warehouse-stakeholder-interview.md
+actors:
+  - id: ACTOR-WAREHOUSE-CLERK
+    status: approved
+    title: Warehouse Clerk
+    summary: Handles reservations from the warehouse console.
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to: []
+external_systems: []
+goals:
+  - id: GOAL-PREVENT-OVERSELL
+    status: approved
+    title: Prevent overselling
+    statement: Reservations are accepted only when inventory is available.
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to: []
+requirements:
+  - id: REQ-CHECK-STOCK-FIRST
+    status: approved
+    title: Check stock before reservation
+    statement: The system must confirm available stock before accepting a reservation.
+    priority: high
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - GOAL-PREVENT-OVERSELL
+business_use_cases:
+  - id: BUC-RESERVE-INVENTORY
+    status: approved
+    title: Reserve inventory
+    statement: The warehouse clerk reserves a requested quantity.
+    actor_ids:
+      - ACTOR-WAREHOUSE-CLERK
+    primary_goal_ids:
+      - GOAL-PREVENT-OVERSELL
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - REQ-CHECK-STOCK-FIRST
+flows:
+  - id: FLOW-RESERVE-AS-IS
+    status: approved
+    title: Reserve inventory as-is
+    mermaid_path: fixtures/discovery-pack/flows/reserve-inventory-as-is.mmd
+    kind: as-is
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - BUC-RESERVE-INVENTORY
+decisions: []
+assumptions: []
+open_questions: []

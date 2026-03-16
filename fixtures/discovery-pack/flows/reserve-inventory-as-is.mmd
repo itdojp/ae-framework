@@ -1,0 +1,6 @@
+flowchart TD
+  Clerk[Warehouse Clerk] --> UI[Reservation Console]
+  UI --> ERP[ERP stock check]
+  ERP --> Decision{Stock available?}
+  Decision -- Yes --> Reserve[Create reservation]
+  Decision -- No --> Reject[Show rejection]

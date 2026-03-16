@@ -1,0 +1,7 @@
+flowchart TD
+  SalesOps[Sales Operations] --> Console[Dispute Console]
+  Console --> Reservation[Reservation service]
+  Reservation --> ERP[ERP]
+  ERP --> Decision{Mismatch confirmed?}
+  Decision -- Yes --> Escalate[Open dispute review]
+  Decision -- No --> Close[Close case]

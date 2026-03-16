@@ -1,0 +1,59 @@
+version: 1
+profile: rdra-lite
+sources:
+  - id: SRC-DISCOVERY-SESSION
+    kind: workshop-note
+    title: Discovery workshop
+    path: spec/discovery-pack/sources/discovery-workshop.md
+actors:
+  - id: ACTOR-ORDER-OPERATOR
+    status: approved
+    title: Order Operator
+    summary: Reviews reservation requests before approval.
+    source_refs:
+      - SRC-DISCOVERY-SESSION
+    traces_to: []
+external_systems: []
+goals:
+  - id: GOAL-AVOID-UNFULFILLABLE-APPROVALS
+    status: approved
+    title: Avoid unfulfillable approvals
+    statement: Approval should only proceed when the requested item can be reserved.
+    source_refs:
+      - SRC-DISCOVERY-SESSION
+    traces_to: []
+requirements:
+  - id: REQ-APPROVAL-CHECKS-RESERVATION
+    status: approved
+    title: Approval checks reservation feasibility
+    statement: Approval must confirm reservation feasibility before final approval.
+    source_refs:
+      - SRC-DISCOVERY-SESSION
+    traces_to:
+      - GOAL-AVOID-UNFULFILLABLE-APPROVALS
+business_use_cases:
+  - id: BUC-APPROVE-RESERVATION
+    status: approved
+    title: Approve reservation request
+    statement: The operator confirms a request only when reservation is feasible.
+    actor_ids:
+      - ACTOR-ORDER-OPERATOR
+    primary_goal_ids:
+      - GOAL-AVOID-UNFULFILLABLE-APPROVALS
+    source_refs:
+      - SRC-DISCOVERY-SESSION
+    traces_to:
+      - REQ-APPROVAL-CHECKS-RESERVATION
+flows:
+  - id: FLOW-APPROVAL-AS-IS
+    status: approved
+    title: Approval as-is
+    mermaid_path: spec/discovery-pack/flows/approval-as-is.mmd
+    kind: as-is
+    source_refs:
+      - SRC-DISCOVERY-SESSION
+    traces_to:
+      - BUC-APPROVE-RESERVATION
+decisions: []
+assumptions: []
+open_questions: []
