@@ -909,14 +909,18 @@ export function createTraceabilityCommand(): Command {
         let discoveryPackIndex: DiscoveryPackIndex | undefined;
         if (discoveryPackPatterns.length > 0) {
           const discoveryPackFiles = scanFiles(discoveryPackPatterns, cwd);
-          if (discoveryPackFiles.length === 0) {
-            throw new Error(`No Discovery Pack files matched: ${discoveryPackPatterns.join(', ')}`);
-          }
-          if (discoveryPackFiles.length !== 1) {
-            throw new Error(`Expected exactly one Discovery Pack file, matched ${discoveryPackFiles.length}`);
-          }
-          discoveryPackIndex = readDiscoveryPackIndex(discoveryPackFiles[0]);
+        if (discoveryPackFiles.length === 0) {
+          throw new Error(`No Discovery Pack files matched: ${discoveryPackPatterns.join(', ')}`);
         }
+        if (discoveryPackFiles.length !== 1) {
+          throw new Error(`Expected exactly one Discovery Pack file, matched ${discoveryPackFiles.length}`);
+        }
+        const [discoveryPackFile] = discoveryPackFiles;
+        if (!discoveryPackFile) {
+          throw new Error(`No Discovery Pack files matched: ${discoveryPackPatterns.join(', ')}`);
+        }
+        discoveryPackIndex = readDiscoveryPackIndex(discoveryPackFile);
+      }
         const contextPackIds = readContextPackIds(contextPackFiles, discoveryPackIndex);
         const matrix = buildTraceabilityMatrix(requirementIds, testFiles, codeFiles, cwd, contextPackIds);
         matrix.sourceMap = path.relative(cwd, mapPath);
