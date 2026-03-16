@@ -15,8 +15,27 @@ actors:
       - GOAL-MISSING
 external_systems: []
 goals: []
-requirements: []
-business_use_cases: []
+requirements:
+  - id: REQ-STOCK-CHECK
+    status: approved
+    title: Check stock
+    statement: Check stock before approval.
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to: []
+business_use_cases:
+  - id: BUC-APPROVE-RESERVATION
+    status: approved
+    title: Approve reservation
+    statement: Approve a feasible reservation.
+    actor_ids:
+      - ACTOR-MISSING
+    primary_goal_ids:
+      - GOAL-MISSING
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - REQ-STOCK-CHECK
 flows: []
 decisions: []
 assumptions: []
