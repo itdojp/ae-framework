@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ASSURANCE-MODEL.md
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
-lastVerified: '2026-03-14'
+lastVerified: '2026-03-16'
 ---
 # Assurance Control Plane
 
@@ -19,7 +19,7 @@ Core value:
 - standardize specifications
 - run and aggregate verification lanes
 - validate artifacts/contracts
-- turn results into policy/review/release decisions
+- turn results into policy / PR gate / release decisions
 
 ---
 
@@ -34,7 +34,7 @@ Core value:
 - specification
 - verification
 - evidence artifacts
-- policy / review / merge gate
+- policy / PR gate / merge automation
 - release / post-deploy judgment
 
 ## 2. 何が価値の中心か
@@ -42,9 +42,9 @@ Core value:
 価値の中心は、個別の codegen 機能ではありません。現在の実装で価値が出ているのは次です。
 
 1. Context Pack や schema による spec/contracts の固定
-2. `verify:lite`、formal runners、conformance の summary 化
+2. `pnpm run verify:lite`、formal runners、conformance の summary 化
 3. artifact validation と Contract Catalog による破壊検知
-4. policy gate / review gate / auto-fix / auto-merge の運用制御
+4. `policy-gate` / `gate` / auto-fix / auto-merge の運用制御
 5. PR / release に必要な証跡を JSON/Markdown で残すこと
 
 ## 3. What ae-framework is / is not
@@ -78,7 +78,7 @@ flowchart TB
   end
   subgraph C[Assurance control plane]
     C1[Context Pack / evidence aggregation]
-    C2[policy gate / review / release judgment]
+    C2[policy / PR gate / release judgment]
   end
   H --> C
 ```
@@ -90,9 +90,9 @@ flowchart TB
 ## 5. 導入プロファイル
 
 ### Baseline
-- `verify:lite`
+- `verify-lite`
 - schema/AJV validation
-- PR gate
+- `policy-gate` と `gate`
 - `quality-scorecard` の report-only 集約
 - 役割: harness layer の最小安定化
 
