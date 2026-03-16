@@ -12,7 +12,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## English (Summary)
 
-This document captures the implementation-aligned architecture of `ae-framework` as of 2026-03-14, including review-topology aware policy gates, OPA shadow-compare migration, assurance/quality aggregation artifacts, handoff adapters, trace-required check integration, release verify operations, and the expanded formal-verification stack with CSP (`cspx`) integration.
+This document captures the implementation-aligned architecture of `ae-framework` as of 2026-03-16, including review-topology aware policy gates, OPA shadow-compare migration, assurance/quality aggregation artifacts, handoff adapters, trace-required check integration, release verify operations, and the expanded formal-verification stack with CSP (`cspx`) integration.
 
 ---
 
@@ -216,7 +216,13 @@ CI pin（再現性）:
 - CSP詳細: `docs/quality/formal-csp.md`
 - 全ドキュメント索引: `docs/README.md`
 
-## 9. 更新サマリ（2026-03-14）
+## 9. 更新サマリ（2026-03-16）
+
+- formal / trace artifact path の current contract 追従
+  - `artifacts/formal/formal-summary-v1.json`
+  - `artifacts/formal/formal-summary-v2.json`
+  - `artifacts/trace/report-envelope.json`
+  - `artifacts/hermetic-reports/trace/kvonce-validation.json`
 
 更新内容:
 - `codex-autopilot-lane.yml` の収束フロー（actionable非suggestion対応を含む）を CIモデルへ統合

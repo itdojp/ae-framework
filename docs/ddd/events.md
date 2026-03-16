@@ -13,7 +13,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## 日本語（概要）
 
-`domainEvents[]` から Zod 契約とリプレイ用フィクスチャを生成し、イベント列に対する集約不変量を検証します。成果物（events.json / replay.summary / formal-summary-v1-v2 / properties.summary）と、Zod/Replay のスケッチ、CLI と PR 要件を記載しています。
+`domainEvents[]` から Zod 契約とリプレイ用フィクスチャを生成し、イベント列に対する集約不変量を検証します。成果物（`artifacts/domain/events.json` / `artifacts/domain/replay.summary.json` / `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` / `artifacts/properties/summary.json`）と、Zod/Replay のスケッチ、CLI と PR 要件を記載しています。
 
 Goals
 - From `domainEvents[]`, generate:
