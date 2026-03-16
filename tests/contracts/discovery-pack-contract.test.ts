@@ -91,19 +91,42 @@ const validateSemanticRefs = (fixture: DiscoveryPack) => {
   }
 
   const violations: Array<{ type: string; id: string; ref: string }> = [];
+  const validateEntryRefs = (
+    id: string,
+    refs: string[] | undefined,
+    validIds: Set<string>,
+    type: string,
+  ) => {
+    for (const ref of refs ?? []) {
+      if (!validIds.has(ref)) {
+        violations.push({ type, id, ref });
+      }
+    }
+  };
 
   for (const section of ELEMENT_SECTIONS) {
     for (const entry of fixture[section] ?? []) {
       const id = typeof entry['id'] === 'string' ? entry['id'] : `${section}-unknown`;
-      for (const ref of (entry['source_refs'] as string[] | undefined) ?? []) {
-        if (!sourceIds.has(ref)) {
-          violations.push({ type: 'source-ref-missing', id, ref });
-        }
-      }
-      for (const ref of (entry['traces_to'] as string[] | undefined) ?? []) {
-        if (!elementIds.has(ref)) {
-          violations.push({ type: 'trace-ref-missing', id, ref });
-        }
+      validateEntryRefs(id, entry['source_refs'] as string[] | undefined, sourceIds, 'source-ref-missing');
+      validateEntryRefs(id, entry['traces_to'] as string[] | undefined, elementIds, 'trace-ref-missing');
+      if (section === 'business_use_cases') {
+        const actorIds = new Set(
+          (fixture.actors ?? [])
+            .map((actor) => actor['id'])
+            .filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0),
+        );
+        const goalIds = new Set(
+          (fixture.goals ?? [])
+            .map((goal) => goal['id'])
+            .filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0),
+        );
+        validateEntryRefs(id, entry['actor_ids'] as string[] | undefined, actorIds, 'actor-ref-missing');
+        validateEntryRefs(
+          id,
+          entry['primary_goal_ids'] as string[] | undefined,
+          goalIds,
+          'primary-goal-ref-missing',
+        );
       }
     }
   }
@@ -143,6 +166,21 @@ describe('discovery-pack contract', () => {
     ).toBe(true);
   });
 
+  it('rejects unsupported profile values', () => {
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    const fixture = {
+      ...loadFixture('fixtures/discovery-pack/minimal.yaml'),
+      profile: 'rdra-full',
+    };
+
+    expect(validate(fixture)).toBe(false);
+    expect(
+      validate.errors?.some((entry) => entry.instancePath === '/profile'),
+    ).toBe(true);
+  });
+
   it('detects duplicate IDs across sections', () => {
     const fixture = loadFixture('fixtures/discovery-pack/invalid.duplicate-id.yaml');
     const duplicateIds = Array.from(buildIdIndex(fixture).entries()).filter(
@@ -172,6 +210,16 @@ describe('discovery-pack contract', () => {
       {
         type: 'trace-ref-missing',
         id: 'ACTOR-WAREHOUSE-CLERK',
+        ref: 'GOAL-MISSING',
+      },
+      {
+        type: 'actor-ref-missing',
+        id: 'BUC-APPROVE-RESERVATION',
+        ref: 'ACTOR-MISSING',
+      },
+      {
+        type: 'primary-goal-ref-missing',
+        id: 'BUC-APPROVE-RESERVATION',
         ref: 'GOAL-MISSING',
       },
     ]);
