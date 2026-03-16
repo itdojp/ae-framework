@@ -1,0 +1,451 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/discovery-pack-v1.schema.json",
+  "title": "Discovery Pack v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "profile",
+    "sources",
+    "actors",
+    "external_systems",
+    "goals",
+    "requirements",
+    "business_use_cases",
+    "flows",
+    "decisions",
+    "assumptions",
+    "open_questions"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "profile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "actors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/actor"
+      }
+    },
+    "external_systems": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/externalSystem"
+      }
+    },
+    "goals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/goal"
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/requirement"
+      }
+    },
+    "business_use_cases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/businessUseCase"
+      }
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/flow"
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/decision"
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/assumption"
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/openQuestion"
+      }
+    }
+  },
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "hypothesis",
+        "reviewed",
+        "approved",
+        "rejected",
+        "deferred"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceRefArray": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/id"
+      }
+    },
+    "traceRefArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/id"
+      }
+    },
+    "commonItem": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "status",
+        "source_refs",
+        "traces_to"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "source_refs": {
+          "$ref": "#/$defs/sourceRefArray"
+        },
+        "traces_to": {
+          "$ref": "#/$defs/traceRefArray"
+        },
+        "detail_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "kind"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "uri": {
+          "type": "string",
+          "format": "uri-reference",
+          "minLength": 1
+        },
+        "format": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "path"
+          ]
+        },
+        {
+          "required": [
+            "uri"
+          ]
+        }
+      ]
+    },
+    "actor": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonItem"
+        },
+        {
+          "type": "object",
+          "required": [
+            "title"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "role": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "externalSystem": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonItem"
+        },
+        {
+          "type": "object",
+          "required": [
+            "title"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            },
+            "system_of_record": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "goal": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonItem"
+        },
+        {
+          "type": "object",
+          "required": [
+            "title",
+            "statement"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "statement": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "requirement": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonItem"
+        },
+        {
+          "type": "object",
+          "required": [
+            "title",
+            "statement"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "statement": {
+              "type": "string",
+              "minLength": 1
+            },
+            "priority": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "businessUseCase": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonItem"
+        },
+        {
+          "type": "object",
+          "required": [
+            "title",
+            "statement"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "statement": {
+              "type": "string",
+              "minLength": 1
+            },
+            "actor_ids": {
+              "$ref": "#/$defs/traceRefArray"
+            },
+            "primary_goal_ids": {
+              "$ref": "#/$defs/traceRefArray"
+            }
+          }
+        }
+      ]
+    },
+    "flow": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonItem"
+        },
+        {
+          "type": "object",
+          "required": [
+            "title",
+            "mermaid_path"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "mermaid_path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "decision": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonItem"
+        },
+        {
+          "type": "object",
+          "required": [
+            "title",
+            "statement"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "statement": {
+              "type": "string",
+              "minLength": 1
+            },
+            "outcome": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "assumption": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonItem"
+        },
+        {
+          "type": "object",
+          "required": [
+            "title",
+            "statement"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "statement": {
+              "type": "string",
+              "minLength": 1
+            },
+            "impact": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "openQuestion": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/commonItem"
+        },
+        {
+          "type": "object",
+          "required": [
+            "title",
+            "question",
+            "blocking"
+          ],
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "question": {
+              "type": "string",
+              "minLength": 1
+            },
+            "blocking": {
+              "type": "boolean"
+            },
+            "owner": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    }
+  }
+}

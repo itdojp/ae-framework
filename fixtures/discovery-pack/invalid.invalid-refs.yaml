@@ -1,0 +1,23 @@
+version: 1
+profile: rdra-lite
+sources:
+  - id: SRC-INTERVIEW-01
+    kind: interview-note
+    title: Warehouse stakeholder interview
+    path: fixtures/discovery-pack/sources/warehouse-stakeholder-interview.md
+actors:
+  - id: ACTOR-WAREHOUSE-CLERK
+    status: approved
+    title: Warehouse Clerk
+    source_refs:
+      - SRC-MISSING
+    traces_to:
+      - GOAL-MISSING
+external_systems: []
+goals: []
+requirements: []
+business_use_cases: []
+flows: []
+decisions: []
+assumptions: []
+open_questions: []

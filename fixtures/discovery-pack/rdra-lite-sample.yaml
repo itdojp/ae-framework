@@ -1,0 +1,150 @@
+version: 1
+profile: rdra-lite
+sources:
+  - id: SRC-INTERVIEW-01
+    kind: interview-note
+    title: Warehouse stakeholder interview
+    path: fixtures/discovery-pack/sources/warehouse-stakeholder-interview.md
+  - id: SRC-TICKET-01
+    kind: issue
+    title: Oversell incident retrospective
+    uri: https://github.com/itdojp/ae-framework/issues/2721
+actors:
+  - id: ACTOR-WAREHOUSE-CLERK
+    status: approved
+    title: Warehouse Clerk
+    summary: Handles reservation intake and stock confirmation.
+    role: reservation-operator
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to: []
+  - id: ACTOR-SALES-OPS
+    status: reviewed
+    title: Sales Operations
+    summary: Escalates stock disputes and cancellation requests.
+    role: escalation-owner
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to: []
+external_systems:
+  - id: EXT-ERP
+    status: approved
+    title: ERP
+    summary: Source of record for current inventory availability.
+    system_of_record: true
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to: []
+goals:
+  - id: GOAL-PREVENT-OVERSELL
+    status: approved
+    title: Prevent overselling
+    statement: Orders and reservations should not exceed available inventory.
+    source_refs:
+      - SRC-INTERVIEW-01
+      - SRC-TICKET-01
+    traces_to: []
+  - id: GOAL-REDUCE-ESCALATIONS
+    status: reviewed
+    title: Reduce stock dispute escalations
+    statement: Escalations should only happen for exceptional cases.
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to: []
+requirements:
+  - id: REQ-CHECK-STOCK-FIRST
+    status: approved
+    title: Check stock before reservation
+    statement: The reservation flow must check ERP stock before accepting inventory.
+    priority: high
+    source_refs:
+      - SRC-INTERVIEW-01
+      - SRC-TICKET-01
+    traces_to:
+      - GOAL-PREVENT-OVERSELL
+  - id: REQ-SHOW-REJECTION-REASON
+    status: reviewed
+    title: Show rejection reason
+    statement: When stock is unavailable, the operator should see a reason code.
+    priority: medium
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - GOAL-PREVENT-OVERSELL
+      - GOAL-REDUCE-ESCALATIONS
+business_use_cases:
+  - id: BUC-RESERVE-INVENTORY
+    status: approved
+    title: Reserve inventory
+    statement: The warehouse clerk reserves available stock for an order.
+    actor_ids:
+      - ACTOR-WAREHOUSE-CLERK
+    primary_goal_ids:
+      - GOAL-PREVENT-OVERSELL
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - REQ-CHECK-STOCK-FIRST
+  - id: BUC-HANDLE-STOCK-DISPUTE
+    status: hypothesis
+    title: Handle stock dispute
+    statement: Sales Operations reviews discrepancies between operator view and ERP.
+    actor_ids:
+      - ACTOR-SALES-OPS
+    primary_goal_ids:
+      - GOAL-REDUCE-ESCALATIONS
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - REQ-SHOW-REJECTION-REASON
+flows:
+  - id: FLOW-RESERVE-AS-IS
+    status: approved
+    title: Reserve inventory as-is
+    mermaid_path: fixtures/discovery-pack/flows/reserve-inventory-as-is.mmd
+    kind: as-is
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - BUC-RESERVE-INVENTORY
+  - id: FLOW-STOCK-DISPUTE-TO-BE
+    status: reviewed
+    title: Stock dispute to-be
+    mermaid_path: fixtures/discovery-pack/flows/stock-dispute-to-be.mmd
+    kind: to-be
+    source_refs:
+      - SRC-INTERVIEW-01
+      - SRC-TICKET-01
+    traces_to:
+      - BUC-HANDLE-STOCK-DISPUTE
+decisions:
+  - id: DEC-ERP-SOR
+    status: approved
+    title: ERP remains the system of record
+    statement: Reservation logic reads availability from ERP until a replacement SoR is approved.
+    outcome: accepted
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - REQ-CHECK-STOCK-FIRST
+assumptions:
+  - id: ASM-ERP-LATENCY
+    status: reviewed
+    title: ERP latency stays within operational tolerance
+    statement: ERP availability checks normally complete within the reservation SLA.
+    impact: If false, reservation UX must degrade gracefully.
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - REQ-CHECK-STOCK-FIRST
+open_questions:
+  - id: OQ-REJECTION-CODE-SOURCE
+    status: reviewed
+    title: Rejection code source
+    question: Should rejection reason codes come from ERP or the reservation service?
+    blocking: true
+    owner: Sales Ops
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to:
+      - REQ-SHOW-REJECTION-REASON

@@ -43,6 +43,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 - `schema/assurance-profile.schema.json`
 - `schema/codex-task-request.schema.json`
 - `schema/context-bundle.schema.json`
+- `schema/discovery-pack-v1.schema.json`
 - `schema/context-pack-v1.schema.json`
 - `schema/context-pack-boundary-map.schema.json`
 - `schema/context-pack-functor-map.schema.json`

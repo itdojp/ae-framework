@@ -1,0 +1,29 @@
+version: 1
+profile: rdra-lite
+sources:
+  - id: SRC-INTERVIEW-01
+    kind: interview-note
+    title: Warehouse stakeholder interview
+    path: fixtures/discovery-pack/sources/warehouse-stakeholder-interview.md
+actors:
+  - id: DUPLICATE-ID
+    status: approved
+    title: Warehouse Clerk
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to: []
+external_systems: []
+goals:
+  - id: DUPLICATE-ID
+    status: approved
+    title: Prevent overselling
+    statement: Reservations are accepted only when inventory is available.
+    source_refs:
+      - SRC-INTERVIEW-01
+    traces_to: []
+requirements: []
+business_use_cases: []
+flows: []
+decisions: []
+assumptions: []
+open_questions: []

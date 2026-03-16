@@ -17,6 +17,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 Canonical locations for specifications and related assets.
 
 Locations
+- Discovery Pack v1: `spec/discovery-pack/`
 - Context Pack v1: `spec/context-pack/`
 - Context Pack functor map: `spec/context-pack/functor-map.json`
 - Context Pack functor map schema: `schema/context-pack-functor-map.schema.json`
