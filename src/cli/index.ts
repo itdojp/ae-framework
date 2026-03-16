@@ -32,6 +32,7 @@ import { handleTestsSuggest } from '../commands/tdd/suggest.js';
 import { handleTestsScaffold } from '../commands/tdd/scaffold.js';
 import { createProgressCommands } from './progress-cli.js';
 import { createTraceabilityCommand } from './traceability-cli.js';
+import { createDiscoveryCommand } from './discovery-cli.js';
 import { normalizeProgramArgv } from './argv-normalize.js';
 
 const program = new Command();
@@ -734,6 +735,9 @@ for (const cmd of createProgressCommands()) {
 
 // Issue requirement ID traceability helpers
 program.addCommand(createTraceabilityCommand());
+
+// Discovery Pack helpers
+program.addCommand(createDiscoveryCommand());
 
 // Conformance verification commands  
 import { ConformanceCli } from './conformance-cli.js';

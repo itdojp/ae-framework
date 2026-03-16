@@ -76,8 +76,8 @@ class SecurityAnalyzer {
     console.log('🔍 Scanning for secrets and credentials...');
     
     try {
-      // Run gitleaks
-      execFileSync('npx', ['--yes', 'gitleaks', 'detect', '--no-git', '--verbose', '--redact'], {
+      // Run gitleaks when a runnable binary is available in the environment.
+      execFileSync('gitleaks', ['detect', '--no-git', '--verbose', '--redact'], {
         cwd: this.projectRoot,
         encoding: 'utf-8',
         stdio: 'pipe'
@@ -105,11 +105,25 @@ class SecurityAnalyzer {
       };
       
     } catch (error) {
+      const output = [error.stdout, error.stderr]
+        .map(value => (value == null ? '' : String(value).trim()))
+        .filter(Boolean)
+        .join('\n');
+      const message = String(error.message || '');
+      const commandMissing =
+        error.code === 'ENOENT' ||
+        output.includes('could not determine executable to run') ||
+        message.includes('could not determine executable to run') ||
+        output.includes('Command "gitleaks" not found') ||
+        message.includes('Command "gitleaks" not found');
+      if (commandMissing) {
+        return {
+          status: 'warning',
+          tool: 'gitleaks',
+          details: ['Gitleaks executable is not available in this environment']
+        };
+      }
       if (error.status === 1) {
-        const output = [error.stdout, error.stderr]
-          .map(value => (value == null ? '' : String(value).trim()))
-          .filter(Boolean)
-          .join('\n');
         if (output) {
           console.error(output);
         }

@@ -94,9 +94,34 @@ spec/discovery-pack/sources/*
 - schema
 - fixtures
 - Contract Catalog 登録
+- `ae discovery validate`
+- `pnpm run discovery-pack:validate`
+
+### validate コマンド
+```bash
+# 既定レイアウトを検証
+pnpm run discovery-pack:validate
+
+# CLI namespace から実行
+pnpm exec ae discovery validate \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# blocking open question を fail 条件に昇格
+pnpm exec ae discovery validate \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
+  --fail-on blocking-open-questions
+
+# approved 要素が non-approved 要素へ依存していないかを strict に確認
+pnpm exec ae discovery validate \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
+  --strict-approved
+```
+
+出力先:
+- `artifacts/discovery-pack/discovery-pack-validate-report.json`
+- `artifacts/discovery-pack/discovery-pack-validate-report.md`
 
 以下は follow-up issue で追加します。
-- `ae discovery validate`
 - `ae discovery compile`
 - Context Pack への `upstream` / `upstream_refs`
 - `verify:lite` への staged rollout

@@ -166,6 +166,23 @@ ae domain-model --language --sources "glossary.md"
 
 ## Tooling & System Commands
 
+### Discovery Pack
+```bash
+# Validate Discovery Pack inputs
+ ae discovery validate --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# Promote warning conditions to failures
+ ae discovery validate --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
+   --fail-on blocking-open-questions \
+   --fail-on orphan-approved-requirements
+
+# Require approved elements to depend only on approved targets
+ ae discovery validate --sources "spec/discovery-pack/**/*.{yml,yaml,json}" --strict-approved
+
+# Package script
+ pnpm run discovery-pack:validate
+```
+
 ### Spec (AE-Spec)
 ```bash
 # Compile AE-Spec markdown to AE-IR JSON
