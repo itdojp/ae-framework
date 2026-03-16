@@ -227,4 +227,14 @@ describe('discovery-pack compile CLI', () => {
     expect(result.status).toBe(2);
     expect(result.stderr).toContain('compile expects exactly one discovery-pack input');
   });
+
+  it('escapes backslashes in markdown report cells', async () => {
+    await writeFile(join(sourceDir, 'index.yaml'), DISCOVERY_PACK.replace('OQ-1', 'OQ-1\\|trace'), 'utf8');
+
+    const result = runCompile();
+    expect(result.status).toBe(0);
+
+    const markdown = await readFile(join(outputDir, 'discovery-pack-compile-report.md'), 'utf8');
+    expect(markdown).toContain('OQ-1\\\\\\|trace');
+  });
 });
