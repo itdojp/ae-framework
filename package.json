@@ -504,6 +504,7 @@
   "files": [
     "NOTICE",
     "dist/**",
+    "scripts/discovery-pack/**",
     "scripts/ci/check-package-manager.mjs",
     "templates/**",
     "docs/**",
