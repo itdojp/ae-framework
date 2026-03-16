@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: 2026-03-11
+lastVerified: 2026-03-16
 owner: testing-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -34,7 +34,8 @@ jobs:
 ```
 
 Notes
-- Emit invariant violations with `traceId` and link to `formal/summary.json` when applicable.
+- Emit invariant violations with `traceId` and link to `artifacts/domain/replay.summary.json`.
+- When traceId-aligned replay/formal correlation still uses the legacy input, link `formal/summary.json`. Current canonical overall formal evidence is `artifacts/hermetic-reports/formal/summary.json`, with `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` as additional normalized status evidence.
 - Keep implementation outside core to avoid dependency bloat.
 
 ## Env Options

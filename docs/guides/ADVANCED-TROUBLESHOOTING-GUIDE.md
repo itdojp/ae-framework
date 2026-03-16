@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/ci/ci-troubleshooting-guide.md
 - docs/ci/ci-operations-handbook.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-16'
 ---
 # Advanced Troubleshooting Guide
 
@@ -56,11 +56,16 @@ Fixes
 
 ### Formal Summary Validation (TLA+/Alloy)
 ```bash
-# Validate formal summary if present
+# Validate canonical formal summaries if present
+node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json
+node scripts/ci/validate-formal-summary-v2.mjs artifacts/formal/formal-summary-v2.json schema/formal-summary-v2.schema.json
+
+# Validate legacy compatibility input only if your workflow still emits it
 npx ajv -s docs/schemas/formal-summary.schema.json -d formal/summary.json --strict=false
 ```
 Fixes
-- Ensure required fields (e.g., `result`, `violations`) exist and types match
+- For Formal Summary v1/v2, ensure `results[].status` is one of the allowed values and required `reason` / `code` fields are present (nullable where allowed) and `results[].status` matches the schema
+- If your workflow still emits `formal/summary.json`, treat it as a legacy compatibility input only
 - Keep messages short; link to logs under `artifacts/codex/*.tlc.log.txt`
 
 ### Properties Summary (array vs object)
@@ -101,16 +106,17 @@ Fix: move to `extras`
 
 ### Reading ajv Errors (quick)
 ```
-error: data/violations must be array at formal/summary.json
+[formal-summary/v1] schema validation failed
+  • /results/0/status must be equal to one of the allowed values
 ```
 Tips
-- `data/<path>` が示すキーの型/存在を確認（`jq` で該当箇所を抽出）
+- `instancePath` が示すキーの型/存在を確認（`jq` で該当箇所を抽出）
 - スキーマ側で許容されない余剰キーは `extras` に移動
 
 #### jq one-liners
 ```bash
-# 抽出: violations の型と要素数
-jq '.violations | type, length' formal/summary.json
+# 抽出: 最初の results entry の status / reason / code
+jq '.results[0] | {status, reason, code}' artifacts/formal/formal-summary-v1.json
 
 # 修正ヒント: 余剰キーの一覧
 jq 'paths | select(.[-1] | strings) | join(".")' artifacts/*/summary.json

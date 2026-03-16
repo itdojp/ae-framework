@@ -11,7 +11,7 @@ lastVerified: '2026-03-10'
 
 Purpose
 - Provide both short GWT (human) and machine-readable JSON (for `ae fix`).
-- Aligns with `formal-summary.schema.json` (#407).
+- Aligns with the legacy `formal/summary.json` counterexample shape and the derived `artifacts/formal/gwt.summary.json` output from `scripts/formal/format-counterexamples.mjs`.
 
 Short GWT (example)
 ```
@@ -20,7 +20,7 @@ When allocate qty=12
 Then invariant "allocated <= onHand" fails
 ```
 
-Machine JSON (embedded in `formal/summary.json`)
+Machine JSON (embedded in legacy `formal/summary.json`; `scripts/formal/format-counterexamples.mjs` can derive `artifacts/formal/gwt.summary.json` from it)
 ```json
 {
   "property": "allocated <= onHand",

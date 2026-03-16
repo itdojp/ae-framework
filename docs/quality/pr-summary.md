@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/pr-summary-tool.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-16'
 ---
 # PR Summary Aggregation (One Page)
 
@@ -14,9 +14,9 @@ lastVerified: '2026-03-10'
 ## 日本語（概要）
 
 PR に 1 ページの品質サマリを集約して表示するための方針です。
-- セクション: カバレッジ、assurance、失敗 GWT、アダプター要約、フォーマル結果、トレース ID
-- 入力: `artifacts/*/summary.json`, `formal/summary.json`, `artifacts/properties/summary.json`
-- 実装: コアは薄く、CI/リリーススクリプトで集約し、単一のコメント本文に出力
+- セクション: verify-lite baseline、assurance、失敗 GWT、アダプター要約、フォーマル結果、トレース ID
+- current main の入力: `artifacts/summary/combined.json`、`artifacts/verify-lite/verify-lite-run-summary.json`、`coverage/coverage-summary.json`、`artifacts/domain/replay.summary.json`、optional `artifacts/ci/policy-gate-summary.json` / `artifacts/assurance/assurance-summary.json` / `artifacts/quality/quality-scorecard.json` / `artifacts/agents/hook-feedback.json` / `artifacts/formal/formal-aggregate.json` / `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` / `artifacts/ci/harness-health.json`
+- 出力: `artifacts/summary/PR_SUMMARY.md` を baseline とし、`pr-ci-status-comment.yml` が `harness-health` / `change-package` / `plan-artifact` / `hook-feedback` / `quality-scorecard` を追記
 
 例やフォーマットは以下の英語セクションを参照してください。
 
@@ -32,8 +32,8 @@ Sections
 - Coverage: overall %, threshold, delta
 - Assurance: satisfied claims / warning claims / warning codes from `artifacts/assurance/assurance-summary.json`
 - Failing GWT: short counterexamples with `traceId` (see `docs/quality/counterexample-gwt.md`)
-- Adapters: one-line summaries from `artifacts/*/summary.json`
-- Formal: link to `formal/summary.json` with result and violated invariants
+- Adapters: one-line summaries from `artifacts/summary/combined.json`
+- Formal: `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` または `artifacts/formal/formal-aggregate.json` の結果を表示
 - Trace IDs: quick links to filterable runs/tests
 
 Format (example)
@@ -45,15 +45,23 @@ Format (example)
 - Adapters:
   - lighthouse: Perf 78, A11y 96, PWA 55 (warn)
   - playwright: 12/12 passed (ok)
-- Formal: fail — see formal/summary.json
+- Formal: fail — see `artifacts/formal/formal-summary-v1.json`
 - Trace IDs: inv-001, inv-002
 ```
 
 Artifacts
 - Read from normalized JSON artifacts:
-  - `artifacts/*/summary.json` (adapters)
-  - `formal/summary.json`
-  - `artifacts/properties/summary.json`
+  - `artifacts/summary/combined.json` (`adapters`, `formal`, `properties`, `propertyDesign`, `bdd`, `ltlSuggestions`)
+  - `artifacts/verify-lite/verify-lite-run-summary.json`
+  - `coverage/coverage-summary.json`
+  - `artifacts/domain/replay.summary.json`
+  - `artifacts/ci/policy-gate-summary.json` (optional)
+  - `artifacts/assurance/assurance-summary.json` (optional)
+  - `artifacts/quality/quality-scorecard.json` (optional)
+  - `artifacts/agents/hook-feedback.json` (optional)
+  - `artifacts/formal/formal-aggregate.json` (optional)
+  - `artifacts/formal/formal-summary-v1.json` or `artifacts/formal/formal-summary-v2.json` (optional)
+  - `artifacts/ci/harness-health.json` (optional)
 
 Implementation Notes
 - Keep core thin; aggregation can be implemented in CI or release scripts.
@@ -65,13 +73,13 @@ Implementation Notes
 - Adapters:
   - lighthouse: Perf 72, A11y 93, PWA 50 (warn)
   - playwright: 10/12 passed (error)
-- Formal: fail — see formal/summary.json
+- Formal: fail — see `artifacts/formal/formal-summary-v1.json`
 - Trace IDs: inv-001, inv-007
 
 ### Aggregator Pseudo
 ```text
 type Summary = { coverage:number; failingGwt:string[]; adapters: {name:string; status:string; summary:string}[]; formal:string; traceIds:string[] };
-function aggregate(a:Artifacts): Summary { /* read artifacts/*/summary.json, formal/summary.json, properties/summary.json */ return {} as any }
+function aggregate(a:Artifacts): Summary { /* read artifacts/summary/combined.json plus coverage/replay and optional assurance/quality/hook-feedback/formal inputs */ return {} as any }
 ```
 ## Validation Flow
 - Validate JSON artifacts against schemas in `docs/schemas/`.
@@ -113,10 +121,17 @@ Quality: 82% (>=80) ✅  [+1%] | Formal: pass | Adapters: lighthouse(warn), play
 PR に 1 ページの品質サマリを生成し、機械/人間双方が読みやすい形で可視化します。
 
 ### 入力（正規化アーティファクト）
-- `artifacts/*/summary.json`（アダプター要約）
-- `formal/summary.json`（フォーマル検査要約）
-- `artifacts/properties/summary.json`（プロパティテスト、配列の場合は要素ごと検証）
-- `artifacts/assurance/assurance-summary.json`（存在する場合、assurance 集約を表示）
+- `artifacts/summary/combined.json`（adapters / formal / properties / propertyDesign / bdd / ltlSuggestions の集約 sidecar）
+- `artifacts/verify-lite/verify-lite-run-summary.json`（baseline）
+- `coverage/coverage-summary.json`
+- `artifacts/domain/replay.summary.json`
+- `artifacts/ci/policy-gate-summary.json`（存在する場合）
+- `artifacts/assurance/assurance-summary.json`（存在する場合）
+- `artifacts/quality/quality-scorecard.json`（存在する場合）
+- `artifacts/agents/hook-feedback.json`（存在する場合）
+- `artifacts/formal/formal-aggregate.json`（存在する場合）
+- `artifacts/formal/formal-summary-v1.json` または `artifacts/formal/formal-summary-v2.json`（存在する場合）
+- `artifacts/ci/harness-health.json`（存在する場合）
 
 ### 出力（例）
 短いダイジェスト:
@@ -192,11 +207,11 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
 
 #### リンク方針（簡潔）
 - 必要に応じて artifacts への相対パスを 1〜2 件だけ添付（多過ぎる列挙は避ける）
-- 例: `formal/summary.json` / `artifacts/integration/summary.json`
+- 例: `artifacts/formal/formal-summary-v1.json` / `artifacts/summary/combined.json`
 
 #### リンク例（Short）
 ```
-Formal: pass — formal/summary.json
+Formal: pass — artifacts/formal/formal-summary-v1.json
 Integration: see artifacts/integration/summary.json
 ```
 

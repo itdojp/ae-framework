@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: 2026-03-11
+lastVerified: 2026-03-16
 owner: testing-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -13,7 +13,9 @@ Goal
 
 Inputs
 - `artifacts/domain/replay.summary.json`
-- `formal/summary.json`
+- `formal/summary.json` (legacy compatibility input when traceId-aligned correlation still depends on it)
+- `artifacts/hermetic-reports/formal/summary.json` (current overall formal aggregate)
+- `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` (optional normalized formal evidence)
 
 Correlation JSON (example)
 ```text
@@ -27,4 +29,5 @@ Correlation JSON (example)
 
 PR Integration
 - Include a brief line in PR summary, e.g., `Replay/Formal: OK/OK for inv-001`.
+- `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` can be attached separately as overall formal status artifacts, but they are not the traceId correlation input in this workflow.
 - Optionally merge into `artifacts/summary/combined.json` under `correlation` key.

@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
   - docs/agents/hook-feedback.md
   - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-16'
 ---
 
 # Claude Code Integration Guide - AE Framework Integration (Implemented + Roadmap)
@@ -256,7 +256,9 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
   - [ ] Apply quick fixes (focus ring, next/image, add tests)
 - No formal artifacts in PR
   - [ ] Ensure formal job ran; see `docs/verify/FORMAL-CHECKS.md`
-  - [ ] Upload `formal/summary.json` when present
+  - [ ] Upload legacy compatibility input `formal/summary.json` if the PR summary still needs the current formal pass/fail line
+  - [ ] Upload `artifacts/hermetic-reports/formal/summary.json`
+  - [ ] Upload `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` when present
 - Aggregation failed on adapter JSON
   - [ ] Validate: `npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d artifacts/*/summary.json --strict=false`
   - [ ] Keep output short: `status` + short `summary`
@@ -300,7 +302,8 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
 #### Schemas (for validation)
 - Adapter summary: `docs/schemas/artifacts-adapter-summary.schema.json`
-- Formal summary: `docs/schemas/formal-summary.schema.json`
+- Formal summary (legacy compatibility): `docs/schemas/formal-summary.schema.json`
+- Formal summary v1/v2: `schema/formal-summary-v1.schema.json`, `schema/formal-summary-v2.schema.json`
 - Properties summary: `docs/schemas/artifacts-properties-summary.schema.json`
 
 ### Best Practices
@@ -424,7 +427,8 @@ jq '.status,.summary' artifacts/*/summary.json
 
 #### スキーマ一覧（検証用）
 - アダプター要約: `docs/schemas/artifacts-adapter-summary.schema.json`
-- フォーマル要約: `docs/schemas/formal-summary.schema.json`
+- フォーマル要約（legacy compatibility）: `docs/schemas/formal-summary.schema.json`
+- フォーマル要約 v1/v2: `schema/formal-summary-v1.schema.json`, `schema/formal-summary-v2.schema.json`
 - プロパティ要約: `docs/schemas/artifacts-properties-summary.schema.json`
 
 #### 出力先（CODEX_ARTIFACTS_DIR）

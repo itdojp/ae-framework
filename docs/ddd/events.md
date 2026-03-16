@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-12'
+lastVerified: '2026-03-16'
 owner: testing
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -13,7 +13,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## 日本語（概要）
 
-`domainEvents[]` から Zod 契約とリプレイ用フィクスチャを生成し、イベント列に対する集約不変量を検証します。成果物（events.json / formal.summary / properties.summary）と、Zod/Replay のスケッチ、CLI と PR 要件を記載しています。
+`domainEvents[]` から Zod 契約とリプレイ用フィクスチャを生成し、イベント列に対する集約不変量を検証します。成果物（`artifacts/domain/events.json` / `artifacts/domain/replay.summary.json` / `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` / `artifacts/properties/summary.json`）と、Zod/Replay のスケッチ、CLI と PR 要件を記載しています。
 
 Goals
 - From `domainEvents[]`, generate:
@@ -22,7 +22,10 @@ Goals
 
 Artifacts
 - `artifacts/domain/events.json` — normalized events and metadata
-- `formal/summary.json` — aligned with replay verification
+- `artifacts/domain/replay.summary.json` — replay verification result for the event sequence
+- `artifacts/hermetic-reports/formal/summary.json` — canonical aggregate formal evidence
+- `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json` — optional normalized formal evidence aligned with replay/conformance verification
+- `formal/summary.json` — legacy compatibility input only when replay/formal traceId correlation still consumes it
 - `artifacts/properties/summary.json` — keep {seed, runs, version} when replay uses property-based exploration
 
 Zod Contract Sketch
@@ -57,7 +60,8 @@ CLI
 - `npm run test:replay` runs the replay suite and reports invariant failures with traceId.
 
 PR Requirements
-- Include event sequence snippet and link to `formal/summary.json`.
+- Include event sequence snippet and link to `artifacts/domain/replay.summary.json`.
+- If formal/conformance evidence is attached, link `artifacts/hermetic-reports/formal/summary.json` and, when useful, `artifacts/formal/formal-summary-v1.json` or `artifacts/formal/formal-summary-v2.json`.
 ## Failure Case Sample
 - See examples/inventory/artifacts/domain/events.replay-failure.sample.json
 - Reported with traceId and violated invariants for CI/PR aggregation.
