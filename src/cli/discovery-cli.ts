@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,11 +8,54 @@ import { Command } from 'commander';
 import { safeExit } from '../utils/safe-exit.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(__dirname, '..', '..');
-const discoveryValidateScript = path.resolve(repoRoot, 'scripts', 'discovery-pack', 'validate.mjs');
-const discoveryCompileScript = path.resolve(repoRoot, 'scripts', 'discovery-pack', 'compile.mjs');
-const discoverySchemaPath = path.resolve(repoRoot, 'schema', 'discovery-pack-v1.schema.json');
 
+const DISCOVERY_VALIDATE_SCRIPT_PATH = ['scripts', 'discovery-pack', 'validate.mjs'];
+const DISCOVERY_COMPILE_SCRIPT_PATH = ['scripts', 'discovery-pack', 'compile.mjs'];
+const DISCOVERY_SCHEMA_PATH = ['schema', 'discovery-pack-v1.schema.json'];
+
+const hasDiscoveryAssets = (candidateRoot: string) =>
+  fs.existsSync(path.join(candidateRoot, 'package.json')) &&
+  fs.existsSync(path.join(candidateRoot, ...DISCOVERY_VALIDATE_SCRIPT_PATH)) &&
+  fs.existsSync(path.join(candidateRoot, ...DISCOVERY_COMPILE_SCRIPT_PATH)) &&
+  fs.existsSync(path.join(candidateRoot, ...DISCOVERY_SCHEMA_PATH));
+
+const enumerateCandidateRoots = (startPath: string) => {
+  const candidates: string[] = [];
+  let current = path.resolve(startPath);
+  while (!candidates.includes(current)) {
+    candidates.push(current);
+    const parent = path.dirname(current);
+    if (parent === current) {
+      break;
+    }
+    current = parent;
+  }
+  return candidates;
+};
+
+export const resolveDiscoveryToolPaths = (
+  cwd = process.cwd(),
+  moduleDir = __dirname,
+) => {
+  const candidates = [
+    ...enumerateCandidateRoots(cwd),
+    ...enumerateCandidateRoots(moduleDir),
+  ];
+  const repoRoot = candidates.find(hasDiscoveryAssets);
+  if (!repoRoot) {
+    throw new Error(
+      'Could not locate discovery-pack assets (package.json, scripts/discovery-pack/{validate,compile}.mjs, schema/discovery-pack-v1.schema.json)',
+    );
+  }
+  return {
+    repoRoot,
+    discoveryValidateScript: path.join(repoRoot, ...DISCOVERY_VALIDATE_SCRIPT_PATH),
+    discoveryCompileScript: path.join(repoRoot, ...DISCOVERY_COMPILE_SCRIPT_PATH),
+    discoverySchemaPath: path.join(repoRoot, ...DISCOVERY_SCHEMA_PATH),
+  };
+};
+
+// Keep this parser aligned with scripts/discovery-pack/lib.mjs#splitSourcePatterns.
 const splitBraceAware = (value: string) => {
   const chunks: string[] = [];
   let buffer = '';
@@ -89,6 +133,7 @@ export const createDiscoveryCommand = () => {
       [],
     )
     .action((options) => {
+      const { discoverySchemaPath, discoveryValidateScript } = resolveDiscoveryToolPaths();
       const args = [
         '--schema',
         discoverySchemaPath,
@@ -122,6 +167,7 @@ export const createDiscoveryCommand = () => {
       [],
     )
     .action((options) => {
+      const { discoveryCompileScript, discoverySchemaPath } = resolveDiscoveryToolPaths();
       const args = [
         '--target',
         options.target,
