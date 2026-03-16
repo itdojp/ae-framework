@@ -105,16 +105,17 @@ Fix: move to `extras`
 
 ### Reading ajv Errors (quick)
 ```
-error: data/results/0/violations must be array at artifacts/formal/formal-summary-v1.json
+[formal-summary/v1] schema validation failed
+  • /results/0/status must be equal to one of the allowed values
 ```
 Tips
-- `data/<path>` が示すキーの型/存在を確認（`jq` で該当箇所を抽出）
+- `instancePath` が示すキーの型/存在を確認（`jq` で該当箇所を抽出）
 - スキーマ側で許容されない余剰キーは `extras` に移動
 
 #### jq one-liners
 ```bash
-# 抽出: 最初の results entry の violations 型と要素数
-jq '.results[0].violations | type, length' artifacts/formal/formal-summary-v1.json
+# 抽出: 最初の results entry の status / reason / code
+jq '.results[0] | {status, reason, code}' artifacts/formal/formal-summary-v1.json
 
 # 修正ヒント: 余剰キーの一覧
 jq 'paths | select(.[-1] | strings) | join(".")' artifacts/*/summary.json
