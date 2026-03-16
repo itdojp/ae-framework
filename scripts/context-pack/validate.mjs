@@ -326,9 +326,25 @@ function resolveDiscoveryPackFile(candidates) {
       }
       continue;
     }
-    matches.add(path.resolve(candidate));
+    const resolvedCandidate = path.resolve(candidate);
+    if (fs.existsSync(resolvedCandidate)) {
+      matches.add(resolvedCandidate);
+    }
   }
   return Array.from(matches).sort((a, b) => a.localeCompare(b));
+}
+
+function loadDiscoveryPack(resolvedPath, cache) {
+  if (cache.has(resolvedPath)) {
+    return cache.get(resolvedPath);
+  }
+  const payload = parseStructuredFile(resolvedPath);
+  const loaded = {
+    payload,
+    index: buildDiscoveryIdIndex(payload),
+  };
+  cache.set(resolvedPath, loaded);
+  return loaded;
 }
 
 function pushProblem(list, problem) {
@@ -351,7 +367,7 @@ function collectUpstreamIds(upstreamRefs) {
   return entries;
 }
 
-function validateContextPackUpstream(payload, relativePath, options, errors, warnings) {
+function validateContextPackUpstream(payload, relativePath, options, errors, warnings, discoveryPackCache) {
   const hasUpstreamConfig = Boolean(payload?.upstream?.discovery_pack);
   const shouldValidateUpstream = hasUpstreamConfig || hasAnyUpstreamRefs(payload) || options.discoveryPackSources.length > 0;
   if (!shouldValidateUpstream) {
@@ -396,8 +412,11 @@ function validateContextPackUpstream(payload, relativePath, options, errors, war
   }
 
   let discoveryPayload;
+  let discoveryIds;
   try {
-    discoveryPayload = parseStructuredFile(matches[0]);
+    const loaded = loadDiscoveryPack(matches[0], discoveryPackCache);
+    discoveryPayload = loaded.payload;
+    discoveryIds = loaded.index;
   } catch (error) {
     pushProblem(errors, {
       file: relativePath,
@@ -410,7 +429,6 @@ function validateContextPackUpstream(payload, relativePath, options, errors, war
     return;
   }
 
-  const discoveryIds = buildDiscoveryIdIndex(discoveryPayload);
   const referenced = {
     goals: new Set(),
     requirements: new Set(),
@@ -502,6 +520,7 @@ function validateContextPacks(options) {
   const sourceFiles = discoverSources(options.sources);
   const errors = [];
   const warnings = [];
+  const discoveryPackCache = new Map();
   let validFiles = 0;
   let skippedFiles = 0;
 
@@ -558,7 +577,7 @@ function validateContextPacks(options) {
     }
 
     validFiles += 1;
-    validateContextPackUpstream(payload, relativePath, options, errors, warnings);
+    validateContextPackUpstream(payload, relativePath, options, errors, warnings, discoveryPackCache);
   }
 
   const report = {

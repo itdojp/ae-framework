@@ -496,10 +496,8 @@ function readContextPackIds(
           continue;
         }
         const refs = toDiscoveryRefs((entry as { upstream_refs?: unknown }).upstream_refs);
-        if (required && !hasDiscoveryRefs(refs)) {
-          missingCounter.value += 1;
-        }
         if (!hasDiscoveryRefs(refs)) {
+          missingCounter.value += 1;
           continue;
         }
         targetMap[id] = mergeDiscoveryRefs(targetMap[id] ?? emptyDiscoveryRefs(), refs);
@@ -705,7 +703,8 @@ export function buildTraceabilityMatrix(
     : 0;
   const rowsMissingDiscoveryLinks = discoveryTracked
     ? rows.filter(
-      (row) => (row.discoveryGoalIds?.length ?? 0) === 0
+      (row) => row.linked
+        && (row.discoveryGoalIds?.length ?? 0) === 0
         && (row.discoveryRequirementIds?.length ?? 0) === 0
         && (row.discoveryBusinessUseCaseIds?.length ?? 0) === 0
         && (row.discoveryDecisionIds?.length ?? 0) === 0,
