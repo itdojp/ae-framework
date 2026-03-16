@@ -15,7 +15,7 @@ lastVerified: '2026-03-16'
 
 PR に 1 ページの品質サマリを集約して表示するための方針です。
 - セクション: verify-lite baseline、assurance、失敗 GWT、アダプター要約、フォーマル結果、トレース ID
-- current main の入力: `artifacts/summary/combined.json`、`artifacts/verify-lite/verify-lite-run-summary.json`、optional `artifacts/ci/policy-gate-summary.json` / `artifacts/assurance/assurance-summary.json` / `artifacts/quality/quality-scorecard.json` / `artifacts/agents/hook-feedback.json` / `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` / `artifacts/ci/harness-health.json`
+- current main の入力: `artifacts/summary/combined.json`、`artifacts/verify-lite/verify-lite-run-summary.json`、`coverage/coverage-summary.json`、`artifacts/domain/replay.summary.json`、optional `artifacts/ci/policy-gate-summary.json` / `artifacts/assurance/assurance-summary.json` / `artifacts/quality/quality-scorecard.json` / `artifacts/agents/hook-feedback.json` / `artifacts/formal/formal-aggregate.json` / `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` / `artifacts/ci/harness-health.json`
 - 出力: `artifacts/summary/PR_SUMMARY.md` を baseline とし、`pr-ci-status-comment.yml` が `harness-health` / `change-package` / `plan-artifact` / `hook-feedback` / `quality-scorecard` を追記
 
 例やフォーマットは以下の英語セクションを参照してください。
@@ -51,12 +51,15 @@ Format (example)
 
 Artifacts
 - Read from normalized JSON artifacts:
-  - `artifacts/summary/combined.json` (coverage / adapters / replay / traceIds / aggregated formal)
+  - `artifacts/summary/combined.json` (`adapters`, `formal`, `properties`, `propertyDesign`, `bdd`, `ltlSuggestions`)
   - `artifacts/verify-lite/verify-lite-run-summary.json`
+  - `coverage/coverage-summary.json`
+  - `artifacts/domain/replay.summary.json`
   - `artifacts/ci/policy-gate-summary.json` (optional)
   - `artifacts/assurance/assurance-summary.json` (optional)
   - `artifacts/quality/quality-scorecard.json` (optional)
   - `artifacts/agents/hook-feedback.json` (optional)
+  - `artifacts/formal/formal-aggregate.json` (optional)
   - `artifacts/formal/formal-summary-v1.json` or `artifacts/formal/formal-summary-v2.json` (optional)
   - `artifacts/ci/harness-health.json` (optional)
 
@@ -76,7 +79,7 @@ Implementation Notes
 ### Aggregator Pseudo
 ```text
 type Summary = { coverage:number; failingGwt:string[]; adapters: {name:string; status:string; summary:string}[]; formal:string; traceIds:string[] };
-function aggregate(a:Artifacts): Summary { /* read artifacts/summary/combined.json, optional assurance/quality/hook-feedback/formal inputs */ return {} as any }
+function aggregate(a:Artifacts): Summary { /* read artifacts/summary/combined.json plus coverage/replay and optional assurance/quality/hook-feedback/formal inputs */ return {} as any }
 ```
 ## Validation Flow
 - Validate JSON artifacts against schemas in `docs/schemas/`.
@@ -118,15 +121,17 @@ Quality: 82% (>=80) ✅  [+1%] | Formal: pass | Adapters: lighthouse(warn), play
 PR に 1 ページの品質サマリを生成し、機械/人間双方が読みやすい形で可視化します。
 
 ### 入力（正規化アーティファクト）
-- `artifacts/summary/combined.json`（coverage / adapters / replay / traceIds の集約 sidecar）
+- `artifacts/summary/combined.json`（adapters / formal / properties / propertyDesign / bdd / ltlSuggestions の集約 sidecar）
 - `artifacts/verify-lite/verify-lite-run-summary.json`（baseline）
+- `coverage/coverage-summary.json`
+- `artifacts/domain/replay.summary.json`
 - `artifacts/ci/policy-gate-summary.json`（存在する場合）
 - `artifacts/assurance/assurance-summary.json`（存在する場合）
 - `artifacts/quality/quality-scorecard.json`（存在する場合）
 - `artifacts/agents/hook-feedback.json`（存在する場合）
+- `artifacts/formal/formal-aggregate.json`（存在する場合）
 - `artifacts/formal/formal-summary-v1.json` または `artifacts/formal/formal-summary-v2.json`（存在する場合）
 - `artifacts/ci/harness-health.json`（存在する場合）
-- `artifacts/assurance/assurance-summary.json`（存在する場合、assurance 集約を表示）
 
 ### 出力（例）
 短いダイジェスト:
@@ -158,7 +163,7 @@ Quality: 82% (>=80) ✅ [+1%] | Formal: pass | Adapters: lighthouse(warn), playw
 - 代表コマンド:
   ```bash
   npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json \
-    -d artifacts/summary/combined.json --strict=false
+    -d artifacts/*/summary.json --strict=false
   ```
 
 ### PR コメント構成（推奨）
