@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-14'
+lastVerified: '2026-03-16'
 owner: architecture-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -168,6 +168,7 @@ CI pin（再現性）:
 | quality 集約 | `artifacts/quality/quality-scorecard.json`, `artifacts/quality/quality-scorecard.md` |
 | continuation / handoff | `artifacts/agents/hook-feedback.json`, `artifacts/handoff/ae-handoff.json` |
 | Context Pack 境界検証（任意実行） | `artifacts/context-pack/context-pack-boundary-map-report.json`, `artifacts/context-pack/context-pack-boundary-map-report.md` |
+| 形式検証の正規化要約 | `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json` |
 | 形式検証の総覧 | `artifacts/hermetic-reports/formal/summary.json` |
 | Conformance要約 | `artifacts/hermetic-reports/conformance/summary.json` |
 | CSP要約 | `artifacts/hermetic-reports/formal/csp-summary.json` |
@@ -178,7 +179,7 @@ CI pin（再現性）:
 | Autopilot契約成果物 | `artifacts/ci/pr-state-v1.json`, `artifacts/ci/execution-plan-v1.json` |
 | Risk label要約 | `artifacts/ci/risk-labeler-summary.json`, `artifacts/ci/risk-labeler-summary.md` |
 | 自動化観測 | `artifacts/ci/automation-report.json` |
-| Trace検証成果物 | `artifacts/kvonce-trace-summary.json`, `artifacts/kvonce-trace-envelope.json`, `artifacts/automation/kvonce-trace-validation-report.json` |
+| Trace検証成果物 | `artifacts/trace/report-envelope.json`, `artifacts/hermetic-reports/trace/kvonce-validation.json`, `artifacts/hermetic-reports/trace/kvonce-projection.json` |
 
 ## 7. 運用開始の最短導線
 
