@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-16'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -16,7 +16,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 | Artifacts 出力 | `trace-conformance` は `artifacts/hermetic-reports/trace/**`、`artifacts/kvonce-trace-summary.json`、`artifacts/kvonce-trace-envelope.json` を出力。`verify-lite` は `artifacts/verify-lite/verify-lite-run-summary.json` と `artifacts/report-envelope.json` を必須生成 | 観測系成果物の命名・配置が `verify-lite` 系と `kvonce` 系で分散し、どこまでを gate 対象にするかが未整理 |
 | スキーマ検証 | `.github/workflows/validate-artifacts-ajv.yml`（`pnpm run artifacts:validate`）が `schema/envelope.schema.json` 等を検証し、`enforce-artifacts` で strict 化可能 | `spec-generate-model` で生成される成果物は、PR 実行経路によっては `validate-artifacts` の検証対象にならない |
 | 検証/ゲート | `scripts/trace/run-kvonce-conformance.sh` は `kvonce-validation.json` が invalid の場合に exit 1。`policy-gate` は `policy/risk-policy.yml` の `enforce-artifacts -> validate-artifacts / validate` を評価 | `KvOnce Trace Validation` チェックは `policy-gate` の評価対象に未接続。`run-trace` ラベル（旧表記: `run-conformance`）は推奨表示のみで実行トリガー未実装 |
-| Required checks | `policy/risk-policy.yml` の required は `verify-lite` と `policy-gate`（branch protection preset で `gate` 併用パターンあり） | OTel/trace 検証を Required に昇格する判断基準と導線が未定義 |
+| Required checks | current main baseline は branch protection preset の `verify-lite` / `policy-gate` / `gate`。OTel/trace 専用 check はまだ Required に含めない | OTel/trace 検証を Required に昇格する判断基準と導線が未定義 |
 
 ## 2. 非ゴール
 
@@ -66,7 +66,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 - `spec-generate-model` の `trace-conformance` 実行で、OTLP/NDJSON の両ケースに `kvonce-validation.json` と `kvonce-trace-envelope.json` が生成され、`schema/envelope.schema.json` 検証を通過する。
 - `enforce-artifacts` 有効時、`pnpm run artifacts:validate -- --strict=true` で対象 artifacts のスキーマ違反を検出できる。
 - 高リスクPRに必要ラベルが付与された場合、`policy-gate` が対応 gate check を評価し、未実行/失敗を blocking error として扱える。
-- Required checks は Phase 4 完了まで `verify-lite` + `policy-gate`（必要に応じて `gate` 併用）の運用を維持する。
+- Required checks は Phase 4 完了まで current main baseline の `verify-lite` / `policy-gate` / `gate` を維持し、trace 専用 check は追加しない。
 
 ## 6. 関連ファイル（一次情報）
 

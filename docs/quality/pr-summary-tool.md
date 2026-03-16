@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/ci/pr-automation.md
-lastVerified: '2026-03-14'
+lastVerified: '2026-03-16'
 ---
 # PR Summary Tool I/O Spec (#407)
 
@@ -22,10 +22,12 @@ Inputs (read-only)
 - Required baseline:
   - `artifacts/verify-lite/verify-lite-run-summary.json`
 - Current optional inputs:
+  - `artifacts/summary/combined.json`
   - `artifacts/ci/policy-gate-summary.json`
   - `artifacts/assurance/assurance-summary.json`
   - `artifacts/quality/quality-scorecard.json`
   - `artifacts/agents/hook-feedback.json`
+  - `artifacts/formal/formal-aggregate.json`
   - `artifacts/formal/formal-summary-v1.json` or `artifacts/formal/formal-summary-v2.json`
   - `artifacts/ci/harness-health.json`
 
@@ -53,8 +55,9 @@ node scripts/summary/render-pr-summary.mjs
 
 Notes
 - `pr-ci-status-comment.yml` の `summarize` job が canonical producer です。
-- `render-pr-summary.mjs` は canonical path（`artifacts/verify-lite/verify-lite-run-summary.json`、`artifacts/ci/policy-gate-summary.json`、`artifacts/assurance/assurance-summary.json`、`artifacts/quality/quality-scorecard.json`、`artifacts/agents/hook-feedback.json` など）を read-only で参照し、`artifacts/summary/PR_SUMMARY.md` を更新します。
+- `render-pr-summary.mjs` は canonical path（`artifacts/summary/combined.json`、`artifacts/verify-lite/verify-lite-run-summary.json`、`artifacts/ci/policy-gate-summary.json`、`artifacts/assurance/assurance-summary.json`、`artifacts/quality/quality-scorecard.json`、`artifacts/agents/hook-feedback.json`、`artifacts/formal/formal-aggregate.json` など）を read-only で参照し、`artifacts/summary/PR_SUMMARY.md` を更新します。
 - `verify-lite-run-summary` は baseline input、assurance / scorecard / hook-feedback は存在時のみ append されます。
+- `pr-ci-status-comment.yml` は renderer の出力後に `harness-health` / `change-package` / `plan-artifact` / `hook-feedback` / downloaded `quality-scorecard.md` を `artifacts/summary/PR_SUMMARY.md` に追記します。
 - Validation / producer/consumer の最新一覧は `docs/quality/ARTIFACTS-CONTRACT.md` と `docs/reference/CONTRACT-CATALOG.md` を優先します。
 ## Sidecar Combined JSON
 - Recommended path: `artifacts/summary/combined.json`

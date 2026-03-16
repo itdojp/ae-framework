@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ASSURANCE-MODEL.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-16'
 ---
 # Assurance Operations Runbook
 
@@ -119,7 +119,9 @@ node scripts/ci/validate-assurance-summary.mjs \
 ### 5.1 既定動作
 
 - `verify-lite.yml` は assurance summary を report-only で生成します。
-- PR summary comment は `artifacts/assurance/assurance-summary.json` が存在する場合に、claim summary を追記します。
+- `verify-lite.yml` は `artifacts/assurance/assurance-summary.json` が存在する場合、`artifacts/quality/quality-scorecard.{json,md}` の optional input としても利用します。
+- `pr-ci-status-comment.yml` は `artifacts/assurance/assurance-summary.json` が存在する場合に PR summary comment へ claim summary を追記し、同一 head SHA の verify-lite artifact を取得できる場合は `hook-feedback` 生成時にも `--assurance-summary` を渡します。
+- `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` は `--assurance-summary` を受け取り、assurance warning を `currentStatus` / `nextActions` / `blockers` / `artifacts` へ反映します。
 - release/post-deploy summary は `artifacts/assurance/assurance-summary.md` が存在する場合に要約を追記します。
 
 ### 5.2 strict assurance enforcement の発火条件
