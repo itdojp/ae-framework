@@ -162,7 +162,7 @@ CI tips
 
 Troubleshooting (quick)
 - Missing UI files → ensure `entities` provided in Phase State; re-run scaffold
-- PR summary missing formal → check `run-formal` label and upload `artifacts/hermetic-reports/formal/summary.json` plus `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` when available
+- PR summary missing formal → check `run-formal` label and upload legacy compatibility input `formal/summary.json`; current formal artifacts (`artifacts/hermetic-reports/formal/summary.json`, `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json`) are useful as supplementary evidence
 - Type coverage regression → add label `enforce-typecov` or reduce scope; raise thresholds gradually
 - Adapter JSON invalid → validate with `ajv` and keep `summary` concise
 
@@ -222,7 +222,7 @@ ae-framework integration run --tests artifacts/integration/discovered.json --env
 
 トラブルシューティング（簡易）
 - UIファイルが出ない → Phase State の `entities` を確認して再スキャフォールド
-- PRサマリにFormalが無い → `run-formal` ラベルと `artifacts/hermetic-reports/formal/summary.json`、`artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` のアップロードを確認
+- PRサマリにFormalが無い → `run-formal` ラベルと legacy compatibility input の `formal/summary.json` のアップロードを確認し、補助証跡として `artifacts/hermetic-reports/formal/summary.json`、`artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` も添付
 - 型カバレッジが下がった → `enforce-typecov` ラベル導入や対象の見直し（段階的に引き上げ）
 - アダプターJSONが不正 → `ajv` で検証し、`summary` を簡潔に
 
@@ -256,7 +256,7 @@ UI/UX:     21 files, a11y 96 / perf 78 / coverage 84 → artifacts/ui/ui-summary
 ```
 
 #### CI Upload Hints (English)
-- Upload `artifacts/*/summary.json` plus current formal artifacts (`artifacts/hermetic-reports/formal/summary.json`, `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json`) for PR aggregation
+- Upload `artifacts/*/summary.json` and, for current PR summary pass/fail compatibility, `formal/summary.json`; attach `artifacts/hermetic-reports/formal/summary.json` and `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` as additional formal evidence
 - Keep paths stable; prefer short relative paths in PR comments
 - Recommended names (CI artifacts): `codex-json-artifacts`, `codex-openapi` (when present)
 

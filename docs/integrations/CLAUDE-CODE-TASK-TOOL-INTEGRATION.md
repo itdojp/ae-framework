@@ -256,6 +256,7 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
   - [ ] Apply quick fixes (focus ring, next/image, add tests)
 - No formal artifacts in PR
   - [ ] Ensure formal job ran; see `docs/verify/FORMAL-CHECKS.md`
+  - [ ] Upload legacy compatibility input `formal/summary.json` if the PR summary still needs the current formal pass/fail line
   - [ ] Upload `artifacts/hermetic-reports/formal/summary.json`
   - [ ] Upload `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` when present
 - Aggregation failed on adapter JSON
