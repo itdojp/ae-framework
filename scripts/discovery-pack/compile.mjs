@@ -28,17 +28,6 @@ const OUTPUT_FILE_BY_TARGET = {
 };
 const SUPPORTED_TARGETS = new Set(Object.keys(OUTPUT_FILE_BY_TARGET));
 const SUPPORTED_STATUSES = new Set(['hypothesis', 'reviewed', 'approved', 'rejected', 'deferred']);
-const SECTION_LABELS = {
-  actors: 'actors',
-  external_systems: 'external systems',
-  goals: 'goals',
-  requirements: 'requirements',
-  business_use_cases: 'business use cases',
-  flows: 'flows',
-  decisions: 'decisions',
-  assumptions: 'assumptions',
-  open_questions: 'open questions',
-};
 
 const escapeMarkdownTableCell = (value) =>
   String(value ?? '')
@@ -90,7 +79,7 @@ export function parseArgs(argv) {
     sources: [],
     schemaPath: DEFAULT_SCHEMA_PATH,
     outputDir: DEFAULT_OUTPUT_DIR,
-    includeStatuses: ['approved'],
+    includeStatuses: [],
     help: false,
   };
 
@@ -117,8 +106,6 @@ export function parseArgs(argv) {
       }
     }
   };
-
-  options.includeStatuses = [];
 
   for (let index = 2; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -219,23 +206,10 @@ const selectByStatus = (pack, includeStatuses) => {
   return { selected, excluded };
 };
 
-const getEntryMaps = (pack) => {
-  const allEntries = new Map();
-  for (const section of DISCOVERY_PACK_SECTIONS) {
-    for (const entry of sectionEntries(pack, section)) {
-      const id = typeof entry?.id === 'string' ? entry.id.trim() : '';
-      if (id) {
-        allEntries.set(id, entry);
-      }
-    }
-  }
-  return allEntries;
-};
-
-const buildActorLookup = (pack) => {
+const buildActorLookup = (entriesBySection) => {
   const lookup = new Map();
   for (const section of ['actors', 'external_systems']) {
-    for (const entry of sectionEntries(pack, section)) {
+    for (const entry of entriesBySection[section] ?? []) {
       const id = typeof entry?.id === 'string' ? entry.id.trim() : '';
       if (id) {
         lookup.set(id, entry);
@@ -245,9 +219,9 @@ const buildActorLookup = (pack) => {
   return lookup;
 };
 
-const buildGoalLookup = (pack) => {
+const buildGoalLookup = (entriesBySection) => {
   const lookup = new Map();
-  for (const entry of sectionEntries(pack, 'goals')) {
+  for (const entry of entriesBySection.goals ?? []) {
     const id = typeof entry?.id === 'string' ? entry.id.trim() : '';
     if (id) {
       lookup.set(id, entry);
@@ -256,11 +230,24 @@ const buildGoalLookup = (pack) => {
   return lookup;
 };
 
-const collectTracedStatements = (entry, allEntries) => {
+const getSelectedEntryMaps = (entriesBySection) => {
+  const selectedEntries = new Map();
+  for (const section of DISCOVERY_PACK_SECTIONS) {
+    for (const entry of entriesBySection[section] ?? []) {
+      const id = typeof entry?.id === 'string' ? entry.id.trim() : '';
+      if (id) {
+        selectedEntries.set(id, entry);
+      }
+    }
+  }
+  return selectedEntries;
+};
+
+const collectTracedStatements = (entry, selectedEntries) => {
   const traceIds = Array.isArray(entry?.traces_to) ? entry.traces_to : [];
   const statements = [];
   for (const ref of traceIds) {
-    const target = allEntries.get(ref);
+    const target = selectedEntries.get(ref);
     const statement = typeof target?.statement === 'string' && target.statement.trim()
       ? target.statement.trim()
       : typeof target?.title === 'string' && target.title.trim()
@@ -273,7 +260,7 @@ const collectTracedStatements = (entry, allEntries) => {
   return uniqueStrings(statements);
 };
 
-const buildAcceptanceCriterion = (entry, actorLookup, goalLookup, allEntries) => {
+const buildAcceptanceCriterion = (entry, actorLookup, goalLookup, selectedEntries) => {
   const actorNames = uniqueStrings(
     (Array.isArray(entry?.actor_ids) ? entry.actor_ids : [])
       .map((id) => actorLookup.get(id))
@@ -284,7 +271,7 @@ const buildAcceptanceCriterion = (entry, actorLookup, goalLookup, allEntries) =>
       .map((id) => goalLookup.get(id))
       .map((goal) => goal?.statement ?? goal?.title ?? ''),
   );
-  const tracedStatements = collectTracedStatements(entry, allEntries);
+  const tracedStatements = collectTracedStatements(entry, selectedEntries);
   const whenText = typeof entry?.statement === 'string' && entry.statement.trim()
     ? entry.statement.trim().replace(/\.$/, '')
     : typeof entry?.title === 'string' && entry.title.trim()
@@ -303,9 +290,9 @@ const formatList = (items, formatter, empty = '- none captured') => {
 };
 
 const buildPlanSpecMarkdown = (pack, selection, compileMeta) => {
-  const actorLookup = buildActorLookup(pack);
-  const goalLookup = buildGoalLookup(pack);
-  const allEntries = getEntryMaps(pack);
+  const actorLookup = buildActorLookup(selection.selected);
+  const goalLookup = buildGoalLookup(selection.selected);
+  const selectedEntries = getSelectedEntryMaps(selection.selected);
   const selectedGoals = selection.selected.goals;
   const selectedRequirements = selection.selected.requirements;
   const selectedUseCases = selection.selected.business_use_cases;
@@ -369,7 +356,10 @@ const buildPlanSpecMarkdown = (pack, selection, compileMeta) => {
   ];
 
   const acceptanceSource = selectedUseCases.length > 0
-    ? selectedUseCases.map((entry) => ({ id: entry.id, criterion: buildAcceptanceCriterion(entry, actorLookup, goalLookup, allEntries) }))
+    ? selectedUseCases.map((entry) => ({
+        id: entry.id,
+        criterion: buildAcceptanceCriterion(entry, actorLookup, goalLookup, selectedEntries),
+      }))
     : selectedRequirements.map((entry) => ({
         id: entry.id,
         criterion: `${(entry.statement ?? entry.title ?? '').trim() || entry.id}`,
@@ -435,8 +425,8 @@ const buildGlossaryTerms = (entries) => {
 };
 
 const buildContextPackScaffold = (pack, selection, compileMeta) => {
-  const allEntries = getEntryMaps(pack);
-  const goalLookup = buildGoalLookup(pack);
+  const selectedEntries = getSelectedEntryMaps(selection.selected);
+  const goalLookup = buildGoalLookup(selection.selected);
   const selectedGoals = selection.selected.goals;
   const selectedRequirements = selection.selected.requirements;
   const selectedUseCases = selection.selected.business_use_cases;
@@ -475,15 +465,15 @@ const buildContextPackScaffold = (pack, selection, compileMeta) => {
       ]),
     },
     objects: [],
-    morphisms: selectedUseCases.map((entry) => {
-      const tracedStatements = collectTracedStatements(entry, allEntries);
+    morphisms: selectedUseCases.map((entry, index) => {
+      const tracedStatements = collectTracedStatements(entry, selectedEntries);
       const primaryGoals = uniqueStrings(
         (Array.isArray(entry?.primary_goal_ids) ? entry.primary_goal_ids : [])
           .map((id) => goalLookup.get(id))
           .map((goal) => goal?.statement ?? goal?.title ?? ''),
       );
       return {
-        id: toPascalFromId(entry.id, `GeneratedMorphism${selectedUseCases.indexOf(entry) + 1}`),
+        id: toPascalFromId(entry.id, `GeneratedMorphism${index + 1}`),
         input: {},
         output: {},
         pre: tracedStatements.length > 0 ? tracedStatements : ['TODO: derive preconditions from approved discovery requirements'],
@@ -518,19 +508,16 @@ const buildContextPackScaffold = (pack, selection, compileMeta) => {
     acceptance_tests: selectedUseCases.map((entry, index) => ({
       id: `AT-${index + 1}`,
       scenario: (entry.statement ?? entry.title ?? '').trim() || entry.id,
-      expected: uniqueStrings([
-        ...collectTracedStatements(entry, allEntries),
-        ...(Array.isArray(entry?.primary_goal_ids) ? entry.primary_goal_ids : [])
-          .map((id) => goalLookup.get(id))
-          .map((goal) => goal?.statement ?? goal?.title ?? ''),
-      ]).length > 0
-        ? uniqueStrings([
-            ...collectTracedStatements(entry, allEntries),
-            ...(Array.isArray(entry?.primary_goal_ids) ? entry.primary_goal_ids : [])
-              .map((id) => goalLookup.get(id))
-              .map((goal) => goal?.statement ?? goal?.title ?? ''),
-          ])
-        : ['TODO: define expected behavior'],
+      expected: (() => {
+        const tracedStatements = collectTracedStatements(entry, selectedEntries);
+        const goalStatements = uniqueStrings(
+          (Array.isArray(entry?.primary_goal_ids) ? entry.primary_goal_ids : [])
+            .map((id) => goalLookup.get(id))
+            .map((goal) => goal?.statement ?? goal?.title ?? ''),
+        );
+        const expectedStatements = uniqueStrings([...tracedStatements, ...goalStatements]);
+        return expectedStatements.length > 0 ? expectedStatements : ['TODO: define expected behavior'];
+      })(),
     })),
     coding_conventions: {
       language: 'TBD',
