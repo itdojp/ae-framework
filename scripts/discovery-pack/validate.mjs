@@ -29,6 +29,7 @@ const SUPPORTED_FAIL_ON = new Set([
 
 const escapeMarkdownTableCell = (value) =>
   String(value ?? '')
+    .replace(/\\/g, '\\\\')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
