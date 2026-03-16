@@ -19,7 +19,7 @@ Core value:
 - standardize specifications
 - run and aggregate verification lanes
 - validate artifacts/contracts
-- turn results into policy/review/release decisions
+- turn results into policy / PR gate / release decisions
 
 ---
 
@@ -42,7 +42,7 @@ Core value:
 価値の中心は、個別の codegen 機能ではありません。現在の実装で価値が出ているのは次です。
 
 1. Context Pack や schema による spec/contracts の固定
-2. `verify:lite`、formal runners、conformance の summary 化
+2. `pnpm run verify:lite`、formal runners、conformance の summary 化
 3. artifact validation と Contract Catalog による破壊検知
 4. `policy-gate` / `gate` / auto-fix / auto-merge の運用制御
 5. PR / release に必要な証跡を JSON/Markdown で残すこと
