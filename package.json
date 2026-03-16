@@ -99,6 +99,7 @@
     "license:audit:precutover": "node scripts/legal/run-license-cutover-preflight.mjs",
     "quality:scorecard:v1": "node scripts/quality/build-quality-scorecard.mjs",
     "quality:scorecard:validate": "node scripts/ci/validate-quality-scorecard.mjs",
+    "discovery-pack:validate": "node scripts/discovery-pack/validate.mjs",
     "context-pack:validate": "node scripts/context-pack/validate.mjs",
     "context-pack:verify-functor": "node scripts/context-pack/verify-functor.mjs",
     "context-pack:verify-natural-transformation": "node scripts/context-pack/verify-natural-transformation.mjs",
