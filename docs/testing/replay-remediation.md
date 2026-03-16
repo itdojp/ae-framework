@@ -30,4 +30,4 @@ Schema (example)
 
 Notes
 - This object can be consumed by `ae fix` or external tooling.
-- Keep format stable and small; link `artifacts/domain/replay.summary.json` in PR summary, and use `formal/summary.json` for traceId-aligned formal evidence. `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` are additional overall formal status evidence only.
+- Keep format stable and small; link `artifacts/domain/replay.summary.json` in PR summary. Use `formal/summary.json` only when the replay/formal traceId correlation still consumes the legacy input, and attach `artifacts/hermetic-reports/formal/summary.json` plus optional `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` as current overall formal evidence.

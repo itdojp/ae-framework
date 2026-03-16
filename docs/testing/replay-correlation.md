@@ -13,7 +13,9 @@ Goal
 
 Inputs
 - `artifacts/domain/replay.summary.json`
-- `formal/summary.json`
+- `formal/summary.json` (legacy compatibility input when traceId-aligned correlation still depends on it)
+- `artifacts/hermetic-reports/formal/summary.json` (current overall formal aggregate)
+- `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` (optional normalized formal evidence)
 
 Correlation JSON (example)
 ```text

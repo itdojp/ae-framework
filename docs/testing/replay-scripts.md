@@ -35,7 +35,7 @@ jobs:
 
 Notes
 - Emit invariant violations with `traceId` and link to `artifacts/domain/replay.summary.json`.
-- When traceId-aligned formal evidence is attached, link `formal/summary.json`. `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` can be attached as additional overall formal status evidence.
+- When traceId-aligned replay/formal correlation still uses the legacy input, link `formal/summary.json`. Current canonical overall formal evidence is `artifacts/hermetic-reports/formal/summary.json`, with `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` as additional normalized status evidence.
 - Keep implementation outside core to avoid dependency bloat.
 
 ## Env Options

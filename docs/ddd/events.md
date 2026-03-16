@@ -23,7 +23,9 @@ Goals
 Artifacts
 - `artifacts/domain/events.json` — normalized events and metadata
 - `artifacts/domain/replay.summary.json` — replay verification result for the event sequence
-- `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json` — optional formal evidence aligned with replay/conformance verification
+- `artifacts/hermetic-reports/formal/summary.json` — canonical aggregate formal evidence
+- `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json` — optional normalized formal evidence aligned with replay/conformance verification
+- `formal/summary.json` — legacy compatibility input only when replay/formal traceId correlation still consumes it
 - `artifacts/properties/summary.json` — keep {seed, runs, version} when replay uses property-based exploration
 
 Zod Contract Sketch
@@ -59,7 +61,7 @@ CLI
 
 PR Requirements
 - Include event sequence snippet and link to `artifacts/domain/replay.summary.json`.
-- If formal/conformance evidence is attached, also link `artifacts/formal/formal-summary-v1.json` or `artifacts/formal/formal-summary-v2.json`.
+- If formal/conformance evidence is attached, link `artifacts/hermetic-reports/formal/summary.json` and, when useful, `artifacts/formal/formal-summary-v1.json` or `artifacts/formal/formal-summary-v2.json`.
 ## Failure Case Sample
 - See examples/inventory/artifacts/domain/events.replay-failure.sample.json
 - Reported with traceId and violated invariants for CI/PR aggregation.
