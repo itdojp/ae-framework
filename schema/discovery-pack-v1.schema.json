@@ -25,7 +25,9 @@
     },
     "profile": {
       "type": "string",
-      "minLength": 1
+      "enum": [
+        "rdra-lite"
+      ]
     },
     "sources": {
       "type": "array",
@@ -183,7 +185,7 @@
           "type": "string"
         }
       },
-      "oneOf": [
+      "anyOf": [
         {
           "required": [
             "path"

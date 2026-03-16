@@ -31,6 +31,7 @@ const SUPPORTED_STATUSES = new Set(['hypothesis', 'reviewed', 'approved', 'rejec
 
 const escapeMarkdownTableCell = (value) =>
   String(value ?? '')
+    .replace(/\\/g, '\\\\')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

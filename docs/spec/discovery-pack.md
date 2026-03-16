@@ -24,6 +24,7 @@ Discovery Pack v1 は、要求分析を repo 内で構造化し、後続の Cont
 - 初期 profile は `rdra-lite` です
 - これは core 実装に方法論名を固定するためではなく、最小 profile を明示するための起点です
 - profile 固有の運用判断は docs と fixture で段階追加します
+- v1 schema で受理する profile も現時点では `rdra-lite` のみです
 
 ### status の意味
 - `hypothesis`: 仮説。compile 既定対象外
@@ -79,8 +80,11 @@ spec/discovery-pack/sources/*
 
 ### source / trace の扱い
 - `sources[].id` は根拠資料の参照元です
+- `sources[]` は `path` または `uri` の少なくとも一方を必須とします
 - `source_refs` は `sources[].id` を参照します
 - `traces_to` は Discovery Pack 内の他要素 ID を参照します
+- `business_use_cases[].actor_ids` は `actors[].id` を参照します
+- `business_use_cases[].primary_goal_ids` は `goals[].id` を参照します
 - `flows` は Mermaid の意味解釈自体を schema では扱わず、`mermaid_path` を契約として持ちます
 
 ### rdra-lite sample
