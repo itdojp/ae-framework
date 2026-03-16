@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
   - README.md
   - docs/agents/commands.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-16'
 ---
 
 # Claude Code で ae-framework を使った開発ワークフロー
@@ -162,7 +162,7 @@ CI tips
 
 Troubleshooting (quick)
 - Missing UI files → ensure `entities` provided in Phase State; re-run scaffold
-- PR summary missing formal → check `run-formal` label and upload `formal/summary.json`
+- PR summary missing formal → check `run-formal` label and upload `artifacts/hermetic-reports/formal/summary.json` plus `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` when available
 - Type coverage regression → add label `enforce-typecov` or reduce scope; raise thresholds gradually
 - Adapter JSON invalid → validate with `ajv` and keep `summary` concise
 
@@ -222,7 +222,7 @@ ae-framework integration run --tests artifacts/integration/discovered.json --env
 
 トラブルシューティング（簡易）
 - UIファイルが出ない → Phase State の `entities` を確認して再スキャフォールド
-- PRサマリにFormalが無い → `run-formal` ラベルと `formal/summary.json` のアップロードを確認
+- PRサマリにFormalが無い → `run-formal` ラベルと `artifacts/hermetic-reports/formal/summary.json`、`artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json` のアップロードを確認
 - 型カバレッジが下がった → `enforce-typecov` ラベル導入や対象の見直し（段階的に引き上げ）
 - アダプターJSONが不正 → `ajv` で検証し、`summary` を簡潔に
 
@@ -256,7 +256,7 @@ UI/UX:     21 files, a11y 96 / perf 78 / coverage 84 → artifacts/ui/ui-summary
 ```
 
 #### CI Upload Hints (English)
-- Upload `artifacts/*/summary.json` + `formal/summary.json` for PR aggregation
+- Upload `artifacts/*/summary.json` plus current formal artifacts (`artifacts/hermetic-reports/formal/summary.json`, `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json`) for PR aggregation
 - Keep paths stable; prefer short relative paths in PR comments
 - Recommended names (CI artifacts): `codex-json-artifacts`, `codex-openapi` (when present)
 
