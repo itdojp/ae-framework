@@ -92,6 +92,8 @@ spec/discovery-pack/sources/*
 - Contract Catalog 登録
 - `ae discovery validate`
 - `pnpm run discovery-pack:validate`
+- `ae discovery compile`
+- `pnpm run discovery-pack:compile`
 
 ### validate コマンド
 ```bash
@@ -117,8 +119,39 @@ pnpm exec ae discovery validate \
 - `artifacts/discovery-pack/discovery-pack-validate-report.json`
 - `artifacts/discovery-pack/discovery-pack-validate-report.md`
 
+### compile コマンド
+```bash
+# approved のみで plan-to-spec 正規化 Markdown を生成
+pnpm exec ae discovery compile \
+  --target plan-spec \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# context-pack 手編集用の scaffold を生成
+pnpm exec ae discovery compile \
+  --target context-pack-scaffold \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# reviewed も明示的に含める
+pnpm run discovery-pack:compile -- \
+  --target plan-spec \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
+  --include-status approved,reviewed
+```
+
+出力先:
+- `artifacts/discovery-pack/plan-to-spec-normalized.md`
+- `artifacts/discovery-pack/context-pack-scaffold.yaml`
+- `artifacts/discovery-pack/discovery-pack-compile-report.json`
+- `artifacts/discovery-pack/discovery-pack-compile-report.md`
+
+compile ルール:
+- 既定の compile status は `approved` のみです
+- `--include-status` を明示した場合のみ `reviewed` / `hypothesis` などを混在させます
+- `plan-to-spec` は `ae tests:scaffold --input ...` に渡せる acceptance section を生成します
+- `context-pack-scaffold` は non-authoritative な下書きであり、Context Pack SSOT を直接上書きしません
+- `as-is` flow は Context Pack `diagrams` に自動昇格しません
+
 以下は follow-up issue で追加します。
-- `ae discovery compile`
 - Context Pack への `upstream` / `upstream_refs`
 - `verify:lite` への staged rollout
 

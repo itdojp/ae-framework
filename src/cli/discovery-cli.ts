@@ -9,6 +9,7 @@ import { safeExit } from '../utils/safe-exit.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
 const discoveryValidateScript = path.resolve(repoRoot, 'scripts', 'discovery-pack', 'validate.mjs');
+const discoveryCompileScript = path.resolve(repoRoot, 'scripts', 'discovery-pack', 'compile.mjs');
 const discoverySchemaPath = path.resolve(repoRoot, 'schema', 'discovery-pack-v1.schema.json');
 
 const splitBraceAware = (value: string) => {
@@ -106,6 +107,36 @@ export const createDiscoveryCommand = () => {
         args.push('--fail-on', rule);
       }
       runNodeScript(discoveryValidateScript, args);
+    });
+
+  discovery
+    .command('compile')
+    .description('Compile Discovery Pack inputs into plan-spec or context-pack scaffold artifacts')
+    .requiredOption('--target <target>', 'plan-spec | context-pack-scaffold')
+    .option('--sources <glob>', 'Source glob (repeatable, comma-separated supported)', collectSourceValues, [])
+    .option('--output-dir <dir>', 'Output directory', 'artifacts/discovery-pack')
+    .option(
+      '--include-status <status>',
+      'Repeatable include-status value: hypothesis, reviewed, approved, rejected, deferred',
+      collectListValues,
+      [],
+    )
+    .action((options) => {
+      const args = [
+        '--target',
+        options.target,
+        '--schema',
+        discoverySchemaPath,
+        '--output-dir',
+        options.outputDir,
+      ];
+      for (const source of options.sources as string[]) {
+        args.push('--sources', source);
+      }
+      for (const status of options.includeStatus as string[]) {
+        args.push('--include-status', status);
+      }
+      runNodeScript(discoveryCompileScript, args);
     });
 
   return discovery;

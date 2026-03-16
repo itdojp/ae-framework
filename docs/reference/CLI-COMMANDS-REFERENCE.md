@@ -181,6 +181,22 @@ ae domain-model --language --sources "glossary.md"
 
 # Package script
  pnpm run discovery-pack:validate
+
+# Compile approved discovery elements into plan-spec markdown
+ ae discovery compile \
+   --target plan-spec \
+   --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# Compile a non-authoritative context-pack scaffold
+ ae discovery compile \
+   --target context-pack-scaffold \
+   --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# Explicitly include reviewed items during compile
+ pnpm run discovery-pack:compile -- \
+   --target plan-spec \
+   --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
+   --include-status approved,reviewed
 ```
 
 ### Spec (AE-Spec)
