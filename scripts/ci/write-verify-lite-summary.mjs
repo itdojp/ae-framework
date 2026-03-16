@@ -77,6 +77,14 @@ const summary = {
       status: readStatus('CONTEXT_PACK_PHASE5_STATUS', 'unknown'),
       notes: process.env.CONTEXT_PACK_PHASE5_NOTES || null,
     },
+    discoveryPackValidation: {
+      status: readStatus('DISCOVERY_PACK_VALIDATION_STATUS', 'skipped'),
+      notes: process.env.DISCOVERY_PACK_VALIDATION_NOTES || null,
+    },
+    discoveryPackCompile: {
+      status: readStatus('DISCOVERY_PACK_COMPILE_STATUS', 'skipped'),
+      notes: process.env.DISCOVERY_PACK_COMPILE_NOTES || null,
+    },
     bddLint: { status: readStatus('BDD_LINT_STATUS', 'skipped') },
     mutationQuick: {
       status: readStatus('MUTATION_STATUS', 'skipped'),
@@ -92,6 +100,36 @@ const summary = {
     missingCount: toNonNegativeInteger(process.env.TRACEABILITY_MISSING_COUNT, 0),
     matrixPath: existsOrNull(process.env.TRACEABILITY_MATRIX_PATH),
     notes: process.env.TRACEABILITY_NOTES || null,
+  },
+  discoveryPack: {
+    mode: process.env.DISCOVERY_PACK_MODE || 'report-only',
+    reason: process.env.DISCOVERY_PACK_REASON || null,
+    sourcePresent: bool(process.env.DISCOVERY_PACK_SOURCE_PRESENT || '0'),
+    strictApproved: bool(process.env.DISCOVERY_PACK_STRICT_APPROVED || '0'),
+    failOn: (process.env.DISCOVERY_PACK_FAIL_ON || '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean),
+    validateStatus: process.env.DISCOVERY_PACK_REPORT_STATUS || 'skipped',
+    compileStatus: process.env.DISCOVERY_PACK_COMPILE_REPORT_STATUS || 'skipped',
+    scannedFiles: toNonNegativeInteger(process.env.DISCOVERY_PACK_SCANNED_FILES, 0),
+    warningFiles: toNonNegativeInteger(process.env.DISCOVERY_PACK_WARNING_FILES, 0),
+    failedFiles: toNonNegativeInteger(process.env.DISCOVERY_PACK_FAILED_FILES, 0),
+    blockingOpenQuestions: toNonNegativeInteger(process.env.DISCOVERY_PACK_BLOCKING_OPEN_QUESTIONS, 0),
+    orphanApprovedRequirements: toNonNegativeInteger(process.env.DISCOVERY_PACK_ORPHAN_APPROVED_REQUIREMENTS, 0),
+    orphanApprovedBusinessUseCases: toNonNegativeInteger(
+      process.env.DISCOVERY_PACK_ORPHAN_APPROVED_BUSINESS_USE_CASES,
+      0,
+    ),
+    compileSelectedCount: toNonNegativeInteger(process.env.DISCOVERY_PACK_COMPILE_SELECTED_COUNT, 0),
+    compileExcludedByStatusCount: toNonNegativeInteger(
+      process.env.DISCOVERY_PACK_COMPILE_EXCLUDED_BY_STATUS_COUNT,
+      0,
+    ),
+    compileSkippedByTargetCount: toNonNegativeInteger(
+      process.env.DISCOVERY_PACK_COMPILE_SKIPPED_BY_TARGET_COUNT,
+      0,
+    ),
   },
   artifacts: {
     lintSummary: existsOrNull(process.env.LINT_SUMMARY_PATH),
@@ -116,6 +154,11 @@ const summary = {
     ),
     contextPackPhase5ReportJson: existsOrNull(process.env.CONTEXT_PACK_PHASE5_REPORT_JSON_PATH),
     contextPackPhase5ReportMarkdown: existsOrNull(process.env.CONTEXT_PACK_PHASE5_REPORT_MD_PATH),
+    discoveryPackValidateReportJson: existsOrNull(process.env.DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH),
+    discoveryPackValidateReportMarkdown: existsOrNull(process.env.DISCOVERY_PACK_VALIDATE_REPORT_MD_PATH),
+    discoveryPackCompileReportJson: existsOrNull(process.env.DISCOVERY_PACK_COMPILE_REPORT_JSON_PATH),
+    discoveryPackCompileReportMarkdown: existsOrNull(process.env.DISCOVERY_PACK_COMPILE_REPORT_MD_PATH),
+    discoveryPackPlanSpec: existsOrNull(process.env.DISCOVERY_PACK_PLAN_SPEC_PATH),
     conformanceSummary: existsOrNull(process.env.CONFORMANCE_SUMMARY_PATH),
     conformanceSummaryMarkdown: existsOrNull(process.env.CONFORMANCE_SUMMARY_MARKDOWN_PATH),
   },

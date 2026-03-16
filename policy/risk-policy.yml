@@ -14,6 +14,7 @@ labels:
     - "enforce-artifacts"
     - "enforce-testing"
     - "enforce-context-pack"
+    - "enforce-discovery"
 
 required_checks:
   - "verify-lite"
@@ -135,6 +136,8 @@ gate_checks:
     - "testing-ddd"
   enforce-context-pack:
     - "context-pack-e2e"
+  enforce-discovery:
+    - "verify-lite"
   enforce-assurance:
     - "verify-lite"
   run-trace:

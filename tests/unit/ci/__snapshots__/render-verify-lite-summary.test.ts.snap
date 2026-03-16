@@ -15,6 +15,20 @@ Schema Version: 1.0.0
 | Type Check | ✅ success |  |
 | Lint | ⏭️ skipped |  |
 
+Discovery Pack:
+- mode: \`report-only\`
+- reason: \`source-not-found\`
+- source present: ❌
+- validate: ⏭️ skipped
+- compile: ⏭️ skipped
+- strict approved: ❌
+- fail-on: n/a
+- scanned/warn/fail files: 0/0/0
+- blocking open questions: 0
+- orphan approved requirements: 0
+- orphan approved business use cases: 0
+- compile selected/excluded/skipped: 0/0/0
+
 
 Artifacts:
 - Lint Baseline Diff: n/a
@@ -31,6 +45,11 @@ Artifacts:
 - Context Pack Product/Coproduct Markdown: n/a
 - Context Pack Phase5 Templates JSON: n/a
 - Context Pack Phase5 Templates Markdown: n/a
+- Discovery Pack Validation JSON: n/a
+- Discovery Pack Validation Markdown: n/a
+- Discovery Pack Compile JSON: n/a
+- Discovery Pack Compile Markdown: n/a
+- Discovery Pack Plan-Spec Markdown: n/a
 - Conformance Summary JSON: n/a
 - Conformance Summary Markdown: n/a"
 `;
@@ -55,9 +74,25 @@ Schema Version: 1.0.0
 | Context Pack Natural Transformation Validation | ✅ success | validated context-pack natural transformation mapping |
 | Context Pack Product Coproduct Validation | ✅ success | validated context-pack product/coproduct mapping;uncovered_variants=0 |
 | Context Pack Phase5 Validation | ✅ success | validated context-pack phase5 templates;violations=0 |
+| Discovery Pack Validation | ✅ success | mode=report-only;reason=default:report-only;report=warn;blocking_open_questions=1;orphan_requirements=2;orphan_business_use_cases=0 |
+| Discovery Pack Compile | ⏭️ skipped | mode=report-only;reason=default:report-only |
 | Bdd Lint | ⏭️ skipped |  |
 | Mutation Quick | ✅ success | score: 59.74% |
 | Conformance Report | ✅ success | runs=1;violations=0 |
+
+Discovery Pack:
+- mode: \`report-only\`
+- reason: \`default:report-only\`
+- source present: ✅
+- validate: ⚠️ warn
+- compile: ⏭️ skipped
+- strict approved: ❌
+- fail-on: n/a
+- scanned/warn/fail files: 3/1/0
+- blocking open questions: 1
+- orphan approved requirements: 2
+- orphan approved business use cases: 0
+- compile selected/excluded/skipped: 0/0/0
 
 
 Artifacts:
@@ -75,6 +110,11 @@ Artifacts:
 - Context Pack Product/Coproduct Markdown: \`artifacts/context-pack/context-pack-product-coproduct-report.md\` ([Data Link](https://example.com/artifacts))
 - Context Pack Phase5 Templates JSON: \`artifacts/context-pack/context-pack-phase5-report.json\` ([Data Link](https://example.com/artifacts))
 - Context Pack Phase5 Templates Markdown: \`artifacts/context-pack/context-pack-phase5-report.md\` ([Data Link](https://example.com/artifacts))
+- Discovery Pack Validation JSON: \`artifacts/discovery-pack/discovery-pack-validate-report.json\` ([Data Link](https://example.com/artifacts))
+- Discovery Pack Validation Markdown: \`artifacts/discovery-pack/discovery-pack-validate-report.md\` ([Data Link](https://example.com/artifacts))
+- Discovery Pack Compile JSON: n/a
+- Discovery Pack Compile Markdown: n/a
+- Discovery Pack Plan-Spec Markdown: n/a
 - Conformance Summary JSON: \`reports/conformance/verify-lite-summary.json\` ([Data Link](https://example.com/artifacts))
 - Conformance Summary Markdown: \`reports/conformance/verify-lite-summary.md\` ([Data Link](https://example.com/artifacts))
 - GitHub Artifacts: [Open](https://example.com/artifacts)"

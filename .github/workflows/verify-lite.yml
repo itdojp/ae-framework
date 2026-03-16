@@ -122,6 +122,8 @@ jobs:
           VERIFY_LITE_LINT_LOG_FILE: artifacts/verify-lite/verify-lite-lint.log
           VERIFY_LITE_LINT_BASELINE: config/verify-lite-lint-baseline.json
           VERIFY_LITE_LINT_ENFORCE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-verify-lite-lint') && '1' || '0' }}
+          VERIFY_LITE_DISCOVERY_MODE: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-discovery') && 'strict' || 'report-only' }}
+          VERIFY_LITE_DISCOVERY_REASON: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-discovery') && 'label:enforce-discovery' || 'default:report-only' }}
         run: |
           pnpm run verify:lite
       - name: Enforce root generated-file policy (post verify-lite)
@@ -380,6 +382,11 @@ jobs:
             artifacts/assurance/assurance-summary.md
             artifacts/quality/quality-scorecard.json
             artifacts/quality/quality-scorecard.md
+            artifacts/discovery-pack/discovery-pack-validate-report.json
+            artifacts/discovery-pack/discovery-pack-validate-report.md
+            artifacts/discovery-pack/discovery-pack-compile-report.json
+            artifacts/discovery-pack/discovery-pack-compile-report.md
+            artifacts/discovery-pack/plan-to-spec-normalized.md
             artifacts/formal/formal-summary-v1.json
             artifacts/formal/formal-summary-v2.json
             artifacts/hermetic-reports/conformance/summary.json

@@ -43,6 +43,7 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `enforce-bdd-lint` | BDD lint を strict 化 | `verify-lite.yml` | `/enforce-bdd-lint` で付与 |
 | `enforce-verify-lite-lint` | verify-lite lint baseline を enforce | `verify-lite.yml` | PRラベルで制御 |
 | `enforce-context-pack` | Context Pack E2E を strict 化 | `context-pack-quality-gate.yml` | Phase C までの段階導入で利用 |
+| `enforce-discovery` | Discovery Pack validate/compile を strict 化 | `verify-lite.yml` 内 Discovery Pack rollout | report-only 既定。strict では orphan / blocking open questions を fail 条件に昇格 |
 | `ci-non-blocking` | 一部ジョブを non-blocking 化 | 各workflowのcontinue-on-error設定 | `/non-blocking` で付与 |
 | `enforce-coverage` | coverageゲートの強制 | `coverage-check.yml` | `/enforce-coverage` で付与 |
 | `coverage:<pct>` | coverage閾値上書き | `coverage-check.yml` | `/coverage 75` 等で付与 |

@@ -183,6 +183,71 @@ describe.sequential('render-pr-summary', () => {
     }
   });
 
+  it('renders discovery pack rollout details when verify-lite summary exists', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-discovery-'));
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'summary'), { recursive: true });
+      mkdirSync(join(sandbox, 'artifacts', 'verify-lite'), { recursive: true });
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'summary', 'combined.json'),
+        JSON.stringify(
+          {
+            adapters: [{ adapter: 'playwright', summary: '12/12 passed', status: 'ok' }],
+            formal: { result: 'pass' },
+            replay: { totalEvents: 2, violatedInvariants: [] },
+          },
+          null,
+          2,
+        ),
+      );
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'verify-lite', 'verify-lite-run-summary.json'),
+        JSON.stringify(
+          {
+            discoveryPack: {
+              mode: 'strict',
+              reason: 'label:enforce-discovery',
+              sourcePresent: true,
+              strictApproved: true,
+              failOn: [
+                'blocking-open-questions',
+                'orphan-approved-requirements',
+                'orphan-approved-business-use-cases',
+              ],
+              validateStatus: 'warn',
+              compileStatus: 'pass',
+              scannedFiles: 3,
+              warningFiles: 1,
+              failedFiles: 0,
+              blockingOpenQuestions: 1,
+              orphanApprovedRequirements: 2,
+              orphanApprovedBusinessUseCases: 0,
+              compileSelectedCount: 8,
+              compileExcludedByStatusCount: 2,
+              compileSkippedByTargetCount: 0,
+            },
+          },
+          null,
+          2,
+        ),
+      );
+
+      const result = runScript(sandbox, { SUMMARY_MODE: 'digest', SUMMARY_LANG: 'en' });
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
+      expect(output).toContain(
+        'Discovery Pack: strict warn (blockingOpenQuestions=1, orphanRequirements=2, orphanBusinessUseCases=0, reason=label:enforce-discovery)',
+      );
+      expect(output).toContain('Discovery compile: pass (selected=8, excluded=2, skippedByTarget=0)');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('omits assurance placeholders when the assurance artifact is missing', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-no-assurance-'));
 
