@@ -7,7 +7,6 @@ on:
       - 'docs/**'
       - '**/*.md'
   pull_request:
-    branches: [ main ]
     # Avoid running heavy scans for docs-only changes
     paths-ignore:
       - 'docs/**'
