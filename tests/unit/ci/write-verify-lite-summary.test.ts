@@ -92,4 +92,96 @@ describe('write-verify-lite-summary CLI', () => {
     );
     expect(validateResult.status).toBe(0);
   });
+
+  it('writes discovery rollout status, counters, and artifacts', async () => {
+    const outputDir = join(workdir, 'artifacts', 'discovery-pack');
+    const validateReportJsonPath = join(outputDir, 'discovery-pack-validate-report.json');
+    const validateReportMarkdownPath = join(outputDir, 'discovery-pack-validate-report.md');
+    const compileReportJsonPath = join(outputDir, 'discovery-pack-compile-report.json');
+    const compileReportMarkdownPath = join(outputDir, 'discovery-pack-compile-report.md');
+    const planSpecPath = join(outputDir, 'plan-to-spec-normalized.md');
+    await mkdir(outputDir, { recursive: true });
+    await writeFile(validateReportJsonPath, '{}\n', 'utf8');
+    await writeFile(validateReportMarkdownPath, '# validate\n', 'utf8');
+    await writeFile(compileReportJsonPath, '{}\n', 'utf8');
+    await writeFile(compileReportMarkdownPath, '# compile\n', 'utf8');
+    await writeFile(planSpecPath, '# plan\n', 'utf8');
+
+    const { result, summaryPath } = runWriteSummary({
+      DISCOVERY_PACK_MODE: 'strict',
+      DISCOVERY_PACK_REASON: 'label:enforce-discovery',
+      DISCOVERY_PACK_SOURCE_PRESENT: '1',
+      DISCOVERY_PACK_STRICT_APPROVED: '1',
+      DISCOVERY_PACK_FAIL_ON:
+        'blocking-open-questions,orphan-approved-requirements,orphan-approved-business-use-cases',
+      DISCOVERY_PACK_VALIDATION_STATUS: 'success',
+      DISCOVERY_PACK_VALIDATION_NOTES:
+        'mode=strict;reason=label:enforce-discovery;report=warn;blocking_open_questions=1;orphan_requirements=2;orphan_business_use_cases=3',
+      DISCOVERY_PACK_COMPILE_STATUS: 'success',
+      DISCOVERY_PACK_COMPILE_NOTES:
+        'target=plan-spec;report=warn;selected=8;excluded_by_status=2;skipped_by_target=0',
+      DISCOVERY_PACK_REPORT_STATUS: 'warn',
+      DISCOVERY_PACK_COMPILE_REPORT_STATUS: 'warn',
+      DISCOVERY_PACK_SCANNED_FILES: '4',
+      DISCOVERY_PACK_WARNING_FILES: '1',
+      DISCOVERY_PACK_FAILED_FILES: '0',
+      DISCOVERY_PACK_BLOCKING_OPEN_QUESTIONS: '1',
+      DISCOVERY_PACK_ORPHAN_APPROVED_REQUIREMENTS: '2',
+      DISCOVERY_PACK_ORPHAN_APPROVED_BUSINESS_USE_CASES: '3',
+      DISCOVERY_PACK_COMPILE_SELECTED_COUNT: '8',
+      DISCOVERY_PACK_COMPILE_EXCLUDED_BY_STATUS_COUNT: '2',
+      DISCOVERY_PACK_COMPILE_SKIPPED_BY_TARGET_COUNT: '0',
+      DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH: validateReportJsonPath,
+      DISCOVERY_PACK_VALIDATE_REPORT_MD_PATH: validateReportMarkdownPath,
+      DISCOVERY_PACK_COMPILE_REPORT_JSON_PATH: compileReportJsonPath,
+      DISCOVERY_PACK_COMPILE_REPORT_MD_PATH: compileReportMarkdownPath,
+      DISCOVERY_PACK_PLAN_SPEC_PATH: planSpecPath,
+    });
+    expect(result.status).toBe(0);
+
+    const summary = JSON.parse(await readFile(summaryPath, 'utf8'));
+    expect(summary.steps.discoveryPackValidation).toEqual({
+      status: 'success',
+      notes:
+        'mode=strict;reason=label:enforce-discovery;report=warn;blocking_open_questions=1;orphan_requirements=2;orphan_business_use_cases=3',
+    });
+    expect(summary.steps.discoveryPackCompile).toEqual({
+      status: 'success',
+      notes: 'target=plan-spec;report=warn;selected=8;excluded_by_status=2;skipped_by_target=0',
+    });
+    expect(summary.discoveryPack).toEqual({
+      mode: 'strict',
+      reason: 'label:enforce-discovery',
+      sourcePresent: true,
+      strictApproved: true,
+      failOn: [
+        'blocking-open-questions',
+        'orphan-approved-requirements',
+        'orphan-approved-business-use-cases',
+      ],
+      validateStatus: 'warn',
+      compileStatus: 'warn',
+      scannedFiles: 4,
+      warningFiles: 1,
+      failedFiles: 0,
+      blockingOpenQuestions: 1,
+      orphanApprovedRequirements: 2,
+      orphanApprovedBusinessUseCases: 3,
+      compileSelectedCount: 8,
+      compileExcludedByStatusCount: 2,
+      compileSkippedByTargetCount: 0,
+    });
+    expect(summary.artifacts.discoveryPackValidateReportJson).toBe(validateReportJsonPath);
+    expect(summary.artifacts.discoveryPackValidateReportMarkdown).toBe(validateReportMarkdownPath);
+    expect(summary.artifacts.discoveryPackCompileReportJson).toBe(compileReportJsonPath);
+    expect(summary.artifacts.discoveryPackCompileReportMarkdown).toBe(compileReportMarkdownPath);
+    expect(summary.artifacts.discoveryPackPlanSpec).toBe(planSpecPath);
+
+    const validateResult = spawnSync(
+      process.execPath,
+      [validateSummaryScript, summaryPath, verifyLiteSummarySchemaPath],
+      { cwd: repoRoot },
+    );
+    expect(validateResult.status).toBe(0);
+  });
 });

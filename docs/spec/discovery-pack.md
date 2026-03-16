@@ -98,6 +98,8 @@ spec/discovery-pack/sources/*
 - `pnpm run discovery-pack:validate`
 - `ae discovery compile`
 - `pnpm run discovery-pack:compile`
+- `verify-lite` での report-only 観測
+- `enforce-discovery` ラベルによる strict rollout
 
 ### validate コマンド
 ```bash
@@ -155,9 +157,39 @@ compile ルール:
 - `context-pack-scaffold` は non-authoritative な下書きであり、Context Pack SSOT を直接上書きしません
 - `as-is` flow は Context Pack `diagrams` に自動昇格しません
 
-以下は follow-up issue で追加します。
-- Context Pack への `upstream` / `upstream_refs`
-- `verify:lite` への staged rollout
+### verify-lite staged rollout
+- Discovery Pack source がある PR では、`verify-lite` が validate を report-only で観測します
+- 既定の report-only では、validate が `warn` / `fail` でも PR を block しません
+- strict 化したい場合は PR に `enforce-discovery` ラベルを付与します
+- strict 時は以下を有効化します
+  - `ae discovery validate --strict-approved`
+  - `--fail-on blocking-open-questions`
+  - `--fail-on orphan-approved-requirements`
+  - `--fail-on orphan-approved-business-use-cases`
+  - `ae discovery compile --target plan-spec`
+
+### verify-lite / strict の見方
+- summary artifact:
+  - `artifacts/verify-lite/verify-lite-run-summary.json`
+- Discovery Pack validate report:
+  - `artifacts/discovery-pack/discovery-pack-validate-report.json`
+  - `artifacts/discovery-pack/discovery-pack-validate-report.md`
+- strict 時の compile dry-run:
+  - `artifacts/discovery-pack/plan-to-spec-normalized.md`
+  - `artifacts/discovery-pack/discovery-pack-compile-report.json`
+  - `artifacts/discovery-pack/discovery-pack-compile-report.md`
+- PR summary / CI summary では以下を確認します
+  - validate status
+  - blocking open questions 数
+  - orphan approved requirements 数
+  - orphan approved business use cases 数
+  - strict / report-only の判定理由
+
+### どの変更で strict を使うか
+- 新しい業務境界を導入する変更
+- 複数アクターをまたぐ業務フローを変更する変更
+- 外部システム連携 / 承認 / 通知 / system-of-record の関係を変える変更
+- high-risk 扱いで upstream 要求分析の明示を残したい変更
 
 ### 関連
 - Context Pack v1: `docs/spec/context-pack.md`

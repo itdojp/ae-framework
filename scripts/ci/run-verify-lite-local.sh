@@ -23,6 +23,7 @@ LINT_BASELINE_PATH="${VERIFY_LITE_LINT_BASELINE:-config/verify-lite-lint-baselin
 VERIFY_LITE_LINT_ENFORCE="${VERIFY_LITE_LINT_ENFORCE:-${VERIFY_LITE_ENFORCE_LINT:-0}}"
 LINT_SUMMARY_TARGET="${VERIFY_LITE_LINT_SUMMARY_FILE:-artifacts/verify-lite/verify-lite-lint-summary.json}"
 LINT_LOG_TARGET="${VERIFY_LITE_LINT_LOG_FILE:-artifacts/verify-lite/verify-lite-lint.log}"
+DEFAULT_DISCOVERY_PACK_SOURCES='spec/discovery-pack/**/*.{yml,yaml,json}'
 
 INSTALL_STATUS="success"
 INSTALL_NOTES="flags=${INSTALL_FLAGS_STR}"
@@ -46,6 +47,33 @@ CONTEXT_PACK_PRODUCT_COPRODUCT_STATUS="pending"
 CONTEXT_PACK_PRODUCT_COPRODUCT_NOTES=""
 CONTEXT_PACK_PHASE5_STATUS="pending"
 CONTEXT_PACK_PHASE5_NOTES=""
+DISCOVERY_PACK_MODE="${VERIFY_LITE_DISCOVERY_MODE:-report-only}"
+DISCOVERY_PACK_REASON="${VERIFY_LITE_DISCOVERY_REASON:-default:report-only}"
+DISCOVERY_PACK_SOURCES="${VERIFY_LITE_DISCOVERY_SOURCES:-$DEFAULT_DISCOVERY_PACK_SOURCES}"
+DISCOVERY_PACK_OUTPUT_DIR="${VERIFY_LITE_DISCOVERY_OUTPUT_DIR:-artifacts/discovery-pack}"
+DISCOVERY_PACK_VALIDATION_STATUS="skipped"
+DISCOVERY_PACK_VALIDATION_NOTES=""
+DISCOVERY_PACK_COMPILE_STATUS="skipped"
+DISCOVERY_PACK_COMPILE_NOTES=""
+DISCOVERY_PACK_SOURCE_PRESENT=0
+DISCOVERY_PACK_STRICT_APPROVED=0
+DISCOVERY_PACK_FAIL_ON=""
+DISCOVERY_PACK_REPORT_STATUS="skipped"
+DISCOVERY_PACK_COMPILE_REPORT_STATUS="skipped"
+DISCOVERY_PACK_SCANNED_FILES=0
+DISCOVERY_PACK_WARNING_FILES=0
+DISCOVERY_PACK_FAILED_FILES=0
+DISCOVERY_PACK_BLOCKING_OPEN_QUESTIONS=0
+DISCOVERY_PACK_ORPHAN_APPROVED_REQUIREMENTS=0
+DISCOVERY_PACK_ORPHAN_APPROVED_BUSINESS_USE_CASES=0
+DISCOVERY_PACK_COMPILE_SELECTED_COUNT=0
+DISCOVERY_PACK_COMPILE_EXCLUDED_BY_STATUS_COUNT=0
+DISCOVERY_PACK_COMPILE_SKIPPED_BY_TARGET_COUNT=0
+DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH="${DISCOVERY_PACK_OUTPUT_DIR}/discovery-pack-validate-report.json"
+DISCOVERY_PACK_VALIDATE_REPORT_MD_PATH="${DISCOVERY_PACK_OUTPUT_DIR}/discovery-pack-validate-report.md"
+DISCOVERY_PACK_COMPILE_REPORT_JSON_PATH="${DISCOVERY_PACK_OUTPUT_DIR}/discovery-pack-compile-report.json"
+DISCOVERY_PACK_COMPILE_REPORT_MD_PATH="${DISCOVERY_PACK_OUTPUT_DIR}/discovery-pack-compile-report.md"
+DISCOVERY_PACK_PLAN_SPEC_PATH="${DISCOVERY_PACK_OUTPUT_DIR}/plan-to-spec-normalized.md"
 MUTATION_STATUS="skipped"
 MUTATION_NOTES=""
 LINT_LOG_EXPORT=""
@@ -78,6 +106,50 @@ CONFORMANCE_STATUS="skipped"
 CONFORMANCE_NOTES="not_run"
 CONFORMANCE_SUMMARY_PATH="${VERIFY_LITE_CONFORMANCE_SUMMARY_FILE:-reports/conformance/verify-lite-summary.json}"
 CONFORMANCE_SUMMARY_MARKDOWN_PATH="${VERIFY_LITE_CONFORMANCE_MARKDOWN_FILE:-reports/conformance/verify-lite-summary.md}"
+DEFERRED_EXIT_CODE=0
+DEFERRED_EXIT_REASON=""
+
+count_discovery_pack_sources() {
+  node --input-type=module -e "
+    import { DEFAULT_SOURCES, discoverSources, splitSourcePatterns } from './scripts/discovery-pack/lib.mjs';
+    const raw = process.argv[1] ?? '';
+    const patterns = splitSourcePatterns(raw).map((entry) => entry.trim()).filter(Boolean);
+    const matches = discoverSources(patterns.length > 0 ? patterns : DEFAULT_SOURCES);
+    process.stdout.write(String(matches.length));
+  " "$DISCOVERY_PACK_SOURCES"
+}
+
+has_discovery_pack_sources() {
+  local source_count
+  if ! source_count="$(count_discovery_pack_sources)"; then
+    return 1
+  fi
+  [[ "$source_count" -gt 0 ]]
+}
+
+read_json_field() {
+  local json_path="$1"
+  local field_path="$2"
+  local fallback="${3:-}"
+  node --input-type=module -e "
+    import fs from 'node:fs';
+    const [jsonPath, fieldPath, fallbackValue] = process.argv.slice(1);
+    const fields = String(fieldPath || '').split('.').filter(Boolean);
+    try {
+      let value = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+      for (const field of fields) {
+        value = value?.[field];
+      }
+      if (value === undefined || value === null) {
+        process.stdout.write(fallbackValue ?? '');
+      } else {
+        process.stdout.write(String(value));
+      }
+    } catch {
+      process.stdout.write(fallbackValue ?? '');
+    }
+  " "$json_path" "$field_path" "$fallback"
+}
 
 run_root_safe_cleanup() {
   local phase="${1:-post-run}"
@@ -352,6 +424,131 @@ if [[ "$CONTEXT_PACK_STATUS" == "success" ]]; then
   fi
 fi
 
+echo "[verify-lite] discovery-pack validation"
+if has_discovery_pack_sources; then
+  DISCOVERY_PACK_SOURCE_PRESENT=1
+  if [[ "$DISCOVERY_PACK_MODE" != "strict" ]]; then
+    DISCOVERY_PACK_MODE="report-only"
+    if [[ -z "$DISCOVERY_PACK_REASON" || "$DISCOVERY_PACK_REASON" == "default:report-only" ]]; then
+      DISCOVERY_PACK_REASON="default:report-only"
+    fi
+  else
+    DISCOVERY_PACK_STRICT_APPROVED=1
+    DISCOVERY_PACK_FAIL_ON="blocking-open-questions,orphan-approved-requirements,orphan-approved-business-use-cases"
+  fi
+
+  DISCOVERY_VALIDATE_ARGS=(
+    --sources "$DISCOVERY_PACK_SOURCES"
+    --output-dir "$DISCOVERY_PACK_OUTPUT_DIR"
+  )
+  if [[ "$DISCOVERY_PACK_MODE" == "strict" ]]; then
+    DISCOVERY_VALIDATE_ARGS+=(
+      --strict-approved
+      --fail-on blocking-open-questions
+      --fail-on orphan-approved-requirements
+      --fail-on orphan-approved-business-use-cases
+    )
+  fi
+
+  DISCOVERY_VALIDATE_EXIT_CODE=0
+  if node scripts/discovery-pack/validate.mjs "${DISCOVERY_VALIDATE_ARGS[@]}"; then
+    DISCOVERY_VALIDATE_EXIT_CODE=0
+  else
+    DISCOVERY_VALIDATE_EXIT_CODE=$?
+  fi
+
+  if [[ -f "$DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH" ]]; then
+    DISCOVERY_PACK_REPORT_STATUS="$(read_json_field "$DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH" status skipped)"
+    DISCOVERY_PACK_SCANNED_FILES="$(read_json_field "$DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH" scannedFiles 0)"
+    DISCOVERY_PACK_WARNING_FILES="$(read_json_field "$DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH" warningFiles 0)"
+    DISCOVERY_PACK_FAILED_FILES="$(read_json_field "$DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH" failedFiles 0)"
+    DISCOVERY_PACK_BLOCKING_OPEN_QUESTIONS="$(read_json_field "$DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH" summary.blockingOpenQuestions 0)"
+    DISCOVERY_PACK_ORPHAN_APPROVED_REQUIREMENTS="$(read_json_field "$DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH" summary.orphanApprovedRequirements 0)"
+    DISCOVERY_PACK_ORPHAN_APPROVED_BUSINESS_USE_CASES="$(read_json_field "$DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH" summary.orphanApprovedBusinessUseCases 0)"
+  else
+    DISCOVERY_PACK_REPORT_STATUS="missing"
+  fi
+
+  DISCOVERY_PACK_VALIDATION_NOTES="mode=${DISCOVERY_PACK_MODE};reason=${DISCOVERY_PACK_REASON};report=${DISCOVERY_PACK_REPORT_STATUS};blocking_open_questions=${DISCOVERY_PACK_BLOCKING_OPEN_QUESTIONS};orphan_requirements=${DISCOVERY_PACK_ORPHAN_APPROVED_REQUIREMENTS};orphan_business_use_cases=${DISCOVERY_PACK_ORPHAN_APPROVED_BUSINESS_USE_CASES}"
+  if [[ "$DISCOVERY_VALIDATE_EXIT_CODE" -ne 0 ]]; then
+    DISCOVERY_PACK_VALIDATION_NOTES="${DISCOVERY_PACK_VALIDATION_NOTES};exit=${DISCOVERY_VALIDATE_EXIT_CODE}"
+  fi
+
+  if [[ "$DISCOVERY_PACK_MODE" == "strict" ]]; then
+    if [[ "$DISCOVERY_VALIDATE_EXIT_CODE" -eq 0 ]]; then
+      DISCOVERY_PACK_VALIDATION_STATUS="success"
+    else
+      DISCOVERY_PACK_VALIDATION_STATUS="failure"
+      echo "[verify-lite] discovery-pack validation failed in strict mode (exit=${DISCOVERY_VALIDATE_EXIT_CODE})" >&2
+      if [[ "$DEFERRED_EXIT_CODE" -eq 0 ]]; then
+        DEFERRED_EXIT_CODE="$DISCOVERY_VALIDATE_EXIT_CODE"
+        DEFERRED_EXIT_REASON="discovery-pack-validation"
+      fi
+    fi
+  else
+    if [[ "$DISCOVERY_VALIDATE_EXIT_CODE" -eq 0 ]]; then
+      DISCOVERY_PACK_VALIDATION_STATUS="success"
+    else
+      DISCOVERY_PACK_VALIDATION_STATUS="failure"
+      echo "[verify-lite] discovery-pack validation failed in report-only mode (exit=${DISCOVERY_VALIDATE_EXIT_CODE})" >&2
+    fi
+  fi
+
+  echo "[verify-lite] discovery-pack compile"
+  if [[ "$DISCOVERY_PACK_MODE" == "strict" ]]; then
+    if [[ "$DISCOVERY_VALIDATE_EXIT_CODE" -ne 0 ]]; then
+      DISCOVERY_PACK_COMPILE_STATUS="skipped"
+      DISCOVERY_PACK_COMPILE_NOTES="skipped-after-validation-failure;validation_exit=${DISCOVERY_VALIDATE_EXIT_CODE}"
+    else
+      DISCOVERY_COMPILE_EXIT_CODE=0
+      if node scripts/discovery-pack/compile.mjs \
+        --target plan-spec \
+        --sources "$DISCOVERY_PACK_SOURCES" \
+        --output-dir "$DISCOVERY_PACK_OUTPUT_DIR"; then
+        DISCOVERY_COMPILE_EXIT_CODE=0
+      else
+        DISCOVERY_COMPILE_EXIT_CODE=$?
+      fi
+
+      if [[ -f "$DISCOVERY_PACK_COMPILE_REPORT_JSON_PATH" ]]; then
+        DISCOVERY_PACK_COMPILE_REPORT_STATUS="$(read_json_field "$DISCOVERY_PACK_COMPILE_REPORT_JSON_PATH" status skipped)"
+        DISCOVERY_PACK_COMPILE_SELECTED_COUNT="$(read_json_field "$DISCOVERY_PACK_COMPILE_REPORT_JSON_PATH" summary.selectedCount 0)"
+        DISCOVERY_PACK_COMPILE_EXCLUDED_BY_STATUS_COUNT="$(read_json_field "$DISCOVERY_PACK_COMPILE_REPORT_JSON_PATH" summary.excludedByStatusCount 0)"
+        DISCOVERY_PACK_COMPILE_SKIPPED_BY_TARGET_COUNT="$(read_json_field "$DISCOVERY_PACK_COMPILE_REPORT_JSON_PATH" summary.skippedByTargetCount 0)"
+      else
+        DISCOVERY_PACK_COMPILE_REPORT_STATUS="missing"
+      fi
+
+      DISCOVERY_PACK_COMPILE_NOTES="target=plan-spec;report=${DISCOVERY_PACK_COMPILE_REPORT_STATUS};selected=${DISCOVERY_PACK_COMPILE_SELECTED_COUNT};excluded_by_status=${DISCOVERY_PACK_COMPILE_EXCLUDED_BY_STATUS_COUNT};skipped_by_target=${DISCOVERY_PACK_COMPILE_SKIPPED_BY_TARGET_COUNT}"
+      if [[ "$DISCOVERY_COMPILE_EXIT_CODE" -ne 0 ]]; then
+        DISCOVERY_PACK_COMPILE_NOTES="${DISCOVERY_PACK_COMPILE_NOTES};exit=${DISCOVERY_COMPILE_EXIT_CODE}"
+      fi
+
+      if [[ "$DISCOVERY_COMPILE_EXIT_CODE" -eq 0 ]]; then
+        DISCOVERY_PACK_COMPILE_STATUS="success"
+      else
+        DISCOVERY_PACK_COMPILE_STATUS="failure"
+        echo "[verify-lite] discovery-pack compile failed in strict mode (exit=${DISCOVERY_COMPILE_EXIT_CODE})" >&2
+        if [[ "$DEFERRED_EXIT_CODE" -eq 0 ]]; then
+          DEFERRED_EXIT_CODE="$DISCOVERY_COMPILE_EXIT_CODE"
+          DEFERRED_EXIT_REASON="discovery-pack-compile"
+        fi
+      fi
+    fi
+  else
+    DISCOVERY_PACK_COMPILE_STATUS="skipped"
+    DISCOVERY_PACK_COMPILE_NOTES="mode=report-only;reason=${DISCOVERY_PACK_REASON}"
+  fi
+else
+  DISCOVERY_PACK_SOURCE_PRESENT=0
+  DISCOVERY_PACK_MODE="report-only"
+  DISCOVERY_PACK_REASON="source-not-found"
+  DISCOVERY_PACK_VALIDATION_STATUS="skipped"
+  DISCOVERY_PACK_VALIDATION_NOTES="source-not-found"
+  DISCOVERY_PACK_COMPILE_STATUS="skipped"
+  DISCOVERY_PACK_COMPILE_NOTES="source-not-found"
+fi
+
 echo "[verify-lite] traceability matrix summary"
 if [[ -f "$TRACEABILITY_MATRIX_PATH" ]]; then
   if TRACEABILITY_MISSING_COUNT="$(node --input-type=module -e "
@@ -471,6 +668,21 @@ export CONTEXT_PACK_PRODUCT_COPRODUCT_STATUS CONTEXT_PACK_PRODUCT_COPRODUCT_NOTE
 export CONTEXT_PACK_PRODUCT_COPRODUCT_REPORT_JSON_PATH CONTEXT_PACK_PRODUCT_COPRODUCT_REPORT_MD_PATH
 export CONTEXT_PACK_PHASE5_STATUS CONTEXT_PACK_PHASE5_NOTES
 export CONTEXT_PACK_PHASE5_REPORT_JSON_PATH CONTEXT_PACK_PHASE5_REPORT_MD_PATH
+export DISCOVERY_PACK_MODE DISCOVERY_PACK_REASON DISCOVERY_PACK_SOURCE_PRESENT
+export DISCOVERY_PACK_STRICT_APPROVED DISCOVERY_PACK_FAIL_ON
+export DISCOVERY_PACK_VALIDATION_STATUS DISCOVERY_PACK_VALIDATION_NOTES
+export DISCOVERY_PACK_COMPILE_STATUS DISCOVERY_PACK_COMPILE_NOTES
+export DISCOVERY_PACK_REPORT_STATUS DISCOVERY_PACK_COMPILE_REPORT_STATUS
+export DISCOVERY_PACK_SCANNED_FILES DISCOVERY_PACK_WARNING_FILES DISCOVERY_PACK_FAILED_FILES
+export DISCOVERY_PACK_BLOCKING_OPEN_QUESTIONS
+export DISCOVERY_PACK_ORPHAN_APPROVED_REQUIREMENTS
+export DISCOVERY_PACK_ORPHAN_APPROVED_BUSINESS_USE_CASES
+export DISCOVERY_PACK_COMPILE_SELECTED_COUNT
+export DISCOVERY_PACK_COMPILE_EXCLUDED_BY_STATUS_COUNT
+export DISCOVERY_PACK_COMPILE_SKIPPED_BY_TARGET_COUNT
+export DISCOVERY_PACK_VALIDATE_REPORT_JSON_PATH DISCOVERY_PACK_VALIDATE_REPORT_MD_PATH
+export DISCOVERY_PACK_COMPILE_REPORT_JSON_PATH DISCOVERY_PACK_COMPILE_REPORT_MD_PATH
+export DISCOVERY_PACK_PLAN_SPEC_PATH
 export TRACEABILITY_STATUS TRACEABILITY_NOTES TRACEABILITY_MISSING_COUNT TRACEABILITY_MATRIX_PATH
 export INSTALL_FLAGS_STR
 export LINT_SUMMARY_PATH LINT_LOG_EXPORT
@@ -488,6 +700,11 @@ if [[ -n "$SUMMARY_EXPORT_PATH" ]]; then
   if [[ "$SUMMARY_EXPORT_PATH" != "$SUMMARY_PATH" ]]; then
     cp "$SUMMARY_PATH" "$SUMMARY_EXPORT_PATH"
   fi
+fi
+
+if [[ "$DEFERRED_EXIT_CODE" -ne 0 ]]; then
+  echo "[verify-lite] exiting after summary write due to ${DEFERRED_EXIT_REASON} (exit=${DEFERRED_EXIT_CODE})" >&2
+  exit "$DEFERRED_EXIT_CODE"
 fi
 
 if [[ -n "$LINT_SUMMARY_PATH" && -f "$LINT_SUMMARY_PATH" ]]; then

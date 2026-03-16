@@ -30,6 +30,14 @@ describe('renderVerifyLiteSummary', () => {
         status: 'success',
         notes: 'validated context-pack phase5 templates;violations=0'
       },
+      discoveryPackValidation: {
+        status: 'success',
+        notes: 'mode=report-only;reason=default:report-only;report=warn;blocking_open_questions=1;orphan_requirements=2;orphan_business_use_cases=0'
+      },
+      discoveryPackCompile: {
+        status: 'skipped',
+        notes: 'mode=report-only;reason=default:report-only'
+      },
       bddLint: { status: 'skipped' },
       mutationQuick: { status: 'success', notes: 'score: 59.74%' },
       conformanceReport: { status: 'success', notes: 'runs=1;violations=0' }
@@ -39,6 +47,24 @@ describe('renderVerifyLiteSummary', () => {
       missingCount: 2,
       matrixPath: 'docs/specs/ISSUE-TRACEABILITY-MATRIX.json',
       notes: 'matrix=docs/specs/ISSUE-TRACEABILITY-MATRIX.json;missing=2'
+    },
+    discoveryPack: {
+      mode: 'report-only',
+      reason: 'default:report-only',
+      sourcePresent: true,
+      strictApproved: false,
+      failOn: [],
+      validateStatus: 'warn',
+      compileStatus: 'skipped',
+      scannedFiles: 3,
+      warningFiles: 1,
+      failedFiles: 0,
+      blockingOpenQuestions: 1,
+      orphanApprovedRequirements: 2,
+      orphanApprovedBusinessUseCases: 0,
+      compileSelectedCount: 0,
+      compileExcludedByStatusCount: 0,
+      compileSkippedByTargetCount: 0
     },
     artifacts: {
       lintSummary: 'artifacts/verify-lite/verify-lite-lint-summary.json',
@@ -59,6 +85,11 @@ describe('renderVerifyLiteSummary', () => {
         'artifacts/context-pack/context-pack-product-coproduct-report.md',
       contextPackPhase5ReportJson: 'artifacts/context-pack/context-pack-phase5-report.json',
       contextPackPhase5ReportMarkdown: 'artifacts/context-pack/context-pack-phase5-report.md',
+      discoveryPackValidateReportJson: 'artifacts/discovery-pack/discovery-pack-validate-report.json',
+      discoveryPackValidateReportMarkdown: 'artifacts/discovery-pack/discovery-pack-validate-report.md',
+      discoveryPackCompileReportJson: null,
+      discoveryPackCompileReportMarkdown: null,
+      discoveryPackPlanSpec: null,
       conformanceSummary: 'reports/conformance/verify-lite-summary.json',
       conformanceSummaryMarkdown: 'reports/conformance/verify-lite-summary.md'
     }
@@ -90,6 +121,24 @@ describe('renderVerifyLiteSummary', () => {
         matrixPath: null,
         notes: 'matrix_not_found'
       },
+      discoveryPack: {
+        mode: 'report-only',
+        reason: 'source-not-found',
+        sourcePresent: false,
+        strictApproved: false,
+        failOn: [],
+        validateStatus: 'skipped',
+        compileStatus: 'skipped',
+        scannedFiles: 0,
+        warningFiles: 0,
+        failedFiles: 0,
+        blockingOpenQuestions: 0,
+        orphanApprovedRequirements: 0,
+        orphanApprovedBusinessUseCases: 0,
+        compileSelectedCount: 0,
+        compileExcludedByStatusCount: 0,
+        compileSkippedByTargetCount: 0
+      },
       artifacts: {
         lintSummary: null,
         lintLog: null,
@@ -105,6 +154,11 @@ describe('renderVerifyLiteSummary', () => {
         contextPackProductCoproductReportMarkdown: null,
         contextPackPhase5ReportJson: null,
         contextPackPhase5ReportMarkdown: null,
+        discoveryPackValidateReportJson: null,
+        discoveryPackValidateReportMarkdown: null,
+        discoveryPackCompileReportJson: null,
+        discoveryPackCompileReportMarkdown: null,
+        discoveryPackPlanSpec: null,
         conformanceSummary: null,
         conformanceSummaryMarkdown: null
       }

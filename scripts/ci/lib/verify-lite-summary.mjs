@@ -9,6 +9,7 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     flags = {},
     steps = {},
     traceability = null,
+    discoveryPack = null,
     artifacts = {}
   } = summary;
 
@@ -36,6 +37,9 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     const normalized = String(status).toLowerCase();
     if (normalized === 'success') return '✅ success';
     if (normalized === 'failure') return '❌ failure';
+    if (normalized === 'warn') return '⚠️ warn';
+    if (normalized === 'pass') return '✅ pass';
+    if (normalized === 'fail') return '❌ fail';
     if (normalized === 'skipped') return '⏭️ skipped';
     if (normalized === 'pending') return '… pending';
     return normalized;
@@ -66,6 +70,8 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     'contextPackNaturalTransformationValidation',
     'contextPackProductCoproductValidation',
     'contextPackPhase5Validation',
+    'discoveryPackValidation',
+    'discoveryPackCompile',
     'bddLint',
     'mutationQuick',
     'conformanceReport',
@@ -105,6 +111,22 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
   }
 
   const artifactLines = [];
+  const discoveryLines = [];
+  if (discoveryPack && typeof discoveryPack === 'object') {
+    discoveryLines.push('', 'Discovery Pack:');
+    discoveryLines.push(`- mode: \`${discoveryPack.mode ?? 'report-only'}\``);
+    discoveryLines.push(`- reason: ${discoveryPack.reason ? `\`${escapeHtml(discoveryPack.reason)}\`` : 'n/a'}`);
+    discoveryLines.push(`- source present: ${yesNo(Boolean(discoveryPack.sourcePresent))}`);
+    discoveryLines.push(`- validate: ${formatStatus(discoveryPack.validateStatus)}`);
+    discoveryLines.push(`- compile: ${formatStatus(discoveryPack.compileStatus)}`);
+    discoveryLines.push(`- strict approved: ${yesNo(Boolean(discoveryPack.strictApproved))}`);
+    discoveryLines.push(`- fail-on: ${Array.isArray(discoveryPack.failOn) && discoveryPack.failOn.length > 0 ? discoveryPack.failOn.map((entry) => `\`${escapeHtml(entry)}\``).join(', ') : 'n/a'}`);
+    discoveryLines.push(`- scanned/warn/fail files: ${discoveryPack.scannedFiles ?? 0}/${discoveryPack.warningFiles ?? 0}/${discoveryPack.failedFiles ?? 0}`);
+    discoveryLines.push(`- blocking open questions: ${discoveryPack.blockingOpenQuestions ?? 0}`);
+    discoveryLines.push(`- orphan approved requirements: ${discoveryPack.orphanApprovedRequirements ?? 0}`);
+    discoveryLines.push(`- orphan approved business use cases: ${discoveryPack.orphanApprovedBusinessUseCases ?? 0}`);
+    discoveryLines.push(`- compile selected/excluded/skipped: ${discoveryPack.compileSelectedCount ?? 0}/${discoveryPack.compileExcludedByStatusCount ?? 0}/${discoveryPack.compileSkippedByTargetCount ?? 0}`);
+  }
   if (Object.keys(artifacts).length > 0) {
     const { artifactsUrl } = options;
     const labelMap = {
@@ -122,6 +144,11 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
       contextPackProductCoproductReportMarkdown: 'Context Pack Product/Coproduct Markdown',
       contextPackPhase5ReportJson: 'Context Pack Phase5 Templates JSON',
       contextPackPhase5ReportMarkdown: 'Context Pack Phase5 Templates Markdown',
+      discoveryPackValidateReportJson: 'Discovery Pack Validation JSON',
+      discoveryPackValidateReportMarkdown: 'Discovery Pack Validation Markdown',
+      discoveryPackCompileReportJson: 'Discovery Pack Compile JSON',
+      discoveryPackCompileReportMarkdown: 'Discovery Pack Compile Markdown',
+      discoveryPackPlanSpec: 'Discovery Pack Plan-Spec Markdown',
       conformanceSummary: 'Conformance Summary JSON',
       conformanceSummaryMarkdown: 'Conformance Summary Markdown',
     };
@@ -152,6 +179,11 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
       'contextPackProductCoproductReportMarkdown',
       'contextPackPhase5ReportJson',
       'contextPackPhase5ReportMarkdown',
+      'discoveryPackValidateReportJson',
+      'discoveryPackValidateReportMarkdown',
+      'discoveryPackCompileReportJson',
+      'discoveryPackCompileReportMarkdown',
+      'discoveryPackPlanSpec',
       'conformanceSummary',
       'conformanceSummaryMarkdown',
     ];
@@ -176,6 +208,7 @@ export const renderVerifyLiteSummary = (summary, options = {}) => {
     ...flagLines,
     '',
     ...tableLines,
+    ...discoveryLines,
     '',
     ...artifactLines,
   ];

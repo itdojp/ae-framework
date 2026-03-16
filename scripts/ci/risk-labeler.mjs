@@ -22,6 +22,7 @@ const DEFAULT_LABEL_STYLE = {
   'enforce-artifacts': { color: '5319E7', description: 'Make artifact validation strict/blocking' },
   'enforce-testing': { color: 'C2E0C6', description: 'Make testing DDD scripts strict/blocking' },
   'enforce-context-pack': { color: '0052CC', description: 'Make Context Pack quality gate strict/blocking' },
+  'enforce-discovery': { color: '1B4F72', description: 'Make Discovery Pack verification strict/blocking' },
 };
 
 const OUTPUT_JSON_PATH = 'artifacts/ci/risk-labeler-summary.json';

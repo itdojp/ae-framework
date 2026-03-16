@@ -115,6 +115,99 @@
         }
       }
     },
+    "discoveryPack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "reason",
+        "sourcePresent",
+        "strictApproved",
+        "failOn",
+        "validateStatus",
+        "compileStatus",
+        "scannedFiles",
+        "warningFiles",
+        "failedFiles",
+        "blockingOpenQuestions",
+        "orphanApprovedRequirements",
+        "orphanApprovedBusinessUseCases",
+        "compileSelectedCount",
+        "compileExcludedByStatusCount",
+        "compileSkippedByTargetCount"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["report-only", "strict"]
+        },
+        "reason": {
+          "type": ["string", "null"]
+        },
+        "sourcePresent": {
+          "type": "boolean"
+        },
+        "strictApproved": {
+          "type": "boolean"
+        },
+        "failOn": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "blocking-open-questions",
+              "orphan-approved-requirements",
+              "orphan-approved-business-use-cases"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "validateStatus": {
+          "type": "string",
+          "enum": ["pass", "warn", "fail", "skipped", "missing", "unknown"]
+        },
+        "compileStatus": {
+          "type": "string",
+          "enum": ["pass", "warn", "fail", "skipped", "missing", "unknown"]
+        },
+        "scannedFiles": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warningFiles": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failedFiles": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blockingOpenQuestions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "orphanApprovedRequirements": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "orphanApprovedBusinessUseCases": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "compileSelectedCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "compileExcludedByStatusCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "compileSkippedByTargetCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
     "artifacts": {
       "type": "object",
       "additionalProperties": false,
@@ -206,6 +299,36 @@
           ]
         },
         "contextPackPhase5ReportMarkdown": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "discoveryPackValidateReportJson": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "discoveryPackValidateReportMarkdown": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "discoveryPackCompileReportJson": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "discoveryPackCompileReportMarkdown": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "discoveryPackPlanSpec": {
           "oneOf": [
             { "type": "string", "minLength": 1 },
             { "type": "null" }

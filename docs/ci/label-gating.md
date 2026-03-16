@@ -14,7 +14,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 PR ラベルでゲートを段階的に強化するための方針です（既定は非ブロッキング）。
 - `risk:low`, `risk:high`
-- `enforce-artifacts`, `enforce-testing`, `enforce-coverage`, `enforce-context-pack`, `coverage:<pct>`, `trace:<id>`, `pr-summary:detailed`
+- `enforce-artifacts`, `enforce-testing`, `enforce-coverage`, `enforce-context-pack`, `enforce-discovery`, `coverage:<pct>`, `trace:<id>`, `pr-summary:detailed`
 - `run-ci-extended`, `run-integration`, `run-property`, `run-mbt`, `run-mutation`, `run-trace`
 - オプトイン系: `run-security`（Security/SBOM）、`run-hermetic`（Hermetic CI）、`run-qa`（QA bench）
 - 各ワークフローがラベルを読み取り、`continue-on-error` 等を切り替え
@@ -38,6 +38,7 @@ Labels
 - `enforce-artifacts`: make artifacts validation (ajv) blocking
 - `enforce-testing`: make testing scripts (property/replay/BDD lint) blocking
 - `enforce-context-pack`: make Context Pack dependency boundary check + E2E validator blocking (`context-pack-quality-gate.yml`)
+- `enforce-discovery`: make Discovery Pack strict validation blocking inside `verify-lite.yml`
 - `trace:<id>`: set TRACE_ID for focused runs in property/replay scripts
 - `pr-summary:detailed`: render a more detailed PR summary (vs. digest)
 - `run-ci-extended`: launch the heavy CI Extended workflow (integration, property, MBT, pact, mutation auto diff)
@@ -58,6 +59,7 @@ Workflows
 - validate-artifacts-ajv.yml: reads `enforce-artifacts`; strict の場合は trace/verify-lite artifacts を先に生成してから `pnpm run artifacts:validate` を実行
 - testing-ddd-scripts.yml: reads `enforce-testing` and makes property/replay/BDD lint blocking only in strict mode; reads `trace:<id>` to focus runs
 - context-pack-quality-gate.yml: reads `enforce-context-pack`; runs `context-pack:deps` + `context-pack:e2e-fixture` in report-only/blocking mode
+- verify-lite.yml: reads `enforce-discovery`; keeps Discovery Pack validate in report-only by default and enables strict fail-on + `plan-spec` compile dry-run only when the label is present
 - spec-generate-model.yml: publishes `KvOnce Trace Validation` (non-fork PR) and always emits `trace-conformance`; `policy-gate` treats these checks as blocking when `run-trace` is required on high-risk PRs
 - pr-ci-status-comment.yml: reads `pr-summary:detailed` to switch summary mode; also generates `artifacts/ci/harness-health.{json,md}` and appends Harness Health section to PR summary
 

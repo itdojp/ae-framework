@@ -18,6 +18,10 @@ const gwt = r('artifacts/formal/gwt.summary.json');
 const gwtItems = gwt?.items || [];
 const gwtCount = gwtItems.length;
 const gwtFirst = gwtCount ? (gwtItems[0].property || (gwtItems[0].gwt ? String(gwtItems[0].gwt).split('\n')[0] : '')) : '';
+const verifyLiteSummary = r('artifacts/verify-lite/verify-lite-run-summary.json');
+const discoveryPack = verifyLiteSummary?.discoveryPack && typeof verifyLiteSummary.discoveryPack === 'object'
+  ? verifyLiteSummary.discoveryPack
+  : null;
 const replay = c.replay || r('artifacts/domain/replay.summary.json') || {};
 const bdd = c.bdd || r('artifacts/bdd/scenarios.json') || {};
 const props = c.properties ? (Array.isArray(c.properties) ? c.properties : [c.properties]) : (r('artifacts/properties/summary.json') ? [r('artifacts/properties/summary.json')] : []);
@@ -117,6 +121,18 @@ const qualityScorecardBlockersLine = qualityScorecardSummary
       `品質 blocker: ${qualityScorecardBlockers.length ? qualityScorecardBlockers.map((entry) => `${entry.dimension}:${entry.code}`).join(', ') : 'なし'}`,
     )
   : '';
+const discoveryPackLine = discoveryPack
+  ? t(
+      `Discovery Pack: ${discoveryPack.mode ?? 'report-only'} ${discoveryPack.validateStatus ?? 'skipped'} (blockingOpenQuestions=${discoveryPack.blockingOpenQuestions ?? 'n/a'}, orphanRequirements=${discoveryPack.orphanApprovedRequirements ?? 'n/a'}, orphanBusinessUseCases=${discoveryPack.orphanApprovedBusinessUseCases ?? 'n/a'}, reason=${discoveryPack.reason ?? 'n/a'})`,
+      `Discovery Pack: ${discoveryPack.mode ?? 'report-only'} ${discoveryPack.validateStatus ?? 'skipped'}（blockingOpenQuestions=${discoveryPack.blockingOpenQuestions ?? 'n/a'}, orphanRequirements=${discoveryPack.orphanApprovedRequirements ?? 'n/a'}, orphanBusinessUseCases=${discoveryPack.orphanApprovedBusinessUseCases ?? 'n/a'}, reason=${discoveryPack.reason ?? 'n/a'}）`,
+    )
+  : '';
+const discoveryPackCompileLine = discoveryPack
+  ? t(
+      `Discovery compile: ${discoveryPack.compileStatus ?? 'skipped'} (selected=${discoveryPack.compileSelectedCount ?? 'n/a'}, excluded=${discoveryPack.compileExcludedByStatusCount ?? 'n/a'}, skippedByTarget=${discoveryPack.compileSkippedByTargetCount ?? 'n/a'})`,
+      `Discovery compile: ${discoveryPack.compileStatus ?? 'skipped'}（selected=${discoveryPack.compileSelectedCount ?? 'n/a'}, excluded=${discoveryPack.compileExcludedByStatusCount ?? 'n/a'}, skippedByTarget=${discoveryPack.compileSkippedByTargetCount ?? 'n/a'}）`,
+    )
+  : '';
 // Alloy temporal (from aggregate JSON if present)
 let alloyTemporalLine = '';
 try {
@@ -157,9 +173,9 @@ try {
 
 let md;
 if (mode === 'digest') {
-  md = `${qualityScorecardLine ? `${qualityScorecardLine}${qualityScorecardBlockersLine ? ` | ${qualityScorecardBlockersLine}` : ''} | ` : ''}${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${qualityScorecardLine ? `${qualityScorecardLine}${qualityScorecardBlockersLine ? ` | ${qualityScorecardBlockersLine}` : ''} | ` : ''}${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''}${discoveryPackLine ? ` | ${discoveryPackLine}` : ''}${discoveryPackCompileLine ? ` | ${discoveryPackCompileLine}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n${qualityScorecardLine ? `- ${qualityScorecardLine}\n${qualityScorecardBlockersLine ? `- ${qualityScorecardBlockersLine}\n` : ''}` : ''}- ${coverageLine}\n${assuranceDetailBlock}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n${qualityScorecardLine ? `- ${qualityScorecardLine}\n${qualityScorecardBlockersLine ? `- ${qualityScorecardBlockersLine}\n` : ''}` : ''}- ${coverageLine}\n${assuranceDetailBlock}${discoveryPackLine ? `- ${discoveryPackLine}\n` : ''}${discoveryPackCompileLine ? `- ${discoveryPackCompileLine}\n` : ''}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
 // Fallback: if formal is n/a, print presentCount from aggregate JSON
 try {
