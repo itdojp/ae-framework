@@ -17,7 +17,7 @@ domain_glossary:
     - term: input_variant
       ja: 入力バリアント
     - term: canonical_representation
-      ja: 正規表現
+      ja: 正準表現
 objects:
   - id: OBJ-INPUT-VARIANT
     kind: value-object

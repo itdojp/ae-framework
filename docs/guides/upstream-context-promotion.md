@@ -26,7 +26,7 @@ lastVerified: '2026-03-17'
 
 ### 前提
 - Node.js: `>=20.11 <23`
-- pnpm: `10.x`
+- pnpm: repository pinned version `10.0.0` (`packageManager`)
 - 実行場所: repository root
 - Discovery Pack は upstream input contract、Context Pack は design SSOT とする
 
