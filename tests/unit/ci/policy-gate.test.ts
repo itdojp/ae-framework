@@ -216,7 +216,37 @@ describe('policy-gate', () => {
     expect(result.errors).toHaveLength(0);
   });
 
-  it('fails high-risk assurance changes without enforce-assurance label', () => {
+  it('does not enforce assurance labels on low-risk assurance changes', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['scripts/ci/enforce-assurance-summary.mjs'],
+      statusRollup: [checkRun('verify-lite')],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.missingRequiredLabels).toContain('enforce-assurance');
+  });
+
+  it('does not enforce discovery labels on low-risk discovery changes', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/cli/discovery-cli.ts'],
+      statusRollup: [checkRun('verify-lite')],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.missingRequiredLabels).toContain('enforce-discovery');
+  });
+
+  it('fails high-risk verify-lite workflow changes without enforce-assurance and enforce-discovery', () => {
     const result = evaluatePolicyGate({
       policy,
       pullRequest: {
@@ -226,9 +256,9 @@ describe('policy-gate', () => {
       changedFiles: ['.github/workflows/verify-lite.yml'],
       reviews: [
         {
-          id: 212,
+          id: 214,
           state: 'APPROVED',
-          submitted_at: '2026-03-09T00:05:00Z',
+          submitted_at: '2026-03-09T00:12:00Z',
           user: { login: 'reviewer1', type: 'User' },
         },
       ],
@@ -237,9 +267,10 @@ describe('policy-gate', () => {
     });
     expect(result.ok).toBe(false);
     expect(result.errors.some((item) => item.includes('missing required labels'))).toBe(true);
+    expect(result.missingRequiredLabels).toEqual(['enforce-assurance', 'enforce-discovery']);
   });
 
-  it('passes high-risk assurance changes when enforce-assurance is present and verify-lite is green', () => {
+  it('fails high-risk verify-lite workflow changes when enforce-discovery is missing', () => {
     const result = evaluatePolicyGate({
       policy,
       pullRequest: {
@@ -249,9 +280,59 @@ describe('policy-gate', () => {
       changedFiles: ['.github/workflows/verify-lite.yml'],
       reviews: [
         {
-          id: 213,
+          id: 215,
           state: 'APPROVED',
-          submitted_at: '2026-03-09T00:10:00Z',
+          submitted_at: '2026-03-09T00:14:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [checkRun('verify-lite')],
+      planArtifact: planArtifactState(),
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('missing required labels: enforce-discovery');
+  });
+
+  it('fails high-risk verify-lite workflow changes when enforce-assurance is missing', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'enforce-discovery' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['.github/workflows/verify-lite.yml'],
+      reviews: [
+        {
+          id: 2151,
+          state: 'APPROVED',
+          submitted_at: '2026-03-09T00:14:30Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [checkRun('verify-lite')],
+      planArtifact: planArtifactState(),
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('missing required labels: enforce-assurance');
+  });
+
+  it('passes high-risk verify-lite workflow changes when enforce-assurance and enforce-discovery are present', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [
+          { name: 'risk:high' },
+          { name: 'enforce-assurance' },
+          { name: 'enforce-discovery' },
+        ],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['.github/workflows/verify-lite.yml'],
+      reviews: [
+        {
+          id: 216,
+          state: 'APPROVED',
+          submitted_at: '2026-03-09T00:16:00Z',
           user: { login: 'reviewer1', type: 'User' },
         },
       ],
