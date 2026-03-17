@@ -522,6 +522,16 @@ pnpm run verify:lite
   - `steps.discoveryPackValidation`
   - `steps.discoveryPackCompile`
   - top-level `discoveryPack`
+  - `artifacts.contextPackReportJson`
+  - `artifacts.contextPackReportMarkdown`
+  - `artifacts.contextPackFunctorReportJson`
+  - `artifacts.contextPackFunctorReportMarkdown`
+  - `artifacts.contextPackNaturalTransformationReportJson`
+  - `artifacts.contextPackNaturalTransformationReportMarkdown`
+  - `artifacts.contextPackProductCoproductReportJson`
+  - `artifacts.contextPackProductCoproductReportMarkdown`
+  - `artifacts.contextPackPhase5ReportJson`
+  - `artifacts.contextPackPhase5ReportMarkdown`
   - `artifacts.discoveryPackValidateReportJson`
   - `artifacts.discoveryPackValidateReportMarkdown`
   - `artifacts.discoveryPackCompileReportJson`
