@@ -1,0 +1,148 @@
+version: 1
+name: upstream-context-promotion-minimal
+upstream:
+  discovery_pack:
+    path: fixtures/discovery-pack/upstream-context-promotion-minimal.yaml
+    profile: rdra-lite
+    source_patterns:
+      - fixtures/discovery-pack/**/*.{yml,yaml,json}
+problem_statement:
+  goals:
+    - Normalize upstream input variants into a canonical representation.
+    - Preserve upstream trace for promoted context elements.
+  non_goals:
+    - Auto-promote non-approved discovery elements.
+domain_glossary:
+  terms:
+    - term: input_variant
+      ja: 入力バリアント
+    - term: canonical_representation
+      ja: 正規表現
+objects:
+  - id: OBJ-INPUT-VARIANT
+    kind: value-object
+    fields:
+      - variantId
+      - rawInput
+  - id: OBJ-CANONICAL-REPRESENTATION
+    kind: aggregate
+    fields:
+      - canonicalId
+      - normalizedInput
+      - upstreamTrace
+  - id: OBJ-DOWNSTREAM-OUTPUT
+    kind: entity
+    fields:
+      - outputId
+      - canonicalId
+morphisms:
+  - id: MOR-NORMALIZE
+    input:
+      variantId: string
+      rawInput: object
+    output:
+      canonicalId: string
+      normalized: boolean
+    pre:
+      - upstream discovery requirement DRQ-NORMALIZE-INPUT is approved
+      - upstream discovery decision DEC-APPROVED-ONLY-COMPILE is approved
+    post:
+      - canonical representation preserves upstream trace
+    failures:
+      - UnknownInputVariant
+    upstream_refs:
+      goal_ids:
+        - GOL-CANONICALIZE-INPUT
+        - GOL-PRESERVE-UPSTREAM-TRACE
+      requirement_ids:
+        - DRQ-UPSTREAM-TRACE
+        - DRQ-APPROVED-ONLY
+        - DRQ-NORMALIZE-INPUT
+      business_use_case_ids:
+        - BUC-PROMOTE-APPROVED
+      decision_ids:
+        - DEC-APPROVED-ONLY-COMPILE
+        - DEC-NORMALIZE-TO-CANONICAL
+  - id: MOR-EMIT
+    input:
+      canonicalId: string
+    output:
+      emitted: boolean
+      outputId: string
+    pre:
+      - canonical representation exists
+    post:
+      - downstream output references canonical representation
+    failures:
+      - MissingCanonicalRepresentation
+    upstream_refs:
+      goal_ids:
+        - GOL-PRESERVE-UPSTREAM-TRACE
+      requirement_ids:
+        - DRQ-UPSTREAM-TRACE
+      business_use_case_ids:
+        - BUC-CAPTURE-UPSTREAM
+      decision_ids:
+        - DEC-NORMALIZE-TO-CANONICAL
+diagrams:
+  - id: DGM-ASIS-TOBE-PROMOTION
+    statement: Approved upstream input is normalized and emitted without losing trace.
+    verification:
+      - natural-transformation
+      - boundary-map
+    upstream_refs:
+      business_use_case_ids:
+        - BUC-CAPTURE-UPSTREAM
+        - BUC-PROMOTE-APPROVED
+constraints:
+  promotion_requires_approved_only: true
+  canonicalization_mode: deterministic
+assurance:
+  profile: upstream-context-promotion-v1
+  claim_refs:
+    - upstream-trace-preserved
+    - approved-upstream-only-promoted
+    - behavior-preserving-transformation-modeled
+    - input-normalization-variants-covered
+    - boundary-separation-explicit
+acceptance_tests:
+  - id: AT-NORMALIZE-VARIANTS
+    scenario: Multiple upstream input variants normalize into the same canonical representation.
+    expected:
+      - canonical representation is emitted
+      - normalization trace is preserved
+    upstream_refs:
+      requirement_ids:
+        - DRQ-NORMALIZE-INPUT
+      business_use_case_ids:
+        - BUC-PROMOTE-APPROVED
+  - id: AT-UPSTREAM-TRACE-PRESERVED
+    scenario: Promotion preserves upstream trace on emitted output.
+    expected:
+      - emitted output keeps upstream trace reference
+    upstream_refs:
+      goal_ids:
+        - GOL-PRESERVE-UPSTREAM-TRACE
+      requirement_ids:
+        - DRQ-UPSTREAM-TRACE
+      decision_ids:
+        - DEC-NORMALIZE-TO-CANONICAL
+  - id: AT-ONLY-APPROVED-PROMOTED
+    scenario: Only approved discovery elements are used for promotion.
+    expected:
+      - reviewed discovery elements are not promoted by default
+    upstream_refs:
+      requirement_ids:
+        - DRQ-APPROVED-ONLY
+      decision_ids:
+        - DEC-APPROVED-ONLY-COMPILE
+coding_conventions:
+  language: TypeScript
+  directory:
+    - src/
+    - tests/
+  dependencies:
+    runtime:
+      - zod
+forbidden_changes:
+  - Promote reviewed discovery elements without explicit override.

@@ -7,6 +7,9 @@ import { Command } from 'commander';
 
 import { safeExit } from '../utils/safe-exit.js';
 
+// Traceability anchors for #2732:
+// REQ-UCP-001 REQ-UCP-003 REQ-UCP-005 REQ-UCP-006 REQ-UCP-007
+// DGM-ASIS-TOBE-PROMOTION MOR-NORMALIZE AT-ONLY-APPROVED-PROMOTED
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DISCOVERY_VALIDATE_SCRIPT_PATH = ['scripts', 'discovery-pack', 'validate.mjs'];

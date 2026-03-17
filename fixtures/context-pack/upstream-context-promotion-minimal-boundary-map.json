@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "context-pack-boundary-map/v1",
+  "contextPackSources": [
+    "fixtures/context-pack/upstream-context-promotion-minimal.yaml"
+  ],
+  "slices": [
+    {
+      "id": "upstream-input-boundary",
+      "description": "Owns upstream input submission.",
+      "produces": [
+        {
+          "kind": "object",
+          "refId": "OBJ-INPUT-VARIANT"
+        }
+      ]
+    },
+    {
+      "id": "promotion-boundary",
+      "description": "Owns normalization and authoritative promotion.",
+      "consumes": [
+        {
+          "kind": "object",
+          "refId": "OBJ-INPUT-VARIANT",
+          "upstream": {
+            "type": "slice",
+            "sliceId": "upstream-input-boundary"
+          }
+        },
+        {
+          "kind": "forbidden-change",
+          "refId": "Promote reviewed discovery elements without explicit override.",
+          "upstream": {
+            "type": "context-pack"
+          }
+        }
+      ],
+      "produces": [
+        {
+          "kind": "object",
+          "refId": "OBJ-CANONICAL-REPRESENTATION"
+        },
+        {
+          "kind": "morphism",
+          "refId": "MOR-NORMALIZE"
+        },
+        {
+          "kind": "diagram",
+          "refId": "DGM-ASIS-TOBE-PROMOTION"
+        },
+        {
+          "kind": "acceptance-test",
+          "refId": "AT-ONLY-APPROVED-PROMOTED"
+        }
+      ]
+    },
+    {
+      "id": "downstream-output-boundary",
+      "description": "Owns downstream emission from canonical representation.",
+      "consumes": [
+        {
+          "kind": "object",
+          "refId": "OBJ-CANONICAL-REPRESENTATION",
+          "upstream": {
+            "type": "slice",
+            "sliceId": "promotion-boundary"
+          }
+        }
+      ],
+      "produces": [
+        {
+          "kind": "object",
+          "refId": "OBJ-DOWNSTREAM-OUTPUT"
+        },
+        {
+          "kind": "morphism",
+          "refId": "MOR-EMIT"
+        },
+        {
+          "kind": "acceptance-test",
+          "refId": "AT-NORMALIZE-VARIANTS"
+        },
+        {
+          "kind": "acceptance-test",
+          "refId": "AT-UPSTREAM-TRACE-PRESERVED"
+        }
+      ]
+    }
+  ]
+}

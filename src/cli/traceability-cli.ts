@@ -5,6 +5,9 @@ import path from 'node:path';
 import yaml from 'yaml';
 import { safeExit } from '../utils/safe-exit.js';
 
+// Traceability anchors for #2732:
+// REQ-UCP-002 REQ-UCP-004
+// DGM-ASIS-TOBE-PROMOTION MOR-EMIT AT-UPSTREAM-TRACE-PRESERVED
 const MAP_SCHEMA_VERSION = 'issue-traceability-map/v1';
 const MATRIX_SCHEMA_VERSION = 'issue-traceability-matrix/v1';
 const DEFAULT_PATTERN = '(?:LG|REQ)-[A-Z0-9_-]+';

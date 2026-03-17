@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "context-pack-natural-transformation/v1",
+  "contextPackSources": [
+    "fixtures/context-pack/upstream-context-promotion-minimal.yaml"
+  ],
+  "transformations": [
+    {
+      "id": "UpstreamPromotionRefactor",
+      "changeType": "refactor",
+      "before": {
+        "morphismIds": [
+          "MOR-NORMALIZE"
+        ],
+        "diagramIds": [
+          "DGM-ASIS-TOBE-PROMOTION"
+        ],
+        "acceptanceTestIds": [
+          "AT-NORMALIZE-VARIANTS"
+        ]
+      },
+      "after": {
+        "morphismIds": [
+          "MOR-NORMALIZE",
+          "MOR-EMIT"
+        ],
+        "diagramIds": [
+          "DGM-ASIS-TOBE-PROMOTION"
+        ],
+        "acceptanceTestIds": [
+          "AT-NORMALIZE-VARIANTS",
+          "AT-UPSTREAM-TRACE-PRESERVED"
+        ]
+      },
+      "commutativityChecks": {
+        "regression": [
+          "tests/fixtures/upstream-context-promotion-minimal.discovery.test.ts"
+        ],
+        "compatibility": [
+          "tests/fixtures/upstream-context-promotion-minimal.context-pack.test.ts"
+        ],
+        "differential": []
+      },
+      "entrypoints": [
+        {
+          "file": "scripts/context-pack/validate.mjs",
+          "symbol": "validateContextPackUpstream"
+        }
+      ],
+      "forbiddenChanges": []
+    }
+  ]
+}

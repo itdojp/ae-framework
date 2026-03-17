@@ -156,6 +156,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - CSP verification (cspx runner): `quality/formal-csp.md`（使い方/成果物/実行結果例）
 - Usefulness evaluation: `quality/usefulness-evaluation.md`（4軸スコア算出/終了コード契約）
 - Issue requirements traceability: `quality/issue-requirements-traceability.md`（extract-ids/matrix/strict validate）
+- Upstream context promotion: `guides/upstream-context-promotion.md`（Discovery Pack → Context Pack 昇格規律の generic guide）
 - PoC success criteria (#2409 first slice): `quality/poc-success-criteria-2409.md`（performance/reproducibility/cost/ops/exit）
 - Local stack foundation PoC (#2409): `infra/local-stack-foundation-poc.md`（Go/Rust + NATS + PostgreSQL + S3 の比較手順）
 - PoC comparison template (TS baseline vs Go/Rust): `templates/quality/poc-comparison-metrics-template.md`

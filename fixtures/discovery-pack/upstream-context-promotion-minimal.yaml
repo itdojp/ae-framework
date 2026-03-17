@@ -1,0 +1,161 @@
+version: 1
+profile: rdra-lite
+sources:
+  - id: SRC-UPSTREAM-DOC
+    kind: report
+    title: Upstream source inventory
+    path: fixtures/discovery-pack/sources/upstream-context-promotion-doc.md
+  - id: SRC-UPSTREAM-INTERVIEW
+    kind: hearing-note
+    title: Upstream normalization interview
+    path: fixtures/discovery-pack/sources/upstream-context-promotion-interview.md
+actors:
+  - id: ACT-PRIMARY-USER
+    status: approved
+    title: Primary User
+    summary: Supplies upstream input variants for review.
+    source_refs:
+      - SRC-UPSTREAM-DOC
+    traces_to: []
+  - id: ACT-REVIEWER
+    status: approved
+    title: Reviewer
+    summary: Reviews and promotes approved upstream input.
+    source_refs:
+      - SRC-UPSTREAM-INTERVIEW
+    traces_to: []
+external_systems: []
+goals:
+  - id: GOL-CANONICALIZE-INPUT
+    status: approved
+    title: Canonicalize input variants
+    statement: Upstream input variants should be normalized into a canonical representation.
+    source_refs:
+      - SRC-UPSTREAM-DOC
+    traces_to: []
+  - id: GOL-PRESERVE-UPSTREAM-TRACE
+    status: approved
+    title: Preserve upstream trace
+    statement: Promotion should keep authoritative trace back to upstream discovery elements.
+    source_refs:
+      - SRC-UPSTREAM-INTERVIEW
+    traces_to: []
+requirements:
+  - id: DRQ-UPSTREAM-TRACE
+    status: approved
+    title: Preserve upstream trace references
+    statement: Promoted Context Pack elements must retain upstream trace references.
+    source_refs:
+      - SRC-UPSTREAM-DOC
+    traces_to:
+      - GOL-PRESERVE-UPSTREAM-TRACE
+  - id: DRQ-APPROVED-ONLY
+    status: approved
+    title: Promote approved discovery only
+    statement: Only approved discovery elements are eligible for compile and promotion.
+    source_refs:
+      - SRC-UPSTREAM-DOC
+    traces_to:
+      - GOL-PRESERVE-UPSTREAM-TRACE
+  - id: DRQ-NORMALIZE-INPUT
+    status: approved
+    title: Normalize input variants
+    statement: Multiple upstream input variants must be normalized into a canonical representation.
+    source_refs:
+      - SRC-UPSTREAM-INTERVIEW
+    traces_to:
+      - GOL-CANONICALIZE-INPUT
+business_use_cases:
+  - id: BUC-CAPTURE-UPSTREAM
+    status: approved
+    title: Capture upstream input
+    statement: Collect upstream input variants with traceable source references.
+    actor_ids:
+      - ACT-PRIMARY-USER
+    primary_goal_ids:
+      - GOL-PRESERVE-UPSTREAM-TRACE
+    source_refs:
+      - SRC-UPSTREAM-DOC
+    traces_to:
+      - DRQ-UPSTREAM-TRACE
+  - id: BUC-PROMOTE-APPROVED
+    status: approved
+    title: Promote approved upstream input
+    statement: Promote only approved discovery elements into the canonical design boundary.
+    actor_ids:
+      - ACT-REVIEWER
+    primary_goal_ids:
+      - GOL-CANONICALIZE-INPUT
+      - GOL-PRESERVE-UPSTREAM-TRACE
+    source_refs:
+      - SRC-UPSTREAM-INTERVIEW
+    traces_to:
+      - DRQ-APPROVED-ONLY
+      - DRQ-NORMALIZE-INPUT
+flows:
+  - id: FLW-ASIS
+    status: approved
+    title: Capture upstream as-is
+    mermaid_path: fixtures/discovery-pack/flows/upstream-context-promotion-asis.mmd
+    kind: as-is
+    source_refs:
+      - SRC-UPSTREAM-DOC
+    traces_to:
+      - BUC-CAPTURE-UPSTREAM
+  - id: FLW-TOBE
+    status: approved
+    title: Promote approved to canonical context
+    mermaid_path: fixtures/discovery-pack/flows/upstream-context-promotion-tobe.mmd
+    kind: to-be
+    source_refs:
+      - SRC-UPSTREAM-INTERVIEW
+    traces_to:
+      - BUC-PROMOTE-APPROVED
+decisions:
+  - id: DEC-APPROVED-ONLY-COMPILE
+    status: approved
+    title: Compile approved discovery only
+    statement: Default compile and promotion consider approved discovery elements only.
+    outcome: accepted
+    source_refs:
+      - SRC-UPSTREAM-DOC
+    traces_to:
+      - DRQ-APPROVED-ONLY
+  - id: DEC-NORMALIZE-TO-CANONICAL
+    status: approved
+    title: Normalize to canonical representation
+    statement: Promotion normalizes input variants before downstream emission.
+    outcome: accepted
+    source_refs:
+      - SRC-UPSTREAM-INTERVIEW
+    traces_to:
+      - DRQ-NORMALIZE-INPUT
+  - id: DEC-EXPLICIT-OVERRIDE-REQUIRED
+    status: reviewed
+    title: Require explicit override for non-approved promotion
+    statement: Promotion from reviewed or deferred discovery remains pending explicit override.
+    outcome: proposed
+    source_refs:
+      - SRC-UPSTREAM-DOC
+    traces_to:
+      - DRQ-APPROVED-ONLY
+assumptions:
+  - id: ASM-UPSTREAM-SOURCES-AVAILABLE
+    status: approved
+    title: Upstream sources remain available
+    statement: The upstream document and interview sources are available during review.
+    source_refs:
+      - SRC-UPSTREAM-DOC
+      - SRC-UPSTREAM-INTERVIEW
+    traces_to:
+      - DRQ-UPSTREAM-TRACE
+open_questions:
+  - id: OQ-MASKING-POLICY
+    status: reviewed
+    title: Masking policy
+    question: Which masking policy should apply before upstream content is promoted?
+    blocking: false
+    source_refs:
+      - SRC-UPSTREAM-INTERVIEW
+    traces_to:
+      - DRQ-NORMALIZE-INPUT

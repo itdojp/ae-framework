@@ -37,6 +37,22 @@ describe('assurance profile contract', () => {
     expect(validate.errors?.some((entry) => entry.instancePath === '/claims/0/requiredEvidenceKinds')).toBe(true);
   });
 
+  it('accepts boundary-map as a required evidence kind', () => {
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(assuranceProfileSchema);
+    const fixture = structuredClone(assuranceProfileFixture) as {
+      claims: Array<Record<string, unknown>>;
+    };
+
+    fixture.claims[0] = {
+      ...fixture.claims[0],
+      requiredEvidenceKinds: ['schema', 'boundary-map'],
+    };
+
+    expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
   it('rejects claims with non-positive minIndependentSources', () => {
     const ajv = new Ajv2020({ allErrors: true, strict: false });
     addFormats(ajv);
