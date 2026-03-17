@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/spec/context-pack.md
 - schema/context-pack-v1.schema.json
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-18'
 ---
 # Context Pack Onboarding Checklist
 
@@ -40,18 +40,24 @@ pnpm run context-pack:e2e-fixture -- --report-dir artifacts/context-pack-e2e
 
 ### 1. 入力ファイルを準備
 - Context Pack 本体: `spec/context-pack/**/*.{yml,yaml,json}`
+- Discovery Pack（`upstream_refs` を使う場合）: `spec/discovery-pack/**/*.{yml,yaml,json}`
 - Functor map: `spec/context-pack/functor-map.json`
 - Natural Transformation map: `spec/context-pack/natural-transformations.json`
 - Product/Coproduct map: `spec/context-pack/product-coproduct-map.json`
+- Boundary Map: `spec/context-pack/boundary-map.json`
 - Phase5 templates: `spec/context-pack/phase5-templates.json`
 
 ### 2. 個別検証を実行
 ```bash
 pnpm run context-pack:validate
+# upstream_refs を使う場合
+pnpm run context-pack:validate -- --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}"
 pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
+pnpm run context-pack:verify-boundary-map
 pnpm run context-pack:verify-phase5
+pnpm run context-pack:deps
 node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
 ```
 
@@ -66,7 +72,9 @@ pnpm run verify:lite
   - `steps.contextPackFunctorValidation`
   - `steps.contextPackNaturalTransformationValidation`
   - `steps.contextPackProductCoproductValidation`
+  - `steps.contextPackBoundaryMapValidation`
   - `steps.contextPackPhase5Validation`
+  - `steps.discoveryPack`
 
 ### 4. 失敗時の修正ループ
 1. 対応する report JSON/Markdown を確認
@@ -77,8 +85,9 @@ pnpm run verify:lite
 障害対応の詳細は `docs/spec/context-pack.md` を参照してください。
 
 ### 5. PR前確認
-- [ ] Context Pack 系 6 コマンドが成功
+- [ ] Context Pack 系 8 コマンドが成功
 - [ ] `context-pack-suggestions.{json,md}` で `recommendedContextChanges` を確認済み
+- [ ] `upstream_refs` を使う場合、`--discovery-pack` 付き validate で Discovery Pack 整合を確認済み
 - [ ] `verify:lite` で Context Pack 関連 step が想定通り
 - [ ] assurance を導入する場合、`assurance.profile` / `claim_refs` を設定し `docs/guides/assurance-onboarding-checklist.md` を実施済み
 - [ ] report に不要な差分ノイズを持ち込んでいない
@@ -107,10 +116,13 @@ pnpm run context-pack:e2e-fixture -- --report-dir artifacts/context-pack-e2e
 ### Validation sequence
 ```bash
 pnpm run context-pack:validate
+pnpm run context-pack:validate -- --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}"
 pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
 pnpm run context-pack:verify-product-coproduct
+pnpm run context-pack:verify-boundary-map
 pnpm run context-pack:verify-phase5
+pnpm run context-pack:deps
 node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
 pnpm run verify:lite
 ```
