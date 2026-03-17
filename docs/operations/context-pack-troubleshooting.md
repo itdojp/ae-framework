@@ -36,7 +36,6 @@ Context Pack 検証（`context-pack:*`, `verify:lite`）の失敗時に、診断
   - `steps.contextPackFunctorValidation`
   - `steps.contextPackNaturalTransformationValidation`
   - `steps.contextPackProductCoproductValidation`
-  - `steps.contextPackBoundaryMapValidation`
   - `steps.contextPackPhase5Validation`
   - `steps.discoveryPackValidation`
   - `steps.discoveryPackCompile`
@@ -152,8 +151,12 @@ pnpm run verify:lite
 - report:
   - `artifacts/context-pack/context-pack-validate-report.json`
   - `artifacts/context-pack/context-pack-validate-report.md`
+- verify-lite で併せて確認するもの:
+  - `artifacts/verify-lite/verify-lite-run-summary.json` の `steps.discoveryPackValidation` / `steps.discoveryPackCompile`
   - `artifacts/discovery-pack/discovery-pack-validate-report.json`
   - `artifacts/discovery-pack/discovery-pack-validate-report.md`
+  - `artifacts/discovery-pack/discovery-pack-compile-report.json`
+  - `artifacts/discovery-pack/discovery-pack-compile-report.md`
 - 重点確認:
   - `upstream_refs` が Discovery Pack の `goal_ids` / `requirement_ids` / `business_use_case_ids` / `decision_ids` に解決できるか
   - approved Discovery 要素の未マップが warning 集計されていないか
@@ -161,6 +164,8 @@ pnpm run verify:lite
 - 再実行:
 ```bash
 pnpm run context-pack:validate -- --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}"
+pnpm run discovery-pack:validate
+pnpm run discovery-pack:compile -- --target plan-spec --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
 pnpm run verify:lite
 ```
 
