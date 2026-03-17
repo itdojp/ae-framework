@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-18'
 owner: context-pack-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -417,6 +417,9 @@ node scripts/ci/enforce-assurance-summary.mjs \
   - `steps.contextPackNaturalTransformationValidation`
   - `steps.contextPackProductCoproductValidation`
   - `steps.contextPackPhase5Validation`
+  - `steps.discoveryPackValidation`
+  - `steps.discoveryPackCompile`
+  - top-level `discoveryPack`
   - `artifacts.contextPackReportJson`
   - `artifacts.contextPackReportMarkdown`
   - `artifacts.contextPackFunctorReportJson`
@@ -427,6 +430,11 @@ node scripts/ci/enforce-assurance-summary.mjs \
   - `artifacts.contextPackProductCoproductReportMarkdown`
   - `artifacts.contextPackPhase5ReportJson`
   - `artifacts.contextPackPhase5ReportMarkdown`
+  - `artifacts.discoveryPackValidateReportJson`
+  - `artifacts.discoveryPackValidateReportMarkdown`
+  - `artifacts.discoveryPackCompileReportJson`
+  - `artifacts.discoveryPackCompileReportMarkdown`
+  - `artifacts.discoveryPackPlanSpec`
 
 ### よくある失敗
 - `required` エラー: 必須キー不足（例: `domain_glossary.terms[].ja`）
@@ -505,4 +513,17 @@ pnpm run verify:lite
 - `artifacts/context-pack/context-pack-boundary-map-report.md`
 - `artifacts/context-pack/context-pack-phase5-report.json`
 - `artifacts/context-pack/context-pack-phase5-report.md`
-- `artifacts/verify-lite/verify-lite-run-summary.json` (`steps.contextPackValidation`, `steps.contextPackFunctorValidation`, `steps.contextPackNaturalTransformationValidation`, `steps.contextPackProductCoproductValidation`, `steps.contextPackPhase5Validation`)
+- `artifacts/verify-lite/verify-lite-run-summary.json`
+  - `steps.contextPackValidation`
+  - `steps.contextPackFunctorValidation`
+  - `steps.contextPackNaturalTransformationValidation`
+  - `steps.contextPackProductCoproductValidation`
+  - `steps.contextPackPhase5Validation`
+  - `steps.discoveryPackValidation`
+  - `steps.discoveryPackCompile`
+  - top-level `discoveryPack`
+  - `artifacts.discoveryPackValidateReportJson`
+  - `artifacts.discoveryPackValidateReportMarkdown`
+  - `artifacts.discoveryPackCompileReportJson`
+  - `artifacts.discoveryPackCompileReportMarkdown`
+  - `artifacts.discoveryPackPlanSpec`
