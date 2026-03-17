@@ -72,9 +72,9 @@ pnpm run verify:lite
   - `steps.contextPackFunctorValidation`
   - `steps.contextPackNaturalTransformationValidation`
   - `steps.contextPackProductCoproductValidation`
-  - `steps.contextPackBoundaryMapValidation`
   - `steps.contextPackPhase5Validation`
-  - `steps.discoveryPack`
+  - `steps.discoveryPackValidation`
+  - `steps.discoveryPackCompile`
 
 ### 4. 失敗時の修正ループ
 1. 対応する report JSON/Markdown を確認
