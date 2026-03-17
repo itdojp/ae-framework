@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import yaml from 'yaml';
 import { buildArtifactMetadata } from '../ci/lib/artifact-metadata.mjs';
 
 const DEFAULT_OUTPUT_JSON = 'artifacts/assurance/assurance-summary.json';
@@ -134,6 +135,16 @@ const ensureFile = (targetPath, label) => {
 };
 
 const readJson = (targetPath) => JSON.parse(fs.readFileSync(targetPath, 'utf8'));
+
+const readStructured = (targetPath, label) => {
+  const raw = fs.readFileSync(targetPath, 'utf8');
+  const lowerPath = targetPath.toLowerCase();
+  if (lowerPath.endsWith('.yaml') || lowerPath.endsWith('.yml')) {
+    const parsed = yaml.parse(raw);
+    return ensureObject(parsed, label);
+  }
+  return ensureObject(JSON.parse(raw), label);
+};
 
 const ensureObject = (value, label) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -378,7 +389,7 @@ const collectContextPackReferences = (contextPackPaths, profileId, claimStateMap
 
   for (const contextPackPath of contextPackPaths) {
     const resolvedPath = ensureFile(contextPackPath, 'Context Pack');
-    const contextPack = readJson(resolvedPath);
+    const contextPack = readStructured(resolvedPath, `Context Pack (${resolvedPath})`);
     const assurance = ensureObject(contextPack.assurance ?? {}, `Context Pack assurance (${resolvedPath})`);
     if (!assurance.profile || !Array.isArray(assurance.claim_refs)) {
       continue;

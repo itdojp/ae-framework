@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "context-pack-product-coproduct/v1",
+  "contextPackSources": [
+    "fixtures/context-pack/upstream-context-promotion-minimal.yaml"
+  ],
+  "products": [
+    {
+      "morphismId": "MOR-NORMALIZE",
+      "requiredInputKeys": [
+        "variantId",
+        "rawInput"
+      ],
+      "disallowGenericDtoKeys": true
+    },
+    {
+      "morphismId": "MOR-EMIT",
+      "requiredInputKeys": [
+        "canonicalId"
+      ],
+      "disallowGenericDtoKeys": true
+    }
+  ],
+  "coproducts": [
+    {
+      "morphismId": "MOR-NORMALIZE",
+      "variants": [
+        {
+          "name": "UnknownInputVariant",
+          "evidencePaths": [
+            "tests/fixtures/upstream-context-promotion-minimal.context-pack.test.ts"
+          ]
+        }
+      ]
+    },
+    {
+      "morphismId": "MOR-EMIT",
+      "variants": [
+        {
+          "name": "MissingCanonicalRepresentation",
+          "evidencePaths": [
+            "tests/fixtures/upstream-context-promotion-minimal.assurance.test.ts"
+          ]
+        }
+      ]
+    }
+  ]
+}

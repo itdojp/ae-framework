@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "assurance-profile/v1",
+  "profileId": "upstream-context-promotion-v1",
+  "scope": {
+    "contextPackSources": [
+      "fixtures/context-pack/upstream-context-promotion-minimal.yaml"
+    ],
+    "componentGlobs": [
+      "src/**/*",
+      "tests/**/*"
+    ]
+  },
+  "claims": [
+    {
+      "id": "upstream-trace-preserved",
+      "statement": "Context Pack promotion preserves upstream discovery trace.",
+      "kind": "compliance",
+      "criticality": "high",
+      "targetLevel": "A1",
+      "minIndependentSources": 1,
+      "requiredLanes": [
+        "spec"
+      ],
+      "requiredEvidenceKinds": [
+        "schema"
+      ]
+    },
+    {
+      "id": "approved-upstream-only-promoted",
+      "statement": "Only approved Discovery Pack elements are promoted into authoritative Context Pack references.",
+      "kind": "compliance",
+      "criticality": "high",
+      "targetLevel": "A1",
+      "minIndependentSources": 1,
+      "requiredLanes": [
+        "spec"
+      ],
+      "requiredEvidenceKinds": [
+        "schema"
+      ]
+    },
+    {
+      "id": "behavior-preserving-transformation-modeled",
+      "statement": "As-Is and To-Be promotion behavior is modeled by a natural transformation.",
+      "kind": "data-integrity",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "minIndependentSources": 1,
+      "requiredLanes": [
+        "spec"
+      ],
+      "requiredEvidenceKinds": [
+        "schema",
+        "natural-transformation"
+      ]
+    },
+    {
+      "id": "input-normalization-variants-covered",
+      "statement": "Input normalization variants are covered by product/coproduct evidence.",
+      "kind": "data-integrity",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "minIndependentSources": 1,
+      "requiredLanes": [
+        "spec"
+      ],
+      "requiredEvidenceKinds": [
+        "schema",
+        "product-coproduct"
+      ]
+    },
+    {
+      "id": "boundary-separation-explicit",
+      "statement": "Promotion authority and upstream input boundaries are explicit.",
+      "kind": "security",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "minIndependentSources": 1,
+      "requiredLanes": [
+        "spec"
+      ],
+      "requiredEvidenceKinds": [
+        "schema",
+        "boundary-map"
+      ]
+    }
+  ]
+}

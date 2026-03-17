@@ -120,6 +120,15 @@ label_requirements:
       - "scripts/ci/enforce-assurance-summary.mjs"
     require_labels:
       - "enforce-assurance"
+  - id: "discovery-contract"
+    when_any_changed:
+      - "spec/discovery-pack/**"
+      - "schema/discovery-pack-v1.schema.json"
+      - "scripts/discovery-pack/**"
+      - "src/cli/discovery-cli.ts"
+      - ".github/workflows/verify-lite.yml"
+    require_labels:
+      - "enforce-discovery"
 
 gate_checks:
   run-security:

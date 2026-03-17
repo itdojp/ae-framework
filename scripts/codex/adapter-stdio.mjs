@@ -5,6 +5,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
+import { pathToFileURL } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 
 const EXIT_CODES = Object.freeze({
@@ -147,7 +149,27 @@ async function loadAdapter() {
   ];
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) {
-      return await import(candidate);
+      const moduleUrl = pathToFileURL(candidate).href;
+      try {
+        return await import(moduleUrl);
+      } catch (error) {
+        // Test fixtures may place an ESM `.js` file outside a `type: module`
+        // package boundary. Mirror it to a sibling `.mjs` so Node loads it
+        // with the intended semantics while preserving relative imports.
+        if (!(error instanceof SyntaxError) || !String(error.message).includes("Unexpected token 'export'")) {
+          throw error;
+        }
+
+        const source = fs.readFileSync(candidate, 'utf8');
+        const mirrorPath = path.join(
+          path.dirname(candidate),
+          `.codex-task-adapter.${crypto.createHash('sha1').update(source).digest('hex')}.mjs`,
+        );
+        if (!fs.existsSync(mirrorPath)) {
+          fs.writeFileSync(mirrorPath, source, 'utf8');
+        }
+        return await import(pathToFileURL(mirrorPath).href);
+      }
     }
   }
   throw new Error('Adapter not found. Build first: pnpm run build');

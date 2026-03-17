@@ -88,7 +88,10 @@ const checks = [
   },
   {
     schema: 'schema/assurance-profile.schema.json',
-    fixtures: ['fixtures/assurance/sample.assurance-profile.json'],
+    fixtures: [
+      'fixtures/assurance/sample.assurance-profile.json',
+      'spec/assurance-profile/upstream-context-promotion-v1.json',
+    ],
     label: 'Assurance profile schema validation'
   },
   {

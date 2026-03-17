@@ -152,6 +152,7 @@
               "counterexample-closed",
               "product-coproduct",
               "natural-transformation",
+              "boundary-map",
               "model-check",
               "proof",
               "runtime-control",

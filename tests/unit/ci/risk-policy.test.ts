@@ -48,6 +48,11 @@ describe('risk-policy', () => {
     expect(requiredLabels).toContain('enforce-assurance');
   });
 
+  it('collects discovery enforcement label for discovery contract changes', () => {
+    const { requiredLabels } = collectRequiredLabels(policy, ['scripts/discovery-pack/validate.mjs']);
+    expect(requiredLabels).toContain('enforce-discovery');
+  });
+
   it('returns check patterns for label-gated checks', () => {
     const patterns = getGateCheckPatternsForLabel(policy, 'enforce-context-pack');
     expect(patterns).toContain('context-pack-e2e');
@@ -61,6 +66,11 @@ describe('risk-policy', () => {
 
   it('returns verify-lite check pattern for enforce-assurance', () => {
     const patterns = getGateCheckPatternsForLabel(policy, 'enforce-assurance');
+    expect(patterns).toContain('verify-lite');
+  });
+
+  it('returns verify-lite check pattern for enforce-discovery', () => {
+    const patterns = getGateCheckPatternsForLabel(policy, 'enforce-discovery');
     expect(patterns).toContain('verify-lite');
   });
 
