@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-18'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -198,6 +198,32 @@ ae domain-model --language --sources "glossary.md"
    --target plan-spec \
    --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
    --include-status approved,reviewed
+```
+
+### Context Pack
+```bash
+# Validate Context Pack inputs
+ pnpm run context-pack:validate
+
+# Extend validation to Discovery Pack upstream references
+ pnpm run context-pack:validate -- --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# Verify Functor / Natural Transformation / Product-Coproduct / Boundary Map
+ pnpm run context-pack:verify-functor
+ pnpm run context-pack:verify-natural-transformation
+ pnpm run context-pack:verify-product-coproduct
+ pnpm run context-pack:verify-boundary-map
+
+# Verify Phase5+ templates and dependency boundaries
+ pnpm run context-pack:verify-phase5
+ pnpm run context-pack:deps
+
+# Generate repair suggestions from reports
+ node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
+
+# Run the minimal end-to-end fixture for local toolchain smoke
+ pnpm run context-pack:e2e-fixture
+ pnpm run context-pack:e2e-fixture -- --report-dir artifacts/context-pack-e2e --keep-reports
 ```
 
 ### Spec (AE-Spec)
@@ -581,6 +607,65 @@ ae ui-scaffold --components
 ---
 
 ## Phase 2.1–2.3（実装済みコマンド）
+
+### Discovery Pack
+```bash
+# Discovery Pack を検証
+ae discovery validate --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# warning 条件を failure に昇格
+ae discovery validate --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
+  --fail-on blocking-open-questions \
+  --fail-on orphan-approved-requirements
+
+# approved 要素が approved target のみへ依存することを要求
+ae discovery validate --sources "spec/discovery-pack/**/*.{yml,yaml,json}" --strict-approved
+
+# package script
+pnpm run discovery-pack:validate
+
+# approved discovery 要素を plan-spec markdown に compile
+ae discovery compile \
+  --target plan-spec \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# 非 authoritative な context-pack scaffold を compile
+ae discovery compile \
+  --target context-pack-scaffold \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# reviewed を明示的に含めて compile
+pnpm run discovery-pack:compile -- \
+  --target plan-spec \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
+  --include-status approved,reviewed
+```
+
+### Context Pack
+```bash
+# Context Pack を検証
+pnpm run context-pack:validate
+
+# upstream_refs を Discovery Pack まで延長して検証
+pnpm run context-pack:validate -- --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# Functor / Natural Transformation / Product-Coproduct / Boundary Map を検証
+pnpm run context-pack:verify-functor
+pnpm run context-pack:verify-natural-transformation
+pnpm run context-pack:verify-product-coproduct
+pnpm run context-pack:verify-boundary-map
+
+# Phase5+ テンプレートと依存境界を検証
+pnpm run context-pack:verify-phase5
+pnpm run context-pack:deps
+
+# report から修正提案を生成
+node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
+
+# 最小 E2E fixture でローカル疎通を確認
+pnpm run context-pack:e2e-fixture
+pnpm run context-pack:e2e-fixture -- --report-dir artifacts/context-pack-e2e --keep-reports
+```
 
 ### CEGIS Auto-Fix
 ```bash
