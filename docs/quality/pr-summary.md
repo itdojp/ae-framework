@@ -180,6 +180,7 @@ Quality: 82% (>=80) ✅ [+1%] | Formal: pass | Adapters: lighthouse(warn), playw
   npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json \
     -d artifacts/*/summary.json --strict=false
   ```
+- `artifacts/ci/policy-gate-summary.json`、`artifacts/agents/hook-feedback.md`、`artifacts/ci/harness-health.md` は renderer の direct input ではなく、workflow append stage または下流 consumer 用の artifact です。
 
 ### PR コメント構成（推奨）
 - 1行ダイジェスト（Coverage/Formal/Adapters/GWT/Trace）
