@@ -545,6 +545,45 @@ describe('context-pack validate CLI', () => {
     expect(report.warnings.some((entry: { type: string }) => entry.type === 'unmapped-approved-requirement')).toBe(true);
   });
 
+  it('warns when approved discovery business use cases are unmapped', async () => {
+    const discoveryDir = join(workdir, 'spec', 'discovery-pack');
+    await mkdir(discoveryDir, { recursive: true });
+    await writeFile(
+      join(discoveryDir, 'sample.yaml'),
+      VALID_DISCOVERY_PACK_YAML.replace(
+        'business_use_cases:\n  - id: BUC-1\n    status: approved\n    title: Complete checkout.\n    source_refs: [SRC-1]\n    traces_to: []\n',
+        [
+          'business_use_cases:',
+          '  - id: BUC-1',
+          '    status: approved',
+          '    title: Complete checkout.',
+          '    source_refs: [SRC-1]',
+          '    traces_to: []',
+          '  - id: BUC-2',
+          '    status: approved',
+          '    title: Additional approved business use case.',
+          '    source_refs: [SRC-1]',
+          '    traces_to: []',
+          '',
+        ].join('\n'),
+      ),
+      'utf8',
+    );
+    await writeFile(join(sourcesDir, 'valid.yaml'), VALID_CONTEXT_PACK_WITH_DISCOVERY_YAML, 'utf8');
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'), [
+      '--discovery-pack',
+      join(discoveryDir, '*.{yaml,yml,json}'),
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout.toString('utf8')).toContain('validation completed with warnings');
+
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.status).toBe('warn');
+    expect(report.warnings.some((entry: { type: string }) => entry.type === 'unmapped-approved-business-use-case')).toBe(true);
+  });
+
   it('fails when upstream refs point to unknown discovery IDs', async () => {
     const discoveryDir = join(workdir, 'spec', 'discovery-pack');
     await mkdir(discoveryDir, { recursive: true });
@@ -566,6 +605,61 @@ describe('context-pack validate CLI', () => {
     const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
     expect(report.status).toBe('fail');
     expect(report.errors.some((entry: { type: string }) => entry.type === 'upstream-ref-missing')).toBe(true);
+  });
+
+  it('warns when required upstream_refs are missing', async () => {
+    const discoveryDir = join(workdir, 'spec', 'discovery-pack');
+    await mkdir(discoveryDir, { recursive: true });
+    await writeFile(join(discoveryDir, 'sample.yaml'), VALID_DISCOVERY_PACK_YAML, 'utf8');
+    await writeFile(
+      join(sourcesDir, 'missing-upstream-refs.yaml'),
+      VALID_CONTEXT_PACK_WITH_DISCOVERY_YAML.replace(
+        [
+          '    upstream_refs:',
+          '      goal_ids: [GOAL-1]',
+          '      requirement_ids: [REQ-1]',
+          '      business_use_case_ids: [BUC-1]',
+          '      decision_ids: [DEC-1]',
+        ].join('\n'),
+        '',
+      ),
+      'utf8',
+    );
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'), [
+      '--discovery-pack',
+      join(discoveryDir, '*.{yaml,yml,json}'),
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout.toString('utf8')).toContain('validation completed with warnings');
+
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.status).toBe('warn');
+    expect(report.warnings.some((entry: { type: string }) => entry.type === 'upstream-refs-missing')).toBe(true);
+  });
+
+  it('warns when declared discovery profile does not match the source profile', async () => {
+    const discoveryDir = join(workdir, 'spec', 'discovery-pack');
+    await mkdir(discoveryDir, { recursive: true });
+    await writeFile(join(discoveryDir, 'sample.yaml'), VALID_DISCOVERY_PACK_YAML, 'utf8');
+    await writeFile(
+      join(sourcesDir, 'profile-mismatch.yaml'),
+      VALID_CONTEXT_PACK_WITH_DISCOVERY_YAML.replace('profile: rdra-lite', 'profile: rdra-strict'),
+      'utf8',
+    );
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'), [
+      '--discovery-pack',
+      join(discoveryDir, '*.{yaml,yml,json}'),
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout.toString('utf8')).toContain('validation completed with warnings');
+
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.status).toBe('warn');
+    expect(report.warnings.some((entry: { type: string }) => entry.type === 'discovery-pack-profile-mismatch')).toBe(true);
   });
 
   it('does not treat a missing declared discovery path as an ambiguous source when one real CLI source exists', async () => {
