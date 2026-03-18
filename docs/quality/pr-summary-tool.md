@@ -33,7 +33,7 @@ Inputs (read-only)
   - `artifacts/quality/quality-scorecard.json`
   - `artifacts/formal/formal-aggregate.json`
   - `formal/summary.json` or `artifacts/hermetic-reports/formal/summary.json`
-  - `artifacts/agents/hook-feedback.md`, `artifacts/ci/harness-health.md`, `artifacts/change-package/change-package.md`, `artifacts/plan/plan-artifact.md` (workflow append stage)
+  - `artifacts/ci/harness-health.md`, `artifacts/change-package/change-package.md`, `artifacts/change-package/change-package-validation.md`, `artifacts/plan/plan-artifact.md`, `artifacts/plan/plan-artifact-validation.md`, `artifacts/agents/hook-feedback.md`, `artifacts/downloaded/verify-lite-report/artifacts/quality/quality-scorecard.md` (workflow append stage)
 
 Output
 - A single Markdown block suitable for PR description or bot comment.
@@ -64,7 +64,7 @@ Notes
 - Discovery Pack 行は `artifacts/verify-lite/verify-lite-run-summary.json` の top-level `discoveryPack` から生成します。`steps.discoveryPackValidation` / `steps.discoveryPackCompile` は verify-lite summary 側の実行記録であり、renderer の直接入力ではありません。
 - formal 行は `combined.json.formal` を優先し、fallback として `formal/summary.json` または `artifacts/hermetic-reports/formal/summary.json` を参照します。Formal Summary v1/v2 は renderer の直接入力ではなく、上流 producer / validator の契約です。
 - `verify-lite-run-summary` は baseline input、assurance / quality-scorecard は renderer が存在時のみ参照します。
-- `pr-ci-status-comment.yml` は renderer の出力後に `harness-health` / `change-package` / `plan-artifact` / `hook-feedback` / downloaded `quality-scorecard.md` を `artifacts/summary/PR_SUMMARY.md` へ append します。これらの Markdown artifact は workflow append stage の入力です。
+- `pr-ci-status-comment.yml` は renderer の出力後に `harness-health` / `change-package` / `change-package-validation` / `plan-artifact` / `plan-artifact-validation` / `hook-feedback` / downloaded `quality-scorecard.md` を `artifacts/summary/PR_SUMMARY.md` へ append します。これらの Markdown artifact は workflow append stage の入力です。
 - Validation / producer/consumer の最新一覧は `docs/quality/ARTIFACTS-CONTRACT.md` と `docs/reference/CONTRACT-CATALOG.md` を優先します。
 ## Sidecar Combined JSON
 - Recommended path: `artifacts/summary/combined.json`
