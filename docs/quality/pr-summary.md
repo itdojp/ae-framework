@@ -156,7 +156,7 @@ Quality: 82% (>=80) ✅ [+1%] | Formal: pass | Adapters: lighthouse(warn), playw
 ### 実装ノート
 - 中核は薄く保ち、CI もしくはリリーススクリプト側で集約。
 - スキーマ検証（`docs/schemas/`）で不正データを早期に除外。
-- Discovery Pack 行は top-level `discoveryPack` と `steps.discoveryPackValidation` / `steps.discoveryPackCompile` から生成します。
+- Discovery Pack 行は top-level `discoveryPack` から生成します。`steps.discoveryPackValidation` / `steps.discoveryPackCompile` は verify-lite summary 側の実行記録であり、renderer の直接入力ではありません。
 - Formal Summary v1/v2 は renderer の直接入力ではなく、上流 producer / validator 契約として別管理します。
 
 ### 検証とエラー方針
