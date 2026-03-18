@@ -75,6 +75,10 @@ pnpm run verify:lite
   - `steps.contextPackPhase5Validation`
   - `steps.discoveryPackValidation`
   - `steps.discoveryPackCompile`
+  - top-level `traceability.status`
+  - top-level `traceability.missingCount`
+  - top-level `traceability.matrixPath`
+  - top-level `traceability.notes`
 
 ### 4. 失敗時の修正ループ
 1. 対応する report JSON/Markdown を確認
@@ -89,6 +93,7 @@ pnpm run verify:lite
 - [ ] `context-pack-suggestions.{json,md}` で `recommendedContextChanges` を確認済み
 - [ ] `upstream_refs` を使う場合、`--discovery-pack` 付き validate で Discovery Pack 整合を確認済み
 - [ ] `verify:lite` で Context Pack 関連 step が想定通り
+- [ ] `verify:lite` の top-level `traceability.status=success` と `missingCount=0` を確認済み
 - [ ] assurance を導入する場合、`assurance.profile` / `claim_refs` を設定し `docs/guides/assurance-onboarding-checklist.md` を実施済み
 - [ ] report に不要な差分ノイズを持ち込んでいない
 - [ ] `evidencePaths` が stale path ではない
