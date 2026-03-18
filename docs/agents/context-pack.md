@@ -98,7 +98,7 @@ pnpm -s run verify:lite
   - top-level `traceability.notes`
 - `steps.discoveryPackValidation` / `steps.discoveryPackCompile` は verify-lite 側の実行記録です。`context-pack:validate -- --discovery-pack ...` 単独実行では Discovery Pack validate / compile report は生成されません。
 - Context Pack validate 単独の primary report は `artifacts/context-pack/context-pack-validate-report.{json,md}` です。
-- `traceability` は top-level summary です。`status != success` の場合は `matrixPath` と `notes` を起点に `ae validate --traceability --strict` を再実行してください。
+- `traceability` は top-level summary です。`status != success` または `missingCount > 0` の場合は `matrixPath` と `notes` を起点に `ae validate --traceability --strict --sources <matrixPath>` を再実行してください。
 
 ## Escalation / follow-up
 

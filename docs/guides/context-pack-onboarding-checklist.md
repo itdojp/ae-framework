@@ -79,6 +79,7 @@ pnpm run verify:lite
   - top-level `traceability.missingCount`
   - top-level `traceability.matrixPath`
   - top-level `traceability.notes`
+- `traceability.status != success` または `traceability.missingCount > 0` の場合は `ae validate --traceability --strict --sources <traceability.matrixPath>` を再実行
 
 ### 4. 失敗時の修正ループ
 1. 対応する report JSON/Markdown を確認
