@@ -184,6 +184,61 @@ describe('context-pack boundary map validate CLI', () => {
     expect(report.violations.some((entry: { type: string }) => entry.type === 'boundary-upstream-producer-missing')).toBe(true);
   });
 
+  it('fails when a consumed ref points to a missing upstream slice', async () => {
+    await writeContextPack();
+    await writeMap({
+      schemaVersion: 'context-pack-boundary-map/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      slices: [
+        {
+          id: 'reservation-flow',
+          consumes: [
+            {
+              kind: 'object',
+              refId: 'InventoryItem',
+              upstream: { type: 'slice', sliceId: 'inventory-item-model' },
+            },
+          ],
+          produces: [{ kind: 'morphism', refId: 'ReserveInventory' }],
+        },
+      ],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.summary.missingUpstreamSlices).toBe(1);
+    expect(report.violations.some((entry: { type: string }) => entry.type === 'boundary-upstream-slice-missing')).toBe(true);
+  });
+
+  it('fails when two slices produce the same ref', async () => {
+    await writeContextPack();
+    await writeMap({
+      schemaVersion: 'context-pack-boundary-map/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      slices: [
+        {
+          id: 'inventory-item-model',
+          produces: [{ kind: 'object', refId: 'InventoryItem' }],
+        },
+        {
+          id: 'inventory-shadow-model',
+          produces: [{ kind: 'object', refId: 'InventoryItem' }],
+        },
+      ],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.summary.duplicateProducedRefs).toBe(1);
+    expect(report.violations.some((entry: { type: string }) => entry.type === 'boundary-producer-duplicate')).toBe(true);
+  });
+
   it('rejects cyclic slice dependencies', async () => {
     await writeContextPack();
     await writeMap({
@@ -222,6 +277,58 @@ describe('context-pack boundary map validate CLI', () => {
     expect(report.status).toBe('fail');
     expect(report.summary.cycleViolations).toBe(1);
     expect(report.violations.some((entry: { type: string }) => entry.type === 'boundary-slice-cycle')).toBe(true);
+  });
+
+  it('fails when no context-pack sources remain after excluding the map file itself', async () => {
+    await writeMap({
+      schemaVersion: 'context-pack-boundary-map/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      slices: [],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('fail');
+    expect(report.scannedContextPackFiles).toBe(0);
+    expect(report.violations.some((entry: { type: string }) => entry.type === 'context-pack-sources-empty')).toBe(true);
+  });
+
+  it('counts auxiliary context-pack sidecars as skipped files', async () => {
+    await writeContextPack();
+    await writeFile(
+      join(contextPackDir, 'functor-map.json'),
+      `${JSON.stringify(
+        {
+          schemaVersion: 'context-pack-functor-map/v1',
+          contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+          objects: [{ id: 'InventoryItem', moduleGlobs: ['src/domain/**/*.ts'] }],
+          morphisms: [{ id: 'ReserveInventory', entrypoints: [{ file: 'src/domain/services.ts' }] }],
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+    await writeMap({
+      schemaVersion: 'context-pack-boundary-map/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      slices: [
+        {
+          id: 'inventory-item-model',
+          produces: [{ kind: 'object', refId: 'InventoryItem' }],
+        },
+      ],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(0);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.status).toBe('pass');
+    expect(report.scannedContextPackFiles).toBe(1);
+    expect(report.skippedAuxiliaryFiles).toBe(1);
   });
 
   it('escapes backslashes in markdown report cells', async () => {
