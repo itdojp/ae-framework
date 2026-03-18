@@ -5,7 +5,7 @@ canonicalSource:
 - docs/spec/discovery-pack.md
 - docs/quality/assurance-profile.md
 - docs/quality/issue-requirements-traceability.md
-lastVerified: '2026-03-17'
+lastVerified: '2026-03-18'
 ---
 # Upstream Context Promotion Guide
 
@@ -116,6 +116,26 @@ node scripts/context-pack/validate.mjs \
   --discovery-pack "fixtures/discovery-pack/upstream-context-promotion-minimal.yaml"
 ```
 
+Context Pack validate で確認する代表的な分岐:
+- warning:
+  - `upstream-refs-missing`
+    - upstream validation 対象の `morphisms` / `acceptance_tests` に `upstream_refs` が無い
+  - `discovery-pack-profile-mismatch`
+    - `upstream.discovery_pack.profile` と Discovery Pack 実ファイルの `profile` が一致しない
+  - `unmapped-approved-requirement`
+  - `unmapped-approved-business-use-case`
+- error:
+  - `discovery-pack-source-missing`
+    - `--discovery-pack` 未指定、または candidate path が解決できない
+  - `discovery-pack-source-ambiguous`
+    - `--discovery-pack` が複数ファイルに一致して 1 件へ特定できない
+  - `upstream-ref-missing`
+    - `upstream_refs` が Discovery Pack 内に存在しない ID を参照している
+
+確認ファイル:
+- `artifacts/context-pack/context-pack-validate-report.json`
+- `artifacts/context-pack/context-pack-validate-report.md`
+
 #### 6.4 Natural transformation verify
 ```bash
 node scripts/context-pack/verify-natural-transformation.mjs \
@@ -186,6 +206,15 @@ ae validate --traceability --strict \
 ### 7. current implementation の注意点
 - `Context Pack validate` は upstream ref の存在整合を検証し、approved requirement / business use case の未マップを warning に集計します
 - `Discovery Pack compile` の既定 include-status は `approved` のみです
+- `verify-lite` では `artifacts/verify-lite/verify-lite-run-summary.json` の top-level `discoveryPack` に以下が集約されます
+  - `mode`, `reason`, `validateStatus`, `compileStatus`
+  - `blockingOpenQuestions`
+  - `orphanApprovedRequirements`
+  - `orphanApprovedBusinessUseCases`
+  - `compileSelectedCount`
+  - `compileExcludedByStatusCount`
+  - `compileSkippedByTargetCount`
+- report-only 既定では warning/error を観測しつつ PR を block しません。`enforce-discovery` ラベル時のみ strict 判定に昇格します
 - `formal/summary.json` は legacy compatibility path であり、このガイドの主対象ではありません
 
 ### 8. 参照
