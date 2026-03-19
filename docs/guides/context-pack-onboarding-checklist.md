@@ -97,15 +97,23 @@ pnpm run verify:lite
 
 ## English
 
-Minimal onboarding checklist for introducing Context Pack into a new project.
+Minimal onboarding checklist for introducing Context Pack into a new project. The goal is to standardize the loop of input preparation -> validation -> repair -> re-validation.
 
-### Quick bootstrap
+### Prerequisites
+- Node.js: `>=20.11 <23`
+- pnpm: `10.x`
+- Run from the repository root
+
+### 0. Confirm tool wiring with the minimal end-to-end fixture
+Start with the framework-owned minimal fixture to verify the local environment and validators before touching project-specific inputs.
+
 ```bash
 pnpm run context-pack:e2e-fixture
 ```
 
-By default, reports are written to a temp directory and cleaned up on success (noise reduction).
-Keep reports with:
+Notes:
+- By default, reports are written to a temp directory and removed on success to reduce diff noise.
+- Keep reports when you need to inspect the generated artifacts:
 
 ```bash
 CONTEXT_PACK_E2E_KEEP_REPORTS=1 pnpm run context-pack:e2e-fixture
@@ -113,9 +121,19 @@ CONTEXT_PACK_E2E_KEEP_REPORTS=1 pnpm run context-pack:e2e-fixture
 pnpm run context-pack:e2e-fixture -- --report-dir artifacts/context-pack-e2e
 ```
 
-### Validation sequence
+### 1. Prepare input files
+- Context Pack source: `spec/context-pack/**/*.{yml,yaml,json}`
+- Discovery Pack source when `upstream_refs` is used: `spec/discovery-pack/**/*.{yml,yaml,json}`
+- Functor map: `spec/context-pack/functor-map.json`
+- Natural transformation map: `spec/context-pack/natural-transformations.json`
+- Product/Coproduct map: `spec/context-pack/product-coproduct-map.json`
+- Boundary map: `spec/context-pack/boundary-map.json`
+- Phase5 templates: `spec/context-pack/phase5-templates.json`
+
+### 2. Run focused validators
 ```bash
 pnpm run context-pack:validate
+# when upstream_refs is used
 pnpm run context-pack:validate -- --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}"
 pnpm run context-pack:verify-functor
 pnpm run context-pack:verify-natural-transformation
@@ -124,7 +142,35 @@ pnpm run context-pack:verify-boundary-map
 pnpm run context-pack:verify-phase5
 pnpm run context-pack:deps
 node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
+```
+
+### 3. Run integrated verification (`verify-lite`)
+```bash
 pnpm run verify:lite
 ```
 
-For incident recovery details, see `docs/spec/context-pack.md`.
+Check the following in `artifacts/verify-lite/verify-lite-run-summary.json`:
+- `steps.contextPackValidation`
+- `steps.contextPackFunctorValidation`
+- `steps.contextPackNaturalTransformationValidation`
+- `steps.contextPackProductCoproductValidation`
+- `steps.contextPackPhase5Validation`
+- `steps.discoveryPackValidation`
+- `steps.discoveryPackCompile`
+
+### 4. Repair loop when a step fails
+1. Open the matching JSON / Markdown report.
+2. Fix `violations[].type` and the referenced object / morphism / diagram IDs.
+3. Re-run the focused validator and then `pnpm run verify:lite`.
+4. Confirm `summary.totalViolations == 0`.
+
+For deeper troubleshooting, see `docs/spec/context-pack.md`.
+
+### 5. Pre-PR checklist
+- [ ] All eight Context Pack commands succeed.
+- [ ] `context-pack-suggestions.{json,md}` has been reviewed for `recommendedContextChanges`.
+- [ ] If `upstream_refs` is used, validation with `--discovery-pack` confirms Discovery Pack alignment.
+- [ ] `verify:lite` shows the expected Context Pack-related steps.
+- [ ] If assurance is enabled, `assurance.profile` / `claim_refs` are configured and `docs/guides/assurance-onboarding-checklist.md` has been completed.
+- [ ] No unnecessary report noise is being introduced.
+- [ ] `evidencePaths` does not contain stale paths.
