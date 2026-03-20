@@ -171,7 +171,8 @@ node scripts/assurance/aggregate-lanes.mjs \
   --output-md artifacts/assurance/upstream-context-promotion-minimal-summary.md
 ```
 
-自然変換 / product-coproduct / boundary map を claim evidence として揃える場合は、verify-lite summary または evidence manifest を追加します。
+自然変換 / product-coproduct を claim evidence として揃える場合は、verify-lite summary または evidence manifest を追加します。
+boundary map の claim は verify-lite summary 単独では満たせません。`verify-lite-run-summary` には boundary-map 用の evidence slot が無いため、`boundary-separation-explicit` のような claim を評価する場合は evidence manifest などの別入力を追加してください。
 
 ```bash
 node scripts/assurance/aggregate-lanes.mjs \
@@ -355,7 +356,7 @@ The smallest aggregate can be produced with:
 node scripts/assurance/aggregate-lanes.mjs   --assurance-profile spec/assurance-profile/upstream-context-promotion-v1.json   --context-pack fixtures/context-pack/upstream-context-promotion-minimal.yaml   --output-json artifacts/assurance/upstream-context-promotion-minimal-summary.json   --output-md artifacts/assurance/upstream-context-promotion-minimal-summary.md
 ```
 
-If you want natural transformation / product-coproduct / boundary map to participate as claim evidence, add verify-lite summary or an evidence manifest:
+If you want natural transformation / product-coproduct claims to participate as evidence, add either a verify-lite summary or an evidence manifest. Boundary-map claims cannot be satisfied from the verify-lite summary alone because `verify-lite-run-summary` has no boundary-map evidence slot. For claims such as `boundary-separation-explicit`, add a separate evidence manifest or another supplemental boundary-map evidence input:
 
 ```bash
 node scripts/assurance/aggregate-lanes.mjs   --assurance-profile spec/assurance-profile/upstream-context-promotion-v1.json   --context-pack fixtures/context-pack/upstream-context-promotion-minimal.yaml   --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json   --evidence-manifest fixtures/assurance/sample.assurance-evidence-manifest.json   --output-json artifacts/assurance/upstream-context-promotion-minimal-summary.json   --output-md artifacts/assurance/upstream-context-promotion-minimal-summary.md
