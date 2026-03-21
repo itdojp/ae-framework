@@ -52,7 +52,7 @@ pnpm run verify:assurance \
 ### 3. evidence source を揃える
 - 最低限の候補:
   - `artifacts/verify-lite/verify-lite-run-summary.json`
-  - `artifacts/formal/formal-summary-v1.json`
+  - `artifacts/formal/formal-summary-v2.json`（優先）または `artifacts/formal/formal-summary-v1.json`
   - `artifacts/hermetic-reports/conformance/summary.json`
   - `fixtures/counterexample/*.json` または生成された counterexample JSON
   - `fixtures/assurance/*.json` 相当の supplemental evidence manifest
@@ -75,7 +75,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 ### 5. strict assurance enforcement は high-risk PR のみ有効化
 - 通常 PR は report-only のまま運用する
 - `enforce-assurance` は high-risk change に限定する
-- strict 運用前に `warningClaims == 0` を確認する
+- strict 運用前に、`warningClaims == 0` だけでなく `warningCount == 0`、`claimsMissingRequiredLanes == 0`、`claimsMissingRequiredEvidenceKinds == 0`、`unlinkedCounterexamples == 0`、および claim ごとの `missingLanes` / `missingEvidenceKinds` / `independenceWarnings` / `openCounterexamples` が残っていないことを確認する
 
 ### 6. PR 前確認
 - [ ] assurance profile が schema-valid
@@ -135,7 +135,7 @@ pnpm run verify:assurance \
 ### 3. Prepare evidence sources
 - minimum candidates:
   - `artifacts/verify-lite/verify-lite-run-summary.json`
-  - `artifacts/formal/formal-summary-v1.json`
+  - `artifacts/formal/formal-summary-v2.json` (preferred) or `artifacts/formal/formal-summary-v1.json`
   - `artifacts/hermetic-reports/conformance/summary.json`
   - `fixtures/counterexample/*.json` or generated counterexample JSON
   - supplemental evidence manifests equivalent to `fixtures/assurance/*.json`
@@ -158,7 +158,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 ### 5. Use strict assurance enforcement only for high-risk PRs
 - keep standard PRs in report-only mode
 - restrict `enforce-assurance` to high-risk changes
-- confirm `warningClaims == 0` before enabling strict mode
+- before enabling strict mode, confirm not only `warningClaims == 0` but also `warningCount == 0`, `claimsMissingRequiredLanes == 0`, `claimsMissingRequiredEvidenceKinds == 0`, `unlinkedCounterexamples == 0`, and no claim-level `missingLanes`, `missingEvidenceKinds`, `independenceWarnings`, or `openCounterexamples`
 
 ### 6. Pre-PR checks
 - [ ] the assurance profile is schema-valid

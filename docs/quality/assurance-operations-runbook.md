@@ -41,7 +41,7 @@ Scope:
 | assurance profile | `fixtures/assurance/sample.assurance-profile.json` | required | claims, required lanes, required evidence kinds |
 | context pack | `fixtures/context-pack/sample.context-pack.json` | optional | supplements claim-to-spec references |
 | verify-lite summary | `artifacts/verify-lite/verify-lite-run-summary.json` | optional | behavior, spec, and runtime observations |
-| formal summary | `artifacts/formal/formal-summary-v1.json` | optional | model and proof observations |
+| formal summary | `artifacts/formal/formal-summary-v2.json` (preferred) or `artifacts/formal/formal-summary-v1.json` | optional | model and proof observations |
 | conformance report | `artifacts/hermetic-reports/conformance/summary.json` | optional | additional model-lane evidence |
 | counterexample | `fixtures/counterexample/sample.counterexample.json` | optional | adversarial lane and triage state |
 | evidence manifest | `fixtures/assurance/sample.assurance-evidence-manifest.json` | optional | supplemental evidence per claim |
@@ -114,7 +114,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 
 - `verify-lite.yml` generates assurance summary in report-only mode.
 - When `artifacts/assurance/assurance-summary.json` exists, `verify-lite.yml` also treats it as an optional input for `artifacts/quality/quality-scorecard.{json,md}`.
-- `pr-ci-status-comment.yml` appends claim summary details to the PR summary comment and passes `--assurance-summary` into hook-feedback generation when a verify-lite artifact for the same head SHA is available.
+- `pr-ci-status-comment.yml` assembles the PR summary comment from harness-health, change-package, hook-feedback, and the downloaded `artifacts/quality/quality-scorecard.md`. When a verify-lite artifact for the same head SHA is available, it also passes `--assurance-summary` into hook-feedback generation. Assurance signals therefore appear through hook-feedback and the quality scorecard rather than by appending `artifacts/assurance/assurance-summary.md` or per-claim details directly.
 - `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` consume `--assurance-summary` and reflect assurance warnings in `currentStatus`, `nextActions`, `blockers`, and `artifacts`.
 - release and post-deploy summaries append a short summary when `artifacts/assurance/assurance-summary.md` exists.
 
@@ -239,7 +239,7 @@ Check in this order:
 | assurance profile | `fixtures/assurance/sample.assurance-profile.json` | 必須 | claim / required lanes / required evidence kinds |
 | context pack | `fixtures/context-pack/sample.context-pack.json` | 任意 | claim と spec 参照の補完 |
 | verify-lite summary | `artifacts/verify-lite/verify-lite-run-summary.json` | 任意 | behavior / spec / runtime の観測 |
-| formal summary | `artifacts/formal/formal-summary-v1.json` | 任意 | model / proof lane の観測 |
+| formal summary | `artifacts/formal/formal-summary-v2.json`（優先）または `artifacts/formal/formal-summary-v1.json` | 任意 | model / proof lane の観測 |
 | conformance report | `artifacts/hermetic-reports/conformance/summary.json` | 任意 | model lane の補完 |
 | counterexample | `fixtures/counterexample/sample.counterexample.json` | 任意 | adversarial lane / triage 状態 |
 | evidence manifest | `fixtures/assurance/sample.assurance-evidence-manifest.json` | 任意 | claim ごとの supplemental evidence |
@@ -312,7 +312,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 
 - `verify-lite.yml` は assurance summary を report-only で生成します。
 - `verify-lite.yml` は `artifacts/assurance/assurance-summary.json` が存在する場合、`artifacts/quality/quality-scorecard.{json,md}` の optional input としても利用します。
-- `pr-ci-status-comment.yml` は `artifacts/assurance/assurance-summary.json` が存在する場合に PR summary comment へ claim summary を追記し、同一 head SHA の verify-lite artifact を取得できる場合は `hook-feedback` 生成時にも `--assurance-summary` を渡します。
+- `pr-ci-status-comment.yml` は harness-health / change-package / hook-feedback / downloaded `artifacts/quality/quality-scorecard.md` を組み合わせて PR summary comment を構成します。同一 head SHA の verify-lite artifact を取得できる場合は `hook-feedback` 生成時にも `--assurance-summary` を渡します。assurance の信号は `hook-feedback` と quality scorecard 経由で反映され、`artifacts/assurance/assurance-summary.md` や claim 単位の詳細を直接追記するわけではありません。
 - `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` は `--assurance-summary` を受け取り、assurance warning を `currentStatus` / `nextActions` / `blockers` / `artifacts` へ反映します。
 - release/post-deploy summary は `artifacts/assurance/assurance-summary.md` が存在する場合に要約を追記します。
 

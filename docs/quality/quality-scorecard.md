@@ -39,7 +39,7 @@ lastVerified: '2026-03-21'
 - `artifacts/formal/formal-summary-v2.json`
 - `artifacts/formal/formal-summary-v1.json` (fallback when v2 is absent)
 
-The producer continues when optional artifacts are missing and marks the corresponding dimension as `missing`. Missing required artifacts still trigger fail-fast behavior.
+The producer continues when optional artifacts are missing. Dimensions that depend on their own optional summaries, such as `assuranceCoverage`, `policyReadiness`, and `performanceRegression`, can become `missing`, while `executionHealth` still resolves to `pass` or `warn` when formal or harness inputs are absent. Missing required artifacts still trigger fail-fast behavior.
 
 ### 3. Evaluation dimensions
 
@@ -115,7 +115,7 @@ pnpm run quality:scorecard:validate -- \
 - `artifacts/formal/formal-summary-v2.json`
 - `artifacts/formal/formal-summary-v1.json`（v2 が無い場合の fallback）
 
-optional artifact が欠けていても producer は継続し、対応する dimension は `missing` として扱います。required artifact が欠けた場合は producer が fail-fast します。
+optional artifact が欠けていても producer は継続します。`assuranceCoverage` / `policyReadiness` / `performanceRegression` のように専用 summary に依存する dimension は `missing` になり得ますが、formal summary や harness-health が無い場合でも `executionHealth` は `pass` / `warn` のまま評価されます。required artifact が欠けた場合は producer が fail-fast します。
 
 ## 3. 評価次元
 
