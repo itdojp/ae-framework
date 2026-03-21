@@ -14,10 +14,11 @@ lastVerified: '2026-03-22'
 ## English
 
 ### 1. Scope and Assumptions
-`ae-framework` is an operating foundation for specification, verification, and CI in agent-assisted SDLC. The product is centered on three layers:
-- specification registration and validation
-- CI quality gates such as `verify-lite`, `policy-gate`, and `gate`
-- operational automation through CLI commands and scripts
+`ae-framework` is an operating foundation for specification, verification, and CI in agent-assisted SDLC. The product is centered on four layers:
+- specification and verification assets, including specs, formal tooling, and tests
+- execution tooling such as CLI entry points and automation scripts
+- operational integration through CI quality gates and workflow orchestration
+- artifacts and reports for both machine and human consumers
 
 For environment prerequisites, see `docs/product/OVERVIEW.md`.
 
@@ -55,7 +56,8 @@ The repository separates unit, integration, property, BDD, MBT, and resilience-o
 
 ### 5. CI and Quality Gates
 Primary workflows are consolidated under `.github/workflows/`.
-- Current main PR baseline: `verify-lite.yml`, `policy-gate.yml`, and `copilot-review-gate.yml` (required context `gate`)
+- Current main PR baseline uses the required check contexts `verify-lite`, `policy-gate`, and `gate`
+- The corresponding workflows are `verify-lite.yml`, `policy-gate.yml`, and `copilot-review-gate.yml`
 - Formal workflows: `formal-verify.yml`, `formal-aggregate.yml`
 - Security workflows: `security.yml`, `sbom-generation.yml`
 - Additional CI lanes: `ci-fast.yml`, `ci-extended.yml`, `pr-verify.yml`

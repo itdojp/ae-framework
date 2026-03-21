@@ -54,7 +54,8 @@ lastVerified: '2026-03-22'
 ### 8. Minimum Adoption Path
 1. Install dependencies with `pnpm install`
 2. Set up hooks with `pnpm run setup-hooks`
-3. Run the minimum checks: `pnpm run lint` and `pnpm run test:fast`
+3. Run the local minimum checks: `pnpm run lint` and `pnpm run test:fast`
+4. Run the baseline gate locally with `pnpm run verify:lite`
 
 ### 9. Current System Snapshot (as of 2026-03-22)
 - Main PR baseline on `main`: `verify-lite`, `policy-gate`, and `gate`
