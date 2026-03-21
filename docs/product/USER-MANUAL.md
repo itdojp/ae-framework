@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/reference/CLI-COMMANDS-REFERENCE.md
 - package.json
-lastVerified: '2026-03-14'
+lastVerified: '2026-03-22'
 ---
 # ae-framework 利用マニュアル
 
@@ -11,9 +11,220 @@ lastVerified: '2026-03-14'
 
 ---
 
-## English (Summary)
+## English
 
-This manual explains setup, common workflows, and operational commands for ae-framework.
+## 1. Target Users
+- product developers, QA engineers, and operators
+- teams that run specification validation and CI quality gates
+- teams evaluating agent integrations
+- teams that need to judge whether ae-framework fits their input/output/tool boundary
+
+For the applicability overview, see `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`.
+
+## 2. Preconditions
+- Node.js: `>=20.11 <23` (`package.json` `engines.node`)
+- pnpm: `10.0.0` (`package.json` `packageManager`)
+- `npm install` is intentionally blocked by the `preinstall` guard; the repository assumes pnpm
+- GitHub Actions is available for CI operation
+- if you use `verify:lite` as-is, the current implementation assumes a JS/TS toolchain (`pnpm types:check`, `pnpm lint`, `pnpm run build`, plus `vitest` in CI)
+- for non-JS/TS products, introduce `verify:formal` / `verify:conformance` first and define language-specific lint/test/build jobs separately
+- Windows is supported through PowerShell, but WSL2 is the safer baseline when tool compatibility becomes an issue
+
+## 3. Setup
+
+### 3.1 Install dependencies
+```bash no-doctest
+corepack enable
+corepack prepare pnpm@10.0.0 --activate
+pnpm install
+```
+
+If `npm install` is executed, the guard prints the migration message and exits immediately with `exit 1`.
+
+### 3.2 Recommended first command
+```bash no-doctest
+pnpm run first-run
+```
+
+This runs `doctor:env -> build -> verify:lite` in sequence and stores:
+- machine-readable summary JSON under `artifacts/first-run`
+- human-readable summary Markdown under `artifacts/first-run`
+- per-step logs under `artifacts/first-run/logs`
+
+Exit-code contract:
+- `0`: all required steps succeeded
+- `1`: at least one required step failed
+- `3`: invalid arguments
+- `4`: summary write failure
+
+### 3.3 Run environment diagnostics separately
+```bash no-doctest
+pnpm run doctor:env
+```
+
+The diagnostic result is written to `artifacts/doctor/env.json`.
+
+Exit-code contract:
+- `0`: all required checks passed
+- `2`: warning-level issues only
+- `1`: operator action required
+- `3`: invalid arguments
+
+### 3.4 Install development hooks
+```bash no-doctest
+pnpm run setup-hooks
+```
+
+### 3.5 Minimal local verification
+```bash no-doctest
+pnpm run lint
+pnpm run test:fast
+```
+
+### 3.6 Optional configuration file
+The CLI loads YAML configuration through `src/cli/config/ConfigLoader.ts`.
+
+Resolution order:
+- `config/ae-framework.yml`
+- `config/ae-framework.yaml`
+- `ae-framework.yml`
+- `ae-framework.yaml`
+- `.ae-framework.yml`
+- `.ae-framework.yaml`
+
+If none exists, the CLI runs with defaults.
+
+## 4. Core Workflows
+
+### 4.1 Register and validate specifications
+- recommended placement: `spec/`
+- reference: `docs/spec/registry.md`
+
+Example commands:
+```bash no-doctest
+# AE-Spec (Markdown) -> AE-IR (JSON)
+pnpm run spec:validate -i spec/example-spec.md --output .ae/ae-ir.json
+
+# AE-IR lint
+pnpm run spec:lint -i .ae/ae-ir.json
+
+# CI-oriented JSON reports
+pnpm run ae-framework -- spec lint -i .ae/ae-ir.json --format json --output artifacts/spec/lint-report.json
+pnpm run ae-framework -- spec validate -i spec/example-spec.md --output .ae/ae-ir.json --format json --report-output artifacts/spec/validate-report.json
+```
+
+### 4.2 Optional formal verification
+Follow `docs/quality/formal-tools-setup.md` first.
+
+```bash no-doctest
+pnpm run verify:formal
+```
+
+If you use CSP with `cspx`, the current recommended path remains:
+```bash no-doctest
+cargo install --git https://github.com/itdojp/cspx --rev 8a67639ea4d3f715e27feb8cd728f46866a905db --locked cspx
+cspx --version
+cspx typecheck --help | grep -- --summary-json
+pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
+```
+
+Expected evidence:
+- `artifacts/hermetic-reports/formal/csp-summary.json`
+- `artifacts/hermetic-reports/formal/cspx-result.json`
+
+### 4.3 Execute tests
+```bash no-doctest
+pnpm run test:fast
+pnpm run test:unit
+pnpm run test:int
+```
+
+Add `pnpm run pbt` or `pnpm run bdd` when needed. `pbt` resolves config in this order:
+- `--config`
+- `PBT_CONFIG`
+- `tests/property/vitest.config.*`
+- `tests/property`
+
+### 4.4 CI operating baseline
+- use `verify-lite` as the default PR gate
+- the current `main` required-check baseline is:
+  - `Verify Lite / verify-lite`
+  - `Policy Gate / policy-gate`
+  - `Copilot Review Gate / gate`
+- optional repository-variable based automation exists for:
+  - Copilot auto-fix
+  - auto-merge
+- add `ci-extended` or `formal-verify` only when the change profile requires it
+
+Primary references:
+- `docs/ci/branch-protection-operations.md`
+- `docs/ci/copilot-review-gate.md`
+- `docs/ci/copilot-auto-fix.md`
+- `docs/ci/auto-merge.md`
+- `docs/ci/pr-automation.md`
+- `docs/quality/formal-runbook.md`
+
+## 5. CLI Basics
+See `docs/product/COMMAND-MODES.md` for entrypoint policy.
+
+The canonical main CLI entrypoint is `src/cli/index.ts`. The benchmark side uses `src/cli/benchmark-cli.ts` (`ae-benchmark`), while `src/cli.ts` remains only as a `benchmark-report/v1` compatibility shim.
+
+### 5.1 Development-time CLI help
+```bash no-doctest
+pnpm run ae-framework -- --help
+```
+
+### 5.2 Built CLI
+```bash no-doctest
+pnpm run build
+pnpm exec ae --help
+pnpm exec ae-framework --help
+```
+
+### 5.3 Representative subcommands
+```bash no-doctest
+pnpm run ae-framework -- --help
+pnpm run ae-framework -- spec --help
+pnpm run ae-framework -- quality run --env development
+pnpm run ae-framework -- quality run --env development --no-history
+pnpm run ae-framework -- security --help
+pnpm run ae-framework -- conformance --help
+pnpm run ae-framework -- integration --help
+pnpm run ae-framework -- resilience --help
+pnpm run ae-framework -- sbom --help
+```
+
+### 5.4 Exit codes and JSON errors
+- `0`: success
+- `2`: invalid input or contract violation
+- `1`: internal or unexpected failure
+
+When `spec lint` / `spec validate` uses `--format json`, failure responses still stay JSON-shaped, but invalid-input and internal-error payloads follow the dedicated error shape emitted by `emitSpecCommandError` rather than `schema/spec-validation-report.schema.json`.
+
+## 6. Agent Integrations
+- Codex: `docs/integrations/CODEX-INTEGRATION.md`
+- Claude Code: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
+- playbook example: `pnpm run codex:run`
+
+## 7. Representative Operational Commands
+```bash no-doctest
+# formal summary
+pnpm run formal:summary
+
+# spec tool checks
+pnpm run spec:validate
+
+# minimum CI-facing verification
+pnpm run verify:lite
+
+# unified fast/full profile with JSON summary
+pnpm run verify:profile -- --profile fast --json --out artifacts/verify-profile-summary.json
+
+# issue-driven traceability
+pnpm run ae-framework -- traceability extract-ids --issue "https://github.com/<org>/<repo>/issues/1" --pattern "(?:LG|REQ)-[A-Z0-9_-]+" --output docs/specs/issue-traceability-map.json
+pnpm run ae-framework -- traceability matrix --map docs/specs/issue-traceability-map.json --tests "tests/**/*" --code "src/**/*" --context-pack "spec/context-pack/**/*.{yml,yaml,json}" --format json --output docs/specs/ISSUE-TRACEABILITY-MATRIX.json
+pnpm run ae-framework -- validate --traceability --strict --sources docs/specs/ISSUE-TRACEABILITY-MATRIX.json
+```
 
 ---
 
