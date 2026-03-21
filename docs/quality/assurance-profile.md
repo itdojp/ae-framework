@@ -13,7 +13,7 @@ lastVerified: '2026-03-21'
 
 ## English
 
-## 1. Purpose
+### 1. Purpose
 
 `assurance-profile/v1` is the input contract that binds business claims to machine-readable assurance requirements.
 
@@ -25,7 +25,7 @@ It records:
 
 Current implementation covers schema validation, documentation, `verify:assurance` summary generation, Verify Lite collection of assurance summary artifacts, and strict assurance enforcement when the `enforce-assurance` label is present. Default PR behavior remains report-only. Strict mode is label-gated.
 
-## 2. Schema
+### 2. Schema
 
 - Schema: `schema/assurance-profile.schema.json`
 - Sample fixture: `fixtures/assurance/sample.assurance-profile.json`
@@ -56,7 +56,7 @@ Minimal shape:
 }
 ```
 
-## 3. Provisional assurance level semantics
+### 3. Provisional assurance level semantics
 
 | Level | Meaning | Typical evidence |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ Minimal shape:
 
 This table is still the Phase 1/2 provisional definition. `verify:assurance` aggregates lanes, evidence, and warnings, but automatic `achievedLevel` determination is not implemented yet.
 
-## 4. Claim design guidance
+### 4. Claim design guidance
 
 1. A claim should describe business correctness, not an implementation tactic.
 2. `criticality` is recorded as one of `low`, `medium`, `high`, or `critical`.
@@ -88,7 +88,7 @@ Examples:
 - A claim requiring `spec + behavior + model` expects at least two distinct evidence lineages across specification, implementation, and model viewpoints.
 - Adding more `behavior` evidence alone does not clear the independence warning if every artifact is still `source-derived`.
 
-## 5. Coupling with Context Pack v1
+### 5. Coupling with Context Pack v1
 
 Context Pack can include an optional `assurance` section.
 
@@ -104,7 +104,7 @@ Purpose:
 - indirectly link morphisms, diagrams, and acceptance tests to claims
 - preserve existing behavior in repositories that do not adopt assurance yet by omitting the section
 
-## 6. Current non-goals
+### 6. Current non-goals
 
 - writing `achievedLevel` back into `verify-lite-run-summary`
 - letting `policy-gate` directly interpret assurance artifacts for blocking decisions
@@ -116,7 +116,7 @@ Notes:
 - The strict step is `Enforce assurance summary (strict; label-gated)` in `verify-lite.yml`.
 - Standard PRs without the `enforce-assurance` label keep assurance summary in report-only mode.
 
-## 7. Change management notes
+### 7. Change management notes
 
 - If you add a new claim kind or evidence kind, update `schema/assurance-profile.schema.json` and this document in the same PR.
 - If a new schema is introduced, update `docs/reference/CONTRACT-CATALOG.md` in the same change.

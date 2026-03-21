@@ -12,11 +12,11 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## English
 
-## 1. Purpose
+### 1. Purpose
 
 This document is the baseline inventory created for Issue #2406. It classifies the current `schema/*.schema.json` set by contract role and serves as the starting point for later `schemaVersion` unification and dual-write / dual-validate operations.
 
-## 2. Contract domains (primary role)
+### 2. Contract domains (primary role)
 
 - `input`: contracts supplied before execution, such as requirement bundles, configuration, or model definitions
 - `decision`: contracts emitted as execution judgements, such as pass/fail, block reasons, or priority
@@ -25,9 +25,9 @@ This document is the baseline inventory created for Issue #2406. It classifies t
 
 Some schemas are dual-role. This catalog records the primary role used in the current implementation.
 
-## 3. Schema inventory (snapshot: 2026-03-04)
+### 3. Schema inventory (snapshot: 2026-03-04)
 
-### 3.1 input
+#### 3.1 input
 
 - `schema/assurance-profile.schema.json`
 - `schema/codex-task-request.schema.json`
@@ -49,7 +49,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/state-machine.schema.json`
 - `schema/trace-map.schema.json`
 
-### 3.2 decision
+#### 3.2 decision
 
 - `schema/codex-task-response.schema.json`
 - `schema/conformance-report.schema.json`
@@ -63,7 +63,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/trace-validation.schema.json`
 - `schema/verify-profile-summary.schema.json`
 
-### 3.3 evidence
+#### 3.3 evidence
 
 - `schema/agentic-metrics.schema.json`
 - `schema/automation-observability-v1.schema.json`
@@ -77,6 +77,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/envelope.schema.json`
 - `schema/formal-summary-v1.schema.json`
 - `schema/formal-summary-v2.schema.json`
+- `schema/harness-health.schema.json`
 - `schema/license-scope-audit.schema.json`
 - `schema/conditional-asset-audit.schema.json`
 - `schema/notice-readiness-audit.schema.json`
@@ -93,7 +94,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/usefulness-evaluation-report.schema.json`
 - `schema/verify-lite-run-summary.schema.json`
 
-### 3.4 operation
+#### 3.4 operation
 
 - `schema/change-package.schema.json`
 - `schema/change-package-v2.schema.json`
@@ -102,7 +103,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/plan-artifact.schema.json`
 - `schema/run-manifest.schema.json`
 
-## 4. Produced/consumed mapping for major artifacts
+### 4. Produced/consumed mapping for major artifacts
 
 The table below keeps the current producer/consumer baseline for representative artifacts. Producer and consumer columns intentionally use implementation entry points rather than abstract ownership labels.
 
@@ -110,30 +111,30 @@ The table below keeps the current producer/consumer baseline for representative 
 | --- | --- | --- | --- |
 | `artifacts/verify-lite/verify-lite-run-summary.json` | `schema/verify-lite-run-summary.schema.json` | `scripts/ci/write-verify-lite-summary.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-verify-lite-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `spec/discovery-pack/**/*.{yml,yaml,json}` | `schema/discovery-pack-v1.schema.json` | manual authoring in `spec/discovery-pack/` | `scripts/discovery-pack/validate.mjs`, `scripts/discovery-pack/compile.mjs`, `src/cli/discovery-cli.ts` |
-| `artifacts/discovery-pack/discovery-pack-validate-report.json` | 専用 schema 未整備（`contractId=discovery-pack-validation-report.v1`） | `scripts/discovery-pack/validate.mjs`, `.github/workflows/verify-lite.yml` | `docs/spec/discovery-pack.md`, `scripts/summary/render-pr-summary.mjs`, CI Step Summary / PR comment operators |
-| `artifacts/discovery-pack/discovery-pack-compile-report.json` | 専用 schema 未整備（`contractId=discovery-pack-compile-report.v1`） | `scripts/discovery-pack/compile.mjs`, `.github/workflows/verify-lite.yml`（strict時 dry-run） | `docs/spec/discovery-pack.md`, `scripts/summary/render-pr-summary.mjs`, operator review before SSOT promotion |
+| `artifacts/discovery-pack/discovery-pack-validate-report.json` | dedicated schema not yet defined (`contractId=discovery-pack-validation-report.v1`) | `scripts/discovery-pack/validate.mjs`, `.github/workflows/verify-lite.yml` | `docs/spec/discovery-pack.md`, `scripts/summary/render-pr-summary.mjs`, CI Step Summary / PR comment operators |
+| `artifacts/discovery-pack/discovery-pack-compile-report.json` | dedicated schema not yet defined (`contractId=discovery-pack-compile-report.v1`) | `scripts/discovery-pack/compile.mjs`, `.github/workflows/verify-lite.yml` (dry-run in strict mode) | `docs/spec/discovery-pack.md`, `scripts/summary/render-pr-summary.mjs`, operator review before SSOT promotion |
 | `artifacts/discovery-pack/plan-to-spec-normalized.md` | non-authoritative Markdown (no schema) | `scripts/discovery-pack/compile.mjs` (`--target plan-spec`), `src/cli/discovery-cli.ts` | `ae tests:scaffold --input ...`, human review before repo SSOT promotion |
 | `artifacts/discovery-pack/context-pack-scaffold.yaml` | `schema/context-pack-v1.schema.json` (scaffold-compatible, non-authoritative) | `scripts/discovery-pack/compile.mjs` (`--target context-pack-scaffold`), `src/cli/discovery-cli.ts` | manual editing before Context Pack SSOT promotion, future Context Pack validation |
 | `artifacts/assurance/assurance-summary.json` | `schema/assurance-summary.schema.json` | `scripts/assurance/aggregate-lanes.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-assurance-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/enforce-assurance-summary.mjs`, `scripts/quality/build-quality-scorecard.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/agents/create-handoff.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `spec/assurance-profile/upstream-context-promotion-v1.json` | `schema/assurance-profile.schema.json` | manual authoring in `spec/assurance-profile/` | `scripts/assurance/aggregate-lanes.mjs`, `docs/guides/upstream-context-promotion.md`, `tests/fixtures/upstream-context-promotion-minimal.assurance.test.ts` |
 | `artifacts/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/publish-envelope.mjs` |
-| `artifacts/trace/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` (copy運用含む) | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/post-envelope-comment.mjs` |
+| `artifacts/trace/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` (including copy-based operation) | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/post-envelope-comment.mjs` |
 | `artifacts/formal/formal-summary-v1.json` | `schema/formal-summary-v1.schema.json` | `scripts/formal/generate-formal-summary-v1.mjs` (`--out`), `.github/workflows/verify-lite.yml`, `.github/workflows/formal-aggregate.yml` | `scripts/ci/validate-formal-summary-v1.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/generate-run-manifest.mjs` |
 | `artifacts/formal/formal-summary-v2.json` | `schema/formal-summary-v2.schema.json` | `scripts/formal/generate-formal-summary-v1.mjs` (`--out-v2`), `.github/workflows/verify-lite.yml`, `.github/workflows/formal-aggregate.yml` | `scripts/ci/validate-formal-summary-v2.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/generate-run-manifest.mjs` |
 | `artifacts/reference/benchmarks/bench.json` | `schema/benchmark-report.schema.json` | `src/commands/bench/run.ts` (`ae bench`) | `tests/scripts/benchmark-report-schema.test.ts`, `scripts/quality/bench-compare.mjs` |
-| `configs/bench-criteria.default.json` | `schema/bench-criteria.schema.json` | `configs/bench-criteria.default.json` (repo default), `scripts/quality/bench-compare.mjs` (`--criteria` 未指定時) | `scripts/quality/bench-compare.mjs`, `tests/scripts/bench-compare.test.ts` |
+| `configs/bench-criteria.default.json` | `schema/bench-criteria.schema.json` | `configs/bench-criteria.default.json` (repo default), `scripts/quality/bench-compare.mjs` (`when --criteria` is omitted) | `scripts/quality/bench-compare.mjs`, `tests/scripts/bench-compare.test.ts` |
 | `artifacts/bench-compare.json` | `schema/bench-compare.schema.json` | `scripts/quality/bench-compare.mjs` | `tests/scripts/bench-compare-schema.test.ts`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/conformance/conformance-results.json` | `schema/conformance-verify-result.schema.json` | `src/cli/conformance-cli.ts` (`ae conformance verify`) | `src/cli/conformance-report.ts`, `scripts/formal/verify-conformance.mjs` |
 | `artifacts/hermetic-reports/conformance/summary.json` | `schema/conformance-report.schema.json` | `scripts/formal/verify-conformance.mjs` | `scripts/change-package/generate.mjs`, `scripts/ci/validate-json.mjs` |
 | `artifacts/observability/trace-bundle.json` | `schema/trace-bundle.schema.json` | `src/cli/conformance-cli.ts` (`ae conformance ingest`) | `src/cli/conformance-cli.ts` (`ae conformance verify --trace-bundle`) |
 | `artifacts/hermetic-reports/trace/**/kvonce-validation.json` | `schema/trace-validation.schema.json` | `scripts/trace/run-kvonce-conformance.sh` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/render-trace-summary.mjs` |
 | `artifacts/change-package/change-package.json` | `schema/change-package.schema.json` | `scripts/change-package/generate.mjs` | `scripts/change-package/validate.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
-| `artifacts/handoff/ae-handoff.json` | `schema/ae-handoff.schema.json` | `scripts/agents/create-handoff.mjs`, `templates/comments/AE-HANDOFF.md`（manual/export）, `docs/agents/handoff.md` | `scripts/agents/validate-handoff.mjs`, future PR/Issue handoff consumers |
+| `artifacts/handoff/ae-handoff.json` | `schema/ae-handoff.schema.json` | `scripts/agents/create-handoff.mjs`, `templates/comments/AE-HANDOFF.md`(manual/export), `docs/agents/handoff.md` | `scripts/agents/validate-handoff.mjs`, future PR/Issue handoff consumers |
 | `artifacts/agents/hook-feedback.json` | `schema/hook-feedback.schema.json` | `scripts/agents/build-hook-feedback.mjs`, `.github/workflows/pr-ci-status-comment.yml` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/agents/create-handoff.mjs`, `docs/agents/hook-feedback.md`, Claude Code / CodeX continuation consumers |
 | `artifacts/plan/plan-artifact.json` | `schema/plan-artifact.schema.json` | `scripts/plan-artifact/generate.mjs` | `scripts/plan-artifact/validate.mjs`, `scripts/ci/policy-gate.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/policy-gate.yml` |
 | `artifacts/ci/policy-input-v1.json` | `schema/policy-input-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/policy-gate.mjs`, `scripts/ci/policy-shadow-compare.mjs`, `scripts/ci/validate-json.mjs` |
 | `artifacts/ci/policy-decision-js-v1.json`, `artifacts/ci/policy-decision-opa-v1.json` | `schema/policy-decision-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `scripts/ci/policy-shadow-compare.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/policy-shadow-compare.mjs`, `scripts/ci/validate-json.mjs` |
-| `artifacts/ci/policy-shadow-compare-v1.json` | 専用 schema 未整備（`contractId=policy-shadow-compare.v1`） | `scripts/ci/policy-shadow-compare.mjs`, `.github/workflows/policy-gate.yml` | `docs/ci/pr-automation.md`, `docs/ci/label-gating.md` |
+| `artifacts/ci/policy-shadow-compare-v1.json` | dedicated schema not yet defined (`contractId=policy-shadow-compare.v1`) | `scripts/ci/policy-shadow-compare.mjs`, `.github/workflows/policy-gate.yml` | `docs/ci/pr-automation.md`, `docs/ci/label-gating.md` |
 | `artifacts/ci/policy-gate-summary.json` | `schema/policy-gate-summary-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/validate-policy-gate-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/ci/harness-health.json` | `schema/harness-health.schema.json` | `scripts/ci/build-harness-health.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/ci-extended.yml` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/change-package/generate.mjs` |
 | `artifacts/quality/quality-scorecard.json` | `schema/quality-scorecard.schema.json` | `scripts/quality/build-quality-scorecard.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-quality-scorecard.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
@@ -150,7 +151,7 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/e2e/ui-e2e-summary.json` | `schema/ui-e2e-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs`, `.github/workflows/parallel-test-execution.yml` | `scripts/ci/build-harness-health.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/e2e/summary.json` | `docs/schemas/artifacts-adapter-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, future adapter-summary aggregators |
 
-## 5. Current gaps (next stage)
+### 5. Current gaps (next stage)
 
 - assurance contracts are still being introduced in phases; default operation stays report-only, and strict assurance enforcement is limited to Verify Lite when the `enforce-assurance` label is present.
 - `schemaVersion` still mixes semver and `*/v1` style identifiers. The staged unification plan lives in `docs/reference/SCHEMA-GOVERNANCE.md`.
@@ -163,7 +164,7 @@ The table below keeps the current producer/consumer baseline for representative 
   - `artifacts/*-retry-eligibility.json`
   - `artifacts/ci/*-summary.json` (risk and related summaries)
 
-## 6. References
+### 6. References
 
 - `docs/reference/SCHEMA-GOVERNANCE.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`
@@ -220,6 +221,7 @@ The table below keeps the current producer/consumer baseline for representative 
 - `schema/conformance-report.schema.json`
 - `schema/conformance-verify-result.schema.json`
 - `schema/hook-feedback.schema.json`
+- `schema/harness-health.schema.json`
 - `schema/issue-traceability-matrix.schema.json`
 - `schema/policy-decision-v1.schema.json`
 - `schema/pr-state-v1.schema.json`
@@ -312,34 +314,6 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/ci/execution-plan-v1.json` | `schema/execution-plan-v1.schema.json` | `scripts/ci/codex-autopilot-lane.mjs` | `scripts/ci/validate-json.mjs`, `docs/ci/codex-autopilot-lane.md` |
 | `artifacts/e2e/ui-e2e-summary.json` | `schema/ui-e2e-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs`, `.github/workflows/parallel-test-execution.yml` | `scripts/ci/build-harness-health.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/e2e/summary.json` | `docs/schemas/artifacts-adapter-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, future adapter-summary aggregators |
-
-## 5. Current gaps (next stage)
-
-- assurance contracts are still being introduced in phases; default operation stays report-only, and strict assurance enforcement is limited to Verify Lite when the `enforce-assurance` label is present.
-- `schemaVersion` still mixes semver and `*/v1` style identifiers. The staged unification plan lives in `docs/reference/SCHEMA-GOVERNANCE.md`.
-- `change-package` still runs with `v1` as the production contract while `v2` remains the proof-carrying preview contract.
-- Formal Summary still operates in a dual-write + dual-validate period (`v2`: `schemaVersion=formal-summary/v2`, `contractId=formal-summary.v2`).
-- `report-envelope` still has two schema lines: `schema/envelope.schema.json` and `schema/report-envelope.schema.json`.
-- The following artifacts still need dedicated schema normalization or explicit contract treatment:
-  - `artifacts/verify-lite/verify-lite-lint-summary.json`
-  - `artifacts/run-manifest-check.json`
-  - `artifacts/*-retry-eligibility.json`
-  - `artifacts/ci/*-summary.json` (risk and related summaries)
-
-## 6. References
-
-- `docs/reference/SCHEMA-GOVERNANCE.md`
-- `docs/quality/ARTIFACTS-CONTRACT.md`
-- `docs/architecture/DELIVERY-CONTRACT-COMPATIBILITY-MATRIX.md`
-- `scripts/ci/validate-artifacts-ajv.mjs`
-- `scripts/ci/validate-formal-summary-v1.mjs`
-- `scripts/ci/validate-formal-summary-v2.mjs`
-- `scripts/ci/validate-json.mjs`
-- `docs/architecture/PR-STATE-EXECUTION-PLAN-V1-DRAFT.md`
-
----
-
-## 日本語
 
 ## 5. 現時点の未整備（次段階）
 
