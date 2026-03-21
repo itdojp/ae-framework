@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
 - README.md
-lastVerified: '2026-03-14'
+lastVerified: '2026-03-22'
 ---
 # ae-framework 概要説明資料
 
@@ -11,15 +11,68 @@ lastVerified: '2026-03-14'
 
 ---
 
-## English (Summary)
+## English
 
-ae-framework is an assurance control plane for agent-driven SDLC that standardizes specifications, verification, evidence, and CI/policy judgment.
+### 1. Purpose and Positioning
+`ae-framework` is an assurance control plane for agent-driven SDLC. It standardizes the flow from requirements to verification, evidence, and PR / release decisions so that teams can operate with auditability and reproducibility.
 
-- Purpose: align requirements, verification, evidence, and CI automation for auditable development
-- Key capabilities: contract/spec registry, verification aggregation, policy gates, GitHub Actions workflows
-- Delivery: project skeleton, CLI tooling, scripts, and templates for automation
-- Non-goals: hosted CI/CD service, agent runtime, or IDE plugin
-- Prerequisites: Node.js >=20.11 and <23, pnpm 10.0.0, GitHub Actions environment
+### 2. Problems It Addresses
+- Broken handoffs between requirements, specifications, tests, and CI decisions
+- Weak reproducibility for heavy verification and delayed regression detection
+- Inconsistent artifact quality when multiple agents participate in delivery
+
+### 3. Value Proposition
+- Scripts and workflows that keep specifications and verification in one operating model
+- Visibility for quality gates, evidence, and traceability outputs
+- Small, reversible PR operations with CI optimization and opt-in heavy checks
+
+### 4. Main Building Blocks
+- GitHub Actions workflows as the primary CI execution surface
+- CLI commands and scripts for specification, verification, and quality automation
+- Decision artifacts such as `assurance-summary`, `quality-scorecard`, `hook-feedback`, and `ae-handoff`
+- Specification registry and aggregation using `Context Pack`, `boundary-map`, and `change-package`
+- Policy automation through `policy-gate`, `gate`, and release / post-deploy summaries
+- Integration paths for agent operators such as Claude Code and Codex
+
+### 5. Target Users and Scenarios
+- Product delivery teams across PM, engineering, QA, and operations
+- Projects that introduce agents into the development workflow
+- Teams that need specification-driven validation, heavy quality checks, or evidence retention
+
+### 6. Non-goals
+- Agent runtimes or IDE plugins
+- Hosted CI/CD as a service
+- UI starter kits or frontend-only scaffolds
+- Environments that cannot run the current Node.js / pnpm toolchain required by `pnpm run verify:lite`
+- Operating models that do not need retained CI evidence or audit trails
+
+### 7. Prerequisites
+- Node.js: `>=20.11 <23` (`package.json` `engines.node`)
+- pnpm: `10.0.0` (`package.json` `packageManager`)
+- CI surface: GitHub Actions (`.github/workflows/`)
+
+### 8. Minimum Adoption Path
+1. Install dependencies with `pnpm install`
+2. Set up hooks with `pnpm run setup-hooks`
+3. Run the minimum checks: `pnpm run lint` and `pnpm run test:fast`
+
+### 9. Current System Snapshot (as of 2026-03-22)
+- Main PR baseline on `main`: `verify-lite`, `policy-gate`, and `gate`
+- Formal verification stack consolidated behind `pnpm run verify:formal`
+- Assurance control plane artifacts generated under `artifacts/assurance/`, `artifacts/quality/`, `artifacts/agents/`, and `artifacts/handoff/`
+- Context Pack boundary management available through `spec/context-pack/boundary-map.json` and `pnpm run context-pack:verify-boundary-map`
+- Policy evaluation supports staged migration with JS decisions and OPA shadow comparison
+- Frontend / UI support lives under `apps/web`, `apps/storybook`, `packages/ui`, and `packages/design-tokens`
+
+### 10. Related Documents
+- Detailed guide: `docs/product/DETAIL.md`
+- User manual: `docs/product/USER-MANUAL.md`
+- Product-fit / input-output map: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- Input-only repository pattern: `docs/product/INPUT-ONLY-SPEC-REPO-PATTERN.md`
+- Current implementation overview: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
+- Minimal adoption guide: `docs/product/MINIMAL-ADOPTION.md`
+- Full docs index: `docs/README.md`
+- Positioning and comparison: `docs/product/POSITIONING.md`
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-22'
 ---
 # ae-framework の位置づけ（比較と導入指針）
 
@@ -8,9 +8,65 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (Summary)
+## English
 
-Clarifies how ae-framework differs from adjacent categories (CI templates, quality tools, spec/contract frameworks, agent runtimes) and provides adoption guidance.
+### 1. Purpose
+This document supports adoption decisions by clarifying how `ae-framework` differs from adjacent categories and by outlining practical adoption patterns.
+
+### 2. Decision Axes
+| Axis | Meaning |
+| --- | --- |
+| Purpose | What problem the mechanism is intended to solve |
+| Operating scope | Whether it covers specs, tests, CI, artifacts, and operations |
+| Auditability | Whether change rationale and verification outputs remain traceable |
+| Reproducibility | Whether the same result can be re-executed deterministically |
+| Cost | Adoption, operation, and learning cost |
+| Extensibility | Whether heavier checks can be enabled incrementally |
+
+### 3. Comparison with Adjacent Categories
+#### 3.1 CI template collections
+- Similarity: both standardize CI execution
+- Difference: `ae-framework` also standardizes artifacts, evidence, and gate operation
+
+#### 3.2 Quality-gate tools
+- Similarity: both make pass/fail judgments from quality signals
+- Difference: `ae-framework` assumes composed operation of lightweight and heavyweight gates instead of a single tool verdict
+
+#### 3.3 Spec / contract test frameworks
+- Similarity: both validate behavior against specifications
+- Difference: `ae-framework` integrates specification, tests, CI gates, and generated evidence into one operating model
+
+#### 3.4 Agent runtimes
+- Similarity: both assume agent-assisted delivery
+- Difference: `ae-framework` is not the runtime. It is the operating surface that receives artifacts, verification outputs, and policy decisions
+
+### 4. Practical Strengths
+- Standardized minimum PR baseline on `main`: `verify-lite`, `policy-gate`, and `gate`
+- Opt-in heavy verification through labels or slash commands when needed
+- Artifact-driven accountability through summaries, envelopes, and quality decision records
+
+### 5. Adoption Patterns
+#### 5.1 Existing CI exists, but operation is inconsistent
+Start from the minimum PR baseline: `verify-lite` + `policy-gate` + `gate`.
+
+#### 5.2 Specification operation is not yet in place
+Introduce AE-Spec / AE-IR first so that specification-to-verification becomes explicit.
+
+#### 5.3 Heavy checks or formal verification should be phased in gradually
+Use opt-in labels / slash commands and add heavy verification incrementally.
+
+#### 5.4 Agent usage needs stronger operational control
+Introduce Codex / Claude Code playbooks together with artifact collection and review evidence.
+
+### 6. Non-goals
+- Agent runtimes or IDE plugins
+- Hosted CI/CD services
+- Generic UI starter kits
+
+### 7. References
+- `docs/product/OVERVIEW.md`
+- `docs/quality/adoption-sample-flow.md`
+- `docs/ci/label-gating.md`
 
 ---
 
