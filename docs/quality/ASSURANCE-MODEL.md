@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-22'
 owner: assurance-model
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -10,16 +10,122 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-This document defines the working assurance model for ae-framework:
+## 1. Purpose
+This document defines the working assurance model for ae-framework so that implementation, operations, and documentation use the same meaning for assurance-related terms.
+
+It fixes the meaning of:
 - claim
-- level
+- assurance level
 - validation lane
 - evidence kind
 - assumption / waiver / runtime control
 
-It is a positioning and contract-alignment document. Full automation is introduced incrementally.
+This is both a positioning document and a contract-alignment reference. Full automation is introduced incrementally, but the terminology is intended to remain stable.
+
+## 2. Basic unit
+
+### 2.1 Claim
+A claim is the unit that states what the system wants to guarantee from a business or design perspective.
+
+Examples:
+- Ledger balance never becomes negative.
+- Replay is idempotent.
+- Required audit fields are always emitted.
+
+### 2.2 Level
+Level expresses the weight of assurance for each claim.
+
+| Level | Meaning | Typical backing evidence |
+| --- | --- | --- |
+| `A0` | contracts, lint, and build remain valid | schema, lint, build |
+| `A1` | basic behavior is checked by unit / integration / property testing | unit, integration, property |
+| `A2` | structural specification consistency is also checked | Context Pack, product-coproduct, natural-transformation, conformance |
+| `A3` | critical claims are closed by model checking or counterexample exploration | TLA, Alloy, SMT, CSP, counterexample-closed |
+| `A4` | proof-carrying assurance is reached | Lean, Kani, equivalence proof |
+
+### 2.3 Validation lane
+A validation lane is an independent verification path so that a single misunderstanding is not repeated across all checks.
+
+- `spec`
+- `behavior`
+- `adversarial`
+- `model`
+- `proof`
+- `runtime`
+
+| lane | Representative producer | Primary role |
+| --- | --- | --- |
+| `spec` | Context Pack validate / functor / natural transformation / product-coproduct / phase5 | verify specification description and structural consistency |
+| `behavior` | unit / integration / property / MBT | verify implementation behavior |
+| `adversarial` | mutation / fuzz / differential / counterexample replay | verify failure modes and counterexample search |
+| `model` | conformance / TLA / Alloy / SMT / CSP / SPIN | verify models, state transitions, and rule consistency |
+| `proof` | Lean / Kani / equivalence proof | provide machine-checked proof-level guarantees |
+| `runtime` | monitoring / alert / rollout guard / runtime conformance | provide operational compensation and runtime controls |
+
+For taxonomy details and the independence rule, see `docs/quality/assurance-lanes.md`.
+
+### 2.4 Evidence kind
+Evidence kind is the type used to explain why a claim is considered supported.
+
+- schema / lint / type / build
+- unit / integration / property
+- conformance / product-coproduct / natural-transformation
+- model-check / counterexample-closed
+- proof
+- runtime-control
+- waiver
+
+## 3. Supporting elements
+
+### 3.1 Assumption
+An assumption is a prerequisite for the guarantee. Typical examples include DB isolation, clock source behavior, or consistency guarantees of external SaaS dependencies.
+
+### 3.2 Runtime control
+Runtime control compensates for areas that are not closed by proof or model checking, such as feature flags, alerts, rollout guards, and monitors.
+
+### 3.3 Waiver
+A waiver is the record used when an exception is accepted. It should retain owner, expiry, reason, and related claims.
+
+## 4. Mapping to the current implementation
+
+Implemented on current `main`:
+- Context Pack v1 and its extended map family
+- verify-lite summary
+- formal summary / formal aggregate
+- policy-gate / change-package v1
+- assurance profile v1
+- change-package v2
+- report-only `verify:assurance` summary generation
+- strict assurance enforcement when the `enforce-assurance` label is set
+- assurance display in PR / release / post-deploy summaries
+
+Not yet implemented or still being phased in:
+- per-claim achieved-level aggregation
+- assurance-aware enforcement directly inside `policy-gate`
+
+## 5. Operating principles
+
+1. Do not describe something as “high assurance” without stating the claim.
+2. Do not conflate `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved`.
+3. Limit heavy assurance to high-risk changes and keep the normal PR lane fast.
+4. Use summary artifacts as the primary input for judgment; raw logs are supporting evidence.
+5. Retain assumptions and trust boundaries so that the guarantee scope is not overstated.
+
+## 6. Related contracts
+
+Contracts already present on `main`:
+- `schema/context-pack-v1.schema.json`
+- `schema/assurance-profile.schema.json`
+- `schema/assurance-summary.schema.json`
+- `schema/change-package.schema.json`
+- `schema/change-package-v2.schema.json`
+
+Contracts that remain incremental candidates:
+- `schema/verify-lite-run-summary.schema.json`
+- `schema/policy-input-v1.schema.json`
+- `schema/policy-decision-v1.schema.json`
 
 ---
 
