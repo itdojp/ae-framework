@@ -10,9 +10,116 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-Defines required vs optional artifacts and how to validate them in CI.
+Defines the minimum contract for CI-generated artifacts and reports so that missing or invalid outputs are detected early.
+
+### 1. Purpose
+- This document defines the contract and validation rules for `artifacts/` and `reports/`.
+- `docs/maintenance/repo-layout-policy.md` defines placement and tracked vs non-tracked policy.
+- When the two documents differ, placement and tracking rules follow the repo layout policy, while schema and consumer rules follow this document.
+- `artifacts/` can contain runtime output, committed contract artifacts, reference snapshots, archives, and local debug archives at the same time.
+
+### 2. Required artifacts
+- `artifacts/verify-lite/verify-lite-run-summary.json`
+  - producer: `pnpm run verify:lite`
+  - validation: JSON parse + schema
+  - role: summary of the verify-lite run
+- `artifacts/report-envelope.json`
+  - producer: `scripts/trace/create-report-envelope.mjs`
+  - validation: JSON parse + schema
+  - role: report envelope generated from verify-lite evidence
+
+Schema validation is already part of `verify-lite.yml`. This document makes existence and minimum consistency explicit.
+
+### 3. Common metadata
+- `artifacts/verify-lite/verify-lite-run-summary.json`
+- `artifacts/formal/formal-summary-v1.json`
+- `artifacts/formal/formal-summary-v2.json`
+
+These artifacts should carry shared `metadata`.
+
+- common schema: `schema/artifact-metadata.schema.json`
+- primary fields:
+  - `generatedAtUtc`
+  - `generatedAtLocal`
+  - `timezoneOffset`
+  - `gitCommit`
+  - `branch`
+  - `runner`
+  - `toolVersions`
+
+If `formal/summary.json` is kept as a legacy compatibility input, applying equivalent metadata is still recommended.
+
+### 4. Assurance provenance minimum
+- `verify:assurance` is a summary-generation command and is report-only by default.
+- `verify-lite.yml` generates `artifacts/assurance/assurance-summary.{json,md}` in report-only mode.
+- Strict assurance enforcement is added only when the `enforce-assurance` label is present.
+- The current minimum provenance classes are:
+  - `spec-derived`
+  - `source-derived`
+  - `model-derived`
+  - `runtime-derived`
+  - `manual`
+- Full schema enforcement currently stops at the common artifact metadata.
+- Detailed lineage such as `derived-from input`, `prompt`, `seed`, or replay command remains a docs-first rule and is separated from strict schema enforcement.
+
+### 5. Optional artifact categories
+Representative optional artifacts include the following groups.
+
+- formal / conformance
+  - `artifacts/hermetic-reports/conformance/summary.json`
+  - `artifacts/hermetic-reports/formal/summary.json`
+  - `artifacts/formal/formal-summary-v1.json`
+  - `artifacts/formal/formal-summary-v2.json`
+- assurance / scorecard / handoff
+  - `artifacts/assurance/assurance-summary.{json,md}`
+  - `artifacts/quality/quality-scorecard.{json,md}`
+  - `artifacts/agents/hook-feedback.{json,md}`
+  - `artifacts/handoff/ae-handoff.{json,md}`
+- CI / automation observability
+  - `artifacts/ci/policy-gate-summary.{json,md}`
+  - `artifacts/ci/policy-shadow-compare-v1.json`
+  - `artifacts/ci/harness-health.{json,md}`
+  - `artifacts/automation/weekly-failure-summary.json`
+  - `artifacts/automation/weekly-alert-summary.json`
+- Context Pack / Discovery Pack
+  - `artifacts/context-pack/*-report.{json,md}`
+  - `artifacts/discovery-pack/discovery-pack-validate-report.{json,md}`
+  - `artifacts/discovery-pack/discovery-pack-compile-report.{json,md}`
+  - `artifacts/discovery-pack/plan-to-spec-normalized.md`
+  - `artifacts/discovery-pack/context-pack-scaffold.yaml`
+- release / trace / benchmark
+  - `artifacts/release/release-plan.{json,md}`
+  - `artifacts/release/post-deploy-verify.{json,md}`
+  - `artifacts/hermetic-reports/trace/**`
+  - `artifacts/reference/benchmarks/bench.json`
+  - `artifacts/bench-compare.{json,md}`
+
+The authoritative details remain in the Japanese section and the contract catalog. This English section mirrors the operational shape and entrypoints.
+
+### 6. Validation entrypoints
+```bash
+# Validate artifact schemas in non-strict mode
+pnpm run artifacts:validate
+
+# Strict artifact validation
+pnpm run artifacts:validate -- --strict
+
+# Check required artifacts
+node scripts/ci/check-required-artifacts.mjs
+
+# Strict required-artifact check with explicit inputs
+REQUIRED_ARTIFACTS=artifacts/verify-lite/verify-lite-run-summary.json,artifacts/report-envelope.json \
+REQUIRED_ARTIFACTS_STRICT=1 \
+node scripts/ci/check-required-artifacts.mjs --strict
+```
+
+### 7. Related references
+- `docs/maintenance/repo-layout-policy.md`
+- `docs/maintenance/artifact-reference-layout-plan.md`
+- `docs/quality/assurance-lanes.md`
+- `docs/reference/CONTRACT-CATALOG.md`
 
 ---
 
