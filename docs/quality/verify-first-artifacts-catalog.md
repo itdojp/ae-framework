@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-21'
 ---
 # Verify-first 成果物カタログ（SSOT / AC / NFR / Evidence）
 
@@ -11,9 +11,55 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (Summary)
+## English
 
-Defines the minimum repository artifacts for Verify-first operations and clarifies ownership/review/storage responsibilities.
+### 1. Purpose
+
+Define the minimum repository artifacts required to keep Verify-first operations auditable in the repository rather than in conversation logs.
+
+### 2. Minimum Artifact Catalog
+
+| Category | Required | Minimum content | Example storage | Decision timing |
+| --- | --- | --- | --- | --- |
+| Spec | Required | scope, requirements, assumptions, revision history | `spec/**/*.md`, `spec/**/*.yaml`, `spec/**/*.yml` | PR review |
+| Acceptance Criteria | Required | Given/When/Then or equivalent pass/fail conditions | AC section inside the spec | PR review |
+| NFR | Required | performance, reliability, security, operational constraints | `spec/nonfunctional/*`, NFR section inside the spec | PR review |
+| Constraints / assumptions | Required | technical limits, dependencies, excluded scope | constraints / assumptions section in the spec | PR review |
+| Gate definition | Required | required / optional gate policy | `spec/gates.yaml`, workflow definitions | CI execution |
+| Evidence | Required | CI summary, reproduction command, primary log paths | `artifacts/**`, PR body / comments | after CI |
+| Formal-method reports | Optional | TLA+, Alloy, CSP, Lean, or equivalent formal outputs | `artifacts/hermetic-reports/formal/**` | opt-in execution |
+| Additional quality reports | Optional | security, adapters, QA, benchmark outputs | `artifacts/**` | opt-in execution |
+
+### 3. Responsibility Matrix
+
+| Artifact | Owner | Reviewer | Canonical storage |
+| --- | --- | --- | --- |
+| Spec / AC / NFR / constraints | implementation author | reviewer + CODEOWNERS | repository (`spec/**`) |
+| Gate definition | CI / quality maintainer + PR author | CI / quality reviewer | repository (`.github/workflows/**`, `spec/gates.yaml`) |
+| Evidence summary | CI as producer + PR author as supplementer | reviewer | artifacts plus PR thread |
+
+### 4. Mapping to Existing SSOT / Contracts
+
+| Catalog entry | Current reference |
+| --- | --- |
+| Spec placement rules | `docs/spec/registry.md` |
+| Artifact required / optional contract | `docs/quality/ARTIFACTS-CONTRACT.md` |
+| Formal verification gate policy | `docs/quality/formal-gates.md` |
+| PR required check operations | `docs/ci-policy.md` |
+| Quality operating flow | `docs/quality/formal-runbook.md` |
+
+### 5. Minimum PR Checklist
+
+- [ ] Spec / AC / NFR / constraints are reviewable in the repository diff
+- [ ] Required gate outcomes are observable
+- [ ] Evidence can be reached from the PR
+- [ ] Out-of-scope / non-goals are explicitly recorded
+
+### 6. Notes
+
+- A plan is an input artifact, not the canonical record.
+- The canonical record remains repository-managed artifacts.
+- This catalog is intentionally minimal and may be extended for product-specific needs.
 
 ---
 
