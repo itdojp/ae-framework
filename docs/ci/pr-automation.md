@@ -57,7 +57,7 @@ Important:
 All automation is controlled via GitHub Repository Variables.
 
 #### 3.1 Recommended rollout order
-1. Configure branch protection required checks, at minimum `verify-lite` and `policy-gate`
+1. Configure branch protection required checks, at minimum `verify-lite`, `policy-gate`, and `gate`
 2. Start with `AE_AUTOMATION_PROFILE=conservative` and label-based opt-in
 3. Expand to `balanced` or `aggressive` only after the flow is stable
 4. Override with explicit variables only where needed
@@ -93,7 +93,7 @@ Recommended progression:
 2. For `risk:high`, commit `artifacts/plan/plan-artifact.json|md`
 3. Trigger AI review from the PR UI and wait for a submitted review
 4. Confirm the `Copilot Auto Fix` result comment
-5. Confirm `gate` and `policy-gate` are green, and resolve any remaining threads
+5. Confirm `verify-lite`, `policy-gate`, and `gate` are green, and resolve any remaining threads
 6. Once conditions are satisfied, `PR Maintenance` enables auto-merge and GitHub merges the PR
 
 Supplement:
