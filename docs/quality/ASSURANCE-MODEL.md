@@ -12,7 +12,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## English
 
-## 1. Purpose
+### 1. Purpose
 This document defines the working assurance model for ae-framework so that implementation, operations, and documentation use the same meaning for assurance-related terms.
 
 It fixes the meaning of:
@@ -24,9 +24,9 @@ It fixes the meaning of:
 
 This is both a positioning document and a contract-alignment reference. Full automation is introduced incrementally, but the terminology is intended to remain stable.
 
-## 2. Basic unit
+### 2. Basic unit
 
-### 2.1 Claim
+#### 2.1 Claim
 A claim is the unit that states what the system wants to guarantee from a business or design perspective.
 
 Examples:
@@ -34,8 +34,8 @@ Examples:
 - Replay is idempotent.
 - Required audit fields are always emitted.
 
-### 2.2 Level
-Level expresses the weight of assurance for each claim.
+#### 2.2 Assurance level
+Assurance level expresses the weight of assurance for each claim.
 
 | Level | Meaning | Typical backing evidence |
 | --- | --- | --- |
@@ -45,7 +45,7 @@ Level expresses the weight of assurance for each claim.
 | `A3` | critical claims are closed by model checking or counterexample exploration | TLA, Alloy, SMT, CSP, counterexample-closed |
 | `A4` | proof-carrying assurance is reached | Lean, Kani, equivalence proof |
 
-### 2.3 Validation lane
+#### 2.3 Validation lane
 A validation lane is an independent verification path so that a single misunderstanding is not repeated across all checks.
 
 - `spec`
@@ -66,7 +66,7 @@ A validation lane is an independent verification path so that a single misunders
 
 For taxonomy details and the independence rule, see `docs/quality/assurance-lanes.md`.
 
-### 2.4 Evidence kind
+#### 2.4 Evidence kind
 Evidence kind is the type used to explain why a claim is considered supported.
 
 - schema / lint / type / build
@@ -77,24 +77,24 @@ Evidence kind is the type used to explain why a claim is considered supported.
 - runtime-control
 - waiver
 
-## 3. Supporting elements
+### 3. Supporting elements
 
-### 3.1 Assumption
+#### 3.1 Assumption
 An assumption is a prerequisite for the guarantee. Typical examples include DB isolation, clock source behavior, or consistency guarantees of external SaaS dependencies.
 
-### 3.2 Runtime control
+#### 3.2 Runtime control
 Runtime control compensates for areas that are not closed by proof or model checking, such as feature flags, alerts, rollout guards, and monitors.
 
-### 3.3 Waiver
+#### 3.3 Waiver
 A waiver is the record used when an exception is accepted. It should retain owner, expiry, reason, and related claims.
 
-## 4. Mapping to the current implementation
+### 4. Mapping to the current implementation
 
 Implemented on current `main`:
 - Context Pack v1 and its extended map family
 - verify-lite summary
 - formal summary / formal aggregate
-- policy-gate / change-package v1
+- policy-gate / change-package v2
 - assurance profile v1
 - change-package v2
 - report-only `verify:assurance` summary generation
@@ -105,7 +105,7 @@ Not yet implemented or still being phased in:
 - per-claim achieved-level aggregation
 - assurance-aware enforcement directly inside `policy-gate`
 
-## 5. Operating principles
+### 5. Operating principles
 
 1. Do not describe something as “high assurance” without stating the claim.
 2. Do not conflate `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved`.
@@ -113,7 +113,7 @@ Not yet implemented or still being phased in:
 4. Use summary artifacts as the primary input for judgment; raw logs are supporting evidence.
 5. Retain assumptions and trust boundaries so that the guarantee scope is not overstated.
 
-## 6. Related contracts
+### 6. Related contracts
 
 Contracts already present on `main`:
 - `schema/context-pack-v1.schema.json`
