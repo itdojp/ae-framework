@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/verify-first-implementation-runbook.md
 - policy/risk-policy.yml
-lastVerified: '2026-03-14'
+lastVerified: '2026-03-21'
 ---
 # Verify-first 最小Quality Gate基準（Required / Opt-in）
 
@@ -11,9 +11,58 @@ lastVerified: '2026-03-14'
 
 ---
 
-## English (Summary)
+## English
 
-Defines a minimal required gate baseline and opt-in expansion gates for Verify-first operations, plus when to apply each gate.
+### 1. Purpose
+
+Define the minimal required gate baseline for day-to-day PR handling and the opt-in expansion gates used by Verify-first operations.
+
+### 2. Required Gates (PR blocking)
+
+| Gate | Minimum success condition | Primary evidence |
+| --- | --- | --- |
+| `verify-lite` | `types:check / lint / build / conformance` succeed | `artifacts/verify-lite/verify-lite-run-summary.json` |
+| `policy-gate` | risk policy, required labels, topology / approval conditions succeed | `artifacts/ci/policy-gate-summary.json` |
+| `Copilot Review Gate / gate` | required review gate succeeds and no AI review thread remains unresolved | Copilot Review Gate logs |
+
+Notes:
+- Treat `docs/ci-policy.md` as the current operational source for detailed CI policy.
+- Required gates should stay fast, deterministic, and reproducible.
+- `test:fast` is a recommended local smoke check, but it is not itself a PR-blocking required gate.
+
+### 3. Opt-in Gates (expansion)
+
+| Gate family | Typical label / trigger | When to apply | Primary evidence |
+| --- | --- | --- | --- |
+| Formal | `run-formal`, `enforce-formal` | spec alignment, formal verification, semantic regression risk | `artifacts/hermetic-reports/formal/**` |
+| Security | `run-security` | dependency updates, auth / authz changes, secret handling | security / sbom reports |
+| Adapters | `run-adapters` | a11y, perf, lighthouse, browser-facing quality checks | adapter summaries / comments |
+| QA | `run-qa` | behavior regression or performance degradation concerns | QA / benchmark reports |
+
+Contract separation notes:
+- API / integration contract verification such as Pact belongs to `run-integration` or the extended CI lane.
+- DbC concerns are covered through a combination of property checks, runtime conformance, and integration assertions.
+
+### 4. Decision Rules
+
+1. Run the required gates for every PR.
+2. Add opt-in gates according to the nature and risk of the change.
+3. Even when an opt-in gate is not run, keep the rationale recordable in the PR.
+4. If a required gate must fail-open, record the exception reason and a follow-up issue.
+
+### 5. Failure Diagnostics
+
+Use the following template when a required or opt-in gate fails:
+- `docs/quality/verify-first-failure-diagnostic-template.md`
+
+The diagnostic record should preserve reproducibility, not only narrative explanation.
+
+### 6. References
+
+- `docs/ci-policy.md`
+- `docs/quality/ARTIFACTS-CONTRACT.md`
+- `docs/quality/formal-runbook.md`
+- `docs/quality/verify-first-failure-diagnostic-template.md`
 
 ---
 
