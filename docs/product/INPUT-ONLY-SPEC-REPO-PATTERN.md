@@ -4,7 +4,7 @@ canonicalSource:
 - docs/strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md
 - docs/spec/context-pack.md
 - docs/reference/CLI-COMMANDS-REFERENCE.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-22'
 ---
 # Input-Only Spec Repository Pattern（入力のみリポジトリ・パターン）
 
@@ -12,14 +12,63 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (Summary)
+## English
 
-This document describes a strict **input-only spec repository** pattern for benchmarking agentic synthesis with ae-framework.
+### 1. Purpose
+This pattern defines a strict repository boundary for experiments or benchmarks where the goal is to prove that implementations can be synthesized from minimal human-readable inputs. The input repository holds only the specification-side material, while generated contracts, code, tests, and CI belong to an output or artifacts repository.
 
-- **Input repo** contains only human-readable specs and fixed assumptions.
-- **Machine-readable API contracts** (OpenAPI / JSON Schema / etc.) are treated as **outputs**, regardless of directory name.
-- **Tests/CI that assume generated outputs** are also **outputs** and must not be placed in the input repo.
-- Use an external **harness** (local runner or CI) to run an *Input Gate* and *Synthesis Gate*, and store generated artifacts in a separate output repo.
+### 2. Terms
+- Input Spec Repo: the repository that stores human-readable requirements, fixed assumptions, and operator instructions
+- Output / Artifacts Repo: the repository that stores generated contracts, code, tests, CI definitions, and execution artifacts
+- Harness: the execution environment, local or CI, that runs `ae-framework` (and optionally Codex) against the input repo and persists generated outputs
+
+### 3. Invariants
+#### 3.1 Machine-readable API contracts are outputs
+Regardless of directory name, machine-readable contracts are treated as outputs. Examples include:
+- OpenAPI
+- JSON Schema
+- Protocol Buffers
+- GraphQL SDL
+- AsyncAPI
+
+#### 3.2 `contracts/**` and `schema/**` are outputs
+In this pattern, `contracts/**` and `schema/**` are generated artifacts and must not live in the input repository.
+
+#### 3.3 Tests and CI that depend on generated contracts are also outputs
+The input repository must not contain:
+- conformance tests that assume generated contracts
+- unit or integration tests tied to generated code or machine-readable contracts
+- CI workflows that assume generated outputs exist
+
+### 4. Recommended Placement
+#### 4.1 Input Spec Repo
+Allowed examples:
+- human-readable requirement or specification markdown such as `spec/*.md`
+- fixed assumptions such as platform constraints, non-functional targets, or DoD notes
+- operator instructions such as `AGENTS.md`
+
+Forbidden examples:
+- machine-readable API contracts
+- implementation code
+- tests
+- `.github/workflows/*` that depend on generated outputs
+- generated artifacts such as `contracts/**`, `schema/**`, `.ae/**`, or `artifacts/**`
+
+#### 4.2 Output / Artifacts Repo
+Typical contents:
+- generated implementation code, tests, and CI workflows
+- machine-readable contracts and schemas
+- execution logs, summaries, and reports
+
+### 5. Gate Model
+#### 5.1 Input Gate
+The harness checks that the input repository does not contain output-like files, and it can also run static specification validation such as `ae-framework -- spec validate` and `ae-framework -- spec lint`.
+
+#### 5.2 Synthesis Gate
+The harness checks whether synthesis can run reproducibly from the given inputs and whether the minimum expected outputs are generated. Detailed quality checks for generated outputs remain on the output side.
+
+### 6. Applicability
+This pattern is intended for synthesis experiments, benchmark runs, and evaluation setups where input minimization matters. It is not the default boundary model for every product repository. Teams should state the boundary explicitly and enforce it continuously through harness-side gates.
 
 ---
 

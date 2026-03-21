@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/reference/CLI-COMMANDS-REFERENCE.md
 - scripts/project/help.mjs
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-22'
 ---
 # ae-framework コマンド体系（実行モード別）
 
@@ -11,9 +11,73 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (Summary)
+## English
 
-This document explains the recommended command entrypoints for development, distribution, and CI, and clarifies when to use `pnpm run`, `pnpm exec`, or direct scripts.
+### 1. Purpose
+`ae-framework` has multiple execution modes for development, packaged distribution, and CI. This document fixes the recommended entrypoint for each mode so operators do not mix development shims, packaged CLI binaries, and direct scripts.
+
+### 2. Execution Mode Matrix
+| Mode | Recommended entrypoint | Main purpose | Notes |
+| --- | --- | --- | --- |
+| Development (TypeScript) | `pnpm run ae-framework -- <cmd>` | feature work, command validation, local debugging | runs `src/cli/index.ts` directly |
+| Benchmark compatibility | `pnpm exec tsx src/cli.ts bench` | legacy `benchmark-report/v1` compatibility | legacy shim; do not use for new user-facing flows |
+| Packaged / built CLI | `pnpm exec ae <cmd>` | end-user operation after build | `package.json bin` points to `dist/src/cli/*` |
+| CI | `pnpm run <script>` | `verify-lite`, tests, security, automation | GitHub Actions uses this path by default |
+| Direct scripts | `node scripts/*` | maintenance or advanced operational tasks | only when the document explicitly calls for it |
+
+### 3. Development Entry Point
+The canonical development-time CLI entrypoint is `src/cli/index.ts`. The benchmark-specific `src/cli.ts` remains a legacy compatibility shim and is not the place to add new user-facing commands.
+
+Example:
+```bash no-doctest
+pnpm run ae-framework -- --help
+pnpm run ae-framework -- spec --help
+pnpm run ae-framework -- quality run --env development
+```
+
+### 4. Packaged / Built Entry Point
+Use the packaged binaries only after a build.
+
+```bash no-doctest
+pnpm run build
+pnpm exec ae --help
+pnpm exec ae spec --help
+```
+
+### 5. CI Entry Point
+CI is designed around `pnpm run <script>`.
+
+```bash no-doctest
+pnpm run verify:lite
+pnpm run test:fast
+pnpm run security:integrated:quick
+```
+
+On `main`, the typical required-check baseline remains `verify-lite`, `policy-gate`, and `gate`.
+
+### 6. Common Confusions
+#### 6.1 `spec validate` input handling
+`spec validate` requires `-i` because `src/cli/spec-cli.ts` declares it as a required option.
+
+```bash no-doctest
+pnpm run spec:validate -i spec/example-spec.md --output .ae/ae-ir.json
+```
+
+#### 6.2 `help` output
+`pnpm run help` executes `scripts/project/help.mjs` and prints repository script groups. `pnpm run ae-framework -- --help` or `pnpm exec ae --help` shows CLI subcommands instead.
+
+### 7. When direct scripts are acceptable
+Direct script execution is acceptable only when the document explicitly instructs it, such as heavy-test caching or trend comparison.
+
+```bash no-doctest
+node scripts/pipelines/sync-test-results.mjs --store
+node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json
+```
+
+### 8. Related Documents
+- `docs/product/USER-MANUAL.md`
+- `docs/product/USE-CASES.md`
+- `docs/reference/CLI-COMMANDS-REFERENCE.md`
 
 ---
 
