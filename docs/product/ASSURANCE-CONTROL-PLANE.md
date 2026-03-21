@@ -13,7 +13,7 @@ lastVerified: '2026-03-22'
 
 ## English
 
-## 1. Definition
+### 1. Definition
 This document defines ae-framework as an assurance control plane that sits on top of BYO agents and verification tools.
 
 Here, “control plane” means the layer that keeps the following under a consistent contract:
@@ -23,7 +23,7 @@ Here, “control plane” means the layer that keeps the following under a consi
 - policy / PR gate / merge automation
 - release / post-deploy judgment
 
-## 2. Where the value actually comes from
+### 2. Where the value actually comes from
 The center of value is not an isolated code-generation feature. In the current implementation, the practical value comes from:
 
 1. fixing specifications and contracts through Context Pack and schemas
@@ -32,28 +32,28 @@ The center of value is not an isolated code-generation feature. In the current i
 4. operating `policy-gate`, `gate`, auto-fix, and auto-merge with explicit control
 5. retaining PR / release evidence in JSON and Markdown
 
-## 3. What ae-framework is / is not
+### 3. What ae-framework is / is not
 
-### 3.1 What it is
+#### 3.1 What it is
 - an agentic SDLC orchestrator
 - a control plane for specification / verification / evidence / policy gates
 - an operating model that can strengthen assurance only for selected high-risk changes
 
-### 3.2 What it is not
+#### 3.2 What it is not
 - a single-model-dependent code generator
 - an agent runtime or IDE plugin
 - a mandatory framework that requires formal proof on every change
 
-## 4. Producer vs. control-plane responsibilities
+### 4. Producer vs. control-plane responsibilities
 
 | Category | Examples | Primary responsibility |
 | --- | --- | --- |
 | Producer | coding agents, test runners, TLA/Alloy/SMT/CSP/Lean tools | generate code, specifications, and raw verification results |
-| Assurance control plane | Context Pack, verify-lite, formal aggregate, policy gate, change package | collect outputs, validate contracts, and convert results into judgment artifacts |
+| Assurance control plane | Context Pack, `verify-lite`, formal aggregate, `policy-gate`, change package | collect outputs, validate contracts, and convert results into judgment artifacts |
 
 Because of this separation, teams can replace the underlying agents or solvers while keeping the judgment-side contracts stable.
 
-### 4.1 Two-layer model
+#### 4.1 Two-layer model
 
 ```text
 Harness layer
@@ -69,7 +69,7 @@ Assurance control plane
 - The Assurance control plane converts those outputs into contract-bound artifacts that can be reviewed and judged.
 - The differentiator of ae-framework is not the individual harness feature, but the ability to keep the judgment-side contract stable.
 
-## 5. Rollout profiles
+### 5. Rollout profiles
 
 ### Baseline
 - `verify-lite`
@@ -92,7 +92,7 @@ Assurance control plane
 - proof-carrying change package
 - role: strengthen the control plane only for selected high-risk changes
 
-## 6. Mapping to the current implementation
+### 6. Mapping to the current implementation
 
 Control-plane elements that already exist today:
 - `docs/spec/context-pack.md`
@@ -117,7 +117,7 @@ Conditional or preview elements:
 - proof-carrying change package v2
 - opt-in heavy lanes such as formal / trace / security
 
-## 7. What matters on the judgment side
+### 7. What matters on the judgment side
 - being able to explain what is guaranteed and what remains unverified is more important than a raw green build alone
 - review and release decisions should center on summary artifacts, not raw logs
 - heavy verification should be required only for high-risk changes, while normal lanes stay fast
