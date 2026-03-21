@@ -37,6 +37,8 @@ Minimal excerpt:
   "claims": [
     {
       "id": "no-negative-balance",
+      "statement": "The change must not allow a negative balance.",
+      "criticality": "high",
       "status": "model-checked",
       "artifactRefs": [
         "artifacts/assurance/assurance-summary.json"
@@ -57,7 +59,7 @@ Minimal excerpt:
 }
 ```
 
-This excerpt shows only the `assurance`, `claims`, and `proofObligations` shape. Use `fixtures/change-package/sample.change-package-v2.json` for the complete sample.
+This excerpt focuses on the `assurance`, `claims`, and `proofObligations` structure while keeping the shown entries schema-valid. Use `fixtures/change-package/sample.change-package-v2.json` for the complete sample.
 
 ### 3. Differences from v1
 
@@ -70,7 +72,7 @@ This excerpt shows only the `assurance`, `claims`, and `proofObligations` shape.
 | proof obligation | absent | `proofObligations[]` |
 | counterexample | absent | `counterexamples[]` |
 | trust boundary | implicit | `trustBoundary.outsideModel` |
-| runtime control | spread across rollout / monitoring | explicit `runtimeControls[]` |
+| runtime control | spread across rollout / monitoring | explicit `runtimeControls.alerts[]` / `runtimeControls.featureFlags[]` |
 | waiver | only `exceptions[]` | adds `waivers[]` linked to claims |
 
 ### 4. Meaning of Additional Sections
@@ -119,7 +121,7 @@ node scripts/change-package/validate.mjs \
   --schema schema/change-package-v2.schema.json
 ```
 
-This validates schema shape only. Artifact-ref existence checks and CI dual-write remain follow-up work.
+This validates schema shape and evaluates evidence consistency, including required evidence IDs and present/missing count mismatches. Artifact-ref existence checks and CI dual-write remain follow-up work.
 
 ### 7. Design Notes
 
@@ -156,6 +158,8 @@ Phase 1 の現時点では、**schema とドキュメントの定義**までを�
   "claims": [
     {
       "id": "no-negative-balance",
+      "statement": "The change must not allow a negative balance.",
+      "criticality": "high",
       "status": "model-checked",
       "artifactRefs": [
         "artifacts/assurance/assurance-summary.json"
