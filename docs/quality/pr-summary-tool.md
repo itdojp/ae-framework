@@ -80,10 +80,12 @@ node scripts/summary/render-pr-summary.mjs
 - Formal Summary v1/v2 are upstream producer / validator contracts, not direct renderer inputs.
 - `verify-lite-run-summary` is the baseline input. Assurance and quality scorecard inputs are optional.
 - After renderer output, `pr-ci-status-comment.yml` appends the workflow-stage Markdown artifacts listed above.
+- If optional JSON cannot be parsed or read, the renderer usually treats that input as missing and continues.
 
 ### Validation Boundary
 - Prefer `docs/quality/ARTIFACTS-CONTRACT.md` and `docs/reference/CONTRACT-CATALOG.md` for the latest producer / consumer inventory.
-- Validate JSON inputs before rendering.
+- JSON schema and shape validation are upstream CI / producer responsibilities.
+- The renderer assumes those validations have already happened and does not fail hard on malformed optional JSON.
 - Keep append-stage Markdown out of the direct input contract.
 
 ## Sidecar Combined JSON
