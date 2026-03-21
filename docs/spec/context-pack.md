@@ -420,6 +420,10 @@ node scripts/ci/enforce-assurance-summary.mjs \
   - `steps.discoveryPackValidation`
   - `steps.discoveryPackCompile`
   - top-level `discoveryPack`
+  - top-level `traceability.status`
+  - top-level `traceability.missingCount`
+  - top-level `traceability.matrixPath`
+  - top-level `traceability.notes`
   - `artifacts.contextPackReportJson`
   - `artifacts.contextPackReportMarkdown`
   - `artifacts.contextPackFunctorReportJson`
@@ -435,6 +439,7 @@ node scripts/ci/enforce-assurance-summary.mjs \
   - `artifacts.discoveryPackCompileReportJson`
   - `artifacts.discoveryPackCompileReportMarkdown`
   - `artifacts.discoveryPackPlanSpec`
+  - `traceability.status != success` または `traceability.missingCount > 0` の場合は `traceability.matrixPath` と `traceability.notes` を起点に `ae validate --traceability --strict --sources <traceability.matrixPath>` を再実行し、missing rows の原因を切り分けます
 
 ### よくある失敗
 - `required` エラー: 必須キー不足（例: `domain_glossary.terms[].ja`）
@@ -522,6 +527,10 @@ pnpm run verify:lite
   - `steps.discoveryPackValidation`
   - `steps.discoveryPackCompile`
   - top-level `discoveryPack`
+  - top-level `traceability.status`
+  - top-level `traceability.missingCount`
+  - top-level `traceability.matrixPath`
+  - top-level `traceability.notes`
   - `artifacts.contextPackReportJson`
   - `artifacts.contextPackReportMarkdown`
   - `artifacts.contextPackFunctorReportJson`

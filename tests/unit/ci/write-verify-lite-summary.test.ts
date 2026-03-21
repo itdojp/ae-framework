@@ -184,4 +184,33 @@ describe('write-verify-lite-summary CLI', () => {
     );
     expect(validateResult.status).toBe(0);
   });
+
+  it('writes top-level traceability summary fields when matrix evidence is provided', async () => {
+    const matrixPath = join(workdir, 'docs', 'specs', 'ISSUE-TRACEABILITY-MATRIX.json');
+    await mkdir(join(workdir, 'docs', 'specs'), { recursive: true });
+    await writeFile(matrixPath, '{"rows":[]}\n', 'utf8');
+
+    const { result, summaryPath } = runWriteSummary({
+      TRACEABILITY_STATUS: 'success',
+      TRACEABILITY_MISSING_COUNT: '0',
+      TRACEABILITY_MATRIX_PATH: matrixPath,
+      TRACEABILITY_NOTES: 'matrix=docs/specs/ISSUE-TRACEABILITY-MATRIX.json;missing=0',
+    });
+    expect(result.status).toBe(0);
+
+    const summary = JSON.parse(await readFile(summaryPath, 'utf8'));
+    expect(summary.traceability).toEqual({
+      status: 'success',
+      missingCount: 0,
+      matrixPath,
+      notes: 'matrix=docs/specs/ISSUE-TRACEABILITY-MATRIX.json;missing=0',
+    });
+
+    const validateResult = spawnSync(
+      process.execPath,
+      [validateSummaryScript, summaryPath, verifyLiteSummarySchemaPath],
+      { cwd: repoRoot },
+    );
+    expect(validateResult.status).toBe(0);
+  });
 });
