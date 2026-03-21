@@ -94,6 +94,7 @@ pnpm run codex:run
 
 ### 6. Definition of Done
 - `verify-lite` is green
+- `policy-gate` is green
 - `gate` is green
 - Minimum artifacts are generated
 - The team agrees on the opt-in rule for heavy checks

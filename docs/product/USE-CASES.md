@@ -24,7 +24,7 @@ pnpm run ae-framework -- <command> [args...]
 ```
 
 ### 0.2 Built CLI distribution
-After `pnpm run build`, use the packaged CLI through `ae` or `ae-framework`.
+After `pnpm run build`, invoke the packaged CLI through `pnpm exec ae ...` or `pnpm exec ae-framework ...` (see `docs/product/COMMAND-MODES.md`).
 
 ### 0.3 GitHub Actions CI
 The current main PR baseline assumes `verify-lite`, `policy-gate`, and `gate` as the default required checks.
@@ -96,10 +96,15 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 ### Purpose
 Keep the daily PR baseline light and trigger stronger security checks only when needed.
 
-### Example
+### Local security example
 ```bash
 pnpm run security:integrated:quick
 ```
+
+### PR / CI trigger examples
+- Add the `run-security` label when the PR needs the security workflow
+- Use the SBOM workflow separately when repository policy requires package inventory output
+- See `.github/workflows/security.yml` and `.github/workflows/sbom-generation.yml` for the split execution paths
 
 ## 7. Agent Integration (Codex)
 ### Purpose
@@ -108,7 +113,7 @@ Run phased automation while preserving execution logs and artifact paths for con
 ### Example
 ```bash
 pnpm run codex:run
-node scripts/codex/ae-playbook.mjs --enable-formal --formal-timeout=60000
+node scripts/codex/ae-playbook.mjs --resume --enable-formal --formal-timeout=60000
 ```
 
 ---
@@ -297,7 +302,7 @@ pnpm run codex:run
 
 ### 発展（Formalを含める）
 ```bash
-node scripts/codex/ae-playbook.mjs --enable-formal --formal-timeout=60000
+node scripts/codex/ae-playbook.mjs --resume --enable-formal --formal-timeout=60000
 ```
 
 ### 参考（根拠）
