@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ASSURANCE-MODEL.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-16'
+lastVerified: '2026-03-21'
 ---
 # Assurance Operations Runbook
 
@@ -11,9 +11,201 @@ lastVerified: '2026-03-16'
 
 ---
 
-## English (Summary)
+## English
 
-Operational runbook for generating, validating, and enforcing `artifacts/assurance/assurance-summary.{json,md}` in ae-framework.
+### 1. Purpose
+
+This runbook is the standard operating procedure for current assurance handling on `main`.
+
+Scope:
+- local execution of `pnpm run verify:assurance`
+- report-only aggregation in `verify-lite.yml`
+- strict assurance enforcement when the `enforce-assurance` label is present
+- interpretation of `artifacts/assurance/assurance-summary.{json,md}`
+- first-pass failure triage
+
+### 2. Preconditions
+
+- Node.js: `>=20.11 <23`
+- pnpm: `10.x`
+- run from the repository root
+- review `docs/quality/assurance-profile.md` for the input contract
+- review `docs/quality/assurance-lanes.md` for lane taxonomy
+
+### 3. Inputs and outputs
+
+#### 3.1 primary inputs
+
+| kind | example path | required | purpose |
+| --- | --- | --- | --- |
+| assurance profile | `fixtures/assurance/sample.assurance-profile.json` | required | claims, required lanes, required evidence kinds |
+| context pack | `fixtures/context-pack/sample.context-pack.json` | optional | supplements claim-to-spec references |
+| verify-lite summary | `artifacts/verify-lite/verify-lite-run-summary.json` | optional | behavior, spec, and runtime observations |
+| formal summary | `artifacts/formal/formal-summary-v1.json` | optional | model and proof observations |
+| conformance report | `artifacts/hermetic-reports/conformance/summary.json` | optional | additional model-lane evidence |
+| counterexample | `fixtures/counterexample/sample.counterexample.json` | optional | adversarial lane and triage state |
+| evidence manifest | `fixtures/assurance/sample.assurance-evidence-manifest.json` | optional | supplemental evidence per claim |
+
+#### 3.2 primary outputs
+
+| path | role |
+| --- | --- |
+| `artifacts/assurance/assurance-summary.json` | machine-readable summary |
+| `artifacts/assurance/assurance-summary.md` | human-readable summary |
+
+### 4. Local execution (report-only)
+
+#### Step 1: prepare inputs with Verify Lite
+
+```bash
+pnpm run verify:lite
+```
+
+#### Step 2: generate the assurance summary
+
+```bash
+pnpm run verify:assurance \
+  --assurance-profile fixtures/assurance/sample.assurance-profile.json \
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
+  --output-json artifacts/assurance/assurance-summary.json \
+  --output-md artifacts/assurance/assurance-summary.md
+```
+
+When extra artifacts are available, pass only the files that exist.
+
+```bash
+args=(
+  --assurance-profile fixtures/assurance/sample.assurance-profile.json
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json
+  --output-json artifacts/assurance/assurance-summary.json
+  --output-md artifacts/assurance/assurance-summary.md
+)
+if [ -f fixtures/context-pack/sample.context-pack.json ]; then
+  args+=(--context-pack fixtures/context-pack/sample.context-pack.json)
+fi
+for formal_summary in artifacts/formal/formal-summary-v1.json artifacts/formal/formal-summary-v2.json; do
+  if [ -f "$formal_summary" ]; then
+    args+=(--formal-summary "$formal_summary")
+  fi
+done
+if [ -f artifacts/hermetic-reports/conformance/summary.json ]; then
+  args+=(--conformance-report artifacts/hermetic-reports/conformance/summary.json)
+fi
+if [ -f fixtures/counterexample/sample.counterexample.json ]; then
+  args+=(--counterexample fixtures/counterexample/sample.counterexample.json)
+fi
+if [ -f fixtures/assurance/sample.assurance-evidence-manifest.json ]; then
+  args+=(--evidence-manifest fixtures/assurance/sample.assurance-evidence-manifest.json)
+fi
+pnpm run verify:assurance "${args[@]}"
+```
+
+#### Step 3: validate the schema
+
+```bash
+node scripts/ci/validate-assurance-summary.mjs \
+  artifacts/assurance/assurance-summary.json \
+  schema/assurance-summary.schema.json
+```
+
+### 5. CI operation
+
+#### 5.1 default behavior
+
+- `verify-lite.yml` generates assurance summary in report-only mode.
+- When `artifacts/assurance/assurance-summary.json` exists, `verify-lite.yml` also treats it as an optional input for `artifacts/quality/quality-scorecard.{json,md}`.
+- `pr-ci-status-comment.yml` appends claim summary details to the PR summary comment and passes `--assurance-summary` into hook-feedback generation when a verify-lite artifact for the same head SHA is available.
+- `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` consume `--assurance-summary` and reflect assurance warnings in `currentStatus`, `nextActions`, `blockers`, and `artifacts`.
+- release and post-deploy summaries append a short summary when `artifacts/assurance/assurance-summary.md` exists.
+
+#### 5.2 trigger for strict assurance enforcement
+
+- Strict mode is enabled only when the PR carries the `enforce-assurance` label.
+- `verify-lite.yml` reevaluates on `labeled`, `unlabeled`, and `ready_for_review`, so label changes are reflected on the same PR.
+
+#### 5.3 local reproduction of strict assurance enforcement
+
+```bash
+node scripts/ci/enforce-assurance-summary.mjs \
+  artifacts/assurance/assurance-summary.json
+```
+
+Strict enforcement treats at least the following as failures:
+- `summary.claimCount < 1`
+- `summary.warningClaims > 0`
+- `summary.warningCount > 0`
+- `summary.claimsMissingRequiredLanes > 0`
+- `summary.claimsMissingRequiredEvidenceKinds > 0`
+- `summary.unlinkedCounterexamples > 0`
+- any claim with `status != satisfied`
+- any claim with non-empty `missingLanes`, `missingEvidenceKinds`, or `independenceWarnings`
+- any claim with `counterexamples.open > 0`
+
+### 6. How to read the summary
+
+#### 6.1 summary level
+
+Check these fields first:
+- `claimCount`
+- `warningClaims`
+- `claimsMissingRequiredLanes`
+- `claimsMissingRequiredEvidenceKinds`
+- `unlinkedCounterexamples`
+- `warningCount`
+
+#### 6.2 claim level
+
+Check these fields per claim:
+- `status`
+- `observedLanes`
+- `missingLanes`
+- `observedEvidenceKinds`
+- `missingEvidenceKinds`
+- `independenceWarnings`
+- `counterexamples.open`
+
+### 7. First-pass triage
+
+#### 7.1 `summary not found`
+
+Check in this order:
+1. whether `verify-lite` completed
+2. whether the `Aggregate assurance summary` step executed
+3. whether `artifacts/assurance/assurance-summary.json` exists
+4. whether `verify:assurance` includes `--assurance-profile` and `--output-json`
+
+#### 7.2 `missingLanes` / `missingEvidenceKinds`
+
+Check in this order:
+1. review claim definitions in `docs/quality/assurance-profile.md`
+2. inspect the corresponding claim in `assurance-summary.json`
+3. determine whether the missing lane can be filled by formal, conformance, counterexample, or evidence manifest inputs
+4. add the missing artifact and rerun `verify:assurance`
+
+#### 7.3 `openCounterexamples > 0` / `unlinkedCounterexamples > 0`
+
+Check in this order:
+1. inspect `fixtures/counterexample/*.json` or the generated counterexample JSON
+2. complete `claimIds`, `morphismIds`, `triageStatus`, and `replayCommand`
+3. confirm that strict mode is not being triggered while `triageStatus=open`
+
+### 8. Pre-PR checklist
+
+- [ ] `pnpm run verify:lite` succeeds
+- [ ] review the output of `pnpm run verify:assurance ...`
+- [ ] `artifacts/assurance/assurance-summary.json` is schema-valid
+- [ ] record the reason for `enforce-assurance` in the PR body or linked Issue when the label is used
+- [ ] do not leave warnings or open counterexamples before strict runs
+
+### 9. References
+
+- `docs/quality/assurance-profile.md`
+- `docs/quality/assurance-lanes.md`
+- `docs/quality/ARTIFACTS-CONTRACT.md`
+- `docs/guides/assurance-onboarding-checklist.md`
+- `scripts/assurance/aggregate-lanes.mjs`
+- `scripts/ci/enforce-assurance-summary.mjs`
+- `.github/workflows/verify-lite.yml`
 
 ---
 
