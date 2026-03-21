@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-22'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -10,13 +10,103 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-- This document describes how `ae-framework` can enable GitHub auto-merge automatically per repository.
-- It is controlled by GitHub Repository Variables (`AE_AUTO_MERGE*`).
-- Eligibility is evaluated against branch protection (required checks + required reviews) and PR state.
+### 1. Purpose
+This document defines how `ae-framework` automatically enables GitHub auto-merge when a pull request is mergeable and satisfies the required checks and review conditions.
 
-Primary sources: `.github/workflows/pr-ci-status-comment.yml`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/lib/automation-config.mjs`.
+Notes:
+- This automation only enables GitHub auto-merge. GitHub performs the actual merge after conditions are satisfied.
+- If branch protection is incomplete, the automation cannot infer the required checks or review constraints correctly.
+- If the repository setting `Allow auto-merge` is disabled, `gh pr merge --auto` fails even when the PR is otherwise eligible.
+
+Related:
+- End-to-end PR automation flow: `docs/ci/pr-automation.md`
+
+### 2. Enablement (repository level)
+This feature is controlled per repository through GitHub Repository Variables.
+
+Supplement:
+- `AE_AUTOMATION_PROFILE` can provide the default auto-merge settings, unless an explicit `AE_AUTO_MERGE*` variable overrides them.
+- Details: `docs/ci/automation-profiles.md`
+
+#### 2.1 Required toggle
+- Set `AE_AUTO_MERGE=1` to enable the feature.
+- If it is unset or not equal to `1`, the auto-merge job in `pr-ci-status-comment.yml` does not run.
+
+#### 2.2 Selection mode
+Use `AE_AUTO_MERGE_MODE` to select which PRs are eligible.
+
+- `AE_AUTO_MERGE_MODE=all` (default): evaluate every eligible PR
+- `AE_AUTO_MERGE_MODE=label`: only evaluate PRs with `AE_AUTO_MERGE_LABEL`
+
+When `AE_AUTO_MERGE_MODE=label` is used:
+- `AE_AUTO_MERGE_LABEL` must be set
+- if the label is missing on the PR, auto-merge is not enabled
+
+#### 2.3 Risk label condition
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1` (default): only PRs labeled `risk:low` are eligible
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=0`: disable the risk label restriction
+
+#### 2.4 Change Package condition
+- `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1` (default): require Change Package Validation in the PR summary
+- `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN=1` (default): allow `WARN`
+- `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN=0`: only `PASS` is allowed
+
+### 3. Current implementation
+- Workflow: `.github/workflows/pr-ci-status-comment.yml`
+- Main script: `scripts/ci/auto-merge-enabler.mjs`
+- Eligibility probe: `scripts/ci/auto-merge-eligible.mjs`
+
+Behavior:
+- on `pull_request`, the workflow evaluates the current PR
+- on `schedule`, it enumerates open PRs and evaluates them up to the configured limit
+- when a PR is eligible, the script runs `gh pr merge --auto --squash`
+
+Assumption:
+- GitHub-hosted `ubuntu-latest` is the default runner model
+- on self-hosted runners, `gh` CLI must be available
+
+### 4. Eligibility
+Auto-merge is enabled only when the following are true:
+- the PR is not a draft
+- `mergeable == MERGEABLE`
+- all required checks from branch protection are green
+- if branch protection requires reviews, `reviewDecision == APPROVED`
+- if `AE_AUTO_MERGE_MODE=label`, the configured label is present
+- if `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1`, `risk:low` is present
+- if `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1`, Change Package Validation is within the allowed status set
+
+Branch protection note:
+- if the base branch is protected but protection metadata cannot be retrieved, the logic fails closed and does not enable auto-merge
+
+### 5. PR status comment
+`scripts/ci/auto-merge-enabler.mjs` upserts a status comment on the PR.
+
+- marker: `<!-- AE-AUTO-MERGE-STATUS v1 -->`
+- typical contents: mergeable state, review/check aggregates, and reasons why auto-merge is not enabled
+
+### 6. Manual eligibility check
+You can run `PR Maintenance` from Actions UI using `workflow_dispatch`.
+
+- `mode=eligibility`
+- `pr_number=<target PR>`
+- `enable_auto_merge=true` enables auto-merge when the PR is eligible
+
+This path runs `scripts/ci/auto-merge-eligible.mjs` and prints the result to standard output.
+
+### 7. Troubleshooting
+- Auto-merge is not enabled
+  - verify branch protection required checks and review requirements
+  - if `AE_AUTO_MERGE_MODE=label`, verify `AE_AUTO_MERGE_LABEL` and the PR label
+  - if `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1`, verify `risk:low`
+  - if `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1`, verify the Change Package Validation section in the PR summary
+  - check whether branch protection metadata retrieval failed closed
+- Self-hosted runner
+  - install `gh` CLI
+- GitHub API 429 / secondary rate limit
+  - adjust `AE_GH_THROTTLE_MS` and `AE_GH_RETRY_*` if required
+  - see `docs/ci/pr-automation.md` and `scripts/ci/lib/gh-exec.mjs`
 
 ---
 

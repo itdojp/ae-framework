@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-22'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -10,20 +10,158 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-This document describes an end-to-end PR automation runbook:
-- Require AI review + resolved threads (Copilot Review Gate)
-- Auto-apply AI review ```` ```suggestion ```` blocks (Copilot Auto Fix)
-- Enable GitHub auto-merge when eligible (Auto Merge)
+### 1. Purpose
+This document defines the target pull request automation flow for `ae-framework`.
 
-It is controlled per repository via GitHub Repository Variables.
+The intended sequence is:
+- create the PR
+- commit a plan artifact for high-risk changes
+- run AI review
+- apply review suggestions through auto-fix
+- omit manual merge operations by enabling auto-merge
 
-Primary sources:
-- Workflows: `.github/workflows/copilot-review-gate.yml`, `.github/workflows/copilot-auto-fix.yml`, `.github/workflows/pr-ci-status-comment.yml`
-- Workflows (self-heal): `.github/workflows/pr-self-heal.yml`
-- Workflow (autopilot lane): `.github/workflows/codex-autopilot-lane.yml`
-- Scripts: `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/auto-merge-enabler.mjs`, `scripts/ci/auto-merge-eligible.mjs`, `scripts/ci/pr-self-heal.mjs`, `scripts/ci/codex-autopilot-lane.mjs`, `scripts/ci/lib/automation-config.mjs`
+Goals:
+- automate the review-response loop after AI review
+- preserve branch protection and required quality gates
+
+Non-goal:
+- forcing GitHub to generate AI reviews outside the platform feature set
+
+### 2. End-to-end flow
+
+#### 2.1 Gate (review is required)
+- `Copilot Review Gate / gate` (`.github/workflows/copilot-review-gate.yml`)
+  - requires at least one allowed AI reviewer review
+  - requires every AI-involved review thread to be resolved
+
+#### 2.2 Auto Fix (apply ```` ```suggestion ```` blocks)
+- `Copilot Auto Fix` (`.github/workflows/copilot-auto-fix.yml`)
+  - runs on `pull_request_review: submitted`
+  - extracts ```` ```suggestion ```` blocks from inline comments by allowed AI reviewers and applies them to the PR
+  - conservatively resolves threads that were applied or are already satisfied
+  - avoids duplicate execution when `autopilot:on` and `AE_CODEX_AUTOPILOT_ENABLED=1` are both active
+
+Important:
+- if an AI reviewer leaves only comments without a submitted review, neither auto-fix nor the gate behaves as intended
+- fork PRs are excluded from the `pull_request` auto-fix path
+
+#### 2.3 Auto Merge
+- `PR Maintenance` (`.github/workflows/pr-ci-status-comment.yml`)
+  - runs `gh pr merge --auto --squash` when conditions are satisfied
+  - GitHub performs the actual merge later
+  - the `summarize` job can append report-only `hook-feedback` if a successful `verify-lite-report` artifact exists for the same head SHA
+
+### 3. Enablement (repository level)
+All automation is controlled via GitHub Repository Variables.
+
+#### 3.1 Recommended rollout order
+1. Configure branch protection required checks, at minimum `verify-lite` and `policy-gate`
+2. Start with `AE_AUTOMATION_PROFILE=conservative` and label-based opt-in
+3. Expand to `balanced` or `aggressive` only after the flow is stable
+4. Override with explicit variables only where needed
+
+Current branch protection baseline in this repository is managed around:
+- `verify-lite`
+- `policy-gate`
+- `gate`
+
+#### 3.2 Review topology
+`policy-gate` supports both solo and team approval models.
+
+- `AE_REVIEW_TOPOLOGY=team` (default)
+- `AE_REVIEW_TOPOLOGY=solo`
+- `AE_POLICY_MIN_HUMAN_APPROVALS=<non-negative int>` as an explicit override
+
+The operator flow is otherwise identical:
+- create PR -> AI review -> fix comments -> required checks green -> merge
+
+#### 3.3 Policy engine rollout
+`AE_POLICY_ENGINE_MODE` controls the OPA shadow compare rollout.
+
+- `shadow` (default): report-only mismatch recording
+- `shadow_strict`: mismatch or OPA evaluation error becomes blocking
+
+Recommended progression:
+1. observe `artifacts/ci/policy-shadow-compare-v1.json`
+2. switch to `shadow_strict` only after mismatch behavior is understood
+3. roll back to `shadow` if unexpected divergence grows
+
+### 4. Short operator runbook
+1. Create the PR and add any opt-in labels if required
+2. For `risk:high`, commit `artifacts/plan/plan-artifact.json|md`
+3. Trigger AI review from the PR UI and wait for a submitted review
+4. Confirm the `Copilot Auto Fix` result comment
+5. Confirm `gate` and `policy-gate` are green, and resolve any remaining threads
+6. Once conditions are satisfied, `PR Maintenance` enables auto-merge and GitHub merges the PR
+
+Supplement:
+- if a committed plan artifact exists, `PR Maintenance` appends the schema validation result to the PR summary
+- the plan artifact is a pre-implementation review contract; the Change Package is a post-implementation evidence contract
+
+#### 4.1 Post-merge release verification path
+- use `post-deploy-verify.yml` through `workflow_dispatch`
+- local reproduction uses `pnpm run ae-framework -- release verify ...` or `ae release verify`
+- `release_tag` is only needed when assurance summary should be loaded from a published release asset
+- assurance summary is optional and report-only for post-deploy judgment
+- details: `docs/operate/release-engineering.md`
+
+### 5. Troubleshooting
+
+#### 5.1 Copilot Review Gate fails
+- `No Copilot review found`
+  - the review may not have been submitted
+  - verify `AI_REVIEW_ACTORS` / `COPILOT_ACTORS`
+  - tune `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` if needed
+- `Unresolved Copilot review threads`
+  - resolve the conversation on the PR
+  - rerun the gate if auto-fix did not trigger a reevaluation
+- `pull_request_review run is action_required`
+  - final judgment should be based on the PR head SHA status of `Copilot Review Gate / gate`
+
+#### 5.2 Copilot Auto Fix is skipped
+- `AE_COPILOT_AUTO_FIX` is disabled
+- required opt-in label is missing
+- `AE_COPILOT_AUTO_FIX_SCOPE=docs` but the PR includes non-doc changes
+- the PR head advanced or the review comment commit no longer matches the head
+
+#### 5.3 Auto-merge is not enabled
+- `AE_AUTO_MERGE=1` is not set
+- label-based mode is active and the PR lacks the required label
+- `risk:low` is required but missing
+- Change Package Validation is missing or outside the allowed status range
+- branch protection metadata is unavailable and the logic failed closed
+- the repository has disabled `Allow auto-merge`
+- the PR is draft, not mergeable, or still has pending required checks
+
+#### 5.4 GitHub API 429 / secondary rate limit
+CI scripts use `scripts/ci/lib/gh-exec.mjs` for retry and backoff.
+
+Primary knobs:
+- `AE_GH_RETRY_MAX_ATTEMPTS`
+- `AE_GH_RETRY_INITIAL_DELAY_MS`
+- `AE_GH_RETRY_MAX_DELAY_MS`
+- `AE_GH_RETRY_MULTIPLIER`
+- `AE_GH_RETRY_JITTER_MS`
+- `AE_GH_THROTTLE_MS`
+- `AE_GH_RETRY_DEBUG=1`
+- `AE_GH_RETRY_NO_SLEEP=1`
+
+#### 5.5 Self-Heal
+- `PR Self-Heal` (`.github/workflows/pr-self-heal.yml`) can rerun failed jobs, update behind PRs, and mark blocked PRs
+- enable with `AE_SELF_HEAL_ENABLED=1`
+
+#### 5.6 Codex Autopilot Lane
+- `Codex Autopilot Lane` (`.github/workflows/codex-autopilot-lane.yml`) automates update-branch, auto-fix, gate dispatch, and auto-merge attempts for `autopilot:on` PRs
+- unresolved actionable comments lead to fail-closed behavior and `status:blocked`
+
+#### 5.7 Global kill-switch
+- `AE_AUTOMATION_GLOBAL_DISABLE=1` disables:
+  - `Copilot Auto Fix`
+  - `PR Maintenance` update-branch / enable-auto-merge
+  - `PR Self-Heal`
+  - `Codex Autopilot Lane`
 
 ---
 
