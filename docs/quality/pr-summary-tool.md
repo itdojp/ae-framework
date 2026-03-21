@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/ci/pr-automation.md
-lastVerified: '2026-03-18'
+lastVerified: '2026-03-21'
 ---
 # PR Summary Tool I/O Spec (#407)
 
@@ -15,13 +15,16 @@ lastVerified: '2026-03-18'
 
 正規化アーティファクトを読み取り、PR 向けの単一サマリブロックを出力する集約ツールの current-state I/O 仕様です。入力（verify-lite / policy / optional assurance・quality・hook-feedback など）、出力（Markdown/JSON サイドカー）、CLI の概略、検証ノートを記載します。
 
-Purpose
-- Define a stable contract for the current PR summary renderer that reads normalized artifacts and emits a single summary block for PRs.
+## English (Detailed)
 
-Inputs (read-only)
+### Purpose
+- Define a stable current-state contract for the PR summary renderer.
+- Clarify which artifacts the renderer reads directly, which artifacts are appended by workflow, and which files are merely upstream contracts.
+
+### Inputs (read-only)
 - Required baseline:
   - `artifacts/verify-lite/verify-lite-run-summary.json`
-- Current optional inputs:
+- Current optional direct inputs:
   - `artifacts/summary/combined.json`
   - `coverage/coverage-summary.json` or `artifacts/coverage/coverage-summary.json`
   - `artifacts/domain/replay.summary.json`
@@ -32,15 +35,25 @@ Inputs (read-only)
   - `artifacts/assurance/assurance-summary.json`
   - `artifacts/quality/quality-scorecard.json`
   - `artifacts/formal/formal-aggregate.json`
-  - `formal/summary.json` or `artifacts/hermetic-reports/formal/summary.json`
-  - `artifacts/ci/harness-health.md`, `artifacts/change-package/change-package.md`, `artifacts/change-package/change-package-validation.md`, `artifacts/plan/plan-artifact.md`, `artifacts/plan/plan-artifact-validation.md`, `artifacts/agents/hook-feedback.md`, `artifacts/downloaded/verify-lite-report/artifacts/quality/quality-scorecard.md` (workflow append stage)
+  - legacy `formal/summary.json`
+  - `artifacts/hermetic-reports/formal/summary.json`
+- Workflow append-stage inputs:
+  - `artifacts/ci/harness-health.md`
+  - `artifacts/change-package/change-package.md`
+  - `artifacts/change-package/change-package-validation.md`
+  - `artifacts/plan/plan-artifact.md`
+  - `artifacts/plan/plan-artifact-validation.md`
+  - `artifacts/agents/hook-feedback.md`
+  - `artifacts/downloaded/verify-lite-report/artifacts/quality/quality-scorecard.md`
 
-Output
-- A single Markdown block suitable for PR description or bot comment.
+### Output
+- A single Markdown block suitable for PR descriptions or bot comments.
 - Current Markdown path: `artifacts/summary/PR_SUMMARY.md`
-- Current machine-readable sidecar: なし（`artifacts/summary/combined.json` は renderer の入力 sidecar）
+- Current machine-readable sidecar: none
+  - `artifacts/summary/combined.json` is an input sidecar, not an output sidecar.
 
-Normalized input example (`artifacts/summary/combined.json`, simplified)
+### Normalized Input Example
+`artifacts/summary/combined.json`:
 ```json
 {
   "coverage": { "value": 0.82, "threshold": 0.80, "delta": 0.01 },
@@ -52,23 +65,33 @@ Normalized input example (`artifacts/summary/combined.json`, simplified)
 }
 ```
 
-CLI Outline
-```
+### CLI Outline
+```bash
 SUMMARY_LANG=ja SUMMARY_MODE=detailed \
 node scripts/summary/render-pr-summary.mjs
 ```
 
-Notes
-- `pr-ci-status-comment.yml` の `summarize` job が canonical producer です。
-- `render-pr-summary.mjs` は `artifacts/summary/combined.json` を優先入力としつつ、coverage / replay / BDD / properties / GWT / formal fallback を個別に read-only 参照し、`artifacts/summary/PR_SUMMARY.md` を更新します。
-- Discovery Pack 行は `artifacts/verify-lite/verify-lite-run-summary.json` の top-level `discoveryPack` から生成します。`steps.discoveryPackValidation` / `steps.discoveryPackCompile` は verify-lite summary 側の実行記録であり、renderer の直接入力ではありません。
-- formal 行は `combined.json.formal` を優先し、fallback として `formal/summary.json` または `artifacts/hermetic-reports/formal/summary.json` を参照します。Formal Summary v1/v2 は renderer の直接入力ではなく、上流 producer / validator の契約です。
-- `verify-lite-run-summary` は baseline input、assurance / quality-scorecard は renderer が存在時のみ参照します。
-- `pr-ci-status-comment.yml` は renderer の出力後に `harness-health` / `change-package` / `change-package-validation` / `plan-artifact` / `plan-artifact-validation` / `hook-feedback` / downloaded `quality-scorecard.md` を `artifacts/summary/PR_SUMMARY.md` へ append します。これらの Markdown artifact は workflow append stage の入力です。
-- Validation / producer/consumer の最新一覧は `docs/quality/ARTIFACTS-CONTRACT.md` と `docs/reference/CONTRACT-CATALOG.md` を優先します。
+### Current Behavior Notes
+- `pr-ci-status-comment.yml` job `summarize` is the canonical producer.
+- `render-pr-summary.mjs` prefers `artifacts/summary/combined.json`, then supplements it with read-only coverage / replay / BDD / properties / GWT / formal fallback inputs.
+- The Discovery Pack line is generated from the top-level `discoveryPack` object in `artifacts/verify-lite/verify-lite-run-summary.json`.
+- `steps.discoveryPackValidation` and `steps.discoveryPackCompile` are execution records, not direct renderer inputs.
+- The formal line prefers `combined.json.formal`, then falls back to `formal/summary.json`, then `artifacts/hermetic-reports/formal/summary.json`.
+- Formal Summary v1/v2 are upstream producer / validator contracts, not direct renderer inputs.
+- `verify-lite-run-summary` is the baseline input. Assurance and quality scorecard inputs are optional.
+- After renderer output, `pr-ci-status-comment.yml` appends the workflow-stage Markdown artifacts listed above.
+- If optional JSON cannot be parsed or read, the renderer usually treats that input as missing and continues.
+
+### Validation Boundary
+- Prefer `docs/quality/ARTIFACTS-CONTRACT.md` and `docs/reference/CONTRACT-CATALOG.md` for the latest producer / consumer inventory.
+- JSON schema and shape validation are upstream CI / producer responsibilities.
+- The renderer assumes those validations have already happened and does not fail hard on malformed optional JSON.
+- Keep append-stage Markdown out of the direct input contract.
+
 ## Sidecar Combined JSON
 - Recommended path: `artifacts/summary/combined.json`
-- Include only the normalized fields that current consumers actually read. Discovery Pack status は combined sidecar ではなく `verify-lite-run-summary.json` から読むため、`combined.json` に重複保持しません。
+- Include only normalized fields that current consumers actually read.
+- Do not duplicate Discovery Pack state in `combined.json`; current consumers read it from `verify-lite-run-summary.json`.
 
 ### Example (extended)
 ```json
