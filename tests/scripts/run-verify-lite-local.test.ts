@@ -170,5 +170,11 @@ describePosixOnly('scripts/ci/run-verify-lite-local.sh discovery-pack rollout', 
     expect(summary.discoveryPack.reason).not.toBe('source-not-found');
     expect(summary.steps.discoveryPackValidation.status).toBe('failure');
     expect(summary.steps.discoveryPackCompile.status).toBe('skipped');
+    expect(summary.traceability).toEqual({
+      status: 'skipped',
+      missingCount: 0,
+      matrixPath: null,
+      notes: 'matrix_not_found',
+    });
   });
 });
