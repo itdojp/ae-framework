@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-21'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -10,19 +10,124 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-`change-package/v2` is the proof-carrying extension of the existing change package contract.
+### 1. Purpose
 
-Current Phase 1 scope:
-- schema definition
-- sample fixture
-- migration notes from v1 to v2
+`change-package/v2` extends `change-package/v1` so that safety reasoning can be recorded in terms of claims, assumptions, proof obligations, counterexamples, trust boundaries, and runtime controls.
 
-Current non-goals:
-- switching the default generator/validator from v1 to v2
-- automatic dual-write in CI
-- strict artifact existence enforcement
+Phase 1 currently covers schema and documentation only. The default production generator / validator contract remains `change-package/v1`.
+
+### 2. Schema and Fixture
+
+- Schema: `schema/change-package-v2.schema.json`
+- Sample fixture: `fixtures/change-package/sample.change-package-v2.json`
+- Current production contract: `schema/change-package.schema.json` (`change-package/v1`)
+
+Minimal excerpt:
+
+```json
+{
+  "schemaVersion": "change-package/v2",
+  "assurance": {
+    "targetLevel": "A3",
+    "achievedLevel": "A2",
+    "status": "partial"
+  },
+  "claims": [
+    {
+      "id": "no-negative-balance",
+      "statement": "The change must not allow a negative balance.",
+      "criticality": "high",
+      "status": "model-checked",
+      "artifactRefs": [
+        "artifacts/assurance/assurance-summary.json"
+      ]
+    }
+  ],
+  "proofObligations": [
+    {
+      "id": "obl-1",
+      "claimId": "no-negative-balance",
+      "method": "tla",
+      "status": "discharged",
+      "artifactRefs": [
+        "artifacts/hermetic-reports/formal/tla-summary.json"
+      ]
+    }
+  ]
+}
+```
+
+This excerpt focuses on the `assurance`, `claims`, and `proofObligations` structure while keeping the shown entries schema-valid. Use `fixtures/change-package/sample.change-package-v2.json` for the complete sample.
+
+### 3. Differences from v1
+
+| Field | v1 | v2 |
+| --- | --- | --- |
+| Primary purpose | aggregate PR risk, evidence, rollout | record assurance package claim by claim |
+| assurance level | absent | `assurance.targetLevel` / `achievedLevel` / `status` |
+| claim | absent | `claims[]` |
+| assumption | absent | `assumptions[]` |
+| proof obligation | absent | `proofObligations[]` |
+| counterexample | absent | `counterexamples[]` |
+| trust boundary | implicit | `trustBoundary.outsideModel` |
+| runtime control | spread across rollout / monitoring | explicit `runtimeControls.alerts[]` / `runtimeControls.featureFlags[]` |
+| waiver | only `exceptions[]` | adds `waivers[]` linked to claims |
+
+### 4. Meaning of Additional Sections
+
+#### 4.1 `assurance`
+Records the target assurance level and the currently achieved level for the entire change package.
+
+#### 4.2 `claims`
+Declares what the change is intended to guarantee. Current status values distinguish at least:
+
+- `proved`
+- `model-checked`
+- `tested`
+- `runtime-mitigated`
+- `waived`
+- `unresolved`
+
+#### 4.3 `assumptions`
+Records the assumptions on which the assurance depends, including external systems and operational dependencies.
+
+#### 4.4 `proofObligations`
+Records which verification obligation exists for which claim, and whether it has been discharged.
+
+#### 4.5 `counterexamples`
+Preserves references to counterexample artifacts, whether still open or already resolved.
+
+#### 4.6 `trustBoundary` / `runtimeControls` / `waivers`
+Separates what is not closed by proof alone from what is controlled operationally or intentionally waived.
+
+### 5. Staged Migration Policy
+
+1. Phase 1: add schema, fixture, and docs
+2. Phase 2: add `generate-v2.mjs` and Markdown renderer support
+3. Phase 3: move to v1 + v2 dual-write / dual-validate
+
+Current state:
+- generator stays on `scripts/change-package/generate.mjs` for v1
+- default validator stays on `scripts/change-package/validate.mjs --schema schema/change-package.schema.json`
+- strict mode is not yet wired to v2
+
+### 6. Manual Validation Example
+
+```bash
+node scripts/change-package/validate.mjs \
+  --file fixtures/change-package/sample.change-package-v2.json \
+  --schema schema/change-package-v2.schema.json
+```
+
+This validates schema shape and evaluates evidence consistency, including required evidence IDs and present/missing count mismatches. Artifact-ref existence checks and CI dual-write remain follow-up work.
+
+### 7. Design Notes
+
+- Do not collapse `proved`, `tested`, and `runtime-mitigated` into one category.
+- Every waiver should retain `owner`, `expires`, `reason`, and `relatedClaimIds`.
+- Treat v2 as an additive migration contract, not as an in-place overwrite of v1.
 
 ---
 
@@ -53,6 +158,8 @@ Phase 1 の現時点では、**schema とドキュメントの定義**までを�
   "claims": [
     {
       "id": "no-negative-balance",
+      "statement": "The change must not allow a negative balance.",
+      "criticality": "high",
       "status": "model-checked",
       "artifactRefs": [
         "artifacts/assurance/assurance-summary.json"
