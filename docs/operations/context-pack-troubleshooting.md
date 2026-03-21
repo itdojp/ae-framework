@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-18'
+lastVerified: '2026-03-21'
 owner: context-pack-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -180,35 +180,166 @@ pnpm run verify:lite
 
 ## English
 
-Operational runbook for diagnosing and recovering Context Pack validation failures.
+Operational runbook for diagnosing and recovering Context Pack validation failures in `context-pack:*` commands and `verify:lite`.
+The normative contract lives in `docs/spec/context-pack.md`. The practical recipe set lives in `docs/guides/context-pack-phase5-cookbook.md`.
 
-### Quick flow
-1. Identify the failed step (`verify:lite` summary or CI logs).
-2. Inspect matching JSON/Markdown reports under `artifacts/context-pack/`.
-3. Check `context-pack-suggestions.{json,md}` for actionable changes.
-4. Fix IDs/evidence/schema fields in `spec/context-pack/`.
-5. Re-run the target command and `pnpm run verify:lite`.
-6. Confirm `summary.totalViolations == 0` before re-push.
+### Preconditions
+- Node.js: `>=20.11 <23`
+- pnpm: `10.x`
+- Validation target: `spec/context-pack/**/*.{yml,yaml,json}`
+- Reports: `artifacts/context-pack/` and `artifacts/verify-lite/`
 
-### Typical reports
-- Base: `context-pack-validate-report.{json,md}`
-- Functor: `context-pack-functor-report.{json,md}`
-- Natural Transformation: `context-pack-natural-transformation-report.{json,md}`
-- Product/Coproduct: `context-pack-product-coproduct-report.{json,md}`
-- Boundary Map: `context-pack-boundary-map-report.{json,md}`
-- Phase5+: `context-pack-phase5-report.{json,md}`
-- Dependency boundary: `deps-summary.{json,md}`
+### Common diagnostic flow
+1. Identify the failed step from `verify:lite` summary or CI job logs.
+2. Open the matching JSON/Markdown report.
+3. Inspect `context-pack-suggestions.{json,md}` for recommended file/changeType/targetId edits.
+4. Read `violations[].type` and the affected object/morphism/diagram IDs.
+5. Fix the Context Pack source or the map file under `spec/context-pack/`.
+6. Re-run the focused command locally.
+7. Confirm `summary.totalViolations == 0` before pushing again.
 
-### Commands
+### First files to inspect in `verify:lite`
+- `artifacts/verify-lite/verify-lite-run-summary.json`
+  - `steps.contextPackValidation`
+  - `steps.contextPackFunctorValidation`
+  - `steps.contextPackNaturalTransformationValidation`
+  - `steps.contextPackProductCoproductValidation`
+  - `steps.contextPackPhase5Validation`
+  - `steps.discoveryPackValidation`
+  - `steps.discoveryPackCompile`
+- `artifacts/context-pack/context-pack-suggestions.json`
+- `artifacts/context-pack/context-pack-suggestions.md`
+
+### Phased recovery procedure
+
+#### 1) Base schema (`context-pack:validate`)
+- Reports:
+  - `artifacts/context-pack/context-pack-validate-report.json`
+  - `artifacts/context-pack/context-pack-validate-report.md`
+- Representative violations:
+  - `required`, `type`, `parse`, `sources`
+- Re-run:
 ```bash
 pnpm run context-pack:validate
-pnpm run context-pack:validate -- --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}"
+pnpm run verify:lite
+```
+
+#### 2) Functor (`context-pack:verify-functor`)
+- Reports:
+  - `artifacts/context-pack/context-pack-functor-report.json`
+  - `artifacts/context-pack/context-pack-functor-report.md`
+- Focus points:
+  - `object-mapping-missing`, `morphism-mapping-missing`
+  - `layer-violation`, `forbidden-import`, `object-dependency-cycle`
+  - `morphism-entrypoint-missing-file`, `morphism-entrypoint-missing-symbol`
+- Re-run:
+```bash
 pnpm run context-pack:verify-functor
+pnpm run verify:lite
+```
+
+#### 3) Natural Transformation (`context-pack:verify-natural-transformation`)
+- Reports:
+  - `artifacts/context-pack/context-pack-natural-transformation-report.json`
+  - `artifacts/context-pack/context-pack-natural-transformation-report.md`
+- Focus points:
+  - required commutativity checks by `changeType`
+    - `refactor`: `regression` + `compatibility`
+    - `migration`: `regression` + `compatibility` + `differential`
+    - `breaking`: `regression` + `differential`
+  - whether `before` / `after` IDs exist in the Context Pack
+  - whether `commutativityChecks` evidence paths exist
+  - whether `breaking` changes are linked to `forbiddenChanges`
+- Re-run:
+```bash
 pnpm run context-pack:verify-natural-transformation
+pnpm run verify:lite
+```
+
+#### 4) Product/Coproduct (`context-pack:verify-product-coproduct`)
+- Reports:
+  - `artifacts/context-pack/context-pack-product-coproduct-report.json`
+  - `artifacts/context-pack/context-pack-product-coproduct-report.md`
+- Focus points:
+  - `products[].requiredInputKeys` completely cover `morphisms[].input`
+  - `disallowGenericDtoKeys=true` does not leave ambiguous keys such as `data`, `payload`, `body`, `dto`
+  - `variants[].name` matches `morphisms[].failures`
+  - `variants[].evidencePaths` resolve to existing files/globs
+- Re-run:
+```bash
 pnpm run context-pack:verify-product-coproduct
-pnpm run context-pack:verify-boundary-map
+pnpm run verify:lite
+```
+
+#### 5) Phase5+ (`context-pack:verify-phase5`)
+- Reports:
+  - `artifacts/context-pack/context-pack-phase5-report.json`
+  - `artifacts/context-pack/context-pack-phase5-report.md`
+- Focus points:
+  - Pullback/Pushout morphism/object/diagram references
+  - Monoidal/Kleisli boundary consistency (overlap, missing refs)
+  - `evidencePaths` / `stringDiagramPaths` existence
+- Re-run:
+```bash
 pnpm run context-pack:verify-phase5
+node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
+pnpm run verify:lite
+```
+
+#### 6) Boundary Map (`context-pack:verify-boundary-map`)
+- Reports:
+  - `artifacts/context-pack/context-pack-boundary-map-report.json`
+  - `artifacts/context-pack/context-pack-boundary-map-report.md`
+- Focus points:
+  - `slices[].produces` / `slices[].consumes` match existing Context Pack refs
+  - `upstream.type=slice` points to a real producer slice
+  - slice graph does not contain cycles
+- Re-run:
+```bash
+pnpm run context-pack:verify-boundary-map
+pnpm run verify:lite
+```
+
+#### 7) Dependency boundary (`context-pack:deps`)
+- Reports:
+  - `artifacts/context-pack/deps-summary.json`
+  - `artifacts/context-pack/deps-summary.md`
+- Focus points:
+  - `boundary-violation`, `dependency-cycle`
+  - whether the failure is only blocking under `strict=true`
+  - whether `context-pack-suggestions.{json,md}` already includes a dependency-oriented remediation proposal
+- Re-run:
+```bash
 pnpm run context-pack:deps
 node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
 pnpm run verify:lite
 ```
+
+#### 8) Discovery upstream (`context-pack:validate -- --discovery-pack ...`)
+- Reports:
+  - `artifacts/context-pack/context-pack-validate-report.json`
+  - `artifacts/context-pack/context-pack-validate-report.md`
+- Also inspect in `verify:lite`:
+  - `artifacts/verify-lite/verify-lite-run-summary.json` for `steps.discoveryPackValidation` / `steps.discoveryPackCompile`
+  - `artifacts/discovery-pack/discovery-pack-validate-report.json`
+  - `artifacts/discovery-pack/discovery-pack-validate-report.md`
+  - `artifacts/discovery-pack/discovery-pack-compile-report.json`
+  - `artifacts/discovery-pack/discovery-pack-compile-report.md`
+- Focus points:
+  - whether `upstream_refs` resolve to Discovery Pack `goal_ids`, `requirement_ids`, `business_use_case_ids`, or `decision_ids`
+  - whether approved Discovery items are still reported as unmapped warnings
+  - whether `steps.discoveryPackValidation` / `steps.discoveryPackCompile` notes explain strict vs report-only behavior
+- Re-run:
+```bash
+pnpm run context-pack:validate -- --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}"
+pnpm run discovery-pack:validate
+pnpm run discovery-pack:compile -- --target plan-spec --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+pnpm run verify:lite
+```
+
+### Escalation criteria
+- The same violation reappears two or more times.
+- `parse` / `sources` failures do not reproduce consistently between CI and local runs.
+- Dependency policy violations (`forbidden-import`, `layer-violation`) propagate across multiple objects.
+
+When that happens, open an Issue with the violation report JSON and the affected PR/commit attached.

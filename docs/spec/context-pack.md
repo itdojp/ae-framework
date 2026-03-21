@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-18'
+lastVerified: '2026-03-21'
 owner: context-pack-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -478,47 +478,230 @@ CI失敗時の詳細な診断フロー（Phase 3/4/5+）は `docs/operations/con
 
 ## English
 
-Context Pack v1 defines the SSOT input contract for design metadata and is validated in CI.
+Context Pack v1 is the SSOT input contract for design metadata that both AI agents and human operators update and validate in CI.
+
+### Purpose
+- Manage design metadata such as `objects`, `morphisms`, `diagrams`, and `acceptance_tests` in YAML/JSON.
+- Make schema validation mandatory in `verify:lite` so contract drift is detected before merge.
+- Emit JSON/Markdown reports to `artifacts/` so violations, affected IDs, and recovery steps remain traceable.
 
 ### Related docs
-- Practical recipes (Phase5+): `docs/guides/context-pack-phase5-cookbook.md`
+- Practical recipes (Phase5+ cookbook): `docs/guides/context-pack-phase5-cookbook.md`
 - Troubleshooting (CI/local recovery): `docs/operations/context-pack-troubleshooting.md`
 - Spec registry: `docs/spec/registry.md`
+- Discovery Pack promotion guide: `docs/guides/upstream-context-promotion.md`
 
 ### Default source layout
-- `spec/context-pack/**/*.{yml,yaml,json}`
+- Default discovery path: `spec/context-pack/**/*.{yml,yaml,json}`
+- Example: `spec/context-pack/minimal-example.yaml`
+
+### Assurance profile reference (Phase 1)
+- `context-pack-v1` can include an optional `assurance` section.
+- Its role is to pin which assurance profile and claim set this Context Pack participates in.
+- Current implementation covers schema validation, report-only `verify:assurance` summary generation, report-only collection in `verify:lite`, and strict assurance enforcement when the `enforce-assurance` label enables the gate defined in `policy/risk-policy.yml`.
+
+```yaml
+assurance:
+  profile: inventory-baseline-v1
+  claim_refs:
+    - no-negative-stock
+```
+
+- `profile`: `profileId` from `schema/assurance-profile.schema.json`
+- `claim_refs`: `claims[].id` from the assurance profile
+- `claim_refs` also anchor claim-level evidence allocation in the assurance aggregate.
+- Details: `docs/quality/assurance-profile.md`, `docs/quality/assurance-lanes.md`
 
 ### Commands
 ```bash
+# Validate the default source path
 pnpm run context-pack:validate
+
+# Validate object/morphism to implementation boundary mappings
 pnpm run context-pack:verify-functor
+
+# Validate Natural Transformation mappings (meaning-preserving change tracking)
 pnpm run context-pack:verify-natural-transformation
+
+# Validate Product/Coproduct mappings (input contract + failure variant coverage)
 pnpm run context-pack:verify-product-coproduct
+
+# Validate slice-level produces/consumes boundaries
 pnpm run context-pack:verify-boundary-map
+
+# Validate Phase5+ templates (Pullback/Pushout, Monoidal, Kleisli)
 pnpm run context-pack:verify-phase5
+
+# Validate dependency boundaries (layer direction, cycles)
 pnpm run context-pack:deps
+
+# Generate remediation suggestions from violation reports
 node scripts/context-pack/suggest.mjs --report-dir artifacts/context-pack
-pnpm run verify:lite
+
+# Override discovery paths and report outputs
+node scripts/context-pack/validate.mjs   --sources 'spec/context-pack/**/*.{yml,yaml,json}'   --schema schema/context-pack-v1.schema.json   --report-json artifacts/context-pack/context-pack-validate-report.json   --report-md artifacts/context-pack/context-pack-validate-report.md   --discovery-pack 'spec/discovery-pack/**/*.{yml,yaml,json}'
+
+# Minimal trace extension into Discovery Pack
+node scripts/context-pack/validate.mjs   --sources 'spec/context-pack/**/*.{yml,yaml,json}'   --discovery-pack 'spec/discovery-pack/**/*.{yml,yaml,json}'
+
+# Direct Functor validation with explicit map/schema/report paths
+node scripts/context-pack/verify-functor.mjs   --map spec/context-pack/functor-map.json   --schema schema/context-pack-functor-map.schema.json   --report-json artifacts/context-pack/context-pack-functor-report.json   --report-md artifacts/context-pack/context-pack-functor-report.md
+
+# Direct Natural Transformation validation with explicit map/schema/report paths
+node scripts/context-pack/verify-natural-transformation.mjs   --map spec/context-pack/natural-transformations.json   --schema schema/context-pack-natural-transformation.schema.json   --report-json artifacts/context-pack/context-pack-natural-transformation-report.json   --report-md artifacts/context-pack/context-pack-natural-transformation-report.md
+
+# Direct Product/Coproduct validation with explicit map/schema/report paths
+node scripts/context-pack/verify-product-coproduct.mjs   --map spec/context-pack/product-coproduct-map.json   --schema schema/context-pack-product-coproduct.schema.json   --report-json artifacts/context-pack/context-pack-product-coproduct-report.json   --report-md artifacts/context-pack/context-pack-product-coproduct-report.md
+
+# Direct Boundary Map validation with explicit map/schema/report paths
+node scripts/context-pack/verify-boundary-map.mjs   --map spec/context-pack/boundary-map.json   --schema schema/context-pack-boundary-map.schema.json   --report-json artifacts/context-pack/context-pack-boundary-map-report.json   --report-md artifacts/context-pack/context-pack-boundary-map-report.md
+
+# Direct Phase5+ template validation with explicit map/schema/report paths
+node scripts/context-pack/verify-phase5-templates.mjs   --map spec/context-pack/phase5-templates.json   --schema schema/context-pack-phase5-templates.schema.json   --report-json artifacts/context-pack/context-pack-phase5-report.json   --report-md artifacts/context-pack/context-pack-phase5-report.md
+
+# Run dependency boundary validation directly in report-only mode
+node scripts/context-pack/check-deps.mjs   --rules configs/context-pack/dependency-rules.json   --strict false   --report-json artifacts/context-pack/deps-summary.json   --report-md artifacts/context-pack/deps-summary.md
+
+# Reproduce the strict CI behavior locally
+node scripts/context-pack/check-deps.mjs   --rules configs/context-pack/dependency-rules.json   --strict true   --report-json artifacts/context-pack/deps-summary.json   --report-md artifacts/context-pack/deps-summary.md
+
+# Generate suggestions from existing reports
+node scripts/context-pack/suggest.mjs   --report-dir artifacts/context-pack   --report-json artifacts/context-pack/context-pack-suggestions.json   --report-md artifacts/context-pack/context-pack-suggestions.md
+
+# Generate the assurance summary in report-only mode
+node scripts/assurance/aggregate-lanes.mjs   --assurance-profile fixtures/assurance/sample.assurance-profile.json   --context-pack fixtures/context-pack/sample.context-pack.json   --output-json artifacts/assurance/assurance-summary.json   --output-md artifacts/assurance/assurance-summary.md
+
+# Replay strict assurance enforcement locally
+# The strict step in Verify Lite is enabled by the `enforce-assurance` label
+node scripts/ci/enforce-assurance-summary.mjs   artifacts/assurance/assurance-summary.json
 ```
 
+### Discovery Pack upstream (optional)
+- Pack-level keys:
+  - `upstream.discovery_pack.path`
+  - `upstream.discovery_pack.profile`
+- Element-level keys:
+  - `morphisms[].upstream_refs`
+  - `acceptance_tests[].upstream_refs`
+  - `diagrams[].upstream_refs` (optional)
+- `upstream_refs` can target:
+  - `goal_ids`
+  - `requirement_ids`
+  - `business_use_case_ids`
+  - `decision_ids`
+- Passing `--discovery-pack` to `context-pack:validate` checks Context Pack `upstream_refs` against Discovery Pack IDs and reports unmapped approved Discovery items as warnings.
+
+### Dependency boundary validation (Issue #2278)
+- Rule definition: `configs/context-pack/dependency-rules.json`
+- Default minimum rules:
+  - forbid `src/core/**` -> `src/agents/**`
+  - forbid `src/mcp-server/**` -> `scripts/**`
+  - forbid `src/**` -> `docs/**`
+  - forbid module-level circular dependencies inside `src/*`
+- Outputs:
+  - `artifacts/context-pack/deps-summary.json`
+  - `artifacts/context-pack/deps-summary.md`
+- CI integration:
+  - always runs in `context-pack-quality-gate.yml`
+  - becomes blocking when `enforce-context-pack` is present or strict mode is enabled on dispatch/main
+
+### Functor boundary validation (Issue #2246)
+- Inputs:
+  - `spec/context-pack/functor-map.json` (`schema/context-pack-functor-map.schema.json`)
+  - `objects[].id` / `morphisms[].id` from `spec/context-pack/**/*.{yml,yaml,json}`
+- Validation scope:
+  - detect missing or extra mappings between Context Pack IDs and the Functor map
+  - resolve implementation boundaries from `objects[].moduleGlobs` and detect forbidden imports, layer violations, and dependency cycles
+  - verify the existence of `morphisms[].entrypoints.file` and `.symbol`
+- Failure classes include `layer-violation`, `forbidden-import`, `object-dependency-cycle`, and `morphism-entrypoint-missing-*`.
+
+### Natural Transformation validation (Issue #2247)
+- Inputs:
+  - `spec/context-pack/natural-transformations.json` (`schema/context-pack-natural-transformation.schema.json`)
+  - `morphisms[].id`, `diagrams[].id`, `acceptance_tests[].id`, and `forbidden_changes` from `spec/context-pack/**/*.{yml,yaml,json}`
+- Validation scope:
+  - enforce required commutativity checks by change type
+    - `refactor`: `regression`, `compatibility`
+    - `migration`: `regression`, `compatibility`, `differential`
+    - `breaking`: `regression`, `differential`
+  - verify `before` / `after` referenced IDs
+  - verify `commutativityChecks` evidence paths
+  - verify entrypoint file/symbol existence
+  - ensure `forbiddenChanges` stays aligned with Context Pack `forbidden_changes`
+  - fail breaking changes that do not link their forbidden change set
+- Failure classes include `transformation-reference-missing`, `commutativity-check-missing`, `commutativity-evidence-missing`, `forbidden-change-link-missing`, `forbidden-change-mismatch`, and `transformation-entrypoint-missing-*`.
+
+### Product/Coproduct validation (Issue #2248)
+- Inputs:
+  - `spec/context-pack/product-coproduct-map.json` (`schema/context-pack-product-coproduct.schema.json`)
+  - `morphisms[].input` and `morphisms[].failures` from `spec/context-pack/**/*.{yml,yaml,json}`
+- Validation scope:
+  - Product/input contract:
+    - verify `requiredInputKeys` completely cover `morphisms[].input`
+    - reject ambiguous DTO keys such as `data`, `payload`, `body`, `dto` when `disallowGenericDtoKeys=true`
+  - Coproduct/failure variants:
+    - verify `variants[].name` matches `morphisms[].failures`
+    - verify `variants[].evidencePaths` resolve to existing files/globs
+  - emit coverage in `coveredFailureVariants` / `uncoveredFailureVariants`
+- Failure classes include `product-required-input-missing`, `product-required-input-unknown`, `ambiguous-dto-key`, `coproduct-variant-missing`, `coproduct-variant-unknown`, and `coproduct-evidence-missing`.
+
+### Boundary Map validation (Issue #2648)
+- Inputs:
+  - `spec/context-pack/boundary-map.json` (`schema/context-pack-boundary-map.schema.json`)
+  - `objects[].id`, `morphisms[].id`, `diagrams[].id`, `acceptance_tests[].id`, and `forbidden_changes` from `spec/context-pack/**/*.{yml,yaml,json}`
+- Validation scope:
+  - verify `slices[].produces` and `slices[].consumes` align with existing Context Pack refs
+  - when `consumes[].upstream.type=slice`, verify the referenced slice exists and actually produces the target ref
+  - detect duplicate producers for the same `kind/refId`
+  - detect slice dependency cycles
+- Failure classes include `boundary-ref-missing`, `boundary-upstream-slice-missing`, `boundary-upstream-producer-missing`, `boundary-producer-duplicate`, and `boundary-slice-cycle`.
+
+### Phase 5+ template validation (Issue #2252)
+- Inputs:
+  - `spec/context-pack/phase5-templates.json` (`schema/context-pack-phase5-templates.schema.json`)
+  - `objects[].id`, `morphisms[].id`, and `diagrams[].id` from `spec/context-pack/**/*.{yml,yaml,json}`
+- Validation scope:
+  - Pullback/Pushout:
+    - verify morphism/object/diagram references
+    - verify `evidencePaths` exist (file/glob)
+    - detect duplicate template IDs
+  - Monoidal:
+    - verify `parallelMorphismIds` and `mergeMorphismId`
+    - verify `tensorLawChecks[].evidencePaths` and `stringDiagramPaths`
+  - Kleisli:
+    - verify `morphismIds`
+    - verify `pureBoundaryMorphismIds` / `impureBoundaryMorphismIds` stay disjoint, cover valid refs, and keep a non-empty impure boundary
+    - verify `bindEvidencePaths` and `sideEffectEvidencePaths`
+- Failure classes include `pullback-morphism-missing`, `pushout-object-missing`, `monoidal-morphism-missing`, `kleisli-boundary-overlap`, `kleisli-impure-boundary-missing`, and `phase5-evidence-missing`.
+- Minimal JSON examples remain language-neutral in the Japanese section above and are valid for both language variants.
+
 ### Artifacts
-- `artifacts/context-pack/context-pack-validate-report.json`
-- `artifacts/context-pack/context-pack-validate-report.md`
-- `artifacts/context-pack/deps-summary.json`
-- `artifacts/context-pack/deps-summary.md`
-- `artifacts/context-pack/context-pack-suggestions.json`
-- `artifacts/context-pack/context-pack-suggestions.md`
-- `artifacts/context-pack/context-pack-functor-report.json`
-- `artifacts/context-pack/context-pack-functor-report.md`
-- `artifacts/context-pack/context-pack-natural-transformation-report.json`
-- `artifacts/context-pack/context-pack-natural-transformation-report.md`
-- `artifacts/context-pack/context-pack-product-coproduct-report.json`
-- `artifacts/context-pack/context-pack-product-coproduct-report.md`
-- `artifacts/context-pack/context-pack-boundary-map-report.json`
-- `artifacts/context-pack/context-pack-boundary-map-report.md`
-- `artifacts/context-pack/context-pack-phase5-report.json`
-- `artifacts/context-pack/context-pack-phase5-report.md`
-- `artifacts/verify-lite/verify-lite-run-summary.json`
+- JSON: `artifacts/context-pack/context-pack-validate-report.json`
+- Markdown: `artifacts/context-pack/context-pack-validate-report.md`
+- When `--discovery-pack` is present, the validate report adds these warnings:
+  - `upstream-refs-missing`
+  - `unmapped-approved-requirement`
+  - `unmapped-approved-business-use-case`
+  - `discovery-pack-profile-mismatch`
+- When `--discovery-pack` is present, the validate report adds these errors:
+  - `discovery-pack-source-missing`
+  - `discovery-pack-source-ambiguous`
+  - `upstream-ref-missing`
+- JSON (Dependency boundary): `artifacts/context-pack/deps-summary.json`
+- Markdown (Dependency boundary): `artifacts/context-pack/deps-summary.md`
+- JSON (Suggestions): `artifacts/context-pack/context-pack-suggestions.json`
+- Markdown (Suggestions): `artifacts/context-pack/context-pack-suggestions.md`
+- JSON (Functor): `artifacts/context-pack/context-pack-functor-report.json`
+- Markdown (Functor): `artifacts/context-pack/context-pack-functor-report.md`
+- JSON (Natural Transformation): `artifacts/context-pack/context-pack-natural-transformation-report.json`
+- Markdown (Natural Transformation): `artifacts/context-pack/context-pack-natural-transformation-report.md`
+- JSON (Product/Coproduct): `artifacts/context-pack/context-pack-product-coproduct-report.json`
+- Markdown (Product/Coproduct): `artifacts/context-pack/context-pack-product-coproduct-report.md`
+- JSON (Boundary Map): `artifacts/context-pack/context-pack-boundary-map-report.json`
+- Markdown (Boundary Map): `artifacts/context-pack/context-pack-boundary-map-report.md`
+- JSON (Phase5+): `artifacts/context-pack/context-pack-phase5-report.json`
+- Markdown (Phase5+): `artifacts/context-pack/context-pack-phase5-report.md`
+- Verify Lite summary: `artifacts/verify-lite/verify-lite-run-summary.json`
   - `steps.contextPackValidation`
   - `steps.contextPackFunctorValidation`
   - `steps.contextPackNaturalTransformationValidation`
@@ -546,3 +729,37 @@ pnpm run verify:lite
   - `artifacts.discoveryPackCompileReportJson`
   - `artifacts.discoveryPackCompileReportMarkdown`
   - `artifacts.discoveryPackPlanSpec`
+  - `traceability.status != success` or `traceability.missingCount > 0` means you should re-run `ae validate --traceability --strict --sources <traceability.matrixPath>` and triage missing rows from `traceability.matrixPath` and `traceability.notes`
+
+### Common failure classes
+- `required`: missing required key (for example `domain_glossary.terms[].ja`)
+- `type`: array/object/string type mismatch
+- `parse`: YAML or JSON syntax error
+- `sources`: no files matched the discovery pattern
+- `object/morphism mapping`: mismatch between Context Pack IDs and the Functor map
+- `layer-violation` / `forbidden-import`: dependency boundary violation
+- `object-dependency-cycle`: dependency cycle between objects
+- `boundary-violation` / `dependency-cycle`: boundary or cycle violation from `context-pack:deps`
+- `morphism-entrypoint-missing-file` / `morphism-entrypoint-missing-symbol`: missing implementation entrypoint
+- `commutativity-check-missing`: missing mandatory commutativity check for the selected change type
+- `commutativity-evidence-missing`: missing regression/compatibility/differential evidence path
+- `forbidden-change-link-missing` / `forbidden-change-mismatch`: inconsistent forbidden change linkage
+- `product-required-input-missing` / `product-required-input-unknown`: missing or extra required input keys
+- `ambiguous-dto-key`: ambiguous DTO key usage
+- `coproduct-variant-missing` / `coproduct-variant-unknown`: incomplete or extra failure variants
+- `coproduct-evidence-missing`: missing evidence path for a failure variant
+- `boundary-ref-missing`: unknown Context Pack ref in Boundary Map
+- `boundary-upstream-slice-missing` / `boundary-upstream-producer-missing`: inconsistent upstream produce/consume relation
+- `boundary-producer-duplicate` / `boundary-slice-cycle`: duplicate producer or slice cycle
+- `discovery-pack-source-missing` / `discovery-pack-source-ambiguous`: Discovery Pack upstream resolution failure
+- `upstream-ref-missing`: `upstream_refs` cannot resolve a Discovery Pack ID
+- `upstream-refs-missing`: missing `upstream_refs` on `morphisms` or `acceptance_tests`
+- `unmapped-approved-requirement` / `unmapped-approved-business-use-case`: approved Discovery element is still unmapped
+- `discovery-pack-profile-mismatch`: Context Pack declared profile and Discovery Pack profile disagree
+- `*-template-duplicate`: duplicate Phase5+ template ID
+- `kleisli-boundary-overlap` / `kleisli-impure-boundary-missing`: invalid Kleisli boundary split
+- `phase5-evidence-missing`: missing Phase5+ evidence path
+
+### Operational diagnosis and recovery
+For the detailed CI/local recovery flow (Phase 3/4/5+, boundary, discovery upstream), see `docs/operations/context-pack-troubleshooting.md`.
+This document remains the normative source for the input contract and violation taxonomy.
