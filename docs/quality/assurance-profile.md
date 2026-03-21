@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - schema/assurance-profile.schema.json
 - docs/quality/ASSURANCE-MODEL.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-21'
 ---
 # Assurance Profile v1
 
@@ -11,23 +11,121 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (Summary)
+## English
 
-`assurance-profile/v1` is the Phase 1 contract that binds business claims to required assurance levels, validation lanes, and evidence kinds.
+## 1. Purpose
 
-Current scope:
-- schema and fixture validation
-- optional references from Context Pack v1
-- documentation of level semantics
-- report-only `verify:assurance` aggregation
-- Verify Lite collection of assurance summary
-- label-gated strict assurance enforcement via `enforce-assurance`
+`assurance-profile/v1` is the input contract that binds business claims to machine-readable assurance requirements.
 
-Not in scope yet:
-- full achieved-level automation
-- direct `policy-gate` interpretation of assurance summary
+It records:
+- target assurance level
+- required validation lanes
+- required evidence kinds
+- Context Pack references for objects, morphisms, diagrams, and acceptance tests
+
+Current implementation covers schema validation, documentation, `verify:assurance` summary generation, Verify Lite collection of assurance summary artifacts, and strict assurance enforcement when the `enforce-assurance` label is present. Default PR behavior remains report-only. Strict mode is label-gated.
+
+## 2. Schema
+
+- Schema: `schema/assurance-profile.schema.json`
+- Sample fixture: `fixtures/assurance/sample.assurance-profile.json`
+- Context Pack reference point: optional `assurance` section in `schema/context-pack-v1.schema.json`
+
+Minimal shape:
+
+```json
+{
+  "schemaVersion": "assurance-profile/v1",
+  "profileId": "inventory-baseline-v1",
+  "scope": {
+    "contextPackSources": ["spec/context-pack/**/*.{yml,yaml,json}"],
+    "componentGlobs": ["src/domain/inventory/**"]
+  },
+  "claims": [
+    {
+      "id": "no-negative-stock",
+      "statement": "Inventory stock never becomes negative after an accepted reservation.",
+      "kind": "safety",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "minIndependentSources": 2,
+      "requiredLanes": ["spec", "behavior", "model"],
+      "requiredEvidenceKinds": ["property", "product-coproduct", "counterexample-closed"]
+    }
+  ]
+}
+```
+
+## 3. Provisional assurance level semantics
+
+| Level | Meaning | Typical evidence |
+| --- | --- | --- |
+| `A0` | Minimum integrity where contract, lint, and build still hold | schema, lint, type, build |
+| `A1` | Sample-level confirmation through unit/integration/property checks | unit, integration, property |
+| `A2` | Structural specification validation is in place | product-coproduct, natural-transformation, conformance |
+| `A3` | Critical claims are closed through counterexample search or model checking | model-check, counterexample-closed |
+| `A4` | Proof-carrying assurance is available | proof |
+
+This table is still the Phase 1/2 provisional definition. `verify:assurance` aggregates lanes, evidence, and warnings, but automatic `achievedLevel` determination is not implemented yet.
+
+## 4. Claim design guidance
+
+1. A claim should describe business correctness, not an implementation tactic.
+2. `criticality` is recorded as one of `low`, `medium`, `high`, or `critical`.
+3. `requiredLanes` should represent independent viewpoints rather than multiple tests of the same kind.
+4. `requiredEvidenceKinds` should make explicit what evidence is needed to explain the claim.
+5. `scopeRefs` should stay linked to Context Pack IDs so the contract keeps traceability to specification fragments.
+
+### 4.1 `requiredLanes` and `minIndependentSources`
+
+- `requiredLanes` is about independence of viewpoints, not test count.
+- `minIndependentSources` is the minimum independence rule consumed by `verify:assurance`.
+- Default when omitted:
+  - `critical` / `high`: `2`
+  - `medium` / `low`: `1`
+
+Examples:
+- A claim requiring `spec + behavior + model` expects at least two distinct evidence lineages across specification, implementation, and model viewpoints.
+- Adding more `behavior` evidence alone does not clear the independence warning if every artifact is still `source-derived`.
+
+## 5. Coupling with Context Pack v1
+
+Context Pack can include an optional `assurance` section.
+
+```yaml
+assurance:
+  profile: inventory-baseline-v1
+  claim_refs:
+    - no-negative-stock
+```
+
+Purpose:
+- declare which assurance profile a Context Pack refers to
+- indirectly link morphisms, diagrams, and acceptance tests to claims
+- preserve existing behavior in repositories that do not adopt assurance yet by omitting the section
+
+## 6. Current non-goals
+
+- writing `achievedLevel` back into `verify-lite-run-summary`
+- letting `policy-gate` directly interpret assurance artifacts for blocking decisions
+- adding assurance judgements into `policy-input` / `policy-decision`
+- formal proof coverage for every claim
+- blocking PRs by default when no assurance profile is configured
+
+Notes:
+- The strict step is `Enforce assurance summary (strict; label-gated)` in `verify-lite.yml`.
+- Standard PRs without the `enforce-assurance` label keep assurance summary in report-only mode.
+
+## 7. Change management notes
+
+- If you add a new claim kind or evidence kind, update `schema/assurance-profile.schema.json` and this document in the same PR.
+- If a new schema is introduced, update `docs/reference/CONTRACT-CATALOG.md` in the same change.
+- If the sample fixture changes, update `tests/contracts/assurance-profile-contract.test.ts`.
+- Lane taxonomy remains SSOT in `docs/quality/assurance-lanes.md`; this document only describes how the input contract connects to that taxonomy.
+- For execution flow and strict/report-only operations, follow `docs/quality/assurance-operations-runbook.md`.
 
 ---
+
 
 ## 日本語
 

@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ASSURANCE-MODEL.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-21'
 ---
 # Assurance Lanes
 
@@ -11,19 +11,128 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (Summary)
+## English
 
-This document defines the canonical validation lanes for assurance claims in ae-framework.
+## 1. Purpose
 
-Current scope:
-- taxonomy of six lanes
-- minimum independence rule
-- minimum provenance rule
-- counterexample linkage convention
+This document fixes the meaning of `requiredLanes` from `assurance-profile/v1` across implementation, CI, and artifacts.
 
-CI enforcement remains report-only by default. `enforce-assurance` enables the strict assurance enforcement step for assurance-aware PRs.
+It defines:
+- canonical validation lanes
+- the minimum independence rule
+- provenance minimum expectations
+- the counterexample linkage convention
+
+Detailed achieved-level judgement remains a later phase. Default operation stays report-only. The strict assurance enforcement step becomes active only when the `enforce-assurance` label is present.
+
+## 2. Canonical validation lanes
+
+| lane | Primary question | Representative producer | Representative artifact / report |
+| --- | --- | --- | --- |
+| `spec` | Is the specification itself structurally sound? | `scripts/context-pack/validate.mjs`, `verify-functor.mjs`, `verify-natural-transformation.mjs`, `verify-product-coproduct.mjs`, `verify-phase5-templates.mjs` | `artifacts/context-pack/*.json` |
+| `behavior` | Does the implementation exhibit the expected behavior? | unit / integration / property / MBT harness | test summary, property result, MBT result |
+| `adversarial` | Does the claim survive counterexamples or destructive conditions? | mutation, fuzz, differential, counterexample replay | mutation summary, counterexample artifacts |
+| `model` | Is the system still coherent from a state-machine / model / rule-system viewpoint? | conformance, TLA, Alloy, SMT, CSP, SPIN | `formal-summary`, conformance report |
+| `proof` | Has the system reached machine-checked proof or equivalence? | Lean, Kani, equivalence proof | `formal-summary` proof entries |
+| `runtime` | Can runtime guards, monitors, and alerts contain residual risk? | runtime conformance, rollout guard, monitor/alert config | runtime conformance summary, runtime control manifests |
+
+## 3. Independence rule
+
+### 3.1 Minimum rule
+
+The Phase 1/2 minimum independence rule uses coarse source categories instead of full lineage proof.
+
+- `spec-derived`
+- `source-derived`
+- `model-derived`
+- `runtime-derived`
+- `manual`
+
+`minIndependentSources` per claim is evaluated by counting observed evidence `sourceKind` categories.
+
+### 3.2 Default values
+
+- If `claims[].minIndependentSources` is explicitly set, that value wins.
+- Otherwise:
+  - `critical` / `high`: `2`
+  - `medium` / `low`: `1`
+
+### 3.3 Initial warnings
+
+`verify:assurance` currently treats at least the following as warnings:
+
+- `all-evidence-derived-from-source`
+- `same-generator-lineage`
+- `missing-spec-derived-evidence`
+- `unresolved-critical-counterexample`
+- `insufficient-independent-lanes`
+
+## 4. Provenance minimum
+
+The current artifact metadata contract is defined in `schema/artifact-metadata.schema.json`.
+
+Currently enforced baseline fields:
+- `generatedAtUtc`
+- `generatedAtLocal`
+- `timezoneOffset`
+- `gitCommit`
+- `branch`
+- `runner`
+- `toolVersions`
+
+The assurance aggregation model is expected to grow additional provenance detail later, including:
+- which inputs an artifact was derived from
+- whether it is `source-derived`, `spec-derived`, `model-derived`, or `runtime-derived`
+- lineage such as model, prompt, seed, or replay command
+
+Those remain documentation rules for now. Schema enforcement is deferred.
+
+## 5. Counterexample linkage convention
+
+`schema/counterexample.schema.json` keeps its core shape and can include optional fields used by assurance linkage.
+
+- `claimIds`
+- `morphismIds`
+- `triageStatus`
+- `replayCommand`
+- `suggestedContextChanges`
+
+Meaning:
+- `claimIds`: which claim the counterexample broke
+- `morphismIds`: which Context Pack morphism is involved
+- `triageStatus`: `open | resolved | accepted-risk`
+- `replayCommand`: command used for local replay
+- `suggestedContextChanges`: return path to Context Pack / docs / patch hints
+
+`change-package-v2` already contains `counterexamples[].claimIds`, so it currently serves as the bridge for counterexample linkage.
+
+## 6. Current implementation boundary
+
+Implemented on `main`:
+- `assurance-profile/v1`
+- optional `assurance.profile` / `claim_refs` in Context Pack
+- claim / counterexample linkage in `change-package-v2`
+- report-only `verify:assurance` summary generation
+- report-only assurance aggregation and artifact upload in `verify-lite.yml`
+- strict assurance enforcement under the `enforce-assurance` label
+- assurance display in PR summary, release summary, and post-deploy summary
+
+Deferred or incomplete:
+- automatic claim-level linkage resolution for every producer
+- rigorous lineage proof
+
+## 7. Related references
+
+- `docs/quality/ASSURANCE-MODEL.md`
+- `docs/quality/assurance-profile.md`
+- `docs/quality/assurance-operations-runbook.md`
+- `docs/quality/ARTIFACTS-CONTRACT.md`
+- `docs/guides/COUNTEREXAMPLE-SCHEMA.md`
+- `docs/spec/context-pack.md`
+- `docs/reference/CONTRACT-CATALOG.md`
 
 ---
+
 
 ## 日本語
 
