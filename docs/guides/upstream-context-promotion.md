@@ -171,7 +171,8 @@ node scripts/assurance/aggregate-lanes.mjs \
   --output-md artifacts/assurance/upstream-context-promotion-minimal-summary.md
 ```
 
-自然変換 / product-coproduct / boundary map を claim evidence として揃える場合は、verify-lite summary または evidence manifest を追加します。
+自然変換 / product-coproduct を claim evidence として揃える場合は、verify-lite summary または evidence manifest を追加します。
+boundary map の claim は verify-lite summary 単独では満たせません。`verify-lite-run-summary` には boundary-map 用の evidence slot が無いため、`boundary-separation-explicit` のような claim を評価する場合は evidence manifest などの別入力を追加してください。
 
 ```bash
 node scripts/assurance/aggregate-lanes.mjs \
@@ -218,6 +219,173 @@ ae validate --traceability --strict \
 - `formal/summary.json` は legacy compatibility path であり、このガイドの主対象ではありません
 
 ### 8. 参照
+- `docs/spec/discovery-pack.md`
+- `docs/spec/context-pack.md`
+- `docs/quality/assurance-profile.md`
+- `docs/quality/issue-requirements-traceability.md`
+
+
+## English
+
+This guide explains how to keep Discovery Pack v1 as the upstream input contract while preserving Context Pack v1 as the design SSOT and making promotion discipline generic.
+
+### Purpose
+- organize upstream input generically under `fixtures/discovery-pack/`
+- promote only `approved` entries by default during compile / promotion
+- retain upstream trace on the Context Pack side
+- record As-Is / To-Be deltas through `natural transformation`, `product-coproduct`, and `boundary map`
+- connect the result to assurance summary generation and issue traceability strict validation
+
+### Preconditions
+- Node.js: `>=20.11 <23`
+- pnpm: repository pinned version `10.0.0` (`packageManager`)
+- run from the repository root
+- treat Discovery Pack as the upstream input contract and Context Pack as the design SSOT
+
+### 1. Responsibility split
+- Discovery Pack
+  - organizes upstream source material
+  - inventories actors / goals / requirements / business use cases / flows / decisions
+  - compiles only `approved` entries by default
+- Context Pack
+  - remains the authoritative design SSOT
+  - keeps upstream trace through `upstream.discovery_pack` and `upstream_refs`
+  - does not promote `reviewed` / `hypothesis` / `deferred` into authoritative design without an explicit override
+
+### 2. Writing upstream trace
+Keep the Discovery Pack linkage at both the pack level and the element level.
+
+```yaml
+upstream:
+  discovery_pack:
+    path: fixtures/discovery-pack/upstream-context-promotion-minimal.yaml
+    profile: rdra-lite
+
+morphisms:
+  - id: MOR-NORMALIZE
+    upstream_refs:
+      goal_ids:
+        - GOL-CANONICALIZE-INPUT
+      requirement_ids:
+        - DRQ-NORMALIZE-INPUT
+      business_use_case_ids:
+        - BUC-PROMOTE-APPROVED
+      decision_ids:
+        - DEC-NORMALIZE-TO-CANONICAL
+```
+
+### 3. Choosing the right map
+- `natural transformation`
+  - represents semantics preservation between As-Is and To-Be
+  - answers whether expected behavior still holds after the change
+- `product-coproduct`
+  - merges multiple input variants into a canonical representation
+  - covers complete input-key coverage and failure-variant coverage
+- `boundary map`
+  - separates actor / reviewer / system boundary / promotion authority
+  - proves that promotion authority and input-authoring authority are separated
+
+### 4. Connecting to assurance and traceability
+- use `assurance.profile` and `assurance.claim_refs` to bind promotion-discipline claims to the Context Pack
+- `aggregate-lanes` reads Context Pack claim refs together with verify-lite / supplemental evidence to generate assurance summary artifacts
+- issue traceability extracts `REQ-UCP-*` from the issue body, aggregates Context Pack / Discovery Pack / tests / code into a matrix, and then runs `ae validate --traceability --strict`
+
+### 5. Role of the generic minimal fixture
+The `upstream-context-promotion-minimal` fixture set is not a domain example. It is the minimum contract fixture for execution confirmation.
+
+- Discovery Pack: `fixtures/discovery-pack/upstream-context-promotion-minimal.yaml`
+- Context Pack: `fixtures/context-pack/upstream-context-promotion-minimal.yaml`
+- map set:
+  - `fixtures/context-pack/upstream-context-promotion-minimal-natural-transformation.json`
+  - `fixtures/context-pack/upstream-context-promotion-minimal-product-coproduct.json`
+  - `fixtures/context-pack/upstream-context-promotion-minimal-boundary-map.json`
+- assurance profile: `spec/assurance-profile/upstream-context-promotion-v1.json`
+
+### 6. Execution flow
+#### 6.1 Discovery Pack validate
+```bash
+pnpm exec ae discovery validate   --sources "fixtures/discovery-pack/upstream-context-promotion-minimal.yaml"   --strict-approved
+```
+
+#### 6.2 Discovery Pack compile
+```bash
+pnpm exec ae discovery compile   --target plan-spec   --sources "fixtures/discovery-pack/upstream-context-promotion-minimal.yaml"
+
+pnpm exec ae discovery compile   --target context-pack-scaffold   --sources "fixtures/discovery-pack/upstream-context-promotion-minimal.yaml"
+```
+
+#### 6.3 Context Pack validate
+```bash
+node scripts/context-pack/validate.mjs   --sources "fixtures/context-pack/upstream-context-promotion-minimal.yaml"   --schema schema/context-pack-v1.schema.json   --discovery-pack "fixtures/discovery-pack/upstream-context-promotion-minimal.yaml"
+```
+
+Representative branches to watch in Context Pack validate:
+- warning:
+  - `upstream-refs-missing`
+  - `discovery-pack-profile-mismatch`
+  - `unmapped-approved-requirement`
+  - `unmapped-approved-business-use-case`
+- error:
+  - `discovery-pack-source-missing`
+  - `discovery-pack-source-ambiguous`
+  - `upstream-ref-missing`
+
+Primary reports:
+- `artifacts/context-pack/context-pack-validate-report.json`
+- `artifacts/context-pack/context-pack-validate-report.md`
+
+#### 6.4 Natural transformation verify
+```bash
+node scripts/context-pack/verify-natural-transformation.mjs   --map fixtures/context-pack/upstream-context-promotion-minimal-natural-transformation.json   --schema schema/context-pack-natural-transformation.schema.json   --context-pack-sources "fixtures/context-pack/upstream-context-promotion-minimal.yaml"
+```
+
+#### 6.5 Product / Coproduct verify
+```bash
+node scripts/context-pack/verify-product-coproduct.mjs   --map fixtures/context-pack/upstream-context-promotion-minimal-product-coproduct.json   --schema schema/context-pack-product-coproduct.schema.json   --context-pack-sources "fixtures/context-pack/upstream-context-promotion-minimal.yaml"
+```
+
+#### 6.6 Boundary map verify
+```bash
+node scripts/context-pack/verify-boundary-map.mjs   --map fixtures/context-pack/upstream-context-promotion-minimal-boundary-map.json   --schema schema/context-pack-boundary-map.schema.json   --context-pack-sources "fixtures/context-pack/upstream-context-promotion-minimal.yaml"
+```
+
+#### 6.7 Assurance aggregate
+The smallest aggregate can be produced with:
+
+```bash
+node scripts/assurance/aggregate-lanes.mjs   --assurance-profile spec/assurance-profile/upstream-context-promotion-v1.json   --context-pack fixtures/context-pack/upstream-context-promotion-minimal.yaml   --output-json artifacts/assurance/upstream-context-promotion-minimal-summary.json   --output-md artifacts/assurance/upstream-context-promotion-minimal-summary.md
+```
+
+If you want natural transformation / product-coproduct claims to participate as evidence, add either a verify-lite summary or an evidence manifest. Boundary-map claims cannot be satisfied from the verify-lite summary alone because `verify-lite-run-summary` has no boundary-map evidence slot. For claims such as `boundary-separation-explicit`, add a separate evidence manifest or another supplemental boundary-map evidence input:
+
+```bash
+node scripts/assurance/aggregate-lanes.mjs   --assurance-profile spec/assurance-profile/upstream-context-promotion-v1.json   --context-pack fixtures/context-pack/upstream-context-promotion-minimal.yaml   --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json   --evidence-manifest fixtures/assurance/sample.assurance-evidence-manifest.json   --output-json artifacts/assurance/upstream-context-promotion-minimal-summary.json   --output-md artifacts/assurance/upstream-context-promotion-minimal-summary.md
+```
+
+#### 6.8 Issue traceability strict validate
+```bash
+ae traceability extract-ids   --issue "https://github.com/itdojp/ae-framework/issues/2732"   --pattern "REQ-UCP-[0-9]{3}"   --output docs/specs/upstream-context-promotion-issue-traceability-map.json
+
+ae traceability matrix   --map docs/specs/upstream-context-promotion-issue-traceability-map.json   --tests "tests/**/*"   --code "src/**/*"   --context-pack "fixtures/context-pack/upstream-context-promotion-minimal.yaml"   --discovery-pack "fixtures/discovery-pack/upstream-context-promotion-minimal.yaml"   --format json   --output docs/specs/upstream-context-promotion-issue-traceability-matrix.json
+
+ae validate --traceability --strict   --sources docs/specs/upstream-context-promotion-issue-traceability-matrix.json
+```
+
+### 7. Current implementation notes
+- `Context Pack validate` checks upstream ref existence and aggregates unmapped approved requirements / business use cases as warnings
+- `Discovery Pack compile` includes only `approved` entries by default
+- `verify-lite` aggregates the following under top-level `discoveryPack` in `artifacts/verify-lite/verify-lite-run-summary.json`
+  - `mode`, `reason`, `validateStatus`, `compileStatus`
+  - `blockingOpenQuestions`
+  - `orphanApprovedRequirements`
+  - `orphanApprovedBusinessUseCases`
+  - `compileSelectedCount`
+  - `compileExcludedByStatusCount`
+  - `compileSkippedByTargetCount`
+- in report-only mode, warning/error conditions are observed but do not block the PR; strict behavior is enabled only with the `enforce-discovery` label
+- `formal/summary.json` is a legacy compatibility path and is not the main target of this guide
+
+### 8. References
 - `docs/spec/discovery-pack.md`
 - `docs/spec/context-pack.md`
 - `docs/quality/assurance-profile.md`
