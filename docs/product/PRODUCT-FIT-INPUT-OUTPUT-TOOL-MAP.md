@@ -4,7 +4,7 @@ canonicalSource:
 - docs/quality/ASSURANCE-MODEL.md
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
 - package.json
-lastVerified: '2026-03-16'
+lastVerified: '2026-03-22'
 ---
 # ae-framework 適用ガイド: プロダクト別の入力・出力・ツール適性
 
@@ -12,13 +12,161 @@ lastVerified: '2026-03-16'
 
 ---
 
-## English (Summary)
+## English
 
-This guide helps teams decide where ae-framework fits best by mapping:
-- product archetypes
-- required input artifacts
-- expected outputs
-- recommended toolchains per problem type
+## 1. Purpose
+This guide helps teams decide, before rollout, whether ae-framework fits a given product and what the minimum operating boundary should be.
+
+It answers four questions:
+- which product categories fit well
+- which inputs should be prepared first
+- which evidence and artifacts will be produced
+- which toolchains should be preferred for each risk domain
+
+The current design assumption is that ae-framework is not merely a code generator. It is an assurance control plane that coordinates specifications, verification, evidence, and policy decisions. Code generation is only one producer among several.
+
+Baseline assumptions:
+- Node.js `>=20.11 <23`
+- pnpm `10.0.0`
+- GitHub Actions as the CI execution substrate
+
+## 1.1 Implementation-language and runtime constraints
+| Category | Constraint | Basis |
+| --- | --- | --- |
+| Framework core | TypeScript / JavaScript on Node.js | `package.json` `type`, `bin`, and scripts |
+| Required execution environment | Node.js + pnpm + GitHub Actions. `verify:lite` requires bash execution | `package.json`, `.github/workflows/*`, `scripts/verify/run.mjs`, `scripts/ci/run-verify-lite-local.sh` |
+| Full baseline rollout | The current `verify:lite` path assumes the JS/TS toolchain | `scripts/ci/run-verify-lite-local.sh` runs `types:check`, `lint`, and `build` |
+| Non-JS/TS products | Specification and formal lanes are still usable, but lint/test/build gates must be implemented per target language | `verify:formal` / `verify:conformance` are specification-centric, while `verify:lite` is JS/TS-centric |
+
+## 1.2 Cost-effectiveness and domain fit
+| Classification | Fit | Notes |
+| --- | --- | --- |
+| Domains with strong specification or audit pressure (APIs, event-driven systems, concurrency, high-reliability cores) | High | the spec -> verification -> artifact chain pays off |
+| Standard business applications (CRUD-heavy) | Moderate | the minimum rollout may stop at `verify:lite` + spec validation |
+| One-off PoCs or short-lived scripts | Low | setup and CI cost can exceed the value |
+| Operations without CI or evidence retention | Not recommended | the core value of reproducibility and auditability does not materialize |
+
+## 1.3 Rollout profiles
+| Profile | Typical target | Core capability | Primary evidence |
+| --- | --- | --- | --- |
+| Baseline | ordinary product teams, routine PR gates | `verify-lite`, schema/AJV checks, `policy-gate`, `gate` | verify-lite summary, report envelope, quality-scorecard |
+| Structured assurance | services that need specification-linked evidence | Context Pack, property/MBT/conformance, change evidence | boundary-map report, conformance summary, assurance summary, change package, hook-feedback |
+| High-assurance critical core | concurrency-heavy or highly regulated cores | formal/model/proof lanes, stricter gate policy, proof-carrying package | formal summary, assurance/change artifacts, quality-scorecard, policy decisions |
+
+Selection rule:
+- Baseline is for stabilizing the minimum day-to-day PR quality
+- Structured assurance is for keeping evidence that explains which specification fragment is supported by which verification lane
+- High-assurance is only justified when critical claims need counterexample exploration or proof obligations
+
+## 1.4 Two-layer model
+```text
+Harness layer
+- lint / test / hooks
+- E2E / adapters / runners
+
+Assurance control plane
+- Context Pack / evidence aggregation
+- policy / PR gate / release judgment
+```
+
+Interpretation:
+- Baseline focuses on stabilizing the harness layer
+- Structured assurance connects harness outputs into the control plane
+- High-assurance raises control-plane strictness only for selected high-risk changes
+
+## 2. Product-fit map
+| Product archetype | Typical problem | Minimum input | Recommended starting command | Main output |
+| --- | --- | --- | --- | --- |
+| Web API / BFF | spec drift and unstable PR quality | requirement markdown, API spec, minimum tests | `pnpm run verify:lite` | `artifacts/verify-lite/verify-lite-run-summary.json`, `artifacts/report-envelope.json` |
+| Event-driven domains (inventory, ordering, payment) | invariant violations and event-order inconsistency | sample events, rule definitions, traces | `pnpm run conformance:verify:sample` | `artifacts/hermetic-reports/conformance/summary.json` |
+| Specification-led development | ambiguous requirements and poor change traceability | AE-Spec markdown | `pnpm run ae-framework -- spec validate -i spec/example-spec.md --output .ae/ae-ir.json` | `.ae/ae-ir.json` plus exported artifacts |
+| Concurrency / protocol systems | deadlock, livelock, unreachable states | CSPM / Promela / TLA+ models | `pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck` | CSP summaries under `artifacts/hermetic-reports/formal/` |
+| High-reliability or assurance-heavy domains | missing edge cases or overlooked counterexamples | formal specifications | `pnpm run verify:formal` | `artifacts/hermetic-reports/formal/summary.json` and per-tool evidence |
+| Existing-product improvement | slow heavy-test reruns and late regression detection | prior snapshots and execution history | `node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json` | `reports/heavy-test-trends.json` |
+
+## 3. Minimum inputs
+
+### 3.1 Common mandatory inputs
+| Input | Recommended placement | Purpose |
+| --- | --- | --- |
+| requirement markdown | `spec/*.md` | starting point for AE-Spec -> AE-IR conversion |
+| executable source and tests | `src/`, `tests/` | baseline for `verify-lite` and `test:fast` |
+| CI configuration | `.github/workflows/*` | PR gates, artifact collection, reproducible operation |
+
+### 3.2 Additional inputs by use case
+| Case | Additional input | Example |
+| --- | --- | --- |
+| Conformance | event JSON + rule JSON | `configs/samples/sample-data.json`, `configs/samples/sample-rules.json` |
+| CSP | CSPM files | `spec/csp/cspx-smoke.cspm` |
+| TLA+ / Alloy / SMT / Lean | formal spec files | `spec/tla/`, `spec/alloy/`, `spec/smt/`, `spec/lean/` |
+| heavy-test trend comparison | previous snapshots | `reports/heavy-test-trends*.json` |
+
+## 4. Main outputs
+| Layer | Main output | Interpretation |
+| --- | --- | --- |
+| lightweight PR gate | `artifacts/verify-lite/verify-lite-run-summary.json` | minimum pass/fail decision for PRs |
+| report-only health aggregation | `artifacts/quality/quality-scorecard.json` | cross-lane overall status over verify-lite, policy, optional assurance, and formal signals |
+| specification conversion | `.ae/ae-ir.json` | machine-readable SSOT for specs |
+| Context Pack boundary validation | `artifacts/context-pack/context-pack-boundary-map-report.json` | slice dependencies, consume edges, and cycle checks |
+| Conformance | `artifacts/hermetic-reports/conformance/summary.json` | schema errors and invariant violations |
+| assurance aggregation | `artifacts/assurance/assurance-summary.json` | lane coverage, warning claims, missing evidence kinds |
+| formal aggregation | `artifacts/hermetic-reports/formal/summary.json` | cross-tool formal status |
+| continuation / handoff | `artifacts/agents/hook-feedback.json`, `artifacts/handoff/ae-handoff.json` | standardized blockers, next actions, and evidence |
+| regression comparison | `reports/heavy-test-trends.json` | heavy-test degradation or improvement trend |
+
+Important note:
+- the critical question is not merely which command runs, but which artifacts are used for PR review, release judgment, and operational follow-up
+- on current `main`, `verify-lite`, `policy-gate`, and `gate` are the required baseline; `assurance-summary` and `quality-scorecard` are report-only judgment artifacts
+
+## 5. Tool-suitability matrix
+| Tool / command | Best-fit domain | Input | Main output | Notes |
+| --- | --- | --- | --- | --- |
+| `pnpm run verify:lite` | routine PR gating | ordinary source and tests | verify-lite summary | default required-gate path |
+| `pnpm run ae-framework -- spec validate ...` / `spec lint ...` | specification-led work and contract alignment | AE-Spec markdown / AE-IR JSON | `.ae/ae-ir.json` | establishes specification quality |
+| `pnpm run verify:formal` | broad formal smoke coverage | formal specs | formal summaries | usually non-blocking first |
+| `pnpm run verify:tla -- --engine=tlc` | smaller state-space model checks | TLA+ + cfg / jar | `tla-summary.json` | requires `TLA_TOOLS_JAR` |
+| `node scripts/formal/verify-apalache.mjs` | BMC or larger TLA+ constraint checks | TLA+ | `apalache-summary.json` | requires Apalache CLI |
+| `pnpm run verify:smt -- --file spec/smt/sample.smt2 --solver=z3|cvc5` | arithmetic constraints and boundary conditions | SMT-LIB2 | `smt-summary.json` | solver installation required |
+| `pnpm run verify:alloy` | structural or relational models | Alloy | `alloy-summary.json` | needs `ALLOY_JAR` |
+| `pnpm run verify:csp` | concurrent protocols and deadlock-style risks | CSPM | CSP summaries | `cspx` preferred |
+| `pnpm run verify:spin` | Promela model checking | `.pml` + LTL | `spin-summary.json` | requires `spin` and `gcc` |
+| `pnpm run verify:lean` | proof and type-check based rigor | Lean project | `lean-summary.json` | requires `elan` / `lake` |
+
+## 6. Recommended rollout order
+1. Establish the minimum gate
+   - `pnpm run lint`
+   - `pnpm run test:fast`
+   - `pnpm run verify:lite`
+2. Start specification operations
+   - `pnpm run ae-framework -- spec validate -i spec/example-spec.md --output .ae/ae-ir.json`
+   - `pnpm run ae-framework -- spec lint -i .ae/ae-ir.json`
+3. Add formal verification where justified
+   - `pnpm run tools:formal:check`
+   - `pnpm run verify:formal`
+4. Add domain-specific lanes
+   - CSP: `pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck`
+   - Conformance: `pnpm run conformance:verify:sample`
+5. Optimize operations
+   - `node scripts/pipelines/sync-test-results.mjs --store`
+   - `node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json`
+
+## 7. Quick decision heuristics
+- if you first need stable PR quality, fix `verify-lite` before anything else
+- if spec ambiguity is the main problem, introduce AE-Spec / AE-IR first
+- if concurrency or deadlock is the main risk, prioritize CSP / SPIN
+- if arithmetic constraints or edge cases dominate, prioritize SMT / TLA / Apalache
+- if staged proof or type-level guarantees matter, add Lean
+
+## 8. Related Documents
+- `docs/product/ASSURANCE-CONTROL-PLANE.md`
+- `docs/product/OVERVIEW.md`
+- `docs/product/DETAIL.md`
+- `docs/product/USER-MANUAL.md`
+- `docs/product/USE-CASES.md`
+- `docs/quality/ASSURANCE-MODEL.md`
+- `docs/quality/formal-runbook.md`
+- `docs/quality/formal-csp.md`
+- `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 
 ---
 
