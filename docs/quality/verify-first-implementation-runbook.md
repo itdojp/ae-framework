@@ -43,7 +43,8 @@ Status note:
 - `ae tests:scaffold` is an implementation item from Issue #1979 and is not available in environments that predate the merge of that feature.
 
 ```bash
-ae tests:scaffold --input docs/templates/plan-to-spec-normalization-sample.md
+# Example: in environments where the scaffold command is available, point it at your project spec or normalized plan artifact
+ae tests:scaffold --input path/to/your-spec.md
 ```
 
 If `ae tests:scaffold` is unavailable, manually expand `docs/templates/spec-kit/*` and create equivalent skeletons.
