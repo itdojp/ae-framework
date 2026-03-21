@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-22'
 ---
 # Run Manifest Freshness Contract
 
@@ -11,9 +11,51 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (Summary)
+## English
 
-Defines how to generate and check a `run-manifest.json` to detect stale artifacts (artifacts that exist but were produced for a different commit).
+## 1. Purpose
+Artifact presence alone does not prove freshness for the current commit. When a local run or partial rerun leaves old artifacts behind, CI or operator judgment can incorrectly treat them as valid evidence.
+
+This contract defines how `run-manifest.json` records:
+- the commit that produced each artifact, and
+- whether that artifact is stale relative to the current commit.
+
+The goal is to make freshness checks deterministic in both CI and local execution.
+
+## 2. Generation
+Generate the manifest with `node scripts/ci/generate-run-manifest.mjs`. By default it writes `artifacts/run-manifest.json`.
+
+```bash
+node scripts/ci/generate-run-manifest.mjs \
+  --top-level-command "pnpm run verify:lite"
+```
+
+## 3. Validation
+Validate the manifest with `node scripts/ci/check-run-manifest.mjs`.
+
+```bash
+node scripts/ci/check-run-manifest.mjs \
+  --manifest artifacts/run-manifest.json \
+  --require-fresh verifyLite,reportEnvelope,formal,formalSummaryV1 \
+  --result artifacts/run-manifest-check.json
+```
+
+### `--require-fresh`
+For each named summary such as `verifyLite`, validation requires:
+- `status == "present"`
+- `staleComparedToCurrentCommit == false`
+
+If `producedByCommit` cannot be extracted and `staleComparedToCurrentCommit == null`, the result is treated as `freshness_unknown` and fails in strict mode.
+
+## 4. Field overview
+- `metadata.gitCommit`: current commit at manifest generation time
+- `summaries.<name>.producedByCommit`: commit extracted from the artifact JSON on a best-effort basis
+- `summaries.<name>.staleComparedToCurrentCommit`: comparison result between `producedByCommit` and `metadata.gitCommit`
+
+## 5. References
+- `schema/run-manifest.schema.json`
+- `scripts/ci/generate-run-manifest.mjs`
+- `scripts/ci/check-run-manifest.mjs`
 
 ---
 
