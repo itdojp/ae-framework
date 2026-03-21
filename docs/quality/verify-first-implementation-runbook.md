@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-21'
 owner: verify-first
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -10,9 +10,113 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-Operational runbook for implementing Verify-first in real projects: normalize plans to repo SSOT, generate test skeletons, run required/opt-in gates, and keep evidence traceable with or without Codex.
+### 1. Purpose
+
+Define the shortest reproducible operating flow for implementing Verify-first in real projects.
+
+Scope:
+- Spec-driven test skeleton generation
+- required / opt-in gate execution
+- reproducible operation with or without Codex
+
+### 2. Preconditions
+
+- Plan to Spec normalization has already been completed according to `docs/templates/plan-to-spec-normalization-template.md`
+- The required gate baseline has been reviewed in `docs/quality/verify-first-gate-baseline.md`
+- The evidence contract has been reviewed in `docs/quality/ARTIFACTS-CONTRACT.md`
+
+### 3. Standard Flow
+
+#### Step 1: Fix Plan into repository SSOT
+
+1. Commit requirements, acceptance criteria, NFRs, and constraints into repository-managed artifacts.
+2. Fill the traceability map.
+3. Record the source issue / thread in the PR description.
+
+#### Step 2: Generate test skeletons
+
+Create the minimum test skeletons from the acceptance criteria in the spec.
+
+Status note:
+- `ae tests:scaffold` is an implementation item from Issue #1979 and is not available in environments that predate the merge of that feature.
+
+```bash
+# Example: in environments where the scaffold command is available, point it at your project spec or normalized plan artifact
+ae tests:scaffold --input path/to/your-spec.md
+```
+
+If `ae tests:scaffold` is unavailable, manually expand `docs/templates/spec-kit/*` and create equivalent skeletons.
+
+Typical generated outputs:
+- `tests/generated/spec-kit/<spec-id>/bdd/<spec-id>.feature`
+- `tests/generated/spec-kit/<spec-id>/<spec-id>.acceptance.md`
+- `tests/generated/spec-kit/<spec-id>/property/<spec-id>.property.test.ts`
+- `tests/generated/spec-kit/<spec-id>/contract/<spec-id>.contract.test.ts`
+- `tests/generated/spec-kit/<spec-id>/regression/<spec-id>.regression.test.ts`
+
+Placement and update rules:
+- Keep generated skeletons under `tests/generated/spec-kit/<spec-id>/`
+- Separate generated skeletons from handwritten production tests
+- When acceptance criteria change, regenerate with overwrite and review the diff explicitly
+
+#### Step 3: Run required gates
+
+```bash
+pnpm run verify:lite
+```
+
+For PR handling, treat required gates as fail-closed and do not merge while they are failing.
+
+#### Step 4: Add opt-in gates when needed
+
+Apply `run-formal`, `run-security`, `run-adapters`, or `run-qa` according to change risk and scope.
+
+Use `docs/quality/verify-first-gate-baseline.md` as the decision baseline.
+
+#### Step 5: Fix evidence
+
+When a gate fails, use:
+- `docs/quality/verify-first-failure-diagnostic-template.md`
+
+Always retain:
+- the failed gate
+- the reproduction command
+- links to the related spec / policy
+- CI run URL and artifact path
+
+For PR comment integration, see:
+- `docs/quality/verify-first-failure-comment-design.md`
+
+### 4. Operation With / Without Codex
+
+#### With Codex
+
+- Codex may help author or normalize plans
+- The SSOT remains repository artifacts such as Spec / AC / NFR / Evidence
+
+#### Without Codex
+
+- The same flow must remain reproducible with CLI and CI only
+- At minimum, operations should remain capable of passing `verify-lite`, `policy-gate`, and `gate`
+
+### 5. Checklist
+
+- [ ] Plan to Spec normalization is complete
+- [ ] Acceptance-criteria-driven skeletons are generated
+- [ ] Required gates are green
+- [ ] The rationale for any opt-in gate selection is recorded
+- [ ] Evidence can be reached from the PR
+
+### 6. References
+
+- `docs/guides/THREAD-REPO-CI-FLOW.md`
+- `docs/quality/verify-first-artifacts-catalog.md`
+- `docs/quality/verify-first-gate-baseline.md`
+- `docs/quality/verify-first-failure-diagnostic-template.md`
+- `docs/quality/verify-first-failure-comment-design.md`
+- `docs/integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md`
 
 ---
 
