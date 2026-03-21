@@ -13,12 +13,12 @@ lastVerified: '2026-03-22'
 
 ## English
 
-## 1. Purpose
+### 1. Purpose
 When artifact or report JSON includes environment-specific absolute paths or inconsistent separators, pull request diffs become noisy and outputs stop being portable across local and CI environments.
 
 This contract standardizes how path-like fields are written inside generated JSON artifacts and reports.
 
-## 2. Normalization rules
+### 2. Normalization rules
 1. If the input is already relative, keep it relative but normalize separators to `/`
 2. If the input is absolute and inside the repository, convert it to a repo-relative path
 3. If the input is absolute and outside the repository, keep it absolute so the external dependency remains explicit
@@ -28,19 +28,19 @@ Notes:
 - Do not rewrite external absolute paths to `../..` style relative paths
 - Windows-originated paths such as `C:\\...` or `\\\\server\\share\\...` should remain external absolute paths on POSIX hosts, but their displayed separators should still be normalized to `C:/...` or `//server/share/...`
 
-## 3. Example target fields
+### 3. Example target fields
 - `artifacts[].path` in report envelope style outputs
 - `*.file`, `detailsFile`, `logPath`, `summaryPath` in formal or conformance summary JSON
 - `sources.*` in aggregate JSON such as progress summaries
 
-## 4. Implementation reference
+### 4. Implementation reference
 The repository treats the following as the standard implementations:
 - Node scripts: `scripts/ci/lib/path-normalization.mjs` -> `normalizeArtifactPath()`
 - TypeScript: `src/utils/path-normalization.ts` -> `normalizeArtifactPath()`
 
 Call sites should normally pass `repoRoot: process.cwd()`, which is expected to be the repository root at execution time.
 
-## 5. Examples
+### 5. Examples
 - Input: `/home/runner/work/repo/repo/artifacts/report-envelope.json` -> Output: `artifacts/report-envelope.json`
 - Input: `/tmp/tool.log` -> Output: `/tmp/tool.log`
 - Input: `reports\\lint\\verify-lite-lint-summary.json` -> Output: `reports/lint/verify-lite-lint-summary.json`

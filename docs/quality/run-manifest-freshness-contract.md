@@ -13,7 +13,7 @@ lastVerified: '2026-03-22'
 
 ## English
 
-## 1. Purpose
+### 1. Purpose
 Artifact presence alone does not prove freshness for the current commit. When a local run or partial rerun leaves old artifacts behind, CI or operator judgment can incorrectly treat them as valid evidence.
 
 This contract defines how `run-manifest.json` records:
@@ -22,7 +22,7 @@ This contract defines how `run-manifest.json` records:
 
 The goal is to make freshness checks deterministic in both CI and local execution.
 
-## 2. Generation
+### 2. Generation
 Generate the manifest with `node scripts/ci/generate-run-manifest.mjs`. By default it writes `artifacts/run-manifest.json`.
 
 ```bash
@@ -30,7 +30,7 @@ node scripts/ci/generate-run-manifest.mjs \
   --top-level-command "pnpm run verify:lite"
 ```
 
-## 3. Validation
+### 3. Validation
 Validate the manifest with `node scripts/ci/check-run-manifest.mjs`.
 
 ```bash
@@ -40,19 +40,19 @@ node scripts/ci/check-run-manifest.mjs \
   --result artifacts/run-manifest-check.json
 ```
 
-### `--require-fresh`
+#### `--require-fresh`
 For each named summary such as `verifyLite`, validation requires:
 - `status == "present"`
 - `staleComparedToCurrentCommit == false`
 
-If `producedByCommit` cannot be extracted and `staleComparedToCurrentCommit == null`, the result is treated as `freshness_unknown` and fails in strict mode.
+If `producedByCommit` cannot be extracted and `staleComparedToCurrentCommit == null`, the result is treated as `freshness_unknown` and the script records it as a violation. Higher-level workflows may still decide whether that failure is blocking or report-only.
 
-## 4. Field overview
+### 4. Field overview
 - `metadata.gitCommit`: current commit at manifest generation time
 - `summaries.<name>.producedByCommit`: commit extracted from the artifact JSON on a best-effort basis
 - `summaries.<name>.staleComparedToCurrentCommit`: comparison result between `producedByCommit` and `metadata.gitCommit`
 
-## 5. References
+### 5. References
 - `schema/run-manifest.schema.json`
 - `scripts/ci/generate-run-manifest.mjs`
 - `scripts/ci/check-run-manifest.mjs`
