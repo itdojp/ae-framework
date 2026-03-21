@@ -20,13 +20,13 @@ lastVerified: '2026-03-22'
 | Mode | Recommended entrypoint | Main purpose | Notes |
 | --- | --- | --- | --- |
 | Development (TypeScript) | `pnpm run ae-framework -- <cmd>` | feature work, command validation, local debugging | runs `src/cli/index.ts` directly |
-| Benchmark compatibility | `pnpm exec tsx src/cli.ts bench` | legacy `benchmark-report/v1` compatibility | legacy shim; do not use for new user-facing flows |
+| Benchmark compatibility | `pnpm exec ae-benchmark <cmd>` | maintained benchmark workflows | use this for `run`, `list`, `validate`, and `init`; `src/cli.ts` remains legacy compatibility only |
 | Packaged / built CLI | `pnpm exec ae <cmd>` | end-user operation after build | `package.json bin` points to `dist/src/cli/*` |
 | CI | `pnpm run <script>` | `verify-lite`, tests, security, automation | GitHub Actions uses this path by default |
 | Direct scripts | `node scripts/*` | maintenance or advanced operational tasks | only when the document explicitly calls for it |
 
 ### 3. Development Entry Point
-The canonical development-time CLI entrypoint is `src/cli/index.ts`. The benchmark-specific `src/cli.ts` remains a legacy compatibility shim and is not the place to add new user-facing commands.
+The canonical development-time CLI entrypoint is `src/cli/index.ts`. The historical `src/cli.ts` entrypoint remains a legacy compatibility shim/router and is not the place to add new user-facing commands. For maintained benchmark workflows, use `src/cli/benchmark-cli.ts` through `ae-benchmark`.
 
 Example:
 ```bash no-doctest
