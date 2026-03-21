@@ -4,7 +4,7 @@ canonicalSource:
 - docs/ci/branch-protection-operations.md
 - docs/reference/CLI-COMMANDS-REFERENCE.md
 - docs/quality/formal-runbook.md
-lastVerified: '2026-03-14'
+lastVerified: '2026-03-22'
 ---
 # ae-framework 典型的な利用シナリオ（Use Cases）
 
@@ -12,9 +12,109 @@ lastVerified: '2026-03-14'
 
 ---
 
-## English (Summary)
+## English
 
-This document lists typical ae-framework usage scenarios with concrete commands, expected artifacts, and CI operation tips.
+This document is organized around execution scenarios. For adoption decisions such as product fit, required inputs, and expected outputs, see `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`.
+
+## 0. Execution Modes
+### 0.1 Development-time TypeScript execution
+Use:
+```bash
+pnpm run ae-framework -- <command> [args...]
+```
+
+### 0.2 Built CLI distribution
+After `pnpm run build`, invoke the packaged CLI through `pnpm exec ae ...` or `pnpm exec ae-framework ...` (see `docs/product/COMMAND-MODES.md`).
+
+### 0.3 GitHub Actions CI
+The current main PR baseline assumes `verify-lite`, `policy-gate`, and `gate` as the default required checks.
+
+## 1. PR Operation: minimum gate with `verify-lite` + `policy-gate` + `gate`
+### Purpose
+Move reviews and lightweight verification quickly while keeping the merge condition explicit.
+
+### Typical flow
+1. Open the PR
+2. Request or receive GitHub Copilot review
+3. Either apply suggestions or reply with rationale
+4. Resolve Copilot-related review threads
+5. Run additional checks only when needed
+6. Merge after required checks are green
+
+### Expected artifacts
+- `artifacts/verify-lite/verify-lite-run-summary.json`
+- `artifacts/verify-lite/verify-lite-lint-summary.json`
+
+## 2. Repository Administration: branch protection presets
+### Purpose
+Standardize required checks across repositories.
+
+### Example
+```bash
+ADMIN_TOKEN=ghp_xxx REPO=itdojp/ae-framework BRANCH=main node scripts/admin/apply-branch-protection.mjs .github/branch-protection.main.verify-lite-noreview.json
+```
+
+## 3. Specification Operation: AE-Spec -> AE-IR -> lint / export
+### Purpose
+Convert human-readable specifications into machine-readable AE-IR and connect them to validation and exports.
+
+### Example
+```bash
+pnpm run ae-framework -- spec validate -i spec/example-spec.md --output .ae/ae-ir.json
+pnpm run ae-framework -- spec lint -i .ae/ae-ir.json
+pnpm run ae-framework -- spec export -i .ae/ae-ir.json --format kiro
+```
+
+### Expected outputs
+- `.ae/ae-ir.json`
+- export directory such as `.kiro/specs/<spec-id>/`
+
+## 4. Formal Verification: counterexample -> failing test -> fix -> green
+### Purpose
+Close specification gaps by moving between formal methods and executable tests.
+
+### Example
+```bash
+pnpm run tools:formal:check
+pnpm run verify:formal
+```
+
+See `docs/quality/formal-runbook.md` and `docs/quality/formal-tools-setup.md` for tool-specific setup.
+
+## 5. Heavy-test Regression Monitoring
+### Purpose
+Cache expensive checks and compare trends so regression triage stays mechanical.
+
+### Example
+```bash
+node scripts/pipelines/sync-test-results.mjs --store
+node scripts/pipelines/sync-test-results.mjs --snapshot
+node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json
+```
+
+## 6. Security / SBOM as opt-in hardening
+### Purpose
+Keep the daily PR baseline light and trigger stronger security checks only when needed.
+
+### Local security example
+```bash
+pnpm run security:integrated:quick
+```
+
+### PR / CI trigger examples
+- Add the `run-security` label when the PR needs the security workflow
+- Use the SBOM workflow separately when repository policy requires package inventory output
+- See `.github/workflows/security.yml` and `.github/workflows/sbom-generation.yml` for the split execution paths
+
+## 7. Agent Integration (Codex)
+### Purpose
+Run phased automation while preserving execution logs and artifact paths for continuation.
+
+### Example
+```bash
+pnpm run codex:run
+node scripts/codex/ae-playbook.mjs --resume --enable-formal --formal-timeout=60000
+```
 
 ---
 
@@ -202,7 +302,7 @@ pnpm run codex:run
 
 ### 発展（Formalを含める）
 ```bash
-node scripts/codex/ae-playbook.mjs --enable-formal --formal-timeout=60000
+node scripts/codex/ae-playbook.mjs --resume --enable-formal --formal-timeout=60000
 ```
 
 ### 参考（根拠）

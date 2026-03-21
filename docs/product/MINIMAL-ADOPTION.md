@@ -4,7 +4,7 @@ canonicalSource:
 - docs/getting-started/QUICK-START-GUIDE.md
 - .github/workflows/verify-lite.yml
 - package.json
-lastVerified: '2026-03-14'
+lastVerified: '2026-03-22'
 ---
 # ae-framework Minimal Adoption（最小導入パッケージ）
 
@@ -12,9 +12,97 @@ lastVerified: '2026-03-14'
 
 ---
 
-## English (Summary)
+## English
 
-Defines the minimal adoption set for ae-framework (roles, goals, commands, and expected artifacts).
+### 1. Purpose
+Establish the minimum PR-quality gate package at the lowest possible cost, while keeping heavier verification optional and opt-in.
+
+### 2. Prerequisites
+- Node.js `>=20.11 <23` (`package.json` `engines.node`)
+- pnpm `10.0.0` (`package.json` `packageManager`)
+- GitHub Actions as the CI execution surface
+
+### 3. Minimum Adoption Set
+#### 3.1 Local and CI commands
+```bash
+pnpm install
+pnpm run lint
+pnpm run test:fast
+pnpm run verify:lite
+```
+
+#### 3.2 Minimum PR gate
+Required checks on `main` should use:
+- `verify-lite`
+- `policy-gate`
+- `gate`
+
+References:
+- `docs/ci/branch-protection-operations.md`
+- `docs/ci/copilot-review-gate.md`
+
+#### 3.3 Minimum artifacts
+- `artifacts/verify-lite/verify-lite-run-summary.json`
+- `artifacts/ci/policy-gate-summary.json`
+- `artifacts/report-envelope.json`
+
+`verify-lite` already validates summary and envelope schemas as part of the baseline workflow.
+
+### 4. Minimum Responsibilities by Role
+#### 4.1 PM / team lead
+- Choose and apply the branch-protection preset
+- Define the opt-in policy for heavy checks
+
+#### 4.2 Developers
+- Keep `lint`, `test:fast`, and `verify:lite` green
+- Resolve Copilot review threads before merge
+
+#### 4.3 QA / test operators
+- Review the `verify-lite` summary first
+- Request additional gates only when the summary or risk profile justifies it
+
+#### 4.4 Operations / infrastructure
+- Ensure CI permissions and required secrets exist
+- Understand fork-PR limitations for security and SBOM workflows
+
+### 5. Adoption Paths
+#### 5.1 Standardize PR operation first
+Start by making `verify-lite`, `policy-gate`, and `gate` the only required checks.
+
+#### 5.2 Start specification operations
+```bash
+pnpm run spec:validate -i spec/example-spec.md --output .ae/ae-ir.json
+pnpm run spec:lint -i .ae/ae-ir.json
+```
+
+#### 5.3 Add formal verification later
+```bash
+pnpm run tools:formal:check
+pnpm run verify:formal
+```
+
+#### 5.4 Add heavy regression monitoring later
+```bash
+node scripts/pipelines/sync-test-results.mjs --store
+node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json
+```
+
+#### 5.5 Add agent integration only when needed
+```bash
+pnpm run codex:run
+```
+
+### 6. Definition of Done
+- `verify-lite` is green
+- `policy-gate` is green
+- `gate` is green
+- Minimum artifacts are generated
+- The team agrees on the opt-in rule for heavy checks
+
+### 7. References
+- `docs/product/USER-MANUAL.md`
+- `docs/ci/label-gating.md`
+- `docs/ci/branch-protection-operations.md`
 
 ---
 
