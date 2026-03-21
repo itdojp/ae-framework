@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
 - docs/quality/formal-runbook.md
-lastVerified: '2026-03-16'
+lastVerified: '2026-03-22'
 ---
 # ae-framework 詳細説明資料
 
@@ -11,9 +11,82 @@ lastVerified: '2026-03-16'
 
 ---
 
-## English (Summary)
+## English
 
-This document describes the current product structure, core components, and operational flows for ae-framework.
+### 1. Scope and Assumptions
+`ae-framework` is an operating foundation for specification, verification, and CI in agent-assisted SDLC. The product is centered on four layers:
+- specification and verification assets, including specs, formal tooling, and tests
+- execution tooling such as CLI entry points and automation scripts
+- operational integration through CI quality gates and workflow orchestration
+- artifacts and reports for both machine and human consumers
+
+For environment prerequisites, see `docs/product/OVERVIEW.md`.
+
+### 2. Logical Architecture
+#### 2.1 Layers
+1. Operations layer
+   - GitHub Actions workflows under `.github/workflows/*`
+   - PR labels, comments, and lightweight gate operation
+2. Execution layer
+   - CLI entry points from `src/cli/*` and `package.json` `bin`
+   - automation scripts under `scripts/*`
+3. Specification and verification layer
+   - specifications under `spec/`
+   - formal tooling under `scripts/formal/*`
+   - tests under `tests/*` and `spec/bdd/*`
+4. Artifact layer
+   - machine-readable outputs under `artifacts/*`
+   - human-readable reports under `reports/*`
+
+#### 2.2 Major Components
+- CLI surface: `ae`, `ae-framework`, `ae-phase`, `ae-approve`, `ae-slash`, `ae-ui`, `ae-sbom`, `ae-resilience`, `ae-benchmark`, `ae-server`
+- Main subcommands registered by `src/cli/index.ts`, including `spec`, `state-machine`, `codegen`, `fix`, `quality`, `qa`, `conformance`, `integration`, and progress views
+- Legacy compatibility shims remain in `src/cli.ts` and `src/runner/main.ts`; new user-facing commands are not added there
+
+### 3. Specification and Verification
+- Registry and contract references live under `spec/` and `docs/spec/registry.md`
+- Formal verification is documented in `docs/quality/formal-runbook.md` and implemented through `scripts/formal/*`
+- Core spec lifecycle commands remain `spec:compile`, `spec:lint`, and `spec:validate`
+
+### 4. Test Structure
+The repository separates unit, integration, property, BDD, MBT, and resilience-oriented tests. Representative areas include:
+- `tests/property/`
+- `tests/integration/`
+- `spec/bdd/`
+
+### 5. CI and Quality Gates
+Primary workflows are consolidated under `.github/workflows/`.
+- Current main PR baseline uses the required check contexts `verify-lite`, `policy-gate`, and `gate`
+- The corresponding workflows are `verify-lite.yml`, `policy-gate.yml`, and `copilot-review-gate.yml`
+- Formal workflows: `formal-verify.yml`, `formal-aggregate.yml`
+- Security workflows: `security.yml`, `sbom-generation.yml`
+- Additional CI lanes: `ci-fast.yml`, `ci-extended.yml`, `pr-verify.yml`
+
+### 6. Formal Verification Stack
+`scripts/formal/*` operates the formal toolchain in non-blocking mode and aggregates outputs under `artifacts/hermetic-reports/formal/`.
+- Individual runners include conformance, Alloy, TLA, SMT, Kani, SPIN, CSP, Lean, and Apalache
+- Unified execution: `pnpm run verify:formal`
+- Aggregate reporting: `pnpm run formal:summary`
+- CSP integration prefers `cspx` when available and persists backend/status/resultStatus/exitCode details for PR-facing aggregation
+
+### 7. Artifacts and Traceability
+- CI outputs are retained under `artifacts/` and `reports/`
+- Formal evidence is aggregated primarily into `artifacts/hermetic-reports/formal/summary.json`
+- CSP-specific details are retained in `artifacts/hermetic-reports/formal/csp-summary.json` and `artifacts/hermetic-reports/formal/cspx-result.json`
+- Traceability design is documented in `docs/verify/TRACEABILITY-GUIDE.md`
+
+### 8. Constraints and References
+- `ae-framework` provides the operating model for CI/CD and evidence, not managed operations itself
+- Agent runtimes remain external integrations
+- `pnpm run verify:lite` depends on the JS/TS toolchain through `scripts/ci/run-verify-lite-local.sh`
+- For non-JS projects, specification-centric features such as `verify:formal` and `verify:conformance` can be adopted first, with language-specific gates connected separately later
+
+Related documents:
+- `docs/product/OVERVIEW.md`
+- `docs/product/USER-MANUAL.md`
+- `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
+- `docs/README.md`
 
 ---
 
