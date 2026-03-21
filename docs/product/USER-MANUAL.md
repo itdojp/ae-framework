@@ -199,7 +199,7 @@ pnpm run ae-framework -- sbom --help
 - `2`: invalid input or contract violation
 - `1`: internal or unexpected failure
 
-When `spec lint` / `spec validate` uses `--format json`, failure responses still stay JSON-shaped and follow `schema/spec-validation-report.schema.json`.
+When `spec lint` / `spec validate` uses `--format json`, failure responses still stay JSON-shaped, but invalid-input and internal-error payloads follow the dedicated error shape emitted by `emitSpecCommandError` rather than `schema/spec-validation-report.schema.json`.
 
 ## 6. Agent Integrations
 - Codex: `docs/integrations/CODEX-INTEGRATION.md`
