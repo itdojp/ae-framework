@@ -305,7 +305,7 @@ pnpm run verify:lite
   - `artifacts/context-pack/deps-summary.json`
   - `artifacts/context-pack/deps-summary.md`
 - Focus points:
-  - `forbidden-import`, `layer-violation`, `object-dependency-cycle`
+  - `boundary-violation`, `dependency-cycle`
   - whether the failure is only blocking under `strict=true`
   - whether `context-pack-suggestions.{json,md}` already includes a dependency-oriented remediation proposal
 - Re-run:

@@ -559,8 +559,11 @@ node scripts/context-pack/verify-boundary-map.mjs   --map spec/context-pack/boun
 # Direct Phase5+ template validation with explicit map/schema/report paths
 node scripts/context-pack/verify-phase5-templates.mjs   --map spec/context-pack/phase5-templates.json   --schema schema/context-pack-phase5-templates.schema.json   --report-json artifacts/context-pack/context-pack-phase5-report.json   --report-md artifacts/context-pack/context-pack-phase5-report.md
 
-# Run dependency boundary validation directly (strictness follows label gating)
+# Run dependency boundary validation directly in report-only mode
 node scripts/context-pack/check-deps.mjs   --rules configs/context-pack/dependency-rules.json   --strict false   --report-json artifacts/context-pack/deps-summary.json   --report-md artifacts/context-pack/deps-summary.md
+
+# Reproduce the strict CI behavior locally
+node scripts/context-pack/check-deps.mjs   --rules configs/context-pack/dependency-rules.json   --strict true   --report-json artifacts/context-pack/deps-summary.json   --report-md artifacts/context-pack/deps-summary.md
 
 # Generate suggestions from existing reports
 node scripts/context-pack/suggest.mjs   --report-dir artifacts/context-pack   --report-json artifacts/context-pack/context-pack-suggestions.json   --report-md artifacts/context-pack/context-pack-suggestions.md
