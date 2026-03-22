@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/risk-policy.yml
 - policy/quality.json
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-22'
 ---
 # Verification Gates Guide
 
@@ -11,13 +11,74 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (summary)
+## English
 
-Verification gates standardize **verify-then-merge**. This guide lists the available gate types, how to enable them, and where results are reported.
+Verification gates standardize **verify-then-merge**. This document summarizes the current gate taxonomy, how heavier checks are enabled, how the word `contract` should be interpreted in gate names, and where operators should look for evidence.
+
+### Gate categories
+
+- Baseline gates: lint / types / coverage
+- Additional gates: property / pact-contract (API) / mutation / MBT / perf / a11y / lighthouse / heavy (CI Extended)
+- Formal gates: TLA+ / Alloy / conformance (report-only by default, opt-in for stricter execution)
+
+### Enablement guidance (current operations)
+
+- Daily PRs default to the lighter baseline in Verify Lite.
+- Heavier gates are usually enabled through opt-in labels.
+- Threshold-style gates such as perf / lighthouse / a11y become blocking only when the corresponding `enforce-*` labels are present.
+
+Related documents:
+- `docs/ci/label-gating.md`
+- `docs/ci/stable-profile.md`
+- `docs/quality/adapter-thresholds.md`
+- `docs/quality/comparator.md`
+
+### Contract taxonomy in this guide
+
+- See `docs/quality/contract-taxonomy.md` for the canonical meaning split.
+- `pact-contract (API)` in this guide refers to **API/Integration contract verification** such as Pact.
+- DbC (Design contract: preconditions / postconditions / invariants) is covered through property tests, runtime conformance, and integration assertions rather than a single gate name.
+- Artifacts contract means required/optional artifact obligations and is separate from API contract verification.
+
+### Representative gates and entry points
+
+| Gate | How to enable | Primary output | Notes |
+| --- | --- | --- | --- |
+| property | label `run-property` | `artifacts/properties/` | Executed from CI Extended lanes |
+| pact-contract (API) | `pnpm run pipelines:pact` | pact test logs/artifacts (project-defined) | Consumer-driven API contract verification |
+| mutation | label `run-mutation` | `reports/mutation/` | quick mode with `ignoreStatic` |
+| MBT | label `run-mbt` | `artifacts/mbt/` | Executed from CI Extended lanes |
+| perf / a11y / lh | label `enforce-perf` / `enforce-a11y` / `enforce-lh` | `reports/*.json` | Becomes blocking through thresholds |
+| heavy tests | label `run-ci-extended` | `reports/heavy-test-trends.json` | Aggregate for integration / property / MBT / mutation |
+
+#### What `contract` means in gate names
+
+- `contract` in this guide means **API/Integration contract tests** such as Pact.
+- DbC concerns are enforced through multiple mechanisms rather than a standalone `contract` gate.
+
+#### Minimal DbC -> verification mapping
+
+| DbC condition | Representative verification method | Representative evidence |
+| --- | --- | --- |
+| Preconditions | request validation / negative tests / type guards | `artifacts/verify-lite/verify-lite-run-summary.json` (see `docs/quality/ARTIFACTS-CONTRACT.md`) |
+| Postconditions | state assertions / event assertions / integration tests | `reports/quality-gates/quality-report-*.json`, `artifacts/hermetic-reports/conformance/summary.json` |
+| Invariants | property tests / runtime conformance monitors / DB constraints | `artifacts/properties/summary.json`, `artifacts/hermetic-reports/conformance/summary.json` |
+
+### PR reporting
+
+- Existing template: `docs/quality/pr-summary-template.md`
+- Implementation detail: `docs/quality/pr-summary-tool.md`
+- Operational goal: summarize verification results in a form that a human reviewer can judge without reopening every raw artifact.
 
 ### Report metadata
 
-Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `meta` object with run context (`runId`, `commitSha`, `branch`, `createdAt`, `agent`, `model`, `traceId`). Values are derived from CI/local environment variables when available and are optional beyond `runId`/`createdAt`.
+Quality gate reports (`reports/quality-gates/quality-report-*.json`) include `meta` fields such as `runId`, `commitSha`, `branch`, `createdAt`, `agent`, `model`, and `traceId`. Values are taken from CI/local environment variables when available; only `runId` and `createdAt` are always populated.
+
+### Operational caution
+
+- When AI produces code and tests together, blind spots can overlap.
+- Spec Kit / Blueprint documents should record adversarial test intent explicitly.
+- The baseline remains **CI green plus human approval**, not machine-only approval.
 
 ---
 
