@@ -31,7 +31,7 @@ The current repository uses labels to opt in additional checks or stricter enfor
 - `run-cedar`
 - `run-resilience`
 - `run-spec`
-- `run-trace`
+- `run-trace` (label only; no PR slash command in the current repository)
 - `run-drift`
 - `run-hermetic`
 - `run-formal`
@@ -74,6 +74,8 @@ Supplement:
 Entry point: `.github/workflows/agent-commands.yml`
 
 Representative commands:
+- trace revalidation remains label-only through the `run-trace` label in the current repository
+
 - `/verify-lite`
 - `/review [strict]`
 - `/run-qa`
@@ -116,7 +118,7 @@ Representative commands:
 - `/ready-for-review`
 - `/block [reason]`
 - `/unblock`
-- `/handoff <role:...>`
+- `/handoff <role:...>` (available only when `AE_SLASH_COMMANDS_ISSUE=1` enables `.github/workflows/slash-commands.yml`)
 
 ### 7. References
 - `docs/ci/branch-protection-operations.md`
@@ -267,7 +269,8 @@ Codex Autopilot Lane を使う場合:
 - `/ready-for-review` → `status:review`
 - `/block [reason]` → `status:blocked`
 - `/unblock` → `status:in-progress`
-- `/handoff <role:...>` → `role:*` ラベルを付与（`AE_ROLE_ASSIGNMENTS` によりアサイン）
+- `/handoff <role:...>` → `AE_SLASH_COMMANDS_ISSUE=1` で `.github/workflows/slash-commands.yml` が有効な場合のみ `role:*` ラベルを付与（`AE_ROLE_ASSIGNMENTS` によりアサイン）
+- `/handoff @user` → 常時有効の `.github/workflows/agent-commands.yml` 側で assignee と `status:review` を設定
 
 ## 6. 参照ドキュメント
 - Branch protection: `docs/ci/branch-protection-operations.md`

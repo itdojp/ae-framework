@@ -31,16 +31,16 @@ Supplement:
 
 #### 2.1 Required toggle
 - set `AE_COPILOT_AUTO_FIX=1` to enable the workflow
-- if unset or not equal to `1`, `.github/workflows/copilot-auto-fix.yml` does not run
+- if unset or not equal to `1`, the auto-fix flow is disabled after config resolution and the workflow exits early without applying changes
 
 #### 2.2 Scope
 - `AE_COPILOT_AUTO_FIX_SCOPE=docs` (default)
-  - if the PR contains files outside `docs/**` and the repository-root README, the whole auto-fix flow is skipped as a fail-safe
+  - if the PR contains files outside `docs/**` and the repository-root README file named README.md, the whole auto-fix flow is skipped as a fail-safe
 - `AE_COPILOT_AUTO_FIX_SCOPE=all`
   - suggestions may be applied to all files
 
 Implementation reference:
-- allowlist: `docs/**`, repository-root README
+- allowlist: `docs/**`, repository-root README file named README.md
 - source: `scripts/ci/copilot-auto-fix.mjs`
 
 #### 2.3 Label opt-in
@@ -53,7 +53,7 @@ Example:
 - Workflow: `.github/workflows/copilot-auto-fix.yml`
   - runs on `pull_request_review: submitted`
   - excludes fork PRs
-  - continues only when `vars.AE_COPILOT_AUTO_FIX == '1'`
+  - delegates `AE_COPILOT_AUTO_FIX` / `AE_COPILOT_AUTO_FIX_FORCE` gating to `scripts/ci/copilot-auto-fix.mjs` after `automation-config` resolution
   - continues only when `github.actor` matches `AI_REVIEW_ACTORS` or the legacy `COPILOT_ACTORS`
 - Script: `node scripts/ci/copilot-auto-fix.mjs`
   - enumerates PR review comments
@@ -138,7 +138,7 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
 
 ### 2.1 必須（ON/OFF）
 - `AE_COPILOT_AUTO_FIX=1` を設定すると有効化します。
-- 未設定/`1` 以外の場合、`.github/workflows/copilot-auto-fix.yml` は起動しません。
+- 未設定/`1` 以外の場合、workflow 自体は起動し得ますが、config 解決後に auto-fix を無効として early exit します。
 
 ### 2.2 スコープ（docs / all）
 
@@ -163,7 +163,7 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
 - Workflow: `.github/workflows/copilot-auto-fix.yml`
   - `pull_request_review: submitted` で起動
   - fork PR は対象外
-  - `vars.AE_COPILOT_AUTO_FIX == '1'` を満たす場合のみ実行
+  - `AE_COPILOT_AUTO_FIX` / `AE_COPILOT_AUTO_FIX_FORCE` の判定は `automation-config` 解決後に `scripts/ci/copilot-auto-fix.mjs` 側で行う
   - `github.actor` が `AI_REVIEW_ACTORS`（未設定時は `COPILOT_ACTORS`）に一致する場合のみ適用処理を継続
 - 実行: `node scripts/ci/copilot-auto-fix.mjs`
   - PR review comments（`pulls/{number}/comments`）から ```` ```suggestion ```` を抽出
