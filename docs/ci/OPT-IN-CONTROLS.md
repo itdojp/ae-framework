@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-22'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -10,9 +10,122 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-This document catalogs PR labels and slash commands that opt-in heavy CI jobs or change gating behavior. It is derived from `.github/workflows/agent-commands.yml`, `verify-lite.yml`, and related workflows.
+### 1. Purpose
+This document is the operational catalog for opt-in controls that trigger heavier CI work or change gate behavior while keeping default PR cost lower.
+
+Primary sources:
+- `.github/workflows/agent-commands.yml`
+- `.github/workflows/verify-lite.yml`
+- `.github/workflows/slash-commands.yml`
+
+### 2. Scope
+- PR-side controls: labels and slash commands on PR comments
+- Issue-side controls: slash commands on issue comments
+
+### 3. Representative PR labels
+The current repository uses labels to opt in additional checks or stricter enforcement, for example:
+- `run-qa`
+- `run-security`
+- `run-cedar`
+- `run-resilience`
+- `run-spec`
+- `run-trace` (label only; no PR slash command in the current repository)
+- `run-drift`
+- `run-hermetic`
+- `run-formal`
+- `enforce-assurance`
+- `enforce-bdd-lint`
+- `enforce-verify-lite-lint`
+- `enforce-context-pack`
+- `enforce-discovery`
+- `ci-non-blocking`
+- `enforce-coverage`
+- `coverage:<pct>`
+- `pr-summary:digest`
+- `pr-summary:detailed`
+- `autopilot:on`
+
+Operational note:
+- PR automation itself is usually enabled through Repository Variables rather than labels
+
+### 4. Repository Variables used with opt-in automation
+Current automation knobs include:
+- `AE_AUTOMATION_PROFILE`
+- `AE_REVIEW_TOPOLOGY`
+- `AE_POLICY_MIN_HUMAN_APPROVALS`
+- `AE_POLICY_ENGINE_MODE`
+- `AE_COPILOT_AUTO_FIX`
+- `AE_COPILOT_AUTO_FIX_SCOPE`
+- `AE_COPILOT_AUTO_FIX_LABEL`
+- `AE_AUTO_MERGE`
+- `AE_AUTO_MERGE_MODE`
+- `AE_AUTO_MERGE_LABEL`
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW`
+- `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE`
+- `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN`
+
+Supplement:
+- explicit variables override `AE_AUTOMATION_PROFILE`
+- GitHub API throttling knobs such as `AE_GH_THROTTLE_MS` and `AE_GH_RETRY_*` are also available when rate-limit tuning is required
+
+### 5. PR slash commands
+Entry point: `.github/workflows/agent-commands.yml`
+
+Representative commands:
+- trace revalidation remains label-only through the `run-trace` label in the current repository
+
+- `/verify-lite`
+- `/review [strict]`
+- `/run-qa`
+- `/run-security`
+- `/run-cedar`
+- `/run-resilience`
+- `/run-spec`
+- `/run-drift`
+- `/run-hermetic`
+- `/run-formal`
+- `/non-blocking`
+- `/blocking`
+- `/coverage <pct|clear>`
+- `/enforce-coverage`
+- `/enforce-context-pack`
+- `/pr-digest`
+- `/pr-detailed`
+- `/formal-help`
+- `/formal-quickstart`
+
+Dispatch-oriented commands also exist for workflow_dispatch entry points, such as:
+- `/run-qa-dispatch`
+- `/run-security-dispatch`
+- `/ci-fast-dispatch`
+- `/formal-verify-dispatch`
+- `/formal-apalache-dispatch`
+- `/run-flake-dispatch`
+- `/spec-validation-dispatch`
+- `/run-cedar-dispatch`
+- `/formal-aggregate-dispatch`
+
+### 6. Issue slash commands
+Entry points:
+- `.github/workflows/agent-commands.yml`
+- `.github/workflows/slash-commands.yml`
+
+Representative commands:
+- `/start`
+- `/plan`
+- `/ready-for-review`
+- `/block [reason]`
+- `/unblock`
+- `/handoff <role:...>` (available only when `AE_SLASH_COMMANDS_ISSUE=1` enables `.github/workflows/slash-commands.yml`)
+
+### 7. References
+- `docs/ci/branch-protection-operations.md`
+- `docs/ci/copilot-review-gate.md`
+- `docs/ci/copilot-auto-fix.md`
+- `docs/ci/auto-merge.md`
+- `docs/ci/pr-automation.md`
 
 ---
 
@@ -156,7 +269,8 @@ Codex Autopilot Lane を使う場合:
 - `/ready-for-review` → `status:review`
 - `/block [reason]` → `status:blocked`
 - `/unblock` → `status:in-progress`
-- `/handoff <role:...>` → `role:*` ラベルを付与（`AE_ROLE_ASSIGNMENTS` によりアサイン）
+- `/handoff <role:...>` → `AE_SLASH_COMMANDS_ISSUE=1` で `.github/workflows/slash-commands.yml` が有効な場合のみ `role:*` ラベルを付与（`AE_ROLE_ASSIGNMENTS` によりアサイン）
+- `/handoff @user` → 常時有効の `.github/workflows/agent-commands.yml` 側で assignee と `status:review` を設定
 
 ## 6. 参照ドキュメント
 - Branch protection: `docs/ci/branch-protection-operations.md`
