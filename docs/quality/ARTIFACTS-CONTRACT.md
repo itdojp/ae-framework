@@ -128,6 +128,29 @@ The authoritative details remain in the Japanese section and the contract catalo
 - Equality between NDJSON and OTLP artifact sets for KvOnce trace validation remains regression-detection evidence, not a required artifact contract.
 - Therefore branch protection required checks are not changed by these trace/report-only contracts.
 
+#### 5.3 Representative current optional artifacts
+- `artifacts/ci/policy-gate-summary.{json,md}`
+  - produced by `policy-gate.yml`
+  - records machine-readable and Markdown summaries for policy decisions
+- `artifacts/ci/harness-health.{json,md}`
+  - produced by `pr-ci-status-comment.yml` `summarize` or scheduled `ci-extended.yml`
+  - consumed by `hook-feedback`, change-package, and PR summary paths
+- `artifacts/quality/quality-scorecard.{json,md}`
+  - produced by `scripts/quality/build-quality-scorecard.mjs` or the `verify-lite.yml` scorecard aggregation path
+  - stays report-only and is used by Step Summary and PR summary append flows
+- `artifacts/agents/hook-feedback.{json,md}`
+  - produced when `pr-ci-status-comment.yml` can download a same-head `verify-lite-report`, or by `pnpm run hook-feedback:build`
+  - normalizes verify-lite, harness health, change-package, and optional assurance into continuation inputs
+- `artifacts/handoff/ae-handoff.{json,md}`
+  - produced by `pnpm run handoff:create`
+  - packages existing `hook-feedback` and verify-lite evidence into a deterministic handoff sidecar
+- `artifacts/discovery-pack/*`
+  - produced by `pnpm run discovery-pack:validate` and `pnpm run discovery-pack:compile`
+  - remain report-only or non-authoritative outputs even when they are uploaded in CI
+- `artifacts/hermetic-reports/trace/*`
+  - produced by trace validation flows such as `run-kvonce-conformance.sh`
+  - used for regression detection and report-only comparison rather than required-artifact promotion
+
 ### 6. Validation entrypoints
 ```bash
 # Validate artifact schemas in non-strict mode
@@ -136,8 +159,39 @@ pnpm run artifacts:validate
 # Strict artifact validation
 pnpm run artifacts:validate -- --strict
 
+# Reproduce enforce-artifacts locally by generating trace/verify-lite artifacts first
+bash scripts/trace/run-kvonce-conformance.sh \
+  --input samples/trace/kvonce-sample.ndjson \
+  --format ndjson \
+  --output-dir artifacts/hermetic-reports/trace
+node scripts/ci/write-verify-lite-summary.mjs
+node scripts/trace/create-report-envelope.mjs \
+  artifacts/verify-lite/verify-lite-run-summary.json \
+  artifacts/report-envelope.json
+mkdir -p artifacts/trace
+cp artifacts/report-envelope.json artifacts/trace/report-envelope.json
+pnpm run artifacts:validate -- --strict
+
 # Check required artifacts
 node scripts/ci/check-required-artifacts.mjs
+
+# Dual-validate Formal Summary v1/v2 locally
+node scripts/ci/validate-formal-summary-v1.mjs \
+  artifacts/formal/formal-summary-v1.json \
+  schema/formal-summary-v1.schema.json
+node scripts/ci/validate-formal-summary-v2.mjs \
+  artifacts/formal/formal-summary-v2.json \
+  schema/formal-summary-v2.schema.json
+
+# Validate Assurance Summary locally
+node scripts/ci/validate-assurance-summary.mjs \
+  artifacts/assurance/assurance-summary.json \
+  schema/assurance-summary.schema.json
+
+# Validate Quality Scorecard locally
+node scripts/ci/validate-quality-scorecard.mjs \
+  artifacts/quality/quality-scorecard.json \
+  schema/quality-scorecard.schema.json
 
 # Strict required-artifact check with explicit inputs
 REQUIRED_ARTIFACTS=artifacts/verify-lite/verify-lite-run-summary.json,artifacts/report-envelope.json \
@@ -145,11 +199,49 @@ REQUIRED_ARTIFACTS_STRICT=1 \
 node scripts/ci/check-required-artifacts.mjs --strict
 ```
 
-### 7. Related references
+`pnpm run artifacts:validate` always emits:
+- `artifacts/schema-validation/summary.json`
+- `artifacts/schema-validation/summary.md`
+- `artifacts/schema-validation/errors.json`
+
+### 7. CI integration (staged rollout)
+- `verify-lite.yml` stays the merge-blocking required workflow baseline, while assurance summary generation/validation is added as non-blocking observation under the same workflow
+- `verify-lite.yml` generates `artifacts/assurance/assurance-summary.{json,md}` in report-only mode from `artifacts/verify-lite/verify-lite-run-summary.json`
+- `verify-lite.yml` also generates `artifacts/quality/quality-scorecard.{json,md}` in report-only mode from the same required inputs
+- when the `enforce-assurance` label is present, `verify-lite.yml` runs `scripts/ci/enforce-assurance-summary.mjs` against `artifacts/assurance/assurance-summary.json`
+- `scripts/summary/render-pr-summary.mjs` can include assurance status only when `artifacts/assurance/assurance-summary.json` already exists in the local workspace before rendering
+- `pr-ci-status-comment.yml` later appends `artifacts/agents/hook-feedback.md` and downloaded `artifacts/quality/quality-scorecard.md`, but does not append a raw assurance summary on its own
+- `post-deploy-verify.yml` appends assurance details only when a release bundle already contains `artifacts/assurance/assurance-summary.md`; this remains optional and does not alter release gate decisions
+- if release-side assurance is consumed from a published asset, `release_tag` is required so `quality-artifacts.tgz` can be downloaded
+- strict required-artifact presence checks in `scripts/ci/check-required-artifacts.mjs` use `REQUIRED_ARTIFACTS_STRICT=1`
+- strict AJV/schema validation in `validate-artifacts-ajv.yml` uses `ARTIFACTS_VALIDATE_STRICT=1` / `--strict`, typically behind the `enforce-artifacts` PR label
+- `validate-artifacts-ajv.yml` generates the trace artifacts plus `artifacts/verify-lite/verify-lite-run-summary.json`, `artifacts/report-envelope.json`, and `artifacts/trace/report-envelope.json` before running strict validation
+- in non-strict mode the workflow keeps the lightweight path and runs only `artifacts:validate`
+- `.github/workflows/verify-lite.yml` and `.github/workflows/formal-aggregate.yml` keep Formal Summary in dual-write mode and run v1/v2 dual-validation
+- `verify-lite.yml` also runs `tests/contracts/cli-artifacts-contracts.test.ts` so the major CLI JSON-schema and exit-code contracts remain covered
+
+### 8. Related references
 - `docs/maintenance/repo-layout-policy.md`
 - `docs/maintenance/artifact-reference-layout-plan.md`
+- `.github/workflows/verify-lite.yml`
+- `.github/workflows/formal-aggregate.yml`
+- `.github/workflows/formal-verify.yml`
+- `scripts/ci/check-required-artifacts.mjs`
+- `scripts/ci/validate-artifacts-ajv.mjs`
+- `scripts/ci/validate-formal-summary-v1.mjs`
+- `scripts/ci/validate-formal-summary-v2.mjs`
+- `scripts/ci/validate-assurance-summary.mjs`
+- `scripts/ci/validate-quality-scorecard.mjs`
+- `schema/artifact-metadata.schema.json`
+- `schema/assurance-summary.schema.json`
+- `schema/quality-scorecard.schema.json`
+- `schema/formal-summary-v1.schema.json`
+- `schema/formal-summary-v2.schema.json`
 - `docs/quality/assurance-lanes.md`
+- `docs/quality/assurance-operations-runbook.md`
 - `docs/quality/contract-taxonomy.md`
+- `docs/quality/path-normalization-contract.md`
+- `docs/quality/run-manifest-freshness-contract.md`
 - `docs/reference/CONTRACT-CATALOG.md`
 
 ---
@@ -325,11 +417,12 @@ node scripts/ci/check-required-artifacts.mjs --strict
 - `verify-lite.yml` は `artifacts/verify-lite/verify-lite-run-summary.json` を入力に `artifacts/assurance/assurance-summary.{json,md}` を **report-only / non-blocking** で生成し、artifact upload と Step Summary に含める
 - `verify-lite.yml` は同じ required input を使って `artifacts/quality/quality-scorecard.{json,md}` を **report-only / non-blocking** で生成し、artifact upload と Step Summary に含める
 - `enforce-assurance` ラベル時は `verify-lite.yml` の `Enforce assurance summary (strict; label-gated)` ステップが `scripts/ci/enforce-assurance-summary.mjs` を呼び出し、`artifacts/assurance/assurance-summary.json` に対して strict assurance enforcement を実行する
-- `pr-ci-status-comment.yml` / `scripts/summary/render-pr-summary.mjs` は `artifacts/assurance/assurance-summary.json` が存在する場合、PR summary comment に assurance の要約（satisfied claims / warning claims / warning codes）を追記する
-- `pr-ci-status-comment.yml` / `scripts/summary/render-pr-summary.mjs` は `artifacts/quality/quality-scorecard.{json,md}` が存在する場合、PR summary comment に overall status / score / blockers を追記する
+- `scripts/summary/render-pr-summary.mjs` は render 開始時点で `artifacts/assurance/assurance-summary.json` がローカル workspace に存在する場合に限り、assurance 状態を本文へ反映できる
+- `pr-ci-status-comment.yml` の後段 append は `artifacts/agents/hook-feedback.md` と downloaded `artifacts/quality/quality-scorecard.md` を追記するが、raw な assurance summary 自体は単独では追記しない
 - `post-deploy-verify.yml` は release artifact bundle 内に `artifacts/assurance/assurance-summary.md` が存在する場合、Step Summary に assurance 要約を追記する。これは optional / report-only であり、release verify の gate 判定は変えない
 - manual `post-deploy-verify.yml` で release 側の assurance summary を使う場合は、公開済み release asset `quality-artifacts.tgz` を取得するため `release_tag` が必要
-- 厳格化する場合は `REQUIRED_ARTIFACTS_STRICT=1` を有効化  
+- `scripts/ci/check-required-artifacts.mjs` の required artifact presence を strict 化する場合は `REQUIRED_ARTIFACTS_STRICT=1` を有効化する
+- `validate-artifacts-ajv.yml` の AJV/schema validation を strict 化する場合は `ARTIFACTS_VALIDATE_STRICT=1` または `--strict` を使う
   - 例: PRラベル `enforce-artifacts` を条件に strict モードを有効化
 - `validate-artifacts-ajv.yml` では strict（`enforce-artifacts`）時に `run-kvonce-conformance.sh`（trace artifacts）と `artifacts/verify-lite/verify-lite-run-summary.json` / `artifacts/report-envelope.json` / `artifacts/trace/report-envelope.json` を生成してから `artifacts:validate` を実行
 - non-strict 時は従来どおり `artifacts:validate` のみを実行（軽量動作を維持）
