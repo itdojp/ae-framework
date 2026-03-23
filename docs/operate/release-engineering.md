@@ -9,9 +9,9 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 Issue: `#2288`
 
+## 日本語
+
 本ドキュメントは、`policy/release-policy.yml` を SSOT としてリリース判定を標準化する運用手順を定義します。
-
-
 
 ## English
 
@@ -47,13 +47,13 @@ Key inputs:
 - `trace_bundle_path`: optional
 - `synthetic_checks_path`: optional
 - `release_tag`: optional; when present, the workflow downloads `quality-artifacts.tgz` from the matching release asset and appends the assurance summary to the Step Summary
-- `fail_on_verify_fail`: when `true`, the job fails only when `artifacts/release/post-deploy-verify.json` returns `status=fail`
+- `fail_on_verify_fail`: when `true`, the final gate step fails the job only when `artifacts/release/post-deploy-verify.json` returns `status=fail`; earlier steps can still fail independently for invalid inputs or failed `release_tag` download/extract
 - `run_rollback_hook_dry_run`: when `true`, the rollback hook runs in dry-run mode on failure
 - `rollback_hook_args`: additional arguments for the dry-run rollback hook
 
 Operational behavior:
 - assurance summary rendering is optional and report-only; it does not affect `status`, `rollbackRecommended`, or the gate outcome
-- if `release_tag` is set and the workflow cannot download or extract `quality-artifacts.tgz`, the workflow fails before the release judgment step completes
+- if `release_tag` is set and the workflow cannot download or extract `quality-artifacts.tgz`, the workflow fails after the release judgment has already been evaluated and before Step Summary, rollback, artifact upload, and gate notification steps run
 - manual runs of `release-quality-artifacts` only produce an Actions artifact; they do not publish a release asset, so `release_tag` cannot retrieve them
 - `metrics_snapshot_path` and `synthetic_checks_path` reject `fixtures/release/sample.*`; operators must provide real runtime evidence
 
@@ -181,7 +181,7 @@ Workflow:
 - `trace_bundle_path`: 任意
 - `synthetic_checks_path`: 任意
 - `release_tag`: 任意。指定すると、対象 release asset `quality-artifacts.tgz` から assurance summary を取得して Step Summary に追記
-- `fail_on_verify_fail`: `true` の場合、`status=fail` でジョブ失敗
+- `fail_on_verify_fail`: `true` の場合、最終の gate step は `status=fail` のときだけジョブ失敗。ただし、入力不正や `release_tag` の download/extract 失敗など前段 step はこのフラグに関係なく失敗し得る
 - `run_rollback_hook_dry_run`: `true` の場合、fail 時に rollback hook を dry-run 実行
 - `rollback_hook_args`: dry-run 実行時の追加引数
 
@@ -210,7 +210,7 @@ Web UI 実行:
 - `release_tag` は assurance summary の表示専用です。`quality-artifacts.tgz` の取得と展開に成功した場合、release verify の `status` / `rollbackRecommended` / gate 判定には影響しません。
 - assurance summary は optional / report-only です。`fail_on_verify_fail` が評価するのは `artifacts/release/post-deploy-verify.json` の結果だけです。
 - `release_tag` を使う場合は、対象 tag に `quality-artifacts.tgz` が release asset として公開済みである必要があります。
-- `release_tag` を指定して download / extract に失敗した場合は、gate 判定以前に workflow 自体が失敗します。
+- `release_tag` を指定して download / extract に失敗した場合は、release 判定結果の評価後、Step Summary / rollback / artifact upload / gate 通知より前に workflow 自体が失敗します。
 - `release-quality-artifacts` を `workflow_dispatch` で手動実行した場合は Actions artifact `quality-artifacts` が生成されるだけで、release asset は作成されません。この場合 `release_tag` からは取得できません。
 - `metrics_snapshot_path` と `synthetic_checks_path` では `fixtures/release/sample.*` は拒否されます。operator は実運用の観測結果を指定してください。
 
