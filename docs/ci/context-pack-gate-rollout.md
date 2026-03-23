@@ -21,7 +21,7 @@ Issue: #2258
 | ジョブ/ステップ | 依存 | 既定モード | blocking 化トリガー |
 | --- | --- | --- | --- |
 | `gate` | なし | report-only 判定 | `enforce-context-pack` ラベル / `CONTEXT_PACK_ENFORCE_MAIN=1` / dispatch strict |
-| `Run Context Pack dependency boundary checks` | `gate` | report-only（違反は warn 出力） | `gate.strict == true` のとき違反で fail |
+| `Run Context Pack dependency boundary checks` | `gate` | report-only（違反は warn 出力） | なし（常に report-only / `warn` 出力） |
 | `context-pack-e2e` | `gate` | non-blocking (`continue-on-error`) | `gate.strict == true` のとき blocking |
 | `Observe rollout metrics` | `context-pack-e2e` 内 | non-blocking | なし（常に観測のみ） |
 
@@ -100,7 +100,7 @@ Primary implementation references:
 | Job / step | Depends on | Default mode | Becomes blocking when |
 | --- | --- | --- | --- |
 | `gate` | none | report-only judgement | `enforce-context-pack` label, `CONTEXT_PACK_ENFORCE_MAIN=1`, or strict workflow dispatch |
-| `Run Context Pack dependency boundary checks` | `gate` | report-only (`warn` on violations) | fails when `gate.strict == true` |
+| `Run Context Pack dependency boundary checks` | `gate` | report-only (`warn` on violations) | never; always report-only (`warn` on violations) |
 | `context-pack-e2e` | `gate` | non-blocking (`continue-on-error`) | blocking when `gate.strict == true` |
 | `Observe rollout metrics` | inside `context-pack-e2e` | non-blocking | never; observation only |
 

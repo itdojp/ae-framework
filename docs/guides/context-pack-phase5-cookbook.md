@@ -99,7 +99,7 @@ Use `docs/spec/context-pack.md` for the normative contract and schema details, a
 ### Recipe 1: Pullback/Pushout integration check
 1. Define Pullback or Pushout entries in `spec/context-pack/phase5-templates.json`.
 2. Confirm that every referenced morphism, object, and diagram ID exists in the primary Context Pack sources.
-3. Confirm that every `evidencePaths` entry resolves to a tracked file.
+3. Confirm that every `evidencePaths` entry resolves to an existing file path within the repository.
 4. Run the validator.
 
 ```bash
