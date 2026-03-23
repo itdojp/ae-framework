@@ -45,10 +45,6 @@ Use this checklist before delegating to LLMs or agents. If any item is missing, 
 - [ ] `contracts.invariants` records constraints that must always hold
 - [ ] Each condition can be traced to a validating test / gate / evidence source
 
-### Related
-- `docs/guides/context-bundle.md`
-- `schema/context-bundle.schema.json`
-
 ---
 
 ## 日本語（チェックリスト）
@@ -85,6 +81,6 @@ Use this checklist before delegating to LLMs or agents. If any item is missing, 
 
 ---
 
-## 関連
+## Related / 関連
 - `docs/guides/context-bundle.md`
 - `schema/context-bundle.schema.json`
