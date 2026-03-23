@@ -131,6 +131,7 @@ pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
 Expected evidence:
 - `artifacts/hermetic-reports/formal/csp-summary.json`
 - `artifacts/hermetic-reports/formal/cspx-result.json`
+- `csp-summary.json` records `backend`, `status`, `resultStatus`, and `exitCode`
 
 ### 4.3 Execute tests
 ```bash no-doctest
@@ -144,6 +145,8 @@ Add `pnpm run pbt` or `pnpm run bdd` when needed. `pbt` resolves config in this 
 - `PBT_CONFIG`
 - `tests/property/vitest.config.*`
 - `tests/property`
+
+If resolution fails, expect `PBT_CONFIG_NOT_FOUND` with exit code `2`. In environments where `pnpm` is missing, the runner exits with `127`.
 
 ### 4.4 CI operating baseline
 - use `verify-lite` as the default PR gate
@@ -201,6 +204,22 @@ pnpm run ae-framework -- sbom --help
 
 When `spec lint` / `spec validate` uses `--format json`, failure responses still stay JSON-shaped, but invalid-input and internal-error payloads follow the dedicated error shape emitted by `emitSpecCommandError` rather than `schema/spec-validation-report.schema.json`.
 
+Representative command contracts in the current implementation:
+
+| Command | success | input error | internal error | success JSON schema |
+| --- | --- | --- | --- | --- |
+| `ae spec lint --format json` | `0` | `2` (`SPEC_INVALID_INPUT`) | `1` (`SPEC_INTERNAL_ERROR`) | `schema/spec-validation-report.schema.json` |
+| `ae spec validate --format json` | `0` | `2` (`SPEC_INVALID_INPUT`) | `1` (`SPEC_INTERNAL_ERROR`) | `schema/spec-validation-report.schema.json` |
+| `ae quality run --format json` | `0` | `2` (`--format` invalid) | `1` (blocker failure / execution error) | `schema/quality-report.schema.json` |
+| `ae quality reconcile --format json` | `0` | `2` (`--format` invalid) | `1` (remaining blocker / execution error) | `schema/quality-report.schema.json` |
+| `pnpm run verify:profile -- --json --profile <name>` | `0` | `2` (unknown profile) / `3` (missing `--profile`, or missing values for `--profile` / `--out`) | `1` (summary write failure and similar) | `schema/verify-profile-summary.schema.json` |
+
+Notes:
+- `ae quality run --format json` and `ae quality reconcile --format json` emit `QualityReport` to stdout when `text` is not requested.
+- `ae spec lint` / `ae spec validate` emit dedicated error payloads through `emitSpecCommandError` on input/internal failures rather than the success schema above.
+- `pnpm run verify:profile` prints text on input errors; success JSON is emitted only when the command runs with a valid profile and reaches the summary path.
+- For artifact placement and root pollution checks, see `docs/quality/ARTIFACTS-CONTRACT.md` and `scripts/ci/check-no-root-generated-files.mjs`.
+
 ## 6. Agent Integrations
 - Codex: `docs/integrations/CODEX-INTEGRATION.md`
 - Claude Code: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
@@ -224,7 +243,48 @@ pnpm run verify:profile -- --profile fast --json --out artifacts/verify-profile-
 pnpm run ae-framework -- traceability extract-ids --issue "https://github.com/<org>/<repo>/issues/1" --pattern "(?:LG|REQ)-[A-Z0-9_-]+" --output docs/specs/issue-traceability-map.json
 pnpm run ae-framework -- traceability matrix --map docs/specs/issue-traceability-map.json --tests "tests/**/*" --code "src/**/*" --context-pack "spec/context-pack/**/*.{yml,yaml,json}" --format json --output docs/specs/ISSUE-TRACEABILITY-MATRIX.json
 pnpm run ae-framework -- validate --traceability --strict --sources docs/specs/ISSUE-TRACEABILITY-MATRIX.json
+
+# usefulness evaluation report
+pnpm run evaluate:usefulness -- --strict-inputs --min-score 70 \
+  --traceability docs/specs/ISSUE-TRACEABILITY-MATRIX.json \
+  --verify-profile artifacts/verify-profile-summary.json \
+  --quality-report reports/quality-gates/quality-report-ci-latest.json \
+  --run-manifest-check artifacts/run-manifest-check.json
+
+# dependency audit
+pnpm run security:integrated:quick
 ```
+
+Notes:
+- full smoke stays on `pnpm run verify:formal`
+- use `pnpm run tools:formal:check` to inspect formal tool installation
+- CSP-specific procedures are in `docs/quality/formal-csp.md`
+- issue-driven traceability is documented in `docs/quality/issue-requirements-traceability.md`
+- usefulness evaluation inputs and scoring rules are in `docs/quality/usefulness-evaluation.md`
+- strict usefulness evaluation expects all required inputs to exist; override paths explicitly when you are reusing artifacts from a different workflow sequence
+
+## 8. Troubleshooting
+
+### 8.1 verify-lite gate failure
+- if `Verify Lite / verify-lite` is required, inspect the `verify-lite` logs and summary first
+- if `Copilot Review Gate / gate` is required, confirm that Copilot review exists and every Copilot-involved conversation is resolved
+- see `docs/ci/ci-troubleshooting-guide.md`
+- for the gate-specific policy, see `docs/ci/copilot-review-gate.md`
+
+### 8.2 Node.js version mismatch
+- check `node -v`
+- keep the runtime inside `>=20.11 <23`
+
+### 8.3 Missing formal verification tools
+- follow `docs/quality/formal-tools-setup.md`
+
+## 9. References
+- overview: `docs/product/OVERVIEW.md`
+- detailed description: `docs/product/DETAIL.md`
+- applicability and input/output/tool fit: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- command modes: `docs/product/COMMAND-MODES.md`
+- current implementation architecture: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
+- top-level navigation: `docs/README.md`
 
 ---
 
@@ -431,16 +491,18 @@ pnpm run ae-framework -- sbom --help
 
 主要コマンドの契約（現行実装）:
 
-| コマンド | success | input error | internal error | JSON schema |
+| コマンド | success | input error | internal error | success JSON schema |
 | --- | --- | --- | --- | --- |
 | `ae spec lint --format json` | `0` | `2` (`SPEC_INVALID_INPUT`) | `1` (`SPEC_INTERNAL_ERROR`) | `schema/spec-validation-report.schema.json` |
 | `ae spec validate --format json` | `0` | `2` (`SPEC_INVALID_INPUT`) | `1` (`SPEC_INTERNAL_ERROR`) | `schema/spec-validation-report.schema.json` |
 | `ae quality run --format json` | `0` | `2` (`--format` 不正値) | `1`（blocker失敗/実行エラー） | `schema/quality-report.schema.json` |
 | `ae quality reconcile --format json` | `0` | `2` (`--format` 不正値) | `1`（blocker残存/実行エラー） | `schema/quality-report.schema.json` |
-| `pnpm run verify:profile -- --json` | `0` | `2` (unknown profile) / `3` (invalid args) | `1` (summary write failure 等) | `schema/verify-profile-summary.schema.json` |
+| `pnpm run verify:profile -- --json --profile <name>` | `0` | `2` (`unknown profile`) / `3`（`--profile` 未指定、または `--profile` / `--out` の値欠落） | `1`（summary write failure 等） | `schema/verify-profile-summary.schema.json` |
 
 補足:
 - `ae quality run --format json` / `ae quality reconcile --format json` は、標準出力に `QualityReport` を出力します（デフォルト `text`）。
+- `ae spec lint` / `ae spec validate` の入力不正・内部エラー時は、成功スキーマではなく `emitSpecCommandError` の専用 error payload を返します。
+- `pnpm run verify:profile` は入力エラー時に text を出力し、成功 JSON は有効な profile で summary 生成まで到達した場合にのみ出力されます。
 - 成果物配置の契約（`artifacts/**`）と root 汚染検知は `docs/quality/ARTIFACTS-CONTRACT.md` と `scripts/ci/check-no-root-generated-files.mjs` を参照してください。
 
 ## 6. エージェント統合
@@ -469,7 +531,11 @@ pnpm run ae-framework -- traceability matrix --map docs/specs/issue-traceability
 pnpm run ae-framework -- validate --traceability --strict --sources docs/specs/ISSUE-TRACEABILITY-MATRIX.json
 
 # 有用性評価レポート（JSON + Markdown）
-pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
+pnpm run evaluate:usefulness -- --strict-inputs --min-score 70 \
+  --traceability docs/specs/ISSUE-TRACEABILITY-MATRIX.json \
+  --verify-profile artifacts/verify-profile-summary.json \
+  --quality-report reports/quality-gates/quality-report-ci-latest.json \
+  --run-manifest-check artifacts/run-manifest-check.json
 
 # 依存監査
 pnpm run security:integrated:quick
@@ -481,6 +547,7 @@ pnpm run security:integrated:quick
 - CSP 詳細手順は `docs/quality/formal-csp.md`
 - Issue要件IDトレーサビリティ手順は `docs/quality/issue-requirements-traceability.md`
 - 有用性評価の入力契約・スコア算出規約は `docs/quality/usefulness-evaluation.md`
+- strict usefulness evaluation では必要入力がすべて揃っていることが前提であり、別フローの成果物を使う場合は path override を明示してください
 
 ## 8. トラブルシューティング
 
