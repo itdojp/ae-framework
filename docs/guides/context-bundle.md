@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - schema/context-bundle.schema.json
 - docs/spec/context-pack.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-23'
 ---
 # Context Bundle Guide
 
@@ -11,11 +11,55 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (summary)
+## English
 
-- Context Bundle is a **structured input** for LLM/agent work.
-- It prevents context vacuum by requiring intent, constraints, and artifacts.
-- Use the schema in `schema/context-bundle.schema.json` and validate in CI.
+### Purpose
+
+Context Bundle is a **structured input artifact** for LLM/agent work. It reduces ambiguity by recording intent, constraints, dependencies, and evidence in a machine-validatable format.
+
+Operational goals:
+- prevent the fragmented-input failure mode often called Context Vacuum
+- leave traceable responsibility for assumptions, open questions, and referenced artifacts
+- make the handoff schema-valid through `schema/context-bundle.schema.json`
+
+### Recommended fields
+
+- `taskIntent`: what the operator wants to achieve
+- `systemConstraints`: language / environment / compatibility / prohibitions
+- `artifacts`: code, docs, logs, or configs that must be consulted
+- `roles`: role labels such as controller / service / domain / helper / test
+- `assumptions`: explicit provisional assumptions
+- `contracts`: structured DbC expectations (preconditions / postconditions / invariants)
+- `openQuestions`: unresolved information that must be answered or carried forward
+- `contextVacuum`: the checklist result for missing context
+
+### Optional `contracts` field
+
+`contracts` is an optional backward-compatible field used to record DbC expectations in a structured way.
+
+- `contracts.preconditions`: input constraints and prerequisite state
+- `contracts.postconditions`: observable results and side effects
+- `contracts.invariants`: constraints that must remain true throughout the operation
+
+Each item may use either of the following shapes:
+- simple form: a string
+- extended form: `{ id?, statement, scope?, severity?, source?, notes? }`
+
+### Context Vacuum check (minimum)
+
+If any of the following is missing, add it either as an **open question** or an explicit **assumption**.
+
+- dependency relationships (callers / callees)
+- data structures (input/output types or formats)
+- execution context (CLI / CI / HTTP and similar entry points)
+- expected failure patterns (error vocabulary)
+- missing DbC conditions (preconditions / postconditions / invariants)
+
+### Related files
+
+- schema: `schema/context-bundle.schema.json`
+- sample fixture: `fixtures/context-bundle/sample.context-bundle.json`
+- validation entry point: `scripts/ci/validate-json.mjs`
 
 ---
 

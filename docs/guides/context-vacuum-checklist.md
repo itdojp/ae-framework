@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/spec/context-pack.md
 - docs/ci/ci-troubleshooting-guide.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-23'
 ---
 # Context Vacuum Checklist
 
@@ -11,10 +11,39 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (summary)
+## English
 
-Use this checklist to ensure the minimum required context is present before delegating to LLM/agents.
-If any item is missing, add **open questions** or **assumptions** to the Context Bundle.
+Use this checklist before delegating to LLMs or agents. If any item is missing, record it explicitly in the Context Bundle as an **open question** or **assumption** instead of leaving it implicit.
+
+### 1) Dependencies
+- [ ] Callers and callees are identifiable
+- [ ] The affected modules/files are identified
+
+### 2) Data structures
+- [ ] Input/output types or formats are documented
+- [ ] The meaning of the main fields is described
+
+### 3) Execution context
+- [ ] The entry point is clear (CLI / HTTP / CI)
+- [ ] Runtime steps and environment assumptions (Node / OS / flags) are written down
+
+### 4) Expected behavior
+- [ ] Success and failure conditions are written down
+- [ ] Error vocabulary (error names / messages) is defined
+
+### 5) Verifiability
+- [ ] Verifiable test criteria are explicit
+- [ ] A reproduction path or sample input exists
+
+### 6) Known gaps
+- [ ] Missing information is listed in `openQuestions`
+- [ ] Provisional assumptions are listed in `assumptions`
+
+### 7) DbC (Design by Contract)
+- [ ] `contracts.preconditions` records input constraints and prerequisite state
+- [ ] `contracts.postconditions` records observable post-state
+- [ ] `contracts.invariants` records constraints that must always hold
+- [ ] Each condition can be traced to a validating test / gate / evidence source
 
 ---
 
@@ -52,6 +81,6 @@ If any item is missing, add **open questions** or **assumptions** to the Context
 
 ---
 
-## 関連
+## Related / 関連
 - `docs/guides/context-bundle.md`
 - `schema/context-bundle.schema.json`
