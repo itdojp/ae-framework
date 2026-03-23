@@ -2,7 +2,7 @@
 docRole: derived
 canonicalSource:
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-23'
 ---
 # 🔧 AE Framework Technical Implementation Details
 
@@ -324,6 +324,401 @@ interface EventSourcingSystem {
 [Content continues with remaining sections in both English and Japanese...]
 
 ---
+
+### 🔌 MCP Server Integration
+
+The framework also supports MCP-oriented integration when operators need tool/resource style access instead of the phase CLI path.
+
+#### MCP Server Architecture
+
+```text
+abstract class BaseMCPServer {
+  protected tools: Map<string, MCPTool> = new Map();
+  protected resources: Map<string, MCPResource> = new Map();
+
+  constructor(protected config: MCPConfig) {
+    this.initializeTools();
+    this.initializeResources();
+  }
+
+  abstract initializeTools(): void;
+  abstract initializeResources(): void;
+
+  async handleRequest(request: MCPRequest): Promise<MCPResponse> {
+    switch (request.type) {
+      case 'tool_call':
+        return this.handleToolCall(request);
+      case 'resource_access':
+        return this.handleResourceAccess(request);
+      default:
+        throw new Error(`Unknown request type: ${request.type}`);
+    }
+  }
+}
+```
+
+#### Implementation Notes
+
+- Phase-specific servers expose a small tool catalog rather than mirroring the entire CLI.
+- Tool handlers usually wrap the same domain services used by the phase pipeline.
+- Resource access is reserved for read-heavy lookups such as policy, glossary, and generated artifacts.
+- In current operations the MCP surface is an integration boundary, not a replacement for the main Verify Lite / Policy Gate / gate workflow.
+
+---
+
+## Telemetry and Monitoring
+
+### 📊 OpenTelemetry Integration
+
+Telemetry remains the main cross-cutting mechanism for execution traces, metrics, and error correlation.
+
+#### Telemetry Service Implementation
+
+```text
+export class TelemetryService {
+  private tracer: Tracer;
+  private meter: Meter;
+  private logger: Logger;
+
+  constructor() {
+    this.tracer = trace.getTracer('@ae-framework/telemetry');
+    this.meter = metrics.getMeter('@ae-framework/telemetry');
+    this.logger = logs.getLogger('@ae-framework/telemetry');
+    this.initializeMetrics();
+  }
+
+  async recordPhaseExecution(
+    phase: PhaseType,
+    duration: number,
+    success: boolean,
+    qualityMetrics?: QualityMetrics
+  ): Promise<void> {
+    const span = this.tracer.startSpan(`phase_${phase}_execution`);
+    span.setAttributes({
+      'phase.type': phase,
+      'phase.success': success,
+      'phase.duration': duration,
+    });
+
+    this.phaseExecutionHistogram.record(duration, {
+      phase,
+      success: success.toString(),
+    });
+
+    if (qualityMetrics) {
+      this.lastQualityScore = qualityMetrics.overallScore;
+    }
+
+    if (!success) {
+      this.errorRateCounter.add(1, {
+        phase,
+        error_type: 'execution_failure',
+      });
+    }
+
+    span.end();
+  }
+}
+```
+
+#### Current Operational Points
+
+- Enhanced telemetry adds Observable Gauges for memory, CPU, uptime, and queue depth snapshots.
+- Runtime traces are correlated through explicit `traceId` handling and summary bundle artifacts.
+- Error reporting follows the repository-wide `unknown-first` policy, with `error-utils` used to normalize messages and stacks.
+- Telemetry documents such as `docs/observability.md` and `docs/operate/telemetry-as-context.md` define the current artifact and redaction expectations.
+
+### 🧰 Error Handling Policy (CLI)
+
+- All CLI catch blocks treat thrown values as `unknown`.
+- Error formatting is centralized in `src/utils/error-utils.ts`.
+- Human-readable console output is separated from machine-readable telemetry and bundle artifacts.
+- Failure reporting is expected to preserve enough metadata for rerun, triage, and self-heal routing.
+
+---
+
+## Quality Assurance System
+
+### 🛡️ Quality Gates Implementation
+
+The quality system is multi-layered. It starts with local validation, continues through Verify Lite, and escalates to conditional gates only when the diff warrants it.
+
+#### TDD Guard System
+
+```text
+export class TDDGuard {
+  async enforceTestFirstDevelopment(
+    phase: PhaseType,
+    artifacts: PhaseOutput
+  ): Promise<TDDValidationResult> {
+    if (phase < PhaseType.USER_STORIES) {
+      return { passed: true, reason: 'TDD enforcement starts from Phase 3' };
+    }
+
+    const hasTests = await this.validateTestExistence(artifacts);
+    if (!hasTests.passed) {
+      return hasTests;
+    }
+
+    const coverage = await this.coverageAnalyzer.analyze(artifacts);
+    if (coverage.percentage < this.getMinimumCoverage(phase)) {
+      return {
+        passed: false,
+        reason: `Coverage ${coverage.percentage}% is below the minimum`,
+        details: coverage,
+      };
+    }
+
+    return { passed: true, coverage };
+  }
+}
+```
+
+#### Accessibility Guard
+
+- Accessibility validation stays wired into the UI generation and review loop.
+- Typical checks cover contrast, keyboard navigation, ARIA labels, semantic HTML, and screen reader compatibility.
+- In current repository operations, accessibility findings are summarized through the same reporting surfaces used by PR summaries and assurance artifacts.
+
+---
+
+## UI/UX Phase 6 Complete Implementation
+
+### 🎨 Phase 6 Implementation Status
+
+Phase 6 is treated as an automated generation and validation pipeline rather than a simple template expander.
+
+#### Delivered Capabilities
+
+- UI scaffold generation from the domain model
+- design-token and Tailwind integration
+- CVA-style variant generation
+- accessibility validation and ARIA generation
+- i18n scaffolding
+- Storybook / E2E / unit-test generation
+- quality checks such as Lighthouse-oriented validation
+
+#### Operational Expectations
+
+- The generated UI must still pass the repository baseline gates.
+- Accessibility is not optional; it is part of the generated artifact contract.
+- Phase 6 outputs are expected to remain compatible with change-package evidence and release-facing summaries.
+
+---
+
+## Comprehensive Quality System
+
+### 🛡️ Enterprise-Grade Quality Coverage
+
+The framework combines three complementary quality approaches instead of relying on a single gate.
+
+#### 1. Golden / Approval Testing
+
+- snapshot capture for generated artifacts
+- structured diffing against the approved baseline
+- explicit approval requirement for material deviations
+
+#### 2. Metamorphic Testing
+
+- invariant-preservation checks across safe transformations
+- consistency checks for domain rules before and after transformation
+- useful when exact outputs vary but semantic obligations must remain stable
+
+#### 3. CLI Robustness and Fuzzing
+
+- randomized argument generation
+- crash-rate tracking
+- command-injection resistance checks
+- execution-time tracking for robustness regressions
+
+#### Quality Metrics Integration
+
+- golden coverage
+- metamorphic coverage
+- fuzzing stability
+- coverage and conformance rollups
+- security blocking conditions
+
+---
+
+## Performance Optimization
+
+### ⚡ Performance Optimization System
+
+#### Parallel Processing Engine
+
+- parallel batch execution for expensive phase work
+- bounded concurrency through semaphores or worker pools
+- isolation when operations need separate processes or stronger resource boundaries
+
+#### Resource Pool Management
+
+- reusable AI service clients
+- queue-based acquisition and release
+- bounded pool size for predictable resource usage
+
+These patterns matter because the framework is expected to run both local developer workflows and CI automation without uncontrolled latency spikes.
+
+---
+
+## Security Implementation
+
+### 🔐 Security Architecture
+
+#### Input Validation System
+
+- schema validation first
+- XSS and injection-oriented validation next
+- sanitization only after structural validation passes
+- explicit error reporting when security checks fail
+
+#### API Security
+
+- rate limiting
+- authentication and authorization
+- payload validation per endpoint
+- encryption or redaction for sensitive fields where applicable
+
+Security validation is expected to integrate with the same evidence flow used by CI and change-package reviews, rather than remaining a separate report with no downstream consumer.
+
+---
+
+## CI/CD Pipeline System
+
+### 🔄 Multi-Layer CI/CD Architecture
+
+The current repository baseline is organized around three always-required checks on day-to-day PRs:
+
+- `verify-lite`
+- `policy-gate`
+- `gate`
+
+Additional workflows are conditional or label-driven.
+
+#### Pipeline Layer Design
+
+- fast baseline validation for normal PRs
+- conditional deeper checks for adapters, assurance, discovery, formal, or security-heavy diffs
+- reusable workflows to avoid command drift across entrypoints
+
+#### Workflow Lint and Reusable Core
+
+- workflow linting remains a separate concern from application tests
+- reusable workflow cores centralize Node setup, dependency installation, and script invocation
+- policy decisions are expressed in workflow topology plus the policy gate, not only in ad hoc shell logic
+
+---
+
+## Test Strategy Architecture
+
+### 🧪 Vitest Projects-Based Test Separation
+
+The repository separates unit, integration, and performance-style workloads through project-specific settings.
+
+#### Key Practices
+
+- shorter timeouts for unit coverage
+- process isolation for integration and performance workloads
+- explicit leak detection and forced shutdown around resource-heavy tests
+- script entrypoints that map to the same grouped workloads used in CI
+
+This keeps local iteration fast while still preserving deterministic coverage in automation.
+
+---
+
+## Performance Budget System
+
+### ⚡ Code-Enforced Performance Thresholds
+
+Performance budgets are treated as executable policy.
+
+#### Budget Categories
+
+- system startup and memory
+- CPU and runtime resource usage
+- test execution duration
+- CI layer duration
+
+#### Enforcement Model
+
+- configuration-driven thresholds
+- environment-specific tolerance multipliers
+- validation reports with pass/fail summaries
+- test-based assertions for critical ceilings
+
+---
+
+## Flake Detection and Isolation
+
+### 🔍 Automated Flaky Test Management
+
+Flake management is an operations system, not only a testing utility.
+
+#### Core Loop
+
+- scheduled or manual detection runs
+- isolation of unstable test patterns
+- recovery attempts after a stability threshold is met
+- maintenance reporting for long-lived flaky tests
+
+#### Operational Outputs
+
+- isolated test configuration
+- maintenance and recovery state
+- scripts for isolate / recover / remove / report flows
+
+---
+
+## Deployment and Operations
+
+### 🚀 CI/CD Pipeline Implementation
+
+Deployment guidance covers both artifact production and runtime observability.
+
+#### Delivery Path
+
+- baseline quality validation
+- build and packaging
+- optional publish path for tagged releases
+- container runtime setup for isolated execution
+
+#### Monitoring and Alerting
+
+- health checks for system and AI-service connectivity
+- alert rules for error rate and latency
+- telemetry export for production analysis
+
+---
+
+## Summary
+
+The technical implementation combines the following architectural characteristics:
+
+### 🏗️ Architecture Characteristics
+
+- hybrid integration across CLI, agent, and integration boundaries
+- phase-specialized coordination with shared quality controls
+- built-in quality, conformance, and security validation
+- runtime telemetry and artifact-based diagnostics
+- operational paths for CI, release, and recovery
+
+### 🔧 Technology Stack Characteristics
+
+- TypeScript-first implementation
+- runtime validation and contract-first evidence flow
+- OpenTelemetry-based observability
+- modern React / Next.js oriented UI generation for Phase 6
+- automation surfaces for AI-assisted development and remediation
+
+### 🚀 Operational Characteristics
+
+- self-healing and issue-driven remediation patterns
+- real-time validation and summary artifacts
+- scalable CI topology with conditional depth
+- layered testing and flake isolation
+- performance and security enforcement as executable policy
+
+The 2025 implementation milestone is best understood as the point where these capabilities became a coherent operating model rather than isolated features.
 
 ## Japanese
 
