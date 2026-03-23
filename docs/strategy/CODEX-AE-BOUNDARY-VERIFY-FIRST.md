@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-23'
 owner: product-strategy
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -11,12 +11,92 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-- Codex is the execution cockpit (planning conversation, task execution, automation orchestration).
-- ae-framework is the governance rail (SSOT, verification design, quality gates, and evidence).
-- Conversation plans are input assets, not SSOT. SSOT must be fixed in repository artifacts.
-- This document defines a standard `Thread -> Repo -> CI` flow and decision criteria (`keep` / `reduce` / `integrate`) for overlapping features.
+### 1. Purpose
+
+This document defines the operational boundary between Codex capabilities (plans, skills, automations) and `ae-framework` capabilities in overlapping areas. The goal is to keep the value center of `ae-framework` fixed on **Verify-first**: verification criteria, gate decisions, and evidence remain first-class outputs.
+
+### 2. Positioning
+
+- **Codex**: the execution cockpit that optimizes conversation, thread handling, delegated work, and operational automation
+- **ae-framework**: the governance rail that makes outputs harder to break through SSOT, quality gates, evidence, and auditability
+
+Principles:
+- **Conversation is not SSOT**: plans in the thread are input assets. The canonical state must be fixed in repository artifacts.
+- **Verify-first**: verification conditions and pass/fail judgement are more important than ad hoc execution sequences.
+- **Policy-as-code**: quality, security, and compliance requirements must remain machine-evaluable.
+- **Vendor-neutral**: prefer artifact contracts that do not depend on a single agent vendor.
+
+### 3. Overlap matrix and operating decision
+
+| Area | Codex responsibility | ae-framework responsibility | SSOT | Policy |
+| --- | --- | --- | --- | --- |
+| Plan (requirement shaping / task decomposition) | Dialogue, decomposition, alignment | Normalization rules into specs | repo | **integrate** |
+| Execution experience (threads / parallel work / task isolation) | Primary owner | No competing implementation; consume only | n/a | **reduce** |
+| Skills (repeatable procedures) | Execution channel | Distribute procedures that assume gate and evidence discipline | repo | **integrate** |
+| Automation triggers (dispatch / comment / labels) | Execution entrypoint | Define decision criteria and safety boundaries | repo + CI | **integrate** |
+| Verification / quality gates | Execution helper only | Own gate definitions, judgements, and evidence contracts | repo + CI | **keep** |
+| Auditability / reproducibility | Supplemental signals | Own evidence contracts, collection, and traceability | repo + artifacts | **keep** |
+
+Decision rules:
+- **keep**: differentiated core of SSOT, verification, and evidence
+- **reduce**: experience layer that should be delegated to the platform
+- **integrate**: areas that should be connected as inputs or distribution channels
+
+### 4. Non-goals
+
+- Rebuilding a full UI / thread / parallel-execution experience that competes directly with Codex
+- Treating `ae-framework` as a generic agent runtime
+- Overcommitting to vendor-specific APIs when contract-neutral artifacts suffice
+
+### 5. Standard flow (`Thread -> Repo -> CI`)
+
+#### Step 0: Thread (conversation assets)
+- Use Codex to organize requirements, tasks, and risks.
+- At this point, the plan is only a working memo, not SSOT.
+
+#### Step 1: Repo (normalize into SSOT)
+- Use `docs/templates/plan-to-spec-normalization-template.md` to fix the plan into repository artifacts.
+- Update, at minimum:
+  - purpose / scope
+  - acceptance criteria
+  - non-functional requirements and constraints
+  - verification conditions (which gate judges what)
+
+#### Step 2: CI (machine judgement)
+- Run the minimum required gate set, for example `verify-lite`, `policy-gate`, and `gate`.
+- Add heavier opt-in verification only when the change warrants it.
+- When a gate fails, preserve diagnosis and reproduction steps as evidence.
+
+#### Step 3: Evidence (make the judgement auditable)
+- Preserve PR/CI results, summaries, and related artifact links.
+- Keep the reason for the change and the basis for the judgement traceable.
+
+### 6. Minimum Verify-first artifact set
+
+Required minimum:
+- **Spec**: requirement, acceptance criteria, non-functional constraints, and explicit limits
+- **Gate definition**: which CI checks are required
+- **Evidence**: result logs, major artifacts, and reproduction commands
+
+Optional extensions:
+- formal-method reports (TLA+, Alloy, CSP, Lean, and similar)
+- additional performance, security, or dependency-audit evidence
+
+### 7. Operational rules
+
+- At PR creation, state which repository artifacts absorb the thread plan.
+- Do not merge changes with unmet required gates unless a fail-open exception is explicitly approved.
+- Manage automation settings as repository variables and policy, not as undocumented operator conventions.
+
+### 8. References
+
+- `docs/product/POSITIONING.md`
+- `docs/product/OVERVIEW.md`
+- `docs/ci/pr-automation.md`
+- `docs/quality/ARTIFACTS-CONTRACT.md`
+- `docs/templates/plan-to-spec-normalization-template.md`
 
 ---
 
