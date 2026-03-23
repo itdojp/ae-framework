@@ -4,7 +4,7 @@ canonicalSource:
 - docs/ci/branch-protection-operations.md
 - docs/reference/CLI-COMMANDS-REFERENCE.md
 - docs/quality/formal-runbook.md
-lastVerified: '2026-03-22'
+lastVerified: '2026-03-23'
 ---
 # ae-framework 典型的な利用シナリオ（Use Cases）
 
@@ -27,7 +27,7 @@ pnpm run ae-framework -- <command> [args...]
 After `pnpm run build`, invoke the packaged CLI through `pnpm exec ae ...` or `pnpm exec ae-framework ...` (see `docs/product/COMMAND-MODES.md`).
 
 ### 0.3 GitHub Actions CI
-The current main PR baseline assumes `verify-lite`, `policy-gate`, and `gate` as the default required checks.
+Primary workflows are defined under `.github/workflows/*`. In daily PR operation, the current main baseline assumes `verify-lite`, `policy-gate`, and `gate` (`copilot-review-gate.yml`) as the default required checks.
 
 ## 1. PR Operation: minimum gate with `verify-lite` + `policy-gate` + `gate`
 ### Purpose
@@ -41,9 +41,20 @@ Move reviews and lightweight verification quickly while keeping the merge condit
 5. Run additional checks only when needed
 6. Merge after required checks are green
 
+### Operational options
+- Auto-fix: enable `AE_COPILOT_AUTO_FIX=1` in Repository Variables. See `docs/ci/copilot-auto-fix.md`.
+- Auto-merge: enable `AE_AUTO_MERGE=1` in Repository Variables. See `docs/ci/auto-merge.md`.
+- Full rollout guidance: `docs/ci/pr-automation.md`.
+- Additional verification:
+  - `/verify-lite` through `.github/workflows/agent-commands.yml`
+  - `/review strict` when coverage and other stricter signals are needed
+
 ### Expected artifacts
 - `artifacts/verify-lite/verify-lite-run-summary.json`
 - `artifacts/verify-lite/verify-lite-lint-summary.json`
+
+### Constraints
+- Copilot Review Gate requires both a GitHub Copilot review and resolution of review threads touched by Copilot. See `docs/ci/copilot-review-gate.md` and `.github/workflows/copilot-review-gate.yml`.
 
 ## 2. Repository Administration: branch protection presets
 ### Purpose
@@ -65,9 +76,17 @@ pnpm run ae-framework -- spec lint -i .ae/ae-ir.json
 pnpm run ae-framework -- spec export -i .ae/ae-ir.json --format kiro
 ```
 
+### Machine-readable reports for CI
+```bash
+pnpm run ae-framework -- spec validate -i spec/example-spec.md --output .ae/ae-ir.json --format json --report-output artifacts/spec/validate-report.json
+pnpm run ae-framework -- spec lint -i .ae/ae-ir.json --format json --output artifacts/spec/lint-report.json
+```
+
 ### Expected outputs
 - `.ae/ae-ir.json`
 - export directory such as `.kiro/specs/<spec-id>/`
+- JSON reports such as `artifacts/spec/validate-report.json` and `artifacts/spec/lint-report.json`
+- Schema reference: `schema/spec-validation-report.schema.json`
 
 ## 4. Formal Verification: counterexample -> failing test -> fix -> green
 ### Purpose
@@ -80,6 +99,10 @@ pnpm run verify:formal
 ```
 
 See `docs/quality/formal-runbook.md` and `docs/quality/formal-tools-setup.md` for tool-specific setup.
+
+### Notes
+- Local execution depends on the environment. TLC, Apalache, SMT solvers, and related tools must already be installed.
+- Use `docs/quality/formal-tools-setup.md` for installation prerequisites.
 
 ## 5. Heavy-test Regression Monitoring
 ### Purpose
@@ -103,6 +126,8 @@ pnpm run security:integrated:quick
 
 ### PR / CI trigger examples
 - Add the `run-security` label when the PR needs the security workflow
+- Use `/run-security` in a PR comment when the team wants `.github/workflows/agent-commands.yml` to attach the label
+- Use `/run-security-dispatch` when the workflow-dispatch path is required
 - Use the SBOM workflow separately when repository policy requires package inventory output
 - See `.github/workflows/security.yml` and `.github/workflows/sbom-generation.yml` for the split execution paths
 
@@ -115,6 +140,13 @@ Run phased automation while preserving execution logs and artifact paths for con
 pnpm run codex:run
 node scripts/codex/ae-playbook.mjs --resume --enable-formal --formal-timeout=60000
 ```
+
+### Expected context artifact
+- `artifacts/ae/context.json` aggregates execution logs and artifact paths so phased operation can resume without losing prior evidence.
+
+### References
+- `docs/codex/ae-playbook.md`
+- `docs/integrations/CODEX-INTEGRATION.md`
 
 ---
 
