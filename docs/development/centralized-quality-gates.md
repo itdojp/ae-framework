@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-23'
 owner: development-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -27,6 +27,16 @@ The centralized quality gates system provides:
 - **Automated CI/CD Integration**: GitHub Actions workflows enforce quality standards
 - **Flexible Configuration**: Easy to modify thresholds and add new quality gates
 
+### Current Repository Baseline
+
+In the current repository, day-to-day pull requests are primarily gated by:
+
+- `verify-lite`
+- `policy-gate`
+- `gate`
+
+This document still matters because it describes the centralized quality-threshold subsystem that feeds local quality runs, compatibility aliases such as `quality:gates`, and conditional or specialized workflows. It should not be read as saying that `quality-gates-centralized.yml` is the only required PR baseline.
+
 ## Architecture
 
 ### Core Components
@@ -37,11 +47,12 @@ policy/
 src/utils/
 ├── quality-policy-loader.ts  # TypeScript utility for loading policy
 scripts/
-├── run-quality-gates.cjs     # Main quality gate runner
+├── run-quality-gates.cjs     # Compatibility entrypoint
+├── quality/run.mjs           # Maintained quality runner
 ├── check-a11y-threshold.cjs  # Accessibility checker (updated)
 ├── check-coverage-threshold.cjs # Coverage checker (new)
 .github/workflows/
-├── quality-gates-centralized.yml # Comprehensive CI workflow
+├── quality-gates-centralized.yml # Centralized quality workflow support
 └── phase6-validation.yml     # Updated to use centralized policy
 ```
 
@@ -184,6 +195,8 @@ jobs:
       phase: 'auto-detect'
       gates: 'all'
 ```
+
+Current operations also run this subsystem alongside the repository baseline checks (`verify-lite`, `policy-gate`, `gate`) rather than instead of them.
 
 ## Implementation Details
 
@@ -449,11 +462,12 @@ policy/
 src/utils/
 ├── quality-policy-loader.ts  # ポリシーロード用TypeScriptユーティリティ
 scripts/
-├── run-quality-gates.cjs     # メイン品質ゲートランナー
+├── run-quality-gates.cjs     # 互換エントリポイント
+├── quality/run.mjs           # 現行の品質ランナー
 ├── check-a11y-threshold.cjs  # アクセシビリティチェッカー（更新済み）
 ├── check-coverage-threshold.cjs # カバレッジチェッカー（新規）
 .github/workflows/
-├── quality-gates-centralized.yml # 包括的CIワークフロー
+├── quality-gates-centralized.yml # 集約品質ワークフロー補助
 └── phase6-validation.yml     # 集約ポリシー使用に更新
 ```
 
@@ -832,3 +846,13 @@ node scripts/check-coverage-threshold.cjs --env=ci
 - トレンド分析と劣化アラート
 
 この集約品質ゲートシステムは、AE-Framework開発ライフサイクル全体を通じて一貫したコード品質を維持するための堅牢な基盤を提供します。
+
+#### current repository baseline との関係
+
+現在の日常的な PR 運用では、required check の中心は以下です。
+
+- `verify-lite`
+- `policy-gate`
+- `gate`
+
+この文書が扱う集約品質ゲートは、`quality:gates` 互換エントリポイント、ローカル実行、条件付きワークフロー、および閾値ポリシーの中心として引き続き有効です。ただし、`quality-gates-centralized.yml` だけが現行の required baseline である、という意味ではありません。
