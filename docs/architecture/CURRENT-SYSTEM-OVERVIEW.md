@@ -112,6 +112,7 @@ Design implications:
 
 Operational notes:
 - `formal-verify.yml` is non-blocking by default. Use `enforce-formal` to gate on Apalache `ran/ok`.
+- On fork-based PRs, `run-formal` does not start `formal-verify.yml`; maintainers must use `workflow_dispatch` when heavy formal checks are required for external contributions.
 - `policy-gate.yml` switches approval expectations through `AE_REVIEW_TOPOLOGY` and `AE_POLICY_MIN_HUMAN_APPROVALS`.
 - `policy-gate.yml` runs `policy-decision-js-v1.json` and `policy-decision-opa-v1.json` in parallel and supports staged OPA migration through `AE_POLICY_ENGINE_MODE=shadow|shadow_strict`.
 - `policy-gate.yml` always evaluates `required_checks` from `policy/risk-policy.yml` and evaluates `gate_checks` only under high-risk conditions.
@@ -192,7 +193,8 @@ CI pin for reproducibility:
    - keep `verify-lite`, `policy-gate`, and `gate` green
    - when using `autopilot:on`, set `AE_CODEX_AUTOPILOT_ENABLED=1` and the required variables, then inspect the `<!-- AE-CODEX-AUTOPILOT v1 -->` comment for stop reasons
 5. Extra verification when required:
-   - use the `run-formal` label for heavy formal checks
+   - use the `run-formal` label for heavy formal checks on non-fork PRs
+   - on fork PRs, ask a maintainer to trigger `formal-verify.yml` through `workflow_dispatch`
    - use the `run-trace` label when trace-gated conditions must be evaluated
 6. Release operation:
    - `gh workflow run post-deploy-verify.yml ...`
@@ -211,7 +213,7 @@ CI pin for reproducibility:
 - CSP details: `docs/quality/formal-csp.md`
 - Full docs index: `docs/README.md`
 
-### 9. Update summary (2026-03-16)
+### 9. Update summary (2026-03-23)
 
 - current artifact contracts for formal / trace paths were synchronized:
   - `artifacts/formal/formal-summary-v1.json`
@@ -339,6 +341,7 @@ Primary implementation sources:
 
 補足:
 - `formal-verify.yml` は non-blocking 設計。必要時のみ `enforce-formal` で Apalache の `ran/ok` をゲート化。
+- fork 由来の PR では `run-formal` ラベルだけでは `formal-verify.yml` は起動しません。外部 contributor 向けに重い形式検証が必要な場合は maintainer が `workflow_dispatch` を使います。
 - `policy-gate.yml` の approval 評価は `AE_REVIEW_TOPOLOGY` / `AE_POLICY_MIN_HUMAN_APPROVALS` で切替可能。
 - `policy-gate.yml` は `policy-decision-js-v1.json` と `policy-decision-opa-v1.json` を併記し、`AE_POLICY_ENGINE_MODE=shadow|shadow_strict` で OPA 移行を段階運用します。
 - `policy-gate.yml` は `policy/risk-policy.yml` の `required_checks` を常時評価し、`gate_checks` は high-risk 判定時に評価します。`run-trace` に紐づく `trace-conformance` / `KvOnce Trace Validation` も high-risk 条件を満たした場合のみゲート対象です。
@@ -418,7 +421,8 @@ CI pin（再現性）:
    - `verify-lite` / `policy-gate` / `gate` の required checks を green にする
    - `autopilot:on` を使う場合は `AE_CODEX_AUTOPILOT_ENABLED=1` と必要変数を設定し、`<!-- AE-CODEX-AUTOPILOT v1 -->` コメントで停止理由を確認
 5. 追加検証（必要時）:
-   - `run-formal` ラベルで重い形式検証を実行
+   - non-fork PR では `run-formal` ラベルで重い形式検証を実行
+   - fork PR では maintainer が `workflow_dispatch` で `formal-verify.yml` を起動
    - `run-trace` ラベルで trace 連動の gate 条件を満たす
 6. リリース運用:
    - `gh workflow run post-deploy-verify.yml ...` で post-deploy verify を実行
