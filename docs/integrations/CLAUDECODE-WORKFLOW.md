@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
   - README.md
   - docs/agents/commands.md
-lastVerified: '2026-03-16'
+lastVerified: '2026-03-23'
 ---
 
 # Claude Code で ae-framework を使った開発ワークフロー
@@ -278,6 +278,64 @@ jobs:
           name: codex-json-artifacts
           path: artifacts/**/result-*.json
 ```
+
+
+#### Operator Workflow Patterns (English)
+- **Full-flow execution**: best for small projects or greenfield spikes. Run Intent -> Natural Language -> Stories -> Validation -> Modeling -> UI/UX without long pauses, then review the generated artifacts together.
+- **Checkpointed execution**: best for medium projects. Pause after Validation and Modeling, confirm that requirements and boundaries are stable, and only then generate UI/UX.
+- **Bounded-context slicing**: best for large projects. Split the problem into bounded contexts, run the same six-phase flow for each slice, and aggregate artifacts at the PR layer.
+
+#### Extended Commands (English)
+Use these when the default phase commands are not enough for diagnostics or guided improvements.
+
+```text
+# Claude Code slash commands (inside the chat/session)
+/ae:analyze ./src/auth --depth=deep --security --performance
+/ae:document ./src --type=api --format=openapi --include-examples
+/ae:improve ./src/tasks --focus=performance --suggest-refactoring
+```
+
+```bash
+# Benchmark and performance characterization
+#ae-benchmark is a separate binary
+ae-benchmark run --ci --dry-run
+
+# Delivery-side verification pass
+ae entry verify --profile lite
+
+ae traceability extract-ids   --issue "https://github.com/<org>/<repo>/issues/1"   --pattern "(?:LG|REQ)-[A-Z0-9_-]+"   --output docs/specs/issue-traceability-map.json
+
+ae traceability matrix   --map docs/specs/issue-traceability-map.json   --tests "tests/**/*"   --code "src/**/*"   --context-pack "spec/context-pack/**/*.{yml,yaml,json}"   --discovery-pack "spec/discovery-pack/**/*.{yml,yaml,json}"   --format json   --output docs/specs/ISSUE-TRACEABILITY-MATRIX.json
+```
+
+#### Best Practices (English)
+- Start with Intent and Natural Language outputs before asking for generated code. This avoids pushing ambiguity downstream into stories or UI scaffolds.
+- Treat Validation as the handoff gate between analysis and implementation. If traceability or consistency findings are weak, fix them before Phase 5 or Phase 6.
+- Keep UI/UX generation tied to a stable domain model. Generating UI too early produces churn in components, tests, and Storybook assets.
+- Use opt-in labels deliberately. `run-formal`, `run-security`, `enforce-coverage`, and related controls should be chosen based on PR risk, not enabled indiscriminately.
+
+#### Troubleshooting (English)
+- **Claude Code cannot route to ae-framework**
+  - confirm the Task Tool path first
+  - fall back to the equivalent CLI command when Task Tool is unavailable
+- **Formal or verification evidence is missing from the PR summary**
+  - check label-gated triggers such as `run-formal`
+  - upload the legacy compatibility input `formal/summary.json` when required
+  - attach current formal artifacts as supplemental evidence
+- **UI scaffold quality is lower than expected**
+  - verify that the Phase State includes stable entities and boundary decisions
+  - rerun scaffold only after fixing the upstream model or requirements ambiguity
+- **Coverage or type-coverage regressions appear late**
+  - move the check earlier in the flow and add enforcement labels only after the project has reached a stable baseline
+
+#### Practical Session Guidance (English)
+A productive Claude Code session usually follows this order:
+1. Start with a concrete user goal and bounded scope.
+2. Run Intent and Natural Language analysis.
+3. Review the structured outputs, not just the narrative explanation.
+4. Proceed to Validation and Modeling only after requirement meaning is stable.
+5. Generate implementation artifacts after the model is accepted.
+6. Finish with verify-lite, formal/security opt-ins, and PR artifact upload.
 
 ---
 
