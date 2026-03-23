@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
   - README.md
   - docs/agents/hook-feedback.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-23'
 ---
 
 # Codex連携の責務境界と Vendor-neutral 最小コア
@@ -12,9 +12,66 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (Summary)
+## English
 
-Defines operational boundaries between Codex and ae-framework, including keep/reduce/integrate decisions, vendor-neutral minimum interfaces, and fail-open/fail-closed policy boundaries.
+### 1. Purpose
+
+This document defines the operational boundary for Codex integration so `ae-framework` keeps its differentiated core in SSOT, verification, and evidence while avoiding redundant functionality.
+
+Scope: `#1973` (parent: `#1969`)
+
+### 2. Responsibility boundary by operation (`keep` / `reduce` / `integrate`)
+
+| Operation | Codex side | ae-framework side | Decision |
+| --- | --- | --- | --- |
+| Plan creation / decomposition | Organize and align through conversation | Consume as an input asset | integrate |
+| Spec updates | Assist with proposal and drafting | Fix as SSOT and make reviewable | keep |
+| Gate execution | Trigger and orchestrate | Own judgement rules, evidence contracts, and result evaluation | keep |
+| Evidence collection | Help collect and package | Own evidence contracts, storage, and traceability | keep |
+| Thread / parallel execution experience | Primary owner | Do not rebuild it | reduce |
+| Vendor-specific APIs | Use as execution channels | Abstract behind the minimum interface | integrate |
+
+### 3. Vendor-neutral minimum interface
+
+The minimum requirement is that the same workflow remains reproducible even without Codex.
+
+- CLI execution:
+  - `pnpm types:check`
+  - `pnpm lint`
+  - `pnpm build`
+  - `pnpm run test:fast`
+- CI execution:
+  - `verify-lite` (required)
+  - `policy-gate` (required)
+  - `gate` (required, Copilot Review Gate)
+  - opt-in jobs for formal, security, adapters, and QA
+- Artifact contract:
+  - `docs/quality/ARTIFACTS-CONTRACT.md`
+  - PRs must remain traceable to the evidence stored under `artifacts/**`
+
+### 4. Fail-open / fail-closed boundary
+
+| Case | Default | Condition | Required action |
+| --- | --- | --- | --- |
+| Required gate failure | fail-closed | Always | Fix and rerun; record the reason if an exception is approved |
+| Opt-in gate failure | fail-open allowed | Only when the gate is non-required | Record the failure reason and open a follow-up issue |
+| Unresolved `gate` findings | fail-closed | Always | Resolve the thread or reply with evidence |
+| External dependency failure (SaaS / API) | fail-open allowed | Only when equivalent alternative verification exists | Preserve the alternative run log and document the limitation |
+
+### 5. Operator decision guide
+
+1. Treat plans as conversation assets; only repository-normalized content is canonical.
+2. Pass the required gates first and add opt-in gates only when change risk justifies them.
+3. When using fail-open, make the exception reason and a time-bounded follow-up issue mandatory.
+4. Even when Codex-specific features are used, keep the workflow reproducible with CLI and CI only.
+
+### 6. References
+
+- `docs/integrations/CODEX-INTEGRATION.md`
+- `docs/ci/pr-automation.md`
+- `docs/ci/automation-failure-policies.md`
+- `docs/ci-policy.md`
+- `docs/quality/ARTIFACTS-CONTRACT.md`
 
 ---
 

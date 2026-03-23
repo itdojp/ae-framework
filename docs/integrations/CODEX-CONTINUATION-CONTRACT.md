@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
   - docs/agents/hook-feedback.md
   - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-23'
 ---
 
 # CodeX Continuation Contract (No Human Bottleneck v1)
@@ -12,19 +12,183 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (Summary)
+## English
 
-This document defines the operational contract to keep CodeX execution moving without open-ended human handoffs.  
-Each adapter response must be either:
+### 1. Purpose
 
-1. **Continue**: `shouldBlockProgress=false` and executable `nextActions` are present.
-2. **Blocked (justified)**: `shouldBlockProgress=true` and the minimum required human input is stated in one line.
+This document defines the continuation contract for CodeX task responses so execution does not stall on open-ended human handoffs. The output must always tell the operator or the automation lane whether work can continue immediately, and if not, what the minimum restart input is.
 
-Primary sources:
-- `src/agents/task-types.ts`
-- `schema/codex-task-response.schema.json`
-- `scripts/codex/adapter-stdio.mjs`
-- `scripts/ci/codex-autopilot-lane.mjs`
+Applies to:
+- local adapter execution (`pnpm run codex:adapter`)
+- the stdio bridge (`scripts/codex/adapter-stdio.mjs`)
+- CI automation through `scripts/ci/codex-autopilot-lane.mjs`
+
+### 2. Continuation Contract (v1)
+
+#### 2.1 Continue
+
+Conditions:
+- `shouldBlockProgress=false`
+- `nextActions.length >= 1`
+- every `nextActions[]` entry is directly executable as a command or deterministic operator action
+
+Disallowed:
+- open-ended questions such as "What should I do?"
+- reporting success while leaving `nextActions=[]`
+
+#### 2.2 Blocked (justified)
+
+Conditions:
+- `shouldBlockProgress=true`
+- `warnings.length >= 1` with an explicit stop reason
+- `nextActions.length >= 1` with a concrete restart step
+
+Input-request representation:
+- preferred: set both `blockingReason` and `requiredHumanInput`
+- compatibility mode: include `REQUIRED_INPUT: <key>=<value>` in `warnings`
+- in both modes, `nextActions` must stay restartable in one step, for example `Provide environment=staging and rerun codex task`
+- keep `requiredHumanInput` to a one-line minimum, for example `approval=1` or `environment=staging|production`
+
+### 3. Recommended response examples
+
+#### 3.1 Continue example
+
+```json
+{
+  "summary": "Generated formal artifacts for checkout flow",
+  "analysis": "OpenAPI and TLA+ artifacts were written to artifacts/codex",
+  "recommendations": ["Run verify gate on generated artifacts"],
+  "nextActions": [
+    "pnpm run verify:lite",
+    "pnpm run verify:formal"
+  ],
+  "warnings": [],
+  "shouldBlockProgress": false
+}
+```
+
+#### 3.2 Blocked example
+
+```json
+{
+  "summary": "Blocked: missing target environment",
+  "analysis": "Release verify requires environment to evaluate policy overrides.",
+  "recommendations": ["Set environment before rerun"],
+  "nextActions": ["Provide environment=staging and rerun codex task"],
+  "warnings": ["REQUIRED_INPUT: environment=staging|production"],
+  "shouldBlockProgress": true,
+  "blockingReason": "missing-environment",
+  "requiredHumanInput": "environment=staging|production"
+}
+```
+
+### 4. Deterministic stop reasons and unblocking paths in CI/autopilot
+
+Representative stop reasons emitted by `scripts/ci/codex-autopilot-lane.mjs`:
+
+| reason | Minimum unblock action |
+| --- | --- |
+| `missing label autopilot:on` | Add the `autopilot:on` label to the PR |
+| `draft PR` | Mark the PR as ready for review |
+| `merge conflict` | Merge `main`, resolve conflicts, and push |
+| `checks healthy, waiting for required checks/merge queue` | Wait for required checks; no extra operator action |
+
+Operational rules:
+- add the `status:blocked` label only when `status=blocked`
+- after unblocking, rerun autopilot through `/autopilot run` or `workflow_dispatch`
+
+#### 4.1 Optional hook-feedback adapter
+
+To rebuild a short continuation payload from existing CI artifacts:
+
+```bash
+pnpm run hook-feedback:build \
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json
+```
+
+- JSON output: `artifacts/agents/hook-feedback.json`
+- Markdown output: `artifacts/agents/hook-feedback.md`
+- continuation consumers should read `status`, `blockingReasons`, `nextActions`, and `reproCommands` first
+- when `harness-health` or `change-package` is missing, the builder still succeeds and reflects the absence through `blockingReasons`, `nextActions`, `evidence.present=false`, and nullable `source.*Path`
+- include `--context-pack-suggestions artifacts/context-pack/context-pack-suggestions.json` when that optional artifact exists
+- add `--assurance-summary` or `--ui-e2e-summary` when those optional inputs are available and you need more specific continuation guidance
+
+Variant with optional inputs:
+
+```bash
+pnpm run hook-feedback:build \
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
+  --harness-health artifacts/ci/harness-health.json \
+  --change-package artifacts/change-package/change-package.json \
+  --assurance-summary artifacts/assurance/assurance-summary.json \
+  --ui-e2e-summary artifacts/e2e/ui-e2e-summary.json
+```
+
+#### 4.2 Adapter normalization rules (v1)
+
+`src/agents/codex-task-adapter.ts` and `scripts/codex/adapter-stdio.mjs` normalize responses to reduce contract violations automatically.
+
+| Condition | Normalization |
+| --- | --- |
+| `shouldBlockProgress=false` and `nextActions=[]` | Inject default phase-specific `nextActions` via `finalizeTaskResponse` |
+| `shouldBlockProgress=true` and `summary` does not start with `Blocked:` | Prefix `Blocked:` |
+| `shouldBlockProgress=true` and no restart action exists in `nextActions` | Inject `Provide ... and rerun codex task` at the top |
+| `shouldBlockProgress=true` and `warnings=[]` inside the adapter | Inject `INTERNAL CONTRACT VIOLATION ...` |
+| `requiredHumanInput` is missing but `warnings` contains `REQUIRED_INPUT:` | Infer and populate `requiredHumanInput` |
+| `shouldBlockProgress=true` and `warnings=[]` in the stdio bridge | Inject `Human action: ...` using `requiredHumanInput`, `nextActions[0]`, `blockingReason`, or a generic fallback |
+
+Notes:
+- after normalization, the final response is validated by `schema/codex-task-response.schema.json`
+- if normalization still cannot satisfy the contract, the stdio bridge fails closed with `INVALID_RESPONSE_SCHEMA` and exit code `1`
+
+### 5. Local validation recipe
+
+```bash
+# 1) Build
+pnpm run build
+
+# 2) Adapter call
+echo '{"description":"validate API","subagent_type":"validation","context":{}}' | pnpm run codex:adapter > /tmp/codex-response.json || test $? -eq 2
+
+# 3) Contract quick checks
+# continue response: nextActions must exist when shouldBlockProgress=false
+jq -e 'if .shouldBlockProgress then true else ((.nextActions | length) > 0) end' /tmp/codex-response.json
+# blocked response: nextActions and warnings must exist when shouldBlockProgress=true
+jq -e 'if .shouldBlockProgress then ((.nextActions | length) > 0 and (.warnings | length) > 0) else true end' /tmp/codex-response.json
+
+# 3.1) Representative unit tests
+pnpm vitest run \
+  tests/unit/agents/codex-task-adapter.test.ts \
+  tests/unit/scripts/codex-adapter-stdio.test.ts \
+  tests/unit/schema/codex-task-response-schema.test.ts
+
+# 4) Optional standalone schema validation
+node --input-type=module - <<'NODE'
+import fs from 'node:fs';
+import Ajv2020 from 'ajv/dist/2020.js';
+
+const schema = JSON.parse(fs.readFileSync('schema/codex-task-response.schema.json', 'utf8'));
+const data = JSON.parse(fs.readFileSync('/tmp/codex-response.json', 'utf8'));
+const ajv = new Ajv2020({ allErrors: true, strict: false });
+const validate = ajv.compile(schema);
+if (!validate(data)) {
+  console.error(JSON.stringify(validate.errors, null, 2));
+  process.exit(1);
+}
+console.log('schema-valid');
+NODE
+```
+
+Notes:
+- `pnpm run codex:adapter` returns exit code `2` for blocked responses; this is expected
+- use `pnpm run check:schemas` when you want to revalidate the schema cross-field constraints locally
+
+### 6. Primary sources
+
+- Type definitions: `src/agents/task-types.ts`
+- Response schema: `schema/codex-task-response.schema.json`
+- stdio bridge: `scripts/codex/adapter-stdio.mjs`
+- CI automation: `scripts/ci/codex-autopilot-lane.mjs`
 
 ---
 
