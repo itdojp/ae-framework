@@ -226,7 +226,7 @@ time=3.2s, confidence=0.78
   
 - if (user.age && user.age < 0) {
 + if (user.age != null && (user.age < 0 || user.age > 130)) {
-   return false;
+    return false;
   }
 ```
 
@@ -262,7 +262,7 @@ ae-framework fix apply --input failures.json --apply
 ```bash
 # Analyze and verify fix candidates
 ae-framework fix analyze --input failures.json
-ae-framework fix apply --input failures.json --verify
+ae-framework fix apply --input failures.json --apply --verify
 
 # Discover integration tests
 ae-framework integration discover --patterns "./tests/**/*.json" --type all
@@ -313,10 +313,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
+    - name: Setup Node.js and pnpm
+      uses: ./.github/actions/setup-node-pnpm
       with:
-        node-version: '18'
+        node-version: '20.11.x'
 
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
@@ -324,7 +324,7 @@ jobs:
     - name: Phase 2.1 - CEGIS Auto-Fix
       run: |
         ae-framework fix analyze --input .ae/failures.json
-        ae-framework fix apply --input .ae/failures.json --output .ae/auto-fix --verify --verify-profile lite
+        ae-framework fix apply --input .ae/failures.json --output .ae/auto-fix --apply --verify --verify-profile lite
 
     - name: Phase 2.2 - Runtime Conformance
       run: |
@@ -341,7 +341,7 @@ jobs:
         TEST_PID=$!
 
         ae-framework integration run \
-          --suites ./tests/integration/suites/*.json \
+          --suites "./tests/integration/suites/*.json" \
           --environment ci \
           --parallel \
           --max-concurrency 4 \
@@ -357,8 +357,8 @@ jobs:
       with:
         name: phase2-advanced-results
         path: |
-          ./conformance-results/
-          ./integration-results/
+          ./artifacts/conformance/**
+          ./integration-results/**
 
     - name: Quality Gate Check
       run: |
@@ -412,47 +412,35 @@ node dashboard-data.js
 #### Configure alerting
 
 ```bash
-cat > quality-thresholds.yaml << 'EOF'
-conformance:
-  totalViolations:
-    warning: 5
-    critical: 10
-  averageExecutionTimeMs:
-    warning: 1000
-    critical: 2000
-
-integration:
-  passRate:
-    warning: 95
-    critical: 90
-EOF
-
 cat > monitor-quality.sh << 'EOF'
 #!/bin/bash
 
 check_thresholds() {
   local metrics_file=$1
-  local thresholds_file=$2
+  local violations_warning=5
+  local violations_critical=10
+  local exec_warning=1000
+  local exec_critical=2000
 
-  local violations=$(jq -r '.counts.totalViolations' $metrics_file)
-  local avg_exec=$(jq -r '.performance.averageExecutionTime' $metrics_file)
+  local violations=$(jq -r '.counts.totalViolations' "$metrics_file")
+  local avg_exec=$(jq -r '.performance.averageExecutionTime' "$metrics_file")
 
-  if (( violations > 10 )); then
+  if (( violations > violations_critical )); then
     echo "CRITICAL: Too many violations detected: $violations"
-  elif (( violations > 5 )); then
+  elif (( violations > violations_warning )); then
     echo "WARNING: Multiple violations detected: $violations"
   fi
 
-  if (( $(echo "$avg_exec > 2000" | bc -l) )); then
-    echo "CRITICAL: Average execution time above 2000ms: $avg_exec"
-  elif (( $(echo "$avg_exec > 1000" | bc -l) )); then
-    echo "WARNING: Average execution time above 1000ms: $avg_exec"
+  if (( $(echo "$avg_exec > $exec_critical" | bc -l) )); then
+    echo "CRITICAL: Average execution time above ${exec_critical}ms: $avg_exec"
+  elif (( $(echo "$avg_exec > $exec_warning" | bc -l) )); then
+    echo "WARNING: Average execution time above ${exec_warning}ms: $avg_exec"
   fi
 }
 
 while true; do
   ae-framework conformance metrics --format json --export current-metrics.json
-  check_thresholds current-metrics.json quality-thresholds.yaml
+  check_thresholds current-metrics.json
   sleep 300
 done
 EOF
@@ -709,7 +697,7 @@ ae-framework fix apply --input failures.json --apply
 ```bash
 # CEGIS による事前修復
 ae-framework fix analyze --input failures.json
-ae-framework fix apply --input failures.json --verify
+ae-framework fix apply --input failures.json --apply --verify
 
 # 統合テストの発見と準備
 ae-framework integration discover --patterns "./tests/**/*.json" --type all
@@ -760,10 +748,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
+    - name: Setup Node.js and pnpm
+      uses: ./.github/actions/setup-node-pnpm
       with:
-        node-version: '18'
+        node-version: '20.11.x'
         
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
@@ -771,7 +759,7 @@ jobs:
     - name: Phase 2.1 - CEGIS Auto-Fix
       run: |
         ae-framework fix analyze --input .ae/failures.json
-        ae-framework fix apply --input .ae/failures.json --output .ae/auto-fix --verify --verify-profile lite
+        ae-framework fix apply --input .ae/failures.json --output .ae/auto-fix --apply --verify --verify-profile lite
         
     - name: Phase 2.2 - Runtime Conformance
       run: |
@@ -790,7 +778,7 @@ jobs:
         
         # テストの実行
         ae-framework integration run \
-          --suites ./tests/integration/suites/*.json \
+          --suites "./tests/integration/suites/*.json" \
           --environment ci \
           --parallel \
           --max-concurrency 4 \
@@ -807,8 +795,8 @@ jobs:
       with:
         name: phase2-advanced-results
         path: |
-          ./conformance-results/
-          ./integration-results/
+          ./artifacts/conformance/**
+          ./integration-results/**
           
     - name: Quality Gate Check
       run: |
@@ -867,53 +855,39 @@ node dashboard-data.js
 ### アラート設定
 
 ```bash
-# 品質閾値の設定
-cat > quality-thresholds.yaml << 'EOF'
-conformance:
-  totalViolations:
-    warning: 5
-    critical: 10
-  averageExecutionTimeMs:
-    warning: 1000
-    critical: 2000
-
-integration:
-  # HTMLレポートのみのため、機械判定が必要ならカスタムReporterを実装
-  passRate:
-    warning: 95
-    critical: 90
-EOF
-
 # アラート監視スクリプト
 cat > monitor-quality.sh << 'EOF'
 #!/bin/bash
 
 check_thresholds() {
   local metrics_file=$1
-  local thresholds_file=$2
+  local violations_warning=5
+  local violations_critical=10
+  local exec_warning=1000
+  local exec_critical=2000
   
   # メトリクスの取得
-  local violations=$(jq -r '.counts.totalViolations' $metrics_file)
-  local avg_exec=$(jq -r '.performance.averageExecutionTime' $metrics_file)
+  local violations=$(jq -r '.counts.totalViolations' "$metrics_file")
+  local avg_exec=$(jq -r '.performance.averageExecutionTime' "$metrics_file")
   
   # 閾値チェック
-  if (( violations > 10 )); then
+  if (( violations > violations_critical )); then
     echo "🚨 CRITICAL: Too many violations detected: $violations"
-  elif (( violations > 5 )); then
+  elif (( violations > violations_warning )); then
     echo "⚠️  WARNING: Multiple violations detected: $violations"
   fi
 
-  if (( $(echo "$avg_exec > 2000" | bc -l) )); then
-    echo "🚨 CRITICAL: Average execution time above 2000ms: $avg_exec"
-  elif (( $(echo "$avg_exec > 1000" | bc -l) )); then
-    echo "⚠️  WARNING: Average execution time above 1000ms: $avg_exec"
+  if (( $(echo "$avg_exec > $exec_critical" | bc -l) )); then
+    echo "🚨 CRITICAL: Average execution time above ${exec_critical}ms: $avg_exec"
+  elif (( $(echo "$avg_exec > $exec_warning" | bc -l) )); then
+    echo "⚠️  WARNING: Average execution time above ${exec_warning}ms: $avg_exec"
   fi
 }
 
 # 定期チェックの実行
 while true; do
   ae-framework conformance metrics --format json --export current-metrics.json
-  check_thresholds current-metrics.json quality-thresholds.yaml
+  check_thresholds current-metrics.json
   sleep 300  # 5分間隔でチェック
 done
 EOF
