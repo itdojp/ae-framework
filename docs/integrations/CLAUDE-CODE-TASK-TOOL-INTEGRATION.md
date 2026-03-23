@@ -235,6 +235,92 @@ Representative TaskResponse:
   - Validate cross-phase consistency in Phase 4
 ```
 
+#### Requirement Categories
+- **Core capabilities**: product CRUD, inventory updates, price management
+- **User / permission concerns**: admin authority, role separation, auditability
+- **Non-functional requirements**: performance, security, accessibility, operational visibility
+
+#### Business Value
+- **Revenue impact**: faster product updates expand selling opportunities and reduce stale catalog time
+- **Operational efficiency**: structured automation reduces manual coordination cost across analysis, modeling, and delivery
+
+#### Phase 2 Example Result
+
+```text
+User: "Structure the detailed requirements for the product management system"
+
+Claude Code: Running the Natural Language Task Adapter...
+
+✅ Requirements Analysis Complete - 15 requirements identified
+📊 Analysis:
+  • Functional Requirements: 10
+  • Non-Functional Requirements: 3
+  • Business Requirements: 2
+💡 Recommendations:
+  • Review identified gaps for completeness
+  • Clarify ambiguous requirements with stakeholders
+```
+
+#### Phase 3 Example Result
+
+```text
+User: "Generate user stories for the product management flow"
+
+Claude Code: Running the User Stories Task Adapter...
+
+✅ User Story Generation Complete - 8 stories created across 3 epics
+📊 Analysis:
+  • Total Stories: 8
+  • Total Epics: 3
+  • Total Story Points: 34
+  • Completeness Score: 85%
+```
+
+#### Phase 4 Example Result
+
+```text
+User: "Validate requirement and story consistency"
+
+Claude Code: Running the Validation Task Adapter...
+
+✅ Cross-Validation Complete - 90% alignment across phases
+📊 Analysis:
+  • Requirements-Stories alignment: 95%
+  • Traceability coverage: 88%
+  • Consistency score: 92%
+```
+
+#### Phase 5 Example Result
+
+```text
+User: "Design the domain model"
+
+Claude Code: Running the Domain Modeling Task Adapter...
+
+✅ Domain Analysis Complete - 6 entities, 2 bounded contexts identified
+📊 Analysis:
+  • Core Domain Entities: 4
+  • Bounded Contexts: 2
+  • Business Rules: 12
+  • Domain Services: 3
+```
+
+#### Phase 6 Example Result
+
+```text
+User: "Generate the UI components"
+
+Claude Code: Running the UI Task Adapter...
+
+📊 OpenTelemetry initialized for ae-framework Phase 6
+✅ Generated 21 files for 3/3 entities
+📊 Analysis:
+  • Coverage: 96% (threshold: 80%)
+  • A11y: 97% (threshold: 95%)
+  • Performance: 79% (threshold: 75%)
+  • Scaffold time: 18243ms
+```
+
 ### Usage Examples & Best Practices
 
 #### Basic UI Generation
