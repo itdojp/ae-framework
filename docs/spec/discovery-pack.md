@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-16'
+lastVerified: '2026-03-23'
 owner: discovery-pack-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -197,6 +197,195 @@ compile ルール:
 - Contract Catalog: `docs/reference/CONTRACT-CATALOG.md`
 
 ## English
+
+Discovery Pack v1 is the upstream input contract that structures requirement analysis inside the repository and passes it to downstream Context Pack, traceability, and CI flows.
+
+### Positioning
+- Discovery Pack is not the design SSOT
+- Discovery Pack is the structured input contract for upstream requirement analysis
+- Context Pack remains the design SSOT
+- Markdown and scaffold outputs generated from Discovery Pack stay non-authoritative artifacts
+
+### Initial profile
+- the initial profile is `rdra-lite`
+- the intent is not to hard-code a methodology name into the core implementation
+- the profile defines the minimum operational starting point
+- profile-specific operating decisions are added incrementally through docs and fixtures
+- the v1 schema currently accepts only `rdra-lite`
+
+### Status semantics
+- `hypothesis`: tentative item; excluded from default compile
+- `reviewed`: human-reviewed but not approved; excluded from default compile
+- `approved`: included in default compile
+- `rejected`: explicitly rejected; excluded from default compile
+- `deferred`: postponed; excluded from default compile
+
+### Compile policy
+- default compile targets only `approved`
+- mixing `reviewed` or `hypothesis` requires explicit downstream flags
+- Discovery Pack does not overwrite Context Pack authoritatively
+
+### Default source layout
+
+```text
+spec/discovery-pack/index.yaml
+spec/discovery-pack/flows/*.mmd
+spec/discovery-pack/sources/*
+```
+
+### Minimum v1 elements
+- `version`
+- `profile`
+- `sources`
+- `actors`
+- `external_systems`
+- `goals`
+- `requirements`
+- `business_use_cases`
+- `flows`
+- `decisions`
+- `assumptions`
+- `open_questions`
+
+### Common fields
+The following collections share a common field shape:
+- `actors`
+- `external_systems`
+- `goals`
+- `requirements`
+- `business_use_cases`
+- `flows`
+- `decisions`
+- `assumptions`
+- `open_questions`
+
+Common fields:
+- `id`
+- `status`
+- `source_refs`
+- `traces_to`
+- optional `detail_path`
+
+### Source and trace semantics
+- `sources[].id` identifies the evidence source
+- each `sources[]` entry must contain at least one of `path` or `uri`
+- `source_refs` points to `sources[].id`
+- `traces_to` points to other Discovery Pack element IDs
+- `business_use_cases[].actor_ids` points to `actors[].id`
+- `business_use_cases[].primary_goal_ids` points to `goals[].id`
+- `flows` do not embed Mermaid semantic validation in the schema; the contract is the `mermaid_path`
+
+### Samples
+- minimal sample: `fixtures/discovery-pack/minimal.yaml`
+- `rdra-lite` sample: `fixtures/discovery-pack/rdra-lite-sample.yaml`
+
+### Current implementation scope
+- schema
+- fixtures
+- Contract Catalog registration
+- `ae discovery validate`
+- `pnpm run discovery-pack:validate`
+- `ae discovery compile`
+- `pnpm run discovery-pack:compile`
+- report-only observation in `verify-lite`
+- strict rollout through the `enforce-discovery` label
+
+### Validate command
+
+```bash no-doctest
+# validate the default layout
+pnpm run discovery-pack:validate
+
+# run from the CLI namespace
+pnpm exec ae discovery validate \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# elevate blocking open questions to failure conditions
+pnpm exec ae discovery validate \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
+  --fail-on blocking-open-questions
+
+# enforce approved items not depending on non-approved items
+pnpm exec ae discovery validate \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
+  --strict-approved
+```
+
+Outputs:
+- `artifacts/discovery-pack/discovery-pack-validate-report.json`
+- `artifacts/discovery-pack/discovery-pack-validate-report.md`
+
+### Compile command
+
+```bash no-doctest
+# generate plan-to-spec normalization markdown from approved items
+pnpm exec ae discovery compile \
+  --target plan-spec \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# generate a scaffold for manual Context Pack editing
+pnpm exec ae discovery compile \
+  --target context-pack-scaffold \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}"
+
+# include reviewed items explicitly
+pnpm run discovery-pack:compile -- \
+  --target plan-spec \
+  --sources "spec/discovery-pack/**/*.{yml,yaml,json}" \
+  --include-status approved,reviewed
+```
+
+Outputs:
+- `artifacts/discovery-pack/plan-to-spec-normalized.md`
+- `artifacts/discovery-pack/context-pack-scaffold.yaml`
+- `artifacts/discovery-pack/discovery-pack-compile-report.json`
+- `artifacts/discovery-pack/discovery-pack-compile-report.md`
+
+Compile rules:
+- default compile status is `approved` only
+- `reviewed`, `hypothesis`, and similar states are mixed in only when `--include-status` is set explicitly
+- `plan-to-spec` generates an acceptance section that can be passed to `ae tests:scaffold --input ...`
+- `context-pack-scaffold` is a non-authoritative draft and does not overwrite the Context Pack SSOT
+- an as-is flow does not auto-promote into Context Pack `diagrams`
+
+### `verify-lite` staged rollout
+- when a PR contains Discovery Pack sources, `verify-lite` observes Discovery Pack validate in report-only mode
+- in the default report-only mode, validate warnings or failures do not block the PR
+- to switch to strict mode, add the `enforce-discovery` label to the PR
+- strict mode enables:
+  - `ae discovery validate --strict-approved`
+  - `--fail-on blocking-open-questions`
+  - `--fail-on orphan-approved-requirements`
+  - `--fail-on orphan-approved-business-use-cases`
+  - `ae discovery compile --target plan-spec`
+
+### Reading `verify-lite` and strict results
+- summary artifact:
+  - `artifacts/verify-lite/verify-lite-run-summary.json`
+- Discovery Pack validate reports:
+  - `artifacts/discovery-pack/discovery-pack-validate-report.json`
+  - `artifacts/discovery-pack/discovery-pack-validate-report.md`
+- strict compile dry-run artifacts:
+  - `artifacts/discovery-pack/plan-to-spec-normalized.md`
+  - `artifacts/discovery-pack/discovery-pack-compile-report.json`
+  - `artifacts/discovery-pack/discovery-pack-compile-report.md`
+- in the PR summary or CI summary, inspect:
+  - validate status
+  - number of blocking open questions
+  - number of orphan approved requirements
+  - number of orphan approved business use cases
+  - why the run was treated as strict or report-only
+
+### When to use strict mode
+- changes that introduce a new business boundary
+- changes that alter flows across multiple actors
+- changes that affect external systems, approvals, notifications, or system-of-record relationships
+- high-risk changes where explicit upstream requirement analysis must remain visible
+
+### Related
+- Context Pack v1: `docs/spec/context-pack.md`
+- Spec registry: `docs/spec/registry.md`
+- Contract Catalog: `docs/reference/CONTRACT-CATALOG.md`
 
 Discovery Pack v1 is the upstream input contract used to structure requirements analysis inside the repository before the information is promoted into Context Pack, traceability, and CI evidence.
 
