@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-22'
+lastVerified: '2026-03-23'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -13,14 +13,15 @@ verificationCommand: pnpm -s run check:doc-consistency
 ## English
 
 ### 1. Purpose
+
 This document defines the target pull request automation flow for `ae-framework`.
 
-The intended sequence is:
+Target sequence:
 - create the PR
-- commit a plan artifact for high-risk changes
+- commit a plan artifact for `risk:high` changes
 - run AI review
-- apply review suggestions through auto-fix
-- omit manual merge operations by enabling auto-merge
+- respond to review through auto-fix where applicable
+- avoid manual merge operations by enabling GitHub auto-merge
 
 Goals:
 - automate the review-response loop after AI review
@@ -32,136 +33,335 @@ Non-goal:
 ### 2. End-to-end flow
 
 #### 2.1 Gate (review is required)
+
 - `Copilot Review Gate / gate` (`.github/workflows/copilot-review-gate.yml`)
   - requires at least one allowed AI reviewer review
   - requires every AI-involved review thread to be resolved
 
 #### 2.2 Auto Fix (apply ```` ```suggestion ```` blocks)
+
 - `Copilot Auto Fix` (`.github/workflows/copilot-auto-fix.yml`)
   - runs on `pull_request_review: submitted`
   - extracts ```` ```suggestion ```` blocks from inline comments by allowed AI reviewers and applies them to the PR
   - conservatively resolves threads that were applied or are already satisfied
-  - avoids duplicate execution when `autopilot:on` and `AE_CODEX_AUTOPILOT_ENABLED=1` are both active
+  - suppresses duplicate execution when `autopilot:on` and `AE_CODEX_AUTOPILOT_ENABLED=1` are both active
 
 Important:
 - if an AI reviewer leaves only comments without a submitted review, neither auto-fix nor the gate behaves as intended
 - fork PRs are excluded from the `pull_request` auto-fix path
+- fork PRs are excluded from the `pull_request` auto-merge path, but schedule-based maintenance can still enumerate open fork PRs
 
-#### 2.3 Auto Merge
+#### 2.3 Auto Merge (automatic enablement of GitHub auto-merge)
+
 - `PR Maintenance` (`.github/workflows/pr-ci-status-comment.yml`)
   - runs `gh pr merge --auto --squash` when conditions are satisfied
   - GitHub performs the actual merge later
-  - the `summarize` job can append report-only `hook-feedback` if a successful `verify-lite-report` artifact exists for the same head SHA
+  - the `summarize` job can append report-only `hook-feedback` when a successful `verify-lite-report` artifact exists for the same head SHA
+
+Important:
+- if repository settings disable `Allow auto-merge`, `gh pr merge --auto` fails even when checks are green
 
 ### 3. Enablement (repository level)
-All automation is controlled via GitHub Repository Variables.
+
+All automation is controlled through GitHub Repository Variables (`Settings -> Secrets and variables -> Actions -> Variables`).
+
+#### 3.0 Profile-based setup (recommended)
+
+- `AE_AUTOMATION_PROFILE` applies a bundled default set managed by `automation-config`
+  - `conservative` / `balanced` / `aggressive`
+- explicit variables override the profile values, including:
+  - `AI_REVIEW_ACTORS`
+  - `AE_REVIEW_TOPOLOGY`
+  - `AE_POLICY_MIN_HUMAN_APPROVALS`
+  - `AE_COPILOT_AUTO_FIX*`
+  - `AE_AUTO_MERGE*`
+  - `AE_GH_*`
+  - `COPILOT_REVIEW_*`
+  - `AE_AUTOPILOT_AUTO_LABEL`
+  - `AE_AUTOPILOT_RISK_POLICY_PATH`
+- details: `docs/ci/automation-profiles.md`
 
 #### 3.1 Recommended rollout order
+
 1. Configure branch protection required checks, at minimum `verify-lite`, `policy-gate`, and `gate`
-2. Start with `AE_AUTOMATION_PROFILE=conservative` and label-based opt-in
+   - `verify-lite` always enforces root-layout checks and enforces required artifact checks for non-docs-only changes
+2. Start with `AE_AUTOMATION_PROFILE=conservative` and docs-scope / label opt-in rollout
 3. Expand to `balanced` or `aggressive` only after the flow is stable
-4. Override with explicit variables only where needed
+4. Use explicit variable overrides only when necessary
 
-Current branch protection baseline in this repository is managed around:
-- `verify-lite`
-- `policy-gate`
-- `gate`
+Supplement:
+- this repository manages branch protection through `.github/branch-protection.main.verify-lite-noreview.json`
+- `gate` is recommended as a required check because it verifies AI review presence and unresolved review threads
 
-#### 3.2 Review topology
+#### 3.1.1 Review topology (solo / team)
+
 `policy-gate` supports both solo and team approval models.
 
 - `AE_REVIEW_TOPOLOGY=team` (default)
+  - high-risk PRs require `high_risk.min_human_approvals` from `policy/risk-policy.yml`
 - `AE_REVIEW_TOPOLOGY=solo`
-- `AE_POLICY_MIN_HUMAN_APPROVALS=<non-negative int>` as an explicit override
+  - high-risk PR approvals are evaluated as zero required human approvals
+- `AE_POLICY_MIN_HUMAN_APPROVALS=<non-negative int>`
+  - explicit override that takes precedence over topology
 
-The operator flow is otherwise identical:
-- create PR -> AI review -> fix comments -> required checks green -> merge
+Notes:
+- these variables affect behavior only in versions that include topology-aware `policy-gate` and `policy-gate.yml` integration with `automation-config`
+- older versions ignore them for approval judgement
+- see `docs/ci/review-topology-matrix.md` for the measurement matrix
 
-#### 3.3 Policy engine rollout
-`AE_POLICY_ENGINE_MODE` controls the OPA shadow compare rollout.
+Common operator flow in both models:
+- create PR -> AI review -> resolve findings -> required checks green -> merge
+
+#### 3.1.2 Recommended baseline by team shape
+
+| Item | solo | team |
+| --- | --- | --- |
+| `AE_REVIEW_TOPOLOGY` | `solo` | `team` |
+| `AE_POLICY_MIN_HUMAN_APPROVALS` | *(empty)* | *(empty)* |
+| Branch protection required checks | `verify-lite`, `policy-gate`, `gate` | `verify-lite`, `policy-gate`, `gate` |
+| branch rule approving review count | `0` | `0` (`policy-gate` handles high-risk approvals) |
+| Flow | PR -> AI review -> auto-fix / reevaluation -> auto-merge | PR -> AI review -> auto-fix / reevaluation -> auto-merge |
+
+Notes:
+- if `AE_POLICY_MIN_HUMAN_APPROVALS` is set, it overrides topology
+- making branch rules enforce high-risk approvals directly is not recommended for solo operation
+
+#### 3.1.3 Policy engine rollout (`shadow` -> `shadow_strict`)
+
+`policy-gate.yml` can roll out OPA shadow compare through `AE_POLICY_ENGINE_MODE`.
 
 - `shadow` (default): report-only mismatch recording
-- `shadow_strict`: mismatch or OPA evaluation error becomes blocking
+- `shadow_strict`: mismatches and OPA evaluation errors become blocking
 
 Recommended progression:
-1. observe `artifacts/ci/policy-shadow-compare-v1.json`
-2. switch to `shadow_strict` only after mismatch behavior is understood
-3. roll back to `shadow` if unexpected divergence grows
+1. keep `AE_POLICY_ENGINE_MODE=shadow` and observe `artifacts/ci/policy-shadow-compare-v1.json`
+2. move to `shadow_strict` only after mismatch behavior is understood
+3. if unexpected divergence grows, roll back to `shadow` and inspect `policy-decision-js-v1.json` vs `policy-decision-opa-v1.json`
+
+Normalization notes:
+- unset values are treated as `shadow`
+- values are normalized by trim + lowercase
+- invalid values fall back to `shadow` and emit a warning from `policy-shadow-compare`
+
+#### 3.2 Example variable set (conservative)
+
+Review topology:
+- `AE_REVIEW_TOPOLOGY=team` (default)
+- `AE_REVIEW_TOPOLOGY=solo`
+- `AE_POLICY_MIN_HUMAN_APPROVALS=` (empty means no override)
+
+Policy engine rollout:
+- `AE_POLICY_ENGINE_MODE=shadow` (default, report-only)
+- `AE_POLICY_ENGINE_MODE=shadow_strict` (blocking on mismatch / OPA evaluation error)
+
+Auto-fix (docs only):
+- `AE_COPILOT_AUTO_FIX=1`
+- `AE_COPILOT_AUTO_FIX_SCOPE=docs` (default)
+- `AE_COPILOT_AUTO_FIX_LABEL=` (optional; if set, label opt-in becomes required)
+
+Auto-merge (label opt-in):
+- `AE_AUTO_MERGE=1`
+- `AE_AUTO_MERGE_MODE=label`
+- `AE_AUTO_MERGE_LABEL=auto-merge`
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1` (default)
+- `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1` (default)
+- `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN=1` (default)
+
+Global emergency stop:
+- `AE_AUTOMATION_GLOBAL_DISABLE=1`
+  - `true` / `yes` / `on` are treated as enabled values as well
+
+Safety note for `AE_COPILOT_AUTO_FIX_SCOPE=docs`:
+- if a PR contains files outside `docs/**` and the repository-root `../README.md`, the whole auto-fix flow is skipped
+
+#### 3.2.1 Recommended mix of `AE_AUTOMATION_PROFILE` plus explicit overrides
+
+| Use case | `AE_AUTOMATION_PROFILE` | Explicit overrides to add |
+| --- | --- | --- |
+| initial rollout | `conservative` | `AE_REVIEW_TOPOLOGY=solo|team` |
+| normal operation | `balanced` | `AE_REVIEW_TOPOLOGY=solo|team`, optionally `AE_COPILOT_AUTO_FIX_SCOPE=docs` |
+| aggressive automation | `aggressive` | `AE_REVIEW_TOPOLOGY=team` after high-risk procedures are ready |
+
+Principle:
+- choose a profile first, then override only the delta
+- when intentionally clearing `AE_COPILOT_AUTO_FIX_LABEL` or `AE_AUTO_MERGE_LABEL`, use `(empty)` per `automation-config` semantics
+
+#### 3.3 Fully automatic merge mode (`all`)
+
+- `AE_AUTO_MERGE_MODE=all` (default)
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1` (`risk:low` required)
+
+Important:
+- because this has broader impact, stabilize exception handling in `label` mode before moving to `all`
+
+#### 3.4 Required GitHub-side repository settings
+
+1. General
+   - enable `Allow auto-merge`
+2. Branch protection (`main`)
+   - set `verify-lite`, `policy-gate`, and `gate` as required checks
+   - enable `Require branches to be up to date before merging`
+3. Actions permissions
+   - allow workflows to run with the required `contents: write`, `pull-requests: write`, `issues: write`, and similar permissions where needed
+4. AI review enablement
+   - enable the GitHub-side review automation used by the chosen AI reviewer
+   - naming differs by GitHub plan / feature, so follow the organization-level GitHub administration path
 
 ### 4. Short operator runbook
-1. Create the PR and add any opt-in labels if required
-2. For `risk:high`, commit `artifacts/plan/plan-artifact.json|md`
-3. Trigger AI review from the PR UI and wait for a submitted review
-4. Confirm the `Copilot Auto Fix` result comment
-5. Confirm `verify-lite`, `policy-gate`, and `gate` are green, and resolve any remaining threads
-6. Once conditions are satisfied, `PR Maintenance` enables auto-merge and GitHub merges the PR
+
+1. Create the PR and add opt-in labels if required
+2. For `risk:high`, commit `artifacts/plan/plan-artifact.json|md` so `policy-gate` does not fail on missing required plan artifacts
+3. Start the AI review from the PR UI and wait for a submitted review
+4. Confirm the `Copilot Auto Fix` result comment (`<!-- AE-COPILOT-AUTO-FIX v1 -->`)
+5. Confirm `gate`, `policy-gate`, and `verify-lite` are green, and resolve any remaining review threads
+6. Once conditions are satisfied, `PR Maintenance` enables auto-merge and GitHub merges the PR (`<!-- AE-AUTO-MERGE-STATUS v1 -->`)
 
 Supplement:
-- if a committed plan artifact exists, `PR Maintenance` appends the schema validation result to the PR summary
-- the plan artifact is a pre-implementation review contract; the Change Package is a post-implementation evidence contract
+- if a committed plan artifact exists, `PR Maintenance` appends the schema-validation result to the PR summary
+- plan artifact is the pre-implementation review contract; Change Package is the post-implementation evidence contract
 
 #### 4.1 Post-merge release verification path
+
 - use `post-deploy-verify.yml` through `workflow_dispatch`
 - local reproduction uses `pnpm run ae-framework -- release verify ...` or `ae release verify`
-- `release_tag` is only needed when assurance summary should be loaded from a published release asset
-- assurance summary is optional and report-only for post-deploy judgment
+- `release_tag` is needed only when assurance summary should be loaded from a published release asset
+- assurance summary is optional and report-only for post-deploy judgement
+- manually running `release-quality-artifacts` only creates an Actions artifact; `release_tag` can reference only a published release asset
 - details: `docs/operate/release-engineering.md`
 
 ### 5. Troubleshooting
 
 #### 5.1 Copilot Review Gate fails
+
 - `No Copilot review found`
-  - the review may not have been submitted
-  - verify `AI_REVIEW_ACTORS` / `COPILOT_ACTORS`
+  - the review may not have been submitted and may exist only as comments
+  - verify `AI_REVIEW_ACTORS` / backward-compatible `COPILOT_ACTORS`
   - tune `COPILOT_REVIEW_WAIT_MINUTES` / `COPILOT_REVIEW_MAX_ATTEMPTS` if needed
 - `Unresolved Copilot review threads`
   - resolve the conversation on the PR
-  - rerun the gate if auto-fix did not trigger a reevaluation
+  - if auto-fix does not commit/push, gate reevaluation may not trigger automatically, so rerun the gate from Actions
+  - when auto-fix does run, the auto-fix result comment update causes the `dispatch` path to rerun the gate against the PR head
 - `pull_request_review run is action_required`
-  - final judgment should be based on the PR head SHA status of `Copilot Review Gate / gate`
+  - the `pull_request_review` path can end as `action_required`
+  - final judgement must be based on the PR-head `gate` result, rerunning through `workflow_dispatch` if required
+- mixed `gate` success/failure on the same head SHA
+  - rerun the failed `Copilot Review Gate` run (`gh run rerun <runId> --failed`)
+  - make decisions from the latest `gate` result on the current head SHA
 
 #### 5.2 Copilot Auto Fix is skipped
-- `AE_COPILOT_AUTO_FIX` is disabled
-- required opt-in label is missing
-- `AE_COPILOT_AUTO_FIX_SCOPE=docs` but the PR includes non-doc changes
-- the PR head advanced or the review comment commit no longer matches the head
+
+- `AE_COPILOT_AUTO_FIX` is unset or disabled
+- `AE_COPILOT_AUTO_FIX_LABEL` is set but the label is missing
+- `AE_COPILOT_AUTO_FIX_SCOPE=docs` and the PR contains non-doc changes
+- the PR head advanced, or the review comment `commit_id` no longer matches the current head
 
 #### 5.3 Auto-merge is not enabled
+
 - `AE_AUTO_MERGE=1` is not set
-- label-based mode is active and the PR lacks the required label
-- `risk:low` is required but missing
-- Change Package Validation is missing or outside the allowed status range
+- `AE_AUTO_MERGE_MODE=label` is active but the required label is missing, or `AE_AUTO_MERGE_LABEL` is unset
+- `AE_AUTO_MERGE_REQUIRE_RISK_LOW=1` but `risk:low` is missing
+- `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1` but Change Package Validation is missing or outside the allowed status range
 - branch protection metadata is unavailable and the logic failed closed
-- the repository has disabled `Allow auto-merge`
+- repository settings disable `Allow auto-merge`
 - the PR is draft, not mergeable, or still has pending required checks
 
 #### 5.4 GitHub API 429 / secondary rate limit
-CI scripts use `scripts/ci/lib/gh-exec.mjs` for retry and backoff.
 
-Primary knobs:
-- `AE_GH_RETRY_MAX_ATTEMPTS`
-- `AE_GH_RETRY_INITIAL_DELAY_MS`
-- `AE_GH_RETRY_MAX_DELAY_MS`
-- `AE_GH_RETRY_MULTIPLIER`
-- `AE_GH_RETRY_JITTER_MS`
-- `AE_GH_THROTTLE_MS`
+This repository uses `scripts/ci/lib/gh-exec.mjs` for retry and backoff, with defaults managed in `scripts/ci/lib/automation-defaults.mjs` and `scripts/ci/lib/automation-config.mjs`.
+
+Primary tuning variables:
+- `AE_GH_RETRY_MAX_ATTEMPTS` (default `8`)
+- `AE_GH_RETRY_INITIAL_DELAY_MS` (default `750`)
+- `AE_GH_RETRY_MAX_DELAY_MS` (default `60000`)
+- `AE_GH_RETRY_MULTIPLIER` (default `2`)
+- `AE_GH_RETRY_JITTER_MS` (default `250`)
+- `AE_GH_THROTTLE_MS` (default `250`; `0` disables throttling)
 - `AE_GH_RETRY_DEBUG=1`
 - `AE_GH_RETRY_NO_SLEEP=1`
 
-#### 5.5 Self-Heal
-- `PR Self-Heal` (`.github/workflows/pr-self-heal.yml`) can rerun failed jobs, update behind PRs, and mark blocked PRs
-- enable with `AE_SELF_HEAL_ENABLED=1`
+##### 5.4.1 Retry / wait quick matrix
 
-#### 5.6 Codex Autopilot Lane
-- `Codex Autopilot Lane` (`.github/workflows/codex-autopilot-lane.yml`) automates update-branch, auto-fix, gate dispatch, and auto-merge attempts for `autopilot:on` PRs
-- unresolved actionable comments lead to fail-closed behavior and `status:blocked`
+SSOT references:
+- shared defaults: `scripts/ci/lib/automation-defaults.mjs`
+- profile overrides and validation: `scripts/ci/lib/automation-config.mjs`
+- self-heal defaults: `scripts/ci/pr-self-heal.mjs` and `.github/workflows/pr-self-heal.yml`
+- autopilot defaults: `scripts/ci/codex-autopilot-lane.mjs` and `.github/workflows/codex-autopilot-lane.yml`
+
+| Lane | Retry settings | Wait settings | Default | `AE_AUTOMATION_PROFILE` override |
+| --- | --- | --- | --- | --- |
+| gate (`copilot-review-gate`) | `COPILOT_REVIEW_MAX_ATTEMPTS` | `COPILOT_REVIEW_WAIT_MINUTES` (fixed) | `3` attempts / `5` minutes | conservative `4 / 7`, balanced `3 / 5`, aggressive `2 / 2` |
+| autopilot (`codex-autopilot-lane`) | `AE_AUTOPILOT_MAX_ROUNDS` | `AE_AUTOPILOT_ROUND_WAIT_SECONDS`, `AE_AUTOPILOT_WAIT_STRATEGY`, `AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS` | `3` rounds / `8s` / `fixed` / `8s` | none |
+| auto-fix (`copilot-auto-fix`) | no explicit retry variable | code constants, not ENV-overridable | `100ms` paging / `150ms` thread-resolve sleep | none |
+| self-heal (`pr-self-heal`) | `AE_SELF_HEAL_MAX_ROUNDS` | `AE_SELF_HEAL_ROUND_WAIT_SECONDS`, `AE_SELF_HEAL_WAIT_STRATEGY`, `AE_SELF_HEAL_ROUND_WAIT_MAX_SECONDS` | `3` rounds / `60s` / `fixed` / `60s` | none |
+
+| Shared `gh-exec` retry/backoff | default | conservative | balanced | aggressive |
+| --- | --- | --- | --- | --- |
+| `AE_GH_RETRY_MAX_ATTEMPTS` | `8` | `10` | `8` | `6` |
+| `AE_GH_RETRY_INITIAL_DELAY_MS` | `750` | `1000` | `750` | `500` |
+| `AE_GH_RETRY_MAX_DELAY_MS` | `60000` | `120000` | `60000` | `30000` |
+| `AE_GH_RETRY_MULTIPLIER` | `2` | `2` | `2` | `2` |
+| `AE_GH_RETRY_JITTER_MS` | `250` | `400` | `250` | `100` |
+| `AE_GH_THROTTLE_MS` | `250` | `400` | `300` | `150` |
+
+Notes:
+- `automation-config` variables resolve in `explicit -> profile -> default` order
+- `AE_AUTOPILOT_ACTIONABLE_COMMAND`, `AE_AUTOPILOT_ACTIONABLE_DRY_RUN`, `AE_AUTOPILOT_MAX_ROUNDS`, and `AE_AUTOPILOT_ROUND_WAIT_*` do not follow profiles
+- wait values for `autopilot`, `auto-fix`, and `self-heal` are profile-independent
+- if GitHub still fails, retry through Actions rerun (`failed only`)
+
+#### 5.5 Self-Heal
+
+- `PR Self-Heal` (`.github/workflows/pr-self-heal.yml`) can automatically:
+  - rerun failed jobs with `gh run rerun --failed`
+  - dispatch `PR Maintenance/update-branch` for behind PRs
+  - apply `status:blocked` and a summary comment to PRs that do not converge
+- enablement variables:
+  - `AE_SELF_HEAL_ENABLED=1`
+  - `AE_SELF_HEAL_MAX_ROUNDS` (default `3`)
+  - `AE_SELF_HEAL_MAX_AGE_MINUTES` (default `180`)
+  - `AE_SELF_HEAL_MAX_PRS` (default `20`)
+  - `AE_SELF_HEAL_ROUND_WAIT_SECONDS` (default `60`)
+  - `AE_SELF_HEAL_WAIT_STRATEGY` (`fixed` by default; `fixed` / `exponential`)
+  - `AE_SELF_HEAL_ROUND_WAIT_MAX_SECONDS` (defaults to `AE_SELF_HEAL_ROUND_WAIT_SECONDS`)
+
+#### 5.6 Codex Autopilot Lane (touchless merge opt-in)
+
+- `Codex Autopilot Lane` (`.github/workflows/codex-autopilot-lane.yml`) automates the following for `autopilot:on` PRs:
+  - update-branch dispatch
+  - Copilot auto-fix in force mode
+  - review-gate dispatch
+  - auto-merge enable attempt
+  - actionable non-suggestion review handling depending on `AE_AUTOPILOT_ACTIONABLE_COMMAND`
+    - unset: fail closed with `status:blocked`
+    - set: run the command and evaluate the result; `failed>0` or `skipped>0` on active runs still fail closed
+- if the PR does not converge, the lane stops with `status:blocked`
+- details: `docs/ci/codex-autopilot-lane.md`
+
+Supplement:
+- in CI, set these as Repository Variables and pass them into workflow `env:` as needed; current repository workflows already read `vars.*`
 
 #### 5.7 Global kill-switch
-- `AE_AUTOMATION_GLOBAL_DISABLE=1` disables:
+
+- `AE_AUTOMATION_GLOBAL_DISABLE=1` skips the following automation:
   - `Copilot Auto Fix`
   - `PR Maintenance` update-branch / enable-auto-merge
   - `PR Self-Heal`
   - `Codex Autopilot Lane`
+- to restore normal operation, return the variable to `0` or unset it, then rerun the required workflows
+
+### 6. References
+
+- `docs/ci/copilot-review-gate.md`
+- `docs/ci/copilot-auto-fix.md`
+- `docs/ci/auto-merge.md`
+- `docs/ci/automation-failure-policies.md`
+- `docs/ci/branch-protection-operations.md`
+- `docs/ci/ci-troubleshooting-guide.md`
+- `docs/ci/automation-permission-boundaries.md`
+- `docs/ci/automation-observability.md`
+- `docs/ci/workflow-dispatch-validation-2026-02-12.md`
+- `docs/product/MINIMAL-ADOPTION.md`
+- `docs/operate/release-engineering.md`
 
 ---
 
