@@ -235,6 +235,95 @@ Representative TaskResponse:
   - Validate cross-phase consistency in Phase 4
 ```
 
+##### Requirement Categories
+- **Core capabilities**: product CRUD, inventory updates, price management
+- **User / permission concerns**: admin authority, role separation, auditability
+- **Non-functional requirements**: performance, security, accessibility, operational visibility
+
+##### Business Value
+- **Revenue impact**: faster product updates expand selling opportunities and reduce stale catalog time
+- **Operational efficiency**: structured automation reduces manual coordination cost across analysis, modeling, and delivery
+
+#### Phase 2 Example Result
+
+```text
+User: "Organize the detailed requirements for the product management system"
+
+Claude Code: Running the Natural Language Task Adapter...
+
+✅ Requirements Structuring Complete - organized into 2 categories
+📊 Analysis:
+  • Categories: 2
+  • Total Requirements: 0
+  • Category Breakdown:
+    - User Management: 0 requirements
+    - Data Processing: 0 requirements
+💡 Recommendations:
+  • Review category organization for logical grouping
+  • Validate priority assignments with stakeholders
+```
+
+#### Phase 3 Example Result
+
+```text
+User: "Generate user stories for the product management flow"
+
+Claude Code: Running the User Stories Task Adapter...
+
+✅ User Story Generation Complete - 1 stories created across 1 epics
+📊 Analysis:
+  • Total Stories: 1
+  • Total Epics: 1
+  • Total Story Points: 5
+  • Completeness Score: 85%
+```
+
+#### Phase 4 Example Result
+
+```text
+User: "Check cross-phase alignment across requirements and stories"
+
+Claude Code: Running the Validation Task Adapter...
+
+✅ Cross-Validation Complete - 85% alignment across phases
+📊 Analysis:
+  • Requirements-Stories: 90% aligned with other phases
+  • Cross-phase issues: none detected
+  • Alignment gaps: none detected
+```
+
+#### Phase 5 Example Result
+
+```text
+User: "Analyze the domain for order and user management"
+
+Claude Code: Running the Domain Modeling Task Adapter...
+
+✅ Domain Analysis Complete - 2 entities, 1 bounded contexts identified
+📊 Analysis:
+  • Core Domain Entities: 1
+  • Bounded Contexts: 1
+  • Business Rules: 1
+  • Domain Services: 1
+```
+
+#### Phase 6 Example Result
+
+```text
+User: "Generate the UI components"
+
+Claude Code: Running the UI Generation Task Adapter...
+
+✅ Generated 21 files for 3/3 entities
+📊 Analysis:
+  • Coverage: 96% (threshold: 80%)
+  • A11y: 97% (threshold: 95%)
+  • Performance: 79% (threshold: 75%)
+  • Scaffold time: 18243ms
+```
+
+The `OpenTelemetry initialized for ae-framework Phase 6` line appears only when `NODE_ENV=production` or `DEBUG_TELEMETRY` is enabled.
+
 ### Usage Examples & Best Practices
 
 #### Basic UI Generation
