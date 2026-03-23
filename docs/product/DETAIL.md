@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
 - docs/quality/formal-runbook.md
-lastVerified: '2026-03-22'
+lastVerified: '2026-03-23'
 ---
 # ae-framework 詳細説明資料
 
@@ -43,18 +43,79 @@ For environment prerequisites, see `docs/product/OVERVIEW.md`.
 - Main subcommands registered by `src/cli/index.ts`, including `spec`, `state-machine`, `codegen`, `fix`, `quality`, `qa`, `conformance`, `integration`, and progress views
 - Legacy compatibility shims remain in `src/cli.ts` and `src/runner/main.ts`; new user-facing commands are not added there
 
+#### 2.3 CLI and entrypoint detail
+- Main binaries from `package.json bin`:
+  - `ae`, `ae-framework` -> `src/cli/index.ts`
+  - `ae-phase` -> `src/cli/phase-cli.ts`
+  - `ae-approve` -> `src/cli/approval-cli.ts`
+  - `ae-slash` -> `src/cli/slash-cli.ts`
+  - `ae-ui` -> `src/cli/ae-ui-alias.ts`
+  - `ae-sbom` -> `src/cli/sbom-cli.ts`
+  - `ae-resilience` -> `src/cli/resilience-cli.ts`
+  - `ae-benchmark` -> `src/cli/benchmark-cli.ts`
+  - `ae-server` -> `src/cli/server-runner.ts`
+- Representative subcommands from `src/cli/index.ts`:
+  - `spec`
+  - `state-machine`
+  - `codegen`
+  - `fix`
+  - `enhanced-state`
+  - `circuit-breaker`
+  - `security`
+  - `entry`
+  - `help`
+  - `setup`
+  - `quality`
+  - `qa`
+  - `conformance`
+  - `integration`
+  - `resilience`
+  - `sbom`
+  - `status` / `board`
+
 ### 3. Specification and Verification
 - Registry and contract references live under `spec/` and `docs/spec/registry.md`
 - Formal verification is documented in `docs/quality/formal-runbook.md` and implemented through `scripts/formal/*`
 - Core spec lifecycle commands remain `spec:compile`, `spec:lint`, and `spec:validate`
 
-### 4. Test Structure
+### 4. Repository Structure
+
+| Directory | Responsibility |
+| --- | --- |
+| `src/` | Core implementation, CLI entrypoints, and MCP/server logic |
+| `scripts/` | CI, quality, security, and verification automation |
+| `docs/` | Reference, runbook, and onboarding documentation |
+| `spec/` | Specification registry and definition inputs |
+| `tests/` | Unit, integration, property, and resilience-oriented tests |
+| `packages/` | Subpackages such as compilers and support utilities |
+| `templates/` | Spec, CI, and quality templates |
+| `artifacts/`, `reports/` | Machine-readable evidence and human-readable reports |
+| `configs/` | TypeScript, test, and CI-related configuration |
+
+### 5. Primary Flows
+#### 5.1 Local verification path
+1. Install dependencies with `pnpm install`
+2. Run the minimum baseline with `pnpm run lint` and `pnpm run test:fast`
+3. Run `pnpm run verify:formal` when formal evidence is needed
+
+#### 5.2 CI path
+1. Open the PR
+2. Pass `verify-lite`, `policy-gate`, and `gate` as the lightweight baseline
+3. Trigger `formal-verify` with the `run-formal` label or `workflow_dispatch` when needed
+4. Add `enforce-formal` only when Apalache `ran/ok` must become blocking
+
+#### 5.3 Specification validation path
+1. Register or update specs under `spec/`
+2. Run `spec:validate` for syntax and contract validation
+3. Use formal verification to surface counterexamples and inconsistencies
+
+### 6. Test Structure
 The repository separates unit, integration, property, BDD, MBT, and resilience-oriented tests. Representative areas include:
 - `tests/property/`
 - `tests/integration/`
 - `spec/bdd/`
 
-### 5. CI and Quality Gates
+### 7. CI and Quality Gates
 Primary workflows are consolidated under `.github/workflows/`.
 - Current main PR baseline uses the required check contexts `verify-lite`, `policy-gate`, and `gate`
 - The corresponding workflows are `verify-lite.yml`, `policy-gate.yml`, and `copilot-review-gate.yml`
@@ -62,20 +123,25 @@ Primary workflows are consolidated under `.github/workflows/`.
 - Security workflows: `security.yml`, `sbom-generation.yml`
 - Additional CI lanes: `ci-fast.yml`, `ci-extended.yml`, `pr-verify.yml`
 
-### 6. Formal Verification Stack
+### 8. Formal Verification Stack
 `scripts/formal/*` operates the formal toolchain in non-blocking mode and aggregates outputs under `artifacts/hermetic-reports/formal/`.
 - Individual runners include conformance, Alloy, TLA, SMT, Kani, SPIN, CSP, Lean, and Apalache
 - Unified execution: `pnpm run verify:formal`
 - Aggregate reporting: `pnpm run formal:summary`
 - CSP integration prefers `cspx` when available and persists backend/status/resultStatus/exitCode details for PR-facing aggregation
 
-### 7. Artifacts and Traceability
+### 9. Artifacts and Traceability
 - CI outputs are retained under `artifacts/` and `reports/`
+- CI comments and summary rendering consume the aggregated evidence
 - Formal evidence is aggregated primarily into `artifacts/hermetic-reports/formal/summary.json`
 - CSP-specific details are retained in `artifacts/hermetic-reports/formal/csp-summary.json` and `artifacts/hermetic-reports/formal/cspx-result.json`
 - Traceability design is documented in `docs/verify/TRACEABILITY-GUIDE.md`
 
-### 8. Constraints and References
+### 10. Security and Compliance
+- Security validation workflows: `security.yml`, `sbom-generation.yml`
+- The operating model assumes SBOM generation and dependency auditing can be enabled when repository policy requires them
+
+### 11. Constraints and References
 - `ae-framework` provides the operating model for CI/CD and evidence, not managed operations itself
 - Agent runtimes remain external integrations
 - `pnpm run verify:lite` depends on the JS/TS toolchain through `scripts/ci/run-verify-lite-local.sh`
