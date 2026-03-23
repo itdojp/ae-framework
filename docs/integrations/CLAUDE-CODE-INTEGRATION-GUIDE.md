@@ -65,7 +65,7 @@ AE Framework (Task Adapters)
 This guide describes the current AE Framework x Claude Code integration model. The repository treats Claude Code Task Tool execution as the primary path, while CLI and MCP remain fallback surfaces for cases where Task Tool is unavailable or when operators want a direct/manual execution path.
 
 Highlights
-- natural language -> requirements -> stories -> validation -> domain modeling -> UI generation
+- intent analysis -> natural language requirements -> stories -> validation -> domain modeling -> UI generation
 - six-phase collaboration with explicit checkpoints between phases
 - Task Tool as the preferred runtime path, with CLI/MCP fallback for recovery and manual control
 - UI generation optimized for WCAG 2.1 AA, TypeScript strictness, and automated test scaffolding
@@ -82,7 +82,7 @@ Operational priority:
 This priority matters because the user experience, blocking semantics, and proactive guidance are designed around the Task Tool path first. CLI and MCP exist to preserve recoverability and manual operability.
 
 #### 2.2 Task Tool contract
-The repository documents the Task Tool exchange in terms of `TaskRequest` and `TaskResponse`. In practice, the request carries:
+The repository documents the Task Tool exchange in terms of `TaskRequest` and `TaskResponse`. The interface excerpt in the Japanese section below follows the same shared contract, including the optional `context` field. In practice, the request carries:
 - task description
 - prompt content
 - phase or subagent type
@@ -133,17 +133,18 @@ The Japanese section below contains the full pseudo-code, but the operational re
 
 #### 4.2 Adapter layout
 The guide models one handler per phase:
+- Intent Task Adapter
 - Natural Language handler
 - User Stories handler
 - Validation handler
 - Domain Modeling handler
 - UI Generation handler
 
-This keeps the integration boundary narrow. Claude Code calls an adapter oriented to the active phase rather than a monolithic black-box command.
+This keeps the integration boundary narrow. Claude Code calls an adapter oriented to the active phase rather than a monolithic black-box command. Intent Analysis is not special-cased out of the adapter layout; it is the first adapter in the flow.
 
 ### 5. Performance, scale, and expectations
 #### 5.1 Expected runtime envelope
-The current Japanese section documents representative timings. The operational expectation is roughly:
+The current Japanese section documents representative timings. These runtime figures are illustrative examples unless they are explicitly tied to generated artifacts or measured CI evidence. Treat them as planning guidance rather than guaranteed SLO values. The operational expectation is roughly:
 - end-to-end flow in about 4 minutes for a medium-sized example
 - Phase 6 is intentionally much faster than the earlier analytical phases
 - memory demand grows with requirement volume and generated output count
@@ -232,6 +233,12 @@ interface TaskRequest {
   description: string;      // タスクの説明
   prompt: string;          // 処理対象のプロンプト  
   subagent_type: string;   // フェーズ指定
+  context?: {
+    validationTaskType?: string;
+    strict?: boolean;
+    sources?: string | string[];
+    [key: string]: unknown;
+  };
 }
 
 // AE Framework → Claude Code
@@ -242,6 +249,8 @@ interface TaskResponse {
   nextActions: string[];     // 次のアクション
   warnings: string[];        // 警告事項
   shouldBlockProgress: boolean; // 進行ブロック判定
+  blockingReason?: string;   // 機械可読のブロッカー理由
+  requiredHumanInput?: string; // 再開に必要な最小人手入力
 }
 ```
 
