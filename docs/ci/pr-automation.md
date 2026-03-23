@@ -157,7 +157,7 @@ Policy engine rollout:
 Auto-fix (docs only):
 - `AE_COPILOT_AUTO_FIX=1`
 - `AE_COPILOT_AUTO_FIX_SCOPE=docs` (default)
-- `AE_COPILOT_AUTO_FIX_LABEL=` (optional; if set, label opt-in becomes required)
+- `AE_COPILOT_AUTO_FIX_LABEL=copilot-auto-fix` (conservative preset default; keeps auto-fix label-gated)
 
 Auto-merge (label opt-in):
 - `AE_AUTO_MERGE=1`
@@ -172,13 +172,13 @@ Global emergency stop:
   - `true` / `yes` / `on` are treated as enabled values as well
 
 Safety note for `AE_COPILOT_AUTO_FIX_SCOPE=docs`:
-- if a PR contains files outside `docs/**` and the repository-root `../README.md`, the whole auto-fix flow is skipped
+- if a PR contains files outside `docs/**` and the README file at the repository root, the whole auto-fix flow is skipped
 
 #### 3.2.1 Recommended mix of `AE_AUTOMATION_PROFILE` plus explicit overrides
 
 | Use case | `AE_AUTOMATION_PROFILE` | Explicit overrides to add |
 | --- | --- | --- |
-| initial rollout | `conservative` | `AE_REVIEW_TOPOLOGY=solo|team` |
+| initial rollout | `conservative` | `AE_REVIEW_TOPOLOGY=solo|team` (keep the preset `AE_COPILOT_AUTO_FIX_LABEL=copilot-auto-fix`) |
 | normal operation | `balanced` | `AE_REVIEW_TOPOLOGY=solo|team`, optionally `AE_COPILOT_AUTO_FIX_SCOPE=docs` |
 | aggressive automation | `aggressive` | `AE_REVIEW_TOPOLOGY=team` after high-risk procedures are ready |
 
@@ -504,7 +504,7 @@ policy engine rollout:
 auto-fix（docsのみ）:
 - `AE_COPILOT_AUTO_FIX=1`
 - `AE_COPILOT_AUTO_FIX_SCOPE=docs`（既定）
-- `AE_COPILOT_AUTO_FIX_LABEL=`（任意。設定時はラベルopt-in必須）
+- `AE_COPILOT_AUTO_FIX_LABEL=copilot-auto-fix`（conservative preset の既定。auto-fix を label-gated に保つ）
 
 auto-merge（ラベルopt-in）:
 - `AE_AUTO_MERGE=1`
@@ -519,13 +519,13 @@ auto-merge（ラベルopt-in）:
   - `true` / `yes` / `on` も有効値として扱います。
 
 `AE_COPILOT_AUTO_FIX_SCOPE=docs` の安全設計（A）:
-- PR差分に `docs/**` と README.md 以外が含まれる場合、auto-fix 全体をスキップします（`scripts/ci/copilot-auto-fix.mjs` の allowlist に準拠）。
+- PR差分に `docs/**` と repository root にある README ファイル 以外が含まれる場合、auto-fix 全体をスキップします（`scripts/ci/copilot-auto-fix.mjs` の allowlist に準拠）。
 
 ### 3.2.1 `AE_AUTOMATION_PROFILE` + 個別上書きの推奨セット
 
 | 用途 | `AE_AUTOMATION_PROFILE` | 追加で明示推奨する個別変数 |
 | --- | --- | --- |
-| 初期導入（安全側） | `conservative` | `AE_REVIEW_TOPOLOGY=solo|team` |
+| 初期導入（安全側） | `conservative` | `AE_REVIEW_TOPOLOGY=solo|team`（preset の `AE_COPILOT_AUTO_FIX_LABEL=copilot-auto-fix` を維持） |
 | 通常運用 | `balanced` | `AE_REVIEW_TOPOLOGY=solo|team`, 必要に応じて `AE_COPILOT_AUTO_FIX_SCOPE=docs` |
 | 高速運用 | `aggressive` | `AE_REVIEW_TOPOLOGY=team`（高リスク時の運用手順を先に整備） |
 
