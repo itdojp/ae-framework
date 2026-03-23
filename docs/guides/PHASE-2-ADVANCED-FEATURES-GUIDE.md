@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
 - README.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-23'
 ---
 # Phase 2 Advanced Features Guide
 
@@ -226,9 +226,366 @@ time=3.2s, confidence=0.78
   
 - if (user.age && user.age < 0) {
 + if (user.age != null && (user.age < 0 || user.age > 130)) {
-    return false;
+   return false;
   }
 ```
+
+## English (Detailed Operations)
+
+### Practical Workflow
+
+#### 1. At the start of development
+
+```bash
+# Check project status
+ae-framework status
+
+# Review conformance configuration
+ae-framework conformance config --show
+
+# List integration environments
+ae-framework integration list --type environments
+```
+
+#### 2. During coding
+
+```bash
+# Run conformance checks repeatedly in a separate terminal
+ae-framework conformance verify --input data.json --rules rules.json
+
+# Apply CEGIS fixes from failure artifacts
+ae-framework fix apply --input failures.json --apply
+```
+
+#### 3. Before test execution
+
+```bash
+# Analyze and verify fix candidates
+ae-framework fix analyze --input failures.json
+ae-framework fix apply --input failures.json --verify
+
+# Discover integration tests
+ae-framework integration discover --patterns "./tests/**/*.json" --type all
+```
+
+#### 4. Execute tests
+
+```bash
+# Run suites in parallel
+ae-framework integration run \
+  --suites auth-suite.json,api-suite.json \
+  --environment test \
+  --parallel \
+  --max-concurrency 4 \
+  --report-format html
+```
+
+#### 5. Analyze results
+
+```bash
+# Review overall status
+ae-framework conformance metrics --format json
+ae-framework integration status
+ae-framework fix status
+
+# Inspect monitor-focused status
+ae-framework conformance status --monitors
+```
+
+### CI/CD Pipeline Integration
+
+#### Example GitHub Actions job
+
+```yaml
+# .github/workflows/ae-framework-advanced.yml
+name: AE Framework Advanced Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  phase2-advanced-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Phase 2.1 - CEGIS Auto-Fix
+      run: |
+        ae-framework fix analyze --input .ae/failures.json
+        ae-framework fix apply --input .ae/failures.json --output .ae/auto-fix --verify --verify-profile lite
+
+    - name: Phase 2.2 - Runtime Conformance
+      run: |
+        mkdir -p ./artifacts/conformance
+        ae-framework conformance verify \
+          --input .ae/conformance-data.json \
+          --context-file .ae/conformance-context.json \
+          --rules .ae/conformance-rules.json \
+          --output ./artifacts/conformance/conformance-results.json
+
+    - name: Phase 2.3 - Integration Testing
+      run: |
+        pnpm run start:server &
+        TEST_PID=$!
+
+        ae-framework integration run \
+          --suites ./tests/integration/suites/*.json \
+          --environment ci \
+          --parallel \
+          --max-concurrency 4 \
+          --timeout 600000 \
+          --output-dir ./integration-results \
+          --report-format html
+
+        kill $TEST_PID
+
+    - name: Upload Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: phase2-advanced-results
+        path: |
+          ./conformance-results/
+          ./integration-results/
+
+    - name: Quality Gate Check
+      run: |
+        conformance_status=$(jq -r '.overall' ./artifacts/conformance/conformance-results.json)
+        if [[ "$conformance_status" != "pass" ]]; then
+          echo "Conformance verification failed"
+          exit 1
+        fi
+
+        echo "Integration reports: ./integration-results/test-report-*.html"
+        echo "Phase 2 advanced quality gates (conformance) passed"
+```
+
+### Monitoring and Metrics
+
+#### Build a dashboard
+
+```bash
+# Export conformance metrics and watch integration status
+ae-framework conformance metrics --format json --export metrics.json
+ae-framework integration status --watch --refresh 60 > integration-status.log &
+
+# Prepare dashboard input
+cat > dashboard-data.js << 'EOF'
+const fs = require('fs');
+const conformanceMetrics = require('./metrics.json');
+const integrationReportPath = './integration-results/test-report-*.html';
+
+const generateDashboardData = () => {
+  return {
+    conformance: {
+      totalVerifications: conformanceMetrics.counts?.totalVerifications || 0,
+      totalViolations: conformanceMetrics.counts?.totalViolations || 0,
+      averageExecutionTimeMs: conformanceMetrics.performance?.averageExecutionTime || 0
+    },
+    integration: {
+      reportPath: integrationReportPath,
+      passRate: null,
+      totalTests: null,
+      executionTimeMs: null
+    }
+  };
+};
+
+console.log(JSON.stringify(generateDashboardData(), null, 2));
+EOF
+
+node dashboard-data.js
+```
+
+#### Configure alerting
+
+```bash
+cat > quality-thresholds.yaml << 'EOF'
+conformance:
+  totalViolations:
+    warning: 5
+    critical: 10
+  averageExecutionTimeMs:
+    warning: 1000
+    critical: 2000
+
+integration:
+  passRate:
+    warning: 95
+    critical: 90
+EOF
+
+cat > monitor-quality.sh << 'EOF'
+#!/bin/bash
+
+check_thresholds() {
+  local metrics_file=$1
+  local thresholds_file=$2
+
+  local violations=$(jq -r '.counts.totalViolations' $metrics_file)
+  local avg_exec=$(jq -r '.performance.averageExecutionTime' $metrics_file)
+
+  if (( violations > 10 )); then
+    echo "CRITICAL: Too many violations detected: $violations"
+  elif (( violations > 5 )); then
+    echo "WARNING: Multiple violations detected: $violations"
+  fi
+
+  if (( $(echo "$avg_exec > 2000" | bc -l) )); then
+    echo "CRITICAL: Average execution time above 2000ms: $avg_exec"
+  elif (( $(echo "$avg_exec > 1000" | bc -l) )); then
+    echo "WARNING: Average execution time above 1000ms: $avg_exec"
+  fi
+}
+
+while true; do
+  ae-framework conformance metrics --format json --export current-metrics.json
+  check_thresholds current-metrics.json quality-thresholds.yaml
+  sleep 300
+done
+EOF
+
+chmod +x monitor-quality.sh
+```
+
+### Troubleshooting
+
+#### 1. CEGIS repair does not apply
+
+```bash
+ae-framework fix analyze --input failures.json
+
+ae-framework fix create-artifact \
+  --type error \
+  --message "Validation logic incomplete" \
+  --file src/validator.ts \
+  --line 15 \
+  --output failure.json
+
+ae-framework fix apply --input failure.json --output .ae/auto-fix --dry-run
+```
+
+#### 2. Runtime Conformance is too slow
+
+```bash
+ae-framework conformance metrics --format json
+
+ae-framework conformance config --set sampling.enabled=true
+ae-framework conformance config --set sampling.rate=0.1
+ae-framework conformance config --set performance.maxConcurrentChecks=5
+```
+
+#### 3. Integration tests are unstable
+
+```bash
+ae-framework integration status
+
+ae-framework integration run --tests tests.json --timeout 60000 --retries 3
+
+ae-framework integration list --type environments
+```
+
+### Best Practices
+
+#### 1. Introduce features in phases
+
+```bash
+# Step 1: Start with Runtime Conformance
+ae-framework conformance sample --rules basic-rules.json
+ae-framework conformance verify --input data.json --rules basic-rules.json
+
+# Step 2: Add Integration Testing
+ae-framework integration generate --type test --test-type api --output basic-api-test.json
+ae-framework integration run --tests basic-api-test.json --environment dev
+
+# Step 3: Integrate CEGIS
+ae-framework fix analyze --input simple-failures.json
+ae-framework fix apply --input simple-failures.json --verify
+```
+
+#### 2. Coordinate across the team
+
+```bash
+mkdir -p .ae/shared
+ae-framework conformance config --export .ae/shared/conformance-config.json
+ae-framework integration generate --type environment --name shared --output .ae/shared/test-environment.json
+
+cat > scripts/team-validation.sh << 'EOF'
+#!/bin/bash
+echo "Running team validation workflow..."
+
+ae-framework conformance verify \
+  --input .ae/shared/conformance-data.json \
+  --context-file .ae/shared/conformance-context.json \
+  --rules .ae/shared/conformance-rules.json
+
+ae-framework integration run --suites .ae/shared/basic-test-suite.json --environment shared
+
+ae-framework fix analyze --input .ae/shared/common-failures.json
+
+echo "Team validation complete"
+EOF
+
+chmod +x scripts/team-validation.sh
+```
+
+#### 3. Improve continuously
+
+The current CLI does not provide automatic historical aggregation commands. Aggregate persisted CI artifacts outside the CLI.
+
+- Conformance: `artifacts/conformance/conformance-results.json` / `reports/conformance/**`
+- Integration: `test-report-*.html` under the chosen output directory
+- CEGIS: `.ae/auto-fix/**` for applied results and reports
+
+Example: aggregate conformance results
+
+```bash
+ae-framework conformance report --directory artifacts/hermetic-reports/conformance --format both
+```
+
+### Next Steps
+
+#### 1. Deepen customization
+
+```bash
+ae-framework conformance sample --rules custom-rule-template.json
+ae-framework integration generate --type test --test-type api --name "Custom API Test" --output custom-test.json
+ae-framework fix create-artifact --type error --message "Custom failure" --file src/app.ts --line 1 --output custom-failure.json
+```
+
+#### 2. Integrate with enterprise systems
+
+- Monitoring: Prometheus and Grafana
+- Alerting: PagerDuty and Slack notifications
+- Log aggregation: ELK Stack and Fluentd
+- Security: SIEM integration
+
+#### 3. Connect to later phases
+
+- Phase 3: requirement traceability with User Stories
+- Phase 4: quality gate integration with the Validation system
+- Phase 5: test generation from Domain Modeling
+- Phase 6: E2E automation for UI/UX
+
+### Related Documents
+
+- [Phase 2.1: CEGIS Design Document](../architecture/CEGIS-DESIGN.md)
+- [Phase 2.2: Runtime Conformance System](../phases/PHASE-2-2-RUNTIME-CONFORMANCE.md)
+- [Phase 2.3: Integration Testing System](../phases/PHASE-2-3-INTEGRATION-TESTING.md)
+- [CLI Commands Reference](../reference/CLI-COMMANDS-REFERENCE.md)
+- [TDD Framework Architecture](../architecture/TDD-FRAMEWORK-ARCHITECTURE.md)
 
 ## 日本語（サンプル出力）
 
