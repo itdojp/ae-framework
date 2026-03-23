@@ -66,7 +66,7 @@ Purpose: provide a short, deterministic path to diagnose common CI failures and 
 
 | Symptom | First check | Runbook |
 | --- | --- | --- |
-| `Copilot Review Gate / gate` fails | unresolved review thread count, failed run conclusion | resolve threads, then run `gh run rerun <RUN_ID> --failed` |
+| `Copilot Review Gate / gate` fails | whether the AI review is missing, unresolved review thread count, failed run conclusion | request AI review first when no AI review exists; otherwise resolve threads, then run `gh run rerun <RUN_ID> --failed` |
 | `enforce-assurance` fails | `warningClaims`, `missingLanes`, `missingEvidenceKinds`, `counterexamples.open`, `warningCount`, `unlinkedCounterexamples`, `claimCount < 1`, `independenceWarnings`, and each claim `status` in `artifacts/assurance/assurance-summary.json` | fill missing lanes / evidence per `docs/quality/assurance-operations-runbook.md` |
 | `PR Self-Heal` is `blocked` | PR comment reason, `status:blocked` label | fix conflicts or failing checks, then rerun manually |
 | auto-merge is not enabled | `AE_AUTO_MERGE*`, required checks, `reviewDecision` | adjust conditions per `docs/ci/auto-merge.md` |
@@ -90,10 +90,12 @@ Notes:
 
 #### 7.2 Manual dispatch by PR number
 
+Use `--ref <HEAD_BRANCH>` so the workflow file and called scripts are loaded from the PR head branch, not from the default branch.
+
 ```bash
-gh workflow run "Copilot Review Gate" -f pr_number=12345
-gh workflow run "PR Self-Heal" -f pr_number=12345 -f dry_run=false
-gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
+gh workflow run "Copilot Review Gate" --ref <HEAD_BRANCH> -f pr_number=12345
+gh workflow run "PR Self-Heal" --ref <HEAD_BRANCH> -f pr_number=12345 -f dry_run=false
+gh workflow run "Codex Autopilot Lane" --ref <HEAD_BRANCH> -f pr_number=12345 -f dry_run=false
 ```
 
 #### 7.3 Resync behind or stale checks
@@ -227,7 +229,7 @@ gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
 
 | 症状 | 一次確認 | runbook |
 | --- | --- | --- |
-| `Copilot Review Gate / gate` fail | unresolved review thread 数、失敗 run の conclusion | thread を解消し、`gh run rerun <RUN_ID> --failed` を実行 |
+| `Copilot Review Gate / gate` fail | AI review 未投稿か、unresolved review thread 数か、失敗 run の conclusion か | AI review が無ければ先に review を要求し、ある場合は thread を解消してから `gh run rerun <RUN_ID> --failed` を実行 |
 | `enforce-assurance` fail | `artifacts/assurance/assurance-summary.json` の `warningClaims` / `missingLanes` / `missingEvidenceKinds` / `counterexamples.open` / `warningCount` / `unlinkedCounterexamples` / `claimCount < 1` / `independenceWarnings` と、claim ごとの `status` | `docs/quality/assurance-operations-runbook.md` に沿って不足 lane / evidence を補完 |
 | `PR Self-Heal` が `blocked` | PR comment の reason、`status:blocked` label | conflict または失敗 check を修復後に手動 rerun |
 | auto-merge が有効化されない | `AE_AUTO_MERGE*`、required checks、`reviewDecision` | `docs/ci/auto-merge.md` に沿って条件修正 |
@@ -251,10 +253,12 @@ gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
 
 #### 7.2 PR番号指定での手動起動
 
+workflow 定義と呼び出される script を default branch ではなく PR head branch から実行するため、`--ref <HEAD_BRANCH>` を付与する。
+
 ```bash
-gh workflow run "Copilot Review Gate" -f pr_number=12345
-gh workflow run "PR Self-Heal" -f pr_number=12345 -f dry_run=false
-gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
+gh workflow run "Copilot Review Gate" --ref <HEAD_BRANCH> -f pr_number=12345
+gh workflow run "PR Self-Heal" --ref <HEAD_BRANCH> -f pr_number=12345 -f dry_run=false
+gh workflow run "Codex Autopilot Lane" --ref <HEAD_BRANCH> -f pr_number=12345 -f dry_run=false
 ```
 
 #### 7.3 behind / stale checks の再同期
