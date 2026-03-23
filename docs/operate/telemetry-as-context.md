@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-23'
 owner: observability-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -9,6 +9,102 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 運用テレメトリを `ae conformance verify` の入力へ接続するために、まず Trace Bundle を生成します。  
 本ドキュメントは Issue #2287 の初期実装（ingest 基盤）を対象とします。
+
+
+## English
+
+Telemetry is first normalized into a Trace Bundle before it is connected to `ae conformance verify`. This runbook documents the initial ingest foundation introduced for Issue #2287.
+
+### 1. Purpose
+
+- Normalize runtime events into the shared `ae-trace-bundle/v1` format
+- Preserve trace-level aggregation keyed by `traceId`
+- Store artifacts after redaction so sensitive fields do not leak into downstream evidence
+
+### 2. Accepted input formats
+
+`ae conformance ingest` accepts any of the following:
+
+- NDJSON (one event per line)
+- JSON array (`[{...}, {...}]`)
+- JSON object (`{ "events": [...] }`)
+
+Each event must provide at least the following fields:
+
+- `traceId` (string)
+- `timestamp` (ISO-8601 date-time)
+- `actor` (string)
+- `event` (string)
+
+### 3. Ingest command
+
+```bash
+ae-framework conformance ingest   --input artifacts/observability/runtime.ndjson   --output artifacts/observability/trace-bundle.json   --summary-output artifacts/observability/trace-bundle-summary.json   --source-env production   --source-service checkout-api   --sample-rate 1   --redact '$.details.email:mask'   --redact '$.details.token:hash'
+```
+
+#### Redaction rules
+
+- Format: `<jsonPath>:<action>`
+- Supported actions: `remove | mask | hash`
+- Supported path shape: `$.a.b.c` only; array wildcards are not supported
+
+### 4. Generated artifacts
+
+- `artifacts/observability/trace-bundle.json`
+  - Schema: `schema/trace-bundle.schema.json`
+  - Version: `schemaVersion = ae-trace-bundle/v1`
+- `artifacts/observability/trace-bundle-summary.json`
+  - Records ingest count, invalid event count, sampled event count, and redaction count
+  - Schema: `schema/trace-bundle-summary.schema.json`
+  - When zero events survive ingest, the unspecified side of `source.timeWindow` is backfilled with Unix epoch (`1970-01-01T00:00:00.000Z`)
+
+### 5. Recommended downstream flow
+
+Use the following sequence as the current baseline:
+
+1. Run `ae conformance ingest` to build the Trace Bundle
+2. Run `ae conformance verify --trace-bundle artifacts/observability/trace-bundle.json`
+3. Convert failures into a CEGIS failure artifact with `ae fix from-conformance --input artifacts/conformance/conformance-results.json --output artifacts/fix/failures.json`
+4. Continue with `ae fix analyze` / `ae fix apply` for the repair lane
+5. Store conformance and fix artifacts as CI artifacts for operational review
+
+### 6. GitHub Actions (self-heal lane)
+
+`.github/workflows/runtime-conformance-self-heal.yml` executes the closed loop in the following order:
+
+1. Prepare the Trace Bundle (skip ingest when `trace_bundle` is supplied)
+2. Run `ae conformance verify --trace-bundle ...`
+3. Run `ae fix from-conformance ...`
+4. Run `ae fix apply ...` only when `apply_fixes=true`
+5. Create an automatic PR when changes exist and `apply_fixes=true` with `dry_run=false`
+
+#### Manual dispatch example
+
+```bash
+gh workflow run runtime-conformance-self-heal.yml   -f trace_input=samples/conformance/sample-traces.json   -f apply_fixes=true   -f dry_run=false
+```
+
+#### Main inputs
+
+- `trace_input`: NDJSON/JSON path used for ingest
+- `trace_bundle`: existing Trace Bundle path; skips ingest when supplied
+- `conformance_rules`: optional custom rules JSON
+- `apply_fixes`: run `ae fix apply` only when `true`
+- `dry_run`: run `ae fix apply --dry-run` when `true`
+
+#### Main outputs
+
+- `artifacts/observability/runtime-self-heal-trace-bundle.json`
+- `artifacts/conformance/runtime-self-heal-results.json`
+- `artifacts/fix/runtime-self-heal-failures.json`
+- `artifacts/automation/runtime-conformance-self-heal-report.json` (`ae-automation-report/v1`)
+
+### 7. Security / PII handling
+
+- Always pass `--redact` before ingesting traces so sensitive fields such as email, token, or session identifiers are removed.
+- When production data is involved, store the Trace Bundle in encrypted storage and do not paste raw events into the PR body.
+- During incident analysis, review `runtime-conformance-self-heal-report.json` and `runtime-self-heal-results.json` first, and only share the minimum necessary event excerpts.
+- `artifacts/ci/harness-health.json` aggregates the `runtimeConformance` gate. When the status is `fail` or `warn`, rerun with `run-trace` (legacy name: `run-conformance`) and only enable `autopilot:on` when continuous operation is justified.
 
 ## 1. 目的
 
