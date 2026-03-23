@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-23'
 owner: development-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -17,7 +17,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 The AE-Framework implements a comprehensive centralized quality gates system that ensures consistent quality standards across all development phases and environments.
 
-## Overview
+### Overview
 
 The centralized quality gates system provides:
 
@@ -27,9 +27,19 @@ The centralized quality gates system provides:
 - **Automated CI/CD Integration**: GitHub Actions workflows enforce quality standards
 - **Flexible Configuration**: Easy to modify thresholds and add new quality gates
 
-## Architecture
+#### Current Repository Baseline
 
-### Core Components
+In the current repository, day-to-day pull requests are primarily gated by:
+
+- `verify-lite`
+- `policy-gate`
+- `gate` (`Copilot Review Gate` as the required status context on the standard PR baseline)
+
+This document still matters because it describes the centralized quality-threshold subsystem that feeds local quality runs, compatibility aliases such as `quality:gates`, and conditional or specialized workflows. In the current repository, `quality-gates-centralized.yml` is auxiliary or conditional PR work, not a merge-blocking required baseline by itself.
+
+### Architecture
+
+#### Core Components
 
 ```
 policy/
@@ -37,26 +47,30 @@ policy/
 src/utils/
 ├── quality-policy-loader.ts  # TypeScript utility for loading policy
 scripts/
-├── run-quality-gates.cjs     # Main quality gate runner
+├── run-quality-gates.cjs     # Compatibility entrypoint
+├── quality/run.mjs           # Alias/profile dispatcher to the CLI path
 ├── check-a11y-threshold.cjs  # Accessibility checker (updated)
 ├── check-coverage-threshold.cjs # Coverage checker (new)
+src/
+├── cli/quality-cli.ts        # Current CLI entry for `quality run`
+├── quality/quality-gate-runner.ts # Maintained execution path and gate orchestration
 .github/workflows/
-├── quality-gates-centralized.yml # Comprehensive CI workflow
+├── quality-gates-centralized.yml # Centralized quality workflow support
 └── phase6-validation.yml     # Updated to use centralized policy
 ```
 
-### Policy Configuration Structure
+#### Policy Configuration Structure
 
 The centralized policy (`policy/quality.json`) defines:
 
 1. **Quality Gates**: Each gate has thresholds, enforcement level, applicable phases, and tools
-2. **Environment Overrides**: Specific adjustments for dev/CI/production environments  
+2. **Environment Overrides**: Specific adjustments for dev/CI/production environments
 3. **Reporting Configuration**: Output formats, retention, and notification settings
 4. **Tool Integration**: Configuration for external tools like Lighthouse CI
 
-## Configuration
+### Configuration
 
-### Quality Gates Definition
+#### Quality Gates Definition
 
 Each quality gate is defined with:
 
@@ -76,7 +90,7 @@ Each quality gate is defined with:
 }
 ```
 
-### Supported Quality Gates
+#### Supported Quality Gates
 
 | Gate | Description | Key Metrics | Phases |
 |------|-------------|-------------|---------|
@@ -90,28 +104,28 @@ Each quality gate is defined with:
 | **policy** | OPA compliance | violations≤0 | phase-6 |
 | **mutation** | Mutation testing | score≥70% | phase-4+ |
 
-### Environment Overrides
+#### Environment Overrides
 
-#### Development Environment
+##### Development Environment
 - Relaxed thresholds for faster iteration
 - Warnings instead of strict enforcement
 - Some gates disabled (lighthouse, visual)
 
-#### CI Environment  
+##### CI Environment
 - Standard enforcement levels
 - All applicable gates enabled
 - Balanced between quality and build speed
 
-#### Production Environment
+##### Production Environment
 - Strictest thresholds
 - Zero tolerance for critical issues
 - Enhanced security and performance requirements
 
-## Usage
+### Usage
 
-### Command Line Interface
+#### Command Line Interface
 
-#### Basic Usage
+##### Basic Usage
 ```bash
 # Run all applicable quality gates for current phase
 pnpm run quality:gates
@@ -128,7 +142,7 @@ pnpm run quality:run:coverage
 pnpm run quality:run:all
 ```
 
-#### Advanced Usage
+##### Advanced Usage
 ```bash
 # Custom environment and phase
 node scripts/run-quality-gates.cjs --env=production --phase=phase-6
@@ -140,20 +154,20 @@ node scripts/run-quality-gates.cjs --gates=accessibility,coverage,lighthouse
 node scripts/run-quality-gates.cjs --help
 ```
 
-### TypeScript Integration
+#### TypeScript Integration
 
 ```text
-import { 
-  loadQualityPolicy, 
-  getQualityGate, 
+import {
+  loadQualityPolicy,
+  getQualityGate,
   shouldEnforceGate,
-  validateQualityResults 
+  validateQualityResults
 } from '../src/utils/quality-policy-loader.js';
 
 // Load policy with environment overrides
 const policy = loadQualityPolicy('ci');
 
-// Get specific gate configuration  
+// Get specific gate configuration
 const accessibilityGate = getQualityGate('accessibility', 'ci');
 
 // Check if gate should be enforced
@@ -167,7 +181,7 @@ const validation = validateQualityResults('accessibility', {
 }, 'ci');
 ```
 
-### GitHub Actions Integration
+#### GitHub Actions Integration
 
 The system automatically integrates with GitHub Actions:
 
@@ -185,9 +199,11 @@ jobs:
       gates: 'all'
 ```
 
-## Implementation Details
+Current operations also run this subsystem alongside the repository baseline checks (`verify-lite`, `policy-gate`, `gate`) rather than instead of them.
 
-### Policy Loading and Overrides
+### Implementation Details
+
+#### Policy Loading and Overrides
 
 The policy loader applies environment-specific overrides using a dot-notation path system:
 
@@ -204,31 +220,31 @@ The policy loader applies environment-specific overrides using a dot-notation pa
 }
 ```
 
-### Phase-Aware Enforcement
+#### Phase-Aware Enforcement
 
 Quality gates can be configured to:
 1. Apply to specific phases: `"phases": ["phase-6"]`
 2. Enable from a certain phase onward: `"enabledFromPhase": "phase-3"`
 3. Always apply if no phase restrictions are defined
 
-### Tool Integration
+#### Tool Integration
 
-#### Lighthouse CI
-- Dynamic configuration based on policy thresholds  
+##### Lighthouse CI
+- Dynamic configuration based on policy thresholds
 - Environment-aware assertion levels
 - Automatic score conversion (90 → 0.9)
 
-#### Coverage Tools
+##### Coverage Tools
 - Support for both nyc and vitest coverage
 - Configurable exclude patterns
 - Multiple metric types (lines, functions, branches, statements)
 
-#### Accessibility Testing
+##### Accessibility Testing
 - Integration with jest-axe and axe-core
 - Multi-level violation tracking
 - Detailed failure reporting
 
-### Error Handling and Fallbacks
+#### Error Handling and Fallbacks
 
 The system includes robust error handling:
 
@@ -237,9 +253,9 @@ The system includes robust error handling:
 3. **Report Generation**: Creates empty reports for development environments
 4. **Environment Detection**: Auto-detects environment from NODE_ENV
 
-## Customization
+### Customization
 
-### Adding New Quality Gates
+#### Adding New Quality Gates
 
 1. **Update Policy Configuration**:
 ```text
@@ -275,7 +291,7 @@ case 'myCustomGate':
 }
 ```
 
-### Modifying Thresholds
+#### Modifying Thresholds
 
 Simply update the `policy/quality.json` file:
 
@@ -285,7 +301,7 @@ Simply update the `policy/quality.json` file:
     "coverage": {
       "thresholds": {
         "lines": 85,        // Changed from 80
-        "functions": 85     // Changed from 80  
+        "functions": 85     // Changed from 80
       }
     }
   }
@@ -294,7 +310,7 @@ Simply update the `policy/quality.json` file:
 
 All tools and workflows will automatically use the new thresholds.
 
-### Environment-Specific Adjustments
+#### Environment-Specific Adjustments
 
 Add or modify environment overrides:
 
@@ -312,37 +328,37 @@ Add or modify environment overrides:
 }
 ```
 
-## Best Practices
+### Best Practices
 
-### Policy Management
+#### Policy Management
 1. **Version Control**: Always version control the policy file
 2. **Change Reviews**: Require approval for threshold changes
 3. **Documentation**: Document rationale for threshold values
 4. **Gradual Changes**: Implement threshold increases gradually
 
-### Development Workflow
+#### Development Workflow
 1. **Pre-commit**: Run quality gates before committing
 2. **Local Testing**: Use development environment for iteration
 3. **Phase Awareness**: Understand which gates apply to your current phase
 4. **Continuous Monitoring**: Regular quality gate execution
 
-### CI/CD Integration
+#### CI/CD Integration
 1. **Matrix Strategy**: Parallel execution for faster feedback
 2. **Artifact Collection**: Preserve reports for analysis
 3. **Failure Handling**: Appropriate fail-fast vs. continue-on-error
 4. **PR Comments**: Automated feedback on pull requests
 
-## Troubleshooting
+### Troubleshooting
 
-### Common Issues
+#### Common Issues
 
-#### Policy Loading Failures
+##### Policy Loading Failures
 ```bash
 ⚠️  Could not load quality policy: ENOENT: no such file or directory
 ```
 **Solution**: Ensure `policy/quality.json` exists and is valid JSON.
 
-#### Phase Detection Problems
+##### Phase Detection Problems
 ```bash
 ⚠️  Could not detect current phase, using phase-1
 ```
@@ -351,13 +367,13 @@ Add or modify environment overrides:
 node scripts/run-quality-gates.cjs --phase=phase-6
 ```
 
-#### Tool Unavailability
+##### Tool Unavailability
 ```bash
 ⚠️  Lighthouse CI config not found, skipping
 ```
 **Solution**: Install required tools or configure gate as optional.
 
-### Debug Mode
+#### Debug Mode
 
 Enable verbose logging for troubleshooting:
 
@@ -365,7 +381,7 @@ Enable verbose logging for troubleshooting:
 DEBUG=quality-gates node scripts/run-quality-gates.cjs --env=development
 ```
 
-### Manual Threshold Validation
+#### Manual Threshold Validation
 
 Test specific thresholds without running full quality gates:
 
@@ -373,13 +389,13 @@ Test specific thresholds without running full quality gates:
 # Check accessibility only
 node scripts/check-a11y-threshold.cjs --env=development
 
-# Check coverage only  
+# Check coverage only
 node scripts/check-coverage-threshold.cjs --env=ci
 ```
 
-## Migration Guide
+### Migration Guide
 
-### From Hardcoded Thresholds
+#### From Hardcoded Thresholds
 
 1. **Identify Current Thresholds**: Review existing scripts and workflows
 2. **Update Policy File**: Add current values to `policy/quality.json`
@@ -387,16 +403,16 @@ node scripts/check-coverage-threshold.cjs --env=ci
 4. **Test Migration**: Verify same behavior with new system
 5. **Cleanup**: Remove hardcoded values from scripts
 
-### From Multiple Configuration Files
+#### From Multiple Configuration Files
 
 1. **Consolidate Configurations**: Merge threshold values into single policy
 2. **Update Tool Configs**: Modify tools to read from centralized policy
 3. **Environment Mapping**: Map existing environment-specific configs
 4. **Validation**: Ensure all scenarios still work correctly
 
-## Advanced Features
+### Advanced Features
 
-### Conditional Enforcement
+#### Conditional Enforcement
 
 Gates can be conditionally enforced based on:
 - File changes (via GitHub Actions path filters)
@@ -404,15 +420,15 @@ Gates can be conditionally enforced based on:
 - Development phase progression
 - Custom business logic
 
-### Reporting Integration
+#### Reporting Integration
 
 The system supports multiple reporting formats:
 - JSON for programmatic consumption
-- HTML for human-readable reports  
+- HTML for human-readable reports
 - JUnit XML for CI/CD integration
 - Custom formats via plugins
 
-### Notification System
+#### Notification System
 
 Configure notifications for:
 - Quality gate failures
@@ -449,11 +465,12 @@ policy/
 src/utils/
 ├── quality-policy-loader.ts  # ポリシーロード用TypeScriptユーティリティ
 scripts/
-├── run-quality-gates.cjs     # メイン品質ゲートランナー
+├── run-quality-gates.cjs     # 互換エントリポイント
+├── quality/run.mjs           # 現行の品質ランナー
 ├── check-a11y-threshold.cjs  # アクセシビリティチェッカー（更新済み）
 ├── check-coverage-threshold.cjs # カバレッジチェッカー（新規）
 .github/workflows/
-├── quality-gates-centralized.yml # 包括的CIワークフロー
+├── quality-gates-centralized.yml # 集約品質ワークフロー補助
 └── phase6-validation.yml     # 集約ポリシー使用に更新
 ```
 
@@ -555,11 +572,11 @@ node scripts/run-quality-gates.cjs --help
 #### TypeScript統合
 
 ```text
-import { 
-  loadQualityPolicy, 
-  getQualityGate, 
+import {
+  loadQualityPolicy,
+  getQualityGate,
   shouldEnforceGate,
-  validateQualityResults 
+  validateQualityResults
 } from '../src/utils/quality-policy-loader.js';
 
 // 環境オーバーライドでポリシーをロード
@@ -832,3 +849,13 @@ node scripts/check-coverage-threshold.cjs --env=ci
 - トレンド分析と劣化アラート
 
 この集約品質ゲートシステムは、AE-Framework開発ライフサイクル全体を通じて一貫したコード品質を維持するための堅牢な基盤を提供します。
+
+#### 現行リポジトリベースラインとの関係
+
+現在の日常的な PR 運用では、required check の中心は以下です。
+
+- `verify-lite`
+- `policy-gate`
+- `gate`（標準 PR ベースラインで required status context として扱う `Copilot Review Gate`）
+
+この文書が扱う集約品質ゲートは、`quality:gates` 互換エントリポイント、ローカル実行、条件付きワークフロー、および閾値ポリシーの中心として引き続き有効です。ただし、`quality-gates-centralized.yml` 自体は現行 PR ベースラインの merge-blocking required workflow ではありません。
