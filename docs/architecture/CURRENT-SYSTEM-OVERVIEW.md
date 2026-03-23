@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-16'
+lastVerified: '2026-03-23'
 owner: architecture-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -10,9 +10,232 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-This document captures the implementation-aligned architecture of `ae-framework` as of 2026-03-16, including review-topology aware policy gates, OPA shadow-compare migration, assurance/quality aggregation artifacts, handoff adapters, trace-required check integration, release verify operations, and the expanded formal-verification stack with CSP (`cspx`) integration.
+### 1. Purpose and scope
+
+This document is the implementation-aligned architecture overview of `ae-framework` as of 2026-03. Use it when you need a current-state explanation of:
+
+- the main layers (`CLI`, `CI`, specification validation, and artifacts)
+- the role split across PR automation lanes (`gate`, auto-fix, autopilot, auto-merge)
+- the expanded formal stack (Alloy, TLA+, SMT, Apalache, Kani, SPIN, CSP, Lean4)
+- the `cspx` integration contract and normalized summary/result artifacts
+- the operational entrypoints for local execution, label-triggered execution, and aggregated evidence review
+
+The architectural position is that `ae-framework` acts as an **assurance control plane**. Individual coding agents, test runners, and formal tools are producers. The framework's core value is the control surface that fixes and evaluates:
+
+- specifications and contracts
+- verification-lane activation and aggregation
+- artifact validation
+- policy, review, and merge gates
+- standardized evidence for PR and release decisions
+
+Baseline assumptions:
+- Node.js: `>=20.11 <23` (`package.json` `engines.node`)
+- pnpm: `10.0.0` (`package.json` `packageManager`)
+- CI platform: GitHub Actions (`.github/workflows/`)
+
+### 2. Layer model (implementation aligned)
+
+| Layer | Main components | Responsibility |
+| --- | --- | --- |
+| Operations layer | `.github/workflows/*`, `.github/actions/*` | PR gates, label/dispatch execution, artifact aggregation |
+| Execution layer | `src/cli/*`, `package.json` scripts/bin, `scripts/*` | Operational entrypoints used by developers and agents |
+| Specification and verification layer | `spec/*`, `scripts/formal/*`, `tests/*` | Specification validation, formal verification, and tests |
+| Artifact layer | `artifacts/*`, `reports/*` | Local/CI outputs and normalized JSON/Markdown summaries |
+| Documentation layer | `docs/*` | Runbooks, contracts, and architecture references |
+
+#### 2.1 Producer vs. control plane
+
+| Category | Main elements | Role |
+| --- | --- | --- |
+| Producer | coding agents, AE-Spec compiler, unit/integration tests, formal runners, conformance tools | Generate specs, code, and raw verification outputs |
+| Control plane | Context Pack, artifact schemas, verify-lite summary, assurance summary, quality scorecard, policy gate, hook feedback / handoff, PR automation | Normalize producer outputs into contract-backed evidence and gate decisions |
+
+Design implications:
+- Code generation is only one producer; the repository SSOT remains in specs, contracts, and artifacts.
+- Heavy verification is not universally mandatory; it is promoted according to risk and profile.
+- Review and release accountability should rely on summary artifacts rather than raw logs.
+
+### 3. Execution interfaces
+
+#### 3.1 Main CLI entrypoints (`package.json` `bin`)
+
+- `ae`, `ae-framework`
+- `ae-phase`, `ae-approve`, `ae-slash`
+- `ae-ui`, `ae-sbom`, `ae-resilience`, `ae-benchmark`, `ae-server`
+
+#### 3.2 Main formal-verification commands
+
+- Unified entrypoint: `pnpm run verify:formal`
+- Focused entrypoints:
+  - `pnpm run verify:conformance`
+  - `pnpm run verify:alloy`
+  - `pnpm run verify:tla -- --engine=tlc|apalache`
+  - `pnpm run verify:smt -- --solver=z3|cvc5 --file spec/smt/sample.smt2`
+  - `node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla`
+  - `pnpm run verify:kani`
+  - `pnpm run verify:spin -- --file spec/spin/sample.pml --ltl p_done`
+  - `pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck`
+  - `pnpm run verify:lean`
+- Aggregation: `pnpm run formal:summary`
+- Tool probing: `pnpm run tools:formal:check`
+
+#### 3.3 MCP server implementations
+
+`src/mcp-server/` currently includes:
+- `intent-server.ts`
+- `formal-server.ts`
+- `test-generation-server.ts`
+- `code-generation-server.ts`
+- `verify-server.ts`
+- `operate-server.ts`
+- `container-server.ts`
+- `tdd-server.ts`
+- `spec-synthesis-server.ts`
+
+### 4. CI execution model (recommended operation)
+
+| Type | Representative workflow | Purpose |
+| --- | --- | --- |
+| Required baseline gate | `verify-lite.yml` | Daily PR verification baseline and required artifact generation |
+| Required policy gate | `policy-gate.yml` | Risk/topology/approval policy evaluation, including team/solo review topology |
+| Required review gate | `copilot-review-gate.yml` | `gate` check that confirms AI review presence and resolved threads |
+| Review response lane (auto-fix) | `copilot-auto-fix.yml` | Optional commit/push application of Copilot suggestions and thread resolution |
+| Touchless convergence lane | `codex-autopilot-lane.yml` | `autopilot:on` convergence loop (`update-branch`, auto-fix, gate reruns, auto-merge attempts) |
+| Auto-merge lane | `pr-ci-status-comment.yml` | Enables auto-merge when conditions are satisfied |
+| Trace conformance | `spec-generate-model.yml` | Emits `KvOnce Trace Validation` and related trace evidence |
+| Formal verification (opt-in) | `formal-verify.yml` | Heavy verification on `run-formal` label or workflow dispatch |
+| Formal aggregation | `formal-aggregate.yml` | Aggregates formal outputs for PR-facing summaries |
+| Security | `security.yml`, `sbom-generation.yml` | Dependency, vulnerability, and SBOM operations |
+| Release verification | `post-deploy-verify.yml` | Workflow-dispatch post-deploy verification with preserved evidence |
+
+Operational notes:
+- `formal-verify.yml` is non-blocking by default. Use `enforce-formal` to gate on Apalache `ran/ok`.
+- On fork-based PRs, `run-formal` does not start `formal-verify.yml`; maintainers must use `workflow_dispatch` when heavy formal checks are required for external contributions.
+- `policy-gate.yml` switches approval expectations through `AE_REVIEW_TOPOLOGY` and `AE_POLICY_MIN_HUMAN_APPROVALS`.
+- `policy-gate.yml` runs `policy-decision-js-v1.json` and `policy-decision-opa-v1.json` in parallel and supports staged OPA migration through `AE_POLICY_ENGINE_MODE=shadow|shadow_strict`.
+- `policy-gate.yml` always evaluates `required_checks` from `policy/risk-policy.yml` and evaluates `gate_checks` only under high-risk conditions.
+- `run-trace` related checks (`trace-conformance`, `KvOnce Trace Validation`) become gating only when the risk-policy conditions for them are met.
+- `codex-autopilot-lane.yml` treats non-suggestion findings as fail-closed and proceeds automatically only when `AE_AUTOPILOT_ACTIONABLE_COMMAND` is configured.
+- `automation-observability-weekly.yml` aggregates `[ae-automation-report]` log lines from workflow runs and uses them for weekly SLO / MTTR observation.
+
+### 5. Formal verification stack (expanded state)
+
+#### 5.1 Shared policy
+
+- Each runner emits a summary JSON and may still exit with `0` in non-blocking mode.
+- Upper gates interpret `status`, `resultStatus`, `ok`, and `exitCode` from the summaries.
+
+#### 5.2 CSP (`cspx`) integration contract
+
+`verify:csp` (`scripts/formal/verify-csp.mjs`) selects a backend in the following order:
+1. `CSP_RUN_CMD`
+2. `cspx`
+3. `refines` (FDR)
+4. `cspmchecker`
+
+Fixed artifacts for `cspx` operation:
+- `artifacts/hermetic-reports/formal/csp-summary.json`
+- `artifacts/hermetic-reports/formal/cspx-result.json`
+
+Compatibility assumptions:
+- `schema_version=0.1` is expected
+- incompatible outputs return `status=unsupported`
+- `metrics` are optional and interpreted conservatively
+
+CI pin for reproducibility:
+- `.github/workflows/formal-verify.yml` uses `CSPX_REF=8a67639ea4d3f715e27feb8cd728f46866a905db`
+
+#### 5.3 Aggregated display
+
+`formal-aggregate.yml` exposes, for CSP:
+- `backend`
+- `status`
+- `resultStatus`
+- `exitCode`
+
+### 6. Major artifacts (first files to inspect in operations)
+
+| Use case | Representative file |
+| --- | --- |
+| Minimum required-gate judgement | `artifacts/verify-lite/verify-lite-run-summary.json`, `artifacts/ci/policy-gate-summary.json`, `gate` check run |
+| Assurance aggregation | `artifacts/assurance/assurance-summary.json`, `artifacts/assurance/assurance-summary.md` |
+| Quality aggregation | `artifacts/quality/quality-scorecard.json`, `artifacts/quality/quality-scorecard.md` |
+| Continuation / handoff | `artifacts/agents/hook-feedback.json`, `artifacts/handoff/ae-handoff.json` |
+| Context Pack boundary validation | `artifacts/context-pack/context-pack-boundary-map-report.json`, `artifacts/context-pack/context-pack-boundary-map-report.md` |
+| Normalized formal summaries | `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json` |
+| Formal master summary | `artifacts/hermetic-reports/formal/summary.json` |
+| Conformance summary | `artifacts/hermetic-reports/conformance/summary.json` |
+| CSP summary | `artifacts/hermetic-reports/formal/csp-summary.json` |
+| CSP detail | `artifacts/hermetic-reports/formal/cspx-result.json` |
+| Apalache summary | `artifacts/hermetic-reports/formal/apalache-summary.json` |
+| PR-facing formal aggregate | `artifacts/formal/formal-aggregate.json`, `artifacts/formal/formal-aggregate.md` |
+| Policy summary / shadow compare | `artifacts/ci/policy-gate-summary.json`, `artifacts/ci/policy-gate-summary.md`, `artifacts/ci/policy-shadow-compare-v1.json` |
+| Autopilot contract artifacts | `artifacts/ci/pr-state-v1.json`, `artifacts/ci/execution-plan-v1.json` |
+| Risk label summary | `artifacts/ci/risk-labeler-summary.json`, `artifacts/ci/risk-labeler-summary.md` |
+| Automation observability | `artifacts/ci/automation-report.json` |
+| Trace validation outputs | `artifacts/trace/report-envelope.json`, `artifacts/hermetic-reports/trace/kvonce-validation.json`, `artifacts/hermetic-reports/trace/kvonce-projection.json` |
+
+### 7. Shortest operational path
+
+1. Local minimum:
+   - `pnpm install`
+   - `pnpm run lint`
+   - `pnpm run test:fast`
+2. Formal tool readiness:
+   - `pnpm run tools:formal:check`
+   - `pnpm run verify:formal`
+3. CSP extension check:
+   - `pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck`
+   - inspect `artifacts/hermetic-reports/formal/csp-summary.json`
+4. PR operation:
+   - keep `verify-lite`, `policy-gate`, and `gate` green
+   - when using `autopilot:on`, set `AE_CODEX_AUTOPILOT_ENABLED=1` and the required variables, then inspect the `<!-- AE-CODEX-AUTOPILOT v1 -->` comment for stop reasons
+5. Extra verification when required:
+   - use the `run-formal` label for heavy formal checks on non-fork PRs
+   - on fork PRs, ask a maintainer to trigger `formal-verify.yml` through `workflow_dispatch`
+   - use the `run-trace` label when trace-gated conditions must be evaluated
+6. Release operation:
+   - `gh workflow run post-deploy-verify.yml ...`
+   - preserve `artifacts/release/post-deploy-verify.json` as the release decision record
+
+### 8. Related documents
+
+- Product overview: `docs/product/OVERVIEW.md`
+- Assurance control plane positioning: `docs/product/ASSURANCE-CONTROL-PLANE.md`
+- Detailed product explanation: `docs/product/DETAIL.md`
+- User-facing operations: `docs/product/USER-MANUAL.md`
+- Assurance model: `docs/quality/ASSURANCE-MODEL.md`
+- PR automation: `docs/ci/pr-automation.md`
+- Release operations: `docs/operate/release-engineering.md`
+- Formal runbook: `docs/quality/formal-runbook.md`
+- CSP details: `docs/quality/formal-csp.md`
+- Full docs index: `docs/README.md`
+
+### 9. Update summary (2026-03-23)
+
+- current artifact contracts for formal / trace paths were synchronized:
+  - `artifacts/formal/formal-summary-v1.json`
+  - `artifacts/formal/formal-summary-v2.json`
+  - `artifacts/trace/report-envelope.json`
+  - `artifacts/hermetic-reports/trace/kvonce-validation.json`
+
+Additional updates:
+- integrated the `codex-autopilot-lane.yml` convergence flow, including actionable non-suggestion handling, into the CI model
+- documented the `run-trace` gate conditions from `policy/risk-policy.yml`
+- added assurance, quality, hook-feedback, handoff, policy-shadow-compare, and automation-report artifacts to the major-artifact index
+- updated the PR operational path around the current required checks
+
+Primary implementation sources:
+- `.github/workflows/policy-gate.yml`
+- `.github/workflows/codex-autopilot-lane.yml`
+- `.github/workflows/spec-generate-model.yml`
+- `policy/risk-policy.yml`
+- `scripts/ci/codex-autopilot-lane.mjs`
+- `.github/workflows/post-deploy-verify.yml`
+- `scripts/ci/lib/automation-config.mjs`
+- `src/cli/release-cli.ts`
 
 ---
 
@@ -118,6 +341,7 @@ This document captures the implementation-aligned architecture of `ae-framework`
 
 補足:
 - `formal-verify.yml` は non-blocking 設計。必要時のみ `enforce-formal` で Apalache の `ran/ok` をゲート化。
+- fork 由来の PR では `run-formal` ラベルだけでは `formal-verify.yml` は起動しません。外部 contributor 向けに重い形式検証が必要な場合は maintainer が `workflow_dispatch` を使います。
 - `policy-gate.yml` の approval 評価は `AE_REVIEW_TOPOLOGY` / `AE_POLICY_MIN_HUMAN_APPROVALS` で切替可能。
 - `policy-gate.yml` は `policy-decision-js-v1.json` と `policy-decision-opa-v1.json` を併記し、`AE_POLICY_ENGINE_MODE=shadow|shadow_strict` で OPA 移行を段階運用します。
 - `policy-gate.yml` は `policy/risk-policy.yml` の `required_checks` を常時評価し、`gate_checks` は high-risk 判定時に評価します。`run-trace` に紐づく `trace-conformance` / `KvOnce Trace Validation` も high-risk 条件を満たした場合のみゲート対象です。
@@ -197,7 +421,8 @@ CI pin（再現性）:
    - `verify-lite` / `policy-gate` / `gate` の required checks を green にする
    - `autopilot:on` を使う場合は `AE_CODEX_AUTOPILOT_ENABLED=1` と必要変数を設定し、`<!-- AE-CODEX-AUTOPILOT v1 -->` コメントで停止理由を確認
 5. 追加検証（必要時）:
-   - `run-formal` ラベルで重い形式検証を実行
+   - non-fork PR では `run-formal` ラベルで重い形式検証を実行
+   - fork PR では maintainer が `workflow_dispatch` で `formal-verify.yml` を起動
    - `run-trace` ラベルで trace 連動の gate 条件を満たす
 6. リリース運用:
    - `gh workflow run post-deploy-verify.yml ...` で post-deploy verify を実行
