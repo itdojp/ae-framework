@@ -4,12 +4,62 @@
 
 ---
 
-## English (summary)
+## English
 
-- Use JSON Lines (JSONL) for pipeline and agent logs: **one JSON object per line**.
-- Always include a **stable runId** to correlate all events in a single pipeline run.
-- Use **traceId** to connect artifacts, tests, and verification results end-to-end.
-- Keep logs compact; store large payloads as artifacts and reference by path.
+### Purpose
+Standardize agent and CI execution logs as JSON Lines (JSONL) so every stage can be correlated with `runId` and `traceId`. Use this when you need end-to-end visibility across intent, specification, tests, implementation, and verification artifacts.
+
+### JSONL format
+- Use **one JSON object per line**.
+- Assume UTF-8 encoding.
+- Do not embed large payloads directly in the log. Store them as artifacts and reference the paths.
+
+#### Required fields
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `timestamp` | string (ISO 8601) | Event time |
+| `level` | string | `debug` / `info` / `warn` / `error` |
+| `event` | string | Event kind, for example `node.started` |
+| `message` | string | Human-readable short message |
+| `runId` | string | Correlation key for the full pipeline run |
+| `traceId` | string | Cross-stage correlation key; also required when the NDJSON is ingested by `ae conformance ingest` |
+| `actor` | string | Event producer or operator identity; required for `ae conformance ingest` |
+
+#### Recommended fields
+
+| Field | Type | Purpose |
+| --- | --- | --- |
+| `stage` | string | Stage name such as `intent2formal` or `formal2tests` |
+| `nodeId` | string | Flow node identifier |
+| `commit` | string | Git SHA (use the resolved SHA, not a symbolic ref such as `HEAD`) |
+| `branch` | string | Branch name |
+| `artifactPaths` | string[] | Related artifact locations |
+| `context` | object | Small, bounded supplemental data |
+
+### Correlation rules
+- `runId` is mandatory and must remain stable for a single execution.
+- Preserve `traceId` across as many stages as possible (`NL -> BDD -> Formal -> Tests -> Code -> Artifacts`).
+- When wrapping JSONL lines in an envelope, include each per-line `traceId` value in `traceCorrelation.traceIds[]`.
+- Keep `runId`, `commit`, `branch`, and `traceCorrelation.traceIds` aligned with the JSONL `traceId` values and other correlation fields defined in `schema/envelope.schema.json`.
+
+### Recommended output locations
+- `artifacts/observability/ae-run-<runId>.jsonl`
+- `artifacts/observability/run.jsonl` when CI already aggregates per-run logs
+
+### Example JSONL
+
+```text
+{"timestamp":"2026-01-07T12:00:00.000Z","level":"info","event":"node.started","message":"intent2formal start","runId":"run-20260107-001","traceId":"inv-001","stage":"intent2formal","nodeId":"n1","commit":"550933b2","branch":"main"}
+{"timestamp":"2026-01-07T12:00:03.000Z","level":"info","event":"artifact.written","message":"formal spec generated","runId":"run-20260107-001","traceId":"inv-001","stage":"intent2formal","artifactPaths":["artifacts/spec/formal.json"]}
+{"timestamp":"2026-01-07T12:00:05.000Z","level":"error","event":"node.failed","message":"tests2code failed","runId":"run-20260107-001","traceId":"inv-001","stage":"tests2code","context":{"reason":"compile error"}}
+```
+
+### Related documents
+- `docs/guides/trace-id.md`
+- `docs/trace/REPORT_ENVELOPE.md`
+- `schema/envelope.schema.json`
+- `schema/flow.schema.json`
 
 ---
 
@@ -60,8 +110,8 @@ Agent/CI の実行ログを **JSONL** で統一し、`runId` と `traceId` で�
 
 ### JSONL 例
 
-```json
-{"timestamp":"2026-01-07T12:00:00.000Z","level":"info","event":"node.started","message":"intent2formal start","runId":"run-20260107-001","traceId":"inv-001","stage":"intent2formal","nodeId":"n1","commit":"HEAD","branch":"main"}
+```text
+{"timestamp":"2026-01-07T12:00:00.000Z","level":"info","event":"node.started","message":"intent2formal start","runId":"run-20260107-001","traceId":"inv-001","stage":"intent2formal","nodeId":"n1","commit":"550933b2","branch":"main"}
 {"timestamp":"2026-01-07T12:00:03.000Z","level":"info","event":"artifact.written","message":"formal spec generated","runId":"run-20260107-001","traceId":"inv-001","stage":"intent2formal","artifactPaths":["artifacts/spec/formal.json"]}
 {"timestamp":"2026-01-07T12:00:05.000Z","level":"error","event":"node.failed","message":"tests2code failed","runId":"run-20260107-001","traceId":"inv-001","stage":"tests2code","context":{"reason":"compile error"}}
 ```
