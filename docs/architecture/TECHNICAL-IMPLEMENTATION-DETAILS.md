@@ -41,6 +41,8 @@ lastVerified: '2026-03-23'
 
 Technical implementation details of ae-framework's core integration system:
 
+The current architectural position is an assurance control plane. Code generation and UI delivery remain important producer surfaces, but the repository's central role is to normalize artifacts, verification outputs, policy decisions, and review evidence into contract-backed operational control.
+
 **2025 implementation status**
 - Phase 6 UI/UX generation: complete
 - comprehensive quality system: golden/approval testing, metamorphic testing, CLI robustness, and fuzzing are implemented
@@ -52,16 +54,9 @@ Technical implementation details of ae-framework's core integration system:
 
 #### Architecture Overview
 
-```text
-interface HybridIntegrationSystem {
-  intentAnalyzer: IntentAnalysisEngine;
-  naturalLanguageProcessor: NLPEngine;
-  userStoryGenerator: StoryGenerationEngine;
-  validationEngine: ValidationEngine;
-  domainModeler: DomainModelingEngine;
-  uiGenerator: UIGenerationEngine;
-}
-```
+- producer surfaces include coding agents, verification tools, tests, and UI generation flows
+- the control plane is responsible for artifact normalization, quality summaries, policy gates, and review/release evidence
+- operational entrypoints are primarily the CLI layer, GitHub workflows, and MCP servers rather than a single in-process router object
 
 #### Core Implementation Patterns
 
@@ -80,35 +75,18 @@ interface HybridIntegrationSystem {
 - Runtime type validation with Zod
 - Contract-first API design
 
-#### Request Routing System
+#### Current Execution Interfaces
 
-```text
-interface RequestRouter {
-  analyzeRequest(request: SystemRequest): Promise<RouteInfo>;
-}
-
-class IntelligentRouter implements RequestRouter {
-  async analyzeRequest(request: SystemRequest): Promise<RouteInfo> {
-    const intentAnalysis = await this.aiService.analyzeIntent(request.input);
-    return {
-      type: this.determineAdapterType(intentAnalysis),
-      phase: this.determineStartPhase(intentAnalysis),
-      priority: this.calculatePriority(intentAnalysis),
-      estimatedComplexity: this.estimateComplexity(intentAnalysis),
-    };
-  }
-}
-```
-
-- Routing is decided from intent analysis, not only from static command names.
-- The router chooses both the adapter surface and the starting phase.
-- Priority and estimated complexity feed retry policy, execution ordering, and guard selection.
+- **CLI layer**: `src/cli/*` and `package.json` `bin` / scripts provide maintained operator entrypoints.
+- **Workflow layer**: `.github/workflows/*` executes required gates, optional lanes, and evidence aggregation.
+- **MCP layer**: `src/mcp-server/*` exposes task-specific server surfaces such as intent, formal verification, testing, and operations.
+- **Adapter layer**: `src/agents/adapters/*` bridges legacy or phase-specific agents into standardized AE interfaces where needed.
 
 ### 🤖 Claude Code Integration
 
 Technical integration with Claude Code for enhanced development workflow:
 
-Current integration is intended to support a continuous path from natural-language intent to high-quality React delivery, while keeping operator-driven CLI and repository workflows aligned.
+Current integration is intended to keep operator-driven CLI entrypoints, repository contracts, and AI-assisted execution aligned under the same assurance control-plane model. UI delivery is one downstream producer, not the sole architectural center.
 
 #### Task Tool Architecture
 
@@ -161,7 +139,7 @@ class IntelligentContextManager implements ContextManager {
 
 Comprehensive implementation of the 6-phase agent system:
 
-#### Base Agent Interface
+#### Agent Surface Types
 
 ```text
 abstract class BaseAgent {
@@ -174,8 +152,9 @@ abstract class BaseAgent {
 }
 ```
 
-- Every agent shares the same execution skeleton: input validation, context building, AI processing, post-processing, and output validation.
-- The shared base keeps retry, telemetry, and contract enforcement consistent across phases.
+- `BaseAgent` exists as a shared phase-state and steering helper for some agent surfaces.
+- The current repository does **not** use a single inheritance path for all agents; standalone agents and adapter-based surfaces coexist.
+- When tracing real execution, prefer concrete classes and adapters over assuming a universal `BaseAgent` lifecycle.
 
 #### Specialized Agents
 
@@ -212,22 +191,37 @@ abstract class BaseAgent {
 #### Specialized Agent Implementation
 
 ```text
-export class IntentAgent extends BaseAgent {
-  protected async processWithAI(
-    input: AgentInput,
-    context: ExecutionContext
-  ): Promise<AIProcessingResult> {
-    const prompt = this.buildIntentAnalysisPrompt(input, context);
-    const aiResponse = await this.aiService.process({
-      prompt,
-      model: 'claude-3-5-sonnet',
-      temperature: 0.3,
-      maxTokens: 4000,
-      systemPrompt: this.getSystemPrompt(),
-    });
-    return this.parseIntentAnalysisResult(aiResponse);
-  }
+export class IntentAgent {
+  static createSimpleRequest(content: string, options?: IntentOptions): IntentAnalysisRequest;
+  static createBenchmarkRequest(spec: BenchmarkSpec): IntentAnalysisRequest;
+  async analyzeIntent(request: IntentAnalysisRequest): Promise<IntentAnalysisResult>;
 }
+
+export class IntentAgentAdapter implements StandardAEAgent<IntentInput, IntentOutput> {
+  async process(input: IntentInput, context?: ProcessingContext): Promise<PhaseResult<IntentOutput>>;
+  validateInput(input: IntentInput): ValidationResult;
+  getCapabilities(): AgentCapabilities;
+}
+```
+
+- `IntentAgent` is a concrete standalone analysis surface with helper constructors and `analyzeIntent()`.
+- `IntentAgentAdapter` wraps that surface into the standardized AE contract used by orchestrated phase execution.
+- This split is representative of the current repository pattern: direct agent implementations plus adapters, rather than a single shared `processWithAI()` inheritance tree.
+
+#### Multi-Agent Coordination
+
+```text
+interface AgentOrchestrator {
+  coordinatePhaseExecution(
+    phase: PhaseType,
+    input: PhaseInput,
+    context: ExecutionContext
+  ): Promise<PhaseOutput>;
+}
+```
+
+- Orchestration responsibilities include pre/post execution quality checks, state persistence, retries, and result handoff.
+- Coordination is a separate concern from any single agent implementation and is not evidence that all agents share the same runtime API.
 ```
 
 - Phase-specific agents differ by prompt construction, post-processing, and contract validation.
