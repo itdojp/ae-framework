@@ -316,7 +316,7 @@ pnpm exec ae discovery compile   --target context-pack-scaffold   --sources "fix
 
 The two compile targets serve different operator paths:
 - `plan-spec`: emits the normalized approved-input snapshot that downstream plan/spec review can consume
-- `context-pack-scaffold`: emits the scaffold used to seed Context Pack authoring while keeping upstream IDs traceable
+- `context-pack-scaffold`: emits the scaffold used to seed Context Pack authoring; operators still need to add canonical trace fields such as `upstream.discovery_pack` and element-level `upstream_refs` before validation/promotion
 
 #### 6.3 Context Pack validate
 ```bash
@@ -402,7 +402,7 @@ ae traceability matrix   --map docs/specs/upstream-context-promotion-issue-trace
 ae validate --traceability --strict   --sources docs/specs/upstream-context-promotion-issue-traceability-matrix.json
 ```
 
-Use this sequence when you need to prove that promotion constraints remain traceable from the originating issue through Discovery Pack, Context Pack, tests, and code.
+Use this sequence when you need to prove that promotion constraints remain traceable from the originating issue through Discovery Pack, Context Pack, tests, and implementation files. If the relevant implementation lives outside `src/**/*` (for example under `scripts/context-pack/**` or `scripts/assurance/**`), widen the `--code` glob before running the matrix step.
 
 ### 7. Current implementation notes
 - `Context Pack validate` checks upstream ref existence and aggregates unmapped approved requirements / business use cases as warnings
