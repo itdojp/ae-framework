@@ -360,9 +360,9 @@ node scripts/ci/enforce-assurance-summary.mjs \
   "contextPackSources": ["spec/context-pack/**/*.{yml,yaml,json}"],
   "pullbacks": [
     {
-      "id": "ReserveReleasePullback",
+      "id": "ReserveInventoryPullback",
       "leftMorphismId": "ReserveInventory",
-      "rightMorphismId": "ReleaseInventory",
+      "rightMorphismId": "ReserveInventory",
       "apexObjectId": "InventoryItem",
       "commutingDiagramIds": ["D-1"],
       "evidencePaths": ["tests/services/inventory-service.test.ts"]
@@ -372,7 +372,7 @@ node scripts/ci/enforce-assurance-summary.mjs \
   "monoidalFlows": [],
   "kleisliPipelines": [
     {
-      "id": "ReservationEffectPipeline",
+      "id": "ReserveInventoryIOPipeline",
       "effectType": "io",
       "morphismIds": ["ReserveInventory"],
       "pureBoundaryMorphismIds": [],
@@ -770,9 +770,9 @@ node scripts/ci/enforce-assurance-summary.mjs   artifacts/assurance/assurance-su
   "contextPackSources": ["spec/context-pack/**/*.{yml,yaml,json}"],
   "pullbacks": [
     {
-      "id": "ReserveReleasePullback",
+      "id": "ReserveInventoryPullback",
       "leftMorphismId": "ReserveInventory",
-      "rightMorphismId": "ReleaseInventory",
+      "rightMorphismId": "ReserveInventory",
       "apexObjectId": "InventoryItem",
       "commutingDiagramIds": ["D-1"],
       "evidencePaths": ["tests/services/inventory-service.test.ts"]
@@ -782,7 +782,7 @@ node scripts/ci/enforce-assurance-summary.mjs   artifacts/assurance/assurance-su
   "monoidalFlows": [],
   "kleisliPipelines": [
     {
-      "id": "ReservationEffectPipeline",
+      "id": "ReserveInventoryIOPipeline",
       "effectType": "io",
       "morphismIds": ["ReserveInventory"],
       "pureBoundaryMorphismIds": [],
