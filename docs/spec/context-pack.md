@@ -120,10 +120,21 @@ node scripts/context-pack/verify-phase5-templates.mjs \
   --report-json artifacts/context-pack/context-pack-phase5-report.json \
   --report-md artifacts/context-pack/context-pack-phase5-report.md
 
-# 依存境界検証を直接実行（strict は label gating と連動）
+# 依存境界検証を直接実行（report-only）
 node scripts/context-pack/check-deps.mjs \
   --rules configs/context-pack/dependency-rules.json \
   --strict false \
+  --report-json artifacts/context-pack/deps-summary.json \
+  --report-md artifacts/context-pack/deps-summary.md
+
+# `enforce-context-pack` の strict lane をローカル再現する最小例
+# CI では `context-pack:deps` と `context-pack:e2e-fixture` の両方が blocking
+pnpm run context-pack:e2e-fixture -- --report-dir artifacts/context-pack-e2e --keep-reports
+
+# 依存境界の strict 部分だけを切り出して確認
+node scripts/context-pack/check-deps.mjs \
+  --rules configs/context-pack/dependency-rules.json \
+  --strict true \
   --report-json artifacts/context-pack/deps-summary.json \
   --report-md artifacts/context-pack/deps-summary.md
 
@@ -562,7 +573,11 @@ node scripts/context-pack/verify-phase5-templates.mjs   --map spec/context-pack/
 # Run dependency boundary validation directly in report-only mode
 node scripts/context-pack/check-deps.mjs   --rules configs/context-pack/dependency-rules.json   --strict false   --report-json artifacts/context-pack/deps-summary.json   --report-md artifacts/context-pack/deps-summary.md
 
-# Reproduce the strict CI behavior locally
+# Minimal local replay of the `enforce-context-pack` strict lane
+# In CI, both `context-pack:deps` and `context-pack:e2e-fixture` become blocking
+pnpm run context-pack:e2e-fixture -- --report-dir artifacts/context-pack-e2e --keep-reports
+
+# Replay only the strict dependency-boundary check locally
 node scripts/context-pack/check-deps.mjs   --rules configs/context-pack/dependency-rules.json   --strict true   --report-json artifacts/context-pack/deps-summary.json   --report-md artifacts/context-pack/deps-summary.md
 
 # Generate suggestions from existing reports
