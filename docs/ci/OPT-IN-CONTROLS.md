@@ -28,13 +28,13 @@ Primary sources:
 
 | Label | Effect | Main workflow / job | Notes |
 | --- | --- | --- | --- |
-| `run-qa` | run QA-equivalent steps | `ae-ci.yml` | attached by `/run-qa` |
-| `run-security` | run security / SBOM flows | `security.yml`, `sbom-generation.yml`, `cedar-quality-gates.yml` | fork PRs remain restricted |
-| `run-cedar` | run Cedar quality gates in report-first mode | `cedar-quality-gates.yml` | attached by `/run-cedar` |
-| `run-formal` | enable formal verification | `verify-lite.yml` step `Run formal` | label-gated inside verify-lite |
-| `run-resilience` | run resilience quick checks | `verify-lite.yml` step `Resilience quick` | attached by `/run-resilience` |
-| `run-hermetic` | run hermetic CI | `ci.yml`, `hermetic-ci.yml` | attached by `/run-hermetic` |
-| `run-spec` | run fail-fast spec validation | `spec-validation.yml` | attached by `/run-spec` |
+| `run-qa` | mark QA-equivalent steps for the next eligible PR event | `ae-ci.yml` | `/run-qa` adds the label; use `/run-qa-dispatch` for immediate execution |
+| `run-security` | mark security / SBOM flows for the next eligible PR event | `security.yml`, `sbom-generation.yml`, `cedar-quality-gates.yml` | `/run-security` adds the label only; fork PRs remain restricted |
+| `run-cedar` | mark Cedar quality gates for the next eligible PR event | `cedar-quality-gates.yml` | `/run-cedar` adds the label; `/run-cedar-dispatch` runs immediately |
+| `run-formal` | enable formal verification on the next `verify-lite` execution | `verify-lite.yml` step `Run formal` | label-gated inside verify-lite; use `/formal-verify-dispatch` for manual execution |
+| `run-resilience` | enable resilience quick checks on the next `verify-lite` execution | `verify-lite.yml` step `Resilience quick` | `/run-resilience` adds the label only |
+| `run-hermetic` | mark hermetic CI for the next eligible PR event | `ci.yml`, `hermetic-ci.yml` | `/run-hermetic` adds the label; use a dispatch path for immediate execution |
+| `run-spec` | mark fail-fast spec validation for the next eligible PR event | `spec-validation.yml` | `/run-spec` adds the label; `/spec-validation-dispatch` runs immediately |
 | `run-trace` | re-evaluate KvOnce trace validation as required-gate evidence | `spec-generate-model.yml` (`trace-conformance`, `KvOnce Trace Validation`) | label only in the current repository |
 | `run-drift` | run codegen drift detection | `codegen-drift-check.yml` | attached by `/run-drift` |
 | `enforce-assurance` | make assurance summary blocking | `verify-lite.yml` strict assurance step | recommended only for high-risk PRs |
@@ -45,8 +45,8 @@ Primary sources:
 | `ci-non-blocking` | mark selected jobs non-blocking | workflow `continue-on-error` branches | attached by `/non-blocking` |
 | `enforce-coverage` | require coverage gate | `coverage-check.yml` | attached by `/enforce-coverage` |
 | `coverage:<pct>` | override coverage threshold | `coverage-check.yml` | for example `/coverage 75` |
-| `pr-summary:digest` | switch PR summary to concise mode | `pr-ci-status-comment.yml` | attached by `/pr-digest` |
-| `pr-summary:detailed` | switch PR summary to detailed mode | `pr-ci-status-comment.yml` | attached by `/pr-detailed` |
+| `pr-summary:digest` | record legacy digest intent only | `pr-ci-status-comment.yml` | `/pr-digest` adds a compatibility label, but current rendering is concise by default when `pr-summary:detailed` is absent |
+| `pr-summary:detailed` | switch PR summary to detailed mode on the next maintenance cycle | `pr-ci-status-comment.yml` | attached by `/pr-detailed`; current renderer checks only this label |
 | `autopilot:on` | opt in to Codex Autopilot Lane | `codex-autopilot-lane.yml` | touchless merge opt-in |
 
 Operational note:
@@ -198,13 +198,13 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 
 | ラベル | 効果 | 起動/影響する主なWF・ジョブ | 補足 |
 | --- | --- | --- | --- |
-| `run-qa` | QA相当のステップ実行 | `ae-ci.yml` | `/run-qa` で付与 |
-| `run-security` | セキュリティ/SBOM実行 | `security.yml`, `sbom-generation.yml`, `cedar-quality-gates.yml` | fork PRは制限あり |
-| `run-cedar` | Cedar品質ゲート実行（report-only想定） | `cedar-quality-gates.yml` | `/run-cedar` で付与 |
-| `run-formal` | 形式検証実行 | `verify-lite.yml` 内 `Run formal` | verify-lite の label-gated |
-| `run-resilience` | Resilience quick実行 | `verify-lite.yml` 内 `Resilience quick` | `/run-resilience` で付与 |
-| `run-hermetic` | Hermetic CI 実行 | `ci.yml`, `hermetic-ci.yml` | `/run-hermetic` で付与 |
-| `run-spec` | fail-fast spec validation | `spec-validation.yml` | `/run-spec` で付与 |
+| `run-qa` | 次回の対象PRイベントで QA 相当のステップを有効化 | `ae-ci.yml` | `/run-qa` はラベル付与のみ。即時実行は `/run-qa-dispatch` を使う |
+| `run-security` | 次回の対象PRイベントでセキュリティ/SBOM実行を有効化 | `security.yml`, `sbom-generation.yml`, `cedar-quality-gates.yml` | `/run-security` はラベル付与のみ。fork PR は引き続き制限あり |
+| `run-cedar` | 次回の対象PRイベントで Cedar 品質ゲートを有効化 | `cedar-quality-gates.yml` | `/run-cedar` はラベル付与のみ。即時実行は `/run-cedar-dispatch` |
+| `run-formal` | 次回の `verify-lite` 実行で形式検証を有効化 | `verify-lite.yml` 内 `Run formal` | verify-lite の label-gated。手動実行は `/formal-verify-dispatch` |
+| `run-resilience` | 次回の `verify-lite` 実行で Resilience quick を有効化 | `verify-lite.yml` 内 `Resilience quick` | `/run-resilience` はラベル付与のみ |
+| `run-hermetic` | 次回の対象PRイベントで Hermetic CI を有効化 | `ci.yml`, `hermetic-ci.yml` | `/run-hermetic` はラベル付与のみ。即時実行は dispatch 系を使う |
+| `run-spec` | 次回の対象PRイベントで fail-fast spec validation を有効化 | `spec-validation.yml` | `/run-spec` はラベル付与のみ。即時実行は `/spec-validation-dispatch` |
 | `run-trace` | KvOnce trace validation を required gate 対象として再評価 | `spec-generate-model.yml`（checks: `trace-conformance`, `KvOnce Trace Validation`） | 高リスクPRで `policy-gate` が参照（fork PRは `trace-conformance` で判定） |
 | `run-drift` | codegen drift detection | `codegen-drift-check.yml` | `/run-drift` で付与 |
 | `enforce-assurance` | assurance summary を strict 判定 | `verify-lite.yml` 内 `Enforce assurance summary (strict; label-gated)` | high-risk PR のみ推奨。運用手順は `docs/quality/assurance-operations-runbook.md` |
@@ -215,8 +215,8 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `ci-non-blocking` | 一部ジョブを non-blocking 化 | 各workflowのcontinue-on-error設定 | `/non-blocking` で付与 |
 | `enforce-coverage` | coverageゲートの強制 | `coverage-check.yml` | `/enforce-coverage` で付与 |
 | `coverage:<pct>` | coverage閾値上書き | `coverage-check.yml` | `/coverage 75` 等で付与 |
-| `pr-summary:digest` | PR summary を簡潔化 | `pr-ci-status-comment.yml` | `/pr-digest` で付与 |
-| `pr-summary:detailed` | PR summary を詳細化 | `pr-ci-status-comment.yml` | `/pr-detailed` で付与 |
+| `pr-summary:digest` | legacy 互換用の digest 意図を記録 | `pr-ci-status-comment.yml` | `/pr-digest` は互換ラベル追加のみ。現行は `pr-summary:detailed` が無ければ簡潔モード |
+| `pr-summary:detailed` | 次回の PR Maintenance cycle で詳細モードを有効化 | `pr-ci-status-comment.yml` | `/pr-detailed` で付与。現行 renderer はこのラベルだけを参照 |
 | `autopilot:on` | Codex Autopilot Lane 対象化 | `codex-autopilot-lane.yml` | touchless merge の opt-in |
 
 補足: PR の自動化（auto-fix / auto-merge）は、ラベルではなく **Repository Variables** でプロジェクト単位に有効化できます。
@@ -288,7 +288,8 @@ Codex Autopilot Lane を使う場合:
   - verify-lite + ci-fast を dispatch
   - `strict` なら coverage-check を追加 + `enforce-coverage` を付与
 - `/run-qa` / `/run-security` / `/run-cedar` / `/run-resilience` / `/run-spec` / `/run-drift` / `/run-hermetic` / `/run-formal`  
-  - 対応ラベルを付与し、ラベル条件で各WFを起動
+  - 次回の対象PRイベントに向けて対応ラベルを付与
+  - 既に open な PR で即時実行したい場合は `*-dispatch` を使う
 - `/non-blocking` / `/blocking`  
   - `ci-non-blocking` の付与/解除
 - `/coverage <pct|clear>`  
@@ -298,7 +299,8 @@ Codex Autopilot Lane を使う場合:
 - `/enforce-context-pack`
   - `enforce-context-pack` を付与（Context Pack E2E を strict 化）
 - `/pr-digest` / `/pr-detailed`  
-  - PR summary の出力モードを切替
+  - `/pr-detailed` は次回の PR Maintenance cycle で詳細モードを有効化
+  - `/pr-digest` は legacy 互換ラベルを付けるだけで、単独では `pr-summary:detailed` を上書きしない
 - `/formal-help` / `/formal-quickstart`  
   - formal 実行のtipsをコメントで返す
 
