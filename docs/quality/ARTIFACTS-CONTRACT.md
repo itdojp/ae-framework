@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-18'
+lastVerified: '2026-03-23'
 owner: quality-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -19,6 +19,22 @@ Defines the minimum contract for CI-generated artifacts and reports so that miss
 - `docs/maintenance/repo-layout-policy.md` defines placement and tracked vs non-tracked policy.
 - When the two documents differ, placement and tracking rules follow the repo layout policy, while schema and consumer rules follow this document.
 - `artifacts/` can contain runtime output, committed contract artifacts, reference snapshots, archives, and local debug archives at the same time.
+
+#### 1.1 Terminology note
+- The `contract` in this document means the artifacts contract for required and optional outputs.
+- It is different from:
+  - design-by-contract semantics such as preconditions, postconditions, or invariants
+  - API or integration contracts such as Pact-based compatibility checks
+- Use `docs/quality/contract-taxonomy.md` as the terminology baseline when these concepts need to be distinguished.
+
+#### 1.2 Responsibility split with repo layout policy
+- This document defines contract and validation rules for `artifacts/` and `reports/`.
+- `docs/maintenance/repo-layout-policy.md` defines placement rules and tracked vs non-tracked policy.
+- If they differ:
+  - placement and tracked/non-tracked decisions follow the repo layout policy
+  - schema and consumer expectations follow this document
+- `artifacts/codex/**` is primarily an ignored-by-default local debug archive. The current repository still keeps some tracked historical entries in place, and those exceptions are inventoried in `docs/maintenance/artifact-reference-layout-plan.md`. New runtime-output archives that must be intentionally tracked should follow the repo layout policy and prefer `artifacts/archive/**`.
+- For tracked reference snapshots and migration sequencing, use `docs/maintenance/artifact-reference-layout-plan.md`.
 
 ### 2. Required artifacts
 - `artifacts/verify-lite/verify-lite-run-summary.json`
@@ -98,6 +114,20 @@ Representative optional artifacts include the following groups.
 
 The authoritative details remain in the Japanese section and the contract catalog. This English section mirrors the operational shape and entrypoints.
 
+#### 5.1 Formal Summary v1/v2 dual-write migration
+- Producers run `scripts/formal/generate-formal-summary-v1.mjs` with both `--out` (v1) and `--out-v2` (v2), so `artifacts/formal/formal-summary-v1.json` and `artifacts/formal/formal-summary-v2.json` are emitted in parallel.
+- The main execution paths are `.github/workflows/verify-lite.yml` and `.github/workflows/formal-aggregate.yml`.
+- Validators currently combine:
+  - `scripts/ci/validate-formal-summary-v1.mjs`
+  - `scripts/ci/validate-formal-summary-v2.mjs`
+  - `scripts/ci/validate-artifacts-ajv.mjs`
+- Current consumers include `scripts/ci/generate-run-manifest.mjs`, which keeps `formalSummaryV1` and `formalSummaryV2` available during the migration period.
+
+#### 5.2 Report-only scope
+- Common required fields such as `traceId`, `timestamp`, `actor`, and `event` are still treated as report-only checks in the current rollout and are not promoted to required artifacts yet.
+- Equality between NDJSON and OTLP artifact sets for KvOnce trace validation remains regression-detection evidence, not a required artifact contract.
+- Therefore branch protection required checks are not changed by these trace/report-only contracts.
+
 ### 6. Validation entrypoints
 ```bash
 # Validate artifact schemas in non-strict mode
@@ -119,6 +149,7 @@ node scripts/ci/check-required-artifacts.mjs --strict
 - `docs/maintenance/repo-layout-policy.md`
 - `docs/maintenance/artifact-reference-layout-plan.md`
 - `docs/quality/assurance-lanes.md`
+- `docs/quality/contract-taxonomy.md`
 - `docs/reference/CONTRACT-CATALOG.md`
 
 ---
@@ -137,7 +168,7 @@ CIが生成する成果物（artifacts/reports）について **最低限の契�
 - 本書は `artifacts/` / `reports/` の **contract / validation rule** を定義します。
 - `docs/maintenance/repo-layout-policy.md` は **配置・tracked/non-tracked の原則** を定義します。
 - `artifacts/` には runtime output / committed contract artifact / reference snapshot / archive / local debug archive が混在します。commit 対象の可否は repo layout policy を優先し、schema/consumer 契約は本書を優先します。
-- `artifacts/codex/**` は `.gitignore` で無視される local debug archive であり、tracked archive として扱う場合は `artifacts/archive/**` へ昇格させます。
+- `artifacts/codex/**` は基本的には `.gitignore` で無視される local debug archive です。ただし current repository にはそのまま追跡している historical entry があり、例外一覧は `docs/maintenance/artifact-reference-layout-plan.md` で管理します。新たに runtime output を意図的に tracked archive 化する場合は、repo layout policy に従い `artifacts/archive/**` を優先します。
 - tracked reference snapshot / archive の inventory と移動順序は `docs/maintenance/artifact-reference-layout-plan.md` を参照します。
 
 ## 2. Required（必須）成果物
