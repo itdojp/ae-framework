@@ -2,7 +2,7 @@
 docRole: derived
 canonicalSource:
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-23'
 ---
 # 🎯 AE Framework Phase-Detailed Architecture
 
@@ -12,7 +12,7 @@ lastVerified: '2026-03-11'
 
 ## English
 
-**Comprehensive technical details of functions, implementation methods, and architecture for each phase of AI-Enhanced Development Framework**
+**Comprehensive technical details of the functions, implementation methods, and architecture for each phase of the AI-Enhanced Development Framework**
 
 ## 📋 Table of Contents
 
@@ -22,6 +22,8 @@ lastVerified: '2026-03-11'
 4. [Phase 4: Validation](#phase-4-validation)
 5. [Phase 5: Domain Modeling](#phase-5-domain-modeling)
 6. [Phase 6: UI/UX & Frontend Delivery](#phase-6-uiux--frontend-delivery)
+7. [Inter-Phase Integration and Data Flow](#inter-phase-integration-and-data-flow)
+8. [Summary](#summary)
 
 ---
 
@@ -29,314 +31,549 @@ lastVerified: '2026-03-11'
 
 ### 🎯 Purpose and Overview
 
-Phase 1 analyzes natural language input from users to clarify development intentions. It transforms ambiguous requirements into structured intentions and organizes them into formats processable by subsequent phases.
+Phase 1 converts natural-language input into structured development intent. The objective is not only to understand user wording, but also to establish category, priority, complexity, scope, assumptions, and constraints in a form that later phases can process deterministically.
 
 ### 📌 Key Features
 
 #### 1.1 Natural Language Processing
-- **Function**: Analyzes user's natural language input to extract development intentions
-- **Implementation**: 
-  - Claude API for intent understanding
-  - Contextual understanding for requirement classification
-  - Keyword extraction and semantic analysis
+- **Function**: Parse free-form user input and extract development intent.
+- **Implementation**:
+  - intent understanding through LLM-assisted analysis
+  - contextual classification of requirements and constraints
+  - keyword extraction and semantic normalization
 - **Technical Details**:
   ```text
-  interface IntentAnalysisEngine {
-    analyzeText(input: string): Promise<IntentResult>;
-    extractKeywords(text: string): string[];
-    classifyRequirements(intents: Intent[]): RequirementCategory[];
+  class IntentAnalyzer {
+    async analyzeIntent(userInput: string): Promise<IntentResult> {
+      const context = this.extractContext(userInput);
+      const keywords = this.extractKeywords(userInput);
+      const intent = await this.intentEngine.analyze({
+        input: userInput,
+        context,
+        keywords,
+      });
+      return this.structureIntent(intent);
+    }
   }
   ```
 
-#### 1.2 Ambiguity Detection and Resolution
-- **Function**: Detects ambiguous expressions in requirements and requests clarification
-- **Implementation**:
-  - Ambiguity pattern matching
-  - Context-based disambiguation
-  - Interactive clarification prompts
-- **Benefits**: Reduces misunderstandings in later development phases
+#### 1.2 Intent Classification
+- **Function**: Classify analyzed intent into execution-relevant categories.
+- **Categories**:
+  - Feature Development
+  - Bug Fix
+  - Refactoring
+  - Quality Improvement
+- **Classification Axes**:
+  - urgency: High / Medium / Low
+  - complexity: Simple / Moderate / Complex
+  - scope: Component / Module / System
 
-#### 1.3 Context Extraction
-- **Function**: Extracts project context and constraints from user input
+#### 1.3 Requirement Prioritization
+- **Function**: Assign priority using a MoSCoW-style decision model.
 - **Implementation**:
-  - Domain identification
-  - Technical constraint extraction
-  - Business context analysis
-- **Output**: Structured context information for subsequent phases
+  - Must have
+  - Should have
+  - Could have
+  - Won't have
+- **Operational Benefit**: Later phases can preserve business-critical paths while separating optional improvements.
 
 ### 🔧 Technical Implementation
 
-#### Intent Analysis Pipeline
-
+#### Intent Agent Architecture
 ```text
-interface IntentPipeline {
-  preprocessor: TextPreprocessor;
-  analyzer: IntentAnalyzer;
-  classifier: RequirementClassifier;
-  validator: IntentValidator;
+interface IntentAgent {
+  analyzeUserIntent(input: UserInput): Promise<Intent>;
+  validateIntent(intent: Intent): ValidationResult;
+  structureIntent(rawIntent: RawIntent): StructuredIntent;
 }
-```
 
-#### Data Structures
-
-```text
 interface Intent {
   id: string;
-  type: IntentType;
-  description: string;
+  category: IntentCategory;
   priority: Priority;
-  context: Context;
-  constraints: Constraint[];
+  complexity: Complexity;
+  scope: Scope;
+  requirements: string[];
+  constraints: string[];
+  acceptanceCriteria: string[];
 }
 ```
+
+#### Hybrid Intent System Integration
+- LLM-backed intent analysis expands interpretation depth.
+- MCP or persistence surfaces retain intent artifacts for downstream reuse.
+- CLI integration keeps operator-triggered intent capture aligned with repository execution.
+
+### 📊 Phase 1 Quality Metrics
+- intent understanding accuracy: >=95%
+- classification accuracy: >=90%
+- processing time: <5 seconds
+- misinterpretation rate: <5%
 
 ---
 
 ## Phase 2: Natural Language Requirements
 
-### 🎯 Purpose and Overview
+### 📝 Purpose and Overview
 
-Phase 2 transforms analyzed intentions into formal specifications. It structures natural language requirements into formats suitable for systematic development processes.
+Phase 2 expands Phase 1 intent into explicit natural-language requirements. The output remains business-readable, but becomes traceable, structured, and ready for story creation and validation.
 
 ### 📌 Key Features
 
-#### 2.1 Formal Specification Generation
-- **Function**: Converts natural language requirements into formal specifications
+#### 2.1 Requirements Specification Generation
+- **Function**: Expand intent into a detailed requirements document.
 - **Implementation**:
-  - TLA+ specification generation
-  - State machine modeling
-  - Contract specification
+  - template-based document generation
+  - industry-standard structure and labeling
+  - stakeholder-oriented grouping of functional and non-functional requirements
+- **Output Shape**:
+  - overview
+  - functional requirements
+  - non-functional requirements
+  - constraints and assumptions
+
+#### 2.2 Requirements Traceability
+- **Function**: Make dependencies and impact relationships explicit.
+- **Implementation**:
+  - requirement ID assignment
+  - dependency matrix generation
+  - change impact analysis
 - **Technical Details**:
   ```text
-  interface SpecificationGenerator {
-    generateTLASpec(requirements: Requirement[]): TLASpecification;
-    createStateMachine(behaviors: Behavior[]): StateMachine;
-    defineContracts(interfaces: Interface[]): Contract[];
+  interface RequirementTrace {
+    id: string;
+    parentIntent: string;
+    dependencies: string[];
+    impactedBy: string[];
+    traceabilityMatrix: TraceMatrix;
   }
   ```
 
-#### 2.2 Requirements Structuring
-- **Function**: Organizes requirements into hierarchical structures
-- **Implementation**:
-  - Dependency analysis
-  - Priority ordering
-  - Categorization by functionality
-- **Benefits**: Clear requirements hierarchy for development planning
+#### 2.3 Stakeholder-Specific Requirements
+- **Function**: Reframe requirements for different stakeholders.
+- **Stakeholders**:
+  - end users
+  - business owners
+  - engineering teams
+  - operations teams
+- **Benefit**: The same intent can be validated from delivery, runtime, and governance perspectives.
 
-#### 2.3 Consistency Checking
-- **Function**: Validates consistency between related requirements
-- **Implementation**:
-  - Conflict detection algorithms
-  - Logical consistency verification
-  - Cross-reference validation
-- **Output**: Validated, consistent requirement specifications
+### 🔧 Technical Implementation
 
-### 🔧 Technical Architecture
-
-#### Specification Pipeline
-
+#### Natural Language Task Adapter
 ```text
-interface SpecificationPipeline {
-  parser: RequirementParser;
-  structurer: RequirementStructurer;
-  validator: ConsistencyValidator;
-  generator: SpecificationGenerator;
+class NaturalLanguageTaskAdapter {
+  async processIntent(intent: Intent): Promise<Requirements> {
+    const context = await this.buildContext(intent);
+    const templates = await this.loadTemplates(intent.category);
+    return {
+      functional: await this.generateFunctionalReqs(intent, context),
+      nonFunctional: await this.generateNonFunctionalReqs(intent, context),
+      constraints: await this.generateConstraints(intent, context),
+      assumptions: await this.generateAssumptions(intent, context),
+    };
+  }
 }
 ```
+
+#### Requirements Extractor Engine
+- automatic extraction assisted by AI or deterministic rules
+- completeness and consistency verification
+- ambiguity, duplication, and contradiction detection
+
+### 📊 Phase 2 Quality Metrics
+- requirements completeness: >=95%
+- ambiguity detection rate: >=90%
+- requirements coverage: 100%
+- stakeholder approval rate: >=95%
 
 ---
 
 ## Phase 3: User Stories Creation
 
-### 🎯 Purpose and Overview
+### 📋 Purpose and Overview
 
-Phase 3 generates user stories from structured requirements using agile development methodologies. It creates user stories in "As a... I want... So that..." format and organizes them into development iterations.
+Phase 3 transforms natural-language requirements into implementation-sized user stories. The output is intended for planning and execution, not just documentation.
 
 ### 📌 Key Features
 
-#### 3.1 Story Generation
-- **Function**: Automatically generates user stories from requirements
+#### 3.1 User Story Generation
+- **Function**: Generate user stories from requirements.
 - **Implementation**:
-  - Template-based story creation
-  - Role identification and assignment
-  - Goal and benefit extraction
+  - `As a ... I want ... So that ...` structure
+  - INVEST principle enforcement
+  - epic -> feature -> story hierarchy
+
+#### 3.2 Acceptance Criteria Generation
+- **Function**: Generate Given-When-Then style acceptance criteria.
+- **Implementation**:
+  - BDD-oriented scenarios
+  - boundary-value coverage
+  - abnormal-path generation
 - **Technical Details**:
   ```text
-  interface StoryGenerator {
-    generateStories(requirements: Requirement[]): UserStory[];
-    extractRoles(context: Context): Role[];
-    defineAcceptanceCriteria(story: UserStory): AcceptanceCriteria[];
+  interface AcceptanceCriteria {
+    id: string;
+    scenario: string;
+    given: string[];
+    when: string;
+    then: string[];
+    examples?: DataTable;
   }
   ```
 
-#### 3.2 Epic Organization
-- **Function**: Groups related user stories into epics
+#### 3.3 Story Point Estimation
+- **Function**: Estimate story size relatively.
 - **Implementation**:
-  - Clustering algorithms for story grouping
-  - Theme identification
-  - Epic priority assignment
-- **Benefits**: Organized development roadmap with clear feature boundaries
+  - Fibonacci sequence
+  - joint evaluation of complexity, uncertainty, and effort
+  - historical calibration when prior data exists
 
-#### 3.3 Acceptance Criteria Definition
-- **Function**: Defines testable acceptance criteria for each user story
-- **Implementation**:
-  - Given-When-Then format generation
-  - Edge case identification
-  - Validation rule extraction
-- **Output**: Comprehensive acceptance criteria for development and testing
+### 🔧 Technical Implementation
 
-### 🔧 Implementation Architecture
-
-#### Story Creation Pipeline
-
+#### User Stories Task Adapter
 ```text
-interface StoryPipeline {
-  extractor: RequirementExtractor;
-  generator: StoryGenerator;
-  organizer: EpicOrganizer;
-  validator: StoryValidator;
+class UserStoriesTaskAdapter {
+  async generateUserStories(requirements: Requirements): Promise<UserStory[]> {
+    const epics = await this.createEpics(requirements);
+    const features = await this.createFeatures(epics);
+    const stories = await this.createStories(features);
+    return stories.map((story) => ({
+      ...story,
+      acceptanceCriteria: this.generateAcceptanceCriteria(story),
+      storyPoints: this.estimateStoryPoints(story),
+      priority: this.calculatePriority(story),
+    }));
+  }
 }
 ```
+
+#### Story Generator Engine
+- template management by industry or project type
+- INVEST-oriented quality checks
+- dependency detection across stories
+
+### 📊 Phase 3 Quality Metrics
+- INVEST compliance: >=95%
+- acceptance criteria coverage: 100%
+- estimation accuracy: within +/-20%
+- story slicing appropriateness: >=90%
+
+### 🛡️ TDD Guard Integration
+- test-first generation from acceptance criteria
+- minimum coverage target: >=80%
+- explicit boundary and abnormal-path test expectations
 
 ---
 
 ## Phase 4: Validation
 
-### 🎯 Purpose and Overview
+### 🔍 Purpose and Overview
 
-Phase 4 performs comprehensive validation of requirements, user stories, and specifications. It ensures consistency, completeness, and feasibility across all development artifacts.
+Phase 4 validates generated stories and specifications from multiple viewpoints before implementation. The focus is business value, technical feasibility, consistency, and quality-gate readiness.
 
 ### 📌 Key Features
 
-#### 4.1 Cross-Phase Consistency
-- **Function**: Validates consistency between different development phases
-- **Implementation**:
-  - Traceability matrix creation
-  - Cross-reference validation
-  - Dependency checking
+#### 4.1 Cross Validation
+- **Validation Perspectives**:
+  - business value and ROI
+  - technical feasibility and architecture constraints
+  - UX/UI and accessibility impact
+  - security threats and vulnerability exposure
 - **Technical Details**:
   ```text
-  interface ConsistencyValidator {
-    validateTraceability(artifacts: Artifact[]): TraceabilityMatrix;
-    checkCrossReferences(documents: Document[]): ValidationResult;
-    analyzeDependencies(items: ValidationItem[]): DependencyGraph;
+  interface CrossValidator {
+    validateBusiness(story: UserStory): BusinessValidation;
+    validateTechnical(story: UserStory): TechnicalValidation;
+    validateUX(story: UserStory): UXValidation;
+    validateSecurity(story: UserStory): SecurityValidation;
+    validateIntegration(stories: UserStory[]): IntegrationValidation;
   }
   ```
 
-#### 4.2 Completeness Assessment
-- **Function**: Ensures all necessary components are defined and specified
-- **Implementation**:
-  - Coverage analysis algorithms
-  - Gap identification
-  - Completeness scoring
-- **Benefits**: Comprehensive development specifications with no missing components
+#### 4.2 Consistency Check
+- **Function**: Verify consistency between stories, schemas, interfaces, and execution order.
+- **Checks**:
+  - logical contradictions
+  - data and schema alignment
+  - API/UI consistency
+  - delivery sequence consistency
 
-#### 4.3 Feasibility Analysis
-- **Function**: Assesses technical and business feasibility of requirements
-- **Implementation**:
-  - Resource requirement analysis
-  - Technical constraint validation
-  - Risk assessment
-- **Output**: Feasibility reports with risk mitigation strategies
+#### 4.3 Quality Gate Assessment
+- **Function**: Assess readiness against predefined quality gates.
+- **Gates**:
+  - completeness gate
+  - testability gate
+  - sizing gate
+  - dependency gate
+
+### 🔧 Technical Implementation
+
+#### Validation Task Adapter
+```text
+class ValidationTaskAdapter {
+  async performValidation(stories: UserStory[]): Promise<ValidationReport> {
+    const results = await Promise.all([
+      this.crossValidator.validateAll(stories),
+      this.consistencyChecker.checkAll(stories),
+      this.qualityGateAssessor.assess(stories),
+      this.riskAnalyzer.analyze(stories),
+    ]);
+    return this.generateValidationReport(results);
+  }
+}
+```
+
+#### Cross Validator Engine
+- AI-assisted reasoning for ambiguous cases
+- rule-based validation for deterministic checks
+- historical comparison against prior projects when useful
+
+### 📊 Phase 4 Quality Metrics
+- validation coverage: 100%
+- validation accuracy: >=95%
+- false-positive rate: <5%
+- true issue detection rate: >=90%
+
+### 🛡️ Test Guard Integration
+- acceptance-criteria-derived tests
+- boundary-value scenario expansion
+- abnormal-path completeness checks
 
 ---
 
 ## Phase 5: Domain Modeling
 
-### 🎯 Purpose and Overview
+### 🏗️ Purpose and Overview
 
-Phase 5 creates domain models using Domain-Driven Design (DDD) principles. It transforms validated requirements into robust domain models that reflect business logic and entity relationships.
+Phase 5 builds implementable domain models from validated stories. The emphasis is on DDD-aligned structure: entities, aggregates, domain services, value objects, and bounded contexts.
 
 ### 📌 Key Features
 
-#### 5.1 Entity Modeling
-- **Function**: Identifies and models domain entities and their relationships
+#### 5.1 Domain Entity Extraction
+- **Function**: Extract domain entities and relationships from stories.
 - **Implementation**:
-  - Entity extraction from requirements
-  - Relationship mapping
-  - Attribute definition
+  - noun phrase and concept extraction
+  - relationship mapping
+  - attribute inference and type assignment
+
+#### 5.2 Aggregate Design
+- **Function**: Define DDD aggregates and consistency boundaries.
+- **Implementation**:
+  - aggregate root identification
+  - transaction and invariants boundary setting
+  - business invariant definition
 - **Technical Details**:
   ```text
-  interface DomainModeler {
-    extractEntities(requirements: Requirement[]): Entity[];
-    defineRelationships(entities: Entity[]): Relationship[];
-    createAggregates(entities: Entity[]): Aggregate[];
+  interface Aggregate {
+    root: Entity;
+    entities: Entity[];
+    valueObjects: ValueObject[];
+    invariants: BusinessInvariant[];
+    events: DomainEvent[];
   }
   ```
 
-#### 5.2 Business Logic Extraction
-- **Function**: Extracts and models business rules and logic
-- **Implementation**:
-  - Rule identification algorithms
-  - Logic flow modeling
-  - Constraint definition
-- **Benefits**: Clear separation of business logic from technical implementation
+#### 5.3 Domain Service Design
+- **Function**: Extract business logic that should not live inside a single entity.
+- **Typical Cases**:
+  - multi-entity operations
+  - external-system coordination
+  - complex business rules spanning aggregate boundaries
 
-#### 5.3 Bounded Context Definition
-- **Function**: Defines bounded contexts for domain separation
-- **Implementation**:
-  - Context boundary analysis
-  - Service interface definition
-  - Integration pattern specification
-- **Output**: Well-defined domain boundaries for microservices architecture
+### 🔧 Technical Implementation
+
+#### Domain Modeling Task Adapter
+```text
+class DomainModelingTaskAdapter {
+  async generateDomainModel(stories: UserStory[]): Promise<DomainModel> {
+    const entities = await this.extractEntities(stories);
+    const relationships = await this.analyzeRelationships(entities);
+    const aggregates = await this.designAggregates(entities, relationships);
+    const services = await this.designDomainServices(aggregates, stories);
+    const valueObjects = await this.extractValueObjects(entities);
+    return {
+      entities,
+      aggregates,
+      services,
+      valueObjects,
+      relationships,
+      boundedContexts: await this.identifyBoundedContexts(aggregates),
+    };
+  }
+}
+```
+
+#### Domain Generator Engine
+- pattern application for DDD and implementation patterns
+- code generation for major languages when relevant
+- schema generation for persistence models
+
+### 📊 Phase 5 Quality Metrics
+- entity extraction coverage: >=95%
+- relationship accuracy: >=90%
+- aggregate appropriateness: >=85%
+- code quality targets: complexity <10, maintainability >80
+
+### 🛡️ Coverage Guard Integration
+- domain logic coverage: >=90%
+- business-rule coverage: 100%
+- explicit abnormal-path tests for aggregate and service behavior
 
 ---
 
 ## Phase 6: UI/UX & Frontend Delivery
 
-### 🎯 Purpose and Overview
+### 🎨 Purpose and Overview
 
-Phase 6 generates complete UI/UX solutions and frontend implementations from domain models. It creates React components, design systems, and complete frontend applications.
+Phase 6 generates React + Next.js frontend deliverables from domain models. The target is not a toy prototype, but a delivery-ready baseline that considers accessibility, internationalization, testing, and performance.
 
 ### 📌 Key Features
 
-#### 6.1 Component Generation
-- **Function**: Automatically generates React components from domain models
-- **Implementation**:
-  - Template-based component creation
-  - Design system integration
-  - Accessibility compliance
-- **Technical Details**:
-  ```text
-  interface UIGenerator {
-    generateComponents(models: DomainModel[]): ReactComponent[];
-    applyDesignSystem(components: Component[]): StyledComponent[];
-    ensureAccessibility(ui: UIElement[]): AccessibleUI[];
-  }
-  ```
+#### 6.1 UI Component Generation
+- **Function**: Generate forms, lists, detail views, and search surfaces from entities.
+- **Outputs**:
+  - CRUD forms
+  - list and table views
+  - detail pages
+  - search and filter surfaces
 
 #### 6.2 Design System Integration
-- **Function**: Integrates with modern design systems (Tailwind CSS, shadcn/ui)
-- **Implementation**:
-  - Design token application
-  - Component library integration
-  - Responsive design implementation
-- **Benefits**: Consistent, professional UI with modern design patterns
+- **Function**: Apply a consistent design system.
+- **Elements**:
+  - design tokens
+  - Tailwind CSS
+  - Class Variance Authority
+  - Radix UI / shadcn primitives
 
-#### 6.3 Full Application Generation
-- **Function**: Creates complete Next.js applications with routing and state management
-- **Implementation**:
-  - Application structure generation
-  - Routing configuration
-  - State management setup
-- **Output**: Production-ready frontend applications
+#### 6.3 Accessibility First
+- **Function**: Encode WCAG 2.1 AA considerations by default.
+- **Checks**:
+  - ARIA and semantic labeling
+  - keyboard navigation
+  - color contrast
+  - screen-reader-friendly ordering
 
-### 🔧 Advanced Features
+#### 6.4 Internationalization
+- **Function**: Support multi-language delivery through `next-intl` style message separation.
+- **Outputs**:
+  - translation keys
+  - message JSON
+  - typed translation access patterns
 
-#### 6.1 OpenTelemetry Integration
-- Real-time performance monitoring
-- Quality metrics tracking
-- User interaction analytics
+#### 6.5 Test Generation
+- **Function**: Generate tests for the produced UI.
+- **Test Types**:
+  - unit tests with Vitest and Testing Library
+  - end-to-end tests with Playwright
+  - visual tests with Storybook
+  - accessibility checks with `jest-axe`-style tooling
 
-#### 6.2 Accessibility Compliance
-- WCAG 2.1 AA compliance
-- Automated accessibility testing
-- Screen reader optimization
+### 🔧 Technical Implementation
 
-#### 6.3 Quality Assurance
-- Automated testing generation
-- Visual regression testing
-- Performance optimization
+#### UI Generation Pipeline
+```text
+class UIGenerationPipeline {
+  async generateUIComponents(domainModel: DomainModel): Promise<GeneratedUI> {
+    const uiSpec = await this.analyzeEntities(domainModel.entities);
+    const components = await this.processTemplates(uiSpec);
+    const styledComponents = await this.applyDesignSystem(components);
+    const accessibleComponents = await this.enhanceAccessibility(styledComponents);
+    const i18nComponents = await this.addInternationalization(accessibleComponents);
+    const tests = await this.generateTests(i18nComponents);
+    return {
+      components: i18nComponents,
+      tests,
+      stories: await this.generateStorybook(i18nComponents),
+      translations: await this.generateTranslations(i18nComponents),
+    };
+  }
+}
+```
+
+#### Handlebars Template Engine
+- template-driven component generation for predictable scaffolding
+- consistent handling of labels, validation, and message keys
+- reusable rendering patterns for forms and detail screens
+
+### 📊 Phase 6 Quality Metrics
+- generation time: <30 seconds for baseline component output
+- accessibility conformance: >=95% toward WCAG 2.1 AA
+- performance targets:
+  - LCP <2.5s
+  - FID/INP equivalent interaction budgets <100ms where measured
+  - CLS <0.1
+- code quality targets:
+  - TypeScript errors: 0
+  - ESLint errors: 0
+  - test coverage: >=80%
+
+### 🛡️ Quality Guards Integration
+- accessibility guard
+- performance guard
+- security guard
+- i18n guard
+
+---
+
+## 🔄 Inter-Phase Integration and Data Flow
+
+### 📊 Inter-Phase Data Transformation
+
+```text
+type PhaseDataFlow = {
+  Phase1: { input: UserInput; output: Intent; };
+  Phase2: { input: Intent; output: Requirements; };
+  Phase3: { input: Requirements; output: UserStory[]; };
+  Phase4: { input: UserStory[]; output: ValidatedStories; };
+  Phase5: {
+    input: {
+      validatedStories: ValidatedStories;
+      requirements: Requirements;
+      businessContext: BusinessContext;
+    };
+    output: DomainModel;
+  };
+  Phase6: {
+    input: {
+      domainModel: DomainModel;
+      userStories: UserStory[];
+      stakeholders: Stakeholder[];
+    };
+    output: GeneratedUI;
+  };
+};
+```
+
+### 🔄 Quality Assurance Process
+1. Phase 1-2 secure input and requirements quality.
+2. Phase 3 introduces TDD-oriented delivery structure.
+3. Phase 4 performs cross-perspective validation.
+4. Phase 5 enforces architecture and domain quality.
+5. Phase 6 verifies UI/UX, accessibility, and delivery readiness.
+
+### 📈 Continuous Improvement
+- telemetry collection across phases
+- feedback loops from later phases into earlier artifacts
+- pattern learning from previous projects where reuse is justified
+
+---
+
+## 🎯 Summary
+
+The six-phase architecture provides a structured path from ambiguous natural-language intent to validated domain models and frontend delivery artifacts.
+
+### ✨ Characteristics
+- phased decomposition with explicit handoff artifacts
+- quality metrics and guardrails at every stage
+- traceable transformation from intent to delivery output
+- compatibility with AI-assisted analysis and deterministic validation
+
+### 🚀 Innovation Points
+- combines AI-assisted authoring with contract-aware validation
+- keeps business-readable artifacts alongside implementation-oriented outputs
+- makes quality gates and recovery points explicit instead of implicit
 
 ---
 
@@ -1100,11 +1337,19 @@ type PhaseDataFlow = {
     output: ValidatedStories;
   };
   Phase5: {
-    input: ValidatedStories;
+    input: {
+      validatedStories: ValidatedStories;
+      requirements: Requirements;
+      businessContext: BusinessContext;
+    };
     output: DomainModel;
   };
   Phase6: {
-    input: DomainModel;
+    input: {
+      domainModel: DomainModel;
+      userStories: UserStory[];
+      stakeholders: Stakeholder[];
+    };
     output: GeneratedUI;
   };
 };
