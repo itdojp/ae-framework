@@ -22,8 +22,8 @@ lastVerified: '2026-03-23'
 4. [Phase 4: Validation](#phase-4-validation)
 5. [Phase 5: Domain Modeling](#phase-5-domain-modeling)
 6. [Phase 6: UI/UX & Frontend Delivery](#phase-6-uiux--frontend-delivery)
-7. [Inter-Phase Integration and Data Flow](#-inter-phase-integration-and-data-flow)
-8. [Summary](#-summary)
+7. [Inter-Phase Integration and Data Flow](#inter-phase-integration-and-data-flow)
+8. [Summary](#summary)
 
 ---
 
