@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/spec/context-pack.md
 - schema/context-pack-phase5-templates.schema.json
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-23'
 ---
 # Context Pack Phase5+ Cookbook
 
@@ -87,16 +87,72 @@ pnpm run verify:lite
 
 ## English
 
-Practical guide for Context Pack Phase5+ templates.  
-Use `docs/spec/context-pack.md` for the normative contract/schema and `docs/operations/context-pack-troubleshooting.md` for incident recovery.
+This guide documents the current operational recipes for Context Pack Phase5+ templates (Pullback/Pushout, Monoidal, and Kleisli).
+Use `docs/spec/context-pack.md` for the normative contract and schema details, and use `docs/operations/context-pack-troubleshooting.md` when a validator run fails in CI or local verification.
 
-Quick run commands:
+### Prerequisites
+- Node.js: `>=20.11 <23`
+- pnpm: `10.x`
+- Context Pack source: `spec/context-pack/**/*.{yml,yaml,json}`
+- Phase5 map: `spec/context-pack/phase5-templates.json`
+
+### Recipe 1: Pullback/Pushout integration check
+1. Define Pullback or Pushout entries in `spec/context-pack/phase5-templates.json`.
+2. Confirm that every referenced morphism, object, and diagram ID exists in the primary Context Pack sources.
+3. Confirm that every `evidencePaths` entry resolves to an existing file path within the repository.
+4. Run the validator.
 
 ```bash
 pnpm run context-pack:verify-phase5
+```
+
+Expected outputs:
+- `artifacts/context-pack/context-pack-phase5-report.json`
+- `artifacts/context-pack/context-pack-phase5-report.md`
+- `summary.totalViolations == 0`
+
+### Recipe 2: Monoidal parallel-flow check
+1. Populate `monoidalFlows[].parallelMorphismIds` with the morphisms that may execute in parallel.
+2. Set `mergeMorphismId` to the morphism that rejoins the branch.
+3. Provide `tensorLawChecks[].evidencePaths` and `stringDiagramPaths`.
+4. Run the validator.
+
+```bash
+pnpm run context-pack:verify-phase5
+```
+
+Operational notes:
+- Duplicate `parallelMorphismIds` fail with `monoidal-parallel-morphism-duplicate`.
+- Missing evidence paths fail with `phase5-evidence-missing`.
+
+### Recipe 3: Kleisli pure/impure boundary check
+1. Define `kleisliPipelines[].morphismIds`.
+2. Define `pureBoundaryMorphismIds` and `impureBoundaryMorphismIds`.
+3. Provide at least one impure boundary.
+4. Run the validator.
+
+```bash
+pnpm run context-pack:verify-phase5
+```
+
+Operational notes:
+- Overlap between pure and impure sets fails with `kleisli-boundary-overlap`.
+- Missing impure boundaries fail with `kleisli-impure-boundary-missing`.
+- Boundaries that reference morphisms outside `morphismIds` fail with `kleisli-boundary-reference-missing`.
+
+### Verify Lite integration check
+```bash
 pnpm run verify:lite
 ```
 
-Check:
-- `artifacts/context-pack/context-pack-phase5-report.{json,md}`
-- `artifacts/verify-lite/verify-lite-run-summary.json` (`steps.contextPackPhase5Validation`)
+Review the following fields first:
+- `artifacts/verify-lite/verify-lite-run-summary.json`
+  - `steps.contextPackPhase5Validation`
+  - `artifacts.contextPackPhase5ReportJson`
+  - `artifacts.contextPackPhase5ReportMarkdown`
+
+### Pre-PR checklist
+- [ ] `pnpm run context-pack:verify-phase5` succeeds locally
+- [ ] `pnpm run verify:lite` reports the expected `contextPackPhase5Validation` status
+- [ ] `context-pack-phase5-report.json` was reviewed for residual violations
+- [ ] `evidencePaths` do not point to stale or renamed files
