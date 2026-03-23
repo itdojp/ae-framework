@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-14'
+lastVerified: '2026-03-24'
 ---
 
 # 📚 ae-framework Documentation / ドキュメント
@@ -21,16 +21,29 @@ Comprehensive documentation for the agentic SDLC orchestrator and assurance cont
 
 See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 
-### Current implementation snapshot (recommended first read)
+### Recommended first reading
 - System overview (implementation-aligned): `architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Product summary: `product/OVERVIEW.md`, `product/DETAIL.md`, `product/USER-MANUAL.md`
+- Quick activation path: `getting-started/QUICK-START-GUIDE.md`
+- Daily operator flow: `guides/THREAD-REPO-CI-FLOW.md`
+- Current PR automation / gate baseline: `ci/pr-automation.md`, `ci/OPT-IN-CONTROLS.md`
+
+### How to use this index
+- If you need the shortest route to a working repository, start with `getting-started/`.
+- If you need current product behavior, read `product/` and `architecture/CURRENT-SYSTEM-OVERVIEW.md`.
+- If you need current CI / PR operating rules, prioritize `ci/`, `quality/`, and `agents/`.
+- If you need authoritative schema/input contracts, prioritize `spec/` and `reference/`.
 
 ### Getting Started
+Entry path for first-time setup, baseline verification, and the shortest route to a usable local environment.
+
 - Quick Start (15 minutes): `getting-started/QUICK-START-GUIDE.md`
 - Phase 6 Quick Start (UI/UX): `getting-started/PHASE-6-GETTING-STARTED.md`
 - Setup: `getting-started/SETUP.md`
 
 ### Product Docs
+Use this section when you need positioning, scope, value proposition, and operator-facing product behavior.
+
 - Overview: `product/OVERVIEW.md`
 - Detailed description: `product/DETAIL.md`
 - User manual: `product/USER-MANUAL.md`
@@ -38,11 +51,15 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Assurance control plane: `product/ASSURANCE-CONTROL-PLANE.md`
 
 ### Strategy
+Repository-wide direction, responsibility boundaries, and normalization rules for turning thread-level intent into repo SSOT.
+
 - Codex boundary + Verify-first strategy: `strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md`
 - Plan -> Spec normalization template: `templates/plan-to-spec-normalization-template.md`
 - Agent development policy (risk-based PR gating): `agent-dev-policy.md`
 
 ### Maintenance
+Repository hygiene, worktree/branch operations, and maintenance-side operational runbooks.
+
 - Repository layout policy: `maintenance/repo-layout-policy.md`
 - Code improvement plan: `maintenance/code-improvement-plan.md`
 - Branch cleanup runbook: `maintenance/branch-cleanup-runbook.md`
@@ -68,6 +85,8 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Formal mini flow: `quality/formal-mini-flow.md`
 
 ### Guides
+Practical operator guides for day-to-day development, troubleshooting, and Context Pack / Discovery Pack workflows.
+
 - Development Instructions: `guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md`
 - Claude Code Automation Guide: `guides/CLAUDE-CODE-AUTOMATION-GUIDE.md`
 - Phase 2 Advanced Features (2.1–2.3): `guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md`
@@ -85,6 +104,8 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Circuit Breaker Pattern: [development/circuit-breaker.md](./development/circuit-breaker.md) - CLOSED/OPEN/HALF_OPEN failover control with fallback and monitoring.
 
 ### Phases
+Phase-specific implementation references, including requirements, validation, domain modeling, UI/UX, and release-adjacent operations.
+
 - Natural Language Requirements: `phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md`
 - Runtime Conformance: `phases/PHASE-2-2-RUNTIME-CONFORMANCE.md`
 - Telemetry-as-Context (Trace Bundle ingest): `operate/telemetry-as-context.md`
@@ -98,6 +119,8 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Telemetry configuration: `phases/telemetry-configuration.md`
 
 ### Integrations
+Integration contracts and operating guides for Claude Code, Codex, handoff sidecars, and related agent/tool boundaries.
+
 - Claude Code Task Tool Integration: `integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
 - Claude Code Workflow: `integrations/CLAUDECODE-WORKFLOW.md`
 - CodeX Integration (PoC/MCP/Adapter): `integrations/CODEX-INTEGRATION.md`
@@ -106,6 +129,8 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - AE handoff sidecar: `agents/handoff.md`
 
 ### Reference
+Normative reference material for commands, schema governance, contract inventory, and stable interfaces.
+
 - CLI Commands: `reference/CLI-COMMANDS-REFERENCE.md`
 - API Reference: `reference/API.md`
 - Document governance front matter: `reference/DOC-GOVERNANCE.md`
@@ -117,6 +142,8 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Legacy ExecPlan (6-phase, deprecated): `../plans/archive/legacy-6-phase.md`
 
 ### Architecture
+Implementation-oriented architecture references, compatibility matrices, and design proposals tied to current repository structure.
+
 - TDD Framework Architecture: `architecture/TDD-FRAMEWORK-ARCHITECTURE.md`
 - CEGIS Design: `architecture/CEGIS-DESIGN.md`
 - Runtime Conformance Design: `architecture/RUNTIME-CONFORMANCE-DESIGN.md`
@@ -127,6 +154,8 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Delivery contract compatibility matrix: `architecture/DELIVERY-CONTRACT-COMPATIBILITY-MATRIX.md`
 
 ### Quality / Verification
+Current verification baseline, assurance model, artifact contracts, automation policy, and CI operating documentation.
+
 - Assurance model: `quality/ASSURANCE-MODEL.md`
 - Assurance lanes / independence rule: `quality/assurance-lanes.md`
 - Formal Quality Gates (DoD v0.2): `quality/formal-gates.md`
@@ -192,7 +221,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Automation Permission Boundaries: `ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment の権限境界）
 - Workflow dispatch validation report (2026-02-12): `ci/workflow-dispatch-validation-2026-02-12.md`
 
-For the complete navigation with highlights, see the Japanese section below (same links).
+For the complete navigation with stronger annotations and the same link set, see the Japanese section below.
 
 ---
 
