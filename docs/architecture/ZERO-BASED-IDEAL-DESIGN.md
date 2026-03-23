@@ -96,9 +96,9 @@ Key transitions:
 - any state -> `blocked` when a fail-closed condition is met
 
 Every `blocked` state must emit:
-- `blocked_reason`
-- `unblock_actions[]`
-- `owner_hint`
+- `blocked.reasonCode`
+- `blocked.unblockActions`
+- `blocked.ownerHint`
 
 ### 4. Ideal CI / automation topology
 
@@ -139,7 +139,7 @@ The ideal design fixes this order so workflow-by-workflow drift disappears.
 
 #### 5.2 Compatibility policy
 
-- every contract has `schema_version`
+- every contract has `schemaVersion` and `contractId`
 - backward compatibility is guaranteed only within the same major version
 - major upgrades require a `dual-write` and `dual-validate` period
 
@@ -210,61 +210,80 @@ Preferred direction: option A (Hybrid).
     input/
     decision/
     evidence/
-    operation/
+  workflows/
+    pr-core/
+    pr-extended/
+    maintenance/
+    release-assurance/
   docs/
     architecture/
     operations/
     contracts/
-  deploy/
-    github-actions/
-    k8s/
 ```
 
 The intent is to keep responsibility boundaries explicit so CLI UX, contracts, policy logic, and workers can evolve independently.
 
 ### 8. Ideal security design
 
-- execution identity should be separated by lane
-- secrets should be scoped per workflow and environment
-- human override must leave an auditable record
-- artifact integrity should be verifiable through manifests and checksums
-- dispatch-only operations should validate intent, target, and actor permissions up front
+- Token separation
+  - split read-only and write-capable tokens per job
+- Provenance
+  - sign major artifacts with Sigstore/cosign
+- Least privilege
+  - declare the minimum permission set per workflow
+- Secret zero
+  - prefer OIDC federation with short-lived credentials wherever possible
 
 ### 9. Ideal quality-gate design
 
-- required gates should be minimal, deterministic, and reproducible locally
-- extended gates should be opt-in but evidence-preserving
-- the final go/no-go decision should read normalized contracts, not raw workflow logs
-- each blocked decision should provide machine-readable recovery steps
+Always-on required gates:
+- contract validation
+- policy decision
+- review resolution
+- verify-lite
+- artifact required set
+
+Conditional gates (policy-driven):
+- high-risk approvals
+- trace conformance
+- security deep scan
+- formal full run
+
+Fail-open should be disallowed by default. When an exception is approved, require a `temporary_override` contract and an explicit expiration.
 
 ### 10. Ideal operating model
 
-- solo mode optimizes for low ceremony and high determinism
-- team mode adds approval topology and evidence reuse
-- enterprise mode adds stronger separation of duties, multi-tenant policy bundles, and durable audit retention
+Example SLOs:
+- Required checks success rate: `>= 99.5%`
+- MTTR (`blocked` -> `merge_eligible`, P50): `<= 30 minutes`
+- false-block rate: `<= 1%`
 
-Across all modes, the operator should be able to answer:
-- what failed
-- why it failed
-- what the minimum restart action is
-- which artifact proves the final decision
+Minimum runbook requirements:
+- fixed failure classification codes
+- recovery commands in one-command units
+- a recurrence-prevention template
 
 ### 11. Phased migration (`current -> ideal`)
 
-1. isolate current contracts and evidence surfaces
-2. separate policy evaluation from workflow-specific shell logic
-3. introduce normalized state/decision contracts
-4. move heavier execution to dedicated workers
-5. adopt the ideal topology incrementally with dual-write / dual-validate periods
+1. Contract-first
+   - convert current script inputs/outputs into explicit contracts
+2. Policy engine separation
+   - detach judgement logic from workflow-specific glue
+3. Orchestrator introduction
+   - unify cross-workflow state transitions
+4. Worker separation
+   - move heavier execution into async workers
+5. Legacy workflow retirement
+   - remove compatibility paths after the transition window
 
 ### 12. Adoption criteria for the ideal design
 
-Adopt the ideal design only when it improves:
-- determinism of gate decisions
-- traceability of release and merge judgements
-- portability across AI producers
-- operator recovery speed
-- long-term maintainability of policy and artifact contracts
+Adopt when:
+- the current operation still suffers from workflow sprawl, duplicated judgement logic, or slow review-to-fix propagation
+- the automation base needs to be reused across multiple products
+
+Defer when:
+- the repository remains single-product and small enough that the current topology is still cheap to maintain
 
 ---
 
@@ -354,9 +373,9 @@ Adopt the ideal design only when it improves:
 - 任意状態 -> `blocked`（fail-closed条件）
 
 `blocked` では必ず以下を出力する:
-- `blocked_reason`（機械可読コード）
-- `unblock_actions[]`（最小復旧手順）
-- `owner_hint`（人/AIどちらが対応すべきか）
+- `blocked.reasonCode`（機械可読コード）
+- `blocked.unblockActions`（最小復旧手順）
+- `blocked.ownerHint`（人/AIどちらが対応すべきか）
 
 ## 4. 理想のCI/自動化トポロジ
 
@@ -397,7 +416,7 @@ Adopt the ideal design only when it improves:
 
 ### 5.2 互換方針
 
-- すべて `schema_version` を持つ
+- すべて `schemaVersion` と `contractId` を持つ
 - 後方互換は同一major内のみ保証
 - major更新時は `dual-write` + `dual-validate` 期間を設ける
 
