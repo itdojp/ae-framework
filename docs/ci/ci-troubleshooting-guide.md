@@ -46,7 +46,7 @@ Purpose: provide a short, deterministic path to diagnose common CI failures and 
 - `ci-auto-rerun-failed` retries a failed job only once. Inspect the rerun log before taking further action.
 - When `PR Self-Heal` (`pr-self-heal.yml`) is enabled, it attempts recovery for review gate failures, 429-triggered failures, and behind PRs. If it cannot converge, it leaves `status:blocked` and a PR comment with the reason.
 - `pr-ci-status-comment` (PR Maintenance) auto-updates behind PRs. Merge conflicts still require manual resolution.
-- If `gateExpected` or `verify-liteExpected` remains at `Waiting for status to be reported`, the auto-update merge commit may not have emitted the required checks. Standard response: push an empty commit to retrigger the PR event or rerun from the PR UI. Long-term fix: configure `AE_AUTO_UPDATE_TOKEN` so required checks run on the auto-update commit.
+- If the review gate or `verify-lite` required check in the PR UI remains at `Waiting for status to be reported`, the auto-update merge commit may not have emitted the required checks. Standard response: push an empty commit to retrigger the PR event or rerun from the PR UI. Long-term fix: configure `AE_AUTO_UPDATE_TOKEN` so required checks run on the auto-update commit.
 - A `Copilot Review Gate` run with `pull_request_review` / `action_required` is not itself a blocker if `Copilot Review Gate / gate` is green on the PR head SHA. Use `workflow_dispatch` with `pr_number` when a manual reevaluation is required.
 - If `Copilot Review Gate / gate` remains with mixed success and failure runs, rerun the failed `Copilot Review Gate` run with `gh run rerun <RUN_ID> --failed`.
 - After `Copilot Auto Fix`, gate reevaluation is dispatched by `agent-commands` through `issue_comment(created/edited)` into `copilot-review-gate.yml`. If reevaluation does not start, inspect the `agent-commands` execution log first.
@@ -207,7 +207,7 @@ gh workflow run "Codex Autopilot Lane" -f pr_number=12345 -f dry_run=false
 - Failed job は `ci-auto-rerun-failed` が **1回だけ** 自動再実行する。追加対応の前に rerun log を確認する。
 - `PR Self-Heal`（`pr-self-heal.yml`）を有効化している場合、review gate failure、429 起因失敗、behind PR の自動復旧を試行する。収束しない場合は `status:blocked` と PR comment を残す。
 - `pr-ci-status-comment`（PR Maintenance）が behind の PR を自動更新する。merge conflict は手動解決が必要。
-- `gateExpected` または `verify-liteExpected` が `Waiting for status to be reported` のままなら、auto-update merge commit に required checks が載っていない可能性がある。標準対応は、空コミットを push して `pull_request` を再発火するか、PR UI から rerun する。恒久策は `AE_AUTO_UPDATE_TOKEN` を設定し、auto-update commit 上でも required checks を走らせること。
+- PR UI 上で review gate または `verify-lite` の required check が `Waiting for status to be reported` のままなら、auto-update merge commit に required checks が載っていない可能性がある。標準対応は、空コミットを push して `pull_request` を再発火するか、PR UI から rerun する。恒久策は `AE_AUTO_UPDATE_TOKEN` を設定し、auto-update commit 上でも required checks を走らせること。
 - `Copilot Review Gate` の `pull_request_review` / `action_required` 自体は、PR head SHA 上の `Copilot Review Gate / gate` が green なら merge blocker ではない。手動 reevaluation が必要な場合は `workflow_dispatch` と `pr_number` を使う。
 - `Copilot Review Gate / gate` が success / failure 混在のまま残る場合は、失敗側の `Copilot Review Gate` run を `gh run rerun <RUN_ID> --failed` で再試行する。
 - `Copilot Auto Fix` 後の gate reevaluation は `agent-commands` が `issue_comment(created/edited)` 経由で `copilot-review-gate.yml` を dispatch する。起動しない場合は `agent-commands` の実行ログを先に確認する。
