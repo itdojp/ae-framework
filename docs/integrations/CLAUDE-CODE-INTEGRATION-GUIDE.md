@@ -59,16 +59,123 @@ AE Framework (Task Adapters)
 
 ---
 
-## English (Overview)
+## English
 
-Comprehensive integration guide for AE Framework ↔ Claude Code.
+### 1. Overview
+This guide describes the current AE Framework x Claude Code integration model. The repository treats Claude Code Task Tool execution as the primary path, while CLI and MCP remain fallback surfaces for cases where Task Tool is unavailable or when operators want a direct/manual execution path.
 
 Highlights
-- Natural language → Requirements → Domain modeling → UI generation
-- 6-phase development, WCAG 2.1 AA compliant UI, enterprise-grade quality
-- Architecture: Task Tool integration in Claude Code, with CLI/MCP fallbacks
+- intent analysis -> natural language requirements -> stories -> validation -> domain modeling -> UI generation
+- six-phase collaboration with explicit checkpoints between phases
+- Task Tool as the preferred runtime path, with CLI/MCP fallback for recovery and manual control
+- UI generation optimized for WCAG 2.1 AA, TypeScript strictness, and automated test scaffolding
 
-See the Japanese sections for full architecture details, call flows, and best practices. Commands and artifacts are identical regardless of language; only the explanatory text differs.
+### 2. Core operating model
+#### 2.1 Hybrid integration
+The current architecture is a hybrid intent system. A request is first evaluated for Claude Code context and Task Tool availability. When both are present, AE Framework routes the request through the Task Tool handler. If not, it falls back to CLI commands or MCP integration.
+
+Operational priority:
+1. Claude Code Task Tool
+2. CLI commands
+3. MCP Server fallback
+
+This priority matters because the user experience, blocking semantics, and proactive guidance are designed around the Task Tool path first. CLI and MCP exist to preserve recoverability and manual operability.
+
+#### 2.2 Task Tool contract
+The repository documents the Task Tool exchange in terms of `TaskRequest` and `TaskResponse`. The interface excerpt in the Japanese section below follows the same shared contract, including the optional `context` field. In practice, the request carries:
+- task description
+- prompt content
+- phase or subagent type
+- optional execution context
+
+The response is expected to include:
+- concise summary
+- detailed analysis in Markdown
+- recommendations
+- next actions
+- warnings
+- an explicit blocking signal when progress should stop
+
+This shape is important because Claude Code needs both a machine-actionable decision surface and a human-readable explanation surface.
+
+#### 2.3 Proactive guidance
+The integration is not limited to passive command execution. The design assumes proactive guidance using recent file changes, recent actions, and inferred user intent. The guidance path can return warnings, suggestions, or blocking interventions. Use this when AE Framework detects a quality, sequencing, or modeling problem that should be surfaced before the next phase continues.
+
+### 3. Phase map and recommended operator flow
+#### 3.1 Six phases
+| Phase | Primary purpose | Typical output | Typical duration |
+| --- | --- | --- | --- |
+| 1. Intent Analysis | classify user intent and identify requirement themes | initial requirement inventory | ~10-20s |
+| 2. Natural Language Requirements | structure functional / non-functional / business requirements | structured requirement set | ~15-30s |
+| 3. User Stories | organize work into stories and epics | stories, epics, point estimates | ~20-45s |
+| 4. Validation | check consistency, gaps, and quality concerns | validation findings and recommendations | ~25-60s |
+| 5. Domain Modeling | derive bounded contexts, entities, services, and events | domain model package | ~30-90s |
+| 6. UI Generation | generate implementation-facing UI assets | React/Next.js UI set and quality metrics | usually <30s |
+
+#### 3.2 Recommended interaction pattern
+The Japanese examples later in this document show a full conversational walk-through. The current recommended English-side interpretation is:
+- run Phases 1-2 to converge on requirement meaning
+- run Phases 3-4 to confirm delivery scope and quality findings
+- run Phase 5 when DDD boundaries, services, and events must be fixed
+- run Phase 6 when the model is stable enough to generate UI artifacts
+
+Recommended execution styles:
+- small project: run the full six-phase flow end to end
+- medium project: pause after validation and domain modeling for explicit review
+- large project: split work by bounded context or major capability area
+
+### 4. Current architecture detail
+#### 4.1 Hybrid system responsibilities
+The Japanese section below contains the full pseudo-code, but the operational reading is straightforward:
+- Claude Code path is selected when the runtime knows it is inside Claude Code and Task Tool is available
+- fallback path is selected for direct CLI execution, MCP integration, or recovery scenarios
+- strictness and real-time handling are explicit configuration surfaces, not implicit side effects
+
+#### 4.2 Adapter layout
+The guide models one handler per phase:
+- Intent Task Adapter
+- Natural Language handler
+- User Stories handler
+- Validation handler
+- Domain Modeling handler
+- UI Generation handler
+
+This keeps the integration boundary narrow. Claude Code calls an adapter oriented to the active phase rather than a monolithic black-box command. Intent Analysis is not special-cased out of the adapter layout; it is the first adapter in the flow.
+
+### 5. Performance, scale, and expectations
+#### 5.1 Expected runtime envelope
+The current Japanese section documents representative timings. These runtime figures are illustrative examples unless they are explicitly tied to generated artifacts or measured CI evidence. Treat them as planning guidance rather than guaranteed SLO values. The operational expectation is roughly:
+- end-to-end flow in about 4 minutes for a medium-sized example
+- Phase 6 is intentionally much faster than the earlier analytical phases
+- memory demand grows with requirement volume and generated output count
+
+#### 5.2 Scaling guidance
+Use these heuristics:
+- fewer than 20 requirements: end-to-end flow is usually acceptable
+- 20-100 requirements: prefer staged confirmation between phases
+- more than 100 requirements: split by bounded context or major capability area
+
+### 6. Troubleshooting guidance
+Common failure categories in the current design are:
+- Task Tool unavailable or misconfigured
+- execution timeout caused by oversized batches
+- UI generation quality below expected thresholds
+- Node.js memory exhaustion on large projects
+
+Pragmatic remediation order:
+1. confirm Claude Code / Task Tool availability
+2. reduce batch size or split the request
+3. tighten quality configuration when UI output quality is insufficient
+4. raise Node.js memory limits or split execution by bounded context
+5. use diagnostic commands and debug logging before retrying broad flows
+
+### 7. References and reading order
+Use this reading order when you are operating in English first:
+1. this English section for the operating model
+2. the detailed Japanese sections below for full pseudo-code, examples, and troubleshooting payloads
+3. repository architecture and phase references when implementation details are required
+
+Commands, workflow entry points, and artifact semantics are shared across both languages. The main difference is the amount of explanatory detail. This section narrows that gap by documenting the current operational model in English.
 
 ## アーキテクチャ詳細
 
@@ -126,6 +233,12 @@ interface TaskRequest {
   description: string;      // タスクの説明
   prompt: string;          // 処理対象のプロンプト  
   subagent_type: string;   // フェーズ指定
+  context?: {
+    validationTaskType?: string;
+    strict?: boolean;
+    sources?: string | string[];
+    [key: string]: unknown;
+  };
 }
 
 // AE Framework → Claude Code
@@ -136,6 +249,8 @@ interface TaskResponse {
   nextActions: string[];     // 次のアクション
   warnings: string[];        // 警告事項
   shouldBlockProgress: boolean; // 進行ブロック判定
+  blockingReason?: string;   // 機械可読のブロッカー理由
+  requiredHumanInput?: string; // 再開に必要な最小人手入力
 }
 ```
 
