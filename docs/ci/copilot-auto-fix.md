@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-22'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -10,13 +10,108 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-- Automatically applies GitHub Copilot review ```` ```suggestion ```` blocks to the PR branch.
-- Can be enabled per repository with variables (`AE_COPILOT_AUTO_FIX`, `AE_COPILOT_AUTO_FIX_SCOPE`, `AE_COPILOT_AUTO_FIX_LABEL`).
-- In `docs` scope mode, the entire auto-fix is skipped if the PR contains non-doc changes (fail-safe).
+### 1. Purpose
+This document defines how GitHub Copilot review ```` ```suggestion ```` blocks are automatically applied to the PR branch.
 
-Primary sources: `.github/workflows/copilot-auto-fix.yml`, `scripts/ci/copilot-auto-fix.mjs`, `scripts/ci/lib/automation-config.mjs`.
+Goals:
+- automate part of the review-response loop after AI review
+- start from lower-risk areas such as docs-only changes
+
+Related:
+- end-to-end PR automation flow: `docs/ci/pr-automation.md`
+
+### 2. Enablement (repository level)
+This feature is controlled per repository through GitHub Repository Variables.
+
+Supplement:
+- `AE_AUTOMATION_PROFILE` can also provide the default auto-fix values, unless explicit variables override them
+- details: `docs/ci/automation-profiles.md`
+
+#### 2.1 Required toggle
+- set `AE_COPILOT_AUTO_FIX=1` to enable the workflow
+- if unset or not equal to `1`, the auto-fix flow is disabled after config resolution and the workflow exits early without applying changes
+
+#### 2.2 Scope
+- `AE_COPILOT_AUTO_FIX_SCOPE=docs` (default)
+  - if the PR contains files outside `docs/**` and the repository-root README file named README.md, the whole auto-fix flow is skipped as a fail-safe
+- `AE_COPILOT_AUTO_FIX_SCOPE=all`
+  - suggestions may be applied to all files
+
+Implementation reference:
+- allowlist: `docs/**`, repository-root README file named README.md
+- source: `scripts/ci/copilot-auto-fix.mjs`
+
+#### 2.3 Label opt-in
+If `AE_COPILOT_AUTO_FIX_LABEL` is set, auto-fix runs only when the PR has that label.
+
+Example:
+- `AE_COPILOT_AUTO_FIX_LABEL=copilot-auto-fix`
+
+### 3. Current implementation
+- Workflow: `.github/workflows/copilot-auto-fix.yml`
+  - runs on `pull_request_review: submitted`
+  - excludes fork PRs
+  - delegates `AE_COPILOT_AUTO_FIX` / `AE_COPILOT_AUTO_FIX_FORCE` gating to `scripts/ci/copilot-auto-fix.mjs` after `automation-config` resolution
+  - continues only when `github.actor` matches `AI_REVIEW_ACTORS` or the legacy `COPILOT_ACTORS`
+- Script: `node scripts/ci/copilot-auto-fix.mjs`
+  - enumerates PR review comments
+  - extracts the first ```` ```suggestion ```` block from each eligible comment
+  - rewrites the target line range
+  - commits and pushes only when file content actually changes
+  - resolves only threads judged to be applied or already satisfied
+
+Assumption:
+- GitHub-hosted `ubuntu-latest` is the default runner model
+- self-hosted runners must provide `gh` CLI
+
+### 4. Safety design
+The script skips execution when any of the following is true:
+- `PR_HEAD_SHA` does not match the checked-out commit
+- the PR head has advanced after the event
+- the review comment `commit_id` does not match `PR_HEAD_SHA`
+- `AE_COPILOT_AUTO_FIX_SCOPE=docs` but the PR contains non-doc changes
+
+Operational note:
+- `AE_COPILOT_AUTO_FIX_FORCE=1` allows forced execution even when `GITHUB_ACTOR` is not a Copilot actor; this is intended for automation lanes such as Codex Autopilot
+
+The implementation also rejects writes outside the repository and symlink-based writes by checking `realpath` and `lstat`.
+
+### 5. Supported suggestion shape
+- supported: the first ```` ```suggestion ```` block in a review comment body
+- skipped:
+  - comments without a suggestion block
+  - overlapping suggestions on the same file/range
+  - out-of-range line numbers
+
+Supplement:
+- comments without a suggestion can still be counted as actionable non-suggestion comments and summarized in the PR result comment
+- actual handling of non-suggestion feedback remains manual or delegated to Codex Autopilot Lane
+
+### 6. Result comment on the PR
+The script upserts an execution result comment on the PR.
+
+- marker: `<!-- AE-COPILOT-AUTO-FIX v1 -->`
+- typical contents:
+  - applied / already-applied / resolved thread counts
+  - changed files
+  - skipped reasons
+  - actionable non-suggestion previews
+
+### 7. Troubleshooting
+- The workflow does not start
+  - verify `AE_COPILOT_AUTO_FIX=1`
+  - verify the reviewer actor is included in `AI_REVIEW_ACTORS` or `COPILOT_ACTORS`
+- `AE_COPILOT_AUTO_FIX_SCOPE=docs` causes a skip
+  - the PR includes non-doc changes; split the PR or consider `AE_COPILOT_AUTO_FIX_SCOPE=all`
+- Copilot Review Gate remains failing
+  - if auto-fix does not commit/push, the gate reevaluation may not trigger automatically
+  - when the auto-fix result comment is updated, `agent-commands` dispatches `copilot-review-gate.yml` against the PR head in the usual path
+  - if reevaluation still does not happen, rerun `Copilot Review Gate` or update the PR head
+- GitHub API 429 / secondary rate limit
+  - tune `AE_GH_RETRY_*` and `AE_GH_THROTTLE_MS` as needed
+  - details: `docs/ci/pr-automation.md`, implementation: `scripts/ci/lib/gh-exec.mjs`
 
 ---
 
@@ -43,7 +138,7 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
 
 ### 2.1 必須（ON/OFF）
 - `AE_COPILOT_AUTO_FIX=1` を設定すると有効化します。
-- 未設定/`1` 以外の場合、`.github/workflows/copilot-auto-fix.yml` は起動しません。
+- 未設定/`1` 以外の場合、workflow 自体は起動し得ますが、config 解決後に auto-fix を無効として early exit します。
 
 ### 2.2 スコープ（docs / all）
 
@@ -68,7 +163,7 @@ Copilot レビューのインラインコメントに含まれる ```` ```sugges
 - Workflow: `.github/workflows/copilot-auto-fix.yml`
   - `pull_request_review: submitted` で起動
   - fork PR は対象外
-  - `vars.AE_COPILOT_AUTO_FIX == '1'` を満たす場合のみ実行
+  - `AE_COPILOT_AUTO_FIX` / `AE_COPILOT_AUTO_FIX_FORCE` の判定は `automation-config` 解決後に `scripts/ci/copilot-auto-fix.mjs` 側で行う
   - `github.actor` が `AI_REVIEW_ACTORS`（未設定時は `COPILOT_ACTORS`）に一致する場合のみ適用処理を継続
 - 実行: `node scripts/ci/copilot-auto-fix.mjs`
   - PR review comments（`pulls/{number}/comments`）から ```` ```suggestion ```` を抽出

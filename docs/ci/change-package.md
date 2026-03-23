@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-22'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -10,21 +10,112 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ---
 
-## English (Summary)
+## English
 
-Change Package standardizes PR safety evidence into machine-readable artifacts:
+### 1. Purpose
+Change Package is the standard artifact set that shifts PR safety judgment from diff-only review to evidence-oriented review.
 
+It consumes policy and changed-file information and produces machine-readable outputs for:
+- risk selection
+- required labels
+- reproducibility commands
+- rollout and monitoring plans
+
+Responsibility split:
+- `plan-artifact/v1`: before-change review contract
+- `change-package/v1`: after-change evidence contract
+
+### 2. Outputs
 - `artifacts/change-package/change-package.json`
+  - schema: `change-package/v1`
+  - major sections:
+    - `intent`
+    - `scope`
+    - `risk`
+    - `evidence`
+    - `reproducibility`
+    - `rolloutPlan`
+    - `monitoringPlan`
+    - `exceptions`
 - `artifacts/change-package/change-package.md`
-- `artifacts/change-package/change-package-validation.json`
-- `artifacts/change-package/change-package-validation.md`
-- preview contract: `schema/change-package-v2.schema.json`
+  - human-readable summary for PR discussion
+- `artifacts/change-package/change-package-validation.json|md`
+  - schema validation and required-evidence evaluation results
 
-Primary components:
-- Generator: `scripts/change-package/generate.mjs`
-- Validator: `scripts/change-package/validate.mjs`
-- Schema: `schema/change-package.schema.json`
-- Sample fixture: `fixtures/change-package/sample.change-package.json`
+#### `change-package/v2` preview contract
+- schema: `schema/change-package-v2.schema.json`
+- sample fixture: `fixtures/change-package/sample.change-package-v2.json`
+- added sections:
+  - `assurance`
+  - `claims`
+  - `assumptions`
+  - `proofObligations`
+  - `counterexamples`
+  - `trustBoundary`
+  - `runtimeControls`
+  - `waivers`
+
+At the moment, v2 is introduced as schema/docs preview only. Default generator, validator, and PR summary integration still use v1.
+
+### 3. Generation and validation commands
+```bash
+# Generate
+node scripts/change-package/generate.mjs \
+  --policy policy/risk-policy.yml \
+  --output-json artifacts/change-package/change-package.json \
+  --output-md artifacts/change-package/change-package.md
+
+# Validate (non-strict: missing evidence becomes warning)
+node scripts/change-package/validate.mjs \
+  --file artifacts/change-package/change-package.json \
+  --schema schema/change-package.schema.json
+
+# Validate (strict: missing evidence fails)
+node scripts/change-package/validate.mjs \
+  --file artifacts/change-package/change-package.json \
+  --schema schema/change-package.schema.json \
+  --required-evidence verifyLiteSummary,policyGateSummary \
+  --strict
+
+# Validate the v2 preview contract
+node scripts/change-package/validate.mjs \
+  --file fixtures/change-package/sample.change-package-v2.json \
+  --schema schema/change-package-v2.schema.json
+```
+
+### 4. Main options
+#### `generate.mjs`
+- `--changed-files-file <path>`: explicit changed file list input
+- `--event-path <path>`: GitHub event payload input
+- `--artifact-root <path>`: artifact lookup root for evidence existence checks
+- `--mode digest|detailed`: markdown output detail level
+
+#### `validate.mjs`
+- `--required-evidence <csv>`: explicit required evidence IDs
+- `--strict`: treat required-evidence gaps as errors
+
+### 5. CI integration
+`pr-ci-status-comment.yml` performs the following:
+1. generate Change Package
+2. validate Change Package
+3. schema-validate committed `artifacts/plan/plan-artifact.json` when present
+4. append Change Package / Plan Artifact sections to the PR summary comment
+5. upload the artifacts
+
+This means:
+- `pr-summary:detailed` shows richer evidence and reproducibility commands
+- digest mode shows a shorter summary
+
+When tied to auto-merge:
+- `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE=1` includes Change Package Validation in auto-merge eligibility
+- `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN=0` requires `PASS` and rejects `WARN`
+
+### 6. Operational guidance
+- For `risk:high` PRs, review `missingRequiredLabels` and `exceptions` first
+- For `risk:high` PRs, commit `artifacts/plan/plan-artifact.json|md` before implementation so `policy-gate` sees the pre-review contract
+- When `policy/risk-policy.yml` changes, verify Change Package outcomes with fixtures and tests
+- When the schema changes, update `fixtures/change-package/sample.change-package.json` and `scripts/ci/validate-json.mjs` together
+- Treat `change-package/v2` as a preview contract and do not break the default v1 flow
 
 ---
 
