@@ -6,14 +6,9 @@ verificationCommand: pnpm -s run check:doc-consistency
 ---
 # CI Operations Handbook
 
-最終更新: 2026-03-06
+> Language / 言語: English | 日本語
 
-目的: 日次運用で使う確認手順・再実行手順・停止判断を 1 ページで参照できるようにする。
-
-責務境界:
-- 方針（Required checks / opt-in）は `docs/ci-policy.md` を正とする
-- 本書は「運用手順（運転方法）」のみを扱い、詳細診断は runbook へ委譲する
-- 境界表は `docs/ci/ci-doc-boundary-matrix.md` を参照
+---
 
 ## English
 
@@ -28,9 +23,9 @@ Scope boundary:
 
 ### 1. Daily operations
 
-1. Check failing open PRs
+1. List open PRs and identify candidates with failing checks
    `gh pr list --state open`
-2. Extract failed / pending jobs
+2. Inspect checks for a candidate PR
    `gh pr checks <PR_NUMBER>`
 3. Narrow the view to required checks
    `gh pr checks <PR_NUMBER> --required`
@@ -68,7 +63,7 @@ Scope boundary:
 #### 3.3 `pnpm install --frozen-lockfile` fails
 - classify the lane using `docs/ci-policy.md`
   - jobs shown in `gh pr checks <PR_NUMBER> --required` are `required-lane`
-  - `workflow_dispatch`-only flows are `manual-ops`
+  - `workflow_dispatch` and scheduled maintenance flows are `manual-ops`
   - explicit non-required PR lanes are `optional-pr`
 - for `required-lane`, refresh `pnpm-lock.yaml` with `pnpm install`, then commit and push the lockfile change
 - after the lockfile fix, inspect the new run created for the latest head branch
@@ -82,9 +77,9 @@ Scope boundary:
 
 #### 3.5 `enforce-assurance` fails
 - confirm `artifacts/assurance/assurance-summary.json` exists
-- inspect `warningCount`, `warningClaims`, `claimsMissingRequiredLanes`, `claimsMissingRequiredEvidenceKinds`, and `unlinkedCounterexamples`
+- inspect `warningCount`, `warningClaims`, `claimsMissingRequiredLanes`, `claimsMissingRequiredEvidenceKinds`, `unlinkedCounterexamples`, and `independenceWarnings`
 - verify `claimCount` is not `0`
-- inspect each claim's `missingLanes`, `missingEvidenceKinds`, and `counterexamples.open`
+- inspect each claim's `status`, `missingLanes`, `missingEvidenceKinds`, and `counterexamples.open`
 - use `docs/quality/assurance-operations-runbook.md` as the primary runbook
 
 ### 4. Fail-safe stop and recovery
@@ -96,6 +91,7 @@ Scope boundary:
 - `AE_CODEX_AUTOPILOT_ENABLED=0`
 - `AE_SELF_HEAL_ENABLED=0`
 - `AE_COPILOT_AUTO_FIX=0`
+- `AE_AUTO_MERGE=0`
 
 #### 4.3 Recovery
 1. fix the root cause
@@ -121,6 +117,17 @@ Scope boundary:
 - `docs/ci/docs-doctest-policy.md`
 - `docs/ci/automation-failure-policies.md`
 - `docs/quality/assurance-operations-runbook.md`
+
+## 日本語
+
+最終更新: 2026-03-06
+
+目的: 日次運用で使う確認手順・再実行手順・停止判断を 1 ページで参照できるようにする。
+
+責務境界:
+- 方針（Required checks / opt-in）は `docs/ci-policy.md` を正とする
+- 本書は「運用手順（運転方法）」のみを扱い、詳細診断は runbook へ委譲する
+- 境界表は `docs/ci/ci-doc-boundary-matrix.md` を参照
 
 ## 1. 日次オペレーション（開始時）
 
@@ -166,6 +173,7 @@ Scope boundary:
 ### 3.3 `pnpm install --frozen-lockfile` が失敗
 
 - lane 判定は `docs/ci-policy.md` の Lockfile reproducibility を source of truth とし、`gh pr checks <PR番号> --required` に出る job は `required-lane`、`workflow_dispatch` 専用は `manual-ops`、それ以外で明示的に非必須化されたものだけを `optional-pr` と扱う
+- scheduled maintenance lane も `manual-ops` に含める
 - `required-lane` は `pnpm install` で `pnpm-lock.yaml` を更新し、差分を commit / push する
 - PR の lockfile 修正後は新しい `pull_request` run が自動生成されるため、その最新 run を確認する
   - `gh run list --branch <head-branch> --limit 20`
@@ -181,9 +189,9 @@ Scope boundary:
 ### 3.5 `enforce-assurance` が失敗
 
 - `artifacts/assurance/assurance-summary.json` が生成されているか確認する
-- `warningCount` / `warningClaims` / `claimsMissingRequiredLanes` / `claimsMissingRequiredEvidenceKinds` / `unlinkedCounterexamples` を確認する
+- `warningCount` / `warningClaims` / `claimsMissingRequiredLanes` / `claimsMissingRequiredEvidenceKinds` / `unlinkedCounterexamples` / `independenceWarnings` を確認する
 - `claimCount` が `0` になっていないか確認する
-- claim ごとの `missingLanes` / `missingEvidenceKinds` / `counterexamples.open` を見て不足証跡を補う
+- claim ごとの `status` / `missingLanes` / `missingEvidenceKinds` / `counterexamples.open` を見て不足証跡を補う
 - 一次情報は `docs/quality/assurance-operations-runbook.md` を参照する
 
 ## 4. 停止・復帰（Fail-safe）
@@ -197,6 +205,7 @@ Scope boundary:
 - `AE_CODEX_AUTOPILOT_ENABLED=0`
 - `AE_SELF_HEAL_ENABLED=0`
 - `AE_COPILOT_AUTO_FIX=0`
+- `AE_AUTO_MERGE=0`
 
 ### 4.3 復帰
 
