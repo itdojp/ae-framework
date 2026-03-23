@@ -55,6 +55,61 @@ If any of the following is missing, add it either as an **open question** or an 
 - expected failure patterns (error vocabulary)
 - missing DbC conditions (preconditions / postconditions / invariants)
 
+### Workflow integration notes
+
+- use Context Bundle when issue text or copied snippets do not preserve dependency flow, contracts, or execution context
+- keep `taskIntent`, `artifacts`, `assumptions`, and `openQuestions` aligned with the current operator request before handing off to an agent
+- if `contextVacuum.status` is `missing`, either fill the missing items or carry them forward explicitly as `openQuestions`
+- keep examples schema-valid; the validation entry point remains `scripts/ci/validate-json.mjs`
+
+### Example 1: Feature addition
+
+```json
+{
+  "schemaVersion": "0.1.0",
+  "taskIntent": "Add a retry policy for verify-lite upload failures",
+  "systemConstraints": ["Node.js 20", "No breaking changes"],
+  "roles": ["cli", "infra"],
+  "artifacts": [
+    {"type": "source", "path": "src/cli/verify-lite.ts", "role": "cli"},
+    {"type": "doc", "path": "docs/verify/verify-lite.md", "role": "spec"}
+  ],
+  "assumptions": ["Retry count defaults to 3"],
+  "contracts": {
+    "preconditions": ["Retry target endpoint is reachable"],
+    "postconditions": ["Retry attempts are logged with final status"],
+    "invariants": [
+      {"id": "INV-RETRY-001", "statement": "Retry attempts never exceed configured max", "severity": "high"}
+    ]
+  },
+  "openQuestions": ["Should retry be exponential or fixed?"],
+  "contextVacuum": {"status": "missing", "missing": ["error taxonomy"]}
+}
+```
+
+### Example 2: Bug fix
+
+```json
+{
+  "schemaVersion": "0.1.0",
+  "taskIntent": "Fix missing envelope error handling in post-envelope-comment",
+  "systemConstraints": ["TypeScript", "No new deps"],
+  "roles": ["cli", "tests"],
+  "artifacts": [
+    {"type": "source", "path": "src/trace/post-envelope-comment.ts", "role": "cli"},
+    {"type": "test", "path": "tests/unit/trace/post-envelope-comment.test.ts", "role": "tests"}
+  ],
+  "assumptions": ["Exit code is 1 on fatal error"],
+  "contracts": {
+    "preconditions": [{"id": "PRE-CLI-001", "statement": "Input file is valid JSON", "severity": "high"}],
+    "postconditions": ["CLI exits with code 1 when envelope is missing"],
+    "invariants": ["traceCorrelation fields remain schema-compliant"]
+  },
+  "openQuestions": ["Should stderr be asserted strictly?"],
+  "contextVacuum": {"status": "ok", "missing": []}
+}
+```
+
 ### Related files
 
 - schema: `schema/context-bundle.schema.json`
