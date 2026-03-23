@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
   - docs/agents/hook-feedback.md
   - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-16'
+lastVerified: '2026-03-23'
 ---
 
 # Claude Code Integration Guide - AE Framework Integration (Implemented + Roadmap)
@@ -121,6 +121,20 @@ export class HybridIntentSystem {
 }
 ```
 
+#### 📊 Call Priority
+
+```text
+if (isClaudeCode && hasTaskTool) -> Task Tool
+else if (userPreference === 'cli' || !isClaudeCode) -> CLI
+else -> MCP
+
+MCP execution failure -> CLI fallback
+```
+
+- The Task Tool path is the preferred operator experience in Claude Code.
+- CLI is selected directly outside Claude Code or when the operator explicitly prefers it.
+- MCP is the default Claude-side fallback when Task Tool is unavailable, and `handleMCPRequest()` falls back to CLI on execution errors.
+
 ### Task Tool Integration
 
 #### 🔧 Interface Definition
@@ -143,6 +157,23 @@ interface TaskResponse {
   shouldBlockProgress: boolean; // Progress blocking determination
 }
 ```
+
+#### 🎯 Task Adapter Architecture
+
+```text
+class AEFrameworkCLI {
+  public naturalLanguageHandler: TaskHandler;
+  public userStoriesHandler: TaskHandler;
+  public validationHandler: TaskHandler;
+  public domainModelingHandler: TaskHandler;
+  public uiHandler: TaskHandler;
+}
+```
+
+- `src/cli/index.ts` wires phase-specific task handlers into a single maintained CLI surface.
+- Claude Code integrations reuse those handlers instead of introducing a separate undocumented runtime.
+- Phase-specific adapters normalize request/response payloads, while quality and artifact validation are handled downstream by `verify-lite` and CI workflows.
+- Standard PR summary rendering consumes repository summary artifacts; CodeX task outputs are summarized separately by `pr-verify.yml` via `scripts/verify/render-codex-summary.mjs`.
 
 ### Phase-by-Phase Integration
 
@@ -176,7 +207,35 @@ interface TaskResponse {
 - **Primary Function**: React + Next.js 14 UI component generation
 - **Output**: 21 files including components, pages, tests, Storybook stories
 
-### Usage Examples
+### Actual Call Flow
+
+#### Example Request Path
+
+1. Claude Code submits a `TaskRequest` with description, prompt, and subagent/phase hint.
+2. The hybrid integration layer decides whether Task Tool, CLI, or MCP is the best current route.
+3. The relevant phase handler parses input and produces structured outputs plus optional task-specific artifacts under `artifacts/codex/*`.
+4. `verify-lite` and the standard PR summary pipeline consume repository summary artifacts such as `artifacts/summary/combined.json` and formal/coverage/replay inputs.
+5. Ordinary CodeX task outputs are not part of the standard `verify-lite` PR summary path.
+6. When `pr-verify.yml` runs, `scripts/verify/render-codex-summary.mjs` can generate a separate CodeX-oriented summary.
+
+#### Phase 1 Example Result
+
+```text
+TaskRequest:
+- description: Analyze the intent for an inventory management system
+- prompt: Build a complete inventory management system
+- subagent_type: intent-analysis
+
+Representative TaskResponse:
+- summary: Inventory-management requirements were identified and classified
+- analysis: Markdown report with requirement categories, constraints, and business context
+- nextActions:
+  - Structure requirements in Phase 2
+  - Generate user stories in Phase 3
+  - Validate cross-phase consistency in Phase 4
+```
+
+### Usage Examples & Best Practices
 
 #### Basic UI Generation
 ```
@@ -205,6 +264,11 @@ Phase 4: Validation complete - 94% traceability achieved
 Phase 5: Domain model created - 6 entities, 3 bounded contexts
 Phase 6: UI generated - React components with full test coverage
 ```
+
+#### Minimal CI References
+
+- Conformance (Phase 2.2) minimal workflow example: `docs/phases/PHASE-2-2-RUNTIME-CONFORMANCE.md`
+- Integration testing (Phase 2.3) minimal workflow example: `docs/phases/PHASE-2-3-INTEGRATION-TESTING.md`
 
 ### Performance & Optimization
 
@@ -247,12 +311,31 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 // After: add tests for API failure banners and form validation
 ```
 
+#### Before / After (additional short examples)
+```
+// a11y — Before: keyboard navigation is incomplete
+<a class="card">Details</a>
+
+// a11y — After: add href/role/tabindex/aria-label
+<a class="card" href="https://example.com/details" role="link" tabindex="0" aria-label="Open details">Details</a>
+
+// perf — Before: no connection warm-up
+<!-- none -->
+
+// perf — After: preconnect / preload critical assets
+<link rel="preconnect" href="https://cdn.example.com" crossorigin>
+<link rel="preload" as="image" href="https://cdn.example.com/hero.jpg" imagesrcset="https://cdn.example.com/hero@2x.jpg 2x" />
+
+// coverage — Before: error branches are not tested
+// After: add save/load error-state coverage for critical paths
+```
+
 #### Troubleshooting (English, checklist)
 - UI missing files
   - [ ] Phase State contains `entities` with required fields
   - [ ] Re-run scaffold: `ae-framework ui-scaffold --components`
 - Gates regressed (a11y/perf/coverage)
-  - [ ] Run `ae-framework quality run --env development --dry-run`
+  - [ ] Run `ae-framework quality run --env development`
   - [ ] Apply quick fixes (focus ring, next/image, add tests)
 - No formal artifacts in PR
   - [ ] Ensure formal job ran; see `docs/verify/FORMAL-CHECKS.md`
@@ -262,24 +345,6 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 - Aggregation failed on adapter JSON
   - [ ] Validate: `npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d artifacts/*/summary.json --strict=false`
   - [ ] Keep output short: `status` + short `summary`
-
-#### Before / After (Japanese, short)
-```
-// a11y — Before: フォーカスリングが見えない
-button:focus { outline: none; }
-
-// a11y — After: 可視フォーカスリング
-button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
-
-// perf — Before: 生の <img> に大画像
-<img src="/hero.jpg" width="1600" height="900" />
-
-// perf — After: next/image を利用し遅延+縮小
-<Image src="/hero.jpg" width={800} height={450} loading="lazy" />
-
-// coverage — Before: エラーバナーのテスト欠落
-// After: API失敗時のバナーテストとフォームバリデーションを追加
-```
 
 #### Phase State (minimal JSON example)
 ```json
@@ -305,6 +370,15 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 - Formal summary (legacy compatibility): `docs/schemas/formal-summary.schema.json`
 - Formal summary v1/v2: `schema/formal-summary-v1.schema.json`, `schema/formal-summary-v2.schema.json`
 - Properties summary: `docs/schemas/artifacts-properties-summary.schema.json`
+
+#### Operational Rerun Flow
+
+1. Re-check Phase State (`entities`, required fields, validation assumptions).
+2. Re-run scaffold with `ae-framework ui-scaffold --components`.
+3. Re-run local quality checks with `ae-framework quality run --env development`.
+4. Fix only the regressed lane (a11y / perf / coverage / artifact validation).
+5. Validate artifacts with `ajv` / `jq`, then review the PR summary output.
+6. Use `--dry-run` only to inspect which commands would execute; it does not reproduce failing gate scores.
 
 ### Best Practices
 
@@ -392,8 +466,8 @@ Claude Code: UI Task Adapter を実行...
 # UI スキャフォールド（再生成）
 ae-framework ui-scaffold --components
 
-# 品質ゲート（開発プロファイルでドライラン）
-ae-framework quality run --env development --dry-run
+# 品質ゲート（開発プロファイルで再実行）
+ae-framework quality run --env development
 
 # 個別テスト
 pnpm run test:a11y
@@ -574,9 +648,10 @@ it('shows error banner on API failure', async () => {
 #### 再実行フロー（例）
 1) Phase State の見直し（`entities`/必須属性/バリデーション）
 2) UI 再生成: `ae-framework ui-scaffold --components`
-3) 品質ゲート（開発プロファイル）: `ae-framework quality run --env development --dry-run`
+3) 品質ゲート（開発プロファイル）: `ae-framework quality run --env development`
 4) 個別ゲートの補強（a11y/perf/coverage の不足箇所をピンポイント修正）
 5) 成果物の検証（ajv/jq）→ PR サマリを確認
+6) `--dry-run` は実行コマンド確認用であり、失敗ゲートの再現には使わない
 
 ---
 
@@ -672,11 +747,11 @@ export class HybridIntentSystem {
 ### 📊 呼び出し優先度
 
 ```
-1. Claude Code Task Tool (最優先)
-   ↓ フォールバック
-2. CLI Commands (開発者直接実行)
-   ↓ フォールバック  
-3. MCP Server (バックアップ統合)
+if (isClaudeCode && hasTaskTool) -> Task Tool
+else if (userPreference === 'cli' || !isClaudeCode) -> CLI
+else -> MCP
+
+MCP 実行失敗 -> CLI にフォールバック
 ```
 
 ---
