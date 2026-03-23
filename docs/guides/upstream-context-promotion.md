@@ -5,7 +5,7 @@ canonicalSource:
 - docs/spec/discovery-pack.md
 - docs/quality/assurance-profile.md
 - docs/quality/issue-requirements-traceability.md
-lastVerified: '2026-03-18'
+lastVerified: '2026-03-23'
 ---
 # Upstream Context Promotion Guide
 
@@ -314,6 +314,10 @@ pnpm exec ae discovery compile   --target plan-spec   --sources "fixtures/discov
 pnpm exec ae discovery compile   --target context-pack-scaffold   --sources "fixtures/discovery-pack/upstream-context-promotion-minimal.yaml"
 ```
 
+The two compile targets serve different operator paths:
+- `plan-spec`: emits the normalized approved-input snapshot that downstream plan/spec review can consume
+- `context-pack-scaffold`: emits the scaffold used to seed Context Pack authoring while keeping upstream IDs traceable
+
 #### 6.3 Context Pack validate
 ```bash
 node scripts/context-pack/validate.mjs   --sources "fixtures/context-pack/upstream-context-promotion-minimal.yaml"   --schema schema/context-pack-v1.schema.json   --discovery-pack "fixtures/discovery-pack/upstream-context-promotion-minimal.yaml"
@@ -339,15 +343,42 @@ Primary reports:
 node scripts/context-pack/verify-natural-transformation.mjs   --map fixtures/context-pack/upstream-context-promotion-minimal-natural-transformation.json   --schema schema/context-pack-natural-transformation.schema.json   --context-pack-sources "fixtures/context-pack/upstream-context-promotion-minimal.yaml"
 ```
 
+Watch these representative failure classes:
+- `commutativity-check-missing`: the selected change type omits a mandatory regression / compatibility / differential check
+- `commutativity-evidence-missing`: evidence paths do not resolve to repository files
+- `forbidden-change-mismatch`: the transformation no longer matches the Context Pack `forbidden_changes`
+
+Primary reports:
+- `artifacts/context-pack/context-pack-natural-transformation-report.json`
+- `artifacts/context-pack/context-pack-natural-transformation-report.md`
+
 #### 6.5 Product / Coproduct verify
 ```bash
 node scripts/context-pack/verify-product-coproduct.mjs   --map fixtures/context-pack/upstream-context-promotion-minimal-product-coproduct.json   --schema schema/context-pack-product-coproduct.schema.json   --context-pack-sources "fixtures/context-pack/upstream-context-promotion-minimal.yaml"
 ```
 
+Watch these representative failure classes:
+- `product-required-input-missing`: required input coverage is incomplete for the promoted morphism
+- `ambiguous-dto-key`: the map still relies on generic DTO keys such as `payload` or `body`
+- `coproduct-variant-missing`: an expected failure variant has no mapped evidence path
+
+Primary reports:
+- `artifacts/context-pack/context-pack-product-coproduct-report.json`
+- `artifacts/context-pack/context-pack-product-coproduct-report.md`
+
 #### 6.6 Boundary map verify
 ```bash
 node scripts/context-pack/verify-boundary-map.mjs   --map fixtures/context-pack/upstream-context-promotion-minimal-boundary-map.json   --schema schema/context-pack-boundary-map.schema.json   --context-pack-sources "fixtures/context-pack/upstream-context-promotion-minimal.yaml"
 ```
+
+Watch these representative failure classes:
+- `boundary-ref-missing`: the map references an object / morphism / decision that the Context Pack does not define
+- `boundary-upstream-producer-missing`: a consuming slice points to an upstream slice that does not actually produce the referenced item
+- `boundary-slice-cycle`: the produce/consume graph introduces a cycle between slices
+
+Primary reports:
+- `artifacts/context-pack/context-pack-boundary-map-report.json`
+- `artifacts/context-pack/context-pack-boundary-map-report.md`
 
 #### 6.7 Assurance aggregate
 The smallest aggregate can be produced with:
@@ -370,6 +401,8 @@ ae traceability matrix   --map docs/specs/upstream-context-promotion-issue-trace
 
 ae validate --traceability --strict   --sources docs/specs/upstream-context-promotion-issue-traceability-matrix.json
 ```
+
+Use this sequence when you need to prove that promotion constraints remain traceable from the originating issue through Discovery Pack, Context Pack, tests, and code.
 
 ### 7. Current implementation notes
 - `Context Pack validate` checks upstream ref existence and aggregates unmapped approved requirements / business use cases as warnings
