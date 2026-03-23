@@ -214,10 +214,10 @@ ae-framework ui-scaffold --components
 # (Optional) Conformance run (2.2)
 ae-framework conformance verify --input data.json --rules rules.json --output artifacts/conformance/conformance-results.json
 
-# (Optional) Integration (2.3)
-ae-framework integration discover --patterns "./e2e/**/*.json" --type tests \
+# (Optional) Integration (2.3) - inventory first, then run concrete files
+ae-framework integration discover --patterns ./e2e/login.json,./e2e/dashboard.json --type tests \
   --output artifacts/integration/discovered.json
-ae-framework integration run --tests artifacts/integration/discovered.json --environment default --output-dir artifacts/integration
+ae-framework integration run --tests ./e2e/login.json,./e2e/dashboard.json --environment default --output-dir artifacts/integration
 ```
 
 トラブルシューティング（簡易）
