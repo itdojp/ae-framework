@@ -47,7 +47,7 @@ Standardize agent and CI execution logs as JSON Lines (JSONL) so every stage can
 
 ### Example JSONL
 
-```json
+```text
 {"timestamp":"2026-01-07T12:00:00.000Z","level":"info","event":"node.started","message":"intent2formal start","runId":"run-20260107-001","traceId":"inv-001","stage":"intent2formal","nodeId":"n1","commit":"HEAD","branch":"main"}
 {"timestamp":"2026-01-07T12:00:03.000Z","level":"info","event":"artifact.written","message":"formal spec generated","runId":"run-20260107-001","traceId":"inv-001","stage":"intent2formal","artifactPaths":["artifacts/spec/formal.json"]}
 {"timestamp":"2026-01-07T12:00:05.000Z","level":"error","event":"node.failed","message":"tests2code failed","runId":"run-20260107-001","traceId":"inv-001","stage":"tests2code","context":{"reason":"compile error"}}
@@ -108,7 +108,7 @@ Agent/CI の実行ログを **JSONL** で統一し、`runId` と `traceId` で�
 
 ### JSONL 例
 
-```json
+```text
 {"timestamp":"2026-01-07T12:00:00.000Z","level":"info","event":"node.started","message":"intent2formal start","runId":"run-20260107-001","traceId":"inv-001","stage":"intent2formal","nodeId":"n1","commit":"HEAD","branch":"main"}
 {"timestamp":"2026-01-07T12:00:03.000Z","level":"info","event":"artifact.written","message":"formal spec generated","runId":"run-20260107-001","traceId":"inv-001","stage":"intent2formal","artifactPaths":["artifacts/spec/formal.json"]}
 {"timestamp":"2026-01-07T12:00:05.000Z","level":"error","event":"node.failed","message":"tests2code failed","runId":"run-20260107-001","traceId":"inv-001","stage":"tests2code","context":{"reason":"compile error"}}
