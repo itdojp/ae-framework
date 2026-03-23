@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-22'
+lastVerified: '2026-03-23'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -25,78 +25,121 @@ Primary sources:
 - Issue-side controls: slash commands on issue comments
 
 ### 3. Representative PR labels
-The current repository uses labels to opt in additional checks or stricter enforcement, for example:
-- `run-qa`
-- `run-security`
-- `run-cedar`
-- `run-resilience`
-- `run-spec`
-- `run-trace` (label only; no PR slash command in the current repository)
-- `run-drift`
-- `run-hermetic`
-- `run-formal`
-- `enforce-assurance`
-- `enforce-bdd-lint`
-- `enforce-verify-lite-lint`
-- `enforce-context-pack`
-- `enforce-discovery`
-- `ci-non-blocking`
-- `enforce-coverage`
-- `coverage:<pct>`
-- `pr-summary:digest`
-- `pr-summary:detailed`
-- `autopilot:on`
+
+| Label | Effect | Main workflow / job | Notes |
+| --- | --- | --- | --- |
+| `run-qa` | run QA-equivalent steps | `ae-ci.yml` | attached by `/run-qa` |
+| `run-security` | run security / SBOM flows | `security.yml`, `sbom-generation.yml`, `cedar-quality-gates.yml` | fork PRs remain restricted |
+| `run-cedar` | run Cedar quality gates in report-first mode | `cedar-quality-gates.yml` | attached by `/run-cedar` |
+| `run-formal` | enable formal verification | `verify-lite.yml` step `Run formal` | label-gated inside verify-lite |
+| `run-resilience` | run resilience quick checks | `verify-lite.yml` step `Resilience quick` | attached by `/run-resilience` |
+| `run-hermetic` | run hermetic CI | `ci.yml`, `hermetic-ci.yml` | attached by `/run-hermetic` |
+| `run-spec` | run fail-fast spec validation | `spec-validation.yml` | attached by `/run-spec` |
+| `run-trace` | re-evaluate KvOnce trace validation as required-gate evidence | `spec-generate-model.yml` (`trace-conformance`, `KvOnce Trace Validation`) | label only in the current repository |
+| `run-drift` | run codegen drift detection | `codegen-drift-check.yml` | attached by `/run-drift` |
+| `enforce-assurance` | make assurance summary blocking | `verify-lite.yml` strict assurance step | recommended only for high-risk PRs |
+| `enforce-bdd-lint` | make BDD lint blocking | `verify-lite.yml` | attached by `/enforce-bdd-lint` |
+| `enforce-verify-lite-lint` | enforce verify-lite lint baseline | `verify-lite.yml` | PR label only |
+| `enforce-context-pack` | make Context Pack E2E blocking | `context-pack-quality-gate.yml` | used during staged rollout |
+| `enforce-discovery` | make Discovery Pack validate/compile blocking | `verify-lite.yml` Discovery rollout | report-only by default |
+| `ci-non-blocking` | mark selected jobs non-blocking | workflow `continue-on-error` branches | attached by `/non-blocking` |
+| `enforce-coverage` | require coverage gate | `coverage-check.yml` | attached by `/enforce-coverage` |
+| `coverage:<pct>` | override coverage threshold | `coverage-check.yml` | for example `/coverage 75` |
+| `pr-summary:digest` | switch PR summary to concise mode | `pr-ci-status-comment.yml` | attached by `/pr-digest` |
+| `pr-summary:detailed` | switch PR summary to detailed mode | `pr-ci-status-comment.yml` | attached by `/pr-detailed` |
+| `autopilot:on` | opt in to Codex Autopilot Lane | `codex-autopilot-lane.yml` | touchless merge opt-in |
 
 Operational note:
-- PR automation itself is usually enabled through Repository Variables rather than labels
+- PR automation itself is usually enabled through Repository Variables rather than labels.
 
 ### 4. Repository Variables used with opt-in automation
-Current automation knobs include:
-- `AE_AUTOMATION_PROFILE`
-- `AE_REVIEW_TOPOLOGY`
-- `AE_POLICY_MIN_HUMAN_APPROVALS`
-- `AE_POLICY_ENGINE_MODE`
-- `AE_COPILOT_AUTO_FIX`
-- `AE_COPILOT_AUTO_FIX_SCOPE`
-- `AE_COPILOT_AUTO_FIX_LABEL`
-- `AE_AUTO_MERGE`
-- `AE_AUTO_MERGE_MODE`
-- `AE_AUTO_MERGE_LABEL`
-- `AE_AUTO_MERGE_REQUIRE_RISK_LOW`
-- `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE`
-- `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN`
 
-Supplement:
-- explicit variables override `AE_AUTOMATION_PROFILE`
-- GitHub API throttling knobs such as `AE_GH_THROTTLE_MS` and `AE_GH_RETRY_*` are also available when rate-limit tuning is required
+#### 4.1 Core automation variables
+
+| Variable | Role | Default | Reference |
+| --- | --- | --- | --- |
+| `AE_AUTOMATION_PROFILE` | bundled PR automation profile (`conservative` / `balanced` / `aggressive`) | unset (disabled) | `docs/ci/automation-profiles.md` |
+| `AE_REVIEW_TOPOLOGY` | approval topology (`team` / `solo`) | `team` | `docs/ci/pr-automation.md` |
+| `AE_POLICY_MIN_HUMAN_APPROVALS` | explicit human-approval override for policy-gate | unset | `docs/ci/pr-automation.md` |
+| `AE_POLICY_ENGINE_MODE` | policy shadow compare mode (`shadow` / `shadow_strict`) | `shadow` | `docs/ci/pr-automation.md` |
+| `AE_COPILOT_AUTO_FIX` | enable Copilot suggestion auto-apply | unset (off) | `docs/ci/copilot-auto-fix.md` |
+| `AE_COPILOT_AUTO_FIX_SCOPE` | auto-fix scope (`docs` / `all`) | `docs` | `docs/ci/copilot-auto-fix.md` |
+| `AE_COPILOT_AUTO_FIX_LABEL` | optional label gate for auto-fix | unset | `docs/ci/copilot-auto-fix.md` |
+| `AE_AUTO_MERGE` | enable automatic merge activation | unset (off) | `docs/ci/auto-merge.md` |
+| `AE_AUTO_MERGE_MODE` | auto-merge mode (`all` / `label`) | `all` | `docs/ci/auto-merge.md` |
+| `AE_AUTO_MERGE_LABEL` | opt-in label in `label` mode | unset | `docs/ci/auto-merge.md` |
+| `AE_AUTO_MERGE_REQUIRE_RISK_LOW` | require `risk:low` for auto-merge (`1` / `0`) | `1` | `docs/ci/auto-merge.md` |
+| `AE_AUTO_MERGE_REQUIRE_CHANGE_PACKAGE` | require Change Package Validation summary (`1` / `0`) | `1` | `docs/ci/auto-merge.md` |
+| `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN` | allow `WARN` from Change Package Validation (`1` / `0`) | `1` | `docs/ci/auto-merge.md` |
+
+Notes:
+- Explicit variables override `AE_AUTOMATION_PROFILE`.
+- These settings are repository-level rollout controls, not per-PR labels.
+
+#### 4.2 GitHub API throttling variables
+Use these only when GitHub API rate limiting or secondary throttling becomes operationally relevant.
+
+| Variable | Role | Default |
+| --- | --- | --- |
+| `AE_GH_THROTTLE_MS` | minimum interval between `gh` calls | `250` (`0` disables) |
+| `AE_GH_RETRY_MAX_ATTEMPTS` | max attempt count including the first call | `8` |
+| `AE_GH_RETRY_INITIAL_DELAY_MS` | initial retry delay | `750` |
+| `AE_GH_RETRY_MAX_DELAY_MS` | maximum retry delay | `60000` |
+| `AE_GH_RETRY_MULTIPLIER` | exponential retry multiplier | `2` |
+| `AE_GH_RETRY_JITTER_MS` | retry jitter cap | `250` |
+| `AE_GH_RETRY_DEBUG` | enable retry debug logging | unset |
+
+#### 4.3 Self-heal and autopilot variables
+Representative variables for follow-on automation:
+
+| Variable | Role | Default | Reference |
+| --- | --- | --- | --- |
+| `AE_SELF_HEAL_ENABLED` | enable PR self-heal workflow | unset (off) | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_MAX_ROUNDS` | max recovery rounds per PR | `3` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_MAX_AGE_MINUTES` | max age of failed checks eligible for rerun | `180` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_MAX_PRS` | max PRs per scheduled run | `20` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_ROUND_WAIT_SECONDS` | wait between self-heal rounds | `60` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_WAIT_STRATEGY` | wait strategy (`fixed` / `exponential`) | `fixed` | `docs/ci/pr-automation.md` |
+| `AE_SELF_HEAL_ROUND_WAIT_MAX_SECONDS` | max exponential wait | `AE_SELF_HEAL_ROUND_WAIT_SECONDS` | `docs/ci/pr-automation.md` |
+| `AE_CODEX_AUTOPILOT_ENABLED` | enable Codex Autopilot Lane | unset (off) | `docs/ci/codex-autopilot-lane.md` |
+| `AE_AUTOPILOT_MAX_ROUNDS` | max autonomous rounds per PR | `3` | `docs/ci/codex-autopilot-lane.md` |
+| `AE_AUTOPILOT_ROUND_WAIT_SECONDS` | wait between autopilot rounds | `8` | `docs/ci/codex-autopilot-lane.md` |
+| `AE_AUTOPILOT_WAIT_STRATEGY` | wait strategy (`fixed` / `exponential`) | `fixed` | `docs/ci/codex-autopilot-lane.md` |
+| `AE_AUTOPILOT_ROUND_WAIT_MAX_SECONDS` | max exponential wait | `AE_AUTOPILOT_ROUND_WAIT_SECONDS` | `docs/ci/codex-autopilot-lane.md` |
+| `AE_AUTOPILOT_DRY_RUN` | dry-run mode without side effects | `false` | `docs/ci/codex-autopilot-lane.md` |
 
 ### 5. PR slash commands
 Entry point: `.github/workflows/agent-commands.yml`
 
-Representative commands:
-- trace revalidation remains label-only through the `run-trace` label in the current repository
+Operational note:
+- Most PR commands are label-attachment commands and do not require trusted association.
+- `/review` is the main exception and is restricted to trusted actors (`MEMBER` / `OWNER` / `COLLABORATOR`).
+- Trace revalidation remains label-only through `run-trace` in the current repository.
 
+#### 5.1 Main commands
 - `/verify-lite`
+  - runs `verify-lite.yml` through `workflow_dispatch`
 - `/review [strict]`
-- `/run-qa`
-- `/run-security`
-- `/run-cedar`
-- `/run-resilience`
-- `/run-spec`
-- `/run-drift`
-- `/run-hermetic`
-- `/run-formal`
-- `/non-blocking`
-- `/blocking`
+  - dispatches verify-lite plus fast CI
+  - `strict` adds coverage-oriented checks and `enforce-coverage`
+- `/run-qa` / `/run-security` / `/run-cedar` / `/run-resilience` / `/run-spec` / `/run-drift` / `/run-hermetic` / `/run-formal`
+  - attach the corresponding label and let workflow label conditions decide execution
+- `/non-blocking` / `/blocking`
+  - add or remove `ci-non-blocking`
 - `/coverage <pct|clear>`
+  - add or clear `coverage:<pct>`
 - `/enforce-coverage`
+  - force the coverage gate
 - `/enforce-context-pack`
-- `/pr-digest`
-- `/pr-detailed`
-- `/formal-help`
-- `/formal-quickstart`
+  - add `enforce-context-pack` to make Context Pack E2E blocking
+- `/pr-digest` / `/pr-detailed`
+  - switch PR summary output mode
+- `/formal-help` / `/formal-quickstart`
+  - post formal execution guidance into the PR
 
-Dispatch-oriented commands also exist for workflow_dispatch entry points, such as:
+#### 5.2 Dispatch-oriented commands
+These call workflow-dispatch entry points directly when the repository wants the manual-dispatch path.
+
 - `/run-qa-dispatch`
 - `/run-security-dispatch`
 - `/ci-fast-dispatch`
@@ -108,17 +151,26 @@ Dispatch-oriented commands also exist for workflow_dispatch entry points, such a
 - `/formal-aggregate-dispatch`
 
 ### 6. Issue slash commands
-Entry points:
+Dual entrypoints exist:
 - `.github/workflows/agent-commands.yml`
+  - always enabled
+  - no `author_association` restriction
 - `.github/workflows/slash-commands.yml`
+  - enabled only when `AE_SLASH_COMMANDS_ISSUE=1`
+  - restricted to `MEMBER` / `OWNER` / `COLLABORATOR`
 
 Representative commands:
-- `/start`
-- `/plan`
-- `/ready-for-review`
-- `/block [reason]`
-- `/unblock`
-- `/handoff <role:...>` (available only when `AE_SLASH_COMMANDS_ISSUE=1` enables `.github/workflows/slash-commands.yml`)
+- `/start` -> apply `status:in-progress` and assign the commenter
+- `/plan` -> post the plan template comment
+- `/ready-for-review` -> move to `status:review`
+- `/block [reason]` -> move to `status:blocked`
+- `/unblock` -> return to `status:in-progress`
+- `/handoff <role:...>`
+  - available only when `AE_SLASH_COMMANDS_ISSUE=1` enables `.github/workflows/slash-commands.yml`
+  - attaches `role:*` labels and can assign according to `AE_ROLE_ASSIGNMENTS`
+- `/handoff @user`
+  - remains available through `.github/workflows/agent-commands.yml`
+  - updates assignee and `status:review`
 
 ### 7. References
 - `docs/ci/branch-protection-operations.md`
@@ -126,6 +178,9 @@ Representative commands:
 - `docs/ci/copilot-auto-fix.md`
 - `docs/ci/auto-merge.md`
 - `docs/ci/pr-automation.md`
+- `.github/workflows/verify-lite.yml`
+- `.github/workflows/agent-commands.yml`
+- `.github/workflows/slash-commands.yml`
 
 ---
 
