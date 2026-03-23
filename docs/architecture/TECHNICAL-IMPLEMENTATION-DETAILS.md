@@ -81,6 +81,7 @@ The current architectural position is an assurance control plane. Code generatio
 - **Workflow layer**: `.github/workflows/*` executes required gates, optional lanes, and evidence aggregation.
 - **MCP layer**: `src/mcp-server/*` exposes task-specific server surfaces such as intent, formal verification, testing, and operations.
 - **Adapter layer**: `src/agents/adapters/*` bridges legacy or phase-specific agents into standardized AE interfaces where needed.
+- **Hybrid intent routing**: `src/integration/hybrid-intent-system.ts` uses `handleIntentRequest()` and `detectBestHandler()` to choose CLI, task, or MCP handling when the hybrid natural-language surface is used.
 
 ### 🤖 Claude Code Integration
 
@@ -101,35 +102,37 @@ interface TaskToolIntegration {
 
 **Key Features:**
 - Automatic phase detection and execution
-- Intelligent task routing
+- Context-aware task selection across CLI, task, and MCP entrypoints
 - Result validation and processing
 - State persistence across sessions
 
 #### Context Management
 
 ```text
-interface ContextManager {
-  buildContext(params: ContextParams): Promise<ExecutionContext>;
-  updateContext(context: ExecutionContext, update: ContextUpdate): Promise<void>;
-  preserveContext(context: ExecutionContext): Promise<string>;
+export interface ContextWindow {
+  steering: string;
+  phaseInfo: string;
+  workingMemory: string;
+  relevantFiles: string;
+  totalTokens: number;
 }
 
-class IntelligentContextManager implements ContextManager {
-  async buildContext(params: ContextParams): Promise<ExecutionContext> {
-    return {
-      relevantHistory: await this.extractRelevantHistory(params),
-      codebaseInsights: await this.analyzeCodebase(params.projectPath),
-      preferences: params.userPreferences,
-      qualityConstraints: await this.loadQualityConstraints(params.phase),
-      technicalConstraints: await this.analyzeTechnicalConstraints(params),
-    };
-  }
+export interface ContextOptions {
+  maxTokens?: number;
+  includeHistory?: boolean;
+  includeArtifacts?: boolean;
+  focusPhase?: PhaseType;
+  relevantKeywords?: string[];
+}
+
+export class ContextManager {
+  async buildContext(options?: ContextOptions): Promise<ContextWindow>;
 }
 ```
 
-- Context assembly pulls project history, codebase analysis, preferences, and quality constraints into one execution surface.
-- Preserved context IDs allow later phases and retries to reuse the same operational baseline.
-- The goal is deterministic downstream execution, not generic prompt expansion.
+- `ContextManager.buildContext()` assembles steering documents, phase state/history, working memory, and relevant files into a single `ContextWindow`.
+- The current implementation uses token budgets for each slice and defaults to an `8000` token context window.
+- The current API does **not** expose `updateContext()` or `preserveContext()`; retries rebuild context from phase state, artifacts, and steering inputs.
 
 ---
 
@@ -143,18 +146,21 @@ Comprehensive implementation of the 6-phase agent system:
 
 ```text
 abstract class BaseAgent {
-  protected config: AgentConfig;
-  protected stateManager: StateManager;
-  protected logger: Logger;
-  
-  abstract execute(input: PhaseInput): Promise<PhaseOutput>;
-  abstract validate(input: PhaseInput): Promise<ValidationResult>;
+  protected phaseStateManager: PhaseStateManager;
+  protected steeringLoader: SteeringLoader;
+  protected phaseName: PhaseType;
+
+  protected async initializePhase(): Promise<void>;
+  protected async canProceed(): Promise<{ canProceed: boolean; reason?: string }>;
+  protected async completePhase(artifacts: string[]): Promise<void>;
+  protected async getSteeringContext(): Promise<string>;
+  protected async validateOutput(output: AgentOutput): Promise<ValidationResult>;
 }
 ```
 
-- `BaseAgent` exists as a shared phase-state and steering helper for some agent surfaces.
+- `BaseAgent` exists as a shared helper for phase state, steering documents, and safe output validation.
 - The current repository does **not** use a single inheritance path for all agents; standalone agents and adapter-based surfaces coexist.
-- When tracing real execution, prefer concrete classes and adapters over assuming a universal `BaseAgent` lifecycle.
+- When tracing real execution, prefer concrete classes, adapters, and pipeline registration over assuming a universal `BaseAgent` lifecycle.
 
 #### Specialized Agents
 
@@ -205,24 +211,10 @@ export class IntentAgentAdapter implements StandardAEAgent<IntentInput, IntentOu
 ```
 
 - `IntentAgent` is a concrete standalone analysis surface with helper constructors and `analyzeIntent()`.
+- `IntentAgent` performs deterministic requirement extraction and intent analysis; it does not call an LLM provider directly.
 - `IntentAgentAdapter` wraps that surface into the standardized AE contract used by orchestrated phase execution.
 - This split is representative of the current repository pattern: direct agent implementations plus adapters, rather than a single shared `processWithAI()` inheritance tree.
-
-#### Multi-Agent Coordination
-
-```text
-interface AgentOrchestrator {
-  coordinatePhaseExecution(
-    phase: PhaseType,
-    input: PhaseInput,
-    context: ExecutionContext
-  ): Promise<PhaseOutput>;
-}
-```
-
-- Orchestration responsibilities include pre/post execution quality checks, state persistence, retries, and result handoff.
-- Coordination is a separate concern from any single agent implementation and is not evidence that all agents share the same runtime API.
-```
+- Provider-backed execution is surfaced elsewhere through adapters, pipeline registration, and provider modules.
 
 - Phase-specific agents differ by prompt construction, post-processing, and contract validation.
 - The implementation pattern is stable even when the underlying model or provider changes.
@@ -250,34 +242,23 @@ interface AgentMessage {
 
 ### 🔄 Agent Coordination
 
-#### Multi-Agent Orchestration
+#### AE Framework Pipeline
 
 ```text
-interface AgentOrchestrator {
-  coordinatePhaseExecution(
+export class AEFrameworkPipeline {
+  registerAgent(phase: PhaseType, agent: StandardAEAgent): void;
+  executePipeline(input: IntentInput): Promise<PipelineResult>;
+  executePhase<TInput, TOutput>(
     phase: PhaseType,
-    input: PhaseInput,
-    context: ExecutionContext
-  ): Promise<PhaseOutput>;
-}
-
-export class IntelligentOrchestrator implements AgentOrchestrator {
-  async coordinatePhaseExecution(
-    phase: PhaseType,
-    input: PhaseInput,
-    context: ExecutionContext
-  ): Promise<PhaseOutput> {
-    await this.qualityGates.preExecutionCheck(phase, input);
-    const result = await this.executeWithRetry(agent, input, context);
-    await this.qualityGates.postExecutionCheck(phase, result);
-    await this.stateManager.persistPhaseResult(phase, result);
-    return result;
-  }
+    input: TInput,
+    context?: ProcessingContext
+  ): Promise<PhaseResult<TOutput>>;
 }
 ```
 
-- Orchestration is responsible for retry policy, pre/post execution quality checks, and state persistence.
-- Coordination logic is a delivery concern, separate from the business meaning of any single phase.
+- `AEFrameworkPipeline` is the concrete orchestration surface for the six-phase workflow.
+- `PipelineConfig` controls input validation, retry policy, and timeout behavior.
+- Pipeline metadata and data-flow trace provide the execution evidence used for debugging and downstream review.
 
 ---
 
