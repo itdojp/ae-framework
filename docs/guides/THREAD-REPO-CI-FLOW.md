@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/ci/pr-automation.md
 - docs/project/GOVERNANCE.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-23'
 ---
 # Thread -> Repo -> CI Flow Guide (Plan -> Spec Normalization)
 
@@ -11,9 +11,69 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (Summary)
+## English
 
-This guide standardizes how conversation plans are normalized into repository SSOT, then validated in CI with traceable evidence.
+This guide standardizes how conversation plans are normalized into repository SSOT, then validated in CI with traceable evidence. Treat the conversation thread as planning input, not as implementation SSOT. The repository specification and the recorded CI evidence remain the authoritative artifacts.
+
+### 1. Purpose
+Use this workflow when a plan originates in a thread or issue and must be converted into a repository artifact before implementation and review. The goal is to keep the plan, repository specification, CI judgement, and PR evidence aligned.
+
+### 2. Inputs, outputs, and update timing
+
+| Phase | Inputs | Outputs | Update timing |
+| --- | --- | --- | --- |
+| Thread triage | Conversation plan, issue, constraints, risks | Plan summary or operator memo | At the start of the work |
+| Repository normalization | Plan summary | Draft spec filled from `docs/templates/plan-to-spec-normalization-template.md` | Before the PR is opened |
+| CI validation | Draft spec, gate definitions | Gate status and evidence (`summary`, logs, reports) | On each PR update |
+| Evidence fixation | CI results, reproduction commands | PR description/comments with traceability links | Before review and before merge |
+
+### 3. Standard procedure
+
+#### Step 0: Organize the plan in the thread
+- Extract requirements, scope, acceptance criteria, non-functional constraints, and explicit exclusions.
+- Treat the result as a working memo only. It is not SSOT.
+
+#### Step 1: Normalize into the repository
+- Copy `docs/templates/plan-to-spec-normalization-template.md` into the working spec or runbook.
+- Fill, at minimum:
+  - Goal / Scope
+  - Acceptance criteria (`Given/When/Then`)
+  - Non-functional requirements
+  - Verification plan (required and optional gates)
+  - Traceability map
+
+#### Step 2: Let CI judge the normalized artifact
+- Run the current main required gates: `verify-lite`, `policy-gate`, and `gate`.
+- Opt in to formal, security, adapters, or QA lanes when the change warrants them.
+
+#### Step 3: Fix evidence in the PR
+- Record the CI run URL, the result summary, and the reproduction commands in the PR.
+- Make the mapping from plan item -> spec artifact -> gate -> evidence explicit and reviewable.
+
+### 4. Example traceability entry for a PR
+
+| Source plan/thread | Spec path | Gate | Evidence |
+| --- | --- | --- | --- |
+| Issue or thread URL | `docs/templates/plan-to-spec-normalization-sample.md` | `verify-lite` | CI URL + `artifacts/verify-lite/verify-lite-run-summary.json` |
+
+### 5. Rerun procedure when validation fails
+1. Identify the failed required gate (`gate`, `policy-gate`, or `verify-lite`).
+2. Inspect the related spec, acceptance criteria, and NFR deltas.
+3. If needed, re-extract the requirement from the original thread and update the normalized template.
+4. Reproduce locally where feasible, then push the correction.
+5. After the CI rerun, update the PR evidence section.
+
+### 6. Minimum review checklist
+- Is the plan fixed into a repository artifact rather than left only in the thread?
+- Is the mapping between acceptance criteria/NFRs and the implementation change explicit?
+- Are the required gates green or accompanied by a defensible reproduction path?
+- Are out-of-scope items stated explicitly?
+
+### 7. Related documents
+- `docs/templates/plan-to-spec-normalization-template.md`
+- `docs/templates/plan-to-spec-normalization-sample.md`
+- `docs/strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md`
+- `docs/quality/ARTIFACTS-CONTRACT.md`
 
 ---
 
