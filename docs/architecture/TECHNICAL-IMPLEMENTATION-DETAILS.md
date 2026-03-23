@@ -41,18 +41,22 @@ lastVerified: '2026-03-23'
 
 Technical implementation details of ae-framework's core integration system:
 
+The current architectural position is an assurance control plane. Code generation and UI delivery remain important producer surfaces, but the repository's central role is to normalize artifacts, verification outputs, policy decisions, and review evidence into contract-backed operational control.
+
+**2025 implementation status**
+- Phase 6 UI/UX generation: complete
+- comprehensive quality system: golden/approval testing, metamorphic testing, CLI robustness, and fuzzing are implemented
+- integrated security audit: core modules are wired into the current repository baseline
+- CEGIS auto-fix: failure artifact analysis and automated repair flow are implemented
+- runtime conformance: Zod + OpenTelemetry based runtime contract validation is available
+- fast CI/CD: fast CI, quality gates, and nightly matrix lanes are separated
+- flake management: detection, isolation, and recovery automation are implemented
+
 #### Architecture Overview
 
-```text
-interface HybridIntegrationSystem {
-  intentAnalyzer: IntentAnalysisEngine;
-  naturalLanguageProcessor: NLPEngine;
-  userStoryGenerator: StoryGenerationEngine;
-  validationEngine: ValidationEngine;
-  domainModeler: DomainModelingEngine;
-  uiGenerator: UIGenerationEngine;
-}
-```
+- producer surfaces include coding agents, verification tools, tests, and UI generation flows
+- the control plane is responsible for artifact normalization, quality summaries, policy gates, and review/release evidence
+- operational entrypoints are primarily the CLI layer, GitHub workflows, and MCP servers rather than a single in-process router object
 
 #### Core Implementation Patterns
 
@@ -71,9 +75,19 @@ interface HybridIntegrationSystem {
 - Runtime type validation with Zod
 - Contract-first API design
 
+#### Current Execution Interfaces
+
+- **CLI layer**: `src/cli/*` and `package.json` `bin` / scripts provide maintained operator entrypoints.
+- **Workflow layer**: `.github/workflows/*` executes required gates, optional lanes, and evidence aggregation.
+- **MCP layer**: `src/mcp-server/*` exposes task-specific server surfaces such as intent, formal verification, testing, and operations.
+- **Adapter layer**: `src/agents/adapters/*` bridges legacy or phase-specific agents into standardized AE interfaces where needed.
+- **Hybrid intent routing**: `src/integration/hybrid-intent-system.ts` uses `handleIntentRequest()` and `detectBestHandler()` to choose CLI, task, or MCP handling when the hybrid natural-language surface is used.
+
 ### 🤖 Claude Code Integration
 
 Technical integration with Claude Code for enhanced development workflow:
+
+Current integration is intended to keep operator-driven CLI entrypoints, repository contracts, and AI-assisted execution aligned under the same assurance control-plane model. UI delivery is one downstream producer, not the sole architectural center.
 
 #### Task Tool Architecture
 
@@ -88,9 +102,37 @@ interface TaskToolIntegration {
 
 **Key Features:**
 - Automatic phase detection and execution
-- Intelligent task routing
+- Context-aware task selection across CLI, task, and MCP entrypoints
 - Result validation and processing
 - State persistence across sessions
+
+#### Context Management
+
+```text
+export interface ContextWindow {
+  steering: string;
+  phaseInfo: string;
+  workingMemory: string;
+  relevantFiles: string;
+  totalTokens: number;
+}
+
+export interface ContextOptions {
+  maxTokens?: number;
+  includeHistory?: boolean;
+  includeArtifacts?: boolean;
+  focusPhase?: PhaseType;
+  relevantKeywords?: string[];
+}
+
+export class ContextManager {
+  async buildContext(options?: ContextOptions): Promise<ContextWindow>;
+}
+```
+
+- `ContextManager.buildContext()` assembles steering documents, phase state/history, working memory, and relevant files into a single `ContextWindow`.
+- The current implementation uses token budgets for each slice and defaults to an `8000` token context window.
+- The current API does **not** expose `updateContext()` or `preserveContext()`; retries rebuild context from phase state, artifacts, and steering inputs.
 
 ---
 
@@ -100,18 +142,25 @@ interface TaskToolIntegration {
 
 Comprehensive implementation of the 6-phase agent system:
 
-#### Agent Hierarchy
+#### Agent Surface Types
 
 ```text
 abstract class BaseAgent {
-  protected config: AgentConfig;
-  protected stateManager: StateManager;
-  protected logger: Logger;
-  
-  abstract execute(input: PhaseInput): Promise<PhaseOutput>;
-  abstract validate(input: PhaseInput): Promise<ValidationResult>;
+  protected phaseStateManager: PhaseStateManager;
+  protected steeringLoader: SteeringLoader;
+  protected phaseName: PhaseType;
+
+  protected async initializePhase(): Promise<void>;
+  protected async canProceed(): Promise<{ canProceed: boolean; reason?: string }>;
+  protected async completePhase(artifacts: string[]): Promise<void>;
+  protected async getSteeringContext(): Promise<string>;
+  protected async validateOutput(output: AgentOutput): Promise<ValidationResult>;
 }
 ```
+
+- `BaseAgent` exists as a shared helper for phase state, steering documents, and safe output validation.
+- The current repository does **not** use a single inheritance path for all agents; standalone agents and adapter-based surfaces coexist.
+- When tracing real execution, prefer concrete classes, adapters, and pipeline registration over assuming a universal `BaseAgent` lifecycle.
 
 #### Specialized Agents
 
@@ -145,6 +194,31 @@ abstract class BaseAgent {
 - Design system integration
 - Accessibility compliance
 
+#### Specialized Agent Implementation
+
+```text
+export class IntentAgent {
+  static createSimpleRequest(content: string, options?: IntentOptions): IntentAnalysisRequest;
+  static createBenchmarkRequest(spec: BenchmarkSpec): IntentAnalysisRequest;
+  async analyzeIntent(request: IntentAnalysisRequest): Promise<IntentAnalysisResult>;
+}
+
+export class IntentAgentAdapter implements StandardAEAgent<IntentInput, IntentOutput> {
+  async process(input: IntentInput, context?: ProcessingContext): Promise<PhaseResult<IntentOutput>>;
+  validateInput(input: IntentInput): ValidationResult;
+  getCapabilities(): AgentCapabilities;
+}
+```
+
+- `IntentAgent` is a concrete standalone analysis surface with helper constructors and `analyzeIntent()`.
+- `IntentAgent` performs deterministic requirement extraction and intent analysis; it does not call an LLM provider directly.
+- `IntentAgentAdapter` wraps that surface into the standardized AE contract used by orchestrated phase execution.
+- This split is representative of the current repository pattern: direct agent implementations plus adapters, rather than a single shared `processWithAI()` inheritance tree.
+- Provider-backed execution is surfaced elsewhere through adapters, pipeline registration, and provider modules.
+
+- Phase-specific agents differ by prompt construction, post-processing, and contract validation.
+- The implementation pattern is stable even when the underlying model or provider changes.
+
 ### 🔄 Inter-Agent Communication
 
 Advanced communication patterns between agents:
@@ -165,6 +239,26 @@ interface AgentMessage {
 - Asynchronous event notifications
 - Broadcast updates
 - Pipeline processing
+
+### 🔄 Agent Coordination
+
+#### AE Framework Pipeline
+
+```text
+export class AEFrameworkPipeline {
+  registerAgent(phase: PhaseType, agent: StandardAEAgent): void;
+  executePipeline(input: IntentInput): Promise<PipelineResult>;
+  executePhase<TInput, TOutput>(
+    phase: PhaseType,
+    input: TInput,
+    context?: ProcessingContext
+  ): Promise<PhaseResult<TOutput>>;
+}
+```
+
+- `AEFrameworkPipeline` is the concrete orchestration surface for the six-phase workflow.
+- `PipelineConfig` controls input validation, retry policy, and timeout behavior.
+- Pipeline metadata and data-flow trace provide the execution evidence used for debugging and downstream review.
 
 ---
 
