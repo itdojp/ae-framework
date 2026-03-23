@@ -34,7 +34,7 @@ Primary sources:
 | `run-formal` | enable formal verification on the next `verify-lite` execution | `verify-lite.yml` step `Run formal` | label-gated inside verify-lite; use `/formal-verify-dispatch` for manual execution |
 | `run-resilience` | enable resilience quick checks on the next `verify-lite` execution | `verify-lite.yml` step `Resilience quick` | `/run-resilience` adds the label only |
 | `run-hermetic` | mark hermetic CI for the next eligible PR event | `ci.yml`, `hermetic-ci.yml` | `/run-hermetic` adds the label; use a dispatch path for immediate execution |
-| `run-spec` | mark fail-fast spec validation for the next eligible PR event | `spec-validation.yml` | `/run-spec` adds the label; `/spec-validation-dispatch` runs immediately |
+| `run-spec` | record intent for fail-fast spec validation | `spec-validation.yml` | `/run-spec` adds an informational label only; use `/spec-validation-dispatch` for actual execution |
 | `run-trace` | re-evaluate KvOnce trace validation as required-gate evidence | `spec-generate-model.yml` (`trace-conformance`, `KvOnce Trace Validation`) | label only in the current repository |
 | `run-drift` | run codegen drift detection | `codegen-drift-check.yml` | attached by `/run-drift` |
 | `enforce-assurance` | make assurance summary blocking | `verify-lite.yml` strict assurance step | recommended only for high-risk PRs |
@@ -162,9 +162,9 @@ Dual entrypoints exist:
 Representative commands:
 - `/start` -> apply `status:in-progress` and assign the commenter
 - `/plan` -> post the plan template comment
-- `/ready-for-review` -> move to `status:review`
-- `/block [reason]` -> move to `status:blocked`
-- `/unblock` -> return to `status:in-progress`
+- `/ready-for-review` -> apply `status:review`
+- `/block [reason]` -> apply `status:blocked`
+- `/unblock` -> apply `status:in-progress`
 - `/handoff <role:...>`
   - available only when `AE_SLASH_COMMANDS_ISSUE=1` enables `.github/workflows/slash-commands.yml`
   - attaches `role:*` labels and can assign according to `AE_ROLE_ASSIGNMENTS`
@@ -204,7 +204,7 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `run-formal` | 次回の `verify-lite` 実行で形式検証を有効化 | `verify-lite.yml` 内 `Run formal` | verify-lite の label-gated。手動実行は `/formal-verify-dispatch` |
 | `run-resilience` | 次回の `verify-lite` 実行で Resilience quick を有効化 | `verify-lite.yml` 内 `Resilience quick` | `/run-resilience` はラベル付与のみ |
 | `run-hermetic` | 次回の対象PRイベントで Hermetic CI を有効化 | `ci.yml`, `hermetic-ci.yml` | `/run-hermetic` はラベル付与のみ。即時実行は dispatch 系を使う |
-| `run-spec` | 次回の対象PRイベントで fail-fast spec validation を有効化 | `spec-validation.yml` | `/run-spec` はラベル付与のみ。即時実行は `/spec-validation-dispatch` |
+| `run-spec` | fail-fast spec validation の意図を記録 | `spec-validation.yml` | `/run-spec` は情報ラベルのみ。実行は `/spec-validation-dispatch` を使う |
 | `run-trace` | KvOnce trace validation を required gate 対象として再評価 | `spec-generate-model.yml`（checks: `trace-conformance`, `KvOnce Trace Validation`） | 高リスクPRで `policy-gate` が参照（fork PRは `trace-conformance` で判定） |
 | `run-drift` | codegen drift detection | `codegen-drift-check.yml` | `/run-drift` で付与 |
 | `enforce-assurance` | assurance summary を strict 判定 | `verify-lite.yml` 内 `Enforce assurance summary (strict; label-gated)` | high-risk PR のみ推奨。運用手順は `docs/quality/assurance-operations-runbook.md` |
