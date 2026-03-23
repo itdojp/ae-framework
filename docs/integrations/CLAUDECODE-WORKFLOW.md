@@ -337,6 +337,114 @@ A productive Claude Code session usually follows this order:
 5. Generate implementation artifacts after the model is accepted.
 6. Finish with verify-lite, formal/security opt-ins, and PR artifact upload.
 
+#### Phase 2-6 Practical Walkthrough (English)
+
+**Phase 2 - Formal Agent**
+- Goal: turn the requirement set into machine-checkable specification artifacts.
+- Typical Claude Code prompt:
+  - "Use the Formal Agent to derive a specification from the accepted requirements."
+- Current repository baseline:
+  - formal verification is opt-in, typically via `run-formal`
+  - local parity entrypoint is `pnpm run verify:formal`
+  - PR summaries may still need the legacy compatibility input `formal/summary.json`, while current formal evidence also includes `artifacts/hermetic-reports/formal/summary.json` and `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json`
+- Operator checkpoint:
+  - confirm the specification explains invariants, allowed transitions, and scope boundaries before moving to tests
+
+**Phase 3 - Test Agent**
+- Goal: derive executable tests and execution priorities from the accepted specification/model.
+- In practice this is often split into:
+  - dependency and scenario analysis
+  - test generation / selection
+  - integration and optimization tuning
+- Useful maintained commands around this phase:
+  - `ae-framework integration discover --patterns "./e2e/**/*.json" --type tests`
+  - `ae-framework integration run --tests artifacts/integration/discovered.json --environment default --output-dir artifacts/integration`
+  - `ae-benchmark run --ci --dry-run` for benchmark planning
+- Operator checkpoint:
+  - confirm that critical-path tests, API regressions, and environment assumptions are visible in artifacts before generating implementation
+
+**Phase 4 - Code Agent**
+- Goal: implement code from validated test and modeling outputs rather than from raw narrative prompts.
+- Current-state expectation:
+  - generated or edited code should be reviewed against the upstream artifacts, not treated as authoritative by itself
+  - security-sensitive surfaces should be paired with `run-security` or equivalent follow-up review when risk warrants it
+- Useful follow-up:
+  - generate OpenAPI or machine-readable docs only after the domain model and validation outputs are stable
+
+**Phase 5 - Verify Agent**
+- Goal: verify that code, tests, and evidence satisfy repository quality policy.
+- Current baseline:
+  - required PR checks are `verify-lite`, `policy-gate`, and `gate`
+  - local equivalents are typically `ae entry verify --profile lite`, `pnpm run check:doc-consistency`, and targeted traceability or artifact validation commands
+- Typical evidence produced here:
+  - `artifacts/summary/PR_SUMMARY.md`
+  - `artifacts/summary/combined.json`
+  - coverage, replay, and formal artifacts as applicable
+- Operator checkpoint:
+  - resolve quality findings before asking Claude Code to continue with downstream implementation or rollout work
+
+**Phase 6 - Operate Agent**
+- Goal: move from implementation to delivery support, telemetry, and operational follow-up.
+- Typical outputs:
+  - UI scaffold artifacts
+  - runtime summaries
+  - telemetry bundles
+  - handoff material for follow-up agents or maintainers
+- Current-state caution:
+  - operational automation is label/trigger driven; not every support workflow is a default required check
+  - use opt-in labels deliberately rather than enabling all automation on every PR
+
+#### Example Claude Code Session (English)
+
+**User**
+```text
+We have accepted the requirement set. Continue through formalization, validation, and implementation planning, but stop if traceability or quality findings are weak.
+```
+
+**Claude Code**
+```text
+Understood.
+
+1. I will derive formal and structured artifacts from the accepted requirements.
+2. I will validate traceability and quality policy before proposing implementation changes.
+3. If the verification evidence is weak, I will stop and surface the exact blocker instead of continuing with code generation.
+```
+
+**Recommended operator sequence**
+1. Review Intent and Natural Language outputs first.
+2. Accept the validation and modeling artifacts.
+3. Generate implementation only after the model is accepted.
+4. Run `verify-lite` and any risk-driven opt-ins.
+5. Attach the resulting artifacts to the PR layer.
+
+#### Delivery Metrics and Operating Expectations (English)
+- Track at least these categories in PR or CI evidence:
+  - requirements coverage / traceability completeness
+  - formal or policy findings
+  - test pass rate and coverage
+  - integration artifacts and discovered test inventory
+  - benchmark or runtime regression indicators when performance work is involved
+- Good sessions reduce rework by failing earlier in Validation and Verify, not by generating more code upfront.
+- The quality objective is not just green tests; it is coherent evidence across requirements, implementation, and review artifacts.
+
+#### Common Pitfalls and Controls (English)
+- **Jumping from narrative requirements directly to code**
+  - Mitigation: require intermediate validation/model artifacts before implementation.
+- **Treating generated code as the source of truth**
+  - Mitigation: compare code against traceability, validation, and modeling outputs.
+- **Relying only on default checks for risky changes**
+  - Mitigation: add risk-driven labels such as formal/security/coverage enforcement when the PR scope justifies them.
+- **Uploading incomplete artifacts**
+  - Mitigation: keep current output paths stable and prefer the current canonical artifacts over ad hoc files.
+
+#### Summary (English)
+- Claude Code is most effective with ae-framework when each phase produces explicit artifacts and the operator keeps phase boundaries disciplined.
+- The highest leverage comes from:
+  - validating earlier
+  - generating later
+  - and attaching machine-readable evidence to the PR layer
+- Use the workflow as an operational pipeline, not as a one-shot code generation shortcut.
+
 ---
 
 ## 日本語（ミニチートシート）
