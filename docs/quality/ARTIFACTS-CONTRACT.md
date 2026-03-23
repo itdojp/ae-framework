@@ -114,6 +114,29 @@ Representative optional artifacts include the following groups.
 
 The authoritative details remain in the Japanese section and the contract catalog. This English section mirrors the operational shape and entrypoints.
 
+#### 5.3 Representative current optional artifacts
+- `artifacts/ci/policy-gate-summary.{json,md}`
+  - produced by `policy-gate.yml`
+  - records machine-readable and Markdown summaries for policy decisions
+- `artifacts/ci/harness-health.{json,md}`
+  - produced by `pr-ci-status-comment.yml` `summarize` or scheduled `ci-extended.yml`
+  - consumed by `hook-feedback`, change-package, and PR summary paths
+- `artifacts/quality/quality-scorecard.{json,md}`
+  - produced by `scripts/quality/build-quality-scorecard.mjs` or the `verify-lite.yml` scorecard aggregation path
+  - stays report-only and is used by Step Summary and PR summary append flows
+- `artifacts/agents/hook-feedback.{json,md}`
+  - produced when `pr-ci-status-comment.yml` can download a same-head `verify-lite-report`, or by `pnpm run hook-feedback:build`
+  - normalizes verify-lite, harness health, change-package, and optional assurance into continuation inputs
+- `artifacts/handoff/ae-handoff.{json,md}`
+  - produced by `pnpm run handoff:create`
+  - packages existing `hook-feedback` and verify-lite evidence into a deterministic handoff sidecar
+- `artifacts/discovery-pack/*`
+  - produced by `pnpm run discovery-pack:validate` and `pnpm run discovery-pack:compile`
+  - remain report-only or non-authoritative outputs even when they are uploaded in CI
+- `artifacts/hermetic-reports/trace/*`
+  - produced by trace validation flows such as `run-kvonce-conformance.sh`
+  - used for regression detection and report-only comparison rather than required-artifact promotion
+
 #### 5.1 Formal Summary v1/v2 dual-write migration
 - Producers run `scripts/formal/generate-formal-summary-v1.mjs` with both `--out` (v1) and `--out-v2` (v2), so `artifacts/formal/formal-summary-v1.json` and `artifacts/formal/formal-summary-v2.json` are emitted in parallel.
 - The main execution paths are `.github/workflows/verify-lite.yml` and `.github/workflows/formal-aggregate.yml`.
@@ -136,8 +159,39 @@ pnpm run artifacts:validate
 # Strict artifact validation
 pnpm run artifacts:validate -- --strict
 
+# Reproduce enforce-artifacts locally by generating trace/verify-lite artifacts first
+bash scripts/trace/run-kvonce-conformance.sh \
+  --input samples/trace/kvonce-sample.ndjson \
+  --format ndjson \
+  --output-dir artifacts/hermetic-reports/trace
+node scripts/ci/write-verify-lite-summary.mjs
+node scripts/trace/create-report-envelope.mjs \
+  artifacts/verify-lite/verify-lite-run-summary.json \
+  artifacts/report-envelope.json
+mkdir -p artifacts/trace
+cp artifacts/report-envelope.json artifacts/trace/report-envelope.json
+pnpm run artifacts:validate -- --strict
+
 # Check required artifacts
 node scripts/ci/check-required-artifacts.mjs
+
+# Dual-validate Formal Summary v1/v2 locally
+node scripts/ci/validate-formal-summary-v1.mjs \
+  artifacts/formal/formal-summary-v1.json \
+  schema/formal-summary-v1.schema.json
+node scripts/ci/validate-formal-summary-v2.mjs \
+  artifacts/formal/formal-summary-v2.json \
+  schema/formal-summary-v2.schema.json
+
+# Validate Assurance Summary locally
+node scripts/ci/validate-assurance-summary.mjs \
+  artifacts/assurance/assurance-summary.json \
+  schema/assurance-summary.schema.json
+
+# Validate Quality Scorecard locally
+node scripts/ci/validate-quality-scorecard.mjs \
+  artifacts/quality/quality-scorecard.json \
+  schema/quality-scorecard.schema.json
 
 # Strict required-artifact check with explicit inputs
 REQUIRED_ARTIFACTS=artifacts/verify-lite/verify-lite-run-summary.json,artifacts/report-envelope.json \
@@ -145,11 +199,47 @@ REQUIRED_ARTIFACTS_STRICT=1 \
 node scripts/ci/check-required-artifacts.mjs --strict
 ```
 
-### 7. Related references
+`pnpm run artifacts:validate` always emits:
+- `artifacts/schema-validation/summary.json`
+- `artifacts/schema-validation/summary.md`
+- `artifacts/schema-validation/errors.json`
+
+### 7. CI integration (staged rollout)
+- `verify-lite.yml` stays the merge-blocking required workflow baseline, while assurance summary generation/validation is added as non-blocking observation under the same workflow
+- `verify-lite.yml` generates `artifacts/assurance/assurance-summary.{json,md}` in report-only mode from `artifacts/verify-lite/verify-lite-run-summary.json`
+- `verify-lite.yml` also generates `artifacts/quality/quality-scorecard.{json,md}` in report-only mode from the same required inputs
+- when the `enforce-assurance` label is present, `verify-lite.yml` runs `scripts/ci/enforce-assurance-summary.mjs` against `artifacts/assurance/assurance-summary.json`
+- `pr-ci-status-comment.yml` and `scripts/summary/render-pr-summary.mjs` append assurance and quality-scorecard summaries when those artifacts exist
+- `post-deploy-verify.yml` appends assurance details only when a release bundle already contains `artifacts/assurance/assurance-summary.md`; this remains optional and does not alter release gate decisions
+- if release-side assurance is consumed from a published asset, `release_tag` is required so `quality-artifacts.tgz` can be downloaded
+- strict artifact enforcement can be added by enabling `REQUIRED_ARTIFACTS_STRICT=1`, typically behind the `enforce-artifacts` PR label
+- `validate-artifacts-ajv.yml` generates the trace artifacts plus `artifacts/verify-lite/verify-lite-run-summary.json`, `artifacts/report-envelope.json`, and `artifacts/trace/report-envelope.json` before running strict validation
+- in non-strict mode the workflow keeps the lightweight path and runs only `artifacts:validate`
+- `.github/workflows/verify-lite.yml` and `.github/workflows/formal-aggregate.yml` keep Formal Summary in dual-write mode and run v1/v2 dual-validation
+- `verify-lite.yml` also runs `tests/contracts/cli-artifacts-contracts.test.ts` so the major CLI JSON-schema and exit-code contracts remain covered
+
+### 8. Related references
 - `docs/maintenance/repo-layout-policy.md`
 - `docs/maintenance/artifact-reference-layout-plan.md`
+- `.github/workflows/verify-lite.yml`
+- `.github/workflows/formal-aggregate.yml`
+- `.github/workflows/formal-verify.yml`
+- `scripts/ci/check-required-artifacts.mjs`
+- `scripts/ci/validate-artifacts-ajv.mjs`
+- `scripts/ci/validate-formal-summary-v1.mjs`
+- `scripts/ci/validate-formal-summary-v2.mjs`
+- `scripts/ci/validate-assurance-summary.mjs`
+- `scripts/ci/validate-quality-scorecard.mjs`
+- `schema/artifact-metadata.schema.json`
+- `schema/assurance-summary.schema.json`
+- `schema/quality-scorecard.schema.json`
+- `schema/formal-summary-v1.schema.json`
+- `schema/formal-summary-v2.schema.json`
 - `docs/quality/assurance-lanes.md`
+- `docs/quality/assurance-operations-runbook.md`
 - `docs/quality/contract-taxonomy.md`
+- `docs/quality/path-normalization-contract.md`
+- `docs/quality/run-manifest-freshness-contract.md`
 - `docs/reference/CONTRACT-CATALOG.md`
 
 ---
