@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-23'
 owner: observability-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -9,6 +9,113 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 運用テレメトリを `ae conformance verify` の入力へ接続するために、まず Trace Bundle を生成します。  
 本ドキュメントは Issue #2287 の初期実装（ingest 基盤）を対象とします。
+
+
+## English
+
+Telemetry is first normalized into a Trace Bundle before it is connected to `ae conformance verify`. This runbook documents the initial ingest foundation introduced for Issue #2287.
+
+### 1. Purpose
+
+- Normalize runtime events into the shared `ae-trace-bundle/v1` format
+- Preserve trace-level aggregation keyed by `traceId`
+- Store artifacts after redaction so sensitive fields do not leak into downstream evidence
+
+### 2. Accepted input formats
+
+`ae conformance ingest` accepts any of the following:
+
+- NDJSON (one event per line), where the input file must use the `.ndjson` extension
+- JSON array (`[{...}, {...}]`) when the input file does not use the `.ndjson` extension
+- JSON object (`{ "events": [...] }`) when the input file does not use the `.ndjson` extension
+
+When the input file does not end with `.ndjson`, `ae conformance ingest` assumes regular JSON and parses it with `JSON.parse()`. NDJSON content stored in a non-`.ndjson` file therefore fails to ingest.
+
+Each event must provide at least the following fields:
+
+- `traceId` (string)
+- `timestamp` (RFC3339 timestamp, for example `2026-03-23T10:15:30Z` or `2026-03-23T10:15:30+09:00`)
+- `actor` (string)
+- `event` (string)
+
+### 3. Ingest command
+
+```bash
+ae-framework conformance ingest \
+  --input artifacts/observability/runtime.ndjson \
+  --output artifacts/observability/trace-bundle.json \
+  --summary-output artifacts/observability/trace-bundle-summary.json \
+  --source-env production \
+  --source-service checkout-api \
+  --sample-rate 1 \
+  --redact '$.details.email:mask' \
+  --redact '$.details.token:hash'
+```
+
+#### Redaction rules
+
+- Format: `<jsonPath>:<action>`
+- Supported actions: `remove | mask | hash`
+- Supported path shape: `$.a.b.c` only; array wildcards are not supported
+
+### 4. Generated artifacts
+
+- `artifacts/observability/trace-bundle.json`
+  - Schema: `schema/trace-bundle.schema.json`
+  - Version: `schemaVersion = ae-trace-bundle/v1`
+  - When zero events survive ingest, the unspecified side of `source.timeWindow` is backfilled with Unix epoch (`1970-01-01T00:00:00.000Z`)
+- `artifacts/observability/trace-bundle-summary.json`
+  - Aggregated counters are exposed as `counts.{rawEventCount,validEventCount,invalidEventCount,sampledOutCount,emittedEventCount,traceCount,redactedFieldCount}`
+  - Schema: `schema/trace-bundle-summary.schema.json`
+
+### 5. Recommended downstream flow
+
+Use the following sequence as the current baseline:
+
+1. Run `ae conformance ingest` to build the Trace Bundle
+2. Run `ae conformance verify --trace-bundle artifacts/observability/trace-bundle.json`
+3. Convert failures into a CEGIS failure artifact with `ae fix from-conformance --input artifacts/conformance/conformance-results.json --output artifacts/fix/failures.json`
+4. Continue with `ae fix analyze` / `ae fix apply` for the repair lane
+5. Store conformance and fix artifacts as CI artifacts for operational review
+
+### 6. GitHub Actions (self-heal lane)
+
+`.github/workflows/runtime-conformance-self-heal.yml` executes the closed loop in the following order:
+
+1. Prepare the Trace Bundle (skip ingest when `trace_bundle` is supplied)
+2. Run `ae conformance verify --trace-bundle ...`
+3. Run `ae fix from-conformance ...`
+4. Run `ae fix apply ...` only when `apply_fixes=true`
+5. Create an automatic PR only when changes exist, `apply_fixes=true`, `dry_run=false`, and the run executes on the repository default branch
+
+#### Manual dispatch example
+
+```bash
+gh workflow run runtime-conformance-self-heal.yml   -f trace_input=samples/conformance/sample-traces.json   -f apply_fixes=true   -f dry_run=false
+```
+
+#### Main inputs
+
+- `trace_input`: NDJSON/JSON path used for ingest
+- `trace_bundle`: existing Trace Bundle path; skips ingest when supplied
+- `conformance_rules`: optional custom rules JSON
+- `apply_fixes`: run `ae fix apply` only when `true`
+- `dry_run`: run `ae fix apply --dry-run` when `true`
+
+#### Main outputs
+
+- `artifacts/observability/runtime-self-heal-trace-bundle.json`
+- `artifacts/observability/runtime-self-heal-trace-bundle-summary.json`
+- `artifacts/conformance/runtime-self-heal-results.json`
+- `artifacts/fix/runtime-self-heal-failures.json`
+- `artifacts/automation/runtime-conformance-self-heal-report.json` (`ae-automation-report/v1`)
+
+### 7. Security / PII handling
+
+- The CI self-heal workflow assumes that `trace_input` is already redacted upstream. When running `ae conformance ingest` manually, always pass `--redact` so sensitive fields such as email, tokens, or session identifiers are removed before ingest.
+- When production data is involved, store the Trace Bundle in encrypted storage and do not paste raw events into the PR body.
+- During incident analysis, review `runtime-conformance-self-heal-report.json` and `runtime-self-heal-results.json` first, and only share the minimum necessary event excerpts.
+- `artifacts/ci/harness-health.json` aggregates the `runtimeConformance` gate. When the status is `fail` or `warn`, rerun with `run-trace` (legacy name: `run-conformance`) and only enable `autopilot:on` when continuous operation is justified.
 
 ## 1. 目的
 
@@ -20,14 +127,16 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 `ae conformance ingest` は次のいずれかを受け付けます。
 
-- NDJSON（1行1イベント）
-- JSON配列（`[{...}, {...}]`）
-- JSONオブジェクト（`{ "events": [...] }`）
+- NDJSON（1行1イベント、入力ファイル名は `.ndjson` 拡張子が必須）
+- JSON配列（`[{...}, {...}]`。入力ファイルが `.ndjson` ではない場合）
+- JSONオブジェクト（`{ "events": [...] }`。入力ファイルが `.ndjson` ではない場合）
+
+入力ファイルが `.ndjson` で終わらない場合、`ae conformance ingest` は通常の JSON とみなして `JSON.parse()` で解釈します。そのため、NDJSON 内容を非 `.ndjson` ファイルへ保存すると取り込みに失敗します。
 
 各イベントは最低限、次のフィールドが必要です。
 
 - `traceId`（string）
-- `timestamp`（ISO-8601 date-time）
+- `timestamp`（RFC3339 timestamp。例: `2026-03-23T10:15:30Z` または `2026-03-23T10:15:30+09:00`）
 - `actor`（string）
 - `event`（string）
 
@@ -56,10 +165,10 @@ ae-framework conformance ingest \
 - `artifacts/observability/trace-bundle.json`
   - スキーマ: `schema/trace-bundle.schema.json`
   - バージョン: `schemaVersion = ae-trace-bundle/v1`
-- `artifacts/observability/trace-bundle-summary.json`
-  - 取り込み件数、無効イベント件数、サンプリング件数、redaction件数を記録
-  - スキーマ: `schema/trace-bundle-summary.schema.json`
   - 取り込み後にイベントが 0 件の場合、`source.timeWindow` の未指定側は Unix epoch（`1970-01-01T00:00:00.000Z`）で補完
+- `artifacts/observability/trace-bundle-summary.json`
+  - 集計値は `counts.{rawEventCount,validEventCount,invalidEventCount,sampledOutCount,emittedEventCount,traceCount,redactedFieldCount}` に記録
+  - スキーマ: `schema/trace-bundle-summary.schema.json`
 
 ## 5. 次段の利用
 
@@ -79,7 +188,7 @@ ae-framework conformance ingest \
 2. `ae conformance verify --trace-bundle ...`
 3. `ae fix from-conformance ...`
 4. `ae fix apply ...`（`apply_fixes=true` のときのみ）
-5. 差分があれば自動PRを作成（`apply_fixes=true` かつ `dry_run=false`）
+5. 差分があり、`apply_fixes=true` かつ `dry_run=false` で、さらに default branch 上で実行している場合のみ自動PRを作成
 
 ### 手動実行例
 
@@ -101,13 +210,14 @@ gh workflow run runtime-conformance-self-heal.yml \
 ### 出力
 
 - `artifacts/observability/runtime-self-heal-trace-bundle.json`
+- `artifacts/observability/runtime-self-heal-trace-bundle-summary.json`
 - `artifacts/conformance/runtime-self-heal-results.json`
 - `artifacts/fix/runtime-self-heal-failures.json`
 - `artifacts/automation/runtime-conformance-self-heal-report.json`（`ae-automation-report/v1`）
 
 ## 7. セキュリティ / PII 運用
 
-- Trace取り込み前に `--redact` を必ず指定し、機微情報（例: email/token/sessionId）を除去する。
+- CI の self-heal workflow は `trace_input` が upstream 側で redaction 済みであることを前提とする。手動で `ae conformance ingest` を実行する場合は、`--redact` を必ず指定し、機微情報（例: email/token/sessionId）を除去する。
 - 本番データを扱う場合、trace bundle は暗号化ストレージへ保管し、PR本文へ生データを貼り付けない。
 - 失敗調査時は `runtime-conformance-self-heal-report.json` と `runtime-self-heal-results.json` を優先参照し、必要最小限の event 抜粋のみ共有する。
 - `artifacts/ci/harness-health.json` に `runtimeConformance` ゲートが集約されるため、fail/warn 時は `run-trace`（旧表記: `run-conformance`）で再実行し、継続運用時のみ `autopilot:on` を付与する。
