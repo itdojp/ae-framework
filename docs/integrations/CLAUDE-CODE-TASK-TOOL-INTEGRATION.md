@@ -124,16 +124,16 @@ export class HybridIntentSystem {
 #### 📊 Call Priority
 
 ```text
-1. Claude Code Task Tool (primary when Claude Code + Task Tool are available)
-   ↓ fallback
-2. CLI commands (operator-driven rerun / local recovery path)
-   ↓ fallback
-3. MCP server surfaces (integration fallback and tool-specific entrypoints)
+if (isClaudeCode && hasTaskTool) -> Task Tool
+else if (userPreference === 'cli' || !isClaudeCode) -> CLI
+else -> MCP
+
+MCP execution failure -> CLI fallback
 ```
 
 - The Task Tool path is the preferred operator experience in Claude Code.
-- CLI remains the most direct maintained rerun path when artifacts, Phase State, or gates need focused repair.
-- MCP is a compatibility surface, not the main operator path for everyday PR work.
+- CLI is selected directly outside Claude Code or when the operator explicitly prefers it.
+- MCP is the default Claude-side fallback when Task Tool is unavailable, and `handleMCPRequest()` falls back to CLI on execution errors.
 
 ### Task Tool Integration
 
@@ -173,6 +173,7 @@ class AEFrameworkCLI {
 - `src/cli/index.ts` wires phase-specific task handlers into a single maintained CLI surface.
 - Claude Code integrations reuse those handlers instead of introducing a separate undocumented runtime.
 - Phase-specific adapters normalize request/response payloads, while quality and artifact validation are handled downstream by `verify-lite` and CI workflows.
+- Standard PR summary rendering consumes repository summary artifacts; CodeX task outputs are summarized separately by `pr-verify.yml` via `scripts/verify/render-codex-summary.mjs`.
 
 ### Phase-by-Phase Integration
 
@@ -212,9 +213,10 @@ class AEFrameworkCLI {
 
 1. Claude Code submits a `TaskRequest` with description, prompt, and subagent/phase hint.
 2. The hybrid integration layer decides whether Task Tool, CLI, or MCP is the best current route.
-3. The relevant phase handler parses input and produces structured outputs.
-4. `verify-lite` and optional workflows convert those outputs into normalized summaries and policy evidence.
-5. PR automation aggregates the resulting artifacts into comments, review guidance, and downstream operator actions.
+3. The relevant phase handler parses input and produces structured outputs plus optional task-specific artifacts under `artifacts/codex/*`.
+4. `verify-lite` and the standard PR summary pipeline consume repository summary artifacts such as `artifacts/summary/combined.json` and formal/coverage/replay inputs.
+5. Ordinary CodeX task outputs are not part of the standard `verify-lite` PR summary path.
+6. When `pr-verify.yml` runs, `scripts/verify/render-codex-summary.mjs` can generate a separate CodeX-oriented summary.
 
 #### Phase 1 Example Result
 
@@ -333,7 +335,7 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
   - [ ] Phase State contains `entities` with required fields
   - [ ] Re-run scaffold: `ae-framework ui-scaffold --components`
 - Gates regressed (a11y/perf/coverage)
-  - [ ] Run `ae-framework quality run --env development --dry-run`
+  - [ ] Run `ae-framework quality run --env development`
   - [ ] Apply quick fixes (focus ring, next/image, add tests)
 - No formal artifacts in PR
   - [ ] Ensure formal job ran; see `docs/verify/FORMAL-CHECKS.md`
@@ -373,9 +375,10 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
 1. Re-check Phase State (`entities`, required fields, validation assumptions).
 2. Re-run scaffold with `ae-framework ui-scaffold --components`.
-3. Re-run local quality checks with `ae-framework quality run --env development --dry-run`.
+3. Re-run local quality checks with `ae-framework quality run --env development`.
 4. Fix only the regressed lane (a11y / perf / coverage / artifact validation).
 5. Validate artifacts with `ajv` / `jq`, then review the PR summary output.
+6. Use `--dry-run` only to inspect which commands would execute; it does not reproduce failing gate scores.
 
 ### Best Practices
 
@@ -463,8 +466,8 @@ Claude Code: UI Task Adapter を実行...
 # UI スキャフォールド（再生成）
 ae-framework ui-scaffold --components
 
-# 品質ゲート（開発プロファイルでドライラン）
-ae-framework quality run --env development --dry-run
+# 品質ゲート（開発プロファイルで再実行）
+ae-framework quality run --env development
 
 # 個別テスト
 pnpm run test:a11y
@@ -645,9 +648,10 @@ it('shows error banner on API failure', async () => {
 #### 再実行フロー（例）
 1) Phase State の見直し（`entities`/必須属性/バリデーション）
 2) UI 再生成: `ae-framework ui-scaffold --components`
-3) 品質ゲート（開発プロファイル）: `ae-framework quality run --env development --dry-run`
+3) 品質ゲート（開発プロファイル）: `ae-framework quality run --env development`
 4) 個別ゲートの補強（a11y/perf/coverage の不足箇所をピンポイント修正）
 5) 成果物の検証（ajv/jq）→ PR サマリを確認
+6) `--dry-run` は実行コマンド確認用であり、失敗ゲートの再現には使わない
 
 ---
 
@@ -743,11 +747,11 @@ export class HybridIntentSystem {
 ### 📊 呼び出し優先度
 
 ```
-1. Claude Code Task Tool (最優先)
-   ↓ フォールバック
-2. CLI Commands (開発者直接実行)
-   ↓ フォールバック  
-3. MCP Server (バックアップ統合)
+if (isClaudeCode && hasTaskTool) -> Task Tool
+else if (userPreference === 'cli' || !isClaudeCode) -> CLI
+else -> MCP
+
+MCP 実行失敗 -> CLI にフォールバック
 ```
 
 ---
