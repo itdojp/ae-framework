@@ -2,7 +2,7 @@
 docRole: derived
 canonicalSource:
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-23'
 ---
 # Zero-Based Ideal Design Blueprint (2026-03)
 
@@ -10,11 +10,280 @@ lastVerified: '2026-03-11'
 
 ---
 
-## English (Summary)
+## English
 
-This document describes an ideal, from-scratch redesign of ae-framework.
-It includes: (1) a target architecture, (2) a free-hand technology stack reconsideration,
-and (3) migration principles to move from the current implementation to the target shape.
+### 1. Purpose
+
+This document defines the ideal future shape of `ae-framework` if it were redesigned from zero while keeping the current business constraints explicit.
+
+In scope:
+- architecture: responsibility separation, state transitions, and contracts
+- environment, language, and technology-stack re-selection
+- operating models for solo, team, and enterprise usage
+
+Out of scope:
+- immediate full replacement of the current implementation
+- patch-by-patch migration detail for every existing module
+
+Assumptions as of 2026-03:
+- the GitHub PR-driven delivery flow remains in place
+- AI review, auto-fix, and gate decisions must stay auditable
+- artifacts remain contractual evidence
+- code generators are replaceable producers, while the assurance control plane stays centered on spec, verification, evidence, and policy gates
+
+### 2. Zero-based design principles
+
+1. Contract-first
+   - Define every input and output with JSON Schema before implementation.
+2. Deterministic by default
+   - The same input should lead to the same judgement; avoid time, ordering, and randomness dependencies where possible.
+3. Policy as code
+   - Approval requirements, risk classification, and required-check selection stay declarative and machine-evaluable.
+4. Observability as product
+   - Failure taxonomy, recovery flow, and SLO/MTTR reporting are specified from the start.
+5. Human override with trace
+   - Human exceptions remain possible, but must always preserve a reason, deadline, and evidence link.
+6. Assurance is claim-based
+   - The system should explain what was assured through claims, levels, lanes, and evidence.
+
+### 3. Ideal architecture (logical structure)
+
+#### 3.1 Overall shape
+
+The ideal design separates `ae-framework` into five planes:
+
+- Control Plane
+  - PR state machine, execution planning, retry, and convergence control
+- Policy Plane
+  - risk classification, required-check selection, and approval topology evaluation
+- Execution Plane
+  - AI review handling, code-change execution, and verification runner orchestration
+- Evidence Plane
+  - artifact generation, validation, storage, and traceability aggregation
+- Observability Plane
+  - audit logs, metrics, alerts, and operational reports
+
+Even in the ideal shape, code generators and review AIs remain replaceable producers in the Execution Plane. The differentiated value stays in the Control, Policy, and Evidence planes, where PR and release assurance becomes standardized.
+
+#### 3.2 Ideal component split
+
+| Component | Primary responsibility | Contract |
+| --- | --- | --- |
+| `orchestrator` | Control PR-scoped state transitions | `pr-state.v1`, `execution-plan.v1` |
+| `policy-engine` | Evaluate risk, approval, and required-check rules | `policy-input.v1`, `policy-decision.v1` |
+| `action-engine` | Execute actionable findings and fix workflows | `review-task.v1`, `action-result.v1` |
+| `evidence-broker` | Collect and validate evidence | `evidence-manifest.v1` |
+| `gate-evaluator` | Produce final go/no-go judgements | `gate-evaluation.v1` |
+| `ops-reporter` | Emit summaries, notifications, and recovery guidance | `ops-report.v1` |
+
+#### 3.3 Ideal PR state machine
+
+States:
+- `draft`
+- `ready_for_review`
+- `review_feedback_pending`
+- `action_execution`
+- `gate_recheck`
+- `merge_eligible`
+- `blocked`
+- `merged`
+
+Key transitions:
+- `ready_for_review -> review_feedback_pending` when AI review arrives
+- `review_feedback_pending -> action_execution` when unresolved findings exist
+- `action_execution -> gate_recheck` after a fix is applied
+- `gate_recheck -> merge_eligible` when required gates are green
+- any state -> `blocked` when a fail-closed condition is met
+
+Every `blocked` state must emit:
+- `blocked.reasonCode`
+- `blocked.unblockActions`
+- `blocked.ownerHint`
+
+### 4. Ideal CI / automation topology
+
+#### 4.1 Consolidate workflows into four lanes
+
+1. `pr-core.yml` (Required)
+   - policy gate, review gate, verify-lite, artifact validation
+2. `pr-extended.yml` (Label opt-in)
+   - heavy tests, full formal verification, deep security scans
+3. `maintenance.yml` (Scheduled + dispatch)
+   - reruns, branch sync, stale cleanup, trend analysis
+4. `release-assurance.yml` (Dispatch)
+   - release verify, rollback verify, post-deploy checks
+
+#### 4.2 Fixed evaluation order
+
+1. contract integrity (schema and artifact validation)
+2. risk and approval policy
+3. unresolved review state
+4. auto-fix feasibility
+5. required-check convergence
+6. auto-merge eligibility
+
+The ideal design fixes this order so workflow-by-workflow drift disappears.
+
+### 5. Ideal contract model
+
+#### 5.1 Contract layers
+
+- input contracts
+  - review comments, changed files, labels, workflow context
+- decision contracts
+  - risk decision, approval decision, gate decision
+- evidence contracts
+  - run summary, trace summary, formal summary, change package
+- operation contracts
+  - retry policy, backoff policy, escalation policy
+
+#### 5.2 Compatibility policy
+
+- every contract has `schemaVersion` and `contractId`
+- backward compatibility is guaranteed only within the same major version
+- major upgrades require a `dual-write` and `dual-validate` period
+
+### 6. Technology-stack reconsideration
+
+#### 6.1 Preferred stack (Ideal option A: Hybrid)
+
+| Layer | Preferred choice | Reason |
+| --- | --- | --- |
+| Orchestrator / Policy runtime | Go 1.24 | single-binary distribution, concurrency, CI stability |
+| CLI / adapter / schema tooling | TypeScript on Node.js 22 LTS with pnpm 10 | strong fit for GitHub API and JSON-heavy workflows |
+| Heavy execution workers | Rust stable | CPU efficiency, memory safety, portable distribution |
+| Policy DSL | Rego (OPA) | declarative policy evaluation and testability |
+| Contract validation | JSON Schema 2020-12 + AJV | compatibility with the current repository assets |
+| Event bus | NATS JetStream | low operational overhead with retry and ordering support |
+| Metadata DB | PostgreSQL 16 | strong audit-query and relational consistency story |
+| Artifact store | S3-compatible storage | long-term evidence retention and re-analysis |
+| Cache | Redis 7 | idempotency keys and short-lived coordination state |
+| Observability | OpenTelemetry + Prometheus + Loki + Tempo + Grafana | integrated logs, metrics, and traces |
+| Packaging | OCI + distroless | reproducibility and smaller security surface |
+
+#### 6.2 Execution-environment profiles
+
+##### Solo
+- GitHub Actions centric
+- SQLite plus artifact files is acceptable instead of an external database
+- OPA bundle can remain local
+
+##### Team
+- GitHub Actions plus a lightweight Go control plane
+- PostgreSQL + S3 + Redis
+- NATS for async job separation
+
+##### Enterprise
+- Kubernetes with HPA
+- PostgreSQL HA and multi-AZ object storage
+- multi-tenant policy bundles
+
+#### 6.3 Alternative stack options
+
+- Option B: TypeScript-only
+  - easier to start, but likely higher long-term operational cost
+- Option C: Rust-first
+  - strongest performance and safety, but slower iteration and higher hiring cost
+
+Preferred direction: option A (Hybrid).
+
+### 7. Ideal repository structure
+
+```text
+/
+  cmd/
+    orchestrator/
+    policy-engine/
+    ops-reporter/
+  packages/
+    contracts/
+    adapters-github/
+    cli/
+  workers/
+    actionable-executor/
+    formal-runner/
+  policy/
+    risk/
+    approval/
+    gate/
+  schemas/
+    input/
+    decision/
+    evidence/
+  workflows/
+    pr-core/
+    pr-extended/
+    maintenance/
+    release-assurance/
+  docs/
+    architecture/
+    operations/
+    contracts/
+```
+
+The intent is to keep responsibility boundaries explicit so CLI UX, contracts, policy logic, and workers can evolve independently.
+
+### 8. Ideal security design
+
+- Token separation
+  - split read-only and write-capable tokens per job
+- Provenance
+  - sign major artifacts with Sigstore/cosign
+- Least privilege
+  - declare the minimum permission set per workflow
+- Secret zero
+  - prefer OIDC federation with short-lived credentials wherever possible
+
+### 9. Ideal quality-gate design
+
+Always-on required gates:
+- contract validation
+- policy decision
+- review resolution
+- verify-lite
+- artifact required set
+
+Conditional gates (policy-driven):
+- high-risk approvals
+- trace conformance
+- security deep scan
+- formal full run
+
+Fail-open should be disallowed by default. When an exception is approved, require a `temporary_override` contract and an explicit expiration.
+
+### 10. Ideal operating model
+
+Example SLOs:
+- Required checks success rate: `>= 99.5%`
+- MTTR (`blocked` -> `merge_eligible`, P50): `<= 30 minutes`
+- false-block rate: `<= 1%`
+
+Minimum runbook requirements:
+- fixed failure classification codes
+- recovery commands in one-command units
+- a recurrence-prevention template
+
+### 11. Phased migration (`current -> ideal`)
+
+1. Contract-first
+   - convert current script inputs/outputs into explicit contracts
+2. Policy engine separation
+   - detach judgement logic from workflow-specific glue
+3. Orchestrator introduction
+   - unify cross-workflow state transitions
+4. Worker separation
+   - move heavier execution into async workers
+5. Legacy workflow retirement
+   - remove compatibility paths after the transition window
+
+### 12. Adoption criteria for the ideal design
+
+Adopt when:
+- the current operation still suffers from workflow sprawl, duplicated judgement logic, or slow review-to-fix propagation
+- the automation base needs to be reused across multiple products
+
+Defer when:
+- the repository remains single-product and small enough that the current topology is still cheap to maintain
 
 ---
 
@@ -104,9 +373,9 @@ and (3) migration principles to move from the current implementation to the targ
 - 任意状態 -> `blocked`（fail-closed条件）
 
 `blocked` では必ず以下を出力する:
-- `blocked_reason`（機械可読コード）
-- `unblock_actions[]`（最小復旧手順）
-- `owner_hint`（人/AIどちらが対応すべきか）
+- `blocked.reasonCode`（機械可読コード）
+- `blocked.unblockActions`（最小復旧手順）
+- `blocked.ownerHint`（人/AIどちらが対応すべきか）
 
 ## 4. 理想のCI/自動化トポロジ
 
@@ -147,7 +416,7 @@ and (3) migration principles to move from the current implementation to the targ
 
 ### 5.2 互換方針
 
-- すべて `schema_version` を持つ
+- すべて `schemaVersion` と `contractId` を持つ
 - 後方互換は同一major内のみ保証
 - major更新時は `dual-write` + `dual-validate` 期間を設ける
 
