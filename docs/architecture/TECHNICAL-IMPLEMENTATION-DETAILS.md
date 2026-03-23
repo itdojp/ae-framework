@@ -41,6 +41,15 @@ lastVerified: '2026-03-23'
 
 Technical implementation details of ae-framework's core integration system:
 
+**2025 implementation status**
+- Phase 6 UI/UX generation: complete
+- comprehensive quality system: golden/approval testing, metamorphic testing, CLI robustness, and fuzzing are implemented
+- integrated security audit: core modules are wired into the current repository baseline
+- CEGIS auto-fix: failure artifact analysis and automated repair flow are implemented
+- runtime conformance: Zod + OpenTelemetry based runtime contract validation is available
+- fast CI/CD: fast CI, quality gates, and nightly matrix lanes are separated
+- flake management: detection, isolation, and recovery automation are implemented
+
 #### Architecture Overview
 
 ```text
@@ -71,9 +80,35 @@ interface HybridIntegrationSystem {
 - Runtime type validation with Zod
 - Contract-first API design
 
+#### Request Routing System
+
+```text
+interface RequestRouter {
+  analyzeRequest(request: SystemRequest): Promise<RouteInfo>;
+}
+
+class IntelligentRouter implements RequestRouter {
+  async analyzeRequest(request: SystemRequest): Promise<RouteInfo> {
+    const intentAnalysis = await this.aiService.analyzeIntent(request.input);
+    return {
+      type: this.determineAdapterType(intentAnalysis),
+      phase: this.determineStartPhase(intentAnalysis),
+      priority: this.calculatePriority(intentAnalysis),
+      estimatedComplexity: this.estimateComplexity(intentAnalysis),
+    };
+  }
+}
+```
+
+- Routing is decided from intent analysis, not only from static command names.
+- The router chooses both the adapter surface and the starting phase.
+- Priority and estimated complexity feed retry policy, execution ordering, and guard selection.
+
 ### 🤖 Claude Code Integration
 
 Technical integration with Claude Code for enhanced development workflow:
+
+Current integration is intended to support a continuous path from natural-language intent to high-quality React delivery, while keeping operator-driven CLI and repository workflows aligned.
 
 #### Task Tool Architecture
 
@@ -92,6 +127,32 @@ interface TaskToolIntegration {
 - Result validation and processing
 - State persistence across sessions
 
+#### Context Management
+
+```text
+interface ContextManager {
+  buildContext(params: ContextParams): Promise<ExecutionContext>;
+  updateContext(context: ExecutionContext, update: ContextUpdate): Promise<void>;
+  preserveContext(context: ExecutionContext): Promise<string>;
+}
+
+class IntelligentContextManager implements ContextManager {
+  async buildContext(params: ContextParams): Promise<ExecutionContext> {
+    return {
+      relevantHistory: await this.extractRelevantHistory(params),
+      codebaseInsights: await this.analyzeCodebase(params.projectPath),
+      preferences: params.userPreferences,
+      qualityConstraints: await this.loadQualityConstraints(params.phase),
+      technicalConstraints: await this.analyzeTechnicalConstraints(params),
+    };
+  }
+}
+```
+
+- Context assembly pulls project history, codebase analysis, preferences, and quality constraints into one execution surface.
+- Preserved context IDs allow later phases and retries to reuse the same operational baseline.
+- The goal is deterministic downstream execution, not generic prompt expansion.
+
 ---
 
 ## AI Agent System
@@ -100,7 +161,7 @@ interface TaskToolIntegration {
 
 Comprehensive implementation of the 6-phase agent system:
 
-#### Agent Hierarchy
+#### Base Agent Interface
 
 ```text
 abstract class BaseAgent {
@@ -112,6 +173,9 @@ abstract class BaseAgent {
   abstract validate(input: PhaseInput): Promise<ValidationResult>;
 }
 ```
+
+- Every agent shares the same execution skeleton: input validation, context building, AI processing, post-processing, and output validation.
+- The shared base keeps retry, telemetry, and contract enforcement consistent across phases.
 
 #### Specialized Agents
 
@@ -145,6 +209,30 @@ abstract class BaseAgent {
 - Design system integration
 - Accessibility compliance
 
+#### Specialized Agent Implementation
+
+```text
+export class IntentAgent extends BaseAgent {
+  protected async processWithAI(
+    input: AgentInput,
+    context: ExecutionContext
+  ): Promise<AIProcessingResult> {
+    const prompt = this.buildIntentAnalysisPrompt(input, context);
+    const aiResponse = await this.aiService.process({
+      prompt,
+      model: 'claude-3-5-sonnet',
+      temperature: 0.3,
+      maxTokens: 4000,
+      systemPrompt: this.getSystemPrompt(),
+    });
+    return this.parseIntentAnalysisResult(aiResponse);
+  }
+}
+```
+
+- Phase-specific agents differ by prompt construction, post-processing, and contract validation.
+- The implementation pattern is stable even when the underlying model or provider changes.
+
 ### 🔄 Inter-Agent Communication
 
 Advanced communication patterns between agents:
@@ -165,6 +253,37 @@ interface AgentMessage {
 - Asynchronous event notifications
 - Broadcast updates
 - Pipeline processing
+
+### 🔄 Agent Coordination
+
+#### Multi-Agent Orchestration
+
+```text
+interface AgentOrchestrator {
+  coordinatePhaseExecution(
+    phase: PhaseType,
+    input: PhaseInput,
+    context: ExecutionContext
+  ): Promise<PhaseOutput>;
+}
+
+export class IntelligentOrchestrator implements AgentOrchestrator {
+  async coordinatePhaseExecution(
+    phase: PhaseType,
+    input: PhaseInput,
+    context: ExecutionContext
+  ): Promise<PhaseOutput> {
+    await this.qualityGates.preExecutionCheck(phase, input);
+    const result = await this.executeWithRetry(agent, input, context);
+    await this.qualityGates.postExecutionCheck(phase, result);
+    await this.stateManager.persistPhaseResult(phase, result);
+    return result;
+  }
+}
+```
+
+- Orchestration is responsible for retry policy, pre/post execution quality checks, and state persistence.
+- Coordination logic is a delivery concern, separate from the business meaning of any single phase.
 
 ---
 
