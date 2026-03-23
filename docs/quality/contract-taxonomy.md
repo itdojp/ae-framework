@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/reference/CONTRACT-CATALOG.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-23'
 ---
 # Contract Taxonomy（DbC / API Contract / Artifacts Contract）
 
@@ -11,9 +11,11 @@ lastVerified: '2026-03-10'
 
 ---
 
-## English (summary)
+## English
 
-In ae-framework, the word "contract" appears in multiple contexts. This document defines the canonical taxonomy to avoid ambiguity.
+In ae-framework, the word `contract` appears in multiple contexts. This document defines the canonical taxonomy so PR summaries, runbooks, schema docs, and implementation notes use the term consistently.
+
+### Canonical categories
 
 | Category | Meaning | Typical artifacts / commands |
 | --- | --- | --- |
@@ -21,14 +23,30 @@ In ae-framework, the word "contract" appears in multiple contexts. This document
 | API/Integration contract | Consumer-driven API contract verification (Pact and related) | `pnpm run pipelines:pact`, CI Extended `pact` smoke, pact test logs/artifacts configured by each project |
 | Artifacts contract | Required/optional CI output contract (reports/artifacts presence and shape) | `docs/quality/ARTIFACTS-CONTRACT.md`, `scripts/ci/check-required-artifacts.mjs` |
 
-Naming guidance:
+### Naming guidance
+
 - Use **DbC** or **Design contract** for pre/post/invariant statements.
 - Use **Pact contract test** or **API contract verification** for consumer-driven API checks.
 - Use **Artifacts contract** only for CI artifact/report obligations.
 
-Compatibility note:
-- Existing labels/commands may still include `contract` for backward compatibility.
-- Update text-level wording first; avoid breaking command names unless explicitly planned.
+### Operational interpretation
+
+- In recent verification guides, `contract gate` usually means an API/Integration contract test such as Pact unless the surrounding text explicitly says `DbC` or `Artifacts contract`.
+- Legacy labels and guides still use `enforce-contracts` for formal / DbC-oriented enforcement. Treat those paths as DbC-oriented compatibility surfaces, not as Pact/API verification.
+- DbC is not a single workflow or a single label. It is evidenced by multiple checks such as property testing, runtime conformance, request validation, and assertion-heavy integration tests.
+- Artifacts contract governs whether expected CI outputs exist and match the required shape. It does not prove business behavior by itself.
+
+### Compatibility note
+
+- Existing labels, commands, and historical documents may still include the bare word `contract` for backward compatibility.
+- Prefer text-level clarification first. Renaming commands or labels should happen only through an explicit migration plan.
+
+### Related documents
+
+- `docs/quality/verification-gates.md`
+- `docs/quality/ARTIFACTS-CONTRACT.md`
+- `docs/ci-policy.md`
+- `docs/architecture/RUNTIME-CONFORMANCE-DESIGN.md`
 
 ---
 
@@ -49,6 +67,7 @@ ae-framework では `contract` が複数の意味で使われます。本ドキ�
 
 互換性メモ:
 - 既存のラベル/コマンド名に `contract` を含むものは互換性のため当面維持する。
+- `enforce-contracts` のような legacy label / command は formal / DbC 系 enforcement を指す互換面として扱い、Pact/API verification とは別に読む。
 - まずは文書上の意味分離を優先し、破壊的リネームは別Issueで扱う。
 
 ## 関連ドキュメント
