@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-23'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -21,7 +21,7 @@ Issue: #2258
 | ジョブ/ステップ | 依存 | 既定モード | blocking 化トリガー |
 | --- | --- | --- | --- |
 | `gate` | なし | report-only 判定 | `enforce-context-pack` ラベル / `CONTEXT_PACK_ENFORCE_MAIN=1` / dispatch strict |
-| `Run Context Pack dependency boundary checks` | `gate` | report-only（違反は warn 出力） | `gate.strict == true` のとき違反で fail |
+| `Run Context Pack dependency boundary checks` | `gate` | report-only（違反は warn 出力） | なし（常に report-only / `warn` 出力） |
 | `context-pack-e2e` | `gate` | non-blocking (`continue-on-error`) | `gate.strict == true` のとき blocking |
 | `Observe rollout metrics` | `context-pack-e2e` 内 | non-blocking | なし（常に観測のみ） |
 
@@ -82,3 +82,78 @@ pnpm -s run ci:context-pack:observe -- \
 - 実行レポートは `artifacts/context-pack/` 配下に保存される。
 - 依存境界チェックのレポートは `artifacts/context-pack/deps-summary.json` / `artifacts/context-pack/deps-summary.md` として保存される。
 - 観測レポート JSON/Markdown は同ディレクトリに出力され、PR Step Summary にも転記される。
+
+
+## English
+
+This document defines the staged rollout plan for promoting the Context Pack validator group from non-blocking observation to blocking CI enforcement.
+
+### 1. Purpose
+Promote the category-theory-oriented Context Pack validators from report-only execution to blocking CI checks without introducing unstable branch protection.
+
+### 2. Current inventory (report-only targets and dependent jobs)
+Primary implementation references:
+- `.github/workflows/context-pack-quality-gate.yml`
+- `scripts/context-pack/run-e2e-fixture.mjs`
+- `scripts/ci/context-pack-gate-observability.mjs`
+
+| Job / step | Depends on | Default mode | Becomes blocking when |
+| --- | --- | --- | --- |
+| `gate` | none | report-only judgement | `enforce-context-pack` label, `CONTEXT_PACK_ENFORCE_MAIN=1`, or strict workflow dispatch |
+| `Run Context Pack dependency boundary checks` | `gate` | report-only (`warn` on violations) | never; always report-only (`warn` on violations) |
+| `context-pack-e2e` | `gate` | non-blocking (`continue-on-error`) | blocking when `gate.strict == true` |
+| `Observe rollout metrics` | inside `context-pack-e2e` | non-blocking | never; observation only |
+
+### 3. Observability metrics and acceptance thresholds
+Recommended observation window: the latest 14 days.
+
+- Failure rate (`failureRatePercent`)
+  - Formula: `failedRuns / totalRuns * 100`
+  - Pass threshold: `<= 5%`
+- Reproduction rate (`reproductionRatePercent`)
+  - Formula: percentage of SHAs that fail again after the first failure within repeated runs
+  - Pass threshold: `>= 80%`
+- MTTR (`mttr.meanMinutes`)
+  - Formula: average time from the first failure to the next success on the same branch
+  - Pass threshold: `<= 120` minutes
+- Sample size
+  - Pass threshold: `totalRuns >= 20`
+
+Generate the observation report with:
+
+```bash
+pnpm -s run ci:context-pack:observe -- \
+  --repo itdojp/ae-framework \
+  --workflow-id context-pack-quality-gate.yml \
+  --days 14 \
+  --output-json artifacts/context-pack/context-pack-gate-observability.json \
+  --output-md artifacts/context-pack/context-pack-gate-observability.md
+```
+
+### 4. Phased rollout procedure
+1. **Phase A (default)**
+   - Run `context-pack-e2e` on PRs and pushes, and observe it in report-only mode.
+2. **Phase B (strict on selected PRs)**
+   - Add the `enforce-context-pack` label to target PRs and run the validators as blocking checks.
+3. **Phase C (strict on `main`)**
+   - Set repository variable `CONTEXT_PACK_ENFORCE_MAIN=1` to enforce blocking behavior on `main`.
+4. **Phase D (branch protection)**
+   - Add `context-pack-e2e` to required checks after the signal remains stable.
+
+### 5. Rollback conditions and procedure
+#### Rollback conditions
+- Failure rate exceeds `5%` for three consecutive days
+- Mean MTTR exceeds `120` minutes for three consecutive days
+- `unresolvedFailureStreaks > 0` continues for more than 24 hours
+
+#### Rollback procedure
+1. Temporarily remove `context-pack-e2e` from branch protection required checks.
+2. Reset `CONTEXT_PACK_ENFORCE_MAIN=0`.
+3. Remove the `enforce-context-pack` label from PRs.
+4. Re-enter at Phase B after the root cause is fixed.
+
+### 6. Operational notes
+- Use `fixtures/context-pack/e2e` as the SSOT for the E2E fixture set.
+- Runtime reports are stored under `artifacts/context-pack/`.
+- Dependency boundary reports are written to `artifacts/context-pack/deps-summary.json` and `artifacts/context-pack/deps-summary.md`.
+- Observation JSON/Markdown reports are written to the same directory and appended to the PR step summary.
