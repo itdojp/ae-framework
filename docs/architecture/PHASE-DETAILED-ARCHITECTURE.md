@@ -527,8 +527,22 @@ type PhaseDataFlow = {
   Phase2: { input: Intent; output: Requirements; };
   Phase3: { input: Requirements; output: UserStory[]; };
   Phase4: { input: UserStory[]; output: ValidatedStories; };
-  Phase5: { input: ValidatedStories; output: DomainModel; };
-  Phase6: { input: DomainModel; output: GeneratedUI; };
+  Phase5: {
+    input: {
+      validatedStories: ValidatedStories;
+      requirements: Requirements;
+      businessContext: BusinessContext;
+    };
+    output: DomainModel;
+  };
+  Phase6: {
+    input: {
+      domainModel: DomainModel;
+      userStories: UserStory[];
+      stakeholders: Stakeholder[];
+    };
+    output: GeneratedUI;
+  };
 };
 ```
 
@@ -1323,11 +1337,19 @@ type PhaseDataFlow = {
     output: ValidatedStories;
   };
   Phase5: {
-    input: ValidatedStories;
+    input: {
+      validatedStories: ValidatedStories;
+      requirements: Requirements;
+      businessContext: BusinessContext;
+    };
     output: DomainModel;
   };
   Phase6: {
-    input: DomainModel;
+    input: {
+      domainModel: DomainModel;
+      userStories: UserStory[];
+      stakeholders: Stakeholder[];
+    };
     output: GeneratedUI;
   };
 };
