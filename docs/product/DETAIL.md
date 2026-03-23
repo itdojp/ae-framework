@@ -44,7 +44,7 @@ For environment prerequisites, see `docs/product/OVERVIEW.md`.
 - Legacy compatibility shims remain in `src/cli.ts` and `src/runner/main.ts`; new user-facing commands are not added there
 
 #### 2.3 CLI and entrypoint detail
-- Main binaries from `package.json bin`:
+- Source entrypoints behind the binaries declared in `package.json bin` (built into `dist/src/cli/*.js` at runtime):
   - `ae`, `ae-framework` -> `src/cli/index.ts`
   - `ae-phase` -> `src/cli/phase-cli.ts`
   - `ae-approve` -> `src/cli/approval-cli.ts`
@@ -54,6 +54,7 @@ For environment prerequisites, see `docs/product/OVERVIEW.md`.
   - `ae-resilience` -> `src/cli/resilience-cli.ts`
   - `ae-benchmark` -> `src/cli/benchmark-cli.ts`
   - `ae-server` -> `src/cli/server-runner.ts`
+- For the exact runtime mapping, consult `package.json` `bin` entries and the built `dist/src/cli/*.js` outputs.
 - Representative subcommands from `src/cli/index.ts`:
   - `spec`
   - `state-machine`
