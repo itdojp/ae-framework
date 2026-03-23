@@ -324,29 +324,24 @@ interface EventSourcingSystem {
 
 ### 🔌 MCP Server Integration
 
-The framework also supports MCP-oriented integration when operators need tool/resource style access instead of the phase CLI path.
+The framework also supports MCP-oriented integration when operators need tool-based access instead of the phase CLI path.
 
 #### MCP Server Architecture
 
 ```text
-abstract class BaseMCPServer {
+abstract class MCPToolServer {
   protected tools: Map<string, MCPTool> = new Map();
-  protected resources: Map<string, MCPResource> = new Map();
 
   constructor(protected config: MCPConfig) {
     this.initializeTools();
-    this.initializeResources();
   }
 
   abstract initializeTools(): void;
-  abstract initializeResources(): void;
 
   async handleRequest(request: MCPRequest): Promise<MCPResponse> {
     switch (request.type) {
       case 'tool_call':
         return this.handleToolCall(request);
-      case 'resource_access':
-        return this.handleResourceAccess(request);
       default:
         throw new Error(`Unknown request type: ${request.type}`);
     }
@@ -358,7 +353,7 @@ abstract class BaseMCPServer {
 
 - Phase-specific servers expose a small tool catalog rather than mirroring the entire CLI.
 - Tool handlers usually wrap the same domain services used by the phase pipeline.
-- Resource access is reserved for read-heavy lookups such as policy, glossary, and generated artifacts.
+- Current `src/mcp-server/*` implementations instantiate the MCP SDK `Server` directly and register tool handlers only.
 - In current operations the MCP surface is an integration boundary, not a replacement for the main Verify Lite / Policy Gate / gate workflow.
 
 ---
@@ -492,8 +487,8 @@ Phase 6 is treated as an automated generation and validation pipeline rather tha
 - CVA-style variant generation
 - accessibility validation and ARIA generation
 - i18n scaffolding
-- Storybook / E2E / unit-test generation
-- quality checks such as Lighthouse-oriented validation
+- optional Storybook / E2E / unit-test generation paths for projects that enable those outputs
+- Lighthouse-oriented and accessibility quality checks as target metrics, commonly report-only in the default baseline
 
 #### Operational Expectations
 
