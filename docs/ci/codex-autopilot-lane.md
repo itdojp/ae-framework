@@ -52,7 +52,7 @@ Operational notes:
 Triggers:
 - `pull_request` (`opened`, `synchronize`, `reopened`, `labeled`, `ready_for_review`)
 - `pull_request_review` (`submitted`)
-- `issue_comment` (`/autopilot run`)
+- `issue_comment` (`/autopilot run`, commenter must be trusted: `MEMBER` / `OWNER` / `COLLABORATOR`)
 - `workflow_dispatch` (`pr_number` required)
 
 Target PR conditions:
@@ -73,7 +73,7 @@ Target PR conditions:
    - if it is not configured, stop with `actionable review tasks pending`
    - human dispositions such as `not applicable`, `fixed`, `対応不要`, `対応済み` remove the item from actionable scope
    - any `failed > 0` result is fail-closed with `status:blocked`
-   - in active execution, any `skipped > 0` result is also fail-closed as `actionable execution incomplete`
+   - in active execution (when `AE_AUTOPILOT_ACTIONABLE_DRY_RUN` is not enabled), any `skipped > 0` result is also fail-closed as `actionable execution incomplete`
 5. If Copilot threads remain unresolved, or `gate` is failing / missing:
    - run `copilot-auto-fix.mjs` in force mode
    - dispatch `copilot-review-gate.yml`
@@ -104,7 +104,12 @@ Artifacts when `AE_AUTOPILOT_WRITE_CONTRACT_ARTIFACTS=1`:
 ### 6. `AE_AUTOPILOT_ACTIONABLE_COMMAND` I/O contract
 
 Inputs through environment variables:
-- `AE_ACTIONABLE_TASKS_JSON` (JSON file containing task array)
+- `AE_ACTIONABLE_TASKS_JSON`
+  - path to a JSON file containing the actionable-tasks envelope object
+  - the lane writes an object of the form:
+    - `{ "prNumber": <number>, "round": <number>, "tasks": [ { /* task */ }, ... ] }`
+  - implementations MUST read and iterate over the `tasks` array; `prNumber` and `round` mirror `AE_ACTIONABLE_PR_NUMBER` / `AE_ACTIONABLE_ROUND`
+  - additional top-level properties may be added in the future and MUST be ignored by consumers
 - `AE_ACTIONABLE_PR_NUMBER`
 - `AE_ACTIONABLE_ROUND`
 
@@ -114,8 +119,10 @@ Expected stdout:
 
 Decision rules:
 - any `failed > 0` result is fail-closed
-- in active execution, any `skipped > 0` result is fail-closed
-- the lane proceeds only when every result is `success`
+- in active execution (when `AE_AUTOPILOT_ACTIONABLE_DRY_RUN` is not enabled), any `skipped > 0` result is fail-closed
+- lane progression:
+  - when `AE_AUTOPILOT_ACTIONABLE_DRY_RUN` is not enabled, the lane proceeds only when every result is `success`
+  - when `AE_AUTOPILOT_ACTIONABLE_DRY_RUN` is enabled, the lane proceeds when there are no `failed` results; some `skipped` results are allowed
 
 ### 7. Safety design
 
@@ -195,7 +202,7 @@ Repository Variables:
 
 - `pull_request`（opened/synchronize/reopened/labeled/ready_for_review）
 - `pull_request_review`（submitted）
-- `issue_comment`（`/autopilot run`）
+- `issue_comment`（`/autopilot run`、comment 投稿者は trusted actor: `MEMBER` / `OWNER` / `COLLABORATOR`）
 - `workflow_dispatch`（`pr_number` 必須）
 
 対象 PR 条件:
@@ -216,7 +223,7 @@ Repository Variables:
    - `AE_AUTOPILOT_ACTIONABLE_COMMAND` 未設定時は `actionable review tasks pending` で停止
    - 人手コメントに `対応不要` / `対応済み` / `not applicable` / `fixed` 相当の disposition が含まれる指摘は actionable 対象から除外
    - 失敗（`failed > 0`）は fail-closed で `status:blocked`
-   - active 実行で `skipped > 0` は `actionable execution incomplete` として fail-closed
+   - active 実行（`AE_AUTOPILOT_ACTIONABLE_DRY_RUN` 未有効）で `skipped > 0` は `actionable execution incomplete` として fail-closed
    - 成功時は再評価へ進行
 5. Copilot 未解決スレッドまたは gate failure / missing の場合:
    - `copilot-auto-fix.mjs` を force mode で実行
@@ -248,7 +255,11 @@ PR コメント（upsert）:
 ### 5. `AE_AUTOPILOT_ACTIONABLE_COMMAND` の入出力契約
 
 入力（環境変数）:
-- `AE_ACTIONABLE_TASKS_JSON`（task 配列を含む JSON ファイル）
+- `AE_ACTIONABLE_TASKS_JSON`
+  - actionable task の envelope object を格納した JSON ファイルの path
+  - lane は `{ "prNumber": <number>, "round": <number>, "tasks": [ ... ] }` の形式で書き出す
+  - consumer はトップレベル配列ではなく `tasks` 配列を読む
+  - 将来 top-level field が増えても無視できる実装にする
 - `AE_ACTIONABLE_PR_NUMBER`
 - `AE_ACTIONABLE_ROUND`
 
@@ -258,8 +269,10 @@ PR コメント（upsert）:
 
 判定:
 - `failed > 0` は fail-closed
-- active 実行で `skipped > 0` は fail-closed
-- すべて `success` のときのみ次段へ進行
+- active 実行（`AE_AUTOPILOT_ACTIONABLE_DRY_RUN` 未有効）で `skipped > 0` は fail-closed
+- 進行条件:
+  - `AE_AUTOPILOT_ACTIONABLE_DRY_RUN` 未有効時は全件 `success`
+  - `AE_AUTOPILOT_ACTIONABLE_DRY_RUN` 有効時は `failed=0` なら進行可能で、`skipped` は許容
 
 ### 6. 安全設計
 
