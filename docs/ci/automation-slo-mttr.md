@@ -22,7 +22,7 @@ Primary sources / 一次情報:
 
 The denominator for these metrics is the set of `ae-automation-report/v1` reports aggregated by the weekly observability workflow.
 
-Covered tools:
+Covered workflows:
 - `PR Self-Heal`
 - `Codex Autopilot Lane`
 - `PR Maintenance`
@@ -35,13 +35,15 @@ This document only defines the weekly SLO / MTTR semantics. Threshold evaluation
 - Metric: `summary.slo.successRatePercent`
 - Formula:
   - `successfulReports = totalReports - totalFailures`
-  - `successRatePercent = successfulReports / totalReports * 100`
+  - if `totalReports > 0`: `successRatePercent = successfulReports / totalReports * 100`
+  - if `totalReports == 0`: `successRatePercent = null`
 - `totalFailures` counts reports where `status in ['error', 'blocked']`
 - Target value:
   - `AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT`
   - default: `95`
 - Achievement rule:
-  - `summary.slo.achieved = successRatePercent >= targetPercent`
+  - if `successRatePercent != null`: `summary.slo.achieved = successRatePercent >= targetPercent`
+  - if `successRatePercent == null`: `summary.slo.achieved = null`
 
 Operational interpretation:
 - `done` and `skip` reports remain outside the failure numerator
@@ -57,8 +59,10 @@ Primary fields:
 
 Minimum recovery pairing logic:
 1. treat `status in ['error', 'blocked']` as a failure event
-2. find the next `status='resolved'` event for the same `tool`
-3. measure the delta in minutes as the recovery duration
+2. define the incident key as `tool + incidentScope` (`pr:<number>`, `pull:<ref>`, `sha:<sha>`, or `global`)
+3. when a failure occurs for a key that does not already have an open incident, open a new incident and record its start time
+4. additional failures for the same key while the incident is still open are aggregated into that incident and do not reset the start time
+5. when `status='resolved'` appears for the same key, close the incident and measure the delta in minutes as the recovery duration
 
 Target value:
 - `AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES`
@@ -74,10 +78,10 @@ Operational interpretation:
 
 ### 4. Incident classification
 
-`summary.mttr.byIncidentType` uses these classification keys:
+`summary.mttr.byIncidentType` uses these classification keys in deterministic order (first match wins):
 - `rate_limit_429`: the reason contains `429`, `Too Many Requests`, or `rate limit`
-- `review_gate`: the reason contains `gate` or `review`
 - `behind_loop`: the reason contains `behind`
+- `review_gate`: the reason contains `gate` or `review`
 - `blocked`: `status='blocked'` or the reason contains `blocked` / `conflict`
 - `other`: anything else
 
@@ -115,19 +119,21 @@ Recommended operator reading order:
 - `PR Maintenance`
 - `Copilot Auto Fix`
 
-`ae-automation-report/v1` の集計対象レポートを分母として扱います。ここでは週次 observability 集計における SLO / MTTR の定義のみを扱い、しきい値評価や alert 発報は `scripts/ci/automation-observability-weekly.mjs` および downstream workflow 側の責務です。
+`ae-automation-report/v1` の集計対象レポートを分母として扱います。ここで列挙しているのは report の `tool` 値ではなく、`DEFAULT_WORKFLOWS` に含まれる対象 workflow 名です。ここでは週次 observability 集計における SLO / MTTR の定義のみを扱い、しきい値評価や alert 発報は `scripts/ci/automation-observability-weekly.mjs` および downstream workflow 側の責務です。
 
 ### 2. SLO（成功率）
 
 - 指標: `summary.slo.successRatePercent`
 - 算式:
   - `successfulReports = totalReports - totalFailures`
-  - `successRatePercent = successfulReports / totalReports * 100`
+  - `totalReports > 0` の場合: `successRatePercent = successfulReports / totalReports * 100`
+  - `totalReports == 0` の場合: `successRatePercent = null`
 - `totalFailures` は `status in ['error', 'blocked']`
 - 目標値:
   - `AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT`（既定: `95`）
 - 達成判定:
-  - `summary.slo.achieved = successRatePercent >= targetPercent`
+  - `successRatePercent != null` の場合: `summary.slo.achieved = successRatePercent >= targetPercent`
+  - `successRatePercent == null` の場合: `summary.slo.achieved = null`
 
 運用解釈:
 - `done` / `skip` は failure 分子に含めません
@@ -142,8 +148,10 @@ Recommended operator reading order:
   - `summary.mttr.unresolvedOpenIncidents`
 - 計測ロジック（最小定義）:
   1. `status in ['error','blocked']` を失敗イベントとして起点化
-  2. 同一 `tool` の次の `status='resolved'` を復旧イベントとして対応付け
-  3. 差分時間を復旧時間（分）として集計
+  2. incident key を `tool + incidentScope`（`pr:<number>` / `pull:<ref>` / `sha:<sha>` / `global`）として定義
+  3. その key に未解消インシデントがない場合のみ新規 open し、開始時刻を記録
+  4. 未解消の間に同じ key で追加 failure が発生しても、同一インシデントへ集約し、開始時刻は更新しない
+  5. 同じ key で `status='resolved'` が来た時点で close し、開始時刻との差分を復旧時間（分）として集計
 - 目標値:
   - `AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES`（既定: `120`）
 - 達成判定:
@@ -156,10 +164,10 @@ Recommended operator reading order:
 
 ### 4. インシデント分類
 
-`summary.mttr.byIncidentType` の分類キー:
+`summary.mttr.byIncidentType` の分類キー（first match wins）:
 - `rate_limit_429`: reason に `429` / `Too Many Requests` / `rate limit`
-- `review_gate`: reason に `gate` または `review`
 - `behind_loop`: reason に `behind`
+- `review_gate`: reason に `gate` または `review`
 - `blocked`: status=`blocked` または reason に `blocked` / `conflict`
 - `other`: 上記以外
 
