@@ -14,7 +14,7 @@ Primary sources / 一次情報:
 - `scripts/ci/codex-autopilot-lane.mjs`
 - `scripts/ci/auto-merge-enabler.mjs`
 - `scripts/ci/copilot-auto-fix.mjs`
-- `.github/workflows/spec-generate-model.yml` (`kvonce-trace-validation` report emit)
+- `.github/workflows/spec-generate-model.yml` (`kvonce-trace-validation` report-emitting step)
 
 > Language / 言語: English | 日本語
 
@@ -123,7 +123,7 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
 
 ### 6. Representative operating uses
 
-- Monitoring integration: extract rows where `status != resolved`
+- Monitoring integration: extract rows where `status in {blocked,error}`
 - Failure analysis: classify by `reasonCode`, then use `reason` and `metrics` as supporting context
 - Evidence retention: write JSON with `AE_AUTOMATION_REPORT_FILE` and upload as an artifact
 
@@ -145,10 +145,12 @@ The weekly batch `Automation Observability Weekly` extracts `ae-automation-repor
   - `weekly-alert-summary.json`
 
 Primary inputs:
+- `AE_AUTOMATION_REPOSITORY`: target repository; required unless `GITHUB_REPOSITORY` is already available
 - `AE_AUTOMATION_OBSERVABILITY_WORKFLOWS`: target workflow names (CSV)
 - `AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS`: aggregation window
 - `AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW`: max referenced runs per workflow
 - `AE_AUTOMATION_OBSERVABILITY_TOP_N`: Top N count
+- `AE_AUTOMATION_OBSERVABILITY_OUTPUT`: summary JSON output path
 - `AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT`: success-rate SLO target (%)
 - `AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES`: MTTR target (minutes)
 - `AE_AUTOMATION_ALERT_SLO_TARGET_PERCENT`: alert threshold override for `slo_breach`
@@ -305,7 +307,7 @@ gh run view <run_id> --repo itdojp/ae-framework --log \
 
 ### 6. 代表的な運用
 
-- 監視連携: `status != resolved` を抽出して通知
+- 監視連携: `status in {blocked,error}` を抽出して通知
 - 失敗分析: `reasonCode` を先に確認し、その後 `reason` と `metrics` で要因を分類
 - 証跡保存: `AE_AUTOMATION_REPORT_FILE` でJSONを生成し artifact 化
 
