@@ -6,8 +6,6 @@ verificationCommand: pnpm -s run check:doc-consistency
 ---
 # Reason Codes（reasonCode）Registry
 
-This document defines the stable `reasonCode` classification keys used by automation and CI reports. / 本ドキュメントは、自動化および CI レポートで使用する安定した分類キー `reasonCode` を定義します。
-
 Primary sources / 一次情報:
 - `policy/reason-codes.yml`
 - `scripts/ci/run-verify-lite-local.sh`
@@ -19,6 +17,8 @@ Primary sources / 一次情報:
 ## English
 
 ### 1. Purpose
+
+This document defines the stable `reasonCode` classification keys used by automation and CI reports.
 
 The repository uses `reasonCode` as a stable machine-readable classification key for failures and skips.
 
@@ -51,7 +51,7 @@ The contract is intentionally conservative: emitters may change `reason`, but th
 ### 4. Validation path in CI
 
 - `verify-lite` (`.github/workflows/verify-lite.yml`) and `minimal-pipeline` (`.github/workflows/minimal-pipeline.yml`) run `pnpm run verify:lite`
-- `scripts/ci/run-verify-lite-local.sh` executes the validator exactly once and records the result into `verify-lite-run-summary.steps.reasonCodeRegistryValidation`
+- `scripts/ci/run-verify-lite-local.sh` executes the validator exactly once and records the result into the artifact `artifacts/verify-lite/verify-lite-run-summary.json` at JSON path `/steps/reasonCodeRegistryValidation`
 - for focused local verification, run `pnpm run reason-codes:validate` directly
 
 Minimum regression command:
@@ -66,6 +66,8 @@ pnpm run reason-codes:validate
 - weekly failure aggregation: `scripts/ci/automation-observability-weekly.mjs`
 
 ## 日本語
+
+本ドキュメントは、自動化および CI レポートで使用する安定した分類キー `reasonCode` を定義します。
 
 本リポジトリでは、失敗要因の安定した分類キーとして `reasonCode` を導入する。
 
@@ -93,7 +95,7 @@ pnpm run reason-codes:validate
 ### 3. 検証導線（CI）
 
 - `verify-lite` (`.github/workflows/verify-lite.yml`) / `minimal-pipeline` (`.github/workflows/minimal-pipeline.yml`) は `pnpm run verify:lite` を実行する。
-- `pnpm run verify:lite` の実体である `scripts/ci/run-verify-lite-local.sh` が validator を 1 回だけ実行し、`verify-lite-run-summary.steps.reasonCodeRegistryValidation` に結果を記録する。
+- `pnpm run verify:lite` の実体である `scripts/ci/run-verify-lite-local.sh` が validator を 1 回だけ実行し、成果物 `artifacts/verify-lite/verify-lite-run-summary.json` の JSON path `/steps/reasonCodeRegistryValidation` に結果を記録する。
 - 単体確認が必要な場合は `pnpm run reason-codes:validate` を直接実行する。
 
 ### 4. 参照
