@@ -6,7 +6,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 ---
 # Automation Failure Policies and Comment Templates
 
-PR 自動化ワークフローの fail-open / fail-closed 方針と、運用で参照するコメントテンプレートを定義します。
+This document defines the fail-open / fail-closed policy for PR automation workflows and the comment templates used during operation. / PR 自動化ワークフローの fail-open / fail-closed 方針と、運用で参照するコメントテンプレートを定義します。
 
 > Language / 言語: English | 日本語
 
