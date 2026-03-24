@@ -23,10 +23,10 @@ This document defines the operating policy for the docs doctest lanes that prote
 
 | Lane | Trigger | Execution |
 | --- | --- | --- |
-| `doctest-index` | `pull_request` / `push(main)` / `workflow_dispatch` | `check-doc-consistency-all` plus doctest for `../../README.md` and `../README.md`; on `pull_request`, changed Markdown files are also validated |
+| `doctest-index` | `pull_request` / `push(main)` / `workflow_dispatch` | `check-doc-consistency-all` plus doctest for README.md and docs/README.md; on `pull_request`, changed Markdown files are also validated |
 | `doctest-full` | `schedule` / `workflow_dispatch(full=true)` | full doctest for `docs/**/*.md` |
 
-Workflow: `../../.github/workflows/docs-doctest.yml`
+Workflow: `.github/workflows/docs-doctest.yml`
 
 ### Operating rules
 
