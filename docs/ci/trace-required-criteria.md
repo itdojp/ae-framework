@@ -128,7 +128,7 @@ Follow `docs/ci/automation-rollback-runbook.md`, section `4.5 trace required rol
 目的:
 - OTel/trace 検証（`KvOnce Trace Validation`）を branch protection の Required check に昇格する Go/No-Go 判定を、再現可能な指標で運用する。
 
-## 1. 判定対象
+### 1. 判定対象
 
 - check context: `KvOnce Trace Validation`
 - 観測単位: `ae-automation-report/v1`（`tool=kvonce-trace-validation`）
@@ -136,7 +136,7 @@ Follow `docs/ci/automation-rollback-runbook.md`, section `4.5 trace required rol
 
 ここでは Go/No-Go 判定基準のみを扱い、データ収集は `automation-observability-weekly.mjs`、branch protection 適用は承認後に別途実施します。
 
-## 2. Go/No-Go 基準
+### 2. Go/No-Go 基準
 
 全条件を同時に満たした場合のみ **Go** とする。
 
@@ -153,16 +153,16 @@ Follow `docs/ci/automation-rollback-runbook.md`, section `4.5 trace required rol
 - 失敗は `status in ['error','blocked']` を採用する（`automation-observability-weekly` の既定）。
 - 失敗率は小数第2位まで丸めて評価する。
 
-## 3. automation-observability からの集計手順
+### 3. automation-observability からの集計手順
 
-### 3.1 事前確認（trace report の存在確認）
+#### 3.1 事前確認（trace report の存在確認）
 
 ```bash
 gh run view <run_id> --repo itdojp/ae-framework --log \
   | rg '^\[ae-automation-report\].*"tool":"kvonce-trace-validation"'
 ```
 
-### 3.2 28日集計の生成
+#### 3.2 28日集計の生成
 
 ```bash
 AE_AUTOMATION_REPOSITORY=itdojp/ae-framework \
@@ -173,7 +173,7 @@ AE_AUTOMATION_OBSERVABILITY_OUTPUT=artifacts/automation/trace-required-summary.j
 node scripts/ci/automation-observability-weekly.mjs
 ```
 
-### 3.3 判定用メトリクス抽出
+#### 3.3 判定用メトリクス抽出
 
 ```bash
 jq '{
@@ -191,7 +191,7 @@ jq '{
 }' artifacts/automation/trace-required-summary.json
 ```
 
-### 3.4 Go/No-Go の機械判定
+#### 3.4 Go/No-Go の機械判定
 
 ```bash
 jq 'def failure_rate:
@@ -210,7 +210,7 @@ jq 'def failure_rate:
     }' artifacts/automation/trace-required-summary.json
 ```
 
-## 4. Branch protection preset 更新案
+### 4. Branch protection preset 更新案
 
 - 追加 preset: `.github/branch-protection.main.verify-lite-trace-noreview.json`
 - Required contexts:
@@ -222,7 +222,7 @@ jq 'def failure_rate:
 適用は Go 判定後に `branch-protection-apply` workflow または `scripts/admin/apply-branch-protection.mjs` で実施する。  
 No-Go の間は既存 preset（`branch-protection.main.verify-lite-noreview.json`）を維持する。
 
-## 5. ロールバック条件
+### 5. ロールバック条件
 
 以下のいずれかに該当した時点で、Required からの切り戻し（rollback）を実施する。
 
