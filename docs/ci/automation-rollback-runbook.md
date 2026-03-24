@@ -140,10 +140,11 @@ Keep rollback comments as continuity evidence instead of deleting them. Operator
 - Use `unfreeze` first to clear the emergency stop.
 - `write` can be reverted immediately by `unfreeze` because it only controls the global kill-switch.
 - `freeze` keeps individual toggles at `0`, so operators must restore those variables explicitly after `unfreeze`.
+- If rollback used the `merge` stage, explicitly restore `AE_AUTO_MERGE` and `AE_CODEX_AUTOPILOT_ENABLED` to the intended operating values before unattended operation resumes.
 - Before re-enabling, confirm MTTR and current observability metrics in `docs/ci/automation-slo-mttr.md`.
 - In trace-required operation, re-promote presets only when `docs/ci/trace-required-criteria.md` says Go.
-- Restore variables in stages according to project policy.
-  - example: reset `AE_AUTOMATION_PROFILE=conservative` first
+- Restore variables in stages according to project policy, covering every toggle that rollback forced to `0`.
+  - example: restore `AE_AUTOMATION_PROFILE=conservative` first, then re-enable `AE_AUTO_MERGE`, then restore `AE_CODEX_AUTOPILOT_ENABLED` and other per-lane toggles
 - Immediately after recovery, watch `PR Maintenance` and `Copilot Review Gate`; if the same failure recurs, return to `write`.
 
 ### 6. Related documents
@@ -277,10 +278,11 @@ rollback comment は削除せず、連続した証跡として残します。`st
 - 緊急停止解除は `unfreeze` を先に実行
 - `write` は global kill-switch だけを制御するため `unfreeze` で即時復帰可能
 - `freeze` は `unfreeze` 後も個別 toggle が `0` のままなので、明示的に戻す必要がある
+- `merge` 段階停止を使った場合は、無人運用へ戻す前に `AE_AUTO_MERGE` / `AE_CODEX_AUTOPILOT_ENABLED` を意図した運用値へ明示的に戻す
 - 復帰前に `docs/ci/automation-slo-mttr.md` の MTTR 目標と最新 observability 指標を確認
 - trace required 運用では `docs/ci/trace-required-criteria.md` が Go を示す場合のみ preset を再昇格
-- project 方針に沿って変数を段階復帰
-  - 例: `AE_AUTOMATION_PROFILE=conservative` を先に戻す
+- project 方針に沿って、rollback で `0` にした変数を段階復帰
+  - 例: `AE_AUTOMATION_PROFILE=conservative` を先に戻し、その後 `AE_AUTO_MERGE`、`AE_CODEX_AUTOPILOT_ENABLED`、他の lane 個別 toggle を順次再有効化
 - 復帰直後は `PR Maintenance` / `Copilot Review Gate` を監視し、再発時は `write` へ戻す
 
 ### 6. 関連ドキュメント
