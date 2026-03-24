@@ -6,9 +6,11 @@ verificationCommand: pnpm -s run check:doc-consistency
 ---
 # Automation Observability
 
-PR自動化系スクリプトの実行結果は、共通フォーマット `ae-automation-report/v1` で出力されます。
+PR automation scripts emit their execution result in the shared `ae-automation-report/v1` format. / PR自動化系スクリプトの実行結果は、共通フォーマット `ae-automation-report/v1` で出力されます。
 
 > Language / 言語: English | 日本語
+
+---
 
 ## English
 
@@ -94,16 +96,16 @@ jq '.summary | {blockedRatePercent, convergenceRounds}' artifacts/automation/wee
 
 ```bash
 gh run view <run_id> --repo itdojp/ae-framework --log \
-  | rg '^\\[ae-automation-report\\]' \
-  | sed 's/^\\[ae-automation-report\\] //'
+  | rg '^\[ae-automation-report\]' \
+  | sed 's/^\[ae-automation-report\] //'
 ```
 
 `grep` variant:
 
 ```bash
 gh run view <run_id> --repo itdojp/ae-framework --log \
-  | grep '^\\[ae-automation-report\\]' \
-  | sed 's/^\\[ae-automation-report\\] //'
+  | grep '^\[ae-automation-report\]' \
+  | sed 's/^\[ae-automation-report\] //'
 ```
 
 ### 6. Representative operations
