@@ -58,6 +58,8 @@ Configuration is resolved in this order:
 
 That means explicit variables override the profile even when the profile is enabled.
 
+For reviewer actors only, there is an additional legacy fallback layer between (2) and (3): when `AI_REVIEW_ACTORS` is unset, `automation-config.mjs` reads `COPILOT_ACTORS` (`legacy(COPILOT_ACTORS)`) before falling back to script defaults.
+
 If an operator needs to override a string variable to an explicit empty value (for example, `AE_COPILOT_AUTO_FIX_LABEL` or `AE_AUTO_MERGE_LABEL`), set the repository variable to `(empty)`.
 
 ### 3. Profile contents
@@ -66,7 +68,7 @@ If an operator needs to override a string variable to an explicit empty value (f
 | --- | --- | --- | --- |
 | `AE_REVIEW_TOPOLOGY` | `team` | `team` | `team` |
 | `AE_POLICY_MIN_HUMAN_APPROVALS` | *(empty)* | *(empty)* | *(empty)* |
-| `AE_AUTOMATION_GLOBAL_DISABLE` | `0` | `0` | `0` |
+| `AE_AUTOMATION_GLOBAL_DISABLE` | *(default / explicit)* | *(default / explicit)* | *(default / explicit)* |
 | `AE_COPILOT_AUTO_FIX` | `1` | `1` | `1` |
 | `AE_COPILOT_AUTO_FIX_SCOPE` | `docs` | `docs` | `all` |
 | `AE_COPILOT_AUTO_FIX_LABEL` | `copilot-auto-fix` | *(empty)* | *(empty)* |
@@ -161,6 +163,8 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 
 つまり、プロファイルを有効化していても、個別変数を指定すればその値が優先されます。
 
+reviewer actor だけは (2) と (3) の間に legacy fallback があり、`AI_REVIEW_ACTORS` 未設定時は `COPILOT_ACTORS`（`legacy(COPILOT_ACTORS)`）を参照してから既定値へフォールバックします。
+
 文字列系の個別変数（例: `AE_COPILOT_AUTO_FIX_LABEL`, `AE_AUTO_MERGE_LABEL`）を明示的に空文字へ上書きしたい場合は、`(empty)` を設定します。
 
 ## 3. プロファイル内容
@@ -169,7 +173,7 @@ Repository Variables に `AE_AUTOMATION_PROFILE` を設定します。
 | --- | --- | --- | --- |
 | `AE_REVIEW_TOPOLOGY` | `team` | `team` | `team` |
 | `AE_POLICY_MIN_HUMAN_APPROVALS` | *(empty)* | *(empty)* | *(empty)* |
-| `AE_AUTOMATION_GLOBAL_DISABLE` | `0` | `0` | `0` |
+| `AE_AUTOMATION_GLOBAL_DISABLE` | *(default / explicit)* | *(default / explicit)* | *(default / explicit)* |
 | `AE_COPILOT_AUTO_FIX` | `1` | `1` | `1` |
 | `AE_COPILOT_AUTO_FIX_SCOPE` | `docs` | `docs` | `all` |
 | `AE_COPILOT_AUTO_FIX_LABEL` | `copilot-auto-fix` | *(empty)* | *(empty)* |
