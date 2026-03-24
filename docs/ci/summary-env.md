@@ -22,8 +22,8 @@ Use these variables to control the output language, verbosity, and adapter alert
 
 | Variable | Values / default | Current behavior |
 | --- | --- | --- |
-| `ADAPTER_WARN_MAX` | integer, default `0` | If adapter summaries contain more than this number of `warn` statuses, the renderer adds an alert line. |
-| `ADAPTER_ERROR_MAX` | integer, default `0` | If adapter summaries contain more than this number of `error` statuses, the renderer adds an alert line. |
+| `ADAPTER_WARN_MAX` | integer, default `0` | If adapter summaries contain more than this number of `warn` statuses, the renderer changes the Alerts line from `Alerts: none` to a populated list that includes a `warn` alert entry. |
+| `ADAPTER_ERROR_MAX` | integer, default `0` | If adapter summaries contain more than this number of `error` statuses, the renderer changes the Alerts line from `Alerts: none` to a populated list that includes an `error` alert entry. |
 | `SUMMARY_MODE` | `digest` or `detailed`, default `digest` | `detailed` is enabled only when the value is exactly `detailed`; any other value falls back to `digest`. |
 | `SUMMARY_LANG` | `en` or `ja`, default `en` | The renderer lowercases the value and uses Japanese output only when the value is `ja`. |
 
@@ -68,8 +68,8 @@ PR サマリ生成の挙動を制御する環境変数の一覧です。
 
 | 変数 | 値 / 既定値 | 現行挙動 |
 | --- | --- | --- |
-| `ADAPTER_WARN_MAX` | 整数、既定 `0` | adapter summary に `warn` がこの件数を超えて含まれると、renderer が alert 行を追加する |
-| `ADAPTER_ERROR_MAX` | 整数、既定 `0` | adapter summary に `error` がこの件数を超えて含まれると、renderer が alert 行を追加する |
+| `ADAPTER_WARN_MAX` | 整数、既定 `0` | adapter summary 内の `warn` 件数がこの値を超えた場合、Alerts 行は `警告: なし` から `warn` 警告を含む内容へ変化する |
+| `ADAPTER_ERROR_MAX` | 整数、既定 `0` | adapter summary 内の `error` 件数がこの値を超えた場合、Alerts 行は `警告: なし` から `error` 警告を含む内容へ変化する |
 | `SUMMARY_MODE` | `digest` または `detailed`、既定 `digest` | 値が正確に `detailed` の場合のみ詳細モードになり、それ以外は `digest` にフォールバックする |
 | `SUMMARY_LANG` | `en` または `ja`、既定 `en` | 値を小文字化したうえで `ja` のときだけ日本語出力、それ以外は英語出力になる |
 
