@@ -1,12 +1,192 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-24'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
 # Automation Observability
 
-PR自動化系スクリプトの実行結果は、共通フォーマット `ae-automation-report/v1` で出力されます。
+PR automation scripts emit their execution result in the shared `ae-automation-report/v1` format. / PR自動化系スクリプトの実行結果は、共通フォーマット `ae-automation-report/v1` で出力されます。
+
+> Language / 言語: English | 日本語
+
+---
+
+## English
+
+PR automation scripts emit their execution result in the shared `ae-automation-report/v1` format.
+
+Primary sources:
+- `scripts/ci/lib/automation-report.mjs`
+- `scripts/ci/pr-self-heal.mjs`
+- `scripts/ci/codex-autopilot-lane.mjs`
+- `scripts/ci/auto-merge-enabler.mjs`
+- `scripts/ci/copilot-auto-fix.mjs`
+- `.github/workflows/spec-generate-model.yml` (`kvonce-trace-validation` report emission)
+
+### 1. Output destinations
+
+- **stdout**: one-line JSON with the prefix `[ae-automation-report]`
+- **Step Summary**: appended automatically when `GITHUB_STEP_SUMMARY` is available
+- **optional JSON file**: written when `AE_AUTOMATION_REPORT_FILE` is set
+
+### 2. Shared schema summary
+
+```json
+{
+  "schemaVersion": "ae-automation-report/v1",
+  "generatedAt": "2026-02-13T00:00:00.000Z",
+  "tool": "codex-autopilot-lane",
+  "mode": "active",
+  "status": "blocked",
+  "reasonCode": "policy.required_labels_missing",
+  "reason": "missing policy labels: run-security, run-ci-extended",
+  "prNumber": 123,
+  "metrics": {},
+  "data": {},
+  "run": {
+    "workflow": "PR Self-Heal",
+    "event": "workflow_dispatch",
+    "runId": 21966754908,
+    "attempt": 1,
+    "url": "https://github.com/itdojp/ae-framework/actions/runs/21966754908",
+    "repository": "itdojp/ae-framework",
+    "ref": "refs/heads/main",
+    "sha": "..."
+  }
+}
+```
+
+### 3. `status` guidance
+
+- `resolved`: completed successfully
+- `blocked`: stopped because conditions did not converge or did not match
+- `skip`: no target to process, or skipped by configuration
+- `error`: runtime failure
+
+Notes:
+- `reasonCode`: stable classification key for failure or skip reasons (dictionary: `policy/reason-codes.yml`, guide: `docs/ci/reason-codes.md`)
+- `reason`: human-readable explanation
+
+### 4. Key operating metrics (`#2374`)
+
+#### 4.1 blocked rate
+
+- definition: `summary.byStatus.blocked / summary.totalReports * 100`
+- JSON output: `weekly-failure-summary.json` -> `summary.blockedRatePercent`
+- intent: detect increasing automation stops (`blocked`) early
+
+#### 4.2 rounds until convergence
+
+- source field: `metrics.rounds` in `ae-automation-report/v1`
+- aggregated output:
+  - `summary.convergenceRounds.overall` (`count`, `meanRounds`, `p95Rounds`, `maxRounds`)
+  - `summary.convergenceRounds.byTool.<tool>` (same metrics)
+- intent: track how many attempts automation needs before it settles
+
+Example:
+
+```bash
+jq '.summary | {blockedRatePercent, convergenceRounds}' artifacts/automation/weekly-failure-summary.json
+```
+
+### 5. Log extraction examples
+
+`rg` variant:
+
+```bash
+gh run view <run_id> --repo itdojp/ae-framework --log \
+  | rg '^\[ae-automation-report\]' \
+  | sed 's/^\[ae-automation-report\] //'
+```
+
+`grep` variant:
+
+```bash
+gh run view <run_id> --repo itdojp/ae-framework --log \
+  | grep '^\[ae-automation-report\]' \
+  | sed 's/^\[ae-automation-report\] //'
+```
+
+### 6. Representative operations
+
+- alerting: notify when `status != resolved`
+- failure analysis: classify incidents by `reason` and `metrics`
+- evidence retention: set `AE_AUTOMATION_REPORT_FILE` and publish the JSON as an artifact
+
+### 7. Weekly aggregation (Top N failure reasons)
+
+The weekly batch `Automation Observability Weekly` extracts `ae-automation-report/v1` from major automation workflow logs and aggregates `error` / `blocked` reasons.
+
+- workflow: `.github/workflows/automation-observability-weekly.yml`
+- script: `scripts/ci/automation-observability-weekly.mjs`
+- alert script: `scripts/ci/automation-observability-alert.mjs`
+- artifact: `automation-observability-weekly`
+  - `weekly-failure-summary.json`
+  - `weekly-alert-summary.json`
+
+Main inputs:
+- `AE_AUTOMATION_OBSERVABILITY_WORKFLOWS`
+- `AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS`
+- `AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW`
+- `AE_AUTOMATION_OBSERVABILITY_TOP_N`
+- `AE_AUTOMATION_OBSERVABILITY_SLO_TARGET_PERCENT`
+- `AE_AUTOMATION_OBSERVABILITY_MTTR_TARGET_MINUTES`
+- `AE_AUTOMATION_ALERT_SLO_TARGET_PERCENT`
+- `AE_AUTOMATION_ALERT_MTTR_TARGET_MINUTES`
+- `AE_AUTOMATION_ALERT_MAX_BLOCKED`
+- `AE_AUTOMATION_ALERT_MAX_CONSECUTIVE_FAILURES`
+- `AE_AUTOMATION_ALERT_COOLDOWN_HOURS`
+- `AE_AUTOMATION_ALERT_ISSUE_NUMBER`
+- `AE_AUTOMATION_ALERT_CHANNEL`
+- `AE_AUTOMATION_ALERT_DRY_RUN`
+
+Key derived outputs:
+- `summary.topFailureReasonCodes`
+- `summary.reasonCodeCoveragePercent`
+- `summary.slo.successRatePercent`
+- `summary.slo.achieved`
+- `summary.mttr.meanMinutes`
+- `summary.mttr.p95Minutes`
+- `summary.mttr.byIncidentType`
+
+See `docs/ci/automation-slo-mttr.md` for metric definitions.
+
+Manual run example:
+
+```bash
+gh workflow run "Automation Observability Weekly" \
+  --repo itdojp/ae-framework \
+  -f since_days=7 \
+  -f max_runs_per_workflow=30 \
+  -f top_n=5 \
+  -f slo_target_percent=95 \
+  -f mttr_target_minutes=120 \
+  -f alert_issue_number=1963 \
+  -f alert_max_blocked=2 \
+  -f alert_max_consecutive_failures=3 \
+  -f alert_cooldown_hours=24 \
+  -f alert_channel=issue_comment
+```
+
+See `docs/ci/automation-alerting.md` for notification conditions, templates, and suppression rules.
+
+### 8. Trace-required aggregation (`#2394`)
+
+When using the report as evidence for `KvOnce Trace Validation` required-check promotion, narrow the target workflow set to `Spec Generate & Model Tests`.
+
+```bash
+AE_AUTOMATION_REPOSITORY=itdojp/ae-framework \
+AE_AUTOMATION_OBSERVABILITY_WORKFLOWS='Spec Generate & Model Tests' \
+AE_AUTOMATION_OBSERVABILITY_SINCE_DAYS=28 \
+AE_AUTOMATION_OBSERVABILITY_MAX_RUNS_PER_WORKFLOW=120 \
+AE_AUTOMATION_OBSERVABILITY_OUTPUT=artifacts/automation/trace-required-summary.json \
+node scripts/ci/automation-observability-weekly.mjs
+```
+
+See `docs/ci/trace-required-criteria.md` for the period, thresholds, and Go/NoGo criteria.
+
+## 日本語
 
 一次情報:
 - `scripts/ci/lib/automation-report.mjs`
