@@ -27,8 +27,8 @@ Primary sources / 一次情報:
   - normal operation: configure the long-lived operations issue as a Repository Variable
   - temporary override: pass a different issue number through `workflow_dispatch`
 - Duplicate suppression:
-  - do not repost the same fingerprint for the same window and condition set
-  - suppress new posts while the previous notification is still within `AE_AUTOMATION_ALERT_COOLDOWN_HOURS`
+  - suppress the same fingerprint unconditionally as `duplicate_fingerprint`
+  - for different fingerprints, suppress new posts while the latest alert comment is still within `AE_AUTOMATION_ALERT_COOLDOWN_HOURS`
 
 Slack or other external channels are not implemented in the current workflow. If an external sink is required, consume `weekly-alert-summary.json` from a separate workflow or job.
 
@@ -58,7 +58,7 @@ The issue-comment body is built from these elements.
 - References: sample run URL, runbook, observability docs
 - fingerprint marker: `<!-- AE-AUTOMATION-ALERT-FP <hex16> -->`
 
-The fingerprint marker is the stable suppression key. If the same fingerprint is still under cooldown, the workflow records the suppression result in `weekly-alert-summary.json` instead of posting another comment.
+The fingerprint marker is the stable suppression key. The same fingerprint is always suppressed as `duplicate_fingerprint`, regardless of cooldown. For different fingerprints, the workflow suppresses a new comment only when the latest alert comment is still within `AE_AUTOMATION_ALERT_COOLDOWN_HOURS`, and records that result in `weekly-alert-summary.json`.
 
 ### 4. Key environment variables
 
@@ -108,8 +108,8 @@ Use `weekly-alert-summary.json` as the first evidence source during triage. It r
   - 通常運用: Repository Variable で固定の運用 Issue を定義
   - 一時上書き: `workflow_dispatch` 入力で別 Issue 番号を指定可能
 - 通知の重複抑止:
-  - 同一 fingerprint（同一期間・同一条件）を再投稿しない
-  - 最終通知から `AE_AUTOMATION_ALERT_COOLDOWN_HOURS` 内は新規通知を抑止
+  - 同一 fingerprint は cooldown に関係なく `duplicate_fingerprint` として常に抑止
+  - 別 fingerprint については、直近の alert comment から `AE_AUTOMATION_ALERT_COOLDOWN_HOURS` 内であれば新規通知を抑止
 
 Slack 等の外部チャネルは current workflow では未対応です。必要な場合は別 workflow / job で `weekly-alert-summary.json` を取り込んで拡張します。
 
@@ -139,7 +139,7 @@ Issue comment の本文は次の要素で構成します。
 - References: sample run URL / runbook / observability docs
 - fingerprint marker: `<!-- AE-AUTOMATION-ALERT-FP <hex16> -->`
 
-fingerprint marker は抑止判定の安定キーです。同一 fingerprint が cooldown 中に再発した場合は、新規 comment を投稿せず `weekly-alert-summary.json` に suppression 結果を書き込みます。
+fingerprint marker は抑止判定の安定キーです。同一 fingerprint は cooldown に関係なく常に `duplicate_fingerprint` として抑止し、`weekly-alert-summary.json` に suppression 結果を書き込みます。別 fingerprint については、直近の alert comment から `AE_AUTOMATION_ALERT_COOLDOWN_HOURS` 内であれば新規 comment を投稿せず抑止し、同様に `weekly-alert-summary.json` へ記録します。
 
 ### 4. 主要環境変数
 
