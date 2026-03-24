@@ -6,7 +6,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 ---
 # ADMIN_TOKEN Setup Guide (Fine-grained PAT)
 
-このドキュメントは、Branch Protection のプリセット適用ワークフローで使用する `ADMIN_TOKEN` の作成・登録手順をまとめたものです。通常のCIやPR作成では使用しません。
+This document summarizes how to create and register `ADMIN_TOKEN` for the Branch Protection preset-apply workflow. It is not used for normal CI or PR creation. / このドキュメントは、Branch Protection のプリセット適用ワークフローで使用する `ADMIN_TOKEN` の作成・登録手順をまとめたものです。通常のCIやPR作成では使用しません。
 
 > Language / 言語: English | 日本語
 

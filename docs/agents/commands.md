@@ -2,7 +2,7 @@
 docRole: derived
 canonicalSource:
   - .github/workflows/agent-commands.yml
-lastVerified: '2026-03-23'
+lastVerified: '2026-03-24'
 ---
 
 # Agent Commands Catalog
