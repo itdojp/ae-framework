@@ -14,7 +14,7 @@ This document classifies `.github/workflows/*.yml` by operational role so requir
 
 ## English
 
-Update summary: 2026-03-14
+Update summary: 2026-03-25
 
 Scope: operational role mapping for `.github/workflows/*.yml` (Issue #2031 / Phase 3).
 
@@ -30,7 +30,7 @@ Note (2026-03-04):
 ### 2. Role definitions
 
 - `core`: daily PR quality gates that require immediate response on failure
-- `optional`: heavier validations that run through label / dispatch / schedule
+- `optional`: heavier validations that run through label / dispatch / schedule / workflow_call
 - `report`: observability, notification, self-heal, or other supporting automation
 
 Notes:
@@ -48,7 +48,7 @@ Notes:
 | `verify-lite.yml` | lightweight required gate (types / build / baseline validation) | PR / push / dispatch |
 | `policy-gate.yml` | required checks / risk policy / OPA shadow compare decisions | PR / review / workflow_run / dispatch |
 | `copilot-review-gate.yml` | Copilot review presence / resolution confirmation | PR / review / dispatch |
-| `ci.yml` | aggregate orchestration entrypoint | PR / push / schedule / dispatch |
+| `ci.yml` | aggregate orchestration entrypoint | PR / push / schedule / call / dispatch |
 | `ci-fast.yml` | fast validation batch | call / dispatch |
 | `pr-verify.yml` | standard PR validation entrypoint | call / dispatch |
 | `verify.yml` | integrated traceability / formal validation entrypoint | PR / call / dispatch |
@@ -101,7 +101,7 @@ Notes:
 
 ## 日本語
 
-最終更新: 2026-03-14
+最終更新: 2026-03-25
 
 対象: `.github/workflows/*.yml` の運用責務整理（Issue #2031 / Phase 3）
 
@@ -118,7 +118,7 @@ Notes:
 ## 2. ロール定義
 
 - `core`: 日常PRの品質ゲート。失敗時は即対応対象
-- `optional`: ラベル/dispatch/schedule で実行する重い検証
+- `optional`: ラベル/dispatch/schedule/workflow_call で実行する重い検証
 - `report`: 可視化・通知・自己修復など運用補助
 
 補足:
@@ -136,7 +136,7 @@ Notes:
 | `verify-lite.yml` | 軽量必須ゲート（型/ビルド/基本検証） | PR / push / dispatch |
 | `policy-gate.yml` | Required checks / risk policy / OPA shadow compare の判定 | PR / review / workflow_run / dispatch |
 | `copilot-review-gate.yml` | Copilotレビュー存在/解決確認 | PR / review / dispatch |
-| `ci.yml` | 総合オーケストレーション入口 | PR / push / schedule / dispatch |
+| `ci.yml` | 総合オーケストレーション入口 | PR / push / schedule / call / dispatch |
 | `ci-fast.yml` | 高速検証バッチ | call / dispatch |
 | `pr-verify.yml` | PR向け標準検証 | call / dispatch |
 | `verify.yml` | traceability/formal系の統合検証入口 | PR / call / dispatch |
