@@ -1,10 +1,105 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-14'
+lastVerified: '2026-03-25'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
 # Workflow Role Matrix (core / optional / report)
+
+This document classifies `.github/workflows/*.yml` by operational role so required and non-required workflows are managed consistently. / 本ドキュメントは、`.github/workflows/*.yml` を運用ロールで分類し、Required / 非Required workflow を一貫して管理するための基準を定義します。
+
+> Language / 言語: English | 日本語
+
+---
+
+## English
+
+Update summary: 2026-03-14
+
+Scope: operational role mapping for `.github/workflows/*.yml` (Issue #2031 / Phase 3).
+
+Note (2026-03-04):
+- for the proposed regrouping into `pr-core` / `pr-extended` / `maintenance` / `release-assurance`, see `docs/ci/workflow-topology-mapping-2026-03-04.md`
+
+### 1. Purpose
+
+- clarify workflow responsibilities as `core`, `optional`, or `report`
+- keep the boundary between required checks and non-required workflows operationally consistent
+- provide a stable decision baseline when workflows are consolidated or removed
+
+### 2. Role definitions
+
+- `core`: daily PR quality gates that require immediate response on failure
+- `optional`: heavier validations that run through label / dispatch / schedule
+- `report`: observability, notification, self-heal, or other supporting automation
+
+Notes:
+
+- as of 2026-03-14, the required checks on `main` are `verify-lite`, `policy-gate`, and `gate`
+- `gate` is the status-check name emitted by `copilot-review-gate.yml`
+- after Copilot Auto Fix, gate re-evaluation dispatch is handled by `agent-commands.yml`, not by `copilot-review-gate.yml`
+
+### 3. Current mapping (major workflows)
+
+#### 3.1 core
+
+| Workflow | Primary purpose | Trigger |
+|---|---|---|
+| `verify-lite.yml` | lightweight required gate (types / build / baseline validation) | PR / push / dispatch |
+| `policy-gate.yml` | required checks / risk policy / OPA shadow compare decisions | PR / review / workflow_run / dispatch |
+| `copilot-review-gate.yml` | Copilot review presence / resolution confirmation | PR / review / dispatch |
+| `ci.yml` | aggregate orchestration entrypoint | PR / push / schedule / dispatch |
+| `ci-fast.yml` | fast validation batch | call / dispatch |
+| `pr-verify.yml` | standard PR validation entrypoint | call / dispatch |
+| `verify.yml` | integrated traceability / formal validation entrypoint | PR / call / dispatch |
+| `workflow-lint.yml` | workflow quality rule validation | PR / push |
+| `docs-doctest.yml` | lightweight doctest for README/docs index plus weekly full doctest | PR(path) / push(main,path) / schedule / dispatch |
+| `coverage-check.yml` | coverage threshold gate | PR / push / dispatch |
+| `spec-validation.yml` | spec fail-fast / schema validation | PR / push / call / dispatch |
+
+#### 3.2 optional
+
+| Workflow | Primary purpose | Trigger |
+|---|---|---|
+| `ci-extended.yml` | integration / property / MBT / mutation suites | call |
+| `parallel-test-execution.yml` | parallel test execution optimization | call / dispatch |
+| `hermetic-ci.yml` | hermetic reproducibility validation | call / dispatch |
+| `formal-verify.yml` | opt-in formal tooling | PR(label) / dispatch |
+| `formal-aggregate.yml` | aggregate formal results | call / dispatch |
+| `security.yml` | heavier security validation | PR(label) / push / schedule / dispatch |
+| `sbom-generation.yml` | SBOM generation and vulnerability collection | PR / push / call / dispatch |
+| `context-pack-quality-gate.yml` | Context Pack E2E validation during staged rollout | PR(path) / push(main) / dispatch |
+| `flake-detect.yml` / `flake-stability.yml` | flake detection / retry stability | schedule / dispatch / call |
+| `podman-smoke.yml` / `docker-tests.yml` | container execution validation | call / dispatch / schedule |
+| `mutation-quick.yml` | mutation quick validation | dispatch |
+
+#### 3.3 report
+
+| Workflow | Primary purpose | Trigger |
+|---|---|---|
+| `pr-ci-status-comment.yml` | PR-facing CI summary / auto-merge control | PR / schedule / dispatch |
+| `pr-self-heal.yml` | automated recovery on failure | workflow_run / schedule / dispatch |
+| `ci-auto-rerun-failed.yml` | automatic rerun of failed jobs | workflow_run |
+| `automation-observability-weekly.yml` | weekly SLO / MTTR observation for automation | schedule / dispatch |
+| `adapter-thresholds.yml` | threshold reporting (report-only) | PR |
+| `branch-protection-apply.yml` | branch-protection apply operations | dispatch |
+
+### 4. Operating rules
+
+1. Whenever a new workflow is added, add its role to this document.
+2. Promote a workflow to `core` only after confirming reproducibility, runtime, and false-positive rate.
+3. Revisit high-frequency `optional` workflows quarterly as potential `core` integration candidates.
+4. Do not include `report` workflows in PR merge-blocking conditions.
+
+### 5. Related documents
+
+- `docs/maintenance/workflow-inventory-2026-02-17.md`
+- `docs/ci-policy.md`
+- `docs/ci/docs-doctest-policy.md`
+- `docs/ci/copilot-review-gate.md`
+- `docs/ci/workflow-topology-mapping-2026-03-04.md`
+
+## 日本語
 
 最終更新: 2026-03-14
 
