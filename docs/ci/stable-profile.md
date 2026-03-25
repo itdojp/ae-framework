@@ -40,8 +40,8 @@ This profile defines the deterministic and relatively fast test subset used as t
 ### Flake diagnostics
 
 - When re-running integration-heavy failures, set `AE_INTEGRATION_TRACE_HANDLES=1` to collect `why-is-node-running` diagnostics.
-- In GitHub Actions, re-run with `gh run rerun <runId> -e AE_INTEGRATION_TRACE_HANDLES=1`.
-- Locally, use `AE_INTEGRATION_TRACE_HANDLES=1 pnpm test:int`.
+- In GitHub Actions, re-run only the failed jobs with `gh run rerun <runId> --failed` to confirm reproducibility on the same CI context.
+- For handle-level diagnostics, reproduce locally with `AE_INTEGRATION_TRACE_HANDLES=1 pnpm test:int`, because `gh run rerun` does not accept environment-variable overrides.
 - After collecting diagnostics, remove the variable to avoid excessive logs and unnecessary CI cost.
 - Detailed procedures live in `docs/testing/integration-runtime-helpers.md`.
 
@@ -81,8 +81,8 @@ This profile defines the deterministic and relatively fast test subset used as t
 ### Flake 診断
 
 - integration 系の再実行でハンドルリーク等を調べる場合は、`AE_INTEGRATION_TRACE_HANDLES=1` を付けて `why-is-node-running` 診断を収集します。
-- GitHub Actions では `gh run rerun <runId> -e AE_INTEGRATION_TRACE_HANDLES=1` を使用します。
-- ローカルでは `AE_INTEGRATION_TRACE_HANDLES=1 pnpm test:int` を使用します。
+- GitHub Actions では、同じ CI 文脈で再現性を確認するため、失敗 job だけを `gh run rerun <runId> --failed` で再実行します。
+- ハンドルレベルの診断が必要な場合は、`gh run rerun` では環境変数 override ができないため、ローカルで `AE_INTEGRATION_TRACE_HANDLES=1 pnpm test:int` を実行します。
 - 診断後はログ肥大と CI コスト増を避けるため、必ず環境変数を外します。
 - 詳細手順は `docs/testing/integration-runtime-helpers.md` を参照します。
 
