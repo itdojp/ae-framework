@@ -181,43 +181,41 @@ Claude Code: Running Intent Task Adapter...
 
 ### Phase-by-Phase Cheatsheet (English)
 - Phase 1 (Intent): `ae-framework intent --analyze --sources=requirements.md`
-- Phase 2 (Natural Language): `ae-framework natural-language --analyze --sources=raw.md`
-- Phase 3 (Stories): generate user stories + AC (Gherkin-friendly)
-- Phase 4 (Validation): cross-validate, produce traceability matrix
-- Phase 5 (Modeling): DDD entities/BCs/services
-- Phase 6 (UI/UX): `ae-framework ui-scaffold --components` (quality gates enabled)
+- Phase 2 (Formal): derive machine-checkable spec artifacts and invariants
+- Phase 3 (Test): analyze dependencies, generate/select tests, and benchmark high-risk paths
+- Phase 4 (Code): generate TDD-oriented implementation from accepted upstream artifacts
+- Phase 5 (Verify): run repository quality gates and evidence validation
+- Phase 6 (Operate): prepare deploy / monitor / incident automation handoff
 
 #### Artifact Handoffs (examples)
 - Intent: `artifacts/intent/summary.json` (requirements, next steps)
-- Natural Language: `artifacts/nl/requirements.json` (structured)
-- Stories: `artifacts/stories/summary.json` (epics/stories/AC)
-- Validation: `artifacts/validation/traceability.json`
-- Modeling: `artifacts/modeling/domain.json` (entities/BC/services)
-- UI: `artifacts/ui/ui-summary.json`; E2E traces under `apps/web/__e2e__/`
+- Formal: `formal/summary.json` (legacy compatibility), plus `artifacts/hermetic-reports/formal/summary.json` and `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json`
+- Test: `artifacts/integration/discovered.json`, `artifacts/integration/*`, benchmark or optimization reports when present
+- Code: generated implementation under `src/**` and machine-readable docs such as `docs/api/**`
+- Verify: `artifacts/summary/combined.json`, `artifacts/summary/PR_SUMMARY.md`, and supporting evidence artifacts
+- Operate: deployment configuration, telemetry bundles, and follow-up handoff artifacts
 ※ CLIは標準でstdout出力のため、ファイル化はリダイレクト/エージェント経由で行うこと
 
 #### Minimal Commands per Phase (English)
-```bash
+```text
 # 1) Intent
-ae-framework intent --analyze --sources=requirements.md > artifacts/intent/summary.txt
+ae-framework intent --analyze --sources=requirements.md
 
-# 2) Natural Language
-ae-framework natural-language --analyze --sources=raw.md > artifacts/nl/requirements.txt
+# 2) Formal
+/ae:formal generate --input="requirements.json" --spec-type="tla+" --output="specifications/"
 
-# 4) Validation
-ae-framework quality policy --env development
-ae-framework quality validate
+# 3) Test
+/ae:test analyze-dependencies --target="./task-management" --include-external=true --analysis-type="full"
+/ae:test select-intelligent --changes="auth-service" --strategy="risk_based" --max-time=300 --coverage-target=0.85
 
-# 6) UI/UX
-ae-framework ui-scaffold --components
+# 4) Code
+/ae:code generate-tdd --tests="./tests/**/*.test.ts" --language="typescript" --framework="fastify"
 
-# (Optional) Conformance run (2.2)
-ae-framework conformance verify --input data.json --rules rules.json --output artifacts/conformance/conformance-results.json
+# 5) Verify
+ae entry verify --profile lite
 
-# (Optional) Integration (2.3) - inventory first, then run concrete files
-ae-framework integration discover --patterns ./e2e/login.json,./e2e/dashboard.json --type tests \
-  --output artifacts/integration/discovered.json
-ae-framework integration run --tests ./e2e/login.json,./e2e/dashboard.json --environment default --output-dir artifacts/integration
+# 6) Operate
+/ae:operate deploy --environment="production" --strategy="blue-green" --health-check="/api/health"
 ```
 
 トラブルシューティング（簡易）
@@ -230,29 +228,31 @@ ae-framework integration run --tests ./e2e/login.json,./e2e/dashboard.json --env
 - Some phases (Stories/Modeling) are primarily orchestrated by the agent; artifacts are collected under `artifacts/stories/*` and `artifacts/modeling/*` when available.
 
 #### Chained Example (English)
-1) Intent → stdout を `artifacts/intent/summary.txt` にリダイレクト
-2) Natural Language → stdout を `artifacts/nl/requirements.txt` にリダイレクト
-3) Stories → `artifacts/stories/summary.json`
-4) Validation → `artifacts/validation/traceability.json`
-5) Modeling → `artifacts/modeling/domain.json`
-6) UI/UX → `artifacts/ui/ui-summary.json` + E2E traces
+1) Intent → capture requirement summary
+2) Formal → generate spec artifacts and formal evidence
+3) Test → derive selected tests, inventory, and optimization hints
+4) Code → generate implementation from accepted upstream artifacts
+5) Verify → produce PR summary and supporting evidence
+6) Operate → prepare deployment and operational handoff
 
-```bash
+```text
 # Sample flow (commands)
-ae-framework intent --analyze --sources=requirements.md > artifacts/intent/summary.txt
-ae-framework natural-language --analyze --sources=raw.md > artifacts/nl/requirements.txt
-ae-framework quality policy --env development && ae-framework quality validate
-ae-framework ui-scaffold --components
+ae-framework intent --analyze --sources=requirements.md
+/ae:formal generate --input="requirements.json" --spec-type="tla+" --output="specifications/"
+/ae:test analyze-dependencies --target="./task-management" --include-external=true --analysis-type="full"
+/ae:code generate-tdd --tests="./tests/**/*.test.ts" --language="typescript" --framework="fastify"
+ae entry verify --profile lite
+/ae:operate deploy --environment="production" --strategy="blue-green" --health-check="/api/health"
 ```
 
 #### Full Flow Summary (English)
 ```
 Intent:    12 requirements → artifacts/intent/summary.json
-NL:        structured requirements → artifacts/nl/requirements.json
-Stories:   8 stories / 3 epics → artifacts/stories/summary.json
-Validate:  traceability 90% → artifacts/validation/traceability.json
-Modeling:  6 entities / 2 BCs → artifacts/modeling/domain.json
-UI/UX:     21 files, a11y 96 / perf 78 / coverage 84 → artifacts/ui/ui-summary.json
+Formal:    invariants / transitions captured → formal/summary.json + formal evidence artifacts
+Test:      selected tests + dependency analysis → artifacts/integration/discovered.json
+Code:      implementation generated from tests/model → src/** + docs/api/**
+Verify:    evidence bundle and PR summary → artifacts/summary/combined.json
+Operate:   deploy / monitor handoff → deployment config + telemetry bundle
 ```
 
 #### CI Upload Hints (English)
@@ -343,6 +343,9 @@ A productive Claude Code session usually follows this order:
 - Goal: turn the requirement set into machine-checkable specification artifacts.
 - Typical Claude Code prompt:
   - "Use the Formal Agent to derive a specification from the accepted requirements."
+- Command note:
+  - `/ae:*` commands shown in this walkthrough are Claude Code internal Task Tool commands inside the editor session.
+  - They are distinct from repository-level GitHub slash commands; the canonical catalog for repository commands remains `docs/agents/commands.md`.
 - Current repository baseline:
   - formal verification is opt-in, typically via `run-formal`
   - local parity entrypoint is `pnpm run verify:formal`
@@ -561,7 +564,7 @@ export class AuthService {
     "tests": {
       "total": 156,
       "passed": 154,
-      "failed": 2,
+      "failed": 0,
       "coverage": 87.3,
       "status": "PASSED"
     },
