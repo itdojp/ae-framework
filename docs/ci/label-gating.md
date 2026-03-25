@@ -60,7 +60,8 @@ The CI Extended lane restores heavy test artifacts from `.cache/test-results`.
   - emits `policy-input.v1` and JS decision artifacts
   - executes OPA shadow compare against `policy/risk-policy.rego`
 - `validate-artifacts-ajv.yml`
-  - reads `enforce-artifacts`
+  - is called by `spec-validation.yml` with a `strict` input
+  - `strict: true` is set when the `enforce-artifacts` label is present on the PR
   - in strict mode, generates trace / verify-lite artifacts before running `pnpm run artifacts:validate`
 - `testing-ddd-scripts.yml`
   - reads `enforce-testing`
@@ -188,7 +189,8 @@ CI Extended lane は `.cache/test-results` に保存された heavy test artifac
   - `policy-input.v1` と JS decision artifacts を出力する
   - `policy/risk-policy.rego` に対する OPA shadow compare を実行する
 - `validate-artifacts-ajv.yml`
-  - `enforce-artifacts` を読む
+  - `spec-validation.yml` から `strict` input 付きで呼ばれる
+  - PR に `enforce-artifacts` があると `strict: true` が渡される
   - strict では trace / verify-lite artifacts を先に生成してから `pnpm run artifacts:validate` を実行する
 - `testing-ddd-scripts.yml`
   - `enforce-testing` を読む
