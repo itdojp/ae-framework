@@ -6,13 +6,13 @@ verificationCommand: pnpm -s run check:doc-consistency
 ---
 # CI Baseline Checklist
 
-This checklist provides the minimum baseline checks for confirming CI health without running heavy suites. / 本チェックリストは、重い suite を実行せずに CI baseline の健全性を確認するための最小確認項目を定義します。
-
 > Language / 言語: English | 日本語
 
 ---
 
 ## English
+
+This checklist provides the minimum baseline checks for confirming CI health without running heavy suites.
 
 ### When to use
 - After CI pipeline changes
@@ -38,6 +38,8 @@ This checklist provides the minimum baseline checks for confirming CI health wit
 - Keep a short log in `docs/notes/pipeline-baseline.md` when investigating
 
 ## 日本語
+
+本チェックリストは、重い suite を実行せずに CI baseline の健全性を確認するための最小確認項目を定義します。
 
 ### 使う場面
 
