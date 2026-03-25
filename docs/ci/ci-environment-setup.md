@@ -16,13 +16,13 @@ Minimal environment notes for reproducing the current CI baseline locally withou
 
 ### Prerequisites
 
-- Node.js `22.x`
+- Node.js in the supported engine range (`>=20.11 <23`); use `20.x` when you want to match the current Verify Lite runner exactly.
 - `pnpm` via Corepack (`corepack enable`)
 - Container runtime: Podman or Docker
 
 ### Recommended defaults
 
-- Use `.pnpm-store` under the repository root for predictable local caching.
+- For predictable local caching, set `pnpm config set store-dir .pnpm-store` in the repository. For container-runner paths, use `AE_HOST_STORE=$(pwd)/.pnpm-store` to mirror the CI host store layout.
 - Use `pnpm run verify:lite` when you need the same lightweight baseline used by the required PR checks.
 - Use `pnpm run test:ci:lite` when you want the CI-lite suite without opening the heavier lanes.
 
@@ -50,13 +50,13 @@ Minimal environment notes for reproducing the current CI baseline locally withou
 
 ### 前提条件
 
-- Node.js `22.x`
+- Node.js in the supported engine range (`>=20.11 <23`); use `20.x` when you want to match the current Verify Lite runner exactly.
 - Corepack 経由の `pnpm`（`corepack enable`）
 - Container runtime: Podman または Docker
 
 ### 推奨デフォルト
 
-- ローカル cache の挙動を安定させるため、`.pnpm-store` は repository root 配下で運用します。
+- ローカル cache の挙動を安定させる場合は、repository で `pnpm config set store-dir .pnpm-store` を設定します。container runner 系の再現では、CI の host store layout に合わせて `AE_HOST_STORE=$(pwd)/.pnpm-store` を使います。
 - required PR checks と同じ軽量 baseline を確認したい場合は `pnpm run verify:lite` を使います。
 - heavier lane を開かずに CI-lite suite だけ見たい場合は `pnpm run test:ci:lite` を使います。
 
