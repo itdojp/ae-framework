@@ -45,10 +45,10 @@ Primary fields:
 | `CONTRACT_SCHEMA` | `artifactsSchema=fail/warn` | `enforce-artifacts` | `bash scripts/trace/run-kvonce-conformance.sh --input samples/trace/kvonce-sample.ndjson --format ndjson --output-dir artifacts/hermetic-reports/trace && node scripts/ci/write-verify-lite-summary.mjs && node scripts/trace/create-report-envelope.mjs artifacts/verify-lite/verify-lite-run-summary.json artifacts/report-envelope.json && mkdir -p artifacts/trace && cp artifacts/report-envelope.json artifacts/trace/report-envelope.json && pnpm run artifacts:validate -- --strict=true` |
 | `DETERMINISTIC_TEST_FAIL` | `testingHarness=fail` | `enforce-testing` | `gh workflow run testing-ddd-scripts.yml --repo <owner/repo>` |
 | `FLAKE_SUSPECTED` | `testingHarness=warn` (`pending` / `inconclusive`) | `enforce-testing` | `trace:<id>` + `test:replay:focus` |
-| `BOUNDARY_VIOLATION` | `contextPack=fail/warn` | `enforce-context-pack` | `pnpm run context-pack:deps` |
+| `BOUNDARY_VIOLATION` | `contextPack=fail/warn` | `enforce-context-pack` | `pnpm run context-pack:deps -- --strict=true && pnpm run context-pack:e2e-fixture` |
 | `RUNTIME_CONFORMANCE` | `runtimeConformance=fail/warn` | `run-trace` (legacy: `run-conformance`), `autopilot:on` | `gh workflow run runtime-conformance-self-heal.yml --repo <owner/repo> -f trace_input=samples/conformance/sample-traces.json -f apply_fixes=false -f dry_run=true` |
-| `PERF_REGRESSION` | `ciExtended=fail/warn` (heavy trend summary) | `run-ci-extended` | `gh workflow run ci-extended.yml` |
-| `UI_SEMANTIC_E2E` | `uiE2E=fail/warn` | `run-e2e` | `pnpm exec playwright install chromium && pnpm run ui-e2e:semantic` |
+| `PERF_REGRESSION` | `ciExtended=fail/warn` (heavy trend summary) | `run-ci-extended` | `gh workflow run ci-extended.yml --repo <owner/repo>` |
+| `UI_SEMANTIC_E2E` | `uiE2E=fail/warn` | `run-e2e` | `pnpm exec playwright install --with-deps chromium && pnpm run ui-e2e:semantic` |
 | `INFRA` | check retrieval unavailable or CI environment prevented evaluation | `needs-investigation` (operations side) | workflow run logs |
 
 Notes:
