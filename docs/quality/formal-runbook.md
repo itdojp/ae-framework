@@ -39,7 +39,7 @@ This runbook describes the lowest-friction way to operate formal verification in
 - `pnpm run verify:spin` - Promela/SPIN runner.
 - `pnpm run verify:csp` - CSP runner using `CSP_RUN_CMD`, `cspx`, `refines`, or `cspmchecker`.
   - When `cspx` is used, the runner emits `csp-summary.json` and `cspx-result.json`.
-  - An incompatible `schema_version=0.1` contract is recorded as `status: "unsupported"`.
+  - A `schema_version` mismatch (expected `0.1`) is recorded as `status: "unsupported"`.
   - Detailed examples: `docs/quality/formal-csp.md`.
 - `pnpm run verify:lean` - Lean4 `lake build` runner.
 - `pnpm run verify:formal` - chained local runner for the commands above.
@@ -163,7 +163,7 @@ TLA: tool_not_available (tlc)
 ### Conformance sample (quick demo)
 - `pnpm run conformance:sample` - generate sample rules, settings, data, and context.
 - `pnpm run conformance:verify:sample` - run verification against the generated sample and emit JSON reports.
-- `pnpm run conformance:report` - aggregate `artifacts/conformance/conformance-results.json` and `artifacts/hermetic-reports/conformance/*.json` into `reports/conformance/verify-lite-summary.(json|md)`.
+- `pnpm run conformance:report` - aggregate `artifacts/conformance/conformance-results.json` and `artifacts/hermetic-reports/conformance/*.json` into `reports/conformance/conformance-summary.(json|md)` (use `--output` / `--markdown-output` to customize filenames if needed).
 - `pnpm bdd` - run encrypted-chat BDD scenarios and save snapshots to `artifacts/bdd/encrypted-chat/*.json`.
 - `pnpm pipelines:pact` - run Pact contract tests for the encrypted-chat API in `tests/contracts/encrypted-chat-contracts.test.ts`.
 
@@ -193,7 +193,7 @@ jobs:
   - Apalache: `artifacts/hermetic-reports/formal/apalache-summary.json`, `artifacts/hermetic-reports/formal/apalache-output.txt`
   - Formal summary: `artifacts/hermetic-reports/formal/summary.json` (includes `present`, `conformance`, `smt`, `alloy`, `tla`, `apalache`)
   - Metadata: `generatedAtUtc`, `generatedAtLocal`, `timezoneOffset`, `gitCommit`, `branch`, `runner`, `toolVersions`
-  - Verify Lite conformance summary: `reports/conformance/verify-lite-summary.json` / `reports/conformance/verify-lite-summary.md`
+  - Conformance report outputs: `reports/conformance/conformance-summary.json` / `reports/conformance/conformance-summary.md` (use explicit `--output` / `--markdown-output` flags when a workflow needs different filenames such as `verify-lite-summary.*`)
 
 ### Samples
 - TLA+: `spec/tla/DomainSpec.tla` - minimal safety invariant and transition example.
