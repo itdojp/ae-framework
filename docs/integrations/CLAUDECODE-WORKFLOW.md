@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
   - README.md
   - docs/agents/commands.md
-lastVerified: '2026-03-23'
+lastVerified: '2026-03-26'
 ---
 
 # Claude Code で ae-framework を使った開発ワークフロー
@@ -181,43 +181,41 @@ Claude Code: Running Intent Task Adapter...
 
 ### Phase-by-Phase Cheatsheet (English)
 - Phase 1 (Intent): `ae-framework intent --analyze --sources=requirements.md`
-- Phase 2 (Natural Language): `ae-framework natural-language --analyze --sources=raw.md`
-- Phase 3 (Stories): generate user stories + AC (Gherkin-friendly)
-- Phase 4 (Validation): cross-validate, produce traceability matrix
-- Phase 5 (Modeling): DDD entities/BCs/services
-- Phase 6 (UI/UX): `ae-framework ui-scaffold --components` (quality gates enabled)
+- Phase 2 (Formal): derive machine-checkable spec artifacts and invariants
+- Phase 3 (Test): analyze dependencies, generate/select tests, and benchmark high-risk paths
+- Phase 4 (Code): generate TDD-oriented implementation from accepted upstream artifacts
+- Phase 5 (Verify): run repository quality gates and evidence validation
+- Phase 6 (Operate): prepare deploy / monitor / incident automation handoff
 
 #### Artifact Handoffs (examples)
 - Intent: `artifacts/intent/summary.json` (requirements, next steps)
-- Natural Language: `artifacts/nl/requirements.json` (structured)
-- Stories: `artifacts/stories/summary.json` (epics/stories/AC)
-- Validation: `artifacts/validation/traceability.json`
-- Modeling: `artifacts/modeling/domain.json` (entities/BC/services)
-- UI: `artifacts/ui/ui-summary.json`; E2E traces under `apps/web/__e2e__/`
+- Formal: `formal/summary.json` (legacy compatibility), plus `artifacts/hermetic-reports/formal/summary.json` and `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json`
+- Test: `artifacts/integration/discovered.json`, `artifacts/integration/*`, benchmark or optimization reports when present
+- Code: generated implementation under `src/**` and machine-readable docs such as `docs/api/**`
+- Verify: `artifacts/summary/combined.json`, `artifacts/summary/PR_SUMMARY.md`, and supporting evidence artifacts
+- Operate: deployment configuration, telemetry bundles, and follow-up handoff artifacts
 ※ CLIは標準でstdout出力のため、ファイル化はリダイレクト/エージェント経由で行うこと
 
 #### Minimal Commands per Phase (English)
-```bash
+```text
 # 1) Intent
-ae-framework intent --analyze --sources=requirements.md > artifacts/intent/summary.txt
+ae-framework intent --analyze --sources=requirements.md
 
-# 2) Natural Language
-ae-framework natural-language --analyze --sources=raw.md > artifacts/nl/requirements.txt
+# 2) Formal
+/ae:formal generate --input="requirements.json" --spec-type="tla+" --output="specifications/"
 
-# 4) Validation
-ae-framework quality policy --env development
-ae-framework quality validate
+# 3) Test
+/ae:test analyze-dependencies --target="./task-management" --include-external=true --analysis-type="full"
+/ae:test select-intelligent --changes="auth-service" --strategy="risk_based" --max-time=300 --coverage-target=0.85
 
-# 6) UI/UX
-ae-framework ui-scaffold --components
+# 4) Code
+/ae:code generate-tdd --tests="./tests/**/*.test.ts" --language="typescript" --framework="fastify"
 
-# (Optional) Conformance run (2.2)
-ae-framework conformance verify --input data.json --rules rules.json --output artifacts/conformance/conformance-results.json
+# 5) Verify
+ae entry verify --profile lite
 
-# (Optional) Integration (2.3) - inventory first, then run concrete files
-ae-framework integration discover --patterns ./e2e/login.json,./e2e/dashboard.json --type tests \
-  --output artifacts/integration/discovered.json
-ae-framework integration run --tests ./e2e/login.json,./e2e/dashboard.json --environment default --output-dir artifacts/integration
+# 6) Operate
+/ae:operate deploy --environment="production" --strategy="blue-green" --health-check="/api/health"
 ```
 
 トラブルシューティング（簡易）
@@ -230,29 +228,31 @@ ae-framework integration run --tests ./e2e/login.json,./e2e/dashboard.json --env
 - Some phases (Stories/Modeling) are primarily orchestrated by the agent; artifacts are collected under `artifacts/stories/*` and `artifacts/modeling/*` when available.
 
 #### Chained Example (English)
-1) Intent → stdout を `artifacts/intent/summary.txt` にリダイレクト
-2) Natural Language → stdout を `artifacts/nl/requirements.txt` にリダイレクト
-3) Stories → `artifacts/stories/summary.json`
-4) Validation → `artifacts/validation/traceability.json`
-5) Modeling → `artifacts/modeling/domain.json`
-6) UI/UX → `artifacts/ui/ui-summary.json` + E2E traces
+1) Intent → capture requirement summary
+2) Formal → generate spec artifacts and formal evidence
+3) Test → derive selected tests, inventory, and optimization hints
+4) Code → generate implementation from accepted upstream artifacts
+5) Verify → produce PR summary and supporting evidence
+6) Operate → prepare deployment and operational handoff
 
-```bash
+```text
 # Sample flow (commands)
-ae-framework intent --analyze --sources=requirements.md > artifacts/intent/summary.txt
-ae-framework natural-language --analyze --sources=raw.md > artifacts/nl/requirements.txt
-ae-framework quality policy --env development && ae-framework quality validate
-ae-framework ui-scaffold --components
+ae-framework intent --analyze --sources=requirements.md
+/ae:formal generate --input="requirements.json" --spec-type="tla+" --output="specifications/"
+/ae:test analyze-dependencies --target="./task-management" --include-external=true --analysis-type="full"
+/ae:code generate-tdd --tests="./tests/**/*.test.ts" --language="typescript" --framework="fastify"
+ae entry verify --profile lite
+/ae:operate deploy --environment="production" --strategy="blue-green" --health-check="/api/health"
 ```
 
 #### Full Flow Summary (English)
 ```
 Intent:    12 requirements → artifacts/intent/summary.json
-NL:        structured requirements → artifacts/nl/requirements.json
-Stories:   8 stories / 3 epics → artifacts/stories/summary.json
-Validate:  traceability 90% → artifacts/validation/traceability.json
-Modeling:  6 entities / 2 BCs → artifacts/modeling/domain.json
-UI/UX:     21 files, a11y 96 / perf 78 / coverage 84 → artifacts/ui/ui-summary.json
+Formal:    invariants / transitions captured → formal/summary.json + formal evidence artifacts
+Test:      selected tests + dependency analysis → artifacts/integration/discovered.json
+Code:      implementation generated from tests/model → src/** + docs/api/**
+Verify:    evidence bundle and PR summary → artifacts/summary/combined.json
+Operate:   deploy / monitor handoff → deployment config + telemetry bundle
 ```
 
 #### CI Upload Hints (English)
@@ -343,12 +343,53 @@ A productive Claude Code session usually follows this order:
 - Goal: turn the requirement set into machine-checkable specification artifacts.
 - Typical Claude Code prompt:
   - "Use the Formal Agent to derive a specification from the accepted requirements."
+- Command note:
+  - `/ae:*` commands shown in this walkthrough are Claude Code internal Task Tool commands inside the editor session.
+  - They are distinct from repository-level GitHub slash commands; the canonical catalog for repository commands remains `docs/agents/commands.md`.
 - Current repository baseline:
   - formal verification is opt-in, typically via `run-formal`
   - local parity entrypoint is `pnpm run verify:formal`
   - PR summaries may still need the legacy compatibility input `formal/summary.json`, while current formal evidence also includes `artifacts/hermetic-reports/formal/summary.json` and `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json`
 - Operator checkpoint:
   - confirm the specification explains invariants, allowed transitions, and scope boundaries before moving to tests
+
+##### Phase 2 example: formal specification handoff
+**Representative Claude Code prompt**
+```text
+Use the Formal Agent to derive a machine-checkable specification from the accepted task-management requirements. Stop if the invariants or transitions are still ambiguous.
+```
+
+**Representative command path**
+```text
+/ae:formal generate --input="requirements.json" --spec-type="tla+" --output="specifications/"
+```
+
+**Representative artifact fragment**
+```tla
+---- MODULE TaskManagement ----
+EXTENDS Naturals, Sequences, FiniteSets
+
+CONSTANTS Users, Tasks, MaxTasks
+
+VARIABLES
+    user_sessions,
+    tasks,
+    task_assignments
+
+TypeInvariant ==
+    /\ user_sessions \subseteq Users
+    /\ tasks \subseteq Tasks
+    /\ Cardinality(tasks) <= MaxTasks
+
+CreateTask(user, task) ==
+    /\ user \in user_sessions
+    /\ task \notin tasks
+    /\ Cardinality(tasks) < MaxTasks
+    /\ tasks' = tasks \cup {task}
+    /\ task_assignments' = task_assignments @@ (task :> user)
+    /\ UNCHANGED user_sessions
+====
+```
 
 **Phase 3 - Test Agent**
 - Goal: derive executable tests and execution priorities from the accepted specification/model.
@@ -363,6 +404,98 @@ A productive Claude Code session usually follows this order:
 - Operator checkpoint:
   - confirm that critical-path tests, API regressions, and environment assumptions are visible in artifacts before generating implementation
 
+##### Phase 3.1 example: dependency and inference analysis
+**Representative command path**
+```text
+/ae:test analyze-dependencies --target="./task-management" --include-external=true --analysis-type="full"
+/ae:test infer --query="microservice separation strategy" --context="task management system" --priority="high"
+```
+
+**Representative result fragment**
+```json
+{
+  "dependency_analysis": {
+    "critical_paths": [
+      ["auth-service", "task-service", "database"],
+      ["frontend", "api-gateway", "auth-service"]
+    ],
+    "risk_assessment": {
+      "auth-service": { "risk_level": "high", "impact_scope": ["security", "functionality"] },
+      "task-service": { "risk_level": "medium", "impact_scope": ["functionality"] }
+    }
+  },
+  "inference_result": {
+    "recommendations": [
+      "Separate the authentication service as an independent microservice",
+      "Define a clear API boundary between task and user services",
+      "Add a shared database access layer"
+    ],
+    "confidence": 0.87
+  }
+}
+```
+
+##### Phase 3.2 example: intelligent test selection and generated tests
+**Representative command path**
+```text
+/ae:test select-intelligent --changes="auth-service" --strategy="risk_based" --max-time=300 --coverage-target=0.85
+/ae:test generate-e2e --components="auth,tasks,ui" --browsers="chromium,firefox" --scenarios="critical-path"
+/ae:test generate-visual --pages="login,dashboard,task-list" --viewports="desktop,tablet,mobile"
+```
+
+**Representative generated test fragment**
+```text
+describe("Task Management E2E", () => {
+  test("login to task creation", async ({ page }) => {
+    await page.goto("/login");
+    await page.fill('[data-testid="email"]', "user@example.com");
+    await page.fill('[data-testid="password"]', "password");
+    await page.click('[data-testid="login-button"]');
+
+    await expect(page).toHaveURL("/dashboard");
+
+    await page.click('[data-testid="create-task"]');
+    await page.fill('[data-testid="task-title"]', "Test Task");
+    await page.selectOption('[data-testid="priority"]', "high");
+    await page.click('[data-testid="save-task"]');
+
+    await expect(page.locator('[data-testid="task-item"]')).toBeVisible();
+  });
+});
+```
+
+##### Phase 3.3 example: optimization system output
+**Representative command path**
+```text
+/ae:test optimize-system --monitoring=true --parallel=true --integration=true
+/ae:test benchmark --components="auth,tasks" --duration=60s --metrics="throughput,latency,errors"
+/ae:test optimize-recommendations --target="performance" --constraints="memory<4GB,cpu<80%"
+```
+
+**Representative metrics fragment**
+```json
+{
+  "performance_metrics": {
+    "auth_service": {
+      "throughput": "1500 req/sec",
+      "avg_latency": "45ms",
+      "error_rate": "0.1%"
+    },
+    "task_service": {
+      "throughput": "2200 req/sec",
+      "avg_latency": "32ms",
+      "error_rate": "0.05%"
+    }
+  },
+  "selected_tests": {
+    "total": 47,
+    "execution_time": "4m32s",
+    "coverage": "87%",
+    "confidence": 0.91
+  }
+}
+```
+
 **Phase 4 - Code Agent**
 - Goal: implement code from validated test and modeling outputs rather than from raw narrative prompts.
 - Current-state expectation:
@@ -370,6 +503,35 @@ A productive Claude Code session usually follows this order:
   - security-sensitive surfaces should be paired with `run-security` or equivalent follow-up review when risk warrants it
 - Useful follow-up:
   - generate OpenAPI or machine-readable docs only after the domain model and validation outputs are stable
+
+##### Phase 4 example: TDD-oriented implementation output
+**Representative command path**
+```text
+/ae:code generate-tdd --tests="./tests/**/*.test.ts" --language="typescript" --framework="fastify"
+/ae:code add-security --auth="jwt" --validation=true --rate-limit=true
+/ae:code generate-docs --input="./src" --output="./docs/api" --format="openapi"
+```
+
+**Representative code fragment**
+```text
+export class AuthService {
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly jwtService: JwtService
+  ) {}
+
+  async login(email: string, password: string): Promise<LoginResult> {
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) throw new UnauthorizedException("Invalid credentials");
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) throw new UnauthorizedException("Invalid credentials");
+
+    const token = this.jwtService.sign({ userId: user.id, email: user.email });
+    return { token, user: { id: user.id, email: user.email } };
+  }
+}
+```
 
 **Phase 5 - Verify Agent**
 - Goal: verify that code, tests, and evidence satisfy repository quality policy.
@@ -383,6 +545,43 @@ A productive Claude Code session usually follows this order:
 - Operator checkpoint:
   - resolve quality findings before asking Claude Code to continue with downstream implementation or rollout work
 
+##### Phase 5 example: verification and evidence output
+**Representative command path**
+```text
+/ae:verify all --project="./task-management" --strict-mode=true
+/ae:verify security --scan-dependencies=true --check-secrets=true
+/ae:verify performance --load-test=true --memory-leak=true
+/ae:verify traceability --requirements="requirements.json" --tests="./tests" --code="./src"
+/ae:verify evidence --claim="JWT authentication implementation" --require-docs=true --require-tests=true --confidence-min=0.8
+/ae:optimize tokens --documents="./docs/**/*.md" --compression="high" --preserve-priority="security,api"
+```
+
+**Representative result fragment**
+```json
+{
+  "overall_quality_score": 94,
+  "verification_results": {
+    "tests": {
+      "total": 156,
+      "passed": 154,
+      "failed": 0,
+      "coverage": 87.3,
+      "status": "PASSED"
+    },
+    "security": {
+      "vulnerabilities": 0,
+      "secrets_exposed": 0,
+      "status": "PASSED"
+    }
+  },
+  "traceability_matrix": {
+    "requirements_coverage": 98.5,
+    "unlinked_requirements": ["NFR-003"],
+    "orphaned_tests": 3
+  }
+}
+```
+
 **Phase 6 - Operate Agent**
 - Goal: move from implementation to delivery support, telemetry, and operational follow-up.
 - Typical outputs:
@@ -393,6 +592,33 @@ A productive Claude Code session usually follows this order:
 - Current-state caution:
   - operational automation is label/trigger driven; not every support workflow is a default required check
   - use opt-in labels deliberately rather than enabling all automation on every PR
+
+##### Phase 6 example: deployment and operational handoff
+**Representative command path**
+```text
+/ae:operate deploy --environment="production" --strategy="blue-green" --health-check="/api/health"
+/ae:operate monitor --services="auth,tasks,database" --alerts="email,slack" --sla="99.9%"
+/ae:operate incident --auto-resolve=true --escalation="15min" --rollback-threshold="error_rate>5%"
+```
+
+**Representative deployment fragment**
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: task-management-config
+data:
+  deployment_strategy: blue-green
+  health_check_endpoint: /api/health
+  auto_scaling:
+    min_replicas: 2
+    max_replicas: 10
+  monitoring:
+    metrics:
+      - response_time
+      - error_rate
+      - throughput
+```
 
 #### Example Claude Code Session (English)
 
@@ -417,6 +643,45 @@ Understood.
 4. Run `verify-lite` and any risk-driven opt-ins.
 5. Attach the resulting artifacts to the PR layer.
 
+#### Integrated Development Session (English)
+
+**User**
+```text
+Use ae-framework to add a task-category feature to the task-management system, while minimizing impact on the existing system.
+```
+
+**Claude Code**
+```text
+I will add the feature incrementally.
+
+1. Start with impact analysis and dependency review.
+2. Optimize the test scope before implementation.
+3. Generate only the code needed for the accepted change set.
+4. Stop if regression or compatibility evidence is weak.
+```
+
+**Representative command path**
+```text
+/ae:test analyze-impact --change="add-task-categories" --existing-system="./task-management" --risk-assessment=true
+/ae:test select-intelligent --changes="task-categories" --strategy="balanced" --existing-coverage=0.87 --risk-threshold=0.3
+/ae:verify regression --baseline="v1.0.0" --changes="task-categories" --backward-compatibility=true
+```
+
+**Representative regression result**
+```json
+{
+  "regression_test_result": {
+    "backward_compatibility": "OK",
+    "existing_functionality": "100% healthy",
+    "new_functionality": "98% healthy",
+    "performance_impact": "+5ms (within threshold)",
+    "database_migration": "generated"
+  },
+  "deployment_ready": true,
+  "estimated_deployment_time": "5m"
+}
+```
+
 #### Delivery Metrics and Operating Expectations (English)
 - Track at least these categories in PR or CI evidence:
   - requirements coverage / traceability completeness
@@ -436,6 +701,43 @@ Understood.
   - Mitigation: add risk-driven labels such as formal/security/coverage enforcement when the PR scope justifies them.
 - **Uploading incomplete artifacts**
   - Mitigation: keep current output paths stable and prefer the current canonical artifacts over ad hoc files.
+
+#### Extended Command Results (English)
+
+**Analyze example**
+```text
+User: /ae:analyze ./src/auth --depth=deep --security --performance
+
+Claude Code:
+- JWT implementation: appropriate
+- Password hashing: bcrypt confirmed
+- Input validation: implemented
+- Average latency: 45ms
+- Memory usage: 12MB
+- Suggested improvement: introduce caching for an estimated 20% gain
+```
+
+**Document example**
+```text
+User: /ae:document ./src --type=api --format=openapi --include-examples
+
+Claude Code:
+- API spec: docs/api-spec.yaml
+- Examples: docs/api-examples.md
+- SDK reference: docs/sdk-reference.md
+- Documented endpoints: 22
+```
+
+**Improve example**
+```text
+User: /ae:improve ./src/tasks --focus=performance --suggest-refactoring
+
+Claude Code:
+- Optimize database queries to remove N+1 access
+- Add response caching for an estimated 20% speedup
+- Split TaskService into query / command responsibilities
+- Predicted code-quality score: 87 -> 95
+```
 
 #### Summary (English)
 - Claude Code is most effective with ae-framework when each phase produces explicit artifacts and the operator keeps phase boundaries disciplined.
