@@ -191,7 +191,7 @@ Claude Code: Running Intent Task Adapter...
 - Intent: `artifacts/intent/summary.json` (requirements, next steps)
 - Formal: `formal/summary.json` (legacy compatibility), plus `artifacts/hermetic-reports/formal/summary.json` and `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json`
 - Test: `artifacts/integration/discovered.json`, `artifacts/integration/*`, benchmark or optimization reports when present
-- Code: generated implementation under `src/**` and machine-readable docs such as `docs/api/**`
+- Code: generated implementation under `src/**` and machine-readable docs such as `docs/api-spec.yaml`, `docs/api-examples.md`, and `docs/sdk-reference.md`
 - Verify: `artifacts/summary/combined.json`, `artifacts/summary/PR_SUMMARY.md`, and supporting evidence artifacts
 - Operate: deployment configuration, telemetry bundles, and follow-up handoff artifacts
 ※ CLIは標準でstdout出力のため、ファイル化はリダイレクト/エージェント経由で行うこと
@@ -250,7 +250,7 @@ ae entry verify --profile lite
 Intent:    12 requirements → artifacts/intent/summary.json
 Formal:    invariants / transitions captured → formal/summary.json + formal evidence artifacts
 Test:      selected tests + dependency analysis → artifacts/integration/discovered.json
-Code:      implementation generated from tests/model → src/** + docs/api/**
+Code:      implementation generated from tests/model → src/** + machine-readable docs under `docs/`
 Verify:    evidence bundle and PR summary → artifacts/summary/combined.json
 Operate:   deploy / monitor handoff → deployment config + telemetry bundle
 ```
@@ -738,6 +738,53 @@ Claude Code:
 - Split TaskService into query / command responsibilities
 - Predicted code-quality score: 87 -> 95
 ```
+
+#### Integrated Analysis Commands (English)
+Use the Analyze example in `Extended Command Results (English)` as the canonical interaction sample. This section defines how to operate it in the delivery flow.
+
+**Representative operating guidance**
+- Run deep analysis before Phase 3 or Phase 4 when the change touches authentication, payment, or cross-service boundaries.
+- Treat the result as a routing aid for the next phase, not as final evidence.
+- When risk is high, pair the analysis with follow-up verification such as `ae entry verify --profile lite` and any risk-driven labels.
+
+#### Integrated Documentation Commands (English)
+Use the Document example in `Extended Command Results (English)` as the canonical interaction sample. This section focuses on when to run it and where the outputs should live.
+
+**Representative operating guidance**
+- Prefer machine-readable outputs such as OpenAPI after the Code and Verify phases have stabilized the contract.
+- Keep generated documentation tied to current artifacts under `docs/` (for example, `docs/api-spec.yaml`, `docs/api-examples.md`, `docs/sdk-reference.md`) or other repository-owned paths.
+- If the documentation becomes part of PR evidence, validate the generated files before attaching them to the PR layer.
+
+#### Integrated Improvement Commands (English)
+Use the Improve example in `Extended Command Results (English)` as the canonical interaction sample. This section focuses on the decision criteria after verification.
+
+**Representative operating guidance**
+- Run improvement commands after Phase 5 findings identify a concrete bottleneck.
+- Keep the refactor scope tied to accepted artifacts so the generated suggestions do not drift from the validated model.
+- Re-run verification after applying the change; improvement proposals are not substitutes for repository evidence.
+
+#### Before / After Adoption Comparison (English)
+- **Before ae-framework**
+  - requirements, tests, implementation, and verification are often discussed in separate conversations
+  - artifact handoff is manual and easy to lose between PR iterations
+  - quality checks arrive late, after implementation has already diverged
+- **After ae-framework**
+  - each phase emits explicit artifacts that can be reviewed and uploaded
+  - operators can stop at Validation or Verify when the evidence is weak
+  - downstream work becomes easier to audit because the PR contains the artifact trail
+
+#### Adoption Patterns (English)
+**Incremental adoption**
+- Start with Intent, Verify, and a single high-value phase such as Test or Code.
+- Add Formal, UI/UX, or Operate only after the team is comfortable with artifact review.
+
+**Continuous quality monitoring**
+- Watch required checks first: `verify-lite`, `policy-gate`, and `gate`.
+- Add opt-in controls only where the PR risk justifies them.
+
+**Team collaboration**
+- Use the generated artifacts as the shared review surface.
+- Keep implementation, verification, and rollout decisions attached to the same PR artifact set.
 
 #### Summary (English)
 - Claude Code is most effective with ae-framework when each phase produces explicit artifacts and the operator keeps phase boundaries disciplined.
