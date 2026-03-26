@@ -3,34 +3,76 @@ docRole: derived
 canonicalSource:
 - policy/quality.json
 - docs/quality/verification-gates.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-26'
 ---
 # Type Coverage Policy (TSDoc)
 
 > 🌍 Language / 言語: English | 日本語
 
-English
+---
 
-- Target: Raise and enforce TypeScript type coverage over time without blocking fast iteration.
-- Current baseline: 65% (script: `pnpm typecov:check`).
-- Incremental gate: 70% available via `pnpm typecov:check:70`; wire this in CI behind a label (e.g., `enforce-typecov`).
-- Local runs:
-  - Quick check: `pnpm types:check && pnpm typecov`
-  - Enforced check (70%): `pnpm typecov:check:70`
-- Scope: Uses `configs/tsconfig/tsconfig.verify.json` to focus on framework/core paths; test scaffolding and examples are excluded.
-- Exceptions: Catch blocks are ignored (`--ignore-catch`). Prefer narrowing, not `any`.
-- Error handling: Use unknown-first in `catch (error: unknown)` and convert via a shared helper (e.g., `toMessage(error)`), avoiding unsafe `error.message` access.
-- Escalation path: If a PR cannot meet the raised threshold, remove the label and leave a short note explaining hotspots and follow-ups.
+## English
 
-Japanese (日本語)
+### Purpose
+- Raise and enforce TypeScript type coverage incrementally without blocking fast iteration in the default path.
 
-- 目的: 速度を落とさず、段階的に TypeScript の型カバレッジを引き上げ、最終的に CI でのゲートを強化します。
-- 現在の基準: 65%（`pnpm typecov:check`）。
-- 段階的ゲート: 70% は `pnpm typecov:check:70` で実行可能。CI 側では `enforce-typecov` ラベルが付与された場合にのみ実行・強制します。
-- ローカル実行:
-  - 迅速な確認: `pnpm types:check && pnpm typecov`
-  - 強制チェック（70%）: `pnpm typecov:check:70`
-- 対象範囲: `configs/tsconfig/tsconfig.verify.json` を使用し、フレームワーク/コアを中心に計測。テスト・サンプルは除外。
-- 例外: `catch` 節は `--ignore-catch` で除外。`any` ではなくナローイングを推奨。
-- エラー処理: `catch (error: unknown)` を基本とし、共通ヘルパ（例: `toMessage(error)`）で安全に文字列化。`error.message` の直接参照は避ける。
-- エスカレーション: PR で閾値を満たせない場合はラベルを外し、ホットスポットと後続対応を簡潔に記載してください。
+### Current baseline
+- Current baseline: `65%`.
+- Local baseline check: `pnpm typecov:check`.
+- Incremental gate: `70%`, available via `pnpm typecov:check:70`.
+
+### CI policy
+- The stronger threshold is intended for label-gated enforcement in CI, for example behind `enforce-typecov`.
+- Keep the default path lightweight; opt in to the stricter threshold when the change is ready for tighter type-quality enforcement.
+
+### Local runs
+- Quick local check: `pnpm types:check && pnpm typecov`
+- Enforced check (`70%`): `pnpm typecov:check:70`
+
+### Scope and exceptions
+- Scope is defined by `configs/tsconfig/tsconfig.verify.json` and focuses on framework/core paths.
+- Test scaffolding and examples are excluded from the coverage target.
+- Catch blocks are ignored via `--ignore-catch`.
+- Prefer narrowing over `any`.
+
+### Error-handling rule
+- Use unknown-first handling in `catch (error: unknown)`.
+- Convert errors through a shared helper such as `toMessage(error)`.
+- Do not rely on unsafe direct access like `error.message`.
+
+### Escalation path
+- If a PR cannot meet the raised threshold, remove the strict label.
+- Leave a short note describing the hotspots and the follow-up work needed to close the gap.
+
+## 日本語
+
+### 目的
+- 速度を落とさず、段階的に TypeScript の型カバレッジを引き上げ、必要時のみ強制ゲートを有効化します。
+
+### 現在の基準
+- 現在の基準: `65%`
+- ローカル基準チェック: `pnpm typecov:check`
+- 段階的ゲート: `70%`（`pnpm typecov:check:70`）
+
+### CI ポリシー
+- 強制しきい値は、たとえば `enforce-typecov` のようなラベル付き CI でのみ有効化する前提です。
+- 既定の開発経路は軽量のまま維持し、型品質を強めたい PR だけ strict 側を選択します。
+
+### ローカル実行
+- 迅速な確認: `pnpm types:check && pnpm typecov`
+- 強制チェック（`70%`）: `pnpm typecov:check:70`
+
+### 対象範囲と例外
+- 対象範囲は `configs/tsconfig/tsconfig.verify.json` で定義し、フレームワーク/コアを中心に計測します。
+- テスト用の足場コードとサンプルは対象外です。
+- `catch` 節は `--ignore-catch` で除外します。
+- `any` ではなくナローイングを優先します。
+
+### エラー処理ルール
+- `catch (error: unknown)` を基本とします。
+- 文字列化は `toMessage(error)` のような共通ヘルパを経由します。
+- `error.message` の直接参照は避けます。
+
+### エスカレーション
+- PR で strict しきい値を満たせない場合は、strict 用ラベルを外します。
+- その上で、ホットスポットと後続対応を短く記録してください。
