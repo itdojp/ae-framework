@@ -74,9 +74,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Release / telemetry operations: `operate/release-engineering.md`, `operate/telemetry-as-context.md`
 
 ### Documentation language policy
-- Keep English and Japanese aligned for operational sections such as commands, thresholds, workflow inputs, and CI examples.
-- When one side intentionally stays shorter, add a clear note pointing to the detailed side instead of letting the two sections silently drift.
-- Prefer executable snippets and repository-owned paths over abstract examples whenever the document is used as a runbook.
+See **Docs Language Policy / ドキュメント言語方針** below for the canonical documentation language policy (single source of truth).
 
 ### Getting Started
 Entry path for first-time setup, baseline verification, and the shortest route to a usable local environment.
