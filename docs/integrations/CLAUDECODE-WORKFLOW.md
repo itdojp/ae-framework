@@ -191,7 +191,7 @@ Claude Code: Running Intent Task Adapter...
 - Intent: `artifacts/intent/summary.json` (requirements, next steps)
 - Formal: `formal/summary.json` (legacy compatibility), plus `artifacts/hermetic-reports/formal/summary.json` and `artifacts/formal/formal-summary-v1.json` / `artifacts/formal/formal-summary-v2.json`
 - Test: `artifacts/integration/discovered.json`, `artifacts/integration/*`, benchmark or optimization reports when present
-- Code: generated implementation under `src/**` and machine-readable docs such as `docs/api/**`
+- Code: generated implementation under `src/**` and machine-readable docs such as `docs/api-spec.yaml`, `docs/api-examples.md`, and `docs/sdk-reference.md`
 - Verify: `artifacts/summary/combined.json`, `artifacts/summary/PR_SUMMARY.md`, and supporting evidence artifacts
 - Operate: deployment configuration, telemetry bundles, and follow-up handoff artifacts
 ※ CLIは標準でstdout出力のため、ファイル化はリダイレクト/エージェント経由で行うこと
@@ -250,7 +250,7 @@ ae entry verify --profile lite
 Intent:    12 requirements → artifacts/intent/summary.json
 Formal:    invariants / transitions captured → formal/summary.json + formal evidence artifacts
 Test:      selected tests + dependency analysis → artifacts/integration/discovered.json
-Code:      implementation generated from tests/model → src/** + docs/api/**
+Code:      implementation generated from tests/model → src/** + machine-readable docs under `docs/`
 Verify:    evidence bundle and PR summary → artifacts/summary/combined.json
 Operate:   deploy / monitor handoff → deployment config + telemetry bundle
 ```
@@ -740,20 +740,7 @@ Claude Code:
 ```
 
 #### Integrated Analysis Commands (English)
-Use these when you need cross-cutting diagnostics before choosing the next ae-framework phase.
-
-**Analyze example**
-```text
-User: /ae:analyze ./src/auth --depth=deep --security --performance
-
-Claude Code:
-- JWT implementation: appropriate
-- Password hashing: bcrypt confirmed
-- Input validation: implemented
-- Average latency: 45ms
-- Memory usage: 12MB
-- Suggested improvement: add caching for an estimated 20% gain
-```
+Use the Analyze example in `Extended Command Results (English)` as the canonical interaction sample. This section defines how to operate it in the delivery flow.
 
 **Representative operating guidance**
 - Run deep analysis before Phase 3 or Phase 4 when the change touches authentication, payment, or cross-service boundaries.
@@ -761,37 +748,15 @@ Claude Code:
 - When risk is high, pair the analysis with follow-up verification such as `ae entry verify --profile lite` and any risk-driven labels.
 
 #### Integrated Documentation Commands (English)
-Use documentation generation only after the model, API shape, and responsibility boundaries are stable.
-
-**Document example**
-```text
-User: /ae:document ./src --type=api --format=openapi --include-examples
-
-Claude Code:
-- API spec: docs/api-spec.yaml
-- Examples: docs/api-examples.md
-- SDK reference: docs/sdk-reference.md
-- Documented endpoints: 22
-```
+Use the Document example in `Extended Command Results (English)` as the canonical interaction sample. This section focuses on when to run it and where the outputs should live.
 
 **Representative operating guidance**
 - Prefer machine-readable outputs such as OpenAPI after the Code and Verify phases have stabilized the contract.
-- Keep generated documentation tied to current artifacts under `docs/api/**` or other repository-owned paths.
+- Keep generated documentation tied to current artifacts under `docs/` (for example, `docs/api-spec.yaml`, `docs/api-examples.md`, `docs/sdk-reference.md`) or other repository-owned paths.
 - If the documentation becomes part of PR evidence, validate the generated files before attaching them to the PR layer.
 
 #### Integrated Improvement Commands (English)
-Use improvement commands to propose bounded refactors after you already have stable verification evidence.
-
-**Improve example**
-```text
-User: /ae:improve ./src/tasks --focus=performance --suggest-refactoring
-
-Claude Code:
-- Optimize database queries to remove N+1 access
-- Add response caching for an estimated 20% speedup
-- Split TaskService into query / command responsibilities
-- Predicted code-quality score: 87 -> 95
-```
+Use the Improve example in `Extended Command Results (English)` as the canonical interaction sample. This section focuses on the decision criteria after verification.
 
 **Representative operating guidance**
 - Run improvement commands after Phase 5 findings identify a concrete bottleneck.
