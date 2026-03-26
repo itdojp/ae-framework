@@ -110,56 +110,51 @@ ae-framework conformance sample --rules rules.json
 
 #### 2. Define rules
 
-Example rule definition file (JSON):
+Example rule definition file (JSON array):
 
 ```text
-{
-  "rules": [
-    {
-      "id": "data-validation-rule",
-      "name": "Data Validation Rule",
-      "description": "Validate user input data",
-      "type": "data_validation",
-      "enabled": true,
-      "severity": "major",
-      "category": "validation",
-      "configuration": {
-        "schema": {
-          "type": "object",
-          "properties": {
-            "username": {"type": "string", "minLength": 3},
-            "email": {"type": "string", "format": "email"}
-          },
-          "required": ["username", "email"]
-        }
-      },
-      "metadata": {
-        "tags": ["user", "validation"]
-      }
+[
+  {
+    "id": "7488a940-9fd6-492b-9160-82c3c2ba0a60",
+    "name": "Required Email Field",
+    "description": "Ensures email field is present and valid",
+    "category": "data_validation",
+    "severity": "major",
+    "enabled": true,
+    "condition": {
+      "expression": "required && email",
+      "variables": ["data.email"],
+      "constraints": {}
     },
-    {
-      "id": "api-contract-rule",
-      "name": "API Contract Rule",
-      "description": "Validate API responses",
-      "type": "api_contract",
-      "enabled": true,
-      "severity": "critical",
-      "category": "api",
-      "configuration": {
-        "endpoint": "/api/users",
-        "method": "GET",
-        "expectedStatus": [200, 404],
-        "responseSchema": {
-          "type": "object",
-          "properties": {
-            "data": {"type": "array"},
-            "total": {"type": "number"}
-          }
-        }
-      }
+    "actions": ["log_violation"],
+    "metadata": {
+      "createdAt": "2025-08-20T23:50:46.701Z",
+      "updatedAt": "2025-08-20T23:50:46.701Z",
+      "version": "1.0.0",
+      "tags": ["email", "required", "sample"]
     }
-  ]
-}
+  },
+  {
+    "id": "8d989667-6eb7-40ac-81b0-34902cf5070f",
+    "name": "API Response Time",
+    "description": "Ensures API responses are within acceptable time limits",
+    "category": "api_contract",
+    "severity": "minor",
+    "enabled": true,
+    "condition": {
+      "expression": "timeout",
+      "variables": ["data.response.time"],
+      "constraints": {"maxMs": 1000}
+    },
+    "actions": ["log_violation", "metric_increment"],
+    "metadata": {
+      "createdAt": "2025-08-20T23:50:46.701Z",
+      "updatedAt": "2025-08-20T23:50:46.701Z",
+      "version": "1.0.0",
+      "tags": ["performance", "api", "sample"]
+    }
+  }
+]
 ```
 
 #### 3. Run verification
@@ -206,7 +201,8 @@ const engine = new ConformanceVerificationEngine({
     cacheTtlMs: 300000
   },
   reporting: { destinations: ['console'], batchSize: 100, flushIntervalMs: 30000 },
-  alerting: { enabled: false, thresholds: {}, channels: [] }
+  alerting: { enabled: false, thresholds: {}, channels: [] },
+  rules: []
 });
 
 // Add a data validation monitor
@@ -225,8 +221,12 @@ engine.on('violation_detected', (violation) => {
 // Execute verification
 const context = {
   timestamp: new Date().toISOString(),
-  source: 'api-endpoint',
-  data: { username: 'test', email: 'test@example.com' }
+  executionId: '550e8400-e29b-41d4-a716-446655440000',
+  environment: 'development',
+  metadata: {
+    source: 'api-endpoint',
+    data: { username: 'test', email: 'test@example.com' }
+  }
 };
 
 const result = await engine.verify({ username: 'test', email: 'test@example.com' }, context);
@@ -254,7 +254,8 @@ const engine = new ConformanceVerificationEngine({
     batchSize: 100,
     flushIntervalMs: 30000
   },
-  alerting: { enabled: false, thresholds: {}, channels: [] }
+  alerting: { enabled: false, thresholds: {}, channels: [] },
+  rules: []
 });
 
 // API contract monitor (current implementation exposes no extra options)
@@ -279,10 +280,11 @@ engine.addMonitor(apiMonitor);
    - Trend analysis
 
 3. Performance metrics
-   - CPU usage
-   - Memory usage
-   - Network I/O
-   - Response time
+   - Response time (aggregated in `ConformanceMetrics`)
+   - Optional, per-check-only fields exposed by some monitors:
+     - CPU usage
+     - Memory usage
+     - Network I/O
 
 #### Metrics collection example
 
@@ -445,7 +447,8 @@ const engine = new ConformanceVerificationEngine({
   sampling: { enabled: false, rate: 1.0, strategy: 'random' },
   performance: { timeoutMs: 5000, maxConcurrentChecks: 10, cacheResults: true, cacheTtlMs: 300000 },
   reporting: { destinations: ['console'], batchSize: 100, flushIntervalMs: 30000 },
-  alerting: { enabled: false, thresholds: {}, channels: [] }
+  alerting: { enabled: false, thresholds: {}, channels: [] },
+  rules: []
 });
 
 // Configure API monitoring
@@ -456,9 +459,13 @@ await engine.start();
 app.use(async (req, res, next) => {
   const context = {
     timestamp: new Date().toISOString(),
-    source: `${req.method} ${req.path}`,
-    request: { method: req.method, path: req.path, headers: req.headers },
-    data: req.body
+    executionId: '550e8400-e29b-41d4-a716-446655440002',
+    environment: 'development',
+    metadata: {
+      source: `${req.method} ${req.path}`,
+      request: { method: req.method, path: req.path, headers: req.headers },
+      data: req.body
+    }
   };
 
   const apiCall = {
@@ -491,17 +498,23 @@ const engine = new ConformanceVerificationEngine({
   sampling: { enabled: false, rate: 1.0, strategy: 'random' },
   performance: { timeoutMs: 5000, maxConcurrentChecks: 10, cacheResults: true, cacheTtlMs: 300000 },
   reporting: { destinations: ['console'], batchSize: 100, flushIntervalMs: 30000 },
-  alerting: { enabled: false, thresholds: {}, channels: [] }
+  alerting: { enabled: false, thresholds: {}, channels: [] },
+  rules: []
 });
 
 engine.addMonitor(new DataValidationMonitor());
+await engine.start();
 
 async function processData(data) {
   for (const record of data) {
     const context = {
       timestamp: new Date().toISOString(),
-      source: 'data-pipeline',
-      data: record
+      executionId: '550e8400-e29b-41d4-a716-446655440001',
+      environment: 'development',
+      metadata: {
+        source: 'data-pipeline',
+        data: record
+      }
     };
 
     const validation = await engine.verify(record, context);
@@ -515,6 +528,8 @@ async function processData(data) {
     await processRecord(record);
   }
 }
+
+await engine.stop();
 ```
 
 ### Troubleshooting
@@ -700,56 +715,51 @@ ae-framework conformance sample --rules rules.json
 
 #### 2. 規則定義
 
-規則定義ファイル（JSON形式）の例：
+規則定義ファイル（JSON配列）の例：
 
 ```text
-{
-  "rules": [
+[
     {
-      "id": "data-validation-rule",
-      "name": "Data Validation Rule",
-      "description": "Validate user input data",
-      "type": "data_validation",
-      "enabled": true,
+      "id": "7488a940-9fd6-492b-9160-82c3c2ba0a60",
+      "name": "Required Email Field",
+      "description": "Ensures email field is present and valid",
+      "category": "data_validation",
       "severity": "major",
-      "category": "validation",
-      "configuration": {
-        "schema": {
-          "type": "object",
-          "properties": {
-            "username": {"type": "string", "minLength": 3},
-            "email": {"type": "string", "format": "email"}
-          },
-          "required": ["username", "email"]
-        }
+      "enabled": true,
+      "condition": {
+        "expression": "required && email",
+        "variables": ["data.email"],
+        "constraints": {}
       },
+      "actions": ["log_violation"],
       "metadata": {
-        "tags": ["user", "validation"]
+        "createdAt": "2025-08-20T23:50:46.701Z",
+        "updatedAt": "2025-08-20T23:50:46.701Z",
+        "version": "1.0.0",
+        "tags": ["email", "required", "sample"]
       }
     },
     {
-      "id": "api-contract-rule",
-      "name": "API Contract Rule", 
-      "description": "Validate API responses",
-      "type": "api_contract",
+      "id": "8d989667-6eb7-40ac-81b0-34902cf5070f",
+      "name": "API Response Time",
+      "description": "Ensures API responses are within acceptable time limits",
+      "category": "api_contract",
+      "severity": "minor",
       "enabled": true,
-      "severity": "critical",
-      "category": "api",
-      "configuration": {
-        "endpoint": "/api/users",
-        "method": "GET",
-        "expectedStatus": [200, 404],
-        "responseSchema": {
-          "type": "object",
-          "properties": {
-            "data": {"type": "array"},
-            "total": {"type": "number"}
-          }
-        }
+      "condition": {
+        "expression": "timeout",
+        "variables": ["data.response.time"],
+        "constraints": {"maxMs": 1000}
+      },
+      "actions": ["log_violation", "metric_increment"],
+      "metadata": {
+        "createdAt": "2025-08-20T23:50:46.701Z",
+        "updatedAt": "2025-08-20T23:50:46.701Z",
+        "version": "1.0.0",
+        "tags": ["performance", "api", "sample"]
       }
     }
-  ]
-}
+]
 ```
 
 #### 3. 検証実行
@@ -795,7 +805,8 @@ const engine = new ConformanceVerificationEngine({
     cacheTtlMs: 300000
   },
   reporting: { destinations: ['console'], batchSize: 100, flushIntervalMs: 30000 },
-  alerting: { enabled: false, thresholds: {}, channels: [] }
+  alerting: { enabled: false, thresholds: {}, channels: [] },
+  rules: []
 });
 
 // データ検証モニターの追加
@@ -814,8 +825,12 @@ engine.on('violation_detected', (violation) => {
 // 規則の実行
 const context = {
   timestamp: new Date().toISOString(),
-  source: 'api-endpoint',
-  data: { username: 'test', email: 'test@example.com' }
+  executionId: '550e8400-e29b-41d4-a716-446655440000',
+  environment: 'development',
+  metadata: {
+    source: 'api-endpoint',
+    data: { username: 'test', email: 'test@example.com' }
+  }
 };
 
 const result = await engine.verify({ username: 'test', email: 'test@example.com' }, context);
@@ -868,10 +883,11 @@ engine.addMonitor(apiMonitor);
    - トレンド分析
 
 3. **パフォーマンスメトリクス**
-   - CPU使用率
-   - メモリ使用量
-   - ネットワーク I/O
-   - レスポンス時間
+   - レスポンス時間（`ConformanceMetrics` に集約）
+   - モニターによっては per-check の補助フィールドとして以下を持つ場合があります:
+     - CPU使用率
+     - メモリ使用量
+     - ネットワーク I/O
 
 #### メトリクス取得例
 
@@ -1009,7 +1025,8 @@ const engine = new ConformanceVerificationEngine({
   sampling: { enabled: false, rate: 1.0, strategy: 'random' },
   performance: { timeoutMs: 5000, maxConcurrentChecks: 10, cacheResults: true, cacheTtlMs: 300000 },
   reporting: { destinations: ['console'], batchSize: 100, flushIntervalMs: 30000 },
-  alerting: { enabled: false, thresholds: {}, channels: [] }
+  alerting: { enabled: false, thresholds: {}, channels: [] },
+  rules: []
 });
 
 // API監視の設定
@@ -1020,9 +1037,13 @@ await engine.start();
 app.use(async (req, res, next) => {
   const context = {
     timestamp: new Date().toISOString(),
-    source: `${req.method} ${req.path}`,
-    request: { method: req.method, path: req.path, headers: req.headers },
-    data: req.body
+    executionId: '550e8400-e29b-41d4-a716-446655440002',
+    environment: 'development',
+    metadata: {
+      source: `${req.method} ${req.path}`,
+      request: { method: req.method, path: req.path, headers: req.headers },
+      data: req.body
+    }
   };
 
   // リクエスト検証
@@ -1056,18 +1077,24 @@ const engine = new ConformanceVerificationEngine({
   sampling: { enabled: false, rate: 1.0, strategy: 'random' },
   performance: { timeoutMs: 5000, maxConcurrentChecks: 10, cacheResults: true, cacheTtlMs: 300000 },
   reporting: { destinations: ['console'], batchSize: 100, flushIntervalMs: 30000 },
-  alerting: { enabled: false, thresholds: {}, channels: [] }
+  alerting: { enabled: false, thresholds: {}, channels: [] },
+  rules: []
 });
 
 engine.addMonitor(new DataValidationMonitor());
+await engine.start();
 
 // データ処理関数
 async function processData(data: unknown[]) {
   for (const record of data) {
     const context = {
       timestamp: new Date().toISOString(),
-      source: 'data-pipeline',
-      data: record
+      executionId: '550e8400-e29b-41d4-a716-446655440001',
+      environment: 'development',
+      metadata: {
+        source: 'data-pipeline',
+        data: record
+      }
     };
 
     // データ適合性検証
@@ -1085,6 +1112,8 @@ async function processData(data: unknown[]) {
     await processRecord(record);
   }
 }
+
+await engine.stop();
 ```
 
 ### トラブルシューティング
