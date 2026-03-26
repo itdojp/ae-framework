@@ -8,6 +8,8 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 > 🌍 Language / 言語: English | 日本語
 
+---
+
 対象Issue / Target issue: `#2404`
 目的 / Purpose: 現行の `.github/workflows/*.yml`（56本）を、理想設計の4系統へ再配置する。 / Re-map the current `.github/workflows/*.yml` set (56 workflows) into the four-track target topology.
 
