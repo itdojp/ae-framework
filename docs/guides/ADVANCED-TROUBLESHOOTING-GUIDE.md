@@ -11,13 +11,9 @@ lastVerified: '2026-03-16'
 
 ---
 
-## 日本語（概要）
-
-Phase 2.1〜2.3 の高度機能（CEGIS/Runtime Conformance/Integration Testing）における代表的な問題と対処法をまとめたガイドです。症状→原因→解決の順に、CLI コマンド例と JSON 例を交えて解説します。
-
-詳細なケースは以下の英語・日本語の本文を参照してください。
-
 ## English
+
+Troubleshooting guide for advanced Phase 2.1-2.3 capabilities (CEGIS, Runtime Conformance, Integration Testing). Each section focuses on symptoms and concrete recovery steps, with likely causes noted where helpful, plus CLI or JSON examples where relevant.
 
 ### Phase 2.1: CEGIS Auto-Fix – No candidates generated
 Symptoms
@@ -141,6 +137,111 @@ Symptoms: runner cannot find artifacts or writes to unexpected locations
 Fixes
 - Use absolute `cwd` without spaces for Windows; prefer WSL
 - Pass `--output` or env (`CODEX_ARTIFACTS_DIR`) explicitly to avoid surprises
+
+### CEGIS verification failures
+Symptoms
+```bash
+ae-framework fix apply --input failures.json --verify
+# Output: Fix verification failed: Tests still failing
+```
+
+Fixes
+- Confirm the test runner works before retrying the fix flow (`pnpm test` or `npx vitest run`)
+- Reduce the repair scope to a smaller failure artifact before re-running `--verify`
+- Check `ae-framework fix status` to confirm the previous repair state before applying another patch set
+
+### CEGIS memory pressure
+Symptoms
+```text
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+```
+
+Fixes
+- Raise the Node heap for large repair batches, for example:
+  ```bash
+  NODE_OPTIONS="--max-old-space-size=4096" ae-framework fix apply --input failures.json
+  node --max-old-space-size=4096 node_modules/.bin/ae-framework fix apply --input failures.json
+  ```
+- Split large failure artifacts into smaller batches because the current CLI has no dedicated concurrency flag for `fix apply`
+
+### Runtime Conformance slow execution
+Symptoms
+```bash
+ae-framework conformance verify --input data.json --rules rules.json
+# Output: Rule execution taking over 30 seconds
+```
+
+Fixes
+- Lower the sampling rate first, then increase it gradually
+- Reduce `performance.maxConcurrentChecks` and increase `performance.timeoutMs` only as needed
+- Add caching, bounded batch size, and explicit timeouts in rule configuration
+
+### Runtime metrics memory growth
+Symptoms
+```bash
+ae-framework conformance metrics --format json --export metrics.json
+# Process memory usage keeps growing
+```
+
+Fixes
+- Increase reporting intervals and reduce flush frequency
+- Re-run under `node --expose-gc` when you need to confirm whether buffer retention is the issue
+- Reduce retention and buffer size in metrics configuration before blaming the rule engine
+
+### Runtime false positives
+Symptoms
+```bash
+ae-framework conformance verify --input data.json --rules rules.json
+# Output: Violation detected: Normal API response flagged as error
+```
+
+Fixes
+- Narrow the rule with exclusion patterns and allowed response sets
+- Switch the operating mode deliberately:
+  - `monitor_only`
+  - `permissive`
+  - `strict`
+- Re-test against known-good traces before restoring strict mode
+
+### Integration authentication failures
+Symptoms
+```bash
+ae-framework integration run --tests api-tests.json
+# Output: API test failed: 401 Unauthorized
+```
+
+Fixes
+- Verify bearer-token configuration and request headers in the environment definition
+- Regenerate the development token and confirm the effective environment before retrying
+- Automate the login/setup step when the token lifecycle is short-lived
+
+### Integration resource contention
+Symptoms
+```bash
+ae-framework integration run --tests tests.json --parallel --max-concurrency 4
+# Output: Database connection error: Too many connections
+```
+
+Fixes
+- Reduce `--max-concurrency`, or derive it from available cores
+- Separate shared resources (database, filesystem, network ports)
+- Encode suite dependencies explicitly when ordering matters
+
+### Emergency response
+
+- Stop all ae-framework processes before changing configs or rerunning unstable suites
+- Back up `.ae/` before resetting runtime conformance settings
+- Collect a diagnostic bundle that includes system info, effective config, logs, and recent artifacts before escalation
+
+### Support resources
+
+- GitHub Issues / Discussions are the primary escalation path
+- Keep links to Phase 2.1-2.3 design docs and the CLI reference alongside the incident notes
+- Use a structured bug report template with environment, reproduction steps, expected behavior, actual behavior, logs, and configuration
+
+## 日本語
+
+Phase 2.1〜2.3 の高度機能（CEGIS/Runtime Conformance/Integration Testing）における代表的な問題と対処法をまとめたガイドです。症状→原因→解決の順に、CLI コマンド例と JSON 例を交えて解説します。
 
 > Phase 2.1-2.3の高度な機能における問題解決ガイド
 
