@@ -19,8 +19,8 @@ lastVerified: '2026-03-26'
 
 ### Short GWT (example)
 ```text
-Given inventory onHand=10
-When allocate qty=12
+Given {"onHand":10}
+When {"command":"allocate","qty":12}
 Then invariant "allocated <= onHand" fails
 ```
 
@@ -32,13 +32,17 @@ Then invariant "allocated <= onHand" fails
 
 ```json
 {
-  "property": "allocated <= onHand",
-  "gwt": "Given inventory onHand=10\nWhen allocate qty=12\nThen invariant \"allocated <= onHand\" fails",
-  "json": {
-    "given": { "onHand": 10 },
-    "when": { "command": "allocate", "qty": 12 },
-    "then": { "violated": "allocated <= onHand" }
-  }
+  "items": [
+    {
+      "property": "allocated <= onHand",
+      "gwt": "Given {\"onHand\":10}\nWhen {\"command\":\"allocate\",\"qty\":12}\nThen invariant \"allocated <= onHand\" fails",
+      "json": {
+        "given": { "onHand": 10 },
+        "when": { "command": "allocate", "qty": 12 },
+        "then": { "violated": "allocated <= onHand" }
+      }
+    }
+  ]
 }
 ```
 
@@ -50,8 +54,8 @@ Then invariant "allocated <= onHand" fails
 
 ### Short GWT（例）
 ```text
-Given inventory onHand=10
-When allocate qty=12
+Given {"onHand":10}
+When {"command":"allocate","qty":12}
 Then invariant "allocated <= onHand" fails
 ```
 
@@ -63,12 +67,16 @@ Then invariant "allocated <= onHand" fails
 
 ```json
 {
-  "property": "allocated <= onHand",
-  "gwt": "Given inventory onHand=10\nWhen allocate qty=12\nThen invariant \"allocated <= onHand\" fails",
-  "json": {
-    "given": { "onHand": 10 },
-    "when": { "command": "allocate", "qty": 12 },
-    "then": { "violated": "allocated <= onHand" }
-  }
+  "items": [
+    {
+      "property": "allocated <= onHand",
+      "gwt": "Given {\"onHand\":10}\nWhen {\"command\":\"allocate\",\"qty\":12}\nThen invariant \"allocated <= onHand\" fails",
+      "json": {
+        "given": { "onHand": 10 },
+        "when": { "command": "allocate", "qty": 12 },
+        "then": { "violated": "allocated <= onHand" }
+      }
+    }
+  ]
 }
 ```
