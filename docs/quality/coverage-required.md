@@ -21,7 +21,7 @@ lastVerified: '2026-03-27'
 ### Recommended Rollout
 - Configure repository variables first.
 - Observe non-blocking comments before making coverage required.
-- Promote `coverage-check` to a required status check only after thresholds and incident frequency are understood.
+- Promote the relevant `coverage-check` job status checks, such as `coverage-check / gate` and `coverage-check / coverage`, to required status checks only after thresholds and incident frequency are understood.
 
 ### Branch Protection Setup
 1. Open Settings -> Variables -> Repository variables.
@@ -30,8 +30,7 @@ lastVerified: '2026-03-27'
    - `COVERAGE_DEFAULT_THRESHOLD` such as `80`
 3. Open Settings -> Branches -> Branch protection rules.
 4. Enable `Require status checks to pass before merging`.
-5. Add the relevant `coverage-check` status contexts. Depending on the repository state, this may appear as:
-   - `coverage-check`
+5. Add the relevant `coverage-check` job status contexts. Depending on the repository state, this may appear as:
    - `coverage-check / gate`
    - `coverage-check / coverage`
 6. Optionally relax `Require branches to be up to date before merging` during staged rollout, then enable it again after the policy stabilizes.
@@ -68,7 +67,7 @@ Coverage comments and notes should make the following fields easy to verify:
 
 ### Quick Checklist
 - [ ] `COVERAGE_ENFORCE_MAIN` and `COVERAGE_DEFAULT_THRESHOLD` are set
-- [ ] the branch protection rule includes the required `coverage-check` context
+- [ ] the branch protection rule includes the required `coverage-check / gate` and, if used in the rollout, `coverage-check / coverage` context
 - [ ] PR comments display `Derived`, `Policy`, and `Policy source`
 - [ ] the team has completed an observation period before enforcing coverage broadly
 
@@ -86,7 +85,7 @@ Coverage comments and notes should make the following fields easy to verify:
 ### 推奨ロールアウト
 - まず repository variable を設定する
 - coverage を required にする前に、non-blocking comment の観測期間を設ける
-- threshold と incident 頻度を把握した後に `coverage-check` を required status check に昇格させる
+- threshold と incident 頻度を把握した後に、`coverage-check / gate` や `coverage-check / coverage` など必要な job-level status check を required に昇格させる
 
 ### Branch protection の設定
 1. Settings -> Variables -> Repository variables を開く
@@ -95,8 +94,7 @@ Coverage comments and notes should make the following fields easy to verify:
    - `COVERAGE_DEFAULT_THRESHOLD`（例: `80`）
 3. Settings -> Branches -> Branch protection rules を開く
 4. `Require status checks to pass before merging` を有効化する
-5. 対象の `coverage-check` status context を追加する。repository 状態によっては次のいずれかで表示される
-   - `coverage-check`
+5. 対象の `coverage-check` job-level status context を追加する。repository 状態によっては次のいずれかで表示される
    - `coverage-check / gate`
    - `coverage-check / coverage`
 6. 段階導入中は `Require branches to be up to date before merging` を一時的に緩め、policy 安定後に再度有効化してよい
@@ -133,7 +131,7 @@ coverage comment と workflow note では、少なくとも次の項目を確認
 
 ### クイックチェックリスト
 - [ ] `COVERAGE_ENFORCE_MAIN` と `COVERAGE_DEFAULT_THRESHOLD` が設定されている
-- [ ] branch protection rule に required な `coverage-check` context が追加されている
+- [ ] branch protection rule に required な `coverage-check / gate` と、ロールアウトで使う場合は `coverage-check / coverage` context が追加されている
 - [ ] PR comment に `Derived`、`Policy`、`Policy source` が表示される
 - [ ] coverage を広く強制する前に観測期間を完了している
 
