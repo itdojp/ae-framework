@@ -739,6 +739,88 @@ Claude Code:
 - Predicted code-quality score: 87 -> 95
 ```
 
+#### Integrated Analysis Commands (English)
+Use these when you need cross-cutting diagnostics before choosing the next ae-framework phase.
+
+**Analyze example**
+```text
+User: /ae:analyze ./src/auth --depth=deep --security --performance
+
+Claude Code:
+- JWT implementation: appropriate
+- Password hashing: bcrypt confirmed
+- Input validation: implemented
+- Average latency: 45ms
+- Memory usage: 12MB
+- Suggested improvement: add caching for an estimated 20% gain
+```
+
+**Representative operating guidance**
+- Run deep analysis before Phase 3 or Phase 4 when the change touches authentication, payment, or cross-service boundaries.
+- Treat the result as a routing aid for the next phase, not as final evidence.
+- When risk is high, pair the analysis with follow-up verification such as `ae entry verify --profile lite` and any risk-driven labels.
+
+#### Integrated Documentation Commands (English)
+Use documentation generation only after the model, API shape, and responsibility boundaries are stable.
+
+**Document example**
+```text
+User: /ae:document ./src --type=api --format=openapi --include-examples
+
+Claude Code:
+- API spec: docs/api-spec.yaml
+- Examples: docs/api-examples.md
+- SDK reference: docs/sdk-reference.md
+- Documented endpoints: 22
+```
+
+**Representative operating guidance**
+- Prefer machine-readable outputs such as OpenAPI after the Code and Verify phases have stabilized the contract.
+- Keep generated documentation tied to current artifacts under `docs/api/**` or other repository-owned paths.
+- If the documentation becomes part of PR evidence, validate the generated files before attaching them to the PR layer.
+
+#### Integrated Improvement Commands (English)
+Use improvement commands to propose bounded refactors after you already have stable verification evidence.
+
+**Improve example**
+```text
+User: /ae:improve ./src/tasks --focus=performance --suggest-refactoring
+
+Claude Code:
+- Optimize database queries to remove N+1 access
+- Add response caching for an estimated 20% speedup
+- Split TaskService into query / command responsibilities
+- Predicted code-quality score: 87 -> 95
+```
+
+**Representative operating guidance**
+- Run improvement commands after Phase 5 findings identify a concrete bottleneck.
+- Keep the refactor scope tied to accepted artifacts so the generated suggestions do not drift from the validated model.
+- Re-run verification after applying the change; improvement proposals are not substitutes for repository evidence.
+
+#### Before / After Adoption Comparison (English)
+- **Before ae-framework**
+  - requirements, tests, implementation, and verification are often discussed in separate conversations
+  - artifact handoff is manual and easy to lose between PR iterations
+  - quality checks arrive late, after implementation has already diverged
+- **After ae-framework**
+  - each phase emits explicit artifacts that can be reviewed and uploaded
+  - operators can stop at Validation or Verify when the evidence is weak
+  - downstream work becomes easier to audit because the PR contains the artifact trail
+
+#### Adoption Patterns (English)
+**Incremental adoption**
+- Start with Intent, Verify, and a single high-value phase such as Test or Code.
+- Add Formal, UI/UX, or Operate only after the team is comfortable with artifact review.
+
+**Continuous quality monitoring**
+- Watch required checks first: `verify-lite`, `policy-gate`, and `gate`.
+- Add opt-in controls only where the PR risk justifies them.
+
+**Team collaboration**
+- Use the generated artifacts as the shared review surface.
+- Keep implementation, verification, and rollout decisions attached to the same PR artifact set.
+
 #### Summary (English)
 - Claude Code is most effective with ae-framework when each phase produces explicit artifacts and the operator keeps phase boundaries disciplined.
 - The highest leverage comes from:
