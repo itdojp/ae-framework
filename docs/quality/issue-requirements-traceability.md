@@ -54,7 +54,7 @@ ae traceability matrix \
 
 The condition for `linked=true` is that the target requirement ID is present in both tests and code.
 
-When `--context-pack` is specified, Context Pack fields such as `diagrams[].id`, `morphisms[].id`, and `acceptance_tests[].id` are also emitted as matrix columns.
+When Context Pack IDs are discovered in the inputs (for example via `--context-pack`, which by default matches `spec/context-pack/**/*.{yml,yaml,json}`), Context Pack fields such as `diagrams[].id`, `morphisms[].id`, and `acceptance_tests[].id` are also emitted as matrix columns.
 
 When `--discovery-pack` is combined, the matrix starts from Context Pack `upstream_refs` and aggregates Discovery Pack `goal_ids`, `requirement_ids`, `business_use_case_ids`, and `decision_ids` per row. The summary adds:
 
@@ -140,7 +140,7 @@ ae traceability matrix \
 
 `linked=true` の条件は「当該 requirement ID が tests と code の両方に存在すること」です。
 
-`--context-pack` を指定した場合は Context Pack の `diagrams[].id` / `morphisms[].id` / `acceptance_tests[].id` も matrix の列に出力されます。
+入力から Context Pack ID が検出された場合（たとえば `--context-pack`。既定値は `spec/context-pack/**/*.{yml,yaml,json}`）は、Context Pack の `diagrams[].id` / `morphisms[].id` / `acceptance_tests[].id` も matrix の列に出力されます。
 
 `--discovery-pack` を併用した場合は、Context Pack の `upstream_refs` を起点に Discovery Pack の `goal_ids` / `requirement_ids` / `business_use_case_ids` / `decision_ids` を行ごとに集約します。summary には以下が追加されます。
 
