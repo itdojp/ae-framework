@@ -33,7 +33,7 @@ High-level architecture of ae-framework, showing how the repository moves from r
 
 ### Technology stack and repository notes
 - The diagrams show conceptual agents, but the repository is implemented through TypeScript modules, CLI entrypoints, workflow orchestration, schemas, and generated artifacts.
-- Top-level integration entrypoints such as `tsconfig.json` and `eslint.config.js` should be read as repository coordination surfaces, not as substitutes for the phase model.
+- Top-level config files such as `tsconfig.json` and `eslint.config.js` should be read primarily as compatibility shims / repository entrypoints; the canonical configurations live under `configs/tsconfig/tsconfig.root.json` and `configs/eslint.config.js`, so phase integration should not treat the root files as independent truth sources.
 - Current formal/reporting behavior is hybrid: some downstream consumers still accept legacy compatibility inputs, while the canonical evidence lives under the current artifact paths.
 
 ### Phase 3 deep dive
