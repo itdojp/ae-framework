@@ -10,9 +10,46 @@ lastVerified: '2026-03-11'
 
 ## English (Overview)
 
-High-level architecture of ae-framework, showing components and document flows across phases. The system integrates with Claude Code and MCP servers, generates formal specs (TLA+/OpenAPI), tests, and UI, and wires verification/telemetry.
+High-level architecture of ae-framework, showing how the repository moves from requirement understanding to delivery evidence across six phases. The diagrams below remain the canonical visual explanation; this section adds the current-state operating notes that are only implicit in the diagrams.
 
-See the Japanese sections and diagrams below for full details.
+### Six-phase architecture
+- **Phase 1: Intent** analyzes narrative requirements and emits structured requirement artifacts.
+- **Phase 2: Formal** derives machine-checkable specifications and contract-oriented artifacts.
+- **Phase 3: Test** is intentionally split into dependency inference, intelligent selection/generation, and optimization/benchmark support.
+- **Phase 4: Code** consumes accepted upstream artifacts and generates implementation-oriented outputs rather than treating free-form prompts as the source of truth.
+- **Phase 5: Verify** consolidates repository quality evidence into PR-facing artifacts such as `artifacts/summary/combined.json`, `artifacts/summary/PR_SUMMARY.md`, traceability outputs, and policy decisions.
+- **Phase 6: Operate** prepares deployment, monitoring, and follow-up automation handoff instead of acting as a default always-on production orchestrator.
+
+### Component relationships
+- Claude Code is the operator-facing entrypoint, but the architecture still exposes phase-specific surfaces through MCP servers, CLI commands, and workflow automation.
+- The central design rule is that phase boundaries are artifact boundaries: each phase emits material that the next phase can validate, not just prose that the next phase has to reinterpret.
+- SuperClaude / auxiliary automation integrates as a support layer around Test, Code, and Verify. It is not a separate truth source; it enriches existing phase outputs.
+
+### Data and document flow
+- Requirements, user stories, and non-functional concerns flow from Intent into Formal and Test.
+- Formal outputs such as TLA+ fragments, state machines, and API contracts become inputs to tests, code generation, and later verification.
+- Test selection, generated scenarios, and benchmark hints should be read as planning artifacts for implementation and verification, not as deployment evidence by themselves.
+- Verify is the first phase that should be treated as PR-evidence-grade by default. Downstream rollout or operations automation should consume those verified artifacts rather than bypass them.
+
+### Technology stack and repository notes
+- The diagrams show conceptual agents, but the repository is implemented through TypeScript modules, CLI entrypoints, workflow orchestration, schemas, and generated artifacts.
+- Top-level integration entrypoints such as `tsconfig.json` and `eslint.config.js` should be read as repository coordination surfaces, not as substitutes for the phase model.
+- Current formal/reporting behavior is hybrid: some downstream consumers still accept legacy compatibility inputs, while the canonical evidence lives under the current artifact paths.
+
+### Phase 3 deep dive
+- Phase 3.1 covers dependency analysis and sequential reasoning to decide what is risky enough to test.
+- Phase 3.2 covers intelligent selection, E2E generation, and visual regression candidates.
+- Phase 3.3 covers optimization, benchmark planning, and integration-level performance signals.
+- This is why Phase 3 is shown with internal subgraphs: the repository treats test strategy as an architecture concern, not a single generator call.
+
+### File and document relationships
+- The document graph is as important as the code graph. Requirements, specifications, tests, implementation, and verification reports all have repository-owned paths and schemas.
+- Architecture work is therefore not limited to `src/**`; it also includes `docs/**`, `schema/**`, `spec/**`, CI workflows, and artifact contracts.
+- When a phase changes shape, the corresponding documentation and schemas should move together; otherwise Verify will surface drift.
+
+### Current implementation note
+- Use the Japanese diagrams below as the canonical visual map.
+- Use this English section as the current-state guide for how those diagrams map to the repository as it exists today.
 
 ae-frameworkの全体アーキテクチャ、コンポーネント関係、入出力ドキュメントの流れを示します。
 
