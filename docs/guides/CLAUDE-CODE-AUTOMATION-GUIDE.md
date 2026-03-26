@@ -13,49 +13,49 @@ lastVerified: '2026-03-26'
 
 ## English
 
-> Complete guide for driving ae-framework from requirements through implementation in Claude Code
+> Complete guide for driving ae-framework from requirements through the default six-phase flow and UI delivery in Claude Code
 
 ### Overview
 
-This guide explains how to drive ae-framework inside Claude Code so that a requirements document can be processed through the phased automation flow with explicit quality expectations. The intent is not to replace engineering review. The intent is to make the phase-by-phase prompts, expected outputs, and escalation rules explicit so operators can run the workflow consistently.
+This guide documents how to drive ae-framework inside Claude Code so that a requirements document can move through the default six-phase automation flow with explicit quality thresholds, traceability checks, and handoff expectations. The objective is operational consistency: the prompts, expected outputs, and escalation rules should be explicit enough that different operators drive the same workflow in the same way.
 
 ### Audience
 
-- Developers using Claude Code with ae-framework Task Tool integration enabled.
-- Operators who need a repeatable prompt pattern from requirements to domain modeling.
-- Reviewers who want explicit checkpoints for quality scores, traceability, and next-phase readiness.
+- Developers using Claude Code with ae-framework integration available in the current workspace.
+- Operators who need repeatable prompts from requirements analysis through domain modeling and UI delivery.
+- Reviewers who need explicit checkpoints for quality scores, traceability, and next-phase readiness.
 
 ### Prerequisites
 
 - Claude Code can invoke ae-framework in the current workspace.
 - A requirements file such as `requirements.md` already exists.
-- The operator understands the Phase 1-5 flow and basic software delivery terminology.
+- The operator understands the Phase 1-6 flow and basic delivery terminology.
 
 ### Basic workflow instructions
 
 #### 1. Project initialization
 
 ```text
-ae-frameworkを使って新しいプロジェクトを開始します。
-プロジェクト名は「ECサイト開発」で、要件ドキュメントは requirements.md です。
-Phase 1から段階的に実行してください。
+Start a new project with ae-framework.
+The project name is "EC Site Development" and the requirements document is `requirements.md`.
+Execute the workflow incrementally from Phase 1.
 ```
 
 Expected result:
-- project context is initialized
+- the project context is initialized
 - Phase 1 inputs are recognized
 - the first execution plan is proposed
 
 #### 2. Requirements analysis (Phase 1: Intent Analysis)
 
 ```text
-requirements.mdの内容を分析して、要件と意図を抽出してください。
-以下の観点で分析してください：
-- 機能要件の特定
-- 非機能要件の抽出
-- ビジネス要件の明確化
-- 技術要件の識別
-次のフェーズへの推奨事項も提示してください。
+Analyze the contents of `requirements.md` and extract the requirements and intent.
+Evaluate the document from the following perspectives:
+- identify functional requirements
+- extract non-functional requirements
+- clarify the business requirements
+- identify technical requirements
+Also provide recommendations for the next phase.
 ```
 
 Expected result:
@@ -67,13 +67,13 @@ Expected result:
 #### 3. Structure requirements (Phase 2: Natural Language Requirements)
 
 ```text
-抽出された要件を構造化してください。
-以下を実行してください：
-- 要件の分類と優先順位付け
-- ビジネスエンティティの特定
-- 要件間の関係性の分析
-- 不明確な要件の明確化提案
-完全性を評価して、次のステップを推奨してください。
+Structure the extracted requirements.
+Please do the following:
+- classify and prioritize the requirements
+- identify business entities
+- analyze the relationships between requirements
+- propose clarifications for ambiguous requirements
+Evaluate completeness and recommend the next steps.
 ```
 
 Expected result:
@@ -85,13 +85,13 @@ Expected result:
 #### 4. Create user stories (Phase 3: User Stories Creation)
 
 ```text
-構造化された要件からユーザーストーリーを作成してください。
-以下の形式で生成してください：
+Create user stories from the structured requirements.
+Use the following format:
 - "As a [user role], I want [functionality], So that [benefit]"
-- 受入基準をGiven-When-Then形式で記述
-- ストーリーポイントによる見積もり
-- エピック単位での組織化
-依存関係も明確にしてください。
+- write acceptance criteria in Given-When-Then form
+- estimate story points
+- organize stories by epic
+Also make dependencies explicit.
 ```
 
 Expected result:
@@ -103,32 +103,32 @@ Expected result:
 #### 5. Validate consistency (Phase 4: Validation)
 
 ```text
-これまでのフェーズの成果物の整合性を検証してください。
-以下をチェックしてください：
-- 要件とユーザーストーリーの対応関係
-- トレーサビリティの確保
-- 一貫性の評価
-- 完全性の確認
-問題があれば修正提案をしてください。
+Validate the consistency of the artifacts produced so far.
+Check the following:
+- requirement-to-story correspondence
+- traceability coverage
+- overall consistency
+- completeness
+If there are problems, propose concrete fixes.
 ```
 
 Expected result:
 - traceability matrix
 - consistency findings
-- gap analysis with concrete repair proposals
+- gap analysis with repair proposals
 - quality score, with `90%+` as the target reference
 
 #### 6. Design the domain model (Phase 5: Domain Modeling)
 
 ```text
-ドメイン駆動設計（DDD）に基づいてドメインモデルを設計してください。
-以下を定義してください：
-- コアドメインエンティティ
-- 集約（Aggregate）と集約ルート
-- 境界コンテキスト（Bounded Context）
-- ドメインサービス
-- ユビキタス言語
-- ビジネスルール
+Design the domain model based on Domain-Driven Design (DDD).
+Define the following:
+- core domain entities
+- aggregates and aggregate roots
+- bounded contexts
+- domain services
+- ubiquitous language
+- business rules
 ```
 
 Expected result:
@@ -137,23 +137,40 @@ Expected result:
 - ubiquitous language dictionary
 - architecture ready for implementation handoff
 
+#### 7. Deliver UI/UX and frontend scaffolding (Phase 6: UI Generation)
+
+```text
+Use the Phase 5 outputs to generate the UI and frontend delivery artifacts.
+Please do the following:
+- generate the required UI components and pages
+- summarize Storybook / E2E / accessibility expectations
+- report missing inputs that block generation
+- provide the files created and the next operator actions
+```
+
+Expected result:
+- Phase 6 delivery artifacts and generated file list
+- explicit blockers if required inputs are missing
+- next-step guidance for review, testing, and implementation hardening
+
 ### Full automation patterns
 
 #### Fully automated run
 
 ```text
-ae-frameworkを使って、添付のrequirements.mdから実装まで完全自動で実行してください。
+Use ae-framework to run the workflow from the attached `requirements.md` through the default delivery flow.
 
-実行フェーズ：
-Phase 1: 要件分析
-Phase 2: 要件構造化
-Phase 3: ユーザーストーリー作成
-Phase 4: 整合性検証
-Phase 5: ドメインモデル設計
+Execution phases:
+Phase 1: Requirements Analysis
+Phase 2: Requirements Structuring
+Phase 3: User Story Creation
+Phase 4: Consistency Validation
+Phase 5: Domain Modeling
+Phase 6: UI / UX Delivery
 
-各フェーズの結果を詳細に報告し、次フェーズへの推奨事項を提示してください。
-品質スコアが80%未満の場合は、改善提案を含めてください。
-最終的にプロジェクト全体のサマリーレポートを作成してください。
+Report each phase result in detail and provide recommendations for the next phase.
+If any quality score is below 80%, include an improvement plan.
+Produce a final summary report for the whole project.
 ```
 
 Use this pattern for:
@@ -164,15 +181,15 @@ Use this pattern for:
 #### Staged execution
 
 ```text
-ae-frameworkのPhase 2を実行してください。
-Phase 1の結果を基に、要件の構造化と分析を行ってください。
+Run ae-framework Phase 2.
+Use the Phase 1 result as input and perform requirements structuring and analysis.
 
-実行後は以下を確認してください：
-- 完全性スコア（目標：80%以上）
-- 曖昧性の有無
-- 次フェーズでの注意点
+After execution, confirm the following:
+- completeness score (target: 80% or higher)
+- whether ambiguity remains
+- cautions for the next phase
 
-完了したら自動的にPhase 3に進んでください。
+If the result is acceptable, continue to Phase 3 automatically.
 ```
 
 Use this pattern for:
@@ -185,16 +202,16 @@ Use this pattern for:
 #### Quality criteria
 
 ```text
-ae-frameworkを実行する際、以下の品質基準を適用してください：
+When running ae-framework, apply the following quality criteria:
 
-品質基準:
-- 完全性: 85%以上
-- 一貫性: 90%以上
-- トレーサビリティカバレッジ: 95%以上
-- ユーザーストーリー品質: INVEST原則準拠
+Quality criteria:
+- completeness: 85% or higher
+- consistency: 90% or higher
+- traceability coverage: 95% or higher
+- user story quality: compliant with the INVEST principle
 
-基準を満たさない場合は進行をブロックし、改善案を提示してください。
-警告レベルの問題は継続可能ですが、解決策を含めて報告してください。
+If a criterion is not met, block progress and propose an improvement plan.
+Warning-level issues may continue, but report the corrective action.
 ```
 
 Operational metrics:
@@ -206,16 +223,16 @@ Operational metrics:
 #### Proactive guidance
 
 ```text
-ae-framework実行中は以下のガイダンス設定を使用してください：
+During ae-framework execution, use the following guidance settings:
 
-ガイダンス設定:
-- 重要な問題: 進行ブロック（エラー停止）
-- 中程度の問題: 警告表示（継続可能）
-- 軽微な問題: 提案表示（参考情報）
-- 自動介入: 有効
+Guidance settings:
+- critical issues: block progress (stop on error)
+- medium issues: show warnings (continue allowed)
+- minor issues: show suggestions (reference information)
+- automatic intervention: enabled
 
-品質向上のための具体的な推奨事項を随時提示してください。
-問題解決のための代替案も含めて提案してください。
+Always provide concrete recommendations for quality improvement.
+Include alternative options for problem resolution when relevant.
 ```
 
 Intervention levels:
@@ -229,19 +246,19 @@ Intervention levels:
 #### Custom configuration run
 
 ```text
-ae-frameworkをカスタム設定で実行してください：
+Run ae-framework with the following custom project settings:
 
-プロジェクト設定:
-- プロジェクトタイプ: Webアプリケーション
-- アーキテクチャパターン: マイクロサービス
-- 開発手法: アジャイル/スクラム
-- 技術スタック: React + Node.js + PostgreSQL
-- 品質重視領域: セキュリティとパフォーマンス
-- デプロイ環境: AWS
-- チーム規模: 5-8名
+Project settings:
+- project type: web application
+- architecture pattern: microservices
+- delivery model: agile / scrum
+- tech stack: React + Node.js + PostgreSQL
+- quality focus: security and performance
+- deployment environment: AWS
+- team size: 5-8 people
 
-この設定に基づいてPhase 2-5を実行してください。
-各フェーズで設定に適した成果物を生成してください。
+Use this configuration to execute Phase 2 through Phase 5.
+Generate artifacts that fit the selected settings at each phase.
 ```
 
 Typical configurable dimensions:
@@ -254,19 +271,19 @@ Typical configurable dimensions:
 #### Parallel execution guidance
 
 ```text
-効率化のため、可能な範囲でフェーズの並列実行を行ってください：
+To improve throughput, execute phases in parallel where safe.
 
-並列実行戦略:
-- Phase 2とPhase 3: 要件確定部分から段階的にユーザーストーリー作成開始
-- Phase 4: 各フェーズ完了後に部分的検証を実行
-- Phase 5: コアドメインから設計開始、サポートドメインは後続実行
+Parallel execution strategy:
+- start user-story generation from requirement subsets that are already stable during Phase 2
+- run partial validation after each phase completes
+- begin domain modeling from the core domain first, then handle supporting domains later
 
-ただし、以下の依存関係は必ず守ってください：
-- Phase 1完了後にPhase 2開始
-- 各フェーズの品質ゲート通過後に次フェーズ移行
-- クリティカルパス上の作業は順次実行
+However, keep the following dependencies strict:
+- start Phase 2 only after Phase 1 completes
+- move to the next phase only after the relevant quality gate passes
+- keep critical-path work sequential
 
-進行状況を定期的に報告し、ボトルネックがあれば調整してください。
+Report progress regularly and adjust if a bottleneck appears.
 ```
 
 Advantages:
@@ -282,22 +299,22 @@ Cautions:
 #### Continuous improvement pattern
 
 ```text
-ae-framework実行中に継続的改善を適用してください：
+Apply a continuous improvement cycle while ae-framework is running:
 
-改善サイクル:
-1. 各フェーズ完了時に振り返り実施
-2. 品質メトリクスの測定と分析
-3. プロセス改善点の特定
-4. 次フェーズでの改善実装
-5. 改善効果の測定
+Improvement cycle:
+1. run a short retrospective after each phase
+2. measure and analyze quality metrics
+3. identify process improvement points
+4. apply the improvements in the next phase
+5. measure the effect of the change
 
-改善対象:
-- 要件の明確性向上
-- ユーザーストーリーの品質向上
-- 検証プロセスの効率化
-- ドメインモデルの精度向上
+Primary improvement targets:
+- clearer requirements
+- better user-story quality
+- more efficient validation
+- higher-precision domain models
 
-フィードバックループを短縮し、学習効果を最大化してください。
+Shorten the feedback loop and maximize learning value.
 ```
 
 ### Reporting instructions
@@ -305,48 +322,49 @@ ae-framework実行中に継続的改善を適用してください：
 #### Detailed project report
 
 ```text
-ae-framework実行完了後、以下を含む詳細レポートを作成してください：
+After the ae-framework run completes, produce a detailed report that includes:
 
-## プロジェクト実行サマリー
-1. **全体概要**
-   - プロジェクト名と期間
-   - 実行フェーズと成果物
-   - 品質スコアサマリー
+## Project Execution Summary
+1. Overall overview
+   - project name and time span
+   - executed phases and produced artifacts
+   - quality score summary
 
-2. **フェーズ別詳細結果**
-   - Phase 1: 要件分析結果（要件数、分類、品質スコア）
-   - Phase 2: 構造化結果（エンティティ数、関係性、完全性）
-   - Phase 3: ユーザーストーリー（ストーリー数、エピック数、工数見積）
-   - Phase 4: 検証結果（トレーサビリティ、一貫性、ギャップ）
-   - Phase 5: ドメインモデル（エンティティ、境界コンテキスト、サービス）
+2. Detailed result by phase
+   - Phase 1: requirements analysis results (requirement count, categories, quality score)
+   - Phase 2: structuring results (entity count, relationships, completeness)
+   - Phase 3: user stories (story count, epic count, effort estimate)
+   - Phase 4: validation results (traceability, consistency, gaps)
+   - Phase 5: domain model (entities, bounded contexts, services)
+   - Phase 6: UI delivery (generated artifacts, blockers, follow-up work)
 
-3. **品質分析**
-   - 品質メトリクス一覧
-   - ベンチマークとの比較
-   - 改善領域の特定
+3. Quality analysis
+   - quality metrics list
+   - comparison against benchmarks
+   - identified improvement areas
 
-4. **課題と解決策**
-   - 特定された課題一覧
-   - 実施済み解決策
-   - 未解決課題と対策案
+4. Issues and solutions
+   - identified issue list
+   - solutions already applied
+   - unresolved issues and response options
 
-5. **次ステップ推奨事項**
-   - Phase 6 (テスト生成) への準備
-   - Phase 7 (コード生成) への準備
-   - 実装チームへの引き継ぎ事項
+5. Recommended next steps
+   - preparation for Phase 6 or its hardening pass when only Phase 1-5 were run
+   - preparation for Phase 7 (Code Generation)
+   - handoff notes for the implementation team
 
-6. **リスク分析**
-   - 技術リスクとその対策
-   - プロジェクトリスクとその対策
-   - 品質リスクとその対策
+6. Risk analysis
+   - technical risks and mitigations
+   - project risks and mitigations
+   - quality risks and mitigations
 
-7. **成功確率評価**
-   - プロジェクト成功確率の算出根拠
-   - 成功要因と阻害要因
-   - 成功確率向上のための推奨アクション
+7. Success probability assessment
+   - rationale for the estimated probability of success
+   - success factors and blockers
+   - recommended actions to improve the probability
 
-レポートはMarkdown形式で作成し、図表を含めてください。
-グラフや表は実際のデータに基づいて作成してください。
+Write the report in Markdown and include diagrams or tables where useful.
+Use actual measured data when presenting graphs or tables.
 ```
 
 The detailed report should be Markdown-based, evidence-backed, and explicit about both solved and unsolved risks.
@@ -354,18 +372,18 @@ The detailed report should be Markdown-based, evidence-backed, and explicit abou
 #### Executive summary
 
 ```text
-経営層向けのエグゼクティブサマリーを作成してください：
+Create an executive summary for management:
 
-内容（A4 1-2ページ）:
-- プロジェクト概要（30秒で理解可能）
-- 主要成果（数値ベース）
-- ビジネスインパクト予測
-- 投資対効果（ROI）分析
-- 主要リスクと対策
-- 次ステップとタイムライン
-- 推奨意思決定事項
+Scope (1-2 A4 pages):
+- project overview (understandable in 30 seconds)
+- key outcomes with numeric evidence
+- projected business impact
+- ROI analysis
+- key risks and mitigations
+- next steps and timeline
+- recommended decisions
 
-ビジネス価値を明確に示し、技術詳細は最小限にしてください。
+Keep business value explicit and minimize low-level technical detail.
 ```
 
 Keep the executive summary short, numeric, and decision-oriented.
@@ -377,16 +395,15 @@ Keep the executive summary short, numeric, and decision-oriented.
 Good example:
 
 ```text
-requirements.mdファイルを読み込んで、ECサイトプロジェクトの
-Phase 2要件構造化を実行してください。
-完全性スコア80%以上を目標とし、
-結果をrequirements_structured.mdに出力してください。
+Read `requirements.md` and run Phase 2 requirements structuring for the EC site project.
+Set the target completeness score to 80% or higher.
+Write the result to `requirements_structured.md`.
 ```
 
 Bad example:
 
 ```text
-要件を分析してください。
+Analyze the requirements.
 ```
 
 Key points:
@@ -406,41 +423,40 @@ Recommended pattern:
 Example instruction:
 
 ```text
-Phase 2を実行後、一時停止してください。
-結果を確認し、品質スコアが80%以上であることを確認してから
-Phase 3への進行許可を出します。
+Run Phase 2 and then pause.
+Review the result and confirm that the quality score is 80% or higher before proceeding to Phase 3.
 ```
 
 #### Optimize for quality
 
 ```text
-以下の品質チェックポイントを必ず確認してください：
+Always confirm the following quality checkpoints:
 
-必須チェック項目:
-□ 要件の網羅性（漏れなし）
-□ ユーザーストーリーのINVEST原則準拠
-□ トレーサビリティの確保
-□ ステークホルダーの合意事項反映
+Required checkpoints:
+- complete requirement coverage
+- user stories comply with the INVEST principle
+- traceability is preserved
+- stakeholder agreements are reflected
 
-推奨チェック項目:
-□ ビジネス価値の明確化
-□ 技術的実現可能性の確認
-□ リスク要因の洗い出し
+Recommended checkpoints:
+- business value is explicit
+- technical feasibility is confirmed
+- major risks are listed
 ```
 
 #### Handle errors explicitly
 
 ```text
-実行中にエラーや警告が発生した場合：
+If an error or warning occurs during execution:
 
-1. エラーレベルの判定（Critical/High/Medium/Low）
-2. 根本原因の分析
-3. 修正案の提示（複数案推奨）
-4. 修正実施の影響範囲評価
-5. 修正後の再検証
+1. classify the severity (Critical / High / Medium / Low)
+2. analyze the root cause
+3. provide one or more repair options
+4. assess the impact of the repair
+5. re-validate after the fix
 
-Critical/Highレベルは進行停止し、
-Medium/Lowレベルは継続可能ですが記録してください。
+Stop progress on Critical or High issues.
+Medium or Low issues may continue, but they must be recorded.
 ```
 
 ### Troubleshooting
@@ -452,7 +468,7 @@ Medium/Lowレベルは継続可能ですが記録してください。
 Symptom:
 
 ```text
-要件分析を実行してください
+Analyze the requirements.
 ```
 
 The request is too vague, so the ae-framework Task Adapter may not activate.
@@ -460,9 +476,8 @@ The request is too vague, so the ae-framework Task Adapter may not activate.
 Fix:
 
 ```text
-ae-frameworkのPhase 1 Intent Analysisを実行してください。
-requirements.mdファイルを対象として、
-要件の抽出と分析を行ってください。
+Run ae-framework Phase 1 Intent Analysis against `requirements.md`.
+Extract and analyze the requirements and provide next-phase recommendations.
 ```
 
 Improvements:
@@ -477,14 +492,13 @@ Symptom: completeness or consistency is below the required threshold.
 Fix:
 
 ```text
-品質スコアが70%でした。以下を実行して改善してください：
+The quality score is 70%. Improve it by doing the following:
+1. identify and add missing requirements
+2. clarify ambiguous wording
+3. list stakeholder confirmation points
+4. reorganize requirement dependencies
 
-1. 不足している要件の特定と追加
-2. 曖昧な表現の明確化
-3. ステークホルダーへの確認事項の整理
-4. 要件間の依存関係の再整理
-
-改善後、再度品質評価を実行してください。
+Run the quality evaluation again after the fixes.
 ```
 
 ##### 3. Proactive guidance is too aggressive
@@ -494,14 +508,13 @@ Symptom: warnings or blocks interrupt progress too often.
 Fix:
 
 ```text
-ガイダンス感度を調整してください：
+Adjust the guidance sensitivity:
+- Critical: only project-failure risks
+- High: only major quality degradation
+- Medium: show as recommended improvements
+- Low: hide
 
-- Critical: プロジェクト失敗リスクのみ
-- High: 品質大幅劣化のみ
-- Medium: 推奨改善事項として表示
-- Low: 非表示
-
-ただし、重要な品質要求は維持してください。
+Keep the important quality requirements in place.
 ```
 
 ##### 4. Memory or performance problems
@@ -511,20 +524,18 @@ Symptom: large requirement sets run slowly or fail.
 Fix:
 
 ```text
-大規模プロジェクトモードで実行してください：
+Run in large-project mode with:
+- batch size: 50 requirements per pass
+- parallelism: up to 2 workers
+- memory limit: 500 MB
+- timeout: 300 seconds
 
-設定:
-- バッチサイズ: 50要件/回
-- 並列度: 2並列まで
-- メモリ制限: 500MB
-- タイムアウト: 300秒
-
-必要に応じて要件を複数ファイルに分割してください。
+Split the requirements into multiple files when necessary.
 ```
 
 ### Related documents
 
-- [ae-framework README](../README.md)
+- [ae-framework README](../../README.md)
 - [Claude Code Task Tool Integration](../integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)
 - [Phase 2: Natural Language Requirements](../phases/PHASE-2-NATURAL-LANGUAGE-REQUIREMENTS.md)
 - [Phase 3: User Stories Creation](../phases/PHASE-3-USER-STORIES-CREATION.md)
@@ -536,6 +547,7 @@ Fix:
 ### Feedback
 
 Use [GitHub Issues](https://github.com/itdojp/ae-framework/issues) for follow-up proposals or corrections.
+
 
 ## 日本語
 
