@@ -77,6 +77,27 @@ pnpm run verify:lite
   - `artifacts.contextPackPhase5ReportJson`
   - `artifacts.contextPackPhase5ReportMarkdown`
 
+加えて、参照されている Phase5 report が実在し、JSON report の `summary.totalViolations == 0` であることを確認してから安定扱いにします。
+
+### failure class の早見表
+- `phase5-evidence-missing`
+  - `evidencePaths` のいずれかが current repository 内の実在ファイルに解決できない
+- `monoidal-parallel-morphism-duplicate`
+  - 同じ morphism が `parallelMorphismIds` に重複している
+- `kleisli-boundary-overlap`
+  - 同一 morphism が `pureBoundaryMorphismIds` と `impureBoundaryMorphismIds` の両方に入っている
+- `kleisli-impure-boundary-missing`
+  - Kleisli pipeline に impure boundary が 1 つも宣言されていない
+- `kleisli-boundary-reference-missing`
+  - boundary が当該 pipeline の `morphismIds` 外を参照している
+
+### 運用時の再実行フロー
+1. `artifacts/context-pack/context-pack-phase5-report.json` と `artifacts/context-pack/context-pack-phase5-report.md` を開く
+2. template entry と参照先の object / morphism / diagram ID を修正する
+3. `pnpm run context-pack:verify-phase5` を再実行する
+4. `pnpm run verify:lite` を再実行し、summary と artifact 参照を更新する
+5. `summary.totalViolations == 0` と `steps.contextPackPhase5Validation.status` が意図した状態であることを確認する
+
 ### PR前チェックリスト
 - [ ] `pnpm run context-pack:verify-phase5` が成功する
 - [ ] `pnpm run verify:lite` で `contextPackPhase5Validation` が意図通りの状態になる
