@@ -34,6 +34,48 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - If you need current CI / PR operating rules, prioritize `ci/`, `quality/`, and `agents/`.
 - If you need authoritative schema/input contracts, prioritize `spec/` and `reference/`.
 
+### Recommended routes by use case
+**First-time users**
+- `getting-started/QUICK-START-GUIDE.md`
+- `guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md`
+- `integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
+- `guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md`
+
+**Phase 6 UI / UX work**
+- `getting-started/PHASE-6-GETTING-STARTED.md`
+- `phases/phase-6-uiux.md`
+- `phases/frontend-foundation.md`
+- `phases/telemetry-configuration.md`
+
+**Full-stack implementation**
+- `architecture/TDD-FRAMEWORK-ARCHITECTURE.md`
+- `phases/`
+- `reference/CLI-COMMANDS-REFERENCE.md`
+
+**Project / delivery management**
+- `guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md`
+- `guides/CLAUDE-CODE-AUTOMATION-GUIDE.md`
+- `product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- `integrations/CODEX-CONTINUATION-CONTRACT.md`
+
+**Quality / CI operators**
+- `quality/ARTIFACTS-CONTRACT.md`
+- `quality/formal-runbook.md`
+- `ci/ci-operations-handbook.md`
+- `ci/ci-troubleshooting-guide.md`
+- `ci/copilot-review-gate.md`
+- `ci/codex-autopilot-lane.md`
+
+### Current-state operator entrypoints
+- Product / contract routing: `product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- Codex continuation and handoff: `integrations/CODEX-CONTINUATION-CONTRACT.md`, `agents/handoff.md`
+- Claude / Codex multi-agent setup: `development/agent-collaboration-setup.md`, `agents/multi-agent-safety.md`
+- CI baseline and opt-in controls: `ci/ci-baseline-checklist.md`, `ci/OPT-IN-CONTROLS.md`, `ci/branch-protection-operations.md`
+- Release / telemetry operations: `operate/release-engineering.md`, `operate/telemetry-as-context.md`
+
+### Documentation language policy
+See **Docs Language Policy / ドキュメント言語方針** below for the canonical documentation language policy (single source of truth).
+
 ### Getting Started
 Entry path for first-time setup, baseline verification, and the shortest route to a usable local environment.
 
