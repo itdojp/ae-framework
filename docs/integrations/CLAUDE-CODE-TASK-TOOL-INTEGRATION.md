@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
   - docs/agents/hook-feedback.md
   - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-23'
+lastVerified: '2026-03-27'
 ---
 
 # Claude Code Integration Guide - AE Framework Integration (Implemented + Roadmap)
@@ -468,6 +468,82 @@ button:focus { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 4. Fix only the regressed lane (a11y / perf / coverage / artifact validation).
 5. Validate artifacts with `ajv` / `jq`, then review the PR summary output.
 6. Use `--dry-run` only to inspect which commands would execute; it does not reproduce failing gate scores.
+
+#### Revalidation Commands (English)
+
+```bash
+# Re-generate the UI scaffold
+ae-framework ui-scaffold --components
+
+# Re-run quality gates with the development profile
+ae-framework quality run --env development
+
+# Re-run individual suites
+pnpm run test:a11y
+pnpm run test:coverage
+pnpm run test:perf
+```
+
+#### Artifact Validation (English)
+
+```bash
+# Validate adapter summaries against the schema
+npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d artifacts/*/summary.json --strict=false
+
+# Inspect compact status/summary fields
+jq '.status,.summary' artifacts/*/summary.json
+```
+
+#### Improvement Heuristics (English)
+
+- a11y (<95)
+  - Add `alt`, `aria-*`, and visible focus styles.
+  - Raise contrast by adjusting design tokens.
+  - Re-check keyboard navigation paths and form labeling.
+- perf (<75)
+  - Use `next/image`, WebP/AVIF, and lazy loading.
+  - Reduce CSS/JS payload and remove unused dependencies.
+  - Preload critical assets and review cache strategy.
+- coverage (<80)
+  - Add tests for create/edit/delete/search/validation paths.
+  - Use coverage output to focus on low-signal modules and critical paths first.
+
+#### Threshold Template (English)
+
+```text
+Coverage: 80%
+A11y:     95%
+Perf:     75%
+```
+
+Raise thresholds only after the default profile is stable and the PR comment trend is consistently green.
+
+#### Form a11y (English, short)
+
+```
+// Before: no associated label
+<input id="email" />
+
+// After: label + aria state
+<label htmlFor="email">Email</label>
+<input id="email" aria-required="true" aria-invalid="false" />
+```
+
+#### Additional Short Examples (English)
+
+```
+// a11y — visible focus token
+:root { --color-focus: #22c55e; }
+
+// perf — route splitting
+const Details = dynamic(() => import('./Details'), { ssr: false, loading: () => <Spinner /> });
+
+// coverage — fallback path
+it('falls back to cached data on network error', async () => {
+  server.use(mockGetItems(500));
+  await expect(loadItems()).resolves.toEqual(cachedItems);
+});
+```
 
 ### Best Practices
 
