@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/spec/context-pack.md
 - schema/context-pack-v1.schema.json
-lastVerified: '2026-03-18'
+lastVerified: '2026-03-27'
 ---
 # Context Pack Onboarding Checklist
 
@@ -79,7 +79,7 @@ pnpm run verify:lite
   - top-level `traceability.missingCount`
   - top-level `traceability.matrixPath`
   - top-level `traceability.notes`
-- `traceability.status != success` または `traceability.missingCount > 0` の場合は `ae validate --traceability --strict --sources <traceability.matrixPath>` を再実行
+- `traceability.status != success` または `traceability.missingCount > 0` の場合は、`artifacts/verify-lite/verify-lite-run-summary.json` の `traceability.matrixPath` を読み取り、その path を `--sources` に渡して strict traceability validation を再実行
 
 ### 4. 失敗時の修正ループ
 1. 対応する report JSON/Markdown を確認
@@ -163,6 +163,16 @@ Check the following in `artifacts/verify-lite/verify-lite-run-summary.json`:
 - `steps.contextPackPhase5Validation`
 - `steps.discoveryPackValidation`
 - `steps.discoveryPackCompile`
+- top-level `traceability.status`
+- top-level `traceability.missingCount`
+- top-level `traceability.matrixPath`
+- top-level `traceability.notes`
+
+If `traceability.status != success` or `traceability.missingCount > 0`, read `traceability.matrixPath` from `artifacts/verify-lite/verify-lite-run-summary.json` (for example, `TRACEABILITY_MATRIX_PATH=$(jq -r '.traceability.matrixPath' artifacts/verify-lite/verify-lite-run-summary.json)`), then re-run strict traceability validation with that generated path:
+
+```bash
+ae validate --traceability --strict --sources "$TRACEABILITY_MATRIX_PATH"
+```
 
 ### 4. Repair loop when a step fails
 1. Open the matching JSON / Markdown report.
@@ -177,6 +187,7 @@ For deeper troubleshooting, see `docs/spec/context-pack.md`.
 - [ ] `context-pack-suggestions.{json,md}` has been reviewed for `recommendedContextChanges`.
 - [ ] If `upstream_refs` is used, validation with `--discovery-pack` confirms Discovery Pack alignment.
 - [ ] `verify:lite` shows the expected Context Pack-related steps.
+- [ ] `verify:lite` top-level `traceability.status=success` and `missingCount=0` are confirmed.
 - [ ] If assurance is enabled, `assurance.profile` / `claim_refs` are configured and `docs/guides/assurance-onboarding-checklist.md` has been completed.
 - [ ] No unnecessary report noise is being introduced.
 - [ ] `evidencePaths` does not contain stale paths.
