@@ -38,8 +38,8 @@ Checks:
 - `docs/legacy/**/*.md` and `docs/notes/*.md` are treated as archival / working-note narrative, so narrative warnings intentionally ignore historical wording and issue-memo language.
 
 Current default targets:
-- Base: `../../README.md`, `../README.md`, Getting Started, User Manual, Integrations
-- Dynamic discovery: markdown files listed under `docs/ci/*` / `docs/quality/*` from `docs/README.md`
+- Base: the repository-root README file, `docs/README.md`, and the primary documents listed in `DEFAULT_DOC_FILES` such as the Getting Started, Product, and Integrations guides
+- Dynamic discovery: use the repository-root README file and `docs/README.md` as seed files, then recursively add linked `docs/**/*.md` entries within the configured discovery prefixes
 
 Generated-report references:
 - `artifacts/*` / `reports/*` are treated as generated-report references and are excluded from missing-path failures.
@@ -118,8 +118,8 @@ If a new docs section needs additional exclusions, update `scripts/docs/check-do
 - `docs/legacy/**/*.md` と `docs/notes/*.md` を archival / working-note narrative として扱い、歴史的文言や issue memo の文言に対する narrative warning を除外すること
 
 既定の対象:
-- Base: `../../README.md`, `../README.md`, Getting Started, User Manual, Integrations
-- Dynamic discovery: `docs/README.md` に記載された `docs/ci/*` / `docs/quality/*` の markdown
+- Base: リポジトリルートの README ファイル、`docs/README.md`、および `DEFAULT_DOC_FILES` に含まれる Getting Started / Product / Integrations の主要ドキュメント
+- Dynamic discovery: リポジトリルートの README ファイルと `docs/README.md` を seed にし、設定された discovery prefix の範囲でリンクされた `docs/**/*.md` を再帰的に追加スキャン
 
 生成物参照:
 - `artifacts/*` / `reports/*` は生成物参照として扱い、missing-path 判定から除外します。
