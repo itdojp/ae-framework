@@ -13,7 +13,7 @@ lastVerified: '2026-03-16'
 
 ## English
 
-Troubleshooting guide for advanced Phase 2.1-2.3 capabilities (CEGIS, Runtime Conformance, Integration Testing). Each section follows the same operational order: symptom, likely cause, and a concrete recovery path with CLI or JSON examples.
+Troubleshooting guide for advanced Phase 2.1-2.3 capabilities (CEGIS, Runtime Conformance, Integration Testing). Each section focuses on symptoms and concrete recovery steps, with likely causes noted where helpful, plus CLI or JSON examples where relevant.
 
 ### Phase 2.1: CEGIS Auto-Fix – No candidates generated
 Symptoms
@@ -157,7 +157,11 @@ FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memor
 ```
 
 Fixes
-- Raise the Node heap for large repair batches
+- Raise the Node heap for large repair batches, for example:
+  ```bash
+  NODE_OPTIONS="--max-old-space-size=4096" ae-framework fix apply --input failures.json
+  node --max-old-space-size=4096 node_modules/.bin/ae-framework fix apply --input failures.json
+  ```
 - Split large failure artifacts into smaller batches because the current CLI has no dedicated concurrency flag for `fix apply`
 
 ### Runtime Conformance slow execution
