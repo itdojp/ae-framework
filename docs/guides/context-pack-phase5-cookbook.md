@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/spec/context-pack.md
 - schema/context-pack-phase5-templates.schema.json
-lastVerified: '2026-03-23'
+lastVerified: '2026-03-27'
 ---
 # Context Pack Phase5+ Cookbook
 
@@ -76,6 +76,27 @@ pnpm run verify:lite
   - `steps.contextPackPhase5Validation`
   - `artifacts.contextPackPhase5ReportJson`
   - `artifacts.contextPackPhase5ReportMarkdown`
+
+加えて、参照されている Phase5 report が実在し、JSON report の `summary.totalViolations == 0` であることを確認してから安定扱いにします。
+
+### failure class の早見表
+- `phase5-evidence-missing`
+  - `evidencePaths` のいずれかが current repository 内の実在ファイルに解決できない
+- `monoidal-parallel-morphism-duplicate`
+  - 同じ morphism が `parallelMorphismIds` に重複している
+- `kleisli-boundary-overlap`
+  - 同一 morphism が `pureBoundaryMorphismIds` と `impureBoundaryMorphismIds` の両方に入っている
+- `kleisli-impure-boundary-missing`
+  - Kleisli pipeline に impure boundary が 1 つも宣言されていない
+- `kleisli-boundary-reference-missing`
+  - boundary が当該 pipeline の `morphismIds` 外を参照している
+
+### 運用時の再実行フロー
+1. `artifacts/context-pack/context-pack-phase5-report.json` と `artifacts/context-pack/context-pack-phase5-report.md` を開く
+2. template entry と参照先の object / morphism / diagram ID を修正する
+3. `pnpm run context-pack:verify-phase5` を再実行する
+4. `pnpm run verify:lite` を再実行し、summary と artifact 参照を更新する
+5. `summary.totalViolations == 0` と `steps.contextPackPhase5Validation.status` が意図した状態であることを確認する
 
 ### PR前チェックリスト
 - [ ] `pnpm run context-pack:verify-phase5` が成功する
@@ -150,6 +171,27 @@ Review the following fields first:
   - `steps.contextPackPhase5Validation`
   - `artifacts.contextPackPhase5ReportJson`
   - `artifacts.contextPackPhase5ReportMarkdown`
+
+Also confirm that the referenced Phase5 report files exist and that `summary.totalViolations == 0` in the JSON report before you treat the lane as stable.
+
+### Failure-class quick map
+- `phase5-evidence-missing`
+  - One or more `evidencePaths` entries do not resolve to current repository files.
+- `monoidal-parallel-morphism-duplicate`
+  - The same morphism appears multiple times in `parallelMorphismIds`.
+- `kleisli-boundary-overlap`
+  - A morphism is listed in both `pureBoundaryMorphismIds` and `impureBoundaryMorphismIds`.
+- `kleisli-impure-boundary-missing`
+  - No impure boundary is declared for a Kleisli pipeline.
+- `kleisli-boundary-reference-missing`
+  - A boundary points to a morphism outside the pipeline’s `morphismIds`.
+
+### Operational rerun flow
+1. Open `artifacts/context-pack/context-pack-phase5-report.json` and `artifacts/context-pack/context-pack-phase5-report.md`.
+2. Fix the template entry and any referenced object / morphism / diagram IDs.
+3. Re-run `pnpm run context-pack:verify-phase5`.
+4. Re-run `pnpm run verify:lite` to refresh the summary and artifact references.
+5. Confirm `summary.totalViolations == 0` and that `steps.contextPackPhase5Validation.status` matches the intended state.
 
 ### Pre-PR checklist
 - [ ] `pnpm run context-pack:verify-phase5` succeeds locally
