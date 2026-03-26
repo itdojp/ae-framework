@@ -486,10 +486,9 @@ pnpm run test:perf
 
 #### Artifact Validation (English)
 
-```bash
-# Validate adapter summaries against the schema
-npx ajv -s docs/schemas/artifacts-adapter-summary.schema.json -d artifacts/*/summary.json --strict=false
+- Validate adapter summaries with the `ajv` command documented in the earlier **Troubleshooting checklist (English)** section.
 
+```bash
 # Inspect compact status/summary fields
 jq '.status,.summary' artifacts/*/summary.json
 ```
