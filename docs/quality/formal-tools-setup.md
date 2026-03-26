@@ -119,7 +119,7 @@ This guide outlines local setup for formal verification tools used alongside AE-
 - TLA+ (TLC)
 - Apalache（SMT/BMC と帰納的不変条件）
 - Alloy（Alloy Analyzer / Alloy 6 CLI）
-- SMT solver: Z3, cvc5
+- SMT solvers: Z3, cvc5
 - Kani（Rust bounded model checking）
 - SPIN（Promela model checking）
 - CSP（`cspx` または構成済み backend による CSPM check）
