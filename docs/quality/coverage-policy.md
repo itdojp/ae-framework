@@ -25,18 +25,19 @@ Threshold source order:
 2. Repository variable `COVERAGE_DEFAULT_THRESHOLD` with default `80`
 
 Label parsing rules:
-- the last matching label wins
-- accepted range is `0` to `100`
-- `%` and surrounding spaces are trimmed
-- the `coverage:` prefix is case-insensitive
+- in `.github/workflows/coverage-check.yml`, the first label whose text starts with lowercase `coverage:` wins
+- the suffix after `coverage:` is passed directly to JavaScript `Number(...)`
+- the gate workflow does not add extra trimming, case-folding, or range validation beyond that conversion
+- `scripts/coverage/pr-coverage-summary.mjs` normalizes labels more aggressively for comment rendering, so gate behavior should be treated as authoritative when they differ
 
 Blocking enforcement is enabled when:
 - the PR has the `enforce-coverage` label, or
-- the workflow runs on a push to `main` and repository variable `COVERAGE_ENFORCE_MAIN=1`
+- the workflow runs on a push to `main` and repository variable `COVERAGE_ENFORCE_MAIN=1`, or
+- an operator manually triggers `coverage-check` via `workflow_dispatch` with input `strict=true`; this is a manual override path rather than the normal PR policy
 
 Reporting behavior:
-- `.github/workflows/coverage-check.yml` posts a non-blocking PR comment that records effective coverage, threshold source, and current policy state
-- Verify Lite logs also note the default threshold and the effective threshold derived from labels or repository variables
+- `.github/workflows/coverage-check.yml` posts a non-blocking PR comment that records effective coverage, effective threshold, threshold source, and current policy state
+- Verify Lite logs note the current `COVERAGE_ENFORCE_MAIN` setting and the configured default threshold; they do not compute or print the effective threshold
 
 ### Recommended Operations
 - On PRs, use `/coverage <pct>` for ad-hoc threshold overrides.
@@ -95,7 +96,7 @@ pnpm run coverage
 <!-- AE-COVERAGE-SUMMARY -->
 Coverage (lines): 82%
 Threshold (effective): 80%
-Source: label
+Gate: OK (82% >= 80%) [non-blocking]
 - via label: coverage:80
 - repo var: COVERAGE_DEFAULT_THRESHOLD=80%
 - default: 80%
@@ -106,9 +107,10 @@ Policy source: report-only
 Docs: docs/quality/coverage-required.md
 Docs: docs/quality/coverage-policy.md
 Docs: docs/ci/label-gating.md
-Reproduce: coverage -> coverage/coverage-summary.json -> total.lines.pct
-Reproduce: threshold -> label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80
 Tips: /coverage <pct> to override; /enforce-coverage to enforce
+Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct
+Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80
+Source: label
 ```
 
 ### Branch Protection
@@ -120,7 +122,7 @@ Tips: /coverage <pct> to override; /enforce-coverage to enforce
 
 ### References
 - Workflow: `.github/workflows/coverage-check.yml`
-- Slash commands: `../../AGENTS.md`, `../ci-policy.md`
+- Slash commands: repository-root AGENTS.md, `docs/ci-policy.md`
 - Related docs:
   - `docs/quality/coverage-required.md`
   - `docs/quality/verification-gates.md`
@@ -140,18 +142,19 @@ Tips: /coverage <pct> to override; /enforce-coverage to enforce
 2. Repository variable `COVERAGE_DEFAULT_THRESHOLD`（既定値 `80`）
 
 label の解釈規則:
-- 最後に付与された一致 label を採用
-- 受け付ける範囲は `0`〜`100`
-- `%` と前後の空白を除去
-- `coverage:` prefix は大文字小文字を区別しない
+- `.github/workflows/coverage-check.yml` では、小文字の `coverage:` で始まる最初の label を採用する
+- `coverage:` の後ろの値は JavaScript の `Number(...)` にそのまま渡される
+- gate workflow 側では追加の trim、case-folding、range validation は行わない
+- `scripts/coverage/pr-coverage-summary.mjs` は comment 表示のためにより積極的な正規化を行うため、差分がある場合は gate 側の挙動を正とする
 
 blocking enforcement は次のいずれかで有効になります。
 - PR に `enforce-coverage` label が付いている
 - `main` への push で workflow が実行され、かつ `COVERAGE_ENFORCE_MAIN=1` が設定されている
+- `coverage-check` を `workflow_dispatch` で手動起動し、input `strict=true` を指定した manual override を使う
 
 reporting の挙動:
-- `.github/workflows/coverage-check.yml` は non-blocking な PR comment を投稿し、effective coverage、threshold source、現在の policy state を記録する
-- Verify Lite のログにも、既定 threshold と label / variable から導出した effective threshold を注記として出力する
+- `.github/workflows/coverage-check.yml` は non-blocking な PR comment を投稿し、effective coverage、effective threshold、threshold source、現在の policy state を記録する
+- Verify Lite のログは current `COVERAGE_ENFORCE_MAIN` 設定と configured default threshold を記録するが、effective threshold 自体は計算・出力しない
 
 ### 推奨運用
 - PR では `/coverage <pct>` で一時的なしきい値 override を行う
@@ -210,7 +213,7 @@ pnpm run coverage
 <!-- AE-COVERAGE-SUMMARY -->
 Coverage (lines): 82%
 Threshold (effective): 80%
-Source: label
+Gate: OK (82% >= 80%) [non-blocking]
 - via label: coverage:80
 - repo var: COVERAGE_DEFAULT_THRESHOLD=80%
 - default: 80%
@@ -221,9 +224,10 @@ Policy source: report-only
 Docs: docs/quality/coverage-required.md
 Docs: docs/quality/coverage-policy.md
 Docs: docs/ci/label-gating.md
-Reproduce: coverage -> coverage/coverage-summary.json -> total.lines.pct
-Reproduce: threshold -> label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80
 Tips: /coverage <pct> to override; /enforce-coverage to enforce
+Reproduce: coverage → coverage/coverage-summary.json → total.lines.pct
+Reproduce: threshold → label coverage:<pct> > vars.COVERAGE_DEFAULT_THRESHOLD > default 80
+Source: label
 ```
 
 ### Branch protection
@@ -235,7 +239,7 @@ Tips: /coverage <pct> to override; /enforce-coverage to enforce
 
 ### 参照
 - Workflow: `.github/workflows/coverage-check.yml`
-- Slash commands: `../../AGENTS.md`, `../ci-policy.md`
+- Slash commands: repository root の AGENTS.md, `docs/ci-policy.md`
 - 関連文書:
   - `docs/quality/coverage-required.md`
   - `docs/quality/verification-gates.md`
