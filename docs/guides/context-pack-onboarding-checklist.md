@@ -79,7 +79,7 @@ pnpm run verify:lite
   - top-level `traceability.missingCount`
   - top-level `traceability.matrixPath`
   - top-level `traceability.notes`
-- `traceability.status != success` または `traceability.missingCount > 0` の場合は `ae validate --traceability --strict --sources <traceability.matrixPath>` を再実行
+- `traceability.status != success` または `traceability.missingCount > 0` の場合は、`artifacts/verify-lite/verify-lite-run-summary.json` の `traceability.matrixPath` を読み取り、その path を `--sources` に渡して strict traceability validation を再実行
 
 ### 4. 失敗時の修正ループ
 1. 対応する report JSON/Markdown を確認
@@ -168,10 +168,9 @@ Check the following in `artifacts/verify-lite/verify-lite-run-summary.json`:
 - top-level `traceability.matrixPath`
 - top-level `traceability.notes`
 
-If `traceability.status != success` or `traceability.missingCount > 0`, re-run strict traceability validation with the generated matrix path:
+If `traceability.status != success` or `traceability.missingCount > 0`, read `traceability.matrixPath` from `artifacts/verify-lite/verify-lite-run-summary.json` (for example, `TRACEABILITY_MATRIX_PATH=$(jq -r '.traceability.matrixPath' artifacts/verify-lite/verify-lite-run-summary.json)`), then re-run strict traceability validation with that generated path:
 
 ```bash
-TRACEABILITY_MATRIX_PATH=artifacts/traceability/issue-requirements-matrix.json
 ae validate --traceability --strict --sources "$TRACEABILITY_MATRIX_PATH"
 ```
 
