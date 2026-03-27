@@ -3,9 +3,137 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - docs/quality/formal-tools-setup.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-28'
 ---
 # Formal Verification Ops Guidelines
+
+> Language / 言語: English | 日本語
+
+---
+
+## English
+
+This guide summarizes recommended operating patterns, naming rules, evidence handling, and CI lane separation for formal verification work.
+
+## 1. Recommended operating patterns (TLC / Apalache / SMT / Alloy)
+
+| Tool | Best at | Recommended use |
+| --- | --- | --- |
+| TLC (TLA+) | Exhaustive exploration of small state spaces | Fast feedback with reduced models |
+| Apalache (TLA+) | Larger integer domains, bounded model checking, iterative refinement | Broader checks with explicit assumptions |
+| SMT (Z3 / cvc5) | Constraint-oriented verification | Local checks for path conditions and invariants |
+| Alloy | Structural and relational modeling | Structural consistency under small scopes |
+
+**Operating policy**
+- Use TLC with reduced models to recover boundary-condition failures and counterexamples quickly.
+- Use Apalache or SMT for broader numeric ranges and assumption-heavy cases.
+- When the same model name is reused with different assumptions or reductions, document those differences explicitly to avoid misinterpretation.
+
+## 2. Naming rules (tool-agnostic vs tool-specific)
+
+**Tool-agnostic files**
+- `spec/tla/DomainSpec.tla`
+- `spec/tla/DomainSpec.cfg` for TLC
+
+**Tool-specific files**
+- `spec/tla/DomainSpec_apalache.tla`
+- `spec/tla/DomainSpec_apalache.cfg`
+
+**Recommended annotations**
+- Record the following in `spec/tla/README.md`:
+  - model intent such as `reduced` or `full`
+  - main assumptions such as integer ranges, symmetry, or abstraction choices
+- Prefer UTC in artifact directory names. If local time is used, record `timezoneOffset` and keep it consistent with artifact metadata.
+
+## 3. Apalache template (stuttering / Next / deadlock)
+
+### Minimal template
+```tla
+VARIABLES vars
+
+Init == ... \* initial condition
+
+Action1 == ...
+Action2 == ...
+
+Stutter == UNCHANGED vars
+
+Next == Action1 \/ Action2 \/ Stutter
+
+Spec == Init /\ [][Next]_vars
+```
+
+### Deadlock policy
+- When deadlock must be rejected:
+  - do not include unconditional `Stutter`, or guard it explicitly
+  - run `apalache-mc check --no-deadlock`
+- When stuttering is intentionally allowed:
+  - introduce an explicit guard such as `StutterEnabled`
+  - distinguish intentional waiting from unintended deadlock
+
+## 4. Evidence scaling (Git vs external storage)
+
+**Minimum set to keep in Git**
+- `summary.json` as the compact outcome
+- short excerpts from important logs
+- the minimal counterexample set needed for reproduction
+
+**Items that should go to CI artifacts or external storage**
+- full detailed logs
+- large counterexample JSON files
+- large volumes of traces or samples
+
+**Rotation policy**
+- Keep CI artifacts for the latest N runs or 30 days as the default baseline.
+- Persist major incidents separately and expose their references from `summary.json`.
+
+## 5. CI split template (`verify-lite` vs `verify-formal`)
+
+**`verify-lite` (required)** is the minimum stable gate that runs on every PR.
+
+**`verify-formal` (optional / nightly)** is for expensive verification that should run by label or schedule.
+
+```yaml
+# .github/workflows/verify-lite.yml
+on:
+  pull_request:
+jobs:
+  verify-lite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run verify:lite
+```
+
+```yaml
+# .github/workflows/formal-verify.yml
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * *" # optional nightly
+  pull_request:
+    types: [labeled]
+
+jobs:
+  formal:
+    if: contains(github.event.pull_request.labels.*.name, 'run-formal')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run verify:formal
+```
+
+Notes:
+- The `enforce-formal` label can be used to gate Apalache `ran/ok` status.
+- See `docs/quality/formal-runbook.md` for the detailed execution procedure.
+
+## 日本語
 
 フォーマル検証を運用する際の **推奨パターン / 命名 / 証跡 / CI 分割** を整理したガイドです。
 
@@ -47,7 +175,7 @@ VARIABLES vars
 
 Init == ... \* 初期条件
 
-Action1 == ... 
+Action1 == ...
 Action2 == ...
 
 Stutter == UNCHANGED vars
@@ -106,7 +234,7 @@ jobs:
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 2 * * *"  # optional nightly
+    - cron: "0 2 * * *" # optional nightly
   pull_request:
     types: [labeled]
 
