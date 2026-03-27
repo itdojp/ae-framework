@@ -9,7 +9,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 This document collects initial ideas for visualizing archived heavy-test trend history. / このドキュメントは、アーカイブ済みの heavy-test trend 履歴を可視化するための初期案を整理します。
 
 Primary sources / 一次情報:
-- history summary: `reports/heavy-test-trends-history/summary.md`
+- history summary renderer: `scripts/pipelines/render-heavy-trend-summary.mjs` (outputs `reports/heavy-test-trends-history/summary.md`)
 - export script: `scripts/pipelines/export-heavy-trend-history.mjs`
 - threshold helper: `scripts/pipelines/recommend-heavy-trend-thresholds.mjs`
 
