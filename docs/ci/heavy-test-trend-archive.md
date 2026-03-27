@@ -25,15 +25,16 @@ Primary sources / 一次情報:
 - Reuse `.cache/test-results` while preserving `reports/heavy-test-trends.json` as a history input for later visualization and analysis.
 - Define the next infrastructure step for the CI stability / measurement track originally tracked in Issue `#1160`, especially the `#1005 Phase 3` line of work.
 
-### 2. Current implementation status (as of 2025-10-28)
+### 2. Current implementation status (as of 2025-10-28 / PR #1192 merge point)
 - `ci-extended.yml` currently handles heavy test artifacts in this order:
   1. restore `.cache/test-results` through `actions/cache/restore`
   2. prepare the baseline in `.cache/test-results-baseline` with `node scripts/pipelines/sync-test-results.mjs --restore` and `--snapshot`
   3. run heavy suites (integration / property / MBT / mutation)
   4. generate baseline-vs-current Markdown / JSON through `node scripts/pipelines/compare-test-trends.mjs` and write `reports/heavy-test-trends.json`
   5. store the latest results back through `node scripts/pipelines/sync-test-results.mjs --store`
-  6. upload the `heavy-test-trends` artifact with 14-day retention through `actions/upload-artifact`
+  6. upload the `heavy-test-trends` artifact with 7-day retention through `actions/upload-artifact` (only for non-PR events)
 - Scheduled execution also saves heavy trend snapshots to `reports/heavy-test-trends-history/<timestamp>.json` and publishes the `heavy-test-trends-history` artifact with 30-day retention.
+- `heavy-test-trends` and `heavy-test-trends-history` artifacts are therefore available only for non-PR paths. `pull_request` runs do not upload them.
 - `.cache/test-results` uses event-specific cache keys:
   - Pull Request / Push: `ci-heavy-${ runner.os }-${ github.sha }`
   - Scheduled: `ci-heavy-${ runner.os }-schedule`
@@ -41,9 +42,9 @@ Primary sources / 一次情報:
 - `.cache/test-results-baseline` overwrites the latest baseline snapshot and does not preserve multiple days of history.
 
 ### 3. Known gaps
-- The current output shows only the most recent delta, not weekly or monthly trends.
-- Historical results are lost unless operators download the scheduled `heavy-test-trends` artifacts.
-- Reuse is limited to Step Summary Markdown and JSON. No dashboard, CSV, or secondary analysis path is documented as the standard flow yet.
+- Trend history is effectively limited to the rolling artifact retention window. There is no built-in long-term retention beyond artifact expiry.
+- Multi-snapshot summaries exist for scheduled runs through `render-heavy-trend-summary.mjs`, but there is still no always-on dashboard or external time-series store for long-horizon analysis.
+- Reuse is still centered on Step Summary Markdown and JSON payloads. CSV export, BI ingestion, and other secondary analysis paths are not yet standardized.
 
 ### 4. Requirements for Nightly archival
 
@@ -59,8 +60,13 @@ Primary sources / 一次情報:
    - Scheduled runs should continue sharing `.cache/test-results` through `ci-heavy-${ runner.os }-schedule`, so the previous Nightly result becomes the baseline.
    - Pull Request / Push must keep SHA-based keys to prevent collisions across event types.
 3. **Metadata enrichment**
-   - Add `runId`, `commit`, `workflow`, `branch`, `timestamp`, and similar context so archived JSON can be correlated later.
-   - This can be done either inside `compare-test-trends.mjs` or by wrapping the JSON in the scheduled workflow.
+   - Ensure the archived JSON can be correlated with actual keys already emitted by `compare-test-trends.mjs`:
+     - `generatedAt` (timestamp)
+     - `context.sha` (commit)
+     - `context.ref` (branch)
+     - `context.runId` / `context.runNumber`
+     - `context.workflow`
+   - Additional metadata can still be added inside `compare-test-trends.mjs` or by wrapping the JSON in the scheduled workflow, but downstream tools should treat the mapping above as the baseline contract.
 4. **Notification / visualization hooks**
    - Design hooks for issue / Slack escalation when deltas cross thresholds, for example mutation score < 95% or MBT violations > 0.
    - Prepare NDJSON or CSV conversion for future Observable / Grafana integration.
@@ -124,23 +130,24 @@ The current minimum-change recommendation is option A. If Nightly uses `workflow
 - `.cache/test-results` に蓄えた成果物を再利用しつつ、`reports/heavy-test-trends.json` を履歴として収集・可視化できるようにする。
 - Issue `#1160` フェーズD（特に `#1005 Phase3`）で掲げている「CI 安定化・計測強化」の次ステップとして、基盤要件を整理する。
 
-### 2. 現状の実装 (2025-10-28 時点)
+### 2. 現状の実装 (2025-10-28 時点 / PR #1192 マージ時点)
 - `ci-extended.yml` は以下の流れで heavy テスト成果物を扱う（PR #1192）:
   1. `actions/cache/restore` で `.cache/test-results` を復元
   2. `node scripts/pipelines/sync-test-results.mjs --restore` と `--snapshot` で baseline (`.cache/test-results-baseline`) を準備
   3. heavy スイート（integration/property/MBT/mutation）を実行
   4. `node scripts/pipelines/compare-test-trends.mjs` で baseline vs current の Markdown/JSON を生成 (`reports/heavy-test-trends.json`)
   5. `node scripts/pipelines/sync-test-results.mjs --store` で最新結果をキャッシュへ格納
-  6. `actions/upload-artifact` で `heavy-test-trends` アーティファクトを 14 日保持
+  6. `actions/upload-artifact` で `heavy-test-trends` アーティファクトを 7 日保持（Pull Request ではアップロードされない）
 - スケジュール実行時は heavy テストトレンドを `reports/heavy-test-trends-history/<timestamp>.json` に保存し、アーティファクト `heavy-test-trends-history`（保持 30 日）として公開する。
+- `heavy-test-trends` / `heavy-test-trends-history` アーティファクトは non-PR path でのみ生成され、`pull_request` 実行では取得できない。
 - `.cache/test-results` はイベントに応じたキャッシュキーを使用し、Pull Request / Push では `ci-heavy-${ runner.os }-${ github.sha }`、スケジュール実行では `ci-heavy-${ runner.os }-schedule` を用いる。
 - `reports/heavy-test-trends.json` は単一ランの比較結果のみ保持（最新 1 件）。
 - Baseline は `.cache/test-results-baseline` 内で最新スナップショットを上書きするため、複数日分は残らない。
 
 ### 3. 既知の課題
-- 「直近ランとの差分」は把握できるが、「週次・月次トレンド」が追跡できない。
-- Nightly / Scheduled 実行で `heavy-test-trends` アーティファクトをダウンロードしない限り、過去結果が失われる。
-- 可視化手段が Step Summary の Markdown と JSON のみであり、ダッシュボードや CSV などの二次利用が想定されていない。
+- 履歴は artifact の保持期間に依存しており、artifact expiry を超える長期保管は built-in では提供されていない。
+- `render-heavy-trend-summary.mjs` による複数スナップショット要約はあるが、常設ダッシュボードや外部時系列ストアは未整備である。
+- 可視化手段は引き続き Step Summary の Markdown と JSON が中心であり、CSV や BI 連携などの二次利用フローは標準化されていない。
 
 ### 4. Nightly アーカイブに必要な要件
 
@@ -156,8 +163,13 @@ The current minimum-change recommendation is option A. If Nightly uses `workflow
    - スケジュール実行時は `.cache/test-results` を `ci-heavy-${ runner.os }-schedule` で共有し、前回 Nightly の成果物を baseline として復元できる。
    - Pull Request / Push は従来どおりコミット SHA ベースのキーを利用し、異なるイベント間での衝突を防ぐ。
 3. **メタデータ付与**
-   - JSON 出力に `runId`, `commit`, `workflow`, `branch`, `timestamp` などのメタ情報を付与し、履歴データ間の参照性を高める。
-   - `compare-test-trends.mjs` に追加フィールドを渡すか、Nightly workflow 側でラップ JSON を生成する。
+   - JSON 出力に実行コンテキストのメタ情報を付与し、履歴データ間の参照性を高める。最低限、現行実装に合わせて次のキーを前提とする:
+     - `generatedAt`（`timestamp` に相当）
+     - `context.sha`（`commit` に相当）
+     - `context.ref`（`branch` に相当）
+     - `context.runId` / `context.runNumber`
+     - `context.workflow`
+   - 追加のメタデータが必要な場合は、`compare-test-trends.mjs` に追加フィールドを渡すか、Nightly workflow 側でラップ JSON を生成する。
 4. **通知 / 可視化フック**
    - Δ が閾値を超えた場合に issue / Slack 通知を出す設計を検討する（例: mutation score < 95%、MBT violations > 0 など）。
    - 将来的に Observable / Grafana での可視化を想定し、NDJSON または CSV への変換スクリプトを用意する。
