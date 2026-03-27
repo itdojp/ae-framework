@@ -78,7 +78,7 @@ lastVerified: '2026-03-27'
 
 > PR/CI 失敗時の最小診断テンプレート（再現手順付き）
 
-### 0. Context
+### 0. Context / コンテキスト
 
 - PR / Issue:
 - Commit SHA:
@@ -107,7 +107,7 @@ lastVerified: '2026-03-27'
 - Expected:
 - Actual:
 
-### 4. Spec / Policy linkage
+### 4. Spec / Policy linkage / 仕様・ポリシーとのひも付け
 
 - Related spec path(s):
 - Related acceptance criteria:
@@ -130,7 +130,7 @@ lastVerified: '2026-03-27'
 - Artifact path(s):
 - Log excerpt location:
 
-### 8. Decision
+### 8. Decision / 決定
 
 - [ ] Re-run only
 - [ ] Fix + re-run
