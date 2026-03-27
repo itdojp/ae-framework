@@ -44,15 +44,15 @@ Override these with `--run-index`, `--traceability`, `--verify-profile`, `--qual
 1. Reproducibility
    - success rate from run history (`successes / total runs`)
 2. Traceability
-   - average linked coverage across `testsLinked`, `implLinked`, and `formalLinked`
-   - uses `coverage.tests|impl|formal` when those values are present
+   - primary metric: average linked coverage across `testsLinked`, `implLinked`, and `formalLinked`
+   - if linked coverage ratios cannot be calculated from `total` and `*Linked`, falls back to `coverage.tests|impl|formal` when those values are present
 3. Automation
    - required-step pass rate from verify-profile summary (70%)
    - execution rate (`non-skipped steps / total steps`, 30%)
 4. Quality Detection
-   - whether failed runs are recorded in history
-   - latest quality report score
-   - run-manifest freshness result
+   - base signal from run history: score `100` when at least one failed run is recorded, otherwise `70`
+   - averages the base signal with the latest quality report score and the run-manifest freshness score when those signals are available
+   - if quality report and run-manifest signals are both missing, falls back to the latest-run heuristic: `85` for success, `35` for failure
 
 The overall score is the simple average of available axes.
 
@@ -99,15 +99,15 @@ pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 1. Reproducibility
    - run history の成功率（成功件数 / 総件数）
 2. Traceability
-   - `testsLinked` / `implLinked` / `formalLinked` の被覆率平均
-   - `coverage.tests|impl|formal` がある場合はそれを利用
+   - `testsLinked` / `implLinked` / `formalLinked` の被覆率平均を主指標として利用
+   - `total` と `*Linked` から被覆率を算出できない場合に限り `coverage.tests|impl|formal` をフォールバックとして利用
 3. Automation
    - verify profile の required step pass rate（70%）
    - 実行率（non-skipped step / 全 step、30%）
 4. Quality Detection
-   - 失敗 run を履歴として記録できているか
-   - quality report の最新スコア
-   - run-manifest freshness チェック結果
+   - run history に失敗が 1 件以上含まれていれば `100`、含まれなければ `70` をベーススコアとする
+   - ベーススコアと quality report の最新スコア、run-manifest freshness のスコアがあればそれらを平均する
+   - quality report / run-manifest のシグナルがどちらも無い場合は latest run の成否により `85`（成功）/ `35`（失敗）でフォールバックする
 
 overall score は利用可能な軸の単純平均です。
 
