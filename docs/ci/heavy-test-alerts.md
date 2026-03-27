@@ -45,14 +45,14 @@ Primary sources / 一次情報:
 
 1. Add threshold options to `render-heavy-trend-summary.mjs` and embed `:warning:` / `:rotating_light:` markers into the Markdown output.
 2. When at least one metric is Warning or worse, send a Slack webhook message from the scheduled path in `ci-extended.yml`.
-3. When the result is Critical, create a GitHub issue with the `flaky-test` label and attach links to logs and artifacts.
+3. Create a GitHub issue only when `steps.harness-health.outputs.severity == 'critical'`. When a heavy-trend snapshot is also critical, the issue body includes the critical heavy-trend entries as supporting detail.
 4. Run the same summary script in scheduled execution, or in `workflow_dispatch` with `trigger=schedule`, and publish the decision in the GitHub Step Summary. Normal PR reruns do not execute this path.
 
 #### Critical issue creation (current implementation)
 
 - Repository: `itdojp/ae-framework`
 - Labels: `flaky-test`, `ci-stability`, `needs-investigation`
-- Title example: `[CI Extended] Heavy test critical alert - mutation score < 96`
+- Title example: `[CI Extended] Harness health critical alert - <snapshotLabel>`
 - Body template:
   ```md
   ## Alert
@@ -66,14 +66,14 @@ Primary sources / 一次情報:
   - [ ] Download artifacts and inspect mutation/property/MBT outputs
   - [ ] Update issue with root cause and resolution plan
   ```
-- Implementation note: the `Create heavy trend issue` step in `ci-extended.yml` opens the issue through `actions/github-script` when `severity == 'critical'`.
+- Implementation note: the `Create harness health critical issue` step in `ci-extended.yml` opens the issue through `actions/github-script` when `steps.harness-health.outputs.severity == 'critical'`.
 
 ### 4. Implementation status
 
 - [x] Threshold options added to `render-heavy-trend-summary.mjs`
 - [x] JSON output for machine-readable decisions (`--json-output`)
 - [x] Slack notification step added to scheduled `ci-extended`
-- [x] Auto issue creation for Critical results (`ci-extended.yml`)
+- [x] Auto issue creation for harness-health Critical results (`ci-extended.yml`)
 - [x] History archive for `reports/heavy-test-trends-history/*.json` plus periodic generation of `reports/heavy-test-trends-history/summary.md` / `reports/heavy-test-trends-history/summary.json`
 - [x] Artifact retention extended to 30 days for 2-3 week trend analysis
 - [x] Threshold recommendation helper added (`scripts/pipelines/recommend-heavy-trend-thresholds.mjs`)
@@ -121,12 +121,12 @@ Primary sources / 一次情報:
 ### 3. 通知フロー（現行実装）
 1. `render-heavy-trend-summary.mjs` に閾値判定オプションを追加し、Markdown 出力内に :warning:/:rotating_light: を埋め込む。
 2. Warning 以上の項目が存在する場合は Slack Webhook（`ci-extended.yml` スケジュール実行に追加済み）でメッセージ送信。
-3. Critical 判定時は GitHub Issue（`flaky-test` ラベル）を自動作成し、関連ログ／アーティファクトへのリンクを添付。
+3. GitHub Issue の自動起票は `steps.harness-health.outputs.severity == 'critical'` の場合のみ実行する。heavy trend 側にも critical snapshot がある場合は、その詳細を補足情報として Issue 本文に含める。
 4. スケジュール実行（または `workflow_dispatch` で `trigger=schedule` 指定時）に同スクリプトを実行し、Step Summary に判定結果を表示する（通常の PR rerun では実行されない）。
 
 #### Critical 判定時の Issue 起票（現行実装）
 - 作成先: `itdojp/ae-framework` / labels: `flaky-test`, `ci-stability`, `needs-investigation`
-- タイトル例: `[CI Extended] Heavy test critical alert - mutation score < 96`
+- タイトル例: `[CI Extended] Harness health critical alert - <snapshotLabel>`
 - 本文テンプレート:
   ```md
   ## Alert
@@ -140,13 +140,13 @@ Primary sources / 一次情報:
   - [ ] Download artifacts and inspect mutation/property/MBT outputs
   - [ ] Update issue with root cause and resolution plan
   ```
-- 実装: `ci-extended.yml` の `Create heavy trend issue` ステップで `severity == 'critical'` 時に `actions/github-script` から Issue を自動起票。
+- 実装: `ci-extended.yml` の `Create harness health critical issue` ステップで `steps.harness-health.outputs.severity == 'critical'` 時に `actions/github-script` から Issue を自動起票。
 
 ### 4. 実装状況
 - [x] `render-heavy-trend-summary.mjs` への閾値オプション追加
 - [x] JSON 形式の判定結果出力（`--json-output`）
 - [x] `ci-extended` スケジュール実行への Slack 通知ステップ追加
-- [x] Critical 判定時の自動 Issue 起票（`ci-extended.yml`）
+- [x] harness-health の Critical 判定時の自動 Issue 起票（`ci-extended.yml`）
 - [x] `reports/heavy-test-trends-history/*.json` の履歴アーカイブと `reports/heavy-test-trends-history/summary.md` / `reports/heavy-test-trends-history/summary.json` の定期生成
 - [x] 履歴アーティファクト保持期間を 30 日に拡張（2〜3週間分の分析前提を満たす）
 - [x] 閾値見直し補助スクリプトを追加（`scripts/pipelines/recommend-heavy-trend-thresholds.mjs`）
