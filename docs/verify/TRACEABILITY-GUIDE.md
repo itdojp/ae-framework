@@ -85,7 +85,10 @@ assert NoNegativeInventory { all it: Item | it.stock >= 0 }
 ### 5) CI behavior
 
 - The builder scans `.feature` files, extracts scenario titles and tags, and derives an `id` slug.
-- It searches `tests/`, `src/`, and formal artifacts for any occurrence of the title, id, or tag and generates:
+- It searches the following locations for any occurrence of the title, id, or tag and generates:
+  - test/spec files under `tests/` whose filenames match `/\.(test|spec)\.[tj]sx?$/`
+  - implementation files under `src/`
+  - formal artifacts and specs picked up by the traceability builder
   - `traceability.csv` for human inspection
   - `traceability.json` with totals and per-scenario rows
 - The PR summary includes:
@@ -178,7 +181,10 @@ assert NoNegativeInventory { all it: Item | it.stock >= 0 }
 ### 5) CI の挙動
 
 - builder は `.feature` を走査し、scenario title と tag を抽出し、`id` slug を導出します。
-- `tests/`、`src/`、formal artifact を検索し、title / id / tag の一致から次を生成します。
+- 次の場所を検索し、title / id / tag の一致から次を生成します。
+  - `tests/` 配下のうち、ファイル名が `/\.(test|spec)\.[tj]sx?$/` に一致する test/spec file
+  - `src/` 配下の implementation file
+  - traceability builder が拾う formal artifact / spec
   - `traceability.csv`：人手確認用
   - `traceability.json`：total と per-scenario row を含む機械可読出力
 - PR summary には次を含みます。
