@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - policy/risk-policy.yml
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-28'
 ---
 # Formal Quality Gates (v0.2 DoD)
 
@@ -11,66 +11,114 @@ lastVerified: '2026-03-10'
 
 ---
 
-## 日本語（概要）
-
-v0.2 で CI に導入するフォーマル検証ゲートの定義です。
-- 適合性チェック（トレース vs 仕様）
-- Alloy 6 による軽量時相検証、TLA+（TLC/Apalache）による検証
-- SMT ソルバの冗長化（Z3/cvc5）
-- 失敗→反例→テスト化→最小修正→緑化、というワークフロー
-
-詳細は英語セクションの対象/ワークフロー/アーティファクト項を参照してください。
-
 ## English
 
-This document defines v0.2 formal verification gates in CI.
+This document defines the formal verification gates used in CI for the current v0.2 baseline.
 
-Objectives
-- Conformance between runtime traces and formal specs
-- Lightweight temporal verification via Alloy 6 (LTL + past)
-- TLA+ via TLC/Apalache (SMT/BMC + inductive invariants)
-- Redundant SMT solving (Z3/cvc5)
+### Objectives
 
-CI Targets (green = pass)
-- verify:conformance — trace vs spec
-- verify:alloy — temporal properties
-- verify:tla --engine=apalache|tlc — model checking
-- verify:smt --solver=z3|cvc5 — redundancy
+- Confirm conformance between runtime traces and formal specifications.
+- Run lightweight temporal verification with Alloy 6.
+- Run TLA+ verification through TLC or Apalache when the corresponding engine is available.
+- Run redundant SMT checks with `z3` or `cvc5`.
+- Preserve the counterexample -> failing test -> minimal fix workflow.
 
-Workflow
-1) Failing property → counterexample
-2) Counterexample → failing test under `tests/`
-3) Minimal fix until all gates green
+### Current CI entry points
 
-Artifacts
-- Trace schema: `observability/trace-schema.yaml`
-- Reports: `artifacts/hermetic-reports/conformance/`
+- `verify:conformance (stub)`
+- `verify:alloy (stub)`
+- `verify:tla (stub)`
+- `verify:smt (stub)`
+- `verify:kani (presence)`
+- `verify:spin (Promela)`
+- `verify:csp`
+- `verify:lean (Lean4)`
+- `Formal Reports Aggregate`
 
-Status
-- v0.2: establish stubs in CI and wire engines incrementally
+These jobs are wired through `.github/workflows/formal-verify.yml` and start on PRs only when the PR has the `run-formal` label, or through manual `workflow_dispatch` with the matching `target`.
 
-This document defines the formal verification gates that must pass in CI for v0.2.
+### Blocking vs report-only behavior
 
-Objectives
-- Conformance checking between runtime traces and formal specs
-- Lightweight temporal verification via Alloy 6 (LTL + past operators)
-- TLA+ verification via TLC and Apalache (SMT/BMC + inductive invariants)
-- Redundant SMT solving with Z3 and cvc5
+- The formal lane is opt-in and report-only by default.
+- Adding `enforce-formal` makes the strict path enforce the Apalache `ran/ok` result and the formal summary validation in the aggregate step.
+- `verify-lite` can also collect formal outputs when `run-formal` is present, but the default required baseline remains `verify-lite`, `policy-gate`, and `gate`.
 
-CI Targets (green = pass)
-- verify:conformance — trace vs spec conformance
-- verify:alloy — Alloy 6 temporal properties
-- verify:tla --engine=apalache|tlc — TLA+ model checking
-- verify:smt --solver=z3|cvc5 — solver redundancy
+### Workflow
 
-Workflow
-1) Failing property yields a counterexample
-2) Counterexample becomes a failing test under tests/
-3) Apply minimal fix until all gates return green
+1. Add `run-formal` to the PR, or dispatch `Formal Verify` manually.
+2. Confirm the per-tool summaries under `artifacts/hermetic-reports/formal/`.
+3. If a property fails, capture the counterexample and convert it into a failing test.
+4. Apply the smallest fix that returns the formal lane to green.
 
-Artifacts
-- Trace schema: observability/trace-schema.yaml
-- Reports: artifacts/hermetic-reports/conformance/
+### Artifacts to review
 
-Status
-- v0.2: Establish gates as stubs in CI; incrementally wire real engines
+- `artifacts/hermetic-reports/formal/summary.json`
+- `artifacts/formal/formal-summary-v1.json`
+- `artifacts/formal/formal-summary-v2.json`
+- per-tool summaries such as:
+  - `artifacts/hermetic-reports/formal/apalache-summary.json`
+  - `artifacts/hermetic-reports/formal/tla-summary.json`
+  - `artifacts/hermetic-reports/formal/smt-summary.json`
+  - `artifacts/hermetic-reports/formal/alloy-summary.json`
+
+### Current status
+
+- v0.2 keeps the formal lane available but opt-in on PRs.
+- Several jobs still operate as stubs or presence checks while the repository incrementally wires real engines and stricter evidence handling.
+- The canonical operational detail lives in `docs/quality/formal-runbook.md`; use this document as the policy-level overview.
+
+## 日本語
+
+この文書は、current v0.2 baseline で CI に導入しているフォーマル検証ゲートの定義をまとめたものです。
+
+### 目的
+
+- 実行トレースと形式仕様の適合性を確認する。
+- Alloy 6 による軽量時相検証を行う。
+- 利用可能な場合は TLC / Apalache を通じて TLA+ 検証を行う。
+- `z3` / `cvc5` による冗長 SMT チェックを行う。
+- 失敗 -> 反例 -> failing test -> 最小修正、という運用フローを維持する。
+
+### 現在の CI entrypoint
+
+- `verify:conformance (stub)`
+- `verify:alloy (stub)`
+- `verify:tla (stub)`
+- `verify:smt (stub)`
+- `verify:kani (presence)`
+- `verify:spin (Promela)`
+- `verify:csp`
+- `verify:lean (Lean4)`
+- `Formal Reports Aggregate`
+
+これらの job は `.github/workflows/formal-verify.yml` に実装されており、PR では `run-formal` ラベルが付いた場合にのみ起動し、手動実行では `workflow_dispatch` の `target` で対象を選択します。
+
+### blocking と report-only の扱い
+
+- formal lane は opt-in で、既定では report-only です。
+- `enforce-formal` を付けると、strict path で Apalache の `ran/ok` と aggregate step の formal summary validation を強制します。
+- `run-formal` がある場合は `verify-lite` でも formal 出力を収集できますが、既定の required baseline は引き続き `verify-lite` / `policy-gate` / `gate` です。
+
+### 運用フロー
+
+1. PR に `run-formal` を付与するか、`Formal Verify` を手動起動する。
+2. `artifacts/hermetic-reports/formal/` 配下の per-tool summary を確認する。
+3. 性質が失敗した場合は反例を採取し、failing test に落とし込む。
+4. formal lane を green に戻す最小修正を適用する。
+
+### 確認する成果物
+
+- `artifacts/hermetic-reports/formal/summary.json`
+- `artifacts/formal/formal-summary-v1.json`
+- `artifacts/formal/formal-summary-v2.json`
+- 各ツールの summary 例:
+  - `artifacts/hermetic-reports/formal/apalache-summary.json`
+  - `artifacts/hermetic-reports/formal/tla-summary.json`
+  - `artifacts/hermetic-reports/formal/smt-summary.json`
+  - `artifacts/hermetic-reports/formal/alloy-summary.json`
+
+### 現状
+
+- v0.2 では formal lane を PR 上で opt-in のまま維持しています。
+- repository では実 engine と stricter evidence handling を段階的に接続しており、stub / presence check の job もまだ含まれます。
+- canonical な運用詳細は `docs/quality/formal-runbook.md` にあるため、この文書は policy-level overview として扱ってください。
