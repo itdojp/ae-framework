@@ -51,7 +51,7 @@ When to use:
 - Add or adjust verification gates:
 - Add regression test(s):
 - Update documentation / runbook:
-- Follow-up issue(s):
+- フォローアップ issue(s):
 
 ### Notes
 
@@ -68,11 +68,11 @@ When to use:
 
 ### トリアージ要約（記入用）
 
-- Incident ID / Link:
+- インシデントID / リンク:
 - 検知元（CI / 監視 / ユーザー報告）:
 - 初回観測時刻（UTC）:
 - 影響範囲（module / service）:
-- 重大度（low / medium / high / critical）:
+- 重大度（低 / 中 / 高 / クリティカル）:
 - 現在の状態（open / mitigating / resolved）:
 
 ### 証跡スナップショット
@@ -100,8 +100,8 @@ When to use:
 - 追加または調整する verification gate:
 - 追加する回帰 test:
 - 更新する documentation / runbook:
-- follow-up issue:
+- フォローアップ issue(s):
 
-### Notes
+### 備考
 
 - 長文化は避けてください。内容が拡大する場合は、詳細を専用 issue または report に切り出してください。
