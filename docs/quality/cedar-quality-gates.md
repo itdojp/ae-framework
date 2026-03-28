@@ -13,7 +13,7 @@ lastVerified: '2026-03-29'
 
 ## English
 
-This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` files and produces a non-blocking summary.
+This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.ced` files and produces a non-blocking summary.
 
 ### Current behavior
 
@@ -40,7 +40,10 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` file
   "okCount": 3,
   "ngCount": 0,
   "errors": [{ "file": "...", "kind": "json-parse", "message": "..." }],
-  "results": [{ "file": "...", "type": "json|cedar", "valid": true }],
+  "results": [
+    { "file": "...", "type": "json|cedar", "valid": true },
+    { "file": "...", "type": "json|cedar", "valid": false }
+  ],
   "timestamp": "..."
 }
 ```
@@ -53,7 +56,7 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` file
 
 ## 日本語
 
-この workflow は `policies/cedar/` 以下の `.json`（Cedar JSON）と `.cedar` ファイルを走査し、non-blocking の summary を生成します。
+この workflow は `policies/cedar/` 以下の `.json`（Cedar JSON）と `.cedar` / `.ced` ファイルを走査し、non-blocking の summary を生成します。
 
 ### 現在の挙動
 
@@ -80,7 +83,10 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` file
   "okCount": 3,
   "ngCount": 0,
   "errors": [{ "file": "...", "kind": "json-parse", "message": "..." }],
-  "results": [{ "file": "...", "type": "json|cedar", "valid": true }],
+  "results": [
+    { "file": "...", "type": "json|cedar", "valid": true },
+    { "file": "...", "type": "json|cedar", "valid": false }
+  ],
   "timestamp": "..."
 }
 ```
