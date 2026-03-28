@@ -88,7 +88,7 @@ Example:
 
 ### Optional enforcement in CI
 
-Set `CONTRACTS_ENFORCE=1` in the environment to make the `contracts-exec` step fail the PR when minimal parse/pre/post checks fail. The default remains report-only.
+Set `CONTRACTS_ENFORCE=1` in the environment to make the `contracts-exec` step fail the PR when minimal input/output parse and pre/post checks fail. The default remains report-only.
 
 Alternatively, add a PR label `enforce-contracts`. The verify workflow translates that label into `CONTRACTS_ENFORCE=1` automatically for that PR.
 
@@ -96,11 +96,11 @@ Alternatively, add a PR label `enforce-contracts`. The verify workflow translate
 
 Set `CONTRACTS_SAMPLE_INPUT=/path/to/input.json` to feed a JSON object into runtime contract execution. This helps validate schemas and pre/post conditions against a realistic shape. When it is absent, `{}` is used.
 
-Alternatively, set `CONTRACTS_OPENAPI_PATH` (defaults to `artifacts/codex/openapi.yaml` or `openapi.json`). The runner then attempts a best-effort sample derivation:
+Alternatively, set `CONTRACTS_OPENAPI_PATH` (defaults to `artifacts/codex/openapi.yaml` or `openapi.json`). The runner then attempts a best-effort sample derivation from the OpenAPI document (JSON or YAML) in this order:
 
-- for JSON, it prefers the first `components.schemas` object by type;
-- otherwise it falls back to the first path entry;
-- for YAML, it extracts the first JSON block when possible.
+- it first tries to synthesize input from `requestBody.content['application/json'].schema` on the first operation;
+- if that is not available, it falls back to the first entry in `components.schemas`;
+- if neither is present, it finally falls back to using the first path key as a placeholder input shape.
 
 ### Operational notes
 
@@ -188,7 +188,7 @@ void main();
 
 ### CI での任意 enforcement
 
-環境変数 `CONTRACTS_ENFORCE=1` を設定すると、`contracts-exec` step は minimal parse/pre/post check が失敗した場合に PR を fail させます。既定は report-only です。
+環境変数 `CONTRACTS_ENFORCE=1` を設定すると、`contracts-exec` step は minimal な input/output parse と pre/post check が失敗した場合に PR を fail させます。既定は report-only です。
 
 代替として、PR ラベル `enforce-contracts` を付与できます。verify workflow はそのラベルを検出し、その PR に対して `CONTRACTS_ENFORCE=1` を自動設定します。
 
@@ -196,11 +196,11 @@ void main();
 
 `CONTRACTS_SAMPLE_INPUT=/path/to/input.json` を設定すると、JSON object を runtime contracts execution の入力として渡せます。schema や pre/post condition を現実的な shape で検証したい場合に有効です。未指定時は `{}` を使います。
 
-代わりに `CONTRACTS_OPENAPI_PATH` を使うこともできます。既定値は `artifacts/codex/openapi.yaml` または `openapi.json` です。runner は best-effort でサンプルを導出します。
+代わりに `CONTRACTS_OPENAPI_PATH` を使うこともできます。既定値は `artifacts/codex/openapi.yaml` または `openapi.json` です。runner は OpenAPI document（JSON / YAML）から次の順序で best-effort にサンプルを導出します。
 
-- JSON の場合は `components.schemas` の先頭オブジェクト型を優先します。
-- それが取れない場合は、最初の path entry にフォールバックします。
-- YAML の場合は、可能であれば最初の JSON block を抽出します。
+- まず最初の operation にある `requestBody.content['application/json'].schema` から入力を合成します。
+- それが取れない場合は `components.schemas` の先頭 entry にフォールバックします。
+- どちらも使えない場合は、最後に最初の path key を placeholder input shape として使います。
 
 ### 運用メモ
 
