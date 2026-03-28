@@ -29,13 +29,14 @@ This document defines the formal verification gates used in CI for the current v
 - `verify:alloy (stub)`
 - `verify:tla (stub)`
 - `verify:smt (stub)`
+- `verify:apalache (stub)`
 - `verify:kani (presence)`
 - `verify:spin (Promela)`
 - `verify:csp`
 - `verify:lean (Lean4)`
 - `Formal Reports Aggregate`
 
-These jobs are wired through `.github/workflows/formal-verify.yml` and start on PRs only when the PR has the `run-formal` label, or through manual `workflow_dispatch` with the matching `target`.
+These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-fork PRs, start only when the PR has the `run-formal` label. For fork PRs, a maintainer must use `workflow_dispatch` with the matching `target`.
 
 ### Blocking vs report-only behavior
 
@@ -85,13 +86,14 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and start on 
 - `verify:alloy (stub)`
 - `verify:tla (stub)`
 - `verify:smt (stub)`
+- `verify:apalache (stub)`
 - `verify:kani (presence)`
 - `verify:spin (Promela)`
 - `verify:csp`
 - `verify:lean (Lean4)`
 - `Formal Reports Aggregate`
 
-これらの job は `.github/workflows/formal-verify.yml` に実装されており、PR では `run-formal` ラベルが付いた場合にのみ起動し、手動実行では `workflow_dispatch` の `target` で対象を選択します。
+これらの job は `.github/workflows/formal-verify.yml` に実装されており、non-fork PR では `run-formal` ラベルが付いた場合にのみ起動します。fork PR では maintainer が `workflow_dispatch` を使い、`target` で対象を選択する必要があります。
 
 ### blocking と report-only の扱い
 
