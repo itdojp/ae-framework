@@ -3,36 +3,80 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - docs/quality/formal-tools-setup.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-29'
 ---
-# Formal Mini Flow: 反例 → 失敗テスト → 修正 → 緑
+# Formal Mini Flow: Counterexample -> Failing Test -> Fix -> Green
 
-目的
-- 形式仕様と実装の“接着”を小さいループで回すための最小手順。
+> 🌍 Language / 言語: English | 日本語
 
-流れ（例）
-1) 仕様/期待を定義（TLA+/Alloy/不変）
-   - TLA+ 最小: `spec/tla/DomainSpec.tla`（Invariant を定義）
-   - Alloy 最小: `spec/alloy/Domain.als`（Safety アサーション）
-   - 実装側の不変: onHand>=0, allocated<=onHand（verify:conformance でチェック）
-2) 実行で反例が出る
-   - `pnpm run spec:check:tla` ／ Alloy IDEで `Domain.als` を `check` 実行
+---
+
+## English
+
+### Purpose
+
+- A minimal loop for connecting formal specs and implementation through small, repeatable steps.
+
+### Example flow
+
+1. Define the spec or expectation (TLA+, Alloy, or invariants).
+   - Minimal TLA+: `spec/tla/DomainSpec.tla` with an invariant.
+   - Minimal Alloy: `spec/alloy/Domain.als` with a safety assertion.
+   - Implementation-side invariant: `onHand >= 0`, `allocated <= onHand` checked with `verify:conformance`.
+2. Run the checker and obtain a counterexample.
+   - `pnpm run spec:check:tla` or run `check` in Alloy IDE for `Domain.als`.
    - `pnpm run verify:conformance -i <events.json>`
-3) 反例をテスト化（Red）
-   - 反例となるイベント列/入力を `tests/` に最小再現として追加
-4) 実装を最小修正（Green）
-   - 失敗テストが通るように、小さく修正
-5) リファクタリング（Refactor）
-   - 仕様と実装の重複/複雑性を整理
+3. Turn the counterexample into a failing test (Red).
+   - Add the failing event sequence or input into `tests/` as the minimal reproduction.
+4. Apply the smallest fix (Green).
+   - Change the implementation only enough to make the failing test pass.
+5. Refactor.
+   - Remove duplication and reduce incidental complexity between spec and implementation.
 
-補助コマンド
-- TLA+ チェック: `pnpm run spec:check:tla`（Apalache または TLC がある場合に実行）
-- Alloy チェック: `pnpm run spec:check:alloy`（CLIがなければガイダンスを表示）
-- トレース検証: `pnpm run trace:validate`（スキーマ整合の軽量チェック）
+### Helper commands
+
+- TLA+ check: `pnpm run spec:check:tla` (runs when Apalache or TLC is available)
+- Alloy check: `pnpm run spec:check:alloy` (shows guidance when CLI is unavailable)
+- Trace validation: `pnpm run trace:validate` (lightweight schema consistency check)
 - Conformance: `pnpm run verify:conformance [-i file --disable-invariants ...]`
 
-Tips
-- まずは「不変（safety）」から始め、小さいループで回す
-- CIは `run-formal` ラベルで起動（非ブロッキング）
-- 詳細は `docs/quality/formal-runbook.md` と `docs/quality/formal-gates.md`
+### Tips
 
+- Start with safety invariants first and keep the loop small.
+- CI runs via the `run-formal` label in non-blocking mode.
+- See `docs/quality/formal-runbook.md` and `docs/quality/formal-gates.md` for the full operating model.
+
+## 日本語
+
+### 目的
+
+- 形式仕様と実装の“接着”を小さいループで回すための最小手順です。
+
+### 流れ（例）
+
+1. 仕様 / 期待を定義します（TLA+ / Alloy / 不変条件）。
+   - TLA+ 最小: `spec/tla/DomainSpec.tla` で invariant を定義
+   - Alloy 最小: `spec/alloy/Domain.als` で safety assertion を定義
+   - 実装側の不変: `onHand >= 0`, `allocated <= onHand` を `verify:conformance` で確認
+2. 実行して反例を得ます。
+   - `pnpm run spec:check:tla`、または Alloy IDE で `Domain.als` を `check`
+   - `pnpm run verify:conformance -i <events.json>`
+3. 反例を failing test に落とし込みます（Red）。
+   - 反例になった event sequence / input を `tests/` に最小再現として追加
+4. 最小修正を入れます（Green）。
+   - failing test が通る最小限の修正だけを実装へ入れる
+5. リファクタリングします。
+   - 仕様と実装の重複、偶発的な複雑性を整理する
+
+### 補助コマンド
+
+- TLA+ チェック: `pnpm run spec:check:tla`（Apalache または TLC が使える場合に実行）
+- Alloy チェック: `pnpm run spec:check:alloy`（CLI が使えない場合は guidance を表示）
+- トレース検証: `pnpm run trace:validate`（軽量な schema consistency check）
+- Conformance: `pnpm run verify:conformance [-i file --disable-invariants ...]`
+
+### Tips
+
+- まず safety invariant から始め、ループを小さく保ちます。
+- CI は `run-formal` ラベルで non-blocking に起動します。
+- 詳細な運用は `docs/quality/formal-runbook.md` と `docs/quality/formal-gates.md` を参照してください。
