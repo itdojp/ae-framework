@@ -16,11 +16,11 @@ This repository supports optional headless Alloy execution in `scripts/verify/ru
 
 ### Environment variables
 
-- `ALLOY_JAR`: path to the Alloy jar. When present, the runner uses `java -jar $ALLOY_JAR <file>.als`.
-- `ALLOY_RUN_CMD`: overrides the execution command. Supports the `{file}` placeholder and `$ALLOY_JAR` replacement.
-- `ALLOY_CMD_JSON`: JSON array of extra args for the jar. Preferred because it is safe for spaces and quotes.
-- `ALLOY_CMD_ARGS`: string-form extra args. Fallback only.
-- `ALLOY_FAIL_REGEX`: regex used to decide failure (`Exception|ERROR|FAILED|Counterexample|assertion` by default).
+- `ALLOY_JAR`: path to the Alloy jar. If unset, the runner falls back to `.cache/tools/alloy.jar`. In the default path, execution uses `java -jar $ALLOY_JAR <file>.als`.
+- `ALLOY_RUN_CMD`: overrides the execution command. Supports the `{file}` placeholder and `$ALLOY_JAR` replacement. When this is set, success/failure is determined by process exit code.
+- `ALLOY_CMD_JSON`: JSON array of extra args for the default `java` execution path. Preferred because it is safe for spaces and quotes. Ignored when `ALLOY_RUN_CMD` is set.
+- `ALLOY_CMD_ARGS`: string-form extra args for the default `java` execution path. Fallback only. Ignored when `ALLOY_RUN_CMD` is set.
+- `ALLOY_FAIL_REGEX`: regex used to decide failure in the default `java` execution path (`Exception|ERROR|FAILED|Counterexample|assertion` by default). Ignored when `ALLOY_RUN_CMD` is set.
 - `ALLOY_TIMEOUT_MS`: timeout in milliseconds (`180000` by default).
 
 ### Examples
@@ -48,8 +48,8 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
 
 ### Notes
 
-- If no jar is provided, the workflow only detects `.als` files and stays report-only.
-- Failure strings vary by jar version and invocation mode, so adjust `ALLOY_FAIL_REGEX` when needed.
+- If no jar is found and `ALLOY_RUN_CMD` is also unset, the workflow only detects `.als` files and stays report-only / detection-only.
+- Failure strings vary by jar version and invocation mode, so adjust `ALLOY_FAIL_REGEX` when you use the default `java` execution path.
 - `ALLOY_RUN_CMD` is executed through the shell. Use trusted input only.
 
 ## 日本語
@@ -58,11 +58,11 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
 
 ### 環境変数
 
-- `ALLOY_JAR`: Alloy jar のパスです。指定すると runner は `java -jar $ALLOY_JAR <file>.als` を使います。
-- `ALLOY_RUN_CMD`: 実行コマンドを上書きします。`{file}` プレースホルダと `$ALLOY_JAR` 置換をサポートします。
-- `ALLOY_CMD_JSON`: jar に渡す追加引数の JSON 配列です。空白や引用符に安全なため、こちらを推奨します。
-- `ALLOY_CMD_ARGS`: 文字列形式の追加引数です。フォールバック用です。
-- `ALLOY_FAIL_REGEX`: failure 判定に使う正規表現です。既定値は `Exception|ERROR|FAILED|Counterexample|assertion` です。
+- `ALLOY_JAR`: Alloy jar のパスです。未指定時は `.cache/tools/alloy.jar` にフォールバックします。既定経路では `java -jar $ALLOY_JAR <file>.als` で実行します。
+- `ALLOY_RUN_CMD`: 実行コマンドを上書きします。`{file}` プレースホルダと `$ALLOY_JAR` 置換をサポートします。これを使う経路では終了コードで成功/失敗を判定します。
+- `ALLOY_CMD_JSON`: 既定の `java` 実行経路に渡す追加引数の JSON 配列です。空白や引用符に安全なため、こちらを推奨します。`ALLOY_RUN_CMD` を使う場合は参照されません。
+- `ALLOY_CMD_ARGS`: 既定の `java` 実行経路に渡す文字列形式の追加引数です。フォールバック用です。`ALLOY_RUN_CMD` を使う場合は参照されません。
+- `ALLOY_FAIL_REGEX`: 既定の `java` 実行経路で failure 判定に使う正規表現です。既定値は `Exception|ERROR|FAILED|Counterexample|assertion` です。`ALLOY_RUN_CMD` を使う場合は参照されません。
 - `ALLOY_TIMEOUT_MS`: ミリ秒単位のタイムアウトです。既定値は `180000` です。
 
 ### 実行例
@@ -90,6 +90,6 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
 
 ### 注意事項
 
-- jar を指定しない場合、workflow は `.als` の存在確認だけを行い、report-only のままです。
-- failure 文字列は jar の版や起動方法で揺れるため、必要に応じて `ALLOY_FAIL_REGEX` を調整してください。
+- jar が見つからず、かつ `ALLOY_RUN_CMD` も未設定の場合は、workflow は `.als` の存在確認だけを行い、report-only / detection-only のままです。
+- failure 文字列は jar の版や起動方法で揺れるため、既定の `java` 実行経路を使う場合は必要に応じて `ALLOY_FAIL_REGEX` を調整してください。
 - `ALLOY_RUN_CMD` は shell 経由で実行されるため、信頼できる入力だけを使ってください。
