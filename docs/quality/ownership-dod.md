@@ -13,7 +13,7 @@ lastVerified: '2026-03-29'
 
 ## English
 
-Purpose: define ownership requirements for AI-assisted changes so teams can explain, support, and roll back safely.
+Purpose: Define ownership requirements for AI-assisted changes so teams can explain, support, and roll back safely.
 
 Scope:
 - Applies to behavior changes, new integrations, and policy changes.
@@ -50,21 +50,21 @@ Scope:
 - 振る舞い変更、新規 integration、policy change に適用する。
 - Spec / Blueprint artifact と PR summary evidence と併用する。
 
-### 必須の ownership artifact
+### 必須の ownership artifacts
 
 - Owner: 責任を持つ個人またはチーム
 - Runbook: 当番対応、緩和策、復旧手順をまとめた運用手順
-- Failure modes: 既知のリスクと想定 mitigation
+- Failure modes: 既知のリスクと想定される緩和策
 - Rollback plan: 安全に差し戻すための手順
 - Evidence: PR summary、verification gates、関連 artifact
 
 ### DoD checklist
 
-- owner が明記され、連絡可能である
-- runbook が存在する、または更新済みである
-- failure modes が列挙され、レビューされている
-- rollback が文書化され、可能ならテストされている
-- PR evidence が summary と artifact を含めて揃っている
+- Owner が明記され、連絡可能である
+- Runbook が存在する、または更新済みである
+- Failure modes が列挙され、レビューされている
+- Rollback plan が文書化され、可能ならテストされている
+- Evidence が summary と artifact を含めて揃っている
 
 ### 参考文書
 
