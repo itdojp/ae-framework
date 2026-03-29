@@ -101,4 +101,4 @@ Quality: {{coverage.value*100 | round}}% (>= {{coverage.threshold*100 | round}})
 - 入力は `docs/quality/pr-summary-tool.md` で定義された正規化済み artifact と `combined.json` を前提とします。
 - template engine 自体は実装依存です。ここでは renderer 固有仕様ではなく、期待される field surface を示します。
 - 有効化されている gate だけを含め、未使用 section は省略して summary を簡潔に保ちます。
-- artifact の lineage や stricter schema rule は `docs/quality/ARTIFACTS-CONTRACT.md` に従います。
+- artifact の lineage や stricter schema rules は `docs/quality/ARTIFACTS-CONTRACT.md` に従います。
