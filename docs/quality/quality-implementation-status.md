@@ -18,37 +18,37 @@ Status: COMPLETE
 
 #### Implemented quality features
 1. Golden/approval testing
-- Location: `tests/golden/codegen-snapshot.test.ts`
-- Helper: `scripts/golden-test-manager.ts`
-- Current capabilities:
-  - Snapshot generation for code generation outputs
-  - Comparison against approved baselines
-  - Approval workflow commands: `pnpm test:golden:approve`, `pnpm test:golden:diff`
-  - Deterministic snapshot output by stable timestamp and sorted file order
-  - CI write suppression for snapshot file updates when `CI=true`
-  - In-memory freshly generated snapshot approval to avoid stale baseline approval in CI
-  - Optional env controls: `AE_GOLDEN_SNAPSHOT_TIMESTAMP`, `AE_GOLDEN_SNAPSHOT_WRITE`
-  - File analysis including hashes, line counts, ARIA attributes, and TypeScript/ESLint error checks
-  - Quality threshold validation
+   - Location: `tests/golden/codegen-snapshot.test.ts`
+   - Helper: `scripts/golden-test-manager.ts`
+   - Current capabilities:
+     - Snapshot generation for code generation outputs
+     - Comparison against approved baselines
+     - Approval workflow commands: `pnpm test:golden:approve`, `pnpm test:golden:diff`
+     - Deterministic snapshot output by stable timestamp and sorted file order
+     - CI write suppression for snapshot file updates when `CI=true`
+     - In-memory freshly generated snapshot approval to avoid stale baseline approval in CI
+     - Optional env controls: `AE_GOLDEN_SNAPSHOT_TIMESTAMP`, `AE_GOLDEN_SNAPSHOT_WRITE`
+     - File analysis including hashes, line counts, ARIA attributes, and TypeScript/ESLint error checks
+     - Quality threshold validation
 
 2. Metamorphic testing
-- Location: `tests/metamorphic/invariant-preservation.test.ts`
-- Current capabilities:
-  - IR variation testing with harmless transformations
-  - Invariant preservation validation across code generation outputs
-  - Business rule consistency checks
-  - Accessibility score maintenance verification
-  - TypeScript compliance checks across variations
+   - Location: `tests/metamorphic/invariant-preservation.test.ts`
+   - Current capabilities:
+     - IR variation testing with harmless transformations
+     - Invariant preservation validation across code generation outputs
+     - Business rule consistency checks
+     - Accessibility score maintenance verification
+     - TypeScript compliance checks across variations
 
 3. CLI robustness and fuzzing
-- Location: `tests/cli/fuzz.spec.ts`
-- Current capabilities:
-  - Random argument generation and execution
-  - Command injection prevention testing
-  - Binary and control character safety checks
-  - Timeout and performance validation
-  - Help text consistency checks
-  - Graceful error handling verification
+   - Location: `tests/cli/fuzz.spec.ts`
+   - Current capabilities:
+     - Random argument generation and execution
+     - Command injection prevention testing
+     - Binary and control character safety checks
+     - Timeout and performance validation
+     - Help text consistency checks
+     - Graceful error handling verification
 
 #### Quality metrics recorded in this report
 - Test coverage: 85%+
@@ -141,37 +141,37 @@ This report documents that the AE Framework quality system protects against regr
 
 #### 実装済みの品質機能
 1. Golden/Approval Testing
-- 配置先: `tests/golden/codegen-snapshot.test.ts`
-- 補助スクリプト: `scripts/golden-test-manager.ts`
-- 現在の機能:
-  - コード生成出力の snapshot 生成
-  - 承認済み baseline との比較
-  - 承認 workflow 用コマンド: `pnpm test:golden:approve`, `pnpm test:golden:diff`
-  - 安定 timestamp とソート済みファイル順による deterministic な snapshot 出力
-  - `CI=true` 時の snapshot 更新抑止
-  - CI で stale baseline を誤承認しないための in-memory fresh snapshot 承認
-  - 任意の環境変数制御: `AE_GOLDEN_SNAPSHOT_TIMESTAMP`, `AE_GOLDEN_SNAPSHOT_WRITE`
-  - hash、行数、ARIA 属性、TypeScript/ESLint error を含むファイル解析
-  - 品質 threshold の検証
+   - 配置先: `tests/golden/codegen-snapshot.test.ts`
+   - 補助スクリプト: `scripts/golden-test-manager.ts`
+   - 現在の機能:
+     - コード生成出力の snapshot 生成
+     - 承認済み baseline との比較
+     - 承認 workflow 用コマンド: `pnpm test:golden:approve`, `pnpm test:golden:diff`
+     - 安定 timestamp とソート済みファイル順による deterministic な snapshot 出力
+     - `CI=true` 時の snapshot 更新抑止
+     - CI で stale baseline を誤承認しないための in-memory fresh snapshot 承認
+     - 任意の環境変数制御: `AE_GOLDEN_SNAPSHOT_TIMESTAMP`, `AE_GOLDEN_SNAPSHOT_WRITE`
+     - hash、行数、ARIA 属性、TypeScript/ESLint error を含むファイル解析
+     - 品質 threshold の検証
 
 2. Metamorphic Testing
-- 配置先: `tests/metamorphic/invariant-preservation.test.ts`
-- 現在の機能:
-  - harmless transformation を使った IR variation test
-  - コード生成出力に対する invariant preservation の検証
-  - business rule consistency の検証
-  - accessibility score の維持確認
-  - variation 間の TypeScript compliance 確認
+   - 配置先: `tests/metamorphic/invariant-preservation.test.ts`
+   - 現在の機能:
+     - harmless transformation を使った IR variation test
+     - コード生成出力に対する invariant preservation の検証
+     - business rule consistency の検証
+     - accessibility score の維持確認
+     - variation 間の TypeScript compliance 確認
 
 3. CLI Robustness and Fuzzing
-- 配置先: `tests/cli/fuzz.spec.ts`
-- 現在の機能:
-  - ランダム引数生成と実行
-  - command injection 防止テスト
-  - binary / control character 安全性確認
-  - timeout / performance 検証
-  - help text 一貫性確認
-  - graceful error handling の検証
+   - 配置先: `tests/cli/fuzz.spec.ts`
+   - 現在の機能:
+     - ランダム引数生成と実行
+     - command injection 防止テスト
+     - binary / control character 安全性確認
+     - timeout / performance 検証
+     - help text 一貫性確認
+     - graceful error handling の検証
 
 #### このレポートで記録している品質指標
 - Test coverage: 85%+
