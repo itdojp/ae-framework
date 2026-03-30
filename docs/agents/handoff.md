@@ -39,7 +39,8 @@ This document defines the minimum handoff protocol between agents. It does not r
 ### Optional fields
 - Change Package reference
   - example: `artifacts/change-package/summary.md`
-  - if no Change Package exists, record `n/a`
+  - if no Change Package exists, record `n/a` in Markdown
+  - in JSON, keep `changePackageRef` present and set it to `null` because the schema treats the field as required but nullable
 
 ### JSON sidecar mapping
 | Markdown field | JSON field |
@@ -62,7 +63,7 @@ This document defines the minimum handoff protocol between agents. It does not r
 
 ### Current repository note
 - PR comments use `/handoff A|B|C` for agent-target handoff
-- issue comments can use `/handoff @user` through `agent-commands.yml` to assign and move toward review
+- issue comments can use `/handoff @user` through `.github/workflows/agent-commands.yml` to assign and move toward review
 - keep that distinction explicit when documenting operating flows
 
 ### Builder examples
@@ -76,7 +77,6 @@ pnpm run handoff:create -- \
 ```bash
 pnpm run handoff:create -- \
   --goal "handoff current CI investigation" \
-  --hook-feedback artifacts/agents/missing-hook-feedback.json \
   --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
   --assurance-summary artifacts/assurance/assurance-summary.json \
   --harness-health artifacts/ci/harness-health.json \
@@ -167,7 +167,8 @@ pnpm run handoff:create -- \
 ### Optional fields
 - Change Package reference
   - 例: `artifacts/change-package/summary.md`
-  - Change Package がなければ `n/a` を記録する
+  - Markdown では Change Package がなければ `n/a` を記録する
+  - JSON では `changePackageRef` を省略せず、schema が required かつ nullable である前提で `null` を設定する
 
 ### JSON sidecar mapping
 | Markdown field | JSON field |
@@ -190,7 +191,7 @@ pnpm run handoff:create -- \
 
 ### 現行 repository 注記
 - PR comment では agent-target handoff として `/handoff A|B|C` を使う
-- issue comment では `agent-commands.yml` 経由で `/handoff @user` を使い、assign と review 方向への遷移を行える
+- issue comment では `.github/workflows/agent-commands.yml` 経由で `/handoff @user` を使い、assign と review 方向への遷移を行える
 - 運用フローを記述する際は、この区別を明示する
 
 ### Builder examples
@@ -204,7 +205,6 @@ pnpm run handoff:create -- \
 ```bash
 pnpm run handoff:create -- \
   --goal "handoff current CI investigation" \
-  --hook-feedback artifacts/agents/missing-hook-feedback.json \
   --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
   --assurance-summary artifacts/assurance/assurance-summary.json \
   --harness-health artifacts/ci/harness-health.json \
