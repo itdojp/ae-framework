@@ -22,7 +22,7 @@ pnpm run progress:summary
 
 ### Default inputs
 - `metrics/project-metrics.json`
-- `reports/quality-gates/quality-report-*-latest.json`
+- `reports/quality-gates/quality-report-*-latest.json` (preferred; if none exist, the generator falls back to the most recent `quality-report-*.json` under `reports/quality-gates/`)
 - `traceability.json`
 - `.ae/phase-state.json`
 
@@ -46,16 +46,16 @@ Phase state resolution checks the following sources in order:
 ### Output shape
 High-level keys:
 - `generatedAt`
-- `sources` resolved file paths
+- `sources` map of logical input keys to resolved file paths or `null` when the source is missing or unreadable
 - `progress` phase state summary
 - `metrics` TDD and coverage totals
 - `quality` gate summary
 - `traceability` link coverage summary
-- `missing` unavailable sources
+- `missing` array of keys from `sources` whose value is `null`
 
 ### Operational notes
-- Missing inputs are reflected in `missing` instead of failing the whole aggregation path.
-- Use the `sources` object to confirm which resolved files were actually consumed.
+- Missing or unreadable inputs are represented as `null` in `sources` and surfaced as the corresponding keys in `missing` instead of failing the whole aggregation path.
+- Use the `sources` object to confirm which resolved files were actually consumed, and do not assume that every `sources.<key>` value is a non-null string.
 - When phase state resolution looks inconsistent, verify the override precedence before debugging the generator itself.
 
 ## 日本語
@@ -72,7 +72,7 @@ pnpm run progress:summary
 
 ### 既定の入力
 - `metrics/project-metrics.json`
-- `reports/quality-gates/quality-report-*-latest.json`
+- `reports/quality-gates/quality-report-*-latest.json`（優先。存在しない場合は、generator が `reports/quality-gates/` 配下の最新 `quality-report-*.json` に fallback します）
 - `traceability.json`
 - `.ae/phase-state.json`
 
@@ -96,14 +96,14 @@ Phase state は次の順序で解決されます。
 ### 出力 shape
 上位 key は次のとおりです。
 - `generatedAt`
-- resolved file path を持つ `sources`
+- logical input key ごとの resolved file path、または source が missing / unreadable の場合は `null` を持つ `sources`
 - phase state summary を持つ `progress`
 - TDD と coverage の合計値を持つ `metrics`
 - gate summary を持つ `quality`
 - link coverage summary を持つ `traceability`
-- 利用できなかった source を持つ `missing`
+- `sources` の値が `null` だった key を持つ `missing`
 
 ### 運用メモ
-- 入力不足があっても集約全体を失敗させず、`missing` に記録します。
-- 実際に消費された file を確認するときは `sources` を参照します。
+- 入力不足や unreadable な source があっても集約全体は失敗せず、`sources` には `null`、`missing` には対応する key を記録します。
+- 実際に消費された file を確認するときは `sources` を参照し、すべての `sources.<key>` が non-null string だと仮定しないでください。
 - phase state の解決結果が想定と異なる場合は、generator 自体を疑う前に override precedence を確認してください。
