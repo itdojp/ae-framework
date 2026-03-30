@@ -92,6 +92,8 @@ Current minimal workflow set:
 - `slash-commands.yml`: optional issue-comment command entrypoint. Enable issue-side slash commands only when needed
 - `agent-commands.yml`: primary command handler for issue-side automation in the current repository
 - `verify-lite.yml`: required lightweight verification lane
+- `policy-gate.yml`: required policy gate workflow that emits the `policy-gate` status
+- `copilot-review-gate.yml`: required review-gate workflow that emits the `gate` status
 - `quality-gates-centralized.yml`: centralized quality gate runner
 
 Current repository note:
@@ -108,6 +110,8 @@ Current repository note:
 - `.github/workflows/slash-commands.yml`
 - `.github/workflows/agent-commands.yml`
 - `.github/workflows/verify-lite.yml`
+- `.github/workflows/policy-gate.yml`
+- `.github/workflows/copilot-review-gate.yml`
 - `.github/workflows/quality-gates-centralized.yml`
 - `policy/quality.json` for staged DoD gate rollout from warning to blocking
 
@@ -261,6 +265,8 @@ docs/** @org/pm-team
 - `slash-commands.yml`: optional な issue_comment command entrypoint。issue 側 slash command が必要な場合にのみ有効化する
 - `agent-commands.yml`: 現在の repository で issue 側 automation を主担当する command handler
 - `verify-lite.yml`: required な軽量 verification lane
+- `policy-gate.yml`: `policy-gate` status を出す required workflow
+- `copilot-review-gate.yml`: `gate` status を出す required review-gate workflow
 - `quality-gates-centralized.yml`: centralized quality gate runner
 
 現行 repository の注記:
@@ -277,6 +283,8 @@ docs/** @org/pm-team
 - `.github/workflows/slash-commands.yml`
 - `.github/workflows/agent-commands.yml`
 - `.github/workflows/verify-lite.yml`
+- `.github/workflows/policy-gate.yml`
+- `.github/workflows/copilot-review-gate.yml`
 - `.github/workflows/quality-gates-centralized.yml`
 - `policy/quality.json`。DoD gate を warning から blocking へ段階導入するために使います
 
