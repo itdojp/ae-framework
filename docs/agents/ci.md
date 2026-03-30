@@ -23,6 +23,7 @@ lastVerified: '2026-03-31'
 - `docs/ci-policy.md`
 - `docs/ci/ci-operations-handbook.md`
 - `docs/ci/ci-troubleshooting-guide.md`
+- `docs/ci/automation-failure-policies.md`
 - `.github/workflows/*.yml`
 
 ### Commands (copy/paste)
@@ -62,6 +63,7 @@ pnpm -s run check:doc-consistency
 - `docs/ci-policy.md`
 - `docs/ci/ci-operations-handbook.md`
 - `docs/ci/ci-troubleshooting-guide.md`
+- `docs/ci/automation-failure-policies.md`
 - `.github/workflows/*.yml`
 
 ### Commands (copy/paste)
