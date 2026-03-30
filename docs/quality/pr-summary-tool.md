@@ -108,9 +108,9 @@ node scripts/summary/render-pr-summary.mjs
 - renderer が直接読む artifact、workflow で append される artifact、upstream contract にとどまる file を切り分ける。
 
 ### 入力（read-only）
-- Required baseline:
+- 必須の baseline 入力:
   - `artifacts/verify-lite/verify-lite-run-summary.json`
-- 現在の optional direct input:
+- 現在の任意の直接入力群:
   - `artifacts/summary/combined.json`
   - `coverage/coverage-summary.json` または `artifacts/coverage/coverage-summary.json`
   - `artifacts/domain/replay.summary.json`
@@ -123,7 +123,7 @@ node scripts/summary/render-pr-summary.mjs
   - `artifacts/formal/formal-aggregate.json`
   - legacy `formal/summary.json`
   - `artifacts/hermetic-reports/formal/summary.json`
-- Workflow append-stage input:
+- workflow append-stage で追記される入力群:
   - `artifacts/ci/harness-health.md`
   - `artifacts/change-package/change-package.md`
   - `artifacts/change-package/change-package-validation.md`
