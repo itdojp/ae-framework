@@ -39,7 +39,7 @@ The dependencies that were previously tracked as missing for early P0 implementa
 ### Directory structure
 - `src/` exists
 - `src/cli/` exists
-- `dist/` exists as the build output surface
+- `dist/` is the build output surface and is typically created after a build, not assumed from a clean checkout
 
 ### Current CLI bin inventory
 Current `package.json#bin` entries:
@@ -96,7 +96,7 @@ Current takeaways:
 ### directory structure
 - `src/` は存在する
 - `src/cli/` は存在する
-- `dist/` は build output surface として存在する
+- `dist/` は build output surface であり、clean checkout で常在する前提ではなく build 後に生成される
 
 ### current CLI bin inventory
 現在の `package.json#bin` entry:
