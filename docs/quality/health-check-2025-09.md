@@ -3,43 +3,86 @@ docRole: derived
 canonicalSource:
 - docs/quality/verification-gates.md
 - docs/ci/ci-troubleshooting-guide.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-03-31'
 ---
 # Repository Health Check — 2025-09-05
 
 > 🌍 Language / 言語: English | 日本語
 
-Scope: Types Gate, Verify, Bench, Flake, Branch Protection, and CI workflow hygiene.
+---
 
-## Current Gates & Policies
-- PR Verify (pr-verify.yml)
-  - CodeX quickstart runs in tolerant mode via env: `CODEX_SKIP_QUALITY=1`, `CODEX_TOLERANT=1`.
-  - Summary/comments and artifacts are uploaded; job status remains green by design.
-- Quality Gates (quality-gates-centralized.yml)
-  - Triggered only on code changes via `paths` filters (`src/**`, `packages/**`, `apps/**`, `tests/**`, `configs/**`, `scripts/**`, `types/**`).
-- SBOM (sbom-generation.yml)
-  - Runs when manifests/code change; avoids docs-only PRs.
-- Security (security.yml)
-  - `paths-ignore` for docs/markdown to skip heavy scans on docs PRs.
-  - Container scan steps guarded by `hashFiles('docker/Dockerfile')` at step level.
-- Parallel Tests (parallel-test-execution.yml)
-  - E2E job on PR runs only with label `run-e2e`; always runs on push.
-  - Path filters identical to quality gates to reduce noise.
+## English
+
+### Scope
+This report captures the repository health snapshot for Types Gate, Verify, Bench, Flake, Branch Protection, and CI workflow hygiene as of the recorded date.
+
+### Current gates and policies
+- PR Verify (`pr-verify.yml`)
+  - CodeX quickstart runs in tolerant mode through `CODEX_SKIP_QUALITY=1` and `CODEX_TOLERANT=1`.
+  - Summary comments and artifacts are uploaded while the job remains green by design.
+- Quality Gates (`quality-gates-centralized.yml`)
+  - Trigger only on code changes through `paths` filters over `src/**`, `packages/**`, `apps/**`, `tests/**`, `configs/**`, `scripts/**`, and `types/**`.
+- SBOM (`sbom-generation.yml`)
+  - Runs when manifests or code change and skips docs-only PRs.
+- Security (`security.yml`)
+  - Uses `paths-ignore` for docs / markdown to avoid heavy scans on docs-only PRs.
+  - Container scan steps are guarded at step level by `hashFiles('docker/Dockerfile')`.
+- Parallel Tests (`parallel-test-execution.yml`)
+  - The E2E job on PR runs only when the `run-e2e` label is present and always runs on push.
+  - Path filters match the quality gates to reduce noise.
 - Spec Validation
-  - Reusable workflow is callable (`workflow_call`) and referenced by fail-fast pipelines.
+  - The reusable workflow is exposed through `workflow_call` and referenced by fail-fast pipelines.
 
-## Lint & Hygiene
-- actionlint: All workflows pass local `actionlint v1.7.1`.
-- workflow reuse: Reusable workflows expose `workflow_call` and optional inputs.
+### Lint and hygiene
+- `actionlint`: all workflows passed local `actionlint v1.7.1` when this report was produced.
+- Reusable workflows expose `workflow_call` and optional inputs.
 
-## Types & Tests
-- Type strict mode env available (`AE_TYPES_STRICT=1`).
-- Stable CI test profile available: `pnpm run test:ci:stable` (excludes heavy system-integration tests). See `docs/ci/stable-profile.md`.
+### Types and tests
+- Strict types mode env is available through `AE_TYPES_STRICT=1`.
+- Stable CI test profile is available with `pnpm run test:ci:stable` and excludes heavy system-integration suites. See `docs/ci/stable-profile.md`.
 
-## Branch Protection (suggested)
-- Require: actionlint, PR Verify, Quality Gates minimal, SBOM (manifests), Security (fast lanes), Spec Validation (if spec used).
-- Optional: E2E label-gated job not required.
+### Suggested branch protection baseline
+- Require: `actionlint`, PR Verify, minimal Quality Gates, SBOM for manifest changes, Security fast lanes, and Spec Validation when spec-related paths are in scope.
+- Optional: the label-gated E2E job does not need to be a required status.
 
-## Follow-ups
-- Document additional exclusions for the stable profile as we identify flaky suites.
-- Track CI duration metrics to refine path filters.
+### Follow-ups recorded in this report
+- Document additional stable-profile exclusions as flaky suites are identified.
+- Track CI duration metrics and refine path filters accordingly.
+
+## 日本語
+
+### 対象範囲
+このレポートは、記録時点における Types Gate、Verify、Bench、Flake、Branch Protection、および CI workflow hygiene の repository health snapshot をまとめたものです。
+
+### 現行の gate とポリシー
+- PR Verify (`pr-verify.yml`)
+  - CodeX quickstart は `CODEX_SKIP_QUALITY=1` と `CODEX_TOLERANT=1` による tolerant mode で動作します。
+  - summary comment と artifact は upload されますが、job は設計上 green のままです。
+- Quality Gates (`quality-gates-centralized.yml`)
+  - `src/**`, `packages/**`, `apps/**`, `tests/**`, `configs/**`, `scripts/**`, `types/**` に対する `paths` filter で、code change 時のみ起動します。
+- SBOM (`sbom-generation.yml`)
+  - manifest または code change 時に起動し、docs-only PR は対象外です。
+- Security (`security.yml`)
+  - docs / markdown のみの PR で重い scan を避けるため `paths-ignore` を使います。
+  - container scan step は `hashFiles('docker/Dockerfile')` により step level で guard されています。
+- Parallel Tests (`parallel-test-execution.yml`)
+  - PR 上の E2E job は `run-e2e` label がある場合にのみ起動し、push では常時実行されます。
+  - path filter は quality gates と同一で、noise を抑える構成です。
+- Spec Validation
+  - reusable workflow は `workflow_call` を公開し、fail-fast pipeline から参照されます。
+
+### Lint と hygiene
+- `actionlint`: このレポート作成時点で、すべての workflow が local `actionlint v1.7.1` を通過しています。
+- reusable workflow は `workflow_call` と optional input を公開しています。
+
+### Types と tests
+- strict types mode 用 env として `AE_TYPES_STRICT=1` が利用可能です。
+- stable CI test profile は `pnpm run test:ci:stable` で利用でき、重い system-integration suite を除外します。`docs/ci/stable-profile.md` を参照してください。
+
+### 推奨 branch protection baseline
+- required にする対象: `actionlint`、PR Verify、minimal Quality Gates、manifest change 向け SBOM、Security fast lane、spec 関連 path が対象の場合の Spec Validation。
+- optional にする対象: label-gated E2E job は required status にする必要はありません。
+
+### このレポートで記録する follow-up
+- flaky suite が判明したら stable profile から除外する対象を追加で文書化する。
+- CI duration metric を追跡し、path filter を継続的に調整する。

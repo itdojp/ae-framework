@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-11'
+lastVerified: '2026-03-31'
 owner: development-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -9,41 +9,41 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 > 🌍 Language / 言語: English | 日本語
 
-The AE-Framework includes a comprehensive deterministic code generation system that ensures consistent code output from AE-IR specifications and detects when generated code drifts from its expected state.
+---
 
-## Overview
+## English
 
+### Overview
+The AE-Framework includes a deterministic code generation system that keeps code output stable for the same AE-IR input and detects drift when generated code diverges from the expected state.
+
+### System scope
 The system consists of:
+- Deterministic code generator for AE-IR based outputs
+- Drift detection engine for generated artifacts
+- CI/CD integration for automated detection and regeneration
+- Local CLI commands and helper scripts for development workflows
 
-- **Deterministic Code Generator**: Generates consistent code from AE-IR specifications
-- **Drift Detection Engine**: Monitors changes and inconsistencies in generated code  
-- **CI/CD Integration**: Automated drift detection and code regeneration
-- **Development Tools**: CLI commands and helper scripts
+### Key features
+#### Deterministic generation
+- Consistent output from the same input
+- SHA-256 hash based tracking for change detection
+- Multi-target support for TypeScript, React, API, and database outputs
+- Extensible template-based generation
 
-## Key Features
+#### Drift detection
+- Detects specification changes in AE-IR inputs
+- Identifies manual modifications to generated files
+- Finds new, deleted, or renamed generated files
+- Classifies drift by confidence and severity
 
-### 🔄 Deterministic Generation
-- **Consistent Output**: Same input always produces identical output
-- **Hash-based Tracking**: SHA-256 hashes for change detection
-- **Multi-target Support**: TypeScript, React, API, Database schemas
-- **Template System**: Extensible template-based generation
+#### Automation
+- GitHub Actions based drift detection on PR and push flows
+- Watch mode for local regeneration while editing specifications
+- Quality gates for blocking critical drift
+- Auto-fixing path for minor drift cases
 
-### 🔍 Drift Detection  
-- **Specification Changes**: Detects when source AE-IR changes
-- **Manual Modifications**: Identifies developer changes to generated files
-- **Structural Changes**: Finds new, deleted, or renamed files
-- **Confidence Levels**: High/medium/low confidence drift classification
-
-### ⚙️ Automation
-- **GitHub Actions**: Automated drift detection on PR/push
-- **Watch Mode**: Real-time regeneration on specification changes
-- **Quality Gates**: Prevents deployment with critical drift
-- **Auto-fixing**: Automatic resolution of minor drift issues
-
-## Architecture
-
-### Core Components
-
+### Architecture
+#### Core components
 ```text
 // Deterministic Code Generator
 export class DeterministicCodeGenerator {
@@ -51,61 +51,57 @@ export class DeterministicCodeGenerator {
   async detectDrift(): Promise<DriftDetectionResult>
 }
 
-// Drift Detection Engine  
+// Drift Detection Engine
 export class DriftDetector {
   async detectDrift(): Promise<DriftReport>
   private scanFileChanges(): Promise<FileChangeInfo[]>
 }
 ```
 
-### Supported Targets
-
+#### Supported targets
 | Target | Description | Generated Files |
 |--------|-------------|-----------------|
 | `typescript` | Type definitions and interfaces | `types/*.ts`, `schemas/*.ts` |
 | `react` | React components and forms | `components/*.tsx` |
-| `api` | API handlers and routes | `handlers/*.ts` |  
+| `api` | API handlers and routes | `handlers/*.ts` |
 | `database` | SQL schemas and ORM models | `migrations/*.sql`, `models/*.ts` |
 
-## Usage
-
-### Command Line Interface
-
-#### Basic Code Generation
+### Usage
+#### Command line interface
+##### Basic code generation
 ```bash
 # Generate TypeScript types
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/types -t typescript
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
 
-# Generate React components  
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/components -t react
+# Generate React components
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/react -t react
 
 # Generate API handlers
 pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/api -t api
 
 # Generate database schemas
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/db -t database
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/database -t database
 ```
 
-#### Drift Detection
+##### Drift detection
 ```bash
 # Check for drift in generated code
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json
 
 # Detailed drift report
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json --verbose
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --verbose
 
 # JSON output for CI/CD
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json --format json
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --format json
 ```
 
-#### Watch Mode
+##### Watch mode
 ```bash
 # Watch for changes and auto-regenerate
-pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/types -t typescript
+pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/typescript -t typescript
 ```
 
-### Scripts
-
+#### Scripts
 ```bash
 # Generate all target types
 pnpm codegen:generate
@@ -129,9 +125,8 @@ pnpm codegen:status
 pnpm codegen:clean
 ```
 
-### Helper Scripts
-
-The `scripts/codegen-tools.sh` script provides convenient batch operations:
+#### Helper script
+The `scripts/codegen-tools.sh` helper supports batch operations.
 
 ```bash
 # Generate all targets at once
@@ -144,10 +139,8 @@ The `scripts/codegen-tools.sh` script provides convenient batch operations:
 ./scripts/codegen-tools.sh watch
 ```
 
-## Configuration
-
-### Generation Options
-
+### Configuration
+#### Generation options
 ```text
 interface CodegenOptions {
   inputPath: string;                    // AE-IR JSON file
@@ -156,12 +149,11 @@ interface CodegenOptions {
   templateDir?: string;                // Custom templates
   enableDriftDetection?: boolean;      // Enable drift detection (default: true)
   preserveManualChanges?: boolean;     // Preserve manual edits (default: true)
-  hashAlgorithm?: 'sha256' | 'md5';   // Hash algorithm (default: sha256)
+  hashAlgorithm?: 'sha256' | 'md5';    // Hash algorithm (default: sha256)
 }
 ```
 
-### Drift Detection Config
-
+#### Drift detection config
 ```text
 interface DriftConfig {
   codeDir: string;                     // Generated code directory
@@ -172,26 +164,21 @@ interface DriftConfig {
 }
 ```
 
-## CI/CD Integration
+### CI/CD integration
+#### GitHub Actions workflow
+The repository includes `.github/workflows/codegen-drift-check.yml` for:
+1. Detecting drift from specification and generated code changes
+2. Regenerating outdated code
+3. Validating that generated output compiles and passes checks
+4. Posting detailed drift reports to pull requests
+5. Blocking merges when drift reaches critical severity
 
-### GitHub Actions Workflow
+#### Workflow triggers
+- Pushes to `main` that change specifications
+- Pull requests that modify specifications
+- Changes to the codegen system or templates
 
-The system includes a comprehensive GitHub Actions workflow (`.github/workflows/codegen-drift-check.yml`) that:
-
-1. **Detects Drift**: Analyzes changes in specifications and generated code
-2. **Regenerates Code**: Automatically regenerates outdated code
-3. **Validates Output**: Ensures generated code compiles and passes checks
-4. **Comments on PRs**: Provides detailed drift reports in pull requests
-5. **Quality Gates**: Prevents merging with critical drift issues
-
-### Workflow Triggers
-
-- Push to main branch with spec changes
-- Pull requests modifying specifications
-- Changes to codegen system or templates
-
-### Exit Codes
-
+#### Exit codes
 | Code | Status | Meaning |
 |------|--------|---------|
 | 0 | `no_drift` | No drift detected |
@@ -199,31 +186,28 @@ The system includes a comprehensive GitHub Actions workflow (`.github/workflows/
 | 2 | `major_drift` | Major changes, regeneration required |
 | 3 | `critical_drift` | Critical changes, immediate action required |
 
-## Drift Detection Levels
+### Drift detection levels
+#### No drift
+- Generated code matches the specification exactly
+- No manual modifications are detected
+- All expected files are present and unchanged
 
-### No Drift ✅
-- Generated code matches specification exactly
-- No manual modifications detected
-- All files present and unchanged
+#### Minor drift
+- Small manual modifications exist in generated files
+- Changes are non-critical and usually auto-fixable
 
-### Minor Drift ⚠️  
-- Small manual modifications to generated files
-- Non-critical changes that don't affect functionality
-- Can be auto-fixed in most cases
+#### Major drift
+- Significant manual changes exist in generated files
+- Multiple files are affected
+- Regeneration is recommended before merging
 
-### Major Drift 🟠
-- Significant changes to generated files
-- Multiple files modified manually
-- Regeneration recommended but not critical
+#### Critical drift
+- Specification changes are large or structural
+- Many generated files were deleted or heavily modified
+- Immediate regeneration is required
 
-### Critical Drift 🚨
-- Specification has changed significantly
-- Many files deleted or heavily modified
-- Immediate regeneration required
-
-## Development Workflow
-
-### 1. Specification Changes
+### Development workflow
+#### 1. Specification changes
 ```bash
 # Edit specification
 vim spec/my-spec.md
@@ -238,7 +222,7 @@ pnpm codegen:drift
 pnpm codegen:regen
 ```
 
-### 2. Local Development
+#### 2. Local development
 ```bash
 # Start watch mode for real-time updates
 pnpm codegen:watch
@@ -247,7 +231,7 @@ pnpm codegen:watch
 # Watch mode will automatically regenerate code
 ```
 
-### 3. Pre-commit Validation
+#### 3. Pre-commit validation
 ```bash
 # Before committing, check for drift
 pnpm codegen:drift
@@ -259,54 +243,52 @@ pnpm codegen:validate
 pnpm codegen:status
 ```
 
-## Generated File Structure
-
-### TypeScript Target
-```
+### Generated file structure
+#### TypeScript target
+```text
 generated/typescript/
-├── .codegen-manifest.json     # Generation metadata
+├── .codegen-manifest.json
 ├── types/
-│   └── domain.ts              # Domain entity types
+│   └── domain.ts
 ├── schemas/
-│   └── validation.ts          # Zod validation schemas
-└── api.ts                     # API interface definitions
+│   └── validation.ts
+└── api.ts
 ```
 
-### React Target
-```
+#### React target
+```text
 generated/react/
 ├── .codegen-manifest.json
 ├── components/
-│   ├── UserForm.tsx           # Entity form components
-│   ├── UserList.tsx           # Entity list components
+│   ├── UserForm.tsx
+│   ├── UserList.tsx
 │   ├── ProductForm.tsx
 │   └── ProductList.tsx
 ```
 
-### API Target
-```
+#### API target
+```text
 generated/api/
 ├── .codegen-manifest.json
 └── handlers/
-    ├── users_get.ts           # GET /users handler
-    ├── users_post.ts          # POST /users handler
-    └── products_get.ts        # GET /products handler
+    ├── users_get.ts
+    ├── users_post.ts
+    └── products_get.ts
 ```
 
-### Database Target
-```
+#### Database target
+```text
 generated/database/
 ├── .codegen-manifest.json
 ├── migrations/
-│   └── 001_initial_schema.sql # SQL migration scripts
+│   └── 001_initial_schema.sql
 └── models/
-    ├── User.ts                # TypeORM entity models
+    ├── User.ts
     └── Product.ts
 ```
 
-## Manifest File Format
-
-Each generated directory contains a `.codegen-manifest.json` file:
+### Manifest file format
+Each generated directory contains a `.codegen-manifest.json` file.
 
 ```text
 {
@@ -328,70 +310,61 @@ Each generated directory contains a `.codegen-manifest.json` file:
 }
 ```
 
-## Best Practices
-
-### 1. Specification Management
+### Best practices
+#### Specification management
 - Keep AE-IR files in version control
 - Use descriptive commit messages when updating specs
 - Tag specification versions for release management
 
-### 2. Generated Code Handling
-- **DO NOT** manually edit generated files
+#### Generated code handling
+- Do not manually edit generated files
 - Add `// DO NOT MODIFY` headers to generated files
-- Use `.gitignore` for generated directories if not committing
+- Use `.gitignore` for generated directories when they are not committed
 
-### 3. Drift Management
+#### Drift management
 - Run drift detection regularly during development
-- Address drift issues promptly to avoid accumulation
-- Use CI/CD quality gates to prevent drift in production
+- Address drift promptly to avoid accumulation
+- Use CI/CD quality gates to block drift from reaching production
 
-### 4. Template Customization
+#### Template customization
 - Create organization-specific templates
-- Version control template files
-- Test template changes with existing specifications
+- Keep template files in version control
+- Test template changes against existing specifications
 
-## Troubleshooting
-
-### Common Issues
-
-#### "No AE-IR file found"
+### Troubleshooting
+#### Common issues
+##### No AE-IR file found
 ```bash
-# Solution: Compile specification first
+# Solution: compile the specification first
 pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
 ```
 
-#### "Drift detection failed"
+##### Drift detection failed
 ```bash
-# Solution: Check manifest file exists
+# Solution: verify that the manifest exists
 ls generated/*/.codegen-manifest.json
 
-# Regenerate if manifest missing
+# Regenerate if the manifest is missing
 pnpm codegen:generate
 ```
 
-#### "Generated code doesn't compile"
+##### Generated code does not compile
 ```bash
-# Solution: Validate and regenerate
+# Solution: validate and regenerate
 pnpm codegen:validate
 pnpm codegen:regen
 ```
 
-### Debug Mode
-
-Enable verbose output for detailed debugging:
-
+#### Debug mode
 ```bash
 # Verbose drift detection
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json --verbose
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --verbose
 
 # Verbose generation
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/types -t typescript --verbose
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --verbose
 ```
 
-### Manual Recovery
-
-If the system gets into an inconsistent state:
-
+#### Manual recovery
 ```bash
 # Clean all generated code
 pnpm codegen:clean
@@ -403,20 +376,15 @@ pnpm codegen:generate
 pnpm codegen:status
 ```
 
-## Integration with Other Systems
-
-### Spec Compiler Integration
-The codegen system works seamlessly with the AE-Spec compiler:
-
+### Integration with other systems
+#### Spec compiler integration
 ```bash
 # Compile spec and generate code in one workflow
 pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/types -t typescript
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
 ```
 
-### Build System Integration
-Add to your build pipeline:
-
+#### Build system integration
 ```text
 {
   "scripts": {
@@ -427,17 +395,414 @@ Add to your build pipeline:
 }
 ```
 
-## Metrics and Monitoring
-
+### Metrics and monitoring
 The system tracks:
-- Generation success/failure rates
+- Generation success and failure rates
 - Drift detection frequency and severity
 - Code validation results
-- Performance metrics (generation time, file counts)
+- Performance metrics such as generation time and file counts
 
 Access metrics through:
 - GitHub Actions artifacts
 - CI/CD dashboard integration
 - Local status reports
 
-This comprehensive system ensures that your generated code stays consistent, up-to-date, and reliable throughout the development lifecycle.
+The deterministic code generation system is intended to keep generated code consistent, up to date, and reliable throughout the development lifecycle.
+
+## 日本語
+
+### 概要
+AE-Framework には、同一の AE-IR 入力に対して安定した code output を維持し、生成済み code が期待状態から逸脱した場合に drift を検出する deterministic code generation system が含まれます。
+
+### システム範囲
+この system は次の要素で構成されます。
+- AE-IR ベースの出力を生成する deterministic code generator
+- 生成 artifact の drift を検出する drift detection engine
+- 検出と再生成を自動化する CI/CD integration
+- local 開発 workflow 向けの CLI command と helper script
+
+### 主な機能
+#### Deterministic generation
+- 同一入力から一貫した output を生成する
+- SHA-256 hash による change detection を行う
+- TypeScript、React、API、database 出力を対象にした multi-target support
+- 拡張可能な template-based generation
+
+#### Drift detection
+- AE-IR specification の変更を検出する
+- 生成 file に対する manual modification を特定する
+- 新規、削除、rename された generated file を検出する
+- confidence と severity に基づいて drift を分類する
+
+#### Automation
+- PR / push flow 上で GitHub Actions により drift を検出する
+- specification 編集中の local regeneration 用 watch mode を提供する
+- critical drift を block する quality gate を提供する
+- minor drift 向けの auto-fix path を提供する
+
+### アーキテクチャ
+#### Core components
+```text
+// Deterministic Code Generator
+export class DeterministicCodeGenerator {
+  async generate(): Promise<CodegenManifest>
+  async detectDrift(): Promise<DriftDetectionResult>
+}
+
+// Drift Detection Engine
+export class DriftDetector {
+  async detectDrift(): Promise<DriftReport>
+  private scanFileChanges(): Promise<FileChangeInfo[]>
+}
+```
+
+#### 対応 target
+| Target | 説明 | 生成される file |
+|--------|------|-----------------|
+| `typescript` | 型定義と interface | `types/*.ts`, `schemas/*.ts` |
+| `react` | React component と form | `components/*.tsx` |
+| `api` | API handler と route | `handlers/*.ts` |
+| `database` | SQL schema と ORM model | `migrations/*.sql`, `models/*.ts` |
+
+### 使い方
+#### Command line interface
+##### 基本的な code generation
+```bash
+# TypeScript types を生成
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
+
+# React components を生成
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/react -t react
+
+# API handlers を生成
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/api -t api
+
+# Database schemas を生成
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/database -t database
+```
+
+##### Drift detection
+```bash
+# generated code の drift を確認
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json
+
+# 詳細な drift report
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --verbose
+
+# CI/CD 向け JSON 出力
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --format json
+```
+
+##### Watch mode
+```bash
+# change を watch して自動再生成
+pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/typescript -t typescript
+```
+
+#### Scripts
+```bash
+# すべての target を生成
+pnpm codegen:generate
+
+# 全 target の drift を確認
+pnpm codegen:drift
+
+# drift した code のみ再生成
+pnpm codegen:regen
+
+# 開発用 watch mode
+pnpm codegen:watch
+
+# generated code を検証
+pnpm codegen:validate
+
+# generation status を表示
+pnpm codegen:status
+
+# generated code を全削除
+pnpm codegen:clean
+```
+
+#### Helper script
+`scripts/codegen-tools.sh` は batch operation を補助します。
+
+```bash
+# 全 target を一括生成
+./scripts/codegen-tools.sh generate-all
+
+# 全 generated code の drift を確認
+./scripts/codegen-tools.sh check-drift
+
+# change を watch して自動再生成
+./scripts/codegen-tools.sh watch
+```
+
+### 設定
+#### Generation options
+```text
+interface CodegenOptions {
+  inputPath: string;                    // AE-IR JSON file
+  outputDir: string;                   // Output directory
+  target: 'typescript' | 'react' | 'api' | 'database';
+  templateDir?: string;                // Custom templates
+  enableDriftDetection?: boolean;      // Enable drift detection (default: true)
+  preserveManualChanges?: boolean;     // Preserve manual edits (default: true)
+  hashAlgorithm?: 'sha256' | 'md5';    // Hash algorithm (default: sha256)
+}
+```
+
+#### Drift detection config
+```text
+interface DriftConfig {
+  codeDir: string;                     // Generated code directory
+  specPath: string;                    // AE-IR specification file
+  ignorePatterns?: string[];           // Files to ignore
+  verbose?: boolean;                   // Detailed reporting
+  autoFix?: boolean;                   // Auto-fix minor issues
+}
+```
+
+### CI/CD integration
+#### GitHub Actions workflow
+repository には `.github/workflows/codegen-drift-check.yml` が含まれており、次を実行します。
+1. specification と generated code の変更から drift を検出する
+2. outdated code を再生成する
+3. generated output が compile / check を通ることを検証する
+4. pull request に詳細な drift report を投稿する
+5. drift が critical severity の場合は merge を block する
+
+#### Workflow triggers
+- specification change を含む `main` への push
+- specification を変更する pull request
+- codegen system または template の変更
+
+#### Exit code
+| Code | Status | 意味 |
+|------|--------|------|
+| 0 | `no_drift` | drift なし |
+| 1 | `minor_drift` | 軽微な変更。再生成推奨 |
+| 2 | `major_drift` | 大きな変更。再生成必須 |
+| 3 | `critical_drift` | 重大な変更。即時対応が必要 |
+
+### Drift detection levels
+#### No drift
+- generated code が specification と完全一致する
+- manual modification が検出されない
+- 想定 file がすべて存在し未変更である
+
+#### Minor drift
+- generated file に軽微な manual modification がある
+- non-critical な change で、多くは auto-fix 可能
+
+#### Major drift
+- generated file に大きな manual change がある
+- 複数 file が影響を受けている
+- merge 前に再生成することが推奨される
+
+#### Critical drift
+- specification change が大きい、または構造的である
+- 多数の generated file が削除または大幅変更されている
+- 即時再生成が必要である
+
+### 開発 workflow
+#### 1. Specification change
+```bash
+# specification を編集
+vim spec/my-spec.md
+
+# AE-IR に compile
+pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
+
+# 再生成が必要な対象を確認
+pnpm codegen:drift
+
+# 影響範囲を再生成
+pnpm codegen:regen
+```
+
+#### 2. Local development
+```bash
+# watch mode を開始
+pnpm codegen:watch
+
+# 別 terminal で specification を編集
+# watch mode が自動再生成する
+```
+
+#### 3. Pre-commit validation
+```bash
+# commit 前に drift を確認
+pnpm codegen:drift
+
+# generated code が compile するか確認
+pnpm codegen:validate
+
+# generation status を確認
+pnpm codegen:status
+```
+
+### 生成 file 構造
+#### TypeScript target
+```text
+generated/typescript/
+├── .codegen-manifest.json
+├── types/
+│   └── domain.ts
+├── schemas/
+│   └── validation.ts
+└── api.ts
+```
+
+#### React target
+```text
+generated/react/
+├── .codegen-manifest.json
+├── components/
+│   ├── UserForm.tsx
+│   ├── UserList.tsx
+│   ├── ProductForm.tsx
+│   └── ProductList.tsx
+```
+
+#### API target
+```text
+generated/api/
+├── .codegen-manifest.json
+└── handlers/
+    ├── users_get.ts
+    ├── users_post.ts
+    └── products_get.ts
+```
+
+#### Database target
+```text
+generated/database/
+├── .codegen-manifest.json
+├── migrations/
+│   └── 001_initial_schema.sql
+└── models/
+    ├── User.ts
+    └── Product.ts
+```
+
+### Manifest file format
+各 generated directory には `.codegen-manifest.json` が含まれます。
+
+```text
+{
+  "metadata": {
+    "generatedAt": "2025-01-20T10:00:00Z",
+    "specHash": "sha256:abc123...",
+    "templateHash": "sha256:def456...",
+    "options": { /* generation options */ }
+  },
+  "files": [
+    {
+      "filePath": "types/domain.ts",
+      "content": "...",
+      "hash": "sha256:...",
+      "timestamp": "2025-01-20T10:00:00Z",
+      "specHash": "sha256:..."
+    }
+  ]
+}
+```
+
+### ベストプラクティス
+#### Specification management
+- AE-IR file を version control に含める
+- specification 更新時は説明的な commit message を使う
+- release 管理用に specification version を tag する
+
+#### Generated code handling
+- generated file を手動編集しない
+- generated file に `// DO NOT MODIFY` header を追加する
+- commit しない generated directory には `.gitignore` を適用する
+
+#### Drift management
+- 開発中は定期的に drift detection を実行する
+- drift は蓄積させずに早めに解消する
+- CI/CD quality gate で production への drift 流入を防ぐ
+
+#### Template customization
+- 組織固有の template を作成する
+- template file を version control に置く
+- template change は既存 specification に対して検証する
+
+### Troubleshooting
+#### よくある問題
+##### AE-IR file が見つからない
+```bash
+# Solution: 先に specification を compile する
+pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
+```
+
+##### Drift detection failed
+```bash
+# Solution: manifest の存在を確認する
+ls generated/*/.codegen-manifest.json
+
+# manifest が無ければ再生成
+pnpm codegen:generate
+```
+
+##### Generated code does not compile
+```bash
+# Solution: validate と regenerate を実行
+pnpm codegen:validate
+pnpm codegen:regen
+```
+
+#### Debug mode
+```bash
+# Verbose drift detection
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --verbose
+
+# Verbose generation
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --verbose
+```
+
+#### Manual recovery
+```bash
+# generated code を全削除
+pnpm codegen:clean
+
+# すべて再生成
+pnpm codegen:generate
+
+# status を確認
+pnpm codegen:status
+```
+
+### 他 system との統合
+#### Spec compiler integration
+```bash
+# spec compile と code generation を連続実行
+pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
+```
+
+#### Build system integration
+```text
+{
+  "scripts": {
+    "prebuild": "pnpm codegen:drift && pnpm codegen:validate",
+    "build": "tsc",
+    "postbuild": "pnpm codegen:status"
+  }
+}
+```
+
+### Metrics and monitoring
+この system は次を追跡します。
+- generation success / failure rate
+- drift detection の頻度と severity
+- code validation result
+- generation time や file count などの performance metric
+
+参照先:
+- GitHub Actions artifact
+- CI/CD dashboard integration
+- local status report
+
+deterministic code generation system は、開発 lifecycle 全体で generated code を一貫・最新・信頼可能な状態に維持することを目的とします。
