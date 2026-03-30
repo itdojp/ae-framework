@@ -71,34 +71,34 @@ export class DriftDetector {
 ##### Basic code generation
 ```bash
 # Generate TypeScript types
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/types -t typescript
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
 
 # Generate React components
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/components -t react
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/react -t react
 
 # Generate API handlers
 pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/api -t api
 
 # Generate database schemas
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/db -t database
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/database -t database
 ```
 
 ##### Drift detection
 ```bash
 # Check for drift in generated code
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json
 
 # Detailed drift report
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json --verbose
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --verbose
 
 # JSON output for CI/CD
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json --format json
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --format json
 ```
 
 ##### Watch mode
 ```bash
 # Watch for changes and auto-regenerate
-pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/types -t typescript
+pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/typescript -t typescript
 ```
 
 #### Scripts
@@ -358,10 +358,10 @@ pnpm codegen:regen
 #### Debug mode
 ```bash
 # Verbose drift detection
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json --verbose
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --verbose
 
 # Verbose generation
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/types -t typescript --verbose
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --verbose
 ```
 
 #### Manual recovery
@@ -381,7 +381,7 @@ pnpm codegen:status
 ```bash
 # Compile spec and generate code in one workflow
 pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/types -t typescript
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
 ```
 
 #### Build system integration
@@ -441,7 +441,7 @@ AE-Framework には、同一の AE-IR 入力に対して安定した code output
 - minor drift 向けの auto-fix path を提供する
 
 ### アーキテクチャ
-#### Core component
+#### Core components
 ```text
 // Deterministic Code Generator
 export class DeterministicCodeGenerator {
@@ -469,37 +469,37 @@ export class DriftDetector {
 ##### 基本的な code generation
 ```bash
 # TypeScript types を生成
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/types -t typescript
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
 
 # React components を生成
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/components -t react
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/react -t react
 
 # API handlers を生成
 pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/api -t api
 
 # Database schemas を生成
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/db -t database
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/database -t database
 ```
 
 ##### Drift detection
 ```bash
 # generated code の drift を確認
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json
 
 # 詳細な drift report
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json --verbose
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --verbose
 
 # CI/CD 向け JSON 出力
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json --format json
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --format json
 ```
 
 ##### Watch mode
 ```bash
 # change を watch して自動再生成
-pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/types -t typescript
+pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/typescript -t typescript
 ```
 
-#### Script
+#### Scripts
 ```bash
 # すべての target を生成
 pnpm codegen:generate
@@ -538,7 +538,7 @@ pnpm codegen:clean
 ```
 
 ### 設定
-#### Generation option
+#### Generation options
 ```text
 interface CodegenOptions {
   inputPath: string;                    // AE-IR JSON file
@@ -571,7 +571,7 @@ repository には `.github/workflows/codegen-drift-check.yml` が含まれてお
 4. pull request に詳細な drift report を投稿する
 5. drift が critical severity の場合は merge を block する
 
-#### Workflow trigger
+#### Workflow triggers
 - specification change を含む `main` への push
 - specification を変更する pull request
 - codegen system または template の変更
@@ -584,7 +584,7 @@ repository には `.github/workflows/codegen-drift-check.yml` が含まれてお
 | 2 | `major_drift` | 大きな変更。再生成必須 |
 | 3 | `critical_drift` | 重大な変更。即時対応が必要 |
 
-### Drift detection level
+### Drift detection levels
 #### No drift
 - generated code が specification と完全一致する
 - manual modification が検出されない
@@ -756,10 +756,10 @@ pnpm codegen:regen
 #### Debug mode
 ```bash
 # Verbose drift detection
-pnpm ae-framework codegen drift -d generated/types -s .ae/ae-ir.json --verbose
+pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --verbose
 
 # Verbose generation
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/types -t typescript --verbose
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --verbose
 ```
 
 #### Manual recovery
@@ -779,7 +779,7 @@ pnpm codegen:status
 ```bash
 # spec compile と code generation を連続実行
 pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/types -t typescript
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
 ```
 
 #### Build system integration
