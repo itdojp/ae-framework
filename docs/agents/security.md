@@ -17,7 +17,7 @@ lastVerified: '2026-03-31'
 
 ### When to use
 - when security-oriented jobs fail, including scan, audit, and secrets lanes
-- when dependency updates need a minimum security review before requesting merge
+- when dependency updates need a minimum security review before requesting a merge
 
 ### What to load (primary sources)
 - `SECURITY.md`
@@ -87,4 +87,4 @@ pnpm -s run security:secrets
 ### Escalation / follow-up
 - 誤検知の可能性がある場合でも、除外根拠を PR または incident log に明記する
 - 高リスク変更では、`run-security` ラベル運用と最新の `policy-gate` 判定結果をあわせて記録する
-- secrets 検知や high severity の dependency issue が確定した場合は、merge を止めて `SECURITY.md` の repository security process に従って escalate する
+- secrets 検知や high-severity dependency issue が確定した場合は、merge を止めて `SECURITY.md` の repository security process に従って escalate する
