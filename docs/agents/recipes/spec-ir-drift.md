@@ -17,8 +17,8 @@ lastVerified: '2026-03-31'
 
 ### When to use
 - when you need a focused replay after changing spec files
-- when you need to confirm whether a failure comes from spec validation or generated drift
-- when you need to separate generated diffs from manual edits before review
+- when you need to confirm whether a failure comes from spec validation or codegen drift
+- when you need to separate codegen diffs from manual edits before review
 
 ### What to load (primary sources)
 - `.github/workflows/spec-validation.yml`
@@ -72,7 +72,7 @@ gh pr checks <PR_NUMBER> --required
 
 ### When to use
 - spec file 変更後に、focused な再確認をしたいとき
-- failure が spec validation 由来か generated drift 由来かを切り分けたいとき
+- failure が spec validation 由来か codegen drift 由来かを切り分けたいとき
 - review 前に、生成差分と手動編集差分を分離したいとき
 
 ### What to load (primary sources)
