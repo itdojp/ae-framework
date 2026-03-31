@@ -31,8 +31,8 @@ lastVerified: '2026-03-31'
 
 ### Contract rules (v1)
 - when `shouldBlockProgress=false`, provide at least one `nextActions` entry
-- when `shouldBlockProgress=true`, provide a stop reason, the minimum human action, and at least one `nextActions` entry
-- for blocked responses, write the minimum human action directly in `warnings[0]`
+- when `shouldBlockProgress=true`, provide an explicit stop reason or required input in `warnings[0]` and at least one `nextActions` entry with unblock steps
+- for blocked responses, `warnings` must state why progress is blocked or what input is required; concrete restart steps or minimum human actions belong in `nextActions`
 - do not use open-ended questions such as "What do you want to do?"
 - when choices are needed, restrict them to 2-4 options and mark one option as recommended
 
@@ -79,7 +79,7 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
     "gh pr edit 1234 --add-label enforce-testing --add-label run-security"
   ],
   "warnings": [
-    "Add labels: enforce-testing, run-security"
+    "REQUIRED_INPUT: required-labels=enforce-testing,run-security"
   ],
   "shouldBlockProgress": true,
   "blockingReason": "missing-policy-labels",
@@ -108,8 +108,8 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 
 ### Contract rules (v1)
 - `shouldBlockProgress=false` のときは `nextActions` を 1 件以上にする
-- `shouldBlockProgress=true` のときは停止理由、人間の最小 1 手、`nextActions` を 1 件以上明示する
-- blocked 応答では、人間の最小 1 手を `warnings[0]` にそのまま書く
+- `shouldBlockProgress=true` のときは、停止理由または必要入力を `warnings[0]` に明示し、解除手順を含む `nextActions` を 1 件以上用意する
+- blocked 応答では、`warnings` に停止理由や必要入力を書き、具体的な再開手順や人間の最小 1 手は `nextActions` に置く
 - 「どうしますか？」のような open-ended question は使わない
 - 選択肢が必要な場合は 2〜4 個に制限し、推奨案を 1 つ明示する
 
@@ -156,7 +156,7 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
     "gh pr edit 1234 --add-label enforce-testing --add-label run-security"
   ],
   "warnings": [
-    "Add labels: enforce-testing, run-security"
+    "REQUIRED_INPUT: required-labels=enforce-testing,run-security"
   ],
   "shouldBlockProgress": true,
   "blockingReason": "missing-policy-labels",
