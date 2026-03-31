@@ -42,7 +42,9 @@ pnpm -s run spec:check:tla
 
 ### Artifacts to check
 - `artifacts/formal/*`
-- `artifacts/quality/formal-summary*`
+- `artifacts/formal/formal-summary-v1.json`
+- `artifacts/formal/formal-summary-v2.json`
+- `artifacts/hermetic-reports/formal/summary.json`
 - Formal Aggregate summary in the PR comment stream
 
 ### Escalation / follow-up
@@ -80,7 +82,9 @@ pnpm -s run spec:check:tla
 
 ### Artifacts to check
 - `artifacts/formal/*`
-- `artifacts/quality/formal-summary*`
+- `artifacts/formal/formal-summary-v1.json`
+- `artifacts/formal/formal-summary-v2.json`
+- `artifacts/hermetic-reports/formal/summary.json`
 - PR comment stream 上の Formal Aggregate summary
 
 ### Escalation / follow-up
