@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/pr-summary-tool.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-21'
+lastVerified: '2026-04-01'
 ---
 # PR Summary Aggregation (One Page)
 
@@ -11,21 +11,18 @@ lastVerified: '2026-03-21'
 
 ---
 
-## 日本語（概要）
+## English
 
-PR に 1 ページの品質サマリを集約して表示するための方針です。
-- セクション: verify-lite baseline、Discovery Pack、assurance、失敗 GWT、アダプター要約、フォーマル結果、トレース ID
-- current main の direct input: `artifacts/summary/combined.json`、`artifacts/verify-lite/verify-lite-run-summary.json`、`coverage/coverage-summary.json` または `artifacts/coverage/coverage-summary.json`、`artifacts/domain/replay.summary.json`、`artifacts/bdd/scenarios.json`、`artifacts/properties/summary.json`、`artifacts/properties/ltl-suggestions.json`、`artifacts/formal/gwt.summary.json`、optional `artifacts/assurance/assurance-summary.json` / `artifacts/quality/quality-scorecard.json` / `artifacts/formal/formal-aggregate.json` / `formal/summary.json` / `artifacts/hermetic-reports/formal/summary.json`
-- 出力: `artifacts/summary/PR_SUMMARY.md` を baseline とし、`pr-ci-status-comment.yml` が `harness-health` / `change-package` / `change-package-validation` / `plan-artifact` / `plan-artifact-validation` / `hook-feedback` / `quality-scorecard` を追記
+### Overview
+- This document defines the current one-page PR summary policy for the renderer and workflow append pipeline.
+- Baseline sections include the verify-lite summary, Discovery Pack status, assurance, failing GWT references, adapter summaries, formal status, and trace IDs.
+- Current direct inputs are `artifacts/summary/combined.json`, `artifacts/verify-lite/verify-lite-run-summary.json`, `coverage/coverage-summary.json` or `artifacts/coverage/coverage-summary.json`, `artifacts/domain/replay.summary.json`, `artifacts/bdd/scenarios.json`, `artifacts/properties/summary.json`, `artifacts/properties/ltl-suggestions.json`, `artifacts/formal/gwt.summary.json`, and optional `artifacts/assurance/assurance-summary.json`, `artifacts/quality/quality-scorecard.json`, `artifacts/formal/formal-aggregate.json`, legacy `formal/summary.json`, or `artifacts/hermetic-reports/formal/summary.json`.
+- The renderer writes the baseline Markdown to `artifacts/summary/PR_SUMMARY.md`, and `pr-ci-status-comment.yml` appends `harness-health`, `change-package`, `change-package-validation`, `plan-artifact`, `plan-artifact-validation`, `hook-feedback`, and `quality-scorecard` Markdown artifacts.
 
-例やフォーマットは以下の英語セクションを参照してください。
-
-最小1行サマリ（例）
+Minimal one-line summary example:
 ```
 • CI: ✅ tests 124/124, coverage 84% (≥80), typecov 66% (baseline 65); a11y 96 (≥95), perf 78 (≥75)
 ```
-
-## English (Detailed)
 
 ### Goal
 - Provide a concise, machine-and-human friendly one-page PR summary for the current renderer and workflow append pipeline.
@@ -171,7 +168,19 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
 
 ---
 
-## 日本語（詳細）
+## 日本語
+
+### 概要
+PR に 1 ページの品質サマリを集約して表示するための方針です。
+- セクション: verify-lite baseline、Discovery Pack、assurance、失敗 GWT、アダプター要約、フォーマル結果、トレース ID
+- current main の direct input: `artifacts/summary/combined.json`、`artifacts/verify-lite/verify-lite-run-summary.json`、`coverage/coverage-summary.json` または `artifacts/coverage/coverage-summary.json`、`artifacts/domain/replay.summary.json`、`artifacts/bdd/scenarios.json`、`artifacts/properties/summary.json`、`artifacts/properties/ltl-suggestions.json`、`artifacts/formal/gwt.summary.json`、optional `artifacts/assurance/assurance-summary.json` / `artifacts/quality/quality-scorecard.json` / `artifacts/formal/formal-aggregate.json` / `formal/summary.json` / `artifacts/hermetic-reports/formal/summary.json`
+- 出力: `artifacts/summary/PR_SUMMARY.md` を baseline とし、`pr-ci-status-comment.yml` が `harness-health` / `change-package` / `change-package-validation` / `plan-artifact` / `plan-artifact-validation` / `hook-feedback` / `quality-scorecard` を追記
+
+最小1行サマリ（例）
+```
+• CI: ✅ tests 124/124, coverage 84% (≥80), typecov 66% (baseline 65); a11y 96 (≥95), perf 78 (≥75)
+```
+
 
 ### 目的
 PR に 1 ページの品質サマリを生成し、機械/人間双方が読みやすい形で可視化します。
