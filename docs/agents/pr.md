@@ -2,6 +2,7 @@
 docRole: derived
 canonicalSource:
 - docs/ci/pr-automation.md
+- docs/ci-policy.md
 - policy/risk-policy.yml
 lastVerified: '2026-03-31'
 ---
