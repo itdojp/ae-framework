@@ -14,7 +14,7 @@ lastVerified: '2026-03-31'
 
 ## English
 
-This is the minimal adapter that normalizes existing CI and evidence artifacts into short feedback that Claude Code and Codex can feed back into the next continuation step without manual reshaping.
+This is the minimal adapter that normalizes existing CI and evidence artifacts into short feedback that Claude Code and Codex (CodeX) can feed back into the next continuation step without manual reshaping.
 
 ### Standard outputs
 
@@ -74,9 +74,9 @@ pnpm run hook-feedback:build \
 
 For the next assistant input, attach `artifacts/agents/hook-feedback.md` as-is. If the hook consumes structured data, prefer `artifacts/agents/hook-feedback.json`.
 
-### Codex continuation usage
+### Codex (CodeX) continuation usage
 
-In Codex continuation flows, add `artifacts/agents/hook-feedback.json` as a preprocessing artifact and prioritize these fields:
+In Codex (CodeX) continuation flows, add `artifacts/agents/hook-feedback.json` as a preprocessing artifact and prioritize these fields:
 
 1. `status`
 2. `blockingReasons[]`
@@ -101,7 +101,7 @@ jq '{status, blockingReasons, nextActions, reproCommands}' artifacts/agents/hook
 
 ## 日本語
 
-既存の CI / evidence artifact を、Claude Code や Codex が次の continuation step にそのまま再入力できる短い feedback に正規化する最小 adapter です。
+既存の CI / evidence artifact を、Claude Code や Codex（CodeX）が次の continuation step にそのまま再入力できる短い feedback に正規化する最小 adapter です。
 
 ### Standard outputs
 
@@ -161,9 +161,9 @@ pnpm run hook-feedback:build \
 
 次の assistant 入力には `artifacts/agents/hook-feedback.md` をそのまま添付すれば足ります。構造化データを扱う hook では `artifacts/agents/hook-feedback.json` を優先します。
 
-### Codex continuation usage
+### Codex（CodeX） continuation usage
 
-Codex continuation flow では `artifacts/agents/hook-feedback.json` を前処理 artifact として追加し、次のフィールドを優先的に使います。
+Codex（CodeX） continuation flow では `artifacts/agents/hook-feedback.json` を前処理 artifact として追加し、次のフィールドを優先的に使います。
 
 1. `status`
 2. `blockingReasons[]`
