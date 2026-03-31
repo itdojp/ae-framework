@@ -86,6 +86,6 @@ pnpm -s run spec:codegen
 - PR 上の Spec Validation と Code Generation の結果
 
 ### Escalation / follow-up
-- spec 変更が広範囲な場合は、生成差分と手動編集差分を可能な限り PR 分割する
+- spec 変更が広範囲な場合は、生成差分と手動編集差分を分けて、可能な限り PR を分割する
 - schema compatibility を壊す変更は、review 依頼前に移行方針を PR 本文へ明記する
 - `spec:codegen` が無関係なファイルまで書き換える場合は、まず生成元を特定し、drift cleanup と意味変更を混在させない
