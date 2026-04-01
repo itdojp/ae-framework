@@ -33,7 +33,7 @@ This runbook describes the lowest-friction way to operate formal verification in
 ### CLI Runners (non-blocking)
 - `pnpm run verify:conformance` - conformance summary runner. Use together with `ae conformance verify` when you need a narrower replay/conformance check.
 - `pnpm run verify:alloy` - Alloy runner. Resolves `ALLOY_RUN_CMD`, `ALLOY_JAR`, or the `alloy` CLI.
-- `pnpm run verify:tla -- --engine=apalache|tlc` - TLA runner. Resolves `TLA_TOOLS_JAR` or `apalache`.
+- `pnpm run verify:tla -- --engine=apalache|tlc` - TLA runner. Resolves `TLA_TOOLS_JAR` or `apalache-mc`.
 - `pnpm run verify:smt -- --solver=z3|cvc5` - SMT runner.
 - `pnpm run verify:kani` - Kani presence summary runner.
 - `pnpm run verify:spin` - Promela/SPIN runner.
@@ -61,7 +61,7 @@ This runbook describes the lowest-friction way to operate formal verification in
 
 ### Reproduce locally
 - Tool availability: `pnpm run tools:formal:check`.
-- Apalache (when installed): `pnpm run verify:tla -- --engine=apalache`.
+- Apalache (`apalache-mc` when installed): `pnpm run verify:tla -- --engine=apalache`.
 - TLC (when `TLA_TOOLS_JAR` is set): `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`.
 - SMT (when `z3` or `cvc5` is available): `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`.
 
@@ -252,7 +252,7 @@ jobs:
 ### CLI ランナー（非ブロッキング）
 - `pnpm run verify:conformance` - conformance summary runner。必要に応じて `ae conformance verify` と併用する。
 - `pnpm run verify:alloy` - Alloy runner。`ALLOY_RUN_CMD`、`ALLOY_JAR`、`alloy` CLI を順に解決する。
-- `pnpm run verify:tla -- --engine=apalache|tlc` - TLA runner。`TLA_TOOLS_JAR` または `apalache` を解決する。
+- `pnpm run verify:tla -- --engine=apalache|tlc` - TLA runner。`TLA_TOOLS_JAR` または `apalache-mc` を解決する。
 - `pnpm run verify:smt -- --solver=z3|cvc5` - SMT runner。
 - `pnpm run verify:kani` - Kani presence summary runner。
 - `pnpm run verify:spin` - Promela / SPIN runner。
@@ -280,7 +280,7 @@ jobs:
 
 ### ローカル再現
 - ツール有無の確認: `pnpm run tools:formal:check`
-- Apalache（導入済みの場合）: `pnpm run verify:tla -- --engine=apalache`
+- Apalache（`apalache-mc` 導入済みの場合）: `pnpm run verify:tla -- --engine=apalache`
 - TLC（`TLA_TOOLS_JAR` 設定時）: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`
 - SMT（`z3` または `cvc5` がある場合）: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
 
