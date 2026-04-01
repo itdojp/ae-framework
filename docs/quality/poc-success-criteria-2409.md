@@ -135,7 +135,6 @@ RUNSET="$(cat artifacts/bench-ts-runset.txt)"
 node scripts/quality/bench-compare.mjs \
   --baseline "${RUNSET}" \
   --candidate ts-self="${RUNSET}" \
-  --criteria configs/bench-criteria.default.json \
   --out-json artifacts/bench-compare.json \
   --out-md artifacts/bench-compare.md
 ```
@@ -321,7 +320,6 @@ RUNSET="$(cat artifacts/bench-ts-runset.txt)"
 node scripts/quality/bench-compare.mjs \
   --baseline "${RUNSET}" \
   --candidate ts-self="${RUNSET}" \
-  --criteria configs/bench-criteria.default.json \
   --out-json artifacts/bench-compare.json \
   --out-md artifacts/bench-compare.md
 ```
