@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ASSURANCE-MODEL.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-21'
+lastVerified: '2026-04-02'
 ---
 # Assurance Lanes
 
@@ -136,14 +136,14 @@ Deferred or incomplete:
 
 ## 日本語
 
-## 1. 目的
+### 1. 目的
 
 `assurance-profile/v1` が要求する `requiredLanes` を、実装・CI・成果物の間で同じ意味に固定するための基準文書です。
 
 この文書では次を定義します。
-- canonical validation lanes
+- canonical validation lanes（正規の検証レーン）
 - 最小 independence rule
-- provenance minimum
+- provenance minimum expectations
 - counterexample linkage convention
 
 詳細な achieved level 判定は後続フェーズで追加します。既定運用は report-only ですが、`enforce-assurance` ラベル時は strict assurance enforcement ステップを有効化します。
@@ -245,7 +245,7 @@ main 実装済み:
 - 全 producer の claim-level linkage 自動解決
 - lineage の厳密証明
 
-## 7. 関連資料
+### 7. 関連資料
 
 - `docs/quality/ASSURANCE-MODEL.md`
 - `docs/quality/assurance-profile.md`
