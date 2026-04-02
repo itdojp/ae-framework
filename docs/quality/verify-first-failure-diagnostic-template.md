@@ -109,7 +109,7 @@ lastVerified: '2026-03-27'
 
 ### 4. 仕様・ポリシーとのひも付け
 
-- 関連 spec path:
+- 関連 spec path (複数可):
 - 関連 acceptance criteria:
 - 関連 policy / contract:
 
@@ -122,12 +122,12 @@ lastVerified: '2026-03-27'
 
 - 即時修正:
 - 追加 tests / checks:
-- Rollback plan (必要なら):
+- ロールバック計画 (必要なら):
 
 ### 7. 証跡
 
 - CI run URL:
-- Artifact path:
+- Artifact path (複数可):
 - Log excerpt location:
 
 ### 8. 決定
