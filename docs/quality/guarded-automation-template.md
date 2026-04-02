@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/ci/pr-automation.md
 - policy/risk-policy.yml
-lastVerified: '2026-03-27'
+lastVerified: '2026-04-03'
 ---
 # Guarded Automation Template
 
@@ -70,33 +70,33 @@ Guarded Automation Decision
 
 ## 対象範囲
 - LLM または agent workflow が作成した PR に適用します。
-- このテンプレートは policy の雛形であり、各 repository ごとに拡張できます。
+- このテンプレートはポリシーの雛形であり、各 repository ごとに拡張できます。
 
 ## 許可される自動化（安全側）
 - spec または blueprint の下書き作成
 - コードとテストの生成
 - `verify-lite` モードでの CI 実行
-- PR summary、artifact、関連リンクなどの要約投稿
+- PR summary、成果物、関連リンクなどの要約投稿
 
 ## 人間が必ず実施する手順（自動化しない）
-- diff と evidence を確認したうえでの merge 承認
+- diff と証跡を確認したうえでの merge 承認
 - security、data、infrastructure など高リスク変更の受理または却下
 - coverage、performance、accessibility など threshold 変更への sign-off
 
-## merge 前に必要な evidence
+## merge 前に必要な証跡
 - `verify-lite` / `policy-gate` / `gate` の結果を含む PR summary
-- report、trace、trend など artifact へのリンク
-- 振る舞い変更がある場合の rollback plan
+- report、trace、trend など成果物へのリンク
+- 振る舞い変更がある場合のロールバック計画
 
-## gate policy（最低限）
+## ゲートポリシー（最低限）
 - `verify-lite` が green であること
 - `policy-gate` が green であること
 - `gate`（`Copilot Review Gate`）が green であること
-- required な label-gate があれば、それを満たしていること
+- 必須の label-gate があれば、それを満たしていること
 
 ## 例外処理
 - required gate が実行できない場合は、理由を文書化し、follow-up issue を起票する
-- 緊急修正であっても、merge 後 review と事後 evidence は必須
+- 緊急修正であっても、merge 後 review と事後証跡は必須
 
 ## 判断記録（PR コメントへ転記）
 
