@@ -64,7 +64,7 @@ Related documents:
 | Postconditions | state assertions / event assertions / integration tests | `reports/quality-gates/quality-report-*.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 | Invariants | property tests / runtime conformance monitors / DB constraints | `artifacts/properties/summary.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 
-### PR reporting
+### PR レポート
 
 - Existing template: `docs/quality/pr-summary-template.md`
 - Implementation detail: `docs/quality/pr-summary-tool.md`
@@ -84,13 +84,13 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 
 ## 日本語
 
-検証ゲートは **verify-then-merge** を標準化するための基準です。本ドキュメントでは、current gate taxonomy、重い check の有効化方法、gate 名に出てくる `contract` の意味、operator がどの証跡を見るべきかを整理します。
+検証ゲートは **verify-then-merge** を標準化するための基準です。本ドキュメントでは、現在のゲート分類（current gate taxonomy）、重い検査（heavy check）の有効化方法、ゲート名（gate name）に含まれる `contract` の意味、オペレーター（operator）がどの証跡を見るべきかを整理します。
 
 ### ゲート種別
 
-- Baseline gates: `types:check` / lint / build / conformance
-- Additional gates: property / pact-contract (API) / mutation / MBT / perf / a11y / lighthouse / heavy (CI Extended)
-- Formal gates: TLA+ / Alloy（既定では report-only、必要に応じて stricter execution を opt-in）
+- 基本ゲート（Baseline gates）: `types:check` / lint / build / conformance
+- 追加ゲート（Additional gates）: property / pact-contract (API) / mutation / MBT / perf / a11y / lighthouse / heavy (CI Extended)
+- Formal ゲート（Formal gates）: TLA+ / Alloy（既定では report-only、必要に応じて stricter execution を opt-in）
 
 ### 有効化ガイド（現行運用）
 
@@ -135,7 +135,7 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 | Postconditions | state assertions / event assertions / integration tests | `reports/quality-gates/quality-report-*.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 | Invariants | property tests / runtime conformance monitors / DB constraints | `artifacts/properties/summary.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 
-### PR reporting
+### PR レポート
 
 - 既存テンプレート: `docs/quality/pr-summary-template.md`
 - 実装詳細: `docs/quality/pr-summary-tool.md`
