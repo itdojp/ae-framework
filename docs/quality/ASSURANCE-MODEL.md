@@ -94,14 +94,14 @@ Implemented on current `main`:
 - Context Pack v1 and its extended map family
 - verify-lite summary
 - formal summary / formal aggregate
-- policy-gate / change-package v2
+- policy-gate / change-package v1 (default flow)
 - assurance profile v1
-- change-package v2
 - report-only `verify:assurance` summary generation
 - strict assurance enforcement when the `enforce-assurance` label is set
 - assurance display in PR / release / post-deploy summaries
 
 Not yet implemented or still being phased in:
+- change-package v2 preview contract (schema / docs only)
 - per-claim achieved-level aggregation
 - assurance-aware enforcement directly inside `policy-gate`
 
@@ -214,14 +214,14 @@ proof や model-check で閉じない部分を、feature flag / alert / rollout 
 - Context Pack v1 とその拡張マップ群
 - verify-lite summary
 - formal summary / formal aggregate
-- policy-gate / change-package v2
+- policy-gate / change-package v1（既定フロー）
 - assurance profile v1
-- change-package v2
 - report-only `verify:assurance` summary generation
 - `enforce-assurance` ラベル時の strict assurance enforcement
 - PR / release / post-deploy summary への assurance 表示
 
 未実装または段階導入中:
+- change-package v2 preview 契約（schema / docs のみ）
 - claim ごとの achieved level 集約
 - policy-gate への assurance-aware enforcement
 
