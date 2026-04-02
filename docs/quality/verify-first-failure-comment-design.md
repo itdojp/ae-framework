@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/verify-first-implementation-runbook.md
 - docs/ci/pr-automation.md
-lastVerified: '2026-03-29'
+lastVerified: '2026-04-03'
 ---
 # Verify-first Failure Diagnostic PR Comment Design
 
@@ -98,7 +98,7 @@ Mapping to template fields:
 
 ### 1. 目的
 
-- Required / Opt-in gate 失敗時に、PR 上で最小診断情報を欠落なく提示する。
+- 必須 / オプトインゲート失敗時に、PR 上で最小診断情報を欠落なく提示する。
 - 再実行・修正・fail-open の判断を PR 上で完結できる状態にする。
 
 ### 2. 入力（テンプレ項目との対応）
@@ -109,18 +109,18 @@ Mapping to template fields:
 - PR metadata（`head SHA`、labels、related issue）
 
 テンプレ項目へのマッピング:
-- `Context`: PR番号、SHA、失敗gate、検出時刻
-- `Symptom`: 失敗job名、先頭失敗step、短いエラー要約
-- `Impact`: gate の blocking level（`Required` / `Opt-in`）
-- `Reproduction`: gate 別の既定のローカル再現コマンド
-- `Spec/Policy linkage`: Specパス、AC参照、関連ポリシー
+- `Context`: PR番号、SHA、失敗ゲート、検出時刻
+- `Symptom`: 失敗 job 名、先頭失敗 step、短いエラー要約
+- `Impact`: ゲートのブロッキング区分（`Required` / `Opt-in`）
+- `Reproduction`: ゲート別の既定のローカル再現コマンド
+- `Spec/Policy linkage`: spec パス、AC 参照、関連ポリシー
 - `Evidence`: CI run URL、artifact path
 
 ### 3. コメント生成ルール
 
 1. 同一 `head SHA` と同一 gate に対する既存 bot コメントがある場合は upsert する。
-2. Required gate 失敗時は fail-closed を明記し、merge 不可を宣言する。
-3. Opt-in gate 失敗時は fail-open 可否と follow-up issue の有無を明記する。
+2. 必須ゲート失敗時は fail-closed を明記し、merge 不可を宣言する。
+3. オプトインゲート失敗時は fail-open 可否と follow-up issue の有無を明記する。
 4. コメント末尾に次アクション（再実行 / 修正 / fail-open）を必ず出力する。
 
 ### 4. PRコメント雛形（最小）
@@ -154,7 +154,7 @@ Mapping to template fields:
 
 ### 5. GitHub Actions 実装ポイント
 
-- 既存の PR gate workflow の `failure()` パスでコメント処理を呼び出す。
+- 既存の PR ゲート workflow の `failure()` パスでコメント処理を呼び出す。
 - 実装手段:
   - `actions/github-script` で upsert を実装する
   - もしくは `gh pr comment` と marker ベースの置換を使う
@@ -163,9 +163,9 @@ Mapping to template fields:
 
 ### 6. 段階導入
 
-1. Phase 1: report-only でコメント投稿のみ行い、merge 制御は既存 gate に委譲する
-2. Phase 2: Required gate の自動診断コメントを必須化する
-3. Phase 3: Opt-in gate まで展開し、follow-up issue チェックを自動化する
+1. Phase 1: report-only でコメント投稿のみ行い、merge 制御は既存ゲートに委譲する
+2. Phase 2: 必須ゲートの自動診断コメントを必須化する
+3. Phase 3: オプトインゲートまで展開し、follow-up issue チェックを自動化する
 
 ### 7. 非対象
 
