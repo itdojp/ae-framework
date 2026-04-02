@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - schema/assurance-profile.schema.json
 - docs/quality/ASSURANCE-MODEL.md
-lastVerified: '2026-03-21'
+lastVerified: '2026-04-03'
 ---
 # Assurance Profile v1
 
@@ -129,18 +129,18 @@ Notes:
 
 ## 日本語
 
-## 1. 目的
+### 1. 目的
 
-`assurance-profile/v1` は、業務上の claim を次の要素に機械可読で結び付けるための入力契約です。
+`assurance-profile/v1` は、業務上のクレーム（claim）を次の要素に機械可読で結び付けるための入力契約です。
 
-- target assurance level
-- required validation lanes
-- required evidence kinds
+- target assurance level（目標保証レベル）
+- required validation lanes（必要な検証レーン）
+- required evidence kinds（必要な証跡種別）
 - Context Pack 上の object / morphism / diagram / acceptance test 参照
 
-現時点では、**schema とドキュメント整備、`verify:assurance` による summary 生成、Verify Lite での assurance 収集、および `enforce-assurance` ラベル時の strict assurance enforcement** までを実装済みとします。通常 PR は report-only のまま維持し、strict 化は label-gated でのみ有効化します。
+現時点では、**schema とドキュメント整備、`verify:assurance` による summary 生成、Verify Lite での assurance summary artifact 収集、および `enforce-assurance` ラベル時の strict assurance enforcement** までを実装済みとします。通常 PR は report-only のまま維持し、strict 化は label-gated でのみ有効化します。
 
-## 2. スキーマ
+### 2. スキーマ
 
 - スキーマ: `schema/assurance-profile.schema.json`
 - sample fixture: `fixtures/assurance/sample.assurance-profile.json`
@@ -171,7 +171,7 @@ Notes:
 }
 ```
 
-## 3. assurance level の暫定意味
+### 3. assurance level の暫定意味
 
 | Level | 意味 | 典型 evidence |
 | --- | --- | --- |
@@ -183,7 +183,7 @@ Notes:
 
 この表は Phase 1/2 の暫定定義です。`verify:assurance` は lane / evidence / warning を集約しますが、最終的な `achievedLevel` 自動判定はまだ後続フェーズです。
 
-## 4. claim の設計指針
+### 4. クレーム（claim）の設計指針
 
 1. claim は実装方針ではなく、業務上の正しさを述べる
 2. `criticality` は low/medium/high/critical の 4 段階で記録する
@@ -203,7 +203,7 @@ Notes:
 - `spec + behavior + model` を要求する claim は、仕様・実装・モデルの少なくとも 2 系統以上が観測されることを期待する
 - `behavior` だけを増やしても、すべて `source-derived` なら independence warning は解消しない
 
-## 5. Context Pack v1 との結合
+### 5. Context Pack v1 との結合
 
 Context Pack には optional `assurance` セクションを追加できます。
 
@@ -219,7 +219,7 @@ assurance:
 - morphism / diagram / acceptance test と claim を間接的に結ぶ
 - assurance 未導入リポジトリでは、このセクションを省略して既存挙動を維持する
 
-## 6. 現時点の非目標
+### 6. 現時点の非目標
 
 - `verify-lite-run-summary` 自体へ achieved level を書き戻すこと
 - `policy-gate` が assurance artifact 自体を直接解釈して blocking 判定すること
@@ -231,10 +231,10 @@ assurance:
 - strict 化されるのは `verify-lite.yml` の `Enforce assurance summary (strict; label-gated)` ステップです。
 - `enforce-assurance` ラベルを付けない通常 PR では、assurance summary は report-only のまま扱います。
 
-## 7. 変更時の注意
+### 7. 変更時の注意
 
 - 新しい claim kind や evidence kind を追加する場合は、`schema/assurance-profile.schema.json` と本ドキュメントを同一 PR で更新する
-- 新しい schema を追加したため、`docs/reference/CONTRACT-CATALOG.md` を同時に更新する
+- 新しい schema を追加した場合は、`docs/reference/CONTRACT-CATALOG.md` を同時に更新する
 - sample fixture を変更する場合は `tests/contracts/assurance-profile-contract.test.ts` を更新する
 - lane taxonomy は `docs/quality/assurance-lanes.md` を SSOT とし、本書では入力契約への接続だけを記述する
 - 実行手順と strict / report-only の使い分けは `docs/quality/assurance-operations-runbook.md` を正とする
