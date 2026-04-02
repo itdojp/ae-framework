@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/reference/CONTRACT-CATALOG.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-23'
+lastVerified: '2026-04-02'
 ---
 # Contract Taxonomy（DbC / API Contract / Artifacts Contract）
 
@@ -52,25 +52,35 @@ In ae-framework, the word `contract` appears in multiple contexts. This document
 
 ## 日本語
 
-ae-framework では `contract` が複数の意味で使われます。本ドキュメントを用語の基準（SSOT）とします。
+ae-framework では `contract` が複数の文脈で使われます。本ドキュメントは、PR summary、runbook、schema doc、implementation note で用語を一貫させるための基準（SSOT）です。
+
+### 正式な区分
 
 | 区分 | 意味 | 代表的な成果物 / コマンド |
 | --- | --- | --- |
-| Design contract（DbC） | 振る舞い仕様の事前条件 / 事後条件 / 不変条件 | Spec Kit、Plan->Spec テンプレ、Context Bundle、Runtime Conformance |
-| API/Integration contract | Pact などの consumer-driven API 契約検証 | `pnpm run pipelines:pact`、CI Extended の pact smoke、プロジェクトで定義された pact のログ/成果物 |
-| Artifacts contract | CI成果物（reports/artifacts）の必須/任意ルール | `docs/quality/ARTIFACTS-CONTRACT.md`、`scripts/ci/check-required-artifacts.mjs` |
+| Design contract（DbC） | 振る舞い仕様の事前条件 / 事後条件 / 不変条件 | Spec Kit、Plan->Spec template、Context Bundle、runtime conformance checks |
+| API/Integration contract | Pact などの consumer-driven API 契約検証 | `pnpm run pipelines:pact`、CI Extended の `pact` smoke、各プロジェクトで定義された pact log / artifact |
+| Artifacts contract | CI 成果物（reports/artifacts）の必須 / 任意ルール | `docs/quality/ARTIFACTS-CONTRACT.md`、`scripts/ci/check-required-artifacts.mjs` |
 
-表記ルール:
-- DbC（pre/post/invariant）を指す場合は **DbC** または **Design contract** を使う。
-- API契約検証を指す場合は **Pact contract test** または **API contract verification** を使う。
-- 成果物の必須要件を指す場合のみ **Artifacts contract** を使う。
+### 表記ガイド
 
-互換性メモ:
-- 既存のラベル/コマンド名に `contract` を含むものは互換性のため当面維持する。
-- `enforce-contracts` のような legacy label / command は formal / DbC 系 enforcement を指す互換面として扱い、Pact/API verification とは別に読む。
-- まずは文書上の意味分離を優先し、破壊的リネームは別Issueで扱う。
+- DbC（pre/post/invariant）を指す場合は **DbC** または **Design contract** を使います。
+- API 契約検証を指す場合は **Pact contract test** または **API contract verification** を使います。
+- 成果物の必須要件を指す場合のみ **Artifacts contract** を使います。
 
-## 関連ドキュメント
+### 運用上の解釈
+
+- 直近の verification guide で `contract gate` とだけ書かれている場合、周辺文脈に `DbC` または `Artifacts contract` の明示がなければ、通常は Pact のような API/Integration contract test を指します。
+- `enforce-contracts` のような legacy label / command は、formal / DbC 系 enforcement の互換面として扱います。Pact / API verification と同義ではありません。
+- DbC は単一 workflow や単一 label ではありません。property testing、runtime conformance、request validation、assertion-heavy integration tests など複数の check で証跡化されます。
+- Artifacts contract は期待される CI output の有無と shape を統制しますが、それ自体で business behavior を証明するものではありません。
+
+### 互換性メモ
+
+- 既存の label / command / 歴史的文書には、互換性のために `contract` という裸の語が残っています。
+- まずは本文上の意味分離を優先します。command や label の破壊的 rename は、明示的な migration plan がある場合に限って実施します。
+
+### 関連ドキュメント
 
 - `docs/quality/verification-gates.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`
