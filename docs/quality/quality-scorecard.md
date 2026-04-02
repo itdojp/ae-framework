@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-03-21'
+lastVerified: '2026-04-02'
 ---
 # Quality Scorecard
 
@@ -89,7 +89,7 @@ pnpm run quality:scorecard:validate -- \
 
 ## 日本語
 
-## 1. 目的
+### 1. 目的
 
 `quality-scorecard/v1` は、既存の summary artifact を read-only で横断集約し、PR / release 判断で「全体としてどの程度健全か」を 1 つの decision/evidence artifact として扱うための成果物です。
 
@@ -99,14 +99,14 @@ pnpm run quality:scorecard:validate -- \
 - producer: `scripts/quality/build-quality-scorecard.mjs` / `pnpm run quality:scorecard:v1`
 - validator: `scripts/ci/validate-quality-scorecard.mjs` / `pnpm run quality:scorecard:validate`
 
-## 2. 入力
+### 2. 入力
 
-### 2.1 required
+#### 2.1 required
 
 - `artifacts/verify-lite/verify-lite-run-summary.json`
 - `artifacts/report-envelope.json`
 
-### 2.2 optional
+#### 2.2 optional
 
 - `artifacts/assurance/assurance-summary.json`
 - `artifacts/ci/harness-health.json`
@@ -115,9 +115,9 @@ pnpm run quality:scorecard:validate -- \
 - `artifacts/formal/formal-summary-v2.json`
 - `artifacts/formal/formal-summary-v1.json`（v2 が無い場合の fallback）
 
-optional artifact が欠けていても producer は継続します。`assuranceCoverage` / `policyReadiness` / `performanceRegression` のように専用 summary に依存する dimension は `missing` になり得ますが、formal summary や harness-health が無い場合でも `executionHealth` は `pass` / `warn` のまま評価されます。required artifact が欠けた場合は producer が fail-fast します。
+optional artifact が欠けていても producer は継続します。`assuranceCoverage` / `policyReadiness` / `performanceRegression` のように専用 summary に依存する dimension は `missing` になり得ます。一方で formal summary や harness-health が無い場合でも `executionHealth` は `pass` / `warn` のまま評価されます。required artifact が欠けた場合は fail-fast します。
 
-## 3. 評価次元
+### 3. 評価次元
 
 - `artifactIntegrity`
   - required artifact の存在と report envelope の最低限の整合
@@ -132,19 +132,19 @@ optional artifact が欠けていても producer は継続します。`assurance
 
 `summary.overallScore` は補助値であり、source of truth は `summary.overallStatus` と `blockers[]` です。
 
-## 4. report-only 導入
+### 4. report-only 導入
 
 - `verify-lite.yml` では report-only で `quality-scorecard` を生成します
 - `validate-artifacts-ajv` と `validate-quality-scorecard.mjs` で schema を検証します
 - PR summary には `overallStatus` / `overallScore` / `blockers` を表示します
-- branch protection の required checks 自体は変更しません
+- この artifact によって branch protection の required checks は変わりません
 
-## 5. legacy `quality:scorecard` との関係
+### 5. legacy `quality:scorecard` との関係
 
 既存の `package.json` にある `quality:scorecard` は `scripts/quality-scorecard-generator.js` を呼ぶ legacy 実装です。  
 `quality-scorecard/v1` は互換置換ではなく、別 producer / validator / artifact として導入します。
 
-## 6. 実行例
+### 6. 実行例
 
 ```bash
 pnpm run quality:scorecard:v1 -- \
