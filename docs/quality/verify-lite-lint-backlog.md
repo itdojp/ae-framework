@@ -10,14 +10,14 @@ lastVerified: '2026-04-02'
 
 ## English
 
-### Current summary
-- Total findings: 1,447
-- `no-unsafe-*`: 686 findings (47.4%)
-- `no-explicit-any`: 226 findings (15.6%)
-- `no-unused-vars`: 194 findings (13.4%)
-- `require-await`: 197 findings (13.6%)
+### Current working counts
+- Use the rule and file counts in this document as the authoritative working backlog.
+- `@typescript-eslint/no-unused-vars`: 271
+- `@typescript-eslint/require-await`: 203
+- `@typescript-eslint/no-explicit-any`: 524
+- `no-unsafe-*` cluster: 1,202
+- `--fix`-eligible findings: 42, still led by `no-unnecessary-type-assertion`
 - Recount basis: 2026-02-23 output from `node scripts/quality/check-lint-summary.mjs`
-- Automatically fixable findings: 35, led by `no-unnecessary-type-assertion` with 31
 - `src/inference/strategies/sequential-strategy.ts` improved from 107 findings to 0 (`Issue #2214`)
 
 ### File-level hotspots (excerpt)
@@ -168,14 +168,14 @@ node scripts/quality/check-lint-summary.mjs
 
 ## 日本語
 
-### 現状サマリ
-- 📊 合計 1,447 件
-- 🛑 `no-unsafe-*` 系 686 件（47.4%）
-- ⚠️ `no-explicit-any` 226 件（15.6%）
-- 🔄 `no-unused-vars` 194 件（13.4%）
-- ⏳ `require-await` 197 件（13.6%）
+### 現在の運用カウント
+- 本ドキュメントでは、以下のルール別・ファイル別件数を現行 backlog の基準値として扱います。
+- `@typescript-eslint/no-unused-vars`: 271 件
+- `@typescript-eslint/require-await`: 203 件
+- `@typescript-eslint/no-explicit-any`: 524 件
+- `no-unsafe-*` クラスター: 1,202 件
+- `--fix` 対応可能な指摘: 42 件（`no-unnecessary-type-assertion` が中心）
 - ℹ️ 2026-02-23 時点の再集計値（`node scripts/quality/check-lint-summary.mjs`）
-- 🛠 自動修正対象は 35 件（`no-unnecessary-type-assertion` が 31 件で最多）
 - ✅ `src/inference/strategies/sequential-strategy.ts` は 107 件 → 0 件に改善（Issue #2214）
 
 ### ファイル別インパクト（抜粋）
