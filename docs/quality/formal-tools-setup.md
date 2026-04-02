@@ -200,8 +200,8 @@ This guide outlines local setup for formal verification tools used alongside AE-
   - `pnpm run verify:lean`
 
 ## 備考
-- これらのツールは通常の AE-Framework 利用では必須ではありません。導入済みの場合に、formal workflow の検証レーンを拡張します。
-- CI 上の stub を動かすには、`Formal Verify` workflow を `run-formal` label か manual dispatch で実行します。各 engine は段階的に接続されます。
+- これらのツールは通常の AE-Framework 利用では必須ではない。導入済みの場合に、formal workflow の検証レーンを拡張する。
+- CI 上の stub を動かすには、`Formal Verify` workflow を `run-formal` ラベルか手動起動（workflow_dispatch）で実行する。各 engine は段階的に接続される。
 
 ## 上流参照 (`cspx`)
 - AE-Framework 連携契約: `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
