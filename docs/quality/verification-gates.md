@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/risk-policy.yml
 - policy/quality.json
-lastVerified: '2026-03-23'
+lastVerified: '2026-04-02'
 ---
 # Verification Gates Guide
 
@@ -82,21 +82,21 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 
 ---
 
-## 日本語（概要）
+## 日本語
 
-検証ゲートは **verify-then-merge** を実現するための基準です。本ドキュメントではゲート種別・有効化方法・レポート出力先を整理します。
+検証ゲートは **verify-then-merge** を標準化するための基準です。本ドキュメントでは、current gate taxonomy、重い check の有効化方法、gate 名に出てくる `contract` の意味、operator がどの証跡を見るべきかを整理します。
 
-## ゲート種別
+### ゲート種別
 
-- 基本ゲート: `types:check` / lint / build / conformance
-- 追加ゲート: property / pact-contract(API) / mutation / MBT / perf / a11y / lighthouse / heavy (CI Extended)
-- Formal: TLA+ / Alloy（report-only → opt-in）
+- Baseline gates: `types:check` / lint / build / conformance
+- Additional gates: property / pact-contract (API) / mutation / MBT / perf / a11y / lighthouse / heavy (CI Extended)
+- Formal gates: TLA+ / Alloy（既定では report-only、必要に応じて stricter execution を opt-in）
 
-## 有効化の指針（既存運用のまとめ）
+### 有効化ガイド（現行運用）
 
-- PRデフォルトは軽量ゲート（Verify Lite）
-- 重いゲートは **ラベルで opt-in** する
-- adapter-threshold 系（perf/lh/a11y）は通常 `run-adapters` で有効化し、`enforce-*` ラベルで report-only から blocking に切り替える
+- 日常的な PR は Verify Lite の軽量 baseline を既定とします。
+- 重い gate は通常 opt-in label で有効化します。
+- perf / lighthouse / a11y のような adapter-threshold check は通常 `run-adapters` で起動し、`enforce-*` label は report-only から blocking への切替だけを担います。
 
 関連ドキュメント:
 - `docs/ci/label-gating.md`
@@ -104,51 +104,49 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 - `docs/quality/adapter-thresholds.md`
 - `docs/quality/comparator.md`
 
-## Contract taxonomy（意味の分離）
+### 本ガイドにおける contract taxonomy
 
-- 用語の基準は `docs/quality/contract-taxonomy.md` を参照
-- 本ガイドの `pact-contract(API)` は **API/Integration contract（Pact）** を指す
-- DbC（Design contract: pre/post/invariant）は、主に property / runtime conformance / integration assertion で担保する
-- Artifacts contract は成果物の必須/任意ルールであり、API契約検証とは別概念
+- 正式な意味分離は `docs/quality/contract-taxonomy.md` を参照してください。
+- 本ガイドの `pact-contract (API)` は **API/Integration contract verification**（Pact など）を指します。
+- DbC（Design contract: preconditions / postconditions / invariants）は、単一の gate 名ではなく、property test、runtime conformance、integration assertion などの組み合わせで担保します。
+- Artifacts contract は required / optional artifact obligation を意味し、API contract verification とは別概念です。
 
-## 代表的なゲートと入口
+### 代表的なゲートと入口
 
 | Gate | How to enable | Primary output | Notes |
 | --- | --- | --- | --- |
 | property | label `run-property` | `artifacts/properties/` | CI Extended 側で実行 |
-| pact-contract(API) | label `run-integration` または `run-ci-extended` | pact test logs/artifacts (project-defined) | CI上の API 契約検証（Pact）。`pnpm run pipelines:pact` はローカル/手動入口 |
-| mutation | label `run-mutation` | `reports/mutation/` | quick mode + ignoreStatic |
-| MBT | label `run-mbt` | `artifacts/mbt/` | CI Extended 側 |
-| perf/a11y/lh | label `run-adapters`（必要に応じて `enforce-perf` / `enforce-a11y` / `enforce-lh` で blocking 化） | `reports/perf-results.json`, `reports/a11y-results.json`, `reports/lighthouse-results.json`（または `reports/lh-results.json`） | adapter-threshold jobs は `run-adapters` で起動し、`enforce-*` は report-only から blocking への切替 |
-| heavy tests | label `run-ci-extended` | `reports/heavy-test-trends.json` | integration/property/MBT/mutation の集約 |
+| pact-contract (API) | label `run-integration` または `run-ci-extended` | pact test logs/artifacts (project-defined) | CI 上の consumer-driven API contract verification。`pnpm run pipelines:pact` はローカル / 手動の入口 |
+| mutation | label `run-mutation` | `reports/mutation/` | quick mode with `ignoreStatic` |
+| MBT | label `run-mbt` | `artifacts/mbt/` | CI Extended 側で実行 |
+| perf / a11y / lh | label `run-adapters`（必要に応じて `enforce-perf` / `enforce-a11y` / `enforce-lh` で blocking 化） | `reports/perf-results.json`, `reports/a11y-results.json`, `reports/lighthouse-results.json`（または `reports/lh-results.json`） | adapter-threshold jobs は `run-adapters` で起動し、`enforce-*` は report-only から blocking への切替 |
+| heavy tests | label `run-ci-extended` | `reports/heavy-test-trends.json` | integration / property / MBT / mutation の集約 |
 
-### contract gate の意味（読み替え）
+#### gate 名における `contract` の意味
 
-- 本ガイドの `contract` gate は **Pact等の API/Integration contract test** を指します。
-- DbC（pre/post/invariant）は単独ゲート名ではなく、下記の複数手段で担保します。
+- 本ガイドの `contract` は **Pact などの API/Integration contract test** を指します。
+- DbC の関心事は、単独の `contract` gate ではなく複数の手段で検証します。
 
-### DbC -> 検証マッピング（最小）
+#### DbC -> verification の最小マッピング
 
-| DbC条件 | 代表的な検証手段 | 代表的な証跡 |
+| DbC 条件 | 代表的な検証手段 | 代表的な証跡 |
 | --- | --- | --- |
 | Preconditions | request validation / negative tests / type guards | `artifacts/verify-lite/verify-lite-run-summary.json`（詳細は `docs/quality/ARTIFACTS-CONTRACT.md`） |
 | Postconditions | state assertions / event assertions / integration tests | `reports/quality-gates/quality-report-*.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 | Invariants | property tests / runtime conformance monitors / DB constraints | `artifacts/properties/summary.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 
-## PRレポート
+### PR reporting
 
-- 既存テンプレ: `docs/quality/pr-summary-template.md`
-- 仕様: `docs/quality/pr-summary-tool.md`
-- 目的: 検証結果を PR に要約して**人間が判断**できる形にする
+- 既存テンプレート: `docs/quality/pr-summary-template.md`
+- 実装詳細: `docs/quality/pr-summary-tool.md`
+- 運用目的: 人間の reviewer が raw artifact をすべて開かなくても判断できる形で verification 結果を要約すること
 
-## レポートメタ情報
+### レポートメタデータ
 
-- quality-gates レポート（`reports/quality-gates/quality-report-*.json`）には run-level metadata を表す `meta` object を付与
-- 代表項目: `runId` / `commitSha` / `branch` / `createdAt` / `agent` / `model` / `traceId`
-- 値はCI/ローカルの環境変数から取得し、存在するもののみ付与（`runId` と `createdAt` は常に付与）
+quality gate report（`reports/quality-gates/quality-report-*.json`）には、run-level metadata を表す `meta` object が含まれます。代表項目は `runId`、`commitSha`、`branch`、`createdAt`、`agent`、`model`、`traceId` です。値は CI / local environment variable から取得できるものだけを使用し、`runId` と `createdAt` は常に設定されます。
 
-## 注意（machine verifying machine）
+### 運用上の注意
 
-- AIがコードとテストを同時に生成すると盲点が共有される
-- Spec Kit / Blueprint に **対抗的なテスト設計** を明記し、人間が責任を持つ
-- verify-then-merge は「**CI合格 + 人間承認**」が基本
+- AI がコードと test を同時に生成すると、盲点が重なる可能性があります。
+- Spec Kit / Blueprint document には adversarial test intent を明示してください。
+- baseline は machine-only approval ではなく、**CI green + human approval** です。
