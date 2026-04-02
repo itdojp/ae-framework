@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-28'
+lastVerified: '2026-04-03'
 ---
 # Incident Triage Template
 
@@ -80,7 +80,7 @@ When to use:
 - 失敗した check / log:
 - 関連 PR / commit:
 - 再現手順:
-- Artifacts（report / trace / coverage / trend）:
+- 証跡成果物（report / trace / coverage / trend）:
 
 ### 診断
 
@@ -91,7 +91,7 @@ When to use:
 ### 緩和計画
 
 - 直ちに行う封じ込め:
-- Rollback plan（必要な場合）:
+- ロールバック計画（必要な場合）:
 - 短期修正:
 - 担当者:
 
@@ -100,7 +100,7 @@ When to use:
 - 追加または調整する verification gate:
 - 追加する回帰 test:
 - 更新する documentation / runbook:
-- フォローアップ issue(s):
+- フォローアップ issue:
 
 ### 備考
 
