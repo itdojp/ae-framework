@@ -232,7 +232,7 @@ Check in this order:
 
 ### 3. 入力と出力
 
-### 3.1 主入力
+#### 3.1 主入力
 
 | 種別 | パス例 | 必須 | 用途 |
 | --- | --- | --- | --- |
@@ -244,7 +244,7 @@ Check in this order:
 | counterexample | `fixtures/counterexample/sample.counterexample.json` | 任意 | adversarial lane / triage 状態 |
 | evidence manifest | `fixtures/assurance/sample.assurance-evidence-manifest.json` | 任意 | claim ごとの supplemental evidence |
 
-### 3.2 主出力
+#### 3.2 主出力
 
 | パス | 役割 |
 | --- | --- |
