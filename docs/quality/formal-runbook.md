@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-26'
+lastVerified: '2026-04-02'
 owner: formal-methods
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -33,7 +33,7 @@ This runbook describes the lowest-friction way to operate formal verification in
 ### CLI Runners (non-blocking)
 - `pnpm run verify:conformance` - conformance summary runner. Use together with `ae conformance verify` when you need a narrower replay/conformance check.
 - `pnpm run verify:alloy` - Alloy runner. Resolves `ALLOY_RUN_CMD`, `ALLOY_JAR`, or the `alloy` CLI.
-- `pnpm run verify:tla -- --engine=apalache|tlc` - TLA runner. Resolves `TLA_TOOLS_JAR` or `apalache`.
+- `pnpm run verify:tla -- --engine=apalache|tlc` - TLA runner. Resolves `TLA_TOOLS_JAR` or `apalache-mc`.
 - `pnpm run verify:smt -- --solver=z3|cvc5` - SMT runner.
 - `pnpm run verify:kani` - Kani presence summary runner.
 - `pnpm run verify:spin` - Promela/SPIN runner.
@@ -61,7 +61,7 @@ This runbook describes the lowest-friction way to operate formal verification in
 
 ### Reproduce locally
 - Tool availability: `pnpm run tools:formal:check`.
-- Apalache (when installed): `pnpm run verify:tla -- --engine=apalache`.
+- Apalache (`apalache-mc` when installed): `pnpm run verify:tla -- --engine=apalache`.
 - TLC (when `TLA_TOOLS_JAR` is set): `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`.
 - SMT (when `z3` or `cvc5` is available): `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`.
 
@@ -249,12 +249,98 @@ jobs:
 1) PR でフォーマル検査を走らせたい場合は、ラベル `run-formal` を付与（初期はスタブ）。
 2) 手動実行は GitHub Actions の `workflow_dispatch`（Formal Verify）から起動。
 
-### CLI スタブ（配線予定）
-- `pnpm run verify:conformance` — スタブ出力（実行時は `ae conformance verify` を利用）
-- `pnpm run verify:alloy` — スタブ出力
-- `pnpm run verify:tla -- --engine=apalache|tlc` — スタブ出力
-- `pnpm run verify:smt -- --solver=z3|cvc5` — スタブ出力
-- `pnpm run verify:formal` — 上記4種の連続実行（ローカル確認）
+### CLI ランナー（非ブロッキング）
+- `pnpm run verify:conformance` - conformance summary runner。必要に応じて `ae conformance verify` と併用する。
+- `pnpm run verify:alloy` - Alloy runner。`ALLOY_RUN_CMD`、`ALLOY_JAR`、`alloy` CLI を順に解決する。
+- `pnpm run verify:tla -- --engine=apalache|tlc` - TLA runner。`TLA_TOOLS_JAR` または `apalache-mc` を解決する。
+- `pnpm run verify:smt -- --solver=z3|cvc5` - SMT runner。
+- `pnpm run verify:kani` - Kani presence summary runner。
+- `pnpm run verify:spin` - Promela / SPIN runner。
+- `pnpm run verify:csp` - `CSP_RUN_CMD`、`cspx`、`refines`、`cspmchecker` を順に使う CSP runner。
+  - `cspx` を使う場合は `csp-summary.json` と `cspx-result.json` を出力する。
+  - `schema_version` 不一致（期待値 `0.1`）は `status: "unsupported"` として記録する。
+  - 詳細例は `docs/quality/formal-csp.md` を参照する。
+- `pnpm run verify:lean` - Lean4 `lake build` runner。
+- `pnpm run verify:formal` - 上記コマンドを連続実行する chained local runner。
+  - 集約 summary は `artifacts/hermetic-reports/formal/summary.json` に出力される。
+  - 実行後は compact な要約を console に表示する。
+
+### Runtime Hooks（Phase 2.2）
+- 任意の runtime hook JSON は `artifacts/hermetic-reports/runtime/hooks.json` に置き、conformance driver が replay summary と相関付ける。
+- 環境変数:
+  - `RUNTIME_HOOKS` または `CONFORMANCE_RUNTIME_HOOKS` - hook JSON path
+  - `CONFORMANCE_TRACE` - replay summary path。既定: `artifacts/domain/replay.summary.json`
+- `conformance-summary` は `runtimeHooks: {present, path, count, uniqueEvents[], traceId, matchesReplayTraceId}` を出力する。
+
+### BDD -> LTL suggestions（report-only）
+- `pnpm run bdd:suggest` は `spec/bdd/**/*.feature`（fallback: `features/`）から GWT scenario を抽出し、candidate LTL properties を生成する。
+- 出力:
+  - `artifacts/bdd/scenarios.json` - PR summary 入力（`{title, criteriaCount}`）
+  - `artifacts/properties/ltl-suggestions.json` - 集約 / 参照出力（`{count, items[]}`）
+
+### ローカル再現
+- ツール有無の確認: `pnpm run tools:formal:check`
+- Apalache（`apalache-mc` 導入済みの場合）: `pnpm run verify:tla -- --engine=apalache`
+- TLC（`TLA_TOOLS_JAR` 設定時）: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`
+- SMT（`z3` または `cvc5` がある場合）: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
+
+### Apalache quickstart
+- Presence / version check: `node scripts/formal/check-apalache.mjs`
+- Verify（non-blocking summary）: `node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla`
+- sibling の `*.cfg`（例: `spec/tla/DomainSpec.cfg`）が存在する場合、runner は自動で `--config` を追加する。
+- 補足:
+  - `verify:apalache` は `formal-verify` 内で non-blocking presence/version guard として配線済み。
+  - aggregate comment は Apalache の `ran/ok` と短い error fragment を 1 行で出力する。
+
+### Timeouts
+- TLA / SMT runner は GNU `timeout` が利用可能な環境で `--timeout <ms>` を受け付ける。
+- 例: `pnpm run verify:tla -- --engine=apalache --timeout 60000`
+- timeout 時は summary に `status: "timeout"` を書き込み、stricter consumer がない限り lane 自体は non-blocking のままにする。
+
+### Troubleshooting
+- PATH: `apalache` または `apalache-mc` が見つからない場合は `node scripts/formal/check-apalache.mjs` で presence/version を確認する。
+- Timeout: log が止まらない場合は `--timeout` を付け、aggregate comment の `status: "timeout"` を cut-off signal として扱う。
+- CSP unsupported:
+  - `artifacts/hermetic-reports/formal/csp-summary.json` の `status: "unsupported"` と、`artifacts/hermetic-reports/formal/csp-output.txt` などに `--summary-json` の CLI error（`unexpected argument` / `unknown argument` / `wasn't expected`）が出ている場合、`cspx` が古い。
+  - `cspx typecheck --help | grep -- --summary-json` で対応を確認し、`docs/quality/formal-tools-setup.md` の pinned setup に沿って更新する。`CSP_RUN_CMD` は fallback escape hatch として残る。
+  - `schema_version mismatch` の場合は `cspx-result.json` を確認し、current contract（`schema_version=0.1`）に合うまで `cspx` を更新する。
+- Raw logs:
+  - `artifacts/hermetic-reports/formal/<tool>-output.txt` に保存される。
+  - 例: `apalache-output.txt`, `tla-output.txt`, `smt-output.txt`, `alloy-output.txt`, `spin-output.txt`, `csp-output.txt`, `lean-output.txt`
+  - Formal Summary v1/v2 では、log file が存在する場合 `results[].logPath` に repo-relative path が入る。
+
+### Aggregate JSON validation（non-blocking）
+- aggregate workflow は `artifacts/formal/formal-aggregate.json` を出力し、軽量 schema で warning-level validate を行う。
+- ローカル check: `node scripts/formal/validate-aggregate-json.mjs`
+- file が欠損または malformed でも、helper は local flow を fail させず `::warning::` を出す。
+
+### Formal Summary v1/v2（dual-write + dual-validate）
+- producer: `scripts/formal/generate-formal-summary-v1.mjs` が v1 を `--out`、v2 を `--out-v2` に出力する。
+- current outputs:
+  - `artifacts/formal/formal-summary-v1.json`（schema: `schema/formal-summary-v1.schema.json`）
+  - `artifacts/formal/formal-summary-v2.json`（schema: `schema/formal-summary-v2.schema.json`、`schemaVersion=formal-summary/v2`、`contractId=formal-summary.v2`）
+- local dual-validate:
+  - `node scripts/ci/validate-formal-summary-v1.mjs artifacts/formal/formal-summary-v1.json schema/formal-summary-v1.schema.json`
+  - `node scripts/ci/validate-formal-summary-v2.mjs artifacts/formal/formal-summary-v2.json schema/formal-summary-v2.schema.json`
+- CI dual-validate:
+  - `scripts/ci/validate-artifacts-ajv.mjs` が両 version を validate する。
+  - `.github/workflows/formal-aggregate.yml` は strict mode（`enforce-formal`）で両 file を `--require` する。
+- consumer:
+  - `scripts/ci/generate-run-manifest.mjs` は `formalSummaryV1` / `formalSummaryV2` として読む。
+
+### Aggregate JSON conventions
+- single source of truth:
+  - `artifacts/formal/formal-aggregate.json` が `present` / `ran` / `ok` signal の canonical source。
+  - PR comment はこの aggregate から生成する。
+- comment wrapping:
+  - `FORMAL_AGG_WRAP_WIDTH` で有効化する。
+  - 実用値は `80-100`、`0` は wrapping 無効。
+  - 長い URL や table が多い場合は無効のままにする。
+- key fields:
+  - `info.present` - `tla`, `alloy`, `smt`, `apalache`, `conformance`, `kani`, `spin`, `csp`, `lean` の presence flag
+  - `info.presentCount` - present な summary 数
+  - `info.presentTotal` - 追跡対象 summary の分母
+  - `info.ranOk.apalache` - `{ ran: boolean, ok: boolean|null }`。`null` は indeterminate
 
 ### 仕様/成果物配置
 - TLA+: `spec/tla/`（最小スケルトンあり）
