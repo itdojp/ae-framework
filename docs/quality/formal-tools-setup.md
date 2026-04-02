@@ -117,13 +117,13 @@ This guide outlines local setup for formal verification tools used alongside AE-
 
 ## 対応ツール
 - TLA+ (TLC)
-- Apalache（SMT/BMC と帰納的不変条件）
+- Apalache（SMT / 有界モデル検査と帰納的不変条件）
 - Alloy（Alloy Analyzer / Alloy 6 CLI）
-- SMT solvers: Z3, cvc5
-- Kani（Rust bounded model checking）
-- SPIN（Promela model checking）
+- SMT ソルバー: Z3, cvc5
+- Kani（Rust の有界モデル検査）
+- SPIN（Promela のモデル検査）
 - CSP（`cspx` または構成済み backend による CSPM check）
-- Lean4（lake による theorem proving / typechecking）
+- Lean4（lake による定理証明 / 型検査）
 
 ## 簡易確認
 - `pnpm run tools:formal:check` を実行し、ローカル環境で利用可能なツールを確認する。
@@ -200,11 +200,11 @@ This guide outlines local setup for formal verification tools used alongside AE-
   - `pnpm run verify:lean`
 
 ## 備考
-- これらのツールは通常の AE-Framework 利用には必須ではない。利用可能な場合に formal workflow を拡張する。
-- CI stub を動かすには、`Formal Verify` workflow を `run-formal` label か manual dispatch で実行する。各 engine は段階的に接続される。
+- これらのツールは通常の AE-Framework 利用では必須ではありません。導入済みの場合に、formal workflow の検証レーンを拡張します。
+- CI 上の stub を動かすには、`Formal Verify` workflow を `run-formal` label か manual dispatch で実行します。各 engine は段階的に接続されます。
 
 ## 上流参照 (`cspx`)
-- Integration contract: `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
-- Result JSON contract: `https://github.com/itdojp/cspx/blob/main/docs/result-json.md`
-- Explainability guide: `https://github.com/itdojp/cspx/blob/main/docs/explainability.md`
-- Validation report: `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
+- AE-Framework 連携契約: `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
+- 結果 JSON 契約: `https://github.com/itdojp/cspx/blob/main/docs/result-json.md`
+- 説明可能性ガイド: `https://github.com/itdojp/cspx/blob/main/docs/explainability.md`
+- 検証レポート: `https://github.com/itdojp/cspx/blob/main/docs/validation-report.md`
