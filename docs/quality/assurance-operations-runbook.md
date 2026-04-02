@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ASSURANCE-MODEL.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-21'
+lastVerified: '2026-04-03'
 ---
 # Assurance Operations Runbook
 
@@ -211,7 +211,7 @@ Check in this order:
 
 ## 日本語
 
-## 1. 目的
+### 1. 目的
 
 本 runbook は、現行実装の assurance 運用を 1 本に集約するための標準手順です。
 
@@ -222,17 +222,17 @@ Check in this order:
 - `artifacts/assurance/assurance-summary.{json,md}` の読み方
 - 失敗時の一次切り分け
 
-## 2. 前提
+### 2. 前提
 
 - Node.js: `>=20.11 <23`
 - pnpm: `10.x`
-- 実行場所: repository root
+- 実行場所: リポジトリルート
 - 入力契約を `docs/quality/assurance-profile.md` で確認済み
-- lane taxonomy を `docs/quality/assurance-lanes.md` で確認済み
+- 検証レーン taxonomy を `docs/quality/assurance-lanes.md` で確認済み
 
-## 3. 入力と出力
+### 3. 入力と出力
 
-### 3.1 主入力
+#### 3.1 主入力
 
 | 種別 | パス例 | 必須 | 用途 |
 | --- | --- | --- | --- |
@@ -244,14 +244,14 @@ Check in this order:
 | counterexample | `fixtures/counterexample/sample.counterexample.json` | 任意 | adversarial lane / triage 状態 |
 | evidence manifest | `fixtures/assurance/sample.assurance-evidence-manifest.json` | 任意 | claim ごとの supplemental evidence |
 
-### 3.2 主出力
+#### 3.2 主出力
 
 | パス | 役割 |
 | --- | --- |
-| `artifacts/assurance/assurance-summary.json` | 機械可読 summary |
-| `artifacts/assurance/assurance-summary.md` | 人間向け summary |
+| `artifacts/assurance/assurance-summary.json` | 機械可読サマリー |
+| `artifacts/assurance/assurance-summary.md` | 人間向けサマリー |
 
-## 4. ローカル実行（report-only）
+### 4. ローカル実行（report-only）
 
 ### Step 1: Verify Lite を実行して入力を揃える
 
@@ -306,7 +306,7 @@ node scripts/ci/validate-assurance-summary.mjs \
   schema/assurance-summary.schema.json
 ```
 
-## 5. CI 運用
+### 5. CI 運用
 
 ### 5.1 既定動作
 
@@ -339,7 +339,7 @@ strict assurance enforcement は少なくとも次を失敗条件として扱い
 - 任意 claim の `missingLanes` / `missingEvidenceKinds` / `independenceWarnings`
 - 任意 claim の `counterexamples.open > 0`
 
-## 6. summary の読み方
+### 6. サマリーの読み方
 
 ### 6.1 summary レベル
 
@@ -362,7 +362,7 @@ claim ごとに確認する項目:
 - `independenceWarnings`
 - `counterexamples.open`
 
-## 7. 失敗時の一次切り分け
+### 7. 失敗時の一次切り分け
 
 ### 7.1 `summary not found`
 
@@ -387,7 +387,7 @@ claim ごとに確認する項目:
 2. `claimIds` / `morphismIds` / `triageStatus` / `replayCommand` を補完
 3. `triageStatus=open` のまま strict に掛けていないかを確認
 
-## 8. PR 前チェックリスト
+### 8. PR 前チェックリスト
 
 - [ ] `pnpm run verify:lite` が通っている
 - [ ] `pnpm run verify:assurance ...` の出力を確認した
@@ -395,7 +395,7 @@ claim ごとに確認する項目:
 - [ ] `enforce-assurance` を付ける理由を PR 本文または Issue に記録した
 - [ ] strict 運用時に warning / open counterexample を残していない
 
-## 9. 参照
+### 9. 参照
 
 - `docs/quality/assurance-profile.md`
 - `docs/quality/assurance-lanes.md`
