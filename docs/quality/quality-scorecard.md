@@ -17,11 +17,11 @@ lastVerified: '2026-04-02'
 
 `quality-scorecard/v1` is a read-only aggregation artifact that summarizes the health of recent summary artifacts and exposes a single decision/evidence view for PR and release review.
 
-- 正規 JSON: `artifacts/quality/quality-scorecard.json`
-- 正規 Markdown: `artifacts/quality/quality-scorecard.md`
+- canonical JSON: `artifacts/quality/quality-scorecard.json`
+- canonical Markdown: `artifacts/quality/quality-scorecard.md`
 - schema: `schema/quality-scorecard.schema.json`
-- 生成処理: `scripts/quality/build-quality-scorecard.mjs` / `pnpm run quality:scorecard:v1`
-- 検証処理: `scripts/ci/validate-quality-scorecard.mjs` / `pnpm run quality:scorecard:validate`
+- producer: `scripts/quality/build-quality-scorecard.mjs` / `pnpm run quality:scorecard:v1`
+- validator: `scripts/ci/validate-quality-scorecard.mjs` / `pnpm run quality:scorecard:validate`
 
 ### 2. Inputs
 
