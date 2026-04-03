@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/verify-first-implementation-runbook.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-03-27'
+lastVerified: '2026-04-03'
 ---
 # Verify-first Failure Diagnostic Template
 
@@ -82,18 +82,18 @@ lastVerified: '2026-03-27'
 
 - PR / Issue:
 - Commit SHA:
-- 失敗した gate:
+- 失敗したゲート:
 - 検知時刻 (UTC):
 
 ### 1. 現象
 
 - エラー要約:
 - 最初の失敗ステップ:
-- 影響範囲 (files/modules):
+- 影響範囲 (files / modules):
 
 ### 2. 影響
 
-- Blocking level: Required / Opt-in
+- ブロッキング区分: 必須 / オプトイン
 - ユーザー影響:
 - リリース影響:
 
@@ -109,7 +109,7 @@ lastVerified: '2026-03-27'
 
 ### 4. 仕様・ポリシーとのひも付け
 
-- 関連 spec path (複数可):
+- 関連 spec path（複数可）:
 - 関連 acceptance criteria:
 - 関連 policy / contract:
 
@@ -127,12 +127,12 @@ lastVerified: '2026-03-27'
 ### 7. 証跡
 
 - CI run URL:
-- Artifact path (複数可):
+- Artifact path（複数可）:
 - Log excerpt location:
 
 ### 8. 決定
 
 - [ ] Re-run only
 - [ ] Fix + re-run
-- [ ] Fail-open (temporary) + follow-up issue
-- Follow-up issue (fail-open 時は必須):
+- [ ] Fail-open（temporary）+ follow-up issue
+- Follow-up issue（fail-open 時は必須）:
