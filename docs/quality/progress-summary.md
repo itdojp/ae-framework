@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-31'
+lastVerified: '2026-04-03'
 ---
 # Progress Summary (`artifacts/progress/summary.json`)
 
@@ -61,7 +61,7 @@ High-level keys:
 ## 日本語
 
 ### 目的
-`artifacts/progress/summary.json` は、最新の progress、quality、traceability の signal を単一の JSON 文書に集約するための summary artifact です。下流の reporting や status inspection 向けの compact な sidecar として扱います。
+`artifacts/progress/summary.json` は、最新の progress / quality / traceability の signal を単一の JSON 文書へ集約する要約成果物です。下流のレポート生成や状態確認で使うコンパクトな補助成果物として扱います。
 
 ### 生成
 ```bash
@@ -72,7 +72,7 @@ pnpm run progress:summary
 
 ### 既定の入力
 - `metrics/project-metrics.json`
-- `reports/quality-gates/quality-report-*-latest.json`（優先。存在しない場合は、generator が `reports/quality-gates/` 配下の最新 `quality-report-*.json` に fallback します）
+- `reports/quality-gates/quality-report-*-latest.json`（優先。存在しない場合は、集約スクリプトが `reports/quality-gates/` 配下の最新 `quality-report-*.json` へフォールバックします）
 - `traceability.json`
 - `.ae/phase-state.json`
 
@@ -86,24 +86,24 @@ pnpm run progress:summary
 - `PROGRESS_PHASE_STATE`
 - `PROGRESS_SUMMARY_OUTPUT`
 
-### Phase state の解決順序
+### phase state の解決順序
 Phase state は次の順序で解決されます。
 1. `PROGRESS_PHASE_STATE`
 2. `AE_PHASE_STATE_FILE`
 3. `AE_PHASE_STATE_ROOT` を使った `<root>/.ae/phase-state.json`
-4. current working directory の `.ae/phase-state.json`
+4. 現在の作業ディレクトリにある `.ae/phase-state.json`
 
-### 出力 shape
-上位 key は次のとおりです。
+### 出力構造
+上位キーは次のとおりです。
 - `generatedAt`
-- logical input key ごとの resolved file path、または source が missing / unreadable の場合は `null` を持つ `sources`
-- phase state summary を持つ `progress`
+- 論理入力キーごとの解決済みファイルパス、または source が missing / unreadable の場合は `null` を持つ `sources`
+- phase state の要約を持つ `progress`
 - TDD と coverage の合計値を持つ `metrics`
-- gate summary を持つ `quality`
-- link coverage summary を持つ `traceability`
-- `sources` の値が `null` だった key を持つ `missing`
+- gate の要約を持つ `quality`
+- link coverage の要約を持つ `traceability`
+- `sources` の値が `null` だったキーを持つ `missing`
 
 ### 運用メモ
-- 入力不足や unreadable な source があっても集約全体は失敗せず、`sources` には `null`、`missing` には対応する key を記録します。
-- 実際に消費された file を確認するときは `sources` を参照し、すべての `sources.<key>` が non-null string だと仮定しないでください。
-- phase state の解決結果が想定と異なる場合は、generator 自体を疑う前に override precedence を確認してください。
+- 入力不足や unreadable な source があっても集約全体は失敗せず、`sources` には `null`、`missing` には対応するキーを記録します。
+- 実際に消費されたファイルを確認するときは `sources` を参照し、すべての `sources.<key>` が non-null string だと仮定しないでください。
+- phase state の解決結果が想定と異なる場合は、generator 自体を疑う前に上書き優先順位を確認してください。
