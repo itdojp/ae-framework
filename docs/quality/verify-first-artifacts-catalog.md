@@ -87,9 +87,9 @@ Define the minimum repository artifacts required to keep Verify-first operations
 
 | 成果物 | 作成責任 | 確認責任 | 正式保管先 |
 | --- | --- | --- | --- |
-| Spec / AC / NFR / 制約 | 変更実装者（PR 作成者） | レビュアー + CODEOWNERS | repository (`spec/**`) |
-| Gate 定義 | CI / 品質運用担当 + PR 作成者 | CI / 品質レビュー担当 | repository (`.github/workflows/**`, `spec/gates.yaml`) |
-| 証跡要約 | CI（自動生成） + PR 作成者（補足） | レビュアー | 成果物 + PR スレッド |
+| Spec / AC / NFR / 制約 | 変更実装者（PR 作成者） | レビュアー + CODEOWNERS | リポジトリ（`spec/**`） |
+| Gate 定義 | CI / 品質運用担当 + PR 作成者 | CI / 品質レビュー担当 | リポジトリ（`.github/workflows/**`, `spec/gates.yaml`） |
+| 証跡要約 | CI（自動生成） + PR 作成者（補足） | レビュアー | `artifacts/**` + PR スレッド |
 
 ### 4. 既存ドキュメントとの対応表
 
