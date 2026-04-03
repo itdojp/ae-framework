@@ -70,7 +70,7 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 
 ## 日本語
 
-この文書は、current v0.2 baseline で CI に導入しているフォーマル検証ゲートの定義をまとめたものです。
+この文書は、現行 v0.2 baseline で CI に導入しているフォーマル検証ゲートの定義をまとめたものです。
 
 ### 目的
 
@@ -80,7 +80,7 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 - `z3` / `cvc5` による冗長 SMT チェックを行う。
 - 失敗 -> 反例 -> failing test -> 最小修正、という運用フローを維持する。
 
-### 現在の CI entrypoint
+### 現在の CI 起点
 
 - `verify:conformance (stub)`
 - `verify:alloy (stub)`
@@ -95,9 +95,9 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 
 これらの job は `.github/workflows/formal-verify.yml` に実装されており、non-fork PR では `run-formal` ラベルが付いた場合にのみ起動します。fork PR では maintainer が `workflow_dispatch` を使い、`target` で対象を選択する必要があります。
 
-### blocking と report-only の扱い
+### ブロッキングと report-only の扱い
 
-- formal lane は opt-in で、既定では report-only です。
+- formal lane はオプトインで、既定では report-only です。
 - `enforce-formal` を付けると、strict path で Apalache の `ran/ok` と aggregate step の formal summary validation を強制します。
 - `run-formal` がある場合は `verify-lite` でも formal 出力を収集できますが、既定の required baseline は引き続き `verify-lite` / `policy-gate` / `gate` です。
 
@@ -121,6 +121,6 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 
 ### 現状
 
-- v0.2 では formal lane を PR 上で opt-in のまま維持しています。
+- v0.2 では formal lane を PR 上でオプトインのまま維持しています。
 - repository では実 engine と stricter evidence handling を段階的に接続しており、stub / presence check の job もまだ含まれます。
 - canonical な運用詳細は `docs/quality/formal-runbook.md` にあるため、この文書は policy-level overview として扱ってください。
