@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/risk-policy.yml
 - policy/quality.json
-lastVerified: '2026-03-29'
+lastVerified: '2026-04-04'
 ---
 # Ownership DoD (Definition of Done)
 
@@ -47,24 +47,24 @@ Scope:
 目的: AI 支援で行う変更について、説明・運用・ロールバックの責任所在を明確にし、安全に引き継げる状態を定義する。
 
 対象範囲:
-- 振る舞い変更、新規 integration、policy change に適用する。
-- Spec / Blueprint artifact と PR summary evidence と併用する。
+- 振る舞い変更、新規連携、ポリシー変更に適用する。
+- Spec / Blueprint 成果物と PR summary 証跡と併用する。
 
-### 必須の ownership artifacts
+### 必須の ownership 成果物
 
 - Owner: 責任を持つ個人またはチーム
-- Runbook: 当番対応、緩和策、復旧手順をまとめた運用手順
-- Failure modes: 既知のリスクと想定される緩和策
-- Rollback plan: 安全に差し戻すための手順
-- Evidence: PR summary、verification gates、関連 artifact
+- Runbook: 当番対応、緩和策、復旧手順をまとめた運用手順書
+- Failure modes: 既知の故障様式と想定される緩和策
+- Rollback plan: 安全に差し戻すための計画と手順
+- Evidence: PR summary、verification gates、関連成果物
 
-### DoD checklist
+### DoD チェックリスト
 
 - Owner が明記され、連絡可能である
 - Runbook が存在する、または更新済みである
 - Failure modes が列挙され、レビューされている
 - Rollback plan が文書化され、可能ならテストされている
-- Evidence が summary と artifact を含めて揃っている
+- Evidence が summary と成果物を含めて揃っている
 
 ### 参考文書
 
