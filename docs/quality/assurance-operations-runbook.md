@@ -213,12 +213,12 @@ Check in this order:
 
 ### 1. 目的
 
-本 runbook は、現行実装の assurance 運用を 1 本に集約するための標準手順です。
+本ランブックは、現行実装の保証運用を 1 本に集約するための標準手順です。
 
 対象:
 - `pnpm run verify:assurance` のローカル実行
-- `verify-lite.yml` における report-only 集約
-- `enforce-assurance` ラベル時の strict assurance enforcement
+- `verify-lite.yml` におけるレポートのみ集約
+- `enforce-assurance` ラベル時の厳格アシュアランス強制
 - `artifacts/assurance/assurance-summary.{json,md}` の読み方
 - 失敗時の一次切り分け
 
@@ -236,13 +236,13 @@ Check in this order:
 
 | 種別 | パス例 | 必須 | 用途 |
 | --- | --- | --- | --- |
-| assurance profile | `fixtures/assurance/sample.assurance-profile.json` | 必須 | claim / 必要レーン / 必要な証跡種別 |
-| context pack | `fixtures/context-pack/sample.context-pack.json` | 任意 | claim と spec 参照の補完 |
-| verify-lite summary | `artifacts/verify-lite/verify-lite-run-summary.json` | 任意 | behavior / spec / runtime の観測 |
-| formal summary | `artifacts/formal/formal-summary-v2.json`（優先）または `artifacts/formal/formal-summary-v1.json` | 任意 | model / proof レーンの観測 |
-| conformance report | `artifacts/hermetic-reports/conformance/summary.json` | 任意 | model レーンの補完 |
-| counterexample | `fixtures/counterexample/sample.counterexample.json` | 任意 | adversarial レーン / triage 状態 |
-| evidence manifest | `fixtures/assurance/sample.assurance-evidence-manifest.json` | 任意 | claim ごとの補助証跡 |
+| 保証プロファイル | `fixtures/assurance/sample.assurance-profile.json` | 必須 | クレーム / 必要レーン / 必要な証跡種別 |
+| コンテキストパック | `fixtures/context-pack/sample.context-pack.json` | 任意 | クレームと仕様参照の補完 |
+| Verify Lite サマリー | `artifacts/verify-lite/verify-lite-run-summary.json` | 任意 | 振る舞い / 仕様 / 実行時の観測 |
+| フォーマルサマリー | `artifacts/formal/formal-summary-v2.json`（優先）または `artifacts/formal/formal-summary-v1.json` | 任意 | モデル / 証明レーンの観測 |
+| 適合性レポート | `artifacts/hermetic-reports/conformance/summary.json` | 任意 | モデルレーンの補完 |
+| 反例 | `fixtures/counterexample/sample.counterexample.json` | 任意 | 攻撃的レーン / トリアージ状態 |
+| 証跡マニフェスト | `fixtures/assurance/sample.assurance-evidence-manifest.json` | 任意 | クレームごとの補助証跡 |
 
 #### 3.2 主出力
 
@@ -251,15 +251,15 @@ Check in this order:
 | `artifacts/assurance/assurance-summary.json` | 機械可読サマリー |
 | `artifacts/assurance/assurance-summary.md` | 人間向けサマリー |
 
-### 4. ローカル実行（report-only）
+### 4. ローカル実行（レポートのみ）
 
-#### Step 1: Verify Lite を実行して入力を揃える
+#### ステップ 1: Verify Lite で入力を準備する
 
 ```bash
 pnpm run verify:lite
 ```
 
-#### Step 2: assurance summary を生成する
+#### ステップ 2: 保証サマリーを生成する
 
 ```bash
 pnpm run verify:assurance \
@@ -269,7 +269,7 @@ pnpm run verify:assurance \
   --output-md artifacts/assurance/assurance-summary.md
 ```
 
-追加の artifact を使う場合は、存在するファイルだけを渡します。
+追加のアーティファクトを使う場合は、存在するファイルだけを渡します。
 
 ```bash
 args=(
@@ -298,7 +298,7 @@ fi
 pnpm run verify:assurance "${args[@]}"
 ```
 
-#### Step 3: schema を検証する
+#### ステップ 3: スキーマを検証する
 
 ```bash
 node scripts/ci/validate-assurance-summary.mjs \
@@ -308,40 +308,40 @@ node scripts/ci/validate-assurance-summary.mjs \
 
 ### 5. CI 運用
 
-### 5.1 既定動作
+#### 5.1 既定動作
 
-- `verify-lite.yml` は assurance summary を report-only で生成します。
-- `verify-lite.yml` は `artifacts/assurance/assurance-summary.json` が存在する場合、`artifacts/quality/quality-scorecard.{json,md}` の optional input としても利用します。
-- `pr-ci-status-comment.yml` は harness-health / change-package / hook-feedback / downloaded `artifacts/quality/quality-scorecard.md` を組み合わせて PR summary comment を構成します。同一 head SHA の verify-lite artifact を取得できる場合は `hook-feedback` 生成時にも `--assurance-summary` を渡します。assurance の信号は `hook-feedback` と quality scorecard 経由で反映され、`artifacts/assurance/assurance-summary.md` や claim 単位の詳細を直接追記するわけではありません。
-- `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` は `--assurance-summary` を受け取り、assurance warning を `currentStatus` / `nextActions` / `blockers` / `artifacts` へ反映します。
-- release/post-deploy summary は `artifacts/assurance/assurance-summary.md` が存在する場合に要約を追記します。
+- `verify-lite.yml` は保証サマリーをレポートのみモードで生成します。
+- `verify-lite.yml` は `artifacts/assurance/assurance-summary.json` が存在する場合、`artifacts/quality/quality-scorecard.{json,md}` の任意入力としても利用します。
+- `pr-ci-status-comment.yml` は harness-health / change-package / hook-feedback / ダウンロードした `artifacts/quality/quality-scorecard.md` を組み合わせて PR サマリーコメントを構成します。同一 head SHA の verify-lite アーティファクトを取得できる場合は `hook-feedback` 生成時にも `--assurance-summary` を渡します。保証シグナルは `hook-feedback` と品質スコアカード経由で反映され、`artifacts/assurance/assurance-summary.md` やクレーム単位の詳細を直接追記するわけではありません。
+- `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` は `--assurance-summary` を受け取り、保証警告を `currentStatus` / `nextActions` / `blockers` / `artifacts` へ反映します。
+- リリース/デプロイ後サマリーは `artifacts/assurance/assurance-summary.md` が存在する場合に要約を追記します。
 
-### 5.2 strict assurance enforcement の発火条件
+#### 5.2 厳格アシュアランス強制の発火条件
 
-- PR に `enforce-assurance` ラベルが付いている場合のみ、`verify-lite.yml` の `Enforce assurance summary (strict; label-gated)` ステップで strict assurance enforcement を有効化します。
+- PR に `enforce-assurance` ラベルが付いている場合のみ、`verify-lite.yml` の `Enforce assurance summary (strict; label-gated)` ステップで厳格アシュアランス強制を有効化します。
 - `pull_request` の `labeled` / `unlabeled` / `ready_for_review` で Verify Lite を再評価するため、ラベル操作後も同一 PR 上で再実行されます。
 
-### 5.3 strict assurance enforcement のローカル再現
+#### 5.3 厳格アシュアランス強制のローカル再現
 
 ```bash
 node scripts/ci/enforce-assurance-summary.mjs \
   artifacts/assurance/assurance-summary.json
 ```
 
-strict assurance enforcement は少なくとも次を失敗条件として扱います。
+厳格アシュアランス強制は少なくとも次を失敗条件として扱います。
 - `summary.claimCount < 1`
 - `summary.warningClaims > 0`
 - `summary.warningCount > 0`
 - `summary.claimsMissingRequiredLanes > 0`
 - `summary.claimsMissingRequiredEvidenceKinds > 0`
 - `summary.unlinkedCounterexamples > 0`
-- 任意 claim の `status != satisfied`
-- 任意 claim の `missingLanes` / `missingEvidenceKinds` / `independenceWarnings`
-- 任意 claim の `counterexamples.open > 0`
+- 任意クレームの `status != satisfied`
+- 任意クレームの `missingLanes` / `missingEvidenceKinds` / `independenceWarnings`
+- 任意クレームの `counterexamples.open > 0`
 
 ### 6. サマリーの読み方
 
-### 6.1 summary レベル
+#### 6.1 サマリーレベル
 
 優先的に確認する項目:
 - `claimCount`
@@ -351,9 +351,9 @@ strict assurance enforcement は少なくとも次を失敗条件として扱い
 - `unlinkedCounterexamples`
 - `warningCount`
 
-### 6.2 claim レベル
+#### 6.2 クレームレベル
 
-claim ごとに確認する項目:
+クレームごとに確認する項目:
 - `status`
 - `observedLanes`
 - `missingLanes`
@@ -364,36 +364,36 @@ claim ごとに確認する項目:
 
 ### 7. 失敗時の一次切り分け
 
-### 7.1 `summary not found`
+#### 7.1 `summary not found`
 
 確認順:
 1. `verify-lite` が完走しているか
-2. `Aggregate assurance summary` step が実行されたか
+2. `Aggregate assurance summary` ステップが実行されたか
 3. `artifacts/assurance/assurance-summary.json` が生成されているか
 4. `verify:assurance` の引数に `--assurance-profile` と `--output-json` が含まれているか
 
-### 7.2 `missingLanes` / `missingEvidenceKinds`
+#### 7.2 `missingLanes` / `missingEvidenceKinds`
 
 確認順:
-1. `docs/quality/assurance-profile.md` の claim 定義を確認
-2. `assurance-summary.json` の該当 claim を確認
-3. 不足 lane が formal / conformance / counterexample / evidence manifest のどれで埋まるかを判断
-4. 入力 artifact を追加して `verify:assurance` を再実行
+1. `docs/quality/assurance-profile.md` のクレーム定義を確認
+2. `assurance-summary.json` の該当クレームを確認
+3. 不足レーンが formal / conformance / counterexample / evidence manifest のどれで埋まるかを判断
+4. 入力アーティファクトを追加して `verify:assurance` を再実行
 
-### 7.3 `openCounterexamples > 0` / `unlinkedCounterexamples > 0`
+#### 7.3 `openCounterexamples > 0` / `unlinkedCounterexamples > 0`
 
 確認順:
 1. `fixtures/counterexample/*.json` または生成された counterexample JSON を確認
 2. `claimIds` / `morphismIds` / `triageStatus` / `replayCommand` を補完
-3. `triageStatus=open` のまま strict に掛けていないかを確認
+3. `triageStatus=open` のまま厳格モードに掛けていないかを確認
 
 ### 8. PR 前チェックリスト
 
 - [ ] `pnpm run verify:lite` が通っている
 - [ ] `pnpm run verify:assurance ...` の出力を確認した
-- [ ] `artifacts/assurance/assurance-summary.json` が schema-valid である
+- [ ] `artifacts/assurance/assurance-summary.json` がスキーマ適合である
 - [ ] `enforce-assurance` を付ける理由を PR 本文または Issue に記録した
-- [ ] strict 運用時に warning / open counterexample を残していない
+- [ ] 厳格モード時に警告 / 未解決の反例を残していない
 
 ### 9. 参照
 
