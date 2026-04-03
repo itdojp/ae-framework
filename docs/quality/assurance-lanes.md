@@ -141,7 +141,7 @@ Deferred or incomplete:
 `assurance-profile/v1` が要求する `requiredLanes` を、実装・CI・成果物の間で同じ意味に固定するための基準文書です。
 
 この文書では次を定義します。
-- 正規の検証レーン（canonical validation lanes）
+- 正規の検証レーン
 - 最小の独立性ルール
 - provenance の最小期待値
 - 反例リンク規約
@@ -190,7 +190,7 @@ claim ごとの `minIndependentSources` は、観測された evidence の `sour
 - `unresolved-critical-counterexample`
 - `insufficient-independent-lanes`
 
-### 4. provenance の最小期待値
+### 4. Provenance の最小期待値
 
 現行の成果物メタデータ契約は `schema/artifact-metadata.schema.json` で定義されています。
 
