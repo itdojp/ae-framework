@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-04-03'
+lastVerified: '2026-04-04'
 owner: verify-first
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -124,7 +124,7 @@ For PR comment integration, see:
 
 ### 1. 目的
 
-本 Runbook は、Verify-first を実装運用に落とすための最短手順を定義します。
+本 runbook は、Verify-first を実装運用に落とし込む最短手順を定義します。
 対象は、Issue #1979 で扱う以下の実装領域です。
 
 - Spec 起点のテスト雛形生成
@@ -142,7 +142,7 @@ For PR comment integration, see:
 #### Step 1: Plan -> Spec 固定
 
 1. 要件 / AC / NFR / 制約をリポジトリに固定する。
-2. `Traceability Map` を埋める。  
+2. `Traceability Map` を埋める。
 3. PR 本文に source issue / thread を記載する。
 
 #### Step 2: テスト雛形生成
@@ -189,10 +189,10 @@ PR では必須ゲートを fail-closed とし、未通過のまま merge しな
 
 - 失敗ゲート
 - 再現コマンド
-- 関連 Spec / Policy リンク
+- 関連する Spec / Policy へのリンク
 - CI run URL と artifact path
 
-PR自動コメントへの連携案は `docs/quality/verify-first-failure-comment-design.md` を参照。
+PR 自動コメントへの連携案は `docs/quality/verify-first-failure-comment-design.md` を参照する。
 
 ### 4. Codex 連携あり / なしの運用
 
