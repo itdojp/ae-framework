@@ -213,7 +213,7 @@ Check in this order:
 
 ### 1. 目的
 
-本 Runbook は、現行実装の assurance 運用を 1 本に集約するための標準手順です。
+本 runbook は、現行実装の assurance 運用を 1 本に集約するための標準手順です。
 
 対象:
 - `pnpm run verify:assurance` のローカル実行
@@ -269,7 +269,7 @@ pnpm run verify:assurance \
   --output-md artifacts/assurance/assurance-summary.md
 ```
 
-追加の成果物を使う場合は、存在するファイルだけを渡します。
+追加の artifact を使う場合は、存在するファイルだけを渡します。
 
 ```bash
 args=(
