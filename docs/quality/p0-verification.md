@@ -94,7 +94,7 @@ Options:
 本ログは、`ae` CLI、benchmark 生成、`tdd:guard` の skip 挙動について、P0 実装の基準動作を確認した際の参照出力を保持するためのものです。
 
 ### 検証範囲
-- `ae` の CLI help 出力
+- `ae` の CLI ヘルプ出力
 - 既定 seed での benchmark 実行
 - `AE_SEED=42` での benchmark 実行
 - `AE_SKIP_GUARD=1` における `ae tdd:guard` の挙動
@@ -158,7 +158,7 @@ Options:
 ```
 
 ### 運用メモ
-- CLI help により、公開 entrypoint が `tdd:guard` / `bench` / `qa` であることを確認できます。
+- CLI ヘルプにより、公開 entrypoint が `tdd:guard` / `bench` / `qa` であることを確認できます。
 - benchmark 生成は既定 seed と `AE_SEED` 上書きの両経路で確認する必要があります。
 - `AE_SKIP_GUARD=1` は guard 実行ではなく、明示的な skip message を返すことが基準動作です。
 - benchmark report は、参照 artifact pipeline が JSON と Markdown を生成できることの証跡として扱います。
