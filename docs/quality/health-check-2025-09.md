@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/verification-gates.md
 - docs/ci/ci-troubleshooting-guide.md
-lastVerified: '2026-03-31'
+lastVerified: '2026-04-04'
 ---
 # Repository Health Check — 2025-09-05
 
@@ -52,14 +52,14 @@ This report captures the repository health snapshot for Types Gate, Verify, Benc
 ## 日本語
 
 ### 対象範囲
-このレポートは、記録時点における Types Gate、Verify、Bench、Flake、Branch Protection、および CI workflow hygiene の repository health snapshot をまとめたものです。
+このレポートは、記録時点における Types Gate、Verify、Bench、Flake、Branch Protection、および CI workflow hygiene のリポジトリ健全性スナップショットをまとめたものです。
 
-### 現行の gate とポリシー
+### 現行のゲートとポリシー
 - PR Verify (`pr-verify.yml`)
   - CodeX quickstart は `CODEX_SKIP_QUALITY=1` と `CODEX_TOLERANT=1` による tolerant mode で動作します。
   - summary comment と artifact は upload されますが、job は設計上 green のままです。
 - Quality Gates (`quality-gates-centralized.yml`)
-  - `src/**`, `packages/**`, `apps/**`, `tests/**`, `configs/**`, `scripts/**`, `types/**` に対する `paths` filter で、code change 時のみ起動します。
+  - `src/**`, `packages/**`, `apps/**`, `tests/**`, `configs/**`, `scripts/**`, `types/**` に対する `paths` filter により、code change 時のみ起動します。
 - SBOM (`sbom-generation.yml`)
   - manifest または code change 時に起動し、docs-only PR は対象外です。
 - Security (`security.yml`)
@@ -72,11 +72,11 @@ This report captures the repository health snapshot for Types Gate, Verify, Benc
   - reusable workflow は `workflow_call` を公開し、fail-fast pipeline から参照されます。
 
 ### Lint と hygiene
-- `actionlint`: このレポート作成時点で、すべての workflow が local `actionlint v1.7.1` を通過しています。
+- `actionlint`: このレポート作成時点で、すべての workflow がローカル `actionlint v1.7.1` を通過しています。
 - reusable workflow は `workflow_call` と optional input を公開しています。
 
 ### Types と tests
-- strict types mode 用 env として `AE_TYPES_STRICT=1` が利用可能です。
+- strict types mode 用の env として `AE_TYPES_STRICT=1` が利用可能です。
 - stable CI test profile は `pnpm run test:ci:stable` で利用でき、重い system-integration suite を除外します。`docs/ci/stable-profile.md` を参照してください。
 
 ### 推奨 branch protection baseline
