@@ -72,7 +72,7 @@ pnpm run progress:summary
 
 ### 既定の入力
 - `metrics/project-metrics.json`
-- `reports/quality-gates/quality-report-*-latest.json`（優先。存在しない場合は、集約スクリプトが `reports/quality-gates/` 配下の最新 `quality-report-*.json` へフォールバックします）
+- `reports/quality-gates/quality-report-*-latest.json`（優先。存在しない場合は、generator が `reports/quality-gates/` 配下の最新 `quality-report-*.json` へフォールバックします）
 - `traceability.json`
 - `.ae/phase-state.json`
 
@@ -87,7 +87,7 @@ pnpm run progress:summary
 - `PROGRESS_SUMMARY_OUTPUT`
 
 ### phase state の解決順序
-Phase state は次の順序で解決されます。
+phase state は次の順序で解決されます。
 1. `PROGRESS_PHASE_STATE`
 2. `AE_PHASE_STATE_FILE`
 3. `AE_PHASE_STATE_ROOT` を使った `<root>/.ae/phase-state.json`
@@ -101,7 +101,7 @@ Phase state は次の順序で解決されます。
 - TDD と coverage の合計値を持つ `metrics`
 - gate の要約を持つ `quality`
 - link coverage の要約を持つ `traceability`
-- `sources` の値が `null` だったキーを持つ `missing`
+- `sources` の値が `null` だったキーの配列を持つ `missing`
 
 ### 運用メモ
 - 入力不足や unreadable な source があっても集約全体は失敗せず、`sources` には `null`、`missing` には対応するキーを記録します。
