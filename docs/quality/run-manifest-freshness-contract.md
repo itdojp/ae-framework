@@ -89,12 +89,12 @@ node scripts/ci/check-run-manifest.mjs \
 - `status == "present"`
 - `staleComparedToCurrentCommit == false`
 
-`producedByCommit` が取得できず `staleComparedToCurrentCommit == null` の場合は **freshness_unknown** として違反を記録します。上位の workflow や運用レイヤーでは、その結果を blocking と扱うか report-only と扱うかを別途判断できます。
+`producedByCommit` が取得できず `staleComparedToCurrentCommit == null` の場合は `freshness_unknown` として違反を記録します。上位の workflow や運用レイヤーでは、その結果を blocking と扱うか report-only と扱うかを別途判断できます。
 
 ### 4. フィールド概要
 - `metadata.gitCommit`: 現在のコミット（マニフェスト生成時点）
 - `summaries.<name>.producedByCommit`: 成果物 JSON 内部から抽出したコミット（best-effort）
-- `summaries.<name>.staleComparedToCurrentCommit`: `producedByCommit` と `metadata.gitCommit` の比較結果
+- `summaries.<name>.staleComparedToCurrentCommit`: `producedByCommit` と `metadata.gitCommit` の比較結果（best-effort）
 
 ### 5. 参照
 - `schema/run-manifest.schema.json`
