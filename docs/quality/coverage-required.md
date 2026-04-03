@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/coverage-policy.md
 - policy/quality.json
-lastVerified: '2026-03-27'
+lastVerified: '2026-04-04'
 ---
 # Coverage Required — Operations Guide for Branch Protection
 
@@ -78,34 +78,34 @@ Coverage comments and notes should make the following fields easy to verify:
 ## 日本語
 
 ### 目的
-- PR では既定で report-only としつつ、reviewer に coverage を可視化する
-- `main` または明示的に escalate された PR で coverage を強制し、branch protection と整合させる
-- repository variable、required check、段階導入の手順を標準化する
+- PR では既定で報告専用（report-only）としつつ、レビュアに coverage を可視化する
+- `main` または明示的にエスカレートされた PR で coverage を強制し、branch protection と整合させる
+- リポジトリ変数、required check、段階導入の手順を標準化する
 
 ### 推奨ロールアウト
-- まず repository variable を設定する
+- まずリポジトリ変数を設定する
 - coverage を required にする前に、non-blocking comment の観測期間を設ける
 - threshold と incident 頻度を把握した後に、`coverage-check / gate` や `coverage-check / coverage` など必要な job-level status check を required に昇格させる
 
-### Branch protection の設定
+### Branch protection 設定
 1. Settings -> Variables -> Repository variables を開く
 2. 次を追加する
    - `COVERAGE_ENFORCE_MAIN=1`
    - `COVERAGE_DEFAULT_THRESHOLD`（例: `80`）
 3. Settings -> Branches -> Branch protection rules を開く
 4. `Require status checks to pass before merging` を有効化する
-5. 対象の `coverage-check` job-level status context を追加する。repository 状態によっては次のいずれかで表示される
+5. 対象の `coverage-check` job-level status context を追加する。リポジトリ状態によっては次のいずれかで表示される
    - `coverage-check / gate`
    - `coverage-check / coverage`
-6. 段階導入中は `Require branches to be up to date before merging` を一時的に緩め、policy 安定後に再度有効化してよい
-7. 段階導入中は `verify-lite` を required のまま維持し、repository が収束するまで `ci-non-blocking` などの移行用制御を使う
+6. 段階導入中は `Require branches to be up to date before merging` を一時的に緩め、ポリシー安定後に再度有効化してよい
+7. 段階導入中は `verify-lite` を required のまま維持し、リポジトリが収束するまで `ci-non-blocking` などの移行用制御を使う
 
 ### 運用上の期待値
 - PR comment には `Coverage (lines):` と `Threshold (effective):` が表示される
-- operator は `/coverage <pct>` で threshold を上書きできる
-- operator は `/enforce-coverage` で PR を blocking mode に切り替えられる
+- 運用担当者は `/coverage <pct>` でしきい値を上書きできる
+- 運用担当者は `/enforce-coverage` で PR を blocking mode に切り替えられる
 - `main` への push では `COVERAGE_ENFORCE_MAIN=1` により coverage enforcement が blocking になる
-- workflow の Note には `label > repo var > default` の導出順と current policy mode が表示され、debug に使える
+- workflow の注記には `label > repo var > default` の導出順と現在のポリシーモードが表示され、デバッグに使える
 
 ### 表示契約
 coverage comment と workflow note では、少なくとも次の項目を確認できる状態にする
@@ -116,9 +116,9 @@ coverage comment と workflow note では、少なくとも次の項目を確認
 
 ### Tips
 - しきい値未満で確実に失敗させたい PR では `/enforce-coverage` を使う
-- 一時的な threshold override には `/coverage <pct>` を使う（例: `72`）
-- 現在の repository 状態で利用可能なら `/coverage clear` で一時 override を解除する
-- policy model と comment semantics の詳細は `docs/quality/coverage-policy.md` を参照する
+- 一時的なしきい値 override には `/coverage <pct>` を使う（例: `72`）
+- 現在のリポジトリ状態で利用可能なら `/coverage clear` で一時 override を解除する
+- ポリシーモデルと comment semantics の詳細は `docs/quality/coverage-policy.md` を参照する
 
 ### 用語集
 - `Derived`
