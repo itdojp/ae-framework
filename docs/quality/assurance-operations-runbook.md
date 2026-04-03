@@ -228,7 +228,7 @@ Check in this order:
 - pnpm: `10.x`
 - 実行場所: リポジトリルート
 - 入力契約を `docs/quality/assurance-profile.md` で確認済み
-- 検証レーン taxonomy を `docs/quality/assurance-lanes.md` で確認済み
+- 検証レーン種別を `docs/quality/assurance-lanes.md` で確認済み
 
 ### 3. 入力と出力
 
@@ -236,13 +236,13 @@ Check in this order:
 
 | 種別 | パス例 | 必須 | 用途 |
 | --- | --- | --- | --- |
-| assurance profile | `fixtures/assurance/sample.assurance-profile.json` | 必須 | claim / required lanes / required evidence kinds |
+| assurance profile | `fixtures/assurance/sample.assurance-profile.json` | 必須 | claim / 必要レーン / 必要な証跡種別 |
 | context pack | `fixtures/context-pack/sample.context-pack.json` | 任意 | claim と spec 参照の補完 |
 | verify-lite summary | `artifacts/verify-lite/verify-lite-run-summary.json` | 任意 | behavior / spec / runtime の観測 |
-| formal summary | `artifacts/formal/formal-summary-v2.json`（優先）または `artifacts/formal/formal-summary-v1.json` | 任意 | model / proof lane の観測 |
-| conformance report | `artifacts/hermetic-reports/conformance/summary.json` | 任意 | model lane の補完 |
-| counterexample | `fixtures/counterexample/sample.counterexample.json` | 任意 | adversarial lane / triage 状態 |
-| evidence manifest | `fixtures/assurance/sample.assurance-evidence-manifest.json` | 任意 | claim ごとの supplemental evidence |
+| formal summary | `artifacts/formal/formal-summary-v2.json`（優先）または `artifacts/formal/formal-summary-v1.json` | 任意 | model / proof レーンの観測 |
+| conformance report | `artifacts/hermetic-reports/conformance/summary.json` | 任意 | model レーンの補完 |
+| counterexample | `fixtures/counterexample/sample.counterexample.json` | 任意 | adversarial レーン / triage 状態 |
+| evidence manifest | `fixtures/assurance/sample.assurance-evidence-manifest.json` | 任意 | claim ごとの補助証跡 |
 
 #### 3.2 主出力
 
@@ -253,13 +253,13 @@ Check in this order:
 
 ### 4. ローカル実行（report-only）
 
-### Step 1: Verify Lite を実行して入力を揃える
+#### Step 1: Verify Lite を実行して入力を揃える
 
 ```bash
 pnpm run verify:lite
 ```
 
-### Step 2: assurance summary を生成する
+#### Step 2: assurance summary を生成する
 
 ```bash
 pnpm run verify:assurance \
@@ -298,7 +298,7 @@ fi
 pnpm run verify:assurance "${args[@]}"
 ```
 
-### Step 3: schema を検証する
+#### Step 3: schema を検証する
 
 ```bash
 node scripts/ci/validate-assurance-summary.mjs \
