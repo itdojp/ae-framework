@@ -59,7 +59,7 @@ Quality: {{coverage.value*100 | round}}% (>= {{coverage.threshold*100 | round}})
 
 ## 日本語
 
-このテンプレートは、正規化済み artifact と `combined.json` から PR summary コメントを生成する際の基準形です。
+このテンプレートは、正規化済み成果物と `combined.json` から PR summary コメントを生成する際の基準形です。
 
 ### Alerts 行
 
@@ -67,15 +67,15 @@ Quality: {{coverage.value*100 | round}}% (>= {{coverage.threshold*100 | round}})
 Alerts: {{alerts}}
 ```
 
-summary engine が alert entry を生成した場合にのみ Alerts 行を出力します。alert がない場合は、その行を省略するか、実装依存の空表現を使います。
+summary 生成処理が alert entry を生成した場合にのみ Alerts 行を出力します。alert がない場合は、その行を省略するか、実装依存の空表現を使います。
 
-### Digest テンプレート
+### Digest 雛形
 
 ```text
 Quality: {{coverage.value*100 | round}}% (>= {{coverage.threshold*100 | round}}) {{coverage.ok ? '✅' : '❌'}} [{{coverage.delta*100 | sign}}%] | Formal: {{formal.result}} | Adapters: {{adapters.line}} | GWT: {{gwt.count}} | Replay: {{replay.totalEvents}} ev, {{replay.violations.length}} viol | Trace: {{traceIds.join(', ')}} | Gates: {{gates.line}}
 ```
 
-### Detailed テンプレート
+### Detailed 雛形
 
 ```text
 ## Quality Summary
@@ -98,7 +98,7 @@ Quality: {{coverage.value*100 | round}}% (>= {{coverage.threshold*100 | round}})
 
 ### Notes
 
-- 入力は `docs/quality/pr-summary-tool.md` で定義された正規化済み artifact と `combined.json` を前提とします。
+- 入力は `docs/quality/pr-summary-tool.md` で定義された正規化済み成果物と `combined.json` を前提とします。
 - template engine 自体は実装依存です。ここでは renderer 固有仕様ではなく、期待される field surface を示します。
 - 有効化されている gate だけを含め、未使用 section は省略して summary を簡潔に保ちます。
-- artifact の lineage や stricter schema rules は `docs/quality/ARTIFACTS-CONTRACT.md` に従います。
+- 成果物の lineage や stricter schema rules は `docs/quality/ARTIFACTS-CONTRACT.md` に従います。
