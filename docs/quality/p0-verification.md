@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/verify-first-implementation-runbook.md
 - policy/risk-policy.yml
-lastVerified: '2026-04-02'
+lastVerified: '2026-04-04'
 ---
 # P0 Implementation Verification Log
 
@@ -95,12 +95,12 @@ Options:
 
 ### 検証範囲
 - `ae` の CLI help 出力
-- default seed での benchmark 実行
+- 既定 seed での benchmark 実行
 - `AE_SEED=42` での benchmark 実行
 - `AE_SKIP_GUARD=1` における `ae tdd:guard` の挙動
 - `artifacts/reference/benchmarks/bench.md` に生成された benchmark report
 
-### 1. CLI Help Command
+### 1. CLI ヘルプコマンド
 
 ```text
 ae
@@ -123,14 +123,14 @@ Options:
   -h, --help  Display this message
 ```
 
-### 2. Benchmark Command（Default Seed）
+### 2. ベンチマーク実行（既定 seed）
 
 ```text
 [ae:bench] running with seed=12345, iterations=30, warmup=300ms
 [ae:bench] artifacts generated -> artifacts/reference/benchmarks/bench.{json,md}
 ```
 
-### 3. Benchmark Command（`AE_SEED=42`）
+### 3. ベンチマーク実行（`AE_SEED=42`）
 
 ```text
 [ae:bench] running with seed=42, iterations=30, warmup=300ms
@@ -143,7 +143,7 @@ Options:
 [ae:tdd:guard] skipped by AE_SKIP_GUARD=1
 ```
 
-### 5. Generated Benchmark Report（`artifacts/reference/benchmarks/bench.md`）
+### 5. 生成された benchmark report（`artifacts/reference/benchmarks/bench.md`）
 
 ```md
 # Bench Report
@@ -159,6 +159,6 @@ Options:
 
 ### 運用メモ
 - CLI help により、公開 entrypoint が `tdd:guard` / `bench` / `qa` であることを確認できます。
-- benchmark 生成は default seed と `AE_SEED` 上書きの両経路で確認する必要があります。
+- benchmark 生成は既定 seed と `AE_SEED` 上書きの両経路で確認する必要があります。
 - `AE_SKIP_GUARD=1` は guard 実行ではなく、明示的な skip message を返すことが基準動作です。
 - benchmark report は、参照 artifact pipeline が JSON と Markdown を生成できることの証跡として扱います。
