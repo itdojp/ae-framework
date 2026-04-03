@@ -40,9 +40,9 @@ lastVerified: '2026-04-04'
 - Trace validation: `pnpm run trace:validate` (lightweight schema consistency check)
 - Conformance: `pnpm run verify:conformance [-i file --disable-invariants ...]`
 
-### 運用メモ
+### Tips
 
-- Start with 安全性 invariants first and keep the loop small.
+- Start with safety invariants first and keep the loop small.
 - CI runs via the `run-formal` label in non-blocking mode.
 - See `docs/quality/formal-runbook.md` and `docs/quality/formal-gates.md` for the full operating model.
 
