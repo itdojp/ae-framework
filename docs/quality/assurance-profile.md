@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - schema/assurance-profile.schema.json
 - docs/quality/ASSURANCE-MODEL.md
-lastVerified: '2026-04-03'
+lastVerified: '2026-04-04'
 ---
 # Assurance Profile v1
 
@@ -138,12 +138,12 @@ Notes:
 - required evidence kinds（必要な証跡種別）
 - Context Pack 上の object / morphism / diagram / acceptance test 参照
 
-現時点では、**schema とドキュメント整備、`verify:assurance` による summary 生成、Verify Lite での assurance summary artifact 収集、および `enforce-assurance` ラベル時の strict assurance enforcement** までを実装済みとします。通常 PR は report-only のまま維持し、strict 化は label-gated でのみ有効化します。
+現時点では、**schema とドキュメント整備、`verify:assurance` による summary 生成、Verify Lite での assurance summary artifact 収集、および `enforce-assurance` ラベル時の strict assurance enforcement** までを実装済みとします。通常 PR は報告専用（report-only）のまま維持し、strict 化はラベル制御（label-gated）時のみ有効化します。
 
 ### 2. スキーマ
 
 - スキーマ: `schema/assurance-profile.schema.json`
-- sample fixture: `fixtures/assurance/sample.assurance-profile.json`
+- サンプル fixture: `fixtures/assurance/sample.assurance-profile.json`
 - Context Pack 側の参照先: `schema/context-pack-v1.schema.json` の optional `assurance`
 
 最小構造:
@@ -171,9 +171,9 @@ Notes:
 }
 ```
 
-### 3. assurance level の暫定意味
+### 3. assurance level の暫定的な意味
 
-| Level | 意味 | 典型 evidence |
+| Level | 意味 | 典型的な証跡（evidence） |
 | --- | --- | --- |
 | `A0` | 契約・lint・build が成立している最低限の整合性 | schema, lint, type, build |
 | `A1` | unit/integration/property によりサンプル的に確認済み | unit, integration, property |
@@ -181,31 +181,31 @@ Notes:
 | `A3` | 反例探索やモデル検査で critical claim を閉じている | model-check, counterexample-closed |
 | `A4` | proof-carrying な厳密保証を持つ | proof |
 
-この表は Phase 1/2 の暫定定義です。`verify:assurance` は lane / evidence / warning を集約しますが、最終的な `achievedLevel` 自動判定はまだ後続フェーズです。
+この表は Phase 1/2 の暫定定義です。`verify:assurance` は lane / evidence / warning を集約しますが、最終的な `achievedLevel` の自動判定はまだ後続フェーズです。
 
 ### 4. クレーム（claim）の設計指針
 
-1. claim は実装方針ではなく、業務上の正しさを述べる
+1. クレーム（claim）は実装方針ではなく、業務上の正しさを述べる
 2. `criticality` は low/medium/high/critical の 4 段階で記録する
 3. `requiredLanes` は同じ誤解を共有しない観点で複数レーンを選ぶ
-4. `requiredEvidenceKinds` は「何を集めれば claim が説明できるか」を明示する
+4. `requiredEvidenceKinds` は「何を集めればクレーム（claim）が説明できるか」を明示する
 5. `scopeRefs` は Context Pack の ID にひも付け、仕様断片との対応を残す
 
 ### 4.1 `requiredLanes` と `minIndependentSources`
 
-- `requiredLanes` は「何本テストがあるか」ではなく、「異なる観点から claim を叩いているか」を表します。
-- `minIndependentSources` は `verify:assurance` が使う最小 independence rule です。
+- `requiredLanes` は「何本テストがあるか」ではなく、「異なる観点からクレーム（claim）を叩いているか」を表します。
+- `minIndependentSources` は `verify:assurance` が使う最小独立性ルール（independence rule）です。
 - 未指定時の既定値:
   - `critical` / `high`: `2`
   - `medium` / `low`: `1`
 
 例:
-- `spec + behavior + model` を要求する claim は、仕様・実装・モデルの少なくとも 2 系統以上が観測されることを期待する
+- `spec + behavior + model` を要求するクレーム（claim）は、仕様・実装・モデルの少なくとも 2 系統以上が観測されることを期待する
 - `behavior` だけを増やしても、すべて `source-derived` なら independence warning は解消しない
 
 ### 5. Context Pack v1 との結合
 
-Context Pack には optional `assurance` セクションを追加できます。
+Context Pack には任意の `assurance` セクションを追加できます。
 
 ```yaml
 assurance:
@@ -216,7 +216,7 @@ assurance:
 
 用途:
 - どの Context Pack がどの assurance profile を参照するかを明示する
-- morphism / diagram / acceptance test と claim を間接的に結ぶ
+- morphism / diagram / acceptance test とクレーム（claim）を間接的に結ぶ
 - assurance 未導入リポジトリでは、このセクションを省略して既存挙動を維持する
 
 ### 6. 現時点の非目標
@@ -224,12 +224,12 @@ assurance:
 - `verify-lite-run-summary` 自体へ achieved level を書き戻すこと
 - `policy-gate` が assurance artifact 自体を直接解釈して blocking 判定すること
 - `policy-input` / `policy-decision` への assurance 判定追加
-- 全 claim の formal proof
+- 全クレーム（claim）の formal proof
 - assurance 未設定 PR を既定で blocking にすること
 
 補足:
 - strict 化されるのは `verify-lite.yml` の `Enforce assurance summary (strict; label-gated)` ステップです。
-- `enforce-assurance` ラベルを付けない通常 PR では、assurance summary は report-only のまま扱います。
+- `enforce-assurance` ラベルを付けない通常 PR では、assurance summary は報告専用（report-only）のまま扱います。
 
 ### 7. 変更時の注意
 
