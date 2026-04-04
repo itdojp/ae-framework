@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - README.md
-lastVerified: '2026-03-27'
+lastVerified: '2026-04-04'
 ---
 # Formal Tools Setup
 
@@ -113,7 +113,7 @@ This guide outlines local setup for formal verification tools used alongside AE-
 
 ## 日本語
 
-このガイドは、AE-Framework と併用する形式検証ツールのローカルセットアップを整理したものです。すべて任意であり、CI は label-gated のままです。
+このガイドは、AE-Framework と併用する形式検証ツールのローカルセットアップを整理したものです。すべて任意であり、CI はラベル制御（label-gated）のままです。
 
 ## 対応ツール
 - TLA+ (TLC)
@@ -137,7 +137,7 @@ This guide outlines local setup for formal verification tools used alongside AE-
   - `TLA_TOOLS_JAR=/path/to/tla2tools.jar`
 
 ## Apalache
-- package manager または release から導入する: `https://github.com/apalache-mc/apalache`
+- パッケージマネージャまたはリリースから導入する: `https://github.com/apalache-mc/apalache`
 - 確認:
   - `apalache-mc version`
 - 実行例:
@@ -152,14 +152,14 @@ This guide outlines local setup for formal verification tools used alongside AE-
   - `ALLOY_JAR=$PWD/alloy.jar ALLOY_RUN_CMD='java -jar $ALLOY_JAR exec -q -o - -f {file}' pnpm run verify:model`
 
 ## Z3 / cvc5
-- package manager または release から導入する。
+- パッケージマネージャまたはリリースから導入する。
 - 確認:
   - `z3 --version`
   - `cvc5 --version`
 
 ## Kani
-- release または cargo から導入する。参考: `https://github.com/model-checking/kani`
-- Linux x86_64 の prebuilt 例:
+- リリースまたは cargo から導入する。参考: `https://github.com/model-checking/kani`
+- Linux x86_64 のビルド済み配布物（prebuilt）の例:
   - `curl -L -o kani.tar.gz https://github.com/model-checking/kani/releases/download/kani-0.67.0/kani-0.67.0-x86_64-unknown-linux-gnu.tar.gz`
   - `tar -xzf kani.tar.gz`
   - `export PATH="$PWD/kani-0.67.0/bin:$PATH"`
@@ -168,15 +168,15 @@ This guide outlines local setup for formal verification tools used alongside AE-
   - cargo plugin を導入している場合は `cargo kani --version`
 
 ## SPIN
-- package manager で導入する。Linux の例:
+- パッケージマネージャで導入する。Linux の例:
   - `sudo apt-get update && sudo apt-get install -y spin gcc`
 - 確認:
   - `spin -V`
   - `gcc --version`
 
 ## CSP
-- CI は non-blocking 構成で、既定では常に `csp-summary.json` を出力する。
-- 推奨 backend は `cspx`（OSS, Apache-2.0）。CI-first な CSPM check と JSON 出力に対応する。
+- CI は非ブロッキング構成で、既定では常に `csp-summary.json` を出力する。
+- 推奨バックエンドは `cspx`（OSS, Apache-2.0）で、CI-first な CSPM check と JSON 出力に対応する。
   - immutable commit pin で導入:
     - `cargo install --git https://github.com/itdojp/cspx --rev 8a67639ea4d3f715e27feb8cd728f46866a905db --locked cspx`
   - 確認:
@@ -184,7 +184,7 @@ This guide outlines local setup for formal verification tools used alongside AE-
     - `cspx typecheck --help | grep -- --summary-json`
   - 実行:
     - `pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck`
-- fallback backend 順序: `CSP_RUN_CMD` -> `cspx` -> `refines` (FDR) -> `cspmchecker`
+- fallback バックエンドの順序: `CSP_RUN_CMD` -> `cspx` -> `refines` (FDR) -> `cspmchecker`
   - `CSP_RUN_CMD` は `{file}` placeholder を受け付ける
   - 例:
     - `CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm`
@@ -201,7 +201,7 @@ This guide outlines local setup for formal verification tools used alongside AE-
 
 ## 備考
 - これらのツールは通常の AE-Framework 利用では必須ではない。導入済みの場合に、formal workflow の検証レーンを拡張する。
-- CI 上の stub を動かすには、`Formal Verify` workflow を `run-formal` ラベルか手動起動（workflow_dispatch）で実行する。各 engine は段階的に接続される。
+- CI 上の stub を動かすには、`Formal Verify` workflow を `run-formal` ラベルまたは手動起動（workflow_dispatch）で実行する。各 engine は段階的に接続される。
 
 ## 上流参照 (`cspx`)
 - AE-Framework 連携契約: `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
