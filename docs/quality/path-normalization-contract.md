@@ -70,7 +70,7 @@ Call sites should normally pass `repoRoot: process.cwd()`, which is expected to 
 
 ### 4. 実装（参照）
 本リポジトリでは、次の関数を標準実装として扱います。
-- Node scripts: `scripts/ci/lib/path-normalization.mjs` の `normalizeArtifactPath()`
+- Node スクリプト: `scripts/ci/lib/path-normalization.mjs` の `normalizeArtifactPath()`
 - TypeScript: `src/utils/path-normalization.ts` の `normalizeArtifactPath()`
 
 呼び出し側は、原則 `repoRoot: process.cwd()`（= 実行時のリポジトリルート）を指定します。
