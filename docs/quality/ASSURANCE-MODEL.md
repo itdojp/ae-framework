@@ -16,11 +16,11 @@ verificationCommand: pnpm -s run check:doc-consistency
 This document defines the working assurance model for ae-framework so that implementation, operations, and documentation use the same meaning for assurance-related terms.
 
 It fixes the meaning of:
-- クレーム（claim）
-- 保証レベル（assurance level）
-- 検証レーン（validation lane）
-- 証跡種別（evidence kind）
-- 前提条件 / 例外記録 / 運用時制御
+- claim
+- assurance level
+- validation lane
+- evidence kind
+- assumption / waiver / runtime control
 
 This is both a positioning document and a contract-alignment reference. Full automation is introduced incrementally, but the terminology is intended to remain stable.
 
@@ -92,8 +92,8 @@ A waiver is the record used when an exception is accepted. It should retain owne
 
 Implemented on current `main`:
 - Context Pack v1 and its extended map family
-- verify-lite サマリー
-- formal サマリー / formal aggregate
+- verify-lite summary
+- formal summary / formal aggregate
 - policy-gate / change-package v1 (default flow)
 - assurance profile v1
 - report-only `verify:assurance` summary generation
