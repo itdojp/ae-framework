@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/ci/pr-automation.md
 - policy/risk-policy.yml
-lastVerified: '2026-03-27'
+lastVerified: '2026-04-04'
 ---
 # LLM First-Pass Review Checklist
 
@@ -89,7 +89,7 @@ LLM First-Pass Review
 
 ## 必要な入力
 - Spec または Blueprint（存在する場合）: `docs/templates/spec-kit/` または `docs/templates/blueprint/`
-- Plan -> Spec template（使用した場合）: `docs/templates/plan-to-spec-normalization-template.md`
+- Plan -> Spec 雛形（使用した場合）: `docs/templates/plan-to-spec-normalization-template.md`
 - DbC の定義ソース（使用した場合）: Plan->Spec、Spec/Blueprint、または Context Bundle
 - Context Bundle（使用した場合）: `docs/guides/context-bundle.md`
 - Context Vacuum checklist: `docs/guides/context-vacuum-checklist.md`
@@ -99,14 +99,14 @@ LLM First-Pass Review
 ## チェックリスト
 
 ### 1) 意図とスコープ
-- PR summary が実際の diff scope と一致し、隠れた変更がない。
+- 検証サマリーが実際の diff 範囲と一致し、隠れた変更がない。
 - 変更内容が Spec または Blueprint と整合し、逸脱がある場合は短い理由が説明されている。
-- 新しい振る舞いには明示的な acceptance criteria がある。
+- 新しい振る舞いには明示的な受け入れ条件がある。
 - 新規または変更された振る舞いに対して、Plan->Spec または Context Bundle に前提条件、事後条件、不変条件（DbC）が明示されている。
 
 ### 2) 証跡と検証
-- 必須 CI check が green であり、最低限 Verify Lite が通過している。
-- mutation、contract、MBT、perf/a11y/lh など、リスクが高い場合に optional gate が有効化されている。
+- 必須 CI チェックが成功しており、最低限 Verify Lite が通過している。
+- mutation、contract、MBT、perf/a11y/lh など、リスクが高い場合にオプトインゲートが有効化されている。
 - レポート成果物が PR にリンクされるか、要約されている。
 - 前提条件と事後条件が unit、integration、negative test のいずれかで検証されている。
 - 不変条件が property test、runtime conformance、DB constraint など、少なくとも 1 つの独立した仕組みで検証されている。
