@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-29'
+lastVerified: '2026-04-05'
 ---
 # Comparator Utilities
 
@@ -70,7 +70,7 @@ When two threshold expressions are merged into one stricter threshold:
 
 ## 日本語
 
-この文書は、閾値の構文解析、比較、より厳しい条件への統合に使う共有 comparator utility を説明します。
+この文書は、閾値の構文解析、比較、より厳しい条件への統合に使う共有 comparator utility（比較ユーティリティ） を説明します。
 
 ### 式の形式
 
@@ -87,7 +87,7 @@ When two threshold expressions are merged into one stricter threshold:
 #### パーセント
 
 - `%`, `percent`, `pct`
-- 正規化後は percent 値として保持します。例: `90% -> 90`
+- 正規化後は パーセント値（percent）として保持します。例: `90% -> 90`
 - comparator が percent の場合、実測値が ratio 形式でも percent として扱います。例: `0.85 -> 85`
 - unit なし comparator と percent 実測値の混在はサポートしません。例: `compare('90%', '>=0.9')` は unit mismatch になります
 
@@ -124,6 +124,6 @@ When two threshold expressions are merged into one stricter threshold:
 - `ms`, `%`, `rps` のような明示的な単位を優先してください
 - accuracy や coverage では、ratio 形式 (`>=0.9`) か percent 形式 (`>=90%`) のどちらかに統一してください
 - 正規化後の浮動小数点値に対しては、許容できるなら `==` より範囲チェック (`>=`, `<=`) を優先してください
-- latency では millisecond ベースの閾値を優先してください
+- latency では ミリ秒ベース（millisecond）の閾値を優先してください
 - throughput では `rps` または `rpm` を明示してください
 - policy threshold と AE-IR / configuration hint を統合する場合は `strictest` を使ってください
