@@ -24,9 +24,9 @@ Scope:
 - Plan -> Spec template (if used): `docs/templates/plan-to-spec-normalization-template.md`
 - DbC definition source (if used): Plan->Spec, Spec/Blueprint, or Context Bundle
 - Context Bundle (if used): `docs/guides/context-bundle.md`
-- Context Vacuum チェックリスト: `docs/guides/context-vacuum-checklist.md`
-- 検証サマリー: `docs/quality/pr-summary-template.md`
-- ゲートガイド: `docs/quality/verification-gates.md`
+- Context Vacuum checklist: `docs/guides/context-vacuum-checklist.md`
+- Verification summary: `docs/quality/pr-summary-template.md`
+- Gates guide: `docs/quality/verification-gates.md`
 
 ## Checklist
 
@@ -92,14 +92,14 @@ LLM First-Pass Review
 - Plan -> Spec 雛形（使用した場合）: `docs/templates/plan-to-spec-normalization-template.md`
 - DbC の定義ソース（使用した場合）: Plan->Spec、Spec/Blueprint、または Context Bundle
 - Context Bundle（使用した場合）: `docs/guides/context-bundle.md`
-- Context Vacuum チェックリスト: `docs/guides/context-vacuum-checklist.md`
-- 検証サマリー: `docs/quality/pr-summary-template.md`
-- ゲートガイド: `docs/quality/verification-gates.md`
+- Context Vacuum checklist: `docs/guides/context-vacuum-checklist.md`
+- Verification summary: `docs/quality/pr-summary-template.md`
+- Gates guide: `docs/quality/verification-gates.md`
 
 ## チェックリスト
 
 ### 1) 意図とスコープ
-- PR サマリーが実際の diff 範囲と一致し、隠れた変更がない。
+- 検証サマリーが実際の diff 範囲と一致し、隠れた変更がない。
 - 変更内容が Spec または Blueprint と整合し、逸脱がある場合は短い理由が説明されている。
 - 新しい振る舞いには明示的な受け入れ条件がある。
 - 新規または変更された振る舞いに対して、Plan->Spec または Context Bundle に前提条件、事後条件、不変条件（DbC）が明示されている。
