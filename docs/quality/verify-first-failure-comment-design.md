@@ -104,17 +104,17 @@ Mapping to template fields:
 ### 2. 入力（テンプレ項目との対応）
 
 入力ソース:
-- CI check context（`workflow`, `job`, `status`, `url`）
+- CI チェック文脈（`workflow`, `job`, `status`, `url`）
 - `docs/quality/verify-first-failure-diagnostic-template.md`
-- PR metadata（`head SHA`、labels、related issue）
+- PR メタデータ（`head SHA`、labels、related issue）
 
 テンプレ項目へのマッピング:
-- `Context`: PR番号、SHA、失敗ゲート、検出時刻
+- `Context`: PR 番号、SHA、失敗ゲート、検出時刻
 - `Symptom`: 失敗 job 名、先頭失敗 step、短いエラー要約
 - `Impact`: ゲートのブロッキング区分（`Required` / `Opt-in`）
-- `Reproduction`: ゲート別の既定のローカル再現コマンド
+- `Reproduction`: ゲート別の既定ローカル再現コマンド
 - `Spec/Policy linkage`: spec パス、AC 参照、関連ポリシー
-- `Evidence`: CI run URL、artifact path
+- `Evidence`: CI run URL、成果物パス
 
 ### 3. コメント生成ルール
 
@@ -123,7 +123,7 @@ Mapping to template fields:
 3. オプトインゲート失敗時は fail-open 可否と follow-up issue の有無を明記する。
 4. コメント末尾に次アクション（再実行 / 修正 / fail-open）を必ず出力する。
 
-### 4. PRコメント雛形（最小）
+### 4. PR コメント雛形（最小）
 
 ````md
 ### Verify-first Failure Diagnostic
