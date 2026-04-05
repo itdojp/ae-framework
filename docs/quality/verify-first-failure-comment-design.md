@@ -114,7 +114,7 @@ Mapping to template fields:
 - `Impact`: ゲートのブロッキング区分（`Required` / `Opt-in`）
 - `Reproduction`: ゲート別の既定ローカル再現コマンド
 - `Spec/Policy linkage`: spec パス、AC 参照、関連ポリシー
-- `Evidence`: CI run URL、成果物 path
+- `Evidence`: CI run URL、成果物パス
 
 ### 3. コメント生成ルール
 
