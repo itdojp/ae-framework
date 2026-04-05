@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/quality.json
 - docs/quality/verification-gates.md
-lastVerified: '2026-03-29'
+lastVerified: '2026-04-05'
 ---
 # Cedar Policies Quality Gates (report-only)
 
@@ -56,20 +56,20 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.
 
 ## 日本語
 
-この workflow は `policies/cedar/` 以下の `.json`（Cedar JSON）と `.cedar` / `.ced` ファイルを走査し、non-blocking の summary を生成します。
+この workflow は `policies/cedar/` 以下の `.json`（Cedar JSON）と `.cedar` / `.ced` ファイルを走査し、非ブロッキングの summary を生成します。
 
 ### 現在の挙動
 
 - Runner: `scripts/policies/validate-cedar.mjs`
 - Artifact: `artifacts/policies/cedar-summary.json`
 - PR comment header: `<!-- AE-CEDAR-SUMMARY -->`
-- Trigger: `run-security` または `run-cedar` ラベルの付与
-- Enforcement: `enforce-security` ラベルを付与すると `ngCount > 0` で fail します
+- Trigger: `run-security` または `run-cedar` ラベルを付与
+- Enforcement: `enforce-security` ラベルを付与すると `ngCount > 0` で失敗させます
 
 ### 環境変数
 
 - `CEDAR_POLICIES_DIR`: 走査対象ディレクトリ。既定値は `policies/cedar`
-- `CEDAR_SUMMARY`: 出力 JSON path。既定値は `artifacts/policies/cedar-summary.json`
+- `CEDAR_SUMMARY`: 出力 JSON パス。既定値は `artifacts/policies/cedar-summary.json`
 
 ### 最小 JSON 形状
 
@@ -93,6 +93,6 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.
 
 ### 注意事項
 
-- JSON validation は意図的に minimal です。checker は `policySet` または `policies` array-like structure の有無を確認します。
+- JSON validation は意図的に minimal です。checker は `policySet` または `policies` の array-like structure の有無を確認します。
 - text `.cedar` file は non-empty かどうかだけを確認します。
-- この lane は既定で report-only です。`ngCount > 0` を block 条件にしたい PR だけ `enforce-security` を付けてください。
+- この lane は既定で report-only です。`ngCount > 0` を block 条件にしたい PR のみ `enforce-security` を付けてください。
