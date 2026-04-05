@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-04-03'
+lastVerified: '2026-04-05'
 ---
 # Run Manifest Freshness Contract
 
@@ -64,7 +64,7 @@ If `producedByCommit` cannot be extracted and `staleComparedToCurrentCommit == n
 ### 1. 目的
 成果物が「存在する」だけでは、**現コミットに対して最新（fresh）**である保証になりません。部分的な再実行やローカル検証で古い成果物が残っていると、誤って成功判定になるリスクがあります。
 
-本契約は、`run-manifest.json` により成果物の **producedByCommit** と **staleComparedToCurrentCommit** を記録し、CI / ローカルの両方で鮮度違反を検出できるようにします。
+本契約は、`run-manifest.json` により成果物のフィールド **`producedByCommit`** と **`staleComparedToCurrentCommit`** を記録し、CI / ローカルの両方で鮮度違反を検出できるようにします。
 
 ### 2. 生成
 `node scripts/ci/generate-run-manifest.mjs` を実行し、既定では `artifacts/run-manifest.json` を生成します。
@@ -89,12 +89,12 @@ node scripts/ci/check-run-manifest.mjs \
 - `status == "present"`
 - `staleComparedToCurrentCommit == false`
 
-`producedByCommit` が取得できず `staleComparedToCurrentCommit == null` の場合は `freshness_unknown` として違反を記録します。上位の workflow や運用レイヤーでは、その結果を blocking と扱うか report-only と扱うかを別途判断できます。
+`producedByCommit` が取得できず `staleComparedToCurrentCommit == null` の場合は `freshness_unknown` として違反を記録します。上位の workflow や運用レイヤーでは、その結果をブロッキングとして扱うか、報告専用（report-only）として扱うかを別途判断できます。
 
 ### 4. フィールド概要
 - `metadata.gitCommit`: 現在のコミット（マニフェスト生成時点）
-- `summaries.<name>.producedByCommit`: 成果物 JSON 内部から抽出したコミット（best-effort）
-- `summaries.<name>.staleComparedToCurrentCommit`: `producedByCommit` と `metadata.gitCommit` の比較結果（best-effort）
+- `summaries.<name>.producedByCommit`: 成果物 JSON 内部から抽出したコミット（best-effort、取得できた範囲）
+- `summaries.<name>.staleComparedToCurrentCommit`: `producedByCommit` と `metadata.gitCommit` の比較結果（best-effort、取得できた範囲）
 
 ### 5. 参照
 - `schema/run-manifest.schema.json`
