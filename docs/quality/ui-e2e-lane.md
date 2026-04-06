@@ -14,7 +14,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 This is the minimum UI semantic E2E lane. It records role/name assertions and ARIA tree evidence instead of depending on screenshots.
 
-### 出力
+### Outputs
 
 - `artifacts/e2e/ui-e2e-summary.json`
 - `artifacts/e2e/ui-e2e-summary.md`
@@ -26,7 +26,7 @@ This is the minimum UI semantic E2E lane. It records role/name assertions and AR
 - `/ja/health`: operational status heading and service information
 - `/ja/e2e/semantic-form`: accessible validation and submit flow
 
-### ローカル実行
+### Local run
 
 ```bash
 pnpm run ui-e2e:semantic
@@ -38,17 +38,17 @@ By default, this starts the `@ae-framework/web` Next dev server on `127.0.0.1:31
 pnpm run ui-e2e:semantic -- --base-url http://127.0.0.1:3000 --skip-server
 ```
 
-### CI 挙動
+### CI behavior
 
 - workflow: `.github/workflows/parallel-test-execution.yml`
 - lane: `test-e2e`
 - trigger: on PRs only when the `run-e2e` label is present; on push runs continuously
-- ゲート統合（gate integration）: wired into `scripts/ci/build-harness-health.mjs` as the optional gate `uiE2E`
+- Gate integration: wired into `scripts/ci/build-harness-health.mjs` as the optional gate `uiE2E`
 
-### 注記
+### Notes
 
 - On failure, keep ARIA snapshots and role/name-based assertion messages rather than DOM snapshots.
-- `artifacts/e2e/summary.json` remains a 二重書き込み（dual-write） path for the existing adapter summary aggregation.
+- `artifacts/e2e/summary.json` remains a dual-write path for the existing adapter summary aggregation.
 - Evidence is not yet required in `change-package`; that belongs to a later rollout slice.
 
 ## 日本語
