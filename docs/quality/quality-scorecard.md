@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-04-02'
+lastVerified: '2026-04-06'
 ---
 # Quality Scorecard
 
@@ -19,7 +19,7 @@ lastVerified: '2026-04-02'
 
 - canonical JSON: `artifacts/quality/quality-scorecard.json`
 - canonical Markdown: `artifacts/quality/quality-scorecard.md`
-- schema: `schema/quality-scorecard.schema.json`
+- スキーマ: `schema/quality-scorecard.schema.json`
 - producer: `scripts/quality/build-quality-scorecard.mjs` / `pnpm run quality:scorecard:v1`
 - validator: `scripts/ci/validate-quality-scorecard.mjs` / `pnpm run quality:scorecard:validate`
 
@@ -95,7 +95,7 @@ pnpm run quality:scorecard:validate -- \
 
 - 正規 JSON: `artifacts/quality/quality-scorecard.json`
 - 正規 Markdown: `artifacts/quality/quality-scorecard.md`
-- schema: `schema/quality-scorecard.schema.json`
+- スキーマ: `schema/quality-scorecard.schema.json`
 - 生成処理: `scripts/quality/build-quality-scorecard.mjs` / `pnpm run quality:scorecard:v1`
 - 検証処理: `scripts/ci/validate-quality-scorecard.mjs` / `pnpm run quality:scorecard:validate`
 
@@ -115,27 +115,27 @@ pnpm run quality:scorecard:validate -- \
 - `artifacts/formal/formal-summary-v2.json`
 - `artifacts/formal/formal-summary-v1.json`（v2 が無い場合の代替）
 
-任意成果物が欠けていても生成処理は継続します。`assuranceCoverage` / `policyReadiness` / `performanceRegression` のように専用 summary に依存する評価次元は `missing` になり得ます。一方で formal summary や harness-health が無い場合でも `executionHealth` は `pass` / `warn` のまま評価されます。必須成果物が欠けた場合は fail-fast します。
+任意成果物が欠けていても生成処理は継続します。`assuranceCoverage` / `policyReadiness` / `performanceRegression` のように専用 summary に依存する評価次元は `missing` になり得ます。一方で formal summary や harness-health が無い場合でも `executionHealth` は `pass` / `warn` のまま評価されます。必須成果物が欠けた場合は即時失敗（fail-fast）します。
 
 ### 3. 評価次元
 
 - `artifactIntegrity`
-  - 必須成果物の存在と report envelope の最低限の整合
+  - 必須成果物の存在と report envelope の最低限の整合性
 - `assuranceCoverage`
-  - claimCount / warningClaims / missing lane/evidence / counterexample 状態
+  - claimCount / warningClaims / missing lane/evidence / counterexample の状態
 - `executionHealth`
-  - verify-lite step 状態、harness-health severity、formal summary 状態
+  - verify-lite step の状態、harness-health severity、formal summary の状態
 - `policyReadiness`
   - approvals / missing labels / policy errors / warnings
 - `performanceRegression`
-  - `bench-compare` の candidate overall
+  - `bench-compare` の candidate overall 結果
 
 `summary.overallScore` は補助値であり、正とする判断値は `summary.overallStatus` と `blockers[]` です。
 
 ### 4. report-only 導入
 
 - `verify-lite.yml` では report-only で `quality-scorecard` を生成します
-- `validate-artifacts-ajv` と `validate-quality-scorecard.mjs` で schema を検証します
+- `validate-artifacts-ajv` と `validate-quality-scorecard.mjs` でスキーマを検証します
 - PR summary には `overallStatus` / `overallScore` / `blockers` を表示します
 - この成果物によって branch protection の required checks は変わりません
 
