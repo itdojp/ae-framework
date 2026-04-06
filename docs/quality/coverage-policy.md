@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/quality.json
 - docs/quality/verification-gates.md
-lastVerified: '2026-03-27'
+lastVerified: '2026-04-06'
 ---
 # Coverage Policy — Proposal and Operations
 
@@ -131,17 +131,17 @@ Source: label
 ## 日本語
 
 ### 目的
-- PR 処理は既定で高速かつ report-only に保つ
-- operator または branch policy が明示した場合のみ coverage を blocking に引き上げる
-- `main` では repository variable によって threshold を統制し、各 PR workflow の個別改修を避ける
+- PR 処理は既定で高速かつ報告専用（report-only）に保つ
+- オペレーターまたはブランチポリシーが明示した場合のみ coverage を blocking に引き上げる
+- `main` ではリポジトリ変数によって threshold を統制し、各 PR workflow の個別改修を避ける
 
 ### 仕組み
 
 しきい値の決定順序:
-1. PR label `coverage:<pct>`（例: `coverage:75`）
-2. Repository variable `COVERAGE_DEFAULT_THRESHOLD`（既定値 `80`）
+1. PR ラベル `coverage:<pct>`（例: `coverage:75`）
+2. リポジトリ変数 `COVERAGE_DEFAULT_THRESHOLD`（既定値 `80`）
 
-label の解釈規則:
+ラベルの解釈規則:
 - `.github/workflows/coverage-check.yml` では、小文字の `coverage:` で始まる最初の label を採用する
 - `coverage:` の後ろの値は JavaScript の `Number(...)` にそのまま渡される
 - gate workflow 側では追加の trim、case-folding、range validation は行わない
@@ -150,7 +150,7 @@ label の解釈規則:
 blocking enforcement は次のいずれかで有効になります。
 - PR に `enforce-coverage` label が付いている
 - `main` への push で workflow が実行され、かつ `COVERAGE_ENFORCE_MAIN=1` が設定されている
-- `coverage-check` を `workflow_dispatch` で手動起動し、input `strict=true` を指定した manual override を使う
+- `coverage-check` を `workflow_dispatch` で手動起動し、input `strict=true` を指定した手動 override を使う
 
 reporting の挙動:
 - `.github/workflows/coverage-check.yml` は non-blocking な PR comment を投稿し、effective coverage、effective threshold、threshold source、現在の policy state を記録する
@@ -160,7 +160,7 @@ reporting の挙動:
 - PR では `/coverage <pct>` で一時的なしきい値 override を行う
 - PR では `/enforce-coverage` で coverage を blocking に切り替える
 - `main` では `COVERAGE_ENFORCE_MAIN=1` と `COVERAGE_DEFAULT_THRESHOLD=<pct>` を repository variable に設定する
-- branch protection は段階導入とし、まずは report-only comment で観測し、その後 `coverage-check` を required にする
+- branch protection は段階導入とし、まずは報告専用 comment で観測し、その後 `coverage-check` を required にする
 
 ### `main` で有効化する手順
 1. Settings -> Variables -> Repository variables に次を追加する
@@ -170,7 +170,7 @@ reporting の挙動:
 3. 運用 baseline が安定したら、branch protection に関連する `coverage-check` status context を追加する
 
 ### 注意事項
-- repository variable が未設定でも PR comment は出力される。これは report-only 挙動である
+- リポジトリ変数が未設定でも PR comment は出力される。これは報告専用（report-only）挙動である
 - threshold は `main` での逸脱頻度を実測したうえで合意する
 - coverage policy は coverage gate だけを制御する。`verify-lite`、`policy-gate`、`gate` 全体の代替ではない
 
