@@ -24,7 +24,7 @@ When {"command":"allocate","qty":12}
 Then invariant "allocated <= onHand" fails
 ```
 
-### 機械可読 JSON
+### Machine JSON
 - Source location:
   - embedded in the legacy `formal/summary.json`
 - Derived location:
