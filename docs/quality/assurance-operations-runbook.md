@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ASSURANCE-MODEL.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-04-03'
+lastVerified: '2026-04-06'
 ---
 # Assurance Operations Runbook
 
@@ -217,7 +217,7 @@ Check in this order:
 
 対象:
 - `pnpm run verify:assurance` のローカル実行
-- `verify-lite.yml` における report-only 集約
+- `verify-lite.yml` における報告専用（report-only）集約
 - `enforce-assurance` ラベル時の strict assurance enforcement
 - `artifacts/assurance/assurance-summary.{json,md}` の読み方
 - 失敗時の一次切り分け
@@ -269,7 +269,7 @@ pnpm run verify:assurance \
   --output-md artifacts/assurance/assurance-summary.md
 ```
 
-追加の artifact を使う場合は、存在するファイルだけを渡します。
+追加の成果物を使う場合は、存在するファイルだけを渡します。
 
 ```bash
 args=(
@@ -310,7 +310,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 
 ### 5.1 既定動作
 
-- `verify-lite.yml` は assurance summary を report-only で生成します。
+- `verify-lite.yml` は assurance summary を報告専用（report-only）で生成します。
 - `verify-lite.yml` は `artifacts/assurance/assurance-summary.json` が存在する場合、`artifacts/quality/quality-scorecard.{json,md}` の optional input としても利用します。
 - `pr-ci-status-comment.yml` は harness-health / change-package / hook-feedback / downloaded `artifacts/quality/quality-scorecard.md` を組み合わせて PR summary comment を構成します。同一 head SHA の verify-lite artifact を取得できる場合は `hook-feedback` 生成時にも `--assurance-summary` を渡します。assurance の信号は `hook-feedback` と quality scorecard 経由で反映され、`artifacts/assurance/assurance-summary.md` や claim 単位の詳細を直接追記するわけではありません。
 - `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` は `--assurance-summary` を受け取り、assurance warning を `currentStatus` / `nextActions` / `blockers` / `artifacts` へ反映します。
@@ -378,7 +378,7 @@ claim ごとに確認する項目:
 1. `docs/quality/assurance-profile.md` の claim 定義を確認
 2. `assurance-summary.json` の該当 claim を確認
 3. 不足 lane が formal / conformance / counterexample / evidence manifest のどれで埋まるかを判断
-4. 入力 artifact を追加して `verify:assurance` を再実行
+4. 入力成果物を追加して `verify:assurance` を再実行
 
 ### 7.3 `openCounterexamples > 0` / `unlinkedCounterexamples > 0`
 
