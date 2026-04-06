@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-04-03'
+lastVerified: '2026-04-06'
 ---
 # Verify-first 成果物カタログ（SSOT / AC / NFR / Evidence）
 
@@ -76,10 +76,10 @@ Define the minimum repository artifacts required to keep Verify-first operations
 | --- | --- | --- | --- | --- |
 | Spec（仕様本体） | 必須 | スコープ、要件、前提、変更履歴 | `spec/**/*.md`, `spec/**/*.yaml`, `spec/**/*.yml` | PR レビュー時 |
 | AC（受入基準） | 必須 | Given/When/Then もしくは同等の合否条件 | Spec 内の AC セクション | PR レビュー時 |
-| NFR（非機能） | 必須 | 性能 / 信頼性 / セキュリティ / 運用制約 | `spec/nonfunctional/*`, Spec 内 NFR | PR レビュー時 |
-| 制約・前提 | 必須 | 技術制約、依存、除外スコープ | Spec 内 constraints / assumptions | PR レビュー時 |
-| Gate 定義 | 必須 | 必須 / 任意ゲートの適用方針 | `spec/gates.yaml`, workflow 定義 | CI 実行時 |
-| 証跡（Evidence） | 必須 | CI 結果要約、再現コマンド、主要ログ導線 | `artifacts/**`, PR 本文 / コメント | CI 完了時 |
+| NFR（非機能） | 必須 | 性能 / 信頼性 / セキュリティ / 運用制約 | `spec/nonfunctional/*`, Spec 内の NFR | PR レビュー時 |
+| 制約・前提 | 必須 | 技術制約、依存、除外スコープ | Spec 内の constraints / assumptions | PR レビュー時 |
+| ゲート定義 | 必須 | 必須 / 任意ゲートの適用方針 | `spec/gates.yaml`, workflow 定義 | CI 実行時 |
+| 証跡 | 必須 | CI 結果要約、再現コマンド、主要ログ導線 | `artifacts/**`, PR 本文 / コメント | CI 完了時 |
 | 形式手法レポート | 任意 | TLA+ / Alloy / CSP / Lean などの結果 | `artifacts/hermetic-reports/formal/**` | オプトイン実行時 |
 | 追加品質レポート | 任意 | Security / adapters / QA の結果 | `artifacts/**` | オプトイン実行時 |
 
@@ -88,7 +88,7 @@ Define the minimum repository artifacts required to keep Verify-first operations
 | 成果物 | 作成責任 | 確認責任 | 正式保管先 |
 | --- | --- | --- | --- |
 | Spec / AC / NFR / 制約 | 変更実装者（PR 作成者） | レビュアー + CODEOWNERS | リポジトリ（`spec/**`） |
-| Gate 定義 | CI / 品質運用担当 + PR 作成者 | CI / 品質レビュー担当 | リポジトリ（`.github/workflows/**`, `spec/gates.yaml`） |
+| ゲート定義 | CI / 品質運用担当 + PR 作成者 | CI / 品質レビュー担当 | リポジトリ（`.github/workflows/**`, `spec/gates.yaml`） |
 | 証跡要約 | CI（自動生成） + PR 作成者（補足） | レビュアー | `artifacts/**` + PR スレッド |
 
 ### 4. 既存ドキュメントとの対応表
@@ -110,5 +110,5 @@ Define the minimum repository artifacts required to keep Verify-first operations
 
 ### 6. 備考
 
-- Plan（会話資産）は入力であり、正は常にリポジトリ成果物に固定する。
-- 本カタログは最小セットであり、プロダクト特性に応じて拡張してよい。
+- Plan（会話資産）は入力であり、正は常にリポジトリ成果物に固定します。
+- 本カタログは最小セットであり、プロダクト特性に応じて拡張して構いません。
