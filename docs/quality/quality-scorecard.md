@@ -19,7 +19,7 @@ lastVerified: '2026-04-06'
 
 - canonical JSON: `artifacts/quality/quality-scorecard.json`
 - canonical Markdown: `artifacts/quality/quality-scorecard.md`
-- スキーマ: `schema/quality-scorecard.schema.json`
+- schema: `schema/quality-scorecard.schema.json`
 - producer: `scripts/quality/build-quality-scorecard.mjs` / `pnpm run quality:scorecard:v1`
 - validator: `scripts/ci/validate-quality-scorecard.mjs` / `pnpm run quality:scorecard:validate`
 
