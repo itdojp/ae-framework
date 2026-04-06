@@ -17,8 +17,8 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.
 
 ### Current behavior
 
-- 実行スクリプト: `scripts/policies/validate-cedar.mjs`
-- 成果物: `artifacts/policies/cedar-summary.json`
+- Runner: `scripts/policies/validate-cedar.mjs`
+- Artifact: `artifacts/policies/cedar-summary.json`
 - PR comment header: `<!-- AE-CEDAR-SUMMARY -->`
 - Trigger: add label `run-security` (or `run-cedar`)
 - Enforcement: add label `enforce-security` (fails when `ngCount > 0`)
