@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/quality.json
 - docs/quality/verification-gates.md
-lastVerified: '2026-03-26'
+lastVerified: '2026-04-06'
 ---
 # Type Coverage Policy (TSDoc)
 
@@ -55,8 +55,8 @@ lastVerified: '2026-03-26'
 - 段階的ゲート: `70%`（`pnpm typecov:check:70`）
 
 ### CI ポリシー
-- 強制しきい値は、たとえば `enforce-typecov` のようなラベル付き CI でのみ有効化する前提です。
-- 既定の開発経路は軽量のまま維持し、型品質を強めたい PR だけ strict 側を選択します。
+- 強制しきい値は、たとえば `enforce-typecov` のようなラベル制御の CI でのみ有効化する前提です。
+- 既定の開発経路は軽量のまま維持し、型品質を強めたい PR だけ厳格側を選択します。
 
 ### ローカル実行
 - 迅速な確認: `pnpm types:check && pnpm typecov`
@@ -74,5 +74,5 @@ lastVerified: '2026-03-26'
 - `error.message` の直接参照は避けます。
 
 ### エスカレーション
-- PR で strict しきい値を満たせない場合は、strict 用ラベルを外します。
+- PR で強制しきい値を満たせない場合は、ラベル `enforce-typecov` を外します。
 - その上で、ホットスポットと後続対応を短く記録してください。
