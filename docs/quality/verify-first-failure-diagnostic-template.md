@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/verify-first-implementation-runbook.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-04-03'
+lastVerified: '2026-04-06'
 ---
 # Verify-first Failure Diagnostic Template
 
@@ -70,7 +70,7 @@ lastVerified: '2026-04-03'
 ### 8. Decision
 
 - [ ] Re-run only
-- [ ] Fix + re-run
+- [ ] Fix and re-run
 - [ ] Fail-open (temporary) + follow-up issue
 - Follow-up issue (required for fail-open):
 
@@ -89,7 +89,7 @@ lastVerified: '2026-04-03'
 
 - エラー要約:
 - 最初の失敗ステップ:
-- 影響範囲 (files / modules):
+- 影響範囲（ファイル / モジュール）:
 
 ### 2. 影響
 
@@ -109,9 +109,9 @@ lastVerified: '2026-04-03'
 
 ### 4. 仕様・ポリシーとのひも付け
 
-- 関連 spec path（複数可）:
-- 関連 acceptance criteria:
-- 関連 policy / contract:
+- 関連する spec path（複数可）:
+- 関連する acceptance criteria:
+- 関連する policy / contract:
 
 ### 5. 原因仮説
 
@@ -121,18 +121,18 @@ lastVerified: '2026-04-03'
 ### 6. 対処計画
 
 - 即時修正:
-- 追加 tests / checks:
+- 追加の tests / checks:
 - ロールバック計画 (必要なら):
 
 ### 7. 証跡
 
 - CI run URL:
-- Artifact path（複数可）:
+- 成果物パス（複数可）:
 - Log excerpt location:
 
 ### 8. 決定
 
 - [ ] Re-run only
-- [ ] Fix + re-run
-- [ ] Fail-open（temporary）+ follow-up issue
+- [ ] Fix and re-run
+- [ ] Fail-open（temporary）+ follow-up issue を起票
 - Follow-up issue（fail-open 時は必須）:
