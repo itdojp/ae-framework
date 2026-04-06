@@ -312,7 +312,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 
 - `verify-lite.yml` は assurance summary を報告専用（report-only）で生成します。
 - `verify-lite.yml` は `artifacts/assurance/assurance-summary.json` が存在する場合、`artifacts/quality/quality-scorecard.{json,md}` の optional input としても利用します。
-- `pr-ci-status-comment.yml` は harness-health / change-package / hook-feedback / downloaded `artifacts/quality/quality-scorecard.md` を組み合わせて PR summary comment を構成します。同一 head SHA の verify-lite artifact を取得できる場合は `hook-feedback` 生成時にも `--assurance-summary` を渡します。assurance の信号は `hook-feedback` と quality scorecard 経由で反映され、`artifacts/assurance/assurance-summary.md` や claim 単位の詳細を直接追記するわけではありません。
+- `pr-ci-status-comment.yml` は harness-health / change-package / hook-feedback / downloaded `artifacts/quality/quality-scorecard.md` を組み合わせて PR summary comment を構成します。同一 head SHA の verify-lite の成果物を取得できる場合は `hook-feedback` 生成時にも `--assurance-summary` を渡します。assurance の信号は `hook-feedback` と quality scorecard 経由で反映され、`artifacts/assurance/assurance-summary.md` や claim 単位の詳細を直接追記するわけではありません。
 - `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` は `--assurance-summary` を受け取り、assurance warning を `currentStatus` / `nextActions` / `blockers` / `artifacts` へ反映します。
 - release/post-deploy summary は `artifacts/assurance/assurance-summary.md` が存在する場合に要約を追記します。
 
