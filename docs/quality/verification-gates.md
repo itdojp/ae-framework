@@ -24,7 +24,7 @@ Verification gates standardize **verify-then-merge**. This document summarizes t
 ### Enablement guidance (current operations)
 
 - Daily PRs default to the lighter baseline in Verify Lite.
-- Heavier gates are usually enabled through opt-in ラベルs.
+- Heavier gates are usually enabled through opt-in labels.
 - Adapter-threshold checks such as perf / lighthouse / a11y are usually enabled through `run-adapters`; `enforce-*` labels only switch those checks from report-only to blocking.
 
 Related documents:
@@ -95,7 +95,7 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 ### 有効化ガイド（現行運用）
 
 - 日常的な PR は Verify Lite の軽量 baseline を既定とします。
-- 重いゲート は通常 opt-in ラベル で有効化します。
+- 重いゲートは通常 opt-in ラベルで有効化します。
 - perf / lighthouse / a11y のような adapter-threshold check は通常 `run-adapters` で起動し、`enforce-*` label は report-only から blocking への切替だけを担います。
 
 関連ドキュメント:
