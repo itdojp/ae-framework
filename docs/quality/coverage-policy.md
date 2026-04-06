@@ -142,13 +142,13 @@ Source: label
 2. リポジトリ変数 `COVERAGE_DEFAULT_THRESHOLD`（既定値 `80`）
 
 ラベルの解釈規則:
-- `.github/workflows/coverage-check.yml` では、小文字の `coverage:` で始まる最初の label を採用する
+- `.github/workflows/coverage-check.yml` では、小文字の `coverage:` で始まる最初のラベルを採用する
 - `coverage:` の後ろの値は JavaScript の `Number(...)` にそのまま渡される
 - gate workflow 側では追加の trim、case-folding、range validation は行わない
 - `scripts/coverage/pr-coverage-summary.mjs` は comment 表示のためにより積極的な正規化を行うため、差分がある場合は gate 側の挙動を正とする
 
 blocking enforcement は次のいずれかで有効になります。
-- PR に `enforce-coverage` label が付いている
+- PR に `enforce-coverage` ラベルが付いている
 - `main` への push で workflow が実行され、かつ `COVERAGE_ENFORCE_MAIN=1` が設定されている
 - `coverage-check` を `workflow_dispatch` で手動起動し、input `strict=true` を指定した手動 override を使う
 
