@@ -17,8 +17,8 @@ lastVerified: '2026-04-06'
 
 ### 0. Context
 
-- PR / issue:
-- commit SHA:
+- PR / Issue:
+- Commit SHA:
 - Failed gate:
 - Detection time (UTC):
 
@@ -63,14 +63,14 @@ lastVerified: '2026-04-06'
 
 ### 7. Evidence
 
-- CI 実行 URL:
+- CI run URL:
 - Artifact path(s):
-- ログ抜粋箇所:
+- Log excerpt location:
 
 ### 8. Decision
 
-- [ ] 再実行のみ
-- [ ] 修正して再実行
+- [ ] Re-run only
+- [ ] Fix and re-run
 - [ ] Fail-open (temporary) + follow-up issue
 - Follow-up issue (required for fail-open):
 
@@ -80,8 +80,8 @@ lastVerified: '2026-04-06'
 
 ### 0. コンテキスト
 
-- PR / issue:
-- commit SHA:
+- PR / Issue:
+- Commit SHA:
 - 失敗したゲート:
 - 検知時刻 (UTC):
 
@@ -126,13 +126,13 @@ lastVerified: '2026-04-06'
 
 ### 7. 証跡
 
-- CI 実行 URL:
+- CI run URL:
 - 成果物パス（複数可）:
-- ログ抜粋箇所:
+- Log excerpt location:
 
 ### 8. 決定
 
-- [ ] 再実行のみ
-- [ ] 修正して再実行
+- [ ] Re-run only
+- [ ] Fix and re-run
 - [ ] Fail-open（temporary）+ follow-up issue を起票
 - Follow-up issue（fail-open 時は必須）:
