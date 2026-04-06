@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md
 - docs/quality/verify-first-implementation-runbook.md
-lastVerified: '2026-03-27'
+lastVerified: '2026-04-07'
 ---
 # Usefulness Evaluation Report
 
@@ -24,8 +24,8 @@ pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 
 ### Default inputs
 
-- Run index: `artifacts/runs/index.json`
-- Traceability: `traceability.json`
+- 実行インデックス（Run index）: `artifacts/runs/index.json`
+- トレーサビリティ（Traceability）: `traceability.json`
 - Verify profile summary: `artifacts/verify-profile-summary.json`
 - Quality report: `reports/quality-gates/quality-report-ci-latest.json`
 - Run manifest check: `artifacts/run-manifest-check.json`
@@ -41,15 +41,15 @@ Override these with `--run-index`, `--traceability`, `--verify-profile`, `--qual
 
 ### Axis scoring rules (v1)
 
-1. Reproducibility
+1. 再現性（Reproducibility）
    - success rate from run history (`successes / total runs`)
-2. Traceability
+2. トレーサビリティ（Traceability）
    - primary metric: average linked coverage across `testsLinked`, `implLinked`, and `formalLinked`
    - if linked coverage ratios cannot be calculated from `total` and `*Linked`, falls back to `coverage.tests|impl|formal` when those values are present
-3. Automation
+3. 自動化（Automation）
    - required-step pass rate from verify-profile summary (70%)
    - execution rate (`non-skipped steps / total steps`, 30%)
-4. Quality Detection
+4. 品質検知（Quality Detection）
    - base signal from run history: score `100` when at least one failed run is recorded, otherwise `70`
    - averages the base signal with the latest quality report score and the run-manifest freshness score when those signals are available
    - if quality report and run-manifest signals are both missing, falls back to the latest-run heuristic: `85` for success, `35` for failure
@@ -79,8 +79,8 @@ pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 
 ### 入力（既定パス）
 
-- Run index: `artifacts/runs/index.json`
-- Traceability: `traceability.json`
+- 実行インデックス（Run index）: `artifacts/runs/index.json`
+- トレーサビリティ（Traceability）: `traceability.json`
 - Verify profile summary: `artifacts/verify-profile-summary.json`
 - Quality report: `reports/quality-gates/quality-report-ci-latest.json`
 - Run manifest check: `artifacts/run-manifest-check.json`
@@ -96,26 +96,26 @@ pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 
 ### 4軸の算出規約（v1）
 
-1. Reproducibility
+1. 再現性（Reproducibility）
    - run history の成功率（成功件数 / 総件数）
-2. Traceability
+2. トレーサビリティ（Traceability）
    - `testsLinked` / `implLinked` / `formalLinked` の被覆率平均を主指標として利用
    - `total` と `*Linked` から被覆率を算出できない場合に限り `coverage.tests|impl|formal` をフォールバックとして利用
-3. Automation
+3. 自動化（Automation）
    - verify profile の required step pass rate（70%）
    - 実行率（non-skipped step / 全 step、30%）
-4. Quality Detection
+4. 品質検知（Quality Detection）
    - run history に失敗が 1 件以上含まれていれば `100`、含まれなければ `70` をベーススコアとする
    - ベーススコアと quality report の最新スコア、run-manifest freshness のスコアがあればそれらを平均する
    - quality report / run-manifest のシグナルがどちらも無い場合は latest run の成否により `85`（成功）/ `35`（失敗）でフォールバックする
 
-overall score は利用可能な軸の単純平均です。
+総合スコア（overall score）は利用可能な軸の単純平均です。
 
 ### CI向け終了コード契約
 
 - `0`: レポート生成成功かつポリシー通過（`--min-score` 指定時は閾値達成を含む）
 - `1`: ポリシー違反（例: `--min-score` 未達）
-- `2`: 入力不正、引数不正、JSON parse失敗、または `--strict-inputs` 未充足
+- `2`: 入力不正、引数不正、JSON parse 失敗、または `--strict-inputs` 未充足
 
 ### `strict-inputs`
 
