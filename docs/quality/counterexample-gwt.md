@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - schema/counterexample.schema.json
 - docs/quality/ASSURANCE-MODEL.md
-lastVerified: '2026-03-26'
+lastVerified: '2026-04-06'
 ---
 # Counterexample → GWT Format (Spec & Examples)
 
@@ -24,7 +24,7 @@ When {"command":"allocate","qty":12}
 Then invariant "allocated <= onHand" fails
 ```
 
-### Machine JSON
+### 機械可読 JSON
 - Source location:
   - embedded in the legacy `formal/summary.json`
 - Derived location:
@@ -50,16 +50,16 @@ Then invariant "allocated <= onHand" fails
 
 ### 目的
 - 反例を、人間向けの短い GWT 形式と、`ae fix` が読める機械可読 JSON の両方で扱えるようにします。
-- legacy `formal/summary.json` の counterexample shape と、`scripts/formal/format-counterexamples.mjs` が生成する `artifacts/formal/gwt.summary.json` に整合させます。
+- legacy `formal/summary.json` の反例形式と、`scripts/formal/format-counterexamples.mjs` が生成する `artifacts/formal/gwt.summary.json` に整合させます。
 
-### Short GWT（例）
+### 短い GWT（例）
 ```text
 Given {"onHand":10}
 When {"command":"allocate","qty":12}
 Then invariant "allocated <= onHand" fails
 ```
 
-### Machine JSON
+### 機械可読 JSON
 - 元の格納先:
   - legacy `formal/summary.json` に埋め込まれます
 - 派生出力先:
