@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/quality.json
 - docs/quality/verification-gates.md
-lastVerified: '2026-04-05'
+lastVerified: '2026-04-06'
 ---
 # Cedar Policies Quality Gates (report-only)
 
@@ -17,8 +17,8 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.
 
 ### Current behavior
 
-- Runner: `scripts/policies/validate-cedar.mjs`
-- Artifact: `artifacts/policies/cedar-summary.json`
+- 実行スクリプト: `scripts/policies/validate-cedar.mjs`
+- 成果物: `artifacts/policies/cedar-summary.json`
 - PR comment header: `<!-- AE-CEDAR-SUMMARY -->`
 - Trigger: add label `run-security` (or `run-cedar`)
 - Enforcement: add label `enforce-security` (fails when `ngCount > 0`)
@@ -60,11 +60,11 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.
 
 ### 現在の挙動
 
-- Runner: `scripts/policies/validate-cedar.mjs`
-- Artifact: `artifacts/policies/cedar-summary.json`
+- 実行スクリプト: `scripts/policies/validate-cedar.mjs`
+- 成果物: `artifacts/policies/cedar-summary.json`
 - PR comment header: `<!-- AE-CEDAR-SUMMARY -->`
-- Trigger: `run-security` または `run-cedar` ラベルを付与
-- Enforcement: `enforce-security` ラベルを付与すると `ngCount > 0` で失敗させます
+- 起動条件: `run-security` または `run-cedar` ラベルを付与
+- 強制条件: `enforce-security` ラベルを付与すると `ngCount > 0` で失敗させます
 
 ### 環境変数
 
@@ -93,6 +93,6 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.
 
 ### 注意事項
 
-- JSON validation は意図的に minimal です。checker は `policySet` または `policies` の array-like structure の有無を確認します。
-- text `.cedar` file は non-empty かどうかだけを確認します。
-- この lane は既定で report-only です。`ngCount > 0` を block 条件にしたい PR のみ `enforce-security` を付けてください。
+- JSON 検証は意図的に最小限です。チェッカーは `policySet` または `policies` の array-like structure の有無を確認します。
+- テキスト `.cedar` ファイルは non-empty かどうかだけを確認します。
+- このレーンは既定で報告専用（report-only）です。`ngCount > 0` を失敗条件にしたい PR のみ `enforce-security` を付けてください。
