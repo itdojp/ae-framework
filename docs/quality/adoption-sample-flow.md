@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/verify-first-implementation-runbook.md
 - docs/product/MINIMAL-ADOPTION.md
-lastVerified: '2026-04-03'
+lastVerified: '2026-04-07'
 ---
 # Ownership & Adoption Sample Flow
 
@@ -74,14 +74,14 @@ Purpose: Provide a minimal end-to-end flow that teams can follow when adopting a
 
 ### 3) Blueprint
 - `docs/templates/blueprint/blueprint-template.md` を基に blueprint を作成する
-- ownership、リスク、ロールバック計画を記録する
+- 責任分界、リスク、ロールバック計画を記録する
 
 ### 4) 実装と検証
 - 変更を実装し、最低限の基準として Verify Lite を実行する
 - 必要に応じて `docs/ci/label-gating.md` に従い、より重いゲートをラベルで有効化する
 
 ### 5) 証跡
-- `docs/quality/pr-summary-template.md` を使って PR summary を作成する
+- `docs/quality/pr-summary-template.md` を使って PR サマリーを作成する
 - `docs/quality/pr-summary-tool.md` に従って成果物やリンクを添付する
 
 ### 6) レビュー
@@ -92,9 +92,9 @@ Purpose: Provide a minimal end-to-end flow that teams can follow when adopting a
 ## 期待される成果物
 - Context bundle
 - Spec（feature、bugfix、または refactor）
-- ownership とロールバック計画を含む blueprint
-- verification artifact へのリンクを含む PR summary
+- 責任分界とロールバック計画を含む blueprint
+- 検証成果物へのリンクを含む PR サマリー
 
 ## 備考
-- このフローは人手承認を伴う verify-then-merge を前提とする
+- このフローは人手承認を伴う verify-then-merge 運用を前提とする
 - PR には要点のみを記載し、詳細は成果物へのリンクで示す

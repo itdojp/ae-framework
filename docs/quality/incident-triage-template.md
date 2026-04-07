@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-04-03'
+lastVerified: '2026-04-07'
 ---
 # Incident Triage Template
 
@@ -63,7 +63,7 @@ When to use:
 
 利用場面:
 - 根本原因が不明な CI 障害
-- merge 後に検出されたリグレッション
+- マージ後に検出されたリグレッション
 - 本番またはステージングでの異常
 
 ### トリアージ要約（記入用）
@@ -71,14 +71,14 @@ When to use:
 - インシデントID / リンク:
 - 検知元（CI / 監視 / ユーザー報告）:
 - 初回観測時刻（UTC）:
-- 影響範囲（module / service）:
+- 影響範囲（モジュール / サービス）:
 - 重大度（低 / 中 / 高 / クリティカル）:
 - 現在の状態（open / mitigating / resolved）:
 
 ### 証跡スナップショット
 
-- 失敗した check / log:
-- 関連 PR / commit:
+- 失敗したチェック / ログ:
+- 関連 PR / コミット:
 - 再現手順:
 - 証跡成果物（report / trace / coverage / trend）:
 
@@ -97,9 +97,9 @@ When to use:
 
 ### インシデント後の対応
 
-- 追加または調整する verification gate:
-- 追加する回帰 test:
-- 更新する documentation / runbook:
+- 追加または調整する検証ゲート:
+- 追加する回帰テスト:
+- 更新するドキュメント / runbook:
 - フォローアップ issue:
 
 ### 備考
