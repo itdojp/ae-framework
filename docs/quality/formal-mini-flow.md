@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - docs/quality/formal-tools-setup.md
-lastVerified: '2026-04-04'
+lastVerified: '2026-04-07'
 ---
 # Formal Mini Flow: Counterexample -> Failing Test -> Fix -> Green
 
@@ -56,13 +56,13 @@ lastVerified: '2026-04-04'
 
 1. 仕様 / 期待を定義します（TLA+ / Alloy / 不変条件）。
    - TLA+ 最小: `spec/tla/DomainSpec.tla` で不変条件を定義
-   - Alloy 最小: `spec/alloy/Domain.als` で安全性 assertion を定義
+   - Alloy 最小: `spec/alloy/Domain.als` で安全性アサーションを定義
    - 実装側の不変: `onHand >= 0`, `allocated <= onHand` を `verify:conformance` で確認
 2. 実行して反例を得ます。
    - `pnpm run spec:check:tla`、または Alloy IDE で `Domain.als` を `check`
    - `pnpm run verify:conformance -i <events.json>`
 3. 反例を失敗テストへ落とし込みます（Red）。
-   - 反例になった event sequence / input を `tests/` に最小再現として追加
+   - 反例になったイベント列 / 入力を `tests/` に最小再現として追加
 4. 最小修正を入れます（Green）。
    - 失敗テストが通る最小限の修正だけを実装へ入れます
 5. リファクタリングします。
@@ -72,11 +72,11 @@ lastVerified: '2026-04-04'
 
 - TLA+ チェック: `pnpm run spec:check:tla`（Apalache または TLC が使える場合に実行）
 - Alloy チェック: `pnpm run spec:check:alloy`（CLI が使えない場合はガイダンスを表示）
-- トレース検証: `pnpm run trace:validate`（軽量な schema consistency check）
+- トレース検証: `pnpm run trace:validate`（軽量なスキーマ整合性チェック）
 - Conformance: `pnpm run verify:conformance [-i file --disable-invariants ...]`
 
 ### 運用メモ
 
-- まず 安全性 invariant から始め、ループを小さく保ちます。
-- CI は `run-formal` ラベルで non-blocking に起動します。
+- まず安全性不変条件から始め、ループを小さく保ちます。
+- CI は `run-formal` ラベルで非ブロッキングに起動します。
 - 詳細な運用は `docs/quality/formal-runbook.md` と `docs/quality/formal-gates.md` を参照してください。
