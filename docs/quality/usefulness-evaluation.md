@@ -24,8 +24,8 @@ pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 
 ### Default inputs
 
-- 実行インデックス（Run index）: `artifacts/runs/index.json`
-- トレーサビリティ（Traceability）: `traceability.json`
+- Run index: `artifacts/runs/index.json`
+- Traceability: `traceability.json`
 - Verify profile summary: `artifacts/verify-profile-summary.json`
 - Quality report: `reports/quality-gates/quality-report-ci-latest.json`
 - Run manifest check: `artifacts/run-manifest-check.json`
@@ -41,15 +41,15 @@ Override these with `--run-index`, `--traceability`, `--verify-profile`, `--qual
 
 ### Axis scoring rules (v1)
 
-1. 再現性（Reproducibility）
+1. Reproducibility
    - success rate from run history (`successes / total runs`)
-2. トレーサビリティ（Traceability）
+2. Traceability
    - primary metric: average linked coverage across `testsLinked`, `implLinked`, and `formalLinked`
    - if linked coverage ratios cannot be calculated from `total` and `*Linked`, falls back to `coverage.tests|impl|formal` when those values are present
-3. 自動化（Automation）
+3. Automation
    - required-step pass rate from verify-profile summary (70%)
    - execution rate (`non-skipped steps / total steps`, 30%)
-4. 品質検知（Quality Detection）
+4. Quality Detection
    - base signal from run history: score `100` when at least one failed run is recorded, otherwise `70`
    - averages the base signal with the latest quality report score and the run-manifest freshness score when those signals are available
    - if quality report and run-manifest signals are both missing, falls back to the latest-run heuristic: `85` for success, `35` for failure
