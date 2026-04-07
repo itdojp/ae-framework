@@ -74,7 +74,7 @@ Purpose: Provide a minimal end-to-end flow that teams can follow when adopting a
 
 ### 3) Blueprint
 - `docs/templates/blueprint/blueprint-template.md` を基に blueprint を作成する
-- 責務分界、リスク、ロールバック計画を記録する
+- 責任分界、リスク、ロールバック計画を記録する
 
 ### 4) 実装と検証
 - 変更を実装し、最低限の基準として Verify Lite を実行する
@@ -92,7 +92,7 @@ Purpose: Provide a minimal end-to-end flow that teams can follow when adopting a
 ## 期待される成果物
 - Context bundle
 - Spec（feature、bugfix、または refactor）
-- 責務分界とロールバック計画を含む blueprint
+- 責任分界とロールバック計画を含む blueprint
 - 検証成果物へのリンクを含む PR サマリー
 
 ## 備考
