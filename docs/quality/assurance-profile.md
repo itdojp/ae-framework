@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - schema/assurance-profile.schema.json
 - docs/quality/ASSURANCE-MODEL.md
-lastVerified: '2026-04-04'
+lastVerified: '2026-04-08'
 ---
 # Assurance Profile v1
 
@@ -133,12 +133,12 @@ Notes:
 
 `assurance-profile/v1` は、業務上のクレーム（claim）を次の要素に機械可読で結び付けるための入力契約です。
 
-- target assurance level（目標保証レベル）
-- required validation lanes（必要な検証レーン）
-- required evidence kinds（必要な証跡種別）
+- 目標保証レベル（target assurance level）
+- 必要な検証レーン（required validation lanes）
+- 必要な証跡種別（required evidence kinds）
 - Context Pack 上の object / morphism / diagram / acceptance test 参照
 
-現時点では、**schema とドキュメント整備、`verify:assurance` による summary 生成、Verify Lite での assurance summary artifact 収集、および `enforce-assurance` ラベル時の strict assurance enforcement** までを実装済みとします。通常 PR は報告専用（report-only）のまま維持し、strict 化はラベル制御（label-gated）時のみ有効化します。
+現時点では、**schema とドキュメント整備、`verify:assurance` による summary 生成、Verify Lite での assurance summary artifact 収集、および `enforce-assurance` ラベル時の strict assurance enforcement** までを実装済みとします。通常 PR は報告専用（report-only）のまま維持し、厳格化はラベル制御（label-gated）時のみ有効化します。
 
 ### 2. スキーマ
 
@@ -222,7 +222,7 @@ assurance:
 ### 6. 現時点の非目標
 
 - `verify-lite-run-summary` 自体へ achieved level を書き戻すこと
-- `policy-gate` が assurance artifact 自体を直接解釈して blocking 判定すること
+- `policy-gate` が assurance artifact 自体を直接解釈してブロッキング判定すること
 - `policy-input` / `policy-decision` への assurance 判定追加
 - 全クレーム（claim）の formal proof
 - assurance 未設定 PR を既定で blocking にすること
