@@ -225,7 +225,7 @@ assurance:
 - `policy-gate` が assurance artifact 自体を直接解釈してブロッキング判定すること
 - `policy-input` / `policy-decision` への assurance 判定追加
 - 全クレーム（claim）の formal proof
-- assurance 未設定 PR を既定で blocking にすること
+- assurance 未設定 PR を既定でブロッキングにすること
 
 補足:
 - strict 化されるのは `verify-lite.yml` の `Enforce assurance summary (strict; label-gated)` ステップです。
