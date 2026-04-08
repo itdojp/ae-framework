@@ -139,7 +139,7 @@ pnpm run quality:scorecard:validate -- \
 - PR summary には `overallStatus` / `overallScore` / `blockers` を表示します
 - この成果物によって branch protection の required checks は変わりません
 
-### 5. legacy `quality:scorecard` との関係
+### 5. 従来実装 `quality:scorecard` との関係
 
 既存の `package.json` にある `quality:scorecard` は `scripts/quality-scorecard-generator.js` を呼ぶ従来実装です。
 `quality-scorecard/v1` は互換置換ではなく、別の生成処理 / 検証処理 / 成果物として導入します。
