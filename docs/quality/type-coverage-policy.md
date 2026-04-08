@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/quality.json
 - docs/quality/verification-gates.md
-lastVerified: '2026-04-06'
+lastVerified: '2026-04-08'
 ---
 # Type Coverage Policy (TSDoc)
 
@@ -55,11 +55,11 @@ lastVerified: '2026-04-06'
 - 段階的ゲート: `70%`（`pnpm typecov:check:70`）
 
 ### CI ポリシー
-- 強制しきい値は、たとえば `enforce-typecov` のようなラベル制御の CI でのみ有効化する前提です。
-- 既定の開発経路は軽量のまま維持し、型品質を強めたい PR だけ厳格側を選択します。
+- 強制しきい値は、たとえば `enforce-typecov` のようなラベル制御（label-gated）の CI でのみ有効化する前提です。
+- 既定の開発経路は軽量のまま維持し、型品質を強めたい PR だけ厳格しきい値を選択します。
 
 ### ローカル実行
-- 迅速な確認: `pnpm types:check && pnpm typecov`
+- クイック確認: `pnpm types:check && pnpm typecov`
 - 強制チェック（`70%`）: `pnpm typecov:check:70`
 
 ### 対象範囲と例外
