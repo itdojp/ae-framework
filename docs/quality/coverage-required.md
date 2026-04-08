@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/coverage-policy.md
 - policy/quality.json
-lastVerified: '2026-04-04'
+lastVerified: '2026-04-08'
 ---
 # Coverage Required — Operations Guide for Branch Protection
 
@@ -79,15 +79,15 @@ Coverage comments and notes should make the following fields easy to verify:
 
 ### 目的
 - PR では既定で報告専用（report-only）としつつ、レビュアに coverage を可視化する
-- `main` または明示的にエスカレートされた PR で coverage を強制し、branch protection と整合させる
-- リポジトリ変数、required check、段階導入の手順を標準化する
+- `main` または明示的にエスカレートされた PR で coverage を強制し、ブランチ保護と整合させる
+- リポジトリ変数、必須チェック、段階導入の手順を標準化する
 
 ### 推奨ロールアウト
 - まずリポジトリ変数を設定する
-- coverage を required にする前に、non-blocking comment の観測期間を設ける
+- coverage を required にする前に、非ブロッキングコメントの観測期間を設ける
 - threshold と incident 頻度を把握した後に、`coverage-check / gate` や `coverage-check / coverage` など必要な job-level status check を required に昇格させる
 
-### Branch protection 設定
+### ブランチ保護設定
 1. Settings -> Variables -> Repository variables を開く
 2. 次を追加する
    - `COVERAGE_ENFORCE_MAIN=1`
@@ -101,14 +101,14 @@ Coverage comments and notes should make the following fields easy to verify:
 7. 段階導入中は `verify-lite` を required のまま維持し、リポジトリが収束するまで `ci-non-blocking` などの移行用制御を使う
 
 ### 運用上の期待値
-- PR comment には `Coverage (lines):` と `Threshold (effective):` が表示される
+- PR コメントには `Coverage (lines):` と `Threshold (effective):` が表示される
 - 運用担当者は `/coverage <pct>` でしきい値を上書きできる
-- 運用担当者は `/enforce-coverage` で PR を blocking mode に切り替えられる
-- `main` への push では `COVERAGE_ENFORCE_MAIN=1` により coverage enforcement が blocking になる
+- 運用担当者は `/enforce-coverage` で PR をブロッキングモードに切り替えられる
+- `main` への push では `COVERAGE_ENFORCE_MAIN=1` により coverage enforcement がブロッキングになる
 - workflow の注記には `label > repo var > default` の導出順と現在のポリシーモードが表示され、デバッグに使える
 
 ### 表示契約
-coverage comment と workflow note では、少なくとも次の項目を確認できる状態にする
+coverage コメントと workflow 注記では、少なくとも次の項目を確認できる状態にする
 - `Threshold (effective)`
 - `Derived: label > repo var > default`
 - `Policy` / `Policy source`
@@ -131,7 +131,7 @@ coverage comment と workflow note では、少なくとも次の項目を確認
 
 ### クイックチェックリスト
 - [ ] `COVERAGE_ENFORCE_MAIN` と `COVERAGE_DEFAULT_THRESHOLD` が設定されている
-- [ ] branch protection rule に required な `coverage-check / gate` と、ロールアウトで使う場合は `coverage-check / coverage` context が追加されている
+- [ ] ブランチ保護ルールに required な `coverage-check / gate` と、ロールアウトで使う場合は `coverage-check / coverage` context が追加されている
 - [ ] PR comment に `Derived`、`Policy`、`Policy source` が表示される
 - [ ] coverage を広く強制する前に観測期間を完了している
 
