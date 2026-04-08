@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/verify-first-implementation-runbook.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-03-27'
+lastVerified: '2026-04-08'
 ---
 # Issue Requirements Traceability (LG-*/REQ-*)
 
@@ -69,7 +69,7 @@ When `--discovery-pack` is combined, the matrix starts from Context Pack `upstre
 - In the same file, keep related Context Pack IDs such as `diagramId`, `morphismId`, or `acceptanceTestId` in comments or metadata.
 - Example:
 
-```ts
+```text
 // LG-CHECKOUT-01 DGM-CHECKOUT-COMMUTE MOR-CALC-TOTAL AT-CHECKOUT-SUCCESS
 ```
 
@@ -99,9 +99,9 @@ ae validate --traceability --strict --sources docs/specs/ISSUE-TRACEABILITY-MATR
 
 ## 日本語
 
-Issue本文を一次ソースとして、要件ID抽出 → matrix 生成 → strict validate までを標準CLIで実行する手順です。
+Issue 本文を一次ソースとして、要件 ID 抽出 → matrix 生成 → strict validate までを標準 CLI で実行する手順です。
 
-### 1) Issue本文から要件ID抽出
+### 1) Issue 本文から要件 ID を抽出
 
 ```bash
 ae traceability extract-ids \
@@ -110,11 +110,11 @@ ae traceability extract-ids \
   --output docs/specs/issue-traceability-map.json
 ```
 
-- `--issue` は GitHub Issue URL または issue number を指定可能
-- issue number の場合は `--repo <owner/repo>` か `GITHUB_REPOSITORY` が必要
+- `--issue` は GitHub Issue URL または issue 番号を指定できます
+- issue 番号の場合は `--repo <owner/repo>` か `GITHUB_REPOSITORY` が必要です
 - private repository では `GH_TOKEN` または `GITHUB_TOKEN` の設定を推奨
 
-### 2) map から matrix 生成（md/json）
+### 2) map から matrix を生成（md/json）
 
 ```bash
 # JSON
@@ -155,20 +155,20 @@ ae traceability matrix \
 - 同じファイル内に、関連する Context Pack ID（`diagramId` / `morphismId` / `acceptanceTestId`）を comment や metadata で残す
 - 例:
 
-```ts
+```text
 // LG-CHECKOUT-01 DGM-CHECKOUT-COMMUTE MOR-CALC-TOTAL AT-CHECKOUT-SUCCESS
 ```
 
-### 3) strict validate
+### 3) strict validate を実行
 
 ```bash
 ae validate --traceability --strict --sources docs/specs/ISSUE-TRACEABILITY-MATRIX.json
 ```
 
-- strict では以下のいずれかが 1 件でもあると非 0 終了
+- strict モードでは以下のいずれかが 1 件でもあると非 0 終了になります
   - tests/code 未リンク
   - （matrix に Context Pack 列が存在する場合）diagram / morphism / acceptance test ID 欠落
-- CI gate 用途では matrix(JSON) を `--sources` に渡す運用を推奨
+- CI ゲート用途では matrix（JSON）を `--sources` に渡す運用を推奨します
 
 ### 失敗時の見方
 
