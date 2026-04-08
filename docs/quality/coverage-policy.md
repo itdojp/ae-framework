@@ -158,7 +158,7 @@ Source: label
 
 ### 推奨運用
 - PR では `/coverage <pct>` で一時的なしきい値 override を行う
-- PR では `/enforce-coverage` で coverage を blocking に切り替える
+- PR では `/enforce-coverage` で coverage をブロッキングに切り替える
 - `main` では `COVERAGE_ENFORCE_MAIN=1` と `COVERAGE_DEFAULT_THRESHOLD=<pct>` をリポジトリ変数に設定する
 - branch protection は段階導入とし、まずは報告専用 comment で観測し、その後 `coverage-check` を required にする
 
