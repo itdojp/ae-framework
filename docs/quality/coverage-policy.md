@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/quality.json
 - docs/quality/verification-gates.md
-lastVerified: '2026-04-06'
+lastVerified: '2026-04-08'
 ---
 # Coverage Policy — Proposal and Operations
 
@@ -132,7 +132,7 @@ Source: label
 
 ### 目的
 - PR 処理は既定で高速かつ報告専用（report-only）に保つ
-- オペレーターまたはブランチポリシーが明示した場合のみ coverage を blocking に引き上げる
+- オペレーターまたはブランチポリシーが明示した場合のみ coverage をブロッキングに引き上げる
 - `main` ではリポジトリ変数によって threshold を統制し、各 PR workflow の個別改修を避ける
 
 ### 仕組み
@@ -147,35 +147,35 @@ Source: label
 - gate workflow 側では追加の trim、case-folding、range validation は行わない
 - `scripts/coverage/pr-coverage-summary.mjs` は comment 表示のためにより積極的な正規化を行うため、差分がある場合は gate 側の挙動を正とする
 
-blocking enforcement は次のいずれかで有効になります。
+ブロッキング強制は次のいずれかで有効になります。
 - PR に `enforce-coverage` ラベルが付いている
 - `main` への push で workflow が実行され、かつ `COVERAGE_ENFORCE_MAIN=1` が設定されている
 - `coverage-check` を `workflow_dispatch` で手動起動し、input `strict=true` を指定した手動 override を使う
 
-reporting の挙動:
-- `.github/workflows/coverage-check.yml` は non-blocking な PR comment を投稿し、effective coverage、effective threshold、threshold source、現在の policy state を記録する
-- Verify Lite のログは current `COVERAGE_ENFORCE_MAIN` 設定と configured default threshold を記録するが、effective threshold 自体は計算・出力しない
+報告時の挙動:
+- `.github/workflows/coverage-check.yml` は非ブロッキングの PR コメントを投稿し、effective coverage、effective threshold、threshold source、現在の policy state を記録する
+- Verify Lite のログは現在の `COVERAGE_ENFORCE_MAIN` 設定と設定済み既定しきい値を記録するが、effective threshold 自体は計算・出力しない
 
 ### 推奨運用
 - PR では `/coverage <pct>` で一時的なしきい値 override を行う
-- PR では `/enforce-coverage` で coverage を blocking に切り替える
-- `main` では `COVERAGE_ENFORCE_MAIN=1` と `COVERAGE_DEFAULT_THRESHOLD=<pct>` を repository variable に設定する
+- PR では `/enforce-coverage` で coverage をブロッキングに切り替える
+- `main` では `COVERAGE_ENFORCE_MAIN=1` と `COVERAGE_DEFAULT_THRESHOLD=<pct>` をリポジトリ変数に設定する
 - branch protection は段階導入とし、まずは報告専用 comment で観測し、その後 `coverage-check` を required にする
 
 ### `main` で有効化する手順
 1. Settings -> Variables -> Repository variables に次を追加する
    - `COVERAGE_ENFORCE_MAIN=1`
    - `COVERAGE_DEFAULT_THRESHOLD`（例: `80`）
-2. まず comment-only の観測期間を設け、現在の `main` に対して threshold が現実的かを確認する
+2. まずコメントのみの観測期間を設け、現在の `main` に対してしきい値が現実的かを確認する
 3. 運用 baseline が安定したら、branch protection に関連する `coverage-check` status context を追加する
 
 ### 注意事項
-- リポジトリ変数が未設定でも PR comment は出力される。これは報告専用（report-only）挙動である
+- リポジトリ変数が未設定でも PR コメントは出力される。これは報告専用（report-only）挙動である
 - threshold は `main` での逸脱頻度を実測したうえで合意する
 - coverage policy は coverage gate だけを制御する。`verify-lite`、`policy-gate`、`gate` 全体の代替ではない
 
 ### Development（ローカル検証）
-- GitHub 投稿なしで summary composer を dry-run する:
+- GitHub 投稿なしで summary 生成処理を dry-run する:
 
 ```bash
 AE_COVERAGE_DRY_RUN=1 \
@@ -195,16 +195,16 @@ node scripts/coverage/pr-coverage-summary.mjs
 pnpm run coverage
 ```
 
-- 別の summary file を使う場合は、既存 file を `AE_COVERAGE_SUMMARY_PATH` で明示する
+- 別の summary ファイルを使う場合は、既存ファイルを `AE_COVERAGE_SUMMARY_PATH` で明示する
 - CI 実験で comment 投稿を止める場合は `AE_COVERAGE_SKIP_COMMENT=1` を使う
 
 ### FAQ
-- `main` 以外の PR で failure になるのはなぜか
+- `main` 以外の PR で失敗になるのはなぜか
   - 既定は report-only。`enforce-coverage` が付いたか、threshold 導出ロジックが変更された可能性を確認する
 - しきい値はどう決まるか
   - `coverage:<pct>` label -> repository variable `COVERAGE_DEFAULT_THRESHOLD` -> 既定 `80`
 - `main` を required にするにはどうするか
-  - `COVERAGE_ENFORCE_MAIN=1` と `COVERAGE_DEFAULT_THRESHOLD` を設定し、一定期間観測した後に branch protection へ追加する
+  - `COVERAGE_ENFORCE_MAIN=1` と `COVERAGE_DEFAULT_THRESHOLD` を設定し、一定期間観測した後にブランチ保護へ追加する
 - strict 実行で `coverage-summary.json` が missing になるのはなぜか
   - `pnpm run coverage` が `json-summary` reporter を出力しているか、および CI が `coverage/` の生成物を保持しているかを確認する
 
@@ -231,7 +231,7 @@ Source: label
 ```
 
 ### Branch protection
-1. repository variable を設定する
+1. リポジトリ変数を設定する
    - `COVERAGE_ENFORCE_MAIN=1`
    - `COVERAGE_DEFAULT_THRESHOLD`
 2. Settings -> Branches -> Branch protection rules -> `main` -> Require status checks で、`coverage-check / gate` や `coverage-check / coverage` など必要な context を追加する
