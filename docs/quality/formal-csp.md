@@ -190,8 +190,8 @@ cspx typecheck --help | grep -- --summary-json
 ```
 
 補足:
-- CI は commit SHA に pin して導入します（`.github/workflows/formal-verify.yml`）。
-- この pin は ae-framework 連携用の `--summary-json` を含みます。
+- CI は commit SHA 固定で導入します（`.github/workflows/formal-verify.yml`）。
+- この固定は ae-framework 連携用の `--summary-json` を含みます。
 - `cspx-result.json` の `metrics` は任意項目です。ae-framework 側は必須フィールドを利用し、拡張フィールドを安全に読み飛ばします。
 
 ### トラブルシューティング
