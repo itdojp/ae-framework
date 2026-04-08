@@ -3,7 +3,9 @@ docRole: derived
 canonicalSource:
 - docs/quality/pr-summary-tool.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-04-02'
+- docs/quality/coverage-required.md
+- docs/quality/coverage-policy.md
+lastVerified: '2026-04-08'
 ---
 # PR Summary Aggregation (One Page)
 
@@ -60,7 +62,7 @@ Minimal one-line summary example:
 - Those workflow-attached Markdown files are downstream workflow inputs, not renderer direct inputs.
 
 ### Summary Sections
-- Coverage: current renderer prints overall percentage from coverage summary; threshold and delta are recommended follow-up enhancements
+- Coverage: the current renderer prints only `Coverage: <pct>%` from the coverage summary; `Threshold (effective)`, `Derived`, `Policy`, and `Policy source` belong to the workflow-level coverage comment contract rather than the renderer output contract
 - Discovery Pack: mode, reason, orphan counts, compile counts from `verify-lite-run-summary.json.discoveryPack`
 - Assurance: satisfied claims, warning claims, warning codes from `artifacts/assurance/assurance-summary.json`
 - Failing GWT: short counterexamples derived from `artifacts/formal/gwt.summary.json.items`, using the count and the first `property` or GWT fragment (`traceId` is not currently rendered)
@@ -69,12 +71,12 @@ Minimal one-line summary example:
 - Trace IDs: filterable trace references for replay / property / failure paths
 
 ### Current Renderer Notes
-- The renderer currently prints `Coverage: <pct>%` without threshold or delta.
+- The renderer currently prints `Coverage: <pct>%` without threshold or delta. `Threshold (effective)`, `Derived`, `Policy`, and `Policy source` are documented in `docs/quality/coverage-required.md` and `docs/quality/coverage-policy.md` as workflow-level coverage comment fields, not renderer direct output fields.
 - It treats unreadable or malformed optional JSON as missing input and continues with the remaining artifacts.
 - It does not perform JSON schema validation on its own; validation is expected to happen upstream.
 
 ### Recommended Output Examples
-The examples below describe the recommended human-facing format. They are not a byte-for-byte snapshot of the current renderer output.
+The examples below describe the recommended human-facing format. They are not a byte-for-byte snapshot of the current renderer output. For authoritative threshold / policy provenance wording, prefer the workflow-level coverage comment contract in `docs/quality/coverage-required.md` and `docs/quality/coverage-policy.md`.
 
 Short digest:
 ```
@@ -217,7 +219,7 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
 - これら workflow 側で追記される Markdown artifact は renderer の direct input ではなく、downstream workflow input です。
 
 ### サマリセクション
-- Coverage: current renderer は coverage summary から overall percentage を出力します。threshold や delta は推奨 follow-up enhancement です。
+- Coverage: current renderer は coverage summary から `Coverage: <pct>%` だけを出力します。`Threshold (effective)`、`Derived`、`Policy`、`Policy source` は renderer 出力契約ではなく、workflow 側の coverage comment 契約です。
 - Discovery Pack: `verify-lite-run-summary.json.discoveryPack` から mode / reason / orphan counts / compile counts を出力します。
 - Assurance: `artifacts/assurance/assurance-summary.json` から satisfied claims / warning claims / warning codes を出力します。
 - Failing GWT: `artifacts/formal/gwt.summary.json.items` から件数と先頭の `property` または GWT 断片を使った短い counterexample を出力します（現状 `traceId` は出力しません）。
@@ -226,12 +228,12 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
 - Trace IDs: replay / property / failure path の filter 可能な trace reference を出力します。
 
 ### Current renderer の注意点
-- current renderer は `Coverage: <pct>%` を出力するだけで、threshold や delta は出しません。
+- current renderer は `Coverage: <pct>%` を出力するだけで、threshold や delta は出しません。`Threshold (effective)`、`Derived`、`Policy`、`Policy source` は `docs/quality/coverage-required.md` と `docs/quality/coverage-policy.md` に定義された workflow 側の coverage comment field です。
 - unreadable または malformed な optional JSON は missing input として扱い、残りの artifact で継続します。
 - renderer 自体は JSON schema validation を実行しません。validation は upstream で行う前提です。
 
 ### 推奨出力例
-以下の例は、推奨される human-facing format を示します。current renderer の byte-for-byte な出力ではありません。
+以下の例は、推奨される human-facing format を示します。current renderer の byte-for-byte な出力ではありません。threshold / policy provenance の正準表現は、`docs/quality/coverage-required.md` と `docs/quality/coverage-policy.md` にある workflow 側の coverage comment 契約を優先してください。
 
 短いダイジェスト:
 ```
