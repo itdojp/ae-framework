@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - docs/quality/formal-tools-setup.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-04-08'
 ---
 # CSP Verification (cspx runner)
 
@@ -160,11 +160,11 @@ Upstream references (cspx):
 対象範囲:
 - 実行エントリ: `pnpm run verify:csp`（`scripts/formal/verify-csp.mjs`）
 - 推奨バックエンド: `cspx`（OSS）
-- CI: `Formal Verify` ワークフロー（ラベル/手動実行で起動、non-blocking）
+- CI: `Formal Verify` ワークフロー（ラベル/手動実行で起動、非ブロッキング）
 
 ### このランナーの前提（重要）
 
-- **non-blocking**: 失敗しても `verify:csp` 自体は終了コード `0` で終了します。  
+- **非ブロッキング**: 失敗しても `verify:csp` 自体は終了コード `0` で終了します。
   成否は `artifacts/hermetic-reports/formal/csp-summary.json` を参照して判断します（既定では「ゲート化」しません）。
 - バックエンド選択は（利用可能なら）次の優先順位です:
   1) `CSP_RUN_CMD`（シェル実行）
@@ -178,7 +178,7 @@ Upstream references (cspx):
 - Rust ツールチェーン（`cargo`）
 - `~/.cargo/bin` が `PATH` に含まれていること
 
-インストール（再現性のため commit SHA pin 推奨）:
+インストール（再現性のため commit SHA 固定を推奨）:
 ```bash
 cargo install --git https://github.com/itdojp/cspx --rev 8a67639ea4d3f715e27feb8cd728f46866a905db --locked cspx
 ```
@@ -192,7 +192,7 @@ cspx typecheck --help | grep -- --summary-json
 補足:
 - CI は commit SHA に pin して導入します（`.github/workflows/formal-verify.yml`）。
 - この pin は ae-framework 連携用の `--summary-json` を含みます。
-- `cspx-result.json` の `metrics` は optional です。ae-framework 側は必須フィールドを利用し、拡張フィールドを安全に読み飛ばします。
+- `cspx-result.json` の `metrics` は任意項目です。ae-framework 側は必須フィールドを利用し、拡張フィールドを安全に読み飛ばします。
 
 ### トラブルシューティング
 
@@ -207,7 +207,7 @@ cspx typecheck --help | grep -- --summary-json
 pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
 ```
 
-Assertions:
+Assertions（assertions）:
 - `cspx` バックエンドの `--mode assertions` は、v0.1 では **1種類の代表チェック**にマップしています:
   - `cspx check --assert "deadlock free" ...`
 ```bash
