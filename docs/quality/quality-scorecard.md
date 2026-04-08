@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-04-06'
+lastVerified: '2026-04-08'
 ---
 # Quality Scorecard
 
@@ -91,7 +91,7 @@ pnpm run quality:scorecard:validate -- \
 
 ### 1. 目的
 
-`quality-scorecard/v1` は、既存の summary 成果物を read-only で横断集約し、PR / release 判断で「全体としてどの程度健全か」を 1 つの判断・証跡成果物として扱うための成果物です。
+`quality-scorecard/v1` は、既存の summary 成果物を読み取り専用（read-only）で横断集約し、PR / release 判断で「全体としてどの程度健全か」を 1 つの判断・証跡成果物として扱うための成果物です。
 
 - 正規 JSON: `artifacts/quality/quality-scorecard.json`
 - 正規 Markdown: `artifacts/quality/quality-scorecard.md`
@@ -115,7 +115,7 @@ pnpm run quality:scorecard:validate -- \
 - `artifacts/formal/formal-summary-v2.json`
 - `artifacts/formal/formal-summary-v1.json`（v2 が無い場合の代替）
 
-任意成果物が欠けていても生成処理は継続します。`assuranceCoverage` / `policyReadiness` / `performanceRegression` のように専用 summary に依存する評価次元は `missing` になり得ます。一方で formal summary や harness-health が無い場合でも `executionHealth` は `pass` / `warn` のまま評価されます。必須成果物が欠けた場合は即時失敗（fail-fast）します。
+任意成果物が欠けていても生成処理は継続します。`assuranceCoverage` / `policyReadiness` / `performanceRegression` のように専用の summary 成果物に依存する評価次元は `missing` になり得ます。一方で formal summary や harness-health が無い場合でも `executionHealth` は `pass` / `warn` のまま評価されます。必須成果物が欠けた場合は即時失敗（fail-fast）します。
 
 ### 3. 評価次元
 
@@ -132,16 +132,16 @@ pnpm run quality:scorecard:validate -- \
 
 `summary.overallScore` は補助値であり、正とする判断値は `summary.overallStatus` と `blockers[]` です。
 
-### 4. report-only 導入
+### 4. 報告専用（report-only）導入
 
-- `verify-lite.yml` では report-only で `quality-scorecard` を生成します
+- `verify-lite.yml` では報告専用（report-only）で `quality-scorecard` を生成します
 - `validate-artifacts-ajv` と `validate-quality-scorecard.mjs` でスキーマを検証します
 - PR summary には `overallStatus` / `overallScore` / `blockers` を表示します
 - この成果物によって branch protection の required checks は変わりません
 
 ### 5. legacy `quality:scorecard` との関係
 
-既存の `package.json` にある `quality:scorecard` は `scripts/quality-scorecard-generator.js` を呼ぶ legacy 実装です。  
+既存の `package.json` にある `quality:scorecard` は `scripts/quality-scorecard-generator.js` を呼ぶ従来実装です。
 `quality-scorecard/v1` は互換置換ではなく、別の生成処理 / 検証処理 / 成果物として導入します。
 
 ### 6. 実行例
