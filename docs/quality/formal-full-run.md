@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - docs/quality/formal-tools-setup.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-04-11'
 ---
 # Formal Full Run (All Tools Smoke Test)
 
@@ -139,9 +139,9 @@ Outputs:
 
 この手順は、**すべての形式検査ツールをまとめて動作確認**するためのスモークテストです。
 
-### 推奨: CI（Apalache / SMT / Alloy / TLA / Kani / SPIN / Lean をまとめて実行。CSP は cspx 経由で non-blocking）
+### 推奨: CI（Apalache / SMT / Alloy / TLA / Kani / SPIN / Lean をまとめて実行。CSP は cspx 経由で非ブロッキング）
 
-1) **PRラベル実行**
+1) **PR ラベルで実行**
 - PR に `run-formal` ラベルを付与
 - 必要に応じて `enforce-formal` で Apalache の ran/ok をゲート
 
@@ -185,7 +185,7 @@ pnpm run verify:formal
 補足:
 - Alloy は `ALLOY_JAR` / `ALLOY_RUN_CMD` 未設定だと `tool_not_available` になります。
 - SMT は入力ファイル指定が必要です（次の手順）。
-- SPIN/Lean/CSP は non-blocking です。未導入の場合は `tool_not_available` として記録されます。
+- SPIN / Lean / CSP は非ブロッキングです。未導入の場合は `tool_not_available` として記録されます。
 
 #### 2) SMT を実行
 ```bash
