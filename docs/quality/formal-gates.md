@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - policy/risk-policy.yml
-lastVerified: '2026-03-28'
+lastVerified: '2026-04-11'
 ---
 # Formal Quality Gates (v0.2 DoD)
 
@@ -70,7 +70,7 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 
 ## 日本語
 
-この文書は、現行 v0.2 baseline で CI に導入しているフォーマル検証ゲートの定義をまとめたものです。
+この文書は、現行 v0.2 ベースラインで CI に導入しているフォーマル検証ゲートの定義をまとめたものです。
 
 ### 目的
 
@@ -93,27 +93,27 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 - `verify:lean (Lean4)`
 - `Formal Reports Aggregate`
 
-これらの job は `.github/workflows/formal-verify.yml` に実装されており、non-fork PR では `run-formal` ラベルが付いた場合にのみ起動します。fork PR では maintainer が `workflow_dispatch` を使い、`target` で対象を選択する必要があります。
+これらのジョブは `.github/workflows/formal-verify.yml` に実装されており、fork ではない PR では `run-formal` ラベルが付いた場合にのみ起動します。fork PR ではメンテナーが `workflow_dispatch` を使い、`target` で対象を選択する必要があります。
 
-### ブロッキングと report-only の扱い
+### ブロッキングと報告専用（report-only）の扱い
 
-- formal lane はオプトインで、既定では report-only です。
-- `enforce-formal` を付けると、strict path で Apalache の `ran/ok` と aggregate step の formal summary validation を強制します。
-- `run-formal` がある場合は `verify-lite` でも formal 出力を収集できますが、既定の required baseline は引き続き `verify-lite` / `policy-gate` / `gate` です。
+- formal レーンはオプトインで、既定では報告専用（report-only）です。
+- `enforce-formal` を付けると、厳格経路（strict path）で Apalache の `ran/ok` と集約ステップ（aggregate step）の formal summary validation を強制します。
+- `run-formal` がある場合は `verify-lite` でも formal 出力を収集できますが、既定の required ベースラインは引き続き `verify-lite` / `policy-gate` / `gate` です。
 
 ### 運用フロー
 
 1. PR に `run-formal` を付与するか、`Formal Verify` を手動起動する。
-2. `artifacts/hermetic-reports/formal/` 配下の per-tool summary を確認する。
+2. `artifacts/hermetic-reports/formal/` 配下の各ツールのサマリを確認する。
 3. 性質が失敗した場合は反例を採取し、failing test に落とし込む。
-4. formal lane を green に戻す最小修正を適用する。
+4. formal レーンを green に戻す最小修正を適用する。
 
 ### 確認する成果物
 
 - `artifacts/hermetic-reports/formal/summary.json`
 - `artifacts/formal/formal-summary-v1.json`
 - `artifacts/formal/formal-summary-v2.json`
-- 各ツールの summary 例:
+- 各ツールのサマリ例:
   - `artifacts/hermetic-reports/formal/apalache-summary.json`
   - `artifacts/hermetic-reports/formal/tla-summary.json`
   - `artifacts/hermetic-reports/formal/smt-summary.json`
@@ -121,6 +121,6 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 
 ### 現状
 
-- v0.2 では formal lane を PR 上でオプトインのまま維持しています。
-- repository では実 engine と stricter evidence handling を段階的に接続しており、stub / presence check の job もまだ含まれます。
-- canonical な運用詳細は `docs/quality/formal-runbook.md` にあるため、この文書は policy-level overview として扱ってください。
+- v0.2 では formal レーンを PR 上でオプトインのまま維持しています。
+- repository では実 engine と、より厳格な証跡処理を段階的に接続しており、stub / presence check のジョブもまだ含まれます。
+- canonical な運用詳細は `docs/quality/formal-runbook.md` にあるため、この文書はポリシーレベルの概要として扱ってください。
