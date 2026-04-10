@@ -110,8 +110,8 @@ ae traceability extract-ids \
   --output docs/specs/issue-traceability-map.json
 ```
 
-- `--issue` は GitHub Issue URL または issue 番号を指定できます
-- issue 番号の場合は `--repo <owner/repo>` か `GITHUB_REPOSITORY` が必要です
+- `--issue` は GitHub Issue URL または Issue 番号を指定できます
+- Issue 番号の場合は `--repo <owner/repo>` か `GITHUB_REPOSITORY` が必要です
 - private repository では `GH_TOKEN` または `GITHUB_TOKEN` の設定を推奨
 
 ### 2) map から matrix を生成（md/json）
