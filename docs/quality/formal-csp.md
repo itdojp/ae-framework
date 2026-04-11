@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - docs/quality/formal-tools-setup.md
-lastVerified: '2026-04-08'
+lastVerified: '2026-04-11'
 ---
 # CSP Verification (cspx runner)
 
@@ -155,7 +155,7 @@ Upstream references (cspx):
 
 ## 日本語
 
-本ドキュメントは、ae-framework における **CSP 検査（cspx ランナー）**の使い方と、生成される成果物（実行結果）を整理したものです。
+本ドキュメントは、ae-framework における **CSP 検査（cspx ランナー）** の使い方と、生成される成果物（実行結果）を整理したものです。
 
 対象範囲:
 - 実行エントリ: `pnpm run verify:csp`（`scripts/formal/verify-csp.mjs`）
@@ -166,7 +166,7 @@ Upstream references (cspx):
 
 - **非ブロッキング**: 失敗しても `verify:csp` 自体は終了コード `0` で終了します。
   成否は `artifacts/hermetic-reports/formal/csp-summary.json` を参照して判断します（既定では「ゲート化」しません）。
-- バックエンド選択は（利用可能なら）次の優先順位です:
+- バックエンドは、利用可能なものから次の優先順位で選択します:
   1) `CSP_RUN_CMD`（シェル実行）
   2) `cspx`
   3) FDR `refines`
@@ -207,8 +207,8 @@ cspx typecheck --help | grep -- --summary-json
 pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
 ```
 
-Assertions（assertions）:
-- `cspx` バックエンドの `--mode assertions` は、v0.1 では **1種類の代表チェック**にマップしています:
+アサーション（assertions）:
+- `cspx` バックエンドの `--mode assertions` は、v0.1 では **1種類の代表的なチェック**にマップしています:
   - `cspx check --assert "deadlock free" ...`
 ```bash
 pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
@@ -221,7 +221,7 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' \
   pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
 ```
 
-セキュリティ注意:
+セキュリティ上の注意:
 - `CSP_RUN_CMD` はシェルで実行されます。信頼できない入力を連結して設定しないでください。
 
 ### 成果物（実行結果）
@@ -236,7 +236,7 @@ CSP_RUN_CMD='echo Running CSP tool on {file}' \
 - `--output artifacts/hermetic-reports/formal/cspx-result.json`
 - `--summary-json artifacts/hermetic-reports/formal/csp-summary.json`
 
-### 実行結果例（main での実測）
+### 実行結果例（main ブランチでの実測）
 
 環境:
 - `node v22.19.0`
@@ -283,9 +283,9 @@ CSP summary written: artifacts/hermetic-reports/formal/csp-summary.json
 }
 ```
 
-Assertions の結果例（STOP のため意図通り fail）:
+アサーション結果の例（STOP のため意図通り fail）:
 - `spec/csp/cspx-smoke.cspm` は `SYSTEM = STOP` を定義しています（deadlock 状態）。
-- `--mode assertions` は `deadlock free` を評価するため、`resultStatus: fail` と `deadlock` タグ付き counterexample を返します。
+- `--mode assertions` は `deadlock free` を評価するため、`resultStatus: fail` と `deadlock` タグ付き反例（counterexample）を返します。
 
 参照先（cspx）:
 - https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md
