@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/risk-policy.yml
 - policy/quality.json
-lastVerified: '2026-04-06'
+lastVerified: '2026-04-11'
 ---
 # Verification Gates Guide
 
@@ -84,19 +84,19 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 
 ## 日本語
 
-検証ゲートは **verify-then-merge** を標準化するための基準です。本ドキュメントでは、現在のゲート分類（current gate taxonomy）、重い検査（heavy check）の有効化方法、ゲート名（gate name）に含まれる `contract` の意味、オペレーター（operator）がどの証跡を見るべきかを整理します。
+検証ゲートは **verify-then-merge** を標準化するための基準です。本ドキュメントでは、現在のゲート分類、重いチェック（heavy check）の有効化方法、ゲート名に含まれる `contract` の意味、運用担当者がどの証跡を見るべきかを整理します。
 
 ### ゲート種別
 
-- 基本ゲート（Baseline gates）: `types:check` / lint / build / conformance
+- ベースラインゲート: `types:check` / lint / build / conformance
 - 追加ゲート（Additional gates）: property / pact-contract (API) / mutation / MBT / perf / a11y / lighthouse / heavy (CI Extended)
-- Formal ゲート（Formal gates）: TLA+ / Alloy（既定では report-only、必要に応じて stricter execution を opt-in）
+- 形式検証ゲート: TLA+ / Alloy（既定では報告専用（report-only）、必要に応じてより厳格な実行をオプトイン）
 
 ### 有効化ガイド（現行運用）
 
-- 日常的な PR は Verify Lite の軽量 baseline を既定とします。
-- 重いゲートは通常 opt-in ラベルで有効化します。
-- perf / lighthouse / a11y のような adapter-threshold check は通常 `run-adapters` で起動し、`enforce-*` label は report-only から blocking への切替だけを担います。
+- 日常的な PR は Verify Lite の軽量ベースラインを既定とします。
+- 重いゲートは通常オプトインラベルで有効化します。
+- perf / lighthouse / a11y のような adapter-threshold チェックは通常 `run-adapters` で起動し、`enforce-*` ラベルは報告専用（report-only）からブロッキングへの切替だけを担います。
 
 関連ドキュメント:
 - `docs/ci/label-gating.md`
@@ -113,7 +113,7 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 
 ### 代表的なゲートと入口
 
-| Gate | How to enable | Primary output | Notes |
+| ゲート | 有効化方法 | 主な出力 | 備考 |
 | --- | --- | --- | --- |
 | property | label `run-property` | `artifacts/properties/` | CI Extended 側で実行 |
 | pact-contract (API) | label `run-integration` または `run-ci-extended` | pact test logs/artifacts (project-defined) | CI 上の consumer-driven API contract verification。`pnpm run pipelines:pact` はローカル / 手動の入口 |
@@ -139,7 +139,7 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 
 - 既存テンプレート: `docs/quality/pr-summary-template.md`
 - 実装詳細: `docs/quality/pr-summary-tool.md`
-- 運用目的: 人間の reviewer が raw artifact をすべて開かなくても判断できる形で verification 結果を要約すること
+- 運用目的: 人間のレビュアが raw artifact をすべて開かなくても判断できる形で verification 結果を要約すること
 
 ### レポートメタデータ
 
