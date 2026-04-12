@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - README.md
-lastVerified: '2026-04-04'
+lastVerified: '2026-04-12'
 ---
 # Formal Tools Setup
 
@@ -113,7 +113,7 @@ This guide outlines local setup for formal verification tools used alongside AE-
 
 ## 日本語
 
-このガイドは、AE-Framework と併用する形式検証ツールのローカルセットアップを整理したものです。すべて任意であり、CI はラベル制御（label-gated）のままです。
+このガイドは、AE-Framework と併用する形式検証ツールのローカルセットアップを整理したものです。すべて任意であり、CI は引き続きラベル制御（label-gated）です。
 
 ## 対応ツール
 - TLA+ (TLC)
@@ -122,11 +122,11 @@ This guide outlines local setup for formal verification tools used alongside AE-
 - SMT ソルバー: Z3, cvc5
 - Kani（Rust の有界モデル検査）
 - SPIN（Promela のモデル検査）
-- CSP（`cspx` または構成済み backend による CSPM check）
+- CSP（`cspx` または構成済みバックエンドによる CSPM 検査）
 - Lean4（lake による定理証明 / 型検査）
 
 ## 簡易確認
-- `pnpm run tools:formal:check` を実行し、ローカル環境で利用可能なツールを確認する。
+- `pnpm run tools:formal:check` を実行し、ローカル環境で利用可能なツールを確認します。
 
 ## TLA+ (TLC)
 - Java 11 以上を導入する。OpenJDK を推奨。
@@ -176,16 +176,16 @@ This guide outlines local setup for formal verification tools used alongside AE-
 
 ## CSP
 - CI は非ブロッキング構成で、既定では常に `csp-summary.json` を出力する。
-- 推奨バックエンドは `cspx`（OSS, Apache-2.0）で、CI-first な CSPM check と JSON 出力に対応する。
-  - immutable commit pin で導入:
+- 推奨バックエンドは `cspx`（OSS, Apache-2.0）で、CI-first な CSPM 検査と JSON 出力に対応します。
+  - 固定 commit pin で導入:
     - `cargo install --git https://github.com/itdojp/cspx --rev 8a67639ea4d3f715e27feb8cd728f46866a905db --locked cspx`
   - 確認:
     - `cspx --version`
     - `cspx typecheck --help | grep -- --summary-json`
   - 実行:
     - `pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck`
-- fallback バックエンドの順序: `CSP_RUN_CMD` -> `cspx` -> `refines` (FDR) -> `cspmchecker`
-  - `CSP_RUN_CMD` は `{file}` placeholder を受け付ける
+- フォールバック用バックエンドの順序: `CSP_RUN_CMD` -> `cspx` -> `refines` (FDR) -> `cspmchecker`
+  - `CSP_RUN_CMD` は `{file}` プレースホルダを受け付けます
   - 例:
     - `CSP_RUN_CMD='echo Running CSP tool on {file}' pnpm run verify:csp -- --file spec/csp/sample.cspm`
 
@@ -196,12 +196,12 @@ This guide outlines local setup for formal verification tools used alongside AE-
 - 確認:
   - `elan --version`
   - `lake --version`
-- `spec/lean/` 配下の project を build:
+- `spec/lean/` 配下のプロジェクトを build:
   - `pnpm run verify:lean`
 
 ## 備考
-- これらのツールは通常の AE-Framework 利用では必須ではない。導入済みの場合に、formal workflow の検証レーンを拡張する。
-- CI 上の stub を動かすには、`Formal Verify` workflow を `run-formal` ラベルまたは手動起動（workflow_dispatch）で実行する。各 engine は段階的に接続される。
+- これらのツールは通常の AE-Framework 利用では必須ではありません。導入済みの場合に、formal workflow の検証レーンを拡張できます。
+- CI 上の stub を動かすには、`Formal Verify` workflow を `run-formal` ラベルまたは手動起動（workflow_dispatch）で実行します。各エンジンは段階的に接続されます。
 
 ## 上流参照 (`cspx`)
 - AE-Framework 連携契約: `https://github.com/itdojp/cspx/blob/main/docs/integrations/ae-framework.md`
