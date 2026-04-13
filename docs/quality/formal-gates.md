@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - policy/risk-policy.yml
-lastVerified: '2026-04-11'
+lastVerified: '2026-04-14'
 ---
 # Formal Quality Gates (v0.2 DoD)
 
@@ -70,7 +70,7 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 
 ## 日本語
 
-この文書は、現行 v0.2 ベースラインで CI に導入しているフォーマル検証ゲートの定義をまとめたものです。
+この文書は、現行 v0.2 ベースラインで CI に導入している形式検証ゲートの定義をまとめたものです。
 
 ### 目的
 
@@ -78,7 +78,7 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 - Alloy 6 による軽量時相検証を行う。
 - 利用可能な場合は TLC / Apalache を通じて TLA+ 検証を行う。
 - `z3` / `cvc5` による冗長 SMT チェックを行う。
-- 失敗 -> 反例 -> failing test -> 最小修正、という運用フローを維持する。
+- 失敗 -> 反例 -> 失敗テスト -> 最小修正、という運用フローを維持する。
 
 ### 現在の CI 起点
 
@@ -93,20 +93,20 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 - `verify:lean (Lean4)`
 - `Formal Reports Aggregate`
 
-これらのジョブは `.github/workflows/formal-verify.yml` に実装されており、fork ではない PR では `run-formal` ラベルが付いた場合にのみ起動します。fork PR ではメンテナーが `workflow_dispatch` を使い、`target` で対象を選択する必要があります。
+これらのジョブは `.github/workflows/formal-verify.yml` に実装されており、fork されていない PR では `run-formal` ラベルが付いた場合にのみ起動します。fork PR ではメンテナーが `workflow_dispatch` を使い、`target` で対象を選択する必要があります。
 
 ### ブロッキングと報告専用（report-only）の扱い
 
-- formal レーンはオプトインで、既定では報告専用（report-only）です。
-- `enforce-formal` を付けると、厳格経路（strict path）で Apalache の `ran/ok` と集約ステップ（aggregate step）の formal summary validation を強制します。
-- `run-formal` がある場合は `verify-lite` でも formal 出力を収集できますが、既定の required ベースラインは引き続き `verify-lite` / `policy-gate` / `gate` です。
+- 形式検証レーンはオプトインで、既定では報告専用（report-only）です。
+- `enforce-formal` を付けると、厳格パス（strict path）で Apalache の `ran/ok` と集約ステップ（aggregate step）の formal summary 検証を強制します。
+- `run-formal` がある場合は `verify-lite` でも formal 出力を収集できますが、既定の必須ベースラインは引き続き `verify-lite` / `policy-gate` / `gate` です。
 
 ### 運用フロー
 
 1. PR に `run-formal` を付与するか、`Formal Verify` を手動起動する。
-2. `artifacts/hermetic-reports/formal/` 配下の各ツールのサマリを確認する。
-3. 性質が失敗した場合は反例を採取し、failing test に落とし込む。
-4. formal レーンを green に戻す最小修正を適用する。
+2. `artifacts/hermetic-reports/formal/` 配下の各ツールのサマリーを確認する。
+3. 性質が失敗した場合は反例を採取し、失敗テストに落とし込む。
+4. 形式検証レーンを green に戻す最小修正を適用する。
 
 ### 確認する成果物
 
@@ -121,6 +121,6 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 
 ### 現状
 
-- v0.2 では formal レーンを PR 上でオプトインのまま維持しています。
-- repository では実 engine と、より厳格な証跡処理を段階的に接続しており、stub / presence check のジョブもまだ含まれます。
-- canonical な運用詳細は `docs/quality/formal-runbook.md` にあるため、この文書はポリシーレベルの概要として扱ってください。
+- v0.2 では形式検証レーンを PR 上でオプトインのまま維持しています。
+- リポジトリでは実エンジンと、より厳格な証跡処理を段階的に接続しており、スタブ / presence check のジョブもまだ含まれます。
+- 正式な運用詳細は `docs/quality/formal-runbook.md` にあるため、この文書はポリシーレベルの概要として扱ってください。
