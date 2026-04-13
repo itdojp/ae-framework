@@ -113,7 +113,7 @@ These jobs are wired through `.github/workflows/formal-verify.yml` and, for non-
 - `artifacts/hermetic-reports/formal/summary.json`
 - `artifacts/formal/formal-summary-v1.json`
 - `artifacts/formal/formal-summary-v2.json`
-- 各ツールのサマリ例:
+- 各ツールのサマリー例:
   - `artifacts/hermetic-reports/formal/apalache-summary.json`
   - `artifacts/hermetic-reports/formal/tla-summary.json`
   - `artifacts/hermetic-reports/formal/smt-summary.json`
