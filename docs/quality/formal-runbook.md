@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-04-02'
+lastVerified: '2026-04-14'
 owner: formal-methods
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -12,7 +12,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## 日本語（概要）
 
-負担の小さい形式検査の運用手順です。PR ラベルでの起動（`run-formal`）、手動トリガー、CLI スタブ、仕様/アーティファクトの配置、ロードマップ適合を簡潔にまとめています。
+負担の小さい形式検査の運用手順です。PR ラベルでの起動（`run-formal`）、手動トリガー、CLI ランナー、仕様/アーティファクトの配置、ロードマップ適合を簡潔にまとめています。
 全ツールのスモークテスト手順は `docs/quality/formal-full-run.md` を参照してください。
 
 ## English
@@ -250,33 +250,33 @@ jobs:
 2) 手動実行は GitHub Actions の `workflow_dispatch`（Formal Verify）から起動。
 
 ### CLI ランナー（非ブロッキング）
-- `pnpm run verify:conformance` - conformance summary runner。必要に応じて `ae conformance verify` と併用する。
-- `pnpm run verify:alloy` - Alloy runner。`ALLOY_RUN_CMD`、`ALLOY_JAR`、`alloy` CLI を順に解決する。
-- `pnpm run verify:tla -- --engine=apalache|tlc` - TLA runner。`TLA_TOOLS_JAR` または `apalache-mc` を解決する。
-- `pnpm run verify:smt -- --solver=z3|cvc5` - SMT runner。
-- `pnpm run verify:kani` - Kani presence summary runner。
-- `pnpm run verify:spin` - Promela / SPIN runner。
-- `pnpm run verify:csp` - `CSP_RUN_CMD`、`cspx`、`refines`、`cspmchecker` を順に使う CSP runner。
+- `pnpm run verify:conformance` - conformance サマリーランナー。必要に応じて `ae conformance verify` と併用する。
+- `pnpm run verify:alloy` - Alloy ランナー。`ALLOY_RUN_CMD`、`ALLOY_JAR`、`alloy` CLI を順に解決する。
+- `pnpm run verify:tla -- --engine=apalache|tlc` - TLA ランナー。`TLA_TOOLS_JAR` または `apalache-mc` を解決する。
+- `pnpm run verify:smt -- --solver=z3|cvc5` - SMT ランナー。
+- `pnpm run verify:kani` - Kani の presence サマリーランナー。
+- `pnpm run verify:spin` - Promela / SPIN ランナー。
+- `pnpm run verify:csp` - `CSP_RUN_CMD`、`cspx`、`refines`、`cspmchecker` を順に使う CSP ランナー。
   - `cspx` を使う場合は `csp-summary.json` と `cspx-result.json` を出力する。
   - `schema_version` 不一致（期待値 `0.1`）は `status: "unsupported"` として記録する。
   - 詳細例は `docs/quality/formal-csp.md` を参照する。
-- `pnpm run verify:lean` - Lean4 `lake build` runner。
-- `pnpm run verify:formal` - 上記コマンドを連続実行する chained local runner。
-  - 集約 summary は `artifacts/hermetic-reports/formal/summary.json` に出力される。
-  - 実行後は compact な要約を console に表示する。
+- `pnpm run verify:lean` - Lean4 `lake build` ランナー。
+- `pnpm run verify:formal` - 上記コマンドを連続実行するローカル連結ランナー。
+  - 集約サマリーは `artifacts/hermetic-reports/formal/summary.json` に出力される。
+  - 実行後は簡潔な要約をコンソールに表示する。
 
 ### Runtime Hooks（Phase 2.2）
-- 任意の runtime hook JSON は `artifacts/hermetic-reports/runtime/hooks.json` に置き、conformance driver が replay summary と相関付ける。
+- 任意のランタイムフック JSON は `artifacts/hermetic-reports/runtime/hooks.json` に置き、conformance driver がリプレイサマリーと相関付ける。
 - 環境変数:
-  - `RUNTIME_HOOKS` または `CONFORMANCE_RUNTIME_HOOKS` - hook JSON path
-  - `CONFORMANCE_TRACE` - replay summary path。既定: `artifacts/domain/replay.summary.json`
+  - `RUNTIME_HOOKS` または `CONFORMANCE_RUNTIME_HOOKS` - フック JSON のパス
+  - `CONFORMANCE_TRACE` - リプレイサマリーのパス。既定: `artifacts/domain/replay.summary.json`
 - `conformance-summary` は `runtimeHooks: {present, path, count, uniqueEvents[], traceId, matchesReplayTraceId}` を出力する。
 
 ### BDD -> LTL suggestions（report-only）
-- `pnpm run bdd:suggest` は `spec/bdd/**/*.feature`（fallback: `features/`）から GWT scenario を抽出し、candidate LTL properties を生成する。
+- `pnpm run bdd:suggest` は `spec/bdd/**/*.feature`（fallback: `features/`）から GWT シナリオを抽出し、候補 LTL 特性を生成する。
 - 出力:
-  - `artifacts/bdd/scenarios.json` - PR summary 入力（`{title, criteriaCount}`）
-  - `artifacts/properties/ltl-suggestions.json` - 集約 / 参照出力（`{count, items[]}`）
+  - `artifacts/bdd/scenarios.json` - PR サマリー入力（`{title, criteriaCount}`）
+  - `artifacts/properties/ltl-suggestions.json` - 集約・参照出力（`{count, items[]}`）
 
 ### ローカル再現
 - ツール有無の確認: `pnpm run tools:formal:check`
@@ -284,35 +284,35 @@ jobs:
 - TLC（`TLA_TOOLS_JAR` 設定時）: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`
 - SMT（`z3` または `cvc5` がある場合）: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
 
-### Apalache quickstart
-- Presence / version check: `node scripts/formal/check-apalache.mjs`
-- Verify（non-blocking summary）: `node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla`
-- sibling の `*.cfg`（例: `spec/tla/DomainSpec.cfg`）が存在する場合、runner は自動で `--config` を追加する。
+### Apalache クイックスタート
+- presence / version 確認: `node scripts/formal/check-apalache.mjs`
+- 検証（non-blocking サマリー）: `node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla`
+- 隣接する `*.cfg`（例: `spec/tla/DomainSpec.cfg`）が存在する場合、ランナーは自動で `--config` を追加する。
 - 補足:
-  - `verify:apalache` は `formal-verify` 内で non-blocking presence/version guard として配線済み。
-  - aggregate comment は Apalache の `ran/ok` と短い error fragment を 1 行で出力する。
+  - `verify:apalache` は `formal-verify` 内で non-blocking の presence/version ガードとして配線済み。
+  - 集約コメントは Apalache の `ran/ok` と短いエラーフラグメントを 1 行で出力する。
 
 ### Timeouts
-- TLA / SMT runner は GNU `timeout` が利用可能な環境で `--timeout <ms>` を受け付ける。
+- TLA / SMT ランナーは GNU `timeout` が利用可能な環境で `--timeout <ms>` を受け付ける。
 - 例: `pnpm run verify:tla -- --engine=apalache --timeout 60000`
-- timeout 時は summary に `status: "timeout"` を書き込み、stricter consumer がない限り lane 自体は non-blocking のままにする。
+- timeout 時はサマリーに `status: "timeout"` を書き込み、より厳格な consumer がない限り lane 自体は non-blocking のままにする。
 
 ### Troubleshooting
 - PATH: `apalache` または `apalache-mc` が見つからない場合は `node scripts/formal/check-apalache.mjs` で presence/version を確認する。
-- Timeout: log が止まらない場合は `--timeout` を付け、aggregate comment の `status: "timeout"` を cut-off signal として扱う。
+- Timeout: ログが止まらない場合は `--timeout` を付け、集約コメントの `status: "timeout"` を打ち切りシグナルとして扱う。
 - CSP unsupported:
-  - `artifacts/hermetic-reports/formal/csp-summary.json` の `status: "unsupported"` と、`artifacts/hermetic-reports/formal/csp-output.txt` などに `--summary-json` の CLI error（`unexpected argument` / `unknown argument` / `wasn't expected`）が出ている場合、`cspx` が古い。
-  - `cspx typecheck --help | grep -- --summary-json` で対応を確認し、`docs/quality/formal-tools-setup.md` の pinned setup に沿って更新する。`CSP_RUN_CMD` は fallback escape hatch として残る。
+  - `artifacts/hermetic-reports/formal/csp-summary.json` の `status: "unsupported"` と、`artifacts/hermetic-reports/formal/csp-output.txt` などに `--summary-json` の CLI エラー（`unexpected argument` / `unknown argument` / `wasn't expected`）が出ている場合、`cspx` が古い。
+  - `cspx typecheck --help | grep -- --summary-json` で対応を確認し、`docs/quality/formal-tools-setup.md` の固定 setup に沿って更新する。`CSP_RUN_CMD` は fallback の escape hatch として残る。
   - `schema_version mismatch` の場合は `cspx-result.json` を確認し、current contract（`schema_version=0.1`）に合うまで `cspx` を更新する。
 - Raw logs:
   - `artifacts/hermetic-reports/formal/<tool>-output.txt` に保存される。
   - 例: `apalache-output.txt`, `tla-output.txt`, `smt-output.txt`, `alloy-output.txt`, `spin-output.txt`, `csp-output.txt`, `lean-output.txt`
-  - Formal Summary v1/v2 では、log file が存在する場合 `results[].logPath` に repo-relative path が入る。
+  - Formal Summary v1/v2 では、ログファイルが存在する場合 `results[].logPath` に repo-relative path が入る。
 
 ### Aggregate JSON validation（non-blocking）
-- aggregate workflow は `artifacts/formal/formal-aggregate.json` を出力し、軽量 schema で warning-level validate を行う。
-- ローカル check: `node scripts/formal/validate-aggregate-json.mjs`
-- file が欠損または malformed でも、helper は local flow を fail させず `::warning::` を出す。
+- aggregate workflow は `artifacts/formal/formal-aggregate.json` を出力し、軽量スキーマで warning-level validate を行う。
+- ローカル検証: `node scripts/formal/validate-aggregate-json.mjs`
+- ファイルが欠損または malformed でも、helper は local flow を fail させず `::warning::` を出す。
 
 ### Formal Summary v1/v2（dual-write + dual-validate）
 - producer: `scripts/formal/generate-formal-summary-v1.mjs` が v1 を `--out`、v2 を `--out-v2` に出力する。
@@ -330,12 +330,12 @@ jobs:
 
 ### Aggregate JSON conventions
 - single source of truth:
-  - `artifacts/formal/formal-aggregate.json` が `present` / `ran` / `ok` signal の canonical source。
+  - `artifacts/formal/formal-aggregate.json` が `present` / `ran` / `ok` シグナルの canonical source。
   - PR comment はこの aggregate から生成する。
 - comment wrapping:
   - `FORMAL_AGG_WRAP_WIDTH` で有効化する。
   - 実用値は `80-100`、`0` は wrapping 無効。
-  - 長い URL や table が多い場合は無効のままにする。
+  - 長い URL やテーブルが多い場合は無効のままにする。
 - key fields:
   - `info.present` - `tla`, `alloy`, `smt`, `apalache`, `conformance`, `kani`, `spin`, `csp`, `lean` の presence flag
   - `info.presentCount` - present な summary 数
