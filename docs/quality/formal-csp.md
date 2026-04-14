@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - docs/quality/formal-tools-setup.md
-lastVerified: '2026-04-11'
+lastVerified: '2026-04-14'
 ---
 # CSP Verification (cspx runner)
 
@@ -178,7 +178,7 @@ Upstream references (cspx):
 - Rust ツールチェーン（`cargo`）
 - `~/.cargo/bin` が `PATH` に含まれていること
 
-インストール（再現性のため commit SHA 固定を推奨）:
+インストール（再現性のため commit SHA の固定を推奨）:
 ```bash
 cargo install --git https://github.com/itdojp/cspx --rev 8a67639ea4d3f715e27feb8cd728f46866a905db --locked cspx
 ```
@@ -198,7 +198,7 @@ cspx typecheck --help | grep -- --summary-json
 
 - `csp-summary.json` の `status` が `"unsupported"` で、`artifacts/hermetic-reports/formal/csp-output.txt`（または `csp-summary.json` の `outputFile`）に `--summary-json` に関する CLI エラー（例: `unexpected argument`, `unknown argument`, `wasn't expected` など）が出る場合、`cspx` が古く互換性がありません（`docs/quality/formal-tools-setup.md` の手順で更新、または `CSP_RUN_CMD` を設定）。
 - `schema_version mismatch: expected 0.1` の場合は `cspx-result.json` の `schema_version` を確認し、現行の契約（`schema_version=0.1`）に合わせて `cspx` を更新してください。
-- `detailsFile` が `null` の場合は、まず `csp-summary.json` の `backend` が `cspx:*` であることを確認してください。`backend` が `cspx:*` かつ `detailsFile` が `null` の場合、`cspx` が details JSON を生成できていません。`artifacts/hermetic-reports/formal/csp-output.txt`（または `outputFile`）の CLI エラーを確認してください（`backend` が `CSP_RUN_CMD` / `refines` / `cspmchecker` の場合、`detailsFile: null` は通常動作です）。
+- `detailsFile` が `null` の場合は、まず `csp-summary.json` の `backend` が `cspx:*` であることを確認してください。`backend` が `cspx:*` かつ `detailsFile` が `null` の場合、`cspx` が詳細 JSON を生成できていません。`artifacts/hermetic-reports/formal/csp-output.txt`（または `outputFile`）の CLI エラーを確認してください（`backend` が `CSP_RUN_CMD` / `refines` / `cspmchecker` の場合、`detailsFile: null` は通常動作です）。
 
 ### 実行方法
 
@@ -207,8 +207,8 @@ cspx typecheck --help | grep -- --summary-json
 pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
 ```
 
-アサーション（assertions）:
-- `cspx` バックエンドの `--mode assertions` は、v0.1 では **1種類の代表的なチェック**にマップしています:
+アサーション:
+- `cspx` バックエンドの `--mode assertions` は、v0.1 では **1 種類の代表的なチェック**にマップしています:
   - `cspx check --assert "deadlock free" ...`
 ```bash
 pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
