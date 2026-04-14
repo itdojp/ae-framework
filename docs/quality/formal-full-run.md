@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/formal-runbook.md
 - docs/quality/formal-tools-setup.md
-lastVerified: '2026-04-11'
+lastVerified: '2026-04-14'
 ---
 # Formal Full Run (All Tools Smoke Test)
 
@@ -148,9 +148,9 @@ Outputs:
 2) **手動実行（workflow_dispatch）**
 - Actions → **Formal Verify** → Run workflow
   - `target`: `all`
-  - `engine`: `tlc` or `apalache`
-  - `solver`: `z3` or `cvc5`
-  - `alloyJar` / `tlaToolsJar`: 任意（jar パス上書き）
+  - `engine`: `tlc` または `apalache`
+  - `solver`: `z3` または `cvc5`
+  - `alloyJar` / `tlaToolsJar`: 任意（jar パスの上書き）
 
 3) **成果物の確認**
 - `formal-reports`（`artifacts/hermetic-reports/formal/*`）
@@ -225,15 +225,15 @@ pnpm run verify:lean
 
 #### 8) CSP を実行（設定済みの場合）
 ```bash
-# Typecheck（安全な既定）:
+# 型検査（安全な既定）:
 pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
 
 # より豊富な CSPM サンプルを実行したい場合（バックエンド/ツール側の対応が必要な場合があります）:
 pnpm run verify:csp -- --file spec/csp/sample.cspm --mode typecheck
 
-# Assertions（バックエンド依存）:
-# - cspx: 基本のデッドロック検査（v0.1: STOPのみのサンプルでは失敗します）
-# - refines（FDR）: ファイル内の assertion を実行
+# アサーション（バックエンド依存）:
+# - cspx: 基本のデッドロック検査（v0.1: STOP のみのサンプルでは失敗します）
+# - refines（FDR）: ファイル内のアサーションを実行
 pnpm run verify:csp -- --file spec/csp/sample.cspm --mode assertions
 
 # 任意のバックエンドをコマンドで実行（シェル経由）。{file} は絶対パスへ置換されます:
