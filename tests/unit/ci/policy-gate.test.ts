@@ -2,12 +2,30 @@ import { describe, expect, it } from 'vitest';
 import { buildPolicyGateReport, evaluatePolicyGate } from '../../../scripts/ci/policy-gate.mjs';
 import { loadRiskPolicy } from '../../../scripts/ci/lib/risk-policy.mjs';
 
-function checkRun(name: string, conclusion: string = 'SUCCESS') {
+function checkRun(
+  name: string,
+  conclusion: string = 'SUCCESS',
+  overrides: Record<string, unknown> = {},
+) {
   return {
     __typename: 'CheckRun',
     name,
     status: 'COMPLETED',
     conclusion,
+    ...overrides,
+  };
+}
+
+function statusContext(
+  context: string,
+  state: string = 'SUCCESS',
+  overrides: Record<string, unknown> = {},
+) {
+  return {
+    __typename: 'StatusContext',
+    context,
+    state,
+    ...overrides,
   };
 }
 
@@ -46,6 +64,111 @@ describe('policy-gate', () => {
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
+  });
+
+  it('prefers the newest same-name required check over an older cancelled run', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [
+        checkRun('verify-lite', 'CANCELLED', {
+          workflowName: 'Verify Lite',
+          completedAt: '2026-04-14T06:00:00Z',
+        }),
+        checkRun('verify-lite', 'SUCCESS', {
+          workflowName: 'Verify Lite',
+          completedAt: '2026-04-14T06:05:00Z',
+        }),
+      ],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.requiredCheckResults[0]?.result.status).toBe('success');
+    expect(result.requiredCheckResults[0]?.result.matches).toHaveLength(1);
+    expect(result.requiredCheckResults[0]?.result.matches[0]?.conclusion).toBe('SUCCESS');
+  });
+
+  it('fails when the newest same-name required check failed after an older success', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [
+        checkRun('verify-lite', 'SUCCESS', {
+          workflowName: 'Verify Lite',
+          completedAt: '2026-04-14T06:00:00Z',
+        }),
+        checkRun('verify-lite', 'FAILURE', {
+          workflowName: 'Verify Lite',
+          completedAt: '2026-04-14T06:05:00Z',
+        }),
+      ],
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('required check failed: verify-lite');
+    expect(result.requiredCheckResults[0]?.result.status).toBe('failure');
+    expect(result.requiredCheckResults[0]?.result.matches).toHaveLength(1);
+    expect(result.requiredCheckResults[0]?.result.matches[0]?.conclusion).toBe('FAILURE');
+  });
+
+  it('uses startedAt fallback when the newest same-name required check is pending', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [
+        checkRun('verify-lite', 'SUCCESS', {
+          workflowName: 'Verify Lite',
+          completedAt: '2026-04-14T06:00:00Z',
+        }),
+        checkRun('verify-lite', '', {
+          workflowName: 'Verify Lite',
+          status: 'IN_PROGRESS',
+          startedAt: '2026-04-14T06:05:00Z',
+        }),
+      ],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.warnings).toContain('required check not ready yet: verify-lite (pending)');
+    expect(result.requiredCheckResults[0]?.result.status).toBe('pending');
+    expect(result.requiredCheckResults[0]?.result.matches).toHaveLength(1);
+    expect(result.requiredCheckResults[0]?.result.matches[0]?.status).toBe('IN_PROGRESS');
+  });
+
+  it('falls back to the later same-name status context when timestamps are unavailable', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [
+        statusContext('verify-lite', 'FAILURE'),
+        statusContext('verify-lite', 'SUCCESS'),
+      ],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.requiredCheckResults[0]?.result.status).toBe('success');
+    expect(result.requiredCheckResults[0]?.result.matches).toHaveLength(1);
+    expect(result.requiredCheckResults[0]?.result.matches[0]?.type).toBe('status-context');
+    expect(result.requiredCheckResults[0]?.result.matches[0]?.conclusion).toBe('SUCCESS');
   });
 
   it('fails when risk label does not match inferred risk', () => {
@@ -214,6 +337,43 @@ describe('policy-gate', () => {
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
+  });
+
+  it('prefers the newest same-name gate check over an older cancelled run', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }, { name: 'run-trace' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['.github/workflows/spec-generate-model.yml'],
+      reviews: [
+        {
+          id: 212,
+          state: 'APPROVED',
+          submitted_at: '2026-03-01T00:06:00Z',
+          user: { login: 'reviewer1', type: 'User' },
+        },
+      ],
+      statusRollup: [
+        checkRun('verify-lite'),
+        checkRun('KvOnce Trace Validation', 'CANCELLED', {
+          workflowName: 'Spec Validation',
+          completedAt: '2026-04-14T06:00:00Z',
+        }),
+        checkRun('KvOnce Trace Validation', 'SUCCESS', {
+          workflowName: 'Spec Validation',
+          completedAt: '2026-04-14T06:05:00Z',
+        }),
+      ],
+      planArtifact: planArtifactState(),
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    const traceGate = result.gateCheckResults.find((item) => item.label === 'run-trace');
+    expect(traceGate?.result.status).toBe('success');
+    expect(traceGate?.result.matches).toHaveLength(1);
+    expect(traceGate?.result.matches[0]?.conclusion).toBe('SUCCESS');
   });
 
   it('does not enforce assurance labels on low-risk assurance changes', () => {

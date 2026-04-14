@@ -265,11 +265,18 @@ approvals := count({login |
   latest_review_state_by_login[login] == "APPROVED"
 })
 
-check_entries := [entry |
+check_entries_raw := [entry |
   some i
   item := as_object(status_rollup[i])
   entry := to_check_entry(item)
   entry != null
+]
+
+check_entries := [entry |
+  some i
+  entry := check_entries_raw[i]
+  key := check_entry_identity(entry)
+  not has_later_check_entry(key, entry, i)
 ]
 
 to_check_entry(item) := entry if {
@@ -279,6 +286,9 @@ to_check_entry(item) := entry if {
   status := upper(string_or_empty(object.get(item, "status", "")))
   status != ""
   conclusion := upper(string_or_empty(object.get(item, "conclusion", "")))
+  workflow_name := string_or_empty(object.get(item, "workflowName", ""))
+  started_at := string_or_empty(object.get(item, "startedAt", ""))
+  completed_at := string_or_empty(object.get(item, "completedAt", ""))
   state := check_run_state(status, conclusion)
   entry := {
     "name": name,
@@ -286,6 +296,9 @@ to_check_entry(item) := entry if {
     "type": "check-run",
     "status": status,
     "conclusion": conclusion,
+    "workflowName": workflow_name,
+    "startedAt": started_at,
+    "completedAt": completed_at,
   }
 } else := entry if {
   string_or_empty(object.get(item, "__typename", "")) == "StatusContext"
@@ -300,9 +313,40 @@ to_check_entry(item) := entry if {
     "type": "status-context",
     "status": status,
     "conclusion": status,
+    "workflowName": "",
+    "startedAt": "",
+    "completedAt": "",
   }
 } else := null if {
   true
+}
+
+check_entry_identity(entry) := sprintf("%s::%s", [
+  string_or_empty(object.get(entry, "type", "")),
+  string_or_empty(object.get(entry, "name", "")),
+])
+
+check_entry_timestamp(entry) := completed_at if {
+  completed_at := string_or_empty(object.get(entry, "completedAt", ""))
+  completed_at != ""
+} else := started_at if {
+  started_at := string_or_empty(object.get(entry, "startedAt", ""))
+  started_at != ""
+} else := "" if {
+  true
+}
+
+check_entry_sort_key(entry, index) := sprintf("%s|%020d", [
+  check_entry_timestamp(entry),
+  index,
+])
+
+has_later_check_entry(key, entry, index) if {
+  some j
+  other := check_entries_raw[j]
+  j != index
+  check_entry_identity(other) == key
+  check_entry_sort_key(other, j) > check_entry_sort_key(entry, index)
 }
 
 check_run_state(status, conclusion) := "pending" if {
