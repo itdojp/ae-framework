@@ -336,17 +336,35 @@ check_entry_timestamp(entry) := completed_at if {
   true
 }
 
-check_entry_sort_key(entry, index) := sprintf("%s|%020d", [
-  check_entry_timestamp(entry),
-  index,
-])
+check_entry_timestamp_ns(entry) := ts_ns if {
+  ts := check_entry_timestamp(entry)
+  ts != ""
+  ts_ns := time.parse_rfc3339_ns(ts)
+} else := -1 if {
+  true
+}
+
+has_distinct_comparable_check_timestamps(entry, other) if {
+  entry_ts := check_entry_timestamp_ns(entry)
+  other_ts := check_entry_timestamp_ns(other)
+  entry_ts >= 0
+  other_ts >= 0
+  entry_ts != other_ts
+}
 
 has_later_check_entry(key, entry, index) if {
   some j
   other := check_entries_raw[j]
   j != index
   check_entry_identity(other) == key
-  check_entry_sort_key(other, j) > check_entry_sort_key(entry, index)
+  has_distinct_comparable_check_timestamps(entry, other)
+  check_entry_timestamp_ns(other) > check_entry_timestamp_ns(entry)
+} else if {
+  some j
+  other := check_entries_raw[j]
+  j > index
+  check_entry_identity(other) == key
+  not has_distinct_comparable_check_timestamps(entry, other)
 }
 
 check_run_state(status, conclusion) := "pending" if {

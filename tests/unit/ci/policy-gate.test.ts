@@ -149,6 +149,34 @@ describe('policy-gate', () => {
     expect(result.requiredCheckResults[0]?.result.matches[0]?.status).toBe('IN_PROGRESS');
   });
 
+  it('treats a timestamp-less newer rerun as the latest pending required check', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [
+        checkRun('verify-lite', 'SUCCESS', {
+          workflowName: 'Verify Lite',
+          completedAt: '2026-04-14T06:00:00Z',
+        }),
+        checkRun('verify-lite', '', {
+          workflowName: 'Verify Lite',
+          status: 'QUEUED',
+        }),
+      ],
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.warnings).toContain('required check not ready yet: verify-lite (pending)');
+    expect(result.requiredCheckResults[0]?.result.status).toBe('pending');
+    expect(result.requiredCheckResults[0]?.result.matches).toHaveLength(1);
+    expect(result.requiredCheckResults[0]?.result.matches[0]?.status).toBe('QUEUED');
+  });
+
   it('falls back to the later same-name status context when timestamps are unavailable', () => {
     const result = evaluatePolicyGate({
       policy,

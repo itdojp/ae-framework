@@ -314,12 +314,6 @@ function shouldReplaceCollapsedEntry(previous, current, previousIndex, currentIn
   if (previousTs !== null && currentTs !== null && previousTs !== currentTs) {
     return currentTs > previousTs;
   }
-  if (previousTs === null && currentTs !== null) {
-    return true;
-  }
-  if (previousTs !== null && currentTs === null) {
-    return false;
-  }
   return currentIndex >= previousIndex;
 }
 
