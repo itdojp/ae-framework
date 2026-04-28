@@ -123,6 +123,55 @@ describe.sequential('claim evidence manifest generator', () => {
     }
   });
 
+  it('attaches assurance warnings when a claim uses id instead of claimId', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-claim-evidence-manifest-id-warning-'));
+    const fixture = JSON.parse(readFileSync(resolve(repoRoot, 'fixtures/assurance/sample.assurance-summary.json'), 'utf8'));
+    const assuranceSummaryPath = join(sandbox, 'assurance-summary.json');
+    const outputJson = join(sandbox, 'claim-evidence-manifest.json');
+    const outputMd = join(sandbox, 'claim-evidence-manifest.md');
+
+    try {
+      const claim = fixture.claims[0];
+      claim.id = 'id-only-claim';
+      delete claim.claimId;
+      for (const evidence of claim.evidence ?? []) {
+        evidence.claimRefs = ['id-only-claim'];
+      }
+      fixture.summary.warningCount = 1;
+      fixture.warnings = [
+        {
+          claimId: 'id-only-claim',
+          code: 'id-only-warning',
+          message: 'warning is attached via computed claim id',
+        },
+      ];
+      writeJson(assuranceSummaryPath, fixture);
+
+      const result = runScript([
+        '--assurance-summary',
+        assuranceSummaryPath,
+        '--generated-at',
+        '2026-04-28T18:20:00.000Z',
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const manifest = JSON.parse(readFileSync(outputJson, 'utf8'));
+      const idOnlyClaim = manifest.claims.find((entry: { id: string }) => entry.id === 'id-only-claim');
+
+      expect(idOnlyClaim?.notes).toEqual(
+        expect.arrayContaining([
+          'assurance-warning:id-only-warning warning is attached via computed claim id',
+        ]),
+      );
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('preserves lower explicit change-package achievedLevel when a claim is also present in assurance summary', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-claim-evidence-manifest-explicit-achieved-'));
     const fixture = JSON.parse(
