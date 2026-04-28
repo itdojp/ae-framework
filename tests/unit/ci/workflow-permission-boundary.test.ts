@@ -63,6 +63,7 @@ describe('workflow permission boundaries', () => {
     expect(updateBranch).toContain("github.event.pull_request.head.repo.fork == false");
     expect(updateBranch).toContain("inputs.mode == 'update-branch'");
     expect(updateBranch).toContain('AE_AUTOMATION_GLOBAL_DISABLE');
+    expect(updateBranch).toContain('github-token: ${{ github.token }}');
   });
 
   it('copilot-review-gate delegates fork-safe behavior to trusted script with explicit actor env', () => {
