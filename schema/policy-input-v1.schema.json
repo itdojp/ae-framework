@@ -224,7 +224,10 @@
         "__typename": { "type": "string", "const": "CheckRun" },
         "name": { "type": "string", "minLength": 1 },
         "status": { "type": "string", "minLength": 1 },
-        "conclusion": { "type": ["string", "null"] }
+        "conclusion": { "type": ["string", "null"] },
+        "workflowName": { "type": "string" },
+        "startedAt": { "type": ["string", "null"], "format": "date-time" },
+        "completedAt": { "type": ["string", "null"], "format": "date-time" }
       },
       "required": ["__typename", "name", "status", "conclusion"]
     },

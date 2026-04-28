@@ -53,11 +53,50 @@ const throttleSync = () => {
   lastGhInvocationAtMs = Date.now();
 };
 
-const shouldRetry = (text) => {
+const extractGhApiMethod = (args) => {
+  const values = Array.isArray(args) ? args.map((value) => String(value)) : [];
+  let method = null;
+  let hasRequestBodyField = false;
+  for (let index = 0; index < values.length; index += 1) {
+    const value = values[index];
+    if (value === '--method' || value === '-X') {
+      method = values[index + 1] || '';
+      index += 1;
+      continue;
+    }
+    if (value.startsWith('--method=')) {
+      method = value.slice('--method='.length);
+      continue;
+    }
+    if (value === '--field' || value === '-F' || value === '--raw-field' || value === '-f' || value === '--input') {
+      hasRequestBodyField = true;
+    }
+  }
+  if (method !== null) return method.trim().toUpperCase();
+  return hasRequestBodyField ? 'POST' : 'GET';
+};
+
+const isReadOnlyGhInvocation = (args) => {
+  const values = Array.isArray(args) ? args.map((value) => String(value)) : [];
+  if (values[0] !== 'api') return false;
+  const method = extractGhApiMethod(values);
+  return method === 'GET' || method === 'HEAD';
+};
+
+const hasTransientServerFailure = (text) => {
+  const value = String(text || '');
+  return (
+    /\bHTTP\s+5\d\d\b/i.test(value) ||
+    /couldn['’]?t respond to your request in time/i.test(value)
+  );
+};
+
+const shouldRetry = (text, args = []) => {
   const value = String(text || '');
   if (!value) return false;
   return (
     /\bHTTP\s+429\b/i.test(value) ||
+    (hasTransientServerFailure(value) && isReadOnlyGhInvocation(args)) ||
     /exceeded retry limit/i.test(value) ||
     /too many requests/i.test(value) ||
     /secondary rate limit/i.test(value) ||
@@ -130,7 +169,7 @@ export function execGh(args, { input, encoding = 'utf8', cwd, env, stdio } = {})
     } catch (error) {
       lastError = error;
       const failureText = buildFailureText(error);
-      const retryable = shouldRetry(failureText);
+      const retryable = shouldRetry(failureText, args);
       if (!retryable || attempt >= maxAttempts) {
         throw error;
       }
@@ -158,8 +197,12 @@ export function execGhJson(args, { input, encoding = 'utf8', cwd, env } = {}) {
   return JSON.parse(output);
 }
 
-export function __testOnly_shouldRetry(text) {
-  return shouldRetry(text);
+export function __testOnly_shouldRetry(text, args = []) {
+  return shouldRetry(text, args);
+}
+
+export function __testOnly_isReadOnlyGhInvocation(args = []) {
+  return isReadOnlyGhInvocation(args);
 }
 
 export function __testOnly_extractRetryAfterMs(text) {

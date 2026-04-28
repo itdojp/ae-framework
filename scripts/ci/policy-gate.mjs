@@ -252,6 +252,9 @@ function toCheckEntries(statusRollup) {
       if (!name) continue;
       const status = String(item.status || '').trim().toUpperCase();
       const conclusion = String(item.conclusion || '').trim().toUpperCase();
+      const workflowName = String(item.workflowName || '').trim();
+      const startedAt = String(item.startedAt || '').trim();
+      const completedAt = String(item.completedAt || '').trim();
       let state = 'neutral';
       if (status !== 'COMPLETED') {
         state = 'pending';
@@ -262,7 +265,16 @@ function toCheckEntries(statusRollup) {
       } else {
         state = 'failure';
       }
-      entries.push({ name, state, type: 'check-run', status, conclusion });
+      entries.push({
+        name,
+        state,
+        type: 'check-run',
+        status,
+        conclusion,
+        workflowName,
+        startedAt,
+        completedAt,
+      });
       continue;
     }
     if (item.__typename === 'StatusContext') {
@@ -273,10 +285,52 @@ function toCheckEntries(statusRollup) {
       if (stateRaw === 'SUCCESS') state = 'success';
       else if (stateRaw === 'PENDING') state = 'pending';
       else if (stateRaw === 'FAILURE' || stateRaw === 'ERROR') state = 'failure';
-      entries.push({ name, state, type: 'status-context', status: stateRaw, conclusion: stateRaw });
+      entries.push({
+        name,
+        state,
+        type: 'status-context',
+        status: stateRaw,
+        conclusion: stateRaw,
+        workflowName: '',
+        startedAt: '',
+        completedAt: '',
+      });
     }
   }
   return entries;
+}
+
+function getCheckEntryTimestamp(entry) {
+  const completedAt = Date.parse(String(entry?.completedAt || '').trim());
+  if (Number.isFinite(completedAt)) return completedAt;
+  const startedAt = Date.parse(String(entry?.startedAt || '').trim());
+  if (Number.isFinite(startedAt)) return startedAt;
+  return null;
+}
+
+function shouldReplaceCollapsedEntry(previous, current, previousIndex, currentIndex) {
+  const previousTs = getCheckEntryTimestamp(previous);
+  const currentTs = getCheckEntryTimestamp(current);
+  if (previousTs !== null && currentTs !== null && previousTs !== currentTs) {
+    return currentTs > previousTs;
+  }
+  return currentIndex >= previousIndex;
+}
+
+function collapseCheckEntriesByName(entries) {
+  const deduped = new Map();
+  for (const [index, entry] of (entries || []).entries()) {
+    if (!entry || typeof entry !== 'object') continue;
+    const name = String(entry.name || '').trim();
+    const type = String(entry.type || '').trim();
+    if (!name || !type) continue;
+    const key = `${type}::${name}`;
+    const previous = deduped.get(key);
+    if (!previous || shouldReplaceCollapsedEntry(previous.entry, entry, previous.index, index)) {
+      deduped.set(key, { entry, index });
+    }
+  }
+  return Array.from(deduped.values(), (value) => value.entry);
 }
 
 function isGlobPattern(pattern) {
@@ -506,7 +560,7 @@ function evaluatePolicyGate({
     errors.push(`risk label mismatch: expected ${inferred.level}, found ${selectedRiskLabel}`);
   }
 
-  const entries = toCheckEntries(statusRollup);
+  const entries = collapseCheckEntriesByName(toCheckEntries(statusRollup));
   const requiredChecks = getRequiredChecks(policy)
     .filter((value) => value !== 'policy-gate');
   const requiredCheckResults = requiredChecks.map((checkName) => ({
@@ -788,12 +842,24 @@ function normalizePolicyInputStatusRollup(statusRollup) {
         const conclusion = item.conclusion === null || item.conclusion === undefined
           ? null
           : String(item.conclusion || '').trim();
+        const workflowName = String(item.workflowName || '').trim();
+        const startedAtRaw = item.startedAt ?? item.started_at ?? null;
+        const completedAtRaw = item.completedAt ?? item.completed_at ?? null;
+        const startedAt = startedAtRaw === null || startedAtRaw === undefined
+          ? null
+          : (String(startedAtRaw || '').trim() || null);
+        const completedAt = completedAtRaw === null || completedAtRaw === undefined
+          ? null
+          : (String(completedAtRaw || '').trim() || null);
         if (!name || !status) return null;
         return {
           __typename: 'CheckRun',
           name,
           status,
           conclusion,
+          workflowName,
+          startedAt,
+          completedAt,
         };
       }
       if (typename === 'StatusContext') {
@@ -965,6 +1031,7 @@ if (isDirectExecution()) {
 }
 
 export {
+  collapseCheckEntriesByName,
   evaluateCheckRequirement,
   evaluatePolicyGate,
   buildPolicyGateReport,
