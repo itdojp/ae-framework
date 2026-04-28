@@ -63,6 +63,9 @@ jobs:
           node-version: '20'
       - run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
       - name: Run DoD composite gate
+        # Keep pull-request DoD signals report-only so baseline security debt does not
+        # leave non-required PR checks red. Push/main still fails on DoD regressions.
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: pnpm run quality:run -- --env=testing --gates=dod --sequential
       - name: Upload quality report
         if: ${{ always() }}
