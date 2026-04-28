@@ -294,6 +294,28 @@ jobs:
           node scripts/ci/validate-quality-scorecard.mjs \
             artifacts/quality/quality-scorecard.json \
             schema/quality-scorecard.schema.json
+      - name: Aggregate claim evidence manifest (report-only)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          args=(
+            --assurance-summary artifacts/assurance/assurance-summary.json
+            --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json
+            --quality-scorecard artifacts/quality/quality-scorecard.json
+            --output-json artifacts/assurance/claim-evidence-manifest.json
+            --output-md artifacts/assurance/claim-evidence-manifest.md
+          )
+          if [ -f artifacts/change-package/change-package-v2.json ]; then
+            args+=(--change-package artifacts/change-package/change-package-v2.json)
+          fi
+          for trace_bundle in artifacts/trace/trace-bundle*.json artifacts/observability/trace-bundle*.json; do
+            if [ -f "$trace_bundle" ]; then
+              args+=(--trace-bundle "$trace_bundle")
+              break
+            fi
+          done
+          pnpm -s run claim-evidence:generate "${args[@]}"
       - name: Enforce assurance summary (strict; label-gated)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-assurance') }}
         run: |
@@ -380,6 +402,8 @@ jobs:
             artifacts/report-envelope.json
             artifacts/assurance/assurance-summary.json
             artifacts/assurance/assurance-summary.md
+            artifacts/assurance/claim-evidence-manifest.json
+            artifacts/assurance/claim-evidence-manifest.md
             artifacts/quality/quality-scorecard.json
             artifacts/quality/quality-scorecard.md
             artifacts/discovery-pack/discovery-pack-validate-report.json
@@ -415,6 +439,15 @@ jobs:
             cat artifacts/assurance/assurance-summary.md >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Assurance summary not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Append claim evidence manifest
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        run: |
+          if [ -f artifacts/assurance/claim-evidence-manifest.md ]; then
+            echo '## Claim Evidence Manifest' >> "$GITHUB_STEP_SUMMARY"
+            cat artifacts/assurance/claim-evidence-manifest.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Claim evidence manifest not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Append quality scorecard
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}

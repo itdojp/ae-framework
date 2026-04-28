@@ -81,6 +81,7 @@
     "test:perf": "vitest run --workspace configs/vitest/vitest.workspace.ts --project performance --passWithNoTests",
     "verify:lite": "node scripts/admin/run-script-alias.mjs verify:lite",
     "verify:assurance": "node scripts/assurance/aggregate-lanes.mjs",
+    "claim-evidence:generate": "node scripts/assurance/build-claim-evidence-manifest.mjs",
     "change-package:generate": "node scripts/change-package/generate.mjs",
     "change-package:validate": "node scripts/change-package/validate.mjs",
     "plan-artifact:generate": "node scripts/plan-artifact/generate.mjs",

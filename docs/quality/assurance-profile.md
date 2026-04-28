@@ -66,7 +66,8 @@ Minimal shape:
 | `A3` | Critical claims are closed through counterexample search or model checking | model-check, counterexample-closed |
 | `A4` | Proof-carrying assurance is available | proof |
 
-This table is still the Phase 1/2 provisional definition. `verify:assurance` aggregates lanes, evidence, and warnings, but automatic `achievedLevel` determination is not implemented yet.
+This table is still the Phase 1/2 provisional definition. `verify:assurance` aggregates lanes, evidence, and warnings, but does not make a strict certification decision.
+`claim-evidence-manifest/v1` adds a report-only achieved-level summary for PR review: explicit `change-package/v2.assurance.achievedLevel` is preserved when available, while assurance-summary-only claims use a conservative display mapping (`satisfied` => `targetLevel`; non-satisfied statuses => one level below `targetLevel`, capped at `A0`). This mapping is not a strict policy gate.
 
 ### 4. Claim design guidance
 
@@ -181,7 +182,8 @@ Notes:
 | `A3` | 反例探索やモデル検査で critical claim を閉じている | model-check, counterexample-closed |
 | `A4` | proof-carrying な厳密保証を持つ | proof |
 
-この表は Phase 1/2 の暫定定義です。`verify:assurance` は lane / evidence / warning を集約しますが、最終的な `achievedLevel` の自動判定はまだ後続フェーズです。
+この表は Phase 1/2 の暫定定義です。`verify:assurance` は lane / evidence / warning を集約しますが、厳密な certification 判定は行いません。
+`claim-evidence-manifest/v1` は PR review 用の report-only な achieved-level summary を追加します。明示された `change-package/v2.assurance.achievedLevel` がある場合はそれを保持し、assurance-summary のみの claim では保守的な表示用 mapping（`satisfied` は `targetLevel`、非 satisfied status は `targetLevel` から 1 段階下げ、下限は `A0`）を使います。この mapping は strict policy gate ではありません。
 
 ### 4. クレーム（claim）の設計指針
 
