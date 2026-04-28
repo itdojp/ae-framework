@@ -58,6 +58,8 @@ const shouldRetry = (text) => {
   if (!value) return false;
   return (
     /\bHTTP\s+429\b/i.test(value) ||
+    /\bHTTP\s+5\d\d\b/i.test(value) ||
+    /couldn['’]?t respond to your request in time/i.test(value) ||
     /exceeded retry limit/i.test(value) ||
     /too many requests/i.test(value) ||
     /secondary rate limit/i.test(value) ||

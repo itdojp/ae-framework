@@ -36,6 +36,8 @@ describe('gh-exec', () => {
     const { __testOnly_shouldRetry } = await import('../../../scripts/ci/lib/gh-exec.mjs');
 
     expect(__testOnly_shouldRetry('HTTP 429: Too Many Requests')).toBe(true);
+    expect(__testOnly_shouldRetry("HTTP 504: We couldn't respond to your request in time")).toBe(true);
+    expect(__testOnly_shouldRetry('HTTP 503: Service Unavailable')).toBe(true);
     expect(__testOnly_shouldRetry('You have exceeded a secondary rate limit.')).toBe(true);
     expect(__testOnly_shouldRetry('abuse detection mechanism')).toBe(true);
     expect(__testOnly_shouldRetry('HTTP 403: Resource not accessible by integration')).toBe(false);
@@ -94,6 +96,33 @@ describe('gh-exec', () => {
     const { execGh } = await import('../../../scripts/ci/lib/gh-exec.mjs');
     expect(execGh(['api', 'rate_limit'])).toBe('ok');
     expect(execFileSyncMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('retries transient GitHub API 5xx failures', async () => {
+    process.env.AE_GH_RETRY_NO_SLEEP = '1';
+    process.env.AE_GH_RETRY_MAX_ATTEMPTS = '2';
+    process.env.AE_GH_RETRY_INITIAL_DELAY_MS = '1';
+    process.env.AE_GH_RETRY_MAX_DELAY_MS = '1';
+    process.env.AE_GH_RETRY_JITTER_MS = '0';
+
+    let attempt = 0;
+    const execFileSyncMock = vi.fn(() => {
+      attempt += 1;
+      if (attempt === 1) {
+        const error = new Error("gh: We couldn't respond to your request in time. (HTTP 504)");
+        (error as any).stderr = "gh: We couldn't respond to your request in time. (HTTP 504)";
+        throw error;
+      }
+      return 'ok';
+    });
+
+    vi.doMock('node:child_process', () => ({
+      execFileSync: execFileSyncMock,
+    }));
+
+    const { execGh } = await import('../../../scripts/ci/lib/gh-exec.mjs');
+    expect(execGh(['api', 'repos/example/repo/pulls/1/reviews'])).toBe('ok');
+    expect(execFileSyncMock).toHaveBeenCalledTimes(2);
   });
 
   it('treats blank AE_GH_RETRY_MULTIPLIER as unset and keeps default backoff growth', async () => {
