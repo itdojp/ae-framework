@@ -429,6 +429,10 @@ jobs:
             printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
             cat artifacts/downloaded/verify-lite-report/artifacts/quality/quality-scorecard.md >> artifacts/summary/PR_SUMMARY.md
           fi
+          if [ -f artifacts/downloaded/verify-lite-report/artifacts/assurance/claim-evidence-manifest.md ]; then
+            printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
+            cat artifacts/downloaded/verify-lite-report/artifacts/assurance/claim-evidence-manifest.md >> artifacts/summary/PR_SUMMARY.md
+          fi
       - name: Upload harness health artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v4

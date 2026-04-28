@@ -28,6 +28,7 @@ const props = c.properties ? (Array.isArray(c.properties) ? c.properties : [c.pr
 const cov = r('coverage/coverage-summary.json') || r('artifacts/coverage/coverage-summary.json');
 const ltlSug = r('artifacts/properties/ltl-suggestions.json');
 const assurance = r('artifacts/assurance/assurance-summary.json');
+const claimEvidenceManifest = r('artifacts/assurance/claim-evidence-manifest.json');
 const qualityScorecard = r('artifacts/quality/quality-scorecard.json');
 let coverageLine = t('Coverage: n/a','カバレッジ: 不明');
 if (cov?.total?.lines && typeof cov.total.lines.pct === 'number') coverageLine = t(`Coverage: ${cov.total.lines.pct}%`, `カバレッジ: ${cov.total.lines.pct}%`);
@@ -105,6 +106,36 @@ const assuranceDigestSegment = assuranceSummary
 const assuranceDetailBlock = assuranceSummary
   ? `- ${assuranceLine}\n${assuranceLaneLine ? `- ${assuranceLaneLine}\n` : ''}${assuranceWarningsLine ? `- ${assuranceWarningsLine}\n` : ''}`
   : '';
+const claimEvidenceSummary = claimEvidenceManifest?.summary && typeof claimEvidenceManifest.summary === 'object'
+  ? claimEvidenceManifest.summary
+  : null;
+const claimEvidenceClaims = Array.isArray(claimEvidenceManifest?.claims) ? claimEvidenceManifest.claims : [];
+const claimEvidenceMissingCount = claimEvidenceClaims.reduce(
+  (count, claim) => count + (Array.isArray(claim?.missingEvidenceRefs) ? claim.missingEvidenceRefs.length : 0),
+  0,
+);
+const claimEvidenceWaiverCount = claimEvidenceClaims.reduce(
+  (count, claim) => count + (Array.isArray(claim?.waiverRefs) ? claim.waiverRefs.length : 0),
+  0,
+);
+const claimEvidenceLine = claimEvidenceSummary
+  ? t(
+      `Claim evidence: satisfied=${claimEvidenceSummary.fullySupported ?? 'n/a'}/${claimEvidenceSummary.totalClaims ?? 'n/a'}, partial=${claimEvidenceSummary.partiallySupported ?? 'n/a'}, waived=${claimEvidenceSummary.waived ?? 'n/a'}, unresolved=${claimEvidenceSummary.unresolved ?? 'n/a'}`,
+      `claim evidence: 適合=${claimEvidenceSummary.fullySupported ?? 'n/a'}/${claimEvidenceSummary.totalClaims ?? 'n/a'}, 部分=${claimEvidenceSummary.partiallySupported ?? 'n/a'}, waiver=${claimEvidenceSummary.waived ?? 'n/a'}, 未解決=${claimEvidenceSummary.unresolved ?? 'n/a'}`,
+    )
+  : '';
+const claimEvidenceRefsLine = claimEvidenceSummary
+  ? t(
+      `Claim evidence refs: missing=${claimEvidenceMissingCount}, waivers=${claimEvidenceWaiverCount}`,
+      `claim evidence refs: missing=${claimEvidenceMissingCount}, waiver=${claimEvidenceWaiverCount}`,
+    )
+  : '';
+const claimEvidenceDigestSegment = claimEvidenceSummary
+  ? `${claimEvidenceLine}${claimEvidenceRefsLine ? ` | ${claimEvidenceRefsLine}` : ''}`
+  : '';
+const claimEvidenceDetailBlock = claimEvidenceSummary
+  ? `- ${claimEvidenceLine}\n${claimEvidenceRefsLine ? `- ${claimEvidenceRefsLine}\n` : ''}`
+  : '';
 const qualityScorecardSummary = qualityScorecard?.summary && typeof qualityScorecard.summary === 'object'
   ? qualityScorecard.summary
   : null;
@@ -173,9 +204,9 @@ try {
 
 let md;
 if (mode === 'digest') {
-  md = `${qualityScorecardLine ? `${qualityScorecardLine}${qualityScorecardBlockersLine ? ` | ${qualityScorecardBlockersLine}` : ''} | ` : ''}${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''}${discoveryPackLine ? ` | ${discoveryPackLine}` : ''}${discoveryPackCompileLine ? ` | ${discoveryPackCompileLine}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${qualityScorecardLine ? `${qualityScorecardLine}${qualityScorecardBlockersLine ? ` | ${qualityScorecardBlockersLine}` : ''} | ` : ''}${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''}${claimEvidenceDigestSegment ? ` | ${claimEvidenceDigestSegment}` : ''}${discoveryPackLine ? ` | ${discoveryPackLine}` : ''}${discoveryPackCompileLine ? ` | ${discoveryPackCompileLine}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n${qualityScorecardLine ? `- ${qualityScorecardLine}\n${qualityScorecardBlockersLine ? `- ${qualityScorecardBlockersLine}\n` : ''}` : ''}- ${coverageLine}\n${assuranceDetailBlock}${discoveryPackLine ? `- ${discoveryPackLine}\n` : ''}${discoveryPackCompileLine ? `- ${discoveryPackCompileLine}\n` : ''}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n${qualityScorecardLine ? `- ${qualityScorecardLine}\n${qualityScorecardBlockersLine ? `- ${qualityScorecardBlockersLine}\n` : ''}` : ''}- ${coverageLine}\n${assuranceDetailBlock}${claimEvidenceDetailBlock}${discoveryPackLine ? `- ${discoveryPackLine}\n` : ''}${discoveryPackCompileLine ? `- ${discoveryPackCompileLine}\n` : ''}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
 // Fallback: if formal is n/a, print presentCount from aggregate JSON
 try {
