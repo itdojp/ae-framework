@@ -66,6 +66,13 @@ describe('workflow permission boundaries', () => {
     expect(updateBranch).toContain('github-token: ${{ github.token }}');
   });
 
+  it('keeps pull-request DoD report-only while preserving push/main enforcement', () => {
+    const workflow = readWorkflow('quality-gates-centralized.yml');
+    const dod = extractJobBlock(workflow, 'dod');
+    expect(dod).toContain("continue-on-error: ${{ github.event_name == 'pull_request' }}");
+    expect(dod).toContain('run: pnpm run quality:run -- --env=testing --gates=dod --sequential');
+  });
+
   it('copilot-review-gate delegates fork-safe behavior to trusted script with explicit actor env', () => {
     const workflow = readWorkflow('copilot-review-gate.yml');
     expect(workflow).toContain('run: node scripts/ci/copilot-review-gate.mjs');

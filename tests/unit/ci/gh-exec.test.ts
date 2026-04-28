@@ -33,14 +33,26 @@ describe('gh-exec', () => {
   });
 
   it('detects retryable GitHub API failures', async () => {
-    const { __testOnly_shouldRetry } = await import('../../../scripts/ci/lib/gh-exec.mjs');
+    const { __testOnly_isReadOnlyGhInvocation, __testOnly_shouldRetry } = await import('../../../scripts/ci/lib/gh-exec.mjs');
 
     expect(__testOnly_shouldRetry('HTTP 429: Too Many Requests')).toBe(true);
-    expect(__testOnly_shouldRetry("HTTP 504: We couldn't respond to your request in time")).toBe(true);
-    expect(__testOnly_shouldRetry('HTTP 503: Service Unavailable')).toBe(true);
+    expect(__testOnly_shouldRetry("HTTP 504: We couldn't respond to your request in time", [
+      'api',
+      'repos/example/repo/pulls/1/reviews',
+    ])).toBe(true);
+    expect(__testOnly_shouldRetry('HTTP 503: Service Unavailable', ['api', 'repos/example/repo/pulls/1'])).toBe(true);
+    expect(__testOnly_shouldRetry('HTTP 503: Service Unavailable', [
+      'api',
+      'repos/example/repo/issues/1/comments',
+      '--method',
+      'POST',
+    ])).toBe(false);
     expect(__testOnly_shouldRetry('You have exceeded a secondary rate limit.')).toBe(true);
     expect(__testOnly_shouldRetry('abuse detection mechanism')).toBe(true);
     expect(__testOnly_shouldRetry('HTTP 403: Resource not accessible by integration')).toBe(false);
+    expect(__testOnly_isReadOnlyGhInvocation(['api', 'repos/example/repo/pulls/1'])).toBe(true);
+    expect(__testOnly_isReadOnlyGhInvocation(['api', 'repos/example/repo/pulls/1', '--method', 'GET', '-f', 'page=1'])).toBe(true);
+    expect(__testOnly_isReadOnlyGhInvocation(['api', 'repos/example/repo/issues/1/comments', '-f', 'body=hi'])).toBe(false);
   });
 
   it('parses retry-after hints from failure text', async () => {
@@ -123,6 +135,35 @@ describe('gh-exec', () => {
     const { execGh } = await import('../../../scripts/ci/lib/gh-exec.mjs');
     expect(execGh(['api', 'repos/example/repo/pulls/1/reviews'])).toBe('ok');
     expect(execFileSyncMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry transient GitHub API 5xx failures for write invocations', async () => {
+    process.env.AE_GH_RETRY_NO_SLEEP = '1';
+    process.env.AE_GH_RETRY_MAX_ATTEMPTS = '3';
+    process.env.AE_GH_RETRY_INITIAL_DELAY_MS = '1';
+    process.env.AE_GH_RETRY_MAX_DELAY_MS = '1';
+    process.env.AE_GH_RETRY_JITTER_MS = '0';
+
+    const execFileSyncMock = vi.fn(() => {
+      const error = new Error("gh: We couldn't respond to your request in time. (HTTP 504)");
+      (error as any).stderr = "gh: We couldn't respond to your request in time. (HTTP 504)";
+      throw error;
+    });
+
+    vi.doMock('node:child_process', () => ({
+      execFileSync: execFileSyncMock,
+    }));
+
+    const { execGh } = await import('../../../scripts/ci/lib/gh-exec.mjs');
+    expect(() => execGh([
+      'api',
+      'repos/example/repo/issues/1/comments',
+      '--method',
+      'POST',
+      '-f',
+      'body=hello',
+    ])).toThrow(/HTTP 504/);
+    expect(execFileSyncMock).toHaveBeenCalledTimes(1);
   });
 
   it('treats blank AE_GH_RETRY_MULTIPLIER as unset and keeps default backoff growth', async () => {
