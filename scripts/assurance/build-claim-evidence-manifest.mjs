@@ -34,7 +34,7 @@ const PROOF_METHODS = new Set(['spec', 'property', 'tla', 'alloy', 'smt', 'csp',
 const PROOF_STATUSES = new Set(['open', 'discharged', 'waived', 'unresolved']);
 
 function usage() {
-  process.stdout.write(`Usage: node scripts/assurance/build-claim-evidence-manifest.mjs [options]\n\nOptions:\n  --assurance-summary <path>       assurance-summary/v1 input (default: ${DEFAULT_ASSURANCE_SUMMARY})\n  --change-package <path>          optional change-package/v2 input; repeatable (default probe: ${DEFAULT_CHANGE_PACKAGE_V2})\n  --quality-scorecard <path>       optional quality-scorecard/v1 input (default: ${DEFAULT_QUALITY_SCORECARD})\n  --verify-lite-summary <path>     optional verify-lite summary input (default: ${DEFAULT_VERIFY_LITE_SUMMARY})\n  --trace-bundle <path>            optional trace bundle input; first present path is used\n  --output-json <path>             output JSON path (default: ${DEFAULT_OUTPUT_JSON})\n  --output-md <path>               output Markdown path (default: ${DEFAULT_OUTPUT_MD})\n  --schema <path>                  schema used for output validation (default: ${DEFAULT_SCHEMA})\n  --generated-at <iso-date-time>   override generatedAt for deterministic tests\n  --no-validate                    skip schema and semantic validation before writing\n  --help                           show this help\n`);
+  process.stdout.write(`Usage: node scripts/assurance/build-claim-evidence-manifest.mjs [options]\n\nOptions:\n  --assurance-summary <path>       assurance-summary/v1 input (default: ${DEFAULT_ASSURANCE_SUMMARY})\n  --change-package <path>          optional change-package/v2 input (default probe: ${DEFAULT_CHANGE_PACKAGE_V2})\n  --quality-scorecard <path>       optional quality-scorecard/v1 input (default: ${DEFAULT_QUALITY_SCORECARD})\n  --verify-lite-summary <path>     optional verify-lite summary input (default: ${DEFAULT_VERIFY_LITE_SUMMARY})\n  --trace-bundle <path>            optional trace bundle input; first present path is used\n  --output-json <path>             output JSON path (default: ${DEFAULT_OUTPUT_JSON})\n  --output-md <path>               output Markdown path (default: ${DEFAULT_OUTPUT_MD})\n  --schema <path>                  schema used for output validation (default: ${DEFAULT_SCHEMA})\n  --generated-at <iso-date-time>   override generatedAt for deterministic tests\n  --no-validate                    skip schema and semantic validation before writing\n  --help                           show this help\n`);
 }
 
 function readRequiredValue(argv, index, option) {
@@ -72,6 +72,9 @@ export function parseArgs(argv = process.argv.slice(2)) {
       continue;
     }
     if (arg === '--change-package') {
+      if (options.changePackages.length > 0) {
+        throw new Error('--change-package can only be provided once');
+      }
       options.changePackages.push(readRequiredValue(argv, index, arg));
       index += 1;
       continue;
@@ -435,6 +438,19 @@ function addMissingEvidence(claim, { id, expectedKind, reason, sourceArtifactId 
 function ingestAssuranceSummary(claimsById, artifact) {
   const sourceArtifactId = 'assurance-summary';
   const payload = ensureObject(artifact.payload);
+  const warningsByClaimId = new Map();
+  for (const warning of ensureArray(payload.warnings)) {
+    const warningClaimId = warning?.claimId;
+    if (!warningClaimId) {
+      continue;
+    }
+    const key = String(warningClaimId);
+    if (!warningsByClaimId.has(key)) {
+      warningsByClaimId.set(key, []);
+    }
+    warningsByClaimId.get(key).push(warning);
+  }
+
   for (const [claimIndex, rawClaim] of ensureArray(payload.claims).entries()) {
     const claimId = rawClaim?.claimId ?? rawClaim?.id;
     if (!claimId) {
@@ -492,7 +508,7 @@ function ingestAssuranceSummary(claimsById, artifact) {
       });
     }
 
-    const relatedWarnings = ensureArray(payload.warnings).filter((warning) => warning?.claimId === rawClaim.claimId);
+    const relatedWarnings = warningsByClaimId.get(String(claimId)) ?? [];
     for (const warning of relatedWarnings) {
       pushNote(claim, `assurance-warning:${warning.code ?? 'unknown'} ${warning.message ?? ''}`.trim());
     }
@@ -599,6 +615,7 @@ function ingestChangePackageV2(claimsById, artifact) {
       achievedLevel,
       status,
     });
+    claim.achievedLevel = achievedLevel;
     pushNote(
       claim,
       `achievedLevel imported from change-package/v2 top-level assurance: targetLevel=${targetLevel}, achievedLevel=${achievedLevel}, status=${assuranceStatus || 'unknown'}.`,

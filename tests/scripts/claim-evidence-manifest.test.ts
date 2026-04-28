@@ -40,6 +40,9 @@ describe.sequential('claim evidence manifest generator', () => {
       validate: true,
     });
     expect(() => mod.parseArgs(['--assurance-summary'])).toThrow('--assurance-summary requires a value');
+    expect(() => mod.parseArgs(['--change-package', 'a.json', '--change-package', 'b.json'])).toThrow(
+      '--change-package can only be provided once',
+    );
 
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-claim-evidence-manifest-'));
     const outputJson = join(sandbox, 'claim-evidence-manifest.json');
@@ -115,6 +118,65 @@ describe.sequential('claim evidence manifest generator', () => {
       expect(markdown).toContain('# Claim Evidence Manifest');
       expect(markdown).toContain('| no-negative-balance | high | A3 | A2 | partial |');
       expect(markdown).toContain('## Missing evidence');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('preserves lower explicit change-package achievedLevel when a claim is also present in assurance summary', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-claim-evidence-manifest-explicit-achieved-'));
+    const fixture = JSON.parse(
+      readFileSync(resolve(repoRoot, 'fixtures/change-package/sample.change-package-v2.json'), 'utf8'),
+    );
+    const changePackagePath = join(sandbox, 'change-package-v2.json');
+    const outputJson = join(sandbox, 'claim-evidence-manifest.json');
+    const outputMd = join(sandbox, 'claim-evidence-manifest.md');
+
+    try {
+      fixture.assurance = {
+        targetLevel: 'A3',
+        achievedLevel: 'A1',
+        status: 'partial',
+      };
+      fixture.claims[0] = {
+        ...fixture.claims[0],
+        id: 'no-negative-stock',
+        statement: 'Inventory stock never becomes negative after an accepted reservation.',
+        criticality: 'high',
+      };
+      fixture.proofObligations[0].claimId = 'no-negative-stock';
+      fixture.counterexamples[0].claimIds = ['no-negative-stock'];
+      writeJson(changePackagePath, fixture);
+
+      const result = runScript([
+        '--assurance-summary',
+        'fixtures/assurance/sample.assurance-summary.json',
+        '--change-package',
+        changePackagePath,
+        '--quality-scorecard',
+        'fixtures/quality/sample.quality-scorecard.json',
+        '--generated-at',
+        '2026-04-28T18:20:00.000Z',
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const manifest = JSON.parse(readFileSync(outputJson, 'utf8'));
+      const stockClaim = manifest.claims.find((claim: { id: string }) => claim.id === 'no-negative-stock');
+
+      expect(stockClaim).toMatchObject({
+        targetLevel: 'A3',
+        achievedLevel: 'A1',
+        status: 'partial',
+      });
+      expect(stockClaim.notes).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('achievedLevel imported from change-package/v2 top-level assurance'),
+        ]),
+      );
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
