@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "claim-evidence-manifest/v1",
+  "generatedAt": "2026-04-28T18:20:00Z",
+  "sourceArtifacts": [
+    {
+      "id": "assurance-summary",
+      "kind": "assurance-summary",
+      "path": "fixtures/assurance/sample.assurance-summary.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "assurance-summary/v1",
+      "description": "Lane coverage and evidence summary input"
+    },
+    {
+      "id": "change-package-v2",
+      "kind": "change-package-v2",
+      "path": "fixtures/change-package/sample.change-package-v2.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "change-package/v2",
+      "description": "Optional proof-carrying change package input"
+    },
+    {
+      "id": "quality-scorecard",
+      "kind": "quality-scorecard",
+      "path": "fixtures/quality/sample.quality-scorecard.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "quality-scorecard/v1",
+      "description": "Quality gate evidence input"
+    },
+    {
+      "id": "verify-lite-run-summary",
+      "kind": "verify-lite-run-summary",
+      "path": null,
+      "present": false,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Optional verify-lite input was not available for this sample"
+    },
+    {
+      "id": "trace-bundle",
+      "kind": "trace-bundle",
+      "path": null,
+      "present": false,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Optional trace bundle input was not available for this sample"
+    },
+    {
+      "id": "manual-waiver-log",
+      "kind": "manual",
+      "path": "fixtures/assurance/sample.claim-evidence-manifest.json#/claims/2/waiverRefs/0",
+      "present": true,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Inline manual waiver example for the sample manifest"
+    }
+  ],
+  "claims": [
+    {
+      "id": "no-negative-stock",
+      "statement": "Inventory stock must never become negative after an accepted reservation.",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "achievedLevel": "A2",
+      "status": "satisfied",
+      "evidenceRefs": [
+        {
+          "id": "property-summary:no-negative-stock",
+          "kind": "behavior",
+          "artifactPath": "artifacts/testing/property-summary.json",
+          "sourceArtifactId": "assurance-summary",
+          "description": "Property suite passed for the no-negative-stock claim"
+        },
+        {
+          "id": "quality-scorecard:assuranceCoverage",
+          "kind": "quality",
+          "artifactPath": "fixtures/quality/sample.quality-scorecard.json#/dimensions/assuranceCoverage",
+          "sourceArtifactId": "quality-scorecard",
+          "description": "Assurance coverage dimension is available for review"
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "notes": [
+        "Sample satisfied claim anchored by assurance summary inputs."
+      ]
+    },
+    {
+      "id": "no-negative-balance",
+      "statement": "Ledger balance must never become negative.",
+      "criticality": "high",
+      "targetLevel": "A3",
+      "achievedLevel": "A2",
+      "status": "partial",
+      "evidenceRefs": [
+        {
+          "id": "change-package-v2:no-negative-balance",
+          "kind": "proof",
+          "artifactPath": "fixtures/change-package/sample.change-package-v2.json#/claims/0",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Change-package v2 claim anchor is present"
+        }
+      ],
+      "proofObligationRefs": [
+        {
+          "id": "obl-1",
+          "status": "discharged",
+          "sourceArtifactId": "change-package-v2",
+          "artifactPath": "fixtures/change-package/sample.change-package-v2.json#/proofObligations/0",
+          "method": "tla",
+          "description": "TLA proof obligation is discharged"
+        }
+      ],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-no-negative-balance-runtime-evidence",
+          "expectedKind": "runtime",
+          "reason": "Runtime guard evidence is not linked for the A3 target level.",
+          "sourceArtifactId": "change-package-v2"
+        }
+      ],
+      "waiverRefs": [],
+      "notes": [
+        "Partial support is explicit; missing runtime evidence is not hidden."
+      ]
+    },
+    {
+      "id": "manual-fraud-review",
+      "statement": "Manual fraud review must remain in place until the automated risk model is validated.",
+      "criticality": "medium",
+      "targetLevel": "A2",
+      "achievedLevel": "A1",
+      "status": "waived",
+      "evidenceRefs": [
+        {
+          "id": "runtime-control:fraud-review-flag",
+          "kind": "runtime",
+          "artifactPath": "artifacts/runtime/fraud-review-control.json",
+          "sourceArtifactId": "manual-waiver-log",
+          "description": "Runtime mitigation remains active while validation is incomplete"
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-fraud-model-validation",
+          "expectedKind": "model",
+          "reason": "Automated fraud model validation evidence is not yet linked."
+        }
+      ],
+      "waiverRefs": [
+        {
+          "id": "waiver-manual-fraud-review-001",
+          "sourceArtifactId": "manual-waiver-log",
+          "status": "active",
+          "owner": "@team-risk",
+          "expires": "2026-06-30",
+          "reason": "Runtime manual review control is active during model validation."
+        }
+      ],
+      "notes": [
+        "Waived status is distinct from fully supported status."
+      ]
+    }
+  ],
+  "summary": {
+    "totalClaims": 3,
+    "fullySupported": 1,
+    "partiallySupported": 1,
+    "waived": 1,
+    "unresolved": 0
+  }
+}

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { globSync } from 'glob';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { validateClaimEvidenceManifestSemantics } from './lib/claim-evidence-manifest-contract.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_REPO_ROOT = path.resolve(__dirname, '..', '..');
@@ -22,6 +23,12 @@ export const DEFAULT_RULES = [
     id: 'assurance-summary',
     schemaPath: 'schema/assurance-summary.schema.json',
     patterns: ['artifacts/assurance/assurance-summary.json'],
+  },
+  {
+    id: 'claim-evidence-manifest',
+    schemaPath: 'schema/claim-evidence-manifest.schema.json',
+    patterns: ['artifacts/assurance/claim-evidence-manifest.json'],
+    semanticValidate: validateClaimEvidenceManifestSemantics,
   },
   {
     id: 'hook-feedback',
@@ -581,19 +588,35 @@ export function validateArtifactsAjv({
       let fileHasFailure = false;
       for (const entry of payloadEntries) {
         const isValid = validate(entry.item);
-        if (isValid) {
+        if (!isValid) {
+          fileHasFailure = true;
+          for (const error of validate.errors ?? []) {
+            errors.push({
+              ruleId: rule.id,
+              file,
+              schemaPath: toPosix(rule.schemaPath),
+              keyword: error.keyword ?? 'validation_error',
+              instancePath: normalizeInstancePath(entry.pathPrefix, error.instancePath),
+              message: error.message ?? 'schema validation failed',
+            });
+          }
           continue;
         }
-        fileHasFailure = true;
-        for (const error of validate.errors ?? []) {
-          errors.push({
-            ruleId: rule.id,
-            file,
-            schemaPath: toPosix(rule.schemaPath),
-            keyword: error.keyword ?? 'validation_error',
-            instancePath: normalizeInstancePath(entry.pathPrefix, error.instancePath),
-            message: error.message ?? 'schema validation failed',
-          });
+        if (typeof rule.semanticValidate === 'function') {
+          const semanticErrors = rule.semanticValidate(entry.item);
+          if (semanticErrors.length > 0) {
+            fileHasFailure = true;
+            for (const error of semanticErrors) {
+              errors.push({
+                ruleId: rule.id,
+                file,
+                schemaPath: toPosix(rule.schemaPath),
+                keyword: error.keyword ?? 'semantic_validation_error',
+                instancePath: normalizeInstancePath(entry.pathPrefix, error.instancePath),
+                message: error.message ?? 'semantic validation failed',
+              });
+            }
+          }
         }
       }
 
