@@ -844,6 +844,7 @@ export function buildClaimEvidenceManifest(options) {
 
 function escapeMarkdown(value) {
   return String(value ?? '')
+    .replace(/\\/gu, '\\\\')
     .replace(/\|/gu, '\\|')
     .replace(/\r?\n/gu, ' ')
     .trim();

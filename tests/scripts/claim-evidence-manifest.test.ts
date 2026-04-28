@@ -172,6 +172,52 @@ describe.sequential('claim evidence manifest generator', () => {
     }
   });
 
+  it('escapes backslashes before markdown table delimiters', async () => {
+    const mod = await import(moduleUrl);
+    const markdown = mod.renderClaimEvidenceManifestMarkdown({
+      schemaVersion: 'claim-evidence-manifest/v1',
+      generatedAt: '2026-04-28T18:20:00.000Z',
+      sourceArtifacts: [
+        {
+          id: String.raw`artifact\id|pipe`,
+          kind: 'assurance-summary',
+          present: true,
+          required: true,
+          path: String.raw`artifacts\assurance|summary.json`,
+          schemaVersion: 'assurance-summary/v1',
+        },
+      ],
+      claims: [
+        {
+          id: String.raw`claim\id|pipe`,
+          statement: 'claim statement',
+          criticality: 'high',
+          targetLevel: 'A2',
+          achievedLevel: 'A2',
+          status: 'satisfied',
+          evidenceRefs: [],
+          missingEvidenceRefs: [],
+          proofObligationRefs: [],
+          counterexampleRefs: [],
+          waiverRefs: [],
+          notes: [],
+        },
+      ],
+      summary: {
+        totalClaims: 1,
+        fullySupported: 1,
+        partiallySupported: 0,
+        waived: 0,
+        unresolved: 0,
+      },
+    });
+
+    expect(markdown).toContain(
+      String.raw`| artifact\\id\|pipe | assurance-summary | true | true | artifacts\\assurance\|summary.json | assurance-summary/v1 |`,
+    );
+    expect(markdown).toContain(String.raw`| claim\\id\|pipe | high | A2 | A2 | satisfied | 0 | 0 | 0 |`);
+  });
+
   it('preserves lower explicit change-package achievedLevel when a claim is also present in assurance summary', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-claim-evidence-manifest-explicit-achieved-'));
     const fixture = JSON.parse(
