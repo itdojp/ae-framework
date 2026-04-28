@@ -90,6 +90,34 @@ describe('validate-artifacts-ajv', () => {
     });
   });
 
+  it('applies semantic validation for claim evidence manifest artifacts', () => {
+    withTempDir((rootDir) => {
+      const schema = JSON.parse(readFileSync('schema/claim-evidence-manifest.schema.json', 'utf8'));
+      const fixture = JSON.parse(readFileSync('fixtures/assurance/sample.claim-evidence-manifest.json', 'utf8'));
+      fixture.summary.totalClaims = 999;
+
+      writeJson(path.join(rootDir, 'schema', 'claim-evidence-manifest.schema.json'), schema);
+      writeJson(
+        path.join(rootDir, 'artifacts', 'assurance', 'claim-evidence-manifest.json'),
+        fixture,
+      );
+
+      const rule = DEFAULT_RULES.find((entry) => entry.id === 'claim-evidence-manifest');
+      expect(rule).toBeDefined();
+
+      const result = validateArtifactsAjv({
+        rootDir,
+        strict: true,
+        rules: [rule!],
+      });
+
+      expect(result.exitCode).toBe(1);
+      expect(result.summary.totals.failedFiles).toBe(1);
+      expect(result.errors.some((error) => error.keyword === 'summary_mismatch')).toBe(true);
+      expect(result.errors.some((error) => error.instancePath === '/summary/totalClaims')).toBe(true);
+    });
+  });
+
   it('iterateArrayItems validates each element and reports index path', () => {
     withTempDir((rootDir) => {
       writeJson(path.join(rootDir, 'schema', 'item.schema.json'), {
@@ -253,6 +281,11 @@ describe('validate-artifacts-ajv', () => {
     expect(assuranceSummaryRule).toBeDefined();
     expect(assuranceSummaryRule?.schemaPath).toBe('schema/assurance-summary.schema.json');
     expect(assuranceSummaryRule?.patterns).toContain('artifacts/assurance/assurance-summary.json');
+
+    const claimEvidenceManifestRule = DEFAULT_RULES.find((rule) => rule.id === 'claim-evidence-manifest');
+    expect(claimEvidenceManifestRule).toBeDefined();
+    expect(claimEvidenceManifestRule?.schemaPath).toBe('schema/claim-evidence-manifest.schema.json');
+    expect(claimEvidenceManifestRule?.patterns).toContain('artifacts/assurance/claim-evidence-manifest.json');
 
     const hookFeedbackRule = DEFAULT_RULES.find((rule) => rule.id === 'hook-feedback');
     expect(hookFeedbackRule).toBeDefined();

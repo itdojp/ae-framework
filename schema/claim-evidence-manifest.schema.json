@@ -1,0 +1,435 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/claim-evidence-manifest.schema.json",
+  "title": "Claim Evidence Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "sourceArtifacts",
+    "claims",
+    "summary"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "claim-evidence-manifest/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sourceArtifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sourceArtifact"
+      },
+      "minItems": 1
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifactPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assuranceLevel": {
+      "type": "string",
+      "enum": [
+        "A0",
+        "A1",
+        "A2",
+        "A3",
+        "A4"
+      ]
+    },
+    "criticality": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "claimStatus": {
+      "type": "string",
+      "enum": [
+        "partial",
+        "satisfied",
+        "waived",
+        "unresolved"
+      ]
+    },
+    "sourceArtifactKind": {
+      "type": "string",
+      "enum": [
+        "assurance-summary",
+        "trace-bundle",
+        "verify-lite-run-summary",
+        "quality-scorecard",
+        "change-package-v2",
+        "manual",
+        "other"
+      ]
+    },
+    "sourceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "path",
+        "present",
+        "required"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "kind": {
+          "$ref": "#/$defs/sourceArtifactKind"
+        },
+        "path": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/artifactPath"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "schemaVersion": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "present": {
+                "const": true
+              }
+            },
+            "required": [
+              "present"
+            ]
+          },
+          "then": {
+            "properties": {
+              "path": {
+                "$ref": "#/$defs/artifactPath"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "present": {
+                "const": false
+              }
+            },
+            "required": [
+              "present"
+            ]
+          },
+          "then": {
+            "properties": {
+              "path": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "evidenceKind": {
+      "type": "string",
+      "enum": [
+        "spec",
+        "behavior",
+        "adversarial",
+        "model",
+        "proof",
+        "runtime",
+        "quality",
+        "trace",
+        "policy",
+        "manual",
+        "other"
+      ]
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "artifactPath",
+        "sourceArtifactId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "kind": {
+          "$ref": "#/$defs/evidenceKind"
+        },
+        "artifactPath": {
+          "$ref": "#/$defs/artifactPath"
+        },
+        "sourceArtifactId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "proofStatus": {
+      "type": "string",
+      "enum": [
+        "open",
+        "discharged",
+        "waived",
+        "unresolved"
+      ]
+    },
+    "proofObligationRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status",
+        "sourceArtifactId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "status": {
+          "$ref": "#/$defs/proofStatus"
+        },
+        "sourceArtifactId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "artifactPath": {
+          "$ref": "#/$defs/artifactPath"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "spec",
+            "property",
+            "tla",
+            "alloy",
+            "smt",
+            "csp",
+            "lean",
+            "kani",
+            "runtime",
+            "manual",
+            "other"
+          ]
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "missingEvidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "expectedKind",
+        "reason"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "expectedKind": {
+          "$ref": "#/$defs/evidenceKind"
+        },
+        "reason": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceArtifactId": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "waiverStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "expired",
+        "orphan",
+        "unknown"
+      ]
+    },
+    "waiverRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sourceArtifactId",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceArtifactId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "status": {
+          "$ref": "#/$defs/waiverStatus"
+        },
+        "owner": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "expires": {
+          "type": "string",
+          "format": "date"
+        },
+        "reason": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "statement",
+        "criticality",
+        "targetLevel",
+        "achievedLevel",
+        "status",
+        "evidenceRefs",
+        "proofObligationRefs",
+        "missingEvidenceRefs",
+        "waiverRefs",
+        "notes"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "statement": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "criticality": {
+          "$ref": "#/$defs/criticality"
+        },
+        "targetLevel": {
+          "$ref": "#/$defs/assuranceLevel"
+        },
+        "achievedLevel": {
+          "$ref": "#/$defs/assuranceLevel"
+        },
+        "status": {
+          "$ref": "#/$defs/claimStatus"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceRef"
+          }
+        },
+        "proofObligationRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/proofObligationRef"
+          }
+        },
+        "missingEvidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/missingEvidenceRef"
+          }
+        },
+        "waiverRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/waiverRef"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "totalClaims",
+        "fullySupported",
+        "partiallySupported",
+        "waived",
+        "unresolved"
+      ],
+      "properties": {
+        "totalClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fullySupported": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "partiallySupported": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "waived": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolved": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

@@ -6,6 +6,7 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import yaml from 'yaml';
 import { runSchemaIdPolicyCheck } from './check-schema-id-policy.mjs';
+import { validateClaimEvidenceManifestSemantics } from './lib/claim-evidence-manifest-contract.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
@@ -28,7 +29,7 @@ function loadFixture(relativePath) {
   return JSON.parse(raw);
 }
 
-function validateSchema(schemaPath, fixturePaths) {
+function validateSchema(schemaPath, fixturePaths, semanticValidate = null) {
   const schema = loadJson(schemaPath);
   const validate = ajv.compile(schema);
   const failures = [];
@@ -37,6 +38,13 @@ function validateSchema(schemaPath, fixturePaths) {
     const ok = validate(data);
     if (!ok) {
       failures.push({ fixture, errors: validate.errors ?? [] });
+      continue;
+    }
+    if (typeof semanticValidate === 'function') {
+      const semanticErrors = semanticValidate(data);
+      if (semanticErrors.length > 0) {
+        failures.push({ fixture, errors: semanticErrors });
+      }
     }
   }
   return failures;
@@ -98,6 +106,12 @@ const checks = [
     schema: 'schema/assurance-summary.schema.json',
     fixtures: ['fixtures/assurance/sample.assurance-summary.json'],
     label: 'Assurance summary schema validation'
+  },
+  {
+    schema: 'schema/claim-evidence-manifest.schema.json',
+    fixtures: ['fixtures/assurance/sample.claim-evidence-manifest.json'],
+    label: 'Claim evidence manifest schema validation',
+    semanticValidate: validateClaimEvidenceManifestSemantics
   },
   {
     schema: 'schema/context-pack-functor-map.schema.json',
@@ -309,7 +323,7 @@ if (schemaIdPolicyCheck.exitCode !== 0) {
 }
 
 for (const check of checks) {
-  const failures = validateSchema(check.schema, check.fixtures);
+  const failures = validateSchema(check.schema, check.fixtures, check.semanticValidate);
   if (failures.length === 0) {
     console.log(`${check.label}: OK`);
   } else {
