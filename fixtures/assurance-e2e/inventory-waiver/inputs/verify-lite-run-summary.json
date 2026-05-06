@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0.0",
+  "timestamp": "2026-05-06T00:00:00.000Z",
+  "metadata": {
+    "generatedAtUtc": "2026-05-06T00:00:00.000Z",
+    "generatedAtLocal": "2026-05-06T09:00:00.000+09:00",
+    "timezoneOffset": "+09:00",
+    "gitCommit": "0123456789abcdef0123456789abcdef01234567",
+    "branch": "main",
+    "runner": {
+      "name": "assurance-e2e-fixture",
+      "os": "linux",
+      "arch": "x64",
+      "ci": false
+    },
+    "toolVersions": {
+      "node": "v22.0.0"
+    }
+  },
+  "flags": {
+    "install": "--frozen-lockfile",
+    "noFrozen": false,
+    "keepLintLog": false,
+    "enforceLint": true,
+    "runMutation": false
+  },
+  "steps": {
+    "install": {
+      "status": "success",
+      "retried": false
+    },
+    "lint": {
+      "status": "success"
+    },
+    "typecheck": {
+      "status": "success"
+    },
+    "unit": {
+      "status": "success"
+    },
+    "claimEvidence": {
+      "status": "success",
+      "notes": "Fixture scenario generates claim-evidence-manifest/v1."
+    }
+  },
+  "traceability": {
+    "status": "success",
+    "missingCount": 0,
+    "matrixPath": "fixtures/assurance-e2e/inventory-waiver/inputs/traceability-matrix.json",
+    "notes": "Fixture traceability is synthetic and deterministic."
+  },
+  "artifacts": {
+    "lintSummary": "artifacts/verify-lite/lint-summary.json",
+    "lintLog": null,
+    "mutationSummary": null,
+    "mutationSurvivors": null,
+    "conformanceSummary": "artifacts/conformance/summary.json",
+    "conformanceSummaryMarkdown": null,
+    "contextPackReportJson": "artifacts/context-pack/context-pack-report.json",
+    "contextPackReportMarkdown": null,
+    "contextPackProductCoproductReportJson": "artifacts/context-pack/context-pack-product-coproduct-report.json",
+    "contextPackProductCoproductReportMarkdown": null
+  }
+}

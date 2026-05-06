@@ -1,0 +1,143 @@
+{
+  "schemaVersion": "policy-gate-summary/v1",
+  "contractId": "policy-gate-summary.v1",
+  "generatedAtUtc": "2026-05-06T00:00:00.000Z",
+  "repository": "itdojp/ae-framework",
+  "prNumber": 3245,
+  "changedFiles": [
+    "fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json",
+    "scripts/assurance/run-e2e-scenario.mjs"
+  ],
+  "evaluation": {
+    "ok": true,
+    "errors": [],
+    "warnings": [],
+    "inferredRisk": {
+      "level": "risk:low",
+      "labels": {
+        "low": "risk:low",
+        "high": "risk:high"
+      },
+      "highRiskPathMatches": [],
+      "forceHighRiskTriggers": []
+    },
+    "selectedRiskLabel": "risk:low",
+    "currentRiskLabels": [
+      "risk:low"
+    ],
+    "reviewTopology": "solo",
+    "approvals": 0,
+    "minApprovals": 0,
+    "policyMinApprovals": 1,
+    "topologyMinApprovals": 0,
+    "effectiveMinApprovals": 0,
+    "minApprovalsSource": "topology",
+    "requiredLabels": [
+      "enforce-assurance"
+    ],
+    "missingRequiredLabels": [
+      "enforce-assurance"
+    ],
+    "requiredCheckResults": [
+      {
+        "checkName": "verify-lite",
+        "result": {
+          "status": "success",
+          "matches": [
+            {
+              "name": "verify-lite",
+              "state": "success",
+              "type": "check-run",
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS"
+            }
+          ],
+          "reason": "success"
+        }
+      }
+    ],
+    "gateCheckResults": [],
+    "assurance": {
+      "mode": "report-only",
+      "result": "waived",
+      "manifest": {
+        "path": "artifacts/assurance-e2e/inventory-waiver/claim-evidence-manifest.json",
+        "present": true,
+        "schemaVersion": "claim-evidence-manifest/v1",
+        "generatedAt": "2026-05-06T00:00:00.000Z"
+      },
+      "summary": {
+        "totalClaims": 3,
+        "pass": 1,
+        "waived": 1,
+        "reportOnly": 1,
+        "block": 0,
+        "activeWaivers": 1,
+        "expiringSoonWaivers": 0,
+        "expiredWaivers": 0,
+        "orphanWaivers": 0
+      },
+      "claims": [
+        {
+          "claimId": "manual-fraud-review",
+          "result": "waived",
+          "status": "waived",
+          "evidenceRefs": [
+            "change-package-v2:manual-fraud-review",
+            "change-package-v2:manual-fraud-review:artifact:0",
+            "quality-scorecard:assurancecoverage:manual-fraud-review"
+          ],
+          "missingEvidenceRefs": [],
+          "waiverRefs": [
+            "change-package-v2:waiver:0:manual-fraud-review"
+          ]
+        },
+        {
+          "claimId": "no-negative-balance",
+          "result": "report-only",
+          "status": "partial",
+          "evidenceRefs": [
+            "change-package-v2:no-negative-balance",
+            "change-package-v2:no-negative-balance:artifact:0",
+            "change-package-v2:no-negative-balance:artifact:1",
+            "change-package-v2:no-negative-balance:counterexample:0",
+            "quality-scorecard:assurancecoverage:no-negative-balance"
+          ],
+          "missingEvidenceRefs": [
+            "change-package-v2:no-negative-balance:target-a3:achieved-a2"
+          ],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "no-negative-stock",
+          "result": "pass",
+          "status": "satisfied",
+          "evidenceRefs": [
+            "assurance-summary:no-negative-stock:0:schema",
+            "assurance-summary:no-negative-stock:1:product-coproduct",
+            "assurance-summary:no-negative-stock:2:property",
+            "assurance-summary:no-negative-stock:3:conformance",
+            "assurance-summary:no-negative-stock:4:counterexample-closed",
+            "assurance-summary:no-negative-stock:5:runtime-alert",
+            "quality-scorecard:assurancecoverage:no-negative-stock"
+          ],
+          "missingEvidenceRefs": [],
+          "waiverRefs": []
+        }
+      ],
+      "waivers": [
+        {
+          "id": "change-package-v2:waiver:0:manual-fraud-review",
+          "sourceArtifactId": "change-package-v2",
+          "status": "active",
+          "owner": "@team-risk",
+          "expires": "2099-12-31",
+          "reason": "Manual fraud review is active while automated model validation evidence is being collected.",
+          "claimId": "manual-fraud-review"
+        }
+      ],
+      "warnings": [],
+      "errors": []
+    }
+  }
+}

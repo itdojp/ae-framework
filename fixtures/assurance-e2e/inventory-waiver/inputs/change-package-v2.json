@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "change-package/v2",
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "policyPath": "policy/risk-policy.yml",
+  "source": {
+    "repository": "itdojp/ae-framework",
+    "prNumber": 3245,
+    "baseRef": "main",
+    "headRef": "feat/3245-assurance-e2e"
+  },
+  "intent": {
+    "summary": "Freeze an end-to-end assurance fixture for inventory reservation controls."
+  },
+  "scope": {
+    "changedFiles": [
+      "fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json",
+      "scripts/assurance/run-e2e-scenario.mjs"
+    ],
+    "changedFileCount": 2,
+    "areas": [
+      "assurance",
+      "test"
+    ]
+  },
+  "risk": {
+    "selected": "risk:low",
+    "inferred": "risk:low",
+    "isHighRisk": false,
+    "requiredLabels": [],
+    "missingRequiredLabels": [],
+    "rationale": {
+      "highRiskPathMatches": [],
+      "forceHighRiskTriggers": []
+    }
+  },
+  "evidence": {
+    "artifactRoot": ".",
+    "items": [
+      {
+        "id": "verifyLiteSummary",
+        "path": "artifacts/verify-lite/verify-lite-run-summary.json",
+        "description": "verify-lite run summary",
+        "present": true
+      },
+      {
+        "id": "policyGateSummary",
+        "path": "artifacts/ci/policy-gate-summary.json",
+        "description": "policy-gate summary",
+        "present": true
+      }
+    ],
+    "presentCount": 2,
+    "missingCount": 0
+  },
+  "reproducibility": {
+    "commands": [
+      "pnpm -s run assurance:e2e -- --scenario inventory-waiver",
+      "node scripts/ci/validate-json.mjs"
+    ]
+  },
+  "rolloutPlan": {
+    "strategy": "fixture-only-golden-regression",
+    "references": [
+      "fixtures/assurance-e2e/inventory-waiver/README.md"
+    ],
+    "notes": [
+      "This fixture does not change production runtime behavior."
+    ]
+  },
+  "monitoringPlan": {
+    "signals": [
+      "assurance-e2e.diff",
+      "claim-evidence.summary",
+      "policy-gate.assurance.result"
+    ],
+    "alerts": [
+      "golden-artifact-drift"
+    ]
+  },
+  "exceptions": [],
+  "assurance": {
+    "targetLevel": "A3",
+    "achievedLevel": "A2",
+    "status": "partial"
+  },
+  "claims": [
+    {
+      "id": "no-negative-balance",
+      "statement": "Ledger balance never becomes negative after reservation settlement.",
+      "status": "model-checked",
+      "criticality": "high",
+      "artifactRefs": [
+        "artifacts/assurance/assurance-summary.json",
+        "artifacts/formal/tla/no-negative-balance-summary.json"
+      ]
+    },
+    {
+      "id": "manual-fraud-review",
+      "statement": "High-risk reservations receive manual fraud review until model validation is complete.",
+      "status": "waived",
+      "criticality": "medium",
+      "artifactRefs": [
+        "artifacts/runtime/manual-fraud-review-control.json"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "serializable-tx",
+      "statement": "Reservation and settlement writes run under serializable transaction isolation.",
+      "owner": "@team-platform",
+      "evidenceRefs": [
+        "docs/operate/release-engineering.md"
+      ]
+    }
+  ],
+  "proofObligations": [
+    {
+      "id": "obl-no-negative-balance",
+      "claimId": "no-negative-balance",
+      "method": "tla",
+      "status": "discharged",
+      "artifactRefs": [
+        "artifacts/formal/tla/no-negative-balance-summary.json"
+      ]
+    }
+  ],
+  "counterexamples": [
+    {
+      "artifactPath": "artifacts/formal/counterexamples/no-negative-balance-cex.json",
+      "status": "resolved",
+      "claimIds": [
+        "no-negative-balance"
+      ]
+    }
+  ],
+  "trustBoundary": {
+    "outsideModel": [
+      "database engine",
+      "fraud-review staffing schedule"
+    ]
+  },
+  "runtimeControls": {
+    "alerts": [
+      "negative-balance-detected"
+    ],
+    "featureFlags": [
+      "manual_fraud_review_required"
+    ]
+  },
+  "waivers": [
+    {
+      "owner": "@team-risk",
+      "expires": "2099-12-31",
+      "reason": "Manual fraud review is active while automated model validation evidence is being collected.",
+      "relatedClaimIds": [
+        "manual-fraud-review"
+      ]
+    }
+  ]
+}
