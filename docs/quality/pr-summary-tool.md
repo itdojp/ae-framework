@@ -29,6 +29,7 @@ lastVerified: '2026-03-29'
   - `artifacts/properties/ltl-suggestions.json`
   - `artifacts/formal/gwt.summary.json`
   - `artifacts/assurance/assurance-summary.json`
+  - `artifacts/assurance/claim-evidence-manifest.json`
   - `artifacts/quality/quality-scorecard.json`
   - `artifacts/formal/formal-aggregate.json`
   - legacy `formal/summary.json`
@@ -119,6 +120,7 @@ node scripts/summary/render-pr-summary.mjs
   - `artifacts/properties/ltl-suggestions.json`
   - `artifacts/formal/gwt.summary.json`
   - `artifacts/assurance/assurance-summary.json`
+  - `artifacts/assurance/claim-evidence-manifest.json`
   - `artifacts/quality/quality-scorecard.json`
   - `artifacts/formal/formal-aggregate.json`
   - legacy `formal/summary.json`

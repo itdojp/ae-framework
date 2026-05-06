@@ -18,8 +18,8 @@ lastVerified: '2026-04-08'
 ### Overview
 - This document defines the current one-page PR summary policy for the renderer and workflow append pipeline.
 - Baseline sections include the verify-lite summary, Discovery Pack status, assurance, failing GWT references, adapter summaries, formal status, and trace IDs.
-- Current direct inputs are `artifacts/summary/combined.json`, `artifacts/verify-lite/verify-lite-run-summary.json`, `coverage/coverage-summary.json` or `artifacts/coverage/coverage-summary.json`, `artifacts/domain/replay.summary.json`, `artifacts/bdd/scenarios.json`, `artifacts/properties/summary.json`, `artifacts/properties/ltl-suggestions.json`, `artifacts/formal/gwt.summary.json`, and optional `artifacts/assurance/assurance-summary.json`, `artifacts/quality/quality-scorecard.json`, `artifacts/formal/formal-aggregate.json`, legacy `formal/summary.json`, or `artifacts/hermetic-reports/formal/summary.json`.
-- The renderer writes the baseline Markdown to `artifacts/summary/PR_SUMMARY.md` and may append report-only detection lines such as `Detected coverage`, `Detected adapters`, and `Adapter shape warnings` when `artifacts/ae/context.json` or related adapter validation artifacts exist. After that, `pr-ci-status-comment.yml` appends `harness-health`, `change-package`, `change-package-validation`, `plan-artifact`, `plan-artifact-validation`, `hook-feedback`, and `quality-scorecard` Markdown artifacts.
+- Current direct inputs are `artifacts/summary/combined.json`, `artifacts/verify-lite/verify-lite-run-summary.json`, `coverage/coverage-summary.json` or `artifacts/coverage/coverage-summary.json`, `artifacts/domain/replay.summary.json`, `artifacts/bdd/scenarios.json`, `artifacts/properties/summary.json`, `artifacts/properties/ltl-suggestions.json`, `artifacts/formal/gwt.summary.json`, and optional `artifacts/assurance/assurance-summary.json`, `artifacts/assurance/claim-evidence-manifest.json`, `artifacts/quality/quality-scorecard.json`, `artifacts/formal/formal-aggregate.json`, legacy `formal/summary.json`, or `artifacts/hermetic-reports/formal/summary.json`.
+- The renderer writes the baseline Markdown to `artifacts/summary/PR_SUMMARY.md` and may append report-only detection lines such as `Detected coverage`, `Detected adapters`, and `Adapter shape warnings` when `artifacts/ae/context.json` or related adapter validation artifacts exist. After that, `pr-ci-status-comment.yml` appends `harness-health`, `change-package`, `change-package-validation`, `plan-artifact`, `plan-artifact-validation`, `hook-feedback`, `quality-scorecard`, and `claim-evidence-manifest` Markdown artifacts.
 
 Minimal one-line summary example:
 ```
@@ -44,6 +44,7 @@ Minimal one-line summary example:
 - `artifacts/domain/replay.summary.json`
 - Optional direct inputs:
   - `artifacts/assurance/assurance-summary.json`
+  - `artifacts/assurance/claim-evidence-manifest.json`
   - `artifacts/quality/quality-scorecard.json`
   - `artifacts/formal/formal-aggregate.json`
   - legacy `formal/summary.json`
@@ -59,12 +60,14 @@ Minimal one-line summary example:
   - `artifacts/plan/plan-artifact-validation.md`
   - `artifacts/agents/hook-feedback.md`
   - `artifacts/downloaded/verify-lite-report/artifacts/quality/quality-scorecard.md`
+  - `artifacts/downloaded/verify-lite-report/artifacts/assurance/claim-evidence-manifest.md`
 - Those workflow-attached Markdown files are downstream workflow inputs, not renderer direct inputs.
 
 ### Summary Sections
 - Coverage: the current renderer prints only `Coverage: <pct>%` from the coverage summary; `Threshold (effective)`, `Derived`, `Policy`, and `Policy source` belong to the workflow-level coverage comment contract rather than the renderer output contract
 - Discovery Pack: mode, reason, orphan counts, compile counts from `verify-lite-run-summary.json.discoveryPack`
 - Assurance: satisfied claims, warning claims, warning codes from `artifacts/assurance/assurance-summary.json`
+- Claim evidence: per-claim satisfied / partial / waived / unresolved counts and missing / waiver reference counts from `artifacts/assurance/claim-evidence-manifest.json`
 - Failing GWT: short counterexamples derived from `artifacts/formal/gwt.summary.json.items`, using the count and the first `property` or GWT fragment (`traceId` is not currently rendered)
 - Adapters: one-line summaries from `artifacts/summary/combined.json`
 - Formal: prefer `artifacts/summary/combined.json.formal`, then fallback to legacy `formal/summary.json`, then `artifacts/hermetic-reports/formal/summary.json`
@@ -175,8 +178,8 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
 ### 概要
 - 本ドキュメントは、renderer と workflow append pipeline における current one-page PR summary policy を定義します。
 - baseline section には、verify-lite summary、Discovery Pack status、assurance、failing GWT references、adapter summaries、formal status、trace IDs が含まれます。
-- 現在の direct input は `artifacts/summary/combined.json`、`artifacts/verify-lite/verify-lite-run-summary.json`、`coverage/coverage-summary.json` または `artifacts/coverage/coverage-summary.json`、`artifacts/domain/replay.summary.json`、`artifacts/bdd/scenarios.json`、`artifacts/properties/summary.json`、`artifacts/properties/ltl-suggestions.json`、`artifacts/formal/gwt.summary.json`、および optional の `artifacts/assurance/assurance-summary.json`、`artifacts/quality/quality-scorecard.json`、`artifacts/formal/formal-aggregate.json`、legacy `formal/summary.json`、`artifacts/hermetic-reports/formal/summary.json` です。
-- renderer は baseline Markdown を `artifacts/summary/PR_SUMMARY.md` に書き出し、`artifacts/ae/context.json` や adapter validation artifact が存在する場合は `Detected coverage`、`Detected adapters`、`Adapter shape warnings` のような report-only 検出行を自ら追記します。その後 `pr-ci-status-comment.yml` が `harness-health`、`change-package`、`change-package-validation`、`plan-artifact`、`plan-artifact-validation`、`hook-feedback`、`quality-scorecard` の Markdown artifact を追記します。
+- 現在の direct input は `artifacts/summary/combined.json`、`artifacts/verify-lite/verify-lite-run-summary.json`、`coverage/coverage-summary.json` または `artifacts/coverage/coverage-summary.json`、`artifacts/domain/replay.summary.json`、`artifacts/bdd/scenarios.json`、`artifacts/properties/summary.json`、`artifacts/properties/ltl-suggestions.json`、`artifacts/formal/gwt.summary.json`、および optional の `artifacts/assurance/assurance-summary.json`、`artifacts/assurance/claim-evidence-manifest.json`、`artifacts/quality/quality-scorecard.json`、`artifacts/formal/formal-aggregate.json`、legacy `formal/summary.json`、`artifacts/hermetic-reports/formal/summary.json` です。
+- renderer は baseline Markdown を `artifacts/summary/PR_SUMMARY.md` に書き出し、`artifacts/ae/context.json` や adapter validation artifact が存在する場合は `Detected coverage`、`Detected adapters`、`Adapter shape warnings` のような report-only 検出行を自ら追記します。その後 `pr-ci-status-comment.yml` が `harness-health`、`change-package`、`change-package-validation`、`plan-artifact`、`plan-artifact-validation`、`hook-feedback`、`quality-scorecard`、`claim-evidence-manifest` の Markdown artifact を追記します。
 
 最小 1 行サマリ（例）:
 ```
@@ -201,6 +204,7 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
 - `artifacts/domain/replay.summary.json`
 - optional direct input:
   - `artifacts/assurance/assurance-summary.json`
+  - `artifacts/assurance/claim-evidence-manifest.json`
   - `artifacts/quality/quality-scorecard.json`
   - `artifacts/formal/formal-aggregate.json`
   - legacy `formal/summary.json`
@@ -216,12 +220,14 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
   - `artifacts/plan/plan-artifact-validation.md`
   - `artifacts/agents/hook-feedback.md`
   - `artifacts/downloaded/verify-lite-report/artifacts/quality/quality-scorecard.md`
+  - `artifacts/downloaded/verify-lite-report/artifacts/assurance/claim-evidence-manifest.md`
 - これら workflow 側で追記される Markdown artifact は renderer の direct input ではなく、downstream workflow input です。
 
 ### サマリセクション
 - Coverage: current renderer は coverage summary から `Coverage: <pct>%` だけを出力します。`Threshold (effective)`、`Derived`、`Policy`、`Policy source` は renderer 出力契約ではなく、workflow 側の coverage comment 契約です。
 - Discovery Pack: `verify-lite-run-summary.json.discoveryPack` から mode / reason / orphan counts / compile counts を出力します。
 - Assurance: `artifacts/assurance/assurance-summary.json` から satisfied claims / warning claims / warning codes を出力します。
+- Claim evidence: `artifacts/assurance/claim-evidence-manifest.json` から claim 単位の satisfied / partial / waived / unresolved 件数と missing / waiver reference 件数を出力します。
 - Failing GWT: `artifacts/formal/gwt.summary.json.items` から件数と先頭の `property` または GWT 断片を使った短い counterexample を出力します（現状 `traceId` は出力しません）。
 - Adapters: `artifacts/summary/combined.json` から 1 行 summary を生成します。
 - Formal: `artifacts/summary/combined.json.formal` を優先し、fallback として legacy `formal/summary.json`、さらに `artifacts/hermetic-reports/formal/summary.json` を見ます。

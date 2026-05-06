@@ -126,6 +126,59 @@ describe.sequential('render-pr-summary', () => {
     }
   });
 
+  it('renders claim evidence manifest when the artifact exists', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-claim-evidence-'));
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'summary'), { recursive: true });
+      mkdirSync(join(sandbox, 'artifacts', 'assurance'), { recursive: true });
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'summary', 'combined.json'),
+        JSON.stringify(
+          {
+            adapters: [{ adapter: 'playwright', summary: '12/12 passed', status: 'ok' }],
+            formal: { result: 'pass' },
+            replay: { totalEvents: 2, violatedInvariants: [] },
+          },
+          null,
+          2,
+        ),
+      );
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'assurance', 'claim-evidence-manifest.json'),
+        JSON.stringify(
+          {
+            summary: {
+              totalClaims: 3,
+              fullySupported: 1,
+              partiallySupported: 1,
+              waived: 1,
+              unresolved: 0,
+            },
+            claims: [
+              { id: 'satisfied-claim', missingEvidenceRefs: [], waiverRefs: [] },
+              { id: 'partial-claim', missingEvidenceRefs: [{ id: 'missing-runtime' }], waiverRefs: [] },
+              { id: 'waived-claim', missingEvidenceRefs: [], waiverRefs: [{ id: 'waiver-001' }] },
+            ],
+          },
+          null,
+          2,
+        ),
+      );
+
+      const result = runScript(sandbox, { SUMMARY_MODE: 'digest', SUMMARY_LANG: 'en' });
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
+      expect(output).toContain('Claim evidence: satisfied=1/3, partial=1, waived=1, unresolved=0');
+      expect(output).toContain('Claim evidence refs: missing=1, waivers=1');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('renders assurance section in detailed Japanese mode', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-detailed-'));
 
