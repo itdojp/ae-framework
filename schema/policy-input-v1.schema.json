@@ -37,19 +37,29 @@
     },
     "changedFiles": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "uniqueItems": true
     },
     "reviews": {
       "type": "array",
-      "items": { "$ref": "#/$defs/review" }
+      "items": {
+        "$ref": "#/$defs/review"
+      }
     },
     "statusRollup": {
       "type": "array",
-      "items": { "$ref": "#/$defs/statusItem" }
+      "items": {
+        "$ref": "#/$defs/statusItem"
+      }
     },
     "config": {
       "$ref": "#/$defs/config"
+    },
+    "assurance": {
+      "$ref": "#/$defs/assuranceInput"
     }
   },
   "required": [
@@ -79,32 +89,59 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "low": { "type": "string", "minLength": 1 },
-                "high": { "type": "string", "minLength": 1 }
+                "low": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "high": {
+                  "type": "string",
+                  "minLength": 1
+                }
               },
-              "required": ["low", "high"]
+              "required": [
+                "low",
+                "high"
+              ]
             },
             "optionalGates": {
               "type": "array",
-              "items": { "type": "string", "minLength": 1 },
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
               "uniqueItems": true
             }
           },
-          "required": ["risk", "optionalGates"]
+          "required": [
+            "risk",
+            "optionalGates"
+          ]
         },
         "requiredChecks": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "uniqueItems": true
         },
         "highRisk": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "minHumanApprovals": { "type": "integer", "minimum": 0 },
-            "requirePolicyLabels": { "type": "boolean" },
-            "requirePlanArtifact": { "type": "boolean" },
-            "failWhenRequiredGateIsPending": { "type": "boolean" }
+            "minHumanApprovals": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "requirePolicyLabels": {
+              "type": "boolean"
+            },
+            "requirePlanArtifact": {
+              "type": "boolean"
+            },
+            "failWhenRequiredGateIsPending": {
+              "type": "boolean"
+            }
           },
           "required": [
             "minHumanApprovals",
@@ -119,24 +156,37 @@
           "properties": {
             "highRiskPaths": {
               "type": "array",
-              "items": { "type": "string", "minLength": 1 },
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
               "uniqueItems": true
             },
             "forceHighRiskWhen": {
               "type": "array",
-              "items": { "type": "string", "minLength": 1 },
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
               "uniqueItems": true
             }
           },
-          "required": ["highRiskPaths", "forceHighRiskWhen"]
+          "required": [
+            "highRiskPaths",
+            "forceHighRiskWhen"
+          ]
         },
         "labelRequirements": {
           "type": "array",
-          "items": { "$ref": "#/$defs/labelRequirement" }
+          "items": {
+            "$ref": "#/$defs/labelRequirement"
+          }
         },
         "gateChecks": {
           "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/gateCheckMapping" }
+          "additionalProperties": {
+            "$ref": "#/$defs/gateCheckMapping"
+          }
         }
       },
       "required": [
@@ -152,19 +202,32 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
         "whenAnyChanged": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "uniqueItems": true
         },
         "requireLabels": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "uniqueItems": true
         }
       },
-      "required": ["id", "whenAnyChanged", "requireLabels"]
+      "required": [
+        "id",
+        "whenAnyChanged",
+        "requireLabels"
+      ]
     },
     "gateCheckMapping": {
       "type": "object",
@@ -172,83 +235,391 @@
       "properties": {
         "patterns": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "uniqueItems": true
         }
       },
-      "required": ["patterns"]
+      "required": [
+        "patterns"
+      ]
     },
     "pullRequest": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "number": { "type": "integer", "minimum": 1 },
+        "number": {
+          "type": "integer",
+          "minimum": 1
+        },
         "labels": {
           "type": "array",
-          "items": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
           "uniqueItems": true
         },
-        "body": { "type": "string" }
+        "body": {
+          "type": "string"
+        }
       },
-      "required": ["number", "labels", "body"]
+      "required": [
+        "number",
+        "labels",
+        "body"
+      ]
     },
     "review": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "integer", "minimum": 1 },
-        "state": { "type": "string", "minLength": 1 },
-        "submittedAt": { "type": ["string", "null"], "format": "date-time" },
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "submittedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
         "user": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "login": { "type": "string", "minLength": 1 },
-            "type": { "type": "string", "minLength": 1 }
+            "login": {
+              "type": "string",
+              "minLength": 1
+            },
+            "type": {
+              "type": "string",
+              "minLength": 1
+            }
           },
-          "required": ["login", "type"]
+          "required": [
+            "login",
+            "type"
+          ]
         }
       },
-      "required": ["id", "state", "submittedAt", "user"]
+      "required": [
+        "id",
+        "state",
+        "submittedAt",
+        "user"
+      ]
     },
     "statusItem": {
       "oneOf": [
-        { "$ref": "#/$defs/checkRun" },
-        { "$ref": "#/$defs/statusContext" }
+        {
+          "$ref": "#/$defs/checkRun"
+        },
+        {
+          "$ref": "#/$defs/statusContext"
+        }
       ]
     },
     "checkRun": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "__typename": { "type": "string", "const": "CheckRun" },
-        "name": { "type": "string", "minLength": 1 },
-        "status": { "type": "string", "minLength": 1 },
-        "conclusion": { "type": ["string", "null"] },
-        "workflowName": { "type": "string" },
-        "startedAt": { "type": ["string", "null"], "format": "date-time" },
-        "completedAt": { "type": ["string", "null"], "format": "date-time" }
+        "__typename": {
+          "type": "string",
+          "const": "CheckRun"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conclusion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "workflowName": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
       },
-      "required": ["__typename", "name", "status", "conclusion"]
+      "required": [
+        "__typename",
+        "name",
+        "status",
+        "conclusion"
+      ]
     },
     "statusContext": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "__typename": { "type": "string", "const": "StatusContext" },
-        "context": { "type": "string", "minLength": 1 },
-        "state": { "type": "string", "minLength": 1 }
+        "__typename": {
+          "type": "string",
+          "const": "StatusContext"
+        },
+        "context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "type": "string",
+          "minLength": 1
+        }
       },
-      "required": ["__typename", "context", "state"]
+      "required": [
+        "__typename",
+        "context",
+        "state"
+      ]
     },
     "config": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "reviewTopology": { "type": ["string", "null"] },
-        "approvalOverride": { "type": ["string", "null"] }
+        "reviewTopology": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approvalOverride": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "assuranceMode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "report-only",
+            "strict",
+            null
+          ]
+        }
       },
-      "required": ["reviewTopology", "approvalOverride"]
+      "required": [
+        "reviewTopology",
+        "approvalOverride"
+      ]
+    },
+    "assuranceInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "present",
+        "schemaVersion",
+        "generatedAt",
+        "summary",
+        "claims",
+        "warnings",
+        "errors"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "schemaVersion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "generatedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "totalClaims",
+            "fullySupported",
+            "partiallySupported",
+            "waived",
+            "unresolved"
+          ],
+          "properties": {
+            "totalClaims": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "fullySupported": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "partiallySupported": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "waived": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unresolved": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "claimId",
+              "result",
+              "status",
+              "evidenceRefs",
+              "missingEvidenceRefs",
+              "waiverRefs",
+              "waivers"
+            ],
+            "properties": {
+              "claimId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "result": {
+                "type": "string",
+                "enum": [
+                  "pass",
+                  "waived",
+                  "report-only",
+                  "block"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidenceRefs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "missingEvidenceRefs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "waiverRefs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "waivers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "status"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "sourceArtifactId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "expiringSoon",
+                        "expired",
+                        "orphan",
+                        "unknown"
+                      ]
+                    },
+                    "owner": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "expires": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date"
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
     }
   }
 }

@@ -74,6 +74,79 @@
           "reason": "not-found"
         }
       }
-    ]
+    ],
+    "assurance": {
+      "mode": "report-only",
+      "result": "waived",
+      "manifest": {
+        "path": "fixtures/assurance/sample.claim-evidence-manifest.json",
+        "present": true,
+        "schemaVersion": "claim-evidence-manifest/v1",
+        "generatedAt": "2026-04-28T18:20:00Z"
+      },
+      "summary": {
+        "totalClaims": 3,
+        "pass": 1,
+        "waived": 1,
+        "reportOnly": 1,
+        "block": 0,
+        "activeWaivers": 1,
+        "expiringSoonWaivers": 0,
+        "expiredWaivers": 0,
+        "orphanWaivers": 0
+      },
+      "claims": [
+        {
+          "claimId": "no-negative-stock",
+          "result": "pass",
+          "status": "satisfied",
+          "evidenceRefs": [
+            "property-summary:no-negative-stock",
+            "quality-scorecard:assuranceCoverage"
+          ],
+          "missingEvidenceRefs": [],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "no-negative-balance",
+          "result": "report-only",
+          "status": "partial",
+          "evidenceRefs": [
+            "change-package-v2:no-negative-balance"
+          ],
+          "missingEvidenceRefs": [
+            "missing-no-negative-balance-runtime-evidence"
+          ],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "manual-fraud-review",
+          "result": "waived",
+          "status": "waived",
+          "evidenceRefs": [
+            "runtime-control:fraud-review-flag"
+          ],
+          "missingEvidenceRefs": [
+            "missing-fraud-model-validation"
+          ],
+          "waiverRefs": [
+            "waiver-manual-fraud-review-001"
+          ]
+        }
+      ],
+      "waivers": [
+        {
+          "id": "waiver-manual-fraud-review-001",
+          "sourceArtifactId": "manual-waiver-log",
+          "status": "active",
+          "owner": "@team-risk",
+          "expires": "2026-06-30",
+          "reason": "Runtime manual review control is active during model validation.",
+          "claimId": "manual-fraud-review"
+        }
+      ],
+      "warnings": [],
+      "errors": []
+    }
   }
 }
