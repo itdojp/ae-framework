@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { buildPolicyGateReport, evaluatePolicyGate } from '../../../scripts/ci/policy-gate.mjs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import {
+  buildMarkdownSummary,
+  buildPolicyGateReport,
+  buildPolicyInputV1,
+  evaluatePolicyGate,
+  inspectClaimEvidenceManifest,
+} from '../../../scripts/ci/policy-gate.mjs';
 import { loadRiskPolicy } from '../../../scripts/ci/lib/risk-policy.mjs';
 
 function checkRun(
@@ -44,6 +52,54 @@ function planArtifactState(overrides: Record<string, unknown> = {}) {
       baseRef: 'main',
       headRef: 'feat/2535-plan-artifact',
     },
+    ...overrides,
+  };
+}
+
+function assuranceState(overrides: Record<string, unknown> = {}) {
+  return {
+    path: '/workspace/artifacts/assurance/claim-evidence-manifest.json',
+    present: true,
+    schemaVersion: 'claim-evidence-manifest/v1',
+    generatedAt: '2026-04-28T18:20:00.000Z',
+    summary: {
+      totalClaims: 2,
+      fullySupported: 1,
+      partiallySupported: 0,
+      waived: 1,
+      unresolved: 0,
+    },
+    claims: [
+      {
+        claimId: 'no-negative-stock',
+        result: 'pass',
+        status: 'satisfied',
+        evidenceRefs: ['property-summary:no-negative-stock'],
+        missingEvidenceRefs: [],
+        waiverRefs: [],
+        waivers: [],
+      },
+      {
+        claimId: 'manual-fraud-review',
+        result: 'waived',
+        status: 'waived',
+        evidenceRefs: ['runtime-control:fraud-review-flag'],
+        missingEvidenceRefs: ['missing-fraud-model-validation'],
+        waiverRefs: ['waiver-manual-fraud-review-001'],
+        waivers: [
+          {
+            id: 'waiver-manual-fraud-review-001',
+            sourceArtifactId: 'manual-waiver-log',
+            status: 'active',
+            owner: '@team-risk',
+            expires: '2026-06-30',
+            reason: 'Runtime manual review control is active during model validation.',
+          },
+        ],
+      },
+    ],
+    warnings: [],
+    errors: [],
     ...overrides,
   };
 }
@@ -417,6 +473,189 @@ describe('policy-gate', () => {
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
     expect(result.missingRequiredLabels).toContain('enforce-assurance');
+  });
+
+  it('records waiver-aware assurance decisions without treating waivers as pass', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState(),
+      assuranceMode: 'report-only',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.assurance.result).toBe('waived');
+    expect(result.assurance.summary).toMatchObject({
+      pass: 1,
+      waived: 1,
+      block: 0,
+      activeWaivers: 1,
+    });
+    expect(result.assurance.waivers).toEqual([
+      expect.objectContaining({
+        id: 'waiver-manual-fraud-review-001',
+        claimId: 'manual-fraud-review',
+        owner: '@team-risk',
+        status: 'active',
+      }),
+    ]);
+  });
+
+  it('renders waiver ownership, expiry, and reason in the policy gate summary', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState(),
+      assuranceMode: 'report-only',
+    });
+
+    const markdown = buildMarkdownSummary(3252, result);
+
+    expect(markdown).toContain('waivers: active=1, expiringSoon=0, expired=0, orphan=0');
+    expect(markdown).toContain('id=waiver-manual-fraud-review-001');
+    expect(markdown).toContain('claim=manual-fraud-review');
+    expect(markdown).toContain('owner=@team-risk');
+    expect(markdown).toContain('expires=2026-06-30');
+    expect(markdown).toContain('reason=Runtime manual review control is active during model validation.');
+  });
+
+  it('blocks strict assurance mode when an expired waiver is present', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState({
+        claims: [
+          {
+            claimId: 'manual-fraud-review',
+            result: 'waived',
+            status: 'waived',
+            evidenceRefs: [],
+            missingEvidenceRefs: ['missing-fraud-model-validation'],
+            waiverRefs: ['waiver-expired-001'],
+            waivers: [
+              {
+                id: 'waiver-expired-001',
+                sourceArtifactId: 'manual-waiver-log',
+                status: 'expired',
+                owner: '@team-risk',
+                expires: '2026-01-31',
+                reason: 'Expired manual control waiver.',
+              },
+            ],
+          },
+        ],
+      }),
+      assuranceMode: 'strict',
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('assurance decision is block');
+    expect(result.assurance.result).toBe('block');
+    expect(result.assurance.summary.expiredWaivers).toBe(1);
+  });
+
+  it('keeps unresolved assurance claims blocking even when active waivers are present', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-test-'));
+    const manifestPath = join(tempDir, 'claim-evidence-manifest.json');
+    writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        schemaVersion: 'claim-evidence-manifest/v1',
+        generatedAt: '2026-05-06T05:00:00.000Z',
+        summary: {
+          totalClaims: 1,
+          fullySupported: 0,
+          partiallySupported: 0,
+          waived: 0,
+          unresolved: 1,
+        },
+        claims: [
+          {
+            id: 'manual-fraud-review',
+            status: 'unresolved',
+            evidenceRefs: [],
+            missingEvidenceRefs: ['missing-fraud-model-validation'],
+            waiverRefs: [
+              {
+                id: 'waiver-active-001',
+                sourceArtifactId: 'manual-waiver-log',
+                status: 'active',
+                owner: '@team-risk',
+                expires: '2026-06-30',
+                reason: 'Active waiver cannot downgrade unresolved evidence.',
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    const assurance = inspectClaimEvidenceManifest(manifestPath, '2026-05-06T05:00:00.000Z');
+
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance,
+      assuranceMode: 'strict',
+    });
+    rmSync(tempDir, { recursive: true, force: true });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('assurance decision is block');
+    expect(result.assurance.result).toBe('block');
+    expect(result.assurance.claims).toEqual([
+      expect.objectContaining({
+        claimId: 'manual-fraud-review',
+        result: 'block',
+        status: 'unresolved',
+      }),
+    ]);
+  });
+
+  it('normalizes assurance mode before writing the policy input contract', () => {
+    const input = buildPolicyInputV1({
+      repo: 'itdojp/ae-framework',
+      prNumber: 3252,
+      policyPath: 'policy/risk-policy.yml',
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assuranceMode: 'unexpected-mode',
+      assurance: assuranceState(),
+      now: '2026-05-06T05:00:00.000Z',
+    });
+
+    expect(input.config.assuranceMode).toBe('report-only');
   });
 
   it('does not enforce discovery labels on low-risk discovery changes', () => {

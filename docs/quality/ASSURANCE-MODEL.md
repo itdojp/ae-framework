@@ -99,11 +99,11 @@ Implemented on current `main`:
 - report-only `verify:assurance` summary generation
 - strict assurance enforcement when the `enforce-assurance` label is set
 - assurance display in PR / release / post-deploy summaries
+- policy-gate decision artifacts carry a report-only waiver-aware assurance section when `claim-evidence-manifest/v1` is available
 
 Not yet implemented or still being phased in:
 - change-package v2 preview contract (schema / docs only)
-- per-claim achieved-level aggregation
-- assurance-aware enforcement directly inside `policy-gate`
+- strict assurance-aware enforcement directly inside `policy-gate` (the default mode remains report-only)
 
 ### 5. Operating principles
 
@@ -121,11 +121,12 @@ Contracts already present on `main`:
 - `schema/assurance-summary.schema.json`
 - `schema/change-package.schema.json`
 - `schema/change-package-v2.schema.json`
+- `schema/claim-evidence-manifest.schema.json`
+- `schema/policy-input-v1.schema.json`
+- `schema/policy-decision-v1.schema.json`
 
 Contracts that remain incremental candidates:
 - `schema/verify-lite-run-summary.schema.json`
-- `schema/policy-input-v1.schema.json`
-- `schema/policy-decision-v1.schema.json`
 
 ---
 
@@ -219,11 +220,11 @@ proof や model-check で閉じない部分を、feature flag / alert / rollout 
 - 報告専用（report-only）の `verify:assurance` サマリー生成
 - `enforce-assurance` ラベル時の strict assurance enforcement
 - PR / release / post-deploy summary への assurance 表示
+- `claim-evidence-manifest/v1` がある場合の、policy-gate decision artifact 内の report-only な waiver-aware assurance section
 
 未実装または段階導入中:
 - change-package v2 preview 契約（schema / docs のみ）
-- クレームごとの achieved level 集約
-- policy-gate への assurance-aware enforcement
+- policy-gate の strict assurance-aware enforcement（既定は report-only のまま）
 
 ### 5. 運用上の原則
 
@@ -241,7 +242,9 @@ main に存在する契約:
 - `schema/assurance-summary.schema.json`
 - `schema/change-package.schema.json`
 - `schema/change-package-v2.schema.json`
+- `schema/claim-evidence-manifest.schema.json`
+- `schema/policy-input-v1.schema.json`
+- `schema/policy-decision-v1.schema.json`
 
 段階導入中の契約:
 - `schema/verify-lite-run-summary.schema.json`（将来拡張候補）
-- `schema/policy-input-v1.schema.json` / `schema/policy-decision-v1.schema.json`（将来拡張候補）
