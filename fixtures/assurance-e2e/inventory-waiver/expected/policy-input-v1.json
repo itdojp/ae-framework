@@ -1,0 +1,314 @@
+{
+  "schemaVersion": "1.0.0",
+  "contractId": "policy-input.v1",
+  "generatedAtUtc": "2026-05-06T00:00:00.000Z",
+  "repository": "itdojp/ae-framework",
+  "prNumber": 3245,
+  "policyPath": "policy/risk-policy.yml",
+  "policy": {
+    "labels": {
+      "risk": {
+        "low": "risk:low",
+        "high": "risk:high"
+      },
+      "optionalGates": [
+        "run-security",
+        "run-ci-extended",
+        "run-trace",
+        "enforce-assurance",
+        "enforce-artifacts",
+        "enforce-testing",
+        "enforce-context-pack",
+        "enforce-discovery"
+      ]
+    },
+    "requiredChecks": [
+      "verify-lite",
+      "policy-gate"
+    ],
+    "highRisk": {
+      "minHumanApprovals": 1,
+      "requirePolicyLabels": true,
+      "requirePlanArtifact": true,
+      "failWhenRequiredGateIsPending": false
+    },
+    "classification": {
+      "highRiskPaths": [
+        ".github/workflows/**",
+        "policy/release-policy.yml",
+        "infra/**",
+        "terraform/**",
+        "k8s/**",
+        "ansible/**",
+        "db/migrations/**",
+        "schema/**",
+        "auth/**",
+        "security/**",
+        "config/**"
+      ],
+      "forceHighRiskWhen": [
+        "contains_dependency_manifest_change",
+        "contains_external_interface_change",
+        "contains_context_boundary_change"
+      ]
+    },
+    "labelRequirements": [
+      {
+        "id": "dependency-supply-chain",
+        "whenAnyChanged": [
+          "package.json",
+          "**/package.json",
+          "pnpm-lock.yaml",
+          "**/pnpm-lock.yaml",
+          "package-lock.json",
+          "**/package-lock.json",
+          "yarn.lock",
+          "**/yarn.lock",
+          "go.mod",
+          "**/go.mod",
+          "go.sum",
+          "**/go.sum",
+          "requirements*.txt",
+          "**/requirements*.txt",
+          "poetry.lock",
+          "**/poetry.lock",
+          "Gemfile.lock",
+          "**/Gemfile.lock",
+          "composer.lock",
+          "**/composer.lock"
+        ],
+        "requireLabels": [
+          "run-security"
+        ]
+      },
+      {
+        "id": "external-interface",
+        "whenAnyChanged": [
+          "api/**",
+          "contracts/**",
+          "schema/**",
+          "spec/**",
+          "openapi/**"
+        ],
+        "requireLabels": [
+          "run-ci-extended",
+          "enforce-artifacts"
+        ]
+      },
+      {
+        "id": "testing-reproducibility",
+        "whenAnyChanged": [
+          "tests/**",
+          "scripts/testing/**",
+          "scripts/replay/**",
+          ".github/workflows/testing-ddd-scripts.yml"
+        ],
+        "requireLabels": [
+          "enforce-testing"
+        ]
+      },
+      {
+        "id": "context-pack-boundary",
+        "whenAnyChanged": [
+          "spec/context-pack/**",
+          "configs/context-pack/**",
+          "scripts/context-pack/**",
+          ".github/workflows/context-pack-quality-gate.yml"
+        ],
+        "requireLabels": [
+          "enforce-context-pack"
+        ]
+      },
+      {
+        "id": "trace-validation",
+        "whenAnyChanged": [
+          ".github/workflows/spec-generate-model.yml",
+          "scripts/trace/**",
+          "scripts/pipelines/run-trace-conformance.mjs",
+          "tests/unit/trace/**",
+          "tests/unit/pipelines/run-trace-conformance.integration.test.ts"
+        ],
+        "requireLabels": [
+          "run-trace"
+        ]
+      },
+      {
+        "id": "assurance-enforcement",
+        "whenAnyChanged": [
+          ".github/workflows/verify-lite.yml",
+          "schema/assurance-*.schema.json",
+          "schema/counterexample.schema.json",
+          "scripts/assurance/**",
+          "scripts/ci/validate-assurance-summary.mjs",
+          "scripts/ci/enforce-assurance-summary.mjs"
+        ],
+        "requireLabels": [
+          "enforce-assurance"
+        ]
+      },
+      {
+        "id": "discovery-contract",
+        "whenAnyChanged": [
+          "spec/discovery-pack/**",
+          "schema/discovery-pack-v1.schema.json",
+          "scripts/discovery-pack/**",
+          "src/cli/discovery-cli.ts",
+          ".github/workflows/verify-lite.yml"
+        ],
+        "requireLabels": [
+          "enforce-discovery"
+        ]
+      }
+    ],
+    "gateChecks": {
+      "enforce-artifacts": {
+        "patterns": [
+          "generate-artifacts",
+          "validate-artifacts / gate",
+          "validate-artifacts / validate"
+        ]
+      },
+      "enforce-assurance": {
+        "patterns": [
+          "verify-lite"
+        ]
+      },
+      "enforce-context-pack": {
+        "patterns": [
+          "context-pack-e2e"
+        ]
+      },
+      "enforce-discovery": {
+        "patterns": [
+          "verify-lite"
+        ]
+      },
+      "enforce-testing": {
+        "patterns": [
+          "testing-ddd"
+        ]
+      },
+      "run-ci-extended": {
+        "patterns": [
+          "CI Extended (entry: pr/push) / extended",
+          "integration / run",
+          "Parallel Tests (entry: pr/push) / Test Suite (integration)"
+        ]
+      },
+      "run-security": {
+        "patterns": [
+          "Security Scanning"
+        ]
+      },
+      "run-trace": {
+        "patterns": [
+          "trace-conformance",
+          "KvOnce Trace Validation"
+        ]
+      }
+    }
+  },
+  "pullRequest": {
+    "number": 3245,
+    "labels": [
+      "risk:low"
+    ],
+    "body": "## Acceptance\nFixture scenario reproduces verify-lite, assurance summary, claim evidence manifest, and policy decision artifacts.\n\n## Rollback\nRevert the fixture scenario, runner, and expected golden artifacts."
+  },
+  "changedFiles": [
+    "fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json",
+    "scripts/assurance/run-e2e-scenario.mjs"
+  ],
+  "reviews": [],
+  "statusRollup": [
+    {
+      "__typename": "CheckRun",
+      "name": "verify-lite",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "workflowName": "",
+      "startedAt": null,
+      "completedAt": null
+    }
+  ],
+  "config": {
+    "reviewTopology": "solo",
+    "approvalOverride": null,
+    "assuranceMode": "report-only"
+  },
+  "assurance": {
+    "path": "artifacts/assurance-e2e/inventory-waiver/claim-evidence-manifest.json",
+    "present": true,
+    "schemaVersion": "claim-evidence-manifest/v1",
+    "generatedAt": "2026-05-06T00:00:00.000Z",
+    "summary": {
+      "totalClaims": 3,
+      "fullySupported": 1,
+      "partiallySupported": 1,
+      "waived": 1,
+      "unresolved": 0
+    },
+    "claims": [
+      {
+        "claimId": "manual-fraud-review",
+        "result": "waived",
+        "status": "waived",
+        "evidenceRefs": [
+          "change-package-v2:manual-fraud-review",
+          "change-package-v2:manual-fraud-review:artifact:0",
+          "quality-scorecard:assurancecoverage:manual-fraud-review"
+        ],
+        "missingEvidenceRefs": [],
+        "waiverRefs": [
+          "change-package-v2:waiver:0:manual-fraud-review"
+        ],
+        "waivers": [
+          {
+            "id": "change-package-v2:waiver:0:manual-fraud-review",
+            "sourceArtifactId": "change-package-v2",
+            "status": "active",
+            "owner": "@team-risk",
+            "expires": "2099-12-31",
+            "reason": "Manual fraud review is active while automated model validation evidence is being collected."
+          }
+        ]
+      },
+      {
+        "claimId": "no-negative-balance",
+        "result": "report-only",
+        "status": "partial",
+        "evidenceRefs": [
+          "change-package-v2:no-negative-balance",
+          "change-package-v2:no-negative-balance:artifact:0",
+          "change-package-v2:no-negative-balance:artifact:1",
+          "change-package-v2:no-negative-balance:counterexample:0",
+          "quality-scorecard:assurancecoverage:no-negative-balance"
+        ],
+        "missingEvidenceRefs": [
+          "change-package-v2:no-negative-balance:target-a3:achieved-a2"
+        ],
+        "waiverRefs": [],
+        "waivers": []
+      },
+      {
+        "claimId": "no-negative-stock",
+        "result": "pass",
+        "status": "satisfied",
+        "evidenceRefs": [
+          "assurance-summary:no-negative-stock:0:schema",
+          "assurance-summary:no-negative-stock:1:product-coproduct",
+          "assurance-summary:no-negative-stock:2:property",
+          "assurance-summary:no-negative-stock:3:conformance",
+          "assurance-summary:no-negative-stock:4:counterexample-closed",
+          "assurance-summary:no-negative-stock:5:runtime-alert",
+          "quality-scorecard:assurancecoverage:no-negative-stock"
+        ],
+        "missingEvidenceRefs": [],
+        "waiverRefs": [],
+        "waivers": []
+      }
+    ],
+    "warnings": [],
+    "errors": []
+  }
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isTopLevelAiReviewComment,
   resolveGateResult,
   resolvePrContext,
   truncateUnicodeSafe,
@@ -79,6 +80,35 @@ describe('copilot-review-gate helpers', () => {
     expect(result.unresolvedSummaries[0]).toContain('Thread 1');
   });
 
+  it('counts top-level AI review comments as review presence', () => {
+    const actorSet = toActorSet(['chatgpt-codex-connector[bot]']);
+    const result = resolveGateResult({
+      reviews: {
+        nodes: [],
+      },
+      comments: {
+        nodes: [
+          {
+            author: { login: 'chatgpt-codex-connector[bot]' },
+            bodyText: '### 💡 Codex Review\n\nDerive policy changedFiles from selected scenario.',
+          },
+          {
+            author: { login: 'chatgpt-codex-connector[bot]' },
+            bodyText: '@codex review requested.',
+          },
+        ],
+      },
+      reviewThreads: {
+        nodes: [],
+      },
+    }, actorSet);
+
+    expect(result.hasReview).toBe(true);
+    expect(result.hasSubmittedReview).toBe(false);
+    expect(result.topLevelReviewCommentsCount).toBe(1);
+    expect(result.unresolvedThreadsCount).toBe(0);
+  });
+
   it('ignores non-actor threads', () => {
     const actorSet = toActorSet(['github-copilot[bot]']);
     const result = resolveGateResult({
@@ -100,6 +130,13 @@ describe('copilot-review-gate helpers', () => {
     expect(result.hasReview).toBe(false);
     expect(result.actorThreadsCount).toBe(0);
     expect(result.unresolvedThreadsCount).toBe(0);
+  });
+
+  it('recognizes only review-shaped top-level AI comments', () => {
+    expect(isTopLevelAiReviewComment('### 💡 Codex Review\n\nNeeds follow-up.')).toBe(true);
+    expect(isTopLevelAiReviewComment('## Copilot Review\n\nLooks good.')).toBe(true);
+    expect(isTopLevelAiReviewComment('@codex review')).toBe(false);
+    expect(isTopLevelAiReviewComment('### Copilot Review Gate\n\nNo AI review found.')).toBe(false);
   });
 
   it('truncates unicode text safely', () => {

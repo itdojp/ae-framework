@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "assurance-summary/v1",
+  "generatedAt": "2026-03-08T09:00:00.000Z",
+  "metadata": {
+    "generatedAtUtc": "2026-03-08T09:00:00.000Z",
+    "generatedAtLocal": "2026-03-08T18:00:00.000+09:00",
+    "timezoneOffset": "+09:00",
+    "gitCommit": "0123456789abcdef0123456789abcdef01234567",
+    "branch": "main",
+    "runner": {
+      "name": "local",
+      "os": "linux",
+      "arch": "x64",
+      "ci": false
+    },
+    "toolVersions": {
+      "node": "v22.0.0"
+    }
+  },
+  "inputs": {
+    "assuranceProfile": "fixtures/assurance/sample.assurance-profile.json",
+    "contextPacks": [
+      "fixtures/context-pack/sample.context-pack.json"
+    ],
+    "verifyLiteSummary": "artifacts/verify-lite/verify-lite-run-summary.json",
+    "formalSummaries": [
+      "fixtures/formal/sample.formal-summary-v2.json"
+    ],
+    "conformanceReport": "fixtures/conformance/sample.conformance-report.json",
+    "counterexamples": [
+      "fixtures/counterexample/sample.counterexample.json"
+    ],
+    "evidenceManifests": [
+      "fixtures/assurance/sample.assurance-evidence-manifest.json"
+    ]
+  },
+  "summary": {
+    "claimCount": 1,
+    "satisfiedClaims": 1,
+    "warningClaims": 0,
+    "claimsMissingRequiredLanes": 0,
+    "claimsMissingRequiredEvidenceKinds": 0,
+    "unlinkedCounterexamples": 0,
+    "warningCount": 0
+  },
+  "laneCoverage": {
+    "spec": {
+      "requiredClaims": 1,
+      "observedClaims": 1
+    },
+    "behavior": {
+      "requiredClaims": 1,
+      "observedClaims": 1
+    },
+    "adversarial": {
+      "requiredClaims": 0,
+      "observedClaims": 1
+    },
+    "model": {
+      "requiredClaims": 1,
+      "observedClaims": 1
+    },
+    "proof": {
+      "requiredClaims": 0,
+      "observedClaims": 0
+    },
+    "runtime": {
+      "requiredClaims": 0,
+      "observedClaims": 1
+    }
+  },
+  "claims": [
+    {
+      "claimId": "no-negative-stock",
+      "statement": "Inventory stock never becomes negative after an accepted reservation.",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "minIndependentSources": 2,
+      "observedIndependentSources": 4,
+      "requiredLanes": [
+        "behavior",
+        "model",
+        "spec"
+      ],
+      "observedLanes": [
+        "adversarial",
+        "behavior",
+        "model",
+        "runtime",
+        "spec"
+      ],
+      "missingLanes": [],
+      "requiredEvidenceKinds": [
+        "counterexample-closed",
+        "product-coproduct",
+        "property"
+      ],
+      "observedEvidenceKinds": [
+        "conformance",
+        "counterexample-closed",
+        "product-coproduct",
+        "property",
+        "runtime-alert",
+        "schema"
+      ],
+      "missingEvidenceKinds": [],
+      "counterexamples": {
+        "open": 0,
+        "resolved": 1,
+        "acceptedRisk": 0,
+        "total": 1
+      },
+      "independenceWarnings": [],
+      "status": "satisfied",
+      "evidence": [
+        {
+          "lane": "spec",
+          "kind": "schema",
+          "sourceKind": "spec-derived",
+          "origin": "context-pack",
+          "status": "observed",
+          "artifactPath": "fixtures/context-pack/sample.context-pack.json",
+          "detail": "Context Pack assurance reference",
+          "claimRefs": [
+            "no-negative-stock"
+          ],
+          "generatorLineage": "context-pack-v1"
+        },
+        {
+          "lane": "spec",
+          "kind": "product-coproduct",
+          "sourceKind": "spec-derived",
+          "origin": "verify-lite",
+          "status": "observed",
+          "artifactPath": "artifacts/context-pack/context-pack-product-coproduct-report.json",
+          "detail": "verify-lite referenced context-pack product/coproduct report",
+          "claimRefs": [
+            "no-negative-stock"
+          ],
+          "generatorLineage": "verify-lite/context-pack"
+        },
+        {
+          "lane": "behavior",
+          "kind": "property",
+          "sourceKind": "source-derived",
+          "origin": "evidence-manifest",
+          "status": "observed",
+          "artifactPath": "artifacts/testing/property-summary.json",
+          "detail": "property suite passed",
+          "claimRefs": [
+            "no-negative-stock"
+          ],
+          "generatorLineage": "property-harness"
+        },
+        {
+          "lane": "model",
+          "kind": "conformance",
+          "sourceKind": "model-derived",
+          "origin": "formal-summary",
+          "status": "observed",
+          "artifactPath": "fixtures/formal/sample.formal-summary-v2.json",
+          "detail": "formal summary recorded successful conformance result",
+          "claimRefs": [
+            "no-negative-stock"
+          ],
+          "generatorLineage": "formal-summary/aggregate"
+        },
+        {
+          "lane": "adversarial",
+          "kind": "counterexample-closed",
+          "sourceKind": "model-derived",
+          "origin": "counterexample",
+          "status": "observed",
+          "artifactPath": "fixtures/counterexample/sample.counterexample.json",
+          "detail": "counterexample resolved for linked claim",
+          "claimRefs": [
+            "no-negative-stock"
+          ],
+          "generatorLineage": "tlc"
+        },
+        {
+          "lane": "runtime",
+          "kind": "runtime-alert",
+          "sourceKind": "runtime-derived",
+          "origin": "evidence-manifest",
+          "status": "observed",
+          "artifactPath": "artifacts/runtime/alerts/no-negative-stock.json",
+          "detail": "runtime alert configuration reviewed",
+          "claimRefs": [
+            "no-negative-stock"
+          ],
+          "generatorLineage": "runtime-guard"
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

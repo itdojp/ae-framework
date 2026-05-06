@@ -104,12 +104,25 @@ const checks = [
   },
   {
     schema: 'schema/assurance-summary.schema.json',
-    fixtures: ['fixtures/assurance/sample.assurance-summary.json'],
+    fixtures: [
+      'fixtures/assurance/sample.assurance-summary.json',
+      'fixtures/assurance-e2e/inventory-waiver/expected/assurance-summary.json',
+    ],
     label: 'Assurance summary schema validation'
   },
   {
+    schema: 'schema/verify-lite-run-summary.schema.json',
+    fixtures: [
+      'fixtures/assurance-e2e/inventory-waiver/expected/verify-lite-run-summary.json',
+    ],
+    label: 'Verify lite run summary schema validation'
+  },
+  {
     schema: 'schema/claim-evidence-manifest.schema.json',
-    fixtures: ['fixtures/assurance/sample.claim-evidence-manifest.json'],
+    fixtures: [
+      'fixtures/assurance/sample.claim-evidence-manifest.json',
+      'fixtures/assurance-e2e/inventory-waiver/expected/claim-evidence-manifest.json',
+    ],
     label: 'Claim evidence manifest schema validation',
     semanticValidate: validateClaimEvidenceManifestSemantics
   },
@@ -163,12 +176,18 @@ const checks = [
   },
   {
     schema: 'schema/policy-input-v1.schema.json',
-    fixtures: ['fixtures/policy/sample.policy-input-v1.json'],
+    fixtures: [
+      'fixtures/policy/sample.policy-input-v1.json',
+      'fixtures/assurance-e2e/inventory-waiver/expected/policy-input-v1.json',
+    ],
     label: 'Policy input v1 schema validation'
   },
   {
     schema: 'schema/policy-decision-v1.schema.json',
-    fixtures: ['fixtures/policy/sample.policy-decision-v1.json'],
+    fixtures: [
+      'fixtures/policy/sample.policy-decision-v1.json',
+      'fixtures/assurance-e2e/inventory-waiver/expected/policy-decision-js-v1.json',
+    ],
     label: 'Policy decision v1 schema validation'
   },
   {
@@ -223,7 +242,10 @@ const checks = [
   },
   {
     schema: 'schema/change-package-v2.schema.json',
-    fixtures: ['fixtures/change-package/sample.change-package-v2.json'],
+    fixtures: [
+      'fixtures/change-package/sample.change-package-v2.json',
+      'fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json',
+    ],
     label: 'Change Package v2 schema validation'
   },
   {
@@ -261,7 +283,10 @@ const checks = [
   },
   {
     schema: 'schema/policy-gate-summary-v1.schema.json',
-    fixtures: ['fixtures/policy-gate/sample.policy-gate-summary-v1.json'],
+    fixtures: [
+      'fixtures/policy-gate/sample.policy-gate-summary-v1.json',
+      'fixtures/assurance-e2e/inventory-waiver/expected/policy-gate-summary.json',
+    ],
     label: 'Policy gate summary v1 schema validation'
   },
   {
