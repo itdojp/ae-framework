@@ -578,6 +578,29 @@ function ingestAssuranceSummaryForV2(claimsById, source) {
   }
 }
 
+function collectSourceClaimStatuses(manifestClaims, assuranceClaims) {
+  const statusesByClaimId = new Map();
+  for (const rawClaim of [
+    ...ensureArray(manifestClaims),
+    ...ensureArray(assuranceClaims),
+  ]) {
+    const claimId = String(rawClaim?.id || rawClaim?.claimId || '').trim();
+    const status = String(rawClaim?.status || '').trim().toLowerCase();
+    if (!claimId || !status) continue;
+
+    const existing = statusesByClaimId.get(claimId);
+    if (existing === 'unresolved') continue;
+    if (status === 'unresolved' || (status === 'partial' && !existing)) {
+      statusesByClaimId.set(claimId, status);
+      continue;
+    }
+    if (!existing) {
+      statusesByClaimId.set(claimId, status);
+    }
+  }
+  return statusesByClaimId;
+}
+
 function ingestPolicyDecisionForV2(claimsById, waivers, source) {
   const assurance = ensureObject(source.payload?.evaluation?.assurance);
   for (const rawClaim of ensureArray(assurance.claims)) {
@@ -667,11 +690,16 @@ function buildV2Assurance(claims, manifestSource, policyDecisionSource, assuranc
   const policyAssurance = ensureObject(policyDecisionSource.payload?.evaluation?.assurance);
   const policyResult = String(policyAssurance.result || '').trim().toLowerCase();
   const manifestStatuses = manifestClaims.map((claim) => String(claim?.status || '').trim().toLowerCase()).filter(Boolean);
+  const sourceStatusesByClaimId = collectSourceClaimStatuses(manifestClaims, assuranceClaims);
+  const sourceStatuses = [...sourceStatusesByClaimId.values()];
+  const generatedUnresolvedClaims = claims
+    .filter((claim) => claim.status === 'unresolved')
+    .filter((claim) => sourceStatusesByClaimId.get(claim.id) !== 'partial');
 
   let status = 'unassessed';
-  if (policyResult === 'block' || manifestStatuses.includes('unresolved')) {
+  if (policyResult === 'block' || sourceStatuses.includes('unresolved') || generatedUnresolvedClaims.length > 0) {
     status = 'unresolved';
-  } else if (policyResult === 'report-only' || manifestStatuses.includes('partial')) {
+  } else if (policyResult === 'report-only' || manifestStatuses.includes('partial') || sourceStatuses.includes('partial')) {
     status = 'partial';
   } else if (policyResult === 'waived') {
     status = 'waived';

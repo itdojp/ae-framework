@@ -404,6 +404,71 @@ describe('change-package generate', () => {
     expect(markdown).toContain('### Waivers');
   });
 
+  it('derives v2 assurance status from unresolved and partial assurance-summary claims', async () => {
+    for (const [sourceStatus, expectedAssuranceStatus] of [
+      ['unresolved', 'unresolved'],
+      ['partial', 'partial'],
+    ]) {
+      const workdir = await createWorkdir(`change-package-generate-v2-${sourceStatus}-`);
+      const changedFilesPath = join(workdir, 'changed-files.txt');
+      const assuranceSummaryPath = join(workdir, 'artifacts', 'assurance', 'assurance-summary.json');
+      const outputJsonPath = join(workdir, 'artifacts', 'change-package', 'change-package-v2.json');
+      const outputMarkdownPath = join(workdir, 'artifacts', 'change-package', 'change-package-v2.md');
+
+      await writeFile(changedFilesPath, ['docs/ci/change-package.md'].join('\n'), 'utf8');
+      await writeJson(assuranceSummaryPath, {
+        schemaVersion: 'assurance-summary/v1',
+        summary: {
+          claimCount: 1,
+          satisfiedClaims: 0,
+          warningClaims: 1,
+          warningCount: 1,
+        },
+        claims: [
+          {
+            claimId: 'runtime-coverage',
+            statement: 'Runtime coverage evidence is not yet complete.',
+            status: sourceStatus,
+            targetLevel: 'A2',
+            criticality: 'high',
+            evidence: [],
+          },
+        ],
+      });
+
+      const result = spawnSync(process.execPath, [
+        generateScript,
+        '--policy', policyPath,
+        '--schema-version', 'v2',
+        '--changed-files-file', changedFilesPath,
+        '--artifact-root', workdir,
+        '--claim-evidence-manifest', join(workdir, 'missing-claim-evidence-manifest.json'),
+        '--policy-decision', join(workdir, 'missing-policy-decision.json'),
+        '--assurance-summary', assuranceSummaryPath,
+        '--output-json', outputJsonPath,
+        '--output-md', outputMarkdownPath,
+        '--mode', 'digest',
+      ], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        env: isolatedGenerateEnv,
+      });
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const generated = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
+        assurance: { status: string };
+        claims: Array<{ id: string; status: string }>;
+      };
+
+      expect(generated.claims).toContainEqual(expect.objectContaining({
+        id: 'runtime-coverage',
+        status: 'unresolved',
+      }));
+      expect(generated.assurance.status).toBe(expectedAssuranceStatus);
+    }
+  });
+
   it('dual-writes v1 and v2 change packages without changing the v1 default output', async () => {
     const workdir = await createWorkdir('change-package-generate-dual-');
     const changedFilesPath = join(workdir, 'changed-files.txt');

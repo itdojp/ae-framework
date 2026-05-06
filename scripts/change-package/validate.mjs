@@ -33,7 +33,7 @@ function parseArgs(argv = process.argv) {
     schemaPath: DEFAULT_SCHEMA_PATH,
     outputJsonPath: DEFAULT_OUTPUT_JSON_PATH,
     outputMarkdownPath: DEFAULT_OUTPUT_MD_PATH,
-    artifactRoot: DEFAULT_ARTIFACT_ROOT,
+    artifactRoot: '',
     policyDecisionPath: '',
     strict: false,
     requiredEvidenceIds: [],
@@ -149,7 +149,7 @@ function printHelp() {
     + `  --schema <path>               JSON Schema path (default: ${DEFAULT_SCHEMA_PATH}; v2 auto-detected)\n`
     + `  --output-json <path>          output JSON report (default: ${DEFAULT_OUTPUT_JSON_PATH})\n`
     + `  --output-md <path>            output Markdown report (default: ${DEFAULT_OUTPUT_MD_PATH})\n`
-    + `  --artifact-root <path>        root for v2 artifactRefs existence checks (default: ${DEFAULT_ARTIFACT_ROOT})\n`
+    + `  --artifact-root <path>        root for v2 artifactRefs existence checks (default: payload evidence.artifactRoot, then ${DEFAULT_ARTIFACT_ROOT})\n`
     + `  --policy-decision <path>      optional policy-decision/v1 for v2 status consistency checks\n`
     + `  --required-evidence <ids>     comma-separated evidence IDs to require\n`
     + `  --strict                      fail on missing required evidence\n`

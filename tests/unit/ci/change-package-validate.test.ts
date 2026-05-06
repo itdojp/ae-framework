@@ -344,6 +344,39 @@ describe('change-package validate', () => {
     expect(markdown).toContain('v2 consistency: claims=2, proofObligations=1, waivers=1');
   });
 
+  it('uses payload evidence.artifactRoot for v2 artifactRefs when no CLI artifact root is provided', async () => {
+    const workdir = await createWorkdir('change-package-validate-v2-payload-root-');
+    const outputJsonPath = join(workdir, 'validation.json');
+    const outputMarkdownPath = join(workdir, 'validation.md');
+    const { inputPath } = await writeV2Fixture(workdir);
+    const payload = JSON.parse(await readFile(inputPath, 'utf8')) as {
+      evidence: { artifactRoot: string };
+    };
+    payload.evidence.artifactRoot = workdir;
+    await writeJson(inputPath, payload);
+
+    const result = spawnSync(process.execPath, [
+      validateScript,
+      '--file', inputPath,
+      '--schema', v2SchemaPath,
+      '--output-json', outputJsonPath,
+      '--output-md', outputMarkdownPath,
+      '--strict',
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+
+    expect(result.status, result.stderr || result.stdout).toBe(0);
+
+    const report = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
+      result: string;
+      v2: { missingArtifactRefs: unknown[] };
+    };
+    expect(report.result).toBe('pass');
+    expect(report.v2.missingArtifactRefs).toHaveLength(0);
+  });
+
   it('fails v2 strict validation when artifactRefs and claim references are inconsistent', async () => {
     const workdir = await createWorkdir('change-package-validate-v2-fail-');
     const outputJsonPath = join(workdir, 'validation.json');
