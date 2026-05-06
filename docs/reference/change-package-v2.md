@@ -16,7 +16,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 `change-package/v2` extends `change-package/v1` so that safety reasoning can be recorded in terms of claims, assumptions, proof obligations, counterexamples, trust boundaries, and runtime controls.
 
-Phase 1 currently covers schema and documentation only. The default production generator / validator contract remains `change-package/v1`.
+The default production contract remains `change-package/v1`, but v2 is now connected through opt-in generation, dual-write, strict validation, and PR summary rendering when the v2 artifact is present.
 
 ### 2. Schema and Fixture
 
@@ -105,23 +105,34 @@ Separates what is not closed by proof alone from what is controlled operationall
 ### 5. Staged Migration Policy
 
 1. Phase 1: add schema, fixture, and docs
-2. Phase 2: add `generate-v2.mjs` and Markdown renderer support
-3. Phase 3: move to v1 + v2 dual-write / dual-validate
+2. Phase 2: add opt-in v2 generation and Markdown renderer support
+3. Phase 3: use v1 + v2 dual-write / dual-validate in selected CI lanes before considering a default switch
 
 Current state:
-- generator stays on `scripts/change-package/generate.mjs` for v1
-- default validator stays on `scripts/change-package/validate.mjs --schema schema/change-package.schema.json`
-- strict mode is not yet wired to v2
+- default generator stays on `scripts/change-package/generate.mjs` for v1
+- `--schema-version v2` writes `artifacts/change-package/change-package-v2.json|md`
+- `--dual-write` writes v1 and v2 in one command
+- validator auto-detects v2 when the input has `schemaVersion: "change-package/v2"` and no explicit `--schema` override
+- strict v2 validation checks schema, evidence counts, `artifactRefs` existence, proof-obligation claim references, waiver claim references, counterexample claim references, and optional policy-decision consistency
 
 ### 6. Manual Validation Example
 
 ```bash
+node scripts/change-package/generate.mjs \
+  --schema-version v2 \
+  --claim-evidence-manifest artifacts/assurance/claim-evidence-manifest.json \
+  --policy-decision artifacts/ci/policy-decision-js-v1.json \
+  --assurance-summary artifacts/assurance/assurance-summary.json
+
 node scripts/change-package/validate.mjs \
-  --file fixtures/change-package/sample.change-package-v2.json \
-  --schema schema/change-package-v2.schema.json
+  --file artifacts/change-package/change-package-v2.json \
+  --schema schema/change-package-v2.schema.json \
+  --artifact-root . \
+  --policy-decision artifacts/ci/policy-decision-js-v1.json \
+  --strict
 ```
 
-This validates schema shape and evaluates evidence consistency, including required evidence IDs and present/missing count mismatches. Artifact-ref existence checks and CI dual-write remain follow-up work.
+This validates schema shape, required evidence IDs, present/missing count consistency, v2 claim references, artifact reference existence, and policy-decision alignment. Use `pnpm run change-package:generate:dual` and `pnpm run change-package:validate:dual` for opt-in dual-write / dual-validate migration checks.
 
 ### 7. Design Notes
 
@@ -137,7 +148,7 @@ This validates schema shape and evaluates evidence consistency, including requir
 
 `change-package/v2` は、現行の `change-package/v1` に対して、変更の安全性説明を claim / assumption / proof obligation / counterexample / runtime control 単位で残すための拡張契約です。
 
-Phase 1 の現時点では、**schema とドキュメントの定義**までを対象とします。既存の generator / validator の既定契約は引き続き `v1` です。
+既定契約は引き続き `change-package/v1` ですが、v2 は opt-in 生成、dual-write、strict validation、v2 artifact が存在する場合の PR summary 表示に接続済みです。
 
 ## 2. スキーマと fixture
 
@@ -226,23 +237,34 @@ proof だけで閉じない範囲を分離して記述します。
 ## 5. 段階移行方針
 
 1. Phase 1: schema/fixture/docs を追加する
-2. Phase 2: `generate-v2.mjs` / Markdown renderer を追加する
-3. Phase 3: v1 + v2 dual-write / dual-validate に移行する
+2. Phase 2: opt-in v2 生成と Markdown renderer を追加する
+3. Phase 3: 既定切替の前に、選択した CI lane で v1 + v2 dual-write / dual-validate を運用する
 
 現時点では、次を維持します。
-- 既存 generator: `scripts/change-package/generate.mjs` は v1 のまま
-- 既存 validator default: `scripts/change-package/validate.mjs --schema schema/change-package.schema.json`
-- strict mode は v2 へまだ連動しない
+- 既定 generator: `scripts/change-package/generate.mjs` は v1 のまま
+- `--schema-version v2` で `artifacts/change-package/change-package-v2.json|md` を出力する
+- `--dual-write` で v1 と v2 を同時出力する
+- validator は入力の `schemaVersion: "change-package/v2"` を自動検出し、明示 `--schema` がない場合は v2 schema を使う
+- v2 strict validation は schema、evidence 件数、`artifactRefs` 実在、proof-obligation / waiver / counterexample の claim 参照、任意の policy-decision 整合性を確認する
 
 ## 6. 手動検証例
 
 ```bash
+node scripts/change-package/generate.mjs \
+  --schema-version v2 \
+  --claim-evidence-manifest artifacts/assurance/claim-evidence-manifest.json \
+  --policy-decision artifacts/ci/policy-decision-js-v1.json \
+  --assurance-summary artifacts/assurance/assurance-summary.json
+
 node scripts/change-package/validate.mjs \
-  --file fixtures/change-package/sample.change-package-v2.json \
-  --schema schema/change-package-v2.schema.json
+  --file artifacts/change-package/change-package-v2.json \
+  --schema schema/change-package-v2.schema.json \
+  --artifact-root . \
+  --policy-decision artifacts/ci/policy-decision-js-v1.json \
+  --strict
 ```
 
-このコマンドは schema validation を実施します。artifact ref の実在確認や CI dual-write は後続 Issue の対象です。
+このコマンドは schema validation、required evidence、present/missing 件数、v2 の claim 参照、artifact ref 実在、policy-decision 整合性を確認します。段階移行確認には `pnpm run change-package:generate:dual` と `pnpm run change-package:validate:dual` を使用します。
 
 ## 7. 設計上の注意
 

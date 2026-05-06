@@ -29,6 +29,7 @@ const cov = r('coverage/coverage-summary.json') || r('artifacts/coverage/coverag
 const ltlSug = r('artifacts/properties/ltl-suggestions.json');
 const assurance = r('artifacts/assurance/assurance-summary.json');
 const claimEvidenceManifest = r('artifacts/assurance/claim-evidence-manifest.json');
+const changePackageV2 = r('artifacts/change-package/change-package-v2.json');
 const qualityScorecard = r('artifacts/quality/quality-scorecard.json');
 let coverageLine = t('Coverage: n/a','カバレッジ: 不明');
 if (cov?.total?.lines && typeof cov.total.lines.pct === 'number') coverageLine = t(`Coverage: ${cov.total.lines.pct}%`, `カバレッジ: ${cov.total.lines.pct}%`);
@@ -136,6 +137,21 @@ const claimEvidenceDigestSegment = claimEvidenceSummary
 const claimEvidenceDetailBlock = claimEvidenceSummary
   ? `- ${claimEvidenceLine}\n${claimEvidenceRefsLine ? `- ${claimEvidenceRefsLine}\n` : ''}`
   : '';
+const changePackageV2Claims = Array.isArray(changePackageV2?.claims) ? changePackageV2.claims : [];
+const changePackageV2ProofObligations = Array.isArray(changePackageV2?.proofObligations) ? changePackageV2.proofObligations : [];
+const changePackageV2Waivers = Array.isArray(changePackageV2?.waivers) ? changePackageV2.waivers : [];
+const changePackageV2Assurance = changePackageV2?.assurance && typeof changePackageV2.assurance === 'object'
+  ? changePackageV2.assurance
+  : null;
+const changePackageV2Line = changePackageV2?.schemaVersion === 'change-package/v2'
+  ? t(
+      `Change Package v2: claims=${changePackageV2Claims.length}, proofObligations=${changePackageV2ProofObligations.length}, waivers=${changePackageV2Waivers.length}, assurance=${changePackageV2Assurance?.targetLevel ?? 'n/a'}/${changePackageV2Assurance?.achievedLevel ?? 'n/a'}/${changePackageV2Assurance?.status ?? 'n/a'}`,
+      `Change Package v2: claims=${changePackageV2Claims.length}, proofObligations=${changePackageV2ProofObligations.length}, waivers=${changePackageV2Waivers.length}, assurance=${changePackageV2Assurance?.targetLevel ?? 'n/a'}/${changePackageV2Assurance?.achievedLevel ?? 'n/a'}/${changePackageV2Assurance?.status ?? 'n/a'}`,
+    )
+  : '';
+const changePackageV2DetailBlock = changePackageV2Line
+  ? `- ${changePackageV2Line}\n`
+  : '';
 const qualityScorecardSummary = qualityScorecard?.summary && typeof qualityScorecard.summary === 'object'
   ? qualityScorecard.summary
   : null;
@@ -204,9 +220,9 @@ try {
 
 let md;
 if (mode === 'digest') {
-  md = `${qualityScorecardLine ? `${qualityScorecardLine}${qualityScorecardBlockersLine ? ` | ${qualityScorecardBlockersLine}` : ''} | ` : ''}${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''}${claimEvidenceDigestSegment ? ` | ${claimEvidenceDigestSegment}` : ''}${discoveryPackLine ? ` | ${discoveryPackLine}` : ''}${discoveryPackCompileLine ? ` | ${discoveryPackCompileLine}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${qualityScorecardLine ? `${qualityScorecardLine}${qualityScorecardBlockersLine ? ` | ${qualityScorecardBlockersLine}` : ''} | ` : ''}${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''}${claimEvidenceDigestSegment ? ` | ${claimEvidenceDigestSegment}` : ''}${changePackageV2Line ? ` | ${changePackageV2Line}` : ''}${discoveryPackLine ? ` | ${discoveryPackLine}` : ''}${discoveryPackCompileLine ? ` | ${discoveryPackCompileLine}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
-  md = `## ${t('Quality Summary','品質サマリ')}\n${qualityScorecardLine ? `- ${qualityScorecardLine}\n${qualityScorecardBlockersLine ? `- ${qualityScorecardBlockersLine}\n` : ''}` : ''}- ${coverageLine}\n${assuranceDetailBlock}${claimEvidenceDetailBlock}${discoveryPackLine ? `- ${discoveryPackLine}\n` : ''}${discoveryPackCompileLine ? `- ${discoveryPackCompileLine}\n` : ''}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
+  md = `## ${t('Quality Summary','品質サマリ')}\n${qualityScorecardLine ? `- ${qualityScorecardLine}\n${qualityScorecardBlockersLine ? `- ${qualityScorecardBlockersLine}\n` : ''}` : ''}- ${coverageLine}\n${assuranceDetailBlock}${claimEvidenceDetailBlock}${changePackageV2DetailBlock}${discoveryPackLine ? `- ${discoveryPackLine}\n` : ''}${discoveryPackCompileLine ? `- ${discoveryPackCompileLine}\n` : ''}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
 // Fallback: if formal is n/a, print presentCount from aggregate JSON
 try {
