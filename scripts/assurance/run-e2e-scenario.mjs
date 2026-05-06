@@ -261,7 +261,7 @@ function canonicalArtifactPaths(scenarioName) {
   };
 }
 
-function buildPolicyArtifacts({ scenarioName, generatedAt, manifestPath, outputDir }) {
+function buildPolicyArtifacts({ scenarioName, generatedAt, manifestPath, outputDir, changePackagePath }) {
   const canonical = canonicalArtifactPaths(scenarioName);
   const policy = loadRiskPolicy('policy/risk-policy.yml');
   const assurance = inspectClaimEvidenceManifest(manifestPath, generatedAt);
@@ -271,7 +271,7 @@ function buildPolicyArtifacts({ scenarioName, generatedAt, manifestPath, outputD
     body: '## Acceptance\nFixture scenario reproduces verify-lite, assurance summary, claim evidence manifest, and policy decision artifacts.\n\n## Rollback\nRevert the fixture scenario, runner, and expected golden artifacts.',
   };
   const changedFiles = [
-    'fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json',
+    toRepoRelativePath(changePackagePath),
     'scripts/assurance/run-e2e-scenario.mjs',
   ];
   const reviews = [];
@@ -397,6 +397,7 @@ export function runScenario(options) {
     generatedAt,
     manifestPath: path.join(paths.outputDir, 'claim-evidence-manifest.json'),
     outputDir: paths.outputDir,
+    changePackagePath: inputFiles.changePackage,
   });
 
   if (options.updateExpected) {

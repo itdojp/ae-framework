@@ -59,7 +59,14 @@ function resolveGateResult(pr, actorSet) {
   const reviewAuthors = reviews
     .map((review) => review?.author?.login)
     .filter(Boolean);
-  const hasReview = reviewAuthors.some((login) => isActorAllowed(login, actorSet));
+  const hasSubmittedReview = reviewAuthors.some((login) => isActorAllowed(login, actorSet));
+
+  const comments = Array.isArray(pr?.comments?.nodes) ? pr.comments.nodes : [];
+  const topLevelReviewComments = comments.filter((comment) =>
+    isActorAllowed(comment?.author?.login, actorSet)
+    && isTopLevelAiReviewComment(comment?.bodyText || comment?.body || '')
+  );
+  const hasReview = hasSubmittedReview || topLevelReviewComments.length > 0;
 
   const reviewThreads = Array.isArray(pr?.reviewThreads?.nodes) ? pr.reviewThreads.nodes : [];
   const actorThreads = reviewThreads.filter((thread) => {
@@ -76,10 +83,17 @@ function resolveGateResult(pr, actorSet) {
 
   return {
     hasReview,
+    hasSubmittedReview,
+    topLevelReviewCommentsCount: topLevelReviewComments.length,
     actorThreadsCount: actorThreads.length,
     unresolvedThreadsCount: unresolvedThreads.length,
     unresolvedSummaries,
   };
+}
+
+function isTopLevelAiReviewComment(body) {
+  const text = String(body || '');
+  return /(?:^|\n)\s{0,3}#{1,6}\s*(?:[^\w\n]+\s*)?(?:codex|copilot)\s+review\b(?!\s+gate\b)/iu.test(text);
 }
 
 function execJson(args, input) {
@@ -120,7 +134,7 @@ function upsertComment(repo, issueNumber, body) {
 }
 
 function fetchPrReviewState(repo, prNumber) {
-  const query = `query($owner:String!, $repo:String!, $number:Int!) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      isCrossRepository\n      reviews(last:50) { nodes { author { login } state } }\n      reviewThreads(first:100) {\n        nodes {\n          isResolved\n          comments(first:25) { nodes { author { login } bodyText } }\n        }\n      }\n    }\n  }\n}`;
+  const query = `query($owner:String!, $repo:String!, $number:Int!) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      isCrossRepository\n      reviews(last:50) { nodes { author { login } state } }\n      comments(last:50) { nodes { author { login } bodyText } }\n      reviewThreads(first:100) {\n        nodes {\n          isResolved\n          comments(first:25) { nodes { author { login } bodyText } }\n        }\n      }\n    }\n  }\n}`;
   const [owner, repoName] = repo.split('/');
   const response = execJson([
     'api',
@@ -134,7 +148,19 @@ function fetchPrReviewState(repo, prNumber) {
     '-F',
     `number=${prNumber}`,
   ]);
-  return response?.data?.repository?.pullRequest || null;
+  const pullRequest = response?.data?.repository?.pullRequest || null;
+  if (!pullRequest) return null;
+  const issueComments = listComments(repo, prNumber).map((comment) => ({
+    author: { login: comment?.user?.login || '' },
+    bodyText: comment?.body || '',
+  }));
+  const graphQlComments = Array.isArray(pullRequest.comments?.nodes) ? pullRequest.comments.nodes : [];
+  return {
+    ...pullRequest,
+    comments: {
+      nodes: [...graphQlComments, ...issueComments],
+    },
+  };
 }
 
 async function main() {
@@ -249,7 +275,7 @@ async function main() {
   }
 
   console.log(
-    `[copilot-review-gate] AI review present. Resolved threads: ${gateResult.actorThreadsCount}.`
+    `[copilot-review-gate] AI review present. Submitted review: ${gateResult.hasSubmittedReview ? 'yes' : 'no'}. Top-level review comments: ${gateResult.topLevelReviewCommentsCount}. Resolved threads: ${gateResult.actorThreadsCount}.`
   );
 }
 
@@ -262,6 +288,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export {
+  isTopLevelAiReviewComment,
   resolvePrContext,
   resolveGateResult,
   truncateUnicodeSafe,

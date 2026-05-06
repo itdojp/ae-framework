@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 
 const repoRoot = resolve('.');
 const scriptPath = resolve(repoRoot, 'scripts/assurance/run-e2e-scenario.mjs');
@@ -81,6 +81,35 @@ describe('assurance e2e scenario runner', () => {
       expect(result.stderr).toContain('claim-evidence-manifest.json');
     } finally {
       rmSync(outputDir, { recursive: true, force: true });
+    }
+  });
+
+  it('derives policy changed files from the selected scenario directory', () => {
+    mkdirSync(resolve(repoRoot, 'artifacts'), { recursive: true });
+    const testRoot = mkdtempSync(join(resolve(repoRoot, 'artifacts'), 'assurance-e2e-custom-test-'));
+    const scenarioDir = join(testRoot, 'custom-inventory-waiver');
+    const outputDir = join(testRoot, 'actual');
+
+    try {
+      cpSync(resolve(repoRoot, 'fixtures/assurance-e2e/inventory-waiver'), scenarioDir, { recursive: true });
+      const result = runScript([
+        '--scenario-dir',
+        scenarioDir,
+        '--output-dir',
+        outputDir,
+        '--no-compare',
+      ]);
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const policyInput = JSON.parse(readFileSync(join(outputDir, 'policy-input-v1.json'), 'utf8'));
+      expect(policyInput.changedFiles).toContain(
+        relative(repoRoot, join(scenarioDir, 'inputs/change-package-v2.json')).split('\\').join('/'),
+      );
+      expect(policyInput.changedFiles).not.toContain(
+        'fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json',
+      );
+    } finally {
+      rmSync(testRoot, { recursive: true, force: true });
     }
   });
 });
