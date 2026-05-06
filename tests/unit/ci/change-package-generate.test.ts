@@ -408,6 +408,7 @@ describe('change-package generate', () => {
     for (const [sourceStatus, expectedAssuranceStatus] of [
       ['unresolved', 'unresolved'],
       ['partial', 'partial'],
+      ['warning', 'partial'],
     ]) {
       const workdir = await createWorkdir(`change-package-generate-v2-${sourceStatus}-`);
       const changedFilesPath = join(workdir, 'changed-files.txt');
@@ -457,7 +458,7 @@ describe('change-package generate', () => {
       expect(result.status, result.stderr || result.stdout).toBe(0);
 
       const generated = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
-        assurance: { status: string };
+        assurance: { achievedLevel: string; status: string };
         claims: Array<{ id: string; status: string }>;
       };
 
@@ -465,6 +466,7 @@ describe('change-package generate', () => {
         id: 'runtime-coverage',
         status: 'unresolved',
       }));
+      expect(generated.assurance.achievedLevel).toBe('A1');
       expect(generated.assurance.status).toBe(expectedAssuranceStatus);
     }
   });

@@ -34,6 +34,7 @@ function parseArgs(argv = process.argv) {
     outputJsonPath: DEFAULT_OUTPUT_JSON_PATH,
     outputMarkdownPath: DEFAULT_OUTPUT_MD_PATH,
     artifactRoot: '',
+    artifactRootExplicit: false,
     policyDecisionPath: '',
     strict: false,
     requiredEvidenceIds: [],
@@ -81,10 +82,12 @@ function parseArgs(argv = process.argv) {
     }
     if (arg === '--artifact-root') {
       options.artifactRoot = readValue('--artifact-root');
+      options.artifactRootExplicit = true;
       continue;
     }
     if (arg.startsWith('--artifact-root=')) {
       options.artifactRoot = arg.slice('--artifact-root='.length);
+      options.artifactRootExplicit = true;
       continue;
     }
     if (arg === '--policy-decision') {
@@ -271,19 +274,28 @@ function ensureArray(value) {
 
 function normalizeRefForFs(artifactRef) {
   const raw = String(artifactRef || '').trim();
-  if (!raw || /^[a-z][a-z0-9+.-]*:/iu.test(raw)) {
+  if (!raw) {
     return '';
   }
+  if (path.win32.isAbsolute(raw)) return raw.split('#')[0].trim();
+  if (/^[a-z][a-z0-9+.-]*:/iu.test(raw)) return '';
   return raw.split('#')[0].trim();
 }
 
 function artifactExists(artifactRoot, artifactRef) {
   const normalized = normalizeRefForFs(artifactRef);
   if (!normalized) return true;
-  const candidate = path.isAbsolute(normalized)
+  const candidate = path.isAbsolute(normalized) || path.win32.isAbsolute(normalized)
     ? normalized
     : path.resolve(artifactRoot || DEFAULT_ARTIFACT_ROOT, normalized);
   return fs.existsSync(candidate);
+}
+
+function resolveArtifactRoot(options, payload) {
+  if (options.artifactRootExplicit) {
+    return path.resolve(options.artifactRoot || DEFAULT_ARTIFACT_ROOT);
+  }
+  return path.resolve(payload?.evidence?.artifactRoot || DEFAULT_ARTIFACT_ROOT);
 }
 
 function collectArtifactRefs(payload) {
@@ -425,7 +437,7 @@ function evaluateV2Consistency(payload, options) {
     }
   }
 
-  const artifactRoot = path.resolve(options.artifactRoot || payload?.evidence?.artifactRoot || DEFAULT_ARTIFACT_ROOT);
+  const artifactRoot = resolveArtifactRoot(options, payload);
   const seenMissingArtifactRefs = new Set();
   const missingArtifactRefs = collectArtifactRefs(payload)
     .filter((entry) => !artifactExists(artifactRoot, entry.artifactRef))

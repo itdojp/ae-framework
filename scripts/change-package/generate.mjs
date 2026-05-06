@@ -418,6 +418,11 @@ function minAssuranceLevel(values, fallback = 'A0') {
   return ASSURANCE_LEVELS[Math.min(...levels.map(assuranceLevelIndex))];
 }
 
+function oneLevelBelow(value) {
+  const index = assuranceLevelIndex(value);
+  return ASSURANCE_LEVELS[Math.max(0, index - 1)];
+}
+
 function normalizeCriticality(value) {
   const candidate = String(value || '').trim().toLowerCase();
   return ['low', 'medium', 'high', 'critical'].includes(candidate) ? candidate : 'medium';
@@ -578,6 +583,15 @@ function ingestAssuranceSummaryForV2(claimsById, source) {
   }
 }
 
+function inferAssuranceSummaryAchievedLevel(claim) {
+  const targetLevel = normalizeAssuranceLevel(claim?.targetLevel);
+  const status = String(claim?.status || '').trim().toLowerCase();
+  if (status === 'warning' || status === 'partial' || status === 'unresolved') {
+    return oneLevelBelow(targetLevel);
+  }
+  return targetLevel;
+}
+
 function collectSourceClaimStatuses(manifestClaims, assuranceClaims) {
   const statusesByClaimId = new Map();
   for (const rawClaim of [
@@ -590,12 +604,13 @@ function collectSourceClaimStatuses(manifestClaims, assuranceClaims) {
 
     const existing = statusesByClaimId.get(claimId);
     if (existing === 'unresolved') continue;
-    if (status === 'unresolved' || (status === 'partial' && !existing)) {
-      statusesByClaimId.set(claimId, status);
+    const normalizedStatus = status === 'warning' ? 'partial' : status;
+    if (normalizedStatus === 'unresolved' || (normalizedStatus === 'partial' && !existing)) {
+      statusesByClaimId.set(claimId, normalizedStatus);
       continue;
     }
     if (!existing) {
-      statusesByClaimId.set(claimId, status);
+      statusesByClaimId.set(claimId, normalizedStatus);
     }
   }
   return statusesByClaimId;
@@ -685,7 +700,7 @@ function buildV2Assurance(claims, manifestSource, policyDecisionSource, assuranc
   ]);
   const achievedLevel = minAssuranceLevel([
     ...manifestClaims.map((claim) => claim?.achievedLevel),
-    ...assuranceClaims.map((claim) => claim?.targetLevel),
+    ...assuranceClaims.map(inferAssuranceSummaryAchievedLevel),
   ], targetLevel);
   const policyAssurance = ensureObject(policyDecisionSource.payload?.evaluation?.assurance);
   const policyResult = String(policyAssurance.result || '').trim().toLowerCase();

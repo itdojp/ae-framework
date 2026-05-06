@@ -417,6 +417,38 @@ describe('change-package validate', () => {
     expect(report.errors.some((error) => error.includes('missing artifactRefs'))).toBe(true);
   });
 
+  it('does not treat Windows absolute artifactRefs as URL schemes', async () => {
+    const workdir = await createWorkdir('change-package-validate-v2-windows-ref-');
+    const outputJsonPath = join(workdir, 'validation.json');
+    const outputMarkdownPath = join(workdir, 'validation.md');
+    const { inputPath } = await writeV2Fixture(workdir);
+    const payload = JSON.parse(await readFile(inputPath, 'utf8')) as {
+      claims: Array<{ artifactRefs: string[] }>;
+    };
+    payload.claims[0].artifactRefs = ['C:\\ae-framework\\missing-runtime-control.json'];
+    await writeJson(inputPath, payload);
+
+    const result = spawnSync(process.execPath, [
+      validateScript,
+      '--file', inputPath,
+      '--schema', v2SchemaPath,
+      '--artifact-root', workdir,
+      '--output-json', outputJsonPath,
+      '--output-md', outputMarkdownPath,
+      '--strict',
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+
+    expect(result.status).toBe(1);
+
+    const report = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
+      errors: string[];
+    };
+    expect(report.errors.some((error) => error.includes('C:\\ae-framework\\missing-runtime-control.json'))).toBe(true);
+  });
+
   it('auto-detects the v2 schema when no schema override is provided', async () => {
     const workdir = await createWorkdir('change-package-validate-v2-autoschema-');
     const outputJsonPath = join(workdir, 'validation.json');
