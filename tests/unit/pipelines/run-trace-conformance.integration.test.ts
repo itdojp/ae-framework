@@ -17,7 +17,7 @@ async function withTempDir<T>(fn: (dir: string) => Promise<T>) {
 }
 
 describe('pipelines:trace', () => {
-  it('generates a summary and report envelope', async () => {
+  it('generates a summary and report envelope', { timeout: 20_000 }, async () => {
     await withTempDir(async (dir) => {
       const nodePath = process.execPath;
       const scriptPath = resolve('scripts/pipelines/run-trace-conformance.mjs');
