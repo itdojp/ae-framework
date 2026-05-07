@@ -21,6 +21,7 @@ lastVerified: '2026-03-31'
 
 ### What to load (primary sources)
 - `SECURITY.md`
+- `docs/security/security-assurance-lane.md`
 - `docs/ci/automation-permission-boundaries.md`
 - `docs/ci/OPT-IN-CONTROLS.md`
 
@@ -59,6 +60,7 @@ pnpm -s run security:secrets
 
 ### What to load (primary sources)
 - `SECURITY.md`
+- `docs/security/security-assurance-lane.md`
 - `docs/ci/automation-permission-boundaries.md`
 - `docs/ci/OPT-IN-CONTROLS.md`
 

@@ -215,6 +215,7 @@ Current verification baseline, assurance model, artifact contracts, automation p
 - Verify-first implementation runbook: `quality/verify-first-implementation-runbook.md`
 - Assurance profile / level: `quality/assurance-profile.md`
 - Assurance operations runbook: `quality/assurance-operations-runbook.md`
+- Security Assurance Lane: `security/security-assurance-lane.md`
 - Quality scorecard: `quality/quality-scorecard.md`
 - Automation observability: `ci/automation-observability.md`
 - Reason codes registry: `ci/reason-codes.md`
@@ -399,6 +400,7 @@ Claude CodeやMCPとの統合
 - [verify-first-implementation-runbook.md](./quality/verify-first-implementation-runbook.md) - Verify-first 実装運用の標準手順（Plan→Spec→Gate→Evidence）
 - [assurance-profile.md](./quality/assurance-profile.md) - assurance profile / level の入力契約（claim / level / lanes / evidence kinds）
 - [assurance-operations-runbook.md](./quality/assurance-operations-runbook.md) - assurance summary の生成・strict assurance enforcement・障害切り分け手順
+- [security-assurance-lane.md](./security/security-assurance-lane.md) - Security Assurance Lane のartifact / command map と candidate finding 運用
 - [assurance-onboarding-checklist.md](./guides/assurance-onboarding-checklist.md) - 新規プロジェクトへ assurance profile を導入する最小チェックリスト
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [run-manifest-freshness-contract.md](./quality/run-manifest-freshness-contract.md) - run-manifest鮮度判定契約（stale artifact 検出）
