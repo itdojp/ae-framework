@@ -142,6 +142,16 @@ const checks = [
     label: 'Security audit scope v1 schema validation'
   },
   {
+    schema: 'schema/security-finding-v1.schema.json',
+    fixtures: ['fixtures/security-assurance/sample.security-findings.json'],
+    label: 'Security finding v1 schema validation'
+  },
+  {
+    schema: 'schema/security-review-v1.schema.json',
+    fixtures: ['fixtures/security-assurance/sample.security-review.json'],
+    label: 'Security review v1 schema validation'
+  },
+  {
     schema: 'schema/temporal-run-summary.schema.json',
     fixtures: ['fixtures/temporal/sample.temporal-run-summary.json'],
     label: 'Temporal run summary schema validation'
