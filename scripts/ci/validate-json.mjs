@@ -99,6 +99,7 @@ const checks = [
     schema: 'schema/assurance-profile.schema.json',
     fixtures: [
       'fixtures/assurance/sample.assurance-profile.json',
+      'fixtures/security-assurance/cache-key/inputs/assurance-profile.json',
       'spec/assurance-profile/upstream-context-promotion-v1.json',
     ],
     label: 'Assurance profile schema validation'
@@ -108,6 +109,7 @@ const checks = [
     fixtures: [
       'fixtures/assurance/sample.assurance-summary.json',
       'fixtures/assurance-e2e/inventory-waiver/expected/assurance-summary.json',
+      'fixtures/security-assurance/cache-key/expected/assurance-summary.json',
     ],
     label: 'Assurance summary schema validation'
   },
@@ -123,46 +125,68 @@ const checks = [
     fixtures: [
       'fixtures/assurance/sample.claim-evidence-manifest.json',
       'fixtures/assurance-e2e/inventory-waiver/expected/claim-evidence-manifest.json',
+      'fixtures/security-assurance/cache-key/expected/claim-evidence-manifest.json',
     ],
     label: 'Claim evidence manifest schema validation',
     semanticValidate: validateClaimEvidenceManifestSemantics
   },
   {
     schema: 'schema/security-claim-v1.schema.json',
-    fixtures: ['fixtures/security-assurance/sample.security-claims.json'],
+    fixtures: [
+      'fixtures/security-assurance/sample.security-claims.json',
+      'fixtures/security-assurance/cache-key/expected/security-claims.json',
+    ],
     label: 'Security claim v1 schema validation'
   },
   {
     schema: 'schema/security-threat-model-v1.schema.json',
-    fixtures: ['fixtures/security-assurance/sample.security-threat-model.json'],
+    fixtures: [
+      'fixtures/security-assurance/sample.security-threat-model.json',
+      'fixtures/security-assurance/cache-key/expected/security-threat-model.json',
+    ],
     label: 'Security threat model v1 schema validation'
   },
   {
     schema: 'schema/security-audit-scope-v1.schema.json',
-    fixtures: ['fixtures/security-assurance/sample.security-audit-scope.json'],
+    fixtures: [
+      'fixtures/security-assurance/sample.security-audit-scope.json',
+      'fixtures/security-assurance/cache-key/expected/security-audit-scope.json',
+    ],
     label: 'Security audit scope v1 schema validation'
   },
   {
     schema: 'schema/security-code-map-v1.schema.json',
-    fixtures: ['fixtures/security-assurance/sample.security-code-map.json'],
+    fixtures: [
+      'fixtures/security-assurance/sample.security-code-map.json',
+      'fixtures/security-assurance/cache-key/expected/security-code-map.json',
+    ],
     label: 'Security code map v1 schema validation',
     semanticValidate: validateSecurityCodeMapSemantics
   },
   {
     schema: 'schema/security-audit-task-bundle-v1.schema.json',
-    fixtures: ['fixtures/security-assurance/sample.security-audit-tasks.json'],
+    fixtures: [
+      'fixtures/security-assurance/sample.security-audit-tasks.json',
+      'fixtures/security-assurance/cache-key/expected/security-audit-tasks.json',
+    ],
     label: 'Security audit task bundle v1 schema validation',
     semanticValidate: validateSecurityAuditTaskBundleSemantics
   },
   {
     schema: 'schema/security-finding-v1.schema.json',
-    fixtures: ['fixtures/security-assurance/sample.security-findings.json'],
+    fixtures: [
+      'fixtures/security-assurance/sample.security-findings.json',
+      'fixtures/security-assurance/cache-key/expected/security-findings.json',
+    ],
     label: 'Security finding v1 schema validation',
     semanticValidate: validateSecurityFindingSemantics
   },
   {
     schema: 'schema/security-review-v1.schema.json',
-    fixtures: ['fixtures/security-assurance/sample.security-review.json'],
+    fixtures: [
+      'fixtures/security-assurance/sample.security-review.json',
+      'fixtures/security-assurance/cache-key/expected/security-review.json',
+    ],
     label: 'Security review v1 schema validation',
     semanticValidate: validateSecurityReviewSemantics
   },

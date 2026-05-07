@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "assurance-profile/v1",
+  "profileId": "security-cache-key-fixture-v1",
+  "scope": {
+    "contextPackSources": [
+      "fixtures/security-assurance/cache-key/inputs/spec.md"
+    ],
+    "componentGlobs": [
+      "fixtures/security-assurance/cache-key/inputs/target/src/**/*.ts"
+    ]
+  },
+  "claims": [
+    {
+      "id": "SEC-CLAIM-001",
+      "statement": "Cache key must include tenant, subject, and attacker-controlled scope fields that affect authorization.",
+      "kind": "security",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "minIndependentSources": 1,
+      "requiredLanes": [
+        "spec",
+        "adversarial"
+      ],
+      "requiredEvidenceKinds": [
+        "counterexample-closed"
+      ]
+    },
+    {
+      "id": "SEC-CLAIM-002",
+      "statement": "Bearer token validation must reject expired tokens before cache lookup.",
+      "kind": "security",
+      "criticality": "medium",
+      "targetLevel": "A1",
+      "minIndependentSources": 1,
+      "requiredLanes": [
+        "spec"
+      ],
+      "requiredEvidenceKinds": [
+        "schema"
+      ]
+    },
+    {
+      "id": "SEC-CLAIM-003",
+      "statement": "Test-only fixture cache helpers must remain outside the production audit scope and trust boundary.",
+      "kind": "security",
+      "criticality": "low",
+      "targetLevel": "A1",
+      "minIndependentSources": 1,
+      "requiredLanes": [
+        "spec",
+        "adversarial"
+      ],
+      "requiredEvidenceKinds": [
+        "counterexample-closed"
+      ]
+    }
+  ]
+}

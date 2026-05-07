@@ -1,0 +1,280 @@
+{
+  "schemaVersion": "claim-evidence-manifest/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "sourceArtifacts": [
+    {
+      "id": "assurance-summary",
+      "kind": "assurance-summary",
+      "path": "artifacts/security-assurance/cache-key/assurance-summary.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "assurance-summary/v1",
+      "description": "Lane coverage and evidence summary input"
+    },
+    {
+      "id": "change-package-v2",
+      "kind": "change-package-v2",
+      "path": null,
+      "present": false,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Optional proof-carrying change package input"
+    },
+    {
+      "id": "quality-scorecard",
+      "kind": "quality-scorecard",
+      "path": null,
+      "present": false,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Quality gate evidence input"
+    },
+    {
+      "id": "verify-lite-run-summary",
+      "kind": "verify-lite-run-summary",
+      "path": null,
+      "present": false,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Optional verify-lite run summary input"
+    },
+    {
+      "id": "trace-bundle",
+      "kind": "trace-bundle",
+      "path": null,
+      "present": false,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Optional trace bundle input"
+    },
+    {
+      "id": "security-claims",
+      "kind": "security-claim",
+      "path": "artifacts/security-assurance/cache-key/security-claims.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "security-claim/v1",
+      "description": "Optional security-claim/v1 input"
+    },
+    {
+      "id": "security-findings",
+      "kind": "security-finding",
+      "path": "artifacts/security-assurance/cache-key/security-findings.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "security-finding/v1",
+      "description": "Optional security-finding/v1 input"
+    },
+    {
+      "id": "security-review",
+      "kind": "security-review",
+      "path": "artifacts/security-assurance/cache-key/security-review.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "security-review/v1",
+      "description": "Optional security-review/v1 input"
+    }
+  ],
+  "claims": [
+    {
+      "id": "sec-claim-001",
+      "statement": "Cache key must include tenant, subject, and attacker-controlled scope fields that affect authorization.",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "achievedLevel": "A1",
+      "status": "partial",
+      "evidenceRefs": [
+        {
+          "id": "assurance-summary:sec-claim-001:0:security-claim",
+          "kind": "spec",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/0",
+          "sourceArtifactId": "assurance-summary",
+          "description": "Security claim imported from security-claim/v1 (type=invariant)."
+        },
+        {
+          "id": "assurance-summary:sec-claim-001:1:security-finding",
+          "kind": "adversarial",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/0",
+          "sourceArtifactId": "assurance-summary",
+          "description": "Security finding SEC-FINDING-001: status=candidate, severity=high, review=needs-human-review."
+        },
+        {
+          "id": "assurance-summary:sec-claim-001:2:security-review",
+          "kind": "adversarial",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/0",
+          "sourceArtifactId": "assurance-summary",
+          "description": "Security review classified SEC-FINDING-001 as needs-human-review."
+        },
+        {
+          "id": "security-claims:sec-claim-001",
+          "kind": "spec",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/0",
+          "sourceArtifactId": "security-claims",
+          "description": "Security claim imported as assurance claim (type=invariant)."
+        },
+        {
+          "id": "security-findings:sec-finding-001",
+          "kind": "adversarial",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/0",
+          "sourceArtifactId": "security-findings",
+          "description": "Security finding SEC-FINDING-001: status=candidate, severity=high, review=needs-human-review."
+        },
+        {
+          "id": "security-review:sec-finding-001:0",
+          "kind": "manual",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/0",
+          "sourceArtifactId": "security-review",
+          "description": "Security review classified SEC-FINDING-001 as needs-human-review."
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "assurance-summary:sec-claim-001:missing-kind:counterexample-closed",
+          "expectedKind": "adversarial",
+          "reason": "Required evidence kind 'counterexample-closed' is not linked for this claim.",
+          "sourceArtifactId": "assurance-summary"
+        },
+        {
+          "id": "security-human-review:sec-finding-001",
+          "expectedKind": "manual",
+          "reason": "high severity security finding SEC-FINDING-001 is needs-human-review; human review or remediation evidence is required before treating it as supported.",
+          "sourceArtifactId": "security-findings"
+        }
+      ],
+      "waiverRefs": [],
+      "notes": [
+        "achievedLevel conservatively derived below targetLevel A2 because assurance-summary status=warning.",
+        "assurance-warning:unresolved-critical-counterexample Critical claim still has unresolved counterexamples.",
+        "assurance-warning:unresolved-critical-counterexample High/critical security finding SEC-FINDING-001 remains needsHumanReview.",
+        "security-attention:high SEC-FINDING-001 remains needs-human-review; keep report-only until reviewed/remediated.",
+        "security-claim:type=invariant provenance=manual-block",
+        "security-finding:SEC-FINDING-001 severity=high findingStatus=candidate reviewResult=needs-human-review falsePositiveRootCause=none"
+      ]
+    },
+    {
+      "id": "sec-claim-002",
+      "statement": "Bearer token validation must reject expired tokens before cache lookup.",
+      "criticality": "medium",
+      "targetLevel": "A1",
+      "achievedLevel": "A0",
+      "status": "partial",
+      "evidenceRefs": [
+        {
+          "id": "assurance-summary:sec-claim-002:0:security-claim",
+          "kind": "spec",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/1",
+          "sourceArtifactId": "assurance-summary",
+          "description": "Security claim imported from security-claim/v1 (type=precondition)."
+        },
+        {
+          "id": "security-claims:sec-claim-002",
+          "kind": "spec",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/1",
+          "sourceArtifactId": "security-claims",
+          "description": "Security claim imported as assurance claim (type=precondition)."
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "assurance-summary:sec-claim-002:missing-kind:schema",
+          "expectedKind": "spec",
+          "reason": "Required evidence kind 'schema' is not linked for this claim.",
+          "sourceArtifactId": "assurance-summary"
+        }
+      ],
+      "waiverRefs": [],
+      "notes": [
+        "achievedLevel conservatively derived below targetLevel A1 because assurance-summary status=warning.",
+        "security-claim:type=precondition provenance=manual-block"
+      ]
+    },
+    {
+      "id": "sec-claim-003",
+      "statement": "Test-only fixture cache helpers must remain outside the production audit scope and trust boundary.",
+      "criticality": "low",
+      "targetLevel": "A2",
+      "achievedLevel": "A0",
+      "status": "partial",
+      "evidenceRefs": [
+        {
+          "id": "assurance-summary:sec-claim-003:0:security-claim",
+          "kind": "spec",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/2",
+          "sourceArtifactId": "assurance-summary",
+          "description": "Security claim imported from security-claim/v1 (type=assumption)."
+        },
+        {
+          "id": "assurance-summary:sec-claim-003:1:security-finding",
+          "kind": "adversarial",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/1",
+          "sourceArtifactId": "assurance-summary",
+          "description": "Security finding SEC-FINDING-002: status=candidate, severity=low, review=out-of-scope."
+        },
+        {
+          "id": "assurance-summary:sec-claim-003:2:security-review",
+          "kind": "adversarial",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/1",
+          "sourceArtifactId": "assurance-summary",
+          "description": "Security review classified SEC-FINDING-002 as out-of-scope (out-of-scope)."
+        },
+        {
+          "id": "security-claims:sec-claim-003",
+          "kind": "spec",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/2",
+          "sourceArtifactId": "security-claims",
+          "description": "Security claim imported as assurance claim (type=assumption)."
+        },
+        {
+          "id": "security-findings:sec-finding-002",
+          "kind": "adversarial",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/1",
+          "sourceArtifactId": "security-findings",
+          "description": "Security finding SEC-FINDING-002: status=candidate, severity=low, review=out-of-scope."
+        },
+        {
+          "id": "security-review:sec-finding-002:1",
+          "kind": "manual",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/1",
+          "sourceArtifactId": "security-review",
+          "description": "Security review classified SEC-FINDING-002 as out-of-scope (out-of-scope)."
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "assurance-summary:sec-claim-003:missing-kind:counterexample-closed",
+          "expectedKind": "adversarial",
+          "reason": "Required evidence kind 'counterexample-closed' is not linked for this claim.",
+          "sourceArtifactId": "assurance-summary"
+        }
+      ],
+      "waiverRefs": [],
+      "notes": [
+        "achievedLevel conservatively derived below targetLevel A1 because assurance-summary status=warning.",
+        "security-claim:type=assumption provenance=manual-block",
+        "security-finding:SEC-FINDING-002 severity=low findingStatus=candidate reviewResult=out-of-scope falsePositiveRootCause=out-of-scope"
+      ]
+    }
+  ],
+  "summary": {
+    "totalClaims": 3,
+    "fullySupported": 0,
+    "partiallySupported": 3,
+    "waived": 0,
+    "unresolved": 0,
+    "security": {
+      "claims": 3,
+      "findings": 2,
+      "reviews": 2,
+      "candidate": 0,
+      "needsHumanReview": 1,
+      "confirmed": 0,
+      "rejected": 0,
+      "waived": 0,
+      "outOfScope": 1,
+      "highOrCriticalOpen": 1
+    }
+  }
+}

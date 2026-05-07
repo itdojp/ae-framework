@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "security-threat-model/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "frameworks": [
+    "STRIDE",
+    "CWE_TOP_25"
+  ],
+  "threats": [
+    {
+      "id": "SEC-THREAT-001",
+      "stride": "Tampering",
+      "cwe": "CWE-20",
+      "description": "A caller changes authorization scope while reusing tenant and subject fields, causing two distinct authorization contexts to share a cache key.",
+      "relatedClaimIds": [
+        "SEC-CLAIM-001"
+      ],
+      "trustBoundaryIds": [
+        "TB-CACHE"
+      ],
+      "notes": [
+        "This is the intentional candidate finding in the fixture."
+      ]
+    },
+    {
+      "id": "SEC-THREAT-002",
+      "stride": "Spoofing",
+      "cwe": "CWE-613",
+      "description": "An expired bearer token is accepted before cache lookup.",
+      "relatedClaimIds": [
+        "SEC-CLAIM-002"
+      ],
+      "trustBoundaryIds": [
+        "TB-CACHE"
+      ],
+      "notes": [
+        "The response fixture records no finding for this threat."
+      ]
+    },
+    {
+      "id": "SEC-THREAT-003",
+      "stride": "Repudiation",
+      "cwe": "CWE-693",
+      "description": "A test-only helper is misread as production cache-key code.",
+      "relatedClaimIds": [
+        "SEC-CLAIM-003"
+      ],
+      "trustBoundaryIds": [
+        "TB-TEST"
+      ],
+      "notes": [
+        "The three-gate review must classify this as out-of-scope."
+      ]
+    }
+  ],
+  "summary": {
+    "totalThreats": 3
+  }
+}

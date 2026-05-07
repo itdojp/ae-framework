@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "security-audit-task-bundle/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "tasks": [
+    {
+      "id": "SEC-AUDIT-TASK-001",
+      "claimId": "SEC-CLAIM-001",
+      "claimStatement": "Cache key must include tenant, subject, and attacker-controlled scope fields that affect authorization.",
+      "status": "ready",
+      "candidateLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 13,
+          "endLine": 20,
+          "reason": "Matched security claim terms in buildCacheKey: attacker, authorization, cache, controlled, key, scope, security, subject.",
+          "symbol": "buildCacheKey",
+          "matchedTerms": [
+            "attacker",
+            "authorization",
+            "cache",
+            "controlled",
+            "key",
+            "scope",
+            "security",
+            "subject",
+            "tenant",
+            "verification"
+          ]
+        },
+        {
+          "path": "src/cache.ts",
+          "startLine": 25,
+          "endLine": 31,
+          "reason": "Matched security claim terms in lookupVerificationCache: cache, key, verification.",
+          "symbol": "lookupVerificationCache",
+          "matchedTerms": [
+            "cache",
+            "key",
+            "verification"
+          ]
+        }
+      ],
+      "scopeRefs": [
+        "TB-CACHE",
+        "api"
+      ],
+      "proofAttemptPrompt": {
+        "map": "Map the security claim to these candidate code paths:\n- src/cache.ts:13-20 (buildCacheKey): Matched security claim terms in buildCacheKey: attacker, authorization, cache, controlled, key, scope, security, subject.\n- src/cache.ts:25-31 (lookupVerificationCache): Matched security claim terms in lookupVerificationCache: cache, key, verification.",
+        "prove": "Prove whether the implementation satisfies claim SEC-CLAIM-001: Cache key must include tenant, subject, and attacker-controlled scope fields that affect authorization.",
+        "stressTest": "Stress-test attacker-controlled inputs, trust-boundary assumptions, cache/key equivalence classes, and edge cases that could break the proof. Do not generate exploit automation.",
+        "report": "Report a candidate finding only when the proof fails with concrete code evidence. Keep all findings as candidate status until three-gate review."
+      },
+      "warnings": []
+    },
+    {
+      "id": "SEC-AUDIT-TASK-002",
+      "claimId": "SEC-CLAIM-002",
+      "claimStatement": "Bearer token validation must reject expired tokens before cache lookup.",
+      "status": "ready",
+      "candidateLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 25,
+          "endLine": 31,
+          "reason": "Matched security claim terms in lookupVerificationCache: bearer, cache, key, lookup, token.",
+          "symbol": "lookupVerificationCache",
+          "matchedTerms": [
+            "bearer",
+            "cache",
+            "key",
+            "lookup",
+            "token"
+          ]
+        },
+        {
+          "path": "src/cache.ts",
+          "startLine": 13,
+          "endLine": 20,
+          "reason": "Matched security claim terms in buildCacheKey: cache, key, security.",
+          "symbol": "buildCacheKey",
+          "matchedTerms": [
+            "cache",
+            "key",
+            "security"
+          ]
+        },
+        {
+          "path": "src/cache.ts",
+          "startLine": 21,
+          "endLine": 24,
+          "reason": "Matched security claim terms in isFreshToken: bearer, token.",
+          "symbol": "isFreshToken",
+          "matchedTerms": [
+            "bearer",
+            "token"
+          ]
+        }
+      ],
+      "scopeRefs": [
+        "TB-CACHE",
+        "api"
+      ],
+      "proofAttemptPrompt": {
+        "map": "Map the security claim to these candidate code paths:\n- src/cache.ts:25-31 (lookupVerificationCache): Matched security claim terms in lookupVerificationCache: bearer, cache, key, lookup, token.\n- src/cache.ts:13-20 (buildCacheKey): Matched security claim terms in buildCacheKey: cache, key, security.\n- src/cache.ts:21-24 (isFreshToken): Matched security claim terms in isFreshToken: bearer, token.",
+        "prove": "Prove whether the implementation satisfies claim SEC-CLAIM-002: Bearer token validation must reject expired tokens before cache lookup.",
+        "stressTest": "Stress-test attacker-controlled inputs, trust-boundary assumptions, cache/key equivalence classes, and edge cases that could break the proof. Do not generate exploit automation.",
+        "report": "Report a candidate finding only when the proof fails with concrete code evidence. Keep all findings as candidate status until three-gate review."
+      },
+      "warnings": []
+    },
+    {
+      "id": "SEC-AUDIT-TASK-003",
+      "claimId": "SEC-CLAIM-003",
+      "claimStatement": "Test-only fixture cache helpers must remain outside the production audit scope and trust boundary.",
+      "status": "ready",
+      "candidateLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 13,
+          "endLine": 20,
+          "reason": "Matched security claim terms in buildCacheKey: cache, fixture, input, key, scope, security.",
+          "symbol": "buildCacheKey",
+          "matchedTerms": [
+            "cache",
+            "fixture",
+            "input",
+            "key",
+            "scope",
+            "security"
+          ]
+        },
+        {
+          "path": "src/cache.ts",
+          "startLine": 25,
+          "endLine": 31,
+          "reason": "Matched security claim terms in lookupVerificationCache: cache, input, key.",
+          "symbol": "lookupVerificationCache",
+          "matchedTerms": [
+            "cache",
+            "input",
+            "key"
+          ]
+        }
+      ],
+      "scopeRefs": [
+        "TB-TEST",
+        "test-fixture"
+      ],
+      "proofAttemptPrompt": {
+        "map": "Map the security claim to these candidate code paths:\n- src/cache.ts:13-20 (buildCacheKey): Matched security claim terms in buildCacheKey: cache, fixture, input, key, scope, security.\n- src/cache.ts:25-31 (lookupVerificationCache): Matched security claim terms in lookupVerificationCache: cache, input, key.",
+        "prove": "Prove whether the implementation satisfies claim SEC-CLAIM-003: Test-only fixture cache helpers must remain outside the production audit scope and trust boundary.",
+        "stressTest": "Stress-test attacker-controlled inputs, trust-boundary assumptions, cache/key equivalence classes, and edge cases that could break the proof. Do not generate exploit automation.",
+        "report": "Report a candidate finding only when the proof fails with concrete code evidence. Keep all findings as candidate status until three-gate review."
+      },
+      "warnings": []
+    }
+  ],
+  "summary": {
+    "totalTasks": 3,
+    "readyTasks": 3,
+    "blockedTasks": 0,
+    "totalCandidateLocations": 7,
+    "totalWarnings": 0,
+    "byStatus": {
+      "ready": 3,
+      "blockedNoCandidateLocation": 0,
+      "blockedMissingCodeMap": 0
+    }
+  },
+  "provenance": {
+    "origin": "deterministic",
+    "generator": "security-proof-attempt-audit",
+    "claims": "artifacts/security-assurance/cache-key/security-claims.json",
+    "codeMap": "artifacts/security-assurance/cache-key/security-code-map.json",
+    "scope": "artifacts/security-assurance/cache-key/security-audit-scope.json"
+  },
+  "warnings": []
+}
