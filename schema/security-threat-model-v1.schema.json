@@ -26,9 +26,7 @@
         "type": "string",
         "enum": [
           "STRIDE",
-          "CWE_TOP_25",
-          "OWASP_TOP_10",
-          "custom"
+          "CWE_TOP_25"
         ]
       }
     },

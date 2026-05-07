@@ -187,12 +187,11 @@
       "type": "string",
       "enum": [
         "spec",
-        "adversarial",
         "behavior",
-        "formal",
-        "runtime",
-        "policy",
-        "manual"
+        "adversarial",
+        "model",
+        "proof",
+        "runtime"
       ]
     },
     "provenance": {

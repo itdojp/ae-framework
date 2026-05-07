@@ -98,6 +98,19 @@ describe('security assurance contracts', () => {
     }
   });
 
+
+  it('constrains threat model frameworks to represented STRIDE and CWE taxonomies', () => {
+    const validate = buildValidator(schemas.threatModel);
+    const invalidFixture = structuredClone(fixtures.threatModel) as {
+      frameworks: string[];
+    };
+
+    invalidFixture.frameworks = ['STRIDE', 'OWASP_TOP_10'];
+
+    expect(validate(invalidFixture)).toBe(false);
+    expect(validate.errors?.some((entry) => entry.instancePath === '/frameworks/1')).toBe(true);
+  });
+
   it('requires the audit scope to include at least one in-scope glob', () => {
     const validate = buildValidator(schemas.auditScope);
     const invalidFixture = structuredClone(fixtures.auditScope) as {
