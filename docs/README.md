@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-24'
+lastVerified: '2026-05-08'
 ---
 
 # 📚 ae-framework Documentation / ドキュメント
@@ -59,6 +59,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - `integrations/CODEX-CONTINUATION-CONTRACT.md`
 
 **Quality / CI operators**
+- `testing/README.md`
 - `quality/ARTIFACTS-CONTRACT.md`
 - `quality/formal-runbook.md`
 - `ci/ci-operations-handbook.md`
@@ -215,6 +216,7 @@ Current verification baseline, assurance model, artifact contracts, automation p
 - Verify-first implementation runbook: `quality/verify-first-implementation-runbook.md`
 - Assurance profile / level: `quality/assurance-profile.md`
 - Assurance operations runbook: `quality/assurance-operations-runbook.md`
+- Testing portfolio and coverage baseline: `testing/README.md`
 - Security Assurance Lane: `security/security-assurance-lane.md`
 - Quality scorecard: `quality/quality-scorecard.md`
 - Automation observability: `ci/automation-observability.md`
@@ -381,6 +383,7 @@ Claude CodeやMCPとの統合
 ### ✅ [quality/](./quality/) - 品質ゲート・検証
 フォーマル検証や品質基準
 
+- [testing/README.md](./testing/README.md) - テスト体系、実行コマンド、CI label、coverage baseline 運用の入口
 - [ASSURANCE-MODEL.md](./quality/ASSURANCE-MODEL.md) - claim / level / lane / evidence kind の共通モデル
 - **[formal-gates.md](./quality/formal-gates.md)** ⭐ フォーマル品質ゲート（v0.2 DoD）
 - **[formal-csp.md](./quality/formal-csp.md)** ⭐ CSP 検証（cspx 連携・summary/result 契約）
@@ -481,11 +484,12 @@ Claude CodeやMCPとの統合
 3. **[architecture/NEW_FEATURES.md](./architecture/NEW_FEATURES.md)** - 機能概要
 
 ### 🧪 品質保証・テストエンジニア
-1. **🆕 [phases/PHASE-2-2-RUNTIME-CONFORMANCE.md](./phases/PHASE-2-2-RUNTIME-CONFORMANCE.md)** - リアルタイム適合性検証
-2. **🆕 [phases/PHASE-2-3-INTEGRATION-TESTING.md](./phases/PHASE-2-3-INTEGRATION-TESTING.md)** - 統合テスト・E2Eテスト
-3. **🆕 [architecture/CEGIS-DESIGN.md](./architecture/CEGIS-DESIGN.md)** - 自動修復システム
-4. **🆕 [guides/ADVANCED-TROUBLESHOOTING-GUIDE.md](./guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)** - 問題解決ガイド
-5. **[quality/type-coverage-policy.md](./quality/type-coverage-policy.md)** - 型カバレッジポリシー（運用ルール）
+1. **[testing/README.md](./testing/README.md)** - テスト体系、代表コマンド、CI label、coverage baseline 運用
+2. **🆕 [phases/PHASE-2-2-RUNTIME-CONFORMANCE.md](./phases/PHASE-2-2-RUNTIME-CONFORMANCE.md)** - リアルタイム適合性検証
+3. **🆕 [phases/PHASE-2-3-INTEGRATION-TESTING.md](./phases/PHASE-2-3-INTEGRATION-TESTING.md)** - 統合テスト・E2Eテスト
+4. **🆕 [architecture/CEGIS-DESIGN.md](./architecture/CEGIS-DESIGN.md)** - 自動修復システム
+5. **🆕 [guides/ADVANCED-TROUBLESHOOTING-GUIDE.md](./guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)** - 問題解決ガイド
+6. **[quality/type-coverage-policy.md](./quality/type-coverage-policy.md)** - 型カバレッジポリシー（運用ルール）
 
 ## 🔄 更新履歴
 
