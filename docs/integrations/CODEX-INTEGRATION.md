@@ -268,7 +268,7 @@ On Windows/WSL
 - If using Windows paths, ensure `cwd` is an absolute path without spaces and that execution policy permits scripts
 - Use Corepack (`corepack enable`) to manage pnpm versions consistently
 
-See also: [CodeX Quick Start](./QUICK-START-CODEX.md) and [CodeX Artifacts and JSON Formats](./CODEX-ARTIFACTS.md) for detailed usage and data shapes.
+See also: [CodeX Quick Start](./QUICK-START-CODEX.md), [CodeX Artifacts and JSON Formats](./CODEX-ARTIFACTS.md), and [CodeX Security Assurance Audit Runbook](./CODEX-SECURITY-AUDIT.md) for detailed usage, data shapes, and Security Assurance Lane operation.
 
 
 Windows/WSL notes (quickstart formal/UI)
@@ -305,6 +305,7 @@ set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
 - CodeX Quick Start（クイックスタート）
 - CodeX Artifacts and JSON Formats（成果物の形式）
 - CodeX Continuation Contract（継続実行ルール）
+- CodeX Security Assurance Audit Runbook（Security Assurance Lane の運用手順）
 
 ## 日本語（詳細）
 

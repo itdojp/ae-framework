@@ -103,6 +103,7 @@ ae-framework ui scaffold --input domain-model.json
 ### 📚 Detailed Documentation
 
 - **[Claude Code Integration Guide](./CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 🔥 Primary integration method
+- **[CodeX Security Assurance Audit Runbook](./CODEX-SECURITY-AUDIT.md)** - Security Assurance Lane operation for Codex / CodeX
 - **[Technical Implementation Details](../architecture/TECHNICAL-IMPLEMENTATION-DETAILS.md)** - Architecture details
 - **[Phase 6 UI Generation](../phases/phase-6-uiux.md)** - UI auto-generation details
 - **[Quality Assurance System](../quality/quality-implementation-status.md)** - Quality management details
@@ -206,6 +207,7 @@ ae-framework ui scaffold --input domain-model.json
 ### 📚 詳細ドキュメント
 
 - **[Claude Code統合ガイド](./CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 🔥 メイン統合方式
+- **[CodeX Security Assurance Audit Runbook](./CODEX-SECURITY-AUDIT.md)** - Codex / CodeX 向け Security Assurance Lane 運用手順
 - **[技術実装詳細](../architecture/TECHNICAL-IMPLEMENTATION-DETAILS.md)** - アーキテクチャ詳細
 - **[Phase 6 UI生成](../phases/phase-6-uiux.md)** - UI自動生成詳細
 - **[品質保証システム](../quality/quality-implementation-status.md)** - 品質管理詳細
