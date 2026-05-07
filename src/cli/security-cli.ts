@@ -12,10 +12,49 @@ import { getSecurityConfiguration, securityConfigurations } from '../api/middlew
 import { generateSecurityCodeMap } from '../security/assurance/code-map.js';
 import { extractSecurityClaimsFromSpec } from '../security/assurance/claim-extractor.js';
 import { importSpecaLikeSecurityArtifacts } from '../security/assurance/speca-import.js';
+import { generateSecurityProofAudit } from '../security/assurance/proof-audit.js';
 
 export function createSecurityCommand(): Command {
   const security = new Command('security');
   security.description('Security management commands');
+
+  security
+    .command('audit')
+    .description('Generate proof-attempt audit tasks and fixture-backed candidate security findings')
+    .requiredOption('-c, --claims <file>', 'security-claim/v1 JSON artifact')
+    .requiredOption('-m, --code-map <file>', 'security-code-map/v1 JSON artifact')
+    .requiredOption('-s, --scope <file>', 'security-audit-scope/v1 JSON artifact')
+    .requiredOption('-o, --out <path>', 'Output directory or security-findings JSON path')
+    .option('-r, --response-fixture <file>', 'Fixture response JSON to simulate proof-attempt results and emit security-finding/v1')
+    .option('--generated-at <iso-date>', 'Deterministic generatedAt timestamp for reproducible audit artifacts')
+    .option('--no-validate', 'Skip schema validation for input and generated artifacts')
+    .action(async (options) => {
+      try {
+        const result = await generateSecurityProofAudit(options.claims, options.codeMap, options.scope, options.out, {
+          generatedAt: options.generatedAt,
+          validate: options.validate,
+          responseFixture: options.responseFixture,
+        });
+
+        console.log(chalk.green('✅ Security proof-attempt audit completed'));
+        console.log(`Audit tasks: ${result.taskBundle.summary.totalTasks}`);
+        console.log(`Ready tasks: ${result.taskBundle.summary.readyTasks}`);
+        console.log(`Blocked tasks: ${result.taskBundle.summary.blockedTasks}`);
+        console.log(`Findings: ${result.findings?.summary.totalFindings ?? 0}`);
+        console.log(`No-finding responses: ${result.responseSummary.noFindingResponses}`);
+        console.log(`Warnings: ${result.warnings.length}`);
+        console.log(`Tasks: ${result.outputPaths.tasks}`);
+        if (result.outputPaths.findings) {
+          console.log(`Findings output: ${result.outputPaths.findings}`);
+        } else {
+          console.log('Findings output: not generated (dry-run mode without --response-fixture)');
+        }
+        console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Security proof-attempt audit failed: ${toMessage(error)}`));
+        safeExit(1);
+      }
+    });
 
   security
     .command('map-code')

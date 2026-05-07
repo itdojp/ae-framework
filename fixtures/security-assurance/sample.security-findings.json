@@ -13,17 +13,17 @@
       "affectedLocations": [
         {
           "path": "src/cache.ts",
-          "startLine": 10,
-          "endLine": 42,
+          "startLine": 7,
+          "endLine": 15,
           "symbol": "buildCacheKey",
-          "description": "Candidate key construction path from fixture audit."
+          "description": "Matched security claim terms in buildCacheKey: attacker, cache, controlled, fields, input, key, verification."
         }
       ],
       "proofAttempt": {
         "claim": "SEC-CLAIM-001",
-        "map": "Relevant code paths include buildCacheKey and verification request parsing.",
+        "map": "Relevant code paths include src/cache.ts:7-15 (buildCacheKey).",
         "prove": "The implementation must show that every verification-affecting attacker-controlled field is included in the key material.",
-        "stressTest": "Counterexample candidate: two requests differ in an attacker-controlled field that affects verification but share the same cache key.",
+        "stressTest": "Counterexample candidate: two verification requests differ in a verification-affecting attacker-controlled field but map to the same cache key.",
         "report": "Treat as a candidate until reviewed by the three-gate security review."
       },
       "scopeRefs": [
@@ -31,18 +31,27 @@
       ],
       "evidenceRefs": [
         {
-          "id": "SEC-EVIDENCE-001",
-          "kind": "security-claim",
-          "path": "fixtures/security-assurance/sample.security-claims.json",
-          "description": "Source claim fixture."
+          "id": "SEC-EVIDENCE-SEC-AUDIT-TASK-001",
+          "kind": "audit-task",
+          "path": "fixtures/security-assurance/sample.security-audit-tasks.json",
+          "description": "Proof-attempt audit task for SEC-CLAIM-001."
+        },
+        {
+          "id": "SEC-CODE-MAP-SEC-CLAIM-001",
+          "kind": "security-code-map",
+          "path": "fixtures/security-assurance/sample.security-code-map.json",
+          "description": "Candidate source locations for SEC-CLAIM-001."
         }
       ],
       "provenance": {
         "origin": "fixture",
-        "generator": "security-proof-attempt-fixture"
+        "generator": "security-proof-attempt-audit",
+        "source": "security-audit-response-fixture/v1",
+        "version": "2026-05-07T00:00:00.000Z"
       },
       "notes": [
-        "Candidate finding is not a confirmed vulnerability."
+        "Candidate finding is not a confirmed vulnerability.",
+        "Fixture-backed simulated proof-attempt response."
       ]
     },
     {
@@ -58,7 +67,8 @@
           "path": "tests/fixtures/cache-helper.ts",
           "startLine": 5,
           "endLine": 20,
-          "symbol": "buildFixtureCacheKey"
+          "symbol": "buildFixtureCacheKey",
+          "description": "Simulated fixture response for a test-only helper path."
         }
       ],
       "proofAttempt": {
@@ -71,11 +81,29 @@
       "scopeRefs": [
         "tests/**"
       ],
-      "evidenceRefs": [],
+      "evidenceRefs": [
+        {
+          "id": "SEC-EVIDENCE-SEC-AUDIT-TASK-001",
+          "kind": "audit-task",
+          "path": "fixtures/security-assurance/sample.security-audit-tasks.json",
+          "description": "Proof-attempt audit task for SEC-CLAIM-001."
+        },
+        {
+          "id": "SEC-CODE-MAP-SEC-CLAIM-001",
+          "kind": "security-code-map",
+          "path": "fixtures/security-assurance/sample.security-code-map.json",
+          "description": "Candidate source locations for SEC-CLAIM-001."
+        }
+      ],
       "provenance": {
         "origin": "fixture",
-        "generator": "security-proof-attempt-fixture"
-      }
+        "generator": "security-proof-attempt-audit",
+        "source": "security-audit-response-fixture/v1",
+        "version": "2026-05-07T00:00:00.000Z"
+      },
+      "notes": [
+        "Candidate finding is not a confirmed vulnerability."
+      ]
     }
   ],
   "summary": {

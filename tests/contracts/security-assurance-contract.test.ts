@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import {
+  validateSecurityAuditTaskBundleSemantics,
   validateSecurityCodeMapSemantics,
   validateSecurityFindingSemantics,
   validateSecurityReviewSemantics,
@@ -19,6 +20,7 @@ const schemas = {
   threatModel: loadJson('schema/security-threat-model-v1.schema.json'),
   auditScope: loadJson('schema/security-audit-scope-v1.schema.json'),
   codeMap: loadJson('schema/security-code-map-v1.schema.json'),
+  auditTasks: loadJson('schema/security-audit-task-bundle-v1.schema.json'),
   findings: loadJson('schema/security-finding-v1.schema.json'),
   review: loadJson('schema/security-review-v1.schema.json'),
 };
@@ -28,6 +30,7 @@ const fixtures = {
   threatModel: loadJson('fixtures/security-assurance/sample.security-threat-model.json'),
   auditScope: loadJson('fixtures/security-assurance/sample.security-audit-scope.json'),
   codeMap: loadJson('fixtures/security-assurance/sample.security-code-map.json'),
+  auditTasks: loadJson('fixtures/security-assurance/sample.security-audit-tasks.json'),
   findings: loadJson('fixtures/security-assurance/sample.security-findings.json'),
   review: loadJson('fixtures/security-assurance/sample.security-review.json'),
 };
@@ -178,6 +181,43 @@ describe('security assurance contracts', () => {
     validFixture.summary.byCoverage.partial = 0;
 
     expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+
+  it('keeps security audit tasks connected to security claim ids and code-map locations', () => {
+    const claimIds = new Set(
+      (fixtures.claims.claims as Array<{ id: string }>).map((claim) => claim.id),
+    );
+    const mappedClaimIds = new Set(
+      (fixtures.codeMap.mappings as Array<{ claimId: string }>).map((mapping) => mapping.claimId),
+    );
+    const tasks = fixtures.auditTasks.tasks as Array<{ claimId: string; status: string; candidateLocations: unknown[] }>;
+
+    expect(tasks).not.toHaveLength(0);
+    for (const task of tasks) {
+      expect(claimIds.has(task.claimId)).toBe(true);
+      expect(mappedClaimIds.has(task.claimId)).toBe(true);
+      expect(task.status).toBe('ready');
+      expect(task.candidateLocations.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('enforces security audit task candidate location line ranges semantically', () => {
+    const validFixture = structuredClone(fixtures.auditTasks);
+    expect(validateSecurityAuditTaskBundleSemantics(validFixture)).toHaveLength(0);
+
+    const invalidFixture = structuredClone(fixtures.auditTasks) as {
+      tasks: Array<{ candidateLocations: Array<{ startLine: number; endLine: number }> }>;
+    };
+    invalidFixture.tasks[0].candidateLocations[0].startLine = 50;
+    invalidFixture.tasks[0].candidateLocations[0].endLine = 10;
+
+    expect(validateSecurityAuditTaskBundleSemantics(invalidFixture)).toEqual([
+      expect.objectContaining({
+        keyword: 'line_range_order',
+        instancePath: '/tasks/0/candidateLocations/0/endLine',
+      }),
+    ]);
   });
 
   it('keeps security findings connected to security claim ids', () => {

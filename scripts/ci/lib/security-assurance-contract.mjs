@@ -44,6 +44,28 @@ function validateCodeMapLocationRanges(codeMapDocument, errors) {
   }
 }
 
+
+function validateAuditTaskLocationRanges(taskBundleDocument, errors) {
+  const tasks = Array.isArray(taskBundleDocument?.tasks) ? taskBundleDocument.tasks : [];
+  for (let taskIndex = 0; taskIndex < tasks.length; taskIndex += 1) {
+    const task = tasks[taskIndex];
+    const locations = Array.isArray(task?.candidateLocations) ? task.candidateLocations : [];
+    for (let locationIndex = 0; locationIndex < locations.length; locationIndex += 1) {
+      const location = locations[locationIndex];
+      if (!Number.isInteger(location?.startLine) || !Number.isInteger(location?.endLine)) {
+        continue;
+      }
+      if (location.endLine < location.startLine) {
+        errors.push(createError(
+          'line_range_order',
+          `/tasks/${taskIndex}/candidateLocations/${locationIndex}/endLine`,
+          `endLine must be greater than or equal to startLine (${location.startLine}), got ${location.endLine}`,
+        ));
+      }
+    }
+  }
+}
+
 function validateReviewRootCauseConsistency(reviewDocument, errors) {
   const unresolvedOrNonFalsePositiveResults = new Set([
     'needs-human-review',
@@ -80,6 +102,12 @@ function validateReviewRootCauseConsistency(reviewDocument, errors) {
 export function validateSecurityFindingSemantics(findingsDocument) {
   const errors = [];
   validateAffectedLocationRanges(findingsDocument, errors);
+  return errors;
+}
+
+export function validateSecurityAuditTaskBundleSemantics(taskBundleDocument) {
+  const errors = [];
+  validateAuditTaskLocationRanges(taskBundleDocument, errors);
   return errors;
 }
 

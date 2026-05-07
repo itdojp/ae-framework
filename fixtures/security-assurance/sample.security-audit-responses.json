@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "security-audit-response-fixture/v1",
+  "responses": [
+    {
+      "taskId": "SEC-AUDIT-TASK-001",
+      "claimId": "SEC-CLAIM-001",
+      "result": "finding",
+      "rationale": "The simulated proof attempt cannot establish that all verification-affecting attacker-controlled fields are included in the cache key.",
+      "finding": {
+        "id": "SEC-FINDING-001",
+        "status": "candidate",
+        "severity": "high",
+        "confidence": "medium",
+        "title": "Verification cache key may omit attacker-controlled input",
+        "summary": "The proof attempt cannot establish that all attacker-controlled fields are included in the cache key.",
+        "proofAttempt": {
+          "map": "Relevant code paths include src/cache.ts:7-15 (buildCacheKey).",
+          "prove": "The implementation must show that every verification-affecting attacker-controlled field is included in the key material.",
+          "stressTest": "Counterexample candidate: two verification requests differ in a verification-affecting attacker-controlled field but map to the same cache key.",
+          "report": "Treat as a candidate until reviewed by the three-gate security review."
+        },
+        "scopeRefs": [
+          "TB-001"
+        ],
+        "notes": [
+          "Fixture-backed simulated proof-attempt response."
+        ]
+      }
+    },
+    {
+      "taskId": "SEC-AUDIT-TASK-001",
+      "claimId": "SEC-CLAIM-001",
+      "result": "finding",
+      "rationale": "The simulated proof attempt also found a fixture helper that resembles key construction but is expected to be classified out-of-scope by the review stage.",
+      "finding": {
+        "id": "SEC-FINDING-002",
+        "status": "candidate",
+        "severity": "medium",
+        "confidence": "low",
+        "title": "Test-only cache helper resembles production key construction",
+        "summary": "The proof attempt found similar test helper code, but the path may be outside the audit scope.",
+        "affectedLocations": [
+          {
+            "path": "tests/fixtures/cache-helper.ts",
+            "startLine": 5,
+            "endLine": 20,
+            "symbol": "buildFixtureCacheKey",
+            "reason": "Simulated fixture response for a test-only helper path."
+          }
+        ],
+        "proofAttempt": {
+          "map": "Candidate code path appears only in fixture helper files.",
+          "prove": "The implementation would need to show the helper is reachable from production entry points.",
+          "stressTest": "No production entry point reaches the fixture helper in the MVP scope.",
+          "report": "Candidate is expected to be rejected by the scope gate."
+        },
+        "scopeRefs": [
+          "tests/**"
+        ]
+      }
+    }
+  ]
+}
