@@ -242,6 +242,7 @@
     "security:config": "tsx src/cli/index.ts security show-config",
     "security:import-speca": "tsx src/cli/index.ts security import-speca",
     "security:extract-claims": "tsx src/cli/index.ts security extract-claims",
+    "security:map-code": "tsx src/cli/index.ts security map-code",
     "verify:all": "pnpm run verify:tests && pnpm run verify:quality && pnpm run verify:security && pnpm run mutation",
     "intent-agent": "tsx src/mcp-server/intent-server.ts",
     "intent-agent:build": "tsc src/mcp-server/intent-server.ts --outDir dist/mcp-server --module commonjs --target es2022",

@@ -9,12 +9,42 @@ import { createServer } from '../api/server.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { getSecurityConfiguration, securityConfigurations } from '../api/middleware/security-headers.js';
+import { generateSecurityCodeMap } from '../security/assurance/code-map.js';
 import { extractSecurityClaimsFromSpec } from '../security/assurance/claim-extractor.js';
 import { importSpecaLikeSecurityArtifacts } from '../security/assurance/speca-import.js';
 
 export function createSecurityCommand(): Command {
   const security = new Command('security');
   security.description('Security management commands');
+
+  security
+    .command('map-code')
+    .description('Map security-claim/v1 entries to candidate source locations before proof-attempt audit')
+    .requiredOption('-c, --claims <file>', 'security-claim/v1 JSON artifact')
+    .requiredOption('-s, --scope <file>', 'security-audit-scope/v1 JSON artifact with in/out-of-scope globs')
+    .requiredOption('-t, --target <dir>', 'Target repository or fixture directory to scan')
+    .requiredOption('-o, --out <path>', 'Output JSON path or directory for security-code-map artifacts')
+    .option('--generated-at <iso-date>', 'Deterministic generatedAt timestamp for reproducible mapping')
+    .option('--no-validate', 'Skip schema validation for input and generated artifacts')
+    .action(async (options) => {
+      try {
+        const result = await generateSecurityCodeMap(options.claims, options.scope, options.target, options.out, {
+          generatedAt: options.generatedAt,
+          validate: options.validate,
+        });
+
+        console.log(chalk.green('✅ Security code-map generation completed'));
+        console.log(`Claims: ${result.codeMap.summary.totalClaims}`);
+        console.log(`Mapped claims: ${result.codeMap.summary.mappedClaims}`);
+        console.log(`Candidate locations: ${result.codeMap.summary.totalCandidateLocations}`);
+        console.log(`Warnings: ${result.warnings.length}`);
+        console.log(`Output: ${result.outputPaths.codeMap}`);
+        console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Security code-map generation failed: ${toMessage(error)}`));
+        safeExit(1);
+      }
+    });
 
   security
     .command('extract-claims')

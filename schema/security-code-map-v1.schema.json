@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/security-code-map-v1.schema.json",
+  "title": "Security Code Map v1",
+  "description": "Pre-resolution mapping from security claims to candidate source locations. Candidate locations are deterministic hints for proof-attempt audit and are not vulnerability findings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "mappings",
+    "summary",
+    "provenance"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "security-code-map/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/mapping"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/warning"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "coverage": {
+      "type": "string",
+      "enum": [
+        "none",
+        "partial",
+        "full"
+      ]
+    },
+    "candidateLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "startLine",
+        "endLine",
+        "reason"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "startLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "symbol": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "reason": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "matchedTerms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "path",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "source": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "path": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "message": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "candidateLocations",
+        "coverage",
+        "warnings"
+      ],
+      "properties": {
+        "claimId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "candidateLocations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/candidateLocation"
+          }
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/warning"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "totalClaims",
+        "mappedClaims",
+        "totalCandidateLocations",
+        "totalWarnings",
+        "byCoverage"
+      ],
+      "properties": {
+        "totalClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mappedClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalCandidateLocations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalWarnings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "byCoverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "none",
+            "partial",
+            "full"
+          ],
+          "properties": {
+            "none": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "partial": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "full": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin",
+        "generator",
+        "claims",
+        "scope",
+        "target"
+      ],
+      "properties": {
+        "origin": {
+          "type": "string",
+          "enum": [
+            "deterministic",
+            "manual",
+            "fixture"
+          ]
+        },
+        "generator": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "claims": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "scope": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "target": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    }
+  }
+}
