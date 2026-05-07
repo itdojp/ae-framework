@@ -9,11 +9,37 @@ import { createServer } from '../api/server.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { getSecurityConfiguration, securityConfigurations } from '../api/middleware/security-headers.js';
+import { extractSecurityClaimsFromSpec } from '../security/assurance/claim-extractor.js';
 import { importSpecaLikeSecurityArtifacts } from '../security/assurance/speca-import.js';
 
 export function createSecurityCommand(): Command {
   const security = new Command('security');
   security.description('Security management commands');
+
+  security
+    .command('extract-claims')
+    .description('Extract explicit SEC-CLAIM blocks from a Markdown specification into security-claim/v1')
+    .requiredOption('-s, --spec <file>', 'Markdown specification containing SEC-CLAIM blocks')
+    .requiredOption('-o, --out <path>', 'Output JSON path or directory for security-claim artifacts')
+    .option('--generated-at <iso-date>', 'Deterministic generatedAt timestamp for reproducible extraction')
+    .option('--no-validate', 'Skip schema validation for generated artifacts')
+    .action(async (options) => {
+      try {
+        const result = await extractSecurityClaimsFromSpec(options.spec, options.out, {
+          generatedAt: options.generatedAt,
+          validate: options.validate,
+        });
+
+        console.log(chalk.green('✅ Security claims extraction completed'));
+        console.log(`Claims: ${result.claims.claims.length}`);
+        console.log(`Warnings: ${result.warnings.length}`);
+        console.log(`Output: ${result.outputPaths.claims}`);
+        console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Security claims extraction failed: ${toMessage(error)}`));
+        safeExit(1);
+      }
+    });
 
   security
     .command('import-speca')
