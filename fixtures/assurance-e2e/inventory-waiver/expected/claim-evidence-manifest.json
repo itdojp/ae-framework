@@ -46,6 +46,33 @@
       "required": false,
       "schemaVersion": null,
       "description": "Optional trace bundle input"
+    },
+    {
+      "id": "security-claims",
+      "kind": "security-claim",
+      "path": null,
+      "present": false,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Optional security-claim/v1 input"
+    },
+    {
+      "id": "security-findings",
+      "kind": "security-finding",
+      "path": null,
+      "present": false,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Optional security-finding/v1 input"
+    },
+    {
+      "id": "security-review",
+      "kind": "security-review",
+      "path": null,
+      "present": false,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Optional security-review/v1 input"
     }
   ],
   "claims": [

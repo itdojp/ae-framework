@@ -55,6 +55,33 @@
       "required": false,
       "schemaVersion": null,
       "description": "Inline manual waiver example for the sample manifest"
+    },
+    {
+      "id": "security-claims",
+      "kind": "security-claim",
+      "path": "fixtures/security-assurance/sample.security-claims.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "security-claim/v1",
+      "description": "Optional security claim input for Security Assurance Lane review"
+    },
+    {
+      "id": "security-findings",
+      "kind": "security-finding",
+      "path": "fixtures/security-assurance/sample.security-findings.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "security-finding/v1",
+      "description": "Candidate security finding input for Security Assurance Lane review"
+    },
+    {
+      "id": "security-review",
+      "kind": "security-review",
+      "path": "fixtures/security-assurance/sample.security-review.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "security-review/v1",
+      "description": "Three-gate security review input for Security Assurance Lane review"
     }
   ],
   "claims": [
@@ -164,13 +191,86 @@
       "notes": [
         "Waived status is distinct from fully supported status."
       ]
+    },
+    {
+      "id": "sec-claim-001",
+      "statement": "Cache key must include all attacker-controlled fields that affect the verification result.",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "achievedLevel": "A1",
+      "status": "partial",
+      "evidenceRefs": [
+        {
+          "id": "security-claims:sec-claim-001",
+          "kind": "spec",
+          "artifactPath": "fixtures/security-assurance/sample.security-claims.json#/claims/0",
+          "sourceArtifactId": "security-claims",
+          "description": "Security claim imported as assurance claim."
+        },
+        {
+          "id": "security-findings:sec-finding-001",
+          "kind": "adversarial",
+          "artifactPath": "fixtures/security-assurance/sample.security-findings.json#/findings/0",
+          "sourceArtifactId": "security-findings",
+          "description": "High severity candidate finding remains needs-human-review after three-gate review."
+        },
+        {
+          "id": "security-review:sec-finding-001:0",
+          "kind": "manual",
+          "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/0",
+          "sourceArtifactId": "security-review",
+          "description": "Three-gate review classified SEC-FINDING-001 as needs-human-review."
+        },
+        {
+          "id": "security-review:sec-finding-002:1",
+          "kind": "manual",
+          "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/1",
+          "sourceArtifactId": "security-review",
+          "description": "Three-gate review classified SEC-FINDING-002 as out-of-scope."
+        },
+        {
+          "id": "security-review:sec-finding-003:2",
+          "kind": "manual",
+          "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/2",
+          "sourceArtifactId": "security-review",
+          "description": "Three-gate review classified SEC-FINDING-003 as rejected dead code."
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "security-human-review:sec-finding-001",
+          "expectedKind": "manual",
+          "reason": "High severity security finding SEC-FINDING-001 is needs-human-review; human review or remediation evidence is required before treating it as supported.",
+          "sourceArtifactId": "security-findings"
+        }
+      ],
+      "waiverRefs": [],
+      "notes": [
+        "security-finding:SEC-FINDING-001 severity=high findingStatus=candidate reviewResult=needs-human-review falsePositiveRootCause=none",
+        "security-finding:SEC-FINDING-002 severity=medium findingStatus=candidate reviewResult=out-of-scope falsePositiveRootCause=out-of-scope",
+        "security-finding:SEC-FINDING-003 severity=low findingStatus=candidate reviewResult=rejected falsePositiveRootCause=dead-code",
+        "security-attention:high SEC-FINDING-001 remains needs-human-review; keep report-only until reviewed/remediated."
+      ]
     }
   ],
   "summary": {
-    "totalClaims": 3,
+    "totalClaims": 4,
     "fullySupported": 1,
-    "partiallySupported": 1,
+    "partiallySupported": 2,
     "waived": 1,
-    "unresolved": 0
+    "unresolved": 0,
+    "security": {
+      "claims": 1,
+      "findings": 3,
+      "reviews": 3,
+      "candidate": 0,
+      "needsHumanReview": 1,
+      "confirmed": 0,
+      "rejected": 1,
+      "waived": 0,
+      "outOfScope": 1,
+      "highOrCriticalOpen": 1
+    }
   }
 }

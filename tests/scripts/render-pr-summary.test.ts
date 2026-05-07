@@ -156,6 +156,18 @@ describe.sequential('render-pr-summary', () => {
               partiallySupported: 1,
               waived: 1,
               unresolved: 0,
+              security: {
+                claims: 1,
+                findings: 3,
+                reviews: 3,
+                candidate: 0,
+                needsHumanReview: 1,
+                confirmed: 0,
+                rejected: 1,
+                waived: 0,
+                outOfScope: 1,
+                highOrCriticalOpen: 1,
+              },
             },
             claims: [
               { id: 'satisfied-claim', missingEvidenceRefs: [], waiverRefs: [] },
@@ -174,6 +186,7 @@ describe.sequential('render-pr-summary', () => {
       const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
       expect(output).toContain('Claim evidence: satisfied=1/3, partial=1, waived=1, unresolved=0');
       expect(output).toContain('Claim evidence refs: missing=1, waivers=1');
+      expect(output).toContain('Security findings: total=3, needs-human-review=1, high/critical-open=1');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

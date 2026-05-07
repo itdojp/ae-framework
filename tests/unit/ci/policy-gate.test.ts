@@ -532,6 +532,125 @@ describe('policy-gate', () => {
     expect(markdown).toContain('reason=Runtime manual review control is active during model validation.');
   });
 
+  it('carries security finding review counts into policy evaluation in report-only mode', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/security/assurance/three-gate-review.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState({
+        summary: {
+          totalClaims: 2,
+          fullySupported: 1,
+          partiallySupported: 1,
+          waived: 0,
+          unresolved: 0,
+          security: {
+            claims: 1,
+            findings: 3,
+            reviews: 3,
+            candidate: 0,
+            needsHumanReview: 1,
+            confirmed: 0,
+            rejected: 1,
+            waived: 0,
+            outOfScope: 1,
+            highOrCriticalOpen: 1,
+          },
+        },
+      }),
+      assuranceMode: 'report-only',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.assurance.summary.security).toMatchObject({
+      findings: 3,
+      needsHumanReview: 1,
+      highOrCriticalOpen: 1,
+    });
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        'assurance: security high/critical findings require review: 1',
+        'assurance: security findings need human review: 1',
+      ]),
+    );
+    expect(buildMarkdownSummary(42, result)).toContain(
+      'security findings: total=3, needs-human-review=1, high/critical-open=1',
+    );
+  });
+
+  it('normalizes malformed manifest security summaries before policy emission', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-security-summary-'));
+    const manifestPath = join(tempDir, 'claim-evidence-manifest.json');
+
+    try {
+      writeFileSync(
+        manifestPath,
+        JSON.stringify({
+          schemaVersion: 'claim-evidence-manifest/v1',
+          generatedAt: '2026-05-07T00:00:00.000Z',
+          summary: {
+            totalClaims: 0,
+            fullySupported: 0,
+            partiallySupported: 0,
+            waived: 0,
+            unresolved: 0,
+            security: [],
+          },
+          claims: [],
+        }),
+      );
+      expect(inspectClaimEvidenceManifest(manifestPath).summary.security).toBeUndefined();
+
+      writeFileSync(
+        manifestPath,
+        JSON.stringify({
+          schemaVersion: 'claim-evidence-manifest/v1',
+          generatedAt: '2026-05-07T00:00:00.000Z',
+          summary: {
+            totalClaims: 0,
+            fullySupported: 0,
+            partiallySupported: 0,
+            waived: 0,
+            unresolved: 0,
+            security: {
+              claims: -1,
+              findings: 2.9,
+              reviews: '4',
+              candidate: 'bad',
+              needsHumanReview: 1.7,
+              confirmed: null,
+              rejected: 1,
+              waived: 0,
+              outOfScope: 1,
+              highOrCriticalOpen: Number.POSITIVE_INFINITY,
+            },
+          },
+          claims: [],
+        }),
+      );
+      expect(inspectClaimEvidenceManifest(manifestPath).summary.security).toMatchObject({
+        claims: 0,
+        findings: 2,
+        reviews: 4,
+        candidate: 0,
+        needsHumanReview: 1,
+        confirmed: 0,
+        rejected: 1,
+        waived: 0,
+        outOfScope: 1,
+        highOrCriticalOpen: 0,
+      });
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it('blocks strict assurance mode when an expired waiver is present', () => {
     const result = evaluatePolicyGate({
       policy,

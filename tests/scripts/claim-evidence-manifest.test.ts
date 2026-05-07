@@ -35,6 +35,9 @@ describe.sequential('claim evidence manifest generator', () => {
     const mod = await import(moduleUrl);
     expect(mod.parseArgs([])).toMatchObject({
       assuranceSummary: 'artifacts/assurance/assurance-summary.json',
+      securityClaims: 'artifacts/security/security-claims.json',
+      securityFindings: 'artifacts/security/security-findings.json',
+      securityReview: 'artifacts/security/security-review.json',
       outputJson: 'artifacts/assurance/claim-evidence-manifest.json',
       outputMd: 'artifacts/assurance/claim-evidence-manifest.md',
       validate: true,
@@ -118,6 +121,108 @@ describe.sequential('claim evidence manifest generator', () => {
       expect(markdown).toContain('# Claim Evidence Manifest');
       expect(markdown).toContain('| no-negative-balance | high | A3 | A2 | partial |');
       expect(markdown).toContain('## Missing evidence');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('integrates security claims, findings, and three-gate reviews as report-only assurance evidence', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-claim-evidence-manifest-security-'));
+    const securityReviewPath = join(sandbox, 'security-review-with-repeat.json');
+    const outputJson = join(sandbox, 'claim-evidence-manifest.json');
+    const outputMd = join(sandbox, 'claim-evidence-manifest.md');
+
+    try {
+      const securityReviewFixture = JSON.parse(
+        readFileSync(resolve(repoRoot, 'fixtures/security-assurance/sample.security-review.json'), 'utf8'),
+      );
+      securityReviewFixture.reviews.push({
+        ...securityReviewFixture.reviews[0],
+        reviewer: 'human-security-reviewer',
+        reviewerNotes: ['Human reviewer rechecked the same finding and kept the review state.'],
+      });
+      writeJson(securityReviewPath, securityReviewFixture);
+
+      const result = runScript([
+        '--assurance-summary',
+        'fixtures/assurance/sample.assurance-summary.json',
+        '--security-claims',
+        'fixtures/security-assurance/sample.security-claims.json',
+        '--security-findings',
+        'fixtures/security-assurance/sample.security-findings.json',
+        '--security-review',
+        securityReviewPath,
+        '--generated-at',
+        '2026-05-07T00:00:00.000Z',
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const manifest = JSON.parse(readFileSync(outputJson, 'utf8'));
+      const validate = buildSchemaValidator();
+      expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
+      expect(validateClaimEvidenceManifestSemantics(manifest)).toEqual([]);
+      expect(manifest.summary.security).toMatchObject({
+        claims: 1,
+        findings: 3,
+        reviews: 4,
+        needsHumanReview: 1,
+        outOfScope: 1,
+        rejected: 1,
+        highOrCriticalOpen: 1,
+      });
+      expect(manifest.sourceArtifacts).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: 'security-claims', present: true, schemaVersion: 'security-claim/v1' }),
+          expect.objectContaining({ id: 'security-findings', present: true, schemaVersion: 'security-finding/v1' }),
+          expect.objectContaining({ id: 'security-review', present: true, schemaVersion: 'security-review/v1' }),
+        ]),
+      );
+
+      const securityClaim = manifest.claims.find((claim: { id: string }) => claim.id === 'sec-claim-001');
+      expect(securityClaim).toMatchObject({
+        criticality: 'high',
+        status: 'partial',
+      });
+      expect(securityClaim.evidenceRefs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ sourceArtifactId: 'security-claims', kind: 'spec' }),
+          expect.objectContaining({ sourceArtifactId: 'security-findings', kind: 'adversarial' }),
+          expect.objectContaining({ sourceArtifactId: 'security-review', kind: 'manual' }),
+        ]),
+      );
+      const reviewEvidenceRefs = securityClaim.evidenceRefs.filter(
+        (ref: { sourceArtifactId: string }) => ref.sourceArtifactId === 'security-review',
+      );
+      expect(reviewEvidenceRefs).toHaveLength(4);
+      expect(reviewEvidenceRefs.map((ref: { id: string }) => ref.id)).toEqual(
+        expect.arrayContaining(['security-review:sec-finding-001:0', 'security-review:sec-finding-001:3']),
+      );
+      expect(securityClaim.missingEvidenceRefs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'security-human-review:sec-finding-001',
+            expectedKind: 'manual',
+          }),
+        ]),
+      );
+      expect(securityClaim.notes).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('security-finding:SEC-FINDING-001'),
+          expect.stringContaining('security-attention:high SEC-FINDING-001'),
+          expect.stringContaining('reviewResult=out-of-scope falsePositiveRootCause=out-of-scope'),
+          expect.stringContaining('reviewResult=rejected falsePositiveRootCause=dead-code'),
+        ]),
+      );
+
+      const markdown = readFileSync(outputMd, 'utf8');
+      expect(markdown).toContain('## Security findings');
+      expect(markdown).toContain('- highOrCriticalOpen: 1');
+      expect(markdown).toContain('| sec-claim-001 | high | A2 | A1 | partial |');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

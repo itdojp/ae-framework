@@ -577,6 +577,28 @@ function normalizeWaiverStatus(waiver, nowDate) {
   return 'unknown';
 }
 
+
+function normalizeManifestSecuritySummary(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const integerField = (field) => {
+    const number = Number(value?.[field] ?? 0);
+    if (!Number.isFinite(number) || number <= 0) return 0;
+    return Math.trunc(number);
+  };
+  return {
+    claims: integerField('claims'),
+    findings: integerField('findings'),
+    reviews: integerField('reviews'),
+    candidate: integerField('candidate'),
+    needsHumanReview: integerField('needsHumanReview'),
+    confirmed: integerField('confirmed'),
+    rejected: integerField('rejected'),
+    waived: integerField('waived'),
+    outOfScope: integerField('outOfScope'),
+    highOrCriticalOpen: integerField('highOrCriticalOpen'),
+  };
+}
+
 function normalizeClaimWaivers(claim, nowDate) {
   return (Array.isArray(claim?.waiverRefs) ? claim.waiverRefs : [])
     .filter((waiver) => waiver && typeof waiver === 'object')
@@ -648,6 +670,7 @@ function inspectClaimEvidenceManifest(manifestPath = CLAIM_EVIDENCE_MANIFEST_PAT
     const claims = (Array.isArray(payload?.claims) ? payload.claims : [])
       .map((claim) => normalizeAssuranceClaim(claim, nowDate))
       .filter((claim) => claim.claimId);
+    const securitySummary = normalizeManifestSecuritySummary(payload?.summary?.security);
     return {
       ...baseState,
       present: true,
@@ -659,6 +682,7 @@ function inspectClaimEvidenceManifest(manifestPath = CLAIM_EVIDENCE_MANIFEST_PAT
         partiallySupported: Number(payload?.summary?.partiallySupported ?? 0) || 0,
         waived: Number(payload?.summary?.waived ?? 0) || 0,
         unresolved: Number(payload?.summary?.unresolved ?? 0) || 0,
+        ...(securitySummary ? { security: securitySummary } : {}),
       },
       claims,
     };
@@ -699,6 +723,14 @@ function buildAssuranceEvaluation(manifestState, options = {}) {
       ? 'waived'
       : (claims.length > 0 && claims.every((claim) => claim.result === 'pass') ? 'pass' : 'report-only'));
 
+  const securitySummary = normalizeManifestSecuritySummary(manifestState?.summary?.security);
+  if (securitySummary?.highOrCriticalOpen > 0) {
+    warnings.push(`security high/critical findings require review: ${securitySummary.highOrCriticalOpen}`);
+  }
+  if (securitySummary?.needsHumanReview > 0) {
+    warnings.push(`security findings need human review: ${securitySummary.needsHumanReview}`);
+  }
+
   const summary = {
     totalClaims: Number(manifestState?.summary?.totalClaims ?? claims.length) || 0,
     pass: claims.filter((claim) => claim.result === 'pass').length,
@@ -709,6 +741,7 @@ function buildAssuranceEvaluation(manifestState, options = {}) {
     expiringSoonWaivers: waivers.filter((waiver) => waiver.status === 'expiringSoon').length,
     expiredWaivers: waivers.filter((waiver) => waiver.status === 'expired').length,
     orphanWaivers: waivers.filter((waiver) => waiver.status === 'orphan').length,
+    ...(securitySummary ? { security: securitySummary } : {}),
   };
 
   return {
@@ -943,6 +976,10 @@ function buildMarkdownSummary(prNumber, evaluation) {
     lines.push(`- assurance: ${evaluation.assurance.result} (${evaluation.assurance.mode})`);
     lines.push(`  - claim evidence manifest: ${evaluation.assurance.manifest.present ? 'present' : 'missing'}`);
     lines.push(`  - claims: pass=${evaluation.assurance.summary.pass}, waived=${evaluation.assurance.summary.waived}, report-only=${evaluation.assurance.summary.reportOnly}, block=${evaluation.assurance.summary.block}`);
+    if (evaluation.assurance.summary.security) {
+      const security = evaluation.assurance.summary.security;
+      lines.push(`  - security findings: total=${security.findings}, needs-human-review=${security.needsHumanReview}, high/critical-open=${security.highOrCriticalOpen}, out-of-scope=${security.outOfScope}, rejected=${security.rejected}`);
+    }
     if (evaluation.assurance.waivers.length > 0) {
       lines.push(`  - waivers: active=${evaluation.assurance.summary.activeWaivers}, expiringSoon=${evaluation.assurance.summary.expiringSoonWaivers}, expired=${evaluation.assurance.summary.expiredWaivers}, orphan=${evaluation.assurance.summary.orphanWaivers}`);
       for (const waiver of evaluation.assurance.waivers) {

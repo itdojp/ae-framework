@@ -38,6 +38,9 @@ Options:
   --conformance-report <path>    Conformance report JSON.
   --counterexample <path>        Counterexample JSON. Repeatable.
   --evidence-manifest <path>     Supplemental evidence manifest JSON. Repeatable.
+  --security-claims <path>       security-claim/v1 JSON input.
+  --security-findings <path>     security-finding/v1 JSON input.
+  --security-review <path>       security-review/v1 JSON input.
   --output-json <path>           Output JSON path (default: ${DEFAULT_OUTPUT_JSON})
   --output-md <path>             Output Markdown path (default: ${DEFAULT_OUTPUT_MD})
   --help                         Show this help.
@@ -62,6 +65,9 @@ export const parseArgs = (argv = process.argv.slice(2)) => {
     conformanceReport: null,
     counterexamples: [],
     evidenceManifests: [],
+    securityClaims: null,
+    securityFindings: null,
+    securityReview: null,
     outputJson: DEFAULT_OUTPUT_JSON,
     outputMd: DEFAULT_OUTPUT_MD,
   };
@@ -104,6 +110,21 @@ export const parseArgs = (argv = process.argv.slice(2)) => {
     }
     if (arg === '--evidence-manifest') {
       options.evidenceManifests.push(readRequiredValue(argv, index, '--evidence-manifest'));
+      index += 1;
+      continue;
+    }
+    if (arg === '--security-claims') {
+      options.securityClaims = readRequiredValue(argv, index, '--security-claims');
+      index += 1;
+      continue;
+    }
+    if (arg === '--security-findings') {
+      options.securityFindings = readRequiredValue(argv, index, '--security-findings');
+      index += 1;
+      continue;
+    }
+    if (arg === '--security-review') {
+      options.securityReview = readRequiredValue(argv, index, '--security-review');
       index += 1;
       continue;
     }
@@ -605,6 +626,147 @@ const ingestCounterexample = (counterexamplePath, claimStateMap, warnings, summa
   }
 };
 
+
+const camelSecurityResult = (value) => {
+  const raw = maybeString(value);
+  if (raw === 'needs-human-review') return 'needsHumanReview';
+  if (raw === 'out-of-scope') return 'outOfScope';
+  return raw;
+};
+
+const reviewMapForSecurityFindings = (securityReviewPath) => {
+  const reviews = new Map();
+  if (!securityReviewPath) return reviews;
+  const resolvedPath = ensureFile(securityReviewPath, 'Security review');
+  const payload = readJson(resolvedPath);
+  for (const [reviewIndex, review] of ensureArray(payload.reviews ?? [], `Security review reviews (${resolvedPath})`).entries()) {
+    const findingId = maybeString(review?.findingId);
+    if (!findingId) continue;
+    const reviewEntry = { ...review, reviewIndex, artifactPath: resolvedPath };
+    const existing = reviews.get(findingId) ?? [];
+    existing.push(reviewEntry);
+    reviews.set(findingId, existing);
+  }
+  return reviews;
+};
+
+const ensureSecurityClaimState = (claimStateMap, rawClaim) => {
+  const claimId = maybeString(rawClaim?.id);
+  if (!claimId) return null;
+  if (!claimStateMap.has(claimId)) {
+    claimStateMap.set(claimId, buildClaimState({
+      id: claimId,
+      statement: maybeString(rawClaim.statement) || `Security claim ${claimId}`,
+      criticality: maybeString(rawClaim.criticality) || 'medium',
+      targetLevel: maybeString(rawClaim.targetLevel) || 'A2',
+      minIndependentSources: rawClaim.minIndependentSources,
+      requiredLanes: Array.isArray(rawClaim.requiredLanes) ? rawClaim.requiredLanes : ['spec', 'adversarial'],
+      requiredEvidenceKinds: Array.isArray(rawClaim.requiredEvidenceKinds) ? rawClaim.requiredEvidenceKinds : [],
+    }));
+  }
+  return claimStateMap.get(claimId);
+};
+
+const ingestSecurityClaims = (securityClaimsPath, claimStateMap, warnings) => {
+  if (!securityClaimsPath) return new Set();
+  const resolvedPath = ensureFile(securityClaimsPath, 'Security claims');
+  const payload = readJson(resolvedPath);
+  const claimIds = new Set();
+  for (const [claimIndex, rawClaim] of ensureArray(payload.claims ?? [], `Security claims (${resolvedPath})`).entries()) {
+    const claimState = ensureSecurityClaimState(claimStateMap, rawClaim);
+    if (!claimState) continue;
+    claimIds.add(claimState.claimId);
+    const evidence = normalizeEvidenceEntry({
+      lane: 'spec',
+      kind: 'security-claim',
+      sourceKind: 'spec-derived',
+      origin: 'security-claim',
+      status: 'observed',
+      artifactPath: `${resolvedPath}#/claims/${claimIndex}`,
+      detail: `Security claim imported from security-claim/v1 (type=${rawClaim.type ?? 'unknown'}).`,
+      claimRefs: [claimState.claimId],
+      generatorLineage: `security-claim/${rawClaim.provenance?.generator ?? 'unknown'}`,
+    });
+    addEvidenceForClaims(claimStateMap, [claimState.claimId], evidence, warnings, resolvedPath);
+  }
+  return claimIds;
+};
+
+const ingestSecurityFindingsAndReviews = (securityFindingsPath, securityReviewPath, claimStateMap, warnings) => {
+  if (!securityFindingsPath) return;
+  const resolvedPath = ensureFile(securityFindingsPath, 'Security findings');
+  const payload = readJson(resolvedPath);
+  const reviews = reviewMapForSecurityFindings(securityReviewPath);
+
+  for (const [findingIndex, finding] of ensureArray(payload.findings ?? [], `Security findings (${resolvedPath})`).entries()) {
+    const claimId = maybeString(finding?.claimId);
+    const findingId = maybeString(finding?.id);
+    if (!claimId || !findingId) continue;
+    if (!claimStateMap.has(claimId)) {
+      claimStateMap.set(claimId, buildClaimState({
+        id: claimId,
+        statement: `Security claim ${claimId}`,
+        criticality: maybeString(finding.severity) || 'medium',
+        targetLevel: 'A2',
+        requiredLanes: ['spec', 'adversarial'],
+        requiredEvidenceKinds: [],
+      }));
+    }
+    const findingReviews = reviews.get(findingId) ?? [];
+    const review = findingReviews.at(-1);
+    const reviewResult = maybeString(review?.result);
+    const effectiveResult = reviewResult || maybeString(finding.status) || 'candidate';
+    const severity = maybeString(review?.severity || finding.severity) || 'medium';
+    const evidence = normalizeEvidenceEntry({
+      lane: 'adversarial',
+      kind: 'security-finding',
+      sourceKind: 'source-derived',
+      origin: 'security-finding',
+      status: 'observed',
+      artifactPath: `${resolvedPath}#/findings/${findingIndex}`,
+      detail: `Security finding ${findingId}: status=${finding.status ?? 'unknown'}, severity=${severity}, review=${effectiveResult}.`,
+      claimRefs: [claimId],
+      generatorLineage: `security-finding/${finding.provenance?.generator ?? 'unknown'}`,
+    });
+    addEvidenceForClaims(claimStateMap, [claimId], evidence, warnings, resolvedPath);
+
+    for (const reviewEntry of findingReviews) {
+      const reviewEvidence = normalizeEvidenceEntry({
+        lane: 'adversarial',
+        kind: 'security-review',
+        sourceKind: 'source-derived',
+        origin: 'security-review',
+        status: 'observed',
+        artifactPath: `${reviewEntry.artifactPath}#/reviews/${reviewEntry.reviewIndex}`,
+        detail: `Security review classified ${findingId} as ${reviewEntry.result ?? 'unknown'}${reviewEntry.falsePositiveRootCause ? ` (${reviewEntry.falsePositiveRootCause})` : ''}.`,
+        claimRefs: [claimId],
+        generatorLineage: `security-review/${reviewEntry.reviewer ?? 'unknown'}`,
+      });
+      addEvidenceForClaims(claimStateMap, [claimId], reviewEvidence, warnings, reviewEntry.artifactPath);
+    }
+
+    const claimState = claimStateMap.get(claimId);
+    claimState.counterexamples.total += 1;
+    if (effectiveResult === 'rejected' || effectiveResult === 'out-of-scope' || effectiveResult === 'waived') {
+      claimState.counterexamples.resolved += 1;
+    } else if (effectiveResult === 'accepted-risk') {
+      claimState.counterexamples.acceptedRisk += 1;
+    } else {
+      claimState.counterexamples.open += 1;
+    }
+
+    const resultKey = camelSecurityResult(effectiveResult) || effectiveResult;
+    if ((severity === 'high' || severity === 'critical') && (effectiveResult === 'candidate' || effectiveResult === 'needs-human-review' || effectiveResult === 'confirmed')) {
+      pushWarning(
+        warnings,
+        'unresolved-critical-counterexample',
+        `High/critical security finding ${findingId} remains ${resultKey}.`,
+        { claimId, artifactPath: resolvedPath },
+      );
+    }
+  }
+};
+
 const ingestEvidenceManifest = (manifestPath, claimStateMap, warnings) => {
   const resolvedPath = ensureFile(manifestPath, 'Evidence manifest');
   const manifest = readJson(resolvedPath);
@@ -784,6 +946,8 @@ export const run = (argv = process.argv.slice(2)) => {
   }
   const claimStateMap = new Map(claims.map((claim) => [claim.id, buildClaimState(claim)]));
 
+  ingestSecurityClaims(options.securityClaims, claimStateMap, warnings);
+
   const contextPackRefs = collectContextPackReferences(
     options.contextPacks,
     maybeString(assuranceProfile.profileId),
@@ -796,6 +960,7 @@ export const run = (argv = process.argv.slice(2)) => {
     ingestFormalSummary(formalSummaryPath, claimStateMap, contextPackRefs, warnings);
   }
   ingestConformanceReport(options.conformanceReport, claimStateMap, contextPackRefs, warnings);
+  ingestSecurityFindingsAndReviews(options.securityFindings, options.securityReview, claimStateMap, warnings);
   for (const counterexamplePath of options.counterexamples) {
     ingestCounterexample(counterexamplePath, claimStateMap, warnings, topLevelState);
   }
@@ -819,6 +984,9 @@ export const run = (argv = process.argv.slice(2)) => {
       conformanceReport: options.conformanceReport ? path.resolve(options.conformanceReport) : null,
       counterexamples: uniqueSorted(options.counterexamples.map((targetPath) => path.resolve(targetPath))),
       evidenceManifests: uniqueSorted(options.evidenceManifests.map((targetPath) => path.resolve(targetPath))),
+      securityClaims: options.securityClaims ? path.resolve(options.securityClaims) : null,
+      securityFindings: options.securityFindings ? path.resolve(options.securityFindings) : null,
+      securityReview: options.securityReview ? path.resolve(options.securityReview) : null,
     },
     summary: {
       claimCount: claimSummaries.length,

@@ -192,6 +192,9 @@ describe.sequential('assurance aggregate lanes script', () => {
     const mod = await import(moduleUrl);
     expect(mod.parseArgs(['--assurance-profile', 'fixtures/assurance/sample.assurance-profile.json'])).toMatchObject({
       assuranceProfile: 'fixtures/assurance/sample.assurance-profile.json',
+      securityClaims: null,
+      securityFindings: null,
+      securityReview: null,
       outputJson: 'artifacts/assurance/assurance-summary.json',
       outputMd: 'artifacts/assurance/assurance-summary.md',
     });
@@ -277,6 +280,69 @@ describe.sequential('assurance aggregate lanes script', () => {
       });
       expect(summary.laneCoverage.proof.observedClaims).toBe(1);
       expect(readFileSync(outputMd, 'utf8')).toContain('## Claim status');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('adds security claim and review evidence to the assurance lane summary', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-aggregate-security-'));
+    const securityReviewPath = join(sandbox, 'security-review-with-repeat.json');
+    const outputJson = join(sandbox, 'assurance-summary.json');
+    const outputMd = join(sandbox, 'assurance-summary.md');
+
+    try {
+      const securityReviewFixture = JSON.parse(
+        readFileSync(resolve(repoRoot, 'fixtures/security-assurance/sample.security-review.json'), 'utf8'),
+      );
+      securityReviewFixture.reviews.push({
+        ...securityReviewFixture.reviews[0],
+        reviewer: 'human-security-reviewer',
+        reviewerNotes: ['Human reviewer rechecked the same finding and kept the review state.'],
+      });
+      writeJson(securityReviewPath, securityReviewFixture);
+
+      const result = runScript([
+        '--assurance-profile',
+        'fixtures/assurance/sample.assurance-profile.json',
+        '--security-claims',
+        'fixtures/security-assurance/sample.security-claims.json',
+        '--security-findings',
+        'fixtures/security-assurance/sample.security-findings.json',
+        '--security-review',
+        securityReviewPath,
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const summary = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(summary.inputs.securityClaims).toContain('fixtures/security-assurance/sample.security-claims.json');
+      expect(summary.inputs.securityFindings).toContain('fixtures/security-assurance/sample.security-findings.json');
+      expect(summary.inputs.securityReview).toContain(securityReviewPath);
+      expect(summary.summary.claimCount).toBe(2);
+
+      const securityClaim = summary.claims.find((claim: { claimId: string }) => claim.claimId === 'SEC-CLAIM-001');
+      expect(securityClaim).toMatchObject({
+        criticality: 'high',
+        observedLanes: ['spec', 'adversarial'],
+        missingLanes: ['behavior'],
+      });
+      expect(securityClaim.observedEvidenceKinds).toEqual(
+        expect.arrayContaining(['security-claim', 'security-finding', 'security-review']),
+      );
+      expect(
+        securityClaim.evidence.filter((entry: { kind: string }) => entry.kind === 'security-review'),
+      ).toHaveLength(4);
+      expect(securityClaim.counterexamples).toMatchObject({
+        open: 1,
+        resolved: 2,
+        total: 3,
+      });
+      expect(securityClaim.independenceWarnings).toContain('unresolved-critical-counterexample');
+      expect(readFileSync(outputMd, 'utf8')).toContain('SEC-CLAIM-001');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
