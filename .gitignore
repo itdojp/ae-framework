@@ -57,6 +57,7 @@ _apalache-out/
 
 # Local generated files (dev/test)
 artifacts/formal/
+artifacts/security-assurance/
 test-results/
 test-results-run/
 tmp-gh-event*.json

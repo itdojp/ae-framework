@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "security-code-map/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "mappings": [
+    {
+      "claimId": "SEC-CLAIM-001",
+      "candidateLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 13,
+          "endLine": 20,
+          "symbol": "buildCacheKey",
+          "reason": "Matched security claim terms in buildCacheKey: attacker, authorization, cache, controlled, key, scope, security, subject.",
+          "matchedTerms": [
+            "attacker",
+            "authorization",
+            "cache",
+            "controlled",
+            "key",
+            "scope",
+            "security",
+            "subject",
+            "tenant",
+            "verification"
+          ]
+        },
+        {
+          "path": "src/cache.ts",
+          "startLine": 25,
+          "endLine": 31,
+          "symbol": "lookupVerificationCache",
+          "reason": "Matched security claim terms in lookupVerificationCache: cache, key, verification.",
+          "matchedTerms": [
+            "cache",
+            "key",
+            "verification"
+          ]
+        }
+      ],
+      "coverage": "partial",
+      "warnings": []
+    },
+    {
+      "claimId": "SEC-CLAIM-002",
+      "candidateLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 25,
+          "endLine": 31,
+          "symbol": "lookupVerificationCache",
+          "reason": "Matched security claim terms in lookupVerificationCache: bearer, cache, key, lookup, token.",
+          "matchedTerms": [
+            "bearer",
+            "cache",
+            "key",
+            "lookup",
+            "token"
+          ]
+        },
+        {
+          "path": "src/cache.ts",
+          "startLine": 13,
+          "endLine": 20,
+          "symbol": "buildCacheKey",
+          "reason": "Matched security claim terms in buildCacheKey: cache, key, security.",
+          "matchedTerms": [
+            "cache",
+            "key",
+            "security"
+          ]
+        },
+        {
+          "path": "src/cache.ts",
+          "startLine": 21,
+          "endLine": 24,
+          "symbol": "isFreshToken",
+          "reason": "Matched security claim terms in isFreshToken: bearer, token.",
+          "matchedTerms": [
+            "bearer",
+            "token"
+          ]
+        }
+      ],
+      "coverage": "partial",
+      "warnings": []
+    },
+    {
+      "claimId": "SEC-CLAIM-003",
+      "candidateLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 13,
+          "endLine": 20,
+          "symbol": "buildCacheKey",
+          "reason": "Matched security claim terms in buildCacheKey: cache, fixture, input, key, scope, security.",
+          "matchedTerms": [
+            "cache",
+            "fixture",
+            "input",
+            "key",
+            "scope",
+            "security"
+          ]
+        },
+        {
+          "path": "src/cache.ts",
+          "startLine": 25,
+          "endLine": 31,
+          "symbol": "lookupVerificationCache",
+          "reason": "Matched security claim terms in lookupVerificationCache: cache, input, key.",
+          "matchedTerms": [
+            "cache",
+            "input",
+            "key"
+          ]
+        }
+      ],
+      "coverage": "partial",
+      "warnings": []
+    }
+  ],
+  "summary": {
+    "totalClaims": 3,
+    "mappedClaims": 3,
+    "totalCandidateLocations": 7,
+    "totalWarnings": 0,
+    "byCoverage": {
+      "none": 0,
+      "partial": 3,
+      "full": 0
+    }
+  },
+  "provenance": {
+    "origin": "deterministic",
+    "generator": "security-code-map-producer",
+    "claims": "artifacts/security-assurance/cache-key/security-claims.json",
+    "scope": "artifacts/security-assurance/cache-key/security-audit-scope.json",
+    "target": "fixtures/security-assurance/cache-key/inputs/target"
+  },
+  "warnings": []
+}

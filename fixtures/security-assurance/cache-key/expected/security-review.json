@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "security-review/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "reviews": [
+    {
+      "findingId": "SEC-FINDING-001",
+      "severity": "high",
+      "result": "needs-human-review",
+      "gates": {
+        "deadCode": {
+          "result": "pass",
+          "rationale": "At least one affected location overlaps the security-code-map candidate locations for the same claim.",
+          "evidenceRefs": [
+            "src/cache.ts:12-17"
+          ]
+        },
+        "trustBoundary": {
+          "result": "pass",
+          "rationale": "Matched attacker-controlled trust boundary: TB-CACHE.",
+          "evidenceRefs": [
+            "TB-CACHE"
+          ]
+        },
+        "scope": {
+          "result": "pass",
+          "rationale": "All affected paths are covered by audit scope inScope globs (src/**/*.ts).",
+          "evidenceRefs": [
+            "src/**/*.ts"
+          ]
+        }
+      },
+      "falsePositiveRootCause": null,
+      "reviewerNotes": [
+        "Severity preserved from finding: high.",
+        "Rule-based MVP review only; exploitability confirmation and full reachability analysis are out of scope.",
+        "Candidate finding remains unresolved and requires human security review before confirmation."
+      ],
+      "reviewedAt": "2026-05-07T00:00:00.000Z",
+      "reviewer": "security-three-gate-review"
+    },
+    {
+      "findingId": "SEC-FINDING-002",
+      "severity": "low",
+      "result": "out-of-scope",
+      "gates": {
+        "deadCode": {
+          "result": "unknown",
+          "rationale": "Dead-code reachability was not evaluated because the scope gate failed first."
+        },
+        "trustBoundary": {
+          "result": "unknown",
+          "rationale": "Trust-boundary involvement was not evaluated because the scope gate failed first."
+        },
+        "scope": {
+          "result": "fail",
+          "rationale": "At least one affected path is excluded by audit scope outOfScope globs: tests/**.",
+          "evidenceRefs": [
+            "tests/**"
+          ]
+        }
+      },
+      "falsePositiveRootCause": "out-of-scope",
+      "reviewerNotes": [
+        "Severity preserved from finding: low.",
+        "Rule-based MVP review only; exploitability confirmation and full reachability analysis are out of scope.",
+        "Trust boundary involvement is unknown from available scope/code-map evidence.",
+        "Classified as out-of-scope based on audit scope glob rules."
+      ],
+      "reviewedAt": "2026-05-07T00:00:00.000Z",
+      "reviewer": "security-three-gate-review"
+    }
+  ],
+  "summary": {
+    "totalReviews": 2,
+    "byResult": {
+      "needsHumanReview": 1,
+      "confirmed": 0,
+      "rejected": 0,
+      "waived": 0,
+      "outOfScope": 1
+    },
+    "falsePositiveRootCauses": {
+      "deadCode": 0,
+      "trustBoundaryMisunderstanding": 0,
+      "outOfScope": 1,
+      "codeReadingError": 0,
+      "specMisinterpretation": 0,
+      "insufficientEvidence": 0
+    }
+  }
+}

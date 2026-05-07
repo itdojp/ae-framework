@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "security-audit-scope/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "target": {
+    "repository": "itdojp/ae-framework-fixture",
+    "commit": "fixture-cache-key",
+    "defaultBranch": "main",
+    "description": "TypeScript-only cache-key fixture for Security Assurance Lane golden scenario."
+  },
+  "inScope": [
+    "src/**/*.ts"
+  ],
+  "outOfScope": [
+    "tests/**",
+    "**/*.test.ts"
+  ],
+  "trustBoundaries": [
+    {
+      "id": "TB-CACHE",
+      "name": "External authorization cache request",
+      "entryPoints": [
+        "api"
+      ],
+      "attackerControlled": true,
+      "description": "Tenant, subject, scope, and bearer token fields cross from an external request into cache lookup code.",
+      "dataClasses": [
+        "tenant",
+        "subject",
+        "scope",
+        "bearer-token",
+        "authorization-context"
+      ],
+      "scopeRefs": [
+        "src/**/*.ts"
+      ]
+    },
+    {
+      "id": "TB-TEST",
+      "name": "Test fixture helper boundary",
+      "entryPoints": [
+        "test-fixture"
+      ],
+      "attackerControlled": false,
+      "description": "Test-only helper code is intentionally outside production audit scope.",
+      "dataClasses": [
+        "fixture-input"
+      ],
+      "scopeRefs": [
+        "tests/**"
+      ]
+    }
+  ],
+  "notes": [
+    "Scope is intentionally small so golden comparisons remain deterministic."
+  ]
+}

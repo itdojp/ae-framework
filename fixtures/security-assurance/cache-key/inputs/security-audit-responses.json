@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "security-audit-response-fixture/v1",
+  "responses": [
+    {
+      "taskId": "SEC-AUDIT-TASK-001",
+      "claimId": "SEC-CLAIM-001",
+      "result": "finding",
+      "rationale": "The simulated proof attempt cannot establish that all attacker-controlled authorization fields participate in cache-key material.",
+      "finding": {
+        "id": "SEC-FINDING-001",
+        "status": "candidate",
+        "severity": "high",
+        "confidence": "medium",
+        "title": "Authorization cache key omits attacker-controlled scope",
+        "summary": "The cache key includes tenant and subject but omits scope, so two authorization contexts can share a key.",
+        "affectedLocations": [
+          {
+            "path": "src/cache.ts",
+            "startLine": 12,
+            "endLine": 17,
+            "symbol": "buildCacheKey",
+            "reason": "buildCacheKey constructs key material from tenant and subject while the scope field is attacker-controlled and authorization-relevant."
+          }
+        ],
+        "proofAttempt": {
+          "map": "Relevant production path is src/cache.ts:12-17 (buildCacheKey).",
+          "prove": "The implementation must show tenant, subject, and scope are all included in the cache key before authorization cache reuse.",
+          "stressTest": "Counterexample candidate: two requests differ only by scope and produce the same cache key.",
+          "report": "Keep as candidate until human security review validates exploitability and intended cache semantics."
+        },
+        "scopeRefs": [
+          "TB-CACHE"
+        ],
+        "notes": [
+          "Primary positive candidate for the golden scenario."
+        ]
+      }
+    },
+    {
+      "taskId": "SEC-AUDIT-TASK-002",
+      "claimId": "SEC-CLAIM-002",
+      "result": "no-finding",
+      "rationale": "isFreshToken rejects tokens whose expiresAtEpochMs is not greater than the current time before cache lookup."
+    },
+    {
+      "taskId": "SEC-AUDIT-TASK-003",
+      "claimId": "SEC-CLAIM-003",
+      "result": "finding",
+      "rationale": "The simulated proof attempt reports a test-only helper that resembles production cache-key construction.",
+      "finding": {
+        "id": "SEC-FINDING-002",
+        "status": "candidate",
+        "severity": "low",
+        "confidence": "low",
+        "title": "Test fixture cache helper resembles production key construction",
+        "summary": "The candidate path is under tests/fixtures and should be rejected by scope review rather than treated as production code.",
+        "affectedLocations": [
+          {
+            "path": "tests/fixtures/cache-helper.ts",
+            "startLine": 1,
+            "endLine": 3,
+            "symbol": "buildFixtureCacheKey",
+            "reason": "Fixture-only helper path is intentionally excluded from production audit scope."
+          }
+        ],
+        "proofAttempt": {
+          "map": "Candidate code path appears only in tests/fixtures/cache-helper.ts.",
+          "prove": "A production entry point would need to reach the helper for this to be actionable.",
+          "stressTest": "No production entry point reaches this helper in the fixture scope.",
+          "report": "Expected to be classified out-of-scope by the three-gate review."
+        },
+        "scopeRefs": [
+          "TB-TEST",
+          "tests/**"
+        ],
+        "notes": [
+          "Negative control for the golden scenario."
+        ]
+      }
+    }
+  ]
+}
