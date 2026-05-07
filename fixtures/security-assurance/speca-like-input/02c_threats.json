@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "speca-like/threats/v1",
+  "frameworks": [
+    "STRIDE",
+    "CWE_TOP_25"
+  ],
+  "threats": [
+    {
+      "id": "SPECA-THREAT-001",
+      "propertyId": "SP-001",
+      "stride": "tampering",
+      "cwe": "cwe-20",
+      "description": "Attacker-controlled verification input can alter the result when cache-key material is incomplete.",
+      "trustBoundaryIds": [
+        "TB-001"
+      ],
+      "likelihood": "medium"
+    }
+  ]
+}

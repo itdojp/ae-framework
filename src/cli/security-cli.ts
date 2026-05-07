@@ -9,10 +9,38 @@ import { createServer } from '../api/server.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { getSecurityConfiguration, securityConfigurations } from '../api/middleware/security-headers.js';
+import { importSpecaLikeSecurityArtifacts } from '../security/assurance/speca-import.js';
 
 export function createSecurityCommand(): Command {
   const security = new Command('security');
   security.description('Security management commands');
+
+  security
+    .command('import-speca')
+    .description('Import SPECA-like security audit output into ae-framework security assurance artifacts')
+    .requiredOption('-i, --input <dir>', 'Directory containing SPECA-like JSON outputs')
+    .requiredOption('-o, --out <dir>', 'Output directory for ae-framework security artifacts')
+    .option('--generated-at <iso-date>', 'Deterministic generatedAt timestamp for reproducible imports')
+    .option('--no-validate', 'Skip schema validation for generated artifacts')
+    .action(async (options) => {
+      try {
+        const result = await importSpecaLikeSecurityArtifacts(options.input, options.out, {
+          generatedAt: options.generatedAt,
+          validate: options.validate,
+        });
+
+        console.log(chalk.green('✅ SPECA-compatible security import completed'));
+        console.log(`Claims: ${result.artifacts.claims.claims.length}`);
+        console.log(`Threats: ${result.artifacts.threatModel.threats.length}`);
+        console.log(`Findings: ${result.artifacts.findings.findings.length}`);
+        console.log(`Reviews: ${result.artifacts.review.reviews.length}`);
+        console.log(`Warnings: ${result.warnings.length}`);
+        console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ SPECA-compatible security import failed: ${toMessage(error)}`));
+        safeExit(1);
+      }
+    });
 
   // Test security headers command
   security

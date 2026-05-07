@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "speca-like/security-properties/v1",
+  "properties": [
+    {
+      "id": "SP-001",
+      "type": "invariant",
+      "statement": "Verification cache key must include every attacker-controlled field that affects the verification result.",
+      "source": {
+        "kind": "spec",
+        "uri": "spec/security/cache-key.md",
+        "section": "Verification cache"
+      },
+      "severity": "high",
+      "assuranceLevel": "A2",
+      "stride": [
+        "Tampering"
+      ],
+      "cwe": [
+        "CWE-20"
+      ],
+      "trustBoundary": {
+        "id": "TB-001",
+        "entryPoints": [
+          "api",
+          "p2p"
+        ],
+        "attackerControlled": true,
+        "dataClasses": [
+          "verification-input"
+        ]
+      },
+      "requiredLanes": [
+        "spec",
+        "adversarial",
+        "behavior"
+      ],
+      "specaPhaseNote": "Fixture-only unsupported field retained in import warnings."
+    }
+  ]
+}
