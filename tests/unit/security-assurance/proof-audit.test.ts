@@ -187,6 +187,34 @@ describe('security proof-attempt audit producer', () => {
     }
   });
 
+
+  it('allows response fixtures where every task has no finding', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-proof-audit-all-clean-'));
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-proof-audit-all-clean-out-'));
+    try {
+      const localResponsesPath = join(fixtureDir, 'responses.json');
+      writeJson(localResponsesPath, {
+        schemaVersion: 'security-audit-response-fixture/v1',
+        responses: [
+          { taskId: 'SEC-AUDIT-TASK-001', result: 'no-finding', rationale: 'The fixture proof established the claim for the mapped code path.' },
+        ],
+      });
+
+      const result = await generateSecurityProofAudit(claimsPath, codeMapPath, scopePath, outDir, {
+        generatedAt,
+        responseFixture: localResponsesPath,
+      });
+
+      expect(result.findings).toBeUndefined();
+      expect(result.outputPaths.findings).toBeUndefined();
+      expect(result.responseSummary).toEqual({ totalResponses: 1, findingResponses: 0, noFindingResponses: 1, missingResponses: 0 });
+      expect(readFileSync(join(outDir, 'security-audit-summary.md'), 'utf8')).toContain('SEC-AUDIT-TASK-001 / SEC-CLAIM-001: no-finding');
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
   it('exposes proof-attempt audit through ae security audit', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ae-proof-audit-cli-'));
     try {

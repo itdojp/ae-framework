@@ -44,10 +44,10 @@ export function createSecurityCommand(): Command {
         console.log(`No-finding responses: ${result.responseSummary.noFindingResponses}`);
         console.log(`Warnings: ${result.warnings.length}`);
         console.log(`Tasks: ${result.outputPaths.tasks}`);
-        if (result.outputPaths.findings) {
+        if (result.findings && result.outputPaths.findings) {
           console.log(`Findings output: ${result.outputPaths.findings}`);
         } else {
-          console.log('Findings output: not generated (dry-run mode without --response-fixture)');
+          console.log('Findings output: not generated (dry-run or all responses were no-finding)');
         }
         console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
       } catch (error: unknown) {

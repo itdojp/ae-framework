@@ -647,7 +647,7 @@ export function normalizeAuditResponsesToFindings(
   taskBundle: SecurityAuditTaskBundleDocument,
   generatedAt: string,
   options: { taskBundlePath?: string; codeMapPath?: string } = {},
-): { findings: SecurityFindingDocument; warnings: AuditWarning[]; responseSummary: SecurityAuditResult['responseSummary']; auditOutcomes: SecurityAuditOutcome[] } {
+): { findings?: SecurityFindingDocument; warnings: AuditWarning[]; responseSummary: SecurityAuditResult['responseSummary']; auditOutcomes: SecurityAuditOutcome[] } {
   const warnings: AuditWarning[] = [];
   const taskById = new Map(taskBundle.tasks.map((task) => [task.id, task]));
   const taskByClaimId = new Map(taskBundle.tasks.map((task) => [task.claimId, task]));
@@ -687,9 +687,6 @@ export function normalizeAuditResponsesToFindings(
     }
     outcomeByTaskId.set(task.id, outcome);
   }
-  if (findings.length === 0) {
-    throw new Error('Security audit response fixture did not produce any security-finding/v1 findings; omit responseFixture for dry-run task generation only.');
-  }
   const byStatus = countFindingStatus();
   const bySeverity = countSeverity();
   for (const finding of findings) {
@@ -697,16 +694,18 @@ export function normalizeAuditResponsesToFindings(
     const severity = normalizeSeverity(finding['severity']) ?? 'medium';
     bySeverity[severity] += 1;
   }
-  const findingsDocument: SecurityFindingDocument = {
-    schemaVersion: 'security-finding/v1',
-    generatedAt,
-    findings,
-    summary: {
-      totalFindings: findings.length,
-      byStatus,
-      bySeverity,
-    },
-  };
+  const findingsDocument: SecurityFindingDocument | undefined = findings.length > 0
+    ? {
+        schemaVersion: 'security-finding/v1',
+        generatedAt,
+        findings,
+        summary: {
+          totalFindings: findings.length,
+          byStatus,
+          bySeverity,
+        },
+      }
+    : undefined;
   const auditOutcomes = taskBundle.tasks.map((task) => outcomeByTaskId.get(task.id) ?? {
     taskId: task.id,
     claimId: task.claimId,
@@ -714,7 +713,7 @@ export function normalizeAuditResponsesToFindings(
     findingIds: [],
   });
   return {
-    findings: findingsDocument,
+    ...(findingsDocument !== undefined ? { findings: findingsDocument } : {}),
     warnings,
     responseSummary: {
       totalResponses: responseFixture.responses.length,
@@ -815,7 +814,7 @@ export async function generateSecurityProofAudit(
   const resolvedCodeMapPath = path.resolve(codeMapPath);
   const resolvedScopePath = path.resolve(scopePath);
   const responseFixturePath = options.responseFixture ? path.resolve(options.responseFixture) : undefined;
-  const outputPaths = outputPathsFor(outPath, responseFixturePath !== undefined);
+  const initialOutputPaths = outputPathsFor(outPath, responseFixturePath !== undefined);
 
   const rawClaims = await loadJson(resolvedClaimsPath);
   const rawCodeMap = await loadJson(resolvedCodeMapPath);
@@ -856,7 +855,7 @@ export async function generateSecurityProofAudit(
   if (responseFixturePath) {
     const responseFixture = parseResponseFixture(await loadJson(responseFixturePath));
     const normalized = normalizeAuditResponsesToFindings(responseFixture, taskBundle, generatedAt, {
-      taskBundlePath: portablePathFrom(repoRoot, outputPaths.tasks),
+      taskBundlePath: portablePathFrom(repoRoot, initialOutputPaths.tasks),
       codeMapPath: portablePathFrom(repoRoot, resolvedCodeMapPath),
     });
     findings = normalized.findings;
@@ -877,16 +876,19 @@ export async function generateSecurityProofAudit(
     taskBundle,
     ...(findings !== undefined ? { findings } : {}),
     warnings,
-    outputPaths,
+    outputPaths: findings ? initialOutputPaths : {
+      tasks: initialOutputPaths.tasks,
+      summaryMarkdown: initialOutputPaths.summaryMarkdown,
+    },
     responseSummary,
     auditOutcomes,
   };
 
-  await writeJson(outputPaths.tasks, taskBundle);
-  if (findings && outputPaths.findings) {
-    await writeJson(outputPaths.findings, findings);
+  await writeJson(result.outputPaths.tasks, taskBundle);
+  if (findings && result.outputPaths.findings) {
+    await writeJson(result.outputPaths.findings, findings);
   }
-  await writeText(outputPaths.summaryMarkdown, renderSummaryMarkdown(result));
+  await writeText(result.outputPaths.summaryMarkdown, renderSummaryMarkdown(result));
 
   return result;
 }
