@@ -2,7 +2,7 @@
 
 - schemaVersion: claim-evidence-manifest/v1
 - generatedAt: 2026-05-06T00:00:00.000Z
-- sourceArtifacts: 4/5 present
+- sourceArtifacts: 4/8 present
 - claims: 3 total; 1 satisfied, 1 partial, 1 waived, 0 unresolved
 - missingEvidenceRefs: 1
 - waiverRefs: 1
@@ -16,6 +16,9 @@
 | quality-scorecard | quality-scorecard | true | false | fixtures/assurance-e2e/inventory-waiver/inputs/quality-scorecard.json | quality-scorecard/v1 |
 | verify-lite-run-summary | verify-lite-run-summary | true | false | fixtures/assurance-e2e/inventory-waiver/inputs/verify-lite-run-summary.json | 1.0.0 |
 | trace-bundle | trace-bundle | false | false | n/a | n/a |
+| security-claims | security-claim | false | false | n/a | n/a |
+| security-findings | security-finding | false | false | n/a | n/a |
+| security-review | security-review | false | false | n/a | n/a |
 
 ## Claims
 
