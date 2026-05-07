@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/security-claim-v1.schema.json",
+  "title": "Security Claim v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "claims"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "security-claim/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assuranceLevel": {
+      "type": "string",
+      "enum": [
+        "A0",
+        "A1",
+        "A2",
+        "A3",
+        "A4"
+      ]
+    },
+    "criticality": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "stride": {
+      "type": "string",
+      "enum": [
+        "Spoofing",
+        "Tampering",
+        "Repudiation",
+        "Information Disclosure",
+        "Denial of Service",
+        "Elevation of Privilege"
+      ]
+    },
+    "cwe": {
+      "type": "string",
+      "pattern": "^CWE-[0-9]+$"
+    },
+    "claimType": {
+      "type": "string",
+      "enum": [
+        "invariant",
+        "precondition",
+        "postcondition",
+        "assumption"
+      ]
+    },
+    "sourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "uri"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "spec",
+            "design",
+            "bug-bounty-scope",
+            "issue",
+            "security-policy",
+            "other"
+          ]
+        },
+        "uri": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "section": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "threatTags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stride",
+        "cwe"
+      ],
+      "properties": {
+        "stride": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/stride"
+          }
+        },
+        "cwe": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/cwe"
+          }
+        },
+        "owasp": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "trustBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entryPoints",
+        "attackerControlled"
+      ],
+      "properties": {
+        "boundaryIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "entryPoints": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "attackerControlled": {
+          "type": "boolean"
+        },
+        "dataClasses": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "requiredLane": {
+      "type": "string",
+      "enum": [
+        "spec",
+        "adversarial",
+        "behavior",
+        "formal",
+        "runtime",
+        "policy",
+        "manual"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin",
+        "generator"
+      ],
+      "properties": {
+        "origin": {
+          "type": "string",
+          "enum": [
+            "manual",
+            "manual-block",
+            "imported",
+            "codex-generated",
+            "generated"
+          ]
+        },
+        "generator": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "source": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "statement",
+        "sourceRefs",
+        "criticality",
+        "targetLevel",
+        "threatTags",
+        "trustBoundary",
+        "requiredLanes",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "type": {
+          "$ref": "#/$defs/claimType"
+        },
+        "statement": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/sourceRef"
+          }
+        },
+        "criticality": {
+          "$ref": "#/$defs/criticality"
+        },
+        "targetLevel": {
+          "$ref": "#/$defs/assuranceLevel"
+        },
+        "threatTags": {
+          "$ref": "#/$defs/threatTags"
+        },
+        "trustBoundary": {
+          "$ref": "#/$defs/trustBoundary"
+        },
+        "requiredLanes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/requiredLane"
+          }
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "totalClaims",
+        "byCriticality"
+      ],
+      "properties": {
+        "totalClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "byCriticality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "properties": {
+            "low": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "medium": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "high": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "critical": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "security-claim/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "claims": [
+    {
+      "id": "SEC-CLAIM-001",
+      "type": "invariant",
+      "statement": "Cache key must include all attacker-controlled fields that affect the verification result.",
+      "sourceRefs": [
+        {
+          "kind": "spec",
+          "uri": "spec/security/cache-key.md",
+          "section": "Verification cache"
+        }
+      ],
+      "criticality": "high",
+      "targetLevel": "A2",
+      "threatTags": {
+        "stride": [
+          "Tampering"
+        ],
+        "cwe": [
+          "CWE-20"
+        ]
+      },
+      "trustBoundary": {
+        "boundaryIds": [
+          "TB-001"
+        ],
+        "entryPoints": [
+          "api",
+          "p2p"
+        ],
+        "attackerControlled": true,
+        "dataClasses": [
+          "verification-input"
+        ]
+      },
+      "requiredLanes": [
+        "spec",
+        "adversarial",
+        "behavior"
+      ],
+      "provenance": {
+        "origin": "manual",
+        "generator": "security-claim-author"
+      },
+      "notes": [
+        "Fixture claim for Security Assurance Lane contract validation."
+      ]
+    }
+  ],
+  "summary": {
+    "totalClaims": 1,
+    "byCriticality": {
+      "low": 0,
+      "medium": 0,
+      "high": 1,
+      "critical": 0
+    }
+  }
+}

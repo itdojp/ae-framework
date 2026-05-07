@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "security-audit-scope/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "target": {
+    "repository": "example/repo",
+    "commit": "HEAD",
+    "defaultBranch": "main",
+    "description": "Fixture target for Security Assurance Lane contract validation."
+  },
+  "inScope": [
+    "src/**/*.ts",
+    "packages/**/src/**/*.ts"
+  ],
+  "outOfScope": [
+    "test/**",
+    "tests/**",
+    "docs/**",
+    "examples/**"
+  ],
+  "trustBoundaries": [
+    {
+      "id": "TB-001",
+      "name": "External verification request boundary",
+      "entryPoints": [
+        "api",
+        "p2p"
+      ],
+      "attackerControlled": true,
+      "description": "Input received from outside the trusted process boundary.",
+      "dataClasses": [
+        "verification-input"
+      ],
+      "scopeRefs": [
+        "src/**/*.ts"
+      ]
+    }
+  ],
+  "notes": [
+    "MVP scope uses glob boundaries only; reachability analysis is out of scope for #3258."
+  ]
+}

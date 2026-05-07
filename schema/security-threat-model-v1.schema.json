@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/security-threat-model-v1.schema.json",
+  "title": "Security Threat Model v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "frameworks",
+    "threats"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "security-threat-model/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "frameworks": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "STRIDE",
+          "CWE_TOP_25",
+          "OWASP_TOP_10",
+          "custom"
+        ]
+      }
+    },
+    "threats": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/threat"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stride": {
+      "type": "string",
+      "enum": [
+        "Spoofing",
+        "Tampering",
+        "Repudiation",
+        "Information Disclosure",
+        "Denial of Service",
+        "Elevation of Privilege"
+      ]
+    },
+    "cwe": {
+      "type": "string",
+      "pattern": "^CWE-[0-9]+$"
+    },
+    "threat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "stride",
+        "cwe",
+        "description",
+        "relatedClaimIds"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "stride": {
+          "$ref": "#/$defs/stride"
+        },
+        "cwe": {
+          "$ref": "#/$defs/cwe"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "relatedClaimIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "trustBoundaryIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "totalThreats"
+      ],
+      "properties": {
+        "totalThreats": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

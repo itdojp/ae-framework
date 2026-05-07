@@ -127,6 +127,21 @@ const checks = [
     semanticValidate: validateClaimEvidenceManifestSemantics
   },
   {
+    schema: 'schema/security-claim-v1.schema.json',
+    fixtures: ['fixtures/security-assurance/sample.security-claims.json'],
+    label: 'Security claim v1 schema validation'
+  },
+  {
+    schema: 'schema/security-threat-model-v1.schema.json',
+    fixtures: ['fixtures/security-assurance/sample.security-threat-model.json'],
+    label: 'Security threat model v1 schema validation'
+  },
+  {
+    schema: 'schema/security-audit-scope-v1.schema.json',
+    fixtures: ['fixtures/security-assurance/sample.security-audit-scope.json'],
+    label: 'Security audit scope v1 schema validation'
+  },
+  {
     schema: 'schema/temporal-run-summary.schema.json',
     fixtures: ['fixtures/temporal/sample.temporal-run-summary.json'],
     label: 'Temporal run summary schema validation'
