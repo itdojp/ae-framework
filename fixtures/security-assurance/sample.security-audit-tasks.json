@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "security-audit-task-bundle/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "tasks": [
+    {
+      "id": "SEC-AUDIT-TASK-001",
+      "claimId": "SEC-CLAIM-001",
+      "claimStatement": "Cache key must include all attacker-controlled fields that affect the verification result.",
+      "status": "ready",
+      "candidateLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 7,
+          "endLine": 15,
+          "reason": "Matched security claim terms in buildCacheKey: attacker, cache, controlled, fields, input, key, verification.",
+          "symbol": "buildCacheKey",
+          "matchedTerms": [
+            "attacker",
+            "cache",
+            "controlled",
+            "fields",
+            "input",
+            "key",
+            "verification"
+          ]
+        }
+      ],
+      "scopeRefs": [
+        "TB-001",
+        "api",
+        "p2p"
+      ],
+      "proofAttemptPrompt": {
+        "map": "Map the security claim to these candidate code paths:\n- src/cache.ts:7-15 (buildCacheKey): Matched security claim terms in buildCacheKey: attacker, cache, controlled, fields, input, key, verification.",
+        "prove": "Prove whether the implementation satisfies claim SEC-CLAIM-001: Cache key must include all attacker-controlled fields that affect the verification result.",
+        "stressTest": "Stress-test attacker-controlled inputs, trust-boundary assumptions, cache/key equivalence classes, and edge cases that could break the proof. Do not generate exploit automation.",
+        "report": "Report a candidate finding only when the proof fails with concrete code evidence. Keep all findings as candidate status until three-gate review."
+      },
+      "warnings": []
+    }
+  ],
+  "summary": {
+    "totalTasks": 1,
+    "readyTasks": 1,
+    "blockedTasks": 0,
+    "totalCandidateLocations": 1,
+    "totalWarnings": 0,
+    "byStatus": {
+      "ready": 1,
+      "blockedNoCandidateLocation": 0,
+      "blockedMissingCodeMap": 0
+    }
+  },
+  "provenance": {
+    "origin": "deterministic",
+    "generator": "security-proof-attempt-audit",
+    "claims": "fixtures/security-assurance/sample.security-claims.json",
+    "codeMap": "fixtures/security-assurance/sample.security-code-map.json",
+    "scope": "fixtures/security-assurance/sample.security-audit-scope.json"
+  },
+  "warnings": []
+}
