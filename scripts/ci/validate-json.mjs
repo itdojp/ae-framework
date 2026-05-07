@@ -127,6 +127,11 @@ const checks = [
     semanticValidate: validateClaimEvidenceManifestSemantics
   },
   {
+    schema: 'schema/temporal-run-summary.schema.json',
+    fixtures: ['fixtures/temporal/sample.temporal-run-summary.json'],
+    label: 'Temporal run summary schema validation'
+  },
+  {
     schema: 'schema/context-pack-functor-map.schema.json',
     fixtures: ['fixtures/context-pack/sample.functor-map.json'],
     label: 'Context Pack functor map schema validation'

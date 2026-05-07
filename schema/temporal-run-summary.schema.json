@@ -1,0 +1,575 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/temporal-run-summary.schema.json",
+  "title": "Temporal Workflow Adapter Run Summary v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "adapter",
+    "execution",
+    "operation",
+    "signals",
+    "activityResults",
+    "outputArtifacts",
+    "history",
+    "restartValidation",
+    "summary"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "temporal-run-summary/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "adapter": {
+      "$ref": "#/$defs/adapter"
+    },
+    "execution": {
+      "$ref": "#/$defs/execution"
+    },
+    "operation": {
+      "$ref": "#/$defs/operation"
+    },
+    "signals": {
+      "$ref": "#/$defs/signals"
+    },
+    "activityResults": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/activityResult"
+      },
+      "minItems": 1
+    },
+    "outputArtifacts": {
+      "$ref": "#/$defs/outputArtifacts"
+    },
+    "history": {
+      "$ref": "#/$defs/history"
+    },
+    "restartValidation": {
+      "$ref": "#/$defs/restartValidation"
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dateTimeOrNull": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "dateOrNull": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "date"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+        "terminated",
+        "timed-out",
+        "continued-as-new",
+        "unknown"
+      ]
+    },
+    "activityStatus": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "failed",
+        "skipped",
+        "cancelled",
+        "timed-out",
+        "unknown"
+      ]
+    },
+    "signalStatus": {
+      "type": "string",
+      "enum": [
+        "awaited",
+        "received",
+        "skipped",
+        "timed-out"
+      ]
+    },
+    "artifactKind": {
+      "type": "string",
+      "enum": [
+        "execution-plan",
+        "run-manifest",
+        "verify-lite-run-summary",
+        "assurance-summary",
+        "claim-evidence-manifest",
+        "policy-input",
+        "policy-decision",
+        "policy-gate-summary",
+        "change-package-v2",
+        "temporal-run-summary",
+        "log",
+        "other"
+      ]
+    },
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "path",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "kind": {
+          "$ref": "#/$defs/artifactKind"
+        },
+        "path": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "present",
+            "missing",
+            "skipped",
+            "generated"
+          ]
+        },
+        "schemaVersion": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "placement",
+        "mandatoryDependency"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "placement": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "mandatoryDependency": {
+          "type": "boolean"
+        },
+        "sdk": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "packages"
+          ],
+          "properties": {
+            "packages": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "version"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "@temporalio/client",
+                      "@temporalio/worker",
+                      "@temporalio/workflow"
+                    ]
+                  },
+                  "version": {
+                    "$ref": "#/$defs/nonEmptyString"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespace",
+        "workflowType",
+        "workflowId",
+        "runId",
+        "taskQueue",
+        "status",
+        "startedAt",
+        "completedAt"
+      ],
+      "properties": {
+        "namespace": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "workflowType": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "workflowId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "runId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "taskQueue": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario",
+        "repository",
+        "inputRef",
+        "contractRefs"
+      ],
+      "properties": {
+        "scenario": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "repository": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "prNumber": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inputRef": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "contractRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifactRef"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "awaited",
+        "received"
+      ],
+      "properties": {
+        "awaited": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/signalSummary"
+          }
+        },
+        "received": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/signalSummary"
+          }
+        }
+      }
+    },
+    "signalSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "status",
+        "awaitedAt",
+        "receivedAt"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "status": {
+          "$ref": "#/$defs/signalStatus"
+        },
+        "awaitedAt": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "receivedAt": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "payloadSummary": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "approvedBy": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "waiverId": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expires": {
+          "$ref": "#/$defs/dateOrNull"
+        }
+      }
+    },
+    "activityResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "status",
+        "startedAt",
+        "completedAt",
+        "attempt",
+        "artifactRefs"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "status": {
+          "$ref": "#/$defs/activityStatus"
+        },
+        "startedAt": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "completedAt": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "artifactRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifactRef"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "outputArtifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verifyLiteRunSummary",
+        "assuranceSummary",
+        "claimEvidenceManifest",
+        "policyDecision",
+        "temporalRunSummary"
+      ],
+      "properties": {
+        "verifyLiteRunSummary": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "assuranceSummary": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "claimEvidenceManifest": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "policyDecision": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "policyGateSummary": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "changePackageV2": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "temporalRunSummary": {
+          "$ref": "#/$defs/artifactRef"
+        }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "referenceType",
+        "namespace",
+        "workflowId",
+        "runId",
+        "pointer"
+      ],
+      "properties": {
+        "referenceType": {
+          "type": "string",
+          "enum": [
+            "temporal-cli-describe",
+            "temporal-web-ui",
+            "event-history-pointer",
+            "other"
+          ]
+        },
+        "namespace": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "workflowId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "runId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "pointer": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "restartValidation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "evidenceRefs",
+        "notes"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not-run",
+            "documented",
+            "manual-pass",
+            "automated-pass"
+          ]
+        },
+        "validatedAt": {
+          "$ref": "#/$defs/dateTimeOrNull"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifactRef"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "activityCount",
+        "awaitedSignalCount",
+        "receivedSignalCount",
+        "outputArtifactCount",
+        "assuranceResult"
+      ],
+      "properties": {
+        "activityCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "awaitedSignalCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "receivedSignalCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "outputArtifactCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "assuranceResult": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "waived",
+            "report-only",
+            "block",
+            "unknown"
+          ]
+        }
+      }
+    }
+  }
+}

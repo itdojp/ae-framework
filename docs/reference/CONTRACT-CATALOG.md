@@ -70,6 +70,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/artifact-metadata.schema.json`
 - `schema/assurance-summary.schema.json`
 - `schema/claim-evidence-manifest.schema.json`
+- `schema/temporal-run-summary.schema.json`
 - `schema/bench-criteria.schema.json`
 - `schema/bench-compare.schema.json`
 - `schema/benchmark-report.schema.json`
@@ -118,6 +119,7 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/discovery-pack/context-pack-scaffold.yaml` | `schema/context-pack-v1.schema.json` (scaffold-compatible, non-authoritative) | `scripts/discovery-pack/compile.mjs` (`--target context-pack-scaffold`), `src/cli/discovery-cli.ts` | manual editing before Context Pack SSOT promotion, future Context Pack validation |
 | `artifacts/assurance/assurance-summary.json` | `schema/assurance-summary.schema.json` | `scripts/assurance/aggregate-lanes.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-assurance-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/enforce-assurance-summary.mjs`, `scripts/quality/build-quality-scorecard.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/agents/create-handoff.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/assurance/claim-evidence-manifest.json` | `schema/claim-evidence-manifest.schema.json` | `scripts/assurance/build-claim-evidence-manifest.mjs`, `.github/workflows/verify-lite.yml`, `fixtures/assurance/sample.claim-evidence-manifest.json` (schema contract fixture) | `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `tests/contracts/claim-evidence-manifest-contract.test.ts`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml`; future policy-gate consumers |
+| `artifacts/temporal/*/temporal-run-summary.json` | `schema/temporal-run-summary.schema.json` | `examples/temporal-workflow-adapter`, `fixtures/temporal/sample.temporal-run-summary.json` (schema contract fixture) | `scripts/ci/validate-json.mjs`, `tests/contracts/temporal-run-summary-contract.test.ts`, operator review; Temporal-specific metadata remains confined to this adapter sidecar |
 | `spec/assurance-profile/upstream-context-promotion-v1.json` | `schema/assurance-profile.schema.json` | manual authoring in `spec/assurance-profile/` | `scripts/assurance/aggregate-lanes.mjs`, `docs/guides/upstream-context-promotion.md`, `tests/fixtures/upstream-context-promotion-minimal.assurance.test.ts` |
 | `artifacts/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/publish-envelope.mjs` |
 | `artifacts/trace/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` (including copy-based operation) | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/post-envelope-comment.mjs` |
@@ -239,6 +241,7 @@ The table below keeps the current producer/consumer baseline for representative 
 - `schema/artifact-metadata.schema.json`
 - `schema/assurance-summary.schema.json`
 - `schema/claim-evidence-manifest.schema.json`
+- `schema/temporal-run-summary.schema.json`
 - `schema/bench-criteria.schema.json`
 - `schema/bench-compare.schema.json`
 - `schema/benchmark-report.schema.json`
@@ -284,6 +287,7 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/discovery-pack/context-pack-scaffold.yaml` | `schema/context-pack-v1.schema.json` (scaffold-compatible, non-authoritative) | `scripts/discovery-pack/compile.mjs` (`--target context-pack-scaffold`), `src/cli/discovery-cli.ts` | manual editing before Context Pack SSOT promotion, future Context Pack validation |
 | `artifacts/assurance/assurance-summary.json` | `schema/assurance-summary.schema.json` | `scripts/assurance/aggregate-lanes.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-assurance-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/enforce-assurance-summary.mjs`, `scripts/quality/build-quality-scorecard.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/agents/create-handoff.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/assurance/claim-evidence-manifest.json` | `schema/claim-evidence-manifest.schema.json` | `scripts/assurance/build-claim-evidence-manifest.mjs`、`.github/workflows/verify-lite.yml`、`fixtures/assurance/sample.claim-evidence-manifest.json`（schema contract fixture） | `scripts/ci/validate-json.mjs`、`scripts/ci/validate-artifacts-ajv.mjs`、`tests/contracts/claim-evidence-manifest-contract.test.ts`、`scripts/summary/render-pr-summary.mjs`、`.github/workflows/pr-ci-status-comment.yml`。将来の policy-gate consumer が参照予定 |
+| `artifacts/temporal/*/temporal-run-summary.json` | `schema/temporal-run-summary.schema.json` | `examples/temporal-workflow-adapter`、`fixtures/temporal/sample.temporal-run-summary.json`（schema contract fixture） | `scripts/ci/validate-json.mjs`、`tests/contracts/temporal-run-summary-contract.test.ts`、operator review。Temporal 固有 metadata はこの adapter sidecar に閉じる |
 | `spec/assurance-profile/upstream-context-promotion-v1.json` | `schema/assurance-profile.schema.json` | manual authoring in `spec/assurance-profile/` | `scripts/assurance/aggregate-lanes.mjs`, `docs/guides/upstream-context-promotion.md`, `tests/fixtures/upstream-context-promotion-minimal.assurance.test.ts` |
 | `artifacts/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/publish-envelope.mjs` |
 | `artifacts/trace/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` (copy運用含む) | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/post-envelope-comment.mjs` |

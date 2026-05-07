@@ -1,0 +1,279 @@
+{
+  "schemaVersion": "temporal-run-summary/v1",
+  "generatedAt": "2026-05-07T02:15:00.000Z",
+  "adapter": {
+    "name": "ae-framework-temporal-workflow-adapter-poc",
+    "version": "0.1.0",
+    "placement": "examples/temporal-workflow-adapter",
+    "mandatoryDependency": false,
+    "sdk": {
+      "packages": [
+        {
+          "name": "@temporalio/client",
+          "version": "1.17.0"
+        },
+        {
+          "name": "@temporalio/worker",
+          "version": "1.17.0"
+        },
+        {
+          "name": "@temporalio/workflow",
+          "version": "1.17.0"
+        }
+      ]
+    }
+  },
+  "execution": {
+    "namespace": "default",
+    "workflowType": "assuranceWorkflow",
+    "workflowId": "ae-assurance-inventory-waiver-20260507",
+    "runId": "9f5e77b1-6d5b-4a2e-9d0a-73e4ff1a2b35",
+    "taskQueue": "ae-assurance-temporal-poc",
+    "status": "completed",
+    "startedAt": "2026-05-07T02:10:00.000Z",
+    "completedAt": "2026-05-07T02:15:00.000Z"
+  },
+  "operation": {
+    "scenario": "inventory-waiver",
+    "repository": "itdojp/ae-framework",
+    "prNumber": 3247,
+    "inputRef": {
+      "id": "fixture-change-package-v2",
+      "kind": "change-package-v2",
+      "path": "fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json",
+      "status": "present",
+      "schemaVersion": "change-package/v2",
+      "description": "Fixture operation input for the Temporal Workflow adapter PoC."
+    },
+    "contractRefs": [
+      {
+        "id": "verify-lite-run-summary",
+        "kind": "verify-lite-run-summary",
+        "path": "fixtures/assurance-e2e/inventory-waiver/expected/verify-lite-run-summary.json",
+        "status": "present",
+        "schemaVersion": "1.0.0",
+        "description": "Existing verify-lite summary contract remains the source of truth."
+      },
+      {
+        "id": "assurance-summary",
+        "kind": "assurance-summary",
+        "path": "fixtures/assurance-e2e/inventory-waiver/expected/assurance-summary.json",
+        "status": "present",
+        "schemaVersion": "assurance-summary/v1",
+        "description": "Existing assurance summary contract remains the source of truth."
+      },
+      {
+        "id": "policy-decision-js-v1",
+        "kind": "policy-decision",
+        "path": "fixtures/assurance-e2e/inventory-waiver/expected/policy-decision-js-v1.json",
+        "status": "present",
+        "schemaVersion": "1.0.0",
+        "description": "Waiver-aware policy decision consumed after approval signal receipt."
+      }
+    ]
+  },
+  "signals": {
+    "awaited": [
+      {
+        "name": "approval",
+        "status": "received",
+        "awaitedAt": "2026-05-07T02:11:00.000Z",
+        "receivedAt": "2026-05-07T02:12:00.000Z",
+        "payloadSummary": "approval accepted for manual-fraud-review waiver",
+        "approvedBy": "@team-risk",
+        "waiverId": "change-package-v2:waiver:0:manual-fraud-review",
+        "expires": "2099-12-31"
+      }
+    ],
+    "received": [
+      {
+        "name": "approval",
+        "status": "received",
+        "awaitedAt": "2026-05-07T02:11:00.000Z",
+        "receivedAt": "2026-05-07T02:12:00.000Z",
+        "payloadSummary": "approval accepted for manual-fraud-review waiver",
+        "approvedBy": "@team-risk",
+        "waiverId": "change-package-v2:waiver:0:manual-fraud-review",
+        "expires": "2099-12-31"
+      }
+    ]
+  },
+  "activityResults": [
+    {
+      "name": "readOperationInput",
+      "status": "completed",
+      "startedAt": "2026-05-07T02:10:05.000Z",
+      "completedAt": "2026-05-07T02:10:10.000Z",
+      "attempt": 1,
+      "artifactRefs": [
+        {
+          "id": "fixture-change-package-v2",
+          "kind": "change-package-v2",
+          "path": "fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json",
+          "status": "present",
+          "schemaVersion": "change-package/v2",
+          "description": "Operation input was loaded by the activity."
+        }
+      ]
+    },
+    {
+      "name": "preparePrerequisites",
+      "status": "completed",
+      "startedAt": "2026-05-07T02:10:11.000Z",
+      "completedAt": "2026-05-07T02:10:20.000Z",
+      "attempt": 1,
+      "artifactRefs": [
+        {
+          "id": "assurance-summary-input",
+          "kind": "assurance-summary",
+          "path": "fixtures/assurance-e2e/inventory-waiver/inputs/assurance-summary.json",
+          "status": "present",
+          "schemaVersion": "assurance-summary/v1",
+          "description": "Prerequisite assurance summary fixture was found."
+        }
+      ]
+    },
+    {
+      "name": "runVerifyLite",
+      "status": "completed",
+      "startedAt": "2026-05-07T02:10:21.000Z",
+      "completedAt": "2026-05-07T02:11:00.000Z",
+      "attempt": 1,
+      "artifactRefs": [
+        {
+          "id": "verify-lite-run-summary",
+          "kind": "verify-lite-run-summary",
+          "path": "fixtures/assurance-e2e/inventory-waiver/expected/verify-lite-run-summary.json",
+          "status": "present",
+          "schemaVersion": "1.0.0",
+          "description": "Fixture verify-lite summary was selected as lightweight verification evidence."
+        }
+      ]
+    },
+    {
+      "name": "runPolicyGate",
+      "status": "completed",
+      "startedAt": "2026-05-07T02:12:10.000Z",
+      "completedAt": "2026-05-07T02:14:30.000Z",
+      "attempt": 1,
+      "artifactRefs": [
+        {
+          "id": "policy-decision-js-v1",
+          "kind": "policy-decision",
+          "path": "fixtures/assurance-e2e/inventory-waiver/expected/policy-decision-js-v1.json",
+          "status": "present",
+          "schemaVersion": "1.0.0",
+          "description": "Policy decision reached waiver-aware assurance result."
+        },
+        {
+          "id": "policy-gate-summary",
+          "kind": "policy-gate-summary",
+          "path": "fixtures/assurance-e2e/inventory-waiver/expected/policy-gate-summary.json",
+          "status": "present",
+          "schemaVersion": "policy-gate-summary/v1",
+          "description": "Policy gate machine-readable summary."
+        }
+      ]
+    },
+    {
+      "name": "writeTemporalRunSummary",
+      "status": "completed",
+      "startedAt": "2026-05-07T02:14:31.000Z",
+      "completedAt": "2026-05-07T02:15:00.000Z",
+      "attempt": 1,
+      "artifactRefs": [
+        {
+          "id": "temporal-run-summary",
+          "kind": "temporal-run-summary",
+          "path": "artifacts/temporal/inventory-waiver/temporal-run-summary.json",
+          "status": "generated",
+          "schemaVersion": "temporal-run-summary/v1",
+          "description": "Temporal adapter sidecar summary."
+        }
+      ]
+    }
+  ],
+  "outputArtifacts": {
+    "verifyLiteRunSummary": {
+      "id": "verify-lite-run-summary",
+      "kind": "verify-lite-run-summary",
+      "path": "fixtures/assurance-e2e/inventory-waiver/expected/verify-lite-run-summary.json",
+      "status": "present",
+      "schemaVersion": "1.0.0",
+      "description": "Existing verify-lite output referenced by the adapter."
+    },
+    "assuranceSummary": {
+      "id": "assurance-summary",
+      "kind": "assurance-summary",
+      "path": "fixtures/assurance-e2e/inventory-waiver/expected/assurance-summary.json",
+      "status": "present",
+      "schemaVersion": "assurance-summary/v1",
+      "description": "Existing assurance summary output referenced by the adapter."
+    },
+    "claimEvidenceManifest": {
+      "id": "claim-evidence-manifest",
+      "kind": "claim-evidence-manifest",
+      "path": "fixtures/assurance-e2e/inventory-waiver/expected/claim-evidence-manifest.json",
+      "status": "present",
+      "schemaVersion": "claim-evidence-manifest/v1",
+      "description": "Existing claim evidence manifest output referenced by the adapter."
+    },
+    "policyDecision": {
+      "id": "policy-decision-js-v1",
+      "kind": "policy-decision",
+      "path": "fixtures/assurance-e2e/inventory-waiver/expected/policy-decision-js-v1.json",
+      "status": "present",
+      "schemaVersion": "1.0.0",
+      "description": "Existing policy decision output referenced by the adapter."
+    },
+    "policyGateSummary": {
+      "id": "policy-gate-summary",
+      "kind": "policy-gate-summary",
+      "path": "fixtures/assurance-e2e/inventory-waiver/expected/policy-gate-summary.json",
+      "status": "present",
+      "schemaVersion": "policy-gate-summary/v1",
+      "description": "Existing policy gate summary output referenced by the adapter."
+    },
+    "changePackageV2": {
+      "id": "change-package-v2",
+      "kind": "change-package-v2",
+      "path": "fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json",
+      "status": "present",
+      "schemaVersion": "change-package/v2",
+      "description": "Proof-carrying change-package input used by the scenario."
+    },
+    "temporalRunSummary": {
+      "id": "temporal-run-summary",
+      "kind": "temporal-run-summary",
+      "path": "artifacts/temporal/inventory-waiver/temporal-run-summary.json",
+      "status": "generated",
+      "schemaVersion": "temporal-run-summary/v1",
+      "description": "Temporal-specific metadata is confined to this adapter sidecar."
+    }
+  },
+  "history": {
+    "referenceType": "temporal-cli-describe",
+    "namespace": "default",
+    "workflowId": "ae-assurance-inventory-waiver-20260507",
+    "runId": "9f5e77b1-6d5b-4a2e-9d0a-73e4ff1a2b35",
+    "pointer": "temporal workflow describe --namespace default --workflow-id ae-assurance-inventory-waiver-20260507 --run-id 9f5e77b1-6d5b-4a2e-9d0a-73e4ff1a2b35",
+    "notes": [
+      "Use a CLI or Web UI pointer instead of embedding full event history in the contract artifact."
+    ]
+  },
+  "restartValidation": {
+    "status": "documented",
+    "validatedAt": null,
+    "evidenceRefs": [],
+    "notes": [
+      "The PoC contract records restart evidence; operator execution of the restart drill is documented in docs/integrations/TEMPORAL-WORKFLOW-INTEGRATION.md."
+    ]
+  },
+  "summary": {
+    "activityCount": 5,
+    "awaitedSignalCount": 1,
+    "receivedSignalCount": 1,
+    "outputArtifactCount": 7,
+    "assuranceResult": "waived"
+  }
+}
