@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-04-28'
+lastVerified: '2026-05-07'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -45,6 +45,9 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/formal-plan.schema.json`
 - `schema/issue-traceability-map.schema.json`
 - `schema/policy-input-v1.schema.json`
+- `schema/security-audit-scope-v1.schema.json`
+- `schema/security-claim-v1.schema.json`
+- `schema/security-threat-model-v1.schema.json`
 - `schema/release-policy.schema.json`
 - `schema/state-machine.schema.json`
 - `schema/trace-map.schema.json`
@@ -119,6 +122,9 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/discovery-pack/context-pack-scaffold.yaml` | `schema/context-pack-v1.schema.json` (scaffold-compatible, non-authoritative) | `scripts/discovery-pack/compile.mjs` (`--target context-pack-scaffold`), `src/cli/discovery-cli.ts` | manual editing before Context Pack SSOT promotion, future Context Pack validation |
 | `artifacts/assurance/assurance-summary.json` | `schema/assurance-summary.schema.json` | `scripts/assurance/aggregate-lanes.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-assurance-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/enforce-assurance-summary.mjs`, `scripts/quality/build-quality-scorecard.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/agents/create-handoff.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/assurance/claim-evidence-manifest.json` | `schema/claim-evidence-manifest.schema.json` | `scripts/assurance/build-claim-evidence-manifest.mjs`, `.github/workflows/verify-lite.yml`, `fixtures/assurance/sample.claim-evidence-manifest.json` (schema contract fixture) | `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `tests/contracts/claim-evidence-manifest-contract.test.ts`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml`; future policy-gate consumers |
+| `artifacts/security/security-claims.json` | `schema/security-claim-v1.schema.json` | manual authoring, future `ae security extract-claims`, `fixtures/security-assurance/sample.security-claims.json` (schema contract fixture) | future Security Assurance Lane producers, `scripts/ci/validate-json.mjs`, `tests/contracts/security-assurance-contract.test.ts`; downstream artifacts reference `claims[].id` |
+| `artifacts/security/security-threat-model.json` | `schema/security-threat-model-v1.schema.json` | manual authoring, future SPECA-compatible import, `fixtures/security-assurance/sample.security-threat-model.json` (schema contract fixture) | future security audit and review producers, `scripts/ci/validate-json.mjs`, `tests/contracts/security-assurance-contract.test.ts`; references security claim ids through `threats[].relatedClaimIds[]` |
+| `artifacts/security/security-audit-scope.json` | `schema/security-audit-scope-v1.schema.json` | manual authoring, bug-bounty/audit scope translation, `fixtures/security-assurance/sample.security-audit-scope.json` (schema contract fixture) | future security claim extraction, code-map, audit, and review producers; scope remains glob-based in the MVP contract |
 | `artifacts/temporal/*/temporal-run-summary.json` | `schema/temporal-run-summary.schema.json` | `examples/temporal-workflow-adapter`, `fixtures/temporal/sample.temporal-run-summary.json` (schema contract fixture) | `scripts/ci/validate-json.mjs`, `tests/contracts/temporal-run-summary-contract.test.ts`, operator review; Temporal-specific metadata remains confined to this adapter sidecar |
 | `spec/assurance-profile/upstream-context-promotion-v1.json` | `schema/assurance-profile.schema.json` | manual authoring in `spec/assurance-profile/` | `scripts/assurance/aggregate-lanes.mjs`, `docs/guides/upstream-context-promotion.md`, `tests/fixtures/upstream-context-promotion-minimal.assurance.test.ts` |
 | `artifacts/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/publish-envelope.mjs` |
@@ -215,6 +221,9 @@ The table below keeps the current producer/consumer baseline for representative 
 - `schema/formal-plan.schema.json`
 - `schema/issue-traceability-map.schema.json`
 - `schema/policy-input-v1.schema.json`
+- `schema/security-audit-scope-v1.schema.json`
+- `schema/security-claim-v1.schema.json`
+- `schema/security-threat-model-v1.schema.json`
 - `schema/release-policy.schema.json`
 - `schema/state-machine.schema.json`
 - `schema/trace-map.schema.json`
@@ -287,6 +296,9 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/discovery-pack/context-pack-scaffold.yaml` | `schema/context-pack-v1.schema.json` (scaffold-compatible, non-authoritative) | `scripts/discovery-pack/compile.mjs` (`--target context-pack-scaffold`), `src/cli/discovery-cli.ts` | manual editing before Context Pack SSOT promotion, future Context Pack validation |
 | `artifacts/assurance/assurance-summary.json` | `schema/assurance-summary.schema.json` | `scripts/assurance/aggregate-lanes.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-assurance-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/enforce-assurance-summary.mjs`, `scripts/quality/build-quality-scorecard.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/agents/create-handoff.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/assurance/claim-evidence-manifest.json` | `schema/claim-evidence-manifest.schema.json` | `scripts/assurance/build-claim-evidence-manifest.mjs`、`.github/workflows/verify-lite.yml`、`fixtures/assurance/sample.claim-evidence-manifest.json`（schema contract fixture） | `scripts/ci/validate-json.mjs`、`scripts/ci/validate-artifacts-ajv.mjs`、`tests/contracts/claim-evidence-manifest-contract.test.ts`、`scripts/summary/render-pr-summary.mjs`、`.github/workflows/pr-ci-status-comment.yml`。将来の policy-gate consumer が参照予定 |
+| `artifacts/security/security-claims.json` | `schema/security-claim-v1.schema.json` | manual authoring、将来の `ae security extract-claims`、`fixtures/security-assurance/sample.security-claims.json`（schema contract fixture） | 将来の Security Assurance Lane producer、`scripts/ci/validate-json.mjs`、`tests/contracts/security-assurance-contract.test.ts`。後続 artifact は `claims[].id` を参照する |
+| `artifacts/security/security-threat-model.json` | `schema/security-threat-model-v1.schema.json` | manual authoring、将来の SPECA-compatible import、`fixtures/security-assurance/sample.security-threat-model.json`（schema contract fixture） | 将来の security audit / review producer、`scripts/ci/validate-json.mjs`、`tests/contracts/security-assurance-contract.test.ts`。`threats[].relatedClaimIds[]` で security claim id を参照する |
+| `artifacts/security/security-audit-scope.json` | `schema/security-audit-scope-v1.schema.json` | manual authoring、bug-bounty / audit scope translation、`fixtures/security-assurance/sample.security-audit-scope.json`（schema contract fixture） | 将来の security claim extraction、code-map、audit、review producer。MVP contract では glob-based scope に限定する |
 | `artifacts/temporal/*/temporal-run-summary.json` | `schema/temporal-run-summary.schema.json` | `examples/temporal-workflow-adapter`、`fixtures/temporal/sample.temporal-run-summary.json`（schema contract fixture） | `scripts/ci/validate-json.mjs`、`tests/contracts/temporal-run-summary-contract.test.ts`、operator review。Temporal 固有 metadata はこの adapter sidecar に閉じる |
 | `spec/assurance-profile/upstream-context-promotion-v1.json` | `schema/assurance-profile.schema.json` | manual authoring in `spec/assurance-profile/` | `scripts/assurance/aggregate-lanes.mjs`, `docs/guides/upstream-context-promotion.md`, `tests/fixtures/upstream-context-promotion-minimal.assurance.test.ts` |
 | `artifacts/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/publish-envelope.mjs` |

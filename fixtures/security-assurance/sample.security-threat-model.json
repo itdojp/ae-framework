@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "security-threat-model/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "frameworks": [
+    "STRIDE",
+    "CWE_TOP_25"
+  ],
+  "threats": [
+    {
+      "id": "THREAT-001",
+      "stride": "Tampering",
+      "cwe": "CWE-20",
+      "description": "Attacker-controlled input changes the verification result when cache-key material is incomplete.",
+      "relatedClaimIds": [
+        "SEC-CLAIM-001"
+      ],
+      "trustBoundaryIds": [
+        "TB-001"
+      ]
+    }
+  ],
+  "summary": {
+    "totalThreats": 1
+  }
+}
