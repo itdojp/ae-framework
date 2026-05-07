@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "speca-like/review-gates/v1",
+  "reviews": [
+    {
+      "findingId": "SPECA-FINDING-001",
+      "result": "needs-human-review",
+      "gates": {
+        "deadCode": {
+          "result": "pass",
+          "rationale": "The candidate path is reachable from the external verification entry point."
+        },
+        "trustBoundary": {
+          "result": "pass",
+          "rationale": "The relevant fields are attacker-controlled at boundary TB-001."
+        },
+        "scope": {
+          "result": "pass",
+          "rationale": "The affected source path is included by the audit scope."
+        }
+      },
+      "falsePositiveRootCause": "insufficient-evidence",
+      "reviewerNotes": [
+        "Human review is still required before confirming vulnerability status."
+      ],
+      "reviewer": "speca-fixture-reviewer",
+      "confidenceScore": 0.64
+    }
+  ]
+}

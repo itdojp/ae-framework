@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "speca-like/audit-findings/v1",
+  "findings": [
+    {
+      "id": "SPECA-FINDING-001",
+      "propertyId": "SP-001",
+      "status": "candidate",
+      "severity": "high",
+      "confidence": "medium",
+      "title": "Verification cache key may omit attacker-controlled input",
+      "summary": "The SPECA-like proof attempt cannot establish that all verification-affecting fields are part of the cache-key material.",
+      "affectedLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 10,
+          "endLine": 42,
+          "symbol": "buildCacheKey"
+        }
+      ],
+      "proofAttempt": {
+        "map": "Relevant code paths include buildCacheKey and verification request parsing.",
+        "prove": "The implementation must show that every verification-affecting attacker-controlled field is included in the key material.",
+        "stressTest": "Counterexample candidate: two requests differ in an attacker-controlled field that affects verification but share the same cache key.",
+        "report": "Treat as a candidate until reviewed by the three-gate security review."
+      },
+      "scopeRefs": [
+        "src/**/*.ts",
+        "TB-001"
+      ],
+      "rawGapScore": 0.71
+    }
+  ]
+}
