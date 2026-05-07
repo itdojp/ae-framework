@@ -1,7 +1,6 @@
 import { Client, Connection } from '@temporalio/client';
 import { approvalSignal, assuranceWorkflow } from './workflows.js';
 import {
-  DEFAULT_GENERATED_AT,
   DEFAULT_NAMESPACE,
   DEFAULT_REPOSITORY,
   DEFAULT_SCENARIO,
@@ -15,7 +14,7 @@ interface CliOptions {
   scenario: string;
   repository: string;
   prNumber: number | null;
-  generatedAt: string;
+  generatedAt?: string;
   outputDir?: string;
   namespace: string;
   taskQueue: string;
@@ -38,6 +37,17 @@ function parseBool(value: string): boolean {
   return !['0', 'false', 'no'].includes(value.toLowerCase());
 }
 
+function parsePositiveInteger(value: string, option: string): number {
+  if (!/^[1-9][0-9]*$/.test(value)) {
+    throw new Error(`${option} requires a positive integer`);
+  }
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isSafeInteger(parsed)) {
+    throw new Error(`${option} is outside the supported integer range`);
+  }
+  return parsed;
+}
+
 function parseArgs(argv = process.argv.slice(2)): CliOptions {
   const command = (argv[0] ?? 'help') as CliOptions['command'];
   const options: CliOptions = {
@@ -46,7 +56,6 @@ function parseArgs(argv = process.argv.slice(2)): CliOptions {
     scenario: DEFAULT_SCENARIO,
     repository: DEFAULT_REPOSITORY,
     prNumber: 3247,
-    generatedAt: DEFAULT_GENERATED_AT,
     namespace: process.env.TEMPORAL_NAMESPACE ?? DEFAULT_NAMESPACE,
     taskQueue: process.env.TEMPORAL_TASK_QUEUE ?? DEFAULT_TASK_QUEUE,
     address: process.env.TEMPORAL_ADDRESS ?? 'localhost:7233',
@@ -78,7 +87,7 @@ function parseArgs(argv = process.argv.slice(2)): CliOptions {
       continue;
     }
     if (arg === '--pr-number') {
-      options.prNumber = Number.parseInt(readValue(argv, index, arg), 10);
+      options.prNumber = parsePositiveInteger(readValue(argv, index, arg), arg);
       index += 1;
       continue;
     }
@@ -167,7 +176,7 @@ Common options:
   --address <host:port>          Temporal address (default: localhost:7233)
   --namespace <name>             Temporal namespace (default: default)
   --task-queue <name>            Temporal task queue (default: ae-assurance-temporal-poc)
-  --generated-at <iso>           Deterministic generatedAt for fixture comparison
+  --generated-at <iso>           Override generatedAt; defaults to the Workflow start time
   --output-dir <path>            Output directory for generated artifacts
   --auto-approve                 Send the approval signal immediately after start
   --no-wait                      Start only; use signal/result commands later
@@ -198,6 +207,7 @@ async function run(): Promise<void> {
         workflowId: options.workflowId,
         outputDir: options.outputDir,
         generatedAt: options.generatedAt,
+        compareExpectedArtifacts: options.generatedAt !== undefined,
         approval: { required: true, timeout: '24 hours' },
         restartValidationStatus: options.restartValidationStatus,
       };

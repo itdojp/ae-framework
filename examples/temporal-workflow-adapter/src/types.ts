@@ -2,7 +2,6 @@ export const DEFAULT_TASK_QUEUE = 'ae-assurance-temporal-poc';
 export const DEFAULT_NAMESPACE = 'default';
 export const DEFAULT_SCENARIO = 'inventory-waiver';
 export const DEFAULT_REPOSITORY = 'itdojp/ae-framework';
-export const DEFAULT_GENERATED_AT = '2026-05-06T00:00:00.000Z';
 
 export type ArtifactKind =
   | 'execution-plan'
@@ -50,6 +49,7 @@ export interface WorkflowInput {
   workflowId?: string;
   outputDir?: string;
   generatedAt?: string;
+  compareExpectedArtifacts?: boolean;
   approval?: {
     required?: boolean;
     timeout?: string;
@@ -95,8 +95,10 @@ export interface TemporalRunSummary {
     placement: string;
     mandatoryDependency: boolean;
     sdk: {
-      name: '@temporalio/typescript-sdk';
-      version: string;
+      packages: Array<{
+        name: '@temporalio/client' | '@temporalio/worker' | '@temporalio/workflow';
+        version: string;
+      }>;
     };
   };
   execution: {

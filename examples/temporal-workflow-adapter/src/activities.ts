@@ -12,7 +12,7 @@ import type {
   TemporalRunSummary,
   WorkflowInput,
 } from './types.js';
-import { DEFAULT_GENERATED_AT, DEFAULT_REPOSITORY, DEFAULT_SCENARIO } from './types.js';
+import { DEFAULT_REPOSITORY, DEFAULT_SCENARIO } from './types.js';
 
 const exampleRoot = fileURLToPath(new URL('..', import.meta.url));
 const repoRoot = path.resolve(exampleRoot, '..', '..');
@@ -27,7 +27,16 @@ function normalizeScenario(input: WorkflowInput): string {
 
 function outputDirFor(input: WorkflowInput): string {
   const scenario = normalizeScenario(input);
-  return path.resolve(repoRoot, input.outputDir ?? path.join('artifacts', 'temporal', scenario));
+  const requested = input.outputDir ?? path.join('artifacts', 'temporal', scenario);
+  if (path.isAbsolute(requested) || path.win32.isAbsolute(requested)) {
+    throw new Error(`outputDir must be repo-relative: ${requested}`);
+  }
+  const outputDir = path.resolve(repoRoot, requested);
+  const relative = path.relative(repoRoot, outputDir);
+  if (!relative || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+    throw new Error(`outputDir must stay under repo root: ${requested}`);
+  }
+  return outputDir;
 }
 
 function toRepoPath(filePath: string): string {
@@ -55,6 +64,14 @@ function scenarioFile(scenario: string, area: 'inputs' | 'expected', fileName: s
 
 function readJson(filePath: string): unknown {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+function readJsonObject(filePath: string): Record<string, unknown> {
+  const data = readJson(filePath);
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error(`expected JSON object in ${filePath}`);
+  }
+  return data as Record<string, unknown>;
 }
 
 function ensureFile(filePath: string, label: string): void {
@@ -158,21 +175,28 @@ export async function runVerifyLite(input: WorkflowInput): Promise<ActivityResul
 
 export async function runPolicyGate(input: WorkflowInput): Promise<ActivityResult> {
   const scenario = normalizeScenario(input);
-  const generatedAt = input.generatedAt ?? DEFAULT_GENERATED_AT;
+  const generatedAt = input.generatedAt ?? nowIso();
   const outputDir = outputDirFor(input);
   return timedActivity('runPolicyGate', async () => {
     fs.mkdirSync(outputDir, { recursive: true });
-    await runNodeScript([
+    const args = [
       'scripts/assurance/run-e2e-scenario.mjs',
       '--scenario', scenario,
       '--output-dir', outputDir,
       '--generated-at', generatedAt,
-    ]);
+    ];
+    if (input.compareExpectedArtifacts === false) {
+      args.push('--no-compare');
+    }
+    await runNodeScript(args);
     const policyDecision = path.join(outputDir, 'policy-decision-js-v1.json');
     const policyGateSummary = path.join(outputDir, 'policy-gate-summary.json');
     const claimEvidenceManifest = path.join(outputDir, 'claim-evidence-manifest.json');
     const assuranceSummary = path.join(outputDir, 'assurance-summary.json');
     ensureFile(policyDecision, 'policy decision output');
+    ensureFile(policyGateSummary, 'policy gate summary output');
+    ensureFile(claimEvidenceManifest, 'claim evidence manifest output');
+    ensureFile(assuranceSummary, 'assurance summary output');
     return {
       artifactRefs: [
         ref('policy-decision-js-v1', 'policy-decision', policyDecision, '1.0.0', 'Policy decision reached waiver-aware assurance result.'),
@@ -199,6 +223,28 @@ function requiredRef(activityResults: ActivityResult[], id: string): ArtifactRef
     throw new Error(`artifact ref not found: ${id}`);
   }
   return artifact;
+}
+
+function artifactRefPath(artifact: ArtifactRef): string {
+  if (path.isAbsolute(artifact.path) || path.win32.isAbsolute(artifact.path)) return artifact.path;
+  return path.resolve(repoRoot, artifact.path);
+}
+
+function deriveAssuranceResult(policyDecision: ArtifactRef): TemporalRunSummary['summary']['assuranceResult'] {
+  const data = readJsonObject(artifactRefPath(policyDecision));
+  const evaluation = data.evaluation;
+  if (!evaluation || typeof evaluation !== 'object' || Array.isArray(evaluation)) {
+    return 'unknown';
+  }
+  const assurance = (evaluation as Record<string, unknown>).assurance;
+  if (!assurance || typeof assurance !== 'object' || Array.isArray(assurance)) {
+    return 'unknown';
+  }
+  const result = (assurance as Record<string, unknown>).result;
+  if (result === 'pass' || result === 'waived' || result === 'report-only' || result === 'block') {
+    return result;
+  }
+  return 'unknown';
 }
 
 export async function writeTemporalRunSummary(input: {
@@ -252,8 +298,11 @@ export async function writeTemporalRunSummary(input: {
         placement: 'examples/temporal-workflow-adapter',
         mandatoryDependency: false,
         sdk: {
-          name: '@temporalio/typescript-sdk',
-          version: '1.17.0',
+          packages: [
+            { name: '@temporalio/client', version: '1.17.0' },
+            { name: '@temporalio/worker', version: '1.17.0' },
+            { name: '@temporalio/workflow', version: '1.17.0' },
+          ],
         },
       },
       execution: {
@@ -294,7 +343,7 @@ export async function writeTemporalRunSummary(input: {
         awaitedSignalCount: input.awaitedSignals.length,
         receivedSignalCount: input.receivedSignals.length,
         outputArtifactCount: Object.keys(outputArtifacts).length,
-        assuranceResult: 'waived',
+        assuranceResult: deriveAssuranceResult(outputArtifacts.policyDecision),
       },
     };
     fs.writeFileSync(outputPath, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');

@@ -46,8 +46,13 @@ export async function assuranceWorkflow(input: WorkflowInput = {}): Promise<Temp
   const completedActivities: string[] = [];
   const activityResults: ActivityResult[] = [];
   const info = workflowInfo();
-  const approvalRequired = input.approval?.required !== false;
-  const approvalAwaitedAt = approvalRequired ? (input.generatedAt ?? info.startTime.toISOString()) : null;
+  const workflowInput: WorkflowInput = {
+    ...input,
+    generatedAt: input.generatedAt ?? info.startTime.toISOString(),
+    compareExpectedArtifacts: input.compareExpectedArtifacts ?? input.generatedAt !== undefined,
+  };
+  const approvalRequired = workflowInput.approval?.required !== false;
+  const approvalAwaitedAt = approvalRequired ? workflowInput.generatedAt ?? null : null;
   let approval: ApprovalPayload | undefined;
 
   setHandler(approvalSignal, (payload) => {
@@ -59,15 +64,15 @@ export async function assuranceWorkflow(input: WorkflowInput = {}): Promise<Temp
     completedActivities,
   }));
 
-  const operationResult = await readOperationInput(input);
+  const operationResult = await readOperationInput(workflowInput);
   completedActivities.push(operationResult.activity.name);
   activityResults.push(operationResult.activity);
 
-  const prerequisites = await preparePrerequisites(input);
+  const prerequisites = await preparePrerequisites(workflowInput);
   completedActivities.push(prerequisites.name);
   activityResults.push(prerequisites);
 
-  const verifyLite = await runVerifyLite(input);
+  const verifyLite = await runVerifyLite(workflowInput);
   completedActivities.push(verifyLite.name);
   activityResults.push(verifyLite);
 
@@ -81,7 +86,7 @@ export async function assuranceWorkflow(input: WorkflowInput = {}): Promise<Temp
       receivedAt: null,
       payloadSummary: 'waiting for waiver or approval signal before policy-gate activity',
     });
-    const received = await condition(() => approval !== undefined, input.approval?.timeout ?? '24 hours');
+    const received = await condition(() => approval !== undefined, workflowInput.approval?.timeout ?? '24 hours');
     if (!received || approval === undefined) {
       awaitedSignals[0] = {
         ...awaitedSignals[0],
@@ -102,7 +107,7 @@ export async function assuranceWorkflow(input: WorkflowInput = {}): Promise<Temp
     });
   }
 
-  const policyGate = await runPolicyGate(input);
+  const policyGate = await runPolicyGate(workflowInput);
   completedActivities.push(policyGate.name);
   activityResults.push(policyGate);
 
@@ -122,7 +127,7 @@ export async function assuranceWorkflow(input: WorkflowInput = {}): Promise<Temp
       inputRef: operationResult.inputRef,
       contractRefs: operationResult.contractRefs,
     },
-    workflowInput: input,
+    workflowInput,
     awaitedSignals,
     receivedSignals,
     activityResults,

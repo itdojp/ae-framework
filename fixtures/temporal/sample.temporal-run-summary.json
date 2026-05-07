@@ -7,8 +7,20 @@
     "placement": "examples/temporal-workflow-adapter",
     "mandatoryDependency": false,
     "sdk": {
-      "name": "@temporalio/typescript-sdk",
-      "version": "1.17.0"
+      "packages": [
+        {
+          "name": "@temporalio/client",
+          "version": "1.17.0"
+        },
+        {
+          "name": "@temporalio/worker",
+          "version": "1.17.0"
+        },
+        {
+          "name": "@temporalio/workflow",
+          "version": "1.17.0"
+        }
+      ]
     }
   },
   "execution": {

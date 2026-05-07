@@ -36,6 +36,7 @@ The adapter sidecar contract is:
 
 The summary records:
 
+- `adapter.sdk.packages`: the optional Temporal SDK packages used by the standalone example (`@temporalio/client`, `@temporalio/worker`, `@temporalio/workflow`)
 - `execution`: namespace, Workflow type, Workflow ID, Run ID, task queue, status, startedAt, completedAt
 - `signals`: awaited and received approval / waiver signals
 - `activityResults`: Activity-level artifact references
@@ -123,6 +124,8 @@ pnpm --dir examples/temporal-workflow-adapter run typecheck
 ### 7. Operational notes
 
 - Use `TEMPORAL_ADDRESS`, `TEMPORAL_NAMESPACE`, and `TEMPORAL_TASK_QUEUE` to override local defaults.
+- `--generated-at` defaults to the Workflow start time; when omitted, generated assurance artifacts skip expected-fixture comparison to avoid timestamp-only drift. Pass it explicitly when deterministic fixture comparison is required.
+- `--output-dir` must be a repository-relative path that stays under the repository root.
 - Do not add Temporal SDK packages to the root `package.json` for this PoC.
 - Treat `temporal-run-summary/v1` as adapter evidence, not as a replacement for `policy-decision/v1` or `claim-evidence-manifest/v1`.
 - If a restart drill is performed, set `--restart-validation-status manual-pass` on the start command to record the evidence status in the summary.
@@ -163,6 +166,7 @@ adapter sidecar contract は次のとおりです。
 
 summary は以下を記録します。
 
+- `adapter.sdk.packages`: standalone example が利用する任意 Temporal SDK package（`@temporalio/client`、`@temporalio/worker`、`@temporalio/workflow`）
 - `execution`: namespace、Workflow type、Workflow ID、Run ID、task queue、status、startedAt、completedAt
 - `signals`: 待機した approval / waiver signal と受信済み signal
 - `activityResults`: Activity 単位の artifact reference
@@ -250,6 +254,8 @@ pnpm --dir examples/temporal-workflow-adapter run typecheck
 ### 7. 運用メモ
 
 - local default を変える場合は `TEMPORAL_ADDRESS`、`TEMPORAL_NAMESPACE`、`TEMPORAL_TASK_QUEUE` を使用します。
+- `--generated-at` は既定で Workflow start time を使います。省略した場合、timestamp のみの drift を避けるため、生成された assurance artifact は expected fixture comparison をスキップします。deterministic fixture comparison が必要な場合は明示指定します。
+- `--output-dir` は repository root 配下に収まる repository-relative path に限定します。
 - この PoC では Temporal SDK package を root `package.json` に追加しません。
 - `temporal-run-summary/v1` は adapter evidence であり、`policy-decision/v1` や `claim-evidence-manifest/v1` の置き換えではありません。
 - restart drill を実施した場合は、開始コマンドに `--restart-validation-status manual-pass` を指定して evidence status を summary に記録します。

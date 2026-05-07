@@ -74,4 +74,22 @@ describe('temporal run summary contract', () => {
     expect(validate(invalidFixture)).toBe(false);
     expect(validate.errors?.some((entry) => entry.instancePath === '/adapter/mandatoryDependency')).toBe(true);
   });
+
+  it('records the actual optional Temporal SDK packages used by the example', () => {
+    const validate = buildValidator();
+    const validFixture = structuredClone(fixture) as {
+      adapter: {
+        sdk: {
+          packages: Array<{ name: string; version: string }>;
+        };
+      };
+    };
+
+    expect(validFixture.adapter.sdk.packages.map((entry) => entry.name)).toEqual([
+      '@temporalio/client',
+      '@temporalio/worker',
+      '@temporalio/workflow',
+    ]);
+    expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
 });

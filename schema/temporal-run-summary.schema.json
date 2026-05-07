@@ -204,16 +204,33 @@
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "name",
-            "version"
+            "packages"
           ],
           "properties": {
-            "name": {
-              "type": "string",
-              "const": "@temporalio/typescript-sdk"
-            },
-            "version": {
-              "$ref": "#/$defs/nonEmptyString"
+            "packages": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "version"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "enum": [
+                      "@temporalio/client",
+                      "@temporalio/worker",
+                      "@temporalio/workflow"
+                    ]
+                  },
+                  "version": {
+                    "$ref": "#/$defs/nonEmptyString"
+                  }
+                }
+              }
             }
           }
         }
