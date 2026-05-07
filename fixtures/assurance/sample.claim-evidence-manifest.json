@@ -215,21 +215,21 @@
           "description": "High severity candidate finding remains needs-human-review after three-gate review."
         },
         {
-          "id": "security-review:sec-finding-001",
+          "id": "security-review:sec-finding-001:0",
           "kind": "manual",
           "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/0",
           "sourceArtifactId": "security-review",
           "description": "Three-gate review classified SEC-FINDING-001 as needs-human-review."
         },
         {
-          "id": "security-review:sec-finding-002",
+          "id": "security-review:sec-finding-002:1",
           "kind": "manual",
           "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/1",
           "sourceArtifactId": "security-review",
           "description": "Three-gate review classified SEC-FINDING-002 as out-of-scope."
         },
         {
-          "id": "security-review:sec-finding-003",
+          "id": "security-review:sec-finding-003:2",
           "kind": "manual",
           "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/2",
           "sourceArtifactId": "security-review",

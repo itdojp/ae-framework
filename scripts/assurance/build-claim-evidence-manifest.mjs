@@ -818,7 +818,10 @@ function securityReviewMap(artifact) {
   for (const [reviewIndex, review] of ensureArray(artifact.payload?.reviews).entries()) {
     const findingId = String(review?.findingId ?? '').trim();
     if (!findingId) continue;
-    reviews.set(findingId, { ...review, reviewIndex });
+    const reviewEntry = { ...review, reviewIndex };
+    const existing = reviews.get(findingId) ?? [];
+    existing.push(reviewEntry);
+    reviews.set(findingId, existing);
   }
   return reviews;
 }
@@ -891,14 +894,15 @@ function ingestSecurityFindingsAndReviews(claimsById, findingsArtifact, reviewAr
   summary.claims = 0;
   if (!findingsArtifact.present && !reviewArtifact.present) return summary;
   const reviews = securityReviewMap(reviewArtifact);
-  summary.reviews = reviews.size;
+  summary.reviews = [...reviews.values()].reduce((total, entries) => total + entries.length, 0);
 
   if (!findingsArtifact.present) return summary;
   const sourceArtifactId = 'security-findings';
   const claimIdsWithFindings = new Set();
   for (const [findingIndex, finding] of ensureArray(findingsArtifact.payload?.findings).entries()) {
     if (!finding?.id || !finding?.claimId) continue;
-    const review = reviews.get(String(finding.id));
+    const findingReviews = reviews.get(String(finding.id)) ?? [];
+    const review = findingReviews.at(-1);
     const reviewResult = String(review?.result ?? '').trim();
     const effectiveResult = reviewResult || String(finding.status ?? 'candidate').trim();
     const summaryKey = camelSecurityResult(effectiveResult);
@@ -924,14 +928,16 @@ function ingestSecurityFindingsAndReviews(claimsById, findingsArtifact, reviewAr
       sourceArtifactId,
       description: `Security finding ${finding.id}: status=${finding.status ?? 'unknown'}, severity=${severity}, review=${effectiveResult || 'unreviewed'}.`,
     });
-    if (review && reviewArtifact.present) {
-      pushUniqueById(claim.evidenceRefs, {
-        id: sanitizeId(`security-review:${finding.id}`),
-        kind: 'manual',
-        artifactPath: artifactPathWithPointer(reviewArtifact.path, `/reviews/${review.reviewIndex}`),
-        sourceArtifactId: 'security-review',
-        description: `Security review classified ${finding.id} as ${review.result ?? 'unknown'}${review.falsePositiveRootCause ? ` (${review.falsePositiveRootCause})` : ''}.`,
-      });
+    if (findingReviews.length > 0 && reviewArtifact.present) {
+      for (const reviewEntry of findingReviews) {
+        pushUniqueById(claim.evidenceRefs, {
+          id: sanitizeId(`security-review:${finding.id}:${reviewEntry.reviewIndex}`),
+          kind: 'manual',
+          artifactPath: artifactPathWithPointer(reviewArtifact.path, `/reviews/${reviewEntry.reviewIndex}`),
+          sourceArtifactId: 'security-review',
+          description: `Security review classified ${finding.id} as ${reviewEntry.result ?? 'unknown'}${reviewEntry.falsePositiveRootCause ? ` (${reviewEntry.falsePositiveRootCause})` : ''}.`,
+        });
+      }
     }
     addSecurityMissingEvidence(claim, finding, review, sourceArtifactId);
     pushNote(

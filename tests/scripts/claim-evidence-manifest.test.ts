@@ -128,10 +128,21 @@ describe.sequential('claim evidence manifest generator', () => {
 
   it('integrates security claims, findings, and three-gate reviews as report-only assurance evidence', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-claim-evidence-manifest-security-'));
+    const securityReviewPath = join(sandbox, 'security-review-with-repeat.json');
     const outputJson = join(sandbox, 'claim-evidence-manifest.json');
     const outputMd = join(sandbox, 'claim-evidence-manifest.md');
 
     try {
+      const securityReviewFixture = JSON.parse(
+        readFileSync(resolve(repoRoot, 'fixtures/security-assurance/sample.security-review.json'), 'utf8'),
+      );
+      securityReviewFixture.reviews.push({
+        ...securityReviewFixture.reviews[0],
+        reviewer: 'human-security-reviewer',
+        reviewerNotes: ['Human reviewer rechecked the same finding and kept the review state.'],
+      });
+      writeJson(securityReviewPath, securityReviewFixture);
+
       const result = runScript([
         '--assurance-summary',
         'fixtures/assurance/sample.assurance-summary.json',
@@ -140,7 +151,7 @@ describe.sequential('claim evidence manifest generator', () => {
         '--security-findings',
         'fixtures/security-assurance/sample.security-findings.json',
         '--security-review',
-        'fixtures/security-assurance/sample.security-review.json',
+        securityReviewPath,
         '--generated-at',
         '2026-05-07T00:00:00.000Z',
         '--output-json',
@@ -158,7 +169,7 @@ describe.sequential('claim evidence manifest generator', () => {
       expect(manifest.summary.security).toMatchObject({
         claims: 1,
         findings: 3,
-        reviews: 3,
+        reviews: 4,
         needsHumanReview: 1,
         outOfScope: 1,
         rejected: 1,
@@ -183,6 +194,13 @@ describe.sequential('claim evidence manifest generator', () => {
           expect.objectContaining({ sourceArtifactId: 'security-findings', kind: 'adversarial' }),
           expect.objectContaining({ sourceArtifactId: 'security-review', kind: 'manual' }),
         ]),
+      );
+      const reviewEvidenceRefs = securityClaim.evidenceRefs.filter(
+        (ref: { sourceArtifactId: string }) => ref.sourceArtifactId === 'security-review',
+      );
+      expect(reviewEvidenceRefs).toHaveLength(4);
+      expect(reviewEvidenceRefs.map((ref: { id: string }) => ref.id)).toEqual(
+        expect.arrayContaining(['security-review:sec-finding-001:0', 'security-review:sec-finding-001:3']),
       );
       expect(securityClaim.missingEvidenceRefs).toEqual(
         expect.arrayContaining([

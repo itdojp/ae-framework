@@ -287,10 +287,21 @@ describe.sequential('assurance aggregate lanes script', () => {
 
   it('adds security claim and review evidence to the assurance lane summary', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-aggregate-security-'));
+    const securityReviewPath = join(sandbox, 'security-review-with-repeat.json');
     const outputJson = join(sandbox, 'assurance-summary.json');
     const outputMd = join(sandbox, 'assurance-summary.md');
 
     try {
+      const securityReviewFixture = JSON.parse(
+        readFileSync(resolve(repoRoot, 'fixtures/security-assurance/sample.security-review.json'), 'utf8'),
+      );
+      securityReviewFixture.reviews.push({
+        ...securityReviewFixture.reviews[0],
+        reviewer: 'human-security-reviewer',
+        reviewerNotes: ['Human reviewer rechecked the same finding and kept the review state.'],
+      });
+      writeJson(securityReviewPath, securityReviewFixture);
+
       const result = runScript([
         '--assurance-profile',
         'fixtures/assurance/sample.assurance-profile.json',
@@ -299,7 +310,7 @@ describe.sequential('assurance aggregate lanes script', () => {
         '--security-findings',
         'fixtures/security-assurance/sample.security-findings.json',
         '--security-review',
-        'fixtures/security-assurance/sample.security-review.json',
+        securityReviewPath,
         '--output-json',
         outputJson,
         '--output-md',
@@ -310,7 +321,7 @@ describe.sequential('assurance aggregate lanes script', () => {
       const summary = JSON.parse(readFileSync(outputJson, 'utf8'));
       expect(summary.inputs.securityClaims).toContain('fixtures/security-assurance/sample.security-claims.json');
       expect(summary.inputs.securityFindings).toContain('fixtures/security-assurance/sample.security-findings.json');
-      expect(summary.inputs.securityReview).toContain('fixtures/security-assurance/sample.security-review.json');
+      expect(summary.inputs.securityReview).toContain(securityReviewPath);
       expect(summary.summary.claimCount).toBe(2);
 
       const securityClaim = summary.claims.find((claim: { claimId: string }) => claim.claimId === 'SEC-CLAIM-001');
@@ -322,6 +333,9 @@ describe.sequential('assurance aggregate lanes script', () => {
       expect(securityClaim.observedEvidenceKinds).toEqual(
         expect.arrayContaining(['security-claim', 'security-finding', 'security-review']),
       );
+      expect(
+        securityClaim.evidence.filter((entry: { kind: string }) => entry.kind === 'security-review'),
+      ).toHaveLength(4);
       expect(securityClaim.counterexamples).toMatchObject({
         open: 1,
         resolved: 2,

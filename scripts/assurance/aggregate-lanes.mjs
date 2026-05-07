@@ -642,7 +642,10 @@ const reviewMapForSecurityFindings = (securityReviewPath) => {
   for (const [reviewIndex, review] of ensureArray(payload.reviews ?? [], `Security review reviews (${resolvedPath})`).entries()) {
     const findingId = maybeString(review?.findingId);
     if (!findingId) continue;
-    reviews.set(findingId, { ...review, reviewIndex, artifactPath: resolvedPath });
+    const reviewEntry = { ...review, reviewIndex, artifactPath: resolvedPath };
+    const existing = reviews.get(findingId) ?? [];
+    existing.push(reviewEntry);
+    reviews.set(findingId, existing);
   }
   return reviews;
 };
@@ -709,7 +712,8 @@ const ingestSecurityFindingsAndReviews = (securityFindingsPath, securityReviewPa
         requiredEvidenceKinds: [],
       }));
     }
-    const review = reviews.get(findingId);
+    const findingReviews = reviews.get(findingId) ?? [];
+    const review = findingReviews.at(-1);
     const reviewResult = maybeString(review?.result);
     const effectiveResult = reviewResult || maybeString(finding.status) || 'candidate';
     const severity = maybeString(review?.severity || finding.severity) || 'medium';
@@ -726,19 +730,19 @@ const ingestSecurityFindingsAndReviews = (securityFindingsPath, securityReviewPa
     });
     addEvidenceForClaims(claimStateMap, [claimId], evidence, warnings, resolvedPath);
 
-    if (review) {
+    for (const reviewEntry of findingReviews) {
       const reviewEvidence = normalizeEvidenceEntry({
         lane: 'adversarial',
         kind: 'security-review',
         sourceKind: 'source-derived',
         origin: 'security-review',
         status: 'observed',
-        artifactPath: `${review.artifactPath}#/reviews/${review.reviewIndex}`,
-        detail: `Security review classified ${findingId} as ${review.result ?? 'unknown'}${review.falsePositiveRootCause ? ` (${review.falsePositiveRootCause})` : ''}.`,
+        artifactPath: `${reviewEntry.artifactPath}#/reviews/${reviewEntry.reviewIndex}`,
+        detail: `Security review classified ${findingId} as ${reviewEntry.result ?? 'unknown'}${reviewEntry.falsePositiveRootCause ? ` (${reviewEntry.falsePositiveRootCause})` : ''}.`,
         claimRefs: [claimId],
-        generatorLineage: `security-review/${review.reviewer ?? 'unknown'}`,
+        generatorLineage: `security-review/${reviewEntry.reviewer ?? 'unknown'}`,
       });
-      addEvidenceForClaims(claimStateMap, [claimId], reviewEvidence, warnings, review.artifactPath);
+      addEvidenceForClaims(claimStateMap, [claimId], reviewEvidence, warnings, reviewEntry.artifactPath);
     }
 
     const claimState = claimStateMap.get(claimId);
