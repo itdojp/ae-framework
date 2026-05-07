@@ -310,11 +310,25 @@ jobs:
         env:
           SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
         run: |
-          node scripts/change-package/generate.mjs \
+          args=(
             --policy policy/risk-policy.yml \
             --mode "${SUMMARY_MODE}" \
             --output-json artifacts/change-package/change-package.json \
             --output-md artifacts/change-package/change-package.md
+          )
+          if [ "${AE_CHANGE_PACKAGE_DUAL_WRITE:-0}" = "1" ]; then
+            args+=(--dual-write)
+          fi
+          if [ -f artifacts/assurance/claim-evidence-manifest.json ]; then
+            args+=(--claim-evidence-manifest artifacts/assurance/claim-evidence-manifest.json)
+          fi
+          if [ -f artifacts/ci/policy-decision-js-v1.json ]; then
+            args+=(--policy-decision artifacts/ci/policy-decision-js-v1.json)
+          fi
+          if [ -f artifacts/assurance/assurance-summary.json ]; then
+            args+=(--assurance-summary artifacts/assurance/assurance-summary.json)
+          fi
+          node scripts/change-package/generate.mjs "${args[@]}"
       - name: Validate Change Package
         run: |
           node scripts/change-package/validate.mjs \
@@ -322,6 +336,21 @@ jobs:
             --schema schema/change-package.schema.json \
             --output-json artifacts/change-package/change-package-validation.json \
             --output-md artifacts/change-package/change-package-validation.md
+          if [ -f artifacts/change-package/change-package-v2.json ]; then
+            v2_args=(
+              --file artifacts/change-package/change-package-v2.json
+              --schema schema/change-package-v2.schema.json
+              --output-json artifacts/change-package/change-package-v2-validation.json
+              --output-md artifacts/change-package/change-package-v2-validation.md
+            )
+            if [ "${AE_CHANGE_PACKAGE_V2_STRICT:-0}" = "1" ]; then
+              v2_args+=(--strict)
+            fi
+            if [ -f artifacts/ci/policy-decision-js-v1.json ]; then
+              v2_args+=(--policy-decision artifacts/ci/policy-decision-js-v1.json)
+            fi
+            node scripts/change-package/validate.mjs "${v2_args[@]}"
+          fi
       - name: Resolve verify-lite run for current head SHA
         id: verify-lite-run
         uses: actions/github-script@v7
@@ -413,6 +442,14 @@ jobs:
             printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
             cat artifacts/change-package/change-package-validation.md >> artifacts/summary/PR_SUMMARY.md
           fi
+          if [ -f artifacts/change-package/change-package-v2.md ]; then
+            printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
+            cat artifacts/change-package/change-package-v2.md >> artifacts/summary/PR_SUMMARY.md
+          fi
+          if [ -f artifacts/change-package/change-package-v2-validation.md ]; then
+            printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
+            cat artifacts/change-package/change-package-v2-validation.md >> artifacts/summary/PR_SUMMARY.md
+          fi
           if [ -f artifacts/plan/plan-artifact.md ]; then
             printf '\n\n' >> artifacts/summary/PR_SUMMARY.md
             cat artifacts/plan/plan-artifact.md >> artifacts/summary/PR_SUMMARY.md
@@ -453,6 +490,10 @@ jobs:
             artifacts/change-package/change-package.md
             artifacts/change-package/change-package-validation.json
             artifacts/change-package/change-package-validation.md
+            artifacts/change-package/change-package-v2.json
+            artifacts/change-package/change-package-v2.md
+            artifacts/change-package/change-package-v2-validation.json
+            artifacts/change-package/change-package-v2-validation.md
             artifacts/plan/plan-artifact.json
             artifacts/plan/plan-artifact.md
             artifacts/plan/plan-artifact-validation.json

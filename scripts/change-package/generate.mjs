@@ -17,8 +17,35 @@ import { normalizeLabelNames } from '../ci/lib/automation-guards.mjs';
 
 const DEFAULT_OUTPUT_JSON_PATH = 'artifacts/change-package/change-package.json';
 const DEFAULT_OUTPUT_MD_PATH = 'artifacts/change-package/change-package.md';
+const DEFAULT_V2_OUTPUT_JSON_PATH = 'artifacts/change-package/change-package-v2.json';
+const DEFAULT_V2_OUTPUT_MD_PATH = 'artifacts/change-package/change-package-v2.md';
 const DEFAULT_ARTIFACT_ROOT = '.';
 const DEFAULT_MODE = 'detailed';
+const DEFAULT_CLAIM_EVIDENCE_MANIFEST_PATH = 'artifacts/assurance/claim-evidence-manifest.json';
+const DEFAULT_POLICY_DECISION_PATH = 'artifacts/ci/policy-decision-js-v1.json';
+const DEFAULT_ASSURANCE_SUMMARY_PATH = 'artifacts/assurance/assurance-summary.json';
+
+const ASSURANCE_LEVELS = ['A0', 'A1', 'A2', 'A3', 'A4'];
+const V2_CLAIM_STATUSES = new Set([
+  'proved',
+  'model-checked',
+  'tested',
+  'runtime-mitigated',
+  'waived',
+  'unresolved',
+]);
+const V2_PROOF_METHODS = new Set([
+  'spec',
+  'property',
+  'tla',
+  'alloy',
+  'smt',
+  'csp',
+  'lean',
+  'kani',
+  'runtime',
+]);
+const V2_PROOF_STATUSES = new Set(['open', 'discharged', 'waived']);
 
 const EVIDENCE_CATALOG = [
   {
@@ -77,14 +104,32 @@ function parseLabelsCsv(value) {
     .filter(Boolean);
 }
 
+function normalizeSchemaVersion(value) {
+  const normalized = String(value || 'v1').trim().toLowerCase();
+  if (normalized === 'v1' || normalized === 'change-package/v1') {
+    return 'v1';
+  }
+  if (normalized === 'v2' || normalized === 'change-package/v2') {
+    return 'v2';
+  }
+  throw new Error(`unsupported schema version: ${value}`);
+}
+
 function parseArgs(argv = process.argv) {
   const options = {
     policyPath: DEFAULT_POLICY_PATH,
     outputJsonPath: DEFAULT_OUTPUT_JSON_PATH,
     outputMarkdownPath: DEFAULT_OUTPUT_MD_PATH,
+    v2OutputJsonPath: DEFAULT_V2_OUTPUT_JSON_PATH,
+    v2OutputMarkdownPath: DEFAULT_V2_OUTPUT_MD_PATH,
     changedFilesPath: '',
     artifactRoot: DEFAULT_ARTIFACT_ROOT,
     mode: DEFAULT_MODE,
+    schemaVersion: 'v1',
+    dualWrite: false,
+    claimEvidenceManifestPath: DEFAULT_CLAIM_EVIDENCE_MANIFEST_PATH,
+    policyDecisionPath: DEFAULT_POLICY_DECISION_PATH,
+    assuranceSummaryPath: DEFAULT_ASSURANCE_SUMMARY_PATH,
     repository: '',
     prNumber: null,
     baseRef: '',
@@ -93,6 +138,8 @@ function parseArgs(argv = process.argv) {
     labelsCsv: '',
     eventPath: process.env.GITHUB_EVENT_PATH || '',
     help: false,
+    outputJsonPathExplicit: false,
+    outputMarkdownPathExplicit: false,
   };
 
   for (let index = 2; index < argv.length; index += 1) {
@@ -121,18 +168,38 @@ function parseArgs(argv = process.argv) {
     }
     if (arg === '--output-json') {
       options.outputJsonPath = readValue('--output-json');
+      options.outputJsonPathExplicit = true;
       continue;
     }
     if (arg.startsWith('--output-json=')) {
       options.outputJsonPath = arg.slice('--output-json='.length);
+      options.outputJsonPathExplicit = true;
       continue;
     }
     if (arg === '--output-md') {
       options.outputMarkdownPath = readValue('--output-md');
+      options.outputMarkdownPathExplicit = true;
       continue;
     }
     if (arg.startsWith('--output-md=')) {
       options.outputMarkdownPath = arg.slice('--output-md='.length);
+      options.outputMarkdownPathExplicit = true;
+      continue;
+    }
+    if (arg === '--v2-output-json') {
+      options.v2OutputJsonPath = readValue('--v2-output-json');
+      continue;
+    }
+    if (arg.startsWith('--v2-output-json=')) {
+      options.v2OutputJsonPath = arg.slice('--v2-output-json='.length);
+      continue;
+    }
+    if (arg === '--v2-output-md') {
+      options.v2OutputMarkdownPath = readValue('--v2-output-md');
+      continue;
+    }
+    if (arg.startsWith('--v2-output-md=')) {
+      options.v2OutputMarkdownPath = arg.slice('--v2-output-md='.length);
       continue;
     }
     if (arg === '--changed-files-file') {
@@ -157,6 +224,42 @@ function parseArgs(argv = process.argv) {
     }
     if (arg.startsWith('--mode=')) {
       options.mode = arg.slice('--mode='.length);
+      continue;
+    }
+    if (arg === '--schema-version') {
+      options.schemaVersion = readValue('--schema-version');
+      continue;
+    }
+    if (arg.startsWith('--schema-version=')) {
+      options.schemaVersion = arg.slice('--schema-version='.length);
+      continue;
+    }
+    if (arg === '--dual-write') {
+      options.dualWrite = true;
+      continue;
+    }
+    if (arg === '--claim-evidence-manifest') {
+      options.claimEvidenceManifestPath = readValue('--claim-evidence-manifest');
+      continue;
+    }
+    if (arg.startsWith('--claim-evidence-manifest=')) {
+      options.claimEvidenceManifestPath = arg.slice('--claim-evidence-manifest='.length);
+      continue;
+    }
+    if (arg === '--policy-decision') {
+      options.policyDecisionPath = readValue('--policy-decision');
+      continue;
+    }
+    if (arg.startsWith('--policy-decision=')) {
+      options.policyDecisionPath = arg.slice('--policy-decision='.length);
+      continue;
+    }
+    if (arg === '--assurance-summary') {
+      options.assuranceSummaryPath = readValue('--assurance-summary');
+      continue;
+    }
+    if (arg.startsWith('--assurance-summary=')) {
+      options.assuranceSummaryPath = arg.slice('--assurance-summary='.length);
       continue;
     }
     if (arg === '--repo') {
@@ -218,6 +321,17 @@ function parseArgs(argv = process.argv) {
     throw new Error(`unknown option: ${arg}`);
   }
 
+  const normalizedSchemaVersion = normalizeSchemaVersion(options.schemaVersion);
+  options.schemaVersion = normalizedSchemaVersion;
+  if (normalizedSchemaVersion === 'v2' && !options.dualWrite) {
+    if (!options.outputJsonPathExplicit) {
+      options.outputJsonPath = DEFAULT_V2_OUTPUT_JSON_PATH;
+    }
+    if (!options.outputMarkdownPathExplicit) {
+      options.outputMarkdownPath = DEFAULT_V2_OUTPUT_MD_PATH;
+    }
+  }
+
   return options;
 }
 
@@ -230,6 +344,13 @@ function printHelp() {
     + `  --policy <path>               risk policy path (default: ${DEFAULT_POLICY_PATH})\n`
     + `  --output-json <path>          output JSON path (default: ${DEFAULT_OUTPUT_JSON_PATH})\n`
     + `  --output-md <path>            output Markdown path (default: ${DEFAULT_OUTPUT_MD_PATH})\n`
+    + `  --schema-version <v1|v2>      generated contract version (default: v1)\n`
+    + `  --dual-write                  write v1 plus v2 outputs using --v2-output-* paths\n`
+    + `  --v2-output-json <path>       dual-write v2 JSON path (default: ${DEFAULT_V2_OUTPUT_JSON_PATH})\n`
+    + `  --v2-output-md <path>         dual-write v2 Markdown path (default: ${DEFAULT_V2_OUTPUT_MD_PATH})\n`
+    + `  --claim-evidence-manifest <path> claim-evidence-manifest/v1 input for v2 (default: ${DEFAULT_CLAIM_EVIDENCE_MANIFEST_PATH})\n`
+    + `  --policy-decision <path>      policy-decision/v1 input for v2 (default: ${DEFAULT_POLICY_DECISION_PATH})\n`
+    + `  --assurance-summary <path>    assurance-summary/v1 input for v2 (default: ${DEFAULT_ASSURANCE_SUMMARY_PATH})\n`
     + `  --changed-files-file <path>   newline-separated changed files input\n`
     + `  --artifact-root <path>        root path for evidence existence checks (default: ${DEFAULT_ARTIFACT_ROOT})\n`
     + `  --mode <digest|detailed>      markdown detail level (default: ${DEFAULT_MODE})\n`
@@ -257,6 +378,357 @@ function readJsonIfExists(filePath) {
   } catch {
     return null;
   }
+}
+
+function ensureArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function ensureObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function uniqueStrings(values) {
+  return [...new Set(
+    ensureArray(values)
+      .map((value) => String(value || '').trim())
+      .filter(Boolean),
+  )];
+}
+
+function normalizeAssuranceLevel(value, fallback = 'A0') {
+  const candidate = String(value || '').trim().toUpperCase();
+  return ASSURANCE_LEVELS.includes(candidate) ? candidate : fallback;
+}
+
+function assuranceLevelIndex(value) {
+  const index = ASSURANCE_LEVELS.indexOf(normalizeAssuranceLevel(value));
+  return index >= 0 ? index : 0;
+}
+
+function maxAssuranceLevel(values, fallback = 'A0') {
+  const levels = ensureArray(values).map((value) => normalizeAssuranceLevel(value, fallback));
+  if (levels.length === 0) return fallback;
+  return ASSURANCE_LEVELS[Math.max(...levels.map(assuranceLevelIndex))];
+}
+
+function minAssuranceLevel(values, fallback = 'A0') {
+  const levels = ensureArray(values).map((value) => normalizeAssuranceLevel(value, fallback));
+  if (levels.length === 0) return fallback;
+  return ASSURANCE_LEVELS[Math.min(...levels.map(assuranceLevelIndex))];
+}
+
+function oneLevelBelow(value) {
+  const index = assuranceLevelIndex(value);
+  return ASSURANCE_LEVELS[Math.max(0, index - 1)];
+}
+
+function normalizeCriticality(value) {
+  const candidate = String(value || '').trim().toLowerCase();
+  return ['low', 'medium', 'high', 'critical'].includes(candidate) ? candidate : 'medium';
+}
+
+function normalizeV2ClaimStatus(value, fallback = 'unresolved') {
+  const candidate = String(value || '').trim();
+  return V2_CLAIM_STATUSES.has(candidate) ? candidate : fallback;
+}
+
+function normalizeV2ProofMethod(value) {
+  const candidate = String(value || '').trim().toLowerCase();
+  if (V2_PROOF_METHODS.has(candidate)) return candidate;
+  if (candidate === 'manual' || candidate === 'other') return 'runtime';
+  return 'spec';
+}
+
+function normalizeV2ProofStatus(value) {
+  const candidate = String(value || '').trim().toLowerCase();
+  if (V2_PROOF_STATUSES.has(candidate)) return candidate;
+  if (candidate === 'unresolved') return 'open';
+  return 'open';
+}
+
+function normalizeDate(value, fallback = '2099-12-31') {
+  const candidate = String(value || '').trim();
+  return /^\d{4}-\d{2}-\d{2}$/u.test(candidate) ? candidate : fallback;
+}
+
+function stripJsonPointer(artifactRef) {
+  return String(artifactRef || '').split('#')[0].trim();
+}
+
+function normalizeArtifactRefs(values, fallback) {
+  const refs = uniqueStrings(values)
+    .map(stripJsonPointer)
+    .filter(Boolean);
+  return refs.length > 0 ? refs : [fallback].filter(Boolean);
+}
+
+function loadOptionalJsonSource(id, filePath, description) {
+  const payload = readJsonIfExists(filePath);
+  return {
+    id,
+    path: filePath,
+    description,
+    present: Boolean(payload),
+    payload,
+  };
+}
+
+function inferV2StatusFromManifestClaim(claim) {
+  const status = String(claim?.status || '').trim().toLowerCase();
+  if (status === 'waived') return 'waived';
+  if (status === 'unresolved' || status === 'partial') return 'unresolved';
+  const proofRefs = ensureArray(claim?.proofObligationRefs);
+  if (proofRefs.some((entry) => String(entry?.status || '').trim() === 'discharged')) {
+    return 'model-checked';
+  }
+  const evidenceRefs = ensureArray(claim?.evidenceRefs);
+  if (evidenceRefs.some((entry) => String(entry?.kind || '').trim() === 'proof')) {
+    return 'model-checked';
+  }
+  if (evidenceRefs.some((entry) => String(entry?.kind || '').trim() === 'runtime')) {
+    return 'runtime-mitigated';
+  }
+  return status === 'satisfied' ? 'tested' : 'unresolved';
+}
+
+function mapPolicyClaimResultToV2Status(result, status) {
+  const normalizedResult = String(result || '').trim().toLowerCase();
+  if (normalizedResult === 'waived') return 'waived';
+  if (normalizedResult === 'block' || normalizedResult === 'report-only') return 'unresolved';
+  const normalizedStatus = String(status || '').trim().toLowerCase();
+  if (normalizedStatus === 'waived') return 'waived';
+  if (normalizedStatus === 'partial' || normalizedStatus === 'unresolved') return 'unresolved';
+  return 'tested';
+}
+
+function upsertClaim(claimsById, rawClaim) {
+  const id = String(rawClaim?.id || rawClaim?.claimId || '').trim();
+  if (!id) return null;
+  const existing = claimsById.get(id) || {
+    id,
+    statement: `Assurance claim ${id}`,
+    status: 'unresolved',
+    criticality: 'medium',
+    artifactRefs: [],
+  };
+  const merged = {
+    ...existing,
+    statement: String(rawClaim?.statement || existing.statement || `Assurance claim ${id}`),
+    status: normalizeV2ClaimStatus(rawClaim?.status, existing.status),
+    criticality: normalizeCriticality(rawClaim?.criticality || existing.criticality),
+    artifactRefs: normalizeArtifactRefs([
+      ...ensureArray(existing.artifactRefs),
+      ...ensureArray(rawClaim?.artifactRefs),
+    ], `artifacts/change-package/${id}.json`),
+  };
+  claimsById.set(id, merged);
+  return merged;
+}
+
+function collectManifestArtifactRefs(claim, manifestPath) {
+  return normalizeArtifactRefs([
+    ...ensureArray(claim?.evidenceRefs).map((entry) => entry?.artifactPath),
+    ...ensureArray(claim?.proofObligationRefs).map((entry) => entry?.artifactPath),
+  ], manifestPath || DEFAULT_CLAIM_EVIDENCE_MANIFEST_PATH);
+}
+
+function ingestManifestForV2(claimsById, proofObligations, waivers, source) {
+  const manifest = ensureObject(source.payload);
+  for (const rawClaim of ensureArray(manifest.claims)) {
+    const claim = upsertClaim(claimsById, {
+      id: rawClaim?.id,
+      statement: rawClaim?.statement,
+      criticality: rawClaim?.criticality,
+      status: inferV2StatusFromManifestClaim(rawClaim),
+      artifactRefs: collectManifestArtifactRefs(rawClaim, source.path),
+    });
+    if (!claim) continue;
+
+    for (const rawObligation of ensureArray(rawClaim?.proofObligationRefs)) {
+      const id = String(rawObligation?.id || '').trim();
+      if (!id) continue;
+      proofObligations.push({
+        id,
+        claimId: claim.id,
+        method: normalizeV2ProofMethod(rawObligation?.method),
+        status: normalizeV2ProofStatus(rawObligation?.status),
+        artifactRefs: normalizeArtifactRefs([rawObligation?.artifactPath], claim.artifactRefs[0] || source.path),
+      });
+    }
+
+    for (const rawWaiver of ensureArray(rawClaim?.waiverRefs)) {
+      waivers.push({
+        owner: String(rawWaiver?.owner || 'unknown'),
+        expires: normalizeDate(rawWaiver?.expires),
+        reason: String(rawWaiver?.reason || `Waiver recorded for claim ${claim.id}`),
+        relatedClaimIds: [claim.id],
+      });
+    }
+  }
+}
+
+function ingestAssuranceSummaryForV2(claimsById, source) {
+  const assuranceSummary = ensureObject(source.payload);
+  for (const rawClaim of ensureArray(assuranceSummary.claims)) {
+    const claimId = String(rawClaim?.claimId || rawClaim?.id || '').trim();
+    if (!claimId || claimsById.has(claimId)) continue;
+    upsertClaim(claimsById, {
+      id: claimId,
+      statement: rawClaim?.statement,
+      criticality: rawClaim?.criticality,
+      status: String(rawClaim?.status || '').trim() === 'satisfied' ? 'tested' : 'unresolved',
+      artifactRefs: ensureArray(rawClaim?.evidence).map((entry) => entry?.artifactPath),
+    });
+  }
+}
+
+function inferAssuranceSummaryAchievedLevel(claim) {
+  const targetLevel = normalizeAssuranceLevel(claim?.targetLevel);
+  const status = String(claim?.status || '').trim().toLowerCase();
+  if (status === 'warning' || status === 'partial' || status === 'unresolved') {
+    return oneLevelBelow(targetLevel);
+  }
+  return targetLevel;
+}
+
+function collectSourceClaimStatuses(manifestClaims, assuranceClaims) {
+  const statusesByClaimId = new Map();
+  for (const rawClaim of [
+    ...ensureArray(manifestClaims),
+    ...ensureArray(assuranceClaims),
+  ]) {
+    const claimId = String(rawClaim?.id || rawClaim?.claimId || '').trim();
+    const status = String(rawClaim?.status || '').trim().toLowerCase();
+    if (!claimId || !status) continue;
+
+    const existing = statusesByClaimId.get(claimId);
+    if (existing === 'unresolved') continue;
+    const normalizedStatus = status === 'warning' ? 'partial' : status;
+    if (normalizedStatus === 'unresolved' || (normalizedStatus === 'partial' && !existing)) {
+      statusesByClaimId.set(claimId, normalizedStatus);
+      continue;
+    }
+    if (!existing) {
+      statusesByClaimId.set(claimId, normalizedStatus);
+    }
+  }
+  return statusesByClaimId;
+}
+
+function ingestPolicyDecisionForV2(claimsById, waivers, source) {
+  const assurance = ensureObject(source.payload?.evaluation?.assurance);
+  for (const rawClaim of ensureArray(assurance.claims)) {
+    const claimId = String(rawClaim?.claimId || '').trim();
+    if (!claimId) continue;
+    upsertClaim(claimsById, {
+      id: claimId,
+      status: mapPolicyClaimResultToV2Status(rawClaim?.result, rawClaim?.status),
+      artifactRefs: [source.path],
+    });
+  }
+  for (const rawWaiver of ensureArray(assurance.waivers)) {
+    const claimId = String(rawWaiver?.claimId || '').trim();
+    if (!claimId) continue;
+    waivers.push({
+      owner: String(rawWaiver?.owner || 'unknown'),
+      expires: normalizeDate(rawWaiver?.expires),
+      reason: String(rawWaiver?.reason || `Policy decision waiver for claim ${claimId}`),
+      relatedClaimIds: [claimId],
+    });
+  }
+}
+
+function dedupeProofObligations(entries) {
+  const seen = new Set();
+  const result = [];
+  for (const entry of entries) {
+    const key = `${entry.id}::${entry.claimId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(entry);
+  }
+  return result.sort((left, right) => `${left.claimId}:${left.id}`.localeCompare(`${right.claimId}:${right.id}`));
+}
+
+function dedupeWaivers(entries) {
+  const seen = new Set();
+  const result = [];
+  for (const entry of entries) {
+    const relatedClaimIds = uniqueStrings(entry.relatedClaimIds);
+    if (relatedClaimIds.length === 0) continue;
+    const normalized = {
+      owner: String(entry.owner || 'unknown'),
+      expires: normalizeDate(entry.expires),
+      reason: String(entry.reason || 'Change-package v2 waiver'),
+      relatedClaimIds,
+    };
+    const key = `${normalized.owner}::${normalized.expires}::${normalized.reason}::${normalized.relatedClaimIds.join(',')}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(normalized);
+  }
+  return result.sort((left, right) => left.relatedClaimIds.join(',').localeCompare(right.relatedClaimIds.join(',')));
+}
+
+function buildV2Evidence(baseEvidence, sources) {
+  const sourceItems = sources.map((source) => ({
+    id: source.id,
+    path: source.path,
+    description: source.description,
+    present: source.present,
+  }));
+  const items = [
+    ...baseEvidence.items,
+    ...sourceItems,
+  ];
+  const presentCount = items.filter((item) => item.present).length;
+  return {
+    ...baseEvidence,
+    items,
+    presentCount,
+    missingCount: items.length - presentCount,
+  };
+}
+
+function buildV2Assurance(claims, manifestSource, policyDecisionSource, assuranceSummarySource) {
+  const manifestClaims = ensureArray(manifestSource.payload?.claims);
+  const assuranceClaims = ensureArray(assuranceSummarySource.payload?.claims);
+  const targetLevel = maxAssuranceLevel([
+    ...manifestClaims.map((claim) => claim?.targetLevel),
+    ...assuranceClaims.map((claim) => claim?.targetLevel),
+  ]);
+  const achievedLevel = minAssuranceLevel([
+    ...manifestClaims.map((claim) => claim?.achievedLevel),
+    ...assuranceClaims.map(inferAssuranceSummaryAchievedLevel),
+  ], targetLevel);
+  const policyAssurance = ensureObject(policyDecisionSource.payload?.evaluation?.assurance);
+  const policyResult = String(policyAssurance.result || '').trim().toLowerCase();
+  const manifestStatuses = manifestClaims.map((claim) => String(claim?.status || '').trim().toLowerCase()).filter(Boolean);
+  const sourceStatusesByClaimId = collectSourceClaimStatuses(manifestClaims, assuranceClaims);
+  const sourceStatuses = [...sourceStatusesByClaimId.values()];
+  const generatedUnresolvedClaims = claims
+    .filter((claim) => claim.status === 'unresolved')
+    .filter((claim) => sourceStatusesByClaimId.get(claim.id) !== 'partial');
+
+  let status = 'unassessed';
+  if (policyResult === 'block' || sourceStatuses.includes('unresolved') || generatedUnresolvedClaims.length > 0) {
+    status = 'unresolved';
+  } else if (policyResult === 'report-only' || manifestStatuses.includes('partial') || sourceStatuses.includes('partial')) {
+    status = 'partial';
+  } else if (policyResult === 'waived') {
+    status = 'waived';
+  } else if (claims.length > 0 && claims.every((claim) => claim.status === 'waived')) {
+    status = 'waived';
+  } else if (claims.length > 0 || policyResult === 'pass' || policyResult === 'waived') {
+    status = 'satisfied';
+  }
+
+  return {
+    targetLevel,
+    achievedLevel,
+    status,
+  };
 }
 
 function toPositiveInt(value) {
@@ -547,6 +1019,84 @@ function buildExceptions({
   return exceptions;
 }
 
+function escapeMarkdownCell(value) {
+  return String(value ?? '')
+    .replace(/\\/gu, '\\\\')
+    .replace(/\|/gu, '\\|')
+    .replace(/\r?\n/gu, ' ')
+    .trim();
+}
+
+function renderTable(headers, rows) {
+  if (rows.length === 0) {
+    return '- (none)';
+  }
+  return [
+    `| ${headers.map(escapeMarkdownCell).join(' | ')} |`,
+    `| ${headers.map(() => '---').join(' | ')} |`,
+    ...rows.map((row) => `| ${row.map(escapeMarkdownCell).join(' | ')} |`),
+  ].join('\n');
+}
+
+function renderV2DetailedSections(changePackage) {
+  if (changePackage.schemaVersion !== 'change-package/v2') {
+    return [];
+  }
+  const claims = ensureArray(changePackage.claims);
+  const proofObligations = ensureArray(changePackage.proofObligations);
+  const waivers = ensureArray(changePackage.waivers);
+  return [
+    '### Assurance',
+    `- target/achieved/status: ${changePackage.assurance.targetLevel}/${changePackage.assurance.achievedLevel}/${changePackage.assurance.status}`,
+    '',
+    '### Claims',
+    renderTable(
+      ['id', 'status', 'criticality', 'artifactRefs', 'statement'],
+      claims.map((claim) => [
+        claim.id,
+        claim.status,
+        claim.criticality,
+        String(ensureArray(claim.artifactRefs).length),
+        claim.statement,
+      ]),
+    ),
+    '',
+    '### Proof Obligations',
+    renderTable(
+      ['id', 'claimId', 'method', 'status', 'artifactRefs'],
+      proofObligations.map((obligation) => [
+        obligation.id,
+        obligation.claimId,
+        obligation.method,
+        obligation.status,
+        String(ensureArray(obligation.artifactRefs).length),
+      ]),
+    ),
+    '',
+    '### Waivers',
+    renderTable(
+      ['owner', 'expires', 'relatedClaimIds', 'reason'],
+      waivers.map((waiver) => [
+        waiver.owner,
+        waiver.expires,
+        ensureArray(waiver.relatedClaimIds).join(', '),
+        waiver.reason,
+      ]),
+    ),
+    '',
+  ];
+}
+
+function renderV2DigestSuffix(changePackage) {
+  if (changePackage.schemaVersion !== 'change-package/v2') {
+    return '';
+  }
+  return ` | assurance=${changePackage.assurance.targetLevel}/${changePackage.assurance.achievedLevel}/${changePackage.assurance.status}`
+    + ` | claims=${ensureArray(changePackage.claims).length}`
+    + ` | proofObligations=${ensureArray(changePackage.proofObligations).length}`
+    + ` | waivers=${ensureArray(changePackage.waivers).length}`;
+}
+
 function renderDetailedMarkdown(changePackage) {
   const risk = changePackage.risk;
   const evidenceRows = changePackage.evidence.items
@@ -590,6 +1140,7 @@ function renderDetailedMarkdown(changePackage) {
     '| --- | --- | --- |',
     evidenceRows,
     '',
+    ...renderV2DetailedSections(changePackage),
     '### Reproducibility',
     ...changePackage.reproducibility.commands.map((command) => `- \`${command}\``),
     '',
@@ -611,7 +1162,7 @@ function renderDigestMarkdown(changePackage) {
   const risk = changePackage.risk;
   return [
     '### Change Package',
-    `- risk=${risk.selected} (inferred=${risk.inferred}) | files=${changePackage.scope.changedFileCount} | areas=${changePackage.scope.areas.join(', ')} | evidence=${changePackage.evidence.presentCount}/${changePackage.evidence.missingCount} present/missing`,
+    `- risk=${risk.selected} (inferred=${risk.inferred}) | files=${changePackage.scope.changedFileCount} | areas=${changePackage.scope.areas.join(', ')} | evidence=${changePackage.evidence.presentCount}/${changePackage.evidence.missingCount} present/missing${renderV2DigestSuffix(changePackage)}`,
     `- required labels: ${risk.requiredLabels.length > 0 ? risk.requiredLabels.join(', ') : '(none)'} | missing: ${risk.missingRequiredLabels.length > 0 ? risk.missingRequiredLabels.join(', ') : '(none)'}`,
     `- reproducibility: ${changePackage.reproducibility.commands.map((command) => `\`${command}\``).join(', ')}`,
     '',
@@ -718,16 +1269,95 @@ function buildChangePackage(options, eventPayload) {
   return changePackage;
 }
 
-function writeOutputs(options, changePackage) {
-  const markdown = renderMarkdown(changePackage, isModeDigest(options.mode) ? 'digest' : 'detailed');
+function buildChangePackageV2(options, eventPayload, baseChangePackage = buildChangePackage(options, eventPayload)) {
+  const claimEvidenceManifest = loadOptionalJsonSource(
+    'claimEvidenceManifest',
+    options.claimEvidenceManifestPath,
+    'claim-evidence-manifest/v1 assurance claims',
+  );
+  const policyDecision = loadOptionalJsonSource(
+    'policyDecision',
+    options.policyDecisionPath,
+    'policy-decision/v1 policy-gate decision',
+  );
+  const assuranceSummary = loadOptionalJsonSource(
+    'assuranceSummary',
+    options.assuranceSummaryPath,
+    'assurance-summary/v1 lane coverage summary',
+  );
+  const claimsById = new Map();
+  const proofObligations = [];
+  const waivers = [];
 
-  ensureDirectory(options.outputJsonPath);
-  fs.writeFileSync(options.outputJsonPath, `${JSON.stringify(changePackage, null, 2)}\n`);
+  if (assuranceSummary.present) {
+    ingestAssuranceSummaryForV2(claimsById, assuranceSummary);
+  }
+  if (claimEvidenceManifest.present) {
+    ingestManifestForV2(claimsById, proofObligations, waivers, claimEvidenceManifest);
+  }
+  if (policyDecision.present) {
+    ingestPolicyDecisionForV2(claimsById, waivers, policyDecision);
+  }
 
-  ensureDirectory(options.outputMarkdownPath);
-  fs.writeFileSync(options.outputMarkdownPath, `${markdown.trimEnd()}\n`);
+  const claims = Array.from(claimsById.values())
+    .map((claim) => ({
+      ...claim,
+      artifactRefs: normalizeArtifactRefs(claim.artifactRefs, options.claimEvidenceManifestPath),
+    }))
+    .sort((left, right) => left.id.localeCompare(right.id));
+  const claimIds = new Set(claims.map((claim) => claim.id));
+  const filteredProofObligations = dedupeProofObligations(proofObligations)
+    .filter((obligation) => claimIds.has(obligation.claimId));
+  const filteredWaivers = dedupeWaivers(waivers)
+    .map((waiver) => ({
+      ...waiver,
+      relatedClaimIds: waiver.relatedClaimIds.filter((claimId) => claimIds.has(claimId)),
+    }))
+    .filter((waiver) => waiver.relatedClaimIds.length > 0);
+
+  return {
+    ...baseChangePackage,
+    schemaVersion: 'change-package/v2',
+    evidence: buildV2Evidence(baseChangePackage.evidence, [
+      claimEvidenceManifest,
+      policyDecision,
+      assuranceSummary,
+    ]),
+    assurance: buildV2Assurance(claims, claimEvidenceManifest, policyDecision, assuranceSummary),
+    claims,
+    assumptions: [],
+    proofObligations: filteredProofObligations,
+    counterexamples: [],
+    trustBoundary: {
+      outsideModel: [],
+    },
+    runtimeControls: {
+      alerts: baseChangePackage.monitoringPlan.alerts,
+      featureFlags: [],
+    },
+    waivers: filteredWaivers,
+  };
+}
+
+function writeChangePackageOutputs(changePackage, outputJsonPath, outputMarkdownPath, mode) {
+  const markdown = renderMarkdown(changePackage, mode);
+
+  ensureDirectory(outputJsonPath);
+  fs.writeFileSync(outputJsonPath, `${JSON.stringify(changePackage, null, 2)}\n`);
+
+  ensureDirectory(outputMarkdownPath);
+  fs.writeFileSync(outputMarkdownPath, `${markdown.trimEnd()}\n`);
 
   return markdown;
+}
+
+function writeOutputs(options, changePackage) {
+  return writeChangePackageOutputs(
+    changePackage,
+    options.outputJsonPath,
+    options.outputMarkdownPath,
+    isModeDigest(options.mode) ? 'digest' : 'detailed',
+  );
 }
 
 async function run(options = parseArgs(process.argv)) {
@@ -737,10 +1367,25 @@ async function run(options = parseArgs(process.argv)) {
   }
 
   const eventPayload = readJsonIfExists(options.eventPath) || {};
-  const changePackage = buildChangePackage(options, eventPayload);
+  const v1ChangePackage = buildChangePackage(options, eventPayload);
+  const changePackage = options.schemaVersion === 'v2'
+    ? buildChangePackageV2(options, eventPayload, v1ChangePackage)
+    : v1ChangePackage;
   const markdown = writeOutputs(options, changePackage);
+  let v2ChangePackage = null;
+  if (options.dualWrite) {
+    v2ChangePackage = buildChangePackageV2(options, eventPayload, v1ChangePackage);
+    writeChangePackageOutputs(
+      v2ChangePackage,
+      options.v2OutputJsonPath,
+      options.v2OutputMarkdownPath,
+      isModeDigest(options.mode) ? 'digest' : 'detailed',
+    );
+  }
   process.stdout.write(`${markdown.trimEnd()}\n`);
-  return changePackage;
+  return options.dualWrite
+    ? { primary: changePackage, v1: v1ChangePackage, v2: v2ChangePackage }
+    : changePackage;
 }
 
 function isDirectExecution() {
@@ -761,6 +1406,7 @@ if (isDirectExecution()) {
 
 export {
   buildChangePackage,
+  buildChangePackageV2,
   parseArgs,
   renderMarkdown,
   run,
