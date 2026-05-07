@@ -25,7 +25,7 @@ This document is the baseline inventory created for Issue #2406. It classifies t
 
 Some schemas are dual-role. This catalog records the primary role used in the current implementation.
 
-### 3. Schema inventory (snapshot: 2026-03-04)
+### 3. Schema inventory (snapshot: 2026-05-07)
 
 #### 3.1 input
 
@@ -62,6 +62,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/policy-decision-v1.schema.json`
 - `schema/pr-state-v1.schema.json`
 - `schema/policy-gate-summary-v1.schema.json`
+- `schema/security-review-v1.schema.json`
 - `schema/quality-report.schema.json`
 - `schema/trace-validation.schema.json`
 - `schema/verify-profile-summary.schema.json`
@@ -73,6 +74,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/artifact-metadata.schema.json`
 - `schema/assurance-summary.schema.json`
 - `schema/claim-evidence-manifest.schema.json`
+- `schema/security-finding-v1.schema.json`
 - `schema/temporal-run-summary.schema.json`
 - `schema/bench-criteria.schema.json`
 - `schema/bench-compare.schema.json`
@@ -125,6 +127,8 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/security/security-claims.json` | `schema/security-claim-v1.schema.json` | manual authoring, future `ae security extract-claims`, `fixtures/security-assurance/sample.security-claims.json` (schema contract fixture) | future Security Assurance Lane producers, `scripts/ci/validate-json.mjs`, `tests/contracts/security-assurance-contract.test.ts`; downstream artifacts reference `claims[].id` |
 | `artifacts/security/security-threat-model.json` | `schema/security-threat-model-v1.schema.json` | manual authoring, future SPECA-compatible import, `fixtures/security-assurance/sample.security-threat-model.json` (schema contract fixture) | future security audit and review producers, `scripts/ci/validate-json.mjs`, `tests/contracts/security-assurance-contract.test.ts`; references security claim ids through `threats[].relatedClaimIds[]` |
 | `artifacts/security/security-audit-scope.json` | `schema/security-audit-scope-v1.schema.json` | manual authoring, bug-bounty/audit scope translation, `fixtures/security-assurance/sample.security-audit-scope.json` (schema contract fixture) | future security claim extraction, code-map, audit, and review producers; scope remains glob-based in the MVP contract |
+| `artifacts/security/security-findings.json` | `schema/security-finding-v1.schema.json` | future proof-attempt audit producers, SPECA-compatible import, `fixtures/security-assurance/sample.security-findings.json` (schema contract fixture) | future security review, assurance summary, claim-evidence manifest, and policy-gate report-only consumers; `status=candidate` is not a confirmed vulnerability |
+| `artifacts/security/security-review.json` | `schema/security-review-v1.schema.json` | future three-gate security review producer, `fixtures/security-assurance/sample.security-review.json` (schema contract fixture) | future assurance summary / PR summary consumers; captures Dead Code / Trust Boundary / Scope gates and false-positive root-cause classification |
 | `artifacts/temporal/*/temporal-run-summary.json` | `schema/temporal-run-summary.schema.json` | `examples/temporal-workflow-adapter`, `fixtures/temporal/sample.temporal-run-summary.json` (schema contract fixture) | `scripts/ci/validate-json.mjs`, `tests/contracts/temporal-run-summary-contract.test.ts`, operator review; Temporal-specific metadata remains confined to this adapter sidecar |
 | `spec/assurance-profile/upstream-context-promotion-v1.json` | `schema/assurance-profile.schema.json` | manual authoring in `spec/assurance-profile/` | `scripts/assurance/aggregate-lanes.mjs`, `docs/guides/upstream-context-promotion.md`, `tests/fixtures/upstream-context-promotion-minimal.assurance.test.ts` |
 | `artifacts/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/publish-envelope.mjs` |
@@ -161,7 +165,14 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/e2e/ui-e2e-summary.json` | `schema/ui-e2e-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs`, `.github/workflows/parallel-test-execution.yml` | `scripts/ci/build-harness-health.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/e2e/summary.json` | `docs/schemas/artifacts-adapter-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, future adapter-summary aggregators |
 
-### 5. Current gaps (next stage)
+### 5. Security Assurance Lane status semantics
+
+- `security-finding/v1` is candidate-first: `status=candidate` and `status=needs-human-review` are audit evidence, not confirmed vulnerabilities. Only `status=confirmed` represents a confirmed vulnerability.
+- `security-review/v1` applies three narrow gates: Dead Code, Trust Boundary, and Scope. Each gate records `pass | fail | unknown | not-applicable` plus a rationale.
+- `falsePositiveRootCause` uses `dead-code`, `trust-boundary-misunderstanding`, `out-of-scope`, `code-reading-error`, `spec-misinterpretation`, or `insufficient-evidence` only for resolved false positives (`rejected` or `out-of-scope`); it remains `null` for `needs-human-review`, `confirmed`, and `waived` results.
+- Policy-gate blocking behavior is intentionally out of scope for these schema contracts; downstream integration starts in report-only mode.
+
+### 6. Current gaps (next stage)
 
 - assurance contracts are still being introduced in phases; default operation stays report-only, and strict assurance enforcement is limited to Verify Lite when the `enforce-assurance` label is present.
 - `schemaVersion` still mixes semver and `*/v1` style identifiers. The staged unification plan lives in `docs/reference/SCHEMA-GOVERNANCE.md`.
@@ -174,7 +185,7 @@ The table below keeps the current producer/consumer baseline for representative 
   - `artifacts/*-retry-eligibility.json`
   - `artifacts/ci/*-summary.json` (risk and related summaries)
 
-### 6. References
+### 7. References
 
 - `docs/reference/SCHEMA-GOVERNANCE.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`
@@ -201,7 +212,7 @@ The table below keeps the current producer/consumer baseline for representative 
 - `evidence`: 監査・再現・可観測性の証跡契約（summary、report、metrics）
 - `operation`: 実行計画や進行制御に関わる運用契約（plan、manifest、package）
 
-## 3. schema 一覧（2026-03-04時点）
+## 3. schema 一覧（2026-05-07時点）
 
 ### 3.1 input
 
@@ -239,6 +250,7 @@ The table below keeps the current producer/consumer baseline for representative 
 - `schema/policy-decision-v1.schema.json`
 - `schema/pr-state-v1.schema.json`
 - `schema/policy-gate-summary-v1.schema.json`
+- `schema/security-review-v1.schema.json`
 - `schema/quality-report.schema.json`
 - `schema/trace-validation.schema.json`
 - `schema/verify-profile-summary.schema.json`
@@ -250,6 +262,7 @@ The table below keeps the current producer/consumer baseline for representative 
 - `schema/artifact-metadata.schema.json`
 - `schema/assurance-summary.schema.json`
 - `schema/claim-evidence-manifest.schema.json`
+- `schema/security-finding-v1.schema.json`
 - `schema/temporal-run-summary.schema.json`
 - `schema/bench-criteria.schema.json`
 - `schema/bench-compare.schema.json`
@@ -299,6 +312,8 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/security/security-claims.json` | `schema/security-claim-v1.schema.json` | manual authoring、将来の `ae security extract-claims`、`fixtures/security-assurance/sample.security-claims.json`（schema contract fixture） | 将来の Security Assurance Lane producer、`scripts/ci/validate-json.mjs`、`tests/contracts/security-assurance-contract.test.ts`。後続 artifact は `claims[].id` を参照する |
 | `artifacts/security/security-threat-model.json` | `schema/security-threat-model-v1.schema.json` | manual authoring、将来の SPECA-compatible import、`fixtures/security-assurance/sample.security-threat-model.json`（schema contract fixture） | 将来の security audit / review producer、`scripts/ci/validate-json.mjs`、`tests/contracts/security-assurance-contract.test.ts`。`threats[].relatedClaimIds[]` で security claim id を参照する |
 | `artifacts/security/security-audit-scope.json` | `schema/security-audit-scope-v1.schema.json` | manual authoring、bug-bounty / audit scope translation、`fixtures/security-assurance/sample.security-audit-scope.json`（schema contract fixture） | 将来の security claim extraction、code-map、audit、review producer。MVP contract では glob-based scope に限定する |
+| `artifacts/security/security-findings.json` | `schema/security-finding-v1.schema.json` | 将来の proof-attempt audit producer、SPECA-compatible import、`fixtures/security-assurance/sample.security-findings.json`（schema contract fixture） | 将来の security review、assurance summary、claim-evidence manifest、policy-gate report-only consumer。`status=candidate` は confirmed vulnerability ではない |
+| `artifacts/security/security-review.json` | `schema/security-review-v1.schema.json` | 将来の three-gate security review producer、`fixtures/security-assurance/sample.security-review.json`（schema contract fixture） | 将来の assurance summary / PR summary consumer。Dead Code / Trust Boundary / Scope gate と false-positive root-cause classification を保持する |
 | `artifacts/temporal/*/temporal-run-summary.json` | `schema/temporal-run-summary.schema.json` | `examples/temporal-workflow-adapter`、`fixtures/temporal/sample.temporal-run-summary.json`（schema contract fixture） | `scripts/ci/validate-json.mjs`、`tests/contracts/temporal-run-summary-contract.test.ts`、operator review。Temporal 固有 metadata はこの adapter sidecar に閉じる |
 | `spec/assurance-profile/upstream-context-promotion-v1.json` | `schema/assurance-profile.schema.json` | manual authoring in `spec/assurance-profile/` | `scripts/assurance/aggregate-lanes.mjs`, `docs/guides/upstream-context-promotion.md`, `tests/fixtures/upstream-context-promotion-minimal.assurance.test.ts` |
 | `artifacts/report-envelope.json` | `schema/envelope.schema.json` | `scripts/trace/create-report-envelope.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/publish-envelope.mjs` |
@@ -335,7 +350,14 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/e2e/ui-e2e-summary.json` | `schema/ui-e2e-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs`, `.github/workflows/parallel-test-execution.yml` | `scripts/ci/build-harness-health.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/e2e/summary.json` | `docs/schemas/artifacts-adapter-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, future adapter-summary aggregators |
 
-## 5. 現時点の未整備（次段階）
+## 5. Security Assurance Lane のステータス意味論
+
+- `security-finding/v1` は candidate-first として扱う。`status=candidate` と `status=needs-human-review` は監査 evidence であり、confirmed vulnerability ではない。confirmed vulnerability を表すのは `status=confirmed` のみ。
+- `security-review/v1` は Dead Code / Trust Boundary / Scope の 3 gate を適用し、各 gate は `pass | fail | unknown | not-applicable` と rationale を保持する。
+- `falsePositiveRootCause` は `dead-code`, `trust-boundary-misunderstanding`, `out-of-scope`, `code-reading-error`, `spec-misinterpretation`, `insufficient-evidence` のいずれかで、resolved false positive（`rejected` または `out-of-scope`）のときだけ設定する。`needs-human-review`, `confirmed`, `waived` では `null` のままにする。
+- これらの schema contract では policy-gate の block logic は扱わず、後続統合は report-only から開始する。
+
+## 6. 現時点の未整備（次段階）
 
 - assurance contract は段階導入中であり、既定運用は report-only、strict assurance enforcement は `enforce-assurance` ラベル時の Verify Lite に限定される。
 - `schemaVersion` は semver と `*/v1` 形式が混在している（統一規約は `docs/reference/SCHEMA-GOVERNANCE.md` で段階導入）。
@@ -348,7 +370,7 @@ The table below keeps the current producer/consumer baseline for representative 
   - `artifacts/*-retry-eligibility.json`
   - `artifacts/ci/*-summary.json`（risk など）
 
-## 6. 参照
+## 7. 参照
 
 - `docs/reference/SCHEMA-GOVERNANCE.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`

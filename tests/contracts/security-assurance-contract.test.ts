@@ -3,6 +3,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import {
+  validateSecurityFindingSemantics,
+  validateSecurityReviewSemantics,
+} from '../../scripts/ci/lib/security-assurance-contract.mjs';
 
 type JsonObject = Record<string, unknown>;
 
@@ -13,12 +17,16 @@ const schemas = {
   claims: loadJson('schema/security-claim-v1.schema.json'),
   threatModel: loadJson('schema/security-threat-model-v1.schema.json'),
   auditScope: loadJson('schema/security-audit-scope-v1.schema.json'),
+  findings: loadJson('schema/security-finding-v1.schema.json'),
+  review: loadJson('schema/security-review-v1.schema.json'),
 };
 
 const fixtures = {
   claims: loadJson('fixtures/security-assurance/sample.security-claims.json'),
   threatModel: loadJson('fixtures/security-assurance/sample.security-threat-model.json'),
   auditScope: loadJson('fixtures/security-assurance/sample.security-audit-scope.json'),
+  findings: loadJson('fixtures/security-assurance/sample.security-findings.json'),
+  review: loadJson('fixtures/security-assurance/sample.security-review.json'),
 };
 
 const buildValidator = (schema: JsonObject) => {
@@ -28,7 +36,7 @@ const buildValidator = (schema: JsonObject) => {
 };
 
 describe('security assurance contracts', () => {
-  it('validates the sample security claim, threat model, and audit scope fixtures', () => {
+  it('validates the sample security assurance fixtures', () => {
     for (const [name, schema] of Object.entries(schemas)) {
       const validate = buildValidator(schema);
       const fixture = fixtures[name as keyof typeof fixtures];
@@ -98,7 +106,6 @@ describe('security assurance contracts', () => {
     }
   });
 
-
   it('constrains threat model frameworks to represented STRIDE and CWE taxonomies', () => {
     const validate = buildValidator(schemas.threatModel);
     const invalidFixture = structuredClone(fixtures.threatModel) as {
@@ -122,4 +129,145 @@ describe('security assurance contracts', () => {
     expect(validate(invalidFixture)).toBe(false);
     expect(validate.errors?.some((entry) => entry.instancePath === '/inScope')).toBe(true);
   });
+
+  it('keeps security findings connected to security claim ids', () => {
+    const claimIds = new Set(
+      (fixtures.claims.claims as Array<{ id: string }>).map((claim) => claim.id),
+    );
+    const findings = fixtures.findings.findings as Array<{ claimId: string }>;
+
+    expect(findings).not.toHaveLength(0);
+    for (const finding of findings) {
+      expect(claimIds.has(finding.claimId)).toBe(true);
+    }
+  });
+
+  it('distinguishes candidate findings from confirmed vulnerabilities', () => {
+    const validate = buildValidator(schemas.findings);
+    const validFixture = structuredClone(fixtures.findings) as {
+      findings: Array<Record<string, unknown>>;
+      summary: { byStatus: Record<string, number> };
+    };
+
+    validFixture.findings[0].status = 'confirmed';
+    validFixture.summary.byStatus.candidate = 1;
+    validFixture.summary.byStatus.confirmed = 1;
+
+    expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+
+    validFixture.findings[0].status = 'vulnerable';
+    expect(validate(validFixture)).toBe(false);
+    expect(validate.errors?.some((entry) => entry.instancePath === '/findings/0/status')).toBe(true);
+  });
+
+  it('requires three-gate review results for every security review', () => {
+    const validate = buildValidator(schemas.review);
+    const invalidFixture = structuredClone(fixtures.review) as {
+      reviews: Array<{ gates: Record<string, unknown> }>;
+    };
+
+    delete invalidFixture.reviews[0].gates.trustBoundary;
+
+    expect(validate(invalidFixture)).toBe(false);
+    expect(validate.errors?.some((entry) => entry.instancePath === '/reviews/0/gates')).toBe(true);
+  });
+
+  it('classifies false-positive root causes while keeping them consistent with review results', () => {
+    const validate = buildValidator(schemas.review);
+    const validFixture = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+
+    expect(validFixture.reviews[0].falsePositiveRootCause).toBeNull();
+    expect(validFixture.reviews[1].falsePositiveRootCause).toBe('out-of-scope');
+    expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+
+    validFixture.reviews[1].falsePositiveRootCause = 'maybe-false-positive';
+    expect(validate(validFixture)).toBe(false);
+    expect(
+      validate.errors?.some((entry) => entry.instancePath === '/reviews/1/falsePositiveRootCause'),
+    ).toBe(true);
+
+    const unresolvedWithRootCause = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    unresolvedWithRootCause.reviews[0].falsePositiveRootCause = 'insufficient-evidence';
+    expect(validate(unresolvedWithRootCause)).toBe(false);
+    expect(
+      validate.errors?.some((entry) => entry.instancePath === '/reviews/0/falsePositiveRootCause'),
+    ).toBe(true);
+
+    const confirmedWithRootCause = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    confirmedWithRootCause.reviews[0].result = 'confirmed';
+    confirmedWithRootCause.reviews[0].falsePositiveRootCause = 'code-reading-error';
+    expect(validate(confirmedWithRootCause)).toBe(false);
+    expect(
+      validate.errors?.some((entry) => entry.instancePath === '/reviews/0/falsePositiveRootCause'),
+    ).toBe(true);
+
+    const rejectedWithoutRootCause = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    rejectedWithoutRootCause.reviews[1].result = 'rejected';
+    rejectedWithoutRootCause.reviews[1].falsePositiveRootCause = null;
+    expect(validate(rejectedWithoutRootCause)).toBe(false);
+    expect(
+      validate.errors?.some((entry) => entry.instancePath === '/reviews/1/falsePositiveRootCause'),
+    ).toBe(true);
+  });
+
+  it('enforces security finding affected location line ranges semantically', () => {
+    const validFixture = structuredClone(fixtures.findings);
+    expect(validateSecurityFindingSemantics(validFixture)).toHaveLength(0);
+
+    const invalidFixture = structuredClone(fixtures.findings) as {
+      findings: Array<{ affectedLocations: Array<{ startLine: number; endLine: number }> }>;
+    };
+    invalidFixture.findings[0].affectedLocations[0].startLine = 42;
+    invalidFixture.findings[0].affectedLocations[0].endLine = 10;
+
+    expect(validateSecurityFindingSemantics(invalidFixture)).toEqual([
+      expect.objectContaining({
+        keyword: 'line_range_order',
+        instancePath: '/findings/0/affectedLocations/0/endLine',
+      }),
+    ]);
+  });
+
+  it('enforces security review root-cause consistency semantically', () => {
+    const validFixture = structuredClone(fixtures.review);
+    expect(validateSecurityReviewSemantics(validFixture)).toHaveLength(0);
+
+    const invalidFixture = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    invalidFixture.reviews[0].falsePositiveRootCause = 'insufficient-evidence';
+    invalidFixture.reviews[1].falsePositiveRootCause = null;
+
+    expect(validateSecurityReviewSemantics(invalidFixture)).toEqual([
+      expect.objectContaining({
+        keyword: 'false_positive_root_cause_result_mismatch',
+        instancePath: '/reviews/0/falsePositiveRootCause',
+      }),
+      expect.objectContaining({
+        keyword: 'false_positive_root_cause_missing',
+        instancePath: '/reviews/1/falsePositiveRootCause',
+      }),
+    ]);
+  });
+
+  it('keeps security reviews connected to security finding ids', () => {
+    const findingIds = new Set(
+      (fixtures.findings.findings as Array<{ id: string }>).map((finding) => finding.id),
+    );
+    const reviews = fixtures.review.reviews as Array<{ findingId: string }>;
+
+    expect(reviews).not.toHaveLength(0);
+    for (const review of reviews) {
+      expect(findingIds.has(review.findingId)).toBe(true);
+    }
+  });
+
 });

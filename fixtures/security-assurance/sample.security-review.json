@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "security-review/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "reviews": [
+    {
+      "findingId": "SEC-FINDING-001",
+      "result": "needs-human-review",
+      "gates": {
+        "deadCode": {
+          "result": "pass",
+          "rationale": "The candidate path is reachable from the external verification entry point."
+        },
+        "trustBoundary": {
+          "result": "pass",
+          "rationale": "The relevant fields are attacker-controlled at boundary TB-001."
+        },
+        "scope": {
+          "result": "pass",
+          "rationale": "The affected source path is included by the audit scope."
+        }
+      },
+      "falsePositiveRootCause": null,
+      "reviewerNotes": [
+        "Human review is still required before confirming vulnerability status."
+      ],
+      "reviewedAt": "2026-05-07T00:00:00.000Z",
+      "reviewer": "security-review-fixture"
+    },
+    {
+      "findingId": "SEC-FINDING-002",
+      "result": "out-of-scope",
+      "gates": {
+        "deadCode": {
+          "result": "unknown",
+          "rationale": "Reachability was not analyzed in the schema-only fixture."
+        },
+        "trustBoundary": {
+          "result": "unknown",
+          "rationale": "No production trust boundary reaches this fixture helper."
+        },
+        "scope": {
+          "result": "fail",
+          "rationale": "The affected path is excluded by the audit scope outOfScope globs."
+        }
+      },
+      "falsePositiveRootCause": "out-of-scope",
+      "reviewerNotes": [
+        "Classified as out-of-scope rather than confirmed."
+      ],
+      "reviewedAt": "2026-05-07T00:00:00.000Z",
+      "reviewer": "security-review-fixture"
+    }
+  ],
+  "summary": {
+    "totalReviews": 2,
+    "byResult": {
+      "needsHumanReview": 1,
+      "confirmed": 0,
+      "rejected": 0,
+      "waived": 0,
+      "outOfScope": 1
+    },
+    "falsePositiveRootCauses": {
+      "deadCode": 0,
+      "trustBoundaryMisunderstanding": 0,
+      "outOfScope": 1,
+      "codeReadingError": 0,
+      "specMisinterpretation": 0,
+      "insufficientEvidence": 0
+    }
+  }
+}

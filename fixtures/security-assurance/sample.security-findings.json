@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "security-finding/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "findings": [
+    {
+      "id": "SEC-FINDING-001",
+      "claimId": "SEC-CLAIM-001",
+      "status": "candidate",
+      "severity": "high",
+      "confidence": "medium",
+      "title": "Verification cache key may omit attacker-controlled input",
+      "summary": "The proof attempt cannot establish that all attacker-controlled fields are included in the cache key.",
+      "affectedLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 10,
+          "endLine": 42,
+          "symbol": "buildCacheKey",
+          "description": "Candidate key construction path from fixture audit."
+        }
+      ],
+      "proofAttempt": {
+        "claim": "SEC-CLAIM-001",
+        "map": "Relevant code paths include buildCacheKey and verification request parsing.",
+        "prove": "The implementation must show that every verification-affecting attacker-controlled field is included in the key material.",
+        "stressTest": "Counterexample candidate: two requests differ in an attacker-controlled field that affects verification but share the same cache key.",
+        "report": "Treat as a candidate until reviewed by the three-gate security review."
+      },
+      "scopeRefs": [
+        "TB-001"
+      ],
+      "evidenceRefs": [
+        {
+          "id": "SEC-EVIDENCE-001",
+          "kind": "security-claim",
+          "path": "fixtures/security-assurance/sample.security-claims.json",
+          "description": "Source claim fixture."
+        }
+      ],
+      "provenance": {
+        "origin": "fixture",
+        "generator": "security-proof-attempt-fixture"
+      },
+      "notes": [
+        "Candidate finding is not a confirmed vulnerability."
+      ]
+    },
+    {
+      "id": "SEC-FINDING-002",
+      "claimId": "SEC-CLAIM-001",
+      "status": "candidate",
+      "severity": "medium",
+      "confidence": "low",
+      "title": "Test-only cache helper resembles production key construction",
+      "summary": "The proof attempt found similar test helper code, but the path may be outside the audit scope.",
+      "affectedLocations": [
+        {
+          "path": "tests/fixtures/cache-helper.ts",
+          "startLine": 5,
+          "endLine": 20,
+          "symbol": "buildFixtureCacheKey"
+        }
+      ],
+      "proofAttempt": {
+        "claim": "SEC-CLAIM-001",
+        "map": "Candidate code path appears only in fixture helper files.",
+        "prove": "The implementation would need to show the helper is reachable from production entry points.",
+        "stressTest": "No production entry point reaches the fixture helper in the MVP scope.",
+        "report": "Candidate is expected to be rejected by the scope gate."
+      },
+      "scopeRefs": [
+        "tests/**"
+      ],
+      "evidenceRefs": [],
+      "provenance": {
+        "origin": "fixture",
+        "generator": "security-proof-attempt-fixture"
+      }
+    }
+  ],
+  "summary": {
+    "totalFindings": 2,
+    "byStatus": {
+      "candidate": 2,
+      "needsHumanReview": 0,
+      "confirmed": 0,
+      "rejected": 0,
+      "waived": 0,
+      "outOfScope": 0
+    },
+    "bySeverity": {
+      "low": 0,
+      "medium": 1,
+      "high": 1,
+      "critical": 0
+    }
+  }
+}
