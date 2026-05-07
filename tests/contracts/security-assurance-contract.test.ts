@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import {
+  validateSecurityCodeMapSemantics,
   validateSecurityFindingSemantics,
   validateSecurityReviewSemantics,
 } from '../../scripts/ci/lib/security-assurance-contract.mjs';
@@ -17,6 +18,7 @@ const schemas = {
   claims: loadJson('schema/security-claim-v1.schema.json'),
   threatModel: loadJson('schema/security-threat-model-v1.schema.json'),
   auditScope: loadJson('schema/security-audit-scope-v1.schema.json'),
+  codeMap: loadJson('schema/security-code-map-v1.schema.json'),
   findings: loadJson('schema/security-finding-v1.schema.json'),
   review: loadJson('schema/security-review-v1.schema.json'),
 };
@@ -25,6 +27,7 @@ const fixtures = {
   claims: loadJson('fixtures/security-assurance/sample.security-claims.json'),
   threatModel: loadJson('fixtures/security-assurance/sample.security-threat-model.json'),
   auditScope: loadJson('fixtures/security-assurance/sample.security-audit-scope.json'),
+  codeMap: loadJson('fixtures/security-assurance/sample.security-code-map.json'),
   findings: loadJson('fixtures/security-assurance/sample.security-findings.json'),
   review: loadJson('fixtures/security-assurance/sample.security-review.json'),
 };
@@ -130,6 +133,53 @@ describe('security assurance contracts', () => {
     expect(validate.errors?.some((entry) => entry.instancePath === '/inScope')).toBe(true);
   });
 
+  it('keeps security code-map mappings connected to security claim ids', () => {
+    const claimIds = new Set(
+      (fixtures.claims.claims as Array<{ id: string }>).map((claim) => claim.id),
+    );
+    const mappings = fixtures.codeMap.mappings as Array<{ claimId: string; candidateLocations: unknown[] }>;
+
+    expect(mappings).not.toHaveLength(0);
+    for (const mapping of mappings) {
+      expect(claimIds.has(mapping.claimId)).toBe(true);
+      expect(Array.isArray(mapping.candidateLocations)).toBe(true);
+    }
+  });
+
+  it('allows no-candidate security code-map entries with explicit warnings', () => {
+    const validate = buildValidator(schemas.codeMap);
+    const validFixture = structuredClone(fixtures.codeMap) as {
+      mappings: Array<{
+        candidateLocations: unknown[];
+        coverage: string;
+        warnings: Array<Record<string, unknown>>;
+      }>;
+      summary: {
+        mappedClaims: number;
+        totalCandidateLocations: number;
+        totalWarnings: number;
+        byCoverage: Record<string, number>;
+      };
+    };
+
+    validFixture.mappings[0].candidateLocations = [];
+    validFixture.mappings[0].coverage = 'none';
+    validFixture.mappings[0].warnings = [
+      {
+        code: 'no-candidate-location',
+        path: '/mappings/0/candidateLocations',
+        message: 'No candidate source location was found for SEC-CLAIM-001.',
+      },
+    ];
+    validFixture.summary.mappedClaims = 0;
+    validFixture.summary.totalCandidateLocations = 0;
+    validFixture.summary.totalWarnings = 1;
+    validFixture.summary.byCoverage.none = 1;
+    validFixture.summary.byCoverage.partial = 0;
+
+    expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
   it('keeps security findings connected to security claim ids', () => {
     const claimIds = new Set(
       (fixtures.claims.claims as Array<{ id: string }>).map((claim) => claim.id),
@@ -232,6 +282,24 @@ describe('security assurance contracts', () => {
       expect.objectContaining({
         keyword: 'line_range_order',
         instancePath: '/findings/0/affectedLocations/0/endLine',
+      }),
+    ]);
+  });
+
+  it('enforces security code-map candidate location line ranges semantically', () => {
+    const validFixture = structuredClone(fixtures.codeMap);
+    expect(validateSecurityCodeMapSemantics(validFixture)).toHaveLength(0);
+
+    const invalidFixture = structuredClone(fixtures.codeMap) as {
+      mappings: Array<{ candidateLocations: Array<{ startLine: number; endLine: number }> }>;
+    };
+    invalidFixture.mappings[0].candidateLocations[0].startLine = 50;
+    invalidFixture.mappings[0].candidateLocations[0].endLine = 10;
+
+    expect(validateSecurityCodeMapSemantics(invalidFixture)).toEqual([
+      expect.objectContaining({
+        keyword: 'line_range_order',
+        instancePath: '/mappings/0/candidateLocations/0/endLine',
       }),
     ]);
   });

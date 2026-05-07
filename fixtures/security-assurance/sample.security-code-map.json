@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "security-code-map/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "mappings": [
+    {
+      "claimId": "SEC-CLAIM-001",
+      "candidateLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 7,
+          "endLine": 15,
+          "symbol": "buildCacheKey",
+          "reason": "Matched security claim terms in buildCacheKey: attacker, cache, controlled, fields, input, key, verification.",
+          "matchedTerms": [
+            "attacker",
+            "cache",
+            "controlled",
+            "fields",
+            "input",
+            "key",
+            "verification"
+          ]
+        }
+      ],
+      "coverage": "partial",
+      "warnings": []
+    }
+  ],
+  "summary": {
+    "totalClaims": 1,
+    "mappedClaims": 1,
+    "totalCandidateLocations": 1,
+    "totalWarnings": 0,
+    "byCoverage": {
+      "none": 0,
+      "partial": 1,
+      "full": 0
+    }
+  },
+  "provenance": {
+    "origin": "deterministic",
+    "generator": "security-code-map-producer",
+    "claims": "fixtures/security-assurance/sample.security-claims.json",
+    "scope": "fixtures/security-assurance/sample.security-audit-scope.json",
+    "target": "fixtures/security-assurance/code-map-target"
+  },
+  "warnings": []
+}

@@ -23,6 +23,27 @@ function validateAffectedLocationRanges(findingsDocument, errors) {
   }
 }
 
+function validateCodeMapLocationRanges(codeMapDocument, errors) {
+  const mappings = Array.isArray(codeMapDocument?.mappings) ? codeMapDocument.mappings : [];
+  for (let mappingIndex = 0; mappingIndex < mappings.length; mappingIndex += 1) {
+    const mapping = mappings[mappingIndex];
+    const locations = Array.isArray(mapping?.candidateLocations) ? mapping.candidateLocations : [];
+    for (let locationIndex = 0; locationIndex < locations.length; locationIndex += 1) {
+      const location = locations[locationIndex];
+      if (!Number.isInteger(location?.startLine) || !Number.isInteger(location?.endLine)) {
+        continue;
+      }
+      if (location.endLine < location.startLine) {
+        errors.push(createError(
+          'line_range_order',
+          `/mappings/${mappingIndex}/candidateLocations/${locationIndex}/endLine`,
+          `endLine must be greater than or equal to startLine (${location.startLine}), got ${location.endLine}`,
+        ));
+      }
+    }
+  }
+}
+
 function validateReviewRootCauseConsistency(reviewDocument, errors) {
   const unresolvedOrNonFalsePositiveResults = new Set([
     'needs-human-review',
@@ -59,6 +80,12 @@ function validateReviewRootCauseConsistency(reviewDocument, errors) {
 export function validateSecurityFindingSemantics(findingsDocument) {
   const errors = [];
   validateAffectedLocationRanges(findingsDocument, errors);
+  return errors;
+}
+
+export function validateSecurityCodeMapSemantics(codeMapDocument) {
+  const errors = [];
+  validateCodeMapLocationRanges(codeMapDocument, errors);
   return errors;
 }
 
