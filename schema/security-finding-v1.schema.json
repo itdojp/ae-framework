@@ -117,7 +117,8 @@
         "description": {
           "$ref": "#/$defs/nonEmptyString"
         }
-      }
+      },
+      "$comment": "Portable JSON Schema cannot compare sibling numeric values; ae-framework semantic validation enforces endLine >= startLine for affectedLocations."
     },
     "proofAttempt": {
       "type": "object",

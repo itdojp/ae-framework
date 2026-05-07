@@ -25,7 +25,7 @@ This document is the baseline inventory created for Issue #2406. It classifies t
 
 Some schemas are dual-role. This catalog records the primary role used in the current implementation.
 
-### 3. Schema inventory (snapshot: 2026-03-04)
+### 3. Schema inventory (snapshot: 2026-05-07)
 
 #### 3.1 input
 
@@ -169,7 +169,7 @@ The table below keeps the current producer/consumer baseline for representative 
 
 - `security-finding/v1` is candidate-first: `status=candidate` and `status=needs-human-review` are audit evidence, not confirmed vulnerabilities. Only `status=confirmed` represents a confirmed vulnerability.
 - `security-review/v1` applies three narrow gates: Dead Code, Trust Boundary, and Scope. Each gate records `pass | fail | unknown | not-applicable` plus a rationale.
-- `falsePositiveRootCause` uses `dead-code`, `trust-boundary-misunderstanding`, `out-of-scope`, `code-reading-error`, `spec-misinterpretation`, or `insufficient-evidence`; it remains `null` while the review is unresolved.
+- `falsePositiveRootCause` uses `dead-code`, `trust-boundary-misunderstanding`, `out-of-scope`, `code-reading-error`, `spec-misinterpretation`, or `insufficient-evidence` only for resolved false positives (`rejected` or `out-of-scope`); it remains `null` for `needs-human-review`, `confirmed`, and `waived` results.
 - Policy-gate blocking behavior is intentionally out of scope for these schema contracts; downstream integration starts in report-only mode.
 
 ### 6. Current gaps (next stage)
@@ -212,7 +212,7 @@ The table below keeps the current producer/consumer baseline for representative 
 - `evidence`: 監査・再現・可観測性の証跡契約（summary、report、metrics）
 - `operation`: 実行計画や進行制御に関わる運用契約（plan、manifest、package）
 
-## 3. schema 一覧（2026-03-04時点）
+## 3. schema 一覧（2026-05-07時点）
 
 ### 3.1 input
 
@@ -350,11 +350,11 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/e2e/ui-e2e-summary.json` | `schema/ui-e2e-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs`, `.github/workflows/parallel-test-execution.yml` | `scripts/ci/build-harness-health.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/e2e/summary.json` | `docs/schemas/artifacts-adapter-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, future adapter-summary aggregators |
 
-## 5. Security Assurance Lane status semantics
+## 5. Security Assurance Lane のステータス意味論
 
 - `security-finding/v1` は candidate-first として扱う。`status=candidate` と `status=needs-human-review` は監査 evidence であり、confirmed vulnerability ではない。confirmed vulnerability を表すのは `status=confirmed` のみ。
 - `security-review/v1` は Dead Code / Trust Boundary / Scope の 3 gate を適用し、各 gate は `pass | fail | unknown | not-applicable` と rationale を保持する。
-- `falsePositiveRootCause` は `dead-code`, `trust-boundary-misunderstanding`, `out-of-scope`, `code-reading-error`, `spec-misinterpretation`, `insufficient-evidence` のいずれか。未解決 review では `null` のままにする。
+- `falsePositiveRootCause` は `dead-code`, `trust-boundary-misunderstanding`, `out-of-scope`, `code-reading-error`, `spec-misinterpretation`, `insufficient-evidence` のいずれかで、resolved false positive（`rejected` または `out-of-scope`）のときだけ設定する。`needs-human-review`, `confirmed`, `waived` では `null` のままにする。
 - これらの schema contract では policy-gate の block logic は扱わず、後続統合は report-only から開始する。
 
 ## 6. 現時点の未整備（次段階）

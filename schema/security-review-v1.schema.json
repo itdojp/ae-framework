@@ -149,7 +149,54 @@
         "reviewer": {
           "$ref": "#/$defs/nonEmptyString"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "result"
+            ],
+            "properties": {
+              "result": {
+                "enum": [
+                  "needs-human-review",
+                  "confirmed",
+                  "waived"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "falsePositiveRootCause": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "result"
+            ],
+            "properties": {
+              "result": {
+                "enum": [
+                  "rejected",
+                  "out-of-scope"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "falsePositiveRootCause": {
+                "$ref": "#/$defs/falsePositiveRootCause"
+              }
+            }
+          }
+        }
+      ]
     },
     "summary": {
       "type": "object",

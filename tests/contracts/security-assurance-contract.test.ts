@@ -3,6 +3,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import {
+  validateSecurityFindingSemantics,
+  validateSecurityReviewSemantics,
+} from '../../scripts/ci/lib/security-assurance-contract.mjs';
 
 type JsonObject = Record<string, unknown>;
 
@@ -168,7 +172,7 @@ describe('security assurance contracts', () => {
     expect(validate.errors?.some((entry) => entry.instancePath === '/reviews/0/gates')).toBe(true);
   });
 
-  it('classifies false-positive root causes while allowing null for unresolved reviews', () => {
+  it('classifies false-positive root causes while keeping them consistent with review results', () => {
     const validate = buildValidator(schemas.review);
     const validFixture = structuredClone(fixtures.review) as {
       reviews: Array<Record<string, unknown>>;
@@ -183,6 +187,75 @@ describe('security assurance contracts', () => {
     expect(
       validate.errors?.some((entry) => entry.instancePath === '/reviews/1/falsePositiveRootCause'),
     ).toBe(true);
+
+    const unresolvedWithRootCause = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    unresolvedWithRootCause.reviews[0].falsePositiveRootCause = 'insufficient-evidence';
+    expect(validate(unresolvedWithRootCause)).toBe(false);
+    expect(
+      validate.errors?.some((entry) => entry.instancePath === '/reviews/0/falsePositiveRootCause'),
+    ).toBe(true);
+
+    const confirmedWithRootCause = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    confirmedWithRootCause.reviews[0].result = 'confirmed';
+    confirmedWithRootCause.reviews[0].falsePositiveRootCause = 'code-reading-error';
+    expect(validate(confirmedWithRootCause)).toBe(false);
+    expect(
+      validate.errors?.some((entry) => entry.instancePath === '/reviews/0/falsePositiveRootCause'),
+    ).toBe(true);
+
+    const rejectedWithoutRootCause = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    rejectedWithoutRootCause.reviews[1].result = 'rejected';
+    rejectedWithoutRootCause.reviews[1].falsePositiveRootCause = null;
+    expect(validate(rejectedWithoutRootCause)).toBe(false);
+    expect(
+      validate.errors?.some((entry) => entry.instancePath === '/reviews/1/falsePositiveRootCause'),
+    ).toBe(true);
+  });
+
+  it('enforces security finding affected location line ranges semantically', () => {
+    const validFixture = structuredClone(fixtures.findings);
+    expect(validateSecurityFindingSemantics(validFixture)).toHaveLength(0);
+
+    const invalidFixture = structuredClone(fixtures.findings) as {
+      findings: Array<{ affectedLocations: Array<{ startLine: number; endLine: number }> }>;
+    };
+    invalidFixture.findings[0].affectedLocations[0].startLine = 42;
+    invalidFixture.findings[0].affectedLocations[0].endLine = 10;
+
+    expect(validateSecurityFindingSemantics(invalidFixture)).toEqual([
+      expect.objectContaining({
+        keyword: 'line_range_order',
+        instancePath: '/findings/0/affectedLocations/0/endLine',
+      }),
+    ]);
+  });
+
+  it('enforces security review root-cause consistency semantically', () => {
+    const validFixture = structuredClone(fixtures.review);
+    expect(validateSecurityReviewSemantics(validFixture)).toHaveLength(0);
+
+    const invalidFixture = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    invalidFixture.reviews[0].falsePositiveRootCause = 'insufficient-evidence';
+    invalidFixture.reviews[1].falsePositiveRootCause = null;
+
+    expect(validateSecurityReviewSemantics(invalidFixture)).toEqual([
+      expect.objectContaining({
+        keyword: 'false_positive_root_cause_result_mismatch',
+        instancePath: '/reviews/0/falsePositiveRootCause',
+      }),
+      expect.objectContaining({
+        keyword: 'false_positive_root_cause_missing',
+        instancePath: '/reviews/1/falsePositiveRootCause',
+      }),
+    ]);
   });
 
   it('keeps security reviews connected to security finding ids', () => {
