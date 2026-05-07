@@ -579,8 +579,12 @@ function normalizeWaiverStatus(waiver, nowDate) {
 
 
 function normalizeManifestSecuritySummary(value) {
-  if (!value || typeof value !== 'object') return null;
-  const integerField = (field) => Number(value?.[field] ?? 0) || 0;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const integerField = (field) => {
+    const number = Number(value?.[field] ?? 0);
+    if (!Number.isFinite(number) || number <= 0) return 0;
+    return Math.trunc(number);
+  };
   return {
     claims: integerField('claims'),
     findings: integerField('findings'),
@@ -666,6 +670,7 @@ function inspectClaimEvidenceManifest(manifestPath = CLAIM_EVIDENCE_MANIFEST_PAT
     const claims = (Array.isArray(payload?.claims) ? payload.claims : [])
       .map((claim) => normalizeAssuranceClaim(claim, nowDate))
       .filter((claim) => claim.claimId);
+    const securitySummary = normalizeManifestSecuritySummary(payload?.summary?.security);
     return {
       ...baseState,
       present: true,
@@ -677,7 +682,7 @@ function inspectClaimEvidenceManifest(manifestPath = CLAIM_EVIDENCE_MANIFEST_PAT
         partiallySupported: Number(payload?.summary?.partiallySupported ?? 0) || 0,
         waived: Number(payload?.summary?.waived ?? 0) || 0,
         unresolved: Number(payload?.summary?.unresolved ?? 0) || 0,
-        ...(normalizeManifestSecuritySummary(payload?.summary?.security) ? { security: normalizeManifestSecuritySummary(payload.summary.security) } : {}),
+        ...(securitySummary ? { security: securitySummary } : {}),
       },
       claims,
     };

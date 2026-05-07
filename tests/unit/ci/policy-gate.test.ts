@@ -583,6 +583,74 @@ describe('policy-gate', () => {
     );
   });
 
+  it('normalizes malformed manifest security summaries before policy emission', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-security-summary-'));
+    const manifestPath = join(tempDir, 'claim-evidence-manifest.json');
+
+    try {
+      writeFileSync(
+        manifestPath,
+        JSON.stringify({
+          schemaVersion: 'claim-evidence-manifest/v1',
+          generatedAt: '2026-05-07T00:00:00.000Z',
+          summary: {
+            totalClaims: 0,
+            fullySupported: 0,
+            partiallySupported: 0,
+            waived: 0,
+            unresolved: 0,
+            security: [],
+          },
+          claims: [],
+        }),
+      );
+      expect(inspectClaimEvidenceManifest(manifestPath).summary.security).toBeUndefined();
+
+      writeFileSync(
+        manifestPath,
+        JSON.stringify({
+          schemaVersion: 'claim-evidence-manifest/v1',
+          generatedAt: '2026-05-07T00:00:00.000Z',
+          summary: {
+            totalClaims: 0,
+            fullySupported: 0,
+            partiallySupported: 0,
+            waived: 0,
+            unresolved: 0,
+            security: {
+              claims: -1,
+              findings: 2.9,
+              reviews: '4',
+              candidate: 'bad',
+              needsHumanReview: 1.7,
+              confirmed: null,
+              rejected: 1,
+              waived: 0,
+              outOfScope: 1,
+              highOrCriticalOpen: Number.POSITIVE_INFINITY,
+            },
+          },
+          claims: [],
+        }),
+      );
+      expect(inspectClaimEvidenceManifest(manifestPath).summary.security).toMatchObject({
+        claims: 0,
+        findings: 2,
+        reviews: 4,
+        candidate: 0,
+        needsHumanReview: 1,
+        confirmed: 0,
+        rejected: 1,
+        waived: 0,
+        outOfScope: 1,
+        highOrCriticalOpen: 0,
+      });
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it('blocks strict assurance mode when an expired waiver is present', () => {
     const result = evaluatePolicyGate({
       policy,

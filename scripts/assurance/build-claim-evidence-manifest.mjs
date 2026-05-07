@@ -919,7 +919,7 @@ function ingestSecurityFindingsAndReviews(claimsById, findingsArtifact, reviewAr
       criticality: severity,
       targetLevel: 'A2',
       achievedLevel: 'A0',
-      status: isOpenSecurityResult(effectiveResult) ? 'partial' : 'partial',
+      status: 'partial',
     });
     pushUniqueById(claim.evidenceRefs, {
       id: sanitizeId(`${sourceArtifactId}:${finding.id}`),
