@@ -24,7 +24,8 @@
         "Human review is still required before confirming vulnerability status."
       ],
       "reviewedAt": "2026-05-07T00:00:00.000Z",
-      "reviewer": "security-review-fixture"
+      "reviewer": "security-review-fixture",
+      "severity": "high"
     },
     {
       "findingId": "SEC-FINDING-002",
@@ -48,20 +49,46 @@
         "Classified as out-of-scope rather than confirmed."
       ],
       "reviewedAt": "2026-05-07T00:00:00.000Z",
+      "reviewer": "security-review-fixture",
+      "severity": "medium"
+    },
+    {
+      "findingId": "SEC-FINDING-003",
+      "severity": "low",
+      "result": "rejected",
+      "gates": {
+        "deadCode": {
+          "result": "fail",
+          "rationale": "The affected source path appears in scope but is not connected to any pre-resolved production candidate location."
+        },
+        "trustBoundary": {
+          "result": "unknown",
+          "rationale": "Trust-boundary involvement was not evaluated after the dead-code gate failed."
+        },
+        "scope": {
+          "result": "pass",
+          "rationale": "The affected source path is included by the audit scope."
+        }
+      },
+      "falsePositiveRootCause": "dead-code",
+      "reviewerNotes": [
+        "Classified as suspected dead code by the rule-based three-gate review fixture."
+      ],
+      "reviewedAt": "2026-05-07T00:00:00.000Z",
       "reviewer": "security-review-fixture"
     }
   ],
   "summary": {
-    "totalReviews": 2,
+    "totalReviews": 3,
     "byResult": {
       "needsHumanReview": 1,
       "confirmed": 0,
-      "rejected": 0,
+      "rejected": 1,
       "waived": 0,
       "outOfScope": 1
     },
     "falsePositiveRootCauses": {
-      "deadCode": 0,
+      "deadCode": 1,
       "trustBoundaryMisunderstanding": 0,
       "outOfScope": 1,
       "codeReadingError": 0,

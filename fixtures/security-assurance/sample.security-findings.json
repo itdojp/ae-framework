@@ -104,12 +104,64 @@
       "notes": [
         "Candidate finding is not a confirmed vulnerability."
       ]
+    },
+    {
+      "id": "SEC-FINDING-003",
+      "claimId": "SEC-CLAIM-001",
+      "status": "candidate",
+      "severity": "low",
+      "confidence": "low",
+      "title": "Unused cache helper appears in proof-attempt notes",
+      "summary": "The proof attempt mentions a cache helper path that is inside source scope but not present in the pre-resolution code map.",
+      "affectedLocations": [
+        {
+          "path": "src/dead-cache-helper.ts",
+          "startLine": 3,
+          "endLine": 9,
+          "symbol": "unusedCacheKey",
+          "description": "Fixture candidate for the three-gate review dead-code classification."
+        }
+      ],
+      "proofAttempt": {
+        "claim": "SEC-CLAIM-001",
+        "map": "Candidate code path appears to be an unused helper that was not selected by security-code-map/v1 pre-resolution.",
+        "prove": "The implementation would need to show the helper is reachable from production entry points.",
+        "stressTest": "No mapped production entry point reaches this helper in the MVP fixture.",
+        "report": "Candidate is expected to be rejected by the dead-code gate."
+      },
+      "scopeRefs": [
+        "TB-001"
+      ],
+      "evidenceRefs": [
+        {
+          "id": "SEC-EVIDENCE-SEC-AUDIT-TASK-001",
+          "kind": "audit-task",
+          "path": "fixtures/security-assurance/sample.security-audit-tasks.json",
+          "description": "Proof-attempt audit task for SEC-CLAIM-001."
+        },
+        {
+          "id": "SEC-CODE-MAP-SEC-CLAIM-001",
+          "kind": "security-code-map",
+          "path": "fixtures/security-assurance/sample.security-code-map.json",
+          "description": "Candidate source locations for SEC-CLAIM-001."
+        }
+      ],
+      "provenance": {
+        "origin": "fixture",
+        "generator": "security-three-gate-review-fixture",
+        "source": "security-finding/v1",
+        "version": "2026-05-07T00:00:00.000Z"
+      },
+      "notes": [
+        "Candidate finding is not a confirmed vulnerability.",
+        "Expected to be classified as dead-code by the review stage."
+      ]
     }
   ],
   "summary": {
-    "totalFindings": 2,
+    "totalFindings": 3,
     "byStatus": {
-      "candidate": 2,
+      "candidate": 3,
       "needsHumanReview": 0,
       "confirmed": 0,
       "rejected": 0,
@@ -117,7 +169,7 @@
       "outOfScope": 0
     },
     "bySeverity": {
-      "low": 0,
+      "low": 1,
       "medium": 1,
       "high": 1,
       "critical": 0

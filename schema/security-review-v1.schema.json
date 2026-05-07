@@ -44,6 +44,15 @@
         "out-of-scope"
       ]
     },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
     "gateResult": {
       "type": "string",
       "enum": [
@@ -119,6 +128,9 @@
       "properties": {
         "findingId": {
           "$ref": "#/$defs/nonEmptyString"
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
         },
         "result": {
           "$ref": "#/$defs/reviewResult"
