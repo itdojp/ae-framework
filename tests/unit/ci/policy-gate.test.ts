@@ -532,6 +532,57 @@ describe('policy-gate', () => {
     expect(markdown).toContain('reason=Runtime manual review control is active during model validation.');
   });
 
+  it('carries security finding review counts into policy evaluation in report-only mode', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/security/assurance/three-gate-review.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState({
+        summary: {
+          totalClaims: 2,
+          fullySupported: 1,
+          partiallySupported: 1,
+          waived: 0,
+          unresolved: 0,
+          security: {
+            claims: 1,
+            findings: 3,
+            reviews: 3,
+            candidate: 0,
+            needsHumanReview: 1,
+            confirmed: 0,
+            rejected: 1,
+            waived: 0,
+            outOfScope: 1,
+            highOrCriticalOpen: 1,
+          },
+        },
+      }),
+      assuranceMode: 'report-only',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.assurance.summary.security).toMatchObject({
+      findings: 3,
+      needsHumanReview: 1,
+      highOrCriticalOpen: 1,
+    });
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        'assurance: security high/critical findings require review: 1',
+        'assurance: security findings need human review: 1',
+      ]),
+    );
+    expect(buildMarkdownSummary(42, result)).toContain(
+      'security findings: total=3, needs-human-review=1, high/critical-open=1',
+    );
+  });
+
   it('blocks strict assurance mode when an expired waiver is present', () => {
     const result = evaluatePolicyGate({
       policy,

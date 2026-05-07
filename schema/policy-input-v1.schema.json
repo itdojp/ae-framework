@@ -494,6 +494,34 @@
             "unresolved": {
               "type": "integer",
               "minimum": 0
+            },
+            "security": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "claims",
+                "findings",
+                "reviews",
+                "candidate",
+                "needsHumanReview",
+                "confirmed",
+                "rejected",
+                "waived",
+                "outOfScope",
+                "highOrCriticalOpen"
+              ],
+              "properties": {
+                "claims": { "type": "integer", "minimum": 0 },
+                "findings": { "type": "integer", "minimum": 0 },
+                "reviews": { "type": "integer", "minimum": 0 },
+                "candidate": { "type": "integer", "minimum": 0 },
+                "needsHumanReview": { "type": "integer", "minimum": 0 },
+                "confirmed": { "type": "integer", "minimum": 0 },
+                "rejected": { "type": "integer", "minimum": 0 },
+                "waived": { "type": "integer", "minimum": 0 },
+                "outOfScope": { "type": "integer", "minimum": 0 },
+                "highOrCriticalOpen": { "type": "integer", "minimum": 0 }
+              }
             }
           }
         },

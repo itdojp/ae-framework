@@ -131,11 +131,20 @@ const claimEvidenceRefsLine = claimEvidenceSummary
       `claim evidence refs: missing=${claimEvidenceMissingCount}, waiver=${claimEvidenceWaiverCount}`,
     )
   : '';
+const claimEvidenceSecurity = claimEvidenceSummary?.security && typeof claimEvidenceSummary.security === 'object'
+  ? claimEvidenceSummary.security
+  : null;
+const claimEvidenceSecurityLine = claimEvidenceSecurity
+  ? t(
+      `Security findings: total=${claimEvidenceSecurity.findings ?? 'n/a'}, needs-human-review=${claimEvidenceSecurity.needsHumanReview ?? 'n/a'}, high/critical-open=${claimEvidenceSecurity.highOrCriticalOpen ?? 'n/a'}, out-of-scope=${claimEvidenceSecurity.outOfScope ?? 'n/a'}, rejected=${claimEvidenceSecurity.rejected ?? 'n/a'}`,
+      `security finding: total=${claimEvidenceSecurity.findings ?? 'n/a'}, human review=${claimEvidenceSecurity.needsHumanReview ?? 'n/a'}, high/critical-open=${claimEvidenceSecurity.highOrCriticalOpen ?? 'n/a'}, out-of-scope=${claimEvidenceSecurity.outOfScope ?? 'n/a'}, rejected=${claimEvidenceSecurity.rejected ?? 'n/a'}`,
+    )
+  : '';
 const claimEvidenceDigestSegment = claimEvidenceSummary
-  ? `${claimEvidenceLine}${claimEvidenceRefsLine ? ` | ${claimEvidenceRefsLine}` : ''}`
+  ? `${claimEvidenceLine}${claimEvidenceRefsLine ? ` | ${claimEvidenceRefsLine}` : ''}${claimEvidenceSecurityLine ? ` | ${claimEvidenceSecurityLine}` : ''}`
   : '';
 const claimEvidenceDetailBlock = claimEvidenceSummary
-  ? `- ${claimEvidenceLine}\n${claimEvidenceRefsLine ? `- ${claimEvidenceRefsLine}\n` : ''}`
+  ? `- ${claimEvidenceLine}\n${claimEvidenceRefsLine ? `- ${claimEvidenceRefsLine}\n` : ''}${claimEvidenceSecurityLine ? `- ${claimEvidenceSecurityLine}\n` : ''}`
   : '';
 const changePackageV2Claims = Array.isArray(changePackageV2?.claims) ? changePackageV2.claims : [];
 const changePackageV2ProofObligations = Array.isArray(changePackageV2?.proofObligations) ? changePackageV2.proofObligations : [];

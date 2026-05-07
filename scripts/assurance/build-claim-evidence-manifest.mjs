@@ -12,11 +12,15 @@ export const DEFAULT_ASSURANCE_SUMMARY = 'artifacts/assurance/assurance-summary.
 export const DEFAULT_VERIFY_LITE_SUMMARY = 'artifacts/verify-lite/verify-lite-run-summary.json';
 export const DEFAULT_QUALITY_SCORECARD = 'artifacts/quality/quality-scorecard.json';
 export const DEFAULT_CHANGE_PACKAGE_V2 = 'artifacts/change-package/change-package-v2.json';
+export const DEFAULT_SECURITY_CLAIMS = 'artifacts/security/security-claims.json';
+export const DEFAULT_SECURITY_FINDINGS = 'artifacts/security/security-findings.json';
+export const DEFAULT_SECURITY_REVIEW = 'artifacts/security/security-review.json';
 export const DEFAULT_SCHEMA = 'schema/claim-evidence-manifest.schema.json';
 
 const SCHEMA_VERSION = 'claim-evidence-manifest/v1';
 const LEVELS = ['A0', 'A1', 'A2', 'A3', 'A4'];
 const CRITICALITIES = new Set(['low', 'medium', 'high', 'critical']);
+const CRITICALITY_ORDER = ['low', 'medium', 'high', 'critical'];
 const EVIDENCE_KINDS = new Set([
   'spec',
   'behavior',
@@ -52,6 +56,9 @@ export function parseArgs(argv = process.argv.slice(2)) {
     qualityScorecard: DEFAULT_QUALITY_SCORECARD,
     verifyLiteSummary: DEFAULT_VERIFY_LITE_SUMMARY,
     traceBundles: [],
+    securityClaims: DEFAULT_SECURITY_CLAIMS,
+    securityFindings: DEFAULT_SECURITY_FINDINGS,
+    securityReview: DEFAULT_SECURITY_REVIEW,
     outputJson: DEFAULT_OUTPUT_JSON,
     outputMd: DEFAULT_OUTPUT_MD,
     schema: DEFAULT_SCHEMA,
@@ -91,6 +98,21 @@ export function parseArgs(argv = process.argv.slice(2)) {
     }
     if (arg === '--trace-bundle') {
       options.traceBundles.push(readRequiredValue(argv, index, arg));
+      index += 1;
+      continue;
+    }
+    if (arg === '--security-claims') {
+      options.securityClaims = readRequiredValue(argv, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === '--security-findings') {
+      options.securityFindings = readRequiredValue(argv, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === '--security-review') {
+      options.securityReview = readRequiredValue(argv, index, arg);
       index += 1;
       continue;
     }
@@ -210,6 +232,14 @@ function decrementLevel(level) {
 function normalizeCriticality(value) {
   const candidate = typeof value === 'string' ? value.trim().toLowerCase() : '';
   return CRITICALITIES.has(candidate) ? candidate : 'medium';
+}
+
+function maxCriticality(left, right) {
+  const normalizedLeft = normalizeCriticality(left);
+  const normalizedRight = normalizeCriticality(right);
+  return CRITICALITY_ORDER.indexOf(normalizedRight) > CRITICALITY_ORDER.indexOf(normalizedLeft)
+    ? normalizedRight
+    : normalizedLeft;
 }
 
 function sanitizeId(value) {
@@ -382,7 +412,7 @@ function getOrCreateClaim(claimsById, id, defaults = {}) {
     claim.statement = defaults.statement;
   }
   if (defaults.criticality) {
-    claim.criticality = normalizeCriticality(defaults.criticality);
+    claim.criticality = maxCriticality(claim.criticality, defaults.criticality);
   }
   if (defaults.targetLevel) {
     claim.targetLevel = maxLevel(claim.targetLevel, defaults.targetLevel);
@@ -741,6 +771,187 @@ function waiverStatus(expires) {
   return expires < today ? 'expired' : 'active';
 }
 
+
+function camelSecurityResult(value) {
+  const raw = String(value ?? '').trim();
+  switch (raw) {
+    case 'needs-human-review':
+      return 'needsHumanReview';
+    case 'out-of-scope':
+      return 'outOfScope';
+    case 'candidate':
+    case 'confirmed':
+    case 'rejected':
+    case 'waived':
+      return raw;
+    default:
+      return null;
+  }
+}
+
+function emptySecuritySummary() {
+  return {
+    claims: 0,
+    findings: 0,
+    reviews: 0,
+    candidate: 0,
+    needsHumanReview: 0,
+    confirmed: 0,
+    rejected: 0,
+    waived: 0,
+    outOfScope: 0,
+    highOrCriticalOpen: 0,
+  };
+}
+
+function isHighOrCritical(severity) {
+  return severity === 'high' || severity === 'critical';
+}
+
+function isOpenSecurityResult(result) {
+  return result === 'candidate' || result === 'needs-human-review' || result === 'confirmed';
+}
+
+function securityReviewMap(artifact) {
+  const reviews = new Map();
+  if (!artifact.present) return reviews;
+  for (const [reviewIndex, review] of ensureArray(artifact.payload?.reviews).entries()) {
+    const findingId = String(review?.findingId ?? '').trim();
+    if (!findingId) continue;
+    reviews.set(findingId, { ...review, reviewIndex });
+  }
+  return reviews;
+}
+
+function addSecurityMissingEvidence(claim, finding, review, sourceArtifactId) {
+  const reviewResult = String(review?.result ?? '').trim();
+  const findingStatus = String(finding?.status ?? '').trim();
+  const severity = String(review?.severity ?? finding?.severity ?? '').trim();
+  const effectiveResult = reviewResult || findingStatus;
+
+  if (effectiveResult === 'confirmed') {
+    claim.status = combineStatus(claim.status, 'unresolved');
+    addMissingEvidence(claim, {
+      id: `security-confirmed-finding:${finding.id}`,
+      expectedKind: 'adversarial',
+      reason: `Security finding ${finding.id} is confirmed and requires remediation evidence before the claim can be supported.`,
+      sourceArtifactId,
+    });
+    return;
+  }
+
+  if (isOpenSecurityResult(effectiveResult)) {
+    claim.status = combineStatus(claim.status, 'partial');
+    const severityPrefix = isHighOrCritical(severity) ? `${severity} severity ` : '';
+    addMissingEvidence(claim, {
+      id: `security-human-review:${finding.id}`,
+      expectedKind: 'manual',
+      reason: `${severityPrefix}security finding ${finding.id} is ${effectiveResult}; human review or remediation evidence is required before treating it as supported.`,
+      sourceArtifactId,
+    });
+    return;
+  }
+
+  if (effectiveResult === 'waived') {
+    claim.status = combineStatus(claim.status, 'partial');
+    addMissingEvidence(claim, {
+      id: `security-waiver:${finding.id}`,
+      expectedKind: 'manual',
+      reason: `Security finding ${finding.id} is marked waived by review output; an explicit waiver reference is required for waived claim status.`,
+      sourceArtifactId,
+    });
+  }
+}
+
+function ingestSecurityClaims(claimsById, artifact) {
+  if (!artifact.present) return;
+  const sourceArtifactId = 'security-claims';
+  for (const [claimIndex, rawClaim] of ensureArray(artifact.payload?.claims).entries()) {
+    if (!rawClaim?.id) continue;
+    const claim = getOrCreateClaim(claimsById, rawClaim.id, {
+      statement: rawClaim.statement,
+      criticality: rawClaim.criticality,
+      targetLevel: rawClaim.targetLevel,
+      achievedLevel: decrementLevel(rawClaim.targetLevel),
+      status: 'partial',
+    });
+    pushUniqueById(claim.evidenceRefs, {
+      id: sanitizeId(`${sourceArtifactId}:${claim.id}`),
+      kind: 'spec',
+      artifactPath: artifactPathWithPointer(artifact.path, `/claims/${claimIndex}`),
+      sourceArtifactId,
+      description: `Security claim imported as assurance claim (type=${rawClaim.type ?? 'unknown'}).`,
+    });
+    pushNote(claim, `security-claim:type=${rawClaim.type ?? 'unknown'} provenance=${rawClaim.provenance?.origin ?? 'unknown'}`);
+  }
+}
+
+function ingestSecurityFindingsAndReviews(claimsById, findingsArtifact, reviewArtifact) {
+  const summary = emptySecuritySummary();
+  summary.claims = 0;
+  if (!findingsArtifact.present && !reviewArtifact.present) return summary;
+  const reviews = securityReviewMap(reviewArtifact);
+  summary.reviews = reviews.size;
+
+  if (!findingsArtifact.present) return summary;
+  const sourceArtifactId = 'security-findings';
+  const claimIdsWithFindings = new Set();
+  for (const [findingIndex, finding] of ensureArray(findingsArtifact.payload?.findings).entries()) {
+    if (!finding?.id || !finding?.claimId) continue;
+    const review = reviews.get(String(finding.id));
+    const reviewResult = String(review?.result ?? '').trim();
+    const effectiveResult = reviewResult || String(finding.status ?? 'candidate').trim();
+    const summaryKey = camelSecurityResult(effectiveResult);
+    if (summaryKey) summary[summaryKey] += 1;
+    summary.findings += 1;
+    const severity = String(review?.severity ?? finding.severity ?? 'medium').trim();
+    if (isHighOrCritical(severity) && isOpenSecurityResult(effectiveResult)) {
+      summary.highOrCriticalOpen += 1;
+    }
+
+    claimIdsWithFindings.add(String(finding.claimId));
+    const claim = getOrCreateClaim(claimsById, finding.claimId, {
+      statement: `Security claim ${finding.claimId}`,
+      criticality: severity,
+      targetLevel: 'A2',
+      achievedLevel: 'A0',
+      status: isOpenSecurityResult(effectiveResult) ? 'partial' : 'partial',
+    });
+    pushUniqueById(claim.evidenceRefs, {
+      id: sanitizeId(`${sourceArtifactId}:${finding.id}`),
+      kind: 'adversarial',
+      artifactPath: artifactPathWithPointer(findingsArtifact.path, `/findings/${findingIndex}`),
+      sourceArtifactId,
+      description: `Security finding ${finding.id}: status=${finding.status ?? 'unknown'}, severity=${severity}, review=${effectiveResult || 'unreviewed'}.`,
+    });
+    if (review && reviewArtifact.present) {
+      pushUniqueById(claim.evidenceRefs, {
+        id: sanitizeId(`security-review:${finding.id}`),
+        kind: 'manual',
+        artifactPath: artifactPathWithPointer(reviewArtifact.path, `/reviews/${review.reviewIndex}`),
+        sourceArtifactId: 'security-review',
+        description: `Security review classified ${finding.id} as ${review.result ?? 'unknown'}${review.falsePositiveRootCause ? ` (${review.falsePositiveRootCause})` : ''}.`,
+      });
+    }
+    addSecurityMissingEvidence(claim, finding, review, sourceArtifactId);
+    pushNote(
+      claim,
+      `security-finding:${finding.id} severity=${severity} findingStatus=${finding.status ?? 'unknown'} reviewResult=${effectiveResult || 'unreviewed'} falsePositiveRootCause=${review?.falsePositiveRootCause ?? 'none'}`,
+    );
+    if (isHighOrCritical(severity) && isOpenSecurityResult(effectiveResult)) {
+      pushNote(claim, `security-attention:${severity} ${finding.id} remains ${effectiveResult}; keep report-only until reviewed/remediated.`);
+    }
+  }
+  if (summary.claims === 0) {
+    summary.claims = claimIdsWithFindings.size;
+  }
+  return summary;
+}
+
+function hasSecuritySummary(summary) {
+  return Boolean(summary && (summary.claims > 0 || summary.findings > 0 || summary.reviews > 0));
+}
+
 function normalizeFinalClaim(claim) {
   claim.evidenceRefs.sort((left, right) => left.id.localeCompare(right.id));
   claim.proofObligationRefs.sort((left, right) => left.id.localeCompare(right.id));
@@ -767,14 +978,18 @@ function normalizeFinalClaim(claim) {
   return claim;
 }
 
-function buildSummary(claims) {
-  return {
+function buildSummary(claims, securitySummary = null) {
+  const summary = {
     totalClaims: claims.length,
     fullySupported: claims.filter((claim) => claim.status === 'satisfied').length,
     partiallySupported: claims.filter((claim) => claim.status === 'partial').length,
     waived: claims.filter((claim) => claim.status === 'waived').length,
     unresolved: claims.filter((claim) => claim.status === 'unresolved').length,
   };
+  if (hasSecuritySummary(securitySummary)) {
+    summary.security = securitySummary;
+  }
+  return summary;
 }
 
 export function buildClaimEvidenceManifest(options) {
@@ -783,6 +998,9 @@ export function buildClaimEvidenceManifest(options) {
   const qualityScorecard = resolveOptionalArtifact(options.qualityScorecard);
   const verifyLiteSummary = resolveOptionalArtifact(options.verifyLiteSummary);
   const traceBundle = resolveTraceBundle(options.traceBundles);
+  const securityClaims = resolveOptionalArtifact(options.securityClaims);
+  const securityFindings = resolveOptionalArtifact(options.securityFindings);
+  const securityReview = resolveOptionalArtifact(options.securityReview);
 
   const sourceArtifacts = [
     buildSourceArtifact({
@@ -820,10 +1038,36 @@ export function buildClaimEvidenceManifest(options) {
       required: false,
       description: 'Optional trace bundle input',
     }),
+    buildSourceArtifact({
+      id: 'security-claims',
+      kind: 'security-claim',
+      artifact: securityClaims,
+      required: false,
+      description: 'Optional security-claim/v1 input',
+    }),
+    buildSourceArtifact({
+      id: 'security-findings',
+      kind: 'security-finding',
+      artifact: securityFindings,
+      required: false,
+      description: 'Optional security-finding/v1 input',
+    }),
+    buildSourceArtifact({
+      id: 'security-review',
+      kind: 'security-review',
+      artifact: securityReview,
+      required: false,
+      description: 'Optional security-review/v1 input',
+    }),
   ];
 
   const claimsById = new Map();
   ingestAssuranceSummary(claimsById, assuranceSummary);
+  ingestSecurityClaims(claimsById, securityClaims);
+  const securitySummary = ingestSecurityFindingsAndReviews(claimsById, securityFindings, securityReview);
+  if (securityClaims.present) {
+    securitySummary.claims = ensureArray(securityClaims.payload?.claims).length;
+  }
   ingestChangePackageV2(claimsById, changePackage);
   addQualityScorecardEvidence(claimsById, qualityScorecard);
   addTraceEvidenceForRuntimeClaims(claimsById, traceBundle);
@@ -838,7 +1082,7 @@ export function buildClaimEvidenceManifest(options) {
     generatedAt: options.generatedAt || new Date().toISOString(),
     sourceArtifacts,
     claims,
-    summary: buildSummary(claims),
+    summary: buildSummary(claims, securitySummary),
   };
 }
 
@@ -871,6 +1115,7 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
     `- generatedAt: ${manifest.generatedAt}`,
     `- sourceArtifacts: ${presentSourceCount}/${manifest.sourceArtifacts.length} present`,
     `- claims: ${manifest.summary.totalClaims} total; ${manifest.summary.fullySupported} satisfied, ${manifest.summary.partiallySupported} partial, ${manifest.summary.waived} waived, ${manifest.summary.unresolved} unresolved`,
+    ...(manifest.summary.security ? [`- securityFindings: ${manifest.summary.security.findings} total; highOrCriticalOpen=${manifest.summary.security.highOrCriticalOpen}, needsHumanReview=${manifest.summary.security.needsHumanReview}, outOfScope=${manifest.summary.security.outOfScope}, rejected=${manifest.summary.security.rejected}`] : []),
     `- missingEvidenceRefs: ${missingEvidence.length}`,
     `- waiverRefs: ${waivers.length}`,
     '',
@@ -914,6 +1159,17 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
     for (const entry of missingEvidence) {
       lines.push(`- ${entry.claimId}: ${entry.id} (${entry.expectedKind}) — ${entry.reason}`);
     }
+  }
+
+  if (manifest.summary.security) {
+    lines.push('', '## Security findings', '');
+    lines.push(`- claims: ${manifest.summary.security.claims}`);
+    lines.push(`- findings: ${manifest.summary.security.findings}`);
+    lines.push(`- reviews: ${manifest.summary.security.reviews}`);
+    lines.push(`- needsHumanReview: ${manifest.summary.security.needsHumanReview}`);
+    lines.push(`- highOrCriticalOpen: ${manifest.summary.security.highOrCriticalOpen}`);
+    lines.push(`- outOfScope: ${manifest.summary.security.outOfScope}`);
+    lines.push(`- rejected: ${manifest.summary.security.rejected}`);
   }
 
   lines.push('', '## Waivers', '');

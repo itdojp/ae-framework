@@ -66,6 +66,24 @@
         },
         "evidenceManifests": {
           "$ref": "#/$defs/stringArray"
+        },
+        "securityClaims": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "securityFindings": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "securityReview": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
         }
       }
     },
