@@ -13,10 +13,41 @@ import { generateSecurityCodeMap } from '../security/assurance/code-map.js';
 import { extractSecurityClaimsFromSpec } from '../security/assurance/claim-extractor.js';
 import { importSpecaLikeSecurityArtifacts } from '../security/assurance/speca-import.js';
 import { generateSecurityProofAudit } from '../security/assurance/proof-audit.js';
+import { generateSecurityThreeGateReview } from '../security/assurance/three-gate-review.js';
 
 export function createSecurityCommand(): Command {
   const security = new Command('security');
   security.description('Security management commands');
+
+  security
+    .command('review')
+    .description('Classify candidate security findings through Dead Code, Trust Boundary, and Scope gates')
+    .requiredOption('-f, --findings <file>', 'security-finding/v1 JSON artifact')
+    .requiredOption('-s, --scope <file>', 'security-audit-scope/v1 JSON artifact')
+    .requiredOption('-m, --code-map <file>', 'security-code-map/v1 JSON artifact')
+    .requiredOption('-o, --out <path>', 'Output directory or security-review JSON path')
+    .option('--generated-at <iso-date>', 'Deterministic generatedAt timestamp for reproducible review artifacts')
+    .option('--no-validate', 'Skip schema validation for input and generated artifacts')
+    .action(async (options) => {
+      try {
+        const result = await generateSecurityThreeGateReview(options.findings, options.scope, options.codeMap, options.out, {
+          generatedAt: options.generatedAt,
+          validate: options.validate,
+        });
+
+        console.log(chalk.green('✅ Security three-gate review completed'));
+        console.log(`Reviews: ${result.review.summary.totalReviews}`);
+        console.log(`Needs human review: ${result.review.summary.byResult.needsHumanReview}`);
+        console.log(`Rejected: ${result.review.summary.byResult.rejected}`);
+        console.log(`Out of scope: ${result.review.summary.byResult.outOfScope}`);
+        console.log(`Warnings: ${result.warnings.length}`);
+        console.log(`Output: ${result.outputPaths.review}`);
+        console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Security three-gate review failed: ${toMessage(error)}`));
+        safeExit(1);
+      }
+    });
 
   security
     .command('audit')

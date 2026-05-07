@@ -262,6 +262,20 @@ describe('security assurance contracts', () => {
     expect(validate.errors?.some((entry) => entry.instancePath === '/reviews/0/gates')).toBe(true);
   });
 
+  it('preserves finding severity on security reviews when emitted by a producer', () => {
+    const validate = buildValidator(schemas.review);
+    const validFixture = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+
+    expect(validFixture.reviews.map((review) => review.severity)).toEqual(['high', 'medium', 'low']);
+    expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+
+    validFixture.reviews[0].severity = 'urgent';
+    expect(validate(validFixture)).toBe(false);
+    expect(validate.errors?.some((entry) => entry.instancePath === '/reviews/0/severity')).toBe(true);
+  });
+
   it('classifies false-positive root causes while keeping them consistent with review results', () => {
     const validate = buildValidator(schemas.review);
     const validFixture = structuredClone(fixtures.review) as {
