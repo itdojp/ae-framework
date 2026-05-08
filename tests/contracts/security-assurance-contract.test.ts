@@ -492,6 +492,35 @@ describe('security assurance contracts', () => {
     ]);
   });
 
+  it('requires claimId and claimType to be emitted together on security reviews', () => {
+    const validate = buildValidator(schemas.review);
+    const claimTypeOnly = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    claimTypeOnly.reviews[0].claimType = 'invariant';
+
+    expect(validate(claimTypeOnly)).toBe(false);
+    expect(validateSecurityReviewSemantics(claimTypeOnly)).toEqual([
+      expect.objectContaining({
+        keyword: 'claim_id_missing_for_claim_type',
+        instancePath: '/reviews/0/claimId',
+      }),
+    ]);
+
+    const claimIdOnly = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    claimIdOnly.reviews[0].claimId = 'SEC-CLAIM-001';
+
+    expect(validate(claimIdOnly)).toBe(false);
+    expect(validateSecurityReviewSemantics(claimIdOnly)).toEqual([
+      expect.objectContaining({
+        keyword: 'claim_type_missing_for_claim_id',
+        instancePath: '/reviews/0/claimType',
+      }),
+    ]);
+  });
+
   it('requires assumption handling mode to match the review disposition', () => {
     const invalidFixture = structuredClone(fixtures.review) as {
       reviews: Array<Record<string, unknown>>;

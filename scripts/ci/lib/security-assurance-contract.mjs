@@ -227,6 +227,20 @@ function validateReviewAssumptionHandling(reviewDocument, errors) {
       continue;
     }
     const handling = review.assumptionHandling;
+    if (review.claimType !== undefined && review.claimId === undefined) {
+      errors.push(createError(
+        'claim_id_missing_for_claim_type',
+        `/reviews/${reviewIndex}/claimId`,
+        'claimId is required when claimType is set',
+      ));
+    }
+    if (review.claimId !== undefined && review.claimType === undefined) {
+      errors.push(createError(
+        'claim_type_missing_for_claim_id',
+        `/reviews/${reviewIndex}/claimType`,
+        'claimType is required when claimId is set',
+      ));
+    }
     if (review.claimType === 'assumption') {
       if (!handling || typeof handling !== 'object') {
         errors.push(createError(

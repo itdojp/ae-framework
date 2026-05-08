@@ -221,6 +221,30 @@
           "if": {
             "required": [
               "claimType"
+            ]
+          },
+          "then": {
+            "required": [
+              "claimId"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "claimId"
+            ]
+          },
+          "then": {
+            "required": [
+              "claimType"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "claimType"
             ],
             "properties": {
               "claimType": {

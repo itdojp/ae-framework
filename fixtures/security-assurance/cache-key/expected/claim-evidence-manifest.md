@@ -27,7 +27,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | sec-claim-001 | invariant | high | A2 | A1 | partial | 6 | 2 | 0 | n/a | security-claim:SEC-CLAIM-001 (security-claims) |
 | sec-claim-002 | precondition | medium | A1 | A0 | partial | 2 | 1 | 0 | n/a | security-claim:SEC-CLAIM-002 (security-claims) |
-| sec-claim-003 | assumption | low | A2 | A0 | partial | 6 | 1 | 0 | SEC-FINDING-002:residual-risk, SEC-FINDING-002:residual-risk | security-claim:SEC-CLAIM-003 (security-claims) |
+| sec-claim-003 | assumption | low | A2 | A0 | partial | 6 | 1 | 0 | SEC-FINDING-002:residual-risk | security-claim:SEC-CLAIM-003 (security-claims) |
 
 ## External IDs
 

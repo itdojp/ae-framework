@@ -187,6 +187,7 @@ describe.sequential('render-pr-summary', () => {
       expect(output).toContain('Claim evidence: satisfied=1/3, partial=1, waived=1, unresolved=0');
       expect(output).toContain('Claim evidence refs: missing=1, waivers=1');
       expect(output).toContain('Security findings: total=3, needs-human-review=1, high/critical-open=1');
+      expect(output).toContain('assumption-validation-required=n/a, assumption-residual-risk=n/a');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

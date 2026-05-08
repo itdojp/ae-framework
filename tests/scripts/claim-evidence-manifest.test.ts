@@ -282,7 +282,8 @@ describe.sequential('claim evidence manifest generator', () => {
     }
   });
 
-  it('tracks assumption-derived security findings as assumption handling evidence', () => {
+  it('tracks assumption-derived security findings as assumption handling evidence', async () => {
+    const mod = await import(moduleUrl);
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-claim-evidence-manifest-assumption-'));
     const outputJson = join(sandbox, 'claim-evidence-manifest.json');
     const outputMd = join(sandbox, 'claim-evidence-manifest.md');
@@ -335,6 +336,20 @@ describe.sequential('claim evidence manifest generator', () => {
       expect(markdown).toContain('## Assumption handling');
       expect(markdown).toContain('SEC-FINDING-002');
       expect(markdown).toContain('residual-risk');
+
+      assumptionClaim.assumptionHandlingRefs.push({
+        ...assumptionClaim.assumptionHandlingRefs[0],
+        id: 'security-assumption:sec-finding-002:residual-risk:duplicate-source',
+        sourceArtifactId: 'duplicate-source',
+      });
+      const duplicateSourceMarkdown = mod.renderClaimEvidenceManifestMarkdown(manifest);
+      const assumptionClaimSummaryLine = duplicateSourceMarkdown
+        .split('\n')
+        .find((line: string) => line.startsWith('| sec-claim-003 |'));
+      expect(assumptionClaimSummaryLine?.match(/SEC-FINDING-002:residual-risk/g)).toHaveLength(1);
+      expect(duplicateSourceMarkdown).toContain(
+        '| sec-claim-003 | security-assumption:sec-finding-002:residual-risk:duplicate-source | residual-risk | SEC-FINDING-002 | out-of-scope | duplicate-source |',
+      );
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

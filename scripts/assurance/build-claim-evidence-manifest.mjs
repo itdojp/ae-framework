@@ -1372,9 +1372,20 @@ function collectExternalIdRows(manifest) {
 
 function formatAssumptionHandlingForTable(handlingRefs) {
   const items = ensureArray(handlingRefs);
-  return items.length > 0
-    ? items.map((entry) => `${entry.findingId}:${entry.mode}`).join(', ')
-    : 'n/a';
+  if (items.length === 0) {
+    return 'n/a';
+  }
+  const rendered = [];
+  const seen = new Set();
+  for (const entry of items) {
+    const key = `${entry.findingId}:${entry.mode}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    rendered.push(key);
+  }
+  return rendered.join(', ');
 }
 
 export function renderClaimEvidenceManifestMarkdown(manifest) {
