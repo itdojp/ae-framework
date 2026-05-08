@@ -26,6 +26,7 @@ Use this index to choose the smallest test lane that gives adequate signal for t
 | --- | --- | --- | --- |
 | Local edit loop | `pnpm run test:fast`, focused `vitest run <path>` | S | Validating a small source or test change before commit. |
 | CLI / command boundary | `pnpm run test:fast:batch:cli`, `pnpm run test:fast:batch:commands`, focused `vitest run tests/contracts/cli-artifacts-contracts.test.ts` | S-M | Updating CLI routing, command helpers, exit-code handling, JSON output, cwd/env behavior, or artifact path behavior. |
+| Workspace package / app smoke | `pnpm run test:workspace:smoke`, `pnpm run build:tokens`, `pnpm run build:ui`, `pnpm run type-check:frontend` | S-M | Updating `packages/*`, `apps/web`, `apps/storybook`, package exports, design tokens, UI source, or frontend/story inventory. |
 | Local unit / contract confidence | `pnpm run test:unit`, `pnpm run test:contracts` | S-M | Updating core modules, schemas, CLI helpers, or contract fixtures. |
 | PR baseline | `pnpm run verify:lite` or `pnpm run test:ci:lite` | M | Preparing a PR that should match the default required-check posture. |
 | Coverage inspection | `pnpm run coverage` | M-L | Refreshing coverage evidence or validating `coverage-check` behavior. |
@@ -98,6 +99,7 @@ Run the same documentation and type-surface checks used by the planning issue:
 | --- | --- | --- | --- |
 | Local edit loop | `pnpm run test:fast`, focused `vitest run <path>` | S | 小さい source / test 変更を commit 前に確認する場合。 |
 | CLI / command boundary | `pnpm run test:fast:batch:cli`, `pnpm run test:fast:batch:commands`, focused `vitest run tests/contracts/cli-artifacts-contracts.test.ts` | S-M | CLI routing、command helper、exit code、JSON output、cwd/env behavior、artifact path behavior を更新した場合。 |
+| Workspace package / app smoke | `pnpm run test:workspace:smoke`, `pnpm run build:tokens`, `pnpm run build:ui`, `pnpm run type-check:frontend` | S-M | `packages/*`、`apps/web`、`apps/storybook`、package export、design tokens、UI source、frontend/story inventory を更新した場合。 |
 | Local unit / contract confidence | `pnpm run test:unit`, `pnpm run test:contracts` | S-M | core module、schema、CLI helper、contract fixture を更新した場合。 |
 | PR baseline | `pnpm run verify:lite` または `pnpm run test:ci:lite` | M | 既定の required-check posture に合わせて PR を準備する場合。 |
 | Coverage inspection | `pnpm run coverage` | M-L | coverage evidence や `coverage-check` の挙動を確認する場合。 |
