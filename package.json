@@ -85,6 +85,7 @@
     "assurance:e2e": "node scripts/assurance/run-e2e-scenario.mjs",
     "test:security-assurance": "node scripts/security/run-security-assurance-fixture.mjs",
     "claim-evidence:generate": "node scripts/assurance/build-claim-evidence-manifest.mjs",
+    "claim-level-summary:generate": "node scripts/assurance/aggregate-claim-levels.mjs",
     "change-package:generate": "node scripts/change-package/generate.mjs",
     "change-package:generate:v2": "node scripts/change-package/generate.mjs --schema-version v2",
     "change-package:generate:dual": "node scripts/change-package/generate.mjs --dual-write",

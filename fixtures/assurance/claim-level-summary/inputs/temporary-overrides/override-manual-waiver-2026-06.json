@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "temporary-override/v1",
+  "id": "override-manual-waiver-2026-06",
+  "status": "active",
+  "owner": "@team-risk",
+  "reason": "Manual fraud review is active while model validation is incomplete.",
+  "expires": "2026-06-30",
+  "relatedClaimIds": [
+    "manual-waiver"
+  ],
+  "evidenceLink": {
+    "artifactPath": "docs/operate/release-engineering.md#manual-fraud-review",
+    "sourceArtifactId": "manual-waiver-log",
+    "description": "Documented manual fraud review control."
+  },
+  "approvedBy": [
+    "@risk-approver"
+  ],
+  "createdAt": "2026-05-08T00:00:00.000Z",
+  "notes": [
+    "Fixture override for claim-level summary aggregation."
+  ]
+}
