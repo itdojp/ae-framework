@@ -202,6 +202,20 @@ node scripts/assurance/build-claim-evidence-manifest.mjs \
   --generated-at "$GENERATED_AT"
 ```
 
+When a deterministic `symbol-index/v1` artifact is available, add it to the mapping step as optional evidence:
+
+```bash
+pnpm -s run security:map-code -- \
+  --claims "$SECURITY_OUT/security-claims.json" \
+  --scope "$SECURITY_OUT/security-audit-scope.json" \
+  --target "$SCENARIO/inputs/target" \
+  --symbol-index artifacts/code/symbol-index.json \
+  --out "$SECURITY_OUT" \
+  --generated-at "$GENERATED_AT"
+```
+
+`--symbol-index` prioritizes matching against symbol name, signature, documentation, and tags, while preserving the existing keyword scan as the fallback path.
+
 After running this sequence, validate the output with:
 
 ```bash
@@ -444,6 +458,20 @@ node scripts/assurance/build-claim-evidence-manifest.mjs \
   --output-md "$SECURITY_OUT/claim-evidence-manifest.md" \
   --generated-at "$GENERATED_AT"
 ```
+
+deterministic な `symbol-index/v1` artifact がある場合は、mapping step に optional evidence として追加します。
+
+```bash
+pnpm -s run security:map-code -- \
+  --claims "$SECURITY_OUT/security-claims.json" \
+  --scope "$SECURITY_OUT/security-audit-scope.json" \
+  --target "$SCENARIO/inputs/target" \
+  --symbol-index artifacts/code/symbol-index.json \
+  --out "$SECURITY_OUT" \
+  --generated-at "$GENERATED_AT"
+```
+
+`--symbol-index` は symbol name / signature / documentation / tags を優先して照合し、該当 symbol がない場合は既存の keyword scan に fallback します。
 
 実行後は次を確認します。
 

@@ -193,6 +193,42 @@
               "minimum": 0
             }
           }
+        },
+        "symbolIndex": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "used",
+            "input",
+            "totalSymbols",
+            "inScopeSymbols",
+            "matchedSymbols",
+            "fallbackClaims"
+          ],
+          "properties": {
+            "used": {
+              "type": "boolean"
+            },
+            "input": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "totalSymbols": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "inScopeSymbols": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "matchedSymbols": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "fallbackClaims": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
         }
       }
     },
@@ -228,6 +264,9 @@
           "$ref": "#/$defs/nonEmptyString"
         },
         "version": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "symbolIndex": {
           "$ref": "#/$defs/nonEmptyString"
         }
       }

@@ -158,6 +158,7 @@ export function createSecurityCommand(): Command {
     .requiredOption('-s, --scope <file>', 'security-audit-scope/v1 JSON artifact with in/out-of-scope globs')
     .requiredOption('-t, --target <dir>', 'Target repository or fixture directory to scan')
     .requiredOption('-o, --out <path>', 'Output JSON path or directory for security-code-map artifacts')
+    .option('--symbol-index <file>', 'Optional symbol-index/v1 JSON artifact to prioritize claim-to-code mapping')
     .option('--generated-at <iso-date>', 'Deterministic generatedAt timestamp for reproducible mapping')
     .option('--no-validate', 'Skip schema validation for input and generated artifacts')
     .action(async (options) => {
@@ -165,6 +166,7 @@ export function createSecurityCommand(): Command {
         const outPath = assertSafeSecurityOutputPath(options.out);
         const result = await generateSecurityCodeMap(options.claims, options.scope, options.target, outPath, {
           generatedAt: options.generatedAt,
+          symbolIndexPath: options.symbolIndex,
           validate: options.validate,
         });
 
@@ -172,6 +174,10 @@ export function createSecurityCommand(): Command {
         console.log(`Claims: ${result.codeMap.summary.totalClaims}`);
         console.log(`Mapped claims: ${result.codeMap.summary.mappedClaims}`);
         console.log(`Candidate locations: ${result.codeMap.summary.totalCandidateLocations}`);
+        if (result.codeMap.summary.symbolIndex) {
+          console.log(`Symbol index: ${displayArtifactPath(result.codeMap.summary.symbolIndex.input)}`);
+          console.log(`Symbol-index fallback claims: ${result.codeMap.summary.symbolIndex.fallbackClaims}`);
+        }
         console.log(`Warnings: ${result.warnings.length}`);
         console.log(`Output: ${displayArtifactPath(result.outputPaths.codeMap)}`);
         console.log(`Summary: ${displayArtifactPath(result.outputPaths.summaryMarkdown)}`);

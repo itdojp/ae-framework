@@ -37,9 +37,30 @@ type SecurityAuditScopeDocument = {
   trustBoundaries?: Array<Record<string, unknown>>;
 };
 
+type SymbolIndexSymbol = {
+  id: string;
+  language?: string;
+  kind?: string;
+  name: string;
+  path: string;
+  startLine: number;
+  endLine: number;
+  exported?: boolean;
+  signature?: string;
+  doc?: string;
+  tags?: string[];
+};
+
+type SymbolIndexDocument = {
+  schemaVersion: 'symbol-index/v1';
+  generatedAt?: string;
+  symbols: SymbolIndexSymbol[];
+};
+
 export interface CodeMapOptions {
   generatedAt?: string;
   repoRoot?: string;
+  symbolIndexPath?: string;
   validate?: boolean;
 }
 
@@ -81,6 +102,14 @@ export interface SecurityCodeMapDocument {
     totalCandidateLocations: number;
     totalWarnings: number;
     byCoverage: Record<Coverage, number>;
+    symbolIndex?: {
+      used: boolean;
+      input: string;
+      totalSymbols: number;
+      inScopeSymbols: number;
+      matchedSymbols: number;
+      fallbackClaims: number;
+    };
   };
   provenance: {
     origin: 'deterministic';
@@ -88,6 +117,7 @@ export interface SecurityCodeMapDocument {
     claims: string;
     scope: string;
     target: string;
+    symbolIndex?: string;
   };
   warnings: CodeMapWarning[];
 }
@@ -113,6 +143,22 @@ type SourceFile = {
   text: string;
   lines: string[];
   symbols: SourceSymbol[];
+};
+
+type IndexedSymbol = SymbolIndexSymbol & {
+  targetRelativePath: string;
+};
+
+type SymbolIndexContext = {
+  portableInputPath: string;
+  totalSymbols: number;
+  inScopeSymbols: IndexedSymbol[];
+};
+
+type MapClaimResult = {
+  mapping: ClaimCodeMapping;
+  symbolIndexMatched: number;
+  usedSymbolIndexFallback: boolean;
 };
 
 const GENERATOR = 'security-code-map-producer';
@@ -297,6 +343,74 @@ function parseScope(document: unknown): SecurityAuditScopeDocument {
   return parsedScope;
 }
 
+function parseSymbolIndex(document: unknown): SymbolIndexDocument {
+  if (!isRecord(document) || document['schemaVersion'] !== 'symbol-index/v1' || !Array.isArray(document['symbols'])) {
+    throw new Error('Expected symbol-index/v1 document with a symbols array.');
+  }
+  const symbols = document['symbols'].map((symbol, index) => {
+    if (!isRecord(symbol)) {
+      throw new Error(`Symbol index entry at index ${index} must be an object.`);
+    }
+    const id = asString(symbol['id']);
+    if (!id) {
+      throw new Error(`Symbol index entry at index ${index} must have a non-empty id.`);
+    }
+    const name = asString(symbol['name']);
+    if (!name) {
+      throw new Error(`Symbol index entry ${id} must have a non-empty name.`);
+    }
+    const symbolPath = asString(symbol['path']);
+    if (!symbolPath) {
+      throw new Error(`Symbol index entry ${id} must have a non-empty path.`);
+    }
+    if (!Number.isInteger(symbol['startLine']) || !Number.isInteger(symbol['endLine'])) {
+      throw new Error(`Symbol index entry ${id} must have integer startLine and endLine values.`);
+    }
+    const startLine = symbol['startLine'] as number;
+    const endLine = symbol['endLine'] as number;
+    const parsed: SymbolIndexSymbol = {
+      id,
+      name,
+      path: symbolPath,
+      startLine,
+      endLine,
+    };
+    const language = asString(symbol['language']);
+    if (language !== undefined) {
+      parsed.language = language;
+    }
+    const kind = asString(symbol['kind']);
+    if (kind !== undefined) {
+      parsed.kind = kind;
+    }
+    if (typeof symbol['exported'] === 'boolean') {
+      parsed.exported = symbol['exported'];
+    }
+    const signature = asString(symbol['signature']);
+    if (signature !== undefined) {
+      parsed.signature = signature;
+    }
+    const doc = asString(symbol['doc']);
+    if (doc !== undefined) {
+      parsed.doc = doc;
+    }
+    const tags = asStringArray(symbol['tags']);
+    if (tags.length > 0) {
+      parsed.tags = [...new Set(tags)];
+    }
+    return parsed;
+  });
+  const parsedDocument: SymbolIndexDocument = {
+    schemaVersion: 'symbol-index/v1',
+    symbols,
+  };
+  const generatedAt = asString(document['generatedAt']);
+  if (generatedAt !== undefined) {
+    parsedDocument.generatedAt = generatedAt;
+  }
+  return parsedDocument;
+}
+
 function normalizePattern(pattern: string): string {
   return pattern.replace(/\\/g, '/').replace(/^\.\//, '');
 }
@@ -388,6 +502,59 @@ async function collectFiles(targetRoot: string, scope: SecurityAuditScopeDocumen
   return files;
 }
 
+function createSymbolIndexContext(
+  symbolIndexPath: string,
+  symbolIndex: SymbolIndexDocument,
+  files: SourceFile[],
+  repoRoot: string,
+  warnings: CodeMapWarning[],
+): SymbolIndexContext {
+  const inScopeFiles = new Set(files.map((file) => file.targetRelativePath));
+  const inScopeSymbols: IndexedSymbol[] = [];
+  const seenIds = new Set<string>();
+  for (const [index, symbol] of symbolIndex.symbols.entries()) {
+    if (seenIds.has(symbol.id)) {
+      warnings.push(warning('duplicate-symbol-id', `/symbolIndex/symbols/${index}/id`, `Ignored duplicate symbol-index entry '${symbol.id}'.`));
+      continue;
+    }
+    seenIds.add(symbol.id);
+    if (isUnsafeGlobPattern(symbol.path)) {
+      warnings.push(warning(
+        'unsafe-symbol-path',
+        `/symbolIndex/symbols/${index}/path`,
+        `Ignored symbol-index entry '${symbol.id}' because path '${symbol.path}' escapes the target root.`,
+      ));
+      continue;
+    }
+    if (symbol.endLine < symbol.startLine) {
+      warnings.push(warning(
+        'invalid-symbol-range',
+        `/symbolIndex/symbols/${index}/endLine`,
+        `Ignored symbol-index entry '${symbol.id}' because endLine is before startLine.`,
+      ));
+      continue;
+    }
+    const targetRelativePath = normalizePattern(symbol.path);
+    if (!inScopeFiles.has(targetRelativePath)) {
+      warnings.push(warning(
+        'symbol-index-out-of-scope',
+        `/symbolIndex/symbols/${index}/path`,
+        `Ignored symbol-index entry '${symbol.id}' because '${symbol.path}' is not one of the scanned in-scope target files.`,
+      ));
+      continue;
+    }
+    inScopeSymbols.push({
+      ...symbol,
+      targetRelativePath,
+    });
+  }
+  return {
+    portableInputPath: portablePathFrom(repoRoot, symbolIndexPath),
+    totalSymbols: symbolIndex.symbols.length,
+    inScopeSymbols,
+  };
+}
+
 function extractSymbols(lines: string[]): SourceSymbol[] {
   const symbols: Array<{ name: string; startLine: number }> = [];
   const symbolPattern = /^(?:export\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+([A-Za-z_$][\w$]*)/;
@@ -452,6 +619,35 @@ function reasonFor(symbol: string | undefined, terms: string[]): string {
   return `Matched security claim terms in ${target}: ${shown}.`;
 }
 
+function symbolIndexSearchText(symbol: IndexedSymbol): string {
+  return [
+    symbol.id,
+    symbol.language,
+    symbol.kind,
+    symbol.name,
+    symbol.path,
+    symbol.signature,
+    symbol.doc,
+    ...(symbol.tags ?? []),
+  ].filter((entry): entry is string => typeof entry === 'string' && entry.trim().length > 0).join('\n');
+}
+
+function candidateForIndexedSymbol(symbol: IndexedSymbol, terms: string[]): CandidateLocation | undefined {
+  const matches = matchedTerms(symbolIndexSearchText(symbol), terms);
+  if (matches.length === 0) {
+    return undefined;
+  }
+  const shown = matches.slice(0, 8).join(', ');
+  return {
+    path: symbol.targetRelativePath,
+    startLine: symbol.startLine,
+    endLine: symbol.endLine,
+    symbol: symbol.name,
+    reason: `Matched security claim terms in symbol-index entry ${symbol.id} (${symbol.name}): ${shown}.`,
+    matchedTerms: matches,
+  };
+}
+
 function candidateForSymbol(file: SourceFile, symbol: SourceSymbol, terms: string[]): CandidateLocation | undefined {
   const matches = matchedTerms(`${symbol.name}\n${symbol.text}`, terms);
   if (matches.length === 0) {
@@ -496,8 +692,7 @@ function compareStableString(left: string, right: string): number {
   return 0;
 }
 
-function mapClaim(claim: SecurityClaim, claimIndex: number, files: SourceFile[]): ClaimCodeMapping {
-  const terms = keywordsForClaim(claim);
+function keywordScanCandidates(terms: string[], files: SourceFile[]): CandidateLocation[] {
   const candidates: CandidateLocation[] = [];
   for (const file of files) {
     const symbolCandidates = file.symbols
@@ -512,22 +707,62 @@ function mapClaim(claim: SecurityClaim, claimIndex: number, files: SourceFile[])
       candidates.push(fileCandidate);
     }
   }
+  return candidates;
+}
+
+function mapClaim(claim: SecurityClaim, claimIndex: number, files: SourceFile[], symbolIndex?: SymbolIndexContext): MapClaimResult {
+  const terms = keywordsForClaim(claim);
+  let candidates: CandidateLocation[] = [];
+  let symbolIndexMatched = 0;
+  let usedSymbolIndexFallback = false;
+
+  if (symbolIndex) {
+    const symbolCandidates = symbolIndex.inScopeSymbols
+      .map((symbol) => candidateForIndexedSymbol(symbol, terms))
+      .filter((entry): entry is CandidateLocation => Boolean(entry));
+    if (symbolCandidates.length > 0) {
+      candidates = symbolCandidates;
+      symbolIndexMatched = symbolCandidates.length;
+    } else {
+      usedSymbolIndexFallback = true;
+      candidates = keywordScanCandidates(terms, files);
+    }
+  } else {
+    candidates = keywordScanCandidates(terms, files);
+  }
 
   const candidateLocations = candidates
     .sort((left, right) => scoreCandidate(right) - scoreCandidate(left) || compareStableString(left.path, right.path) || left.startLine - right.startLine)
     .slice(0, MAX_CANDIDATES_PER_CLAIM);
-  const warnings = candidateLocations.length === 0
-    ? [warning('no-candidate-location', `/mappings/${claimIndex}/candidateLocations`, `No candidate source location was found for ${claim.id}.`)]
-    : [];
+  const warnings: CodeMapWarning[] = [];
+  if (usedSymbolIndexFallback) {
+    warnings.push(warning(
+      'symbol-index-no-match-fallback',
+      `/mappings/${claimIndex}/candidateLocations`,
+      `No in-scope symbol-index entry matched ${claim.id}; keyword source scan fallback was used.`,
+      symbolIndex?.portableInputPath,
+    ));
+  }
+  if (candidateLocations.length === 0) {
+    warnings.push(warning('no-candidate-location', `/mappings/${claimIndex}/candidateLocations`, `No candidate source location was found for ${claim.id}.`));
+  }
   return {
-    claimId: claim.id,
-    candidateLocations,
-    coverage: candidateLocations.length === 0 ? 'none' : 'partial',
-    warnings,
+    mapping: {
+      claimId: claim.id,
+      candidateLocations,
+      coverage: candidateLocations.length === 0 ? 'none' : 'partial',
+      warnings,
+    },
+    symbolIndexMatched,
+    usedSymbolIndexFallback,
   };
 }
 
-function summarize(mappings: ClaimCodeMapping[], documentWarnings: CodeMapWarning[]): SecurityCodeMapDocument['summary'] {
+function summarize(
+  mappings: ClaimCodeMapping[],
+  documentWarnings: CodeMapWarning[],
+  symbolIndexSummary?: SecurityCodeMapDocument['summary']['symbolIndex'],
+): SecurityCodeMapDocument['summary'] {
   const byCoverage: Record<Coverage, number> = { none: 0, partial: 0, full: 0 };
   let totalCandidateLocations = 0;
   let mappingWarnings = 0;
@@ -536,13 +771,17 @@ function summarize(mappings: ClaimCodeMapping[], documentWarnings: CodeMapWarnin
     totalCandidateLocations += mapping.candidateLocations.length;
     mappingWarnings += mapping.warnings.length;
   }
-  return {
+  const summary: SecurityCodeMapDocument['summary'] = {
     totalClaims: mappings.length,
     mappedClaims: mappings.filter((mapping) => mapping.candidateLocations.length > 0).length,
     totalCandidateLocations,
     totalWarnings: documentWarnings.length + mappingWarnings,
     byCoverage,
   };
+  if (symbolIndexSummary) {
+    summary.symbolIndex = symbolIndexSummary;
+  }
+  return summary;
 }
 
 function buildDocument(
@@ -554,20 +793,36 @@ function buildDocument(
   targetRoot: string,
   repoRoot: string,
   documentWarnings: CodeMapWarning[],
+  symbolIndex?: SymbolIndexContext,
 ): SecurityCodeMapDocument {
-  const mappings = claims.claims.map((claim, index) => mapClaim(claim, index, files));
+  const mapped = claims.claims.map((claim, index) => mapClaim(claim, index, files, symbolIndex));
+  const mappings = mapped.map((entry) => entry.mapping);
+  const symbolIndexSummary = symbolIndex
+    ? {
+        used: true,
+        input: symbolIndex.portableInputPath,
+        totalSymbols: symbolIndex.totalSymbols,
+        inScopeSymbols: symbolIndex.inScopeSymbols.length,
+        matchedSymbols: mapped.reduce((total, entry) => total + entry.symbolIndexMatched, 0),
+        fallbackClaims: mapped.filter((entry) => entry.usedSymbolIndexFallback).length,
+      }
+    : undefined;
+  const provenance: SecurityCodeMapDocument['provenance'] = {
+    origin: 'deterministic',
+    generator: GENERATOR,
+    claims: portablePathFrom(repoRoot, claimsPath),
+    scope: portablePathFrom(repoRoot, scopePath),
+    target: portablePathFrom(repoRoot, targetRoot),
+  };
+  if (symbolIndex) {
+    provenance.symbolIndex = symbolIndex.portableInputPath;
+  }
   return {
     schemaVersion: 'security-code-map/v1',
     generatedAt,
     mappings,
-    summary: summarize(mappings, documentWarnings),
-    provenance: {
-      origin: 'deterministic',
-      generator: GENERATOR,
-      claims: portablePathFrom(repoRoot, claimsPath),
-      scope: portablePathFrom(repoRoot, scopePath),
-      target: portablePathFrom(repoRoot, targetRoot),
-    },
+    summary: summarize(mappings, documentWarnings, symbolIndexSummary),
+    provenance,
     warnings: documentWarnings,
   };
 }
@@ -581,10 +836,15 @@ function renderSummaryMarkdown(document: SecurityCodeMapDocument): string {
     `- Mapped claims: ${document.summary.mappedClaims}`,
     `- Candidate locations: ${document.summary.totalCandidateLocations}`,
     `- Warnings: ${document.summary.totalWarnings}`,
-    '',
-    '## Mappings',
-    '',
   ];
+  if (document.summary.symbolIndex) {
+    lines.push(
+      `- Symbol index: ${document.summary.symbolIndex.input}`,
+      `- Symbol-index in-scope symbols: ${document.summary.symbolIndex.inScopeSymbols}/${document.summary.symbolIndex.totalSymbols}`,
+      `- Symbol-index fallback claims: ${document.summary.symbolIndex.fallbackClaims}`,
+    );
+  }
+  lines.push('', '## Mappings', '');
   for (const mapping of document.mappings) {
     lines.push(`### ${mapping.claimId}`, '', `- Coverage: ${mapping.coverage}`, `- Candidate locations: ${mapping.candidateLocations.length}`, '');
     if (mapping.candidateLocations.length === 0) {
@@ -626,18 +886,27 @@ export async function generateSecurityCodeMap(claimsPath: string, scopePath: str
   const resolvedClaimsPath = path.resolve(claimsPath);
   const resolvedScopePath = path.resolve(scopePath);
   const resolvedTargetPath = path.resolve(targetPath);
+  const resolvedSymbolIndexPath = options.symbolIndexPath ? path.resolve(options.symbolIndexPath) : undefined;
   const warnings: CodeMapWarning[] = [];
 
   const rawClaims = await loadJson(resolvedClaimsPath);
   const rawScope = await loadJson(resolvedScopePath);
+  const rawSymbolIndex = resolvedSymbolIndexPath ? await loadJson(resolvedSymbolIndexPath) : undefined;
   if (options.validate !== false) {
     await validateWithSchema(repoRoot, 'security-claim-v1.schema.json', rawClaims, 'Input security claims');
     await validateWithSchema(repoRoot, 'security-audit-scope-v1.schema.json', rawScope, 'Input security audit scope');
+    if (rawSymbolIndex !== undefined) {
+      await validateWithSchema(repoRoot, 'symbol-index-v1.schema.json', rawSymbolIndex, 'Input symbol index');
+    }
   }
   const claims = parseClaims(rawClaims);
   const scope = parseScope(rawScope);
+  const symbolIndexDocument = rawSymbolIndex !== undefined ? parseSymbolIndex(rawSymbolIndex) : undefined;
   const files = await collectFiles(resolvedTargetPath, scope, repoRoot, warnings);
-  const codeMap = buildDocument(claims, files, generatedAt, resolvedClaimsPath, resolvedScopePath, resolvedTargetPath, repoRoot, warnings);
+  const symbolIndex = symbolIndexDocument && resolvedSymbolIndexPath
+    ? createSymbolIndexContext(resolvedSymbolIndexPath, symbolIndexDocument, files, repoRoot, warnings)
+    : undefined;
+  const codeMap = buildDocument(claims, files, generatedAt, resolvedClaimsPath, resolvedScopePath, resolvedTargetPath, repoRoot, warnings, symbolIndex);
   if (options.validate !== false) {
     await validateWithSchema(repoRoot, 'security-code-map-v1.schema.json', codeMap, 'Generated security code map');
   }

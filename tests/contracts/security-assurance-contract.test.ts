@@ -8,6 +8,7 @@ import {
   validateSecurityCodeMapSemantics,
   validateSecurityFindingSemantics,
   validateSecurityReviewSemantics,
+  validateSymbolIndexSemantics,
 } from '../../scripts/ci/lib/security-assurance-contract.mjs';
 
 type JsonObject = Record<string, unknown>;
@@ -20,6 +21,7 @@ const schemas = {
   threatModel: loadJson('schema/security-threat-model-v1.schema.json'),
   auditScope: loadJson('schema/security-audit-scope-v1.schema.json'),
   codeMap: loadJson('schema/security-code-map-v1.schema.json'),
+  symbolIndex: loadJson('schema/symbol-index-v1.schema.json'),
   auditTasks: loadJson('schema/security-audit-task-bundle-v1.schema.json'),
   findings: loadJson('schema/security-finding-v1.schema.json'),
   review: loadJson('schema/security-review-v1.schema.json'),
@@ -30,6 +32,7 @@ const fixtures = {
   threatModel: loadJson('fixtures/security-assurance/sample.security-threat-model.json'),
   auditScope: loadJson('fixtures/security-assurance/sample.security-audit-scope.json'),
   codeMap: loadJson('fixtures/security-assurance/sample.security-code-map.json'),
+  symbolIndex: loadJson('fixtures/security-assurance/sample.symbol-index.json'),
   auditTasks: loadJson('fixtures/security-assurance/sample.security-audit-tasks.json'),
   findings: loadJson('fixtures/security-assurance/sample.security-findings.json'),
   review: loadJson('fixtures/security-assurance/sample.security-review.json'),
@@ -186,6 +189,52 @@ describe('security assurance contracts', () => {
     validFixture.summary.byCoverage.partial = 0;
 
     expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('allows security code-map summary to record optional symbol-index provenance', () => {
+    const validate = buildValidator(schemas.codeMap);
+    const validFixture = structuredClone(fixtures.codeMap) as {
+      summary: Record<string, unknown>;
+      provenance: Record<string, unknown>;
+    };
+
+    validFixture.summary.symbolIndex = {
+      used: true,
+      input: 'fixtures/security-assurance/sample.symbol-index.json',
+      totalSymbols: 1,
+      inScopeSymbols: 1,
+      matchedSymbols: 1,
+      fallbackClaims: 0,
+    };
+    validFixture.provenance.symbolIndex = 'fixtures/security-assurance/sample.symbol-index.json';
+
+    expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('enforces symbol-index semantic line ranges and unique ids', () => {
+    const validFixture = structuredClone(fixtures.symbolIndex);
+    expect(validateSymbolIndexSemantics(validFixture)).toHaveLength(0);
+
+    const invalidFixture = structuredClone(fixtures.symbolIndex) as {
+      symbols: Array<{ id: string; startLine: number; endLine: number }>;
+    };
+    invalidFixture.symbols.push({
+      ...invalidFixture.symbols[0],
+      id: invalidFixture.symbols[0].id,
+      startLine: 50,
+      endLine: 10,
+    });
+
+    expect(validateSymbolIndexSemantics(invalidFixture)).toEqual([
+      expect.objectContaining({
+        keyword: 'line_range_order',
+        instancePath: '/symbols/1/endLine',
+      }),
+      expect.objectContaining({
+        keyword: 'duplicate_symbol_id',
+        instancePath: '/symbols/1/id',
+      }),
+    ]);
   });
 
 
