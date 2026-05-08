@@ -51,7 +51,7 @@ Use this document with:
 | Risk-based verification | Heavy verification is conditional and risk-based, not universal. |
 | Claim-based assurance | Assurance is evaluated per claim, not by repository-wide green status alone. |
 | Summary-first evidence | Summary artifacts are primary judgment inputs; raw logs are supporting evidence. |
-| Distinct evidence states | `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, `unresolved`, and `not-applicable` are distinct states. |
+| Distinct evidence states | Current emitted evidence states are `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved`. A future `not-applicable` state requires schema and docs migration before producers emit it. |
 | Human override | Human override requires owner, reason, expiry, related claim IDs, and evidence link. |
 | Contract evolution | Contract changes use compatibility windows, dual-write/dual-validate behavior, or explicit migration notes. |
 | Enforcement default | New assurance evaluation should start report-only unless an explicit policy, label, or risk profile selects enforcement. |
@@ -83,8 +83,7 @@ A claim state must not be upgraded beyond the supporting evidence.
 | `tested` | Unit, integration, property, MBT, or similar behavior evidence exists. | Formal proof. |
 | `runtime-mitigated` | Runtime control reduces operational risk. | Proof or model checking. |
 | `waived` | An owner accepted a time-bounded exception with evidence link. | Satisfied claim. |
-| `unresolved` | Required evidence is absent, stale, failed, or insufficient. | Passing build. |
-| `not-applicable` | Claim does not apply and the reason is recorded. | Missing evidence. |
+| `unresolved` | Required evidence is absent, stale, failed, insufficient, or intentionally out of current scope. | Passing build. |
 
 ### 6. Valid and invalid wording examples
 
@@ -169,7 +168,7 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 | Risk-based verification | 重い検証は条件付き・risk-based であり、常時強制しない。 |
 | Claim-based assurance | assurance は claim 単位で評価し、repository 全体の green status だけでは判断しない。 |
 | Summary-first evidence | summary artifact を主な判断入力とし、raw log は補助証跡とする。 |
-| Distinct evidence states | `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved`、`not-applicable` を混同しない。 |
+| Distinct evidence states | 現行 contract が emit できる state は `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved`。将来 `not-applicable` を追加する場合は、producer が emit する前に schema/docs migration を行う。 |
 | Human override | human override には owner、reason、expiry、related claim IDs、evidence link を必要とする。 |
 | Contract evolution | contract 変更には compatibility window、dual-write/dual-validate、または migration note を使う。 |
 | Enforcement default | 新しい assurance evaluation は、明示的な policy / label / risk profile が enforcement を選択しない限り report-only から開始する。 |
@@ -208,4 +207,4 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 5. 既存 contract を変更する場合は v1 compatibility または migration note を残す。
 6. schema を追加・厳格化する場合は positive / negative fixture を追加する。
 7. PR/release の判断には summary artifact を使い、raw log は補助証跡とする。
-8. evidence が missing、waived、runtime-mitigated、out-of-scope の場合は residual risk として記録する。
+8. evidence が missing、waived、runtime-mitigated、out-of-scope の場合は、現行 contract では `unresolved` または waiver として residual risk を記録する。
