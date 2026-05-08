@@ -8,6 +8,7 @@ import { generateSecurityThreeGateReview } from '../../../src/security/assurance
 const findingsPath = 'fixtures/security-assurance/sample.security-findings.json';
 const scopePath = 'fixtures/security-assurance/sample.security-audit-scope.json';
 const codeMapPath = 'fixtures/security-assurance/sample.security-code-map.json';
+const entrypointMapPath = 'fixtures/security-assurance/sample.security-entrypoint-map.json';
 const generatedAt = '2026-05-07T00:00:00.000Z';
 const tsxBin = resolve('node_modules/.bin/tsx');
 
@@ -16,6 +17,53 @@ const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) 
 const writeJson = (filePath: string, value: unknown) => {
   writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 };
+
+const entrypointMapFixture = ({
+  id = 'EP-001',
+  attackerControlled = true,
+  reachPath = 'src/cache.ts',
+  trustBoundaryIds = ['TB-001'],
+}: {
+  id?: string;
+  attackerControlled?: boolean;
+  reachPath?: string;
+  trustBoundaryIds?: string[];
+} = {}) => ({
+  schemaVersion: 'security-entrypoint-map/v1',
+  generatedAt,
+  entrypoints: [
+    {
+      id,
+      kind: 'api-route',
+      name: 'POST /verify',
+      path: 'src/routes/verify.ts',
+      startLine: 1,
+      endLine: 30,
+      trustBoundaryIds,
+      attackerControlled,
+      reaches: [
+        {
+          path: reachPath,
+          startLine: 7,
+          endLine: 15,
+          symbol: 'buildCacheKey',
+          reason: 'Fixture entrypoint reaches the cache key builder.',
+        },
+      ],
+    },
+  ],
+  summary: {
+    totalEntrypoints: 1,
+    attackerControlledEntrypoints: attackerControlled ? 1 : 0,
+    totalReachableLocations: 1,
+    byKind: { 'api-route': 1 },
+  },
+  provenance: {
+    origin: 'fixture',
+    generator: 'three-gate-review-test',
+    source: 'entrypoint-map.json',
+  },
+});
 
 describe('security three-gate review producer', () => {
   it('classifies candidate findings through scope, dead-code, and trust-boundary gates', async () => {
@@ -72,6 +120,96 @@ describe('security three-gate review producer', () => {
       expect(readJson<{ reviews: unknown[] }>(join(outDir, 'security-review.json')).reviews).toHaveLength(3);
       expect(readFileSync(join(outDir, 'security-review.md'), 'utf8')).toContain('Security three-gate review summary');
     } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('uses optional entrypoint-map evidence for the trust-boundary gate', async () => {
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-entrypoint-'));
+    try {
+      const result = await generateSecurityThreeGateReview(findingsPath, scopePath, codeMapPath, outDir, {
+        generatedAt,
+        entrypointMapPath,
+      });
+
+      const reviewsByFinding = new Map(result.review.reviews.map((review) => [review.findingId, review]));
+      expect(reviewsByFinding.get('SEC-FINDING-001')).toEqual(
+        expect.objectContaining({
+          result: 'needs-human-review',
+          gates: expect.objectContaining({
+            trustBoundary: expect.objectContaining({
+              result: 'pass',
+              rationale: expect.stringContaining('Matched attacker-controlled entrypoint evidence: EP-001'),
+              evidenceRefs: expect.arrayContaining(['EP-001', 'TB-001', 'src/cache.ts:7-15']),
+            }),
+          }),
+        }),
+      );
+      expect(readFileSync(join(outDir, 'security-review.md'), 'utf8')).toContain('Matched attacker-controlled entrypoint evidence: EP-001');
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps the trust-boundary gate unknown when entrypoint-map lacks matching reachability evidence', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-security-review-entrypoint-missing-'));
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-entrypoint-missing-out-'));
+    try {
+      const localEntrypointMapPath = join(fixtureDir, 'entrypoint-map.json');
+      writeJson(localEntrypointMapPath, entrypointMapFixture({ id: 'EP-OTHER', reachPath: 'src/other.ts' }));
+
+      const result = await generateSecurityThreeGateReview(findingsPath, scopePath, codeMapPath, outDir, {
+        generatedAt,
+        entrypointMapPath: localEntrypointMapPath,
+      });
+
+      const review = result.review.reviews.find((entry) => entry.findingId === 'SEC-FINDING-001');
+      expect(review).toEqual(
+        expect.objectContaining({
+          result: 'needs-human-review',
+          falsePositiveRootCause: null,
+          gates: expect.objectContaining({
+            trustBoundary: expect.objectContaining({
+              result: 'unknown',
+              rationale: 'No entrypoint-map reachability evidence matched affected locations and audit scope trust boundaries.',
+            }),
+          }),
+        }),
+      );
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects trust-boundary misunderstanding when only non-attacker-controlled entrypoints reach the location', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-security-review-entrypoint-internal-'));
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-entrypoint-internal-out-'));
+    try {
+      const localEntrypointMapPath = join(fixtureDir, 'entrypoint-map.json');
+      writeJson(localEntrypointMapPath, entrypointMapFixture({ id: 'EP-INTERNAL', attackerControlled: false }));
+
+      const result = await generateSecurityThreeGateReview(findingsPath, scopePath, codeMapPath, outDir, {
+        generatedAt,
+        entrypointMapPath: localEntrypointMapPath,
+      });
+
+      const review = result.review.reviews.find((entry) => entry.findingId === 'SEC-FINDING-001');
+      expect(review).toEqual(
+        expect.objectContaining({
+          result: 'rejected',
+          falsePositiveRootCause: 'trust-boundary-misunderstanding',
+          gates: expect.objectContaining({
+            trustBoundary: expect.objectContaining({
+              result: 'fail',
+              rationale: 'Matching entrypoint evidence is not attacker-controlled: EP-INTERNAL.',
+              evidenceRefs: expect.arrayContaining(['EP-INTERNAL', 'TB-001', 'src/cache.ts:7-15']),
+            }),
+          }),
+        }),
+      );
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
       rmSync(outDir, { recursive: true, force: true });
     }
   });
@@ -342,6 +480,8 @@ describe('security three-gate review producer', () => {
           scopePath,
           '--code-map',
           codeMapPath,
+          '--entrypoint-map',
+          entrypointMapPath,
           '--out',
           outDir,
           '--generated-at',
@@ -363,7 +503,11 @@ describe('security three-gate review producer', () => {
       expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
       expect(result.stdout).toContain('Security three-gate review completed');
       expect(result.stdout).toContain('Reviews: 3');
-      expect(readJson<{ reviews: unknown[] }>(join(outDir, 'security-review.json')).reviews).toHaveLength(3);
+      const review = readJson<{
+        reviews: Array<{ findingId: string; gates: { trustBoundary: { evidenceRefs?: string[] } } }>;
+      }>(join(outDir, 'security-review.json'));
+      expect(review.reviews).toHaveLength(3);
+      expect(review.reviews.find((entry) => entry.findingId === 'SEC-FINDING-001')?.gates.trustBoundary.evidenceRefs).toContain('EP-001');
       expect(readFileSync(join(outDir, 'security-review.md'), 'utf8')).toContain('Dead-code root causes: 1');
     } finally {
       rmSync(outDir, { recursive: true, force: true });

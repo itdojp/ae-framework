@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/security-entrypoint-map-v1.schema.json",
+  "title": "Security Entrypoint Map v1",
+  "description": "Optional manual or deterministic evidence that maps externally reachable entrypoints to code locations for Security Assurance Lane Trust Boundary review. This contract records reachability hints only; it is not a full call graph, dataflow proof, or vulnerability confirmation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "entrypoints",
+    "summary",
+    "provenance"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "security-entrypoint-map/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "entrypoints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entrypoint"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "entrypoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "path",
+        "startLine",
+        "endLine",
+        "trustBoundaryIds",
+        "attackerControlled",
+        "reaches"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "kind": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "name": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "path": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "startLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "trustBoundaryIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "attackerControlled": {
+          "type": "boolean"
+        },
+        "reaches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reach"
+          }
+        }
+      },
+      "$comment": "Portable JSON Schema cannot compare sibling numeric values; ae-framework semantic validation enforces endLine >= startLine for entrypoints."
+    },
+    "reach": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "reason"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "startLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "symbol": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "reason": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      },
+      "$comment": "Portable JSON Schema cannot compare sibling numeric values; ae-framework semantic validation enforces endLine >= startLine for reaches.",
+      "dependentRequired": {
+        "startLine": [
+          "endLine"
+        ],
+        "endLine": [
+          "startLine"
+        ]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "totalEntrypoints",
+        "attackerControlledEntrypoints",
+        "totalReachableLocations"
+      ],
+      "properties": {
+        "totalEntrypoints": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "attackerControlledEntrypoints": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalReachableLocations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "byKind": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin",
+        "generator"
+      ],
+      "properties": {
+        "origin": {
+          "type": "string",
+          "enum": [
+            "manual",
+            "deterministic",
+            "fixture",
+            "imported"
+          ]
+        },
+        "generator": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "source": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "scope": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "target": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    }
+  }
+}

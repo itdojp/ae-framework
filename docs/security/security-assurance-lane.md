@@ -27,6 +27,7 @@ The lane covers the MVP path from security claims to assurance evidence:
 spec / design / audit scope
   -> security-claim/v1 + security-threat-model/v1 + security-audit-scope/v1
   -> security-code-map/v1
+  -> optional security-entrypoint-map/v1
   -> security-audit-task-bundle/v1 + security-finding/v1
   -> security-review/v1
   -> assurance-summary/v1 + claim-evidence-manifest/v1
@@ -38,6 +39,7 @@ In scope:
 - typed security claims, threat models, and audit scopes;
 - SPECA-like import and explicit `SEC-CLAIM` Markdown extraction;
 - scoped candidate source mapping, with optional `symbol-index/v1` input for deterministic symbol metadata;
+- optional `security-entrypoint-map/v1` input for Trust Boundary reachability evidence;
 - deterministic proof-attempt task generation and fixture-backed candidate normalization;
 - Dead Code / Trust Boundary / Scope review classification;
 - integration into assurance summary, claim-evidence manifest, policy summaries, and PR summaries;
@@ -60,9 +62,10 @@ Out of scope for the MVP:
 | Audit scope contract | `schema/security-audit-scope-v1.schema.json` | manual scope definition | `node scripts/ci/validate-json.mjs`, contract tests |
 | Code map | `schema/security-code-map-v1.schema.json` / `artifacts/security/security-code-map.json` | `pnpm run security:map-code` (optionally `--symbol-index`) | semantic contract tests, fixture golden comparison |
 | Symbol index | `schema/symbol-index-v1.schema.json` / `artifacts/code/symbol-index.json` | manual / external deterministic index producer | schema + semantic contract tests |
+| Entrypoint map | `schema/security-entrypoint-map-v1.schema.json` / `artifacts/security/security-entrypoint-map.json` | manual / external deterministic entrypoint evidence producer | schema + semantic contract tests |
 | Audit tasks | `schema/security-audit-task-bundle-v1.schema.json` / `artifacts/security/security-audit-tasks.json` | `pnpm run security:proof-audit` | semantic contract tests, fixture golden comparison |
 | Candidate findings | `schema/security-finding-v1.schema.json` / `artifacts/security/security-findings.json` | `pnpm run security:proof-audit` with `--response-fixture` | candidate status checks, fixture golden comparison |
-| Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review` | Dead Code / Trust Boundary / Scope semantic checks |
+| Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review` (optionally `--entrypoint-map`) | Dead Code / Trust Boundary / Scope semantic checks |
 | Assurance summary | `artifacts/assurance/assurance-summary.json` by default | `node scripts/assurance/aggregate-lanes.mjs` | `schema/assurance-summary.schema.json`, fixture golden comparison |
 | Claim-evidence manifest | `artifacts/assurance/claim-evidence-manifest.json` by default | `node scripts/assurance/build-claim-evidence-manifest.mjs` | `schema/claim-evidence-manifest.schema.json`, semantic validation |
 | Golden scenario | `fixtures/security-assurance/cache-key/` | `pnpm run test:security-assurance` | expected-vs-actual comparison and schema validation |
@@ -91,6 +94,7 @@ For step-by-step Codex / CodeX operation, use `docs/integrations/CODEX-SECURITY-
 
 - `security-finding/v1.status=candidate` means the lane found a proof-attempt gap candidate, not a confirmed vulnerability.
 - `security-review/v1.result=needs-human-review` means the candidate remains unresolved.
+- Optional `security-entrypoint-map/v1` evidence can make the Trust Boundary gate rationale more specific; absence of matching reach evidence remains `unknown`, not `confirmed`.
 - `result=out-of-scope`, `result=rejected`, and `falsePositiveRootCause` preserve why a candidate did not become actionable security evidence.
 - High/critical open candidates are surfaced to summaries as review pressure, but the MVP keeps policy behavior report-only for unconfirmed candidates.
 
@@ -137,6 +141,7 @@ Security Assurance Lane は、仕様由来のセキュリティ期待値を revi
 spec / design / audit scope
   -> security-claim/v1 + security-threat-model/v1 + security-audit-scope/v1
   -> security-code-map/v1
+  -> optional security-entrypoint-map/v1
   -> security-audit-task-bundle/v1 + security-finding/v1
   -> security-review/v1
   -> assurance-summary/v1 + claim-evidence-manifest/v1
@@ -148,6 +153,7 @@ MVP の対象範囲:
 - typed security claim / threat model / audit scope;
 - SPECA-like import と明示 `SEC-CLAIM` Markdown 抽出;
 - scope に基づく candidate source mapping と、deterministic symbol metadata 用 optional `symbol-index/v1` input;
+- Trust Boundary reachability evidence 用の optional `security-entrypoint-map/v1` input;
 - deterministic proof-attempt task 生成と fixture-backed candidate 正規化;
 - Dead Code / Trust Boundary / Scope review 分類;
 - assurance summary、claim-evidence manifest、policy summary、PR summary への接続;
@@ -170,9 +176,10 @@ MVP の対象外:
 | Audit scope contract | `schema/security-audit-scope-v1.schema.json` | manual scope definition | `node scripts/ci/validate-json.mjs`, contract tests |
 | Code map | `schema/security-code-map-v1.schema.json` / `artifacts/security/security-code-map.json` | `pnpm run security:map-code`（optional `--symbol-index`） | semantic contract tests, fixture golden comparison |
 | Symbol index | `schema/symbol-index-v1.schema.json` / `artifacts/code/symbol-index.json` | manual / external deterministic index producer | schema + semantic contract tests |
+| Entrypoint map | `schema/security-entrypoint-map-v1.schema.json` / `artifacts/security/security-entrypoint-map.json` | manual / external deterministic entrypoint evidence producer | schema + semantic contract tests |
 | Audit tasks | `schema/security-audit-task-bundle-v1.schema.json` / `artifacts/security/security-audit-tasks.json` | `pnpm run security:proof-audit` | semantic contract tests, fixture golden comparison |
 | Candidate findings | `schema/security-finding-v1.schema.json` / `artifacts/security/security-findings.json` | `pnpm run security:proof-audit` with `--response-fixture` | candidate status checks, fixture golden comparison |
-| Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review` | Dead Code / Trust Boundary / Scope semantic checks |
+| Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review`（optional `--entrypoint-map`） | Dead Code / Trust Boundary / Scope semantic checks |
 | Assurance summary | `artifacts/assurance/assurance-summary.json` by default | `node scripts/assurance/aggregate-lanes.mjs` | `schema/assurance-summary.schema.json`, fixture golden comparison |
 | Claim-evidence manifest | `artifacts/assurance/claim-evidence-manifest.json` by default | `node scripts/assurance/build-claim-evidence-manifest.mjs` | `schema/claim-evidence-manifest.schema.json`, semantic validation |
 | Golden scenario | `fixtures/security-assurance/cache-key/` | `pnpm run test:security-assurance` | expected-vs-actual comparison and schema validation |
@@ -201,6 +208,7 @@ Codex / CodeX で段階実行する場合は `docs/integrations/CODEX-SECURITY-A
 
 - `security-finding/v1.status=candidate` は proof-attempt gap candidate を意味し、confirmed vulnerability ではありません。
 - `security-review/v1.result=needs-human-review` は candidate が未解決であることを意味します。
+- optional `security-entrypoint-map/v1` evidence により Trust Boundary gate の rationale を具体化できます。一致する reach evidence がない場合は `confirmed` ではなく `unknown` を維持します。
 - `result=out-of-scope`、`result=rejected`、`falsePositiveRootCause` は、candidate が actionable security evidence にならなかった理由を保持します。
 - high / critical の open candidate は summary 上で review pressure として表示されますが、MVP では未確認 candidate に対する policy behavior は report-only です。
 

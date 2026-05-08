@@ -81,6 +81,89 @@ function validateSymbolIndexUniqueIds(symbolIndexDocument, errors) {
   }
 }
 
+function validateEntrypointMapLocationRanges(entrypointMapDocument, errors) {
+  const entrypoints = Array.isArray(entrypointMapDocument?.entrypoints) ? entrypointMapDocument.entrypoints : [];
+  for (let entrypointIndex = 0; entrypointIndex < entrypoints.length; entrypointIndex += 1) {
+    const entrypoint = entrypoints[entrypointIndex];
+    if (Number.isInteger(entrypoint?.startLine) && Number.isInteger(entrypoint?.endLine) && entrypoint.endLine < entrypoint.startLine) {
+      errors.push(createError(
+        'line_range_order',
+        `/entrypoints/${entrypointIndex}/endLine`,
+        `endLine must be greater than or equal to startLine (${entrypoint.startLine}), got ${entrypoint.endLine}`,
+      ));
+    }
+
+    const reaches = Array.isArray(entrypoint?.reaches) ? entrypoint.reaches : [];
+    for (let reachIndex = 0; reachIndex < reaches.length; reachIndex += 1) {
+      const reach = reaches[reachIndex];
+      if (!Number.isInteger(reach?.startLine) || !Number.isInteger(reach?.endLine)) {
+        continue;
+      }
+      if (reach.endLine < reach.startLine) {
+        errors.push(createError(
+          'line_range_order',
+          `/entrypoints/${entrypointIndex}/reaches/${reachIndex}/endLine`,
+          `endLine must be greater than or equal to startLine (${reach.startLine}), got ${reach.endLine}`,
+        ));
+      }
+    }
+  }
+}
+
+function validateEntrypointMapUniqueIds(entrypointMapDocument, errors) {
+  const entrypoints = Array.isArray(entrypointMapDocument?.entrypoints) ? entrypointMapDocument.entrypoints : [];
+  const seen = new Map();
+  for (let entrypointIndex = 0; entrypointIndex < entrypoints.length; entrypointIndex += 1) {
+    const id = entrypoints[entrypointIndex]?.id;
+    if (typeof id !== 'string' || id.length === 0) {
+      continue;
+    }
+    if (seen.has(id)) {
+      errors.push(createError(
+        'duplicate_entrypoint_id',
+        `/entrypoints/${entrypointIndex}/id`,
+        `entrypoint id '${id}' duplicates /entrypoints/${seen.get(id)}/id`,
+      ));
+      continue;
+    }
+    seen.set(id, entrypointIndex);
+  }
+}
+
+function validateEntrypointMapSummary(entrypointMapDocument, errors) {
+  const entrypoints = Array.isArray(entrypointMapDocument?.entrypoints) ? entrypointMapDocument.entrypoints : [];
+  const summary = entrypointMapDocument?.summary;
+  if (!summary || typeof summary !== 'object') {
+    return;
+  }
+
+  const expectedTotal = entrypoints.length;
+  if (Number.isInteger(summary.totalEntrypoints) && summary.totalEntrypoints !== expectedTotal) {
+    errors.push(createError(
+      'summary_total_entrypoints_mismatch',
+      '/summary/totalEntrypoints',
+      `summary.totalEntrypoints must equal entrypoints.length (${expectedTotal}), got ${summary.totalEntrypoints}`,
+    ));
+  }
+
+  const expectedAttackerControlled = entrypoints.filter((entrypoint) => entrypoint?.attackerControlled === true).length;
+  if (Number.isInteger(summary.attackerControlledEntrypoints) && summary.attackerControlledEntrypoints !== expectedAttackerControlled) {
+    errors.push(createError(
+      'summary_attacker_controlled_entrypoints_mismatch',
+      '/summary/attackerControlledEntrypoints',
+      `summary.attackerControlledEntrypoints must equal attackerControlled entrypoints (${expectedAttackerControlled}), got ${summary.attackerControlledEntrypoints}`,
+    ));
+  }
+
+  const expectedReachableLocations = entrypoints.reduce((count, entrypoint) => count + (Array.isArray(entrypoint?.reaches) ? entrypoint.reaches.length : 0), 0);
+  if (Number.isInteger(summary.totalReachableLocations) && summary.totalReachableLocations !== expectedReachableLocations) {
+    errors.push(createError(
+      'summary_total_reachable_locations_mismatch',
+      '/summary/totalReachableLocations',
+      `summary.totalReachableLocations must equal total reaches (${expectedReachableLocations}), got ${summary.totalReachableLocations}`,
+    ));
+  }
+}
 
 function validateAuditTaskLocationRanges(taskBundleDocument, errors) {
   const tasks = Array.isArray(taskBundleDocument?.tasks) ? taskBundleDocument.tasks : [];
@@ -158,6 +241,14 @@ export function validateSymbolIndexSemantics(symbolIndexDocument) {
   const errors = [];
   validateSymbolIndexLocationRanges(symbolIndexDocument, errors);
   validateSymbolIndexUniqueIds(symbolIndexDocument, errors);
+  return errors;
+}
+
+export function validateSecurityEntrypointMapSemantics(entrypointMapDocument) {
+  const errors = [];
+  validateEntrypointMapLocationRanges(entrypointMapDocument, errors);
+  validateEntrypointMapUniqueIds(entrypointMapDocument, errors);
+  validateEntrypointMapSummary(entrypointMapDocument, errors);
   return errors;
 }
 

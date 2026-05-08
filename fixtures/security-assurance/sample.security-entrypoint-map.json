@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "security-entrypoint-map/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "entrypoints": [
+    {
+      "id": "EP-001",
+      "kind": "api-route",
+      "name": "POST /verify",
+      "path": "src/routes/verify.ts",
+      "startLine": 1,
+      "endLine": 30,
+      "trustBoundaryIds": [
+        "TB-001"
+      ],
+      "attackerControlled": true,
+      "reaches": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 7,
+          "endLine": 15,
+          "symbol": "buildCacheKey",
+          "reason": "The external verification route calls the authorization cache key builder."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalEntrypoints": 1,
+    "attackerControlledEntrypoints": 1,
+    "totalReachableLocations": 1,
+    "byKind": {
+      "api-route": 1
+    }
+  },
+  "provenance": {
+    "origin": "fixture",
+    "generator": "security-entrypoint-map-fixture",
+    "source": "fixtures/security-assurance/sample.security-entrypoint-map.json",
+    "scope": "fixtures/security-assurance/sample.security-audit-scope.json",
+    "target": "fixtures/security-assurance/target"
+  }
+}

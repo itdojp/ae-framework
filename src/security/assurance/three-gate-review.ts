@@ -86,6 +86,32 @@ type SecurityCodeMapDocument = {
   mappings: CodeMapMapping[];
 };
 
+type EntrypointReach = {
+  path: string;
+  startLine?: number;
+  endLine?: number;
+  symbol?: string;
+  reason?: string;
+};
+
+type SecurityEntrypoint = {
+  id: string;
+  kind: string;
+  name: string;
+  path: string;
+  startLine: number;
+  endLine: number;
+  trustBoundaryIds: string[];
+  attackerControlled: boolean;
+  reaches: EntrypointReach[];
+};
+
+type SecurityEntrypointMapDocument = {
+  schemaVersion: 'security-entrypoint-map/v1';
+  generatedAt?: string;
+  entrypoints: SecurityEntrypoint[];
+};
+
 export interface ReviewWarning {
   code: string;
   source?: string;
@@ -132,6 +158,7 @@ export interface SecurityReviewOptions {
   generatedAt?: string;
   repoRoot?: string;
   validate?: boolean;
+  entrypointMapPath?: string;
 }
 
 export interface SecurityReviewOutputPaths {
@@ -402,6 +429,78 @@ function parseCodeMapDocument(document: unknown, repoRoot?: string): SecurityCod
   return { schemaVersion: 'security-code-map/v1', mappings };
 }
 
+function parseEntrypointReach(rawReach: unknown, pathRef: string, repoRoot?: string): EntrypointReach {
+  if (!isRecord(rawReach)) {
+    throw new Error(`Entrypoint reach ${pathRef} must be an object.`);
+  }
+  const reachPath = asString(rawReach['path']);
+  if (!reachPath) {
+    throw new Error(`Entrypoint reach ${pathRef} must have a non-empty path.`);
+  }
+  const parsed: EntrypointReach = {
+    path: normalizeArtifactPath(reachPath, repoRoot),
+  };
+  if (typeof rawReach['startLine'] === 'number' || typeof rawReach['endLine'] === 'number') {
+    const startLine = typeof rawReach['startLine'] === 'number' ? Math.max(1, Math.floor(rawReach['startLine'])) : 1;
+    const rawEndLine = typeof rawReach['endLine'] === 'number' ? Math.max(1, Math.floor(rawReach['endLine'])) : startLine;
+    parsed.startLine = startLine;
+    parsed.endLine = Math.max(startLine, rawEndLine);
+  }
+  const symbol = asString(rawReach['symbol']);
+  if (symbol !== undefined) {
+    parsed.symbol = symbol;
+  }
+  const reason = asString(rawReach['reason']);
+  if (reason !== undefined) {
+    parsed.reason = reason;
+  }
+  return parsed;
+}
+
+function parseEntrypoint(rawEntrypoint: unknown, pathRef: string, repoRoot?: string): SecurityEntrypoint {
+  if (!isRecord(rawEntrypoint)) {
+    throw new Error(`Security entrypoint ${pathRef} must be an object.`);
+  }
+  const id = asString(rawEntrypoint['id']);
+  const kind = asString(rawEntrypoint['kind']);
+  const name = asString(rawEntrypoint['name']);
+  const entrypointPath = asString(rawEntrypoint['path']);
+  if (!id || !kind || !name || !entrypointPath) {
+    throw new Error(`Security entrypoint ${pathRef} must have non-empty id, kind, name, and path.`);
+  }
+  const startLine = typeof rawEntrypoint['startLine'] === 'number' ? Math.max(1, Math.floor(rawEntrypoint['startLine'])) : 1;
+  const rawEndLine = typeof rawEntrypoint['endLine'] === 'number' ? Math.max(1, Math.floor(rawEntrypoint['endLine'])) : startLine;
+  const reaches = Array.isArray(rawEntrypoint['reaches'])
+    ? rawEntrypoint['reaches'].map((rawReach, reachIndex) => parseEntrypointReach(rawReach, `${pathRef}/reaches/${reachIndex}`, repoRoot))
+    : [];
+  return {
+    id,
+    kind,
+    name,
+    path: normalizeArtifactPath(entrypointPath, repoRoot),
+    startLine,
+    endLine: Math.max(startLine, rawEndLine),
+    trustBoundaryIds: unique(asStringArray(rawEntrypoint['trustBoundaryIds'])),
+    attackerControlled: rawEntrypoint['attackerControlled'] === true,
+    reaches,
+  };
+}
+
+function parseEntrypointMapDocument(document: unknown, repoRoot?: string): SecurityEntrypointMapDocument {
+  if (!isRecord(document) || document['schemaVersion'] !== 'security-entrypoint-map/v1' || !Array.isArray(document['entrypoints'])) {
+    throw new Error('Expected security-entrypoint-map/v1 document with an entrypoints array.');
+  }
+  const entrypoints = document['entrypoints'].map((rawEntrypoint, entrypointIndex) =>
+    parseEntrypoint(rawEntrypoint, `/entrypoints/${entrypointIndex}`, repoRoot),
+  );
+  const parsed: SecurityEntrypointMapDocument = { schemaVersion: 'security-entrypoint-map/v1', entrypoints };
+  const generatedAt = asString(document['generatedAt']);
+  if (generatedAt !== undefined) {
+    parsed.generatedAt = generatedAt;
+  }
+  return parsed;
+}
+
 function matchingGlobs(pathRef: string, patterns: string[], repoRoot?: string): string[] {
   const normalizedPath = normalizeArtifactPath(pathRef, repoRoot);
   return patterns.filter((pattern) => minimatch(normalizedPath, normalizeArtifactPath(pattern, repoRoot), { dot: true, windowsPathsNoEscape: true }));
@@ -580,7 +679,102 @@ function referencedBoundaries(finding: SecurityFinding, scope: SecurityAuditScop
   return scope.trustBoundaries.filter((boundary) => boundaryKeys(boundary).some((key) => refs.includes(key)));
 }
 
-function decideTrustBoundary(finding: SecurityFinding, scope: SecurityAuditScopeDocument, scopeDecision: GateDecision, deadCodeDecision: GateDecision): GateDecision {
+function locationRef(location: { path: string; startLine: number; endLine: number }): string {
+  return `${location.path}:${location.startLine}-${location.endLine}`;
+}
+
+function entrypointReachMatchesAffectedLocation(reach: EntrypointReach, affectedLocation: AffectedLocation): boolean {
+  if (!sameLocationPath(reach.path, affectedLocation.path)) {
+    return false;
+  }
+  if (reach.startLine !== undefined && reach.endLine !== undefined) {
+    const reachRange = { startLine: reach.startLine, endLine: reach.endLine };
+    if (!locationsOverlap(reachRange, affectedLocation)) {
+      return false;
+    }
+  }
+  if (reach.symbol && affectedLocation.symbol && reach.symbol !== affectedLocation.symbol) {
+    return false;
+  }
+  return true;
+}
+
+type EntrypointReachMatch = {
+  entrypoint: SecurityEntrypoint;
+  reach: EntrypointReach;
+  matchedBoundaryIds: string[];
+};
+
+function entrypointScopeBoundaryIds(entrypoint: SecurityEntrypoint, scope: SecurityAuditScopeDocument): string[] {
+  const scopeBoundaryIds = new Set(scope.trustBoundaries.map((boundary) => boundary.id));
+  return entrypoint.trustBoundaryIds.filter((boundaryId) => scopeBoundaryIds.has(boundaryId));
+}
+
+function matchingEntrypointReachEvidence(
+  finding: SecurityFinding,
+  scope: SecurityAuditScopeDocument,
+  entrypointMap: SecurityEntrypointMapDocument,
+): EntrypointReachMatch[] {
+  const matches: EntrypointReachMatch[] = [];
+  for (const entrypoint of entrypointMap.entrypoints) {
+    const matchedBoundaryIds = entrypointScopeBoundaryIds(entrypoint, scope);
+    for (const reach of entrypoint.reaches) {
+      if (finding.affectedLocations.some((affectedLocation) => entrypointReachMatchesAffectedLocation(reach, affectedLocation))) {
+        matches.push({ entrypoint, reach, matchedBoundaryIds });
+      }
+    }
+  }
+  return matches;
+}
+
+function evidenceRefsForEntrypointMatches(matches: EntrypointReachMatch[]): string[] {
+  return unique(
+    matches.flatMap((match) => [
+      match.entrypoint.id,
+      ...match.matchedBoundaryIds,
+      match.reach.startLine !== undefined && match.reach.endLine !== undefined ? locationRef({ path: match.reach.path, startLine: match.reach.startLine, endLine: match.reach.endLine }) : match.reach.path,
+    ]),
+  );
+}
+
+function decideTrustBoundaryFromEntrypoints(
+  finding: SecurityFinding,
+  scope: SecurityAuditScopeDocument,
+  entrypointMap: SecurityEntrypointMapDocument,
+): GateDecision {
+  const reachMatches = matchingEntrypointReachEvidence(finding, scope, entrypointMap);
+  const scopedMatches = reachMatches.filter((match) => match.matchedBoundaryIds.length > 0);
+
+  if (scopedMatches.length === 0) {
+    return {
+      result: 'unknown',
+      rationale: 'No entrypoint-map reachability evidence matched affected locations and audit scope trust boundaries.',
+    };
+  }
+
+  const attackerControlledMatches = scopedMatches.filter((match) => match.entrypoint.attackerControlled);
+  if (attackerControlledMatches.length > 0) {
+    return {
+      result: 'pass',
+      rationale: `Matched attacker-controlled entrypoint evidence: ${unique(attackerControlledMatches.map((match) => match.entrypoint.id)).join(', ')}.`,
+      evidenceRefs: evidenceRefsForEntrypointMatches(attackerControlledMatches),
+    };
+  }
+
+  return {
+    result: 'fail',
+    rationale: `Matching entrypoint evidence is not attacker-controlled: ${unique(scopedMatches.map((match) => match.entrypoint.id)).join(', ')}.`,
+    evidenceRefs: evidenceRefsForEntrypointMatches(scopedMatches),
+  };
+}
+
+function decideTrustBoundary(
+  finding: SecurityFinding,
+  scope: SecurityAuditScopeDocument,
+  scopeDecision: GateDecision,
+  deadCodeDecision: GateDecision,
+  entrypointMap?: SecurityEntrypointMapDocument,
+): GateDecision {
   if (finding.status !== 'candidate' && finding.status !== 'needs-human-review') {
     return {
       result: 'not-applicable',
@@ -600,6 +794,10 @@ function decideTrustBoundary(finding: SecurityFinding, scope: SecurityAuditScope
       result: 'unknown',
       rationale: 'Trust-boundary involvement remains unknown because the dead-code gate failed first.',
     };
+  }
+
+  if (entrypointMap) {
+    return decideTrustBoundaryFromEntrypoints(finding, scope, entrypointMap);
   }
 
   const matchedBoundaries = referencedBoundaries(finding, scope);
@@ -679,10 +877,17 @@ function reviewerNotesFor(finding: SecurityFinding, gates: SecurityReviewEntry['
   return unique(notes);
 }
 
-function reviewEntryForFinding(finding: SecurityFinding, scope: SecurityAuditScopeDocument, codeMapByClaim: Map<string, CodeMapMapping>, generatedAt: string, repoRoot?: string): SecurityReviewEntry {
+function reviewEntryForFinding(
+  finding: SecurityFinding,
+  scope: SecurityAuditScopeDocument,
+  codeMapByClaim: Map<string, CodeMapMapping>,
+  generatedAt: string,
+  repoRoot?: string,
+  entrypointMap?: SecurityEntrypointMapDocument,
+): SecurityReviewEntry {
   const scopeDetails = decideScope(finding, scope, repoRoot);
   const deadCodeDetails = decideDeadCode(finding, codeMapByClaim, scopeDetails.decision);
-  const trustBoundary = decideTrustBoundary(finding, scope, scopeDetails.decision, deadCodeDetails.decision);
+  const trustBoundary = decideTrustBoundary(finding, scope, scopeDetails.decision, deadCodeDetails.decision, entrypointMap);
   const gates = {
     deadCode: deadCodeDetails.decision,
     trustBoundary,
@@ -763,9 +968,10 @@ export function buildSecurityThreeGateReview(
   codeMap: SecurityCodeMapDocument,
   generatedAt: string,
   repoRoot?: string,
+  entrypointMap?: SecurityEntrypointMapDocument,
 ): SecurityReviewDocument {
   const codeMapByClaim = new Map(codeMap.mappings.map((mapping) => [mapping.claimId, mapping]));
-  const reviews = findings.findings.map((finding) => reviewEntryForFinding(finding, scope, codeMapByClaim, generatedAt, repoRoot));
+  const reviews = findings.findings.map((finding) => reviewEntryForFinding(finding, scope, codeMapByClaim, generatedAt, repoRoot, entrypointMap));
   return {
     schemaVersion: 'security-review/v1',
     generatedAt,
@@ -846,24 +1052,30 @@ export async function generateSecurityThreeGateReview(
   const schemaRoot = resolveSchemaRoot(options.repoRoot);
   const artifactRepoRoot = options.repoRoot ?? schemaRoot;
 
-  const [findingsDocument, scopeDocument, codeMapDocument] = await Promise.all([
+  const [findingsDocument, scopeDocument, codeMapDocument, entrypointMapDocument] = await Promise.all([
     loadJson(findingsPath),
     loadJson(scopePath),
-      loadJson(codeMapPath),
+    loadJson(codeMapPath),
+    options.entrypointMapPath ? loadJson(options.entrypointMapPath) : Promise.resolve(undefined),
   ]);
 
   if (shouldValidate) {
-    await Promise.all([
+    const validationTasks = [
       validateWithSchema(schemaRoot, 'security-finding-v1.schema.json', findingsDocument, 'security-finding/v1 input'),
       validateWithSchema(schemaRoot, 'security-audit-scope-v1.schema.json', scopeDocument, 'security-audit-scope/v1 input'),
       validateWithSchema(schemaRoot, 'security-code-map-v1.schema.json', codeMapDocument, 'security-code-map/v1 input'),
-    ]);
+    ];
+    if (entrypointMapDocument !== undefined) {
+      validationTasks.push(validateWithSchema(schemaRoot, 'security-entrypoint-map-v1.schema.json', entrypointMapDocument, 'security-entrypoint-map/v1 input'));
+    }
+    await Promise.all(validationTasks);
   }
 
   const findings = parseFindingDocument(findingsDocument, artifactRepoRoot);
   const scope = parseScopeDocument(scopeDocument, artifactRepoRoot);
   const codeMap = parseCodeMapDocument(codeMapDocument, artifactRepoRoot);
-  const review = buildSecurityThreeGateReview(findings, scope, codeMap, generatedAt, artifactRepoRoot);
+  const entrypointMap = entrypointMapDocument === undefined ? undefined : parseEntrypointMapDocument(entrypointMapDocument, artifactRepoRoot);
+  const review = buildSecurityThreeGateReview(findings, scope, codeMap, generatedAt, artifactRepoRoot, entrypointMap);
   const warnings: ReviewWarning[] = [];
   const outputPaths = outputPathsFor(outPath);
   const result: SecurityReviewResult = { generatedAt, review, warnings, outputPaths };
