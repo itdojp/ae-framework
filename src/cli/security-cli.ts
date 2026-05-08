@@ -3,6 +3,8 @@
  * Provides commands to test and manage security headers
  */
 
+import path from 'node:path';
+import { tmpdir } from 'node:os';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { createServer } from '../api/server.js';
@@ -14,6 +16,41 @@ import { extractSecurityClaimsFromSpec } from '../security/assurance/claim-extra
 import { importSpecaLikeSecurityArtifacts } from '../security/assurance/speca-import.js';
 import { generateSecurityProofAudit } from '../security/assurance/proof-audit.js';
 import { generateSecurityThreeGateReview } from '../security/assurance/three-gate-review.js';
+import { normalizeArtifactPath } from '../utils/path-normalization.js';
+
+
+function pathHasTraversalSegment(value: string): boolean {
+  return value
+    .replace(/\\/g, '/')
+    .split('/')
+    .some((segment) => segment === '..');
+}
+
+function isInsideDirectory(parentDir: string, candidatePath: string): boolean {
+  const relative = path.relative(parentDir, candidatePath);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function assertSafeSecurityOutputPath(value: string, optionName = '--out'): string {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    throw new Error(`Unsafe ${optionName} path: output path must not be empty.`);
+  }
+  if (pathHasTraversalSegment(raw)) {
+    throw new Error(`Unsafe ${optionName} path: path traversal segments are not allowed.`);
+  }
+
+  const resolved = path.resolve(raw);
+  const allowedRoots = [process.cwd(), tmpdir()].map((entry) => path.resolve(entry));
+  if (!allowedRoots.some((root) => isInsideDirectory(root, resolved))) {
+    throw new Error(`Unsafe ${optionName} path: absolute output paths must stay under the current working directory or the OS temp directory.`);
+  }
+  return raw;
+}
+
+function displayArtifactPath(value: string): string {
+  return normalizeArtifactPath(value, { repoRoot: process.cwd() }) ?? value.replace(/\\/g, '/');
+}
 
 export function createSecurityCommand(): Command {
   const security = new Command('security');
@@ -30,7 +67,8 @@ export function createSecurityCommand(): Command {
     .option('--no-validate', 'Skip schema validation for input and generated artifacts')
     .action(async (options) => {
       try {
-        const result = await generateSecurityThreeGateReview(options.findings, options.scope, options.codeMap, options.out, {
+        const outPath = assertSafeSecurityOutputPath(options.out);
+        const result = await generateSecurityThreeGateReview(options.findings, options.scope, options.codeMap, outPath, {
           generatedAt: options.generatedAt,
           validate: options.validate,
         });
@@ -41,8 +79,8 @@ export function createSecurityCommand(): Command {
         console.log(`Rejected: ${result.review.summary.byResult.rejected}`);
         console.log(`Out of scope: ${result.review.summary.byResult.outOfScope}`);
         console.log(`Warnings: ${result.warnings.length}`);
-        console.log(`Output: ${result.outputPaths.review}`);
-        console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
+        console.log(`Output: ${displayArtifactPath(result.outputPaths.review)}`);
+        console.log(`Summary: ${displayArtifactPath(result.outputPaths.summaryMarkdown)}`);
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Security three-gate review failed: ${toMessage(error)}`));
         safeExit(1);
@@ -61,7 +99,8 @@ export function createSecurityCommand(): Command {
     .option('--no-validate', 'Skip schema validation for input and generated artifacts')
     .action(async (options) => {
       try {
-        const result = await generateSecurityProofAudit(options.claims, options.codeMap, options.scope, options.out, {
+        const outPath = assertSafeSecurityOutputPath(options.out);
+        const result = await generateSecurityProofAudit(options.claims, options.codeMap, options.scope, outPath, {
           generatedAt: options.generatedAt,
           validate: options.validate,
           responseFixture: options.responseFixture,
@@ -74,13 +113,13 @@ export function createSecurityCommand(): Command {
         console.log(`Findings: ${result.findings?.summary.totalFindings ?? 0}`);
         console.log(`No-finding responses: ${result.responseSummary.noFindingResponses}`);
         console.log(`Warnings: ${result.warnings.length}`);
-        console.log(`Tasks: ${result.outputPaths.tasks}`);
+        console.log(`Tasks: ${displayArtifactPath(result.outputPaths.tasks)}`);
         if (result.findings && result.outputPaths.findings) {
-          console.log(`Findings output: ${result.outputPaths.findings}`);
+          console.log(`Findings output: ${displayArtifactPath(result.outputPaths.findings)}`);
         } else {
           console.log('Findings output: not generated (dry-run or all responses were no-finding)');
         }
-        console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
+        console.log(`Summary: ${displayArtifactPath(result.outputPaths.summaryMarkdown)}`);
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Security proof-attempt audit failed: ${toMessage(error)}`));
         safeExit(1);
@@ -98,7 +137,8 @@ export function createSecurityCommand(): Command {
     .option('--no-validate', 'Skip schema validation for input and generated artifacts')
     .action(async (options) => {
       try {
-        const result = await generateSecurityCodeMap(options.claims, options.scope, options.target, options.out, {
+        const outPath = assertSafeSecurityOutputPath(options.out);
+        const result = await generateSecurityCodeMap(options.claims, options.scope, options.target, outPath, {
           generatedAt: options.generatedAt,
           validate: options.validate,
         });
@@ -108,8 +148,8 @@ export function createSecurityCommand(): Command {
         console.log(`Mapped claims: ${result.codeMap.summary.mappedClaims}`);
         console.log(`Candidate locations: ${result.codeMap.summary.totalCandidateLocations}`);
         console.log(`Warnings: ${result.warnings.length}`);
-        console.log(`Output: ${result.outputPaths.codeMap}`);
-        console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
+        console.log(`Output: ${displayArtifactPath(result.outputPaths.codeMap)}`);
+        console.log(`Summary: ${displayArtifactPath(result.outputPaths.summaryMarkdown)}`);
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Security code-map generation failed: ${toMessage(error)}`));
         safeExit(1);
@@ -125,7 +165,8 @@ export function createSecurityCommand(): Command {
     .option('--no-validate', 'Skip schema validation for generated artifacts')
     .action(async (options) => {
       try {
-        const result = await extractSecurityClaimsFromSpec(options.spec, options.out, {
+        const outPath = assertSafeSecurityOutputPath(options.out);
+        const result = await extractSecurityClaimsFromSpec(options.spec, outPath, {
           generatedAt: options.generatedAt,
           validate: options.validate,
         });
@@ -133,8 +174,8 @@ export function createSecurityCommand(): Command {
         console.log(chalk.green('✅ Security claims extraction completed'));
         console.log(`Claims: ${result.claims.claims.length}`);
         console.log(`Warnings: ${result.warnings.length}`);
-        console.log(`Output: ${result.outputPaths.claims}`);
-        console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
+        console.log(`Output: ${displayArtifactPath(result.outputPaths.claims)}`);
+        console.log(`Summary: ${displayArtifactPath(result.outputPaths.summaryMarkdown)}`);
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Security claims extraction failed: ${toMessage(error)}`));
         safeExit(1);
@@ -150,7 +191,8 @@ export function createSecurityCommand(): Command {
     .option('--no-validate', 'Skip schema validation for generated artifacts')
     .action(async (options) => {
       try {
-        const result = await importSpecaLikeSecurityArtifacts(options.input, options.out, {
+        const outPath = assertSafeSecurityOutputPath(options.out);
+        const result = await importSpecaLikeSecurityArtifacts(options.input, outPath, {
           generatedAt: options.generatedAt,
           validate: options.validate,
         });
@@ -161,7 +203,7 @@ export function createSecurityCommand(): Command {
         console.log(`Findings: ${result.artifacts.findings.findings.length}`);
         console.log(`Reviews: ${result.artifacts.review.reviews.length}`);
         console.log(`Warnings: ${result.warnings.length}`);
-        console.log(`Summary: ${result.outputPaths.summaryMarkdown}`);
+        console.log(`Summary: ${displayArtifactPath(result.outputPaths.summaryMarkdown)}`);
       } catch (error: unknown) {
         console.error(chalk.red(`❌ SPECA-compatible security import failed: ${toMessage(error)}`));
         safeExit(1);

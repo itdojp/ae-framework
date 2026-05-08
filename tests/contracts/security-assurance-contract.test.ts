@@ -35,6 +35,11 @@ const fixtures = {
   review: loadJson('fixtures/security-assurance/sample.security-review.json'),
 };
 
+const boundaryFixtures = {
+  multipleReviewRecords: loadJson('fixtures/security-assurance/boundary-cases/multiple-review-records.security-review.json'),
+  trustBoundaryUnknown: loadJson('fixtures/security-assurance/boundary-cases/trust-boundary-unknown.security-review.json'),
+};
+
 const buildValidator = (schema: JsonObject) => {
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   addFormats(ajv);
@@ -378,6 +383,33 @@ describe('security assurance contracts', () => {
         instancePath: '/reviews/1/falsePositiveRootCause',
       }),
     ]);
+  });
+
+
+  it('keeps boundary security review fixtures schema-valid', () => {
+    const validate = buildValidator(schemas.review);
+
+    expect(validate(boundaryFixtures.multipleReviewRecords), JSON.stringify(validate.errors)).toBe(true);
+    expect(validateSecurityReviewSemantics(boundaryFixtures.multipleReviewRecords)).toHaveLength(0);
+    expect(validate(boundaryFixtures.trustBoundaryUnknown), JSON.stringify(validate.errors)).toBe(true);
+    expect(validateSecurityReviewSemantics(boundaryFixtures.trustBoundaryUnknown)).toHaveLength(0);
+  });
+
+  it('allows multiple review records for a single candidate finding', () => {
+    const reviews = boundaryFixtures.multipleReviewRecords.reviews as Array<{ findingId: string; result: string }>;
+
+    expect(reviews.filter((review) => review.findingId === 'SEC-FINDING-001')).toHaveLength(2);
+    expect(reviews.map((review) => review.result)).toEqual(['needs-human-review', 'confirmed']);
+  });
+
+  it('preserves trust-boundary unknown as a candidate-first review scenario', () => {
+    const reviews = boundaryFixtures.trustBoundaryUnknown.reviews as Array<{
+      result: string;
+      gates: { trustBoundary: { result: string } };
+    }>;
+
+    expect(reviews[0]?.result).toBe('needs-human-review');
+    expect(reviews[0]?.gates.trustBoundary.result).toBe('unknown');
   });
 
   it('keeps security reviews connected to security finding ids', () => {

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "security-audit-response-fixture/v1",
+  "responses": [
+    {
+      "taskId": "SEC-AUDIT-TASK-001",
+      "claimId": "SEC-CLAIM-001",
+      "result": "no-finding",
+      "rationale": "Boundary fixture: deterministic proof attempt found no candidate vulnerability for the mapped claim."
+    }
+  ]
+}
