@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "security-audit-prompt-pack/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "tasks": [
+    {
+      "taskId": "SEC-AUDIT-TASK-001",
+      "claimId": "SEC-CLAIM-001",
+      "promptPath": "artifacts/security/codex-audit-prompts/prompts/SEC-AUDIT-TASK-001.md",
+      "status": "ready",
+      "sourceTaskStatus": "ready",
+      "claim": {
+        "statement": "Cache key must include all attacker-controlled fields that affect the verification result.",
+        "type": "invariant",
+        "criticality": "high",
+        "targetLevel": "A2"
+      },
+      "scopeRefs": [
+        "TB-001",
+        "api",
+        "p2p"
+      ],
+      "candidateLocations": [
+        {
+          "path": "src/cache.ts",
+          "startLine": 7,
+          "endLine": 15,
+          "reason": "Matched security claim terms in buildCacheKey: attacker, cache, controlled, fields, input, key, verification.",
+          "symbol": "buildCacheKey",
+          "matchedTerms": [
+            "attacker",
+            "cache",
+            "controlled",
+            "fields",
+            "input",
+            "key",
+            "verification"
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalTasks": 1,
+    "readyTasks": 1,
+    "blockedTasks": 0,
+    "totalCandidateLocations": 1,
+    "totalWarnings": 0
+  },
+  "provenance": {
+    "origin": "deterministic",
+    "generator": "security-audit-prompt-pack",
+    "tasks": "fixtures/security-assurance/sample.security-audit-tasks.json",
+    "codeMap": "fixtures/security-assurance/sample.security-code-map.json",
+    "claims": "fixtures/security-assurance/sample.security-claims.json"
+  }
+}

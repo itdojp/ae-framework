@@ -186,6 +186,94 @@ function validateAuditTaskLocationRanges(taskBundleDocument, errors) {
   }
 }
 
+function validatePromptPackLocationRanges(promptPackDocument, errors) {
+  const tasks = Array.isArray(promptPackDocument?.tasks) ? promptPackDocument.tasks : [];
+  for (let taskIndex = 0; taskIndex < tasks.length; taskIndex += 1) {
+    const task = tasks[taskIndex];
+    const locations = Array.isArray(task?.candidateLocations) ? task.candidateLocations : [];
+    for (let locationIndex = 0; locationIndex < locations.length; locationIndex += 1) {
+      const location = locations[locationIndex];
+      if (!Number.isInteger(location?.startLine) || !Number.isInteger(location?.endLine)) {
+        continue;
+      }
+      if (location.endLine < location.startLine) {
+        errors.push(createError(
+          'line_range_order',
+          `/tasks/${taskIndex}/candidateLocations/${locationIndex}/endLine`,
+          `endLine must be greater than or equal to startLine (${location.startLine}), got ${location.endLine}`,
+        ));
+      }
+    }
+  }
+}
+
+function validatePromptPackSummary(promptPackDocument, errors) {
+  const tasks = Array.isArray(promptPackDocument?.tasks) ? promptPackDocument.tasks : [];
+  const summary = promptPackDocument?.summary;
+  if (!summary || typeof summary !== 'object') {
+    return;
+  }
+  const readyTasks = tasks.filter((task) => task?.status === 'ready').length;
+  const blockedTasks = tasks.filter((task) => task?.status === 'blocked').length;
+  const totalCandidateLocations = tasks.reduce((count, task) => count + (Array.isArray(task?.candidateLocations) ? task.candidateLocations.length : 0), 0);
+  const totalTaskWarnings = tasks.reduce((count, task) => count + (Array.isArray(task?.warnings) ? task.warnings.length : 0), 0);
+  const totalDocumentWarnings = Array.isArray(promptPackDocument?.warnings) ? promptPackDocument.warnings.length : 0;
+  const expected = {
+    totalTasks: tasks.length,
+    readyTasks,
+    blockedTasks,
+    totalCandidateLocations,
+    totalWarnings: totalTaskWarnings + totalDocumentWarnings,
+  };
+  for (const [field, value] of Object.entries(expected)) {
+    if (Number.isInteger(summary[field]) && summary[field] !== value) {
+      errors.push(createError(
+        'summary_count_mismatch',
+        `/summary/${field}`,
+        `summary.${field} must equal ${value}, got ${summary[field]}`,
+      ));
+    }
+  }
+}
+
+function validatePromptPackPromptPaths(promptPackDocument, errors) {
+  const tasks = Array.isArray(promptPackDocument?.tasks) ? promptPackDocument.tasks : [];
+  const seen = new Map();
+  for (let taskIndex = 0; taskIndex < tasks.length; taskIndex += 1) {
+    const promptPath = tasks[taskIndex]?.promptPath;
+    if (typeof promptPath !== 'string' || promptPath.length === 0) {
+      continue;
+    }
+    if (seen.has(promptPath)) {
+      errors.push(createError(
+        'duplicate_prompt_path',
+        `/tasks/${taskIndex}/promptPath`,
+        `promptPath '${promptPath}' duplicates /tasks/${seen.get(promptPath)}/promptPath`,
+      ));
+      continue;
+    }
+    seen.set(promptPath, taskIndex);
+  }
+}
+
+function validatePromptPackReadyTasks(promptPackDocument, errors) {
+  const tasks = Array.isArray(promptPackDocument?.tasks) ? promptPackDocument.tasks : [];
+  for (let taskIndex = 0; taskIndex < tasks.length; taskIndex += 1) {
+    const task = tasks[taskIndex];
+    if (task?.status !== 'ready') {
+      continue;
+    }
+    const locations = Array.isArray(task?.candidateLocations) ? task.candidateLocations : [];
+    if (locations.length === 0) {
+      errors.push(createError(
+        'ready_task_missing_candidate_location',
+        `/tasks/${taskIndex}/candidateLocations`,
+        'ready prompt tasks must include at least one candidate location',
+      ));
+    }
+  }
+}
+
 function validateReviewRootCauseConsistency(reviewDocument, errors) {
   const unresolvedOrNonFalsePositiveResults = new Set([
     'needs-human-review',
@@ -281,6 +369,15 @@ export function validateSecurityFindingSemantics(findingsDocument) {
 export function validateSecurityAuditTaskBundleSemantics(taskBundleDocument) {
   const errors = [];
   validateAuditTaskLocationRanges(taskBundleDocument, errors);
+  return errors;
+}
+
+export function validateSecurityAuditPromptPackSemantics(promptPackDocument) {
+  const errors = [];
+  validatePromptPackLocationRanges(promptPackDocument, errors);
+  validatePromptPackSummary(promptPackDocument, errors);
+  validatePromptPackPromptPaths(promptPackDocument, errors);
+  validatePromptPackReadyTasks(promptPackDocument, errors);
   return errors;
 }
 
