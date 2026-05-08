@@ -65,7 +65,7 @@ Out of scope for the MVP:
 | Entrypoint map | `schema/security-entrypoint-map-v1.schema.json` / `artifacts/security/security-entrypoint-map.json` | manual / external deterministic entrypoint evidence producer | schema + semantic contract tests |
 | Audit tasks | `schema/security-audit-task-bundle-v1.schema.json` / `artifacts/security/security-audit-tasks.json` | `pnpm run security:proof-audit` | semantic contract tests, fixture golden comparison |
 | Candidate findings | `schema/security-finding-v1.schema.json` / `artifacts/security/security-findings.json` | `pnpm run security:proof-audit` with `--response-fixture` | candidate status checks, fixture golden comparison |
-| Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review` (optionally `--entrypoint-map`) | Dead Code / Trust Boundary / Scope semantic checks |
+| Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review` (optionally `--claims`, `--entrypoint-map`) | Dead Code / Trust Boundary / Scope semantic checks |
 | Assurance summary | `artifacts/assurance/assurance-summary.json` by default | `node scripts/assurance/aggregate-lanes.mjs` | `schema/assurance-summary.schema.json`, fixture golden comparison |
 | Claim-evidence manifest | `artifacts/assurance/claim-evidence-manifest.json` by default | `node scripts/assurance/build-claim-evidence-manifest.mjs` | `schema/claim-evidence-manifest.schema.json`, semantic validation |
 | Golden scenario | `fixtures/security-assurance/cache-key/` | `pnpm run test:security-assurance` | expected-vs-actual comparison and schema validation |
@@ -86,6 +86,7 @@ Expected behavior for the canonical `cache-key` scenario:
 - 2 candidate findings are emitted from fixture-backed proof-attempt responses.
 - 1 finding remains `needs-human-review`.
 - 1 finding is classified as `out-of-scope` by the Scope gate.
+- The assumption-derived out-of-scope finding is retained as `assumptionHandling.mode=residual-risk` in review, assurance summary, and claim-evidence manifest artifacts.
 - Assurance summary and claim-evidence manifest are generated and compared with golden artifacts.
 
 For step-by-step Codex / CodeX operation, use `docs/integrations/CODEX-SECURITY-AUDIT.md`.
@@ -94,6 +95,8 @@ For step-by-step Codex / CodeX operation, use `docs/integrations/CODEX-SECURITY-
 
 - `security-finding/v1.status=candidate` means the lane found a proof-attempt gap candidate, not a confirmed vulnerability.
 - `security-review/v1.result=needs-human-review` means the candidate remains unresolved.
+- When `ae security review --claims` is supplied, `security-review/v1.claimType` records the originating `security-claim/v1.type`.
+- Assumption-derived findings use `assumptionHandling.mode=assumption-validation-required` for unresolved / confirmed dispositions and `residual-risk` for rejected, out-of-scope, or waived dispositions. Downstream summaries display this separately from invariant / precondition / postcondition findings.
 - Optional `security-entrypoint-map/v1` evidence can make the Trust Boundary gate rationale more specific; absence of matching reach evidence remains `unknown`, not `confirmed`.
 - `result=out-of-scope`, `result=rejected`, and `falsePositiveRootCause` preserve why a candidate did not become actionable security evidence.
 - High/critical open candidates are surfaced to summaries as review pressure, but the MVP keeps policy behavior report-only for unconfirmed candidates.
@@ -179,7 +182,7 @@ MVP の対象外:
 | Entrypoint map | `schema/security-entrypoint-map-v1.schema.json` / `artifacts/security/security-entrypoint-map.json` | manual / external deterministic entrypoint evidence producer | schema + semantic contract tests |
 | Audit tasks | `schema/security-audit-task-bundle-v1.schema.json` / `artifacts/security/security-audit-tasks.json` | `pnpm run security:proof-audit` | semantic contract tests, fixture golden comparison |
 | Candidate findings | `schema/security-finding-v1.schema.json` / `artifacts/security/security-findings.json` | `pnpm run security:proof-audit` with `--response-fixture` | candidate status checks, fixture golden comparison |
-| Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review`（optional `--entrypoint-map`） | Dead Code / Trust Boundary / Scope semantic checks |
+| Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review`（optional `--claims`、`--entrypoint-map`） | Dead Code / Trust Boundary / Scope semantic checks |
 | Assurance summary | `artifacts/assurance/assurance-summary.json` by default | `node scripts/assurance/aggregate-lanes.mjs` | `schema/assurance-summary.schema.json`, fixture golden comparison |
 | Claim-evidence manifest | `artifacts/assurance/claim-evidence-manifest.json` by default | `node scripts/assurance/build-claim-evidence-manifest.mjs` | `schema/claim-evidence-manifest.schema.json`, semantic validation |
 | Golden scenario | `fixtures/security-assurance/cache-key/` | `pnpm run test:security-assurance` | expected-vs-actual comparison and schema validation |
@@ -200,6 +203,7 @@ pnpm -s run test:security-assurance
 - fixture-backed proof-attempt response から candidate finding が 2 件生成される。
 - 1 件は `needs-human-review` として残る。
 - 1 件は Scope gate により `out-of-scope` に分類される。
+- assumption 由来の out-of-scope finding は review、assurance summary、claim-evidence manifest の各 artifact で `assumptionHandling.mode=residual-risk` として保持される。
 - assurance summary と claim-evidence manifest が生成され、golden artifact と比較される。
 
 Codex / CodeX で段階実行する場合は `docs/integrations/CODEX-SECURITY-AUDIT.md` を使います。
@@ -208,6 +212,8 @@ Codex / CodeX で段階実行する場合は `docs/integrations/CODEX-SECURITY-A
 
 - `security-finding/v1.status=candidate` は proof-attempt gap candidate を意味し、confirmed vulnerability ではありません。
 - `security-review/v1.result=needs-human-review` は candidate が未解決であることを意味します。
+- `ae security review --claims` を指定すると、`security-review/v1.claimType` に元の `security-claim/v1.type` を記録します。
+- assumption 由来の finding は、未解決 / confirmed の場合に `assumptionHandling.mode=assumption-validation-required`、rejected / out-of-scope / waived の場合に `residual-risk` として扱います。後続 summary では invariant / precondition / postcondition 由来の finding と分離して表示します。
 - optional `security-entrypoint-map/v1` evidence により Trust Boundary gate の rationale を具体化できます。一致する reach evidence がない場合は `confirmed` ではなく `unknown` を維持します。
 - `result=out-of-scope`、`result=rejected`、`falsePositiveRootCause` は、candidate が actionable security evidence にならなかった理由を保持します。
 - high / critical の open candidate は summary 上で review pressure として表示されますが、MVP では未確認 candidate に対する policy behavior は report-only です。

@@ -327,6 +327,7 @@ describe.sequential('assurance aggregate lanes script', () => {
       const securityClaim = summary.claims.find((claim: { claimId: string }) => claim.claimId === 'SEC-CLAIM-001');
       expect(securityClaim).toMatchObject({
         criticality: 'high',
+        securityClaimType: 'invariant',
         observedLanes: ['spec', 'adversarial'],
         missingLanes: ['behavior'],
       });
@@ -343,6 +344,123 @@ describe.sequential('assurance aggregate lanes script', () => {
       });
       expect(securityClaim.independenceWarnings).toContain('unresolved-critical-counterexample');
       expect(readFileSync(outputMd, 'utf8')).toContain('SEC-CLAIM-001');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('treats assumption validation requirements as claim warnings', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-aggregate-assumption-warning-'));
+    const assuranceProfilePath = join(sandbox, 'assurance-profile.json');
+    const securityClaimsPath = join(sandbox, 'security-claims.json');
+    const securityFindingsPath = join(sandbox, 'security-findings.json');
+    const securityReviewPath = join(sandbox, 'security-review.json');
+    const outputJson = join(sandbox, 'assurance-summary.json');
+
+    try {
+      writeJson(assuranceProfilePath, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'assumption-warning-profile',
+        claims: [
+          {
+            id: 'SEC-CLAIM-ASSUMPTION',
+            statement: 'Deployment topology assumption must be validated before vulnerability interpretation.',
+            criticality: 'low',
+            targetLevel: 'A1',
+            minIndependentSources: 1,
+            requiredLanes: ['spec', 'adversarial'],
+            requiredEvidenceKinds: [],
+          },
+        ],
+      });
+      writeJson(securityClaimsPath, {
+        schemaVersion: 'security-claim/v1',
+        claims: [
+          {
+            id: 'SEC-CLAIM-ASSUMPTION',
+            type: 'assumption',
+            statement: 'Deployment topology assumption must be validated before vulnerability interpretation.',
+            criticality: 'low',
+            targetLevel: 'A1',
+            minIndependentSources: 1,
+            requiredLanes: ['spec', 'adversarial'],
+          },
+        ],
+      });
+      writeJson(securityFindingsPath, {
+        schemaVersion: 'security-finding/v1',
+        findings: [
+          {
+            id: 'SEC-FINDING-ASSUMPTION',
+            claimId: 'SEC-CLAIM-ASSUMPTION',
+            status: 'candidate',
+            severity: 'low',
+            title: 'Assumption validation required',
+            summary: 'The finding depends on an unvalidated deployment assumption.',
+            affectedLocations: [],
+            provenance: { origin: 'fixture', generator: 'assumption-warning-test' },
+          },
+        ],
+      });
+      writeJson(securityReviewPath, {
+        schemaVersion: 'security-review/v1',
+        reviews: [
+          {
+            findingId: 'SEC-FINDING-ASSUMPTION',
+            claimId: 'SEC-CLAIM-ASSUMPTION',
+            claimType: 'assumption',
+            severity: 'low',
+            result: 'needs-human-review',
+            gates: {
+              deadCode: { result: 'pass', rationale: 'Reachability is plausible.' },
+              trustBoundary: { result: 'pass', rationale: 'Trust boundary depends on deployment topology.' },
+              scope: { result: 'pass', rationale: 'Finding is in scope pending assumption validation.' },
+            },
+            falsePositiveRootCause: null,
+            assumptionHandling: {
+              mode: 'assumption-validation-required',
+              rationale: 'Validate deployment topology before classifying this as a direct vulnerability.',
+              evidenceRefs: ['SEC-CLAIM-ASSUMPTION', 'SEC-FINDING-ASSUMPTION'],
+            },
+            reviewerNotes: ['Assumption validation is still required.'],
+            reviewer: 'assumption-warning-test',
+          },
+        ],
+      });
+
+      const result = runScript([
+        '--assurance-profile',
+        assuranceProfilePath,
+        '--security-claims',
+        securityClaimsPath,
+        '--security-findings',
+        securityFindingsPath,
+        '--security-review',
+        securityReviewPath,
+        '--output-json',
+        outputJson,
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const summary = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(summary.summary).toMatchObject({
+        satisfiedClaims: 0,
+        warningClaims: 1,
+      });
+      expect(summary.claims[0]).toMatchObject({
+        claimId: 'SEC-CLAIM-ASSUMPTION',
+        status: 'warning',
+        securityClaimType: 'assumption',
+        independenceWarnings: expect.arrayContaining(['assumption-validation-required']),
+      });
+      expect(summary.warnings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            claimId: 'SEC-CLAIM-ASSUMPTION',
+            code: 'assumption-validation-required',
+          }),
+        ]),
+      );
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

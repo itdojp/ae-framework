@@ -129,6 +129,12 @@
         "findingId": {
           "$ref": "#/$defs/nonEmptyString"
         },
+        "claimId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "claimType": {
+          "$ref": "#/$defs/claimType"
+        },
         "severity": {
           "$ref": "#/$defs/severity"
         },
@@ -147,6 +153,9 @@
               "type": "null"
             }
           ]
+        },
+        "assumptionHandling": {
+          "$ref": "#/$defs/assumptionHandling"
         },
         "reviewerNotes": {
           "type": "array",
@@ -206,6 +215,47 @@
                 "$ref": "#/$defs/falsePositiveRootCause"
               }
             }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "claimType"
+            ]
+          },
+          "then": {
+            "required": [
+              "claimId"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "claimId"
+            ]
+          },
+          "then": {
+            "required": [
+              "claimType"
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "claimType"
+            ],
+            "properties": {
+              "claimType": {
+                "const": "assumption"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "assumptionHandling"
+            ]
           }
         }
       ]
@@ -292,6 +342,44 @@
               "type": "integer",
               "minimum": 0
             }
+          }
+        }
+      }
+    },
+    "claimType": {
+      "type": "string",
+      "enum": [
+        "invariant",
+        "precondition",
+        "postcondition",
+        "assumption"
+      ]
+    },
+    "assumptionHandlingMode": {
+      "type": "string",
+      "enum": [
+        "assumption-validation-required",
+        "residual-risk"
+      ]
+    },
+    "assumptionHandling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "rationale"
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/assumptionHandlingMode"
+        },
+        "rationale": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
           }
         }
       }

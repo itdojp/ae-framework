@@ -119,7 +119,7 @@ describe.sequential('claim evidence manifest generator', () => {
 
       const markdown = readFileSync(outputMd, 'utf8');
       expect(markdown).toContain('# Claim Evidence Manifest');
-      expect(markdown).toContain('| no-negative-balance | high | A3 | A2 | partial |');
+      expect(markdown).toContain('| no-negative-balance | n/a | high | A3 | A2 | partial |');
       expect(markdown).toContain('## Missing evidence');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
@@ -186,6 +186,7 @@ describe.sequential('claim evidence manifest generator', () => {
       const securityClaim = manifest.claims.find((claim: { id: string }) => claim.id === 'sec-claim-001');
       expect(securityClaim).toMatchObject({
         criticality: 'high',
+        securityClaimType: 'invariant',
         status: 'partial',
       });
       expect(securityClaim.externalIds).toEqual(
@@ -270,11 +271,85 @@ describe.sequential('claim evidence manifest generator', () => {
 
       const markdown = readFileSync(outputMd, 'utf8');
       expect(markdown).toContain('## Security findings');
+      expect(markdown).toContain('securityType');
       expect(markdown).toContain('## External IDs');
       expect(markdown).toContain('security-claim:SEC-CLAIM-001 (security-claims)');
       expect(markdown).toContain('security-finding:SEC-FINDING-001 (security-findings)');
       expect(markdown).toContain('- highOrCriticalOpen: 1');
-      expect(markdown).toContain('| sec-claim-001 | high | A2 | A1 | partial |');
+      expect(markdown).toContain('| sec-claim-001 | invariant | high | A2 | A1 | partial |');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('tracks assumption-derived security findings as assumption handling evidence', async () => {
+    const mod = await import(moduleUrl);
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-claim-evidence-manifest-assumption-'));
+    const outputJson = join(sandbox, 'claim-evidence-manifest.json');
+    const outputMd = join(sandbox, 'claim-evidence-manifest.md');
+
+    try {
+      const result = runScript([
+        '--assurance-summary',
+        'fixtures/security-assurance/cache-key/expected/assurance-summary.json',
+        '--security-claims',
+        'fixtures/security-assurance/cache-key/expected/security-claims.json',
+        '--security-findings',
+        'fixtures/security-assurance/cache-key/expected/security-findings.json',
+        '--security-review',
+        'fixtures/security-assurance/cache-key/expected/security-review.json',
+        '--generated-at',
+        '2026-05-07T00:00:00.000Z',
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const manifest = JSON.parse(readFileSync(outputJson, 'utf8'));
+      const validate = buildSchemaValidator();
+      expect(validate(manifest), JSON.stringify(validate.errors)).toBe(true);
+      const assumptionClaim = manifest.claims.find((claim: { id: string }) => claim.id === 'sec-claim-003');
+
+      expect(assumptionClaim).toMatchObject({
+        securityClaimType: 'assumption',
+        assumptionHandlingRefs: expect.arrayContaining([
+          expect.objectContaining({
+            mode: 'residual-risk',
+            findingId: 'SEC-FINDING-002',
+            reviewResult: 'out-of-scope',
+          }),
+        ]),
+      });
+      expect(assumptionClaim.missingEvidenceRefs).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: 'security-human-review:sec-finding-002' }),
+        ]),
+      );
+      expect(manifest.summary.security).toMatchObject({
+        assumptionValidationRequired: 0,
+        assumptionResidualRisk: 1,
+      });
+
+      const markdown = readFileSync(outputMd, 'utf8');
+      expect(markdown).toContain('## Assumption handling');
+      expect(markdown).toContain('SEC-FINDING-002');
+      expect(markdown).toContain('residual-risk');
+
+      assumptionClaim.assumptionHandlingRefs.push({
+        ...assumptionClaim.assumptionHandlingRefs[0],
+        id: 'security-assumption:sec-finding-002:residual-risk:duplicate-source',
+        sourceArtifactId: 'duplicate-source',
+      });
+      const duplicateSourceMarkdown = mod.renderClaimEvidenceManifestMarkdown(manifest);
+      const assumptionClaimSummaryLine = duplicateSourceMarkdown
+        .split('\n')
+        .find((line: string) => line.startsWith('| sec-claim-003 |'));
+      expect(assumptionClaimSummaryLine?.match(/SEC-FINDING-002:residual-risk/g)).toHaveLength(1);
+      expect(duplicateSourceMarkdown).toContain(
+        '| sec-claim-003 | security-assumption:sec-finding-002:residual-risk:duplicate-source | residual-risk | SEC-FINDING-002 | out-of-scope | duplicate-source |',
+      );
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
@@ -372,7 +447,7 @@ describe.sequential('claim evidence manifest generator', () => {
     expect(markdown).toContain(
       String.raw`| artifact\\id\|pipe | assurance-summary | true | true | artifacts\\assurance\|summary.json | assurance-summary/v1 |`,
     );
-    expect(markdown).toContain(String.raw`| claim\\id\|pipe | high | A2 | A2 | satisfied | 0 | 0 | 0 |`);
+    expect(markdown).toContain(String.raw`| claim\\id\|pipe | n/a | high | A2 | A2 | satisfied | 0 | 0 | 0 | n/a | n/a |`);
   });
 
   it('preserves lower explicit change-package achievedLevel when a claim is also present in assurance summary', () => {

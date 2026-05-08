@@ -454,6 +454,93 @@ describe('security assurance contracts', () => {
     ).toBe(true);
   });
 
+  it('allows claim type-aware assumption handling on security reviews', () => {
+    const validate = buildValidator(schemas.review);
+    const validFixture = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+
+    validFixture.reviews[0].claimId = 'SEC-CLAIM-001';
+    validFixture.reviews[0].claimType = 'assumption';
+    validFixture.reviews[0].assumptionHandling = {
+      mode: 'assumption-validation-required',
+      rationale: 'Validate the assumption before treating this candidate as a vulnerability.',
+      evidenceRefs: ['SEC-CLAIM-001', 'SEC-FINDING-001'],
+    };
+
+    expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+    expect(validateSecurityReviewSemantics(validFixture)).toHaveLength(0);
+
+    const missingHandling = structuredClone(validFixture);
+    delete missingHandling.reviews[0].assumptionHandling;
+    expect(validate(missingHandling)).toBe(false);
+    expect(validateSecurityReviewSemantics(missingHandling)).toEqual([
+      expect.objectContaining({
+        keyword: 'assumption_handling_missing',
+        instancePath: '/reviews/0/assumptionHandling',
+      }),
+    ]);
+
+    const nonAssumptionWithHandling = structuredClone(validFixture);
+    nonAssumptionWithHandling.reviews[0].claimType = 'invariant';
+    expect(validate(nonAssumptionWithHandling), JSON.stringify(validate.errors)).toBe(true);
+    expect(validateSecurityReviewSemantics(nonAssumptionWithHandling)).toEqual([
+      expect.objectContaining({
+        keyword: 'assumption_handling_without_assumption',
+        instancePath: '/reviews/0/assumptionHandling',
+      }),
+    ]);
+  });
+
+  it('requires claimId and claimType to be emitted together on security reviews', () => {
+    const validate = buildValidator(schemas.review);
+    const claimTypeOnly = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    claimTypeOnly.reviews[0].claimType = 'invariant';
+
+    expect(validate(claimTypeOnly)).toBe(false);
+    expect(validateSecurityReviewSemantics(claimTypeOnly)).toEqual([
+      expect.objectContaining({
+        keyword: 'claim_id_missing_for_claim_type',
+        instancePath: '/reviews/0/claimId',
+      }),
+    ]);
+
+    const claimIdOnly = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    claimIdOnly.reviews[0].claimId = 'SEC-CLAIM-001';
+
+    expect(validate(claimIdOnly)).toBe(false);
+    expect(validateSecurityReviewSemantics(claimIdOnly)).toEqual([
+      expect.objectContaining({
+        keyword: 'claim_type_missing_for_claim_id',
+        instancePath: '/reviews/0/claimType',
+      }),
+    ]);
+  });
+
+  it('requires assumption handling mode to match the review disposition', () => {
+    const invalidFixture = structuredClone(fixtures.review) as {
+      reviews: Array<Record<string, unknown>>;
+    };
+    invalidFixture.reviews[1].claimId = 'SEC-CLAIM-003';
+    invalidFixture.reviews[1].claimType = 'assumption';
+    invalidFixture.reviews[1].assumptionHandling = {
+      mode: 'assumption-validation-required',
+      rationale: 'Out-of-scope assumption findings should remain residual-risk evidence.',
+      evidenceRefs: ['SEC-CLAIM-003', 'SEC-FINDING-002'],
+    };
+
+    expect(validateSecurityReviewSemantics(invalidFixture)).toEqual([
+      expect.objectContaining({
+        keyword: 'assumption_handling_mode_mismatch',
+        instancePath: '/reviews/1/assumptionHandling/mode',
+      }),
+    ]);
+  });
+
   it('enforces security finding affected location line ranges semantically', () => {
     const validFixture = structuredClone(fixtures.findings);
     expect(validateSecurityFindingSemantics(validFixture)).toHaveLength(0);

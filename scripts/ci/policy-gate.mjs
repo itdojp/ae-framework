@@ -596,6 +596,8 @@ function normalizeManifestSecuritySummary(value) {
     waived: integerField('waived'),
     outOfScope: integerField('outOfScope'),
     highOrCriticalOpen: integerField('highOrCriticalOpen'),
+    assumptionValidationRequired: integerField('assumptionValidationRequired'),
+    assumptionResidualRisk: integerField('assumptionResidualRisk'),
   };
 }
 
@@ -978,7 +980,7 @@ function buildMarkdownSummary(prNumber, evaluation) {
     lines.push(`  - claims: pass=${evaluation.assurance.summary.pass}, waived=${evaluation.assurance.summary.waived}, report-only=${evaluation.assurance.summary.reportOnly}, block=${evaluation.assurance.summary.block}`);
     if (evaluation.assurance.summary.security) {
       const security = evaluation.assurance.summary.security;
-      lines.push(`  - security findings: total=${security.findings}, needs-human-review=${security.needsHumanReview}, high/critical-open=${security.highOrCriticalOpen}, out-of-scope=${security.outOfScope}, rejected=${security.rejected}`);
+      lines.push(`  - security findings: total=${security.findings}, needs-human-review=${security.needsHumanReview}, high/critical-open=${security.highOrCriticalOpen}, out-of-scope=${security.outOfScope}, rejected=${security.rejected}, assumption-validation-required=${security.assumptionValidationRequired}, assumption-residual-risk=${security.assumptionResidualRisk}`);
     }
     if (evaluation.assurance.waivers.length > 0) {
       lines.push(`  - waivers: active=${evaluation.assurance.summary.activeWaivers}, expiringSoon=${evaluation.assurance.summary.expiringSoonWaivers}, expired=${evaluation.assurance.summary.expiredWaivers}, orphan=${evaluation.assurance.summary.orphanWaivers}`);

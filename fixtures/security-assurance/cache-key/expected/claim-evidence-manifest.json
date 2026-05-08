@@ -96,14 +96,14 @@
           "kind": "adversarial",
           "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/0",
           "sourceArtifactId": "assurance-summary",
-          "description": "Security finding SEC-FINDING-001: status=candidate, severity=high, review=needs-human-review."
+          "description": "Security finding SEC-FINDING-001: status=candidate, severity=high, review=needs-human-review, claimType=invariant."
         },
         {
           "id": "assurance-summary:sec-claim-001:2:security-review",
           "kind": "adversarial",
           "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/0",
           "sourceArtifactId": "assurance-summary",
-          "description": "Security review classified SEC-FINDING-001 as needs-human-review."
+          "description": "Security review classified SEC-FINDING-001 as needs-human-review; claimType=invariant."
         },
         {
           "id": "security-claims:sec-claim-001",
@@ -126,7 +126,7 @@
           "kind": "adversarial",
           "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/0",
           "sourceArtifactId": "security-findings",
-          "description": "Security finding SEC-FINDING-001: status=candidate, severity=high, review=needs-human-review.",
+          "description": "Security finding SEC-FINDING-001: status=candidate, severity=high, review=needs-human-review, claimType=invariant.",
           "externalIds": [
             {
               "kind": "security-finding",
@@ -142,7 +142,7 @@
           "kind": "manual",
           "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/0",
           "sourceArtifactId": "security-review",
-          "description": "Security review classified SEC-FINDING-001 as needs-human-review.",
+          "description": "Security review classified SEC-FINDING-001 as needs-human-review; claimType=invariant.",
           "externalIds": [
             {
               "kind": "security-review",
@@ -176,8 +176,9 @@
         "assurance-warning:unresolved-critical-counterexample High/critical security finding SEC-FINDING-001 remains needsHumanReview.",
         "security-attention:high SEC-FINDING-001 remains needs-human-review; keep report-only until reviewed/remediated.",
         "security-claim:type=invariant provenance=manual-block",
-        "security-finding:SEC-FINDING-001 severity=high findingStatus=candidate reviewResult=needs-human-review falsePositiveRootCause=none"
+        "security-finding:SEC-FINDING-001 severity=high findingStatus=candidate reviewResult=needs-human-review falsePositiveRootCause=none claimType=invariant"
       ],
+      "securityClaimType": "invariant",
       "externalIds": [
         {
           "kind": "security-claim",
@@ -234,6 +235,7 @@
         "achievedLevel conservatively derived below targetLevel A1 because assurance-summary status=warning.",
         "security-claim:type=precondition provenance=manual-block"
       ],
+      "securityClaimType": "precondition",
       "externalIds": [
         {
           "kind": "security-claim",
@@ -264,14 +266,14 @@
           "kind": "adversarial",
           "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/1",
           "sourceArtifactId": "assurance-summary",
-          "description": "Security finding SEC-FINDING-002: status=candidate, severity=low, review=out-of-scope."
+          "description": "Security finding SEC-FINDING-002: status=candidate, severity=low, review=out-of-scope, claimType=assumption."
         },
         {
           "id": "assurance-summary:sec-claim-003:2:security-review",
           "kind": "adversarial",
           "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/1",
           "sourceArtifactId": "assurance-summary",
-          "description": "Security review classified SEC-FINDING-002 as out-of-scope (out-of-scope)."
+          "description": "Security review classified SEC-FINDING-002 as out-of-scope (out-of-scope); claimType=assumption; assumptionHandling=residual-risk."
         },
         {
           "id": "security-claims:sec-claim-003",
@@ -294,7 +296,7 @@
           "kind": "adversarial",
           "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/1",
           "sourceArtifactId": "security-findings",
-          "description": "Security finding SEC-FINDING-002: status=candidate, severity=low, review=out-of-scope.",
+          "description": "Security finding SEC-FINDING-002: status=candidate, severity=low, review=out-of-scope, claimType=assumption.",
           "externalIds": [
             {
               "kind": "security-finding",
@@ -310,7 +312,7 @@
           "kind": "manual",
           "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/1",
           "sourceArtifactId": "security-review",
-          "description": "Security review classified SEC-FINDING-002 as out-of-scope (out-of-scope).",
+          "description": "Security review classified SEC-FINDING-002 as out-of-scope (out-of-scope); claimType=assumption; assumptionHandling=residual-risk.",
           "externalIds": [
             {
               "kind": "security-review",
@@ -335,7 +337,26 @@
       "notes": [
         "achievedLevel conservatively derived below targetLevel A1 because assurance-summary status=warning.",
         "security-claim:type=assumption provenance=manual-block",
-        "security-finding:SEC-FINDING-002 severity=low findingStatus=candidate reviewResult=out-of-scope falsePositiveRootCause=out-of-scope"
+        "security-finding:SEC-FINDING-002 severity=low findingStatus=candidate reviewResult=out-of-scope falsePositiveRootCause=out-of-scope claimType=assumption assumptionHandling=residual-risk"
+      ],
+      "securityClaimType": "assumption",
+      "assumptionHandlingRefs": [
+        {
+          "id": "assurance-summary:sec-claim-003:assumption:sec-finding-002:residual-risk",
+          "mode": "residual-risk",
+          "findingId": "SEC-FINDING-002",
+          "reviewResult": "out-of-scope",
+          "reason": "Finding SEC-FINDING-002 is derived from an assumption claim and was classified as out-of-scope (out-of-scope); keep the assumption disposition traceable as residual-risk evidence.",
+          "sourceArtifactId": "assurance-summary"
+        },
+        {
+          "id": "security-assumption:sec-finding-002:residual-risk",
+          "mode": "residual-risk",
+          "findingId": "SEC-FINDING-002",
+          "reviewResult": "out-of-scope",
+          "reason": "Finding SEC-FINDING-002 is derived from an assumption claim and was classified as out-of-scope (out-of-scope); keep the assumption disposition traceable as residual-risk evidence.",
+          "sourceArtifactId": "security-review"
+        }
       ],
       "externalIds": [
         {
@@ -364,7 +385,9 @@
       "rejected": 0,
       "waived": 0,
       "outOfScope": 1,
-      "highOrCriticalOpen": 1
+      "highOrCriticalOpen": 1,
+      "assumptionValidationRequired": 0,
+      "assumptionResidualRisk": 1
     }
   }
 }

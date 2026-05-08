@@ -37,6 +37,8 @@ const EVIDENCE_KINDS = new Set([
 const PROOF_METHODS = new Set(['spec', 'property', 'tla', 'alloy', 'smt', 'csp', 'lean', 'kani', 'runtime', 'manual', 'other']);
 const PROOF_STATUSES = new Set(['open', 'discharged', 'waived', 'unresolved']);
 const EXTERNAL_ID_KINDS = new Set(['security-claim', 'security-finding', 'security-review', 'other']);
+const SECURITY_CLAIM_TYPES = new Set(['invariant', 'precondition', 'postcondition', 'assumption']);
+const ASSUMPTION_HANDLING_MODES = new Set(['assumption-validation-required', 'residual-risk']);
 
 function usage() {
   process.stdout.write(`Usage: node scripts/assurance/build-claim-evidence-manifest.mjs [options]\n\nOptions:\n  --assurance-summary <path>       assurance-summary/v1 input (default: ${DEFAULT_ASSURANCE_SUMMARY})\n  --change-package <path>          optional change-package/v2 input (default probe: ${DEFAULT_CHANGE_PACKAGE_V2})\n  --quality-scorecard <path>       optional quality-scorecard/v1 input (default: ${DEFAULT_QUALITY_SCORECARD})\n  --verify-lite-summary <path>     optional verify-lite summary input (default: ${DEFAULT_VERIFY_LITE_SUMMARY})\n  --trace-bundle <path>            optional trace bundle input; first present path is used\n  --output-json <path>             output JSON path (default: ${DEFAULT_OUTPUT_JSON})\n  --output-md <path>               output Markdown path (default: ${DEFAULT_OUTPUT_MD})\n  --schema <path>                  schema used for output validation (default: ${DEFAULT_SCHEMA})\n  --generated-at <iso-date-time>   override generatedAt for deterministic tests\n  --no-validate                    skip schema and semantic validation before writing\n  --help                           show this help\n`);
@@ -392,6 +394,19 @@ function normalizeExternalIdKind(value) {
   return EXTERNAL_ID_KINDS.has(candidate) ? candidate : 'other';
 }
 
+function normalizeSecurityClaimType(value) {
+  const candidate = String(value ?? '').trim().toLowerCase();
+  return SECURITY_CLAIM_TYPES.has(candidate) ? candidate : null;
+}
+
+function normalizeAssumptionHandlingMode(value, effectiveResult) {
+  const candidate = String(value ?? '').trim();
+  if (ASSUMPTION_HANDLING_MODES.has(candidate)) {
+    return candidate;
+  }
+  return isOpenSecurityResult(effectiveResult) ? 'assumption-validation-required' : 'residual-risk';
+}
+
 function artifactPathWithPointer(basePath, pointer) {
   return `${basePath}#${pointer}`;
 }
@@ -551,6 +566,34 @@ function addMissingEvidence(claim, { id, expectedKind, reason, sourceArtifactId 
   pushUniqueById(claim.missingEvidenceRefs, item);
 }
 
+function pushAssumptionHandlingRef(claim, nextRef) {
+  const id = sanitizeId(nextRef?.id);
+  if (!id) {
+    return null;
+  }
+  if (!Array.isArray(claim.assumptionHandlingRefs)) {
+    claim.assumptionHandlingRefs = [];
+  }
+  const item = {
+    id,
+    mode: normalizeAssumptionHandlingMode(nextRef.mode, nextRef.reviewResult),
+    findingId: String(nextRef.findingId ?? '').trim() || 'unknown',
+    reviewResult: String(nextRef.reviewResult ?? '').trim() || 'unknown',
+    reason: String(nextRef.reason ?? '').trim() || 'Assumption handling evidence is required.',
+    sourceArtifactId: String(nextRef.sourceArtifactId ?? '').trim() || 'security-review',
+  };
+  const artifactPath = String(nextRef.artifactPath ?? '').trim();
+  if (artifactPath) {
+    item.artifactPath = artifactPath;
+  }
+  const existing = claim.assumptionHandlingRefs.find((entry) => entry.id === item.id);
+  if (existing) {
+    return existing;
+  }
+  claim.assumptionHandlingRefs.push(item);
+  return item;
+}
+
 function ingestAssuranceSummary(claimsById, artifact) {
   const sourceArtifactId = 'assurance-summary';
   const payload = ensureObject(artifact.payload);
@@ -585,6 +628,20 @@ function ingestAssuranceSummary(claimsById, artifact) {
       achievedLevel,
       status,
     });
+    const securityClaimType = normalizeSecurityClaimType(rawClaim.securityClaimType);
+    if (securityClaimType) {
+      claim.securityClaimType = securityClaimType;
+    }
+    for (const handling of ensureArray(rawClaim.assumptionHandling)) {
+      pushAssumptionHandlingRef(claim, {
+        id: `${sourceArtifactId}:${claim.id}:assumption:${handling.findingId ?? 'unknown'}:${handling.mode ?? 'unknown'}`,
+        mode: handling.mode,
+        findingId: handling.findingId,
+        reviewResult: handling.reviewResult,
+        reason: handling.rationale,
+        sourceArtifactId,
+      });
+    }
     pushNote(
       claim,
       status === 'satisfied'
@@ -887,6 +944,8 @@ function emptySecuritySummary() {
     waived: 0,
     outOfScope: 0,
     highOrCriticalOpen: 0,
+    assumptionValidationRequired: 0,
+    assumptionResidualRisk: 0,
   };
 }
 
@@ -917,6 +976,34 @@ function addSecurityMissingEvidence(claim, finding, review, sourceArtifactId) {
   const findingStatus = String(finding?.status ?? '').trim();
   const severity = String(review?.severity ?? finding?.severity ?? '').trim();
   const effectiveResult = reviewResult || findingStatus;
+  const claimType = normalizeSecurityClaimType(review?.claimType) || normalizeSecurityClaimType(claim.securityClaimType);
+
+  if (claimType === 'assumption') {
+    const mode = normalizeAssumptionHandlingMode(review?.assumptionHandling?.mode, effectiveResult);
+    pushAssumptionHandlingRef(claim, {
+      id: `security-assumption:${finding.id}:${mode}`,
+      mode,
+      findingId: finding.id,
+      reviewResult: effectiveResult,
+      reason: String(
+        review?.assumptionHandling?.rationale
+          ?? (mode === 'assumption-validation-required'
+            ? `Assumption-derived finding ${finding.id} requires validation before vulnerability interpretation.`
+            : `Assumption-derived finding ${finding.id} is tracked as residual-risk evidence.`),
+      ),
+      sourceArtifactId: review ? 'security-review' : sourceArtifactId,
+    });
+    if (mode === 'assumption-validation-required') {
+      claim.status = combineStatus(claim.status, 'partial');
+      addMissingEvidence(claim, {
+        id: `security-assumption-validation:${finding.id}`,
+        expectedKind: 'manual',
+        reason: `Assumption-derived finding ${finding.id} is ${effectiveResult}; validate environment, scope, and trust-boundary assumptions before treating it as direct vulnerability evidence.`,
+        sourceArtifactId,
+      });
+    }
+    return;
+  }
 
   if (effectiveResult === 'confirmed') {
     claim.status = combineStatus(claim.status, 'unresolved');
@@ -972,6 +1059,10 @@ function ingestSecurityClaims(claimsById, artifact) {
       achievedLevel: decrementLevel(rawClaim.targetLevel),
       status: 'partial',
     });
+    const securityClaimType = normalizeSecurityClaimType(rawClaim.type);
+    if (securityClaimType) {
+      claim.securityClaimType = securityClaimType;
+    }
     pushExternalId(claim, claimExternalId);
     pushUniqueById(claim.evidenceRefs, {
       id: sanitizeId(`${sourceArtifactId}:${claim.id}`),
@@ -1025,6 +1116,18 @@ function ingestSecurityFindingsAndReviews(claimsById, findingsArtifact, reviewAr
       achievedLevel: 'A0',
       status: 'partial',
     });
+    const securityClaimType = normalizeSecurityClaimType(review?.claimType) || normalizeSecurityClaimType(claim.securityClaimType);
+    if (securityClaimType) {
+      claim.securityClaimType = securityClaimType;
+    }
+    if (securityClaimType === 'assumption') {
+      const assumptionMode = normalizeAssumptionHandlingMode(review?.assumptionHandling?.mode, effectiveResult);
+      if (assumptionMode === 'assumption-validation-required') {
+        summary.assumptionValidationRequired += 1;
+      } else {
+        summary.assumptionResidualRisk += 1;
+      }
+    }
     if (!hasExternalId(claim, { kind: 'security-claim', id: finding.claimId })) {
       pushExternalId(claim, {
         kind: 'security-claim',
@@ -1039,7 +1142,7 @@ function ingestSecurityFindingsAndReviews(claimsById, findingsArtifact, reviewAr
       kind: 'adversarial',
       artifactPath: findingArtifactPath,
       sourceArtifactId,
-      description: `Security finding ${finding.id}: status=${finding.status ?? 'unknown'}, severity=${severity}, review=${effectiveResult || 'unreviewed'}.`,
+      description: `Security finding ${finding.id}: status=${finding.status ?? 'unknown'}, severity=${severity}, review=${effectiveResult || 'unreviewed'}${securityClaimType ? `, claimType=${securityClaimType}` : ''}.`,
       externalIds: findingExternalId ? [findingExternalId] : undefined,
     });
     if (findingReviews.length > 0 && reviewArtifact.present) {
@@ -1057,7 +1160,7 @@ function ingestSecurityFindingsAndReviews(claimsById, findingsArtifact, reviewAr
           kind: 'manual',
           artifactPath: reviewArtifactPath,
           sourceArtifactId: 'security-review',
-          description: `Security review classified ${finding.id} as ${reviewEntry.result ?? 'unknown'}${reviewEntry.falsePositiveRootCause ? ` (${reviewEntry.falsePositiveRootCause})` : ''}.`,
+          description: `Security review classified ${finding.id} as ${reviewEntry.result ?? 'unknown'}${reviewEntry.falsePositiveRootCause ? ` (${reviewEntry.falsePositiveRootCause})` : ''}${reviewEntry.claimType ? `; claimType=${reviewEntry.claimType}` : ''}${reviewEntry.assumptionHandling?.mode ? `; assumptionHandling=${reviewEntry.assumptionHandling.mode}` : ''}.`,
           externalIds: reviewExternalId ? [reviewExternalId] : undefined,
         });
       }
@@ -1065,7 +1168,7 @@ function ingestSecurityFindingsAndReviews(claimsById, findingsArtifact, reviewAr
     addSecurityMissingEvidence(claim, finding, review, sourceArtifactId);
     pushNote(
       claim,
-      `security-finding:${finding.id} severity=${severity} findingStatus=${finding.status ?? 'unknown'} reviewResult=${effectiveResult || 'unreviewed'} falsePositiveRootCause=${review?.falsePositiveRootCause ?? 'none'}`,
+      `security-finding:${finding.id} severity=${severity} findingStatus=${finding.status ?? 'unknown'} reviewResult=${effectiveResult || 'unreviewed'} falsePositiveRootCause=${review?.falsePositiveRootCause ?? 'none'}${securityClaimType ? ` claimType=${securityClaimType}` : ''}${review?.assumptionHandling?.mode ? ` assumptionHandling=${review.assumptionHandling.mode}` : ''}`,
     );
     if (isHighOrCritical(severity) && isOpenSecurityResult(effectiveResult)) {
       pushNote(claim, `security-attention:${severity} ${finding.id} remains ${effectiveResult}; keep report-only until reviewed/remediated.`);
@@ -1090,6 +1193,9 @@ function normalizeFinalClaim(claim) {
   claim.proofObligationRefs.sort((left, right) => left.id.localeCompare(right.id));
   claim.missingEvidenceRefs.sort((left, right) => left.id.localeCompare(right.id));
   claim.waiverRefs.sort((left, right) => left.id.localeCompare(right.id));
+  if (Array.isArray(claim.assumptionHandlingRefs)) {
+    claim.assumptionHandlingRefs.sort((left, right) => left.id.localeCompare(right.id));
+  }
   claim.notes.sort((left, right) => left.localeCompare(right));
 
   if (claim.status === 'waived' && claim.waiverRefs.length === 0) {
@@ -1264,11 +1370,32 @@ function collectExternalIdRows(manifest) {
   ]);
 }
 
+function formatAssumptionHandlingForTable(handlingRefs) {
+  const items = ensureArray(handlingRefs);
+  if (items.length === 0) {
+    return 'n/a';
+  }
+  const rendered = [];
+  const seen = new Set();
+  for (const entry of items) {
+    const key = `${entry.findingId}:${entry.mode}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    rendered.push(key);
+  }
+  return rendered.join(', ');
+}
+
 export function renderClaimEvidenceManifestMarkdown(manifest) {
   const missingEvidence = manifest.claims.flatMap((claim) =>
     claim.missingEvidenceRefs.map((entry) => ({ claimId: claim.id, ...entry })),
   );
   const waivers = manifest.claims.flatMap((claim) => claim.waiverRefs.map((entry) => ({ claimId: claim.id, ...entry })));
+  const assumptionHandling = manifest.claims.flatMap((claim) =>
+    ensureArray(claim.assumptionHandlingRefs).map((entry) => ({ claimId: claim.id, ...entry })),
+  );
   const externalIdRows = collectExternalIdRows(manifest);
   const presentSourceCount = manifest.sourceArtifacts.filter((artifact) => artifact.present).length;
   const lines = [
@@ -1278,7 +1405,7 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
     `- generatedAt: ${manifest.generatedAt}`,
     `- sourceArtifacts: ${presentSourceCount}/${manifest.sourceArtifacts.length} present`,
     `- claims: ${manifest.summary.totalClaims} total; ${manifest.summary.fullySupported} satisfied, ${manifest.summary.partiallySupported} partial, ${manifest.summary.waived} waived, ${manifest.summary.unresolved} unresolved`,
-    ...(manifest.summary.security ? [`- securityFindings: ${manifest.summary.security.findings} total; highOrCriticalOpen=${manifest.summary.security.highOrCriticalOpen}, needsHumanReview=${manifest.summary.security.needsHumanReview}, outOfScope=${manifest.summary.security.outOfScope}, rejected=${manifest.summary.security.rejected}`] : []),
+    ...(manifest.summary.security ? [`- securityFindings: ${manifest.summary.security.findings} total; highOrCriticalOpen=${manifest.summary.security.highOrCriticalOpen}, needsHumanReview=${manifest.summary.security.needsHumanReview}, outOfScope=${manifest.summary.security.outOfScope}, rejected=${manifest.summary.security.rejected}, assumptionValidationRequired=${manifest.summary.security.assumptionValidationRequired ?? 0}, assumptionResidualRisk=${manifest.summary.security.assumptionResidualRisk ?? 0}`] : []),
     `- missingEvidenceRefs: ${missingEvidence.length}`,
     `- waiverRefs: ${waivers.length}`,
     '',
@@ -1299,9 +1426,10 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
     '## Claims',
     '',
     renderTable(
-      ['claim', 'criticality', 'target', 'achieved', 'status', 'evidence', 'missing', 'waivers', 'externalIds'],
+      ['claim', 'securityType', 'criticality', 'target', 'achieved', 'status', 'evidence', 'missing', 'waivers', 'assumptionHandling', 'externalIds'],
       manifest.claims.map((claim) => [
         claim.id,
+        claim.securityClaimType ?? 'n/a',
         claim.criticality,
         claim.targetLevel,
         claim.achievedLevel,
@@ -1309,6 +1437,7 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
         String(claim.evidenceRefs.length),
         String(claim.missingEvidenceRefs.length),
         String(claim.waiverRefs.length),
+        formatAssumptionHandlingForTable(claim.assumptionHandlingRefs),
         formatExternalIdsForTable(claim.externalIds),
       ]),
     ),
@@ -1319,6 +1448,21 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
     lines.push('- none');
   } else {
     lines.push(renderTable(['claim', 'subject', 'externalId', 'artifactPath'], externalIdRows));
+  }
+
+  lines.push('', '## Assumption handling', '');
+  if (assumptionHandling.length === 0) {
+    lines.push('- none');
+  } else {
+    lines.push(renderTable(['claim', 'id', 'mode', 'finding', 'reviewResult', 'source', 'reason'], assumptionHandling.map((entry) => [
+      entry.claimId,
+      entry.id,
+      entry.mode,
+      entry.findingId,
+      entry.reviewResult,
+      entry.sourceArtifactId,
+      entry.reason,
+    ])));
   }
 
   lines.push('', '## Missing evidence', '');
@@ -1337,6 +1481,8 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
     lines.push(`- reviews: ${manifest.summary.security.reviews}`);
     lines.push(`- needsHumanReview: ${manifest.summary.security.needsHumanReview}`);
     lines.push(`- highOrCriticalOpen: ${manifest.summary.security.highOrCriticalOpen}`);
+    lines.push(`- assumptionValidationRequired: ${manifest.summary.security.assumptionValidationRequired ?? 0}`);
+    lines.push(`- assumptionResidualRisk: ${manifest.summary.security.assumptionResidualRisk ?? 0}`);
     lines.push(`- outOfScope: ${manifest.summary.security.outOfScope}`);
     lines.push(`- rejected: ${manifest.summary.security.rejected}`);
   }

@@ -305,7 +305,8 @@
           "artifactPath": "fixtures/security-assurance/sample.security-claims.json#/claims/0",
           "description": "Original security-claim/v1 id before claim-evidence canonicalization."
         }
-      ]
+      ],
+      "securityClaimType": "invariant"
     }
   ],
   "summary": {
@@ -324,7 +325,9 @@
       "rejected": 1,
       "waived": 0,
       "outOfScope": 1,
-      "highOrCriticalOpen": 1
+      "highOrCriticalOpen": 1,
+      "assumptionValidationRequired": 0,
+      "assumptionResidualRisk": 0
     }
   }
 }

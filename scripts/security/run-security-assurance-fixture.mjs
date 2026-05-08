@@ -458,7 +458,7 @@ function writeSecuritySummary(paths, generatedAt) {
     `- Findings: ${findings.summary?.totalFindings ?? 0}`,
     `- Review results: needs-human-review=${review.summary?.byResult?.needsHumanReview ?? 0}, rejected=${review.summary?.byResult?.rejected ?? 0}, out-of-scope=${review.summary?.byResult?.outOfScope ?? 0}`,
     `- Assurance claims: ${assuranceSummary.summary?.claimCount ?? 0}`,
-    `- Manifest security: findings=${manifest.summary?.security?.findings ?? 0}, highOrCriticalOpen=${manifest.summary?.security?.highOrCriticalOpen ?? 0}, outOfScope=${manifest.summary?.security?.outOfScope ?? 0}, rejected=${manifest.summary?.security?.rejected ?? 0}`,
+    `- Manifest security: findings=${manifest.summary?.security?.findings ?? 0}, highOrCriticalOpen=${manifest.summary?.security?.highOrCriticalOpen ?? 0}, outOfScope=${manifest.summary?.security?.outOfScope ?? 0}, rejected=${manifest.summary?.security?.rejected ?? 0}, assumptionValidationRequired=${manifest.summary?.security?.assumptionValidationRequired ?? 0}, assumptionResidualRisk=${manifest.summary?.security?.assumptionResidualRisk ?? 0}`,
     '',
     '## Expected lane behavior',
     '',
@@ -523,6 +523,7 @@ function generateSecurityArtifacts(paths, generatedAt) {
     '--findings', path.join(paths.outputDir, 'security-findings.json'),
     '--scope', path.join(paths.outputDir, 'security-audit-scope.json'),
     '--code-map', path.join(paths.outputDir, 'security-code-map.json'),
+    '--claims', path.join(paths.outputDir, 'security-claims.json'),
     '--out', paths.outputDir,
     '--generated-at', generatedAt,
   ]);

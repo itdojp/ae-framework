@@ -188,6 +188,7 @@ pnpm -s run security:review -- \
   --findings "$SECURITY_OUT/security-findings.json" \
   --scope "$SECURITY_OUT/security-audit-scope.json" \
   --code-map "$SECURITY_OUT/security-code-map.json" \
+  --claims "$SECURITY_OUT/security-claims.json" \
   "${ENTRYPOINT_MAP_ARGS[@]}" \
   --out "$SECURITY_OUT" \
   --generated-at "$GENERATED_AT"
@@ -223,6 +224,8 @@ pnpm -s run security:map-code -- \
 ```
 
 `--symbol-index` prioritizes matching against symbol name, signature, documentation, and tags, while preserving the existing keyword scan as the fallback path.
+
+`security:review --claims` copies `security-claim/v1.type` into `security-review/v1.claimType`. Findings linked to `type=assumption` get machine-readable `assumptionHandling.mode`: unresolved or confirmed dispositions use `assumption-validation-required`, while rejected / out-of-scope / waived dispositions are retained as `residual-risk` evidence instead of direct vulnerability evidence.
 
 After running this sequence, validate the output with:
 
@@ -454,6 +457,7 @@ pnpm -s run security:review -- \
   --findings "$SECURITY_OUT/security-findings.json" \
   --scope "$SECURITY_OUT/security-audit-scope.json" \
   --code-map "$SECURITY_OUT/security-code-map.json" \
+  --claims "$SECURITY_OUT/security-claims.json" \
   "${ENTRYPOINT_MAP_ARGS[@]}" \
   --out "$SECURITY_OUT" \
   --generated-at "$GENERATED_AT"
@@ -489,6 +493,8 @@ pnpm -s run security:map-code -- \
 ```
 
 `--symbol-index` は symbol name / signature / documentation / tags を優先して照合し、該当 symbol がない場合は既存の keyword scan に fallback します。
+
+`security:review --claims` は `security-claim/v1.type` を `security-review/v1.claimType` に転記します。`type=assumption` に紐づく finding は machine-readable な `assumptionHandling.mode` を持ち、未解決または confirmed の場合は `assumption-validation-required`、rejected / out-of-scope / waived の場合は direct vulnerability evidence ではなく `residual-risk` evidence として保持されます。
 
 実行後は次を確認します。
 

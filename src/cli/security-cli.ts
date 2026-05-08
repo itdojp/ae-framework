@@ -89,6 +89,7 @@ export function createSecurityCommand(): Command {
     .requiredOption('-m, --code-map <file>', 'security-code-map/v1 JSON artifact')
     .requiredOption('-o, --out <path>', 'Output directory or security-review JSON path')
     .option('--entrypoint-map <file>', 'Optional security-entrypoint-map/v1 JSON artifact for Trust Boundary evidence')
+    .option('--claims <file>', 'Optional security-claim/v1 JSON artifact for claim type-aware review')
     .option('--generated-at <iso-date>', 'Deterministic generatedAt timestamp for reproducible review artifacts')
     .option('--no-validate', 'Skip schema validation for input and generated artifacts')
     .action(async (options) => {
@@ -97,6 +98,7 @@ export function createSecurityCommand(): Command {
         const result = await generateSecurityThreeGateReview(options.findings, options.scope, options.codeMap, outPath, {
           generatedAt: options.generatedAt,
           entrypointMapPath: options.entrypointMap,
+          claimsPath: options.claims,
           validate: options.validate,
         });
 

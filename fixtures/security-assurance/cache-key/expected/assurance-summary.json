@@ -121,7 +121,7 @@
           "origin": "security-finding",
           "status": "observed",
           "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/0",
-          "detail": "Security finding SEC-FINDING-001: status=candidate, severity=high, review=needs-human-review.",
+          "detail": "Security finding SEC-FINDING-001: status=candidate, severity=high, review=needs-human-review, claimType=invariant.",
           "claimRefs": [
             "SEC-CLAIM-001"
           ],
@@ -134,13 +134,14 @@
           "origin": "security-review",
           "status": "observed",
           "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/0",
-          "detail": "Security review classified SEC-FINDING-001 as needs-human-review.",
+          "detail": "Security review classified SEC-FINDING-001 as needs-human-review; claimType=invariant.",
           "claimRefs": [
             "SEC-CLAIM-001"
           ],
           "generatorLineage": "security-review/security-three-gate-review"
         }
-      ]
+      ],
+      "securityClaimType": "invariant"
     },
     {
       "claimId": "SEC-CLAIM-002",
@@ -187,7 +188,8 @@
           ],
           "generatorLineage": "security-claim/security-claim-extractor"
         }
-      ]
+      ],
+      "securityClaimType": "precondition"
     },
     {
       "claimId": "SEC-CLAIM-003",
@@ -245,7 +247,7 @@
           "origin": "security-finding",
           "status": "observed",
           "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/1",
-          "detail": "Security finding SEC-FINDING-002: status=candidate, severity=low, review=out-of-scope.",
+          "detail": "Security finding SEC-FINDING-002: status=candidate, severity=low, review=out-of-scope, claimType=assumption.",
           "claimRefs": [
             "SEC-CLAIM-003"
           ],
@@ -258,11 +260,24 @@
           "origin": "security-review",
           "status": "observed",
           "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/1",
-          "detail": "Security review classified SEC-FINDING-002 as out-of-scope (out-of-scope).",
+          "detail": "Security review classified SEC-FINDING-002 as out-of-scope (out-of-scope); claimType=assumption; assumptionHandling=residual-risk.",
           "claimRefs": [
             "SEC-CLAIM-003"
           ],
           "generatorLineage": "security-review/security-three-gate-review"
+        }
+      ],
+      "securityClaimType": "assumption",
+      "assumptionHandling": [
+        {
+          "mode": "residual-risk",
+          "findingId": "SEC-FINDING-002",
+          "reviewResult": "out-of-scope",
+          "rationale": "Finding SEC-FINDING-002 is derived from an assumption claim and was classified as out-of-scope (out-of-scope); keep the assumption disposition traceable as residual-risk evidence.",
+          "evidenceRefs": [
+            "SEC-CLAIM-003",
+            "SEC-FINDING-002"
+          ]
         }
       ]
     }

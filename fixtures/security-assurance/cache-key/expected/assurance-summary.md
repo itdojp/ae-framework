@@ -9,11 +9,11 @@
 
 ## Claim status
 
-| claim | status | required lanes | observed lanes | missing lanes | warnings |
-| --- | --- | --- | --- | --- | --- |
-| SEC-CLAIM-001 | warning | adversarial, spec | spec, adversarial |  | unresolved-critical-counterexample |
-| SEC-CLAIM-002 | warning | spec | spec |  |  |
-| SEC-CLAIM-003 | warning | adversarial, spec | spec, adversarial |  |  |
+| claim | type | status | required lanes | observed lanes | missing lanes | assumption handling | warnings |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| SEC-CLAIM-001 | invariant | warning | adversarial, spec | spec, adversarial |  | n/a | unresolved-critical-counterexample |
+| SEC-CLAIM-002 | precondition | warning | spec | spec |  | n/a |  |
+| SEC-CLAIM-003 | assumption | warning | adversarial, spec | spec, adversarial |  | SEC-FINDING-002:residual-risk |  |
 
 ## Lane coverage
 

@@ -26,7 +26,11 @@ const WARNING_CODES = new Set([
   'unknown-claim-ref',
   'unlinked-counterexample',
   'unrecognized-evidence-claim',
+  'assumption-validation-required',
 ]);
+
+const SECURITY_CLAIM_TYPES = new Set(['invariant', 'precondition', 'postcondition', 'assumption']);
+const ASSUMPTION_HANDLING_MODES = new Set(['assumption-validation-required', 'residual-risk']);
 
 const usage = () => {
   console.log(`Usage: node scripts/assurance/aggregate-lanes.mjs --assurance-profile <path> [options]
@@ -184,6 +188,30 @@ const ensureArray = (value, label) => {
 const maybeString = (value) => (value === null || value === undefined ? '' : String(value).trim());
 
 const uniqueSorted = (values) => Array.from(new Set(values.filter(Boolean))).sort();
+
+const normalizeSecurityClaimType = (value) => {
+  const candidate = maybeString(value).toLowerCase();
+  return SECURITY_CLAIM_TYPES.has(candidate) ? candidate : null;
+};
+
+const normalizeAssumptionHandling = (handling, effectiveResult, findingId) => {
+  const mode = ASSUMPTION_HANDLING_MODES.has(maybeString(handling?.mode))
+    ? maybeString(handling.mode)
+    : (effectiveResult === 'candidate' || effectiveResult === 'needs-human-review' || effectiveResult === 'confirmed'
+        ? 'assumption-validation-required'
+        : 'residual-risk');
+  const rationale = maybeString(handling?.rationale)
+    || (mode === 'assumption-validation-required'
+      ? `Assumption-derived finding ${findingId} requires environment, scope, and trust-boundary validation.`
+      : `Assumption-derived finding ${findingId} is tracked as residual-risk evidence.`);
+  return {
+    mode,
+    findingId,
+    reviewResult: effectiveResult || 'unknown',
+    rationale,
+    evidenceRefs: uniqueSorted(Array.isArray(handling?.evidenceRefs) ? handling.evidenceRefs.map((entry) => maybeString(entry)) : []),
+  };
+};
 
 const sortLanes = (values) =>
   Array.from(new Set(values.filter(Boolean))).sort((left, right) => {
@@ -374,6 +402,8 @@ const buildClaimState = (claim) => ({
   statement: claim.statement,
   criticality: claim.criticality,
   targetLevel: claim.targetLevel,
+  securityClaimType: normalizeSecurityClaimType(claim.securityClaimType ?? claim.type),
+  assumptionHandling: [],
   minIndependentSources: defaultMinIndependentSources(claim),
   requiredLanes: uniqueSorted(claim.requiredLanes ?? []),
   requiredEvidenceKinds: uniqueSorted(claim.requiredEvidenceKinds ?? []),
@@ -659,12 +689,18 @@ const ensureSecurityClaimState = (claimStateMap, rawClaim) => {
       statement: maybeString(rawClaim.statement) || `Security claim ${claimId}`,
       criticality: maybeString(rawClaim.criticality) || 'medium',
       targetLevel: maybeString(rawClaim.targetLevel) || 'A2',
+      securityClaimType: normalizeSecurityClaimType(rawClaim.type),
       minIndependentSources: rawClaim.minIndependentSources,
       requiredLanes: Array.isArray(rawClaim.requiredLanes) ? rawClaim.requiredLanes : ['spec', 'adversarial'],
       requiredEvidenceKinds: Array.isArray(rawClaim.requiredEvidenceKinds) ? rawClaim.requiredEvidenceKinds : [],
     }));
   }
-  return claimStateMap.get(claimId);
+  const claimState = claimStateMap.get(claimId);
+  const claimType = normalizeSecurityClaimType(rawClaim?.type);
+  if (claimType) {
+    claimState.securityClaimType = claimType;
+  }
+  return claimState;
 };
 
 const ingestSecurityClaims = (securityClaimsPath, claimStateMap, warnings) => {
@@ -702,21 +738,27 @@ const ingestSecurityFindingsAndReviews = (securityFindingsPath, securityReviewPa
     const claimId = maybeString(finding?.claimId);
     const findingId = maybeString(finding?.id);
     if (!claimId || !findingId) continue;
+    const findingReviews = reviews.get(findingId) ?? [];
+    const review = findingReviews.at(-1);
     if (!claimStateMap.has(claimId)) {
       claimStateMap.set(claimId, buildClaimState({
         id: claimId,
         statement: `Security claim ${claimId}`,
         criticality: maybeString(finding.severity) || 'medium',
         targetLevel: 'A2',
+        securityClaimType: normalizeSecurityClaimType(review?.claimType),
         requiredLanes: ['spec', 'adversarial'],
         requiredEvidenceKinds: [],
       }));
     }
-    const findingReviews = reviews.get(findingId) ?? [];
-    const review = findingReviews.at(-1);
+    const claimState = claimStateMap.get(claimId);
     const reviewResult = maybeString(review?.result);
     const effectiveResult = reviewResult || maybeString(finding.status) || 'candidate';
     const severity = maybeString(review?.severity || finding.severity) || 'medium';
+    const claimType = normalizeSecurityClaimType(review?.claimType) || claimState.securityClaimType;
+    if (claimType) {
+      claimState.securityClaimType = claimType;
+    }
     const evidence = normalizeEvidenceEntry({
       lane: 'adversarial',
       kind: 'security-finding',
@@ -724,7 +766,7 @@ const ingestSecurityFindingsAndReviews = (securityFindingsPath, securityReviewPa
       origin: 'security-finding',
       status: 'observed',
       artifactPath: `${resolvedPath}#/findings/${findingIndex}`,
-      detail: `Security finding ${findingId}: status=${finding.status ?? 'unknown'}, severity=${severity}, review=${effectiveResult}.`,
+      detail: `Security finding ${findingId}: status=${finding.status ?? 'unknown'}, severity=${severity}, review=${effectiveResult}${claimType ? `, claimType=${claimType}` : ''}.`,
       claimRefs: [claimId],
       generatorLineage: `security-finding/${finding.provenance?.generator ?? 'unknown'}`,
     });
@@ -738,15 +780,18 @@ const ingestSecurityFindingsAndReviews = (securityFindingsPath, securityReviewPa
         origin: 'security-review',
         status: 'observed',
         artifactPath: `${reviewEntry.artifactPath}#/reviews/${reviewEntry.reviewIndex}`,
-        detail: `Security review classified ${findingId} as ${reviewEntry.result ?? 'unknown'}${reviewEntry.falsePositiveRootCause ? ` (${reviewEntry.falsePositiveRootCause})` : ''}.`,
+        detail: `Security review classified ${findingId} as ${reviewEntry.result ?? 'unknown'}${reviewEntry.falsePositiveRootCause ? ` (${reviewEntry.falsePositiveRootCause})` : ''}${reviewEntry.claimType ? `; claimType=${reviewEntry.claimType}` : ''}${reviewEntry.assumptionHandling?.mode ? `; assumptionHandling=${reviewEntry.assumptionHandling.mode}` : ''}.`,
         claimRefs: [claimId],
         generatorLineage: `security-review/${reviewEntry.reviewer ?? 'unknown'}`,
       });
       addEvidenceForClaims(claimStateMap, [claimId], reviewEvidence, warnings, reviewEntry.artifactPath);
     }
 
-    const claimState = claimStateMap.get(claimId);
     claimState.counterexamples.total += 1;
+    if (claimState.securityClaimType === 'assumption') {
+      const handling = normalizeAssumptionHandling(review?.assumptionHandling, effectiveResult, findingId);
+      claimState.assumptionHandling.push(handling);
+    }
     if (effectiveResult === 'rejected' || effectiveResult === 'out-of-scope' || effectiveResult === 'waived') {
       claimState.counterexamples.resolved += 1;
     } else if (effectiveResult === 'accepted-risk') {
@@ -826,6 +871,9 @@ const summarizeClaim = (claimState, warnings) => {
   ) {
     claimWarnings.push('unresolved-critical-counterexample');
   }
+  if (claimState.assumptionHandling.some((entry) => entry.mode === 'assumption-validation-required')) {
+    claimWarnings.push('assumption-validation-required');
+  }
 
   for (const code of claimWarnings) {
     const messages = {
@@ -834,6 +882,7 @@ const summarizeClaim = (claimState, warnings) => {
       'insufficient-independent-lanes': `Observed independent source kinds (${observedIndependentSources}) do not meet the minimum (${claimState.minIndependentSources}).`,
       'same-generator-lineage': 'Observed evidence appears to share a single generator lineage.',
       'unresolved-critical-counterexample': 'Critical claim still has unresolved counterexamples.',
+      'assumption-validation-required': 'Assumption-derived security finding requires validation before vulnerability interpretation.',
     };
     pushWarning(warnings, code, messages[code], { claimId: claimState.claimId });
   }
@@ -845,7 +894,7 @@ const summarizeClaim = (claimState, warnings) => {
       ? 'satisfied'
       : 'warning';
 
-  return {
+  const summary = {
     claimId: claimState.claimId,
     statement: claimState.statement,
     criticality: claimState.criticality,
@@ -867,6 +916,21 @@ const summarizeClaim = (claimState, warnings) => {
       return left.kind.localeCompare(right.kind);
     }),
   };
+  if (claimState.securityClaimType) {
+    summary.securityClaimType = claimState.securityClaimType;
+  }
+  if (claimState.assumptionHandling.length > 0) {
+    summary.assumptionHandling = claimState.assumptionHandling
+      .map((entry) => ({
+        mode: entry.mode,
+        findingId: entry.findingId,
+        reviewResult: entry.reviewResult,
+        rationale: entry.rationale,
+        evidenceRefs: entry.evidenceRefs,
+      }))
+      .sort((left, right) => `${left.findingId}:${left.mode}`.localeCompare(`${right.findingId}:${right.mode}`));
+  }
+  return summary;
 };
 
 const buildLaneCoverage = (claimSummaries) => {
@@ -894,13 +958,15 @@ const buildMarkdown = (summary) => {
     '## Claim status',
     '',
     renderTable(
-      ['claim', 'status', 'required lanes', 'observed lanes', 'missing lanes', 'warnings'],
+      ['claim', 'type', 'status', 'required lanes', 'observed lanes', 'missing lanes', 'assumption handling', 'warnings'],
       summary.claims.map((claim) => [
         claim.claimId,
+        claim.securityClaimType ?? 'n/a',
         claim.status,
         claim.requiredLanes.join(', '),
         claim.observedLanes.join(', '),
         claim.missingLanes.join(', '),
+        (claim.assumptionHandling ?? []).map((entry) => `${entry.findingId}:${entry.mode}`).join(', ') || 'n/a',
         claim.independenceWarnings.join(', '),
       ]),
     ),

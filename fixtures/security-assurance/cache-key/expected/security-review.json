@@ -33,10 +33,13 @@
       "reviewerNotes": [
         "Severity preserved from finding: high.",
         "Rule-based MVP review only; exploitability confirmation and full reachability analysis are out of scope.",
-        "Candidate finding remains unresolved and requires human security review before confirmation."
+        "Candidate finding remains unresolved and requires human security review before confirmation.",
+        "Security claim type: invariant."
       ],
       "reviewedAt": "2026-05-07T00:00:00.000Z",
-      "reviewer": "security-three-gate-review"
+      "reviewer": "security-three-gate-review",
+      "claimId": "SEC-CLAIM-001",
+      "claimType": "invariant"
     },
     {
       "findingId": "SEC-FINDING-002",
@@ -64,10 +67,23 @@
         "Severity preserved from finding: low.",
         "Rule-based MVP review only; exploitability confirmation and full reachability analysis are out of scope.",
         "Trust boundary involvement is unknown from available scope/code-map evidence.",
-        "Classified as out-of-scope based on audit scope glob rules."
+        "Classified as out-of-scope based on audit scope glob rules.",
+        "Security claim type: assumption.",
+        "Assumption-derived finding is handled as assumption validation or residual-risk evidence, not as a direct vulnerability classification.",
+        "Assumption-derived finding disposition is retained as residual-risk evidence."
       ],
       "reviewedAt": "2026-05-07T00:00:00.000Z",
-      "reviewer": "security-three-gate-review"
+      "reviewer": "security-three-gate-review",
+      "claimId": "SEC-CLAIM-003",
+      "claimType": "assumption",
+      "assumptionHandling": {
+        "mode": "residual-risk",
+        "rationale": "Finding SEC-FINDING-002 is derived from an assumption claim and was classified as out-of-scope (out-of-scope); keep the assumption disposition traceable as residual-risk evidence.",
+        "evidenceRefs": [
+          "SEC-CLAIM-003",
+          "SEC-FINDING-002"
+        ]
+      }
     }
   ],
   "summary": {

@@ -219,6 +219,59 @@ function validateReviewRootCauseConsistency(reviewDocument, errors) {
   }
 }
 
+function validateReviewAssumptionHandling(reviewDocument, errors) {
+  const reviews = Array.isArray(reviewDocument?.reviews) ? reviewDocument.reviews : [];
+  for (let reviewIndex = 0; reviewIndex < reviews.length; reviewIndex += 1) {
+    const review = reviews[reviewIndex];
+    if (!review || typeof review !== 'object') {
+      continue;
+    }
+    const handling = review.assumptionHandling;
+    if (review.claimType !== undefined && review.claimId === undefined) {
+      errors.push(createError(
+        'claim_id_missing_for_claim_type',
+        `/reviews/${reviewIndex}/claimId`,
+        'claimId is required when claimType is set',
+      ));
+    }
+    if (review.claimId !== undefined && review.claimType === undefined) {
+      errors.push(createError(
+        'claim_type_missing_for_claim_id',
+        `/reviews/${reviewIndex}/claimType`,
+        'claimType is required when claimId is set',
+      ));
+    }
+    if (review.claimType === 'assumption') {
+      if (!handling || typeof handling !== 'object') {
+        errors.push(createError(
+          'assumption_handling_missing',
+          `/reviews/${reviewIndex}/assumptionHandling`,
+          'assumptionHandling is required when claimType is assumption',
+        ));
+        continue;
+      }
+      const expectedMode = review.result === 'needs-human-review' || review.result === 'confirmed'
+        ? 'assumption-validation-required'
+        : 'residual-risk';
+      if (handling.mode !== expectedMode) {
+        errors.push(createError(
+          'assumption_handling_mode_mismatch',
+          `/reviews/${reviewIndex}/assumptionHandling/mode`,
+          `assumptionHandling.mode must be ${expectedMode} when result is ${review.result}`,
+        ));
+      }
+      continue;
+    }
+    if (handling !== undefined) {
+      errors.push(createError(
+        'assumption_handling_without_assumption',
+        `/reviews/${reviewIndex}/assumptionHandling`,
+        'assumptionHandling is only valid when claimType is assumption',
+      ));
+    }
+  }
+}
+
 export function validateSecurityFindingSemantics(findingsDocument) {
   const errors = [];
   validateAffectedLocationRanges(findingsDocument, errors);
@@ -255,5 +308,6 @@ export function validateSecurityEntrypointMapSemantics(entrypointMapDocument) {
 export function validateSecurityReviewSemantics(reviewDocument) {
   const errors = [];
   validateReviewRootCauseConsistency(reviewDocument, errors);
+  validateReviewAssumptionHandling(reviewDocument, errors);
   return errors;
 }

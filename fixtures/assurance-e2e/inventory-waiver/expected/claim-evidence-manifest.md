@@ -22,13 +22,17 @@
 
 ## Claims
 
-| claim | criticality | target | achieved | status | evidence | missing | waivers | externalIds |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| manual-fraud-review | medium | A3 | A2 | waived | 3 | 0 | 1 | n/a |
-| no-negative-balance | high | A3 | A2 | partial | 5 | 1 | 0 | n/a |
-| no-negative-stock | high | A2 | A2 | satisfied | 7 | 0 | 0 | n/a |
+| claim | securityType | criticality | target | achieved | status | evidence | missing | waivers | assumptionHandling | externalIds |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| manual-fraud-review | n/a | medium | A3 | A2 | waived | 3 | 0 | 1 | n/a | n/a |
+| no-negative-balance | n/a | high | A3 | A2 | partial | 5 | 1 | 0 | n/a | n/a |
+| no-negative-stock | n/a | high | A2 | A2 | satisfied | 7 | 0 | 0 | n/a | n/a |
 
 ## External IDs
+
+- none
+
+## Assumption handling
 
 - none
 

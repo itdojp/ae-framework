@@ -9,6 +9,11 @@ const findingsPath = 'fixtures/security-assurance/sample.security-findings.json'
 const scopePath = 'fixtures/security-assurance/sample.security-audit-scope.json';
 const codeMapPath = 'fixtures/security-assurance/sample.security-code-map.json';
 const entrypointMapPath = 'fixtures/security-assurance/sample.security-entrypoint-map.json';
+const claimsPath = 'fixtures/security-assurance/sample.security-claims.json';
+const cacheKeyClaimsPath = 'fixtures/security-assurance/cache-key/expected/security-claims.json';
+const cacheKeyFindingsPath = 'fixtures/security-assurance/cache-key/expected/security-findings.json';
+const cacheKeyScopePath = 'fixtures/security-assurance/cache-key/expected/security-audit-scope.json';
+const cacheKeyCodeMapPath = 'fixtures/security-assurance/cache-key/expected/security-code-map.json';
 const generatedAt = '2026-05-07T00:00:00.000Z';
 const tsxBin = resolve('node_modules/.bin/tsx');
 
@@ -147,6 +152,93 @@ describe('security three-gate review producer', () => {
       );
       expect(readFileSync(join(outDir, 'security-review.md'), 'utf8')).toContain('Matched attacker-controlled entrypoint evidence: EP-001');
     } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('records claim type and assumption handling when security claims are provided', async () => {
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-assumption-'));
+    try {
+      const result = await generateSecurityThreeGateReview(cacheKeyFindingsPath, cacheKeyScopePath, cacheKeyCodeMapPath, outDir, {
+        generatedAt,
+        claimsPath: cacheKeyClaimsPath,
+      });
+
+      const reviewsByFinding = new Map(result.review.reviews.map((review) => [review.findingId, review]));
+      const invariantReview = reviewsByFinding.get('SEC-FINDING-001');
+      expect(invariantReview).toEqual(
+        expect.objectContaining({
+          claimId: 'SEC-CLAIM-001',
+          claimType: 'invariant',
+        }),
+      );
+      expect(invariantReview).not.toHaveProperty('assumptionHandling');
+      expect(reviewsByFinding.get('SEC-FINDING-002')).toEqual(
+        expect.objectContaining({
+          claimId: 'SEC-CLAIM-003',
+          claimType: 'assumption',
+          result: 'out-of-scope',
+          assumptionHandling: expect.objectContaining({
+            mode: 'residual-risk',
+            evidenceRefs: expect.arrayContaining(['SEC-CLAIM-003', 'SEC-FINDING-002']),
+          }),
+        }),
+      );
+      const markdown = readFileSync(join(outDir, 'security-review.md'), 'utf8');
+      expect(markdown).toContain('Claim type: assumption');
+      expect(markdown).toContain('Assumption handling: residual-risk');
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('marks unresolved assumption-derived candidates as assumption validation required', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-security-review-assumption-open-'));
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-assumption-open-out-'));
+    try {
+      const localClaimsPath = join(fixtureDir, 'security-claims.json');
+      const claims = readJson<{ claims: Array<Record<string, unknown>>; summary: Record<string, unknown> }>(claimsPath);
+      claims.claims[0].type = 'assumption';
+      writeJson(localClaimsPath, claims);
+
+      const result = await generateSecurityThreeGateReview(findingsPath, scopePath, codeMapPath, outDir, {
+        generatedAt,
+        claimsPath: localClaimsPath,
+      });
+      const review = result.review.reviews.find((entry) => entry.findingId === 'SEC-FINDING-001');
+      expect(review).toEqual(
+        expect.objectContaining({
+          claimType: 'assumption',
+          result: 'needs-human-review',
+          assumptionHandling: expect.objectContaining({
+            mode: 'assumption-validation-required',
+          }),
+        }),
+      );
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects duplicate security claim ids before building the claim lookup', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-security-review-duplicate-claims-'));
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-duplicate-claims-out-'));
+    try {
+      const localClaimsPath = join(fixtureDir, 'security-claims.json');
+      const claims = readJson<{ claims: Array<Record<string, unknown>> }>(claimsPath);
+      claims.claims.push({
+        ...claims.claims[0],
+        type: 'assumption',
+      });
+      writeJson(localClaimsPath, claims);
+
+      await expect(generateSecurityThreeGateReview(findingsPath, scopePath, codeMapPath, outDir, {
+        generatedAt,
+        claimsPath: localClaimsPath,
+      })).rejects.toThrow("Security claim id 'SEC-CLAIM-001' at index 1 duplicates index 0.");
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
       rmSync(outDir, { recursive: true, force: true });
     }
   });
@@ -506,6 +598,8 @@ describe('security three-gate review producer', () => {
           codeMapPath,
           '--entrypoint-map',
           entrypointMapPath,
+          '--claims',
+          claimsPath,
           '--out',
           outDir,
           '--generated-at',
@@ -528,9 +622,10 @@ describe('security three-gate review producer', () => {
       expect(result.stdout).toContain('Security three-gate review completed');
       expect(result.stdout).toContain('Reviews: 3');
       const review = readJson<{
-        reviews: Array<{ findingId: string; gates: { trustBoundary: { evidenceRefs?: string[] } } }>;
+        reviews: Array<{ findingId: string; claimType?: string; gates: { trustBoundary: { evidenceRefs?: string[] } } }>;
       }>(join(outDir, 'security-review.json'));
       expect(review.reviews).toHaveLength(3);
+      expect(review.reviews.every((entry) => entry.claimType === 'invariant')).toBe(true);
       expect(review.reviews.find((entry) => entry.findingId === 'SEC-FINDING-001')?.gates.trustBoundary.evidenceRefs).toContain('EP-001');
       expect(readFileSync(join(outDir, 'security-review.md'), 'utf8')).toContain('Dead-code root causes: 1');
     } finally {
