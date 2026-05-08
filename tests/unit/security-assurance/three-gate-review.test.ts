@@ -214,6 +214,30 @@ describe('security three-gate review producer', () => {
     }
   });
 
+  it('rejects partial entrypoint reach line ranges even when schema validation is disabled', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-security-review-entrypoint-partial-'));
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-entrypoint-partial-out-'));
+    try {
+      const localEntrypointMapPath = join(fixtureDir, 'entrypoint-map.json');
+      const entrypointMap = entrypointMapFixture() as {
+        entrypoints: Array<{ reaches: Array<Record<string, unknown>> }>;
+      };
+      delete entrypointMap.entrypoints[0].reaches[0].startLine;
+      writeJson(localEntrypointMapPath, entrypointMap);
+
+      await expect(
+        generateSecurityThreeGateReview(findingsPath, scopePath, codeMapPath, outDir, {
+          generatedAt,
+          entrypointMapPath: localEntrypointMapPath,
+          validate: false,
+        }),
+      ).rejects.toThrow('must provide both startLine and endLine');
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
   it('keeps trust-boundary involvement unknown when no explicit boundary evidence is available', async () => {
     const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-security-review-trust-'));
     const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-trust-out-'));

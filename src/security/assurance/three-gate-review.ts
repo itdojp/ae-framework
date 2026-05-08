@@ -440,7 +440,12 @@ function parseEntrypointReach(rawReach: unknown, pathRef: string, repoRoot?: str
   const parsed: EntrypointReach = {
     path: normalizeArtifactPath(reachPath, repoRoot),
   };
-  if (typeof rawReach['startLine'] === 'number' || typeof rawReach['endLine'] === 'number') {
+  const hasStartLine = typeof rawReach['startLine'] === 'number';
+  const hasEndLine = typeof rawReach['endLine'] === 'number';
+  if (hasStartLine !== hasEndLine) {
+    throw new Error(`Entrypoint reach ${pathRef} must provide both startLine and endLine when using a line range.`);
+  }
+  if (hasStartLine && hasEndLine) {
     const startLine = typeof rawReach['startLine'] === 'number' ? Math.max(1, Math.floor(rawReach['startLine'])) : 1;
     const rawEndLine = typeof rawReach['endLine'] === 'number' ? Math.max(1, Math.floor(rawReach['endLine'])) : startLine;
     parsed.startLine = startLine;
