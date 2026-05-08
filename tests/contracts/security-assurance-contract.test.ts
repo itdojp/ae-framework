@@ -6,6 +6,7 @@ import addFormats from 'ajv-formats';
 import {
   validateSecurityAuditTaskBundleSemantics,
   validateSecurityCodeMapSemantics,
+  validateSecurityEntrypointMapSemantics,
   validateSecurityFindingSemantics,
   validateSecurityReviewSemantics,
   validateSymbolIndexSemantics,
@@ -22,6 +23,7 @@ const schemas = {
   auditScope: loadJson('schema/security-audit-scope-v1.schema.json'),
   codeMap: loadJson('schema/security-code-map-v1.schema.json'),
   symbolIndex: loadJson('schema/symbol-index-v1.schema.json'),
+  entrypointMap: loadJson('schema/security-entrypoint-map-v1.schema.json'),
   auditTasks: loadJson('schema/security-audit-task-bundle-v1.schema.json'),
   findings: loadJson('schema/security-finding-v1.schema.json'),
   review: loadJson('schema/security-review-v1.schema.json'),
@@ -33,6 +35,7 @@ const fixtures = {
   auditScope: loadJson('fixtures/security-assurance/sample.security-audit-scope.json'),
   codeMap: loadJson('fixtures/security-assurance/sample.security-code-map.json'),
   symbolIndex: loadJson('fixtures/security-assurance/sample.symbol-index.json'),
+  entrypointMap: loadJson('fixtures/security-assurance/sample.security-entrypoint-map.json'),
   auditTasks: loadJson('fixtures/security-assurance/sample.security-audit-tasks.json'),
   findings: loadJson('fixtures/security-assurance/sample.security-findings.json'),
   review: loadJson('fixtures/security-assurance/sample.security-review.json'),
@@ -235,6 +238,81 @@ describe('security assurance contracts', () => {
         instancePath: '/symbols/1/id',
       }),
     ]);
+  });
+
+  it('enforces security-entrypoint-map semantic line ranges, unique ids, and summary counts', () => {
+    const validFixture = structuredClone(fixtures.entrypointMap);
+    expect(validateSecurityEntrypointMapSemantics(validFixture)).toHaveLength(0);
+
+    const invalidFixture = structuredClone(fixtures.entrypointMap) as {
+      entrypoints: Array<{
+        id: string;
+        startLine: number;
+        endLine: number;
+        reaches: Array<{ startLine: number; endLine: number }>;
+      }>;
+      summary: {
+        totalEntrypoints: number;
+        attackerControlledEntrypoints: number;
+        totalReachableLocations: number;
+      };
+    };
+    invalidFixture.entrypoints.push({
+      ...invalidFixture.entrypoints[0],
+      id: invalidFixture.entrypoints[0].id,
+      startLine: 80,
+      endLine: 10,
+      reaches: [
+        {
+          ...invalidFixture.entrypoints[0].reaches[0],
+          startLine: 30,
+          endLine: 10,
+        },
+      ],
+    });
+    invalidFixture.summary.totalEntrypoints = 1;
+    invalidFixture.summary.attackerControlledEntrypoints = 1;
+    invalidFixture.summary.totalReachableLocations = 1;
+
+    expect(validateSecurityEntrypointMapSemantics(invalidFixture)).toEqual([
+      expect.objectContaining({
+        keyword: 'line_range_order',
+        instancePath: '/entrypoints/1/endLine',
+      }),
+      expect.objectContaining({
+        keyword: 'line_range_order',
+        instancePath: '/entrypoints/1/reaches/0/endLine',
+      }),
+      expect.objectContaining({
+        keyword: 'duplicate_entrypoint_id',
+        instancePath: '/entrypoints/1/id',
+      }),
+      expect.objectContaining({
+        keyword: 'summary_total_entrypoints_mismatch',
+        instancePath: '/summary/totalEntrypoints',
+      }),
+      expect.objectContaining({
+        keyword: 'summary_attacker_controlled_entrypoints_mismatch',
+        instancePath: '/summary/attackerControlledEntrypoints',
+      }),
+      expect.objectContaining({
+        keyword: 'summary_total_reachable_locations_mismatch',
+        instancePath: '/summary/totalReachableLocations',
+      }),
+    ]);
+  });
+
+  it('allows security-entrypoint-map reaches to omit line ranges when path and symbol evidence is available', () => {
+    const validate = buildValidator(schemas.entrypointMap);
+    const validFixture = structuredClone(fixtures.entrypointMap) as {
+      entrypoints: Array<{ reaches: Array<Record<string, unknown>> }>;
+    };
+
+    delete validFixture.entrypoints[0].reaches[0].startLine;
+    delete validFixture.entrypoints[0].reaches[0].endLine;
+
+    expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+    expect(validateSecurityEntrypointMapSemantics(validFixture)).toHaveLength(0);
   });
 
 

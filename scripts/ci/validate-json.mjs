@@ -7,7 +7,14 @@ import addFormats from 'ajv-formats';
 import yaml from 'yaml';
 import { runSchemaIdPolicyCheck } from './check-schema-id-policy.mjs';
 import { validateClaimEvidenceManifestSemantics } from './lib/claim-evidence-manifest-contract.mjs';
-import { validateSecurityAuditTaskBundleSemantics, validateSecurityCodeMapSemantics, validateSecurityFindingSemantics, validateSecurityReviewSemantics, validateSymbolIndexSemantics } from './lib/security-assurance-contract.mjs';
+import {
+  validateSecurityAuditTaskBundleSemantics,
+  validateSecurityCodeMapSemantics,
+  validateSecurityEntrypointMapSemantics,
+  validateSecurityFindingSemantics,
+  validateSecurityReviewSemantics,
+  validateSymbolIndexSemantics,
+} from './lib/security-assurance-contract.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
@@ -170,6 +177,14 @@ const checks = [
     ],
     label: 'Symbol index v1 schema validation',
     semanticValidate: validateSymbolIndexSemantics
+  },
+  {
+    schema: 'schema/security-entrypoint-map-v1.schema.json',
+    fixtures: [
+      'fixtures/security-assurance/sample.security-entrypoint-map.json',
+    ],
+    label: 'Security entrypoint map v1 schema validation',
+    semanticValidate: validateSecurityEntrypointMapSemantics
   },
   {
     schema: 'schema/security-audit-task-bundle-v1.schema.json',
