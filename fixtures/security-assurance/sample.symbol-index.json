@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "symbol-index/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "symbols": [
+    {
+      "id": "SYM-001",
+      "language": "typescript",
+      "kind": "function",
+      "name": "buildCacheKey",
+      "path": "src/cache.ts",
+      "startLine": 7,
+      "endLine": 15,
+      "exported": true,
+      "signature": "buildCacheKey(input: VerificationCacheInput): string",
+      "doc": "Builds a verification cache key from attacker-controlled request input fields.",
+      "tags": [
+        "cache",
+        "verification",
+        "attacker-controlled",
+        "key"
+      ]
+    }
+  ],
+  "summary": {
+    "totalSymbols": 1,
+    "byLanguage": {
+      "typescript": 1
+    }
+  }
+}

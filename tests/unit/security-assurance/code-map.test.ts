@@ -8,6 +8,7 @@ import { generateSecurityCodeMap } from '../../../src/security/assurance/code-ma
 const claimsPath = 'fixtures/security-assurance/sample.security-claims.json';
 const scopePath = 'fixtures/security-assurance/sample.security-audit-scope.json';
 const targetPath = 'fixtures/security-assurance/code-map-target';
+const symbolIndexPath = 'fixtures/security-assurance/sample.symbol-index.json';
 const generatedAt = '2026-05-07T00:00:00.000Z';
 const tsxBin = resolve('node_modules/.bin/tsx');
 
@@ -98,6 +99,84 @@ describe('security code-map producer', () => {
     }
   });
 
+  it('uses optional symbol-index input before keyword source scanning', async () => {
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-code-map-symbol-index-'));
+    try {
+      const result = await generateSecurityCodeMap(claimsPath, scopePath, targetPath, outDir, {
+        generatedAt,
+        symbolIndexPath,
+      });
+
+      expect(result.codeMap.summary.symbolIndex).toEqual({
+        used: true,
+        input: symbolIndexPath,
+        totalSymbols: 1,
+        inScopeSymbols: 1,
+        matchedSymbols: 1,
+        fallbackClaims: 0,
+      });
+      expect(result.codeMap.provenance.symbolIndex).toBe(symbolIndexPath);
+      expect(result.codeMap.mappings[0]?.candidateLocations[0]).toEqual(
+        expect.objectContaining({
+          path: 'src/cache.ts',
+          symbol: 'buildCacheKey',
+          startLine: 7,
+          endLine: 15,
+          reason: expect.stringContaining('symbol-index entry SYM-001'),
+          matchedTerms: expect.arrayContaining(['attacker', 'cache', 'controlled', 'key', 'verification']),
+        }),
+      );
+      expect(result.warnings).toHaveLength(0);
+      expect(readFileSync(join(outDir, 'security-code-map.md'), 'utf8')).toContain('Symbol index: fixtures/security-assurance/sample.symbol-index.json');
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('exposes optional symbol-index mapping through ae security map-code', () => {
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-code-map-cli-symbol-index-'));
+    try {
+      const result = spawnSync(
+        tsxBin,
+        [
+          'src/cli/index.ts',
+          'security',
+          'map-code',
+          '--claims',
+          claimsPath,
+          '--scope',
+          scopePath,
+          '--target',
+          targetPath,
+          '--symbol-index',
+          symbolIndexPath,
+          '--out',
+          outDir,
+          '--generated-at',
+          generatedAt,
+        ],
+        {
+          encoding: 'utf8',
+          timeout: 60_000,
+          env: {
+            ...process.env,
+            VITEST: '',
+            NODE_ENV: 'production',
+            AE_TEST_NO_EXIT: '0',
+            DISABLE_TELEMETRY: 'true',
+          },
+        },
+      );
+
+      expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+      expect(result.stdout).toContain('Security code-map generation completed');
+      expect(result.stdout).toContain('Symbol index: fixtures/security-assurance/sample.symbol-index.json');
+      expect(readJson<{ summary: { symbolIndex?: { fallbackClaims: number } } }>(join(outDir, 'security-code-map.json')).summary.symbolIndex?.fallbackClaims).toBe(0);
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
   it('respects out-of-scope globs during candidate collection', async () => {
     const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-code-map-scope-'));
     const outDir = mkdtempSync(join(tmpdir(), 'ae-code-map-scope-out-'));
@@ -180,6 +259,211 @@ describe('security code-map producer', () => {
           path: '/scope/inScope/0',
         }),
       ]);
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('filters symbol-index paths through the scoped target file set and falls back to keyword scanning', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-code-map-symbol-index-scope-'));
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-code-map-symbol-index-scope-out-'));
+    try {
+      mkdirSync(join(fixtureDir, 'src'), { recursive: true });
+      mkdirSync(join(fixtureDir, 'tests'), { recursive: true });
+      writeFileSync(
+        join(fixtureDir, 'src/cache.ts'),
+        [
+          'export function buildCacheKey(): string {',
+          "  return ['cache', 'key', 'verification'].join(':');",
+          '}',
+          '',
+        ].join('\n'),
+        'utf8',
+      );
+      writeFileSync(
+        join(fixtureDir, 'tests/cache.test.ts'),
+        [
+          'export function testOnlyCacheKey(): string {',
+          "  return ['cache', 'key', 'verification', 'attacker'].join(':');",
+          '}',
+          '',
+        ].join('\n'),
+        'utf8',
+      );
+      const localScopePath = join(fixtureDir, 'scope.json');
+      const localSymbolIndexPath = join(fixtureDir, 'symbol-index.json');
+      writeJson(localScopePath, {
+        schemaVersion: 'security-audit-scope/v1',
+        generatedAt,
+        target: { repository: 'fixture/repo', commit: 'HEAD' },
+        inScope: ['src/**/*.ts'],
+        outOfScope: ['tests/**'],
+        trustBoundaries: [{ id: 'TB-001', name: 'fixture', entryPoints: ['api'], attackerControlled: true }],
+      });
+      writeJson(localSymbolIndexPath, {
+        schemaVersion: 'symbol-index/v1',
+        generatedAt,
+        symbols: [
+          {
+            id: 'SYM-OUT-001',
+            language: 'typescript',
+            kind: 'function',
+            name: 'testOnlyCacheKey',
+            path: 'tests/cache.test.ts',
+            startLine: 1,
+            endLine: 3,
+            tags: ['cache', 'key', 'verification', 'attacker'],
+          },
+        ],
+        summary: { totalSymbols: 1, byLanguage: { typescript: 1 } },
+      });
+
+      const result = await generateSecurityCodeMap(claimsPath, localScopePath, fixtureDir, outDir, {
+        generatedAt,
+        symbolIndexPath: localSymbolIndexPath,
+      });
+      const mapping = result.codeMap.mappings[0];
+
+      expect(result.codeMap.summary.symbolIndex).toEqual(
+        expect.objectContaining({
+          totalSymbols: 1,
+          inScopeSymbols: 0,
+          matchedSymbols: 0,
+          fallbackClaims: 1,
+        }),
+      );
+      expect(result.codeMap.warnings).toEqual([
+        expect.objectContaining({
+          code: 'symbol-index-out-of-scope',
+          path: '/symbolIndex/symbols/0/path',
+        }),
+      ]);
+      expect(mapping?.warnings).toEqual([
+        expect.objectContaining({
+          code: 'symbol-index-no-match-fallback',
+          source: expect.stringContaining('symbol-index.json'),
+        }),
+      ]);
+      expect(mapping?.candidateLocations.map((location) => location.path)).toEqual(['src/cache.ts']);
+      expect(mapping?.candidateLocations[0]?.reason).not.toContain('symbol-index entry');
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects symbol-index ranges beyond the matched source file and falls back to keyword scanning', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-code-map-symbol-index-bounds-'));
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-code-map-symbol-index-bounds-out-'));
+    try {
+      mkdirSync(join(fixtureDir, 'src'), { recursive: true });
+      writeFileSync(
+        join(fixtureDir, 'src/cache.ts'),
+        [
+          'export function buildCacheKey(): string {',
+          "  return ['cache', 'key', 'verification'].join(':');",
+          '}',
+          '',
+        ].join('\n'),
+        'utf8',
+      );
+      const localScopePath = join(fixtureDir, 'scope.json');
+      const localSymbolIndexPath = join(fixtureDir, 'symbol-index.json');
+      writeJson(localScopePath, {
+        schemaVersion: 'security-audit-scope/v1',
+        generatedAt,
+        target: { repository: 'fixture/repo', commit: 'HEAD' },
+        inScope: ['src/**/*.ts'],
+        outOfScope: [],
+        trustBoundaries: [{ id: 'TB-001', name: 'fixture', entryPoints: ['api'], attackerControlled: true }],
+      });
+      writeJson(localSymbolIndexPath, {
+        schemaVersion: 'symbol-index/v1',
+        generatedAt,
+        symbols: [
+          {
+            id: 'SYM-OOB-001',
+            language: 'typescript',
+            kind: 'function',
+            name: 'buildCacheKey',
+            path: 'src/cache.ts',
+            startLine: 100,
+            endLine: 120,
+            tags: ['cache', 'key', 'verification'],
+          },
+        ],
+        summary: { totalSymbols: 1, byLanguage: { typescript: 1 } },
+      });
+
+      const result = await generateSecurityCodeMap(claimsPath, localScopePath, fixtureDir, outDir, {
+        generatedAt,
+        symbolIndexPath: localSymbolIndexPath,
+      });
+
+      expect(result.codeMap.warnings).toEqual([
+        expect.objectContaining({
+          code: 'symbol-range-out-of-bounds',
+          path: '/symbolIndex/symbols/0/endLine',
+        }),
+      ]);
+      expect(result.codeMap.summary.symbolIndex).toEqual(
+        expect.objectContaining({
+          inScopeSymbols: 0,
+          matchedSymbols: 0,
+          fallbackClaims: 1,
+        }),
+      );
+      expect(result.codeMap.mappings[0]?.candidateLocations).toEqual([
+        expect.objectContaining({
+          path: 'src/cache.ts',
+          startLine: 1,
+          endLine: 4,
+        }),
+      ]);
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps symbol-index parser requirements aligned with the schema when validation is disabled', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-code-map-symbol-index-invalid-'));
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-code-map-symbol-index-invalid-out-'));
+    try {
+      mkdirSync(join(fixtureDir, 'src'), { recursive: true });
+      writeFileSync(join(fixtureDir, 'src/cache.ts'), 'export function buildCacheKey(): string { return \"cache key\"; }\n', 'utf8');
+      const localScopePath = join(fixtureDir, 'scope.json');
+      const localSymbolIndexPath = join(fixtureDir, 'symbol-index.json');
+      writeJson(localScopePath, {
+        schemaVersion: 'security-audit-scope/v1',
+        generatedAt,
+        target: { repository: 'fixture/repo', commit: 'HEAD' },
+        inScope: ['src/**/*.ts'],
+        outOfScope: [],
+        trustBoundaries: [{ id: 'TB-001', name: 'fixture', entryPoints: ['api'], attackerControlled: true }],
+      });
+      writeJson(localSymbolIndexPath, {
+        schemaVersion: 'symbol-index/v1',
+        generatedAt,
+        symbols: [
+          {
+            id: 'SYM-MISSING-KIND',
+            language: 'typescript',
+            name: 'buildCacheKey',
+            path: 'src/cache.ts',
+            startLine: 1,
+            endLine: 1,
+          },
+        ],
+        summary: { totalSymbols: 1, byLanguage: { typescript: 1 } },
+      });
+
+      await expect(generateSecurityCodeMap(claimsPath, localScopePath, fixtureDir, outDir, {
+        generatedAt,
+        symbolIndexPath: localSymbolIndexPath,
+        validate: false,
+      })).rejects.toThrow('must have a non-empty kind');
     } finally {
       rmSync(fixtureDir, { recursive: true, force: true });
       rmSync(outDir, { recursive: true, force: true });

@@ -44,6 +44,43 @@ function validateCodeMapLocationRanges(codeMapDocument, errors) {
   }
 }
 
+function validateSymbolIndexLocationRanges(symbolIndexDocument, errors) {
+  const symbols = Array.isArray(symbolIndexDocument?.symbols) ? symbolIndexDocument.symbols : [];
+  for (let symbolIndex = 0; symbolIndex < symbols.length; symbolIndex += 1) {
+    const symbol = symbols[symbolIndex];
+    if (!Number.isInteger(symbol?.startLine) || !Number.isInteger(symbol?.endLine)) {
+      continue;
+    }
+    if (symbol.endLine < symbol.startLine) {
+      errors.push(createError(
+        'line_range_order',
+        `/symbols/${symbolIndex}/endLine`,
+        `endLine must be greater than or equal to startLine (${symbol.startLine}), got ${symbol.endLine}`,
+      ));
+    }
+  }
+}
+
+function validateSymbolIndexUniqueIds(symbolIndexDocument, errors) {
+  const symbols = Array.isArray(symbolIndexDocument?.symbols) ? symbolIndexDocument.symbols : [];
+  const seen = new Map();
+  for (let symbolIndex = 0; symbolIndex < symbols.length; symbolIndex += 1) {
+    const id = symbols[symbolIndex]?.id;
+    if (typeof id !== 'string' || id.length === 0) {
+      continue;
+    }
+    if (seen.has(id)) {
+      errors.push(createError(
+        'duplicate_symbol_id',
+        `/symbols/${symbolIndex}/id`,
+        `symbol id '${id}' duplicates /symbols/${seen.get(id)}/id`,
+      ));
+      continue;
+    }
+    seen.set(id, symbolIndex);
+  }
+}
+
 
 function validateAuditTaskLocationRanges(taskBundleDocument, errors) {
   const tasks = Array.isArray(taskBundleDocument?.tasks) ? taskBundleDocument.tasks : [];
@@ -114,6 +151,13 @@ export function validateSecurityAuditTaskBundleSemantics(taskBundleDocument) {
 export function validateSecurityCodeMapSemantics(codeMapDocument) {
   const errors = [];
   validateCodeMapLocationRanges(codeMapDocument, errors);
+  return errors;
+}
+
+export function validateSymbolIndexSemantics(symbolIndexDocument) {
+  const errors = [];
+  validateSymbolIndexLocationRanges(symbolIndexDocument, errors);
+  validateSymbolIndexUniqueIds(symbolIndexDocument, errors);
   return errors;
 }
 

@@ -37,7 +37,7 @@ In scope:
 
 - typed security claims, threat models, and audit scopes;
 - SPECA-like import and explicit `SEC-CLAIM` Markdown extraction;
-- scoped candidate source mapping;
+- scoped candidate source mapping, with optional `symbol-index/v1` input for deterministic symbol metadata;
 - deterministic proof-attempt task generation and fixture-backed candidate normalization;
 - Dead Code / Trust Boundary / Scope review classification;
 - integration into assurance summary, claim-evidence manifest, policy summaries, and PR summaries;
@@ -58,7 +58,8 @@ Out of scope for the MVP:
 | Claim contract | `schema/security-claim-v1.schema.json` | manual authoring, `ae security import-speca`, `ae security extract-claims` | `node scripts/ci/validate-json.mjs`, `tests/contracts/security-assurance-contract.test.ts` |
 | Threat model contract | `schema/security-threat-model-v1.schema.json` | manual authoring, `ae security import-speca` | `node scripts/ci/validate-json.mjs`, contract tests |
 | Audit scope contract | `schema/security-audit-scope-v1.schema.json` | manual scope definition | `node scripts/ci/validate-json.mjs`, contract tests |
-| Code map | `schema/security-code-map-v1.schema.json` / `artifacts/security/security-code-map.json` | `pnpm run security:map-code` | semantic contract tests, fixture golden comparison |
+| Code map | `schema/security-code-map-v1.schema.json` / `artifacts/security/security-code-map.json` | `pnpm run security:map-code` (optionally `--symbol-index`) | semantic contract tests, fixture golden comparison |
+| Symbol index | `schema/symbol-index-v1.schema.json` / `artifacts/code/symbol-index.json` | manual / external deterministic index producer | schema + semantic contract tests |
 | Audit tasks | `schema/security-audit-task-bundle-v1.schema.json` / `artifacts/security/security-audit-tasks.json` | `pnpm run security:proof-audit` | semantic contract tests, fixture golden comparison |
 | Candidate findings | `schema/security-finding-v1.schema.json` / `artifacts/security/security-findings.json` | `pnpm run security:proof-audit` with `--response-fixture` | candidate status checks, fixture golden comparison |
 | Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review` | Dead Code / Trust Boundary / Scope semantic checks |
@@ -146,7 +147,7 @@ MVP の対象範囲:
 
 - typed security claim / threat model / audit scope;
 - SPECA-like import と明示 `SEC-CLAIM` Markdown 抽出;
-- scope に基づく candidate source mapping;
+- scope に基づく candidate source mapping と、deterministic symbol metadata 用 optional `symbol-index/v1` input;
 - deterministic proof-attempt task 生成と fixture-backed candidate 正規化;
 - Dead Code / Trust Boundary / Scope review 分類;
 - assurance summary、claim-evidence manifest、policy summary、PR summary への接続;
@@ -167,7 +168,8 @@ MVP の対象外:
 | Claim contract | `schema/security-claim-v1.schema.json` | manual authoring, `ae security import-speca`, `ae security extract-claims` | `node scripts/ci/validate-json.mjs`, `tests/contracts/security-assurance-contract.test.ts` |
 | Threat model contract | `schema/security-threat-model-v1.schema.json` | manual authoring, `ae security import-speca` | `node scripts/ci/validate-json.mjs`, contract tests |
 | Audit scope contract | `schema/security-audit-scope-v1.schema.json` | manual scope definition | `node scripts/ci/validate-json.mjs`, contract tests |
-| Code map | `schema/security-code-map-v1.schema.json` / `artifacts/security/security-code-map.json` | `pnpm run security:map-code` | semantic contract tests, fixture golden comparison |
+| Code map | `schema/security-code-map-v1.schema.json` / `artifacts/security/security-code-map.json` | `pnpm run security:map-code`（optional `--symbol-index`） | semantic contract tests, fixture golden comparison |
+| Symbol index | `schema/symbol-index-v1.schema.json` / `artifacts/code/symbol-index.json` | manual / external deterministic index producer | schema + semantic contract tests |
 | Audit tasks | `schema/security-audit-task-bundle-v1.schema.json` / `artifacts/security/security-audit-tasks.json` | `pnpm run security:proof-audit` | semantic contract tests, fixture golden comparison |
 | Candidate findings | `schema/security-finding-v1.schema.json` / `artifacts/security/security-findings.json` | `pnpm run security:proof-audit` with `--response-fixture` | candidate status checks, fixture golden comparison |
 | Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review` | Dead Code / Trust Boundary / Scope semantic checks |
