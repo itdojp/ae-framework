@@ -7,6 +7,7 @@ import {
   buildPolicyInputV1,
   evaluatePolicyGate,
   inspectClaimEvidenceManifest,
+  inspectClaimLevelSummary,
 } from '../../../scripts/ci/policy-gate.mjs';
 import { loadRiskPolicy } from '../../../scripts/ci/lib/risk-policy.mjs';
 
@@ -508,6 +509,42 @@ describe('policy-gate', () => {
     ]);
   });
 
+  it('keeps report-only assurance blocks non-fatal while surfacing next actions', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState({
+        claims: [
+          {
+            claimId: 'proof-required',
+            result: 'block',
+            status: 'unresolved',
+            evidenceRefs: [],
+            missingEvidenceRefs: ['missing-proof:proof-required'],
+            waiverRefs: [],
+            waivers: [],
+          },
+        ],
+      }),
+      assuranceMode: 'report-only',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.assurance.result).toBe('block');
+    expect(result.assurance.summary.block).toBe(1);
+    expect(result.warnings).toEqual(expect.arrayContaining([
+      expect.stringContaining('assurance claim proof-required is missing required evidence'),
+      expect.stringContaining('next action: add evidence or provide a valid waiver'),
+    ]));
+  });
+
   it('renders waiver ownership, expiry, and reason in the policy gate summary', () => {
     const result = evaluatePolicyGate({
       policy,
@@ -690,6 +727,41 @@ describe('policy-gate', () => {
     expect(result.errors).toContain('assurance decision is block');
     expect(result.assurance.result).toBe('block');
     expect(result.assurance.summary.expiredWaivers).toBe(1);
+  });
+
+  it('blocks strict assurance mode when claim evidence failed', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState({
+        claims: [
+          {
+            claimId: 'no-negative-stock',
+            result: 'block',
+            status: 'failed',
+            evidenceRefs: ['property-summary:no-negative-stock'],
+            missingEvidenceRefs: [],
+            waiverRefs: [],
+            waivers: [],
+          },
+        ],
+      }),
+      assuranceMode: 'strict',
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(expect.arrayContaining([
+      expect.stringContaining('assurance claim no-negative-stock has failed evidence'),
+      expect.stringContaining('next action: fix the failing evidence or provide a valid waiver'),
+      'assurance decision is block',
+    ]));
+    expect(result.assurance.result).toBe('block');
   });
 
   it('keeps unresolved assurance claims blocking even when active waivers are present', () => {
@@ -883,10 +955,203 @@ describe('policy-gate', () => {
         },
       ],
       statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState(),
       planArtifact: planArtifactState(),
     });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
+  });
+
+  it('fails closed when assurance enforcement is selected but the required artifact is missing', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assuranceMode: 'enforcement',
+      assurance: {
+        path: '/workspace/artifacts/assurance/claim-level-summary.json',
+        present: false,
+        schemaVersion: null,
+        generatedAt: null,
+        summary: {
+          totalClaims: 0,
+          fullySupported: 0,
+          partiallySupported: 0,
+          waived: 0,
+          unresolved: 0,
+        },
+        claims: [],
+        warnings: [],
+        errors: [],
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.assurance.mode).toBe('strict');
+    expect(result.errors).toEqual(expect.arrayContaining([
+      expect.stringContaining('required assurance artifact missing'),
+      'assurance decision is block',
+    ]));
+  });
+
+  it('uses the enforce-assurance label as assurance enforcement mode', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }, { name: 'enforce-assurance' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState({
+        claims: [
+          {
+            claimId: 'proof-required',
+            result: 'block',
+            status: 'unresolved',
+            evidenceRefs: [],
+            missingEvidenceRefs: ['missing-proof:proof-required'],
+            waiverRefs: [],
+            waivers: [],
+          },
+        ],
+      }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.assurance.mode).toBe('strict');
+    expect(result.errors).toEqual(expect.arrayContaining([
+      expect.stringContaining('assurance claim proof-required is missing required evidence'),
+      'assurance decision is block',
+    ]));
+  });
+
+  it('rejects invalid active waivers in assurance enforcement mode', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assuranceMode: 'strict',
+      assurance: assuranceState({
+        claims: [
+          {
+            claimId: 'manual-review',
+            result: 'waived',
+            status: 'waived',
+            evidenceRefs: [],
+            missingEvidenceRefs: [],
+            waiverRefs: ['waiver-invalid-001'],
+            waivers: [
+              {
+                id: 'waiver-invalid-001',
+                sourceArtifactId: '',
+                status: 'active',
+                owner: '',
+                expires: '',
+                reason: '',
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(expect.arrayContaining([
+      expect.stringContaining('waiver-invalid-001 for manual-review is missing owner'),
+      expect.stringContaining('waiver-invalid-001 for manual-review is missing reason'),
+      expect.stringContaining('waiver-invalid-001 for manual-review is missing expiry'),
+      expect.stringContaining('waiver-invalid-001 for manual-review is missing source artifact'),
+      expect.stringContaining('waiver-invalid-001 for manual-review is missing related evidence link'),
+      'assurance decision is block',
+    ]));
+  });
+
+  it('consumes claim-level summary artifacts for assurance enforcement', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-claim-level-summary-'));
+    const summaryPath = join(tempDir, 'claim-level-summary.json');
+
+    try {
+      writeFileSync(
+        summaryPath,
+        JSON.stringify({
+          schemaVersion: 'claim-level-summary/v1',
+          generatedAt: '2026-05-08T00:00:00.000Z',
+          summary: {
+            totalClaims: 2,
+            satisfied: 0,
+            tested: 0,
+            modelChecked: 0,
+            proved: 1,
+            runtimeMitigated: 0,
+            waived: 1,
+            unresolved: 0,
+            failed: 0,
+            notApplicable: 0,
+          },
+          claims: [
+            {
+              claimId: 'balance-proved',
+              state: 'proved',
+              decision: { result: 'pass' },
+              evidenceRefs: [{ id: 'proof:balance' }],
+              missingEvidenceRefs: [],
+              waiverRefs: [],
+            },
+            {
+              claimId: 'manual-waiver',
+              state: 'waived',
+              decision: { result: 'waived' },
+              evidenceRefs: [{ id: 'manual-control:review' }],
+              missingEvidenceRefs: [{ id: 'missing-model:manual-waiver' }],
+              waiverRefs: [
+                {
+                  id: 'waiver-manual-001',
+                  sourceArtifactId: 'temporary-override',
+                  status: 'active',
+                  owner: '@team-risk',
+                  expires: '2026-06-30',
+                  reason: 'Manual review remains active while model validation is incomplete.',
+                },
+              ],
+            },
+          ],
+        }),
+      );
+
+      const assurance = inspectClaimLevelSummary(summaryPath, '2026-05-08T00:00:00.000Z');
+      const result = evaluatePolicyGate({
+        policy,
+        pullRequest: {
+          labels: [{ name: 'risk:low' }],
+          body: '## Rollback\nnone\n\n## Acceptance\nok',
+        },
+        changedFiles: ['src/feature/example.ts'],
+        reviews: [],
+        statusRollup: [checkRun('verify-lite')],
+        assuranceMode: 'strict',
+        assurance,
+      });
+
+      expect(assurance.schemaVersion).toBe('claim-level-summary/v1');
+      expect(result.ok).toBe(true);
+      expect(result.assurance.result).toBe('waived');
+      expect(result.assurance.summary).toMatchObject({ pass: 1, waived: 1, block: 0 });
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 
   it('fails high-risk PR when KvOnce trace validation check fails', () => {

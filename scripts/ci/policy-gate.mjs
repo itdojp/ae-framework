@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import micromatch from 'micromatch';
@@ -32,12 +33,13 @@ const SUMMARY_CONTRACT_ID = 'policy-gate-summary.v1';
 const POLICY_INPUT_PATH = 'artifacts/ci/policy-input-v1.json';
 const POLICY_DECISION_PATH = 'artifacts/ci/policy-decision-js-v1.json';
 const CLAIM_EVIDENCE_MANIFEST_PATH = 'artifacts/assurance/claim-evidence-manifest.json';
+const CLAIM_LEVEL_SUMMARY_PATH = 'artifacts/assurance/claim-level-summary.json';
 const PLAN_ARTIFACT_PATH = 'artifacts/plan/plan-artifact.json';
 const PLAN_ARTIFACT_SCHEMA_PATH = 'schema/plan-artifact.schema.json';
 const PLAN_ARTIFACT_VALIDATION_JSON_PATH = 'artifacts/plan/plan-artifact-validation.json';
 const PLAN_ARTIFACT_VALIDATION_MD_PATH = 'artifacts/plan/plan-artifact-validation.md';
 const VALID_REVIEW_TOPOLOGIES = new Set(['team', 'solo']);
-const VALID_ASSURANCE_MODES = new Set(['report-only', 'strict']);
+const VALID_ASSURANCE_MODES = new Set(['report-only', 'strict', 'enforcement', 'enforced']);
 const EXPIRING_SOON_DAYS = 14;
 
 function parseArgs(argv) {
@@ -525,6 +527,9 @@ function normalizeAssuranceMode(value) {
   if (!raw) {
     return { value: 'report-only', warning: null };
   }
+  if (raw === 'enforcement' || raw === 'enforced') {
+    return { value: 'strict', warning: null };
+  }
   if (VALID_ASSURANCE_MODES.has(raw)) {
     return { value: raw, warning: null };
   }
@@ -532,6 +537,19 @@ function normalizeAssuranceMode(value) {
     value: 'report-only',
     warning: `invalid assurance mode: ${raw} (fallback to report-only)`,
   };
+}
+
+function resolveAssuranceMode(value, labels = []) {
+  const modeState = normalizeAssuranceMode(value);
+  const explicitMode = String(value ?? '').trim();
+  if (modeState.warning || explicitMode || modeState.value !== 'report-only') {
+    return modeState;
+  }
+  const labelSet = new Set(normalizeLabelNames(labels));
+  if (labelSet.has('enforce-assurance')) {
+    return { value: 'strict', warning: null };
+  }
+  return modeState;
 }
 
 function normalizeIdRefs(value) {
@@ -577,6 +595,11 @@ function normalizeWaiverStatus(waiver, nowDate) {
   return 'unknown';
 }
 
+function normalizeAssuranceResult(value, fallback = 'report-only') {
+  const raw = String(value ?? '').trim().toLowerCase();
+  return ['pass', 'waived', 'report-only', 'block'].includes(raw) ? raw : fallback;
+}
+
 
 function normalizeManifestSecuritySummary(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -615,6 +638,34 @@ function normalizeClaimWaivers(claim, nowDate) {
     .filter((waiver) => waiver.id);
 }
 
+function waiverValidationErrors(waiver, claim) {
+  const claimId = String(claim?.claimId || '').trim() || '(unknown claim)';
+  const errors = [];
+  if (waiver.status === 'expired') {
+    errors.push(`assurance waiver ${waiver.id} for ${claimId} is expired; next action: renew or remove the waiver and provide required evidence`);
+  } else if (waiver.status === 'orphan') {
+    errors.push(`assurance waiver ${waiver.id} for ${claimId} is orphaned; next action: link it to an active claim and evidence record`);
+  } else if (waiver.status === 'unknown') {
+    errors.push(`assurance waiver ${waiver.id} for ${claimId} has unknown status; next action: set status to active or expired`);
+  }
+  if (!waiver.owner) {
+    errors.push(`assurance waiver ${waiver.id} for ${claimId} is missing owner; next action: add waiver owner`);
+  }
+  if (!waiver.reason) {
+    errors.push(`assurance waiver ${waiver.id} for ${claimId} is missing reason; next action: add waiver rationale`);
+  }
+  if (!waiver.expires) {
+    errors.push(`assurance waiver ${waiver.id} for ${claimId} is missing expiry; next action: add waiver expiry date`);
+  }
+  if (!waiver.sourceArtifactId) {
+    errors.push(`assurance waiver ${waiver.id} for ${claimId} is missing source artifact; next action: link the waiver to its source artifact`);
+  }
+  if ((claim.evidenceRefs.length + claim.missingEvidenceRefs.length) === 0) {
+    errors.push(`assurance waiver ${waiver.id} for ${claimId} is missing related evidence link; next action: link evidence or missing-evidence refs`);
+  }
+  return errors;
+}
+
 function normalizeAssuranceClaim(claim, nowDate) {
   const id = String(claim?.id || claim?.claimId || '').trim();
   const status = String(claim?.status || 'unresolved').trim() || 'unresolved';
@@ -630,6 +681,38 @@ function normalizeAssuranceClaim(claim, nowDate) {
     result = 'waived';
   } else if (status === 'satisfied' && missingEvidenceRefs.length === 0) {
     result = 'pass';
+  }
+
+  return {
+    claimId: id,
+    result,
+    status,
+    evidenceRefs,
+    missingEvidenceRefs,
+    waiverRefs: waiverRefs.map((waiver) => waiver.id),
+    waivers: waiverRefs,
+  };
+}
+
+function normalizeClaimLevelSummaryClaim(claim, nowDate) {
+  const id = String(claim?.claimId || claim?.id || '').trim();
+  const status = String(claim?.state || claim?.status || 'unresolved').trim() || 'unresolved';
+  const evidenceRefs = normalizeIdRefs(claim?.evidenceRefs);
+  const missingEvidenceRefs = normalizeIdRefs(claim?.missingEvidenceRefs);
+  const waiverRefs = normalizeClaimWaivers(claim, nowDate);
+  const decisionResult = normalizeAssuranceResult(claim?.decision?.result, 'report-only');
+  let result = decisionResult;
+
+  if (status === 'failed' || status === 'unresolved') {
+    result = 'block';
+  } else if (missingEvidenceRefs.length > 0 && status !== 'waived' && status !== 'not-applicable') {
+    result = 'block';
+  } else if (status === 'waived' || waiverRefs.some((waiver) => waiver.status === 'active' || waiver.status === 'expiringSoon')) {
+    result = 'waived';
+  } else if (['satisfied', 'tested', 'model-checked', 'proved'].includes(status) && missingEvidenceRefs.length === 0) {
+    result = 'pass';
+  } else if (status === 'not-applicable') {
+    result = 'report-only';
   }
 
   return {
@@ -698,6 +781,67 @@ function inspectClaimEvidenceManifest(manifestPath = CLAIM_EVIDENCE_MANIFEST_PAT
   }
 }
 
+function inspectClaimLevelSummary(summaryPath = CLAIM_LEVEL_SUMMARY_PATH, now = new Date().toISOString()) {
+  const absolutePath = path.resolve(summaryPath);
+  const nowDate = toDateOnly(now);
+  const baseState = {
+    path: absolutePath,
+    present: false,
+    schemaVersion: null,
+    generatedAt: null,
+    summary: {
+      totalClaims: 0,
+      fullySupported: 0,
+      partiallySupported: 0,
+      waived: 0,
+      unresolved: 0,
+    },
+    claims: [],
+    warnings: [],
+    errors: [],
+  };
+
+  if (!fs.existsSync(absolutePath)) {
+    return baseState;
+  }
+
+  try {
+    const payload = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
+    const claims = (Array.isArray(payload?.claims) ? payload.claims : [])
+      .map((claim) => normalizeClaimLevelSummaryClaim(claim, nowDate))
+      .filter((claim) => claim.claimId);
+    return {
+      ...baseState,
+      present: true,
+      schemaVersion: String(payload?.schemaVersion || '').trim() || null,
+      generatedAt: String(payload?.generatedAt || '').trim() || null,
+      summary: {
+        totalClaims: Number(payload?.summary?.totalClaims ?? claims.length) || 0,
+        fullySupported: Number(payload?.summary?.satisfied ?? 0) + Number(payload?.summary?.tested ?? 0) + Number(payload?.summary?.modelChecked ?? 0) + Number(payload?.summary?.proved ?? 0) || 0,
+        partiallySupported: Number(payload?.summary?.runtimeMitigated ?? 0) || 0,
+        waived: Number(payload?.summary?.waived ?? 0) || 0,
+        unresolved: Number(payload?.summary?.unresolved ?? 0) + Number(payload?.summary?.failed ?? 0) || 0,
+      },
+      claims,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ...baseState,
+      present: true,
+      errors: [`failed to parse claim-level summary: ${message}`],
+    };
+  }
+}
+
+function inspectAssuranceEvidence(now = new Date().toISOString()) {
+  const claimLevelSummary = inspectClaimLevelSummary(CLAIM_LEVEL_SUMMARY_PATH, now);
+  if (claimLevelSummary.present) {
+    return claimLevelSummary;
+  }
+  return inspectClaimEvidenceManifest(CLAIM_EVIDENCE_MANIFEST_PATH, now);
+}
+
 function flattenAssuranceWaivers(claims) {
   return (Array.isArray(claims) ? claims : []).flatMap((claim) =>
     (Array.isArray(claim.waivers) ? claim.waivers : []).map((waiver) => ({
@@ -714,11 +858,28 @@ function buildAssuranceEvaluation(manifestState, options = {}) {
   if (modeState.warning) warnings.push(modeState.warning);
   if (!manifestState?.present) {
     warnings.push(`claim evidence manifest not found: ${manifestState?.path || path.resolve(CLAIM_EVIDENCE_MANIFEST_PATH)}`);
+    if (modeState.value === 'strict') {
+      errors.push(`required assurance artifact missing: ${manifestState?.path || path.resolve(CLAIM_LEVEL_SUMMARY_PATH)}; next action: generate claim-level summary or claim-evidence manifest`);
+    }
   }
 
   const claims = Array.isArray(manifestState?.claims) ? manifestState.claims : [];
   const waivers = flattenAssuranceWaivers(claims);
-  const hasBlockingWaiver = waivers.some((waiver) => waiver.status === 'expired' || waiver.status === 'orphan');
+  for (const claim of claims) {
+    for (const waiver of Array.isArray(claim.waivers) ? claim.waivers : []) {
+      errors.push(...waiverValidationErrors(waiver, claim));
+    }
+    if (claim.result === 'block') {
+      if (claim.status === 'failed') {
+        errors.push(`assurance claim ${claim.claimId} has failed evidence; next action: fix the failing evidence or provide a valid waiver`);
+      } else if (claim.missingEvidenceRefs.length > 0) {
+        errors.push(`assurance claim ${claim.claimId} is missing required evidence: ${claim.missingEvidenceRefs.join(', ')}; next action: add evidence or provide a valid waiver`);
+      } else {
+        errors.push(`assurance claim ${claim.claimId} is unresolved; next action: satisfy, waive, or mark the claim not applicable`);
+      }
+    }
+  }
+  const hasBlockingWaiver = waivers.some((waiver) => waiver.status === 'expired' || waiver.status === 'orphan' || waiver.status === 'unknown');
   const result = errors.length > 0 || hasBlockingWaiver || claims.some((claim) => claim.result === 'block')
     ? 'block'
     : (claims.some((claim) => claim.result === 'waived')
@@ -756,7 +917,11 @@ function buildAssuranceEvaluation(manifestState, options = {}) {
       generatedAt: manifestState?.generatedAt ?? null,
     },
     summary,
-    claims: claims.map(({ waivers: _waivers, ...claim }) => claim),
+    claims: claims.map((claim) => {
+      const normalizedClaim = { ...claim };
+      delete normalizedClaim.waivers;
+      return normalizedClaim;
+    }),
     waivers,
     warnings,
     errors,
@@ -844,14 +1009,16 @@ function evaluatePolicyGate({
   errors.push(...planArtifactEvaluation.errors);
   warnings.push(...planArtifactEvaluation.warnings);
 
+  const assuranceModeState = resolveAssuranceMode(assuranceMode, currentLabels);
+  if (assuranceModeState.warning) warnings.push(`assurance: ${assuranceModeState.warning}`);
   const assuranceEvaluation = buildAssuranceEvaluation(
-    assurance || inspectClaimEvidenceManifest(CLAIM_EVIDENCE_MANIFEST_PATH),
-    { assuranceMode },
+    assurance || inspectAssuranceEvidence(),
+    { assuranceMode: assuranceModeState.value },
   );
   warnings.push(...assuranceEvaluation.warnings.map((warning) => `assurance: ${warning}`));
   if (assuranceEvaluation.mode === 'strict' && assuranceEvaluation.result === 'block') {
     errors.push(...assuranceEvaluation.errors.map((error) => `assurance: ${error}`));
-    if (assuranceEvaluation.errors.length === 0) {
+    if (!errors.includes('assurance decision is block')) {
       errors.push('assurance decision is block');
     }
   } else if (assuranceEvaluation.errors.length > 0) {
@@ -976,7 +1143,7 @@ function buildMarkdownSummary(prNumber, evaluation) {
   }
   if (evaluation.assurance) {
     lines.push(`- assurance: ${evaluation.assurance.result} (${evaluation.assurance.mode})`);
-    lines.push(`  - claim evidence manifest: ${evaluation.assurance.manifest.present ? 'present' : 'missing'}`);
+    lines.push(`  - assurance artifact: ${evaluation.assurance.manifest.present ? 'present' : 'missing'} (${evaluation.assurance.manifest.schemaVersion ?? 'n/a'})`);
     lines.push(`  - claims: pass=${evaluation.assurance.summary.pass}, waived=${evaluation.assurance.summary.waived}, report-only=${evaluation.assurance.summary.reportOnly}, block=${evaluation.assurance.summary.block}`);
     if (evaluation.assurance.summary.security) {
       const security = evaluation.assurance.summary.security;
@@ -1186,7 +1353,7 @@ function buildPolicyInputV1({
   assurance,
   now = new Date().toISOString(),
 }) {
-  const normalizedAssuranceMode = normalizeAssuranceMode(assuranceMode).value;
+  const normalizedAssuranceMode = resolveAssuranceMode(assuranceMode, pullRequest?.labels || []).value;
   const input = {
     schemaVersion: '1.0.0',
     contractId: 'policy-input.v1',
@@ -1259,7 +1426,7 @@ async function run(options = parseArgs(process.argv)) {
   const statusRollup = fetchStatusRollup(repo, prNumber);
   const planArtifact = inspectPlanArtifact(options.policyPath);
   const now = new Date().toISOString();
-  const assurance = inspectClaimEvidenceManifest(CLAIM_EVIDENCE_MANIFEST_PATH, now);
+  const assurance = inspectAssuranceEvidence(now);
 
   const evaluation = evaluatePolicyGate({
     policy,
@@ -1285,7 +1452,7 @@ async function run(options = parseArgs(process.argv)) {
     statusRollup,
     reviewTopology: process.env.AE_REVIEW_TOPOLOGY,
     approvalOverride: process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
-    assuranceMode: process.env.AE_POLICY_ASSURANCE_MODE,
+    assuranceMode: resolveAssuranceMode(process.env.AE_POLICY_ASSURANCE_MODE, pullRequest?.labels || []).value,
     assurance,
     now,
   });
@@ -1345,7 +1512,9 @@ export {
   evaluateCheckRequirement,
   evaluatePolicyGate,
   buildPolicyGateReport,
+  inspectAssuranceEvidence,
   inspectClaimEvidenceManifest,
+  inspectClaimLevelSummary,
   run,
   toCheckEntries,
 };
