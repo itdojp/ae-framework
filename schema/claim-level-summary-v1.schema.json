@@ -342,9 +342,7 @@
           },
           "then": {
             "properties": {
-              "mode": { "const": "strict" },
-              "result": { "const": "block" },
-              "missingEvidenceRefs": { "minItems": 1 }
+              "mode": { "const": "strict" }
             }
           }
         }

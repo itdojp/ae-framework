@@ -41,6 +41,29 @@ describe('assurance control plane preview schema contracts', () => {
     expect(validate.errors?.some((entry) => entry.instancePath === '/claims/0/decision')).toBe(true);
   });
 
+  it('allows enforced strict decisions to pass when evidence is present', () => {
+    const validate = buildValidator('schema/claim-level-summary-v1.schema.json');
+    const fixture = structuredClone(loadJson('fixtures/assurance/sample.claim-level-summary-v1.json')) as {
+      claims: Array<{
+        state: string;
+        decision: Record<string, unknown>;
+      }>;
+    };
+    const satisfiedClaim = fixture.claims.find((claim) => claim.state === 'satisfied');
+    if (!satisfiedClaim) {
+      throw new Error('sample fixture must include a satisfied claim');
+    }
+    satisfiedClaim.decision = {
+      ...satisfiedClaim.decision,
+      mode: 'strict',
+      result: 'pass',
+      enforced: true,
+      missingEvidenceRefs: [],
+    };
+
+    expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
   it('rejects waived claim-level summaries without waiver references', () => {
     const validate = buildValidator('schema/claim-level-summary-v1.schema.json');
     const invalidFixture = structuredClone(loadJson('fixtures/assurance/sample.claim-level-summary-v1.json')) as {
