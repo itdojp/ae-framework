@@ -310,6 +310,11 @@ function collectArtifactRefs(payload) {
       refs.push({ path: `/assumptions/${index}/evidenceRefs`, artifactRef });
     }
   }
+  for (const [index, waiver] of ensureArray(payload?.waivers).entries()) {
+    for (const artifactRef of ensureArray(waiver?.evidenceRefs)) {
+      refs.push({ path: `/waivers/${index}/evidenceRefs`, artifactRef });
+    }
+  }
   for (const [index, obligation] of ensureArray(payload?.proofObligations).entries()) {
     for (const artifactRef of ensureArray(obligation?.artifactRefs)) {
       refs.push({ path: `/proofObligations/${index}/artifactRefs`, artifactRef });
@@ -366,10 +371,10 @@ function evaluatePolicyDecisionConsistency(payload, policyDecision) {
     if (result === 'waived' && status !== 'waived') {
       errors.push(`policy decision marks ${claimId} waived but change-package status is ${status}`);
     }
-    if (result === 'pass' && ['waived', 'unresolved'].includes(status)) {
+    if (result === 'pass' && ['waived', 'unresolved', 'failed'].includes(status)) {
       errors.push(`policy decision marks ${claimId} pass but change-package status is ${status}`);
     }
-    if (result === 'block' && status !== 'unresolved') {
+    if (result === 'block' && !['failed', 'unresolved'].includes(status)) {
       errors.push(`policy decision marks ${claimId} block but change-package status is ${status}`);
     }
     if (result === 'report-only' && status === 'waived') {

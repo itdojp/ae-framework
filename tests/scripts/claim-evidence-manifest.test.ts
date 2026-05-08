@@ -78,9 +78,9 @@ describe.sequential('claim evidence manifest generator', () => {
         schemaVersion: 'claim-evidence-manifest/v1',
         generatedAt: '2026-04-28T18:20:00.000Z',
         summary: {
-          totalClaims: 2,
+          totalClaims: 4,
           fullySupported: 1,
-          partiallySupported: 1,
+          partiallySupported: 3,
           waived: 0,
           unresolved: 0,
         },
@@ -120,7 +120,47 @@ describe.sequential('claim evidence manifest generator', () => {
       const markdown = readFileSync(outputMd, 'utf8');
       expect(markdown).toContain('# Claim Evidence Manifest');
       expect(markdown).toContain('| no-negative-balance | n/a | high | A3 | A2 | partial |');
+      expect(markdown).toContain('| strict-proof-failure | n/a | high | A3 | A2 | partial |');
+      expect(markdown).toContain('| ui-out-of-scope | n/a | low | A3 | A2 | partial |');
       expect(markdown).toContain('## Missing evidence');
+
+      const strictProofClaim = manifest.claims.find((claim: { id: string }) => claim.id === 'strict-proof-failure');
+      expect(strictProofClaim).toMatchObject({
+        targetLevel: 'A3',
+        achievedLevel: 'A2',
+        status: 'partial',
+      });
+      expect(strictProofClaim.evidenceRefs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            description: expect.stringContaining('status=failed'),
+            sourceArtifactId: 'change-package-v2',
+          }),
+        ]),
+      );
+      expect(strictProofClaim.missingEvidenceRefs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'change-package-v2:strict-proof-failure:proof-obligation:obl-strict-proof-failure',
+            expectedKind: 'proof',
+          }),
+        ]),
+      );
+
+      const outOfScopeClaim = manifest.claims.find((claim: { id: string }) => claim.id === 'ui-out-of-scope');
+      expect(outOfScopeClaim).toMatchObject({
+        targetLevel: 'A3',
+        achievedLevel: 'A2',
+        status: 'partial',
+      });
+      expect(outOfScopeClaim.evidenceRefs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            description: expect.stringContaining('status=not-applicable'),
+            sourceArtifactId: 'change-package-v2',
+          }),
+        ]),
+      );
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

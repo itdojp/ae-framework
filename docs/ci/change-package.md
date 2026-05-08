@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-22'
+lastVerified: '2026-05-08'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -46,16 +46,21 @@ Responsibility split:
 - schema: `schema/change-package-v2.schema.json`
 - sample fixture: `fixtures/change-package/sample.change-package-v2.json`
 - added sections:
+  - `requirements`
+  - `validationLanes`
+  - `policyDecision`
   - `assurance`
   - `claims`
   - `assumptions`
   - `proofObligations`
   - `counterexamples`
+  - `releaseControls`
+  - `residualRisks`
   - `trustBoundary`
   - `runtimeControls`
   - `waivers`
 
-The default path remains `change-package/v1`. v2 is available through opt-in generation, strict validation, and dual-write / dual-validate commands so migration can proceed without breaking existing consumers.
+The default path remains `change-package/v1`. v2 is available through opt-in generation, strict validation, and dual-write / dual-validate commands so migration can proceed without breaking existing consumers. The v2 package is the proof-carrying PR/release package: it preserves evidence-backed, waived, runtime-mitigated, unresolved, failed, and not-applicable claim states and points summaries to `artifacts/change-package/change-package-v2.json`.
 
 ### 3. Generation and validation commands
 ```bash
@@ -70,7 +75,8 @@ node scripts/change-package/generate.mjs \
   --schema-version v2 \
   --claim-evidence-manifest artifacts/assurance/claim-evidence-manifest.json \
   --policy-decision artifacts/ci/policy-decision-js-v1.json \
-  --assurance-summary artifacts/assurance/assurance-summary.json
+  --assurance-summary artifacts/assurance/assurance-summary.json \
+  --claim-level-summary artifacts/assurance/claim-level-summary.json
 
 # Dual-write v1 + v2
 node scripts/change-package/generate.mjs --dual-write
@@ -104,7 +110,8 @@ node scripts/change-package/validate.mjs \
 - `--mode digest|detailed`: markdown output detail level
 - `--schema-version v1|v2`: switch the generated contract; default is `v1`
 - `--dual-write`: write v1 to `change-package.json|md` and v2 to `change-package-v2.json|md`
-- `--claim-evidence-manifest`, `--policy-decision`, `--assurance-summary`: optional v2 integration inputs
+- `--claim-evidence-manifest`, `--policy-decision`, `--assurance-summary`, `--claim-level-summary`: optional v2 integration inputs
+- `--post-deploy-verify <path>`: optional release/post-deploy verification input for v2 `releaseControls`
 
 #### `validate.mjs`
 - `--required-evidence <csv>`: explicit required evidence IDs
@@ -123,7 +130,7 @@ node scripts/change-package/validate.mjs \
 This means:
 - `pr-summary:detailed` shows richer evidence and reproducibility commands
 - digest mode shows a shorter summary
-- when `artifacts/change-package/change-package-v2.json` exists, PR summary rendering includes v2 claim / proof obligation / waiver counts
+- when `artifacts/change-package/change-package-v2.json` exists, PR summary rendering includes v2 claim / proof obligation / waiver counts, claim-state counts, and the evidence package path
 - `AE_CHANGE_PACKAGE_DUAL_WRITE=1` enables opt-in v1 + v2 generation in the PR summary workflow; `AE_CHANGE_PACKAGE_V2_STRICT=1` makes its v2 validation strict
 
 When tied to auto-merge:
@@ -136,6 +143,8 @@ When tied to auto-merge:
 - When `policy/risk-policy.yml` changes, verify Change Package outcomes with fixtures and tests
 - When the schema changes, update `fixtures/change-package/sample.change-package.json` and `scripts/ci/validate-json.mjs` together
 - Keep `change-package/v1` as the default until downstream consumers explicitly migrate to v2
+- Review `failed`, `not-applicable`, `runtime-mitigated`, and `waived` claim states explicitly; do not treat them as satisfied claims.
+- For release decisions, review `releaseControls` and `residualRisks` in the v2 Markdown before relying on post-deploy mitigation.
 
 ---
 
@@ -171,16 +180,21 @@ PR の安全性判断を diff 中心ではなく、証跡（evidence）中心で
 - スキーマ: `schema/change-package-v2.schema.json`
 - sample fixture: `fixtures/change-package/sample.change-package-v2.json`
 - 追加セクション:
+  - `requirements`
+  - `validationLanes`
+  - `policyDecision`
   - `assurance`
   - `claims`
   - `assumptions`
   - `proofObligations`
   - `counterexamples`
+  - `releaseControls`
+  - `residualRisks`
   - `trustBoundary`
   - `runtimeControls`
   - `waivers`
 
-既定経路は引き続き `change-package/v1` です。v2 は opt-in 生成、strict validation、dual-write / dual-validate による段階移行として利用できます。
+既定経路は引き続き `change-package/v1` です。v2 は opt-in 生成、strict validation、dual-write / dual-validate による段階移行として利用できます。v2 は proof-carrying PR/release package であり、evidence-backed / waived / runtime-mitigated / unresolved / failed / not-applicable の claim state を区別し、summary から `artifacts/change-package/change-package-v2.json` を参照できるようにします。
 
 ## 3. 生成・検証コマンド
 
@@ -196,7 +210,8 @@ node scripts/change-package/generate.mjs \
   --schema-version v2 \
   --claim-evidence-manifest artifacts/assurance/claim-evidence-manifest.json \
   --policy-decision artifacts/ci/policy-decision-js-v1.json \
-  --assurance-summary artifacts/assurance/assurance-summary.json
+  --assurance-summary artifacts/assurance/assurance-summary.json \
+  --claim-level-summary artifacts/assurance/claim-level-summary.json
 
 # v1 + v2 dual-write
 node scripts/change-package/generate.mjs --dual-write
@@ -231,7 +246,8 @@ node scripts/change-package/validate.mjs \
 - `--mode digest|detailed`: Markdown 出力粒度
 - `--schema-version v1|v2`: 生成する contract を切り替える。既定は `v1`
 - `--dual-write`: v1 を `change-package.json|md`、v2 を `change-package-v2.json|md` に同時出力する
-- `--claim-evidence-manifest`, `--policy-decision`, `--assurance-summary`: v2 生成用の任意入力
+- `--claim-evidence-manifest`, `--policy-decision`, `--assurance-summary`, `--claim-level-summary`: v2 生成用の任意入力
+- `--post-deploy-verify <path>`: v2 `releaseControls` に使う任意の release/post-deploy verification 入力
 
 ### `validate.mjs`
 - `--required-evidence <csv>`: required evidence ID を明示
@@ -250,7 +266,7 @@ node scripts/change-package/validate.mjs \
 5. artifact としてアップロード
 
 これにより、`pr-summary:detailed` の場合は証跡と再現コマンドを詳細表示し、digest の場合は短い要約を表示します。
-`artifacts/change-package/change-package-v2.json` が存在する場合、PR summary は v2 の claims / proofObligations / waivers 件数も表示します。
+`artifacts/change-package/change-package-v2.json` が存在する場合、PR summary は v2 の claims / proofObligations / waivers 件数、claim-state counts、evidence package path も表示します。
 PR summary workflow では `AE_CHANGE_PACKAGE_DUAL_WRITE=1` で v1 + v2 生成を opt-in でき、`AE_CHANGE_PACKAGE_V2_STRICT=1` で v2 validation を strict にできます。
 
 auto-merge 運用と連携する場合:
@@ -264,3 +280,5 @@ auto-merge 運用と連携する場合:
 - `policy/risk-policy.yml` の更新時は、Change Package の判定結果が意図どおりかを fixture とテストで確認する。  
 - schema 変更時は `fixtures/change-package/sample.change-package.json` と `scripts/ci/validate-json.mjs` の検証対象を同時更新する。  
 - downstream consumer が明示移行するまでは `change-package/v1` を既定運用として維持する。
+- `failed`、`not-applicable`、`runtime-mitigated`、`waived` は satisfied claim として扱わず、明示的に確認する。
+- release 判断では v2 Markdown の `releaseControls` と `residualRisks` を確認してから post-deploy mitigation に依存する。

@@ -224,8 +224,10 @@ describe.sequential('render-pr-summary', () => {
               status: 'partial',
             },
             claims: [
-              { id: 'no-negative-stock' },
-              { id: 'manual-review' },
+              { id: 'no-negative-stock', status: 'tested' },
+              { id: 'manual-review', status: 'waived' },
+              { id: 'strict-proof', status: 'failed' },
+              { id: 'ui-out-of-scope', status: 'not-applicable' },
             ],
             proofObligations: [
               { id: 'obl-no-negative-stock' },
@@ -233,6 +235,16 @@ describe.sequential('render-pr-summary', () => {
             waivers: [
               { owner: '@team-risk', relatedClaimIds: ['manual-review'] },
             ],
+            policyDecision: {
+              result: 'report-only',
+              mode: 'report-only',
+              enforced: false,
+            },
+            releaseControls: {
+              preDeployChecks: ['pnpm run verify:lite'],
+              postDeployChecks: ['post-deploy-verify'],
+              rollbackSignals: ['post-deploy-verify.status=fail'],
+            },
           },
           null,
           2,
@@ -243,7 +255,9 @@ describe.sequential('render-pr-summary', () => {
       expect(result.status, result.stderr || result.stdout).toBe(0);
 
       const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
-      expect(output).toContain('Change Package v2: claims=2, proofObligations=1, waivers=1, assurance=A3/A2/partial');
+      expect(output).toContain('Change Package v2: claims=4, proofObligations=1, waivers=1, assurance=A3/A2/partial');
+      expect(output).toContain('evidencePackage=artifacts/change-package/change-package-v2.json');
+      expect(output).toContain('claimStates=satisfied=0, tested=1, model-checked=0, proved=0, runtime-mitigated=0, waived=1, unresolved=0, failed=1, not-applicable=1');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

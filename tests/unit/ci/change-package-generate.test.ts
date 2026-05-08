@@ -165,6 +165,168 @@ async function writeV2InputArtifacts(workdir: string): Promise<{
   return { manifestPath, policyDecisionPath, assuranceSummaryPath };
 }
 
+async function writeClaimLevelSummaryArtifact(workdir: string): Promise<string> {
+  const claimLevelSummaryPath = join(workdir, 'artifacts', 'assurance', 'claim-level-summary.json');
+  await writeJson(claimLevelSummaryPath, {
+    schemaVersion: 'claim-level-summary/v1',
+    generatedAt: '2026-05-08T00:00:00.000Z',
+    source: {
+      repository: 'itdojp/ae-framework',
+      prNumber: 3309,
+      baseRef: 'main',
+      headRef: 'feat/3309-change-package-proof',
+    },
+    inputs: {
+      claimEvidenceManifest: {
+        id: 'claim-evidence-manifest',
+        path: 'artifacts/assurance/claim-evidence-manifest.json',
+        present: true,
+        required: true,
+      },
+      policyGateSummary: {
+        id: 'policy-gate-summary',
+        path: 'artifacts/ci/policy-gate-summary.json',
+        present: true,
+        required: false,
+      },
+      temporaryOverrides: [],
+      changePackageV2: null,
+    },
+    summary: {
+      totalClaims: 3,
+      satisfied: 0,
+      tested: 1,
+      modelChecked: 0,
+      proved: 0,
+      runtimeMitigated: 1,
+      waived: 0,
+      unresolved: 0,
+      failed: 1,
+      notApplicable: 0,
+      enforcedDecisions: 1,
+      reportOnlyDecisions: 2,
+    },
+    claims: [
+      {
+        claimId: 'reservation-tested',
+        statement: 'Reservation behavior is covered by tests.',
+        criticality: 'medium',
+        targetLevel: 'A2',
+        achievedLevel: 'A2',
+        state: 'tested',
+        stateRationale: 'Behavior evidence is observed.',
+        decision: {
+          mode: 'report-only',
+          result: 'pass',
+          enforced: false,
+          reason: 'Test evidence is present.',
+          sourceArtifactId: 'policy-gate-summary',
+          evidenceRefs: ['ev-reservation-test'],
+          missingEvidenceRefs: [],
+          waiverRefs: [],
+        },
+        evidenceRefs: [
+          {
+            id: 'ev-reservation-test',
+            kind: 'behavior',
+            status: 'observed',
+            artifactPath: 'artifacts/testing/property-summary.json',
+            sourceArtifactId: 'verify-lite',
+            description: 'Behavior test evidence.',
+          },
+        ],
+        missingEvidenceRefs: [],
+        waiverRefs: [],
+        assumptions: [],
+        runtimeControls: [],
+        notes: ['requirement:docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md'],
+      },
+      {
+        claimId: 'rollout-runtime',
+        statement: 'Rollout risk is mitigated by runtime controls.',
+        criticality: 'high',
+        targetLevel: 'A3',
+        achievedLevel: 'A2',
+        state: 'runtime-mitigated',
+        stateRationale: 'Runtime control is linked.',
+        decision: {
+          mode: 'report-only',
+          result: 'report-only',
+          enforced: false,
+          reason: 'Runtime mitigation remains distinct from proof.',
+          sourceArtifactId: 'policy-gate-summary',
+          evidenceRefs: ['ev-runtime-control'],
+          missingEvidenceRefs: [],
+          waiverRefs: [],
+        },
+        evidenceRefs: [
+          {
+            id: 'ev-runtime-control',
+            kind: 'runtime',
+            status: 'observed',
+            artifactPath: 'artifacts/runtime/manual-review.json',
+            sourceArtifactId: 'change-package-v2',
+            description: 'Runtime rollout guard.',
+          },
+        ],
+        missingEvidenceRefs: [],
+        waiverRefs: [],
+        assumptions: [
+          {
+            id: 'assumption-rollout-window',
+            statement: 'Rollback window remains staffed.',
+            status: 'residual-risk',
+            artifactPath: 'docs/ci/change-package.md',
+          },
+        ],
+        runtimeControls: [
+          {
+            id: 'rollout_guard_violation',
+            kind: 'alert',
+            description: 'Rollback if rollout guard emits an alert.',
+          },
+        ],
+        notes: [],
+      },
+      {
+        claimId: 'strict-proof-failure',
+        statement: 'Strict proof still has an open counterexample.',
+        criticality: 'critical',
+        targetLevel: 'A4',
+        achievedLevel: 'A1',
+        state: 'failed',
+        stateRationale: 'Proof evidence failed.',
+        decision: {
+          mode: 'strict',
+          result: 'block',
+          enforced: true,
+          reason: 'Failed proof blocks strict enforcement.',
+          sourceArtifactId: 'policy-gate-summary',
+          evidenceRefs: ['ev-proof-failed'],
+          missingEvidenceRefs: [],
+          waiverRefs: [],
+        },
+        evidenceRefs: [
+          {
+            id: 'ev-proof-failed',
+            kind: 'proof',
+            status: 'failed',
+            artifactPath: 'artifacts/formal/no-negative-summary.json',
+            sourceArtifactId: 'formal-summary',
+            description: 'Failed proof evidence.',
+          },
+        ],
+        missingEvidenceRefs: [],
+        waiverRefs: [],
+        assumptions: [],
+        runtimeControls: [],
+        notes: [],
+      },
+    ],
+  });
+  return claimLevelSummaryPath;
+}
+
 describe('change-package generate', () => {
   it('generates change-package json/md from changed files and event payload', async () => {
     const workdir = await createWorkdir('change-package-generate-');
@@ -402,6 +564,82 @@ describe('change-package generate', () => {
     expect(markdown).toContain('### Claims');
     expect(markdown).toContain('### Proof Obligations');
     expect(markdown).toContain('### Waivers');
+  });
+
+  it('projects claim-level-summary states, release controls, policy decision, and residual risks into v2', async () => {
+    const workdir = await createWorkdir('change-package-generate-claim-level-v2-');
+    const changedFilesPath = join(workdir, 'changed-files.txt');
+    const outputJsonPath = join(workdir, 'artifacts', 'change-package', 'change-package-v2.json');
+    const outputMarkdownPath = join(workdir, 'artifacts', 'change-package', 'change-package-v2.md');
+    const { manifestPath, policyDecisionPath, assuranceSummaryPath } = await writeV2InputArtifacts(workdir);
+    const claimLevelSummaryPath = await writeClaimLevelSummaryArtifact(workdir);
+
+    await writeFile(
+      changedFilesPath,
+      [
+        'docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md',
+        'scripts/change-package/generate.mjs',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const result = spawnSync(process.execPath, [
+      generateScript,
+      '--policy', policyPath,
+      '--schema-version', 'v2',
+      '--changed-files-file', changedFilesPath,
+      '--artifact-root', workdir,
+      '--claim-evidence-manifest', manifestPath,
+      '--policy-decision', policyDecisionPath,
+      '--assurance-summary', assuranceSummaryPath,
+      '--claim-level-summary', claimLevelSummaryPath,
+      '--output-json', outputJsonPath,
+      '--output-md', outputMarkdownPath,
+      '--mode', 'detailed',
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      env: isolatedGenerateEnv,
+    });
+
+    expect(result.status, result.stderr || result.stdout).toBe(0);
+
+    const generated = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
+      assurance: { status: string };
+      requirements: { changedRefs: string[] };
+      validationLanes: Array<{ id: string; status: string }>;
+      policyDecision: { result: string; mode: string; enforced: boolean };
+      releaseControls: { preDeployChecks: string[]; postDeployChecks: string[]; rollbackSignals: string[] };
+      residualRisks: Array<{ id: string; claimIds: string[] }>;
+      claims: Array<{ id: string; status: string; targetLevel: string; achievedLevel: string }>;
+      evidence: { items: Array<{ id: string; present: boolean }> };
+    };
+
+    expect(generated.assurance.status).toBe('failed');
+    expect(generated.requirements.changedRefs).toContain('docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md');
+    expect(generated.claims).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'rollout-runtime', status: 'runtime-mitigated', targetLevel: 'A3', achievedLevel: 'A2' }),
+      expect.objectContaining({ id: 'strict-proof-failure', status: 'failed', targetLevel: 'A4', achievedLevel: 'A1' }),
+    ]));
+    expect(generated.validationLanes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'proof', status: 'fail' }),
+      expect.objectContaining({ id: 'runtime', status: 'pass' }),
+    ]));
+    expect(generated.policyDecision).toMatchObject({ result: 'waived', mode: 'unknown', enforced: false });
+    expect(generated.releaseControls.preDeployChecks).toContain('pnpm run verify:lite');
+    expect(generated.releaseControls.postDeployChecks).toContain('post-deploy-verify workflow or release verification artifact required before production rollout');
+    expect(generated.releaseControls.rollbackSignals).toContain('post-deploy-verify.status=fail');
+    expect(generated.residualRisks).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'claim:strict-proof-failure:failed', claimIds: ['strict-proof-failure'] }),
+      expect.objectContaining({ id: 'assumption:assumption-rollout-window', claimIds: ['rollout-runtime'] }),
+    ]));
+    expect(generated.evidence.items).toContainEqual(expect.objectContaining({ id: 'claimLevelSummary', present: true }));
+
+    const markdown = await readFile(outputMarkdownPath, 'utf8');
+    expect(markdown).toContain('evidence package:');
+    expect(markdown).toContain('claim states: satisfied=');
+    expect(markdown).toContain('### Release / Post-deploy Controls');
+    expect(markdown).toContain('### Residual Risks');
   });
 
   it('derives v2 assurance status from unresolved and partial assurance-summary claims', async () => {
