@@ -28,7 +28,8 @@ spec / design / audit scope
   -> security-claim/v1 + security-threat-model/v1 + security-audit-scope/v1
   -> security-code-map/v1
   -> optional security-entrypoint-map/v1
-  -> security-audit-task-bundle/v1 + security-finding/v1
+  -> security-audit-task-bundle/v1 + optional security-audit-prompt-pack/v1
+  -> security-finding/v1
   -> security-review/v1
   -> assurance-summary/v1 + claim-evidence-manifest/v1
   -> policy-gate report-only summary + PR summary
@@ -40,7 +41,7 @@ In scope:
 - SPECA-like import and explicit `SEC-CLAIM` Markdown extraction;
 - scoped candidate source mapping, with optional `symbol-index/v1` input for deterministic symbol metadata;
 - optional `security-entrypoint-map/v1` input for Trust Boundary reachability evidence;
-- deterministic proof-attempt task generation and fixture-backed candidate normalization;
+- deterministic proof-attempt task generation, Codex-ready prompt-pack generation, and fixture-backed candidate normalization;
 - Dead Code / Trust Boundary / Scope review classification;
 - integration into assurance summary, claim-evidence manifest, policy summaries, and PR summaries;
 - deterministic fixture/golden regression through `fixtures/security-assurance/cache-key/`.
@@ -64,6 +65,7 @@ Out of scope for the MVP:
 | Symbol index | `schema/symbol-index-v1.schema.json` / `artifacts/code/symbol-index.json` | manual / external deterministic index producer | schema + semantic contract tests |
 | Entrypoint map | `schema/security-entrypoint-map-v1.schema.json` / `artifacts/security/security-entrypoint-map.json` | manual / external deterministic entrypoint evidence producer | schema + semantic contract tests |
 | Audit tasks | `schema/security-audit-task-bundle-v1.schema.json` / `artifacts/security/security-audit-tasks.json` | `pnpm run security:proof-audit` | semantic contract tests, fixture golden comparison |
+| Audit prompt pack | `schema/security-audit-prompt-pack-v1.schema.json` / `artifacts/security/codex-audit-prompts/security-audit-prompt-pack.json` | `pnpm run security:audit-prompt` | schema + semantic contract tests; no external LLM/network calls |
 | Candidate findings | `schema/security-finding-v1.schema.json` / `artifacts/security/security-findings.json` | `pnpm run security:proof-audit` with `--response-fixture` | candidate status checks, fixture golden comparison |
 | Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review` (optionally `--claims`, `--entrypoint-map`) | Dead Code / Trust Boundary / Scope semantic checks |
 | Assurance summary | `artifacts/assurance/assurance-summary.json` by default | `node scripts/assurance/aggregate-lanes.mjs` | `schema/assurance-summary.schema.json`, fixture golden comparison |
@@ -145,7 +147,8 @@ spec / design / audit scope
   -> security-claim/v1 + security-threat-model/v1 + security-audit-scope/v1
   -> security-code-map/v1
   -> optional security-entrypoint-map/v1
-  -> security-audit-task-bundle/v1 + security-finding/v1
+  -> security-audit-task-bundle/v1 + optional security-audit-prompt-pack/v1
+  -> security-finding/v1
   -> security-review/v1
   -> assurance-summary/v1 + claim-evidence-manifest/v1
   -> policy-gate report-only summary + PR summary
@@ -157,7 +160,7 @@ MVP の対象範囲:
 - SPECA-like import と明示 `SEC-CLAIM` Markdown 抽出;
 - scope に基づく candidate source mapping と、deterministic symbol metadata 用 optional `symbol-index/v1` input;
 - Trust Boundary reachability evidence 用の optional `security-entrypoint-map/v1` input;
-- deterministic proof-attempt task 生成と fixture-backed candidate 正規化;
+- deterministic proof-attempt task 生成、Codex-ready prompt pack 生成、fixture-backed candidate 正規化;
 - Dead Code / Trust Boundary / Scope review 分類;
 - assurance summary、claim-evidence manifest、policy summary、PR summary への接続;
 - `fixtures/security-assurance/cache-key/` による deterministic fixture / golden regression。
@@ -181,6 +184,7 @@ MVP の対象外:
 | Symbol index | `schema/symbol-index-v1.schema.json` / `artifacts/code/symbol-index.json` | manual / external deterministic index producer | schema + semantic contract tests |
 | Entrypoint map | `schema/security-entrypoint-map-v1.schema.json` / `artifacts/security/security-entrypoint-map.json` | manual / external deterministic entrypoint evidence producer | schema + semantic contract tests |
 | Audit tasks | `schema/security-audit-task-bundle-v1.schema.json` / `artifacts/security/security-audit-tasks.json` | `pnpm run security:proof-audit` | semantic contract tests, fixture golden comparison |
+| Audit prompt pack | `schema/security-audit-prompt-pack-v1.schema.json` / `artifacts/security/codex-audit-prompts/security-audit-prompt-pack.json` | `pnpm run security:audit-prompt` | schema + semantic contract tests; no external LLM/network calls |
 | Candidate findings | `schema/security-finding-v1.schema.json` / `artifacts/security/security-findings.json` | `pnpm run security:proof-audit` with `--response-fixture` | candidate status checks, fixture golden comparison |
 | Security review | `schema/security-review-v1.schema.json` / `artifacts/security/security-review.json` | `pnpm run security:review`（optional `--claims`、`--entrypoint-map`） | Dead Code / Trust Boundary / Scope semantic checks |
 | Assurance summary | `artifacts/assurance/assurance-summary.json` by default | `node scripts/assurance/aggregate-lanes.mjs` | `schema/assurance-summary.schema.json`, fixture golden comparison |

@@ -249,6 +249,7 @@
     "security:extract-claims": "tsx src/cli/index.ts security extract-claims",
     "security:map-code": "tsx src/cli/index.ts security map-code",
     "security:proof-audit": "tsx src/cli/index.ts security audit",
+    "security:audit-prompt": "tsx src/cli/index.ts security audit-prompt",
     "security:review": "tsx src/cli/index.ts security review",
     "verify:all": "pnpm run verify:tests && pnpm run verify:quality && pnpm run verify:security && pnpm run mutation",
     "intent-agent": "tsx src/mcp-server/intent-server.ts",

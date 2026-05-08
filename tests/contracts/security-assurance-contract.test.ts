@@ -5,6 +5,7 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import {
   validateSecurityAuditTaskBundleSemantics,
+  validateSecurityAuditPromptPackSemantics,
   validateSecurityCodeMapSemantics,
   validateSecurityEntrypointMapSemantics,
   validateSecurityFindingSemantics,
@@ -25,6 +26,7 @@ const schemas = {
   symbolIndex: loadJson('schema/symbol-index-v1.schema.json'),
   entrypointMap: loadJson('schema/security-entrypoint-map-v1.schema.json'),
   auditTasks: loadJson('schema/security-audit-task-bundle-v1.schema.json'),
+  auditPromptPack: loadJson('schema/security-audit-prompt-pack-v1.schema.json'),
   findings: loadJson('schema/security-finding-v1.schema.json'),
   review: loadJson('schema/security-review-v1.schema.json'),
 };
@@ -37,6 +39,7 @@ const fixtures = {
   symbolIndex: loadJson('fixtures/security-assurance/sample.symbol-index.json'),
   entrypointMap: loadJson('fixtures/security-assurance/sample.security-entrypoint-map.json'),
   auditTasks: loadJson('fixtures/security-assurance/sample.security-audit-tasks.json'),
+  auditPromptPack: loadJson('fixtures/security-assurance/sample.security-audit-prompt-pack.json'),
   findings: loadJson('fixtures/security-assurance/sample.security-findings.json'),
   review: loadJson('fixtures/security-assurance/sample.security-review.json'),
 };
@@ -348,6 +351,60 @@ describe('security assurance contracts', () => {
       expect.objectContaining({
         keyword: 'line_range_order',
         instancePath: '/tasks/0/candidateLocations/0/endLine',
+      }),
+    ]);
+  });
+
+  it('keeps security audit prompt packs connected to generated prompt paths and candidate locations', () => {
+    const validate = buildValidator(schemas.auditPromptPack);
+    const validFixture = structuredClone(fixtures.auditPromptPack);
+
+    expect(validate(validFixture), JSON.stringify(validate.errors)).toBe(true);
+    expect(validateSecurityAuditPromptPackSemantics(validFixture)).toHaveLength(0);
+
+    const tasks = validFixture.tasks as Array<{
+      taskId: string;
+      claimId: string;
+      promptPath: string;
+      status: string;
+      candidateLocations: unknown[];
+    }>;
+    expect(tasks).not.toHaveLength(0);
+    expect(tasks[0]).toMatchObject({
+      taskId: 'SEC-AUDIT-TASK-001',
+      claimId: 'SEC-CLAIM-001',
+      status: 'ready',
+      promptPath: 'artifacts/security/codex-audit-prompts/prompts/SEC-AUDIT-TASK-001.md',
+    });
+    expect(tasks[0].candidateLocations.length).toBeGreaterThan(0);
+  });
+
+  it('enforces security audit prompt pack semantic summary and path invariants', () => {
+    const invalidSummary = structuredClone(fixtures.auditPromptPack) as {
+      summary: { readyTasks: number };
+    };
+    invalidSummary.summary.readyTasks = 0;
+
+    expect(validateSecurityAuditPromptPackSemantics(invalidSummary)).toEqual([
+      expect.objectContaining({
+        keyword: 'summary_count_mismatch',
+        instancePath: '/summary/readyTasks',
+      }),
+    ]);
+
+    const duplicatePath = structuredClone(fixtures.auditPromptPack) as {
+      tasks: Array<Record<string, unknown>>;
+      summary: Record<string, unknown>;
+    };
+    duplicatePath.tasks.push({ ...duplicatePath.tasks[0], taskId: 'SEC-AUDIT-TASK-002' });
+    duplicatePath.summary.totalTasks = 2;
+    duplicatePath.summary.readyTasks = 2;
+    duplicatePath.summary.totalCandidateLocations = 2;
+
+    expect(validateSecurityAuditPromptPackSemantics(duplicatePath)).toEqual([
+      expect.objectContaining({
+        keyword: 'duplicate_prompt_path',
+        instancePath: '/tasks/1/promptPath',
       }),
     ]);
   });

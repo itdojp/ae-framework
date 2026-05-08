@@ -9,6 +9,7 @@ import { runSchemaIdPolicyCheck } from './check-schema-id-policy.mjs';
 import { validateClaimEvidenceManifestSemantics } from './lib/claim-evidence-manifest-contract.mjs';
 import {
   validateSecurityAuditTaskBundleSemantics,
+  validateSecurityAuditPromptPackSemantics,
   validateSecurityCodeMapSemantics,
   validateSecurityEntrypointMapSemantics,
   validateSecurityFindingSemantics,
@@ -194,6 +195,14 @@ const checks = [
     ],
     label: 'Security audit task bundle v1 schema validation',
     semanticValidate: validateSecurityAuditTaskBundleSemantics
+  },
+  {
+    schema: 'schema/security-audit-prompt-pack-v1.schema.json',
+    fixtures: [
+      'fixtures/security-assurance/sample.security-audit-prompt-pack.json',
+    ],
+    label: 'Security audit prompt pack v1 schema validation',
+    semanticValidate: validateSecurityAuditPromptPackSemantics
   },
   {
     schema: 'schema/security-finding-v1.schema.json',

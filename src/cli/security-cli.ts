@@ -16,6 +16,7 @@ import { generateSecurityCodeMap } from '../security/assurance/code-map.js';
 import { extractSecurityClaimsFromSpec } from '../security/assurance/claim-extractor.js';
 import { importSpecaLikeSecurityArtifacts } from '../security/assurance/speca-import.js';
 import { generateSecurityProofAudit } from '../security/assurance/proof-audit.js';
+import { generateSecurityAuditPromptPack } from '../security/assurance/audit-prompt-pack.js';
 import { generateSecurityThreeGateReview } from '../security/assurance/three-gate-review.js';
 import { normalizeArtifactPath } from '../utils/path-normalization.js';
 
@@ -151,6 +152,38 @@ export function createSecurityCommand(): Command {
         console.log(`Summary: ${displayArtifactPath(result.outputPaths.summaryMarkdown)}`);
       } catch (error: unknown) {
         console.error(chalk.red(`❌ Security proof-attempt audit failed: ${toMessage(error)}`));
+        safeExit(1);
+      }
+    });
+
+  security
+    .command('audit-prompt')
+    .description('Generate deterministic Codex-ready audit prompt packs from security-audit-task-bundle/v1')
+    .requiredOption('-t, --tasks <file>', 'security-audit-task-bundle/v1 JSON artifact')
+    .requiredOption('-m, --code-map <file>', 'security-code-map/v1 JSON artifact')
+    .requiredOption('-c, --claims <file>', 'security-claim/v1 JSON artifact')
+    .requiredOption('-o, --out <path>', 'Output directory or security-audit-prompt-pack JSON path')
+    .option('--generated-at <iso-date>', 'Deterministic generatedAt timestamp for reproducible prompt packs')
+    .option('--no-validate', 'Skip schema validation for input and generated artifacts')
+    .action(async (options) => {
+      try {
+        const outPath = assertSafeSecurityOutputPath(options.out);
+        const result = await generateSecurityAuditPromptPack(options.tasks, options.codeMap, options.claims, outPath, {
+          generatedAt: options.generatedAt,
+          validate: options.validate,
+        });
+
+        console.log(chalk.green('✅ Security audit prompt pack generated'));
+        console.log(`Prompt tasks: ${result.promptPack.summary.totalTasks}`);
+        console.log(`Ready tasks: ${result.promptPack.summary.readyTasks}`);
+        console.log(`Blocked tasks: ${result.promptPack.summary.blockedTasks}`);
+        console.log(`Candidate locations: ${result.promptPack.summary.totalCandidateLocations}`);
+        console.log(`Warnings: ${result.promptPack.summary.totalWarnings}`);
+        console.log(`Output: ${displayArtifactPath(result.outputPaths.promptPack)}`);
+        console.log(`Prompts: ${displayArtifactPath(result.outputPaths.promptsDir)}`);
+        console.log(`Summary: ${displayArtifactPath(result.outputPaths.summaryMarkdown)}`);
+      } catch (error: unknown) {
+        console.error(chalk.red(`❌ Security audit prompt pack generation failed: ${toMessage(error)}`));
         safeExit(1);
       }
     });

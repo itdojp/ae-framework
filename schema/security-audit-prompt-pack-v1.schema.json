@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/security-audit-prompt-pack-v1.schema.json",
+  "title": "Security Audit Prompt Pack v1",
+  "description": "Deterministic Codex-ready prompt pack generated from security-audit-task-bundle/v1. It packages prompt markdown inputs only and does not invoke external LLMs or confirm vulnerabilities.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "tasks",
+    "summary",
+    "provenance"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "security-audit-prompt-pack/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/promptTask"
+      }
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/warning"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claimType": {
+      "type": "string",
+      "enum": [
+        "invariant",
+        "precondition",
+        "postcondition",
+        "assumption"
+      ]
+    },
+    "criticality": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "sourceTaskStatus": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "blocked-no-candidate-location",
+        "blocked-missing-code-map"
+      ]
+    },
+    "promptStatus": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "blocked"
+      ]
+    },
+    "candidateLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "startLine",
+        "endLine",
+        "reason"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "startLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "symbol": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "reason": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "matchedTerms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      },
+      "$comment": "Semantic validation enforces endLine >= startLine."
+    },
+    "claimSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statement"
+      ],
+      "properties": {
+        "statement": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "type": {
+          "$ref": "#/$defs/claimType"
+        },
+        "criticality": {
+          "$ref": "#/$defs/criticality"
+        },
+        "targetLevel": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "promptTask": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "claimId",
+        "promptPath",
+        "status",
+        "sourceTaskStatus",
+        "claim",
+        "scopeRefs",
+        "candidateLocations"
+      ],
+      "properties": {
+        "taskId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "claimId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "promptPath": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "status": {
+          "$ref": "#/$defs/promptStatus"
+        },
+        "sourceTaskStatus": {
+          "$ref": "#/$defs/sourceTaskStatus"
+        },
+        "claim": {
+          "$ref": "#/$defs/claimSummary"
+        },
+        "scopeRefs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "candidateLocations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/candidateLocation"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/warning"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "totalTasks",
+        "readyTasks",
+        "blockedTasks",
+        "totalCandidateLocations",
+        "totalWarnings"
+      ],
+      "properties": {
+        "totalTasks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "readyTasks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blockedTasks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalCandidateLocations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalWarnings": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "origin",
+        "generator",
+        "tasks",
+        "codeMap",
+        "claims"
+      ],
+      "properties": {
+        "origin": {
+          "type": "string",
+          "const": "deterministic"
+        },
+        "generator": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "tasks": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "codeMap": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "claims": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "path",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "path": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "message": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    }
+  }
+}
