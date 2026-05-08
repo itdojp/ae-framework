@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/temporary-override-v1.schema.json",
+  "title": "Temporary Override v1",
+  "description": "Preview contract for a time-bounded human waiver or override that can be linked from assurance claim summaries and policy-gate decisions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "status",
+    "owner",
+    "reason",
+    "expires",
+    "relatedClaimIds",
+    "evidenceLink"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "temporary-override/v1"
+    },
+    "id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "expiringSoon",
+        "expired",
+        "orphan",
+        "unknown"
+      ]
+    },
+    "owner": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "reason": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "expires": {
+      "type": "string",
+      "format": "date"
+    },
+    "relatedClaimIds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "evidenceLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactPath",
+        "description"
+      ],
+      "properties": {
+        "artifactPath": {
+          "$ref": "#/$defs/artifactPath"
+        },
+        "sourceArtifactId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "url": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "approvedBy": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "uniqueItems": true
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/nonEmptyString"
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifactPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\.\\.)(?!.*//).+"
+    }
+  }
+}

@@ -34,6 +34,8 @@ Baseline assumptions (as of `lastVerified: 2026-05-08`):
 - Canonical current lane summary: `schema/assurance-summary.schema.json` with `schemaVersion: assurance-summary/v1`.
 - Canonical current policy-gate summary: `schema/policy-gate-summary-v1.schema.json` with `schemaVersion: policy-gate-summary/v1`.
 - Canonical current proof-carrying package preview: `schema/change-package-v2.schema.json` with `schemaVersion: change-package/v2`.
+- Preview per-claim PR/release projection: `schema/claim-level-summary-v1.schema.json` with `schemaVersion: claim-level-summary/v1`.
+- Preview temporary override record: `schema/temporary-override-v1.schema.json` with `schemaVersion: temporary-override/v1`.
 
 ### 2. Design goals and non-goals
 
@@ -140,7 +142,7 @@ Current emitted evidence states for change-package claims are:
 | `waived` | Human exception exists and is traceable. | `claim-evidence-manifest/v1.status=waived` plus `waiverRefs`; `change-package/v2.claims[].status=waived`. |
 | `unresolved` | Evidence is missing, failed, stale, insufficient, out of scope, or not accepted. | `claim-evidence-manifest/v1.status=unresolved`/`partial`, `missingEvidenceRefs`, policy result `block` or `report-only`. |
 
-`not-applicable` is intentionally not part of the current emitted state set. Until a schema migration exists, a producer should either omit a non-claim or record the unresolved/out-of-scope rationale in notes, missing evidence, waiver/residual risk, or PR summary text.
+`not-applicable` is intentionally not part of the current `claim-evidence-manifest/v1` or `change-package/v2` emitted state set. The preview `claim-level-summary/v1` schema can represent `not-applicable` for PR/release projection and migration testing, but producers should not emit it into current primary contracts until promotion is explicit.
 
 #### 4.6 Evidence manifest
 
@@ -166,7 +168,7 @@ Assumptions must remain visible in PR/release summaries. A formal or model-check
 
 #### 4.8 Waiver / override
 
-A waiver is a time-bounded human exception. The current compatible contract requires or derives:
+A waiver is a time-bounded human exception. The current compatible representation is `schema/temporary-override-v1.schema.json` for preview override records plus waiver references in claim-evidence, policy, and change-package artifacts. It requires or derives:
 
 - owner
 - reason
@@ -214,7 +216,7 @@ The v2 package consumes claim-evidence and policy artifacts; it is not the sourc
 
 #### 4.12 PR/release summary
 
-A PR or release summary is a human-facing projection of the contracts above. It should surface:
+A PR or release summary is a human-facing projection of the contracts above. The preview schema is `schema/claim-level-summary-v1.schema.json`. It should surface:
 
 - target and achieved assurance level
 - satisfied, partial, waived, and unresolved claim counts
@@ -256,7 +258,7 @@ Summaries must avoid wording that claims proof beyond the linked evidence scope.
 7. If a claim is waived, keep waiver details and do not count it as satisfied.
 8. If a claim is runtime-mitigated, record runtime control evidence and residual risk; do not treat it as proof/model-checking evidence.
 9. When multiple sources disagree, choose the more conservative claim status in this order: `unresolved` > `waived` > `partial` > `satisfied`, while preserving all evidence and notes.
-10. When a current schema lacks a precise state, represent it as `unresolved` or `partial` with a note/missing-evidence reference rather than introducing an undeclared enum value.
+10. When a current primary schema lacks a precise state, represent it as `unresolved` or `partial` with a note/missing-evidence reference rather than introducing an undeclared enum value. Use `claim-level-summary/v1` only as a preview projection until producers and consumers are promoted together.
 
 ### 6. Failure-mode representation
 
