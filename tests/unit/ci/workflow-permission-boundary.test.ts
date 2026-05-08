@@ -86,4 +86,15 @@ describe('workflow permission boundaries', () => {
     expect(workflow.on?.workflow_run).toBeDefined();
     expect(workflow.on?.workflow_run?.workflows).toContain('Spec Generate & Model Tests');
   });
+
+  it('policy-gate downloads verify-lite assurance artifacts before label-derived strict mode', () => {
+    const workflow = readWorkflow('policy-gate.yml');
+    expect(workflow).toContain('actions: read');
+    expect(workflow).toContain('Resolve assurance policy inputs');
+    expect(workflow).toContain("labels.has('enforce-assurance')");
+    expect(workflow).toContain("core.exportVariable('AE_POLICY_ASSURANCE_MODE', 'strict')");
+    expect(workflow).toContain('Download verify-lite assurance artifacts');
+    expect(workflow).toContain('name: verify-lite-report');
+    expect(workflow).toContain('run-id: ${{ steps.assurance-policy.outputs.verify_lite_run_id }}');
+  });
 });
