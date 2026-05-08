@@ -22,6 +22,7 @@ Use this document with:
 - `docs/product/ASSURANCE-CONTROL-PLANE.md` for the product overview.
 - `docs/quality/ASSURANCE-MODEL.md` for claim, assurance level, validation lane, evidence, assumption, waiver, and runtime-control terminology.
 - `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md` for implementation-aligned architecture.
+- `docs/architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md` for detailed claim/evidence/policy/package design.
 - `docs/reference/CONTRACT-CATALOG.md` for current schema, producer, and consumer mappings.
 - `docs/reports/ASSURANCE-CONTROL-PLANE-CURRENT-STATE.md` for the 2026-05 current-state audit.
 
@@ -127,6 +128,7 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 - Product overview: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance model: `docs/quality/ASSURANCE-MODEL.md`
 - Current system overview: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
+- Detailed design: `docs/architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md`
 - Artifacts contract: `docs/quality/ARTIFACTS-CONTRACT.md`
 - Contract catalog: `docs/reference/CONTRACT-CATALOG.md`
 - Change package v2: `docs/reference/change-package-v2.md`
