@@ -98,11 +98,46 @@ describe('security audit prompt pack producer', () => {
         totalCandidateLocations: 0,
         totalWarnings: 1,
       });
+      expect(result.warnings).toEqual([
+        expect.objectContaining({ code: 'missing-candidate-location' }),
+      ]);
       expect(result.promptPack.tasks[0]).toMatchObject({
         status: 'blocked',
         sourceTaskStatus: 'blocked-no-candidate-location',
         warnings: [expect.objectContaining({ code: 'missing-candidate-location' })],
       });
+      expect(validateSecurityAuditPromptPackSemantics(result.promptPack)).toHaveLength(0);
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  it('marks tasks ready when candidate locations are recovered from code-map input', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-security-audit-prompt-pack-recovered-'));
+    const outDir = join(fixtureDir, 'out');
+    try {
+      const tasks = readJson<{ tasks: Array<Record<string, unknown>> }>(tasksPath);
+      tasks.tasks[0].status = 'blocked-missing-code-map';
+      tasks.tasks[0].candidateLocations = [];
+      const localTasksPath = join(fixtureDir, 'security-audit-tasks.json');
+      writeJson(localTasksPath, tasks);
+
+      const result = await generateSecurityAuditPromptPack(localTasksPath, codeMapPath, claimsPath, outDir, { generatedAt });
+
+      expect(result.promptPack.summary).toMatchObject({
+        readyTasks: 1,
+        blockedTasks: 0,
+        totalCandidateLocations: 1,
+        totalWarnings: 1,
+      });
+      expect(result.promptPack.tasks[0]).toMatchObject({
+        status: 'ready',
+        sourceTaskStatus: 'blocked-missing-code-map',
+        warnings: [expect.objectContaining({ code: 'candidate-location-recovered-from-code-map' })],
+      });
+      expect(result.warnings).toEqual([
+        expect.objectContaining({ code: 'candidate-location-recovered-from-code-map' }),
+      ]);
       expect(validateSecurityAuditPromptPackSemantics(result.promptPack)).toHaveLength(0);
     } finally {
       rmSync(fixtureDir, { recursive: true, force: true });

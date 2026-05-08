@@ -555,6 +555,12 @@ function buildPromptTask(params: {
       path: `/tasks/${params.taskIndex}/candidateLocations`,
       message: `No candidate source location was found for ${params.task.claimId}.`,
     });
+  } else if (params.task.status !== 'ready' && params.task.candidateLocations.length === 0 && params.codeMapLocations.length > 0) {
+    warnings.push({
+      code: 'candidate-location-recovered-from-code-map',
+      path: `/tasks/${params.taskIndex}/candidateLocations`,
+      message: `Source task ${params.task.id} was ${params.task.status}, but candidate locations were recovered from security-code-map/v1.`,
+    });
   }
   const claimSummary: SecurityAuditPromptPackTask['claim'] = {
     statement: params.claim?.statement ?? params.task.claimStatement,
@@ -572,7 +578,7 @@ function buildPromptTask(params: {
     taskId: params.task.id,
     claimId: params.task.claimId,
     promptPath: portablePathFrom(params.repoRoot, params.promptPath),
-    status: params.task.status === 'ready' && candidateLocations.length > 0 ? 'ready' : 'blocked',
+    status: candidateLocations.length > 0 ? 'ready' : 'blocked',
     sourceTaskStatus: params.task.status,
     claim: claimSummary,
     scopeRefs: params.task.scopeRefs.length > 0 ? params.task.scopeRefs : ['security-audit-scope'],
@@ -626,7 +632,7 @@ function renderSummaryMarkdown(result: SecurityAuditPromptPackResult): string {
     }
     lines.push('');
   }
-  lines.push('## Pack warnings', '');
+  lines.push('## Warnings', '');
   if (result.warnings.length === 0) {
     lines.push('- None');
   } else {
@@ -675,6 +681,10 @@ export function buildSecurityAuditPromptPack(
     promptMarkdownByPath.set(promptPath, renderPrompt(promptTask, task, claimsById.get(task.claimId)));
     return promptTask;
   });
+  const allWarnings = [
+    ...warnings,
+    ...tasks.flatMap((task) => task.warnings ?? []),
+  ];
   const promptPack: SecurityAuditPromptPackDocument = {
     schemaVersion: 'security-audit-prompt-pack/v1',
     generatedAt,
@@ -685,7 +695,7 @@ export function buildSecurityAuditPromptPack(
   if (warnings.length > 0) {
     promptPack.warnings = warnings;
   }
-  return { promptPack, promptMarkdownByPath, warnings };
+  return { promptPack, promptMarkdownByPath, warnings: allWarnings };
 }
 
 export async function generateSecurityAuditPromptPack(
