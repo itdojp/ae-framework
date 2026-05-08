@@ -181,7 +181,7 @@ This report documents that the AE Framework quality system protects against regr
 
 #### このレポートで記録している品質 gate
 - Accessibility: critical violation 0 件、minor violation は最大 2 件
-- TypeScript: 対象範囲で compilation 成功、かつ `any` 禁止ポリシー
+- TypeScript: 対象範囲で compilation 成功、`no-explicit-any` は warn として追跡（baseline に既存違反あり）
 - Performance: CLI command が設定済み timeout threshold 内で完了
 - Security: command injection 試行を遮断
 

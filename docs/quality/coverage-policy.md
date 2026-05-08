@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - policy/quality.json
 - docs/quality/verification-gates.md
-lastVerified: '2026-04-08'
+lastVerified: '2026-05-08'
 ---
 # Coverage Policy — Proposal and Operations
 
@@ -38,6 +38,21 @@ Blocking enforcement is enabled when:
 Reporting behavior:
 - `.github/workflows/coverage-check.yml` posts a non-blocking PR comment that records effective coverage, effective threshold, threshold source, and current policy state
 - Verify Lite logs note the current `COVERAGE_ENFORCE_MAIN` setting and the configured default threshold; they do not compute or print the effective threshold
+
+### Baseline Freshness and Generated Artifacts
+- `pnpm run coverage` is the canonical project command for generating local coverage evidence.
+- The command writes `coverage/coverage-summary.json` and `coverage/lcov.info`; `coverage/` is ignored by `.gitignore` and is treated as generated evidence, not as a manually maintained tracked baseline.
+- When documenting a baseline, record the target commit, command, date, and relevant environment flags. Do not infer freshness from an old local `coverage/` directory alone.
+- On hosts without a detectable Docker or Podman engine, non-CI coverage runs can fail in `tests/container/container-agent.test.ts`. Use `CI=1 pnpm run coverage` when the intent is to emulate CI degraded-mode behavior locally, and record that condition with the evidence.
+
+Latest observed `origin/main` baseline as of 2026-05-08 on commit `944fc818dd89a9d51cb72f1c2ee6e1b5cfa3e7e1` using `CI=1 pnpm -s run coverage`:
+
+| Metric | Percent | Covered / Total |
+| --- | ---: | ---: |
+| Lines | 31.96% | 53,302 / 166,738 |
+| Statements | 31.96% | 53,302 / 166,738 |
+| Functions | 60.76% | 3,132 / 5,154 |
+| Branches | 67.89% | 10,708 / 15,771 |
 
 ### Recommended Operations
 - On PRs, use `/coverage <pct>` for ad-hoc threshold overrides.
@@ -155,6 +170,21 @@ Source: label
 報告時の挙動:
 - `.github/workflows/coverage-check.yml` は非ブロッキングの PR コメントを投稿し、effective coverage、effective threshold、threshold source、現在の policy state を記録する
 - Verify Lite のログは現在の `COVERAGE_ENFORCE_MAIN` 設定と設定済み既定しきい値を記録するが、effective threshold 自体は計算・出力しない
+
+### Baseline freshness と generated artifact
+- `pnpm run coverage` は local coverage evidence を生成する project の標準コマンドです。
+- このコマンドは `coverage/coverage-summary.json` と `coverage/lcov.info` を出力します。`coverage/` は `.gitignore` で除外されており、手動管理する tracked baseline ではなく generated evidence として扱います。
+- baseline を文書に記録する場合は、対象 commit、command、date、関連する environment flag を併記します。古い local `coverage/` directory だけから鮮度を判断しないでください。
+- Docker / Podman engine を検出できない host では、non-CI の coverage run が `tests/container/container-agent.test.ts` で失敗する場合があります。CI degraded-mode を local で再現したい場合は `CI=1 pnpm run coverage` を使い、その条件を evidence として記録します。
+
+2026-05-08 時点で `origin/main` commit `944fc818dd89a9d51cb72f1c2ee6e1b5cfa3e7e1` に対して `CI=1 pnpm -s run coverage` で確認した latest observed baseline:
+
+| Metric | Percent | Covered / Total |
+| --- | ---: | ---: |
+| Lines | 31.96% | 53,302 / 166,738 |
+| Statements | 31.96% | 53,302 / 166,738 |
+| Functions | 60.76% | 3,132 / 5,154 |
+| Branches | 67.89% | 10,708 / 15,771 |
 
 ### 推奨運用
 - PR では `/coverage <pct>` で一時的なしきい値 override を行う
