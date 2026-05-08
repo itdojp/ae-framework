@@ -849,7 +849,7 @@ function buildAssuranceEvaluation(manifestState, options = {}) {
   const errors = [...(Array.isArray(manifestState?.errors) ? manifestState.errors : [])];
   if (modeState.warning) warnings.push(modeState.warning);
   if (!manifestState?.present) {
-    warnings.push(`claim evidence manifest not found: ${manifestState?.path || path.resolve(CLAIM_EVIDENCE_MANIFEST_PATH)}`);
+    warnings.push(`assurance artifact not found: ${manifestState?.path || path.resolve(CLAIM_LEVEL_SUMMARY_PATH)}; expected claim-level summary or claim-evidence manifest`);
     if (modeState.value === 'strict') {
       errors.push(`required assurance artifact missing: ${manifestState?.path || path.resolve(CLAIM_LEVEL_SUMMARY_PATH)}; next action: generate claim-level summary or claim-evidence manifest`);
     }
@@ -861,7 +861,9 @@ function buildAssuranceEvaluation(manifestState, options = {}) {
     for (const waiver of Array.isArray(claim.waivers) ? claim.waivers : []) {
       errors.push(...waiverValidationErrors(waiver, claim));
     }
-    if (claim.result === 'block') {
+    const strictMissingEvidence = modeState.value === 'strict' && claim.result !== 'waived' && claim.missingEvidenceRefs.length > 0;
+    const strictFailedEvidence = modeState.value === 'strict' && claim.status === 'failed';
+    if (claim.result === 'block' || strictMissingEvidence || strictFailedEvidence) {
       if (claim.status === 'failed') {
         errors.push(`assurance claim ${claim.claimId} has failed evidence; next action: fix the failing evidence or provide a valid waiver`);
       } else if (claim.missingEvidenceRefs.length > 0) {

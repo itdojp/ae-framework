@@ -764,6 +764,60 @@ describe('policy-gate', () => {
     expect(result.assurance.result).toBe('block');
   });
 
+  it('blocks strict manifest claims when partial status is missing evidence', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-manifest-partial-'));
+    const manifestPath = join(tempDir, 'claim-evidence-manifest.json');
+
+    try {
+      writeFileSync(
+        manifestPath,
+        JSON.stringify({
+          schemaVersion: 'claim-evidence-manifest/v1',
+          generatedAt: '2026-05-08T00:00:00.000Z',
+          summary: {
+            totalClaims: 1,
+            fullySupported: 0,
+            partiallySupported: 1,
+            waived: 0,
+            unresolved: 0,
+          },
+          claims: [
+            {
+              id: 'partial-proof',
+              status: 'partial',
+              evidenceRefs: [{ id: 'runtime-control:partial-proof' }],
+              missingEvidenceRefs: [{ id: 'missing-proof:partial-proof' }],
+              waiverRefs: [],
+            },
+          ],
+        }),
+      );
+      const assurance = inspectClaimEvidenceManifest(manifestPath, '2026-05-08T00:00:00.000Z');
+      const result = evaluatePolicyGate({
+        policy,
+        pullRequest: {
+          labels: [{ name: 'risk:low' }],
+          body: '## Rollback\nnone\n\n## Acceptance\nok',
+        },
+        changedFiles: ['src/feature/example.ts'],
+        reviews: [],
+        statusRollup: [checkRun('verify-lite')],
+        assurance,
+        assuranceMode: 'strict',
+      });
+
+      expect(assurance.claims[0]?.result).toBe('report-only');
+      expect(result.ok).toBe(false);
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.stringContaining('assurance claim partial-proof is missing required evidence'),
+        'assurance decision is block',
+      ]));
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it('keeps unresolved assurance claims blocking even when active waivers are present', () => {
     mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
     const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-test-'));
@@ -993,6 +1047,9 @@ describe('policy-gate', () => {
 
     expect(result.ok).toBe(false);
     expect(result.assurance.mode).toBe('strict');
+    expect(result.warnings).toEqual(expect.arrayContaining([
+      expect.stringContaining('assurance artifact not found'),
+    ]));
     expect(result.errors).toEqual(expect.arrayContaining([
       expect.stringContaining('required assurance artifact missing'),
       'assurance decision is block',
