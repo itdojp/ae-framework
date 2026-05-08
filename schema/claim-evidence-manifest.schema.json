@@ -410,6 +410,9 @@
         "status": {
           "$ref": "#/$defs/claimStatus"
         },
+        "securityClaimType": {
+          "$ref": "#/$defs/securityClaimType"
+        },
         "evidenceRefs": {
           "type": "array",
           "items": {
@@ -426,6 +429,12 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/missingEvidenceRef"
+          }
+        },
+        "assumptionHandlingRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/assumptionHandlingRef"
           }
         },
         "waiverRefs": {
@@ -463,19 +472,59 @@
         "rejected",
         "waived",
         "outOfScope",
-        "highOrCriticalOpen"
+        "highOrCriticalOpen",
+        "assumptionValidationRequired",
+        "assumptionResidualRisk"
       ],
       "properties": {
-        "claims": { "type": "integer", "minimum": 0 },
-        "findings": { "type": "integer", "minimum": 0 },
-        "reviews": { "type": "integer", "minimum": 0 },
-        "candidate": { "type": "integer", "minimum": 0 },
-        "needsHumanReview": { "type": "integer", "minimum": 0 },
-        "confirmed": { "type": "integer", "minimum": 0 },
-        "rejected": { "type": "integer", "minimum": 0 },
-        "waived": { "type": "integer", "minimum": 0 },
-        "outOfScope": { "type": "integer", "minimum": 0 },
-        "highOrCriticalOpen": { "type": "integer", "minimum": 0 }
+        "claims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "findings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reviews": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidate": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "needsHumanReview": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "confirmed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "waived": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "outOfScope": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "highOrCriticalOpen": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "assumptionValidationRequired": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "assumptionResidualRisk": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
     "summary": {
@@ -511,6 +560,57 @@
         },
         "security": {
           "$ref": "#/$defs/securitySummary"
+        }
+      }
+    },
+    "securityClaimType": {
+      "type": "string",
+      "enum": [
+        "invariant",
+        "precondition",
+        "postcondition",
+        "assumption"
+      ]
+    },
+    "assumptionHandlingMode": {
+      "type": "string",
+      "enum": [
+        "assumption-validation-required",
+        "residual-risk"
+      ]
+    },
+    "assumptionHandlingRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mode",
+        "findingId",
+        "reviewResult",
+        "reason",
+        "sourceArtifactId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "mode": {
+          "$ref": "#/$defs/assumptionHandlingMode"
+        },
+        "findingId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "reviewResult": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "reason": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceArtifactId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "artifactPath": {
+          "$ref": "#/$defs/artifactPath"
         }
       }
     }

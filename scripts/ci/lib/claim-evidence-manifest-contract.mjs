@@ -210,7 +210,7 @@ function validateClaimReferenceArray({
 function validateClaimReferences(manifest, errors) {
   const { presentSourceIds, absentSourceIds } = collectSourceArtifactIds(manifest);
   const claims = Array.isArray(manifest?.claims) ? manifest.claims : [];
-  const referenceFields = ['evidenceRefs', 'proofObligationRefs', 'missingEvidenceRefs', 'waiverRefs'];
+  const referenceFields = ['evidenceRefs', 'proofObligationRefs', 'missingEvidenceRefs', 'assumptionHandlingRefs', 'waiverRefs'];
   for (let claimIndex = 0; claimIndex < claims.length; claimIndex += 1) {
     const claim = claims[claimIndex];
     validateExternalIds({

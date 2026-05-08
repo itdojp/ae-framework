@@ -532,16 +532,54 @@
                 "highOrCriticalOpen"
               ],
               "properties": {
-                "claims": { "type": "integer", "minimum": 0 },
-                "findings": { "type": "integer", "minimum": 0 },
-                "reviews": { "type": "integer", "minimum": 0 },
-                "candidate": { "type": "integer", "minimum": 0 },
-                "needsHumanReview": { "type": "integer", "minimum": 0 },
-                "confirmed": { "type": "integer", "minimum": 0 },
-                "rejected": { "type": "integer", "minimum": 0 },
-                "waived": { "type": "integer", "minimum": 0 },
-                "outOfScope": { "type": "integer", "minimum": 0 },
-                "highOrCriticalOpen": { "type": "integer", "minimum": 0 }
+                "claims": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "findings": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "reviews": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "candidate": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "needsHumanReview": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "confirmed": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "rejected": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "waived": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "outOfScope": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "highOrCriticalOpen": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "assumptionValidationRequired": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "assumptionResidualRisk": {
+                  "type": "integer",
+                  "minimum": 0
+                }
               }
             }
           }

@@ -19,6 +19,8 @@ type Severity = 'low' | 'medium' | 'high' | 'critical';
 type FindingStatus = 'candidate' | 'needs-human-review' | 'confirmed' | 'rejected' | 'waived' | 'out-of-scope';
 type ReviewResult = 'needs-human-review' | 'confirmed' | 'rejected' | 'waived' | 'out-of-scope';
 type GateResult = 'pass' | 'fail' | 'unknown' | 'not-applicable';
+type SecurityClaimType = 'invariant' | 'precondition' | 'postcondition' | 'assumption';
+type AssumptionHandlingMode = 'assumption-validation-required' | 'residual-risk';
 type FalsePositiveRootCause =
   | 'dead-code'
   | 'trust-boundary-misunderstanding'
@@ -86,6 +88,18 @@ type SecurityCodeMapDocument = {
   mappings: CodeMapMapping[];
 };
 
+type SecurityClaim = {
+  id: string;
+  type: SecurityClaimType;
+  statement?: string;
+};
+
+type SecurityClaimDocument = {
+  schemaVersion: 'security-claim/v1';
+  generatedAt?: string;
+  claims: SecurityClaim[];
+};
+
 type EntrypointReach = {
   path: string;
   startLine?: number;
@@ -125,8 +139,16 @@ export interface GateDecision {
   evidenceRefs?: string[];
 }
 
+export interface AssumptionHandling {
+  mode: AssumptionHandlingMode;
+  rationale: string;
+  evidenceRefs?: string[];
+}
+
 export interface SecurityReviewEntry {
   findingId: string;
+  claimId?: string;
+  claimType?: SecurityClaimType;
   severity?: Severity;
   result: ReviewResult;
   gates: {
@@ -135,6 +157,7 @@ export interface SecurityReviewEntry {
     scope: GateDecision;
   };
   falsePositiveRootCause: FalsePositiveRootCause | null;
+  assumptionHandling?: AssumptionHandling;
   reviewerNotes: string[];
   reviewedAt?: string;
   reviewer?: string;
@@ -159,6 +182,7 @@ export interface SecurityReviewOptions {
   repoRoot?: string;
   validate?: boolean;
   entrypointMapPath?: string;
+  claimsPath?: string;
 }
 
 export interface SecurityReviewOutputPaths {
@@ -189,6 +213,7 @@ const GENERATOR = 'security-three-gate-review';
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SEVERITIES: readonly Severity[] = ['low', 'medium', 'high', 'critical'];
 const FINDING_STATUSES: readonly FindingStatus[] = ['candidate', 'needs-human-review', 'confirmed', 'rejected', 'waived', 'out-of-scope'];
+const SECURITY_CLAIM_TYPES: readonly SecurityClaimType[] = ['invariant', 'precondition', 'postcondition', 'assumption'];
 const DEAD_CODE_PATH_MARKERS = new Set(['__fixtures__', '__mocks__', 'fixture', 'fixtures', 'mock', 'mocks', 'generated', 'dead', 'unused', 'unreachable', 'orphan']);
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -230,6 +255,14 @@ function normalizeFindingStatus(value: unknown): FindingStatus {
     return candidate as FindingStatus;
   }
   return 'candidate';
+}
+
+function normalizeSecurityClaimType(value: unknown): SecurityClaimType | undefined {
+  const candidate = asString(value)?.toLowerCase();
+  if (candidate && (SECURITY_CLAIM_TYPES as readonly string[]).includes(candidate)) {
+    return candidate as SecurityClaimType;
+  }
+  return undefined;
 }
 
 function candidateSchemaRoots(preferredRoot?: string): string[] {
@@ -427,6 +460,41 @@ function parseCodeMapDocument(document: unknown, repoRoot?: string): SecurityCod
     return { claimId, candidateLocations } satisfies CodeMapMapping;
   });
   return { schemaVersion: 'security-code-map/v1', mappings };
+}
+
+function parseClaimDocument(document: unknown): SecurityClaimDocument {
+  if (!isRecord(document) || document['schemaVersion'] !== 'security-claim/v1' || !Array.isArray(document['claims'])) {
+    throw new Error('Expected security-claim/v1 document with a claims array.');
+  }
+  const claims = document['claims'].map((rawClaim, claimIndex) => {
+    if (!isRecord(rawClaim)) {
+      throw new Error(`Security claim at index ${claimIndex} must be an object.`);
+    }
+    const id = asString(rawClaim['id']);
+    const type = normalizeSecurityClaimType(rawClaim['type']);
+    if (!id || !type) {
+      throw new Error(`Security claim at index ${claimIndex} must have non-empty id and supported type.`);
+    }
+    const parsed: SecurityClaim = { id, type };
+    const statement = asString(rawClaim['statement']);
+    if (statement !== undefined) {
+      parsed.statement = statement;
+    }
+    return parsed;
+  });
+  const parsed: SecurityClaimDocument = { schemaVersion: 'security-claim/v1', claims };
+  const generatedAt = asString(document['generatedAt']);
+  if (generatedAt !== undefined) {
+    parsed.generatedAt = generatedAt;
+  }
+  return parsed;
+}
+
+function claimMapFromDocument(claims?: SecurityClaimDocument): Map<string, SecurityClaim> | undefined {
+  if (!claims) {
+    return undefined;
+  }
+  return new Map(claims.claims.map((claim) => [claim.id, claim]));
 }
 
 function parseEntrypointReach(rawReach: unknown, pathRef: string, repoRoot?: string): EntrypointReach {
@@ -862,7 +930,31 @@ function decideReviewResult(finding: SecurityFinding, gates: SecurityReviewEntry
   return { result: 'needs-human-review', rootCause: null };
 }
 
-function reviewerNotesFor(finding: SecurityFinding, gates: SecurityReviewEntry['gates'], result: ReviewResult, rootCause: FalsePositiveRootCause | null): string[] {
+function assumptionHandlingFor(
+  finding: SecurityFinding,
+  result: ReviewResult,
+  rootCause: FalsePositiveRootCause | null,
+): AssumptionHandling {
+  const validationRequired = result === 'needs-human-review' || result === 'confirmed';
+  const mode: AssumptionHandlingMode = validationRequired ? 'assumption-validation-required' : 'residual-risk';
+  const rationale = validationRequired
+    ? `Finding ${finding.id} is derived from an assumption claim; validate the assumed environment, scope, and trust-boundary evidence before treating it as a vulnerability.`
+    : `Finding ${finding.id} is derived from an assumption claim and was classified as ${result}${rootCause ? ` (${rootCause})` : ''}; keep the assumption disposition traceable as residual-risk evidence.`;
+  return {
+    mode,
+    rationale,
+    evidenceRefs: unique([finding.claimId, finding.id]),
+  };
+}
+
+function reviewerNotesFor(
+  finding: SecurityFinding,
+  gates: SecurityReviewEntry['gates'],
+  result: ReviewResult,
+  rootCause: FalsePositiveRootCause | null,
+  claim?: SecurityClaim,
+  assumptionHandling?: AssumptionHandling,
+): string[] {
   const notes = [
     `Severity preserved from finding: ${finding.severity}.`,
     'Rule-based MVP review only; exploitability confirmation and full reachability analysis are out of scope.',
@@ -879,6 +971,17 @@ function reviewerNotesFor(finding: SecurityFinding, gates: SecurityReviewEntry['
   if (rootCause === 'out-of-scope') {
     notes.push('Classified as out-of-scope based on audit scope glob rules.');
   }
+  if (claim) {
+    notes.push(`Security claim type: ${claim.type}.`);
+  }
+  if (claim?.type === 'assumption' && assumptionHandling) {
+    notes.push('Assumption-derived finding is handled as assumption validation or residual-risk evidence, not as a direct vulnerability classification.');
+    if (assumptionHandling.mode === 'assumption-validation-required') {
+      notes.push('Assumption validation is required before this finding can be promoted to a vulnerability or closed as supported evidence.');
+    } else {
+      notes.push('Assumption-derived finding disposition is retained as residual-risk evidence.');
+    }
+  }
   return unique(notes);
 }
 
@@ -889,6 +992,7 @@ function reviewEntryForFinding(
   generatedAt: string,
   repoRoot?: string,
   entrypointMap?: SecurityEntrypointMapDocument,
+  claim?: SecurityClaim,
 ): SecurityReviewEntry {
   const scopeDetails = decideScope(finding, scope, repoRoot);
   const deadCodeDetails = decideDeadCode(finding, codeMapByClaim, scopeDetails.decision);
@@ -899,16 +1003,27 @@ function reviewEntryForFinding(
     scope: scopeDetails.decision,
   };
   const decision = decideReviewResult(finding, gates);
-  return {
+  const assumptionHandling = claim?.type === 'assumption'
+    ? assumptionHandlingFor(finding, decision.result, decision.rootCause)
+    : undefined;
+  const entry: SecurityReviewEntry = {
     findingId: finding.id,
     severity: finding.severity,
     result: decision.result,
     gates,
     falsePositiveRootCause: decision.rootCause,
-    reviewerNotes: reviewerNotesFor(finding, gates, decision.result, decision.rootCause),
+    reviewerNotes: reviewerNotesFor(finding, gates, decision.result, decision.rootCause, claim, assumptionHandling),
     reviewedAt: generatedAt,
     reviewer: GENERATOR,
   };
+  if (claim) {
+    entry.claimId = finding.claimId;
+    entry.claimType = claim.type;
+  }
+  if (assumptionHandling) {
+    entry.assumptionHandling = assumptionHandling;
+  }
+  return entry;
 }
 
 function reviewSummaryKey(result: ReviewResult): keyof SecurityReviewDocument['summary']['byResult'] {
@@ -974,9 +1089,13 @@ export function buildSecurityThreeGateReview(
   generatedAt: string,
   repoRoot?: string,
   entrypointMap?: SecurityEntrypointMapDocument,
+  claims?: SecurityClaimDocument,
 ): SecurityReviewDocument {
   const codeMapByClaim = new Map(codeMap.mappings.map((mapping) => [mapping.claimId, mapping]));
-  const reviews = findings.findings.map((finding) => reviewEntryForFinding(finding, scope, codeMapByClaim, generatedAt, repoRoot, entrypointMap));
+  const claimById = claimMapFromDocument(claims);
+  const reviews = findings.findings.map((finding) =>
+    reviewEntryForFinding(finding, scope, codeMapByClaim, generatedAt, repoRoot, entrypointMap, claimById?.get(finding.claimId)),
+  );
   return {
     schemaVersion: 'security-review/v1',
     generatedAt,
@@ -1008,20 +1127,23 @@ function renderSecurityReviewMarkdown(result: SecurityReviewResult): string {
     '',
     '## Reviews',
     '',
-    '| Finding | Severity | Result | Dead Code | Trust Boundary | Scope | Root cause |',
-    '| --- | --- | --- | --- | --- | --- | --- |',
+    '| Finding | Claim type | Severity | Result | Assumption handling | Dead Code | Trust Boundary | Scope | Root cause |',
+    '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
   ];
   for (const review of result.review.reviews) {
-    lines.push(`| ${review.findingId} | ${review.severity ?? 'unknown'} | ${review.result} | ${review.gates.deadCode.result} | ${review.gates.trustBoundary.result} | ${review.gates.scope.result} | ${review.falsePositiveRootCause ?? 'n/a'} |`);
+    lines.push(`| ${review.findingId} | ${review.claimType ?? 'n/a'} | ${review.severity ?? 'unknown'} | ${review.result} | ${review.assumptionHandling?.mode ?? 'n/a'} | ${review.gates.deadCode.result} | ${review.gates.trustBoundary.result} | ${review.gates.scope.result} | ${review.falsePositiveRootCause ?? 'n/a'} |`);
   }
   lines.push('', '## Review detail', '');
   for (const review of result.review.reviews) {
     lines.push(
       `### ${review.findingId}`,
       '',
+      `- Claim ID: ${review.claimId ?? 'n/a'}`,
+      `- Claim type: ${review.claimType ?? 'n/a'}`,
       `- Severity: ${review.severity ?? 'unknown'}`,
       `- Result: ${review.result}`,
       `- False-positive root cause: ${review.falsePositiveRootCause ?? 'n/a'}`,
+      `- Assumption handling: ${review.assumptionHandling ? `${review.assumptionHandling.mode} — ${review.assumptionHandling.rationale}` : 'n/a'}`,
       `- Dead Code: ${renderGate(review.gates.deadCode)}`,
       `- Trust Boundary: ${renderGate(review.gates.trustBoundary)}`,
       `- Scope: ${renderGate(review.gates.scope)}`,
@@ -1057,11 +1179,12 @@ export async function generateSecurityThreeGateReview(
   const schemaRoot = resolveSchemaRoot(options.repoRoot);
   const artifactRepoRoot = options.repoRoot ?? schemaRoot;
 
-  const [findingsDocument, scopeDocument, codeMapDocument, entrypointMapDocument] = await Promise.all([
+  const [findingsDocument, scopeDocument, codeMapDocument, entrypointMapDocument, claimsDocument] = await Promise.all([
     loadJson(findingsPath),
     loadJson(scopePath),
     loadJson(codeMapPath),
     options.entrypointMapPath ? loadJson(options.entrypointMapPath) : Promise.resolve(undefined),
+    options.claimsPath ? loadJson(options.claimsPath) : Promise.resolve(undefined),
   ]);
 
   if (shouldValidate) {
@@ -1073,6 +1196,9 @@ export async function generateSecurityThreeGateReview(
     if (entrypointMapDocument !== undefined) {
       validationTasks.push(validateWithSchema(schemaRoot, 'security-entrypoint-map-v1.schema.json', entrypointMapDocument, 'security-entrypoint-map/v1 input'));
     }
+    if (claimsDocument !== undefined) {
+      validationTasks.push(validateWithSchema(schemaRoot, 'security-claim-v1.schema.json', claimsDocument, 'security-claim/v1 input'));
+    }
     await Promise.all(validationTasks);
   }
 
@@ -1080,7 +1206,8 @@ export async function generateSecurityThreeGateReview(
   const scope = parseScopeDocument(scopeDocument, artifactRepoRoot);
   const codeMap = parseCodeMapDocument(codeMapDocument, artifactRepoRoot);
   const entrypointMap = entrypointMapDocument === undefined ? undefined : parseEntrypointMapDocument(entrypointMapDocument, artifactRepoRoot);
-  const review = buildSecurityThreeGateReview(findings, scope, codeMap, generatedAt, artifactRepoRoot, entrypointMap);
+  const claims = claimsDocument === undefined ? undefined : parseClaimDocument(claimsDocument);
+  const review = buildSecurityThreeGateReview(findings, scope, codeMap, generatedAt, artifactRepoRoot, entrypointMap, claims);
   const warnings: ReviewWarning[] = [];
   const outputPaths = outputPathsFor(outPath);
   const result: SecurityReviewResult = { generatedAt, review, warnings, outputPaths };

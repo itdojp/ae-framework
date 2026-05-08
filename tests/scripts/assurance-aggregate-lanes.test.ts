@@ -327,6 +327,7 @@ describe.sequential('assurance aggregate lanes script', () => {
       const securityClaim = summary.claims.find((claim: { claimId: string }) => claim.claimId === 'SEC-CLAIM-001');
       expect(securityClaim).toMatchObject({
         criticality: 'high',
+        securityClaimType: 'invariant',
         observedLanes: ['spec', 'adversarial'],
         missingLanes: ['behavior'],
       });

@@ -9,7 +9,7 @@
 - Findings: 2
 - Review results: needs-human-review=1, rejected=0, out-of-scope=1
 - Assurance claims: 3
-- Manifest security: findings=2, highOrCriticalOpen=1, outOfScope=1, rejected=0
+- Manifest security: findings=2, highOrCriticalOpen=1, outOfScope=1, rejected=0, assumptionValidationRequired=0, assumptionResidualRisk=1
 
 ## Expected lane behavior
 

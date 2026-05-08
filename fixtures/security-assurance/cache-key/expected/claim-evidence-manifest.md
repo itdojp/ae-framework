@@ -4,7 +4,7 @@
 - generatedAt: 2026-05-07T00:00:00.000Z
 - sourceArtifacts: 4/8 present
 - claims: 3 total; 0 satisfied, 3 partial, 0 waived, 0 unresolved
-- securityFindings: 2 total; highOrCriticalOpen=1, needsHumanReview=1, outOfScope=1, rejected=0
+- securityFindings: 2 total; highOrCriticalOpen=1, needsHumanReview=1, outOfScope=1, rejected=0, assumptionValidationRequired=0, assumptionResidualRisk=1
 - missingEvidenceRefs: 4
 - waiverRefs: 0
 
@@ -23,11 +23,11 @@
 
 ## Claims
 
-| claim | criticality | target | achieved | status | evidence | missing | waivers | externalIds |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| sec-claim-001 | high | A2 | A1 | partial | 6 | 2 | 0 | security-claim:SEC-CLAIM-001 (security-claims) |
-| sec-claim-002 | medium | A1 | A0 | partial | 2 | 1 | 0 | security-claim:SEC-CLAIM-002 (security-claims) |
-| sec-claim-003 | low | A2 | A0 | partial | 6 | 1 | 0 | security-claim:SEC-CLAIM-003 (security-claims) |
+| claim | securityType | criticality | target | achieved | status | evidence | missing | waivers | assumptionHandling | externalIds |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| sec-claim-001 | invariant | high | A2 | A1 | partial | 6 | 2 | 0 | n/a | security-claim:SEC-CLAIM-001 (security-claims) |
+| sec-claim-002 | precondition | medium | A1 | A0 | partial | 2 | 1 | 0 | n/a | security-claim:SEC-CLAIM-002 (security-claims) |
+| sec-claim-003 | assumption | low | A2 | A0 | partial | 6 | 1 | 0 | SEC-FINDING-002:residual-risk, SEC-FINDING-002:residual-risk | security-claim:SEC-CLAIM-003 (security-claims) |
 
 ## External IDs
 
@@ -44,6 +44,13 @@
 | sec-claim-003 | evidence:security-findings:sec-finding-002 | security-finding:SEC-FINDING-002 (security-findings) | artifacts/security-assurance/cache-key/security-findings.json#/findings/1 |
 | sec-claim-003 | evidence:security-review:sec-finding-002:1 | security-review:SEC-FINDING-002:review:1 (security-review) | artifacts/security-assurance/cache-key/security-review.json#/reviews/1 |
 
+## Assumption handling
+
+| claim | id | mode | finding | reviewResult | source | reason |
+| --- | --- | --- | --- | --- | --- | --- |
+| sec-claim-003 | assurance-summary:sec-claim-003:assumption:sec-finding-002:residual-risk | residual-risk | SEC-FINDING-002 | out-of-scope | assurance-summary | Finding SEC-FINDING-002 is derived from an assumption claim and was classified as out-of-scope (out-of-scope); keep the assumption disposition traceable as residual-risk evidence. |
+| sec-claim-003 | security-assumption:sec-finding-002:residual-risk | residual-risk | SEC-FINDING-002 | out-of-scope | security-review | Finding SEC-FINDING-002 is derived from an assumption claim and was classified as out-of-scope (out-of-scope); keep the assumption disposition traceable as residual-risk evidence. |
+
 ## Missing evidence
 
 - sec-claim-001: assurance-summary:sec-claim-001:missing-kind:counterexample-closed (adversarial) — Required evidence kind 'counterexample-closed' is not linked for this claim.
@@ -58,6 +65,8 @@
 - reviews: 2
 - needsHumanReview: 1
 - highOrCriticalOpen: 1
+- assumptionValidationRequired: 0
+- assumptionResidualRisk: 1
 - outOfScope: 1
 - rejected: 0
 
