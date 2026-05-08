@@ -32,8 +32,11 @@ describe('assurance e2e scenario runner', () => {
         'verify-lite-run-summary.json',
         'assurance-summary.json',
         'claim-evidence-manifest.json',
+        'claim-level-summary.json',
         'policy-decision-js-v1.json',
         'policy-gate-summary.json',
+        'change-package-v2.json',
+        'change-package-v2.md',
       ]) {
         expect(existsSync(join(outputDir, fileName)), `${fileName} should be generated`).toBe(true);
       }
@@ -57,6 +60,31 @@ describe('assurance e2e scenario runner', () => {
           activeWaivers: 1,
         },
       });
+
+      const claimLevel = JSON.parse(readFileSync(join(outputDir, 'claim-level-summary.json'), 'utf8'));
+      expect(claimLevel.summary).toMatchObject({
+        totalClaims: 3,
+        modelChecked: 1,
+        runtimeMitigated: 1,
+        waived: 1,
+        reportOnlyDecisions: 3,
+      });
+      const noNegativeBalance = claimLevel.claims.find(
+        (claim: { claimId: string }) => claim.claimId === 'no-negative-balance',
+      );
+      expect(noNegativeBalance).toBeDefined();
+      expect(noNegativeBalance).toMatchObject({
+        state: 'model-checked',
+        missingEvidenceRefs: [
+          expect.objectContaining({
+            id: 'change-package-v2:no-negative-balance:target-a3:achieved-a2',
+          }),
+        ],
+      });
+
+      const changePackageMarkdown = readFileSync(join(outputDir, 'change-package-v2.md'), 'utf8');
+      expect(changePackageMarkdown).toContain('changed requirement refs: REQ-INV-001, REQ-INV-002');
+      expect(changePackageMarkdown).toContain('### Waivers');
     } finally {
       rmSync(outputDir, { recursive: true, force: true });
     }
@@ -110,6 +138,25 @@ describe('assurance e2e scenario runner', () => {
       );
     } finally {
       rmSync(testRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects output directories outside the repository root with a clear error', () => {
+    const outsideOutputDir = resolve(repoRoot, '..', 'assurance-e2e-outside-repo-output');
+
+    try {
+      const result = runScript([
+        '--scenario',
+        'inventory-waiver',
+        '--output-dir',
+        outsideOutputDir,
+        '--no-compare',
+      ]);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('output-dir must stay under the repository root');
+    } finally {
+      rmSync(outsideOutputDir, { recursive: true, force: true });
     }
   });
 });

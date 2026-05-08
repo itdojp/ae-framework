@@ -1,0 +1,314 @@
+{
+  "schemaVersion": "claim-level-summary/v1",
+  "generatedAt": "2026-05-06T00:00:00.000Z",
+  "source": {
+    "repository": "itdojp/ae-framework",
+    "prNumber": 3245,
+    "baseRef": "main",
+    "headRef": "feat/3245-assurance-e2e",
+    "headSha": "fixture-current-head-smoke"
+  },
+  "inputs": {
+    "claimEvidenceManifest": {
+      "path": "artifacts/assurance-e2e/inventory-waiver/claim-evidence-manifest.json",
+      "schemaVersion": "claim-evidence-manifest/v1",
+      "present": true,
+      "required": true
+    },
+    "policyGateSummary": {
+      "path": "artifacts/assurance-e2e/inventory-waiver/policy-gate-summary.json",
+      "schemaVersion": "policy-gate-summary/v1",
+      "present": true,
+      "required": false
+    },
+    "temporaryOverrides": [],
+    "changePackageV2": {
+      "path": "fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json",
+      "schemaVersion": "change-package/v2",
+      "present": true,
+      "required": false
+    }
+  },
+  "summary": {
+    "totalClaims": 3,
+    "satisfied": 0,
+    "tested": 0,
+    "modelChecked": 1,
+    "proved": 0,
+    "runtimeMitigated": 1,
+    "waived": 1,
+    "unresolved": 0,
+    "failed": 0,
+    "notApplicable": 0,
+    "enforcedDecisions": 0,
+    "reportOnlyDecisions": 3
+  },
+  "claims": [
+    {
+      "claimId": "manual-fraud-review",
+      "statement": "High-risk reservations receive manual fraud review until model validation is complete.",
+      "criticality": "medium",
+      "targetLevel": "A3",
+      "achievedLevel": "A2",
+      "state": "waived",
+      "stateRationale": "Active or recorded waiver keeps this claim distinct from satisfied claims.",
+      "decision": {
+        "mode": "report-only",
+        "result": "waived",
+        "enforced": false,
+        "reason": "Policy gate recognizes an explicit waiver for this claim.",
+        "sourceArtifactId": "policy-gate-summary",
+        "evidenceRefs": [
+          "change-package-v2:manual-fraud-review",
+          "change-package-v2:manual-fraud-review:artifact:0",
+          "quality-scorecard:assurancecoverage:manual-fraud-review"
+        ],
+        "missingEvidenceRefs": [],
+        "waiverRefs": [
+          "change-package-v2:waiver:0:manual-fraud-review"
+        ]
+      },
+      "evidenceRefs": [
+        {
+          "id": "change-package-v2:manual-fraud-review",
+          "kind": "manual",
+          "status": "observed",
+          "artifactPath": "fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json#/claims/1",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Change-package v2 claim anchor is present (status=waived)."
+        },
+        {
+          "id": "change-package-v2:manual-fraud-review:artifact:0",
+          "kind": "runtime",
+          "status": "observed",
+          "artifactPath": "artifacts/runtime/manual-fraud-review-control.json",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Change-package v2 artifactRef linked to claim"
+        },
+        {
+          "id": "quality-scorecard:assurancecoverage:manual-fraud-review",
+          "kind": "quality",
+          "status": "observed",
+          "artifactPath": "fixtures/assurance-e2e/inventory-waiver/inputs/quality-scorecard.json#/dimensions/assuranceCoverage",
+          "sourceArtifactId": "quality-scorecard",
+          "description": "Assurance summary reports satisfied claims without coverage blockers."
+        }
+      ],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [
+        {
+          "id": "change-package-v2:waiver:0:manual-fraud-review",
+          "temporaryOverridePath": "artifacts/assurance/temporary-overrides/change-package-v2:waiver:0:manual-fraud-review.json",
+          "status": "active",
+          "owner": "@team-risk",
+          "expires": "2099-12-31",
+          "reason": "Manual fraud review is active while automated model validation evidence is being collected."
+        }
+      ],
+      "assumptions": [],
+      "runtimeControls": [
+        {
+          "id": "change-package-v2:manual-fraud-review:artifact:0",
+          "kind": "runtime-conformance",
+          "description": "Change-package v2 artifactRef linked to claim",
+          "artifactPath": "artifacts/runtime/manual-fraud-review-control.json"
+        }
+      ],
+      "notes": [
+        "achievedLevel imported from change-package/v2 top-level assurance: targetLevel=A3, achievedLevel=A2, status=partial."
+      ]
+    },
+    {
+      "claimId": "no-negative-balance",
+      "statement": "Ledger balance never becomes negative after reservation settlement.",
+      "criticality": "high",
+      "targetLevel": "A3",
+      "achievedLevel": "A2",
+      "state": "model-checked",
+      "stateRationale": "Model-checking evidence is linked for the stated scope.",
+      "decision": {
+        "mode": "report-only",
+        "result": "report-only",
+        "enforced": false,
+        "reason": "Claim remains report-only until required evidence is complete or policy enforcement is enabled.",
+        "sourceArtifactId": "policy-gate-summary",
+        "evidenceRefs": [
+          "change-package-v2:no-negative-balance",
+          "change-package-v2:no-negative-balance:artifact:0",
+          "change-package-v2:no-negative-balance:artifact:1",
+          "change-package-v2:no-negative-balance:counterexample:0",
+          "quality-scorecard:assurancecoverage:no-negative-balance"
+        ],
+        "missingEvidenceRefs": [
+          "change-package-v2:no-negative-balance:target-a3:achieved-a2"
+        ],
+        "waiverRefs": []
+      },
+      "evidenceRefs": [
+        {
+          "id": "change-package-v2:no-negative-balance",
+          "kind": "proof",
+          "status": "observed",
+          "artifactPath": "fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json#/claims/0",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Change-package v2 claim anchor is present (status=model-checked)."
+        },
+        {
+          "id": "change-package-v2:no-negative-balance:artifact:0",
+          "kind": "proof",
+          "status": "observed",
+          "artifactPath": "artifacts/assurance/assurance-summary.json",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Change-package v2 artifactRef linked to claim"
+        },
+        {
+          "id": "change-package-v2:no-negative-balance:artifact:1",
+          "kind": "proof",
+          "status": "observed",
+          "artifactPath": "artifacts/formal/tla/no-negative-balance-summary.json",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Change-package v2 artifactRef linked to claim"
+        },
+        {
+          "id": "change-package-v2:no-negative-balance:counterexample:0",
+          "kind": "adversarial",
+          "status": "observed",
+          "artifactPath": "artifacts/formal/counterexamples/no-negative-balance-cex.json",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Counterexample is resolved."
+        },
+        {
+          "id": "quality-scorecard:assurancecoverage:no-negative-balance",
+          "kind": "quality",
+          "status": "observed",
+          "artifactPath": "fixtures/assurance-e2e/inventory-waiver/inputs/quality-scorecard.json#/dimensions/assuranceCoverage",
+          "sourceArtifactId": "quality-scorecard",
+          "description": "Assurance summary reports satisfied claims without coverage blockers."
+        }
+      ],
+      "missingEvidenceRefs": [
+        {
+          "id": "change-package-v2:no-negative-balance:target-a3:achieved-a2",
+          "expectedKind": "other",
+          "reason": "achievedLevel A2 is below targetLevel A3; additional evidence is required.",
+          "sourceArtifactId": "change-package-v2"
+        }
+      ],
+      "waiverRefs": [],
+      "assumptions": [],
+      "runtimeControls": [],
+      "notes": [
+        "achievedLevel imported from change-package/v2 top-level assurance: targetLevel=A3, achievedLevel=A2, status=partial."
+      ]
+    },
+    {
+      "claimId": "no-negative-stock",
+      "statement": "Inventory stock never becomes negative after an accepted reservation.",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "achievedLevel": "A2",
+      "state": "runtime-mitigated",
+      "stateRationale": "Runtime controls or runtime evidence mitigate the claim without promoting it to proof.",
+      "decision": {
+        "mode": "report-only",
+        "result": "pass",
+        "enforced": false,
+        "reason": "Linked evidence is sufficient for report-only pass projection.",
+        "sourceArtifactId": "policy-gate-summary",
+        "evidenceRefs": [
+          "assurance-summary:no-negative-stock:0:schema",
+          "assurance-summary:no-negative-stock:1:product-coproduct",
+          "assurance-summary:no-negative-stock:2:property",
+          "assurance-summary:no-negative-stock:3:conformance",
+          "assurance-summary:no-negative-stock:4:counterexample-closed",
+          "assurance-summary:no-negative-stock:5:runtime-alert",
+          "quality-scorecard:assurancecoverage:no-negative-stock"
+        ],
+        "missingEvidenceRefs": [],
+        "waiverRefs": []
+      },
+      "evidenceRefs": [
+        {
+          "id": "assurance-summary:no-negative-stock:0:schema",
+          "kind": "spec",
+          "status": "observed",
+          "artifactPath": "fixtures/context-pack/sample.context-pack.json",
+          "sourceArtifactId": "assurance-summary",
+          "description": "Context Pack assurance reference"
+        },
+        {
+          "id": "assurance-summary:no-negative-stock:1:product-coproduct",
+          "kind": "spec",
+          "status": "observed",
+          "artifactPath": "artifacts/context-pack/context-pack-product-coproduct-report.json",
+          "sourceArtifactId": "assurance-summary",
+          "description": "verify-lite referenced context-pack product/coproduct report"
+        },
+        {
+          "id": "assurance-summary:no-negative-stock:2:property",
+          "kind": "behavior",
+          "status": "observed",
+          "artifactPath": "artifacts/testing/property-summary.json",
+          "sourceArtifactId": "assurance-summary",
+          "description": "property suite passed"
+        },
+        {
+          "id": "assurance-summary:no-negative-stock:3:conformance",
+          "kind": "model",
+          "status": "observed",
+          "artifactPath": "fixtures/formal/sample.formal-summary-v2.json",
+          "sourceArtifactId": "assurance-summary",
+          "description": "formal summary recorded successful conformance result"
+        },
+        {
+          "id": "assurance-summary:no-negative-stock:4:counterexample-closed",
+          "kind": "adversarial",
+          "status": "observed",
+          "artifactPath": "fixtures/counterexample/sample.counterexample.json",
+          "sourceArtifactId": "assurance-summary",
+          "description": "counterexample resolved for linked claim"
+        },
+        {
+          "id": "assurance-summary:no-negative-stock:5:runtime-alert",
+          "kind": "runtime",
+          "status": "observed",
+          "artifactPath": "artifacts/runtime/alerts/no-negative-stock.json",
+          "sourceArtifactId": "assurance-summary",
+          "description": "runtime alert configuration reviewed"
+        },
+        {
+          "id": "quality-scorecard:assurancecoverage:no-negative-stock",
+          "kind": "quality",
+          "status": "observed",
+          "artifactPath": "fixtures/assurance-e2e/inventory-waiver/inputs/quality-scorecard.json#/dimensions/assuranceCoverage",
+          "sourceArtifactId": "quality-scorecard",
+          "description": "Assurance summary reports satisfied claims without coverage blockers."
+        }
+      ],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "assumptions": [],
+      "runtimeControls": [
+        {
+          "id": "alert:negative-balance-detected",
+          "kind": "alert",
+          "description": "Runtime alert control negative-balance-detected is linked from change-package/v2."
+        },
+        {
+          "id": "assurance-summary:no-negative-stock:5:runtime-alert",
+          "kind": "runtime-conformance",
+          "description": "runtime alert configuration reviewed",
+          "artifactPath": "artifacts/runtime/alerts/no-negative-stock.json"
+        },
+        {
+          "id": "feature-flag:manual_fraud_review_required",
+          "kind": "feature-flag",
+          "description": "Runtime feature flag manual_fraud_review_required is linked from change-package/v2."
+        }
+      ],
+      "notes": [
+        "achievedLevel derived from assurance-summary satisfied status at targetLevel A2."
+      ]
+    }
+  ]
+}
