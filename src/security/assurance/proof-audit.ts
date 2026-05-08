@@ -256,7 +256,18 @@ function outputPathsFor(outPath: string, includeFindings: boolean): SecurityAudi
 }
 
 async function loadJson(filePath: string): Promise<unknown> {
-  return JSON.parse(await fs.readFile(filePath, 'utf8')) as unknown;
+  try {
+    return JSON.parse(await fs.readFile(filePath, 'utf8')) as unknown;
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code?: unknown }).code === 'ENOENT') {
+      const detail = error instanceof Error ? `: ${error.message}` : '';
+      throw new Error(`Input file not found: ${filePath}${detail}`, { cause: error });
+    }
+    if (error instanceof SyntaxError) {
+      throw new Error(`Malformed JSON input: ${filePath}: ${error.message}`, { cause: error });
+    }
+    throw error;
+  }
 }
 
 async function validateWithSchema(repoRoot: string, schemaName: string, document: unknown, label: string): Promise<void> {

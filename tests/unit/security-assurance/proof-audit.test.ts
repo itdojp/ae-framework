@@ -9,6 +9,7 @@ const claimsPath = 'fixtures/security-assurance/sample.security-claims.json';
 const codeMapPath = 'fixtures/security-assurance/sample.security-code-map.json';
 const scopePath = 'fixtures/security-assurance/sample.security-audit-scope.json';
 const responseFixturePath = 'fixtures/security-assurance/sample.security-audit-responses.json';
+const zeroFindingResponseFixturePath = 'fixtures/security-assurance/boundary-cases/zero-finding.security-audit-responses.json';
 const generatedAt = '2026-05-07T00:00:00.000Z';
 const tsxBin = resolve('node_modules/.bin/tsx');
 
@@ -188,21 +189,12 @@ describe('security proof-attempt audit producer', () => {
   });
 
 
-  it('allows response fixtures where every task has no finding', async () => {
-    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-proof-audit-all-clean-'));
+  it('allows the zero-finding boundary fixture where every task has no finding', async () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ae-proof-audit-all-clean-out-'));
     try {
-      const localResponsesPath = join(fixtureDir, 'responses.json');
-      writeJson(localResponsesPath, {
-        schemaVersion: 'security-audit-response-fixture/v1',
-        responses: [
-          { taskId: 'SEC-AUDIT-TASK-001', result: 'no-finding', rationale: 'The fixture proof established the claim for the mapped code path.' },
-        ],
-      });
-
       const result = await generateSecurityProofAudit(claimsPath, codeMapPath, scopePath, outDir, {
         generatedAt,
-        responseFixture: localResponsesPath,
+        responseFixture: zeroFindingResponseFixturePath,
       });
 
       expect(result.findings).toBeUndefined();
@@ -210,7 +202,6 @@ describe('security proof-attempt audit producer', () => {
       expect(result.responseSummary).toEqual({ totalResponses: 1, findingResponses: 0, noFindingResponses: 1, missingResponses: 0 });
       expect(readFileSync(join(outDir, 'security-audit-summary.md'), 'utf8')).toContain('SEC-AUDIT-TASK-001 / SEC-CLAIM-001: no-finding');
     } finally {
-      rmSync(fixtureDir, { recursive: true, force: true });
       rmSync(outDir, { recursive: true, force: true });
     }
   });

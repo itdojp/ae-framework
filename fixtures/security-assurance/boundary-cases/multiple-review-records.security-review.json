@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "security-review/v1",
+  "generatedAt": "2026-05-07T00:00:00.000Z",
+  "reviews": [
+    {
+      "findingId": "SEC-FINDING-001",
+      "severity": "high",
+      "result": "needs-human-review",
+      "gates": {
+        "deadCode": {
+          "result": "pass",
+          "rationale": "Primary review found production code evidence.",
+          "evidenceRefs": [
+            "src/cache.ts"
+          ]
+        },
+        "trustBoundary": {
+          "result": "pass",
+          "rationale": "The candidate crosses TB-001.",
+          "evidenceRefs": [
+            "TB-001"
+          ]
+        },
+        "scope": {
+          "result": "pass",
+          "rationale": "The source path is in scope.",
+          "evidenceRefs": [
+            "src/**/*.ts"
+          ]
+        }
+      },
+      "falsePositiveRootCause": null,
+      "reviewerNotes": [
+        "First deterministic review record for the same finding."
+      ],
+      "reviewedAt": "2026-05-07T00:00:00.000Z",
+      "reviewer": "security-review-fixture"
+    },
+    {
+      "findingId": "SEC-FINDING-001",
+      "severity": "high",
+      "result": "confirmed",
+      "gates": {
+        "deadCode": {
+          "result": "pass",
+          "rationale": "Follow-up review confirmed the code is reachable.",
+          "evidenceRefs": [
+            "src/cache.ts"
+          ]
+        },
+        "trustBoundary": {
+          "result": "pass",
+          "rationale": "Follow-up review confirmed attacker-controlled input crosses TB-001.",
+          "evidenceRefs": [
+            "TB-001"
+          ]
+        },
+        "scope": {
+          "result": "pass",
+          "rationale": "The finding remains in the audit scope.",
+          "evidenceRefs": [
+            "src/**/*.ts"
+          ]
+        }
+      },
+      "falsePositiveRootCause": null,
+      "reviewerNotes": [
+        "Second deterministic review record for the same finding."
+      ],
+      "reviewedAt": "2026-05-07T00:01:00.000Z",
+      "reviewer": "security-review-fixture"
+    }
+  ],
+  "summary": {
+    "totalReviews": 2,
+    "byResult": {
+      "needsHumanReview": 1,
+      "confirmed": 1,
+      "rejected": 0,
+      "waived": 0,
+      "outOfScope": 0
+    },
+    "falsePositiveRootCauses": {
+      "deadCode": 0,
+      "trustBoundaryMisunderstanding": 0,
+      "outOfScope": 0,
+      "codeReadingError": 0,
+      "specMisinterpretation": 0,
+      "insufficientEvidence": 0
+    }
+  }
+}
