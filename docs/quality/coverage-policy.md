@@ -43,6 +43,8 @@ Reporting behavior:
 - `pnpm run coverage` is the canonical project command for generating local coverage evidence.
 - The command writes `coverage/coverage-summary.json` and `coverage/lcov.info`; `coverage/` is ignored by `.gitignore` and is treated as generated evidence, not as a manually maintained tracked baseline.
 - When documenting a baseline, record the target commit, command, date, and relevant environment flags. Do not infer freshness from an old local `coverage/` directory alone.
+- `pnpm run coverage:freshness` reads `coverage/coverage-summary.json` and writes report-only freshness evidence to `artifacts/testing/coverage-freshness.json` and `artifacts/testing/coverage-freshness.md`.
+- Freshness statuses are `fresh`, `stale`, `missing`, `unknown`, and `invalid`. Only `fresh` proves that coverage metadata matches the current HEAD; every other status remains a warning with the update command recorded in the artifact.
 - On hosts without a detectable Docker or Podman engine, non-CI coverage runs can fail in `tests/container/container-agent.test.ts`. Use `CI=1 pnpm run coverage` when the intent is to emulate CI degraded-mode behavior locally, and record that condition with the evidence.
 
 Latest observed `origin/main` baseline as of 2026-05-08 on commit `944fc818dd89a9d51cb72f1c2ee6e1b5cfa3e7e1` using `CI=1 pnpm -s run coverage`:
@@ -175,6 +177,8 @@ Source: label
 - `pnpm run coverage` は local coverage evidence を生成する project の標準コマンドです。
 - このコマンドは `coverage/coverage-summary.json` と `coverage/lcov.info` を出力します。`coverage/` は `.gitignore` で除外されており、手動管理する tracked baseline ではなく generated evidence として扱います。
 - baseline を文書に記録する場合は、対象 commit、command、date、関連する environment flag を併記します。古い local `coverage/` directory だけから鮮度を判断しないでください。
+- `pnpm run coverage:freshness` は `coverage/coverage-summary.json` を読み、report-only freshness evidence を `artifacts/testing/coverage-freshness.json` と `artifacts/testing/coverage-freshness.md` に出力します。
+- freshness status は `fresh`、`stale`、`missing`、`unknown`、`invalid` です。coverage metadata が current HEAD と一致することを証明できるのは `fresh` のみで、それ以外は artifact に更新コマンドを記録した warning として扱います。
 - Docker / Podman engine を検出できない host では、non-CI の coverage run が `tests/container/container-agent.test.ts` で失敗する場合があります。CI degraded-mode を local で再現したい場合は `CI=1 pnpm run coverage` を使い、その条件を evidence として記録します。
 
 2026-05-08 時点で `origin/main` commit `944fc818dd89a9d51cb72f1c2ee6e1b5cfa3e7e1` に対して `CI=1 pnpm -s run coverage` で確認した latest observed baseline:

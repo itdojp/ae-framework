@@ -31,6 +31,7 @@ Use this index to choose the smallest test lane that gives adequate signal for t
 | Local unit / contract confidence | `pnpm run test:unit`, `pnpm run test:contracts` | S-M | Updating core modules, schemas, CLI helpers, or contract fixtures. |
 | PR baseline | `pnpm run verify:lite` or `pnpm run test:ci:lite` | M | Preparing a PR that should match the default required-check posture. |
 | Coverage inspection | `pnpm run coverage` | M-L | Refreshing coverage evidence or validating `coverage-check` behavior. |
+| Test inventory / freshness evidence | `pnpm run testing:inventory`, `pnpm run coverage:freshness` | S | Preparing report-only testing evidence for planning, maintenance, or PR summaries. |
 | Extended PR signal | `pnpm run test:ci:extended` | L | High-risk changes, integration-sensitive edits, or label-gated PR runs. |
 | Nightly / scheduled heavy signal | `pnpm run test:mbt:ci`, `pnpm run pipelines:mutation:quick`, `pnpm run verify:formal` | XL | Regression discovery, assurance refresh, or scheduled quality reporting. |
 | Release readiness | `pnpm run verify:lite`, `pnpm run test:ci:extended`, selected heavy lanes | L-XL | Confirming the release candidate across default and opt-in lanes. |
@@ -79,6 +80,15 @@ Latest observed baseline on `origin/main` `944fc818dd89a9d51cb72f1c2ee6e1b5cfa3e
 | Functions | 60.76% | 3,132 / 5,154 |
 | Branches | 67.89% | 10,708 / 15,771 |
 
+
+### Test inventory and coverage freshness artifacts
+
+Use `pnpm run testing:inventory` to generate a report-only inventory under `artifacts/testing/test-inventory.json` and `artifacts/testing/test-inventory.md`. The JSON report records the current git HEAD, total test file count, category counts, cost-class counts, and per-file `path`, `category`, `likelyTarget`, and `costClass` fields.
+
+Use `pnpm run coverage:freshness` to generate `artifacts/testing/coverage-freshness.json` and `artifacts/testing/coverage-freshness.md` from `coverage/coverage-summary.json`. Freshness is report-only: `fresh` means coverage metadata matches the current HEAD, `stale` means coverage metadata points at a different commit, and `missing` / `unknown` / `invalid` mean freshness cannot be proven. In all non-fresh cases the report includes an update command such as `pnpm run coverage`.
+
+Verify Lite and PR summaries do not depend on these artifacts by default. The near-term integration path is to attach or render the generated JSON/Markdown as optional evidence in PR summaries; making freshness blocking should remain a separate policy change after operators observe the report-only output.
+
 ### Verification for docs-only updates
 
 Run the same documentation and type-surface checks used by the planning issue:
@@ -105,6 +115,7 @@ Run the same documentation and type-surface checks used by the planning issue:
 | Local unit / contract confidence | `pnpm run test:unit`, `pnpm run test:contracts` | S-M | core module、schema、CLI helper、contract fixture を更新した場合。 |
 | PR baseline | `pnpm run verify:lite` または `pnpm run test:ci:lite` | M | 既定の required-check posture に合わせて PR を準備する場合。 |
 | Coverage inspection | `pnpm run coverage` | M-L | coverage evidence や `coverage-check` の挙動を確認する場合。 |
+| Test inventory / freshness evidence | `pnpm run testing:inventory`, `pnpm run coverage:freshness` | S | planning、maintenance、PR summary 向けの report-only testing evidence を作る場合。 |
 | Extended PR signal | `pnpm run test:ci:extended` | L | high-risk 変更、integration-sensitive な変更、label-gated PR run が必要な場合。 |
 | Nightly / scheduled heavy signal | `pnpm run test:mbt:ci`, `pnpm run pipelines:mutation:quick`, `pnpm run verify:formal` | XL | regression discovery、assurance refresh、scheduled quality reporting。 |
 | Release readiness | `pnpm run verify:lite`, `pnpm run test:ci:extended`, selected heavy lanes | L-XL | release candidate を default lane と opt-in lane の両方で確認する場合。 |
@@ -152,6 +163,15 @@ Cost class は目安です。S は local edit loop、M は pre-PR、L は extend
 | Statements | 31.96% | 53,302 / 166,738 |
 | Functions | 60.76% | 3,132 / 5,154 |
 | Branches | 67.89% | 10,708 / 15,771 |
+
+
+### Test inventory と coverage freshness artifact
+
+`pnpm run testing:inventory` は `artifacts/testing/test-inventory.json` と `artifacts/testing/test-inventory.md` を report-only evidence として生成します。JSON report は current git HEAD、test file count、category count、cost-class count、各 file の `path`、`category`、`likelyTarget`、`costClass` を記録します。
+
+`pnpm run coverage:freshness` は `coverage/coverage-summary.json` から `artifacts/testing/coverage-freshness.json` と `artifacts/testing/coverage-freshness.md` を生成します。freshness 判定は report-only です。`fresh` は coverage metadata が current HEAD と一致する状態、`stale` は異なる commit の coverage である状態、`missing` / `unknown` / `invalid` は鮮度を証明できない状態を表します。fresh 以外では `pnpm run coverage` のような更新コマンドを report に含めます。
+
+Verify Lite と PR summary は既定ではこれらの artifact に依存しません。当面の統合方針は、生成済み JSON / Markdown を PR summary の任意 evidence として添付または描画することです。freshness を blocking にする変更は、report-only 出力を観測した後の別 policy 変更として扱います。
 
 ### docs-only 更新時の検証
 
