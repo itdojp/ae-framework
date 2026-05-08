@@ -30,6 +30,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'workflow_run' }}
 
 permissions:
+  actions: read
   contents: read
   pull-requests: write
   issues: write
@@ -97,6 +98,78 @@ jobs:
           fi
           printf '%s\n' "skip=false" >> "$GITHUB_OUTPUT"
           printf '%s\n' "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve assurance policy inputs
+        if: ${{ steps.pr.outputs.skip != 'true' }}
+        id: assurance-policy
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          AE_POLICY_ASSURANCE_MODE_CONFIG: ${{ vars.AE_POLICY_ASSURANCE_MODE || '' }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = Number(process.env.PR_NUMBER || 0);
+            const explicitMode = String(process.env.AE_POLICY_ASSURANCE_MODE_CONFIG || '').trim();
+
+            if (explicitMode) {
+              core.exportVariable('AE_POLICY_ASSURANCE_MODE', explicitMode);
+            }
+            core.setOutput('verify_lite_run_id', '');
+
+            if (!prNumber) {
+              return;
+            }
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: prNumber,
+            });
+            const labels = new Set((pr.labels || []).map((label) => label.name));
+            const explicitStrict = ['strict', 'enforcement', 'enforced'].includes(explicitMode.toLowerCase());
+            const labelStrict = labels.has('enforce-assurance');
+            if (!explicitStrict && !labelStrict) {
+              return;
+            }
+
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: 'verify-lite.yml',
+              event: 'pull_request',
+              head_sha: pr.head.sha,
+              status: 'completed',
+              per_page: 10,
+            });
+            const run = (data.workflow_runs || []).find((candidate) =>
+              candidate.head_sha === pr.head.sha
+              && candidate.conclusion === 'success'
+            );
+            if (!run) {
+              if (labelStrict && !explicitStrict) {
+                core.notice('enforce-assurance label is present, but no successful Verify Lite artifact exists for this head yet; policy-gate remains report-only until workflow_run re-evaluation.');
+              } else {
+                core.warning('Strict assurance mode is configured, but no successful Verify Lite artifact exists for this head; policy-gate will fail closed if the assurance artifact is missing.');
+              }
+              return;
+            }
+
+            core.setOutput('verify_lite_run_id', String(run.id));
+            if (labelStrict && !explicitMode) {
+              core.exportVariable('AE_POLICY_ASSURANCE_MODE', 'strict');
+            }
+
+      - name: Download verify-lite assurance artifacts
+        if: ${{ steps.assurance-policy.outputs.verify_lite_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: verify-lite-report
+          path: .
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.assurance-policy.outputs.verify_lite_run_id }}
 
       - name: Run risk labeler
         if: ${{ steps.pr.outputs.skip != 'true' && github.event_name != 'workflow_run' }}

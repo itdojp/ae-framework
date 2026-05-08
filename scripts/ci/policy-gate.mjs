@@ -539,16 +539,8 @@ function normalizeAssuranceMode(value) {
   };
 }
 
-function resolveAssuranceMode(value, labels = []) {
+function resolveAssuranceMode(value) {
   const modeState = normalizeAssuranceMode(value);
-  const explicitMode = String(value ?? '').trim();
-  if (modeState.warning || explicitMode || modeState.value !== 'report-only') {
-    return modeState;
-  }
-  const labelSet = new Set(normalizeLabelNames(labels));
-  if (labelSet.has('enforce-assurance')) {
-    return { value: 'strict', warning: null };
-  }
   return modeState;
 }
 
@@ -629,7 +621,7 @@ function normalizeClaimWaivers(claim, nowDate) {
     .filter((waiver) => waiver && typeof waiver === 'object')
     .map((waiver) => ({
       id: String(waiver.id || '').trim(),
-      sourceArtifactId: String(waiver.sourceArtifactId || '').trim(),
+      sourceArtifactId: String(waiver.sourceArtifactId || waiver.temporaryOverridePath || '').trim(),
       status: normalizeWaiverStatus(waiver, nowDate),
       owner: String(waiver.owner || '').trim() || null,
       expires: normalizeDateOnly(waiver.expires),
@@ -1009,7 +1001,7 @@ function evaluatePolicyGate({
   errors.push(...planArtifactEvaluation.errors);
   warnings.push(...planArtifactEvaluation.warnings);
 
-  const assuranceModeState = resolveAssuranceMode(assuranceMode, currentLabels);
+  const assuranceModeState = resolveAssuranceMode(assuranceMode);
   if (assuranceModeState.warning) warnings.push(`assurance: ${assuranceModeState.warning}`);
   const assuranceEvaluation = buildAssuranceEvaluation(
     assurance || inspectAssuranceEvidence(),
@@ -1353,7 +1345,7 @@ function buildPolicyInputV1({
   assurance,
   now = new Date().toISOString(),
 }) {
-  const normalizedAssuranceMode = resolveAssuranceMode(assuranceMode, pullRequest?.labels || []).value;
+  const normalizedAssuranceMode = resolveAssuranceMode(assuranceMode).value;
   const input = {
     schemaVersion: '1.0.0',
     contractId: 'policy-input.v1',
@@ -1452,7 +1444,7 @@ async function run(options = parseArgs(process.argv)) {
     statusRollup,
     reviewTopology: process.env.AE_REVIEW_TOPOLOGY,
     approvalOverride: process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
-    assuranceMode: resolveAssuranceMode(process.env.AE_POLICY_ASSURANCE_MODE, pullRequest?.labels || []).value,
+    assuranceMode: resolveAssuranceMode(process.env.AE_POLICY_ASSURANCE_MODE).value,
     assurance,
     now,
   });

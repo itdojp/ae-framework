@@ -999,7 +999,7 @@ describe('policy-gate', () => {
     ]));
   });
 
-  it('uses the enforce-assurance label as assurance enforcement mode', () => {
+  it('keeps enforce-assurance label report-only until CI exports assurance enforcement mode', () => {
     const result = evaluatePolicyGate({
       policy,
       pullRequest: {
@@ -1024,11 +1024,11 @@ describe('policy-gate', () => {
       }),
     });
 
-    expect(result.ok).toBe(false);
-    expect(result.assurance.mode).toBe('strict');
-    expect(result.errors).toEqual(expect.arrayContaining([
+    expect(result.ok).toBe(true);
+    expect(result.assurance.mode).toBe('report-only');
+    expect(result.errors).toHaveLength(0);
+    expect(result.warnings).toEqual(expect.arrayContaining([
       expect.stringContaining('assurance claim proof-required is missing required evidence'),
-      'assurance decision is block',
     ]));
   });
 
@@ -1119,7 +1119,7 @@ describe('policy-gate', () => {
               waiverRefs: [
                 {
                   id: 'waiver-manual-001',
-                  sourceArtifactId: 'temporary-override',
+                  temporaryOverridePath: 'artifacts/assurance/temporary-overrides/waiver-manual-001.json',
                   status: 'active',
                   owner: '@team-risk',
                   expires: '2026-06-30',
@@ -1146,6 +1146,9 @@ describe('policy-gate', () => {
       });
 
       expect(assurance.schemaVersion).toBe('claim-level-summary/v1');
+      expect(assurance.claims[1]?.waivers[0]?.sourceArtifactId).toBe(
+        'artifacts/assurance/temporary-overrides/waiver-manual-001.json',
+      );
       expect(result.ok).toBe(true);
       expect(result.assurance.result).toBe('waived');
       expect(result.assurance.summary).toMatchObject({ pass: 1, waived: 1, block: 0 });
