@@ -155,21 +155,44 @@ export function getGitHead(rootDir) {
 }
 
 function readCoverageSummary(summaryPath) {
-  if (!fs.existsSync(summaryPath)) {
-    return { exists: false, summary: null, parseError: null, stat: null };
-  }
-
-  const stat = fs.statSync(summaryPath);
+  let fd;
+  let stat = null;
   try {
+    fd = fs.openSync(summaryPath, 'r');
+    stat = fs.fstatSync(fd);
+    const content = fs.readFileSync(fd, 'utf8');
+
+    try {
+      return {
+        exists: true,
+        summary: JSON.parse(content),
+        parseError: null,
+        stat,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { exists: true, summary: null, parseError: message, stat };
+    }
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return { exists: false, summary: null, parseError: null, stat: null };
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
     return {
       exists: true,
-      summary: JSON.parse(fs.readFileSync(summaryPath, 'utf8')),
-      parseError: null,
+      summary: null,
+      parseError: message,
       stat,
     };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { exists: true, summary: null, parseError: message, stat };
+  } finally {
+    if (typeof fd === 'number') {
+      try {
+        fs.closeSync(fd);
+      } catch {
+        // best-effort close for a report-only helper
+      }
+    }
   }
 }
 
@@ -234,7 +257,7 @@ export function buildCoverageFreshnessReport(options = {}) {
   const sourcePathSource = sourcePath ? 'summary-metadata' : 'default-summary-path';
   const metrics = extractMetrics(summary);
   const warnings = [];
-  let status = 'unknown';
+  let status;
   let isFresh = false;
 
   if (summaryGitSha && currentHead && shasMatch(summaryGitSha, currentHead)) {
