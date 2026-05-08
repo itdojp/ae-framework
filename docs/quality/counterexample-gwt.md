@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - schema/counterexample.schema.json
 - docs/quality/ASSURANCE-MODEL.md
-lastVerified: '2026-04-06'
+lastVerified: '2026-05-09'
 ---
 # Counterexample → GWT Format (Spec & Examples)
 
@@ -15,7 +15,8 @@ lastVerified: '2026-04-06'
 
 ### Purpose
 - Provide both a short human-readable GWT form and a machine-readable JSON form for counterexamples consumed by `ae fix`.
-- Keep the doc aligned with the legacy `formal/summary.json` counterexample shape and the derived `artifacts/formal/gwt.summary.json` output produced by `scripts/formal/format-counterexamples.mjs`.
+- Keep the doc aligned with the legacy compatibility input `formal/summary.json` counterexample shape and the derived `artifacts/formal/gwt.summary.json` output produced by `scripts/formal/format-counterexamples.mjs`.
+- The primary formal status contracts are `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json`, and the aggregate `artifacts/hermetic-reports/formal/summary.json`; this GWT artifact is a derived aid, not the primary status contract.
 
 ### Short GWT (example)
 ```text
@@ -26,7 +27,7 @@ Then invariant "allocated <= onHand" fails
 
 ### Machine JSON
 - Source location:
-  - embedded in the legacy `formal/summary.json`
+  - embedded in the legacy compatibility input `formal/summary.json`
 - Derived location:
   - `scripts/formal/format-counterexamples.mjs` can derive `artifacts/formal/gwt.summary.json`
 
@@ -50,7 +51,8 @@ Then invariant "allocated <= onHand" fails
 
 ### 目的
 - 反例を、人間向けの短い GWT 形式と、`ae fix` が読める機械可読 JSON の両方で扱えるようにします。
-- legacy `formal/summary.json` の反例形式と、`scripts/formal/format-counterexamples.mjs` が生成する `artifacts/formal/gwt.summary.json` に整合させます。
+- legacy compatibility input の `formal/summary.json` の反例形式と、`scripts/formal/format-counterexamples.mjs` が生成する `artifacts/formal/gwt.summary.json` に整合させます。
+- primary formal status contract は `artifacts/formal/formal-summary-v1.json`、`artifacts/formal/formal-summary-v2.json`、aggregate の `artifacts/hermetic-reports/formal/summary.json` です。この GWT artifact は派生補助であり、primary status contract ではありません。
 
 ### 短い GWT（例）
 ```text
@@ -61,7 +63,7 @@ Then invariant "allocated <= onHand" fails
 
 ### 機械可読 JSON
 - 元の格納先:
-  - legacy `formal/summary.json` に埋め込まれます
+  - legacy compatibility input の `formal/summary.json` に埋め込まれます
 - 派生出力先:
   - `scripts/formal/format-counterexamples.mjs` により `artifacts/formal/gwt.summary.json` を生成できます
 

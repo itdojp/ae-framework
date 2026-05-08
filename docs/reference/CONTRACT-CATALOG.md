@@ -179,6 +179,18 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/e2e/ui-e2e-summary.json` | `schema/ui-e2e-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs`, `.github/workflows/parallel-test-execution.yml` | `scripts/ci/build-harness-health.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/e2e/summary.json` | `docs/schemas/artifacts-adapter-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, future adapter-summary aggregators |
 
+### 4.1 Canonical and legacy route markers
+
+The produced/consumed table lists implementation entry points. When more than one route exists, use `docs/reference/ASSURANCE-CANONICAL-ROUTES.md` to decide whether a route is canonical, preview, or legacy compatibility. Current cleanup markers are:
+
+| Topic | Canonical route | Compatibility route | Cleanup status |
+| --- | --- | --- | --- |
+| Quality scorecard | `quality-scorecard/v1`, `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, `schema/quality-scorecard.schema.json` | `pnpm run quality:scorecard`, `scripts/quality-scorecard-generator.js` | Keep compatibility until workflow consumers have v1 input wiring tests. |
+| Formal status | `artifacts/formal/formal-summary-v2.json` plus dual-write `artifacts/formal/formal-summary-v1.json`; aggregate `artifacts/hermetic-reports/formal/summary.json` | `formal/summary.json` | Keep as compatibility input only; current PR summary rendering still reads it before the hermetic aggregate. |
+| Counterexample GWT | `artifacts/formal/gwt.summary.json` | Counterexamples embedded in `formal/summary.json` | Derived aid only; not a primary formal status contract. |
+| PR summary judgment | `scripts/summary/render-pr-summary.mjs` plus `pr-ci-status-comment.yml` append stage | Hand-authored or older bot summaries | Keep direct renderer inputs separate from workflow-appended Markdown. |
+| Change package | Production `change-package/v1`; proof-carrying preview `change-package/v2` | Direct source artifact fragments | Keep v1 compatibility while v2 is preview / dual-write. |
+
 ### 5. Security Assurance Lane status semantics
 
 - `security-audit-task-bundle/v1` records deterministic proof-attempt prompt inputs. It is not vulnerability evidence by itself and does not confirm or reject a claim.
@@ -203,6 +215,7 @@ The table below keeps the current producer/consumer baseline for representative 
 ### 7. References
 
 - `docs/reference/SCHEMA-GOVERNANCE.md`
+- `docs/reference/ASSURANCE-CANONICAL-ROUTES.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`
 - `docs/architecture/DELIVERY-CONTRACT-COMPATIBILITY-MATRIX.md`
 - `scripts/ci/validate-artifacts-ajv.mjs`
@@ -378,6 +391,18 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/e2e/ui-e2e-summary.json` | `schema/ui-e2e-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs`, `.github/workflows/parallel-test-execution.yml` | `scripts/ci/build-harness-health.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `artifacts/e2e/summary.json` | `docs/schemas/artifacts-adapter-summary.schema.json` | `scripts/e2e/run-ui-e2e-semantic.mjs` | `scripts/ci/validate-artifacts-ajv.mjs`, future adapter-summary aggregators |
 
+### 4.1 正準/legacy route marker
+
+Produced/consumed table は実装 entry point を列挙します。複数導線が存在する場合は、`docs/reference/ASSURANCE-CANONICAL-ROUTES.md` で canonical / preview / legacy compatibility の別を判断します。現時点の cleanup marker は次の通りです。
+
+| Topic | 正準導線 | 互換導線 | cleanup 状態 |
+| --- | --- | --- | --- |
+| Quality scorecard | `quality-scorecard/v1`, `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, `schema/quality-scorecard.schema.json` | `pnpm run quality:scorecard`, `scripts/quality-scorecard-generator.js` | workflow consumer に v1 input wiring test が入るまで互換維持。 |
+| Formal status | `artifacts/formal/formal-summary-v2.json` と dual-write の `artifacts/formal/formal-summary-v1.json`; aggregate の `artifacts/hermetic-reports/formal/summary.json` | `formal/summary.json` | compatibility input としてのみ維持。現行 PR summary rendering は hermetic aggregate より先にこれを読む。 |
+| Counterexample GWT | `artifacts/formal/gwt.summary.json` | `formal/summary.json` に埋め込まれた counterexample | 派生補助であり、primary formal status contract ではない。 |
+| PR summary judgment | `scripts/summary/render-pr-summary.mjs` と `pr-ci-status-comment.yml` append stage | 手書きまたは古い bot summary | renderer direct input と workflow 追記 Markdown を分離して維持。 |
+| Change package | production `change-package/v1`; proof-carrying preview `change-package/v2` | source artifact fragment の直接参照 | v2 が preview / dual-write の間は v1 互換を維持。 |
+
 ## 5. Security Assurance Lane のステータス意味論
 
 - `security-audit-task-bundle/v1` は deterministic proof-attempt prompt input を記録する。単体では vulnerability evidence ではなく、claim の成立・不成立を確定しない。
@@ -402,6 +427,7 @@ The table below keeps the current producer/consumer baseline for representative 
 ## 7. 参照
 
 - `docs/reference/SCHEMA-GOVERNANCE.md`
+- `docs/reference/ASSURANCE-CANONICAL-ROUTES.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`
 - `docs/architecture/DELIVERY-CONTRACT-COMPATIBILITY-MATRIX.md`
 - `scripts/ci/validate-artifacts-ajv.mjs`

@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-04-08'
+lastVerified: '2026-05-09'
 ---
 # Quality Scorecard
 
@@ -63,9 +63,11 @@ The producer continues when optional artifacts are missing. Dimensions that depe
 - PR summary rendering shows `overallStatus`, `overallScore`, and `blockers`.
 - Required branch-protection checks do not change because of this artifact.
 
-### 5. Relationship with legacy `quality:scorecard`
+### 5. Canonical route and legacy `quality:scorecard` compatibility
 
-The existing `quality:scorecard` entry in `package.json` still points to the legacy `scripts/quality-scorecard-generator.js` implementation. `quality-scorecard/v1` is introduced as a separate producer, validator, and artifact rather than as an in-place replacement.
+For new PR and release evidence, the canonical route is `quality-scorecard/v1`: `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, and `pnpm run quality:scorecard:validate`. The existing `quality:scorecard` entry in `package.json` still points to the legacy `scripts/quality-scorecard-generator.js` implementation. Treat that command as a compatibility diagnostic route, not as the canonical PR/release judgment artifact.
+
+Do not repoint or remove the legacy command until the remaining workflow consumers pass explicit migration tests that provide the required v1 inputs (`verify-lite-run-summary` and `report-envelope`). The route matrix in `docs/reference/ASSURANCE-CANONICAL-ROUTES.md` is the cleanup reference.
 
 ### 6. Example commands
 
@@ -139,10 +141,11 @@ pnpm run quality:scorecard:validate -- \
 - PR summary には `overallStatus` / `overallScore` / `blockers` を表示します
 - この成果物によって branch protection の required checks は変わりません
 
-### 5. 従来実装 `quality:scorecard` との関係
+### 5. 正準導線と legacy `quality:scorecard` 互換
 
-既存の `package.json` にある `quality:scorecard` は `scripts/quality-scorecard-generator.js` を呼ぶ従来実装です。
-`quality-scorecard/v1` は互換置換ではなく、別の生成処理 / 検証処理 / 成果物として導入します。
+新しい PR / release evidence では、`quality-scorecard/v1` を正準導線として扱います。該当する実装は `scripts/quality/build-quality-scorecard.mjs`、`pnpm run quality:scorecard:v1`、`pnpm run quality:scorecard:validate` です。既存の `package.json` にある `quality:scorecard` は `scripts/quality-scorecard-generator.js` を呼ぶ legacy 実装のままです。この command は互換 diagnostic route であり、正準の PR / release judgment artifact ではありません。
+
+legacy command は、残存 workflow consumer が v1 の必須入力（`verify-lite-run-summary` と `report-envelope`）を渡す migration test で保護されるまで、差し替えまたは削除しません。cleanup の参照先は `docs/reference/ASSURANCE-CANONICAL-ROUTES.md` です。
 
 ### 6. 実行例
 
