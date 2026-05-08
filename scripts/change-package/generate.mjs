@@ -670,7 +670,6 @@ function ingestClaimLevelSummaryForV2(claimsById, proofObligations, waivers, ass
     if (!claimId) continue;
     const artifactRefs = [
       ...ensureArray(rawClaim?.evidenceRefs).map((entry) => entry?.artifactPath),
-      ...ensureArray(rawClaim?.missingEvidenceRefs).map((entry) => `${source.path}#/claims/${claimId}/missingEvidenceRefs/${entry?.id || 'missing'}`),
       source.path,
     ];
     const claim = upsertClaim(claimsById, {
@@ -962,7 +961,7 @@ function buildValidationLanes(claimLevelSummarySource, baseEvidence) {
       const laneStatus = mapEvidenceStatusToLaneStatus(evidence?.status);
       const existing = lanesById.get(laneId) || { id: laneId, status: 'pass', evidenceRefs: [] };
       existing.status = mergeLaneStatus(existing.status, laneStatus);
-      existing.evidenceRefs = uniqueStrings([...existing.evidenceRefs, evidence?.artifactPath, evidence?.id]);
+      existing.evidenceRefs = uniqueStrings([...existing.evidenceRefs, evidence?.artifactPath]);
       lanesById.set(laneId, existing);
     }
   }

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 /* global process, console */
-/* eslint-disable no-empty */
 import fs from 'node:fs';
 function r(p){ try { return JSON.parse(fs.readFileSync(p,'utf-8')); } catch { return undefined; } }
 const lang = (process.env.SUMMARY_LANG||'en').toLowerCase();
@@ -43,18 +42,6 @@ for (const p of props) if (p?.traceId) traceIds.add(p.traceId);
 const replayLine = replay.totalEvents!==undefined 
   ? t(`Replay ev/viol=${replay.totalEvents}/${(replay.violatedInvariants||[]).length}`, `リプレイ ev/viol=${replay.totalEvents}/${(replay.violatedInvariants||[]).length}`)
   : t('Replay: n/a','リプレイ: なし');
-// Properties (PBT) quick count: prefer aggregate 'count' or fallback to array length
-let propsCount = 0;
-if (Array.isArray(props) && props.length) {
-  for (const p of props) {
-    if (p && typeof p.count === 'number') {
-      propsCount += p.count;
-    } else {
-      propsCount += 1;
-    }
-  }
-}
-void propsCount;
 const ltlLine = ltlSug && typeof ltlSug.count === 'number'
   ? t(`LTL sugg: ${ltlSug.count}`, `LTL候補: ${ltlSug.count}`)
   : t('LTL sugg: n/a', 'LTL候補: なし');
@@ -176,7 +163,7 @@ const changePackageV2Line = changePackageV2?.schemaVersion === 'change-package/v
     )
   : '';
 const changePackageV2DetailBlock = changePackageV2Line
-  ? `- ${changePackageV2Line}\n- Change Package v2 claim states: ${changePackageV2StateLine}\n${changePackageV2PolicyDecision ? `- Change Package v2 policy decision: ${changePackageV2PolicyDecision.result ?? 'n/a'} (${changePackageV2PolicyDecision.mode ?? 'n/a'}, enforced=${changePackageV2PolicyDecision.enforced ?? 'n/a'})\n` : ''}${changePackageV2ReleaseControls ? `- Change Package v2 release controls: pre=${Array.isArray(changePackageV2ReleaseControls.preDeployChecks) ? changePackageV2ReleaseControls.preDeployChecks.length : 'n/a'}, post=${Array.isArray(changePackageV2ReleaseControls.postDeployChecks) ? changePackageV2ReleaseControls.postDeployChecks.length : 'n/a'}, rollback=${Array.isArray(changePackageV2ReleaseControls.rollbackSignals) ? changePackageV2ReleaseControls.rollbackSignals.length : 'n/a'}\n` : ''}`
+  ? `- ${changePackageV2Line}\n${changePackageV2PolicyDecision ? `- Change Package v2 policy decision: ${changePackageV2PolicyDecision.result ?? 'n/a'} (${changePackageV2PolicyDecision.mode ?? 'n/a'}, enforced=${changePackageV2PolicyDecision.enforced ?? 'n/a'})\n` : ''}${changePackageV2ReleaseControls ? `- Change Package v2 release controls: pre=${Array.isArray(changePackageV2ReleaseControls.preDeployChecks) ? changePackageV2ReleaseControls.preDeployChecks.length : 'n/a'}, post=${Array.isArray(changePackageV2ReleaseControls.postDeployChecks) ? changePackageV2ReleaseControls.postDeployChecks.length : 'n/a'}, rollback=${Array.isArray(changePackageV2ReleaseControls.rollbackSignals) ? changePackageV2ReleaseControls.rollbackSignals.length : 'n/a'}\n` : ''}`
   : '';
 const qualityScorecardSummary = qualityScorecard?.summary && typeof qualityScorecard.summary === 'object'
   ? qualityScorecard.summary
@@ -218,7 +205,9 @@ try {
       `時相: present=${!!temp.present}${ops? ` ops=[${ops}]`:''}${pops? ` past=[${pops}]`:''}`
     );
   }
-} catch {}
+} catch {
+  /* Optional formal aggregate temporal metadata may be absent or malformed. */
+}
 const alerts=[];
 if ((statusCounts.error||0) > errorMax) alerts.push(t(`adapter errors>${errorMax}`, `アダプタ失敗>${errorMax}`));
 if ((statusCounts.warn||0) > warnMax) alerts.push(t(`adapter warnings>${warnMax}`, `アダプタ注意>${warnMax}`));
@@ -242,7 +231,9 @@ try {
     const ja = `適合: 率=${vr ?? 'n/a'}${mr!==null? ` 一致率=${mr}`:''}${delta}${evs}`;
     conformanceLine = t(en, ja);
   }
-} catch {}
+} catch {
+  /* Optional conformance metadata may be absent or malformed. */
+}
 
 let md;
 if (mode === 'digest') {
@@ -261,7 +252,9 @@ try {
     const line = t(`Formal: present ${pc}/${total}${pc? ` (${presentKeys})`:''}`, `フォーマル: present ${pc}/${total}${pc? `（${presentKeys}）`:''}`);
     if (mode === 'digest') md += ` | ${line}`; else md += `\n- ${line}`;
   }
-} catch {}
+} catch {
+  /* Optional formal aggregate fallback may be absent or malformed. */
+}
 
 // (Removed duplicate conformance fallback line; unified above using aggregate JSON)
 fs.mkdirSync('artifacts/summary',{recursive:true});
@@ -290,7 +283,9 @@ try {
           const sum = String(j.summary).replace(/\s+/g,' ').slice(0, 100);
           samples.push(`${id}: ${sum}`);
         }
-      } catch {}
+      } catch {
+        /* Optional adapter sample artifacts may be absent or malformed. */
+      }
     }
     if (samples.length) extra += `\n- ${t('Adapter samples','アダプタ例')}: ${samples.join('; ')}`;
   }
@@ -299,4 +294,6 @@ try {
     fs.appendFileSync(p, `\n${extra}\n`);
     console.log(extra);
   }
-} catch {}
+} catch {
+  /* Optional summary detection metadata may be absent or malformed. */
+}
