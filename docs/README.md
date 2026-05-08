@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-05-09'
+lastVerified: '2026-05-08'
 ---
 
 # 📚 ae-framework Documentation / ドキュメント

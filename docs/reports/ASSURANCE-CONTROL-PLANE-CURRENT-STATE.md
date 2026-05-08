@@ -6,7 +6,7 @@ canonicalSource:
   - docs/quality/ARTIFACTS-CONTRACT.md
   - docs/reference/CONTRACT-CATALOG.md
   - docs/reference/change-package-v2.md
-lastVerified: '2026-05-09'
+lastVerified: '2026-05-08'
 ---
 
 # Assurance Control Plane Current-State Report
