@@ -1,9 +1,10 @@
 ---
 docRole: derived
 canonicalSource:
+- docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
 - docs/quality/ASSURANCE-MODEL.md
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
-lastVerified: '2026-03-22'
+lastVerified: '2026-05-08'
 ---
 # Assurance Control Plane
 
@@ -12,6 +13,8 @@ lastVerified: '2026-03-22'
 ---
 
 ## English
+
+Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`. This overview is derived from the policy and current architecture; use the policy for implementation decisions.
 
 ### 1. Definition
 This document defines ae-framework as an assurance control plane that sits on top of BYO agents and verification tools.
@@ -125,6 +128,8 @@ Conditional or preview elements:
 ---
 
 ## 日本語
+
+Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`。この概要は policy と current architecture から派生した文書です。実装判断には policy を優先します。
 
 ## 1. 定義
 

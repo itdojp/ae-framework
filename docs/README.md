@@ -93,6 +93,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - User manual: `product/USER-MANUAL.md`
 - Positioning / comparison: `product/POSITIONING.md`
 - Assurance control plane: `product/ASSURANCE-CONTROL-PLANE.md`
+- Assurance control plane policy: `product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 
 ### Strategy
 Repository-wide direction, responsibility boundaries, and normalization rules for turning thread-level intent into repo SSOT.
