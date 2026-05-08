@@ -791,14 +791,6 @@ const ingestSecurityFindingsAndReviews = (securityFindingsPath, securityReviewPa
     if (claimState.securityClaimType === 'assumption') {
       const handling = normalizeAssumptionHandling(review?.assumptionHandling, effectiveResult, findingId);
       claimState.assumptionHandling.push(handling);
-      if (handling.mode === 'assumption-validation-required') {
-        pushWarning(
-          warnings,
-          'assumption-validation-required',
-          `Assumption-derived security finding ${findingId} requires validation before vulnerability interpretation.`,
-          { claimId, artifactPath: resolvedPath },
-        );
-      }
     }
     if (effectiveResult === 'rejected' || effectiveResult === 'out-of-scope' || effectiveResult === 'waived') {
       claimState.counterexamples.resolved += 1;
@@ -879,6 +871,9 @@ const summarizeClaim = (claimState, warnings) => {
   ) {
     claimWarnings.push('unresolved-critical-counterexample');
   }
+  if (claimState.assumptionHandling.some((entry) => entry.mode === 'assumption-validation-required')) {
+    claimWarnings.push('assumption-validation-required');
+  }
 
   for (const code of claimWarnings) {
     const messages = {
@@ -887,6 +882,7 @@ const summarizeClaim = (claimState, warnings) => {
       'insufficient-independent-lanes': `Observed independent source kinds (${observedIndependentSources}) do not meet the minimum (${claimState.minIndependentSources}).`,
       'same-generator-lineage': 'Observed evidence appears to share a single generator lineage.',
       'unresolved-critical-counterexample': 'Critical claim still has unresolved counterexamples.',
+      'assumption-validation-required': 'Assumption-derived security finding requires validation before vulnerability interpretation.',
     };
     pushWarning(warnings, code, messages[code], { claimId: claimState.claimId });
   }

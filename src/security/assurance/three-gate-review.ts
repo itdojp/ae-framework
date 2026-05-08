@@ -466,6 +466,7 @@ function parseClaimDocument(document: unknown): SecurityClaimDocument {
   if (!isRecord(document) || document['schemaVersion'] !== 'security-claim/v1' || !Array.isArray(document['claims'])) {
     throw new Error('Expected security-claim/v1 document with a claims array.');
   }
+  const seenClaimIds = new Map<string, number>();
   const claims = document['claims'].map((rawClaim, claimIndex) => {
     if (!isRecord(rawClaim)) {
       throw new Error(`Security claim at index ${claimIndex} must be an object.`);
@@ -475,6 +476,11 @@ function parseClaimDocument(document: unknown): SecurityClaimDocument {
     if (!id || !type) {
       throw new Error(`Security claim at index ${claimIndex} must have non-empty id and supported type.`);
     }
+    const duplicateIndex = seenClaimIds.get(id);
+    if (duplicateIndex !== undefined) {
+      throw new Error(`Security claim id '${id}' at index ${claimIndex} duplicates index ${duplicateIndex}.`);
+    }
+    seenClaimIds.set(id, claimIndex);
     const parsed: SecurityClaim = { id, type };
     const statement = asString(rawClaim['statement']);
     if (statement !== undefined) {

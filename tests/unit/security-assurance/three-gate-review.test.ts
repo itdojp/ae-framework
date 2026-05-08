@@ -221,6 +221,28 @@ describe('security three-gate review producer', () => {
     }
   });
 
+  it('rejects duplicate security claim ids before building the claim lookup', async () => {
+    const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-security-review-duplicate-claims-'));
+    const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-duplicate-claims-out-'));
+    try {
+      const localClaimsPath = join(fixtureDir, 'security-claims.json');
+      const claims = readJson<{ claims: Array<Record<string, unknown>> }>(claimsPath);
+      claims.claims.push({
+        ...claims.claims[0],
+        type: 'assumption',
+      });
+      writeJson(localClaimsPath, claims);
+
+      await expect(generateSecurityThreeGateReview(findingsPath, scopePath, codeMapPath, outDir, {
+        generatedAt,
+        claimsPath: localClaimsPath,
+      })).rejects.toThrow("Security claim id 'SEC-CLAIM-001' at index 1 duplicates index 0.");
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
   it('keeps the trust-boundary gate unknown when entrypoint-map lacks matching reachability evidence', async () => {
     const fixtureDir = mkdtempSync(join(tmpdir(), 'ae-security-review-entrypoint-missing-'));
     const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-entrypoint-missing-out-'));
