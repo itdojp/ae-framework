@@ -39,8 +39,8 @@ type SecurityAuditScopeDocument = {
 
 type SymbolIndexSymbol = {
   id: string;
-  language?: string;
-  kind?: string;
+  language: string;
+  kind: string;
   name: string;
   path: string;
   startLine: number;
@@ -53,8 +53,12 @@ type SymbolIndexSymbol = {
 
 type SymbolIndexDocument = {
   schemaVersion: 'symbol-index/v1';
-  generatedAt?: string;
+  generatedAt: string;
   symbols: SymbolIndexSymbol[];
+  summary: {
+    totalSymbols: number;
+    byLanguage: Record<string, number>;
+  };
 };
 
 export interface CodeMapOptions {
@@ -355,6 +359,14 @@ function parseSymbolIndex(document: unknown): SymbolIndexDocument {
     if (!id) {
       throw new Error(`Symbol index entry at index ${index} must have a non-empty id.`);
     }
+    const language = asString(symbol['language']);
+    if (!language) {
+      throw new Error(`Symbol index entry ${id} must have a non-empty language.`);
+    }
+    const kind = asString(symbol['kind']);
+    if (!kind) {
+      throw new Error(`Symbol index entry ${id} must have a non-empty kind.`);
+    }
     const name = asString(symbol['name']);
     if (!name) {
       throw new Error(`Symbol index entry ${id} must have a non-empty name.`);
@@ -370,19 +382,13 @@ function parseSymbolIndex(document: unknown): SymbolIndexDocument {
     const endLine = symbol['endLine'] as number;
     const parsed: SymbolIndexSymbol = {
       id,
+      language,
+      kind,
       name,
       path: symbolPath,
       startLine,
       endLine,
     };
-    const language = asString(symbol['language']);
-    if (language !== undefined) {
-      parsed.language = language;
-    }
-    const kind = asString(symbol['kind']);
-    if (kind !== undefined) {
-      parsed.kind = kind;
-    }
     if (typeof symbol['exported'] === 'boolean') {
       parsed.exported = symbol['exported'];
     }
@@ -400,15 +406,35 @@ function parseSymbolIndex(document: unknown): SymbolIndexDocument {
     }
     return parsed;
   });
-  const parsedDocument: SymbolIndexDocument = {
-    schemaVersion: 'symbol-index/v1',
-    symbols,
-  };
   const generatedAt = asString(document['generatedAt']);
-  if (generatedAt !== undefined) {
-    parsedDocument.generatedAt = generatedAt;
+  if (!generatedAt) {
+    throw new Error('Symbol index document must have a non-empty generatedAt timestamp.');
   }
-  return parsedDocument;
+  const summary = document['summary'];
+  if (!isRecord(summary)) {
+    throw new Error('Symbol index document must have a summary object.');
+  }
+  if (!Number.isInteger(summary['totalSymbols'])) {
+    throw new Error('Symbol index summary must have an integer totalSymbols value.');
+  }
+  const byLanguage = isRecord(summary['byLanguage'])
+    ? Object.fromEntries(
+        Object.entries(summary['byLanguage'])
+          .filter((entry): entry is [string, number] => typeof entry[1] === 'number' && Number.isInteger(entry[1])),
+      )
+    : undefined;
+  if (!byLanguage) {
+    throw new Error('Symbol index summary must have a byLanguage object.');
+  }
+  return {
+    schemaVersion: 'symbol-index/v1',
+    generatedAt,
+    symbols,
+    summary: {
+      totalSymbols: summary['totalSymbols'] as number,
+      byLanguage,
+    },
+  };
 }
 
 function normalizePattern(pattern: string): string {
@@ -509,7 +535,7 @@ function createSymbolIndexContext(
   repoRoot: string,
   warnings: CodeMapWarning[],
 ): SymbolIndexContext {
-  const inScopeFiles = new Set(files.map((file) => file.targetRelativePath));
+  const inScopeFiles = new Map(files.map((file) => [file.targetRelativePath, file]));
   const inScopeSymbols: IndexedSymbol[] = [];
   const seenIds = new Set<string>();
   for (const [index, symbol] of symbolIndex.symbols.entries()) {
@@ -535,11 +561,20 @@ function createSymbolIndexContext(
       continue;
     }
     const targetRelativePath = normalizePattern(symbol.path);
-    if (!inScopeFiles.has(targetRelativePath)) {
+    const sourceFile = inScopeFiles.get(targetRelativePath);
+    if (!sourceFile) {
       warnings.push(warning(
         'symbol-index-out-of-scope',
         `/symbolIndex/symbols/${index}/path`,
         `Ignored symbol-index entry '${symbol.id}' because '${symbol.path}' is not one of the scanned in-scope target files.`,
+      ));
+      continue;
+    }
+    if (symbol.startLine > sourceFile.lines.length || symbol.endLine > sourceFile.lines.length) {
+      warnings.push(warning(
+        'symbol-range-out-of-bounds',
+        `/symbolIndex/symbols/${index}/endLine`,
+        `Ignored symbol-index entry '${symbol.id}' because lines ${symbol.startLine}-${symbol.endLine} exceed ${targetRelativePath} length ${sourceFile.lines.length}.`,
       ));
       continue;
     }
