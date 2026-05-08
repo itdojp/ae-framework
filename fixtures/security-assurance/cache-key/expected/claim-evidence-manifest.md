@@ -23,11 +23,26 @@
 
 ## Claims
 
-| claim | criticality | target | achieved | status | evidence | missing | waivers |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| sec-claim-001 | high | A2 | A1 | partial | 6 | 2 | 0 |
-| sec-claim-002 | medium | A1 | A0 | partial | 2 | 1 | 0 |
-| sec-claim-003 | low | A2 | A0 | partial | 6 | 1 | 0 |
+| claim | criticality | target | achieved | status | evidence | missing | waivers | externalIds |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| sec-claim-001 | high | A2 | A1 | partial | 6 | 2 | 0 | security-claim:SEC-CLAIM-001 (security-claims) |
+| sec-claim-002 | medium | A1 | A0 | partial | 2 | 1 | 0 | security-claim:SEC-CLAIM-002 (security-claims) |
+| sec-claim-003 | low | A2 | A0 | partial | 6 | 1 | 0 | security-claim:SEC-CLAIM-003 (security-claims) |
+
+## External IDs
+
+| claim | subject | externalId | artifactPath |
+| --- | --- | --- | --- |
+| sec-claim-001 | claim | security-claim:SEC-CLAIM-001 (security-claims) | artifacts/security-assurance/cache-key/security-claims.json#/claims/0 |
+| sec-claim-001 | evidence:security-claims:sec-claim-001 | security-claim:SEC-CLAIM-001 (security-claims) | artifacts/security-assurance/cache-key/security-claims.json#/claims/0 |
+| sec-claim-001 | evidence:security-findings:sec-finding-001 | security-finding:SEC-FINDING-001 (security-findings) | artifacts/security-assurance/cache-key/security-findings.json#/findings/0 |
+| sec-claim-001 | evidence:security-review:sec-finding-001:0 | security-review:SEC-FINDING-001:review:0 (security-review) | artifacts/security-assurance/cache-key/security-review.json#/reviews/0 |
+| sec-claim-002 | claim | security-claim:SEC-CLAIM-002 (security-claims) | artifacts/security-assurance/cache-key/security-claims.json#/claims/1 |
+| sec-claim-002 | evidence:security-claims:sec-claim-002 | security-claim:SEC-CLAIM-002 (security-claims) | artifacts/security-assurance/cache-key/security-claims.json#/claims/1 |
+| sec-claim-003 | claim | security-claim:SEC-CLAIM-003 (security-claims) | artifacts/security-assurance/cache-key/security-claims.json#/claims/2 |
+| sec-claim-003 | evidence:security-claims:sec-claim-003 | security-claim:SEC-CLAIM-003 (security-claims) | artifacts/security-assurance/cache-key/security-claims.json#/claims/2 |
+| sec-claim-003 | evidence:security-findings:sec-finding-002 | security-finding:SEC-FINDING-002 (security-findings) | artifacts/security-assurance/cache-key/security-findings.json#/findings/1 |
+| sec-claim-003 | evidence:security-review:sec-finding-002:1 | security-review:SEC-FINDING-002:review:1 (security-review) | artifacts/security-assurance/cache-key/security-review.json#/reviews/1 |
 
 ## Missing evidence
 

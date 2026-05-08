@@ -188,11 +188,46 @@ describe.sequential('claim evidence manifest generator', () => {
         criticality: 'high',
         status: 'partial',
       });
+      expect(securityClaim.externalIds).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'security-claim',
+            id: 'SEC-CLAIM-001',
+            sourceArtifactId: 'security-claims',
+            artifactPath: 'fixtures/security-assurance/sample.security-claims.json#/claims/0',
+          }),
+        ]),
+      );
       expect(securityClaim.evidenceRefs).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ sourceArtifactId: 'security-claims', kind: 'spec' }),
           expect.objectContaining({ sourceArtifactId: 'security-findings', kind: 'adversarial' }),
           expect.objectContaining({ sourceArtifactId: 'security-review', kind: 'manual' }),
+        ]),
+      );
+      const securityClaimEvidenceRef = securityClaim.evidenceRefs.find(
+        (ref: { sourceArtifactId: string }) => ref.sourceArtifactId === 'security-claims',
+      );
+      expect(securityClaimEvidenceRef?.externalIds).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'security-claim',
+            id: 'SEC-CLAIM-001',
+            sourceArtifactId: 'security-claims',
+          }),
+        ]),
+      );
+      const findingEvidenceRef = securityClaim.evidenceRefs.find(
+        (ref: { sourceArtifactId: string }) => ref.sourceArtifactId === 'security-findings',
+      );
+      expect(findingEvidenceRef?.externalIds).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'security-finding',
+            id: 'SEC-FINDING-001',
+            sourceArtifactId: 'security-findings',
+            artifactPath: 'fixtures/security-assurance/sample.security-findings.json#/findings/0',
+          }),
         ]),
       );
       const reviewEvidenceRefs = securityClaim.evidenceRefs.filter(
@@ -201,6 +236,20 @@ describe.sequential('claim evidence manifest generator', () => {
       expect(reviewEvidenceRefs).toHaveLength(4);
       expect(reviewEvidenceRefs.map((ref: { id: string }) => ref.id)).toEqual(
         expect.arrayContaining(['security-review:sec-finding-001:0', 'security-review:sec-finding-001:3']),
+      );
+      expect(reviewEvidenceRefs.flatMap((ref: { externalIds?: Array<{ id: string }> }) => ref.externalIds ?? [])).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'security-review',
+            id: 'SEC-FINDING-001:review:0',
+            sourceArtifactId: 'security-review',
+          }),
+          expect.objectContaining({
+            kind: 'security-review',
+            id: 'SEC-FINDING-001:review:3',
+            sourceArtifactId: 'security-review',
+          }),
+        ]),
       );
       expect(securityClaim.missingEvidenceRefs).toEqual(
         expect.arrayContaining([
@@ -221,6 +270,9 @@ describe.sequential('claim evidence manifest generator', () => {
 
       const markdown = readFileSync(outputMd, 'utf8');
       expect(markdown).toContain('## Security findings');
+      expect(markdown).toContain('## External IDs');
+      expect(markdown).toContain('security-claim:SEC-CLAIM-001 (security-claims)');
+      expect(markdown).toContain('security-finding:SEC-FINDING-001 (security-findings)');
       expect(markdown).toContain('- highOrCriticalOpen: 1');
       expect(markdown).toContain('| sec-claim-001 | high | A2 | A1 | partial |');
     } finally {

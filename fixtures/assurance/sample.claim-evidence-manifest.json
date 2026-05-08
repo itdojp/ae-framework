@@ -205,35 +205,80 @@
           "kind": "spec",
           "artifactPath": "fixtures/security-assurance/sample.security-claims.json#/claims/0",
           "sourceArtifactId": "security-claims",
-          "description": "Security claim imported as assurance claim."
+          "description": "Security claim imported as assurance claim.",
+          "externalIds": [
+            {
+              "kind": "security-claim",
+              "id": "SEC-CLAIM-001",
+              "sourceArtifactId": "security-claims",
+              "artifactPath": "fixtures/security-assurance/sample.security-claims.json#/claims/0",
+              "description": "Original security-claim/v1 id before claim-evidence canonicalization."
+            }
+          ]
         },
         {
           "id": "security-findings:sec-finding-001",
           "kind": "adversarial",
           "artifactPath": "fixtures/security-assurance/sample.security-findings.json#/findings/0",
           "sourceArtifactId": "security-findings",
-          "description": "High severity candidate finding remains needs-human-review after three-gate review."
+          "description": "High severity candidate finding remains needs-human-review after three-gate review.",
+          "externalIds": [
+            {
+              "kind": "security-finding",
+              "id": "SEC-FINDING-001",
+              "sourceArtifactId": "security-findings",
+              "artifactPath": "fixtures/security-assurance/sample.security-findings.json#/findings/0",
+              "description": "Original security-finding/v1 id before claim-evidence canonicalization."
+            }
+          ]
         },
         {
           "id": "security-review:sec-finding-001:0",
           "kind": "manual",
           "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/0",
           "sourceArtifactId": "security-review",
-          "description": "Three-gate review classified SEC-FINDING-001 as needs-human-review."
+          "description": "Three-gate review classified SEC-FINDING-001 as needs-human-review.",
+          "externalIds": [
+            {
+              "kind": "security-review",
+              "id": "SEC-FINDING-001:review:0",
+              "sourceArtifactId": "security-review",
+              "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/0",
+              "description": "Original security-review/v1 entry anchored by finding id and review index."
+            }
+          ]
         },
         {
           "id": "security-review:sec-finding-002:1",
           "kind": "manual",
           "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/1",
           "sourceArtifactId": "security-review",
-          "description": "Three-gate review classified SEC-FINDING-002 as out-of-scope."
+          "description": "Three-gate review classified SEC-FINDING-002 as out-of-scope.",
+          "externalIds": [
+            {
+              "kind": "security-review",
+              "id": "SEC-FINDING-002:review:1",
+              "sourceArtifactId": "security-review",
+              "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/1",
+              "description": "Original security-review/v1 entry anchored by finding id and review index."
+            }
+          ]
         },
         {
           "id": "security-review:sec-finding-003:2",
           "kind": "manual",
           "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/2",
           "sourceArtifactId": "security-review",
-          "description": "Three-gate review classified SEC-FINDING-003 as rejected dead code."
+          "description": "Three-gate review classified SEC-FINDING-003 as rejected dead code.",
+          "externalIds": [
+            {
+              "kind": "security-review",
+              "id": "SEC-FINDING-003:review:2",
+              "sourceArtifactId": "security-review",
+              "artifactPath": "fixtures/security-assurance/sample.security-review.json#/reviews/2",
+              "description": "Original security-review/v1 entry anchored by finding id and review index."
+            }
+          ]
         }
       ],
       "proofObligationRefs": [],
@@ -251,6 +296,15 @@
         "security-finding:SEC-FINDING-002 severity=medium findingStatus=candidate reviewResult=out-of-scope falsePositiveRootCause=out-of-scope",
         "security-finding:SEC-FINDING-003 severity=low findingStatus=candidate reviewResult=rejected falsePositiveRootCause=dead-code",
         "security-attention:high SEC-FINDING-001 remains needs-human-review; keep report-only until reviewed/remediated."
+      ],
+      "externalIds": [
+        {
+          "kind": "security-claim",
+          "id": "SEC-CLAIM-001",
+          "sourceArtifactId": "security-claims",
+          "artifactPath": "fixtures/security-assurance/sample.security-claims.json#/claims/0",
+          "description": "Original security-claim/v1 id before claim-evidence canonicalization."
+        }
       ]
     }
   ],

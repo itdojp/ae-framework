@@ -137,6 +137,55 @@ describe('claim evidence manifest contract', () => {
     expect(errors.some((entry) => entry.instancePath === '/claims/0/evidenceRefs/0/sourceArtifactId')).toBe(true);
   });
 
+  it('rejects duplicate claim-level external ids at the semantic contract layer', () => {
+    const invalidFixture = structuredClone(fixture) as {
+      claims: Array<Record<string, unknown>>;
+    };
+    const externalId = {
+      kind: 'security-claim',
+      id: 'SEC-CLAIM-DUPLICATE',
+      sourceArtifactId: 'assurance-summary',
+      artifactPath: 'fixtures/security-assurance/sample.security-claims.json#/claims/0',
+    };
+
+    invalidFixture.claims[0].externalIds = [
+      externalId,
+      {
+        ...externalId,
+        id: ' SEC-CLAIM-DUPLICATE ',
+        artifactPath: 'fixtures/security-assurance/sample.security-claims.json#/claims/1',
+      },
+    ];
+
+    const errors = validateClaimEvidenceManifestSemantics(invalidFixture);
+
+    expect(errors.some((entry) => entry.keyword === 'duplicate_external_id')).toBe(true);
+    expect(errors.some((entry) => entry.instancePath === '/claims/0/externalIds/1/id')).toBe(true);
+  });
+
+  it('rejects dangling external id source artifact references at the semantic contract layer', () => {
+    const invalidFixture = structuredClone(fixture) as {
+      claims: Array<{
+        evidenceRefs: Array<Record<string, unknown>>;
+      }>;
+    };
+
+    invalidFixture.claims[0].evidenceRefs[0].externalIds = [
+      {
+        kind: 'security-finding',
+        id: 'SEC-FINDING-001',
+        sourceArtifactId: 'missing-source-artifact',
+      },
+    ];
+
+    const errors = validateClaimEvidenceManifestSemantics(invalidFixture);
+
+    expect(errors.some((entry) => entry.keyword === 'dangling_source_artifact_ref')).toBe(true);
+    expect(
+      errors.some((entry) => entry.instancePath === '/claims/0/evidenceRefs/0/externalIds/0/sourceArtifactId'),
+    ).toBe(true);
+  });
+
   it('rejects summary counts that do not match claim statuses at the semantic contract layer', () => {
     const invalidFixture = structuredClone(fixture) as {
       summary: Record<string, unknown>;

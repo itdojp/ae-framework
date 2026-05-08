@@ -89,6 +89,41 @@
         "other"
       ]
     },
+    "externalIdKind": {
+      "type": "string",
+      "enum": [
+        "security-claim",
+        "security-finding",
+        "security-review",
+        "other"
+      ]
+    },
+    "externalId": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id",
+        "sourceArtifactId"
+      ],
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/externalIdKind"
+        },
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceArtifactId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "artifactPath": {
+          "$ref": "#/$defs/artifactPath"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
     "sourceArtifact": {
       "type": "object",
       "additionalProperties": false,
@@ -217,6 +252,13 @@
         },
         "description": {
           "$ref": "#/$defs/nonEmptyString"
+        },
+        "externalIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/externalId"
+          },
+          "uniqueItems": true
         }
       }
     },
@@ -396,6 +438,13 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "externalIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/externalId"
           },
           "uniqueItems": true
         }
