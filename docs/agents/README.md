@@ -2,7 +2,7 @@
 docRole: derived
 canonicalSource:
 - docs/agents/agents-doc-boundary-matrix.md
-lastVerified: '2026-03-31'
+lastVerified: '2026-05-08'
 ---
 
 # Agent Docs Index
@@ -30,6 +30,7 @@ This is the agent-facing index referenced from `AGENTS.md`. It points only to th
 
 ### Primary domains and primary sources
 - boundary definitions (primary / secondary): `docs/agents/agents-doc-boundary-matrix.md`
+- producer-agent assurance runbook: `docs/integrations/ASSURANCE-AGENT-RUNBOOK.md`
 - CI policy (SSOT): `docs/ci-policy.md`
 - CI operations: `docs/ci/ci-operations-handbook.md`
 - CI incident recovery: `docs/ci/ci-troubleshooting-guide.md`
@@ -77,6 +78,7 @@ This is the agent-facing index referenced from `AGENTS.md`. It points only to th
 
 ### 主要ドメインと一次情報
 - 境界定義（一次 / 二次）: `docs/agents/agents-doc-boundary-matrix.md`
+- producer-agent assurance runbook: `docs/integrations/ASSURANCE-AGENT-RUNBOOK.md`
 - CI 方針（SSOT）: `docs/ci-policy.md`
 - CI 運用: `docs/ci/ci-operations-handbook.md`
 - CI 障害復旧: `docs/ci/ci-troubleshooting-guide.md`

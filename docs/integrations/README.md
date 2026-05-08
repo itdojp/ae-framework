@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
   - README.md
   - docs/reference/DOC-GOVERNANCE.md
-lastVerified: '2026-03-10'
+lastVerified: '2026-05-08'
 ---
 
 # AE Framework Integration Guide
@@ -17,6 +17,14 @@ lastVerified: '2026-03-10'
 **AE Framework Integration Methods and Setup Guide**
 
 ### 📋 Integration Methods Overview
+
+#### 🧭 Assurance Agent Runbook (Canonical Execution Path)
+- **File**: [ASSURANCE-AGENT-RUNBOOK.md](./ASSURANCE-AGENT-RUNBOOK.md)
+- **Overview**: Standard issue-driven execution path for Codex CLI, Claude Code, MCP clients, and other producer agents
+- **Features**:
+  - Positions agents as replaceable producers and ae-framework as the assurance control plane
+  - Defines no-MCP fallback, MCP path, hook feedback usage, expected commands, and evidence artifacts
+  - Prevents green-build / waiver / runtime mitigation from being over-claimed as proof
 
 #### 🤖 Claude Code Integration (Primary Integration)
 - **File**: [CLAUDE-CODE-TASK-TOOL-INTEGRATION.md](./CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)
@@ -102,6 +110,7 @@ ae-framework ui scaffold --input domain-model.json
 
 ### 📚 Detailed Documentation
 
+- **[Assurance Agent Runbook](./ASSURANCE-AGENT-RUNBOOK.md)** - canonical producer-agent execution path for Codex / Claude / MCP
 - **[Claude Code Integration Guide](./CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 🔥 Primary integration method
 - **[CodeX Security Assurance Audit Runbook](./CODEX-SECURITY-AUDIT.md)** - Security Assurance Lane operation for Codex / CodeX
 - **[Technical Implementation Details](../architecture/TECHNICAL-IMPLEMENTATION-DETAILS.md)** - Architecture details
@@ -121,6 +130,14 @@ ae-framework ui scaffold --input domain-model.json
 **AE Framework の各種統合方式とセットアップガイド**
 
 ### 📋 統合方式一覧
+
+#### 🧭 Assurance Agent Runbook（canonical execution path）
+- **ファイル**: [ASSURANCE-AGENT-RUNBOOK.md](./ASSURANCE-AGENT-RUNBOOK.md)
+- **概要**: Codex CLI、Claude Code、MCP client、その他 producer agent の issue-driven 標準実行手順
+- **特徴**:
+  - agent を交換可能な producer、ae-framework を assurance control plane として位置付ける
+  - MCP なし fallback、MCP path、hook feedback、期待コマンド、evidence artifact を定義
+  - green build / waiver / runtime mitigation を proof と過剰表現しない
 
 #### 🤖 Claude Code統合 (メイン統合)
 - **ファイル**: [CLAUDE-CODE-TASK-TOOL-INTEGRATION.md](./CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)
@@ -206,6 +223,7 @@ ae-framework ui scaffold --input domain-model.json
 
 ### 📚 詳細ドキュメント
 
+- **[Assurance Agent Runbook](./ASSURANCE-AGENT-RUNBOOK.md)** - Codex / Claude / MCP 向け canonical producer-agent execution path
 - **[Claude Code統合ガイド](./CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 🔥 メイン統合方式
 - **[CodeX Security Assurance Audit Runbook](./CODEX-SECURITY-AUDIT.md)** - Codex / CodeX 向け Security Assurance Lane 運用手順
 - **[技術実装詳細](../architecture/TECHNICAL-IMPLEMENTATION-DETAILS.md)** - アーキテクチャ詳細

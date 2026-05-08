@@ -167,6 +167,7 @@ Phase-specific implementation references, including requirements, validation, do
 ### Integrations
 Integration contracts and operating guides for Claude Code, Codex, handoff sidecars, and related agent/tool boundaries.
 
+- Assurance Agent Runbook: `integrations/ASSURANCE-AGENT-RUNBOOK.md`
 - Claude Code Task Tool Integration: `integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
 - Claude Code Workflow: `integrations/CLAUDECODE-WORKFLOW.md`
 - CodeX Integration (PoC/MCP/Adapter): `integrations/CODEX-INTEGRATION.md`
@@ -353,6 +354,7 @@ ae-frameworkは、エージェント協調型のSDLCオーケストレーター�
 ### 🔗 [integrations/](./integrations/) - 統合・ワークフロー
 Claude CodeやMCPとの統合
 
+- [ASSURANCE-AGENT-RUNBOOK.md](./integrations/ASSURANCE-AGENT-RUNBOOK.md) - Codex / Claude / MCP producer agent の標準実行手順
 - **[CLAUDE-CODE-TASK-TOOL-INTEGRATION.md](./integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** ⭐ **重要** - Task Tool統合仕様
 - [CLAUDECODE-WORKFLOW.md](./integrations/CLAUDECODE-WORKFLOW.md) - Claude Codeワークフロー
 - [CODEX-INTEGRATION.md](./integrations/CODEX-INTEGRATION.md) - CodeX統合（PoC/MCP/Adapter）
