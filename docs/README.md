@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-05-08'
+lastVerified: '2026-05-09'
 ---
 
 # 📚 ae-framework Documentation / ドキュメント
@@ -71,6 +71,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Product / contract routing: `product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - Assurance control-plane current-state audit: `reports/ASSURANCE-CONTROL-PLANE-CURRENT-STATE.md`
 - Assurance control-plane E2E validation: `reports/ASSURANCE-CONTROL-PLANE-E2E-VALIDATION.md`
+- Assurance canonical routes / legacy compatibility: `reference/ASSURANCE-CANONICAL-ROUTES.md`
 - Codex continuation and handoff: `integrations/CODEX-CONTINUATION-CONTRACT.md`, `agents/handoff.md`
 - Claude / Codex multi-agent setup: `development/agent-collaboration-setup.md`, `agents/multi-agent-safety.md`
 - CI baseline and opt-in controls: `ci/ci-baseline-checklist.md`, `ci/OPT-IN-CONTROLS.md`, `ci/branch-protection-operations.md`
@@ -184,6 +185,7 @@ Normative reference material for commands, schema governance, contract inventory
 - Document governance front matter: `reference/DOC-GOVERNANCE.md`
 - Schema governance ($id canonical URI policy): [SCHEMA-GOVERNANCE.md](./reference/SCHEMA-GOVERNANCE.md)
 - Contract catalog (input/decision/evidence/operation): [CONTRACT-CATALOG.md](./reference/CONTRACT-CATALOG.md)
+- Assurance canonical routes / legacy compatibility: [ASSURANCE-CANONICAL-ROUTES.md](./reference/ASSURANCE-CANONICAL-ROUTES.md)
 - Change Package v2 reference: `reference/change-package-v2.md`
 - Context Pack v1 validation guide: [context-pack.md](./spec/context-pack.md)
 - Spec & Verification Kit (minimal activation guide): `reference/SPEC-VERIFICATION-KIT-MIN.md`

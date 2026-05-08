@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/quality/ARTIFACTS-CONTRACT.md
 - docs/ci/pr-automation.md
-lastVerified: '2026-03-29'
+lastVerified: '2026-05-09'
 ---
 # PR Summary Tool I/O Spec (#407)
 
@@ -32,7 +32,7 @@ lastVerified: '2026-03-29'
   - `artifacts/assurance/claim-evidence-manifest.json`
   - `artifacts/quality/quality-scorecard.json`
   - `artifacts/formal/formal-aggregate.json`
-  - legacy `formal/summary.json`
+  - legacy compatibility input `formal/summary.json`
   - `artifacts/hermetic-reports/formal/summary.json`
 - Workflow append-stage inputs:
   - `artifacts/ci/harness-health.md`
@@ -73,7 +73,7 @@ node scripts/summary/render-pr-summary.mjs
 - `render-pr-summary.mjs` prefers `artifacts/summary/combined.json`, then supplements it with read-only coverage / replay / BDD / properties / GWT / formal fallback inputs.
 - The Discovery Pack line is generated from the top-level `discoveryPack` object in `artifacts/verify-lite/verify-lite-run-summary.json`.
 - `steps.discoveryPackValidation` and `steps.discoveryPackCompile` are execution records, not direct renderer inputs.
-- The formal line prefers `combined.json.formal`, then falls back to `formal/summary.json`, then `artifacts/hermetic-reports/formal/summary.json`.
+- The formal line prefers `combined.json.formal`, then legacy compatibility input `formal/summary.json`, then `artifacts/hermetic-reports/formal/summary.json`. This documents current renderer behavior; formal-summary v1/v2 and the hermetic aggregate remain the canonical formal evidence route.
 - Formal Summary v1/v2 are upstream producer / validator contracts, not direct renderer inputs.
 - `verify-lite-run-summary` is the baseline input. Assurance and quality scorecard inputs are optional.
 - After renderer output, `pr-ci-status-comment.yml` appends the workflow-stage Markdown artifacts listed above.
@@ -84,6 +84,7 @@ node scripts/summary/render-pr-summary.mjs
 - JSON schema and shape validation are upstream CI / producer responsibilities.
 - The renderer assumes those validations have already happened and does not fail hard on malformed optional JSON.
 - Keep append-stage Markdown out of the direct input contract.
+- Use `docs/reference/ASSURANCE-CANONICAL-ROUTES.md` when deciding whether a route is canonical, preview, or legacy compatibility.
 
 ### Sidecar Combined JSON
 - Recommended path: `artifacts/summary/combined.json`
@@ -123,7 +124,7 @@ node scripts/summary/render-pr-summary.mjs
   - `artifacts/assurance/claim-evidence-manifest.json`
   - `artifacts/quality/quality-scorecard.json`
   - `artifacts/formal/formal-aggregate.json`
-  - legacy `formal/summary.json`
+  - legacy compatibility input `formal/summary.json`
   - `artifacts/hermetic-reports/formal/summary.json`
 - workflow append-stage で追記される入力群:
   - `artifacts/ci/harness-health.md`
@@ -164,7 +165,7 @@ node scripts/summary/render-pr-summary.mjs
 - `render-pr-summary.mjs` はまず `artifacts/summary/combined.json` を読み、その後 coverage / replay / BDD / properties / GWT / formal の fallback input を read-only で補完する。
 - Discovery Pack line は `artifacts/verify-lite/verify-lite-run-summary.json` の top-level `discoveryPack` object から生成する。
 - `steps.discoveryPackValidation` と `steps.discoveryPackCompile` は execution record であり、renderer の direct input ではない。
-- formal line は `combined.json.formal` を優先し、次に `formal/summary.json`、次に `artifacts/hermetic-reports/formal/summary.json` を fallback とする。
+- formal line は `combined.json.formal` を優先し、次に legacy compatibility input の `formal/summary.json`、さらに `artifacts/hermetic-reports/formal/summary.json` を見る。これは現行 renderer 挙動を示す。formal-summary v1/v2 と hermetic aggregate は正準 formal evidence 導線として維持する。
 - Formal Summary v1/v2 は upstream の producer / validator contract であり、renderer の direct input ではない。
 - baseline input は `verify-lite-run-summary` で、assurance と quality scorecard は optional input。
 - renderer 出力後に、`pr-ci-status-comment.yml` が上記の workflow-stage Markdown artifact を append する。
@@ -175,6 +176,7 @@ node scripts/summary/render-pr-summary.mjs
 - JSON schema や shape validation は upstream CI / producer の責務。
 - renderer はそれらの validation が済んでいる前提で動き、malformed な optional JSON で hard fail しない。
 - append-stage Markdown は direct input contract に含めない。
+- 導線が canonical / preview / legacy compatibility のどれかを判断する際は `docs/reference/ASSURANCE-CANONICAL-ROUTES.md` を使う。
 
 ### Sidecar Combined JSON
 - 推奨 path: `artifacts/summary/combined.json`
