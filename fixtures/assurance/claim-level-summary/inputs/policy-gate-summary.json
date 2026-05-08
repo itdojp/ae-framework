@@ -1,0 +1,211 @@
+{
+  "schemaVersion": "policy-gate-summary/v1",
+  "contractId": "policy-gate-summary.v1",
+  "generatedAtUtc": "2026-05-08T00:00:00.000Z",
+  "repository": "itdojp/ae-framework",
+  "prNumber": 3307,
+  "changedFiles": [
+    "scripts/assurance/aggregate-claim-levels.mjs",
+    "fixtures/assurance/claim-level-summary/inputs/claim-evidence-manifest.json"
+  ],
+  "evaluation": {
+    "ok": false,
+    "errors": [
+      "assurance claim strict-proof-failure is blocked in strict policy."
+    ],
+    "warnings": [],
+    "inferredRisk": {
+      "level": "risk:high",
+      "labels": {
+        "low": "risk:low",
+        "high": "risk:high"
+      },
+      "highRiskPathMatches": [
+        "package.json"
+      ],
+      "forceHighRiskTriggers": []
+    },
+    "selectedRiskLabel": "risk:high",
+    "currentRiskLabels": [
+      "risk:high"
+    ],
+    "reviewTopology": "team",
+    "approvals": 0,
+    "minApprovals": 1,
+    "policyMinApprovals": 1,
+    "topologyMinApprovals": 1,
+    "effectiveMinApprovals": 1,
+    "minApprovalsSource": "policy",
+    "requiredLabels": [
+      "run-security"
+    ],
+    "missingRequiredLabels": [
+      "run-security"
+    ],
+    "requiredCheckResults": [
+      {
+        "checkName": "verify-lite",
+        "result": {
+          "status": "success",
+          "matches": [
+            {
+              "name": "verify-lite",
+              "state": "success",
+              "type": "check-run",
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS"
+            }
+          ],
+          "reason": "success"
+        }
+      }
+    ],
+    "gateCheckResults": [
+      {
+        "label": "run-security",
+        "patterns": [
+          "Security Scanning"
+        ],
+        "result": {
+          "status": "missing",
+          "matches": [],
+          "reason": "not-found"
+        }
+      }
+    ],
+    "assurance": {
+      "mode": "report-only",
+      "result": "block",
+      "manifest": {
+        "path": "fixtures/assurance/claim-level-summary/inputs/claim-evidence-manifest.json",
+        "present": true,
+        "schemaVersion": "claim-evidence-manifest/v1",
+        "generatedAt": "2026-05-08T00:00:00.000Z"
+      },
+      "summary": {
+        "totalClaims": 9,
+        "pass": 4,
+        "waived": 1,
+        "reportOnly": 3,
+        "block": 1,
+        "activeWaivers": 1,
+        "expiringSoonWaivers": 0,
+        "expiredWaivers": 0,
+        "orphanWaivers": 0
+      },
+      "claims": [
+        {
+          "claimId": "policy-satisfied",
+          "result": "pass",
+          "status": "satisfied",
+          "evidenceRefs": [
+            "policy-pass:policy-satisfied"
+          ],
+          "missingEvidenceRefs": [],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "reservation-tested",
+          "result": "pass",
+          "status": "partial",
+          "evidenceRefs": [
+            "behavior-test:reservation-flow"
+          ],
+          "missingEvidenceRefs": [],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "inventory-model",
+          "result": "pass",
+          "status": "partial",
+          "evidenceRefs": [
+            "formal-model:inventory-state"
+          ],
+          "missingEvidenceRefs": [],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "balance-proved",
+          "result": "pass",
+          "status": "satisfied",
+          "evidenceRefs": [
+            "proof:balance-invariant"
+          ],
+          "missingEvidenceRefs": [],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "rollout-runtime",
+          "result": "report-only",
+          "status": "partial",
+          "evidenceRefs": [
+            "runtime-control:rollout-guard"
+          ],
+          "missingEvidenceRefs": [
+            "missing-proof:rollout-runtime"
+          ],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "manual-waiver",
+          "result": "waived",
+          "status": "waived",
+          "evidenceRefs": [
+            "manual-control:fraud-review"
+          ],
+          "missingEvidenceRefs": [
+            "missing-model:manual-waiver"
+          ],
+          "waiverRefs": [
+            "override-manual-waiver-2026-06"
+          ]
+        },
+        {
+          "claimId": "strict-proof-failure",
+          "result": "block",
+          "status": "partial",
+          "evidenceRefs": [
+            "proof-failed:strict-proof"
+          ],
+          "missingEvidenceRefs": [
+            "missing-discharged-proof:strict-proof"
+          ],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "unresolved-model",
+          "result": "report-only",
+          "status": "unresolved",
+          "evidenceRefs": [],
+          "missingEvidenceRefs": [
+            "missing-model:unresolved-model"
+          ],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "ui-out-of-scope",
+          "result": "report-only",
+          "status": "partial",
+          "evidenceRefs": [],
+          "missingEvidenceRefs": [],
+          "waiverRefs": []
+        }
+      ],
+      "waivers": [
+        {
+          "id": "override-manual-waiver-2026-06",
+          "sourceArtifactId": "manual-waiver-log",
+          "status": "active",
+          "owner": "@team-risk",
+          "expires": "2026-06-30",
+          "reason": "Manual fraud review is active while model validation is incomplete.",
+          "claimId": "manual-waiver"
+        }
+      ],
+      "warnings": [],
+      "errors": [
+        "assurance claim strict-proof-failure is blocked in strict policy."
+      ]
+    }
+  }
+}

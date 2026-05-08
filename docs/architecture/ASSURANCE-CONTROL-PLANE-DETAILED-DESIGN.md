@@ -216,10 +216,10 @@ The v2 package consumes claim-evidence and policy artifacts; it is not the sourc
 
 #### 4.12 PR/release summary
 
-A PR or release summary is a human-facing projection of the contracts above. The preview schema is `schema/claim-level-summary-v1.schema.json`. It should surface:
+A PR or release summary is a human-facing projection of the contracts above. The preview schema is `schema/claim-level-summary-v1.schema.json`, and the current deterministic preview producer is `scripts/assurance/aggregate-claim-levels.mjs` (`pnpm run claim-level-summary:generate`). The producer consumes `claim-evidence-manifest/v1`, `policy-gate-summary/v1`, optional `change-package/v2`, and optional `temporary-override/v1` records, preserving the current primary artifact state sets while projecting the richer PR/release review states. It should surface:
 
 - target and achieved assurance level
-- satisfied, partial, waived, and unresolved claim counts
+- satisfied, tested, model-checked, proved, runtime-mitigated, waived, unresolved, failed, and not-applicable claim counts
 - blocking and report-only policy outcomes
 - active/expired/orphan waivers
 - runtime-mitigated claims

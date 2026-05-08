@@ -134,6 +134,7 @@ const checks = [
       'fixtures/assurance/sample.claim-evidence-manifest.json',
       'fixtures/assurance-e2e/inventory-waiver/expected/claim-evidence-manifest.json',
       'fixtures/security-assurance/cache-key/expected/claim-evidence-manifest.json',
+      'fixtures/assurance/claim-level-summary/inputs/claim-evidence-manifest.json',
     ],
     label: 'Claim evidence manifest schema validation',
     semanticValidate: validateClaimEvidenceManifestSemantics
@@ -142,6 +143,7 @@ const checks = [
     schema: 'schema/claim-level-summary-v1.schema.json',
     fixtures: [
       'fixtures/assurance/sample.claim-level-summary-v1.json',
+      'fixtures/assurance/claim-level-summary/expected/claim-level-summary.json',
     ],
     label: 'Claim level summary v1 schema validation'
   },
@@ -149,6 +151,7 @@ const checks = [
     schema: 'schema/temporary-override-v1.schema.json',
     fixtures: [
       'fixtures/assurance/sample.temporary-override-v1.json',
+      'fixtures/assurance/claim-level-summary/inputs/temporary-overrides/override-manual-waiver-2026-06.json',
     ],
     label: 'Temporary override v1 schema validation'
   },
@@ -360,6 +363,7 @@ const checks = [
     fixtures: [
       'fixtures/change-package/sample.change-package-v2.json',
       'fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json',
+      'fixtures/assurance/claim-level-summary/inputs/change-package-v2.json',
     ],
     label: 'Change Package v2 schema validation'
   },
@@ -401,6 +405,7 @@ const checks = [
     fixtures: [
       'fixtures/policy-gate/sample.policy-gate-summary-v1.json',
       'fixtures/assurance-e2e/inventory-waiver/expected/policy-gate-summary.json',
+      'fixtures/assurance/claim-level-summary/inputs/policy-gate-summary.json',
     ],
     label: 'Policy gate summary v1 schema validation'
   },

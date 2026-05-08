@@ -1,0 +1,214 @@
+{
+  "schemaVersion": "change-package/v2",
+  "generatedAt": "2026-05-08T00:00:00.000Z",
+  "policyPath": "policy/risk-policy.yml",
+  "source": {
+    "repository": "itdojp/ae-framework",
+    "prNumber": 3307,
+    "baseRef": "main",
+    "headRef": "feat/3307-claim-level-summary"
+  },
+  "intent": {
+    "summary": "Generate a fixture-backed claim-level assurance summary projection."
+  },
+  "scope": {
+    "changedFiles": [
+      "scripts/assurance/aggregate-claim-levels.mjs",
+      "fixtures/assurance/claim-level-summary/inputs/claim-evidence-manifest.json"
+    ],
+    "changedFileCount": 2,
+    "areas": [
+      "assurance",
+      "tests"
+    ]
+  },
+  "risk": {
+    "selected": "risk:low",
+    "inferred": "risk:low",
+    "isHighRisk": false,
+    "requiredLabels": [],
+    "missingRequiredLabels": [],
+    "rationale": {
+      "highRiskPathMatches": [],
+      "forceHighRiskTriggers": []
+    }
+  },
+  "evidence": {
+    "artifactRoot": ".",
+    "items": [
+      {
+        "id": "verifyLiteSummary",
+        "path": "artifacts/verify-lite/verify-lite-run-summary.json",
+        "description": "verify-lite run summary",
+        "present": true
+      },
+      {
+        "id": "policyGateSummary",
+        "path": "artifacts/ci/policy-gate-summary.json",
+        "description": "policy-gate summary",
+        "present": true
+      }
+    ],
+    "presentCount": 2,
+    "missingCount": 0
+  },
+  "reproducibility": {
+    "commands": [
+      "pnpm -s run assurance:e2e -- --scenario inventory-waiver",
+      "node scripts/ci/validate-json.mjs"
+    ]
+  },
+  "rolloutPlan": {
+    "strategy": "fixture-only-golden-regression",
+    "references": [
+      "fixtures/assurance-e2e/inventory-waiver/README.md"
+    ],
+    "notes": [
+      "This fixture does not change production runtime behavior."
+    ]
+  },
+  "monitoringPlan": {
+    "signals": [
+      "assurance-e2e.diff",
+      "claim-evidence.summary",
+      "policy-gate.assurance.result"
+    ],
+    "alerts": [
+      "golden-artifact-drift"
+    ]
+  },
+  "exceptions": [],
+  "assurance": {
+    "targetLevel": "A4",
+    "achievedLevel": "A2",
+    "status": "partial"
+  },
+  "claims": [
+    {
+      "id": "reservation-tested",
+      "statement": "Reservation flow has behavior test coverage.",
+      "status": "tested",
+      "criticality": "medium",
+      "artifactRefs": [
+        "artifacts/verify-lite/verify-lite-run-summary.json"
+      ]
+    },
+    {
+      "id": "inventory-model",
+      "statement": "Inventory state transitions are model checked for reservation commands.",
+      "status": "model-checked",
+      "criticality": "high",
+      "artifactRefs": [
+        "artifacts/formal/inventory-model-summary.json"
+      ]
+    },
+    {
+      "id": "balance-proved",
+      "statement": "Balance invariant is discharged by proof-level evidence.",
+      "status": "proved",
+      "criticality": "critical",
+      "artifactRefs": [
+        "artifacts/formal/proof/balance-invariant.json"
+      ]
+    },
+    {
+      "id": "rollout-runtime",
+      "statement": "Rollout guard mitigates incomplete proof for staged deployment.",
+      "status": "runtime-mitigated",
+      "criticality": "high",
+      "artifactRefs": [
+        "artifacts/runtime/rollout-guard.json"
+      ]
+    },
+    {
+      "id": "manual-waiver",
+      "statement": "Manual fraud review remains in place until model validation is complete.",
+      "status": "waived",
+      "criticality": "medium",
+      "artifactRefs": [
+        "docs/operate/release-engineering.md#manual-fraud-review"
+      ]
+    },
+    {
+      "id": "strict-proof-failure",
+      "statement": "Strict proof evidence must pass before enforced release.",
+      "status": "unresolved",
+      "criticality": "critical",
+      "artifactRefs": [
+        "artifacts/formal/proof/strict-proof-failure.json"
+      ]
+    },
+    {
+      "id": "unresolved-model",
+      "statement": "Model reconciliation evidence is required but absent.",
+      "status": "unresolved",
+      "criticality": "high",
+      "artifactRefs": [
+        "artifacts/formal/model-reconciliation.json"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "serializable-tx",
+      "statement": "Reservation and settlement writes run under serializable transaction isolation.",
+      "owner": "@team-platform",
+      "evidenceRefs": [
+        "docs/operate/release-engineering.md"
+      ]
+    }
+  ],
+  "proofObligations": [
+    {
+      "id": "obl-balance-proof",
+      "claimId": "balance-proved",
+      "method": "tla",
+      "status": "discharged",
+      "artifactRefs": [
+        "artifacts/formal/proof/balance-invariant.json"
+      ]
+    },
+    {
+      "id": "obl-strict-proof",
+      "claimId": "strict-proof-failure",
+      "method": "tla",
+      "status": "open",
+      "artifactRefs": [
+        "artifacts/formal/proof/strict-proof-failure.json"
+      ]
+    }
+  ],
+  "counterexamples": [
+    {
+      "artifactPath": "artifacts/formal/counterexamples/strict-proof-failure.json",
+      "status": "open",
+      "claimIds": [
+        "strict-proof-failure"
+      ]
+    }
+  ],
+  "trustBoundary": {
+    "outsideModel": [
+      "database engine",
+      "fraud-review staffing schedule"
+    ]
+  },
+  "runtimeControls": {
+    "alerts": [
+      "rollout_guard_violation"
+    ],
+    "featureFlags": [
+      "staged_release_guard"
+    ]
+  },
+  "waivers": [
+    {
+      "owner": "@team-risk",
+      "expires": "2026-06-30",
+      "reason": "Manual fraud review is active while model validation is incomplete.",
+      "relatedClaimIds": [
+        "manual-waiver"
+      ]
+    }
+  ]
+}

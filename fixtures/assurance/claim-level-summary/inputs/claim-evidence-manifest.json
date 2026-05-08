@@ -1,0 +1,306 @@
+{
+  "schemaVersion": "claim-evidence-manifest/v1",
+  "generatedAt": "2026-05-08T00:00:00.000Z",
+  "sourceArtifacts": [
+    {
+      "id": "assurance-summary",
+      "kind": "assurance-summary",
+      "path": "fixtures/assurance/claim-level-summary/inputs/assurance-summary.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "assurance-summary/v1",
+      "description": "Claim-level summary fixture assurance input"
+    },
+    {
+      "id": "change-package-v2",
+      "kind": "change-package-v2",
+      "path": "fixtures/assurance/claim-level-summary/inputs/change-package-v2.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "change-package/v2",
+      "description": "Claim-level summary fixture proof-carrying change package"
+    },
+    {
+      "id": "quality-scorecard",
+      "kind": "quality-scorecard",
+      "path": "fixtures/quality/sample.quality-scorecard.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "quality-scorecard/v1",
+      "description": "Quality coverage fixture"
+    },
+    {
+      "id": "policy-gate-summary",
+      "kind": "other",
+      "path": "fixtures/assurance/claim-level-summary/inputs/policy-gate-summary.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "policy-gate-summary/v1",
+      "description": "Policy decision fixture"
+    },
+    {
+      "id": "manual-waiver-log",
+      "kind": "manual",
+      "path": "fixtures/assurance/claim-level-summary/inputs/temporary-overrides/override-manual-waiver-2026-06.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "temporary-override/v1",
+      "description": "Manual waiver fixture"
+    }
+  ],
+  "claims": [
+    {
+      "id": "policy-satisfied",
+      "statement": "Policy gate confirms the release checklist is satisfied.",
+      "criticality": "medium",
+      "targetLevel": "A1",
+      "achievedLevel": "A1",
+      "status": "satisfied",
+      "evidenceRefs": [
+        {
+          "id": "policy-pass:policy-satisfied",
+          "kind": "policy",
+          "artifactPath": "fixtures/assurance/claim-level-summary/inputs/policy-gate-summary.json#/evaluation/assurance/claims/0",
+          "sourceArtifactId": "policy-gate-summary",
+          "description": "Policy gate projected this claim as pass."
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "notes": [
+        "All-green policy-only claim remains satisfied rather than upgraded to a stronger evidence lane."
+      ]
+    },
+    {
+      "id": "reservation-tested",
+      "statement": "Reservation flow has behavior test coverage.",
+      "criticality": "medium",
+      "targetLevel": "A2",
+      "achievedLevel": "A2",
+      "status": "partial",
+      "evidenceRefs": [
+        {
+          "id": "behavior-test:reservation-flow",
+          "kind": "behavior",
+          "artifactPath": "artifacts/verify-lite/verify-lite-run-summary.json#/steps/reservation",
+          "sourceArtifactId": "assurance-summary",
+          "description": "Behavior test evidence passed for the reservation flow."
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "notes": [
+        "Behavior evidence is present; model/proof evidence is intentionally not claimed."
+      ]
+    },
+    {
+      "id": "inventory-model",
+      "statement": "Inventory state transitions are model checked for reservation commands.",
+      "criticality": "high",
+      "targetLevel": "A3",
+      "achievedLevel": "A3",
+      "status": "partial",
+      "evidenceRefs": [
+        {
+          "id": "formal-model:inventory-state",
+          "kind": "model",
+          "artifactPath": "artifacts/formal/inventory-model-summary.json",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Model checking completed for the inventory state transition model."
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "notes": [
+        "Model scope is limited to inventory state transitions."
+      ]
+    },
+    {
+      "id": "balance-proved",
+      "statement": "Balance invariant is discharged by proof-level evidence.",
+      "criticality": "critical",
+      "targetLevel": "A4",
+      "achievedLevel": "A4",
+      "status": "satisfied",
+      "evidenceRefs": [
+        {
+          "id": "proof:balance-invariant",
+          "kind": "proof",
+          "artifactPath": "artifacts/formal/proof/balance-invariant.json",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Proof obligation discharged for balance invariant."
+        }
+      ],
+      "proofObligationRefs": [
+        {
+          "id": "obl-balance-proof",
+          "status": "discharged",
+          "sourceArtifactId": "change-package-v2",
+          "artifactPath": "artifacts/formal/proof/balance-invariant.json",
+          "method": "tla",
+          "description": "TLA proof obligation discharged."
+        }
+      ],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "notes": [
+        "Proof evidence is available and discharged."
+      ]
+    },
+    {
+      "id": "rollout-runtime",
+      "statement": "Rollout guard mitigates incomplete proof for staged deployment.",
+      "criticality": "high",
+      "targetLevel": "A3",
+      "achievedLevel": "A2",
+      "status": "partial",
+      "evidenceRefs": [
+        {
+          "id": "runtime-control:rollout-guard",
+          "kind": "runtime",
+          "artifactPath": "artifacts/runtime/rollout-guard.json",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Runtime rollout guard is active for staged deployment."
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-proof:rollout-runtime",
+          "expectedKind": "proof",
+          "reason": "Proof evidence is not yet linked for the rollout guard claim.",
+          "sourceArtifactId": "change-package-v2"
+        }
+      ],
+      "waiverRefs": [],
+      "notes": [
+        "Runtime mitigation is not promoted to proof."
+      ]
+    },
+    {
+      "id": "manual-waiver",
+      "statement": "Manual fraud review remains in place until model validation is complete.",
+      "criticality": "medium",
+      "targetLevel": "A3",
+      "achievedLevel": "A1",
+      "status": "waived",
+      "evidenceRefs": [
+        {
+          "id": "manual-control:fraud-review",
+          "kind": "manual",
+          "artifactPath": "docs/operate/release-engineering.md#manual-fraud-review",
+          "sourceArtifactId": "manual-waiver-log",
+          "description": "Manual fraud review control is documented."
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-model:manual-waiver",
+          "expectedKind": "model",
+          "reason": "Automated fraud model validation evidence is not linked.",
+          "sourceArtifactId": "change-package-v2"
+        }
+      ],
+      "waiverRefs": [
+        {
+          "id": "override-manual-waiver-2026-06",
+          "sourceArtifactId": "manual-waiver-log",
+          "status": "active",
+          "owner": "@team-risk",
+          "expires": "2026-06-30",
+          "reason": "Manual fraud review is active while model validation is incomplete."
+        }
+      ],
+      "notes": [
+        "Waived claims are not satisfied claims."
+      ]
+    },
+    {
+      "id": "strict-proof-failure",
+      "statement": "Strict proof evidence must pass before enforced release.",
+      "criticality": "critical",
+      "targetLevel": "A4",
+      "achievedLevel": "A1",
+      "status": "partial",
+      "evidenceRefs": [
+        {
+          "id": "proof-failed:strict-proof",
+          "kind": "proof",
+          "artifactPath": "artifacts/formal/proof/strict-proof-failure.json",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Proof run failed for the strict release claim."
+        }
+      ],
+      "proofObligationRefs": [
+        {
+          "id": "obl-strict-proof",
+          "status": "open",
+          "sourceArtifactId": "change-package-v2",
+          "artifactPath": "artifacts/formal/proof/strict-proof-failure.json",
+          "method": "tla",
+          "description": "TLA proof obligation remains open."
+        }
+      ],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-discharged-proof:strict-proof",
+          "expectedKind": "proof",
+          "reason": "Discharged proof evidence is required for strict release.",
+          "sourceArtifactId": "change-package-v2"
+        }
+      ],
+      "waiverRefs": [],
+      "notes": [
+        "Failed evidence must block when policy marks the claim strict."
+      ]
+    },
+    {
+      "id": "unresolved-model",
+      "statement": "Model reconciliation evidence is required but absent.",
+      "criticality": "high",
+      "targetLevel": "A3",
+      "achievedLevel": "A1",
+      "status": "unresolved",
+      "evidenceRefs": [],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-model:unresolved-model",
+          "expectedKind": "model",
+          "reason": "Model reconciliation summary is absent.",
+          "sourceArtifactId": "assurance-summary"
+        }
+      ],
+      "waiverRefs": [],
+      "notes": [
+        "Unresolved primary status remains unresolved in the projection."
+      ]
+    },
+    {
+      "id": "ui-out-of-scope",
+      "statement": "UI-only animation claim is outside the backend release assurance scope.",
+      "criticality": "low",
+      "targetLevel": "A1",
+      "achievedLevel": "A0",
+      "status": "partial",
+      "evidenceRefs": [],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "notes": [
+        "not-applicable: UI-only animation claim is outside the backend release scope. | scope=backend release | artifact=docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md"
+      ]
+    }
+  ],
+  "summary": {
+    "totalClaims": 9,
+    "fullySupported": 2,
+    "partiallySupported": 5,
+    "waived": 1,
+    "unresolved": 1
+  }
+}
