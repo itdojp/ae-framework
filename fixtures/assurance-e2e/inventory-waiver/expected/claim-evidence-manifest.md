@@ -22,11 +22,15 @@
 
 ## Claims
 
-| claim | criticality | target | achieved | status | evidence | missing | waivers |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| manual-fraud-review | medium | A3 | A2 | waived | 3 | 0 | 1 |
-| no-negative-balance | high | A3 | A2 | partial | 5 | 1 | 0 |
-| no-negative-stock | high | A2 | A2 | satisfied | 7 | 0 | 0 |
+| claim | criticality | target | achieved | status | evidence | missing | waivers | externalIds |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| manual-fraud-review | medium | A3 | A2 | waived | 3 | 0 | 1 | n/a |
+| no-negative-balance | high | A3 | A2 | partial | 5 | 1 | 0 | n/a |
+| no-negative-stock | high | A2 | A2 | satisfied | 7 | 0 | 0 | n/a |
+
+## External IDs
+
+- none
 
 ## Missing evidence
 

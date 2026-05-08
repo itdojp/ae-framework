@@ -28,6 +28,19 @@ function validateUniqueIds(items, collectionPath, errors) {
   }
 }
 
+function getExternalIdKey(value) {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+  const kind = typeof value.kind === 'string' ? value.kind.trim().toLowerCase() : null;
+  const id = typeof value.id === 'string' ? value.id.trim() : null;
+  const sourceArtifactId = typeof value.sourceArtifactId === 'string' ? value.sourceArtifactId.trim() : null;
+  if (!kind || !id || !sourceArtifactId) {
+    return null;
+  }
+  return `${kind}::${id}::${sourceArtifactId}`;
+}
+
 function validateSourceArtifactReference({
   presentSourceIds,
   absentSourceIds,
@@ -57,6 +70,60 @@ function validateSourceArtifactReference({
     instancePath,
     `sourceArtifactId '${sourceArtifactId}' does not match any sourceArtifacts[].id`,
   ));
+}
+
+function validateExternalIds({
+  externalIds,
+  collectionPath,
+  presentSourceIds,
+  absentSourceIds,
+  errors,
+}) {
+  if (!Array.isArray(externalIds)) {
+    return;
+  }
+  const seen = new Map();
+  for (let index = 0; index < externalIds.length; index += 1) {
+    const externalId = externalIds[index];
+    const key = getExternalIdKey(externalId);
+    if (key) {
+      if (seen.has(key)) {
+        errors.push(createError(
+          'duplicate_external_id',
+          `/${collectionPath}/${index}/id`,
+          `duplicate ${collectionPath} external id '${key}' also appears at /${collectionPath}/${seen.get(key)}/id`,
+        ));
+      } else {
+        seen.set(key, index);
+      }
+    }
+    validateSourceArtifactReference({
+      presentSourceIds,
+      absentSourceIds,
+      sourceArtifactId: externalId?.sourceArtifactId,
+      instancePath: `/${collectionPath}/${index}/sourceArtifactId`,
+      errors,
+    });
+  }
+}
+
+function collectSourceArtifactIds(manifest) {
+  const presentSourceIds = new Set();
+  const absentSourceIds = new Set();
+  if (Array.isArray(manifest?.sourceArtifacts)) {
+    for (const sourceArtifact of manifest.sourceArtifacts) {
+      const id = getId(sourceArtifact);
+      if (!id) {
+        continue;
+      }
+      if (sourceArtifact.present === true) {
+        presentSourceIds.add(id);
+      } else {
+        absentSourceIds.add(id);
+      }
+    }
+  }
+  return { presentSourceIds, absentSourceIds };
 }
 
 function countClaimStatuses(claims) {
@@ -130,29 +197,29 @@ function validateClaimReferenceArray({
       instancePath: `/claims/${claimIndex}/${field}/${refIndex}/sourceArtifactId`,
       errors,
     });
+    validateExternalIds({
+      externalIds: ref?.externalIds,
+      collectionPath: `claims/${claimIndex}/${field}/${refIndex}/externalIds`,
+      presentSourceIds,
+      absentSourceIds,
+      errors,
+    });
   }
 }
 
 function validateClaimReferences(manifest, errors) {
-  const presentSourceIds = new Set();
-  const absentSourceIds = new Set();
-  if (Array.isArray(manifest?.sourceArtifacts)) {
-    for (const sourceArtifact of manifest.sourceArtifacts) {
-      const id = getId(sourceArtifact);
-      if (!id) {
-        continue;
-      }
-      if (sourceArtifact.present === true) {
-        presentSourceIds.add(id);
-      } else {
-        absentSourceIds.add(id);
-      }
-    }
-  }
+  const { presentSourceIds, absentSourceIds } = collectSourceArtifactIds(manifest);
   const claims = Array.isArray(manifest?.claims) ? manifest.claims : [];
   const referenceFields = ['evidenceRefs', 'proofObligationRefs', 'missingEvidenceRefs', 'waiverRefs'];
   for (let claimIndex = 0; claimIndex < claims.length; claimIndex += 1) {
     const claim = claims[claimIndex];
+    validateExternalIds({
+      externalIds: claim?.externalIds,
+      collectionPath: `claims/${claimIndex}/externalIds`,
+      presentSourceIds,
+      absentSourceIds,
+      errors,
+    });
     for (const field of referenceFields) {
       validateClaimReferenceArray({
         claimIndex,

@@ -110,21 +110,48 @@
           "kind": "spec",
           "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/0",
           "sourceArtifactId": "security-claims",
-          "description": "Security claim imported as assurance claim (type=invariant)."
+          "description": "Security claim imported as assurance claim (type=invariant).",
+          "externalIds": [
+            {
+              "kind": "security-claim",
+              "id": "SEC-CLAIM-001",
+              "sourceArtifactId": "security-claims",
+              "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/0",
+              "description": "Original security-claim/v1 id before claim-evidence canonicalization."
+            }
+          ]
         },
         {
           "id": "security-findings:sec-finding-001",
           "kind": "adversarial",
           "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/0",
           "sourceArtifactId": "security-findings",
-          "description": "Security finding SEC-FINDING-001: status=candidate, severity=high, review=needs-human-review."
+          "description": "Security finding SEC-FINDING-001: status=candidate, severity=high, review=needs-human-review.",
+          "externalIds": [
+            {
+              "kind": "security-finding",
+              "id": "SEC-FINDING-001",
+              "sourceArtifactId": "security-findings",
+              "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/0",
+              "description": "Original security-finding/v1 id before claim-evidence canonicalization."
+            }
+          ]
         },
         {
           "id": "security-review:sec-finding-001:0",
           "kind": "manual",
           "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/0",
           "sourceArtifactId": "security-review",
-          "description": "Security review classified SEC-FINDING-001 as needs-human-review."
+          "description": "Security review classified SEC-FINDING-001 as needs-human-review.",
+          "externalIds": [
+            {
+              "kind": "security-review",
+              "id": "SEC-FINDING-001:review:0",
+              "sourceArtifactId": "security-review",
+              "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/0",
+              "description": "Original security-review/v1 entry anchored by finding id and review index."
+            }
+          ]
         }
       ],
       "proofObligationRefs": [],
@@ -150,6 +177,15 @@
         "security-attention:high SEC-FINDING-001 remains needs-human-review; keep report-only until reviewed/remediated.",
         "security-claim:type=invariant provenance=manual-block",
         "security-finding:SEC-FINDING-001 severity=high findingStatus=candidate reviewResult=needs-human-review falsePositiveRootCause=none"
+      ],
+      "externalIds": [
+        {
+          "kind": "security-claim",
+          "id": "SEC-CLAIM-001",
+          "sourceArtifactId": "security-claims",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/0",
+          "description": "Original security-claim/v1 id before claim-evidence canonicalization."
+        }
       ]
     },
     {
@@ -172,7 +208,16 @@
           "kind": "spec",
           "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/1",
           "sourceArtifactId": "security-claims",
-          "description": "Security claim imported as assurance claim (type=precondition)."
+          "description": "Security claim imported as assurance claim (type=precondition).",
+          "externalIds": [
+            {
+              "kind": "security-claim",
+              "id": "SEC-CLAIM-002",
+              "sourceArtifactId": "security-claims",
+              "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/1",
+              "description": "Original security-claim/v1 id before claim-evidence canonicalization."
+            }
+          ]
         }
       ],
       "proofObligationRefs": [],
@@ -188,6 +233,15 @@
       "notes": [
         "achievedLevel conservatively derived below targetLevel A1 because assurance-summary status=warning.",
         "security-claim:type=precondition provenance=manual-block"
+      ],
+      "externalIds": [
+        {
+          "kind": "security-claim",
+          "id": "SEC-CLAIM-002",
+          "sourceArtifactId": "security-claims",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/1",
+          "description": "Original security-claim/v1 id before claim-evidence canonicalization."
+        }
       ]
     },
     {
@@ -224,21 +278,48 @@
           "kind": "spec",
           "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/2",
           "sourceArtifactId": "security-claims",
-          "description": "Security claim imported as assurance claim (type=assumption)."
+          "description": "Security claim imported as assurance claim (type=assumption).",
+          "externalIds": [
+            {
+              "kind": "security-claim",
+              "id": "SEC-CLAIM-003",
+              "sourceArtifactId": "security-claims",
+              "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/2",
+              "description": "Original security-claim/v1 id before claim-evidence canonicalization."
+            }
+          ]
         },
         {
           "id": "security-findings:sec-finding-002",
           "kind": "adversarial",
           "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/1",
           "sourceArtifactId": "security-findings",
-          "description": "Security finding SEC-FINDING-002: status=candidate, severity=low, review=out-of-scope."
+          "description": "Security finding SEC-FINDING-002: status=candidate, severity=low, review=out-of-scope.",
+          "externalIds": [
+            {
+              "kind": "security-finding",
+              "id": "SEC-FINDING-002",
+              "sourceArtifactId": "security-findings",
+              "artifactPath": "artifacts/security-assurance/cache-key/security-findings.json#/findings/1",
+              "description": "Original security-finding/v1 id before claim-evidence canonicalization."
+            }
+          ]
         },
         {
           "id": "security-review:sec-finding-002:1",
           "kind": "manual",
           "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/1",
           "sourceArtifactId": "security-review",
-          "description": "Security review classified SEC-FINDING-002 as out-of-scope (out-of-scope)."
+          "description": "Security review classified SEC-FINDING-002 as out-of-scope (out-of-scope).",
+          "externalIds": [
+            {
+              "kind": "security-review",
+              "id": "SEC-FINDING-002:review:1",
+              "sourceArtifactId": "security-review",
+              "artifactPath": "artifacts/security-assurance/cache-key/security-review.json#/reviews/1",
+              "description": "Original security-review/v1 entry anchored by finding id and review index."
+            }
+          ]
         }
       ],
       "proofObligationRefs": [],
@@ -255,6 +336,15 @@
         "achievedLevel conservatively derived below targetLevel A1 because assurance-summary status=warning.",
         "security-claim:type=assumption provenance=manual-block",
         "security-finding:SEC-FINDING-002 severity=low findingStatus=candidate reviewResult=out-of-scope falsePositiveRootCause=out-of-scope"
+      ],
+      "externalIds": [
+        {
+          "kind": "security-claim",
+          "id": "SEC-CLAIM-003",
+          "sourceArtifactId": "security-claims",
+          "artifactPath": "artifacts/security-assurance/cache-key/security-claims.json#/claims/2",
+          "description": "Original security-claim/v1 id before claim-evidence canonicalization."
+        }
       ]
     }
   ],

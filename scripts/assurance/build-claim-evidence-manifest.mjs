@@ -36,6 +36,7 @@ const EVIDENCE_KINDS = new Set([
 ]);
 const PROOF_METHODS = new Set(['spec', 'property', 'tla', 'alloy', 'smt', 'csp', 'lean', 'kani', 'runtime', 'manual', 'other']);
 const PROOF_STATUSES = new Set(['open', 'discharged', 'waived', 'unresolved']);
+const EXTERNAL_ID_KINDS = new Set(['security-claim', 'security-finding', 'security-review', 'other']);
 
 function usage() {
   process.stdout.write(`Usage: node scripts/assurance/build-claim-evidence-manifest.mjs [options]\n\nOptions:\n  --assurance-summary <path>       assurance-summary/v1 input (default: ${DEFAULT_ASSURANCE_SUMMARY})\n  --change-package <path>          optional change-package/v2 input (default probe: ${DEFAULT_CHANGE_PACKAGE_V2})\n  --quality-scorecard <path>       optional quality-scorecard/v1 input (default: ${DEFAULT_QUALITY_SCORECARD})\n  --verify-lite-summary <path>     optional verify-lite summary input (default: ${DEFAULT_VERIFY_LITE_SUMMARY})\n  --trace-bundle <path>            optional trace bundle input; first present path is used\n  --output-json <path>             output JSON path (default: ${DEFAULT_OUTPUT_JSON})\n  --output-md <path>               output Markdown path (default: ${DEFAULT_OUTPUT_MD})\n  --schema <path>                  schema used for output validation (default: ${DEFAULT_SCHEMA})\n  --generated-at <iso-date-time>   override generatedAt for deterministic tests\n  --no-validate                    skip schema and semantic validation before writing\n  --help                           show this help\n`);
@@ -386,6 +387,11 @@ function normalizeProofMethod(value) {
   return PROOF_METHODS.has(candidate) ? candidate : 'other';
 }
 
+function normalizeExternalIdKind(value) {
+  const candidate = String(value ?? '').trim().toLowerCase();
+  return EXTERNAL_ID_KINDS.has(candidate) ? candidate : 'other';
+}
+
 function artifactPathWithPointer(basePath, pointer) {
   return `${basePath}#${pointer}`;
 }
@@ -435,14 +441,94 @@ function getReferencedClaim(claimsById, rawClaimId, context) {
   return claim;
 }
 
+function buildExternalId({ kind, id, sourceArtifactId, artifactPath, description }) {
+  const originalId = String(id ?? '').trim();
+  const originalSourceArtifactId = String(sourceArtifactId ?? '').trim();
+  if (!originalId || !originalSourceArtifactId) {
+    return null;
+  }
+  const externalId = {
+    kind: normalizeExternalIdKind(kind),
+    id: originalId,
+    sourceArtifactId: originalSourceArtifactId,
+  };
+  const normalizedArtifactPath = String(artifactPath ?? '').trim();
+  if (normalizedArtifactPath) {
+    externalId.artifactPath = normalizedArtifactPath;
+  }
+  const normalizedDescription = String(description ?? '').trim();
+  if (normalizedDescription) {
+    externalId.description = normalizedDescription;
+  }
+  return externalId;
+}
+
+function externalIdKey(externalId) {
+  if (!externalId || typeof externalId !== 'object') {
+    return null;
+  }
+  const kind = String(externalId.kind ?? '').trim();
+  const id = String(externalId.id ?? '').trim();
+  const sourceArtifactId = String(externalId.sourceArtifactId ?? '').trim();
+  if (!kind || !id || !sourceArtifactId) {
+    return null;
+  }
+  return `${kind}::${id}::${sourceArtifactId}`;
+}
+
+function pushExternalId(target, externalId) {
+  const normalizedExternalId = buildExternalId(externalId ?? {});
+  const key = externalIdKey(normalizedExternalId);
+  if (!key) {
+    return null;
+  }
+  if (!Array.isArray(target.externalIds)) {
+    target.externalIds = [];
+  }
+  const existing = target.externalIds.find((item) => externalIdKey(item) === key);
+  if (existing) {
+    return existing;
+  }
+  target.externalIds.push(normalizedExternalId);
+  return normalizedExternalId;
+}
+
+function hasExternalId(target, { kind, id }) {
+  const normalizedKind = normalizeExternalIdKind(kind);
+  const normalizedId = String(id ?? '').trim();
+  return Array.isArray(target.externalIds)
+    && target.externalIds.some((externalId) => externalId.kind === normalizedKind && externalId.id === normalizedId);
+}
+
+function compareExternalIds(left, right) {
+  return [
+    String(left.kind ?? '').localeCompare(String(right.kind ?? '')),
+    String(left.id ?? '').localeCompare(String(right.id ?? '')),
+    String(left.sourceArtifactId ?? '').localeCompare(String(right.sourceArtifactId ?? '')),
+    String(left.artifactPath ?? '').localeCompare(String(right.artifactPath ?? '')),
+  ].find((result) => result !== 0) ?? 0;
+}
+
+function sortExternalIds(target) {
+  if (!Array.isArray(target.externalIds)) {
+    return;
+  }
+  target.externalIds.sort(compareExternalIds);
+}
+
 function pushUniqueById(items, nextItem) {
   if (!nextItem || !nextItem.id) {
-    return;
+    return null;
   }
-  if (items.some((item) => item.id === nextItem.id)) {
-    return;
+  const existing = items.find((item) => item.id === nextItem.id);
+  if (existing) {
+    for (const externalId of ensureArray(nextItem.externalIds)) {
+      pushExternalId(existing, externalId);
+    }
+    return existing;
   }
   items.push(nextItem);
+  return nextItem;
 }
 
 function pushNote(claim, note) {
@@ -871,6 +957,14 @@ function ingestSecurityClaims(claimsById, artifact) {
   const sourceArtifactId = 'security-claims';
   for (const [claimIndex, rawClaim] of ensureArray(artifact.payload?.claims).entries()) {
     if (!rawClaim?.id) continue;
+    const claimArtifactPath = artifactPathWithPointer(artifact.path, `/claims/${claimIndex}`);
+    const claimExternalId = buildExternalId({
+      kind: 'security-claim',
+      id: rawClaim.id,
+      sourceArtifactId,
+      artifactPath: claimArtifactPath,
+      description: 'Original security-claim/v1 id before claim-evidence canonicalization.',
+    });
     const claim = getOrCreateClaim(claimsById, rawClaim.id, {
       statement: rawClaim.statement,
       criticality: rawClaim.criticality,
@@ -878,12 +972,14 @@ function ingestSecurityClaims(claimsById, artifact) {
       achievedLevel: decrementLevel(rawClaim.targetLevel),
       status: 'partial',
     });
+    pushExternalId(claim, claimExternalId);
     pushUniqueById(claim.evidenceRefs, {
       id: sanitizeId(`${sourceArtifactId}:${claim.id}`),
       kind: 'spec',
-      artifactPath: artifactPathWithPointer(artifact.path, `/claims/${claimIndex}`),
+      artifactPath: claimArtifactPath,
       sourceArtifactId,
       description: `Security claim imported as assurance claim (type=${rawClaim.type ?? 'unknown'}).`,
+      externalIds: claimExternalId ? [claimExternalId] : undefined,
     });
     pushNote(claim, `security-claim:type=${rawClaim.type ?? 'unknown'} provenance=${rawClaim.provenance?.origin ?? 'unknown'}`);
   }
@@ -901,6 +997,14 @@ function ingestSecurityFindingsAndReviews(claimsById, findingsArtifact, reviewAr
   const claimIdsWithFindings = new Set();
   for (const [findingIndex, finding] of ensureArray(findingsArtifact.payload?.findings).entries()) {
     if (!finding?.id || !finding?.claimId) continue;
+    const findingArtifactPath = artifactPathWithPointer(findingsArtifact.path, `/findings/${findingIndex}`);
+    const findingExternalId = buildExternalId({
+      kind: 'security-finding',
+      id: finding.id,
+      sourceArtifactId,
+      artifactPath: findingArtifactPath,
+      description: 'Original security-finding/v1 id before claim-evidence canonicalization.',
+    });
     const findingReviews = reviews.get(String(finding.id)) ?? [];
     const review = findingReviews.at(-1);
     const reviewResult = String(review?.result ?? '').trim();
@@ -921,21 +1025,40 @@ function ingestSecurityFindingsAndReviews(claimsById, findingsArtifact, reviewAr
       achievedLevel: 'A0',
       status: 'partial',
     });
+    if (!hasExternalId(claim, { kind: 'security-claim', id: finding.claimId })) {
+      pushExternalId(claim, {
+        kind: 'security-claim',
+        id: finding.claimId,
+        sourceArtifactId,
+        artifactPath: findingArtifactPath,
+        description: 'Original security claim id referenced by security-finding/v1.',
+      });
+    }
     pushUniqueById(claim.evidenceRefs, {
       id: sanitizeId(`${sourceArtifactId}:${finding.id}`),
       kind: 'adversarial',
-      artifactPath: artifactPathWithPointer(findingsArtifact.path, `/findings/${findingIndex}`),
+      artifactPath: findingArtifactPath,
       sourceArtifactId,
       description: `Security finding ${finding.id}: status=${finding.status ?? 'unknown'}, severity=${severity}, review=${effectiveResult || 'unreviewed'}.`,
+      externalIds: findingExternalId ? [findingExternalId] : undefined,
     });
     if (findingReviews.length > 0 && reviewArtifact.present) {
       for (const reviewEntry of findingReviews) {
+        const reviewArtifactPath = artifactPathWithPointer(reviewArtifact.path, `/reviews/${reviewEntry.reviewIndex}`);
+        const reviewExternalId = buildExternalId({
+          kind: 'security-review',
+          id: `${finding.id}:review:${reviewEntry.reviewIndex}`,
+          sourceArtifactId: 'security-review',
+          artifactPath: reviewArtifactPath,
+          description: 'Original security-review/v1 entry anchored by finding id and review index.',
+        });
         pushUniqueById(claim.evidenceRefs, {
           id: sanitizeId(`security-review:${finding.id}:${reviewEntry.reviewIndex}`),
           kind: 'manual',
-          artifactPath: artifactPathWithPointer(reviewArtifact.path, `/reviews/${reviewEntry.reviewIndex}`),
+          artifactPath: reviewArtifactPath,
           sourceArtifactId: 'security-review',
           description: `Security review classified ${finding.id} as ${reviewEntry.result ?? 'unknown'}${reviewEntry.falsePositiveRootCause ? ` (${reviewEntry.falsePositiveRootCause})` : ''}.`,
+          externalIds: reviewExternalId ? [reviewExternalId] : undefined,
         });
       }
     }
@@ -960,6 +1083,10 @@ function hasSecuritySummary(summary) {
 
 function normalizeFinalClaim(claim) {
   claim.evidenceRefs.sort((left, right) => left.id.localeCompare(right.id));
+  sortExternalIds(claim);
+  for (const evidenceRef of claim.evidenceRefs) {
+    sortExternalIds(evidenceRef);
+  }
   claim.proofObligationRefs.sort((left, right) => left.id.localeCompare(right.id));
   claim.missingEvidenceRefs.sort((left, right) => left.id.localeCompare(right.id));
   claim.waiverRefs.sort((left, right) => left.id.localeCompare(right.id));
@@ -1108,11 +1235,41 @@ function renderTable(headers, rows) {
   ].join('\n');
 }
 
+function formatExternalId(externalId) {
+  const suffix = externalId.sourceArtifactId ? ` (${externalId.sourceArtifactId})` : '';
+  return `${externalId.kind}:${externalId.id}${suffix}`;
+}
+
+function formatExternalIdsForTable(externalIds) {
+  const items = ensureArray(externalIds);
+  return items.length > 0 ? items.map(formatExternalId).join(', ') : 'n/a';
+}
+
+function collectExternalIdRows(manifest) {
+  return manifest.claims.flatMap((claim) => [
+    ...ensureArray(claim.externalIds).map((externalId) => [
+      claim.id,
+      'claim',
+      formatExternalId(externalId),
+      externalId.artifactPath ?? 'n/a',
+    ]),
+    ...claim.evidenceRefs.flatMap((evidenceRef) =>
+      ensureArray(evidenceRef.externalIds).map((externalId) => [
+        claim.id,
+        `evidence:${evidenceRef.id}`,
+        formatExternalId(externalId),
+        externalId.artifactPath ?? evidenceRef.artifactPath,
+      ]),
+    ),
+  ]);
+}
+
 export function renderClaimEvidenceManifestMarkdown(manifest) {
   const missingEvidence = manifest.claims.flatMap((claim) =>
     claim.missingEvidenceRefs.map((entry) => ({ claimId: claim.id, ...entry })),
   );
   const waivers = manifest.claims.flatMap((claim) => claim.waiverRefs.map((entry) => ({ claimId: claim.id, ...entry })));
+  const externalIdRows = collectExternalIdRows(manifest);
   const presentSourceCount = manifest.sourceArtifacts.filter((artifact) => artifact.present).length;
   const lines = [
     '# Claim Evidence Manifest',
@@ -1142,7 +1299,7 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
     '## Claims',
     '',
     renderTable(
-      ['claim', 'criticality', 'target', 'achieved', 'status', 'evidence', 'missing', 'waivers'],
+      ['claim', 'criticality', 'target', 'achieved', 'status', 'evidence', 'missing', 'waivers', 'externalIds'],
       manifest.claims.map((claim) => [
         claim.id,
         claim.criticality,
@@ -1152,13 +1309,19 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
         String(claim.evidenceRefs.length),
         String(claim.missingEvidenceRefs.length),
         String(claim.waiverRefs.length),
+        formatExternalIdsForTable(claim.externalIds),
       ]),
     ),
-    '',
-    '## Missing evidence',
-    '',
   ];
 
+  lines.push('', '## External IDs', '');
+  if (externalIdRows.length === 0) {
+    lines.push('- none');
+  } else {
+    lines.push(renderTable(['claim', 'subject', 'externalId', 'artifactPath'], externalIdRows));
+  }
+
+  lines.push('', '## Missing evidence', '');
   if (missingEvidence.length === 0) {
     lines.push('- none');
   } else {
