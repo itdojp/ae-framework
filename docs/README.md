@@ -69,6 +69,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 
 ### Current-state operator entrypoints
 - Product / contract routing: `product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- Assurance control-plane current-state audit: `reports/ASSURANCE-CONTROL-PLANE-CURRENT-STATE.md`
 - Codex continuation and handoff: `integrations/CODEX-CONTINUATION-CONTRACT.md`, `agents/handoff.md`
 - Claude / Codex multi-agent setup: `development/agent-collaboration-setup.md`, `agents/multi-agent-safety.md`
 - CI baseline and opt-in controls: `ci/ci-baseline-checklist.md`, `ci/OPT-IN-CONTROLS.md`, `ci/branch-protection-operations.md`
