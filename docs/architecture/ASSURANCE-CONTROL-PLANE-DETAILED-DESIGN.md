@@ -25,7 +25,7 @@ Use this design with:
 - `docs/reports/ASSURANCE-CONTROL-PLANE-CURRENT-STATE.md` for the current-state inventory.
 - `docs/reference/CONTRACT-CATALOG.md` and `docs/reference/change-package-v2.md` for schema and package references.
 
-Baseline assumptions verified from current HEAD after PR #3314:
+Baseline assumptions (as of `lastVerified: 2026-05-08`):
 
 - Node.js engine: `>=20.11 <23` from `package.json`.
 - pnpm package manager: `pnpm@10.0.0` from `package.json`.
@@ -240,7 +240,7 @@ Summaries must avoid wording that claims proof beyond the linked evidence scope.
 
 | Source | Current derivation rule | Design interpretation |
 | --- | --- | --- |
-| `assurance-summary/v1` | `status=satisfied` yields achieved level at target; warning/partial/missing derives below target. | Lane aggregation is conservative and missing lanes reduce the achieved level. |
+| `assurance-summary/v1` | `status=satisfied` yields achieved level at target; `status=warning` or non-empty `missingLanes` / `missingEvidenceKinds` derives below target. | Lane aggregation is conservative and missing lanes or missing evidence kinds reduce the achieved level. |
 | `claim-evidence-manifest/v1` | `status=satisfied` is normalized to at least target; `partial` and `unresolved` are kept below target; `waived` requires waiver refs. | Manifest is the canonical per-claim support state. |
 | `change-package/v2` | Top-level `assurance.achievedLevel` and `assurance.status` are imported, while proof obligations, counterexamples, and waivers can downgrade or qualify claims. | Package-level assurance must be reconciled with manifest evidence, not blindly trusted. |
 | Policy-gate assurance | `pass`, `waived`, `report-only`, and `block` are policy outcomes over claim state. | Policy result is not an assurance level; it controls workflow behavior. |
