@@ -96,6 +96,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Zero-based ideal redesign blueprint: `docs/architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - Product fit (what to input/output, which tools to use): `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - Assurance control plane positioning: `docs/product/ASSURANCE-CONTROL-PLANE.md`
+- Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Assurance model (claim / level / lane / evidence): `docs/quality/ASSURANCE-MODEL.md`
 - Assurance operations runbook: `docs/quality/assurance-operations-runbook.md`
 - Assurance onboarding checklist: `docs/guides/assurance-onboarding-checklist.md`
@@ -191,6 +192,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - ゼロベース再設計の理想像: `docs/architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - 適用対象/入力/出力/ツール適性: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - Assurance control plane の位置付け: `docs/product/ASSURANCE-CONTROL-PLANE.md`
+- Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Assurance model（claim / level / lane / evidence）: `docs/quality/ASSURANCE-MODEL.md`
 - PR自動化（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
 - リリース運用（release verify / post-deploy verify）: `docs/operate/release-engineering.md`
