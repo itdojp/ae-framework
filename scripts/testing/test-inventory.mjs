@@ -195,6 +195,13 @@ function categorizeTest(relativePath) {
   return p.includes('/test') || p.includes('/spec') ? 'workspace' : 'unknown';
 }
 
+function inferUnitLikelyTarget(relativePath) {
+  const unitRelativePath = relativePath.split('/').slice(2).join('/');
+  if (!unitRelativePath) return 'src/*';
+  const sourceRelativePath = unitRelativePath.replace(/\.(?:test|spec)(\.[cm]?[jt]sx?)$/iu, '$1');
+  return `src/${sourceRelativePath}`;
+}
+
 function inferLikelyTarget(relativePath, category) {
   const p = relativePath.toLowerCase();
   if (p.startsWith('types/')) return 'types/*';
@@ -214,12 +221,7 @@ function inferLikelyTarget(relativePath, category) {
   if (p.startsWith('tests/a11y/')) return 'apps/web, packages/ui';
   if (p.startsWith('tests/perf/') || p.startsWith('tests/performance/')) return 'performance-sensitive source modules';
   if (p.startsWith('tests/integration/')) return 'integration boundaries';
-  if (p.startsWith('tests/unit/')) {
-    const parts = relativePath.split('/');
-    if (parts.length >= 3) {
-      return `src/${parts[2]}`;
-    }
-  }
+  if (p.startsWith('tests/unit/')) return inferUnitLikelyTarget(relativePath);
   if (category === 'unit') return 'src/*';
   return 'unknown';
 }

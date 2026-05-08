@@ -7,6 +7,9 @@ export const DEFAULT_FRESHNESS_JSON_PATH = 'artifacts/testing/coverage-freshness
 export const DEFAULT_FRESHNESS_MARKDOWN_PATH = 'artifacts/testing/coverage-freshness.md';
 
 const METRIC_NAMES = ['lines', 'statements', 'functions', 'branches'];
+const MIN_SHA_PREFIX_LENGTH = 7;
+const MAX_SHA_LENGTH = 64;
+const HEX_SHA_PATTERN = /^[0-9a-f]+$/iu;
 
 export function toPosixPath(value) {
   return String(value).split(path.sep).join('/');
@@ -48,10 +51,19 @@ function normalizeSha(value) {
   return normalized;
 }
 
+function isComparableSha(value) {
+  return (
+    typeof value === 'string'
+    && value.length >= MIN_SHA_PREFIX_LENGTH
+    && value.length <= MAX_SHA_LENGTH
+    && HEX_SHA_PATTERN.test(value)
+  );
+}
+
 function shasMatch(left, right) {
   const leftSha = normalizeSha(left);
   const rightSha = normalizeSha(right);
-  if (!leftSha || !rightSha) return false;
+  if (!isComparableSha(leftSha) || !isComparableSha(rightSha)) return false;
   return leftSha === rightSha || leftSha.startsWith(rightSha) || rightSha.startsWith(leftSha);
 }
 

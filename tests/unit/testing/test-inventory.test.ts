@@ -59,16 +59,16 @@ describe('testing inventory and coverage freshness scripts', () => {
       writeTextFile(dir, 'tests/commands/qa-run.spec.ts', 'import { it } from "vitest"; it("command", () => {});');
       writeTextFile(dir, 'packages/ui/src/button.test.tsx', 'export const Button = () => null;');
       writeTextFile(dir, 'node_modules/pkg/ignored.test.ts', 'throw new Error("must be ignored");');
-      writeCoverageSummary(dir, 'abc123');
+      writeCoverageSummary(dir, 'abc1234');
 
-      const result = runNodeScript(inventoryScriptPath, dir, ['--head-sha', 'abc123']);
+      const result = runNodeScript(inventoryScriptPath, dir, ['--head-sha', 'abc1234']);
       expect(result.status).toBe(0);
       expect(result.stderr).toBe('');
 
       const report = readJsonFile(dir, 'artifacts/testing/test-inventory.json');
       expect(existsSync(join(dir, 'artifacts/testing/test-inventory.md'))).toBe(true);
       expect(report.schemaVersion).toBe('test-inventory/v1');
-      expect(report.git.head).toBe('abc123');
+      expect(report.git.head).toBe('abc1234');
       expect(report.totals.files).toBe(5);
       expect(report.totals.categories).toEqual(
         expect.objectContaining({
@@ -82,7 +82,7 @@ describe('testing inventory and coverage freshness scripts', () => {
       expect(report.totals.costClasses).toEqual(expect.objectContaining({ S: 2, 'S-M': 3 }));
       expect(report.files).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ path: 'tests/unit/foo.test.ts', category: 'unit', likelyTarget: 'src/foo.test.ts' }),
+          expect.objectContaining({ path: 'tests/unit/foo.test.ts', category: 'unit', likelyTarget: 'src/foo.ts' }),
           expect.objectContaining({ path: 'tests/contracts/bar.test.ts', category: 'contract', likelyTarget: 'schema, fixtures, artifact producers' }),
           expect.objectContaining({ path: 'packages/ui/src/button.test.tsx', category: 'workspace', likelyTarget: 'packages/ui' }),
         ]),
@@ -94,8 +94,8 @@ describe('testing inventory and coverage freshness scripts', () => {
           status: 'fresh',
           isFresh: true,
           reportOnly: true,
-          summaryGitSha: 'abc123',
-          currentHead: 'abc123',
+          summaryGitSha: 'abc1234',
+          currentHead: 'abc1234',
           summaryPath: 'coverage/coverage-summary.json',
         }),
       );
@@ -142,11 +142,38 @@ describe('testing inventory and coverage freshness scripts', () => {
     }
   });
 
+
+  it('does not treat ambiguous short SHA prefixes as fresh coverage', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'coverage-freshness-short-sha-'));
+
+    try {
+      writeCoverageSummary(dir, 'a');
+      const result = runNodeScript(freshnessScriptPath, dir, [
+        '--head-sha',
+        'abcdef1234567890abcdef1234567890abcdef12',
+      ]);
+      expect(result.status).toBe(0);
+
+      const report = readJsonFile(dir, 'artifacts/testing/coverage-freshness.json');
+      expect(report).toEqual(
+        expect.objectContaining({
+          status: 'stale',
+          isFresh: false,
+          reportOnly: true,
+          summaryGitSha: 'a',
+        }),
+      );
+      expect(report.warnings[0]).toContain('does not match current HEAD');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('reports missing coverage summary without failing the command', () => {
     const dir = mkdtempSync(join(tmpdir(), 'coverage-freshness-missing-'));
 
     try {
-      const result = runNodeScript(freshnessScriptPath, dir, ['--head-sha', 'abc123']);
+      const result = runNodeScript(freshnessScriptPath, dir, ['--head-sha', 'abc1234']);
       expect(result.status).toBe(0);
       expect(result.stderr).toContain('warning: coverage summary is missing');
 
