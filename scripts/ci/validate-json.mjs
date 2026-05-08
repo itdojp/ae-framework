@@ -139,6 +139,20 @@ const checks = [
     semanticValidate: validateClaimEvidenceManifestSemantics
   },
   {
+    schema: 'schema/claim-level-summary-v1.schema.json',
+    fixtures: [
+      'fixtures/assurance/sample.claim-level-summary-v1.json',
+    ],
+    label: 'Claim level summary v1 schema validation'
+  },
+  {
+    schema: 'schema/temporary-override-v1.schema.json',
+    fixtures: [
+      'fixtures/assurance/sample.temporary-override-v1.json',
+    ],
+    label: 'Temporary override v1 schema validation'
+  },
+  {
     schema: 'schema/security-claim-v1.schema.json',
     fixtures: [
       'fixtures/security-assurance/sample.security-claims.json',

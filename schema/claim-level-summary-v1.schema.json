@@ -1,0 +1,459 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/claim-level-summary-v1.schema.json",
+  "title": "Claim Level Summary v1",
+  "description": "Preview per-claim assurance summary contract that projects claim-evidence, policy-gate, temporary overrides, runtime controls, and residual-risk state into a compact PR/release review artifact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "source",
+    "inputs",
+    "summary",
+    "claims"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "claim-level-summary/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "baseRef",
+        "headRef"
+      ],
+      "properties": {
+        "repository": {
+          "type": ["string", "null"],
+          "pattern": "^[^/\\s]+/[^/\\s]+$"
+        },
+        "prNumber": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "baseRef": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "headRef": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "headSha": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimEvidenceManifest",
+        "policyGateSummary",
+        "temporaryOverrides",
+        "changePackageV2"
+      ],
+      "properties": {
+        "claimEvidenceManifest": {
+          "$ref": "#/$defs/inputArtifact"
+        },
+        "policyGateSummary": {
+          "$ref": "#/$defs/inputArtifact"
+        },
+        "temporaryOverrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inputArtifact"
+          }
+        },
+        "changePackageV2": {
+          "$ref": "#/$defs/nullableInputArtifact"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "totalClaims",
+        "satisfied",
+        "tested",
+        "modelChecked",
+        "proved",
+        "runtimeMitigated",
+        "waived",
+        "unresolved",
+        "failed",
+        "notApplicable",
+        "enforcedDecisions",
+        "reportOnlyDecisions"
+      ],
+      "properties": {
+        "totalClaims": { "$ref": "#/$defs/nonNegativeInteger" },
+        "satisfied": { "$ref": "#/$defs/nonNegativeInteger" },
+        "tested": { "$ref": "#/$defs/nonNegativeInteger" },
+        "modelChecked": { "$ref": "#/$defs/nonNegativeInteger" },
+        "proved": { "$ref": "#/$defs/nonNegativeInteger" },
+        "runtimeMitigated": { "$ref": "#/$defs/nonNegativeInteger" },
+        "waived": { "$ref": "#/$defs/nonNegativeInteger" },
+        "unresolved": { "$ref": "#/$defs/nonNegativeInteger" },
+        "failed": { "$ref": "#/$defs/nonNegativeInteger" },
+        "notApplicable": { "$ref": "#/$defs/nonNegativeInteger" },
+        "enforcedDecisions": { "$ref": "#/$defs/nonNegativeInteger" },
+        "reportOnlyDecisions": { "$ref": "#/$defs/nonNegativeInteger" }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claimSummary"
+      },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "artifactPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*\\.\\.)(?!.*//).+"
+    },
+    "assuranceLevel": {
+      "type": "string",
+      "enum": ["A0", "A1", "A2", "A3", "A4"]
+    },
+    "criticality": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "claimState": {
+      "type": "string",
+      "enum": [
+        "satisfied",
+        "tested",
+        "model-checked",
+        "proved",
+        "runtime-mitigated",
+        "waived",
+        "unresolved",
+        "failed",
+        "not-applicable"
+      ]
+    },
+    "evidenceKind": {
+      "type": "string",
+      "enum": [
+        "spec",
+        "behavior",
+        "adversarial",
+        "model",
+        "proof",
+        "runtime",
+        "quality",
+        "trace",
+        "policy",
+        "manual",
+        "other"
+      ]
+    },
+    "evidenceStatus": {
+      "type": "string",
+      "enum": ["observed", "failed", "stale", "missing"]
+    },
+    "inputArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "present", "required"],
+      "properties": {
+        "path": {
+          "oneOf": [
+            { "$ref": "#/$defs/artifactPath" },
+            { "type": "null" }
+          ]
+        },
+        "schemaVersion": {
+          "type": ["string", "null"],
+          "minLength": 1
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "nullableInputArtifact": {
+      "oneOf": [
+        { "$ref": "#/$defs/inputArtifact" },
+        { "type": "null" }
+      ]
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "status",
+        "artifactPath",
+        "sourceArtifactId",
+        "description"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "kind": { "$ref": "#/$defs/evidenceKind" },
+        "status": { "$ref": "#/$defs/evidenceStatus" },
+        "artifactPath": { "$ref": "#/$defs/artifactPath" },
+        "sourceArtifactId": { "$ref": "#/$defs/nonEmptyString" },
+        "description": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "missingEvidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "expectedKind",
+        "reason",
+        "sourceArtifactId"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "expectedKind": { "$ref": "#/$defs/evidenceKind" },
+        "reason": { "$ref": "#/$defs/nonEmptyString" },
+        "sourceArtifactId": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "waiverRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "temporaryOverridePath",
+        "status",
+        "owner",
+        "expires",
+        "reason"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "temporaryOverridePath": { "$ref": "#/$defs/artifactPath" },
+        "status": {
+          "type": "string",
+          "enum": ["active", "expiringSoon", "expired", "orphan", "unknown"]
+        },
+        "owner": { "$ref": "#/$defs/nonEmptyString" },
+        "expires": {
+          "type": "string",
+          "format": "date"
+        },
+        "reason": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "assumption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "statement": { "$ref": "#/$defs/nonEmptyString" },
+        "status": {
+          "type": "string",
+          "enum": ["accepted", "needs-validation", "residual-risk"]
+        },
+        "artifactPath": { "$ref": "#/$defs/artifactPath" }
+      }
+    },
+    "runtimeControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "description"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "kind": {
+          "type": "string",
+          "enum": ["alert", "feature-flag", "rollout-guard", "monitor", "runtime-conformance", "other"]
+        },
+        "description": { "$ref": "#/$defs/nonEmptyString" },
+        "artifactPath": { "$ref": "#/$defs/artifactPath" }
+      }
+    },
+    "gateDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "result",
+        "enforced",
+        "reason",
+        "sourceArtifactId",
+        "evidenceRefs",
+        "missingEvidenceRefs",
+        "waiverRefs"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["report-only", "strict"]
+        },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "waived", "report-only", "block"]
+        },
+        "enforced": {
+          "type": "boolean"
+        },
+        "reason": { "$ref": "#/$defs/nonEmptyString" },
+        "sourceArtifactId": { "$ref": "#/$defs/nonEmptyString" },
+        "evidenceRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "missingEvidenceRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "waiverRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enforced": { "const": true }
+            },
+            "required": ["enforced"]
+          },
+          "then": {
+            "properties": {
+              "mode": { "const": "strict" },
+              "result": { "const": "block" },
+              "missingEvidenceRefs": { "minItems": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "applicability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "scope"],
+      "properties": {
+        "reason": { "$ref": "#/$defs/nonEmptyString" },
+        "scope": { "$ref": "#/$defs/nonEmptyString" },
+        "artifactPath": { "$ref": "#/$defs/artifactPath" }
+      }
+    },
+    "claimSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "statement",
+        "criticality",
+        "targetLevel",
+        "achievedLevel",
+        "state",
+        "stateRationale",
+        "decision",
+        "evidenceRefs",
+        "missingEvidenceRefs",
+        "waiverRefs",
+        "assumptions",
+        "runtimeControls",
+        "notes"
+      ],
+      "properties": {
+        "claimId": { "$ref": "#/$defs/nonEmptyString" },
+        "statement": { "$ref": "#/$defs/nonEmptyString" },
+        "criticality": { "$ref": "#/$defs/criticality" },
+        "targetLevel": { "$ref": "#/$defs/assuranceLevel" },
+        "achievedLevel": { "$ref": "#/$defs/assuranceLevel" },
+        "state": { "$ref": "#/$defs/claimState" },
+        "stateRationale": { "$ref": "#/$defs/nonEmptyString" },
+        "decision": { "$ref": "#/$defs/gateDecision" },
+        "evidenceRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidenceRef" }
+        },
+        "missingEvidenceRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/missingEvidenceRef" }
+        },
+        "waiverRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/waiverRef" }
+        },
+        "assumptions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assumption" }
+        },
+        "runtimeControls": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/runtimeControl" }
+        },
+        "applicability": { "$ref": "#/$defs/applicability" },
+        "notes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": { "const": "waived" }
+            },
+            "required": ["state"]
+          },
+          "then": {
+            "properties": {
+              "waiverRefs": { "minItems": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": { "const": "not-applicable" }
+            },
+            "required": ["state"]
+          },
+          "then": {
+            "required": ["applicability"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": { "const": "runtime-mitigated" }
+            },
+            "required": ["state"]
+          },
+          "then": {
+            "properties": {
+              "runtimeControls": { "minItems": 1 }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

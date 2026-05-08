@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "temporary-override/v1",
+  "id": "override-inventory-waiver-2026-06",
+  "status": "active",
+  "owner": "@team-platform",
+  "reason": "Temporary exception while inventory audit trail migration is completed.",
+  "expires": "2026-06-30",
+  "relatedClaimIds": ["claim-waived-audit-trail"],
+  "evidenceLink": {
+    "artifactPath": "artifacts/assurance/temporary-overrides/override-inventory-waiver-2026-06.md",
+    "sourceArtifactId": "manual-waiver-record",
+    "description": "Human-approved waiver record linked to follow-up migration issue."
+  },
+  "approvedBy": ["@security-reviewer"],
+  "createdAt": "2026-05-08T00:00:00.000Z",
+  "notes": ["Does not mark the related claim as satisfied."]
+}

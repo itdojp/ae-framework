@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "temporary-override/v1",
+  "id": "override-missing-evidence-link",
+  "status": "active",
+  "owner": "@team-platform",
+  "reason": "Missing evidence link should be rejected.",
+  "expires": "2026-06-30",
+  "relatedClaimIds": ["claim-waived-audit-trail"]
+}

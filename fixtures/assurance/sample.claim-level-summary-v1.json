@@ -1,0 +1,392 @@
+{
+  "schemaVersion": "claim-level-summary/v1",
+  "generatedAt": "2026-05-08T00:00:00.000Z",
+  "source": {
+    "repository": "itdojp/ae-framework",
+    "prNumber": 3306,
+    "baseRef": "main",
+    "headRef": "feat/3306-assurance-schemas",
+    "headSha": "0000000000000000000000000000000000000000"
+  },
+  "inputs": {
+    "claimEvidenceManifest": {
+      "path": "artifacts/assurance/claim-evidence-manifest.json",
+      "schemaVersion": "claim-evidence-manifest/v1",
+      "present": true,
+      "required": true
+    },
+    "policyGateSummary": {
+      "path": "artifacts/ci/policy-gate-summary.json",
+      "schemaVersion": "policy-gate-summary/v1",
+      "present": true,
+      "required": true
+    },
+    "temporaryOverrides": [
+      {
+        "path": "artifacts/assurance/temporary-overrides/override-inventory-waiver-2026-06.json",
+        "schemaVersion": "temporary-override/v1",
+        "present": true,
+        "required": false
+      }
+    ],
+    "changePackageV2": {
+      "path": "artifacts/change-package/change-package-v2.json",
+      "schemaVersion": "change-package/v2",
+      "present": true,
+      "required": false
+    }
+  },
+  "summary": {
+    "totalClaims": 9,
+    "satisfied": 1,
+    "tested": 1,
+    "modelChecked": 1,
+    "proved": 1,
+    "runtimeMitigated": 1,
+    "waived": 1,
+    "unresolved": 1,
+    "failed": 1,
+    "notApplicable": 1,
+    "enforcedDecisions": 1,
+    "reportOnlyDecisions": 2
+  },
+  "claims": [
+    {
+      "claimId": "claim-satisfied-inventory-reservation",
+      "statement": "Inventory reservations do not produce negative available stock.",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "achievedLevel": "A2",
+      "state": "satisfied",
+      "stateRationale": "Required behavior and policy evidence are linked and no missing evidence remains.",
+      "decision": {
+        "mode": "report-only",
+        "result": "pass",
+        "enforced": false,
+        "reason": "Claim is satisfied at target level.",
+        "sourceArtifactId": "policy-gate-summary",
+        "evidenceRefs": ["ev-policy-pass"],
+        "missingEvidenceRefs": [],
+        "waiverRefs": []
+      },
+      "evidenceRefs": [
+        {
+          "id": "ev-policy-pass",
+          "kind": "policy",
+          "status": "observed",
+          "artifactPath": "artifacts/ci/policy-gate-summary.json#/evaluation/assurance/claims/0",
+          "sourceArtifactId": "policy-gate-summary",
+          "description": "Policy gate summarized claim as pass."
+        }
+      ],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "assumptions": [],
+      "runtimeControls": [],
+      "notes": []
+    },
+    {
+      "claimId": "claim-tested-reservation-flow",
+      "statement": "Reservation flow has behavior test coverage.",
+      "criticality": "medium",
+      "targetLevel": "A2",
+      "achievedLevel": "A2",
+      "state": "tested",
+      "stateRationale": "Behavior evidence is present but no model/proof evidence is claimed.",
+      "decision": {
+        "mode": "report-only",
+        "result": "pass",
+        "enforced": false,
+        "reason": "Behavior evidence is linked.",
+        "sourceArtifactId": "claim-evidence-manifest",
+        "evidenceRefs": ["ev-behavior-test"],
+        "missingEvidenceRefs": [],
+        "waiverRefs": []
+      },
+      "evidenceRefs": [
+        {
+          "id": "ev-behavior-test",
+          "kind": "behavior",
+          "status": "observed",
+          "artifactPath": "artifacts/verify-lite/verify-lite-run-summary.json",
+          "sourceArtifactId": "verify-lite-run-summary",
+          "description": "Verify Lite behavior tests passed."
+        }
+      ],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "assumptions": [],
+      "runtimeControls": [],
+      "notes": []
+    },
+    {
+      "claimId": "claim-model-checked-inventory-state",
+      "statement": "Inventory state transition model has been checked for the stated scope.",
+      "criticality": "high",
+      "targetLevel": "A3",
+      "achievedLevel": "A3",
+      "state": "model-checked",
+      "stateRationale": "Formal summary contains model checking evidence for the modeled scope.",
+      "decision": {
+        "mode": "report-only",
+        "result": "pass",
+        "enforced": false,
+        "reason": "Model-checking evidence is linked.",
+        "sourceArtifactId": "claim-evidence-manifest",
+        "evidenceRefs": ["ev-model-check"],
+        "missingEvidenceRefs": [],
+        "waiverRefs": []
+      },
+      "evidenceRefs": [
+        {
+          "id": "ev-model-check",
+          "kind": "model",
+          "status": "observed",
+          "artifactPath": "artifacts/formal/formal-summary-v2.json",
+          "sourceArtifactId": "formal-summary-v2",
+          "description": "Model checking completed under stated assumptions."
+        }
+      ],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "assumptions": [
+        {
+          "id": "assumption-model-scope",
+          "statement": "The model covers reservation state transitions only.",
+          "status": "accepted",
+          "artifactPath": "artifacts/formal/formal-summary-v2.json#/assumptions/0"
+        }
+      ],
+      "runtimeControls": [],
+      "notes": []
+    },
+    {
+      "claimId": "claim-proved-balance-invariant",
+      "statement": "The balance invariant is discharged by proof-level evidence for the stated module.",
+      "criticality": "critical",
+      "targetLevel": "A4",
+      "achievedLevel": "A4",
+      "state": "proved",
+      "stateRationale": "Proof obligation is discharged and linked.",
+      "decision": {
+        "mode": "report-only",
+        "result": "pass",
+        "enforced": false,
+        "reason": "Proof-level evidence is linked.",
+        "sourceArtifactId": "claim-evidence-manifest",
+        "evidenceRefs": ["ev-proof"],
+        "missingEvidenceRefs": [],
+        "waiverRefs": []
+      },
+      "evidenceRefs": [
+        {
+          "id": "ev-proof",
+          "kind": "proof",
+          "status": "observed",
+          "artifactPath": "artifacts/formal/proof-summary.json",
+          "sourceArtifactId": "claim-evidence-manifest",
+          "description": "Proof obligation status is discharged."
+        }
+      ],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "assumptions": [],
+      "runtimeControls": [],
+      "notes": []
+    },
+    {
+      "claimId": "claim-runtime-mitigated-rollout",
+      "statement": "Rollout risk is mitigated by runtime controls.",
+      "criticality": "medium",
+      "targetLevel": "A3",
+      "achievedLevel": "A2",
+      "state": "runtime-mitigated",
+      "stateRationale": "Runtime control evidence exists, but proof/model evidence is not claimed.",
+      "decision": {
+        "mode": "report-only",
+        "result": "report-only",
+        "enforced": false,
+        "reason": "Runtime mitigation remains distinct from proof.",
+        "sourceArtifactId": "claim-evidence-manifest",
+        "evidenceRefs": ["ev-runtime-control"],
+        "missingEvidenceRefs": ["missing-proof-for-runtime-claim"],
+        "waiverRefs": []
+      },
+      "evidenceRefs": [
+        {
+          "id": "ev-runtime-control",
+          "kind": "runtime",
+          "status": "observed",
+          "artifactPath": "artifacts/change-package/change-package-v2.json#/runtimeControls/featureFlags/0",
+          "sourceArtifactId": "change-package-v2",
+          "description": "Feature flag limits blast radius."
+        }
+      ],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-proof-for-runtime-claim",
+          "expectedKind": "proof",
+          "reason": "Runtime mitigation does not satisfy proof evidence requirements.",
+          "sourceArtifactId": "claim-evidence-manifest"
+        }
+      ],
+      "waiverRefs": [],
+      "assumptions": [],
+      "runtimeControls": [
+        {
+          "id": "runtime-control-inventory-flag",
+          "kind": "feature-flag",
+          "description": "Inventory rollout flag remains enabled for staged deployment.",
+          "artifactPath": "artifacts/change-package/change-package-v2.json#/runtimeControls/featureFlags/0"
+        }
+      ],
+      "notes": ["Runtime control is not proof."]
+    },
+    {
+      "claimId": "claim-waived-audit-trail",
+      "statement": "Audit trail completeness is temporarily waived.",
+      "criticality": "high",
+      "targetLevel": "A3",
+      "achievedLevel": "A2",
+      "state": "waived",
+      "stateRationale": "A linked time-bounded temporary override exists.",
+      "decision": {
+        "mode": "report-only",
+        "result": "waived",
+        "enforced": false,
+        "reason": "Active waiver is linked and not counted as satisfied.",
+        "sourceArtifactId": "policy-gate-summary",
+        "evidenceRefs": ["ev-waiver-record"],
+        "missingEvidenceRefs": [],
+        "waiverRefs": ["override-inventory-waiver-2026-06"]
+      },
+      "evidenceRefs": [
+        {
+          "id": "ev-waiver-record",
+          "kind": "manual",
+          "status": "observed",
+          "artifactPath": "artifacts/assurance/temporary-overrides/override-inventory-waiver-2026-06.json",
+          "sourceArtifactId": "temporary-override",
+          "description": "Temporary override record is present."
+        }
+      ],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [
+        {
+          "id": "override-inventory-waiver-2026-06",
+          "temporaryOverridePath": "artifacts/assurance/temporary-overrides/override-inventory-waiver-2026-06.json",
+          "status": "active",
+          "owner": "@team-platform",
+          "expires": "2026-06-30",
+          "reason": "Temporary exception while inventory audit trail migration is completed."
+        }
+      ],
+      "assumptions": [],
+      "runtimeControls": [],
+      "notes": ["Waived is distinct from satisfied."]
+    },
+    {
+      "claimId": "claim-unresolved-missing-model",
+      "statement": "Model evidence for inventory reconciliation is required but missing.",
+      "criticality": "high",
+      "targetLevel": "A3",
+      "achievedLevel": "A1",
+      "state": "unresolved",
+      "stateRationale": "Required model evidence is absent.",
+      "decision": {
+        "mode": "report-only",
+        "result": "report-only",
+        "enforced": false,
+        "reason": "Missing model evidence is report-only in default mode.",
+        "sourceArtifactId": "policy-gate-summary",
+        "evidenceRefs": [],
+        "missingEvidenceRefs": ["missing-model-reconciliation"],
+        "waiverRefs": []
+      },
+      "evidenceRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-model-reconciliation",
+          "expectedKind": "model",
+          "reason": "No model summary is linked for this claim.",
+          "sourceArtifactId": "claim-evidence-manifest"
+        }
+      ],
+      "waiverRefs": [],
+      "assumptions": [],
+      "runtimeControls": [],
+      "notes": []
+    },
+    {
+      "claimId": "claim-failed-strict-proof",
+      "statement": "Strict proof requirement failed and blocks enforcement.",
+      "criticality": "critical",
+      "targetLevel": "A4",
+      "achievedLevel": "A1",
+      "state": "failed",
+      "stateRationale": "Required proof evidence failed under strict policy.",
+      "decision": {
+        "mode": "strict",
+        "result": "block",
+        "enforced": true,
+        "reason": "Strict proof evidence failed.",
+        "sourceArtifactId": "policy-gate-summary",
+        "evidenceRefs": ["ev-failed-proof"],
+        "missingEvidenceRefs": ["missing-discharged-proof"],
+        "waiverRefs": []
+      },
+      "evidenceRefs": [
+        {
+          "id": "ev-failed-proof",
+          "kind": "proof",
+          "status": "failed",
+          "artifactPath": "artifacts/formal/proof-summary.json#/proofObligations/0",
+          "sourceArtifactId": "formal-summary-v2",
+          "description": "Proof obligation failed."
+        }
+      ],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-discharged-proof",
+          "expectedKind": "proof",
+          "reason": "A discharged proof obligation is required for strict enforcement.",
+          "sourceArtifactId": "claim-evidence-manifest"
+        }
+      ],
+      "waiverRefs": [],
+      "assumptions": [],
+      "runtimeControls": [],
+      "notes": []
+    },
+    {
+      "claimId": "claim-not-applicable-ui-flow",
+      "statement": "UI-only assurance is not applicable to this docs-only change.",
+      "criticality": "low",
+      "targetLevel": "A1",
+      "achievedLevel": "A0",
+      "state": "not-applicable",
+      "stateRationale": "The claim is explicitly outside the changed scope in this preview summary.",
+      "decision": {
+        "mode": "report-only",
+        "result": "report-only",
+        "enforced": false,
+        "reason": "Applicability record documents why this claim is outside scope.",
+        "sourceArtifactId": "claim-level-summary",
+        "evidenceRefs": [],
+        "missingEvidenceRefs": [],
+        "waiverRefs": []
+      },
+      "evidenceRefs": [],
+      "missingEvidenceRefs": [],
+      "waiverRefs": [],
+      "assumptions": [],
+      "runtimeControls": [],
+      "applicability": {
+        "reason": "Docs-only change does not alter UI runtime behavior.",
+        "scope": "docs/architecture/**",
+        "artifactPath": "artifacts/change-package/change-package-v2.json#/scope"
+      },
+      "notes": ["Preview-only state; current producers must not emit this into claim-evidence-manifest/v1 or change-package/v2."]
+    }
+  ]
+}

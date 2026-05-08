@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-05-07'
+lastVerified: '2026-05-08'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -25,7 +25,7 @@ This document is the baseline inventory created for Issue #2406. It classifies t
 
 Some schemas are dual-role. This catalog records the primary role used in the current implementation.
 
-### 3. Schema inventory (snapshot: 2026-05-07)
+### 3. Schema inventory (snapshot: 2026-05-08)
 
 #### 3.1 input
 
@@ -62,6 +62,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/policy-decision-v1.schema.json`
 - `schema/pr-state-v1.schema.json`
 - `schema/policy-gate-summary-v1.schema.json`
+- `schema/temporary-override-v1.schema.json`
 - `schema/security-review-v1.schema.json`
 - `schema/quality-report.schema.json`
 - `schema/trace-validation.schema.json`
@@ -74,6 +75,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/artifact-metadata.schema.json`
 - `schema/assurance-summary.schema.json`
 - `schema/claim-evidence-manifest.schema.json`
+- `schema/claim-level-summary-v1.schema.json`
 - `schema/security-code-map-v1.schema.json`
 - `schema/symbol-index-v1.schema.json`
 - `schema/security-entrypoint-map-v1.schema.json`
@@ -129,6 +131,8 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/discovery-pack/context-pack-scaffold.yaml` | `schema/context-pack-v1.schema.json` (scaffold-compatible, non-authoritative) | `scripts/discovery-pack/compile.mjs` (`--target context-pack-scaffold`), `src/cli/discovery-cli.ts` | manual editing before Context Pack SSOT promotion, future Context Pack validation |
 | `artifacts/assurance/assurance-summary.json` | `schema/assurance-summary.schema.json` | `scripts/assurance/aggregate-lanes.mjs`, `.github/workflows/verify-lite.yml`; optional `security-claim/v1`, `security-finding/v1`, and `security-review/v1` inputs surface Security Assurance Lane evidence, including claim-type and assumption-handling summaries | `scripts/ci/validate-assurance-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/ci/enforce-assurance-summary.mjs`, `scripts/quality/build-quality-scorecard.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/agents/create-handoff.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/assurance/claim-evidence-manifest.json` | `schema/claim-evidence-manifest.schema.json` | `scripts/assurance/build-claim-evidence-manifest.mjs`, `.github/workflows/verify-lite.yml`, `fixtures/assurance/sample.claim-evidence-manifest.json` (schema contract fixture); optional `security-claim/v1`, `security-finding/v1`, and `security-review/v1` inputs are summarized under `summary.security`, preserve original security IDs in claim/evidence `externalIds`, and expose assumption handling through `securityClaimType` / `assumptionHandlingRefs` | `scripts/ci/validate-json.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `tests/contracts/claim-evidence-manifest-contract.test.ts`, `scripts/summary/render-pr-summary.mjs`, `scripts/ci/policy-gate.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
+| `artifacts/assurance/claim-level-summary.json` | `schema/claim-level-summary-v1.schema.json` | Preview/manual or future `claim-evidence-manifest/v1` projection; `fixtures/assurance/sample.claim-level-summary-v1.json` covers satisfied, tested, model-checked, proved, runtime-mitigated, waived, unresolved, failed, and not-applicable states | `scripts/ci/validate-json.mjs`, `tests/contracts/assurance-control-plane-schema-contract.test.ts`, future PR/release summary renderers; this preview does not change current `claim-evidence-manifest/v1` or `change-package/v2` emitted state sets |
+| `artifacts/assurance/temporary-overrides/*.json` | `schema/temporary-override-v1.schema.json` | Manual or policy-owner waiver records; `fixtures/assurance/sample.temporary-override-v1.json` is the schema contract fixture | `scripts/ci/validate-json.mjs`, `tests/contracts/assurance-control-plane-schema-contract.test.ts`, future claim-level summaries and policy-gate waiver projections; requires owner, reason, expiry, related claim IDs, and evidence link |
 | `artifacts/security/security-claims.json` | `schema/security-claim-v1.schema.json` | manual authoring, `ae security import-speca`, `ae security extract-claims`, `fixtures/security-assurance/sample.security-claims.json` (schema contract fixture) | `ae security map-code`, future Security Assurance Lane producers, `scripts/ci/validate-json.mjs`, `tests/contracts/security-assurance-contract.test.ts`; downstream artifacts reference `claims[].id` |
 | `artifacts/security/security-threat-model.json` | `schema/security-threat-model-v1.schema.json` | manual authoring, `ae security import-speca`, `fixtures/security-assurance/sample.security-threat-model.json` (schema contract fixture) | future security audit and review producers, `scripts/ci/validate-json.mjs`, `tests/contracts/security-assurance-contract.test.ts`; references security claim ids through `threats[].relatedClaimIds[]` |
 | `artifacts/security/security-audit-scope.json` | `schema/security-audit-scope-v1.schema.json` | manual authoring, bug-bounty/audit scope translation, `fixtures/security-assurance/sample.security-audit-scope.json` (schema contract fixture) | future security claim extraction, code-map, audit, and review producers; scope remains glob-based in the MVP contract |
@@ -185,7 +189,7 @@ The table below keeps the current producer/consumer baseline for representative 
 
 ### 6. Current gaps (next stage)
 
-- assurance contracts are still being introduced in phases; default operation stays report-only, and strict assurance enforcement is limited to Verify Lite when the `enforce-assurance` label is present.
+- assurance contracts are still being introduced in phases; default operation stays report-only, and strict assurance enforcement is limited to Verify Lite when the `enforce-assurance` label is present. `claim-level-summary/v1` and `temporary-override/v1` are preview contracts and are not mandatory producer outputs yet.
 - `schemaVersion` still mixes semver and `*/v1` style identifiers. The staged unification plan lives in `docs/reference/SCHEMA-GOVERNANCE.md`.
 - `change-package` still runs with `v1` as the production contract while `v2` remains the proof-carrying preview contract.
 - Formal Summary still operates in a dual-write + dual-validate period (`v2`: `schemaVersion=formal-summary/v2`, `contractId=formal-summary.v2`).
@@ -261,6 +265,7 @@ The table below keeps the current producer/consumer baseline for representative 
 - `schema/policy-decision-v1.schema.json`
 - `schema/pr-state-v1.schema.json`
 - `schema/policy-gate-summary-v1.schema.json`
+- `schema/temporary-override-v1.schema.json`
 - `schema/security-review-v1.schema.json`
 - `schema/quality-report.schema.json`
 - `schema/trace-validation.schema.json`
@@ -273,6 +278,7 @@ The table below keeps the current producer/consumer baseline for representative 
 - `schema/artifact-metadata.schema.json`
 - `schema/assurance-summary.schema.json`
 - `schema/claim-evidence-manifest.schema.json`
+- `schema/claim-level-summary-v1.schema.json`
 - `schema/security-code-map-v1.schema.json`
 - `schema/symbol-index-v1.schema.json`
 - `schema/security-entrypoint-map-v1.schema.json`

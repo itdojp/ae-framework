@@ -52,7 +52,7 @@ Use this document with:
 | Risk-based verification | Heavy verification is conditional and risk-based, not universal. |
 | Claim-based assurance | Assurance is evaluated per claim, not by repository-wide green status alone. |
 | Summary-first evidence | Summary artifacts are primary judgment inputs; raw logs are supporting evidence. |
-| Distinct evidence states | Current emitted evidence states are `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved`. A future `not-applicable` state requires schema and docs migration before producers emit it. |
+| Distinct evidence states | Current primary emitted evidence states are `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved`. Preview `claim-level-summary/v1` can represent `not-applicable` for PR/release projection, but current primary producers must not emit it until promotion is explicit. |
 | Human override | Human override requires owner, reason, expiry, related claim IDs, and evidence link. |
 | Contract evolution | Contract changes use compatibility windows, dual-write/dual-validate behavior, or explicit migration notes. |
 | Enforcement default | New assurance evaluation should start report-only unless an explicit policy, label, or risk profile selects enforcement. |
@@ -84,7 +84,8 @@ A claim state must not be upgraded beyond the supporting evidence.
 | `tested` | Unit, integration, property, MBT, or similar behavior evidence exists. | Formal proof. |
 | `runtime-mitigated` | Runtime control reduces operational risk. | Proof or model checking. |
 | `waived` | An owner accepted a time-bounded exception with evidence link. | Satisfied claim. |
-| `unresolved` | Required evidence is absent, stale, failed, insufficient, or intentionally out of current scope. | Passing build. |
+| `unresolved` | Required evidence is absent, stale, failed, insufficient, or intentionally out of current primary-contract scope. | Passing build. |
+| `not-applicable` | Preview-only claim-level summary projection for an explicitly out-of-scope/non-applicable claim. | A current `claim-evidence-manifest/v1` or `change-package/v2` emitted state. |
 
 ### 6. Valid and invalid wording examples
 
