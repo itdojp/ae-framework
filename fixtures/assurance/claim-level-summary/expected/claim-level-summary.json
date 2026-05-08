@@ -46,8 +46,8 @@
     "unresolved": 1,
     "failed": 1,
     "notApplicable": 1,
-    "enforcedDecisions": 1,
-    "reportOnlyDecisions": 8
+    "enforcedDecisions": 0,
+    "reportOnlyDecisions": 9
   },
   "claims": [
     {
@@ -333,10 +333,10 @@
       "state": "failed",
       "stateRationale": "Policy gate marked this claim as block; failed evidence remains decision-relevant.",
       "decision": {
-        "mode": "strict",
-        "result": "block",
-        "enforced": true,
-        "reason": "Strict policy blocks the claim until failed or missing evidence is resolved.",
+        "mode": "report-only",
+        "result": "report-only",
+        "enforced": false,
+        "reason": "Claim remains report-only until required evidence is complete or policy enforcement is enabled.",
         "sourceArtifactId": "policy-gate-summary",
         "evidenceRefs": [
           "proof-failed:strict-proof"

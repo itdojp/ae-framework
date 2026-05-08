@@ -546,6 +546,11 @@ function deriveDecision({ state, policyAssurance, policyClaim, evidenceRefs, mis
     else if (['satisfied', 'tested', 'model-checked', 'proved'].includes(state)) result = 'pass';
     else result = 'report-only';
   }
+  // policy-gate can report per-claim blocks during a report-only rollout. Keep those
+  // visible as failed evidence, but do not promote them into enforced release blocks.
+  if (policyMode === 'report-only' && result === 'block') {
+    result = 'report-only';
+  }
   const mode = result === 'block' ? 'strict' : policyMode;
   const enforced = mode === 'strict';
   return {

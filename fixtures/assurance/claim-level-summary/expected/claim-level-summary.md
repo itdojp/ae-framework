@@ -9,7 +9,7 @@
 
 | total | satisfied | tested | model-checked | proved | runtime-mitigated | waived | unresolved | failed | not-applicable | enforced | report-only |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 9 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 8 |
+| 9 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 0 | 9 |
 
 ## Claims
 
@@ -21,7 +21,7 @@
 | `policy-satisfied` | satisfied | A1 | A1 | report-only/pass | 1 | 0 | 0 |
 | `reservation-tested` | tested | A2 | A2 | report-only/pass | 1 | 0 | 0 |
 | `rollout-runtime` | runtime-mitigated | A3 | A2 | report-only/report-only | 1 | 1 | 0 |
-| `strict-proof-failure` | failed | A4 | A1 | strict/block | 2 | 1 | 0 |
+| `strict-proof-failure` | failed | A4 | A1 | report-only/report-only | 2 | 1 | 0 |
 | `ui-out-of-scope` | not-applicable | A1 | A0 | report-only/report-only | 0 | 0 | 0 |
 | `unresolved-model` | unresolved | A3 | A1 | report-only/report-only | 0 | 1 | 0 |
 
