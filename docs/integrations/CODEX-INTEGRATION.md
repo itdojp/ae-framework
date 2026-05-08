@@ -78,6 +78,26 @@ pnpm run codex:mcp:code
 pnpm run codex:mcp:spec
 ```
 
+### Agent / MCP boundary smoke test
+
+Use the focused smoke lane when changing agent entrypoints, MCP stdio servers, or provider fallback behavior:
+
+```bash
+pnpm run test:agents:smoke
+```
+
+This lane starts the Intent MCP server over stdio, verifies the client initialize handshake, lists tools, performs a basic tool call, and confirms that missing external provider API keys fall back to the local echo provider without network access.
+
+### Agent / MCP 境界 smoke test
+
+agent entrypoint、MCP stdio server、provider fallback を変更した場合は、次の focused smoke lane を使います。
+
+```bash
+pnpm run test:agents:smoke
+```
+
+この lane は Intent MCP server を stdio で起動し、client initialize handshake、tool list、basic tool call、外部 provider API key 未設定時の local echo provider fallback を確認します。
+
 ### Client setup (example)
 Configure CodeX to connect to the servers via stdio on Node 20.11+. Ensure the working directory is the ae-framework repo (or set `cwd`).
 
