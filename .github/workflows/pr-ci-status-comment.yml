@@ -328,6 +328,12 @@ jobs:
           if [ -f artifacts/assurance/assurance-summary.json ]; then
             args+=(--assurance-summary artifacts/assurance/assurance-summary.json)
           fi
+          if [ -f artifacts/assurance/claim-level-summary.json ]; then
+            args+=(--claim-level-summary artifacts/assurance/claim-level-summary.json)
+          fi
+          if [ -f artifacts/release/post-deploy-verify.json ]; then
+            args+=(--post-deploy-verify artifacts/release/post-deploy-verify.json)
+          fi
           node scripts/change-package/generate.mjs "${args[@]}"
       - name: Validate Change Package
         run: |

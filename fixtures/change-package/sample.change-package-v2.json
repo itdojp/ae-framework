@@ -116,6 +116,37 @@
       "artifactRefs": [
         "artifacts/assurance/assurance-summary.json",
         "artifacts/hermetic-reports/formal/summary.json"
+      ],
+      "targetLevel": "A3",
+      "achievedLevel": "A3",
+      "requirementRefs": []
+    },
+    {
+      "id": "strict-proof-failure",
+      "statement": "Strict proof obligation produced a counterexample that remains decision-relevant.",
+      "status": "failed",
+      "criticality": "high",
+      "targetLevel": "A4",
+      "achievedLevel": "A1",
+      "requirementRefs": [
+        "docs/quality/ARTIFACTS-CONTRACT.md"
+      ],
+      "artifactRefs": [
+        "artifacts/formal/counterexamples/cex-001.json"
+      ]
+    },
+    {
+      "id": "ui-out-of-scope",
+      "statement": "UI-only assurance is not applicable to this change-package contract update.",
+      "status": "not-applicable",
+      "criticality": "low",
+      "targetLevel": "A1",
+      "achievedLevel": "A0",
+      "requirementRefs": [
+        "docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md"
+      ],
+      "artifactRefs": [
+        "docs/ci/change-package.md"
       ]
     }
   ],
@@ -137,6 +168,15 @@
       "status": "discharged",
       "artifactRefs": [
         "artifacts/hermetic-reports/formal/tla-summary.json"
+      ]
+    },
+    {
+      "id": "obl-strict-proof-failure",
+      "claimId": "strict-proof-failure",
+      "method": "tla",
+      "status": "open",
+      "artifactRefs": [
+        "artifacts/formal/counterexamples/cex-001.json"
       ]
     }
   ],
@@ -164,5 +204,74 @@
       "ledger_v2_shadow_write"
     ]
   },
-  "waivers": []
+  "waivers": [],
+  "requirements": {
+    "changedRefs": [],
+    "claimRefs": [
+      {
+        "claimId": "strict-proof-failure",
+        "refs": [
+          "docs/quality/ARTIFACTS-CONTRACT.md"
+        ]
+      },
+      {
+        "claimId": "ui-out-of-scope",
+        "refs": [
+          "docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md"
+        ]
+      }
+    ]
+  },
+  "validationLanes": [
+    {
+      "id": "verifyLiteSummary",
+      "status": "pass",
+      "evidenceRefs": [
+        "artifacts/verify-lite/verify-lite-run-summary.json"
+      ]
+    },
+    {
+      "id": "policyGateSummary",
+      "status": "missing",
+      "evidenceRefs": [
+        "artifacts/ci/policy-gate-summary.json"
+      ]
+    }
+  ],
+  "policyDecision": {
+    "present": false,
+    "sourceArtifactPath": null,
+    "result": "unassessed",
+    "mode": "unknown",
+    "enforced": false,
+    "reason": "No policy-decision/v1 artifact is linked in this fixture.",
+    "warnings": [],
+    "errors": []
+  },
+  "releaseControls": {
+    "preDeployChecks": [
+      "pnpm run verify:lite",
+      "pnpm run artifacts:validate -- --strict=true",
+      "pnpm run test:ci:extended"
+    ],
+    "postDeployChecks": [
+      "post-deploy-verify workflow or release verification artifact required before production rollout"
+    ],
+    "rollbackSignals": [
+      "human-approval-required",
+      "missing-required-labels",
+      "post-deploy-verify.status=fail"
+    ]
+  },
+  "residualRisks": [
+    {
+      "id": "claim:strict-proof-failure:failed",
+      "statement": "failed claim requires human review: Strict proof obligation produced a counterexample that remains decision-relevant.",
+      "severity": "high",
+      "source": "change-package/v2 fixture claim status",
+      "claimIds": [
+        "strict-proof-failure"
+      ]
+    }
+  ]
 }

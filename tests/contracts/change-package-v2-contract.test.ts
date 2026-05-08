@@ -40,4 +40,45 @@ describe('change-package v2 contract', () => {
     expect(validate(invalidFixture)).toBe(false);
     expect(validate.errors?.some((entry) => entry.instancePath === '/waivers/0/relatedClaimIds')).toBe(true);
   });
+
+  it('preserves failed and not-applicable as first-class claim states', () => {
+    const claims = (fixture as { claims: Array<{ id: string; status: string }> }).claims;
+
+    expect(claims).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'strict-proof-failure', status: 'failed' }),
+      expect.objectContaining({ id: 'ui-out-of-scope', status: 'not-applicable' }),
+    ]));
+  });
+
+  it('requires waiver evidence refs in the stabilized v2 contract', () => {
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    const invalidFixture = structuredClone(fixture) as {
+      claims: Array<Record<string, unknown>>;
+      waivers: Array<Record<string, unknown>>;
+    };
+
+    invalidFixture.claims.push({
+      id: 'waived-without-evidence',
+      statement: 'Waiver evidence must remain linked.',
+      status: 'waived',
+      criticality: 'medium',
+      targetLevel: 'A2',
+      achievedLevel: 'A1',
+      requirementRefs: [],
+      artifactRefs: ['docs/ci/change-package.md'],
+    });
+    invalidFixture.waivers = [
+      {
+        owner: '@team-platform',
+        expires: '2026-12-31',
+        reason: 'temporary rollout exception',
+        relatedClaimIds: ['waived-without-evidence'],
+      },
+    ];
+
+    expect(validate(invalidFixture)).toBe(false);
+    expect(validate.errors?.some((entry) => entry.instancePath === '/waivers/0')).toBe(true);
+  });
 });

@@ -27,7 +27,17 @@ const CLAIM_STATES = new Set([
   'failed',
   'not-applicable',
 ]);
-const CHANGE_PACKAGE_STATES = new Set(['proved', 'model-checked', 'tested', 'runtime-mitigated', 'waived', 'unresolved']);
+const CHANGE_PACKAGE_STATES = new Set([
+  'satisfied',
+  'proved',
+  'model-checked',
+  'tested',
+  'runtime-mitigated',
+  'waived',
+  'unresolved',
+  'failed',
+  'not-applicable',
+]);
 const DECISION_RESULTS = new Set(['pass', 'waived', 'report-only', 'block']);
 const DECISION_MODES = new Set(['report-only', 'strict']);
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');

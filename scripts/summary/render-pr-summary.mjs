@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+/* global process, console */
+/* eslint-disable no-empty */
 import fs from 'node:fs';
 function r(p){ try { return JSON.parse(fs.readFileSync(p,'utf-8')); } catch { return undefined; } }
 const lang = (process.env.SUMMARY_LANG||'en').toLowerCase();
@@ -52,6 +54,7 @@ if (Array.isArray(props) && props.length) {
     }
   }
 }
+void propsCount;
 const ltlLine = ltlSug && typeof ltlSug.count === 'number'
   ? t(`LTL sugg: ${ltlSug.count}`, `LTL候補: ${ltlSug.count}`)
   : t('LTL sugg: n/a', 'LTL候補: なし');
@@ -152,14 +155,28 @@ const changePackageV2Waivers = Array.isArray(changePackageV2?.waivers) ? changeP
 const changePackageV2Assurance = changePackageV2?.assurance && typeof changePackageV2.assurance === 'object'
   ? changePackageV2.assurance
   : null;
+const changePackageV2StateCounts = changePackageV2Claims.reduce((counts, claim) => {
+  const status = String(claim?.status || 'unknown');
+  counts.set(status, (counts.get(status) || 0) + 1);
+  return counts;
+}, new Map());
+const changePackageV2StateLine = ['satisfied', 'tested', 'model-checked', 'proved', 'runtime-mitigated', 'waived', 'unresolved', 'failed', 'not-applicable']
+  .map((status) => `${status}=${changePackageV2StateCounts.get(status) || 0}`)
+  .join(', ');
+const changePackageV2PolicyDecision = changePackageV2?.policyDecision && typeof changePackageV2.policyDecision === 'object'
+  ? changePackageV2.policyDecision
+  : null;
+const changePackageV2ReleaseControls = changePackageV2?.releaseControls && typeof changePackageV2.releaseControls === 'object'
+  ? changePackageV2.releaseControls
+  : null;
 const changePackageV2Line = changePackageV2?.schemaVersion === 'change-package/v2'
   ? t(
-      `Change Package v2: claims=${changePackageV2Claims.length}, proofObligations=${changePackageV2ProofObligations.length}, waivers=${changePackageV2Waivers.length}, assurance=${changePackageV2Assurance?.targetLevel ?? 'n/a'}/${changePackageV2Assurance?.achievedLevel ?? 'n/a'}/${changePackageV2Assurance?.status ?? 'n/a'}`,
-      `Change Package v2: claims=${changePackageV2Claims.length}, proofObligations=${changePackageV2ProofObligations.length}, waivers=${changePackageV2Waivers.length}, assurance=${changePackageV2Assurance?.targetLevel ?? 'n/a'}/${changePackageV2Assurance?.achievedLevel ?? 'n/a'}/${changePackageV2Assurance?.status ?? 'n/a'}`,
+      `Change Package v2: claims=${changePackageV2Claims.length}, proofObligations=${changePackageV2ProofObligations.length}, waivers=${changePackageV2Waivers.length}, assurance=${changePackageV2Assurance?.targetLevel ?? 'n/a'}/${changePackageV2Assurance?.achievedLevel ?? 'n/a'}/${changePackageV2Assurance?.status ?? 'n/a'}, claimStates=${changePackageV2StateLine}, evidencePackage=artifacts/change-package/change-package-v2.json`,
+      `Change Package v2: claims=${changePackageV2Claims.length}, proofObligations=${changePackageV2ProofObligations.length}, waivers=${changePackageV2Waivers.length}, assurance=${changePackageV2Assurance?.targetLevel ?? 'n/a'}/${changePackageV2Assurance?.achievedLevel ?? 'n/a'}/${changePackageV2Assurance?.status ?? 'n/a'}, claimStates=${changePackageV2StateLine}, evidencePackage=artifacts/change-package/change-package-v2.json`,
     )
   : '';
 const changePackageV2DetailBlock = changePackageV2Line
-  ? `- ${changePackageV2Line}\n`
+  ? `- ${changePackageV2Line}\n- Change Package v2 claim states: ${changePackageV2StateLine}\n${changePackageV2PolicyDecision ? `- Change Package v2 policy decision: ${changePackageV2PolicyDecision.result ?? 'n/a'} (${changePackageV2PolicyDecision.mode ?? 'n/a'}, enforced=${changePackageV2PolicyDecision.enforced ?? 'n/a'})\n` : ''}${changePackageV2ReleaseControls ? `- Change Package v2 release controls: pre=${Array.isArray(changePackageV2ReleaseControls.preDeployChecks) ? changePackageV2ReleaseControls.preDeployChecks.length : 'n/a'}, post=${Array.isArray(changePackageV2ReleaseControls.postDeployChecks) ? changePackageV2ReleaseControls.postDeployChecks.length : 'n/a'}, rollback=${Array.isArray(changePackageV2ReleaseControls.rollbackSignals) ? changePackageV2ReleaseControls.rollbackSignals.length : 'n/a'}\n` : ''}`
   : '';
 const qualityScorecardSummary = qualityScorecard?.summary && typeof qualityScorecard.summary === 'object'
   ? qualityScorecard.summary

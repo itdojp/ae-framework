@@ -24,15 +24,20 @@ const DEFAULT_MODE = 'detailed';
 const DEFAULT_CLAIM_EVIDENCE_MANIFEST_PATH = 'artifacts/assurance/claim-evidence-manifest.json';
 const DEFAULT_POLICY_DECISION_PATH = 'artifacts/ci/policy-decision-js-v1.json';
 const DEFAULT_ASSURANCE_SUMMARY_PATH = 'artifacts/assurance/assurance-summary.json';
+const DEFAULT_CLAIM_LEVEL_SUMMARY_PATH = 'artifacts/assurance/claim-level-summary.json';
+const DEFAULT_POST_DEPLOY_VERIFY_PATH = 'artifacts/release/post-deploy-verify.json';
 
 const ASSURANCE_LEVELS = ['A0', 'A1', 'A2', 'A3', 'A4'];
 const V2_CLAIM_STATUSES = new Set([
+  'satisfied',
   'proved',
   'model-checked',
   'tested',
   'runtime-mitigated',
   'waived',
   'unresolved',
+  'failed',
+  'not-applicable',
 ]);
 const V2_PROOF_METHODS = new Set([
   'spec',
@@ -130,6 +135,8 @@ function parseArgs(argv = process.argv) {
     claimEvidenceManifestPath: DEFAULT_CLAIM_EVIDENCE_MANIFEST_PATH,
     policyDecisionPath: DEFAULT_POLICY_DECISION_PATH,
     assuranceSummaryPath: DEFAULT_ASSURANCE_SUMMARY_PATH,
+    claimLevelSummaryPath: DEFAULT_CLAIM_LEVEL_SUMMARY_PATH,
+    postDeployVerifyPath: DEFAULT_POST_DEPLOY_VERIFY_PATH,
     repository: '',
     prNumber: null,
     baseRef: '',
@@ -262,6 +269,22 @@ function parseArgs(argv = process.argv) {
       options.assuranceSummaryPath = arg.slice('--assurance-summary='.length);
       continue;
     }
+    if (arg === '--claim-level-summary') {
+      options.claimLevelSummaryPath = readValue('--claim-level-summary');
+      continue;
+    }
+    if (arg.startsWith('--claim-level-summary=')) {
+      options.claimLevelSummaryPath = arg.slice('--claim-level-summary='.length);
+      continue;
+    }
+    if (arg === '--post-deploy-verify') {
+      options.postDeployVerifyPath = readValue('--post-deploy-verify');
+      continue;
+    }
+    if (arg.startsWith('--post-deploy-verify=')) {
+      options.postDeployVerifyPath = arg.slice('--post-deploy-verify='.length);
+      continue;
+    }
     if (arg === '--repo') {
       options.repository = readValue('--repo');
       continue;
@@ -351,6 +374,8 @@ function printHelp() {
     + `  --claim-evidence-manifest <path> claim-evidence-manifest/v1 input for v2 (default: ${DEFAULT_CLAIM_EVIDENCE_MANIFEST_PATH})\n`
     + `  --policy-decision <path>      policy-decision/v1 input for v2 (default: ${DEFAULT_POLICY_DECISION_PATH})\n`
     + `  --assurance-summary <path>    assurance-summary/v1 input for v2 (default: ${DEFAULT_ASSURANCE_SUMMARY_PATH})\n`
+    + `  --claim-level-summary <path>  claim-level-summary/v1 input for v2 (default: ${DEFAULT_CLAIM_LEVEL_SUMMARY_PATH})\n`
+    + `  --post-deploy-verify <path>   post-deploy verification input for v2 release controls (default: ${DEFAULT_POST_DEPLOY_VERIFY_PATH})\n`
     + `  --changed-files-file <path>   newline-separated changed files input\n`
     + `  --artifact-root <path>        root path for evidence existence checks (default: ${DEFAULT_ARTIFACT_ROOT})\n`
     + `  --mode <digest|detailed>      markdown detail level (default: ${DEFAULT_MODE})\n`
@@ -429,8 +454,19 @@ function normalizeCriticality(value) {
 }
 
 function normalizeV2ClaimStatus(value, fallback = 'unresolved') {
-  const candidate = String(value || '').trim();
+  const candidate = String(value || '').trim().toLowerCase();
   return V2_CLAIM_STATUSES.has(candidate) ? candidate : fallback;
+}
+
+function normalizeDecisionResult(value, fallback = 'unassessed') {
+  const candidate = String(value || '').trim().toLowerCase();
+  return ['pass', 'waived', 'report-only', 'block', 'unassessed'].includes(candidate) ? candidate : fallback;
+}
+
+function normalizeDecisionMode(value, enforced = false) {
+  const candidate = String(value || '').trim().toLowerCase();
+  if (candidate === 'strict' || candidate === 'report-only') return candidate;
+  return enforced ? 'strict' : 'unknown';
 }
 
 function normalizeV2ProofMethod(value) {
@@ -461,6 +497,30 @@ function normalizeArtifactRefs(values, fallback) {
     .map(stripJsonPointer)
     .filter(Boolean);
   return refs.length > 0 ? refs : [fallback].filter(Boolean);
+}
+
+function collectRequirementRefs(rawClaim) {
+  const directRefs = [
+    ...ensureArray(rawClaim?.requirementRefs),
+    ...ensureArray(rawClaim?.requirements),
+    ...ensureArray(rawClaim?.requirementIds),
+  ];
+  const specEvidenceRefs = ensureArray(rawClaim?.evidenceRefs)
+    .filter((entry) => String(entry?.kind || '').trim().toLowerCase() === 'spec')
+    .map((entry) => entry?.artifactPath || entry?.id);
+  return uniqueStrings([...directRefs, ...specEvidenceRefs]);
+}
+
+function normalizeClaimDecision(rawDecision) {
+  const decision = ensureObject(rawDecision);
+  const result = normalizeDecisionResult(decision.result);
+  const enforced = Boolean(decision.enforced);
+  return {
+    result,
+    mode: normalizeDecisionMode(decision.mode, enforced),
+    enforced,
+    reason: String(decision.reason || 'No policy decision was linked for this claim.'),
+  };
 }
 
 function loadOptionalJsonSource(id, filePath, description) {
@@ -495,11 +555,13 @@ function inferV2StatusFromManifestClaim(claim) {
 function mapPolicyClaimResultToV2Status(result, status) {
   const normalizedResult = String(result || '').trim().toLowerCase();
   if (normalizedResult === 'waived') return 'waived';
-  if (normalizedResult === 'block' || normalizedResult === 'report-only') return 'unresolved';
+  if (normalizedResult === 'block') return 'failed';
+  if (normalizedResult === 'report-only') return 'unresolved';
   const normalizedStatus = String(status || '').trim().toLowerCase();
   if (normalizedStatus === 'waived') return 'waived';
   if (normalizedStatus === 'partial' || normalizedStatus === 'unresolved') return 'unresolved';
-  return 'tested';
+  if (V2_CLAIM_STATUSES.has(normalizedStatus)) return normalizedStatus;
+  return 'satisfied';
 }
 
 function upsertClaim(claimsById, rawClaim) {
@@ -510,6 +572,10 @@ function upsertClaim(claimsById, rawClaim) {
     statement: `Assurance claim ${id}`,
     status: 'unresolved',
     criticality: 'medium',
+    targetLevel: 'A0',
+    achievedLevel: 'A0',
+    requirementRefs: [],
+    decision: normalizeClaimDecision(null),
     artifactRefs: [],
   };
   const merged = {
@@ -517,6 +583,13 @@ function upsertClaim(claimsById, rawClaim) {
     statement: String(rawClaim?.statement || existing.statement || `Assurance claim ${id}`),
     status: normalizeV2ClaimStatus(rawClaim?.status, existing.status),
     criticality: normalizeCriticality(rawClaim?.criticality || existing.criticality),
+    targetLevel: normalizeAssuranceLevel(rawClaim?.targetLevel, existing.targetLevel),
+    achievedLevel: normalizeAssuranceLevel(rawClaim?.achievedLevel, existing.achievedLevel),
+    requirementRefs: uniqueStrings([
+      ...ensureArray(existing.requirementRefs),
+      ...collectRequirementRefs(rawClaim),
+    ]),
+    decision: rawClaim?.decision ? normalizeClaimDecision(rawClaim.decision) : existing.decision,
     artifactRefs: normalizeArtifactRefs([
       ...ensureArray(existing.artifactRefs),
       ...ensureArray(rawClaim?.artifactRefs),
@@ -541,6 +614,9 @@ function ingestManifestForV2(claimsById, proofObligations, waivers, source) {
       statement: rawClaim?.statement,
       criticality: rawClaim?.criticality,
       status: inferV2StatusFromManifestClaim(rawClaim),
+      targetLevel: rawClaim?.targetLevel,
+      achievedLevel: rawClaim?.achievedLevel,
+      requirementRefs: rawClaim?.requirementRefs,
       artifactRefs: collectManifestArtifactRefs(rawClaim, source.path),
     });
     if (!claim) continue;
@@ -563,6 +639,7 @@ function ingestManifestForV2(claimsById, proofObligations, waivers, source) {
         expires: normalizeDate(rawWaiver?.expires),
         reason: String(rawWaiver?.reason || `Waiver recorded for claim ${claim.id}`),
         relatedClaimIds: [claim.id],
+        evidenceRefs: normalizeArtifactRefs([rawWaiver?.artifactPath, rawWaiver?.temporaryOverridePath, source.path], source.path),
       });
     }
   }
@@ -578,8 +655,81 @@ function ingestAssuranceSummaryForV2(claimsById, source) {
       statement: rawClaim?.statement,
       criticality: rawClaim?.criticality,
       status: String(rawClaim?.status || '').trim() === 'satisfied' ? 'tested' : 'unresolved',
+      targetLevel: rawClaim?.targetLevel,
+      achievedLevel: inferAssuranceSummaryAchievedLevel(rawClaim),
+      requirementRefs: rawClaim?.requirementRefs,
       artifactRefs: ensureArray(rawClaim?.evidence).map((entry) => entry?.artifactPath),
     });
+  }
+}
+
+function ingestClaimLevelSummaryForV2(claimsById, proofObligations, waivers, assumptions, runtimeControls, source) {
+  const summary = ensureObject(source.payload);
+  for (const rawClaim of ensureArray(summary.claims)) {
+    const claimId = String(rawClaim?.claimId || rawClaim?.id || '').trim();
+    if (!claimId) continue;
+    const artifactRefs = [
+      ...ensureArray(rawClaim?.evidenceRefs).map((entry) => entry?.artifactPath),
+      ...ensureArray(rawClaim?.missingEvidenceRefs).map((entry) => `${source.path}#/claims/${claimId}/missingEvidenceRefs/${entry?.id || 'missing'}`),
+      source.path,
+    ];
+    const claim = upsertClaim(claimsById, {
+      id: claimId,
+      statement: rawClaim?.statement,
+      criticality: rawClaim?.criticality,
+      status: rawClaim?.state,
+      targetLevel: rawClaim?.targetLevel,
+      achievedLevel: rawClaim?.achievedLevel,
+      requirementRefs: collectRequirementRefs(rawClaim),
+      decision: rawClaim?.decision,
+      artifactRefs,
+    });
+    if (!claim) continue;
+
+    for (const rawEvidence of ensureArray(rawClaim?.evidenceRefs)) {
+      const kind = String(rawEvidence?.kind || '').trim().toLowerCase();
+      if (!['proof', 'model', 'runtime'].includes(kind)) continue;
+      const evidenceId = String(rawEvidence?.id || `${claim.id}:${kind}:${proofObligations.length}`).trim();
+      if (!evidenceId) continue;
+      proofObligations.push({
+        id: `${evidenceId}:obligation`,
+        claimId: claim.id,
+        method: normalizeV2ProofMethod(kind),
+        status: String(rawEvidence?.status || '').trim().toLowerCase() === 'observed' ? 'discharged' : 'open',
+        artifactRefs: normalizeArtifactRefs([rawEvidence?.artifactPath], source.path),
+      });
+    }
+
+    for (const rawWaiver of ensureArray(rawClaim?.waiverRefs)) {
+      waivers.push({
+        owner: String(rawWaiver?.owner || 'unknown'),
+        expires: normalizeDate(rawWaiver?.expires),
+        reason: String(rawWaiver?.reason || `Waiver recorded for claim ${claim.id}`),
+        relatedClaimIds: [claim.id],
+        evidenceRefs: normalizeArtifactRefs([rawWaiver?.temporaryOverridePath, rawWaiver?.artifactPath, source.path], source.path),
+      });
+    }
+
+    for (const rawAssumption of ensureArray(rawClaim?.assumptions)) {
+      assumptions.push({
+        id: String(rawAssumption?.id || `${claim.id}:assumption:${assumptions.length}`),
+        statement: String(rawAssumption?.statement || `Assumption linked to ${claim.id}.`),
+        owner: String(rawAssumption?.owner || 'unknown'),
+        evidenceRefs: normalizeArtifactRefs([rawAssumption?.artifactPath, source.path], source.path),
+        status: String(rawAssumption?.status || ''),
+        claimId: claim.id,
+      });
+    }
+
+    for (const rawControl of ensureArray(rawClaim?.runtimeControls)) {
+      runtimeControls.push({
+        id: String(rawControl?.id || `${claim.id}:runtime-control:${runtimeControls.length}`),
+        kind: String(rawControl?.kind || 'other'),
+        description: String(rawControl?.description || `Runtime control linked to ${claim.id}.`),
+        artifactPath: rawControl?.artifactPath,
+        claimId: claim.id,
+      });
+    }
   }
 }
 
@@ -635,6 +785,7 @@ function ingestPolicyDecisionForV2(claimsById, waivers, source) {
       expires: normalizeDate(rawWaiver?.expires),
       reason: String(rawWaiver?.reason || `Policy decision waiver for claim ${claimId}`),
       relatedClaimIds: [claimId],
+      evidenceRefs: normalizeArtifactRefs([source.path], source.path),
     });
   }
 }
@@ -662,6 +813,7 @@ function dedupeWaivers(entries) {
       expires: normalizeDate(entry.expires),
       reason: String(entry.reason || 'Change-package v2 waiver'),
       relatedClaimIds,
+      evidenceRefs: normalizeArtifactRefs(entry.evidenceRefs, DEFAULT_CLAIM_LEVEL_SUMMARY_PATH),
     };
     const key = `${normalized.owner}::${normalized.expires}::${normalized.reason}::${normalized.relatedClaimIds.join(',')}`;
     if (seen.has(key)) continue;
@@ -691,16 +843,29 @@ function buildV2Evidence(baseEvidence, sources) {
   };
 }
 
-function buildV2Assurance(claims, manifestSource, policyDecisionSource, assuranceSummarySource) {
+function summarizeClaimStatuses(claims) {
+  const summary = new Map();
+  for (const claim of claims) {
+    summary.set(claim.status, (summary.get(claim.status) || 0) + 1);
+  }
+  return summary;
+}
+
+function buildV2Assurance(claims, manifestSource, policyDecisionSource, assuranceSummarySource, claimLevelSummarySource) {
   const manifestClaims = ensureArray(manifestSource.payload?.claims);
   const assuranceClaims = ensureArray(assuranceSummarySource.payload?.claims);
+  const claimLevelClaims = ensureArray(claimLevelSummarySource.payload?.claims);
   const targetLevel = maxAssuranceLevel([
     ...manifestClaims.map((claim) => claim?.targetLevel),
     ...assuranceClaims.map((claim) => claim?.targetLevel),
+    ...claimLevelClaims.map((claim) => claim?.targetLevel),
+    ...claims.map((claim) => claim?.targetLevel),
   ]);
   const achievedLevel = minAssuranceLevel([
     ...manifestClaims.map((claim) => claim?.achievedLevel),
     ...assuranceClaims.map(inferAssuranceSummaryAchievedLevel),
+    ...claimLevelClaims.map((claim) => claim?.achievedLevel),
+    ...claims.map((claim) => claim?.achievedLevel),
   ], targetLevel);
   const policyAssurance = ensureObject(policyDecisionSource.payload?.evaluation?.assurance);
   const policyResult = String(policyAssurance.result || '').trim().toLowerCase();
@@ -712,7 +877,12 @@ function buildV2Assurance(claims, manifestSource, policyDecisionSource, assuranc
     .filter((claim) => sourceStatusesByClaimId.get(claim.id) !== 'partial');
 
   let status = 'unassessed';
-  if (policyResult === 'block' || sourceStatuses.includes('unresolved') || generatedUnresolvedClaims.length > 0) {
+  const claimStatusSummary = summarizeClaimStatuses(claims);
+  if (claimStatusSummary.get('failed') > 0 || policyResult === 'block') {
+    status = 'failed';
+  } else if (claims.length > 0 && claims.every((claim) => claim.status === 'not-applicable')) {
+    status = 'not-applicable';
+  } else if (sourceStatuses.includes('unresolved') || generatedUnresolvedClaims.length > 0) {
     status = 'unresolved';
   } else if (policyResult === 'report-only' || manifestStatuses.includes('partial') || sourceStatuses.includes('partial')) {
     status = 'partial';
@@ -729,6 +899,137 @@ function buildV2Assurance(claims, manifestSource, policyDecisionSource, assuranc
     achievedLevel,
     status,
   };
+}
+
+function inferChangedRequirementRefs(changedFiles) {
+  return uniqueStrings(changedFiles.filter((filePath) => {
+    const normalized = String(filePath || '').trim().toLowerCase();
+    return normalized.startsWith('requirements/')
+      || normalized.startsWith('reqs/')
+      || normalized.includes('/requirements/')
+      || normalized.startsWith('spec/')
+      || normalized.startsWith('docs/product/')
+      || normalized.startsWith('docs/requirements/');
+  }));
+}
+
+function buildV2Requirements(changedFiles, claims) {
+  return {
+    changedRefs: inferChangedRequirementRefs(changedFiles),
+    claimRefs: claims
+      .filter((claim) => ensureArray(claim.requirementRefs).length > 0)
+      .map((claim) => ({
+        claimId: claim.id,
+        refs: uniqueStrings(claim.requirementRefs),
+      }))
+      .sort((left, right) => left.claimId.localeCompare(right.claimId)),
+  };
+}
+
+function mapEvidenceStatusToLaneStatus(status) {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (normalized === 'failed') return 'fail';
+  if (normalized === 'missing' || normalized === 'stale') return 'warn';
+  return 'pass';
+}
+
+function mergeLaneStatus(current, next) {
+  const rank = { missing: 0, pass: 1, warn: 2, fail: 3 };
+  return rank[next] > rank[current] ? next : current;
+}
+
+function buildValidationLanes(claimLevelSummarySource, baseEvidence) {
+  const lanesById = new Map();
+  for (const item of ensureArray(baseEvidence.items)) {
+    const status = item.present ? 'pass' : 'missing';
+    lanesById.set(item.id, {
+      id: item.id,
+      status,
+      evidenceRefs: [item.path],
+    });
+  }
+  for (const claim of ensureArray(claimLevelSummarySource.payload?.claims)) {
+    for (const evidence of [
+      ...ensureArray(claim?.evidenceRefs),
+      ...ensureArray(claim?.missingEvidenceRefs).map((entry) => ({
+        ...entry,
+        kind: entry?.expectedKind,
+        status: 'missing',
+        artifactPath: claimLevelSummarySource.path,
+      })),
+    ]) {
+      const laneId = String(evidence?.kind || evidence?.expectedKind || 'other').trim().toLowerCase() || 'other';
+      const laneStatus = mapEvidenceStatusToLaneStatus(evidence?.status);
+      const existing = lanesById.get(laneId) || { id: laneId, status: 'pass', evidenceRefs: [] };
+      existing.status = mergeLaneStatus(existing.status, laneStatus);
+      existing.evidenceRefs = uniqueStrings([...existing.evidenceRefs, evidence?.artifactPath, evidence?.id]);
+      lanesById.set(laneId, existing);
+    }
+  }
+  return [...lanesById.values()].sort((left, right) => left.id.localeCompare(right.id));
+}
+
+function buildPolicyDecisionSummary(policyDecisionSource) {
+  const assurance = ensureObject(policyDecisionSource.payload?.evaluation?.assurance);
+  const result = normalizeDecisionResult(assurance.result);
+  const enforced = String(assurance.mode || '').trim().toLowerCase() === 'strict' || result === 'block';
+  return {
+    present: policyDecisionSource.present,
+    sourceArtifactPath: policyDecisionSource.present ? policyDecisionSource.path : null,
+    result,
+    mode: policyDecisionSource.present ? normalizeDecisionMode(assurance.mode, enforced) : 'unknown',
+    enforced,
+    reason: policyDecisionSource.present
+      ? `Policy decision assurance result is ${result}.`
+      : 'No policy-decision/v1 artifact was available when the change package was generated.',
+    warnings: ensureArray(assurance.warnings).map(String),
+    errors: ensureArray(assurance.errors).map(String),
+  };
+}
+
+function buildReleaseControls(baseChangePackage, postDeploySource) {
+  const postDeployChecks = postDeploySource.present
+    ? [postDeploySource.path]
+    : ['post-deploy-verify workflow or release verification artifact required before production rollout'];
+  return {
+    preDeployChecks: uniqueStrings(baseChangePackage.reproducibility.commands),
+    postDeployChecks,
+    rollbackSignals: uniqueStrings([
+      ...ensureArray(baseChangePackage.monitoringPlan.alerts),
+      'post-deploy-verify.status=fail',
+    ]),
+  };
+}
+
+function buildResidualRisks(claims, assumptions) {
+  const risks = [];
+  for (const claim of claims) {
+    if (!['failed', 'unresolved', 'runtime-mitigated', 'waived'].includes(claim.status)) continue;
+    risks.push({
+      id: `claim:${claim.id}:${claim.status}`,
+      statement: `${claim.status} claim requires human review: ${claim.statement}`,
+      severity: normalizeCriticality(claim.criticality),
+      source: 'change-package/v2 claim status',
+      claimIds: [claim.id],
+    });
+  }
+  for (const assumption of assumptions) {
+    if (!['needs-validation', 'residual-risk'].includes(String(assumption.status || ''))) continue;
+    risks.push({
+      id: `assumption:${assumption.id}`,
+      statement: assumption.statement,
+      severity: 'medium',
+      source: 'claim-level-summary/v1 assumption',
+      owner: assumption.owner,
+      claimIds: [assumption.claimId].filter(Boolean),
+    });
+  }
+  const seen = new Set();
+  return risks.filter((risk) => {
+    if (seen.has(risk.id)) return false;
+    seen.add(risk.id);
+    return true;
+  }).sort((left, right) => left.id.localeCompare(right.id));
 }
 
 function toPositiveInt(value) {
@@ -1038,24 +1339,39 @@ function renderTable(headers, rows) {
   ].join('\n');
 }
 
-function renderV2DetailedSections(changePackage) {
+function renderStatusCounts(claims) {
+  const counts = summarizeClaimStatuses(claims);
+  return ['satisfied', 'tested', 'model-checked', 'proved', 'runtime-mitigated', 'waived', 'unresolved', 'failed', 'not-applicable']
+    .map((status) => `${status}=${counts.get(status) || 0}`)
+    .join(', ');
+}
+
+function renderV2DetailedSections(changePackage, outputJsonPath) {
   if (changePackage.schemaVersion !== 'change-package/v2') {
     return [];
   }
   const claims = ensureArray(changePackage.claims);
   const proofObligations = ensureArray(changePackage.proofObligations);
   const waivers = ensureArray(changePackage.waivers);
+  const residualRisks = ensureArray(changePackage.residualRisks);
   return [
-    '### Assurance',
+    '### Proof-carrying Assurance',
+    `- evidence package: \`${outputJsonPath || DEFAULT_V2_OUTPUT_JSON_PATH}\``,
     `- target/achieved/status: ${changePackage.assurance.targetLevel}/${changePackage.assurance.achievedLevel}/${changePackage.assurance.status}`,
+    `- claim states: ${renderStatusCounts(claims)}`,
+    `- policy decision: ${changePackage.policyDecision.result} (${changePackage.policyDecision.mode}, enforced=${changePackage.policyDecision.enforced})`,
+    `- changed requirement refs: ${ensureArray(changePackage.requirements.changedRefs).length > 0 ? changePackage.requirements.changedRefs.join(', ') : '(none)'}`,
     '',
     '### Claims',
     renderTable(
-      ['id', 'status', 'criticality', 'artifactRefs', 'statement'],
+      ['id', 'status', 'target', 'achieved', 'criticality', 'requirements', 'artifactRefs', 'statement'],
       claims.map((claim) => [
         claim.id,
         claim.status,
+        claim.targetLevel,
+        claim.achievedLevel,
         claim.criticality,
+        ensureArray(claim.requirementRefs).join(', ') || '(none)',
         String(ensureArray(claim.artifactRefs).length),
         claim.statement,
       ]),
@@ -1073,13 +1389,40 @@ function renderV2DetailedSections(changePackage) {
       ]),
     ),
     '',
+    '### Validation Lanes',
+    renderTable(
+      ['id', 'status', 'evidenceRefs'],
+      ensureArray(changePackage.validationLanes).map((lane) => [
+        lane.id,
+        lane.status,
+        String(ensureArray(lane.evidenceRefs).length),
+      ]),
+    ),
+    '',
+    '### Release / Post-deploy Controls',
+    `- pre-deploy checks: ${ensureArray(changePackage.releaseControls.preDeployChecks).length}`,
+    `- post-deploy checks: ${ensureArray(changePackage.releaseControls.postDeployChecks).join(', ') || '(none)'}`,
+    `- rollback signals: ${ensureArray(changePackage.releaseControls.rollbackSignals).join(', ') || '(none)'}`,
+    '',
+    '### Residual Risks',
+    renderTable(
+      ['id', 'severity', 'claimIds', 'statement'],
+      residualRisks.map((risk) => [
+        risk.id,
+        risk.severity,
+        ensureArray(risk.claimIds).join(', '),
+        risk.statement,
+      ]),
+    ),
+    '',
     '### Waivers',
     renderTable(
-      ['owner', 'expires', 'relatedClaimIds', 'reason'],
+      ['owner', 'expires', 'relatedClaimIds', 'evidenceRefs', 'reason'],
       waivers.map((waiver) => [
         waiver.owner,
         waiver.expires,
         ensureArray(waiver.relatedClaimIds).join(', '),
+        String(ensureArray(waiver.evidenceRefs).length),
         waiver.reason,
       ]),
     ),
@@ -1087,17 +1430,19 @@ function renderV2DetailedSections(changePackage) {
   ];
 }
 
-function renderV2DigestSuffix(changePackage) {
+function renderV2DigestSuffix(changePackage, outputJsonPath) {
   if (changePackage.schemaVersion !== 'change-package/v2') {
     return '';
   }
   return ` | assurance=${changePackage.assurance.targetLevel}/${changePackage.assurance.achievedLevel}/${changePackage.assurance.status}`
     + ` | claims=${ensureArray(changePackage.claims).length}`
+    + ` | states(${renderStatusCounts(ensureArray(changePackage.claims))})`
     + ` | proofObligations=${ensureArray(changePackage.proofObligations).length}`
-    + ` | waivers=${ensureArray(changePackage.waivers).length}`;
+    + ` | waivers=${ensureArray(changePackage.waivers).length}`
+    + ` | evidencePackage=${outputJsonPath || DEFAULT_V2_OUTPUT_JSON_PATH}`;
 }
 
-function renderDetailedMarkdown(changePackage) {
+function renderDetailedMarkdown(changePackage, outputJsonPath) {
   const risk = changePackage.risk;
   const evidenceRows = changePackage.evidence.items
     .map((item) => `| ${item.id} | \`${item.path}\` | ${item.present ? 'yes' : 'no'} |`)
@@ -1140,7 +1485,7 @@ function renderDetailedMarkdown(changePackage) {
     '| --- | --- | --- |',
     evidenceRows,
     '',
-    ...renderV2DetailedSections(changePackage),
+    ...renderV2DetailedSections(changePackage, outputJsonPath),
     '### Reproducibility',
     ...changePackage.reproducibility.commands.map((command) => `- \`${command}\``),
     '',
@@ -1158,22 +1503,22 @@ function renderDetailedMarkdown(changePackage) {
   ].join('\n');
 }
 
-function renderDigestMarkdown(changePackage) {
+function renderDigestMarkdown(changePackage, outputJsonPath) {
   const risk = changePackage.risk;
   return [
     '### Change Package',
-    `- risk=${risk.selected} (inferred=${risk.inferred}) | files=${changePackage.scope.changedFileCount} | areas=${changePackage.scope.areas.join(', ')} | evidence=${changePackage.evidence.presentCount}/${changePackage.evidence.missingCount} present/missing${renderV2DigestSuffix(changePackage)}`,
+    `- risk=${risk.selected} (inferred=${risk.inferred}) | files=${changePackage.scope.changedFileCount} | areas=${changePackage.scope.areas.join(', ')} | evidence=${changePackage.evidence.presentCount}/${changePackage.evidence.missingCount} present/missing${renderV2DigestSuffix(changePackage, outputJsonPath)}`,
     `- required labels: ${risk.requiredLabels.length > 0 ? risk.requiredLabels.join(', ') : '(none)'} | missing: ${risk.missingRequiredLabels.length > 0 ? risk.missingRequiredLabels.join(', ') : '(none)'}`,
     `- reproducibility: ${changePackage.reproducibility.commands.map((command) => `\`${command}\``).join(', ')}`,
     '',
   ].join('\n');
 }
 
-function renderMarkdown(changePackage, mode) {
+function renderMarkdown(changePackage, mode, outputJsonPath) {
   if (mode === 'digest') {
-    return renderDigestMarkdown(changePackage);
+    return renderDigestMarkdown(changePackage, outputJsonPath);
   }
-  return renderDetailedMarkdown(changePackage);
+  return renderDetailedMarkdown(changePackage, outputJsonPath);
 }
 
 function isModeDigest(mode) {
@@ -1285,9 +1630,21 @@ function buildChangePackageV2(options, eventPayload, baseChangePackage = buildCh
     options.assuranceSummaryPath,
     'assurance-summary/v1 lane coverage summary',
   );
+  const claimLevelSummary = loadOptionalJsonSource(
+    'claimLevelSummary',
+    options.claimLevelSummaryPath,
+    'claim-level-summary/v1 per-claim achieved-level summary',
+  );
+  const postDeployVerify = loadOptionalJsonSource(
+    'postDeployVerify',
+    options.postDeployVerifyPath,
+    'post-deploy verification result',
+  );
   const claimsById = new Map();
   const proofObligations = [];
   const waivers = [];
+  const assumptions = [];
+  const runtimeControls = [];
 
   if (assuranceSummary.present) {
     ingestAssuranceSummaryForV2(claimsById, assuranceSummary);
@@ -1297,6 +1654,9 @@ function buildChangePackageV2(options, eventPayload, baseChangePackage = buildCh
   }
   if (policyDecision.present) {
     ingestPolicyDecisionForV2(claimsById, waivers, policyDecision);
+  }
+  if (claimLevelSummary.present) {
+    ingestClaimLevelSummaryForV2(claimsById, proofObligations, waivers, assumptions, runtimeControls, claimLevelSummary);
   }
 
   const claims = Array.from(claimsById.values())
@@ -1314,6 +1674,16 @@ function buildChangePackageV2(options, eventPayload, baseChangePackage = buildCh
       relatedClaimIds: waiver.relatedClaimIds.filter((claimId) => claimIds.has(claimId)),
     }))
     .filter((waiver) => waiver.relatedClaimIds.length > 0);
+  const releaseControls = buildReleaseControls(baseChangePackage, postDeployVerify);
+  const normalizedRuntimeControls = {
+    alerts: uniqueStrings([
+      ...baseChangePackage.monitoringPlan.alerts,
+      ...runtimeControls.filter((control) => control.kind === 'alert').map((control) => control.id),
+    ]),
+    featureFlags: uniqueStrings([
+      ...runtimeControls.filter((control) => control.kind === 'feature-flag').map((control) => control.id),
+    ]),
+  };
 
   return {
     ...baseChangePackage,
@@ -1322,25 +1692,34 @@ function buildChangePackageV2(options, eventPayload, baseChangePackage = buildCh
       claimEvidenceManifest,
       policyDecision,
       assuranceSummary,
+      claimLevelSummary,
+      postDeployVerify,
     ]),
-    assurance: buildV2Assurance(claims, claimEvidenceManifest, policyDecision, assuranceSummary),
+    requirements: buildV2Requirements(baseChangePackage.scope.changedFiles, claims),
+    validationLanes: buildValidationLanes(claimLevelSummary, baseChangePackage.evidence),
+    policyDecision: buildPolicyDecisionSummary(policyDecision),
+    releaseControls,
+    residualRisks: buildResidualRisks(claims, assumptions),
+    assurance: buildV2Assurance(claims, claimEvidenceManifest, policyDecision, assuranceSummary, claimLevelSummary),
     claims,
-    assumptions: [],
+    assumptions: assumptions.map((assumption) => ({
+      id: assumption.id,
+      statement: assumption.statement,
+      owner: assumption.owner,
+      evidenceRefs: normalizeArtifactRefs(assumption.evidenceRefs, claimLevelSummary.path),
+    })).sort((left, right) => left.id.localeCompare(right.id)),
     proofObligations: filteredProofObligations,
     counterexamples: [],
     trustBoundary: {
       outsideModel: [],
     },
-    runtimeControls: {
-      alerts: baseChangePackage.monitoringPlan.alerts,
-      featureFlags: [],
-    },
+    runtimeControls: normalizedRuntimeControls,
     waivers: filteredWaivers,
   };
 }
 
 function writeChangePackageOutputs(changePackage, outputJsonPath, outputMarkdownPath, mode) {
-  const markdown = renderMarkdown(changePackage, mode);
+  const markdown = renderMarkdown(changePackage, mode, outputJsonPath);
 
   ensureDirectory(outputJsonPath);
   fs.writeFileSync(outputJsonPath, `${JSON.stringify(changePackage, null, 2)}\n`);

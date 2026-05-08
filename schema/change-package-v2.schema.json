@@ -24,7 +24,12 @@
     "counterexamples",
     "trustBoundary",
     "runtimeControls",
-    "waivers"
+    "waivers",
+    "requirements",
+    "validationLanes",
+    "policyDecision",
+    "releaseControls",
+    "residualRisks"
   ],
   "properties": {
     "schemaVersion": {
@@ -106,6 +111,27 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/waiver"
+      }
+    },
+    "requirements": {
+      "$ref": "#/$defs/requirements"
+    },
+    "validationLanes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/validationLane"
+      }
+    },
+    "policyDecision": {
+      "$ref": "#/$defs/policyDecision"
+    },
+    "releaseControls": {
+      "$ref": "#/$defs/releaseControls"
+    },
+    "residualRisks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/residualRisk"
       }
     }
   },
@@ -465,7 +491,9 @@
             "partial",
             "satisfied",
             "waived",
-            "unresolved"
+            "unresolved",
+            "failed",
+            "not-applicable"
           ]
         }
       }
@@ -487,7 +515,10 @@
         "statement",
         "status",
         "criticality",
-        "artifactRefs"
+        "artifactRefs",
+        "targetLevel",
+        "achievedLevel",
+        "requirementRefs"
       ],
       "properties": {
         "id": {
@@ -506,7 +537,10 @@
             "tested",
             "runtime-mitigated",
             "waived",
-            "unresolved"
+            "unresolved",
+            "satisfied",
+            "failed",
+            "not-applicable"
           ]
         },
         "criticality": {
@@ -520,6 +554,37 @@
         },
         "artifactRefs": {
           "$ref": "#/$defs/artifactRefs"
+        },
+        "targetLevel": {
+          "type": "string",
+          "enum": [
+            "A0",
+            "A1",
+            "A2",
+            "A3",
+            "A4"
+          ]
+        },
+        "achievedLevel": {
+          "type": "string",
+          "enum": [
+            "A0",
+            "A1",
+            "A2",
+            "A3",
+            "A4"
+          ]
+        },
+        "requirementRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "$ref": "#/$defs/claimDecision"
         }
       }
     },
@@ -675,7 +740,8 @@
         "owner",
         "expires",
         "reason",
-        "relatedClaimIds"
+        "relatedClaimIds",
+        "evidenceRefs"
       ],
       "properties": {
         "owner": {
@@ -693,6 +759,270 @@
         "relatedClaimIds": {
           "type": "array",
           "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "evidenceRefs": {
+          "$ref": "#/$defs/artifactRefs"
+        }
+      }
+    },
+    "requirementClaimRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "refs"
+      ],
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "changedRefs",
+        "claimRefs"
+      ],
+      "properties": {
+        "changedRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "claimRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirementClaimRef"
+          }
+        }
+      }
+    },
+    "claimDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result",
+        "mode",
+        "enforced",
+        "reason"
+      ],
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "waived",
+            "report-only",
+            "block",
+            "unassessed"
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "report-only",
+            "strict",
+            "unknown"
+          ]
+        },
+        "enforced": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "validationLane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "warn",
+            "fail",
+            "missing"
+          ]
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "policyDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "present",
+        "sourceArtifactPath",
+        "result",
+        "mode",
+        "enforced",
+        "reason",
+        "warnings",
+        "errors"
+      ],
+      "properties": {
+        "present": {
+          "type": "boolean"
+        },
+        "sourceArtifactPath": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "waived",
+            "report-only",
+            "block",
+            "unassessed"
+          ]
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "report-only",
+            "strict",
+            "unknown"
+          ]
+        },
+        "enforced": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "releaseControls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preDeployChecks",
+        "postDeployChecks",
+        "rollbackSignals"
+      ],
+      "properties": {
+        "preDeployChecks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "postDeployChecks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "rollbackSignals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "residualRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "statement",
+        "severity",
+        "source",
+        "claimIds"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimIds": {
+          "type": "array",
           "items": {
             "type": "string",
             "minLength": 1

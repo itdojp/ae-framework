@@ -92,7 +92,10 @@
       "artifactRefs": [
         "artifacts/assurance/assurance-summary.json",
         "artifacts/formal/tla/no-negative-balance-summary.json"
-      ]
+      ],
+      "targetLevel": "A3",
+      "achievedLevel": "A3",
+      "requirementRefs": []
     },
     {
       "id": "manual-fraud-review",
@@ -101,7 +104,10 @@
       "criticality": "medium",
       "artifactRefs": [
         "artifacts/runtime/manual-fraud-review-control.json"
-      ]
+      ],
+      "targetLevel": "A3",
+      "achievedLevel": "A2",
+      "requirementRefs": []
     }
   ],
   "assumptions": [
@@ -154,6 +160,63 @@
       "expires": "2099-12-31",
       "reason": "Manual fraud review is active while automated model validation evidence is being collected.",
       "relatedClaimIds": [
+        "manual-fraud-review"
+      ],
+      "evidenceRefs": [
+        "fixtures/assurance/sample.temporary-override-v1.json"
+      ]
+    }
+  ],
+  "requirements": {
+    "changedRefs": [],
+    "claimRefs": []
+  },
+  "validationLanes": [
+    {
+      "id": "verifyLiteSummary",
+      "status": "pass",
+      "evidenceRefs": [
+        "artifacts/verify-lite/verify-lite-run-summary.json"
+      ]
+    },
+    {
+      "id": "policyGateSummary",
+      "status": "pass",
+      "evidenceRefs": [
+        "artifacts/ci/policy-gate-summary.json"
+      ]
+    }
+  ],
+  "policyDecision": {
+    "present": false,
+    "sourceArtifactPath": null,
+    "result": "unassessed",
+    "mode": "unknown",
+    "enforced": false,
+    "reason": "No policy-decision/v1 artifact is linked in this fixture.",
+    "warnings": [],
+    "errors": []
+  },
+  "releaseControls": {
+    "preDeployChecks": [
+      "pnpm -s run assurance:e2e -- --scenario inventory-waiver",
+      "node scripts/ci/validate-json.mjs"
+    ],
+    "postDeployChecks": [
+      "post-deploy-verify workflow or release verification artifact required before production rollout"
+    ],
+    "rollbackSignals": [
+      "golden-artifact-drift",
+      "post-deploy-verify.status=fail"
+    ]
+  },
+  "residualRisks": [
+    {
+      "id": "claim:manual-fraud-review:waived",
+      "statement": "waived claim requires human review: High-risk reservations receive manual fraud review until model validation is complete.",
+      "severity": "medium",
+      "source": "change-package/v2 fixture claim status",
+      "claimIds": [
         "manual-fraud-review"
       ]
     }

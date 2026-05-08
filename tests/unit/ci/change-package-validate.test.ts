@@ -76,6 +76,34 @@ async function writeV2Fixture(workdir: string): Promise<{ inputPath: string; pol
       presentCount: 1,
       missingCount: 0,
     },
+    requirements: {
+      changedRefs: [],
+      claimRefs: [
+        { claimId: 'manual-review', refs: ['docs/ci/change-package.md'] },
+      ],
+    },
+    validationLanes: [
+      {
+        id: 'behavior',
+        status: 'pass',
+        evidenceRefs: ['artifacts/testing/property-summary.json'],
+      },
+      {
+        id: 'runtime',
+        status: 'pass',
+        evidenceRefs: ['artifacts/runtime/manual-review.json'],
+      },
+    ],
+    policyDecision: {
+      present: true,
+      sourceArtifactPath: 'policy-decision-js-v1.json',
+      result: 'waived',
+      mode: 'report-only',
+      enforced: false,
+      reason: 'Policy decision accepted a waiver for manual review.',
+      warnings: [],
+      errors: [],
+    },
     reproducibility: { commands: ['pnpm run verify:lite'] },
     rolloutPlan: {
       strategy: 'manual-approval-and-gate-green',
@@ -98,6 +126,9 @@ async function writeV2Fixture(workdir: string): Promise<{ inputPath: string; pol
         statement: 'Manual review is active.',
         status: 'waived',
         criticality: 'medium',
+        targetLevel: 'A3',
+        achievedLevel: 'A2',
+        requirementRefs: ['docs/ci/change-package.md'],
         artifactRefs: ['artifacts/runtime/manual-review.json'],
       },
       {
@@ -105,6 +136,9 @@ async function writeV2Fixture(workdir: string): Promise<{ inputPath: string; pol
         statement: 'Inventory stock never becomes negative.',
         status: 'tested',
         criticality: 'high',
+        targetLevel: 'A3',
+        achievedLevel: 'A3',
+        requirementRefs: [],
         artifactRefs: ['artifacts/testing/property-summary.json'],
       },
     ],
@@ -126,12 +160,27 @@ async function writeV2Fixture(workdir: string): Promise<{ inputPath: string; pol
       alerts: [],
       featureFlags: [],
     },
+    releaseControls: {
+      preDeployChecks: ['pnpm run verify:lite'],
+      postDeployChecks: ['post-deploy-verify workflow or release verification artifact required before production rollout'],
+      rollbackSignals: ['post-deploy-verify.status=fail'],
+    },
+    residualRisks: [
+      {
+        id: 'claim:manual-review:waived',
+        statement: 'waived claim requires human review: Manual review is active.',
+        severity: 'medium',
+        source: 'change-package/v2 test fixture',
+        claimIds: ['manual-review'],
+      },
+    ],
     waivers: [
       {
         owner: '@team-risk',
         expires: '2099-12-31',
         reason: 'Manual review control is active.',
         relatedClaimIds: ['manual-review'],
+        evidenceRefs: ['artifacts/runtime/manual-review.json'],
       },
     ],
   });
