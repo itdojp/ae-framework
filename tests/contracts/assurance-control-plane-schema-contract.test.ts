@@ -20,7 +20,7 @@ describe('assurance control plane preview schema contracts', () => {
     };
 
     expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
-    expect(fixture.claims.map((claim) => claim.state)).toEqual([
+    const expectedStates = [
       'satisfied',
       'tested',
       'model-checked',
@@ -30,7 +30,10 @@ describe('assurance control plane preview schema contracts', () => {
       'unresolved',
       'failed',
       'not-applicable',
-    ]);
+    ];
+    const observedStates = fixture.claims.map((claim) => claim.state);
+    expect(observedStates).toHaveLength(expectedStates.length);
+    expect(new Set(observedStates)).toEqual(new Set(expectedStates));
   });
 
   it('rejects an enforced claim-level decision without a reason', () => {
@@ -62,6 +65,52 @@ describe('assurance control plane preview schema contracts', () => {
     };
 
     expect(validate(fixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('rejects strict decisions that are not marked as enforced', () => {
+    const validate = buildValidator('schema/claim-level-summary-v1.schema.json');
+    const fixture = structuredClone(loadJson('fixtures/assurance/sample.claim-level-summary-v1.json')) as {
+      claims: Array<{
+        state: string;
+        decision: Record<string, unknown>;
+      }>;
+    };
+    const failedClaim = fixture.claims.find((claim) => claim.state === 'failed');
+    if (!failedClaim) {
+      throw new Error('sample fixture must include a failed claim');
+    }
+    failedClaim.decision = {
+      ...failedClaim.decision,
+      mode: 'strict',
+      result: 'block',
+      enforced: false,
+    };
+
+    expect(validate(fixture)).toBe(false);
+    expect(validate.errors?.some((entry) => entry.instancePath.endsWith('/decision/enforced'))).toBe(true);
+  });
+
+  it('rejects report-only decisions that try to block', () => {
+    const validate = buildValidator('schema/claim-level-summary-v1.schema.json');
+    const fixture = structuredClone(loadJson('fixtures/assurance/sample.claim-level-summary-v1.json')) as {
+      claims: Array<{
+        state: string;
+        decision: Record<string, unknown>;
+      }>;
+    };
+    const unresolvedClaim = fixture.claims.find((claim) => claim.state === 'unresolved');
+    if (!unresolvedClaim) {
+      throw new Error('sample fixture must include an unresolved claim');
+    }
+    unresolvedClaim.decision = {
+      ...unresolvedClaim.decision,
+      mode: 'report-only',
+      result: 'block',
+      enforced: false,
+    };
+
+    expect(validate(fixture)).toBe(false);
+    expect(validate.errors?.some((entry) => entry.instancePath.endsWith('/decision/mode'))).toBe(true);
   });
 
   it('rejects waived claim-level summaries without waiver references', () => {

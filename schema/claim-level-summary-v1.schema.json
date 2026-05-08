@@ -336,6 +336,32 @@
         {
           "if": {
             "properties": {
+              "mode": { "const": "report-only" }
+            },
+            "required": ["mode"]
+          },
+          "then": {
+            "properties": {
+              "enforced": { "const": false }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "mode": { "const": "strict" }
+            },
+            "required": ["mode"]
+          },
+          "then": {
+            "properties": {
+              "enforced": { "const": true }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
               "enforced": { "const": true }
             },
             "required": ["enforced"]
@@ -343,6 +369,33 @@
           "then": {
             "properties": {
               "mode": { "const": "strict" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "enforced": { "const": false }
+            },
+            "required": ["enforced"]
+          },
+          "then": {
+            "properties": {
+              "mode": { "const": "report-only" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": { "const": "block" }
+            },
+            "required": ["result"]
+          },
+          "then": {
+            "properties": {
+              "mode": { "const": "strict" },
+              "enforced": { "const": true }
             }
           }
         }
