@@ -4,6 +4,11 @@ import path from 'node:path';
 import process from 'node:process';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import {
+  buildClaimLevelSummary,
+  renderClaimLevelSummaryMarkdown,
+  validateClaimLevelSummary,
+} from './aggregate-claim-levels.mjs';
 import { buildClaimEvidenceManifest, renderClaimEvidenceManifestMarkdown, validateManifest } from './build-claim-evidence-manifest.mjs';
 import {
   buildMarkdownSummary,
@@ -14,6 +19,7 @@ import {
 } from '../ci/policy-gate.mjs';
 import { loadRiskPolicy } from '../ci/lib/risk-policy.mjs';
 import { validateClaimEvidenceManifestSemantics } from '../ci/lib/claim-evidence-manifest-contract.mjs';
+import { renderMarkdown as renderChangePackageMarkdown } from '../change-package/generate.mjs';
 
 const DEFAULT_SCENARIO = 'inventory-waiver';
 const DEFAULT_FIXTURE_ROOT = 'fixtures/assurance-e2e';
@@ -28,6 +34,10 @@ const ARTIFACT_FILES = [
   'policy-decision-js-v1.json',
   'policy-gate-summary.json',
   'policy-gate-summary.md',
+  'claim-level-summary.json',
+  'claim-level-summary.md',
+  'change-package-v2.json',
+  'change-package-v2.md',
 ];
 
 function usage() {
@@ -131,6 +141,13 @@ function toRepoRelativePath(filePath) {
   return relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath)
     ? toPosixPath(relativePath)
     : toPosixPath(filePath);
+}
+
+function ensureOutputDirUnderRepoRoot(outputDir) {
+  const relativePath = path.relative(process.cwd(), outputDir);
+  if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    throw new Error(`output-dir must stay under the repository root: ${outputDir}`);
+  }
 }
 
 function stableStringify(value) {
@@ -240,6 +257,7 @@ function scenarioPaths(options) {
   const outputDir = path.resolve(
     options.outputDir || path.join('artifacts/assurance-e2e', scenarioName, timestampSlug(options.generatedAt)),
   );
+  ensureOutputDirUnderRepoRoot(outputDir);
   return {
     scenarioName,
     scenarioDir,
@@ -258,6 +276,8 @@ function canonicalArtifactPaths(scenarioName) {
     policyInput: `${root}/policy-input-v1.json`,
     policyDecision: `${root}/policy-decision-js-v1.json`,
     policyGateSummary: `${root}/policy-gate-summary.json`,
+    claimLevelSummary: `${root}/claim-level-summary.json`,
+    changePackageV2: `${root}/change-package-v2.json`,
   };
 }
 
@@ -345,6 +365,40 @@ function buildPolicyArtifacts({ scenarioName, generatedAt, manifestPath, outputD
   };
 }
 
+function buildClaimLevelArtifacts({ scenarioName, generatedAt, outputDir, manifestPath, policyGateSummaryPath, changePackagePath }) {
+  const canonical = canonicalArtifactPaths(scenarioName);
+  const claimLevelSummary = buildClaimLevelSummary({
+    claimEvidenceManifest: manifestPath,
+    policyGateSummary: policyGateSummaryPath,
+    changePackage: changePackagePath,
+    temporaryOverrides: [],
+    generatedAt,
+    repository: 'itdojp/ae-framework',
+    prNumber: 3245,
+    baseRef: 'main',
+    headRef: 'feat/3245-assurance-e2e',
+    headSha: 'fixture-current-head-smoke',
+  });
+  claimLevelSummary.inputs.claimEvidenceManifest.path = canonical.claimEvidenceManifest;
+  claimLevelSummary.inputs.policyGateSummary.path = canonical.policyGateSummary;
+  validateClaimLevelSummary(claimLevelSummary, 'schema/claim-level-summary-v1.schema.json');
+  writeJson(path.join(outputDir, 'claim-level-summary.json'), claimLevelSummary);
+  writeText(path.join(outputDir, 'claim-level-summary.md'), renderClaimLevelSummaryMarkdown(claimLevelSummary));
+  return claimLevelSummary;
+}
+
+function buildChangePackageArtifacts({ scenarioName, outputDir, changePackagePath }) {
+  const canonical = canonicalArtifactPaths(scenarioName);
+  const changePackage = readJson(changePackagePath);
+  validateWithSchema('change package v2', changePackage, 'schema/change-package-v2.schema.json');
+  writeJson(path.join(outputDir, 'change-package-v2.json'), changePackage);
+  writeText(
+    path.join(outputDir, 'change-package-v2.md'),
+    renderChangePackageMarkdown(changePackage, 'detailed', canonical.changePackageV2),
+  );
+  return changePackage;
+}
+
 export function runScenario(options) {
   const generatedAt = ensureDateTime(options.generatedAt);
   const paths = scenarioPaths(options);
@@ -399,6 +453,19 @@ export function runScenario(options) {
     outputDir: paths.outputDir,
     changePackagePath: inputFiles.changePackage,
   });
+  const claimLevelSummary = buildClaimLevelArtifacts({
+    scenarioName: paths.scenarioName,
+    generatedAt,
+    outputDir: paths.outputDir,
+    manifestPath: path.join(paths.outputDir, 'claim-evidence-manifest.json'),
+    policyGateSummaryPath: path.join(paths.outputDir, 'policy-gate-summary.json'),
+    changePackagePath: inputFiles.changePackage,
+  });
+  const changePackage = buildChangePackageArtifacts({
+    scenarioName: paths.scenarioName,
+    outputDir: paths.outputDir,
+    changePackagePath: inputFiles.changePackage,
+  });
 
   if (options.updateExpected) {
     fs.mkdirSync(paths.expectedDir, { recursive: true });
@@ -427,8 +494,10 @@ export function runScenario(options) {
       verifyLiteStatus: Object.values(verifyLiteSummary.steps).every((step) => step.status === 'success') ? 'success' : 'non-success',
       assuranceClaims: assuranceSummary.summary?.claimCount ?? assuranceSummary.claims?.length ?? 0,
       claimEvidenceClaims: manifest.summary.totalClaims,
+      claimLevelClaims: claimLevelSummary.summary.totalClaims,
       claimEvidenceWaived: manifest.summary.waived,
       policyDecision: policyArtifacts.policyDecision.evaluation.assurance?.result ?? 'unknown',
+      changePackageStatus: changePackage.assurance?.status ?? 'unknown',
     },
   };
 }
@@ -444,8 +513,10 @@ export function run(argv = process.argv.slice(2)) {
   process.stdout.write(`- scenario: ${result.scenario}\n`);
   process.stdout.write(`- output: ${result.outputDir}\n`);
   process.stdout.write(`- claim evidence claims: ${result.summary.claimEvidenceClaims}\n`);
+  process.stdout.write(`- claim-level claims: ${result.summary.claimLevelClaims}\n`);
   process.stdout.write(`- waived claims: ${result.summary.claimEvidenceWaived}\n`);
   process.stdout.write(`- policy assurance result: ${result.summary.policyDecision}\n`);
+  process.stdout.write(`- change-package assurance status: ${result.summary.changePackageStatus}\n`);
   process.stdout.write('- comparison: ok\n');
   return 0;
 }
