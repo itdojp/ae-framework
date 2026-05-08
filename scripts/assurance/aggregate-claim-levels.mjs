@@ -2,8 +2,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { normalizeArtifactPath as normalizeSharedArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 export const DEFAULT_CLAIM_EVIDENCE_MANIFEST = 'artifacts/assurance/claim-evidence-manifest.json';
 export const DEFAULT_POLICY_GATE_SUMMARY = 'artifacts/ci/policy-gate-summary.json';
@@ -28,6 +30,7 @@ const CLAIM_STATES = new Set([
 const CHANGE_PACKAGE_STATES = new Set(['proved', 'model-checked', 'tested', 'runtime-mitigated', 'waived', 'unresolved']);
 const DECISION_RESULTS = new Set(['pass', 'waived', 'report-only', 'block']);
 const DECISION_MODES = new Set(['report-only', 'strict']);
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const EVIDENCE_KINDS = new Set([
   'spec',
   'behavior',
@@ -190,23 +193,20 @@ function existsFile(targetPath) {
   return Boolean(targetPath) && fs.existsSync(targetPath) && fs.statSync(targetPath).isFile();
 }
 
-function toPosix(value) {
-  return String(value).replace(/\\/gu, '/');
-}
-
 function normalizeArtifactPath(value, label = 'artifact path') {
   const raw = String(value ?? '').trim();
   if (!raw) {
     throw new Error(`${label} must be a non-empty path`);
   }
-  const normalized = path.isAbsolute(raw)
-    ? path.relative(process.cwd(), raw)
-    : raw;
-  if (!normalized || normalized.startsWith('..') || path.isAbsolute(normalized)) {
-    throw new Error(`${label} must be inside the repository worktree: ${raw}`);
-  }
-  const posix = toPosix(normalized);
-  if (posix.startsWith('/') || posix.includes('..') || posix.includes('//')) {
+  const posix = normalizeSharedArtifactPath(raw, { repoRoot: REPO_ROOT });
+  if (
+    !posix
+    || posix.startsWith('/')
+    || posix.startsWith('//')
+    || posix.includes('..')
+    || posix.includes('//')
+    || /^[A-Za-z]:\//u.test(posix)
+  ) {
     throw new Error(`${label} must be a relative normalized artifact path: ${raw}`);
   }
   return posix;
@@ -385,18 +385,19 @@ function parseNotApplicableMarker(claim) {
   return null;
 }
 
-function evidenceText(ref) {
-  return [ref?.id, ref?.kind, ref?.artifactPath, ref?.sourceArtifactId, ref?.description]
-    .map(maybeString)
-    .join(' ')
-    .toLowerCase();
+function normalizeEvidenceStatus(value) {
+  const raw = maybeString(value).toLowerCase();
+  if (['failed', 'failure', 'open', 'blocked'].includes(raw)) return 'failed';
+  if (['stale', 'expired'].includes(raw)) return 'stale';
+  if (['observed', 'passed', 'pass', 'success', 'closed', 'resolved', 'discharged'].includes(raw)) return 'observed';
+  return null;
 }
 
 function inferEvidenceStatus(ref, state, policyClaim) {
-  const text = evidenceText(ref);
-  if (text.includes('stale')) return 'stale';
-  if (text.includes('failed') || text.includes('failure') || text.includes('open counterexample')) return 'failed';
-  if (state === 'failed' && ensureArray(policyClaim?.evidenceRefs).map(maybeString).includes(maybeString(ref?.id))) {
+  const explicitStatus = normalizeEvidenceStatus(ref?.status);
+  if (explicitStatus) return explicitStatus;
+  const policyEvidenceRefs = ensureArray(policyClaim?.evidenceRefs).map(maybeString);
+  if (state === 'failed' && normalizeDecisionResult(policyClaim?.result, '') === 'block' && policyEvidenceRefs.includes(maybeString(ref?.id))) {
     return 'failed';
   }
   return 'observed';
@@ -558,7 +559,7 @@ function deriveDecision({ state, policyAssurance, policyClaim, evidenceRefs, mis
     result,
     enforced,
     reason: maybeString(policyClaim?.reason) || decisionReason(state, result, enforced),
-    sourceArtifactId: policyClaim ? 'policy-gate-summary' : 'claim-level-summary',
+    sourceArtifactId: policyAssurance || policyClaim ? 'policy-gate-summary' : 'claim-level-summary',
     evidenceRefs: evidenceRefs.map((ref) => ref.id).filter((id) => ensureArray(policyClaim?.evidenceRefs).length === 0 || ensureArray(policyClaim?.evidenceRefs).includes(id)),
     missingEvidenceRefs: missingEvidenceRefs.map((ref) => ref.id).filter((id) => ensureArray(policyClaim?.missingEvidenceRefs).length === 0 || ensureArray(policyClaim?.missingEvidenceRefs).includes(id)),
     waiverRefs: waiverRefs.map((ref) => ref.id).filter((id) => ensureArray(policyClaim?.waiverRefs).length === 0 || ensureArray(policyClaim?.waiverRefs).includes(id)),
@@ -676,6 +677,7 @@ export function buildClaimLevelSummary(options) {
           ...ensureArray(counterexamplesByClaim.get(claimId)).map((counterexample, index) => ({
             id: `change-package-v2:${claimId}:counterexample:${index}`,
             kind: 'adversarial',
+            status: maybeString(counterexample.status) || 'open',
             artifactPath: maybeString(counterexample.artifactPath) || `artifacts/assurance/${claimId}/counterexample-${index}.json`,
             sourceArtifactId: 'change-package-v2',
             description: `Counterexample status=${maybeString(counterexample.status) || 'unknown'}.`,

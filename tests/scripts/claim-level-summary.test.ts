@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -172,5 +172,88 @@ describe.sequential('claim-level summary aggregator', () => {
     expect(first.claims.every((claim: { decision: { mode: string; enforced: boolean } }) => (
       claim.decision.mode === 'report-only' && claim.decision.enforced === false
     ))).toBe(true);
+  });
+
+  it('keeps report-only policy blocks and failure-like evidence names non-enforced', async () => {
+    const mod = await import(moduleUrl);
+    const sandboxRoot = join(repoRoot, 'tmp');
+    mkdirSync(sandboxRoot, { recursive: true });
+    const sandbox = mkdtempSync(join(sandboxRoot, 'ae-claim-level-structured-status-'));
+    const manifestPath = join(sandbox, 'claim-evidence-manifest.json');
+    const policyPath = join(sandbox, 'policy-gate-summary.json');
+
+    try {
+      const manifest = readJson(`${fixtureRoot}/inputs/claim-evidence-manifest.json`);
+      manifest.claims = [
+        manifest.claims.find((claim: { id: string }) => claim.id === 'strict-proof-failure'),
+        {
+          id: 'observed-failure-mode-doc',
+          statement: 'Failure-mode documentation is linked as observed evidence.',
+          criticality: 'medium',
+          targetLevel: 'A2',
+          achievedLevel: 'A2',
+          status: 'satisfied',
+          evidenceRefs: [
+            {
+              id: 'failure-mode-documentation',
+              kind: 'behavior',
+              artifactPath: 'artifacts/assurance/failure-mode-documentation.json',
+              sourceArtifactId: 'claim-evidence-manifest',
+              description: 'Documents a failure mode but is not itself failed evidence.',
+            },
+          ],
+          proofObligationRefs: [],
+          missingEvidenceRefs: [],
+          waiverRefs: [],
+          notes: [],
+        },
+      ];
+      writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+
+      const policy = readJson(`${fixtureRoot}/inputs/policy-gate-summary.json`);
+      policy.evaluation.assurance.mode = 'report-only';
+      policy.evaluation.assurance.claims = [
+        policy.evaluation.assurance.claims.find((claim: { claimId: string }) => claim.claimId === 'strict-proof-failure'),
+      ];
+      writeFileSync(policyPath, `${JSON.stringify(policy, null, 2)}\n`, 'utf8');
+
+      const summary = mod.buildClaimLevelSummary({
+        claimEvidenceManifest: manifestPath,
+        policyGateSummary: policyPath,
+        changePackage: 'fixtures/assurance/claim-level-summary/inputs/missing-change-package-v2.json',
+        temporaryOverrides: [],
+        generatedAt: '2026-05-08T00:00:00.000Z',
+        repository: null,
+        prNumber: null,
+        baseRef: null,
+        headRef: null,
+        headSha: null,
+        outputJson: 'unused.json',
+        outputMd: 'unused.md',
+        schema: 'schema/claim-level-summary-v1.schema.json',
+        validate: true,
+        help: false,
+      });
+
+      const blockedClaim = summary.claims.find((claim: { claimId: string }) => claim.claimId === 'strict-proof-failure');
+      expect(blockedClaim.state).toBe('failed');
+      expect(blockedClaim.decision).toMatchObject({
+        mode: 'report-only',
+        result: 'report-only',
+        enforced: false,
+        sourceArtifactId: 'policy-gate-summary',
+      });
+
+      const observedClaim = summary.claims.find((claim: { claimId: string }) => claim.claimId === 'observed-failure-mode-doc');
+      expect(observedClaim.decision.sourceArtifactId).toBe('policy-gate-summary');
+      expect(observedClaim.evidenceRefs).toEqual([
+        expect.objectContaining({
+          id: 'failure-mode-documentation',
+          status: 'observed',
+        }),
+      ]);
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
   });
 });
