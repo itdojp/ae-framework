@@ -5,6 +5,7 @@
 
 import path from 'node:path';
 import { tmpdir } from 'node:os';
+import { existsSync, realpathSync } from 'node:fs';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { createServer } from '../api/server.js';
@@ -31,6 +32,25 @@ function isInsideDirectory(parentDir: string, candidatePath: string): boolean {
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 }
 
+function nearestExistingPath(candidatePath: string): string {
+  let current = candidatePath;
+  while (!existsSync(current)) {
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return current;
+    }
+    current = parent;
+  }
+  return current;
+}
+
+function resolveThroughExistingParent(candidatePath: string): string {
+  const nearestExisting = nearestExistingPath(candidatePath);
+  const nearestRealPath = realpathSync.native(nearestExisting);
+  const unresolvedSuffix = path.relative(nearestExisting, candidatePath);
+  return unresolvedSuffix ? path.resolve(nearestRealPath, unresolvedSuffix) : nearestRealPath;
+}
+
 function assertSafeSecurityOutputPath(value: string, optionName = '--out'): string {
   const raw = String(value || '').trim();
   if (!raw) {
@@ -44,6 +64,11 @@ function assertSafeSecurityOutputPath(value: string, optionName = '--out'): stri
   const allowedRoots = [process.cwd(), tmpdir()].map((entry) => path.resolve(entry));
   if (!allowedRoots.some((root) => isInsideDirectory(root, resolved))) {
     throw new Error(`Unsafe ${optionName} path: absolute output paths must stay under the current working directory or the OS temp directory.`);
+  }
+  const realResolved = resolveThroughExistingParent(resolved);
+  const realAllowedRoots = allowedRoots.map((root) => realpathSync.native(root));
+  if (!realAllowedRoots.some((root) => isInsideDirectory(root, realResolved))) {
+    throw new Error(`Unsafe ${optionName} path: existing symlink segments must not resolve outside the current working directory or the OS temp directory.`);
   }
   return raw;
 }

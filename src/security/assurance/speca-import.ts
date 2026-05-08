@@ -835,10 +835,11 @@ async function readJson(filePath: string): Promise<JsonRecord> {
     parsed = JSON.parse(content) as unknown;
   } catch (error: unknown) {
     if (typeof error === 'object' && error !== null && 'code' in error && (error as { code?: unknown }).code === 'ENOENT') {
-      throw new Error(`Input file not found: ${filePath}`);
+      const detail = error instanceof Error ? `: ${error.message}` : '';
+      throw new Error(`Input file not found: ${filePath}${detail}`, { cause: error });
     }
     if (error instanceof SyntaxError) {
-      throw new Error(`Malformed JSON input: ${filePath}`);
+      throw new Error(`Malformed JSON input: ${filePath}: ${error.message}`, { cause: error });
     }
     throw error;
   }

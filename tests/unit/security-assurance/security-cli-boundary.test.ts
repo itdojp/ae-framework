@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path, { join, resolve } from 'node:path';
 
@@ -45,6 +45,8 @@ describe('Security Assurance Lane CLI boundary', () => {
       expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
       const outputLine = result.stdout.split(/\r?\n/).find((line) => line.startsWith('Output: '));
       const summaryLine = result.stdout.split(/\r?\n/).find((line) => line.startsWith('Summary: '));
+      expect(outputLine, `stdout:\n${result.stdout}\nstderr:\n${result.stderr}`).toBeDefined();
+      expect(summaryLine, `stdout:\n${result.stdout}\nstderr:\n${result.stderr}`).toBeDefined();
       expect(outputLine).toMatch(/^Output: artifacts\/security-cli-boundary-[^\\]+\/security-claims\.json$/);
       expect(summaryLine).toMatch(/^Summary: artifacts\/security-cli-boundary-[^\\]+\/security-claims\.md$/);
       expect(outputLine).not.toContain(process.cwd());
@@ -86,6 +88,41 @@ describe('Security Assurance Lane CLI boundary', () => {
     expect(result.stderr).toContain('Unsafe --out path');
     expect(result.stderr).toContain('absolute output paths must stay under');
     expect(existsSync(deniedPath)).toBe(false);
+  });
+
+  it('rejects --out paths that escape through existing symlink directories', () => {
+    mkdirSync('artifacts', { recursive: true });
+    const outDir = mkdtempSync(join(resolve('artifacts'), 'security-cli-symlink-boundary-'));
+    const linkPath = join(outDir, 'link-to-root');
+    const escapedFileName = `ae-security-symlink-escape-${Date.now()}.json`;
+    const escapedOutputPath = join(linkPath, escapedFileName);
+    try {
+      try {
+        symlinkSync(path.parse(process.cwd()).root, linkPath, 'dir');
+      } catch (error: unknown) {
+        if (process.platform === 'win32') {
+          return;
+        }
+        throw error;
+      }
+
+      const result = runSecurity([
+        'extract-claims',
+        '--spec',
+        inputSpec,
+        '--out',
+        escapedOutputPath,
+        '--generated-at',
+        generatedAt,
+      ]);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('Unsafe --out path');
+      expect(result.stderr).toContain('existing symlink segments');
+      expect(existsSync(escapedOutputPath)).toBe(false);
+    } finally {
+      rmSync(outDir, { recursive: true, force: true });
+    }
   });
 
   it('reports malformed JSON input with a stable error prefix', () => {
