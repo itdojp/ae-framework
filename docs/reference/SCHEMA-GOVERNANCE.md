@@ -63,6 +63,7 @@ These URLs are branch/path-coupled and are not stable schema identifiers.
 ### 7. CI checkpoints
 
 - `schema/**` changes trigger `.github/workflows/spec-validation.yml`.
+- Assurance contract governance markers can be checked locally with `pnpm -s run check:assurance-contract-governance`; this check is deterministic documentation/schema consistency support and does not prove code correctness.
 - Schema/artifact validation is executed in:
   - `.github/workflows/validate-artifacts-ajv.yml`
   - `.github/workflows/verify-lite.yml`
@@ -163,6 +164,7 @@ These URLs are branch/path-coupled and are not stable schema identifiers.
 ### 7. CI観点
 
 - `schema/**` の変更は `.github/workflows/spec-validation.yml` のトリガー対象。
+- Assurance contract governance marker は `pnpm -s run check:assurance-contract-governance` でローカル確認できます。この check は決定的な documentation / schema consistency support であり、コード正しさの証明ではありません。
 - スキーマ/成果物検証は次で実行される。
   - `.github/workflows/validate-artifacts-ajv.yml`
   - `.github/workflows/verify-lite.yml`
