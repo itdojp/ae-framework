@@ -245,6 +245,19 @@ describe.sequential('render-pr-summary', () => {
               postDeployChecks: ['post-deploy-verify'],
               rollbackSignals: ['post-deploy-verify.status=fail'],
             },
+            contractMigrationNotes: [
+              {
+                contractId: 'change-package/v2',
+                compatibilityState: 'preview',
+                dualWriteStatus: 'active',
+                dualValidateStatus: 'planned',
+                affectedProducers: ['scripts/change-package/generate.mjs'],
+                affectedConsumers: ['scripts/summary/render-pr-summary.mjs'],
+                migrationNoteRefs: ['docs/reference/change-package-v2.md'],
+                rollbackRefs: ['docs/reference/SCHEMA-GOVERNANCE.md'],
+                summary: 'Preview contract migration note for summary surfaces.',
+              },
+            ],
           },
           null,
           2,
@@ -258,6 +271,120 @@ describe.sequential('render-pr-summary', () => {
       expect(output).toContain('Change Package v2: claims=4, proofObligations=1, waivers=1, assurance=A3/A2/partial');
       expect(output).toContain('evidencePackage=artifacts/change-package/change-package-v2.json');
       expect(output).toContain('claimStates=satisfied=0, tested=1, model-checked=0, proved=0, runtime-mitigated=0, waived=1, unresolved=0, failed=1, not-applicable=1');
+      expect(output).toContain('Contract migrations: change-package/v2:preview dual-write=active dual-validate=planned');
+      expect(output).toContain('migration=docs/reference/change-package-v2.md rollback=docs/reference/SCHEMA-GOVERNANCE.md');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('omits contract migration notes when change-package v2 has none', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-no-contract-migration-'));
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'summary'), { recursive: true });
+      mkdirSync(join(sandbox, 'artifacts', 'change-package'), { recursive: true });
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'summary', 'combined.json'),
+        JSON.stringify(
+          {
+            adapters: [{ adapter: 'playwright', summary: '12/12 passed', status: 'ok' }],
+            formal: { result: 'pass' },
+          },
+          null,
+          2,
+        ),
+      );
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'change-package', 'change-package-v2.json'),
+        JSON.stringify(
+          {
+            schemaVersion: 'change-package/v2',
+            assurance: {
+              targetLevel: 'A2',
+              achievedLevel: 'A2',
+              status: 'satisfied',
+            },
+            claims: [],
+            proofObligations: [],
+            waivers: [],
+          },
+          null,
+          2,
+        ),
+      );
+
+      const result = runScript(sandbox, { SUMMARY_MODE: 'digest', SUMMARY_LANG: 'en' });
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
+      expect(output).toContain('Change Package v2: claims=0');
+      expect(output).not.toContain('Contract migrations:');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('renders contract migration labels in Japanese mode', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-contract-migration-ja-'));
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'summary'), { recursive: true });
+      mkdirSync(join(sandbox, 'artifacts', 'change-package'), { recursive: true });
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'summary', 'combined.json'),
+        JSON.stringify(
+          {
+            adapters: [{ adapter: 'playwright', summary: '12/12 passed', status: 'ok' }],
+            formal: { result: 'pass' },
+          },
+          null,
+          2,
+        ),
+      );
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'change-package', 'change-package-v2.json'),
+        JSON.stringify(
+          {
+            schemaVersion: 'change-package/v2',
+            assurance: {
+              targetLevel: 'A2',
+              achievedLevel: 'A2',
+              status: 'satisfied',
+            },
+            claims: [],
+            proofObligations: [],
+            waivers: [],
+            contractMigrationNotes: [
+              {
+                contractId: 'policy-decision/v1',
+                compatibilityState: 'legacy-compatible',
+                dualWriteStatus: 'complete',
+                dualValidateStatus: 'active',
+                affectedProducers: ['policy-gate'],
+                affectedConsumers: ['pr-summary'],
+                migrationNoteRefs: ['docs/reference/SCHEMA-GOVERNANCE.md'],
+                rollbackRefs: ['docs/reference/ASSURANCE-CANONICAL-ROUTES.md'],
+                summary: 'Policy decision remains legacy-compatible while summaries migrate.',
+              },
+            ],
+          },
+          null,
+          2,
+        ),
+      );
+
+      const result = runScript(sandbox, { SUMMARY_MODE: 'digest', SUMMARY_LANG: 'ja' });
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
+      expect(output).toContain('契約移行: policy-decision/v1:legacy-compatible');
+      expect(output).toContain('移行注記=docs/reference/SCHEMA-GOVERNANCE.md');
+      expect(output).toContain('ロールバック=docs/reference/ASSURANCE-CANONICAL-ROUTES.md');
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

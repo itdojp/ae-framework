@@ -26,8 +26,26 @@ const DEFAULT_POLICY_DECISION_PATH = 'artifacts/ci/policy-decision-js-v1.json';
 const DEFAULT_ASSURANCE_SUMMARY_PATH = 'artifacts/assurance/assurance-summary.json';
 const DEFAULT_CLAIM_LEVEL_SUMMARY_PATH = 'artifacts/assurance/claim-level-summary.json';
 const DEFAULT_POST_DEPLOY_VERIFY_PATH = 'artifacts/release/post-deploy-verify.json';
+const DEFAULT_CONTRACT_MIGRATION_NOTES_PATH = 'artifacts/change-package/contract-migration-notes.json';
 
 const ASSURANCE_LEVELS = ['A0', 'A1', 'A2', 'A3', 'A4'];
+const CONTRACT_COMPATIBILITY_STATES = new Set([
+  'stable',
+  'preview',
+  'legacy-compatible',
+  'deprecated',
+  'breaking',
+  'removed',
+  'unknown',
+]);
+const CONTRACT_MIGRATION_STATUSES = new Set([
+  'not-applicable',
+  'planned',
+  'active',
+  'complete',
+  'blocked',
+  'unknown',
+]);
 const V2_CLAIM_STATUSES = new Set([
   'satisfied',
   'proved',
@@ -137,6 +155,7 @@ function parseArgs(argv = process.argv) {
     assuranceSummaryPath: DEFAULT_ASSURANCE_SUMMARY_PATH,
     claimLevelSummaryPath: DEFAULT_CLAIM_LEVEL_SUMMARY_PATH,
     postDeployVerifyPath: DEFAULT_POST_DEPLOY_VERIFY_PATH,
+    contractMigrationNotesPath: DEFAULT_CONTRACT_MIGRATION_NOTES_PATH,
     repository: '',
     prNumber: null,
     baseRef: '',
@@ -285,6 +304,14 @@ function parseArgs(argv = process.argv) {
       options.postDeployVerifyPath = arg.slice('--post-deploy-verify='.length);
       continue;
     }
+    if (arg === '--contract-migration-notes') {
+      options.contractMigrationNotesPath = readValue('--contract-migration-notes');
+      continue;
+    }
+    if (arg.startsWith('--contract-migration-notes=')) {
+      options.contractMigrationNotesPath = arg.slice('--contract-migration-notes='.length);
+      continue;
+    }
     if (arg === '--repo') {
       options.repository = readValue('--repo');
       continue;
@@ -376,6 +403,7 @@ function printHelp() {
     + `  --assurance-summary <path>    assurance-summary/v1 input for v2 (default: ${DEFAULT_ASSURANCE_SUMMARY_PATH})\n`
     + `  --claim-level-summary <path>  claim-level-summary/v1 input for v2 (default: ${DEFAULT_CLAIM_LEVEL_SUMMARY_PATH})\n`
     + `  --post-deploy-verify <path>   post-deploy verification input for v2 release controls (default: ${DEFAULT_POST_DEPLOY_VERIFY_PATH})\n`
+    + `  --contract-migration-notes <path> optional contract migration-note input for v2 summaries (default: ${DEFAULT_CONTRACT_MIGRATION_NOTES_PATH})\n`
     + `  --changed-files-file <path>   newline-separated changed files input\n`
     + `  --artifact-root <path>        root path for evidence existence checks (default: ${DEFAULT_ARTIFACT_ROOT})\n`
     + `  --mode <digest|detailed>      markdown detail level (default: ${DEFAULT_MODE})\n`
@@ -488,6 +516,18 @@ function normalizeDate(value, fallback = '2099-12-31') {
   return /^\d{4}-\d{2}-\d{2}$/u.test(candidate) ? candidate : fallback;
 }
 
+function normalizeCompatibilityState(value) {
+  const candidate = String(value || '').trim().toLowerCase();
+  return CONTRACT_COMPATIBILITY_STATES.has(candidate) ? candidate : 'unknown';
+}
+
+function normalizeMigrationStatus(value) {
+  if (value === true) return 'active';
+  if (value === false) return 'not-applicable';
+  const candidate = String(value || '').trim().toLowerCase();
+  return CONTRACT_MIGRATION_STATUSES.has(candidate) ? candidate : 'unknown';
+}
+
 function stripJsonPointer(artifactRef) {
   return String(artifactRef || '').split('#')[0].trim();
 }
@@ -497,6 +537,52 @@ function normalizeArtifactRefs(values, fallback) {
     .map(stripJsonPointer)
     .filter(Boolean);
   return refs.length > 0 ? refs : [fallback].filter(Boolean);
+}
+
+function normalizeContractMigrationNote(rawNote, sourcePath) {
+  const note = ensureObject(rawNote);
+  const contractId = String(note.contractId || note.contract || note.schemaVersion || '').trim();
+  if (!contractId) return null;
+  const summary = String(note.summary || note.note || '').trim()
+    || `Contract migration note for ${contractId}.`;
+  const migrationNoteRefs = normalizeArtifactRefs([
+    ...ensureArray(note.migrationNoteRefs),
+    note.migrationNotePath,
+    note.notePath,
+    note.sourceArtifactPath,
+  ], sourcePath);
+  return {
+    contractId,
+    compatibilityState: normalizeCompatibilityState(note.compatibilityState || note.state),
+    dualWriteStatus: normalizeMigrationStatus(note.dualWriteStatus ?? note.dualWrite),
+    dualValidateStatus: normalizeMigrationStatus(note.dualValidateStatus ?? note.dualValidate),
+    affectedProducers: uniqueStrings(note.affectedProducers),
+    affectedConsumers: uniqueStrings(note.affectedConsumers),
+    migrationNoteRefs,
+    rollbackRefs: normalizeArtifactRefs([
+      ...ensureArray(note.rollbackRefs),
+      note.rollbackRef,
+      note.rollbackPath,
+    ], ''),
+    summary,
+  };
+}
+
+function buildContractMigrationNotes(source) {
+  if (!source.present) return [];
+  const payload = source.payload;
+  const rawNotes = Array.isArray(payload)
+    ? payload
+    : (Array.isArray(payload?.contractMigrationNotes) || Array.isArray(payload?.notes)
+      ? [
+        ...ensureArray(payload?.contractMigrationNotes),
+        ...ensureArray(payload?.notes),
+      ]
+      : [payload]);
+  return rawNotes
+    .map((entry) => normalizeContractMigrationNote(entry, source.path))
+    .filter(Boolean)
+    .sort((left, right) => left.contractId.localeCompare(right.contractId));
 }
 
 function collectRequirementRefs(rawClaim) {
@@ -1345,6 +1431,12 @@ function renderStatusCounts(claims) {
     .join(', ');
 }
 
+function renderContractMigrationDigest(notes) {
+  return notes
+    .map((note) => `${note.contractId}:${note.compatibilityState}`)
+    .join(', ');
+}
+
 function renderV2DetailedSections(changePackage, outputJsonPath) {
   if (changePackage.schemaVersion !== 'change-package/v2') {
     return [];
@@ -1353,6 +1445,7 @@ function renderV2DetailedSections(changePackage, outputJsonPath) {
   const proofObligations = ensureArray(changePackage.proofObligations);
   const waivers = ensureArray(changePackage.waivers);
   const residualRisks = ensureArray(changePackage.residualRisks);
+  const contractMigrationNotes = ensureArray(changePackage.contractMigrationNotes);
   return [
     '### Proof-carrying Assurance',
     `- evidence package: \`${outputJsonPath || DEFAULT_V2_OUTPUT_JSON_PATH}\``,
@@ -1403,6 +1496,26 @@ function renderV2DetailedSections(changePackage, outputJsonPath) {
     `- post-deploy checks: ${ensureArray(changePackage.releaseControls.postDeployChecks).join(', ') || '(none)'}`,
     `- rollback signals: ${ensureArray(changePackage.releaseControls.rollbackSignals).join(', ') || '(none)'}`,
     '',
+    ...(contractMigrationNotes.length > 0
+      ? [
+        '### Contract Migration Notes',
+        renderTable(
+          ['contract', 'state', 'dual-write', 'dual-validate', 'producers', 'consumers', 'migration refs', 'rollback refs', 'summary'],
+          contractMigrationNotes.map((note) => [
+            note.contractId,
+            note.compatibilityState,
+            note.dualWriteStatus,
+            note.dualValidateStatus,
+            ensureArray(note.affectedProducers).join(', ') || '(none)',
+            ensureArray(note.affectedConsumers).join(', ') || '(none)',
+            ensureArray(note.migrationNoteRefs).join(', ') || '(none)',
+            ensureArray(note.rollbackRefs).join(', ') || '(none)',
+            note.summary,
+          ]),
+        ),
+        '',
+      ]
+      : []),
     '### Residual Risks',
     renderTable(
       ['id', 'severity', 'claimIds', 'statement'],
@@ -1433,11 +1546,13 @@ function renderV2DigestSuffix(changePackage, outputJsonPath) {
   if (changePackage.schemaVersion !== 'change-package/v2') {
     return '';
   }
+  const contractMigrationNotes = ensureArray(changePackage.contractMigrationNotes);
   return ` | assurance=${changePackage.assurance.targetLevel}/${changePackage.assurance.achievedLevel}/${changePackage.assurance.status}`
     + ` | claims=${ensureArray(changePackage.claims).length}`
     + ` | states(${renderStatusCounts(ensureArray(changePackage.claims))})`
     + ` | proofObligations=${ensureArray(changePackage.proofObligations).length}`
     + ` | waivers=${ensureArray(changePackage.waivers).length}`
+    + (contractMigrationNotes.length > 0 ? ` | contractMigrations=${contractMigrationNotes.length} (${renderContractMigrationDigest(contractMigrationNotes)})` : '')
     + ` | evidencePackage=${outputJsonPath || DEFAULT_V2_OUTPUT_JSON_PATH}`;
 }
 
@@ -1639,6 +1754,11 @@ function buildChangePackageV2(options, eventPayload, baseChangePackage = buildCh
     options.postDeployVerifyPath,
     'post-deploy verification result',
   );
+  const contractMigrationNotesSource = loadOptionalJsonSource(
+    'contractMigrationNotes',
+    options.contractMigrationNotesPath,
+    'contract migration notes for PR and release summaries',
+  );
   const claimsById = new Map();
   const proofObligations = [];
   const waivers = [];
@@ -1693,12 +1813,14 @@ function buildChangePackageV2(options, eventPayload, baseChangePackage = buildCh
       assuranceSummary,
       claimLevelSummary,
       postDeployVerify,
+      ...(contractMigrationNotesSource.present ? [contractMigrationNotesSource] : []),
     ]),
     requirements: buildV2Requirements(baseChangePackage.scope.changedFiles, claims),
     validationLanes: buildValidationLanes(claimLevelSummary, baseChangePackage.evidence),
     policyDecision: buildPolicyDecisionSummary(policyDecision),
     releaseControls,
     residualRisks: buildResidualRisks(claims, assumptions),
+    contractMigrationNotes: buildContractMigrationNotes(contractMigrationNotesSource),
     assurance: buildV2Assurance(claims, claimEvidenceManifest, policyDecision, assuranceSummary, claimLevelSummary),
     claims,
     assumptions: assumptions.map((assumption) => ({

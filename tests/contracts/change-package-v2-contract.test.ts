@@ -81,4 +81,25 @@ describe('change-package v2 contract', () => {
     expect(validate(invalidFixture)).toBe(false);
     expect(validate.errors?.some((entry) => entry.instancePath === '/waivers/0')).toBe(true);
   });
+
+  it('validates contract migration notes as an additive preview summary surface', () => {
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+    const invalidFixture = structuredClone(fixture) as {
+      contractMigrationNotes: Array<Record<string, unknown>>;
+    };
+
+    expect(Array.isArray(invalidFixture.contractMigrationNotes)).toBe(true);
+    expect(invalidFixture.contractMigrationNotes[0]).toMatchObject({
+      contractId: 'change-package/v2',
+      compatibilityState: 'preview',
+      dualWriteStatus: 'active',
+      dualValidateStatus: 'active',
+    });
+
+    invalidFixture.contractMigrationNotes[0].compatibilityState = 'silent-breaking-change';
+    expect(validate(invalidFixture)).toBe(false);
+    expect(validate.errors?.some((entry) => entry.instancePath === '/contractMigrationNotes/0/compatibilityState')).toBe(true);
+  });
 });
