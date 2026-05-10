@@ -185,7 +185,7 @@ The produced/consumed table lists implementation entry points. When more than on
 
 | Topic | Canonical route | Compatibility route | Cleanup status |
 | --- | --- | --- | --- |
-| Quality scorecard | `quality-scorecard/v1`, `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, `schema/quality-scorecard.schema.json` | `pnpm run quality:scorecard`, `scripts/quality-scorecard-generator.js` | Compatibility script delegates to v1 when required inputs are supplied; keep no-input legacy diagnostics until workflow consumers have v1 input wiring tests. |
+| Quality scorecard | `quality-scorecard/v1`, `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, `schema/quality-scorecard.schema.json` | `pnpm run quality:scorecard`, `scripts/quality-scorecard-generator.js` | Compatibility script delegates to v1 only when both required inputs are supplied; `--legacy` / `--legacy-diagnostic` force legacy diagnostics until workflow consumers have v1 input wiring tests. |
 | Formal status | `artifacts/formal/formal-summary-v2.json` plus dual-write `artifacts/formal/formal-summary-v1.json`; aggregate `artifacts/hermetic-reports/formal/summary.json` | `formal/summary.json` | Keep as compatibility input only; current PR summary rendering still reads it before the hermetic aggregate. |
 | Counterexample GWT | `artifacts/formal/gwt.summary.json` | Counterexamples embedded in `formal/summary.json` | Derived aid only; not a primary formal status contract. |
 | PR summary judgment | `scripts/summary/render-pr-summary.mjs` plus `pr-ci-status-comment.yml` append stage | Hand-authored or older bot summaries | Keep direct renderer inputs separate from workflow-appended Markdown. |
