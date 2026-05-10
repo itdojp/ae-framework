@@ -15,7 +15,7 @@ lastVerified: '2026-05-09'
 
 ### Purpose
 - Provide both a short human-readable GWT form and a machine-readable JSON form for counterexamples consumed by `ae fix`.
-- Keep the doc aligned with the legacy compatibility input `formal/summary.json` counterexample shape and the derived `artifacts/formal/gwt.summary.json` output produced by `scripts/formal/format-counterexamples.mjs`.
+- Keep the doc aligned with canonical aggregate/tool counterexamples first, while preserving the legacy compatibility input `formal/summary.json` counterexample shape and the derived `artifacts/formal/gwt.summary.json` output produced by `scripts/formal/format-counterexamples.mjs`.
 - The primary formal status contracts are `artifacts/formal/formal-summary-v1.json`, `artifacts/formal/formal-summary-v2.json`, and the aggregate `artifacts/hermetic-reports/formal/summary.json`; this GWT artifact is a derived aid, not the primary status contract.
 
 ### Short GWT (example)
@@ -27,7 +27,8 @@ Then invariant "allocated <= onHand" fails
 
 ### Machine JSON
 - Source location:
-  - embedded in the legacy compatibility input `formal/summary.json`
+  - preferred: counterexamples embedded in canonical aggregate/tool evidence, especially `artifacts/hermetic-reports/formal/summary.json` or `artifacts/formal/formal-aggregate.json`
+  - compatibility fallback: counterexamples embedded in `formal/summary.json`
 - Derived location:
   - `scripts/formal/format-counterexamples.mjs` can derive `artifacts/formal/gwt.summary.json`
 
@@ -51,7 +52,7 @@ Then invariant "allocated <= onHand" fails
 
 ### 目的
 - 反例を、人間向けの短い GWT 形式と、`ae fix` が読める機械可読 JSON の両方で扱えるようにします。
-- legacy compatibility input の `formal/summary.json` の反例形式と、`scripts/formal/format-counterexamples.mjs` が生成する `artifacts/formal/gwt.summary.json` に整合させます。
+- canonical aggregate / tool evidence の反例を優先しつつ、legacy compatibility input の `formal/summary.json` の反例形式と、`scripts/formal/format-counterexamples.mjs` が生成する `artifacts/formal/gwt.summary.json` に整合させます。
 - primary formal status contract は `artifacts/formal/formal-summary-v1.json`、`artifacts/formal/formal-summary-v2.json`、aggregate の `artifacts/hermetic-reports/formal/summary.json` です。この GWT artifact は派生補助であり、primary status contract ではありません。
 
 ### 短い GWT（例）
@@ -63,7 +64,8 @@ Then invariant "allocated <= onHand" fails
 
 ### 機械可読 JSON
 - 元の格納先:
-  - legacy compatibility input の `formal/summary.json` に埋め込まれます
+  - 優先: `artifacts/hermetic-reports/formal/summary.json` や `artifacts/formal/formal-aggregate.json` などの canonical aggregate / tool evidence に埋め込まれた counterexample
+  - 互換 fallback: `formal/summary.json` に埋め込まれた counterexample
 - 派生出力先:
   - `scripts/formal/format-counterexamples.mjs` により `artifacts/formal/gwt.summary.json` を生成できます
 
