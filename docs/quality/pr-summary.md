@@ -18,7 +18,7 @@ lastVerified: '2026-05-09'
 ### Overview
 - This document defines the current one-page PR summary policy for the renderer and workflow append pipeline.
 - Baseline sections include the verify-lite summary, Discovery Pack status, assurance, failing GWT references, adapter summaries, formal status, and trace IDs.
-- Current direct inputs are `artifacts/summary/combined.json`, `artifacts/verify-lite/verify-lite-run-summary.json`, `coverage/coverage-summary.json` or `artifacts/coverage/coverage-summary.json`, `artifacts/domain/replay.summary.json`, `artifacts/bdd/scenarios.json`, `artifacts/properties/summary.json`, `artifacts/properties/ltl-suggestions.json`, `artifacts/formal/gwt.summary.json`, and optional `artifacts/assurance/assurance-summary.json`, `artifacts/assurance/claim-evidence-manifest.json`, `artifacts/quality/quality-scorecard.json`, `artifacts/formal/formal-aggregate.json`, legacy compatibility input `formal/summary.json`, or `artifacts/hermetic-reports/formal/summary.json`.
+- Current direct inputs are `artifacts/summary/combined.json`, `artifacts/verify-lite/verify-lite-run-summary.json`, `coverage/coverage-summary.json` or `artifacts/coverage/coverage-summary.json`, `artifacts/domain/replay.summary.json`, `artifacts/bdd/scenarios.json`, `artifacts/properties/summary.json`, `artifacts/properties/ltl-suggestions.json`, `artifacts/formal/gwt.summary.json`, and optional `artifacts/assurance/assurance-summary.json`, `artifacts/assurance/claim-evidence-manifest.json`, `artifacts/quality/quality-scorecard.json`, canonical formal inputs `artifacts/formal/formal-summary-v2.json` / `artifacts/formal/formal-summary-v1.json`, `artifacts/hermetic-reports/formal/summary.json`, `artifacts/formal/formal-aggregate.json`, or final legacy compatibility input `formal/summary.json`.
 - The renderer writes the baseline Markdown to `artifacts/summary/PR_SUMMARY.md` and may append report-only detection lines such as `Detected coverage`, `Detected adapters`, and `Adapter shape warnings` when `artifacts/ae/context.json` or related adapter validation artifacts exist. After that, `pr-ci-status-comment.yml` appends `harness-health`, `change-package`, `change-package-validation`, `plan-artifact`, `plan-artifact-validation`, `hook-feedback`, `quality-scorecard`, and `claim-evidence-manifest` Markdown artifacts.
 
 Minimal one-line summary example:
@@ -46,9 +46,11 @@ Minimal one-line summary example:
   - `artifacts/assurance/assurance-summary.json`
   - `artifacts/assurance/claim-evidence-manifest.json`
   - `artifacts/quality/quality-scorecard.json`
-  - `artifacts/formal/formal-aggregate.json`
-  - legacy compatibility input `formal/summary.json`
+  - `artifacts/formal/formal-summary-v2.json`
+  - `artifacts/formal/formal-summary-v1.json`
   - `artifacts/hermetic-reports/formal/summary.json`
+  - `artifacts/formal/formal-aggregate.json`
+  - final legacy compatibility input `formal/summary.json`
 
 ### Workflow Append Stage
 - The renderer writes the baseline block to `artifacts/summary/PR_SUMMARY.md` and may append report-only detection lines such as `Detected coverage`, `Detected adapters`, and `Adapter shape warnings` when `artifacts/ae/context.json` or related adapter validation artifacts exist.
@@ -70,7 +72,7 @@ Minimal one-line summary example:
 - Claim evidence: per-claim satisfied / partial / waived / unresolved counts and missing / waiver reference counts from `artifacts/assurance/claim-evidence-manifest.json`
 - Failing GWT: short counterexamples derived from `artifacts/formal/gwt.summary.json.items`, using the count and the first `property` or GWT fragment (`traceId` is not currently rendered)
 - Adapters: one-line summaries from `artifacts/summary/combined.json`
-- Formal: prefer `artifacts/summary/combined.json.formal`, then legacy compatibility input `formal/summary.json`, then `artifacts/hermetic-reports/formal/summary.json`. This preserves current renderer behavior; the canonical formal evidence route remains formal-summary v1/v2 plus the hermetic aggregate.
+- Formal: prefer `artifacts/summary/combined.json.formal`, then canonical `artifacts/formal/formal-summary-v2.json`, then `artifacts/formal/formal-summary-v1.json`, then `artifacts/hermetic-reports/formal/summary.json`, including the same paths under `artifacts/downloaded/verify-lite-report/` when the PR Maintenance workflow has downloaded verify-lite evidence before rendering. Legacy compatibility input `formal/summary.json` remains the final fallback. Formal Summary `ok` / `failed` is rendered as PR-summary `pass` / `fail`; hermetic aggregate presence is rendered as `present <n>/<total>` when no pass/fail status exists.
 - Trace IDs: filterable trace references for replay / property / failure paths
 
 ### Current Renderer Notes
@@ -95,7 +97,7 @@ Detailed block:
 - Adapters:
   - lighthouse: Perf 78, A11y 96, PWA 55 (warn)
   - playwright: 12/12 passed (ok)
-- Formal: fail — see `formal/summary.json` (legacy compatibility); attach `artifacts/hermetic-reports/formal/summary.json` / formal-summary v2 as current formal evidence
+- Formal: fail — from `artifacts/formal/formal-summary-v2.json` or `artifacts/hermetic-reports/formal/summary.json`; use `formal/summary.json` only as the final legacy compatibility fallback
 - Trace IDs: inv-001, inv-002
 ```
 
@@ -106,7 +108,7 @@ Failure-oriented example:
 - Adapters:
   - lighthouse: Perf 72, A11y 93, PWA 50 (warn)
   - playwright: 10/12 passed (error)
-- Formal: fail — see `formal/summary.json` (legacy compatibility); attach `artifacts/hermetic-reports/formal/summary.json` / formal-summary v2 as current formal evidence
+- Formal: fail — from `artifacts/formal/formal-summary-v2.json` or `artifacts/hermetic-reports/formal/summary.json`; use `formal/summary.json` only as the final legacy compatibility fallback
 - Trace IDs: inv-001, inv-007
 ```
 
@@ -119,9 +121,9 @@ Replay: 12 events (ItemReceived:7, ItemAllocated:5), 0 violations
 - Keep the renderer core thin and push enrichment into CI append stages or release scripts.
 - Prefer aggregating validated artifacts.
 - Discovery Pack execution records under `steps.discoveryPackValidation` and `steps.discoveryPackCompile` are operational traces in `verify-lite-run-summary.json`; they are not direct renderer inputs.
-- Formal Summary v1/v2 remain upstream producer / validator contracts. They are not direct renderer inputs.
+- Formal Summary v2/v1 are now direct read-only renderer inputs after `combined.json.formal`; they remain upstream producer / validator contracts and are not schema-validated by the renderer itself.
 - `artifacts/formal/formal-aggregate.json` is supplementary aggregate detail, not the primary formal status source.
-- The current renderer and workflow append step still keep `formal/summary.json` as a compatibility input; migration away from that fallback is tracked in `docs/reference/ASSURANCE-CANONICAL-ROUTES.md`.
+- The current renderer and workflow inline fallback keep `formal/summary.json` as the final compatibility input after canonical formal-summary and hermetic aggregate paths.
 
 ### Current Validation and Error Behavior
 - `scripts/summary/render-pr-summary.mjs` does not enforce JSON schema validation.
@@ -179,7 +181,7 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
 ### 概要
 - 本ドキュメントは、renderer と workflow append pipeline における current one-page PR summary policy を定義します。
 - baseline section には、verify-lite summary、Discovery Pack status、assurance、failing GWT references、adapter summaries、formal status、trace IDs が含まれます。
-- 現在の direct input は `artifacts/summary/combined.json`、`artifacts/verify-lite/verify-lite-run-summary.json`、`coverage/coverage-summary.json` または `artifacts/coverage/coverage-summary.json`、`artifacts/domain/replay.summary.json`、`artifacts/bdd/scenarios.json`、`artifacts/properties/summary.json`、`artifacts/properties/ltl-suggestions.json`、`artifacts/formal/gwt.summary.json`、および optional の `artifacts/assurance/assurance-summary.json`、`artifacts/assurance/claim-evidence-manifest.json`、`artifacts/quality/quality-scorecard.json`、`artifacts/formal/formal-aggregate.json`、legacy compatibility input `formal/summary.json`、`artifacts/hermetic-reports/formal/summary.json` です。
+- 現在の direct input は `artifacts/summary/combined.json`、`artifacts/verify-lite/verify-lite-run-summary.json`、`coverage/coverage-summary.json` または `artifacts/coverage/coverage-summary.json`、`artifacts/domain/replay.summary.json`、`artifacts/bdd/scenarios.json`、`artifacts/properties/summary.json`、`artifacts/properties/ltl-suggestions.json`、`artifacts/formal/gwt.summary.json`、および optional の `artifacts/assurance/assurance-summary.json`、`artifacts/assurance/claim-evidence-manifest.json`、`artifacts/quality/quality-scorecard.json`、正準 formal input の `artifacts/formal/formal-summary-v2.json` / `artifacts/formal/formal-summary-v1.json`、`artifacts/hermetic-reports/formal/summary.json`、`artifacts/formal/formal-aggregate.json`、final legacy compatibility input `formal/summary.json` です。
 - renderer は baseline Markdown を `artifacts/summary/PR_SUMMARY.md` に書き出し、`artifacts/ae/context.json` や adapter validation artifact が存在する場合は `Detected coverage`、`Detected adapters`、`Adapter shape warnings` のような report-only 検出行を自ら追記します。その後 `pr-ci-status-comment.yml` が `harness-health`、`change-package`、`change-package-validation`、`plan-artifact`、`plan-artifact-validation`、`hook-feedback`、`quality-scorecard`、`claim-evidence-manifest` の Markdown artifact を追記します。
 
 最小 1 行サマリ（例）:
@@ -207,9 +209,11 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
   - `artifacts/assurance/assurance-summary.json`
   - `artifacts/assurance/claim-evidence-manifest.json`
   - `artifacts/quality/quality-scorecard.json`
-  - `artifacts/formal/formal-aggregate.json`
-  - legacy compatibility input `formal/summary.json`
+  - `artifacts/formal/formal-summary-v2.json`
+  - `artifacts/formal/formal-summary-v1.json`
   - `artifacts/hermetic-reports/formal/summary.json`
+  - `artifacts/formal/formal-aggregate.json`
+  - final legacy compatibility input `formal/summary.json`
 
 ### Workflow 追記段階
 - renderer は baseline block を `artifacts/summary/PR_SUMMARY.md` に書き出し、`artifacts/ae/context.json` や adapter validation artifact が存在する場合は `Detected coverage`、`Detected adapters`、`Adapter shape warnings` のような report-only 検出行を追記します。
@@ -231,7 +235,7 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
 - Claim evidence: `artifacts/assurance/claim-evidence-manifest.json` から claim 単位の satisfied / partial / waived / unresolved 件数と missing / waiver reference 件数を出力します。
 - Failing GWT: `artifacts/formal/gwt.summary.json.items` から件数と先頭の `property` または GWT 断片を使った短い counterexample を出力します（現状 `traceId` は出力しません）。
 - Adapters: `artifacts/summary/combined.json` から 1 行 summary を生成します。
-- Formal: `artifacts/summary/combined.json.formal` を優先し、次に legacy compatibility input の `formal/summary.json`、さらに `artifacts/hermetic-reports/formal/summary.json` を見ます。これは現行 renderer 挙動を維持する説明です。正準 formal evidence 導線は formal-summary v1/v2 と hermetic aggregate です。
+- Formal: `artifacts/summary/combined.json.formal` を優先し、次に正準 `artifacts/formal/formal-summary-v2.json`、`artifacts/formal/formal-summary-v1.json`、`artifacts/hermetic-reports/formal/summary.json` を見ます。PR Maintenance workflow が rendering 前に verify-lite evidence を download した場合は、同じ path の `artifacts/downloaded/verify-lite-report/` mirror も参照します。legacy compatibility input の `formal/summary.json` は final fallback です。Formal Summary の `ok` / `failed` は PR summary 上では `pass` / `fail` として表示し、pass/fail status が無い hermetic aggregate は `present <n>/<total>` として表示します。
 - Trace IDs: replay / property / failure path の filter 可能な trace reference を出力します。
 
 ### Current renderer の注意点
@@ -256,7 +260,7 @@ Quality: 82% (>=80) ✅ [+1%] | Formal: pass | Adapters: lighthouse(warn), playw
 - Adapters:
   - lighthouse: Perf 78, A11y 96, PWA 55 (warn)
   - playwright: 12/12 passed (ok)
-- Formal: fail — see `formal/summary.json`（legacy compatibility）。current formal evidence として `artifacts/hermetic-reports/formal/summary.json` / formal-summary v2 も添付します
+- Formal: fail — `artifacts/formal/formal-summary-v2.json` または `artifacts/hermetic-reports/formal/summary.json` から表示します。`formal/summary.json` は final legacy compatibility fallback としてのみ使います
 - Trace IDs: inv-001, inv-002
 ```
 
@@ -267,7 +271,7 @@ Quality: 82% (>=80) ✅ [+1%] | Formal: pass | Adapters: lighthouse(warn), playw
 - Adapters:
   - lighthouse: Perf 72, A11y 93, PWA 50 (warn)
   - playwright: 10/12 passed (error)
-- Formal: fail — see `formal/summary.json`（legacy compatibility）。current formal evidence として `artifacts/hermetic-reports/formal/summary.json` / formal-summary v2 も添付します
+- Formal: fail — `artifacts/formal/formal-summary-v2.json` または `artifacts/hermetic-reports/formal/summary.json` から表示します。`formal/summary.json` は final legacy compatibility fallback としてのみ使います
 - Trace IDs: inv-001, inv-007
 ```
 
@@ -280,9 +284,9 @@ Replay: 12 events (ItemReceived:7, ItemAllocated:5), 0 violations
 - renderer の core は薄く保ち、enrichment は CI append stage または release script 側へ寄せます。
 - validated artifact の集約を優先します。
 - `steps.discoveryPackValidation` と `steps.discoveryPackCompile` にある Discovery Pack execution record は、`verify-lite-run-summary.json` の operational trace であり、renderer の direct input ではありません。
-- Formal Summary v1/v2 は upstream producer / validator contract であり、renderer の direct input ではありません。
+- Formal Summary v2/v1 は `combined.json.formal` の次に参照される renderer の read-only direct input です。upstream producer / validator contract である点は維持し、renderer 自体は schema validation を実行しません。
 - `artifacts/formal/formal-aggregate.json` は補助的な aggregate detail であり、primary formal status source ではありません。
-- 現行 renderer と workflow append step は `formal/summary.json` を compatibility input として維持しています。この fallback からの移行は `docs/reference/ASSURANCE-CANONICAL-ROUTES.md` で追跡します。
+- 現行 renderer と workflow inline fallback は、正準 formal-summary と hermetic aggregate の後に `formal/summary.json` を final compatibility input として維持します。
 
 ### 現行の validation と error behavior
 - `scripts/summary/render-pr-summary.mjs` は JSON schema validation を強制しません。

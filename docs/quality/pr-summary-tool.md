@@ -31,9 +31,11 @@ lastVerified: '2026-05-09'
   - `artifacts/assurance/assurance-summary.json`
   - `artifacts/assurance/claim-evidence-manifest.json`
   - `artifacts/quality/quality-scorecard.json`
-  - `artifacts/formal/formal-aggregate.json`
-  - legacy compatibility input `formal/summary.json`
+  - `artifacts/formal/formal-summary-v2.json`
+  - `artifacts/formal/formal-summary-v1.json`
   - `artifacts/hermetic-reports/formal/summary.json`
+  - `artifacts/formal/formal-aggregate.json`
+  - final legacy compatibility input `formal/summary.json`
 - Workflow append-stage inputs:
   - `artifacts/ci/harness-health.md`
   - `artifacts/change-package/change-package.md`
@@ -73,8 +75,8 @@ node scripts/summary/render-pr-summary.mjs
 - `render-pr-summary.mjs` prefers `artifacts/summary/combined.json`, then supplements it with read-only coverage / replay / BDD / properties / GWT / formal fallback inputs.
 - The Discovery Pack line is generated from the top-level `discoveryPack` object in `artifacts/verify-lite/verify-lite-run-summary.json`.
 - `steps.discoveryPackValidation` and `steps.discoveryPackCompile` are execution records, not direct renderer inputs.
-- The formal line prefers `combined.json.formal`, then legacy compatibility input `formal/summary.json`, then `artifacts/hermetic-reports/formal/summary.json`. This documents current renderer behavior; formal-summary v1/v2 and the hermetic aggregate remain the canonical formal evidence route.
-- Formal Summary v1/v2 are upstream producer / validator contracts, not direct renderer inputs.
+- The formal line prefers `combined.json.formal`, then canonical `artifacts/formal/formal-summary-v2.json`, `artifacts/formal/formal-summary-v1.json`, and `artifacts/hermetic-reports/formal/summary.json`; `pr-ci-status-comment.yml` downloads the same-head `verify-lite-report` before rendering and the renderer also checks the downloaded `artifacts/downloaded/verify-lite-report/artifacts/formal/...` mirror. Legacy compatibility input `formal/summary.json` remains the final fallback.
+- Formal Summary v2/v1 are direct read-only renderer inputs, while schema validation remains an upstream producer / validator responsibility.
 - `verify-lite-run-summary` is the baseline input. Assurance and quality scorecard inputs are optional.
 - After renderer output, `pr-ci-status-comment.yml` appends the workflow-stage Markdown artifacts listed above.
 - If optional JSON cannot be parsed or read, the renderer usually treats that input as missing and continues.
@@ -123,9 +125,11 @@ node scripts/summary/render-pr-summary.mjs
   - `artifacts/assurance/assurance-summary.json`
   - `artifacts/assurance/claim-evidence-manifest.json`
   - `artifacts/quality/quality-scorecard.json`
-  - `artifacts/formal/formal-aggregate.json`
-  - legacy compatibility input `formal/summary.json`
+  - `artifacts/formal/formal-summary-v2.json`
+  - `artifacts/formal/formal-summary-v1.json`
   - `artifacts/hermetic-reports/formal/summary.json`
+  - `artifacts/formal/formal-aggregate.json`
+  - final legacy compatibility input `formal/summary.json`
 - workflow append-stage で追記される入力群:
   - `artifacts/ci/harness-health.md`
   - `artifacts/change-package/change-package.md`
@@ -165,8 +169,8 @@ node scripts/summary/render-pr-summary.mjs
 - `render-pr-summary.mjs` はまず `artifacts/summary/combined.json` を読み、その後 coverage / replay / BDD / properties / GWT / formal の fallback input を read-only で補完する。
 - Discovery Pack line は `artifacts/verify-lite/verify-lite-run-summary.json` の top-level `discoveryPack` object から生成する。
 - `steps.discoveryPackValidation` と `steps.discoveryPackCompile` は execution record であり、renderer の direct input ではない。
-- formal line は `combined.json.formal` を優先し、次に legacy compatibility input の `formal/summary.json`、さらに `artifacts/hermetic-reports/formal/summary.json` を見る。これは現行 renderer 挙動を示す。formal-summary v1/v2 と hermetic aggregate は正準 formal evidence 導線として維持する。
-- Formal Summary v1/v2 は upstream の producer / validator contract であり、renderer の direct input ではない。
+- formal line は `combined.json.formal` を優先し、次に正準 `artifacts/formal/formal-summary-v2.json`、`artifacts/formal/formal-summary-v1.json`、`artifacts/hermetic-reports/formal/summary.json` を見る。`pr-ci-status-comment.yml` は same-head の `verify-lite-report` を rendering 前に download し、renderer は downloaded mirror の `artifacts/downloaded/verify-lite-report/artifacts/formal/...` も参照する。legacy compatibility input の `formal/summary.json` は final fallback として維持する。
+- Formal Summary v2/v1 は renderer の read-only direct input であり、schema validation は引き続き upstream producer / validator の責務である。
 - baseline input は `verify-lite-run-summary` で、assurance と quality scorecard は optional input。
 - renderer 出力後に、`pr-ci-status-comment.yml` が上記の workflow-stage Markdown artifact を append する。
 - optional JSON が parse/read できなくても、renderer は通常 missing input として扱って継続する。

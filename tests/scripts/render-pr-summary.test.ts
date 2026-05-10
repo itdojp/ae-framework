@@ -385,6 +385,231 @@ describe.sequential('render-pr-summary', () => {
     }
   });
 
+  it('prefers canonical formal-summary v2 over the legacy formal summary fallback', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-formal-v2-'));
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'summary'), { recursive: true });
+      mkdirSync(join(sandbox, 'artifacts', 'formal'), { recursive: true });
+      mkdirSync(join(sandbox, 'formal'), { recursive: true });
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'summary', 'combined.json'),
+        JSON.stringify(
+          {
+            adapters: [{ adapter: 'playwright', summary: '12/12 passed', status: 'ok' }],
+          },
+          null,
+          2,
+        ),
+      );
+      writeFileSync(
+        join(sandbox, 'artifacts', 'formal', 'formal-summary-v2.json'),
+        JSON.stringify(
+          {
+            schemaVersion: 'formal-summary/v2',
+            contractId: 'formal-summary.v2',
+            tool: 'aggregate',
+            status: 'ok',
+            ok: true,
+            generatedAtUtc: '2026-03-04T00:00:00.000Z',
+            metadata: {},
+            results: [],
+          },
+          null,
+          2,
+        ),
+      );
+      writeFileSync(
+        join(sandbox, 'formal', 'summary.json'),
+        JSON.stringify({ result: 'fail', traceId: 'legacy-trace' }, null, 2),
+      );
+
+      const result = runScript(sandbox, { SUMMARY_MODE: 'digest', SUMMARY_LANG: 'en' });
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
+      expect(output).toContain('Formal: pass');
+      expect(output).not.toContain('Formal: fail');
+      expect(output).not.toContain('legacy-trace');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('uses the hermetic formal aggregate before the legacy formal summary fallback', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-formal-hermetic-'));
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'summary'), { recursive: true });
+      mkdirSync(join(sandbox, 'artifacts', 'hermetic-reports', 'formal'), { recursive: true });
+      mkdirSync(join(sandbox, 'formal'), { recursive: true });
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'summary', 'combined.json'),
+        JSON.stringify(
+          {
+            adapters: [{ adapter: 'playwright', summary: '12/12 passed', status: 'ok' }],
+          },
+          null,
+          2,
+        ),
+      );
+      writeFileSync(
+        join(sandbox, 'artifacts', 'hermetic-reports', 'formal', 'summary.json'),
+        JSON.stringify(
+          {
+            present: {
+              conformance: true,
+              smt: false,
+              alloy: false,
+            },
+          },
+          null,
+          2,
+        ),
+      );
+      writeFileSync(
+        join(sandbox, 'formal', 'summary.json'),
+        JSON.stringify({ result: 'fail' }, null, 2),
+      );
+
+      const result = runScript(sandbox, { SUMMARY_MODE: 'digest', SUMMARY_LANG: 'en' });
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
+      expect(output).toContain('Formal: present 1/3 (conformance)');
+      expect(output).not.toContain('Formal: fail');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('reads downloaded verify-lite formal summaries before the legacy formal summary fallback', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-formal-downloaded-'));
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'summary'), { recursive: true });
+      mkdirSync(join(sandbox, 'artifacts', 'downloaded', 'verify-lite-report', 'artifacts', 'formal'), { recursive: true });
+      mkdirSync(join(sandbox, 'formal'), { recursive: true });
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'summary', 'combined.json'),
+        JSON.stringify(
+          {
+            adapters: [{ adapter: 'playwright', summary: '12/12 passed', status: 'ok' }],
+          },
+          null,
+          2,
+        ),
+      );
+      writeFileSync(
+        join(sandbox, 'artifacts', 'downloaded', 'verify-lite-report', 'artifacts', 'formal', 'formal-summary-v2.json'),
+        JSON.stringify(
+          {
+            schemaVersion: 'formal-summary/v2',
+            contractId: 'formal-summary.v2',
+            tool: 'aggregate',
+            status: 'ok',
+            ok: true,
+            generatedAtUtc: '2026-03-04T00:00:00.000Z',
+            metadata: {},
+            results: [],
+          },
+          null,
+          2,
+        ),
+      );
+      writeFileSync(
+        join(sandbox, 'formal', 'summary.json'),
+        JSON.stringify({ result: 'fail' }, null, 2),
+      );
+
+      const result = runScript(sandbox, { SUMMARY_MODE: 'digest', SUMMARY_LANG: 'en' });
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
+      expect(output).toContain('Formal: pass');
+      expect(output).not.toContain('Formal: fail');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps the legacy formal summary as the final compatibility fallback', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-formal-legacy-'));
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'summary'), { recursive: true });
+      mkdirSync(join(sandbox, 'formal'), { recursive: true });
+
+      writeFileSync(
+        join(sandbox, 'artifacts', 'summary', 'combined.json'),
+        JSON.stringify(
+          {
+            adapters: [{ adapter: 'playwright', summary: '12/12 passed', status: 'ok' }],
+          },
+          null,
+          2,
+        ),
+      );
+      writeFileSync(
+        join(sandbox, 'formal', 'summary.json'),
+        JSON.stringify({ result: 'fail', traceId: 'legacy-trace' }, null, 2),
+      );
+
+      const result = runScript(sandbox, { SUMMARY_MODE: 'digest', SUMMARY_LANG: 'en' });
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
+      expect(output).toContain('Formal: fail');
+      expect(output).toContain('Trace: legacy-trace');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps the workflow inline fallback formal order aligned with canonical routes', () => {
+    const workflow = readFileSync(resolve(repoRoot, '.github/workflows/pr-ci-status-comment.yml'), 'utf8');
+    const resolveRunStep = workflow.indexOf('name: Resolve verify-lite run for current head SHA');
+    const downloadStep = workflow.indexOf('name: Download verify-lite report artifact');
+    const renderStep = workflow.indexOf('name: Generate Markdown summary');
+    expect(resolveRunStep).toBeGreaterThanOrEqual(0);
+    expect(downloadStep).toBeGreaterThan(resolveRunStep);
+    expect(renderStep).toBeGreaterThan(downloadStep);
+
+    const selectorStart = workflow.indexOf('function selectFormalSummary(c)');
+    expect(selectorStart).toBeGreaterThanOrEqual(0);
+
+    const selector = workflow.slice(selectorStart, workflow.indexOf('const c = r("artifacts/summary/combined.json")', selectorStart));
+    const combinedIndex = selector.indexOf('c.formal');
+    const v2Index = selector.indexOf('artifacts/formal/formal-summary-v2.json');
+    const downloadedV2Index = selector.indexOf('artifacts/downloaded/verify-lite-report/artifacts/formal/formal-summary-v2.json');
+    const v1Index = selector.indexOf('artifacts/formal/formal-summary-v1.json');
+    const downloadedV1Index = selector.indexOf('artifacts/downloaded/verify-lite-report/artifacts/formal/formal-summary-v1.json');
+    const hermeticIndex = selector.indexOf('artifacts/hermetic-reports/formal/summary.json');
+    const downloadedHermeticIndex = selector.indexOf('artifacts/downloaded/verify-lite-report/artifacts/hermetic-reports/formal/summary.json');
+    const legacyIndex = selector.indexOf('r("formal/summary.json")');
+
+    expect([
+      combinedIndex,
+      v2Index,
+      downloadedV2Index,
+      v1Index,
+      downloadedV1Index,
+      hermeticIndex,
+      downloadedHermeticIndex,
+      legacyIndex,
+    ].every((index) => index >= 0)).toBe(true);
+    expect(combinedIndex).toBeLessThan(v2Index);
+    expect(v2Index).toBeLessThan(downloadedV2Index);
+    expect(downloadedV2Index).toBeLessThan(v1Index);
+    expect(v1Index).toBeLessThan(downloadedV1Index);
+    expect(downloadedV1Index).toBeLessThan(hermeticIndex);
+    expect(hermeticIndex).toBeLessThan(downloadedHermeticIndex);
+    expect(downloadedHermeticIndex).toBeLessThan(legacyIndex);
+  });
+
   it('omits assurance placeholders when the assurance artifact is missing', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-render-pr-summary-no-assurance-'));
 

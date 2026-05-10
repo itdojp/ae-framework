@@ -232,6 +232,48 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Resolve verify-lite run for current head SHA
+        id: verify-lite-run
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const headSha = context.payload.pull_request?.head?.sha;
+            if (!headSha) {
+              core.notice('No pull_request head SHA found; skipping verify-lite artifact lookup.');
+              core.setOutput('run_id', '');
+              return;
+            }
+            const { data } = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: 'verify-lite.yml',
+              event: 'pull_request',
+              head_sha: headSha,
+              status: 'completed',
+              per_page: 1,
+            });
+            const run = (data.workflow_runs || []).find((candidate) =>
+              candidate.head_sha === headSha
+              && candidate.conclusion === 'success'
+            );
+            if (!run) {
+              core.notice(`No successful verify-lite run found for ${headSha}.`);
+              core.setOutput('run_id', '');
+              return;
+            }
+            core.notice(`Using verify-lite run ${run.id} for ${headSha}.`);
+            core.setOutput('run_id', String(run.id));
+      - name: Download verify-lite report artifact
+        if: ${{ steps.verify-lite-run.outputs.run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: verify-lite-report
+          path: artifacts/downloaded/verify-lite-report
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.verify-lite-run.outputs.run_id }}
       - name: Aggregate artifacts if present
         run: |
           if npm run -s | grep -q "artifacts:aggregate"; then npm run artifacts:aggregate || true; fi
@@ -248,10 +290,47 @@ jobs:
           node <<'JS'
           const fs=require("fs");
           function r(p){ try { return JSON.parse(fs.readFileSync(p,"utf-8")); } catch { return undefined; } }
+          function normalizeFormalStatus(status) {
+            if (status === "ok") return "pass";
+            if (status === "failed") return "fail";
+            return status;
+          }
+          function summarizeFormalPresence(summary) {
+            const presentMap = summary?.present && typeof summary.present === "object"
+              ? summary.present
+              : (summary?.info?.present && typeof summary.info.present === "object" ? summary.info.present : null);
+            if (!presentMap) return "";
+            const entries = Object.entries(presentMap);
+            if (!entries.length) return "";
+            const presentKeys = entries.filter(([, value]) => value).map(([key]) => key);
+            return `present ${presentKeys.length}/${entries.length}${presentKeys.length ? ` (${presentKeys.join(", ")})` : ""}`;
+          }
+          function formalResultFromSummary(summary) {
+            if (!summary || typeof summary !== "object") return "";
+            if (typeof summary.result === "string" && summary.result.trim()) return summary.result.trim();
+            if (typeof summary.status === "string" && summary.status.trim()) return normalizeFormalStatus(summary.status.trim());
+            return summarizeFormalPresence(summary);
+          }
+          function selectFormalSummary(c) {
+            const candidates = [
+              c.formal,
+              r("artifacts/formal/formal-summary-v2.json"),
+              r("artifacts/downloaded/verify-lite-report/artifacts/formal/formal-summary-v2.json"),
+              r("artifacts/formal/formal-summary-v1.json"),
+              r("artifacts/downloaded/verify-lite-report/artifacts/formal/formal-summary-v1.json"),
+              r("artifacts/hermetic-reports/formal/summary.json"),
+              r("artifacts/downloaded/verify-lite-report/artifacts/hermetic-reports/formal/summary.json"),
+              r("formal/summary.json"),
+            ];
+            for (const candidate of candidates) {
+              if (formalResultFromSummary(candidate)) return candidate;
+            }
+            return {};
+          }
           const c = r("artifacts/summary/combined.json") || {};
           const adapters=(c.adapters||[]).map(a=>`  - ${a.adapter||a.name}: ${a.summary} (${a.status})`).join("\n");
-          const formalObj = c.formal || r("formal/summary.json") || {};
-          const formal = formalObj.result || "n/a";
+          const formalObj = selectFormalSummary(c);
+          const formal = formalResultFromSummary(formalObj) || "n/a";
           const replay = c.replay || r("artifacts/domain/replay.summary.json") || {};
           const props = c.properties ? (Array.isArray(c.properties) ? c.properties : [c.properties]) : (r("artifacts/properties/summary.json") ? [r("artifacts/properties/summary.json")] : []);
           const assurance = r("artifacts/assurance/assurance-summary.json") || {};
@@ -357,48 +436,6 @@ jobs:
             fi
             node scripts/change-package/validate.mjs "${v2_args[@]}"
           fi
-      - name: Resolve verify-lite run for current head SHA
-        id: verify-lite-run
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const headSha = context.payload.pull_request?.head?.sha;
-            if (!headSha) {
-              core.notice('No pull_request head SHA found; skipping verify-lite artifact lookup.');
-              core.setOutput('run_id', '');
-              return;
-            }
-            const { data } = await github.rest.actions.listWorkflowRuns({
-              owner,
-              repo,
-              workflow_id: 'verify-lite.yml',
-              event: 'pull_request',
-              head_sha: headSha,
-              status: 'completed',
-              per_page: 1,
-            });
-            const run = (data.workflow_runs || []).find((candidate) =>
-              candidate.head_sha === headSha
-              && candidate.conclusion === 'success'
-            );
-            if (!run) {
-              core.notice(`No successful verify-lite run found for ${headSha}.`);
-              core.setOutput('run_id', '');
-              return;
-            }
-            core.notice(`Using verify-lite run ${run.id} for ${headSha}.`);
-            core.setOutput('run_id', String(run.id));
-      - name: Download verify-lite report artifact
-        if: ${{ steps.verify-lite-run.outputs.run_id != '' }}
-        uses: actions/download-artifact@v4
-        with:
-          name: verify-lite-report
-          path: artifacts/downloaded/verify-lite-report
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ steps.verify-lite-run.outputs.run_id }}
       - name: Build hook feedback (report-only)
         if: ${{ always() }}
         shell: bash

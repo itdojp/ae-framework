@@ -12,9 +12,47 @@ const adaptersArr = (c.adapters||[]);
 const statusCounts = adaptersArr.reduce((acc,a)=>{ const s=(a.status||'ok').toLowerCase(); acc[s]=(acc[s]||0)+1; return acc; },{});
 const adaptersLine = adaptersArr.map(a=>`${a.adapter||a.name}: ${a.summary} (${a.status})`).join(', ');
 const adaptersList = adaptersArr.map(a=>`  - ${a.adapter||a.name}: ${a.summary} (${a.status})`).join('\n');
-const formalObj = c.formal || r('formal/summary.json') || r('artifacts/hermetic-reports/formal/summary.json') || {};
+function normalizeFormalStatus(status) {
+  if (status === 'ok') return 'pass';
+  if (status === 'failed') return 'fail';
+  return status;
+}
+function summarizeFormalPresence(summary) {
+  const presentMap = (summary?.present && typeof summary.present === 'object')
+    ? summary.present
+    : (summary?.info?.present && typeof summary.info.present === 'object' ? summary.info.present : null);
+  if (!presentMap) return '';
+  const entries = Object.entries(presentMap);
+  if (!entries.length) return '';
+  const presentKeys = entries.filter(([, value]) => value).map(([key]) => key);
+  return `present ${presentKeys.length}/${entries.length}${presentKeys.length ? ` (${presentKeys.join(', ')})` : ''}`;
+}
+function formalResultFromSummary(summary) {
+  if (!summary || typeof summary !== 'object') return '';
+  if (typeof summary.result === 'string' && summary.result.trim()) return summary.result.trim();
+  if (typeof summary.status === 'string' && summary.status.trim()) return normalizeFormalStatus(summary.status.trim());
+  return summarizeFormalPresence(summary);
+}
+function selectFormalSummary() {
+  const candidates = [
+    c.formal,
+    r('artifacts/formal/formal-summary-v2.json'),
+    r('artifacts/downloaded/verify-lite-report/artifacts/formal/formal-summary-v2.json'),
+    r('artifacts/formal/formal-summary-v1.json'),
+    r('artifacts/downloaded/verify-lite-report/artifacts/formal/formal-summary-v1.json'),
+    r('artifacts/hermetic-reports/formal/summary.json'),
+    r('artifacts/downloaded/verify-lite-report/artifacts/hermetic-reports/formal/summary.json'),
+    r('formal/summary.json'),
+  ];
+  for (const candidate of candidates) {
+    if (formalResultFromSummary(candidate)) return candidate;
+  }
+  return {};
+}
+const formalObj = selectFormalSummary();
 const formalAgg = r('artifacts/formal/formal-aggregate.json') || {};
-const formal = formalObj.result || t('n/a','不明');
+const hermeticFormalSummary = r('artifacts/hermetic-reports/formal/summary.json') || {};
+const formal = formalResultFromSummary(formalObj) || t('n/a','不明');
 const gwt = r('artifacts/formal/gwt.summary.json');
 const gwtItems = gwt?.items || [];
 const gwtCount = gwtItems.length;
@@ -215,7 +253,7 @@ const alertsLine = alerts.length ? t(`Alerts: ${alerts.join(', ')}`, `警告: ${
 // Conformance short line (violationRate / hooks matchRate)
 let conformanceLine = '';
 try {
-  const conf = (formalAgg?.conformance) || (r('artifacts/hermetic-reports/formal/summary.json')?.conformance) || {};
+  const conf = (formalAgg?.conformance) || (hermeticFormalSummary?.conformance) || {};
   const vr = (typeof conf.violationRate === 'number') ? conf.violationRate : null;
   const mr = (typeof formalAgg?.info?.conformance?.hookReplayMatchRate === 'number')
     ? formalAgg.info.conformance.hookReplayMatchRate
