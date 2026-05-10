@@ -39,6 +39,9 @@ export function parseArgs(argv = process.argv.slice(2)) {
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
+    if (arg === '--') {
+      continue;
+    }
     if (arg === '--verify-lite-summary') {
       options.verifyLiteSummary = readRequiredValue(argv, index, arg);
       index += 1;

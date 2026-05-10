@@ -3,9 +3,11 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 
 const repoRoot = resolve('.');
 const scriptPath = resolve(repoRoot, 'scripts/quality/build-quality-scorecard.mjs');
+const legacyScriptPath = resolve(repoRoot, 'scripts/quality-scorecard-generator.js');
 
 function createVerifyLiteSummary() {
   return {
@@ -217,6 +219,81 @@ function createBenchCompare(overall = 'pass') {
 }
 
 describe.sequential('build-quality-scorecard', () => {
+  it('keeps the legacy quality:scorecard route unless required v1 inputs are supplied', () => {
+    const result = spawnSync('node', [
+      '--input-type=module',
+      '--eval',
+      [
+        `import { shouldDelegateToCanonicalRoute } from ${JSON.stringify(pathToFileURL(legacyScriptPath).href)};`,
+        'const cases = [',
+        "  ['--output-json', 'artifacts/quality/quality-scorecard.json'],",
+        "  ['--verify-lite-summary', 'artifacts/verify-lite/verify-lite-run-summary.json', '--output-json', 'artifacts/quality/quality-scorecard.json'],",
+        "  ['--verify-lite-summary', 'artifacts/verify-lite/verify-lite-run-summary.json', '--report-envelope', 'artifacts/report-envelope.json'],",
+        "  ['--verify-lite-summary', 'artifacts/verify-lite/verify-lite-run-summary.json', '--report-envelope', 'artifacts/report-envelope.json', '--legacy-diagnostic'],",
+        '];',
+        'console.log(JSON.stringify(cases.map((argv) => shouldDelegateToCanonicalRoute(argv))));',
+      ].join('\n'),
+    ], { cwd: repoRoot, encoding: 'utf8', timeout: 120_000 });
+
+    expect(result.status, result.stderr || result.stdout).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual([false, false, true, false]);
+  });
+
+  it('documents both legacy-force flags in the compatibility help', () => {
+    const result = spawnSync('node', [
+      legacyScriptPath,
+      '--help',
+    ], { cwd: repoRoot, encoding: 'utf8', timeout: 120_000 });
+
+    expect(result.status, result.stderr || result.stdout).toBe(0);
+    expect(result.stdout).toContain('--legacy');
+    expect(result.stdout).toContain('--legacy-diagnostic');
+    expect(result.stdout).toContain('--verify-lite-summary <path> --report-envelope <path>');
+  });
+
+  it('delegates the legacy quality:scorecard route to v1 when required inputs are supplied', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-quality-scorecard-legacy-wrapper-'));
+    const verifyLitePath = join(sandbox, 'artifacts', 'verify-lite', 'verify-lite-run-summary.json');
+    const reportEnvelopePath = join(sandbox, 'artifacts', 'report-envelope.json');
+    const outJson = join(sandbox, 'artifacts', 'quality', 'quality-scorecard.json');
+    const outMd = join(sandbox, 'artifacts', 'quality', 'quality-scorecard.md');
+
+    try {
+      mkdirSync(join(sandbox, 'artifacts', 'verify-lite'), { recursive: true });
+      writeFileSync(verifyLitePath, `${JSON.stringify(createVerifyLiteSummary(), null, 2)}\n`);
+      writeFileSync(reportEnvelopePath, `${JSON.stringify(createReportEnvelope(), null, 2)}\n`);
+
+      const result = spawnSync('node', [
+        legacyScriptPath,
+        '--',
+        '--verify-lite-summary', verifyLitePath,
+        '--report-envelope', reportEnvelopePath,
+        '--output-json', outJson,
+        '--output-md', outMd,
+      ], { cwd: sandbox, encoding: 'utf8', timeout: 120_000 });
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      expect(result.stderr).toContain('compatibility route delegates to quality-scorecard/v1');
+      const payload = JSON.parse(readFileSync(outJson, 'utf8')) as {
+        schemaVersion: string;
+        contractId: string;
+        inputs: {
+          verifyLiteSummary: { path: string; present: boolean; required: boolean };
+          reportEnvelope: { path: string; present: boolean; required: boolean };
+        };
+      };
+      const markdown = readFileSync(outMd, 'utf8');
+
+      expect(payload.schemaVersion).toBe('quality-scorecard/v1');
+      expect(payload.contractId).toBe('quality-scorecard.v1');
+      expect(payload.inputs.verifyLiteSummary).toMatchObject({ path: verifyLitePath, present: true, required: true });
+      expect(payload.inputs.reportEnvelope).toMatchObject({ path: reportEnvelopePath, present: true, required: true });
+      expect(markdown).toContain('# Quality Scorecard');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('builds a scorecard with missing optional dimensions', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-quality-scorecard-'));
     const verifyLitePath = join(sandbox, 'artifacts', 'verify-lite', 'verify-lite-run-summary.json');
