@@ -8,6 +8,70 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { run as runQualityScorecardV1 } from './quality/build-quality-scorecard.mjs';
+
+
+const CANONICAL_V1_OPTIONS = new Set([
+  '--verify-lite-summary',
+  '--report-envelope',
+  '--assurance-summary',
+  '--harness-health',
+  '--policy-gate-summary',
+  '--bench-compare',
+  '--formal-summary',
+  '--output-json',
+  '--output-md',
+]);
+
+const LEGACY_FORCE_OPTIONS = new Set(['--legacy', '--legacy-diagnostic']);
+
+function shouldDelegateToCanonicalRoute(argv = process.argv.slice(2)) {
+  if (argv.some((arg) => LEGACY_FORCE_OPTIONS.has(arg))) {
+    return false;
+  }
+  return argv.some((arg) => CANONICAL_V1_OPTIONS.has(arg));
+}
+
+function stripLegacyForceOptions(argv) {
+  return argv.filter((arg) => !LEGACY_FORCE_OPTIONS.has(arg));
+}
+
+function printCompatibilityHelp() {
+  process.stdout.write([
+    'Usage: node scripts/quality-scorecard-generator.js [--legacy] [quality-scorecard/v1 options]',
+    '',
+    'Compatibility route for pnpm run quality:scorecard.',
+    '',
+    'Default behavior with no v1 inputs:',
+    '  Run the legacy diagnostic scorecard and write ./quality-scorecard.md.',
+    '',
+    'Canonical behavior when v1 inputs are supplied:',
+    '  Delegate to scripts/quality/build-quality-scorecard.mjs and produce quality-scorecard/v1.',
+    '',
+    'Examples:',
+    '  node scripts/quality-scorecard-generator.js --legacy',
+    '  node scripts/quality-scorecard-generator.js --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json --report-envelope artifacts/report-envelope.json',
+    '',
+    'For new PR/release evidence prefer pnpm run quality:scorecard:v1.',
+    '',
+  ].join('\n'));
+}
+
+async function runCli(argv = process.argv.slice(2)) {
+  if (argv.includes('--help') || argv.includes('-h')) {
+    printCompatibilityHelp();
+    return 0;
+  }
+
+  if (shouldDelegateToCanonicalRoute(argv)) {
+    process.stderr.write('[quality-scorecard] compatibility route delegates to quality-scorecard/v1 when v1 inputs are supplied. Prefer pnpm run quality:scorecard:v1 for new PR/release evidence.\n');
+    return runQualityScorecardV1(stripLegacyForceOptions(argv));
+  }
+
+  const scorecard = new QualityScorecard();
+  await scorecard.runCompleteAssessment();
+  return 0;
+}
 
 class QualityScorecard {
   constructor() {
@@ -524,8 +588,12 @@ class QualityScorecard {
 
 // CLI interface
 if (process.argv[1] === new URL(import.meta.url).pathname) {
-  const scorecard = new QualityScorecard();
-  scorecard.runCompleteAssessment().catch(console.error);
+  runCli().then((code) => {
+    process.exitCode = code;
+  }).catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
 }
 
-export { QualityScorecard };
+export { QualityScorecard, shouldDelegateToCanonicalRoute, runCli };

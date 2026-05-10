@@ -311,8 +311,10 @@ pnpm run coverage
 #### 3. Quality Analysis
 
 ```bash
-# Project-wide quality analysis
+# Project-wide quality diagnostics (legacy compatibility route)
 pnpm run quality:scorecard
+
+# Canonical PR/release scorecard evidence uses quality:scorecard:v1 with verify-lite/report-envelope inputs.
 pnpm run package:quality
 
 # Security analysis
@@ -752,8 +754,10 @@ pnpm run coverage
 #### 3. 品質分析
 
 ```bash
-# プロジェクト全体の品質分析
+# プロジェクト全体の品質診断（legacy 互換導線）
 pnpm run quality:scorecard
+
+# 正準の PR / release scorecard evidence は verify-lite / report-envelope 入力付きの quality:scorecard:v1 を使う。
 pnpm run package:quality
 
 # セキュリティ分析

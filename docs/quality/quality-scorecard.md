@@ -65,9 +65,9 @@ The producer continues when optional artifacts are missing. Dimensions that depe
 
 ### 5. Canonical route and legacy `quality:scorecard` compatibility
 
-For new PR and release evidence, the canonical route is `quality-scorecard/v1`: `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, and `pnpm run quality:scorecard:validate`. The existing `quality:scorecard` entry in `package.json` still points to the legacy `scripts/quality-scorecard-generator.js` implementation. Treat that command as a compatibility diagnostic route, not as the canonical PR/release judgment artifact.
+For new PR and release evidence, the canonical route is `quality-scorecard/v1`: `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, and `pnpm run quality:scorecard:validate`. The existing `quality:scorecard` entry in `package.json` still points to the compatibility script `scripts/quality-scorecard-generator.js`. With no v1 inputs it preserves the legacy diagnostic route and writes `./quality-scorecard.md`; when callers provide the required v1 inputs (`--verify-lite-summary` and `--report-envelope`) it delegates to the canonical v1 producer and can write `artifacts/quality/quality-scorecard.json` / `.md`. Treat the no-input legacy diagnostic output as compatibility-only, not as the canonical PR/release judgment artifact.
 
-Do not repoint or remove the legacy command until the remaining workflow consumers pass explicit migration tests that provide the required v1 inputs (`verify-lite-run-summary` and `report-envelope`). The route matrix in `docs/reference/ASSURANCE-CANONICAL-ROUTES.md` is the cleanup reference.
+Do not remove the legacy no-input behavior until the remaining workflow and operator consumers are migrated. The tested migration path is to pass the v1 inputs through the compatibility script or call `quality:scorecard:v1` directly. The route matrix in `docs/reference/ASSURANCE-CANONICAL-ROUTES.md` is the cleanup reference.
 
 ### 6. Example commands
 
@@ -77,6 +77,16 @@ pnpm run quality:scorecard:v1 -- \
   --report-envelope artifacts/report-envelope.json \
   --assurance-summary artifacts/assurance/assurance-summary.json \
   --formal-summary artifacts/formal/formal-summary-v2.json \
+  --output-json artifacts/quality/quality-scorecard.json \
+  --output-md artifacts/quality/quality-scorecard.md
+```
+
+Compatibility wrapper example for existing `quality:scorecard` callers that are ready to supply v1 inputs:
+
+```bash
+pnpm run quality:scorecard -- \
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
+  --report-envelope artifacts/report-envelope.json \
   --output-json artifacts/quality/quality-scorecard.json \
   --output-md artifacts/quality/quality-scorecard.md
 ```
@@ -143,9 +153,9 @@ pnpm run quality:scorecard:validate -- \
 
 ### 5. 正準導線と legacy `quality:scorecard` 互換
 
-新しい PR / release evidence では、`quality-scorecard/v1` を正準導線として扱います。該当する実装は `scripts/quality/build-quality-scorecard.mjs`、`pnpm run quality:scorecard:v1`、`pnpm run quality:scorecard:validate` です。既存の `package.json` にある `quality:scorecard` は `scripts/quality-scorecard-generator.js` を呼ぶ legacy 実装のままです。この command は互換 diagnostic route であり、正準の PR / release judgment artifact ではありません。
+新しい PR / release evidence では、`quality-scorecard/v1` を正準導線として扱います。該当する実装は `scripts/quality/build-quality-scorecard.mjs`、`pnpm run quality:scorecard:v1`、`pnpm run quality:scorecard:validate` です。既存の `package.json` にある `quality:scorecard` は互換 script の `scripts/quality-scorecard-generator.js` を呼びます。v1 入力を渡さない場合は legacy diagnostic route として `./quality-scorecard.md` を生成し、必須 v1 入力（`--verify-lite-summary` と `--report-envelope`）を渡した場合は正準 v1 producer に委譲して `artifacts/quality/quality-scorecard.json` / `.md` を生成できます。入力なし legacy diagnostic output は互換専用であり、正準の PR / release judgment artifact ではありません。
 
-legacy command は、残存 workflow consumer が v1 の必須入力（`verify-lite-run-summary` と `report-envelope`）を渡す migration test で保護されるまで、差し替えまたは削除しません。cleanup の参照先は `docs/reference/ASSURANCE-CANONICAL-ROUTES.md` です。
+legacy の入力なし挙動は、残存 workflow / operator consumer が移行されるまで削除しません。test 済みの移行導線は、互換 script に v1 入力を渡すか、`quality:scorecard:v1` を直接呼ぶことです。cleanup の参照先は `docs/reference/ASSURANCE-CANONICAL-ROUTES.md` です。
 
 ### 6. 実行例
 
@@ -155,6 +165,16 @@ pnpm run quality:scorecard:v1 -- \
   --report-envelope artifacts/report-envelope.json \
   --assurance-summary artifacts/assurance/assurance-summary.json \
   --formal-summary artifacts/formal/formal-summary-v2.json \
+  --output-json artifacts/quality/quality-scorecard.json \
+  --output-md artifacts/quality/quality-scorecard.md
+```
+
+既存の `quality:scorecard` 呼び出し側が v1 入力を渡せる場合の互換 wrapper 例:
+
+```bash
+pnpm run quality:scorecard -- \
+  --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json \
+  --report-envelope artifacts/report-envelope.json \
   --output-json artifacts/quality/quality-scorecard.json \
   --output-md artifacts/quality/quality-scorecard.md
 ```

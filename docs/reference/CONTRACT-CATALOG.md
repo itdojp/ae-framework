@@ -185,7 +185,7 @@ The produced/consumed table lists implementation entry points. When more than on
 
 | Topic | Canonical route | Compatibility route | Cleanup status |
 | --- | --- | --- | --- |
-| Quality scorecard | `quality-scorecard/v1`, `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, `schema/quality-scorecard.schema.json` | `pnpm run quality:scorecard`, `scripts/quality-scorecard-generator.js` | Keep compatibility until workflow consumers have v1 input wiring tests. |
+| Quality scorecard | `quality-scorecard/v1`, `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, `schema/quality-scorecard.schema.json` | `pnpm run quality:scorecard`, `scripts/quality-scorecard-generator.js` | Compatibility script delegates to v1 when required inputs are supplied; keep no-input legacy diagnostics until workflow consumers have v1 input wiring tests. |
 | Formal status | `artifacts/formal/formal-summary-v2.json` plus dual-write `artifacts/formal/formal-summary-v1.json`; aggregate `artifacts/hermetic-reports/formal/summary.json` | `formal/summary.json` | Keep as compatibility input only; current PR summary rendering still reads it before the hermetic aggregate. |
 | Counterexample GWT | `artifacts/formal/gwt.summary.json` | Counterexamples embedded in `formal/summary.json` | Derived aid only; not a primary formal status contract. |
 | PR summary judgment | `scripts/summary/render-pr-summary.mjs` plus `pr-ci-status-comment.yml` append stage | Hand-authored or older bot summaries | Keep direct renderer inputs separate from workflow-appended Markdown. |
@@ -397,7 +397,7 @@ Produced/consumed table は実装 entry point を列挙します。複数導線�
 
 | Topic | 正準導線 | 互換導線 | cleanup 状態 |
 | --- | --- | --- | --- |
-| Quality scorecard | `quality-scorecard/v1`, `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, `schema/quality-scorecard.schema.json` | `pnpm run quality:scorecard`, `scripts/quality-scorecard-generator.js` | workflow consumer に v1 input wiring test が入るまで互換維持。 |
+| Quality scorecard | `quality-scorecard/v1`, `scripts/quality/build-quality-scorecard.mjs`, `pnpm run quality:scorecard:v1`, `schema/quality-scorecard.schema.json` | `pnpm run quality:scorecard`, `scripts/quality-scorecard-generator.js` | 互換 script は必須入力がある場合に v1 へ委譲する。入力なし legacy diagnostic は workflow consumer に v1 input wiring test が入るまで維持。 |
 | Formal status | `artifacts/formal/formal-summary-v2.json` と dual-write の `artifacts/formal/formal-summary-v1.json`; aggregate の `artifacts/hermetic-reports/formal/summary.json` | `formal/summary.json` | compatibility input としてのみ維持。現行 PR summary rendering は hermetic aggregate より先にこれを読む。 |
 | Counterexample GWT | `artifacts/formal/gwt.summary.json` | `formal/summary.json` に埋め込まれた counterexample | 派生補助であり、primary formal status contract ではない。 |
 | PR summary judgment | `scripts/summary/render-pr-summary.mjs` と `pr-ci-status-comment.yml` append stage | 手書きまたは古い bot summary | renderer direct input と workflow 追記 Markdown を分離して維持。 |
