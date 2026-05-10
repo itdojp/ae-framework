@@ -208,12 +208,12 @@
     }
   ],
   "policyDecision": {
-    "present": false,
-    "sourceArtifactPath": null,
-    "result": "unassessed",
-    "mode": "unknown",
+    "present": true,
+    "sourceArtifactPath": "artifacts/assurance-e2e/inventory-waiver/policy-decision-js-v1.json",
+    "result": "waived",
+    "mode": "report-only",
     "enforced": false,
-    "reason": "No policy-decision/v1 artifact is linked in this fixture.",
+    "reason": "Policy decision assurance result is waived.",
     "warnings": [],
     "errors": []
   },

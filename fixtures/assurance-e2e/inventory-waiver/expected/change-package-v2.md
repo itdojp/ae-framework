@@ -31,7 +31,7 @@
 - evidence package: `artifacts/assurance-e2e/inventory-waiver/change-package-v2.json`
 - target/achieved/status: A3/A2/partial
 - claim states: satisfied=0, tested=0, model-checked=1, proved=0, runtime-mitigated=0, waived=1, unresolved=0, failed=0, not-applicable=0
-- policy decision: unassessed (unknown, enforced=false)
+- policy decision: waived (report-only, enforced=false)
 - changed requirement refs: REQ-INV-001, REQ-INV-002
 
 ### Claims

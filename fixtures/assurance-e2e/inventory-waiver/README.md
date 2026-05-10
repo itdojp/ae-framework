@@ -31,6 +31,29 @@ The golden output fixes the path from:
 7. `claim-level-summary`
 8. `change-package-v2` JSON and Markdown summary
 
+## Post-roadmap canonical route coverage
+
+This scenario is also the post-roadmap canonical-route smoke test. It asserts
+that review-facing assurance evidence composes through the current route:
+
+```text
+claim-level-summary/v1 -> policy-decision/v1 -> change-package/v2
+```
+
+The expected artifacts intentionally keep non-green states visible:
+
+- `manual-fraud-review` remains `waived`.
+- `no-negative-stock` remains `runtime-mitigated` in the claim-level summary.
+- `no-negative-balance` remains below target level (`A3` target / `A2`
+  achieved) while still carrying model-checking evidence.
+- Policy-gate remains report-only unless an explicit enforcement mode selects
+  strict behavior.
+
+Legacy compatibility routes are not removed by this fixture, but they are not
+treated as canonical summary inputs. In particular, generated change-package v2
+Markdown should not depend on legacy `formal/summary.json` or legacy
+`quality:scorecard` output.
+
 ## Layout
 
 - `inputs/` contains deterministic source artifacts for the scenario.
@@ -85,7 +108,9 @@ pnpm -s run assurance:e2e -- \
   proof-backed.
 - `expected/change-package-v2.json` and `.md` provide the proof-carrying change
   package summary, including requirement references, validation lanes, residual
-  risks, and waiver information.
+  risks, release/post-deploy controls, and waiver information. The Markdown is
+  also the canonical-route reviewer surface used to detect accidental fallback
+  to legacy compatibility paths.
 
 ## Regression triage
 
