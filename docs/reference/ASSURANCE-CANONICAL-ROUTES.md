@@ -6,7 +6,7 @@ canonicalSource:
 - docs/architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md
 - docs/reference/CONTRACT-CATALOG.md
 - docs/quality/ARTIFACTS-CONTRACT.md
-lastVerified: '2026-05-09'
+lastVerified: '2026-05-10'
 ---
 # Assurance Canonical Routes and Legacy Compatibility
 
@@ -46,14 +46,16 @@ This reference document resolves the duplicate route findings from the assurance
 - Prefer report-only documentation when the replacement is not yet enforced by CI.
 - Keep README and index pages pointed at the canonical route first, with compatibility notes secondary.
 
-### 4. Cleanup backlog that still needs tests
+### 4. Cleanup backlog and disposition
 
-| Candidate cleanup | Current blocker | Minimum evidence before changing behavior |
-| --- | --- | --- |
-| Repoint `quality:scorecard` to v1 | The compatibility script now delegates to v1 when required inputs are supplied, but no-input legacy diagnostic callers can still exist. | Keep the wrapper test and migrate workflow/operator callers to supply `verify-lite-run-summary` and `report-envelope` before removing no-input legacy behavior. |
-| Keep `formal/summary.json` as final PR summary compatibility fallback | `render-pr-summary.mjs` and the workflow inline fallback now read formal-summary v2/v1 and the hermetic aggregate before `formal/summary.json`. Full removal still needs consumer migration evidence. | Maintain renderer/workflow tests that prove canonical artifacts populate the formal line and legacy fallback still works until all consumers are migrated. |
-| Keep `format-counterexamples.mjs` independent of legacy `formal/summary.json` | The script now reads the hermetic aggregate and `artifacts/formal/formal-aggregate.json` before the legacy compatibility fallback. Full removal of the fallback still needs consumer migration evidence. | Maintain formatter tests that derive `artifacts/formal/gwt.summary.json` from a current formal aggregate source and verify legacy fallback remains available. |
-| Remove duplicate judgment explanations from older docs | Older docs still carry useful operator context. | Index updates and redirects/replacement links that preserve discoverability. |
+Every legacy or compatibility route listed in this document currently has an explicit disposition. These dispositions are intentionally conservative: compatibility behavior stays available until consumer-path tests and rollback notes prove that a behavior change is safe.
+
+| Candidate cleanup | Disposition | Current blocker | Minimum evidence before changing behavior | Rollback guidance |
+| --- | --- | --- | --- | --- |
+| Repoint `quality:scorecard` to v1 | `legacy-compatible` / keep wrapper | The compatibility script now delegates to v1 when required inputs are supplied, but no-input legacy diagnostic callers can still exist. | Keep the wrapper test and migrate workflow/operator callers to supply `verify-lite-run-summary` and `report-envelope` before removing no-input legacy behavior. | Restore the wrapper branch to call `scripts/quality-scorecard-generator.js` for affected callers and keep `quality:scorecard:v1` available as the canonical route. |
+| Keep `formal/summary.json` as final PR summary compatibility fallback | `legacy-compatible` / canonical aggregate preferred | `render-pr-summary.mjs` and the workflow inline fallback now read formal-summary v2/v1 and the hermetic aggregate before `formal/summary.json`. Full removal still needs consumer migration evidence. | Maintain renderer/workflow tests that prove canonical artifacts populate the formal line and legacy fallback still works until all consumers are migrated. | Re-enable the legacy fallback read path and document the consumer that still requires it. |
+| Keep `format-counterexamples.mjs` independent of legacy `formal/summary.json` | `legacy-compatible` / canonical aggregate preferred | The script now reads the hermetic aggregate and `artifacts/formal/formal-aggregate.json` before the legacy compatibility fallback. Full removal of the fallback still needs consumer migration evidence. | Maintain formatter tests that derive `artifacts/formal/gwt.summary.json` from a current formal aggregate source and verify legacy fallback remains available. | Restore the legacy fallback parser while keeping canonical aggregate parsing first. |
+| Remove duplicate judgment explanations from older docs | `legacy-compatible` / docs-only cleanup | Older docs still carry useful operator context. | Index updates and redirects/replacement links that preserve discoverability. | Revert the docs-only consolidation and keep replacement links in the canonical route map. |
 
 ---
 
@@ -89,11 +91,13 @@ This reference document resolves the duplicate route findings from the assurance
 - replacement が CI enforcement されていない場合は、report-only として文書化する。
 - README と index は、正準導線を先に示し、互換注記は secondary として扱う。
 
-### 4. test が必要な残 cleanup
+### 4. cleanup backlog と disposition
 
-| cleanup 候補 | 現在の blocker | 挙動変更前に必要な最低証跡 |
-| --- | --- | --- |
-| `quality:scorecard` を v1 に向ける | 互換 script は必須入力が渡された場合に v1 へ委譲するが、入力なし legacy diagnostic caller は残り得る。 | wrapper test を維持し、入力なし legacy 挙動を削除する前に workflow / operator caller が `verify-lite-run-summary` と `report-envelope` を渡すよう移行する。 |
-| `formal/summary.json` を PR summary の final compatibility fallback として維持する | `render-pr-summary.mjs` と workflow inline fallback は formal-summary v2/v1 と hermetic aggregate を `formal/summary.json` より先に読む。完全削除には consumer migration evidence がまだ必要。 | current canonical artifact から formal line が埋まり、legacy fallback も残ることを示す renderer / workflow tests を維持する。 |
-| `format-counterexamples.mjs` を legacy `formal/summary.json` から独立した状態で維持する | script は hermetic aggregate と `artifacts/formal/formal-aggregate.json` を legacy compatibility fallback より先に読む。fallback の完全削除には consumer migration evidence がまだ必要。 | current formal aggregate source から `artifacts/formal/gwt.summary.json` を生成し、legacy fallback も残ることを示す formatter test を維持する。 |
-| 古い docs の重複 judgment 説明を削減する | 古い docs にも有用な operator context が残っている。 | discoverability を維持する index 更新と replacement link。 |
+本ドキュメントに列挙した legacy / compatibility route は、現時点で明示的な disposition を持ちます。挙動変更は保守的に扱い、consumer-path test と rollback note が揃うまで互換挙動を維持します。
+
+| cleanup 候補 | disposition | 現在の blocker | 挙動変更前に必要な最低証跡 | rollback guidance |
+| --- | --- | --- | --- | --- |
+| `quality:scorecard` を v1 に向ける | `legacy-compatible` / wrapper 維持 | 互換 script は必須入力が渡された場合に v1 へ委譲するが、入力なし legacy diagnostic caller は残り得る。 | wrapper test を維持し、入力なし legacy 挙動を削除する前に workflow / operator caller が `verify-lite-run-summary` と `report-envelope` を渡すよう移行する。 | 影響 caller 向けに wrapper branch を `scripts/quality-scorecard-generator.js` 呼び出しへ戻し、canonical route として `quality:scorecard:v1` は維持する。 |
+| `formal/summary.json` を PR summary の final compatibility fallback として維持する | `legacy-compatible` / canonical aggregate 優先 | `render-pr-summary.mjs` と workflow inline fallback は formal-summary v2/v1 と hermetic aggregate を `formal/summary.json` より先に読む。完全削除には consumer migration evidence がまだ必要。 | current canonical artifact から formal line が埋まり、legacy fallback も残ることを示す renderer / workflow tests を維持する。 | legacy fallback read path を戻し、まだ必要としている consumer を文書化する。 |
+| `format-counterexamples.mjs` を legacy `formal/summary.json` から独立した状態で維持する | `legacy-compatible` / canonical aggregate 優先 | script は hermetic aggregate と `artifacts/formal/formal-aggregate.json` を legacy compatibility fallback より先に読む。fallback の完全削除には consumer migration evidence がまだ必要。 | current formal aggregate source から `artifacts/formal/gwt.summary.json` を生成し、legacy fallback も残ることを示す formatter test を維持する。 | canonical aggregate parsing を優先したまま、legacy fallback parser を戻す。 |
+| 古い docs の重複 judgment 説明を削減する | `legacy-compatible` / docs-only cleanup | 古い docs にも有用な operator context が残っている。 | discoverability を維持する index 更新と replacement link。 | docs-only consolidation を revert し、canonical route map には replacement link を残す。 |
