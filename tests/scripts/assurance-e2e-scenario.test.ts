@@ -62,6 +62,7 @@ describe('assurance e2e scenario runner', () => {
       });
 
       const claimLevel = JSON.parse(readFileSync(join(outputDir, 'claim-level-summary.json'), 'utf8'));
+      expect(claimLevel.schemaVersion).toBe('claim-level-summary/v1');
       expect(claimLevel.summary).toMatchObject({
         totalClaims: 3,
         modelChecked: 1,
@@ -82,9 +83,45 @@ describe('assurance e2e scenario runner', () => {
         ],
       });
 
+      // Post-roadmap canonical route regression:
+      // claim-level-summary/v1 -> policy-decision/v1 -> change-package/v2
+      // must keep waived / runtime-mitigated / partial states reviewable without
+      // promoting legacy compatibility routes to canonical summary inputs.
+      const changePackage = JSON.parse(readFileSync(join(outputDir, 'change-package-v2.json'), 'utf8'));
+      expect(changePackage.schemaVersion).toBe('change-package/v2');
+      expect(changePackage.assurance).toMatchObject({
+        targetLevel: 'A3',
+        achievedLevel: 'A2',
+        status: 'partial',
+      });
+      expect(changePackage.policyDecision).toMatchObject({
+        present: true,
+        sourceArtifactPath: 'artifacts/assurance-e2e/inventory-waiver/policy-decision-js-v1.json',
+        result: 'waived',
+        mode: 'report-only',
+        enforced: false,
+      });
+      expect(changePackage.claims).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: 'no-negative-balance', status: 'model-checked' }),
+        expect.objectContaining({ id: 'manual-fraud-review', status: 'waived' }),
+      ]));
+      expect(changePackage.releaseControls.postDeployChecks).toContain(
+        'post-deploy-verify workflow or release verification artifact required before production rollout',
+      );
+      expect(changePackage.releaseControls.rollbackSignals).toContain('golden-artifact-drift');
+      expect(changePackage.residualRisks).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: 'claim:manual-fraud-review:waived', claimIds: ['manual-fraud-review'] }),
+      ]));
+
       const changePackageMarkdown = readFileSync(join(outputDir, 'change-package-v2.md'), 'utf8');
       expect(changePackageMarkdown).toContain('changed requirement refs: REQ-INV-001, REQ-INV-002');
+      expect(changePackageMarkdown).toContain('claim states: satisfied=0, tested=0, model-checked=1');
+      expect(changePackageMarkdown).toContain('waived=1');
+      expect(changePackageMarkdown).toContain('### Release / Post-deploy Controls');
+      expect(changePackageMarkdown).toContain('### Residual Risks');
       expect(changePackageMarkdown).toContain('### Waivers');
+      expect(changePackageMarkdown).not.toContain('formal/summary.json');
+      expect(changePackageMarkdown).not.toContain('quality:scorecard');
     } finally {
       rmSync(outputDir, { recursive: true, force: true });
     }

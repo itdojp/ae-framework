@@ -387,9 +387,40 @@ function buildClaimLevelArtifacts({ scenarioName, generatedAt, outputDir, manife
   return claimLevelSummary;
 }
 
-function buildChangePackageArtifacts({ scenarioName, outputDir, changePackagePath }) {
+function normalizeDecisionResult(value, fallback = 'unassessed') {
+  const candidate = String(value || '').trim().toLowerCase();
+  return ['pass', 'waived', 'report-only', 'block', 'unassessed'].includes(candidate) ? candidate : fallback;
+}
+
+function normalizeDecisionMode(value, enforced = false) {
+  const candidate = String(value || '').trim().toLowerCase();
+  if (candidate === 'strict' || candidate === 'report-only') return candidate;
+  return enforced ? 'strict' : 'unknown';
+}
+
+function summarizePolicyDecisionForChangePackage(policyDecision, sourceArtifactPath) {
+  const assurance = policyDecision?.evaluation?.assurance && typeof policyDecision.evaluation.assurance === 'object'
+    ? policyDecision.evaluation.assurance
+    : {};
+  const result = normalizeDecisionResult(assurance.result);
+  const enforced = String(assurance.mode || '').trim().toLowerCase() === 'strict' || result === 'block';
+  return {
+    present: true,
+    sourceArtifactPath,
+    result,
+    mode: normalizeDecisionMode(assurance.mode, enforced),
+    enforced,
+    reason: `Policy decision assurance result is ${result}.`,
+    warnings: Array.isArray(assurance.warnings) ? assurance.warnings.map(String) : [],
+    errors: Array.isArray(assurance.errors) ? assurance.errors.map(String) : [],
+  };
+}
+
+function buildChangePackageArtifacts({ scenarioName, outputDir, changePackagePath, policyDecisionPath }) {
   const canonical = canonicalArtifactPaths(scenarioName);
   const changePackage = readJson(changePackagePath);
+  const policyDecision = readJson(policyDecisionPath);
+  changePackage.policyDecision = summarizePolicyDecisionForChangePackage(policyDecision, canonical.policyDecision);
   validateWithSchema('change package v2', changePackage, 'schema/change-package-v2.schema.json');
   writeJson(path.join(outputDir, 'change-package-v2.json'), changePackage);
   writeText(
@@ -465,6 +496,7 @@ export function runScenario(options) {
     scenarioName: paths.scenarioName,
     outputDir: paths.outputDir,
     changePackagePath: inputFiles.changePackage,
+    policyDecisionPath: path.join(paths.outputDir, 'policy-decision-js-v1.json'),
   });
 
   if (options.updateExpected) {
