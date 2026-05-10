@@ -273,5 +273,26 @@
         "strict-proof-failure"
       ]
     }
+  ],
+  "contractMigrationNotes": [
+    {
+      "contractId": "change-package/v2",
+      "compatibilityState": "preview",
+      "dualWriteStatus": "active",
+      "dualValidateStatus": "active",
+      "affectedProducers": [
+        "scripts/change-package/generate.mjs"
+      ],
+      "affectedConsumers": [
+        "scripts/summary/render-pr-summary.mjs"
+      ],
+      "migrationNoteRefs": [
+        "docs/reference/change-package-v2.md"
+      ],
+      "rollbackRefs": [
+        "docs/reference/SCHEMA-GOVERNANCE.md"
+      ],
+      "summary": "Preview proof-carrying change-package fields are dual-written and dual-validated before consumers rely on v2-only migration notes."
+    }
   ]
 }

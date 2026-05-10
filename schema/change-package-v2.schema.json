@@ -133,6 +133,12 @@
       "items": {
         "$ref": "#/$defs/residualRisk"
       }
+    },
+    "contractMigrationNotes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/contractMigrationNote"
+      }
     }
   },
   "$defs": {
@@ -1028,6 +1034,98 @@
             "minLength": 1
           },
           "uniqueItems": true
+        }
+      }
+    },
+    "contractMigrationNote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contractId",
+        "compatibilityState",
+        "dualWriteStatus",
+        "dualValidateStatus",
+        "affectedProducers",
+        "affectedConsumers",
+        "migrationNoteRefs",
+        "rollbackRefs",
+        "summary"
+      ],
+      "properties": {
+        "contractId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "compatibilityState": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "preview",
+            "legacy-compatible",
+            "deprecated",
+            "breaking",
+            "removed",
+            "unknown"
+          ]
+        },
+        "dualWriteStatus": {
+          "type": "string",
+          "enum": [
+            "not-applicable",
+            "planned",
+            "active",
+            "complete",
+            "blocked",
+            "unknown"
+          ]
+        },
+        "dualValidateStatus": {
+          "type": "string",
+          "enum": [
+            "not-applicable",
+            "planned",
+            "active",
+            "complete",
+            "blocked",
+            "unknown"
+          ]
+        },
+        "affectedProducers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "affectedConsumers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "migrationNoteRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "rollbackRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }

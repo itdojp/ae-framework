@@ -58,7 +58,7 @@ Minimal excerpt:
 }
 ```
 
-Use the fixture for a complete schema-valid sample, including `validationLanes`, `policyDecision`, `releaseControls`, and `residualRisks`.
+Use the fixture for a complete schema-valid sample, including `validationLanes`, `policyDecision`, `releaseControls`, `residualRisks`, and optional `contractMigrationNotes`.
 
 ### 3. Differences from v1
 
@@ -74,6 +74,7 @@ Use the fixture for a complete schema-valid sample, including `validationLanes`,
 | Policy decision | external artifact only | summarized as `policyDecision` |
 | Residual risks | notes or exceptions | explicit `residualRisks[]` |
 | Release controls | rollout / monitoring only | explicit `releaseControls` for pre-deploy, post-deploy, rollback |
+| Contract migration notes | absent | optional `contractMigrationNotes[]` for compatibility-impacting assurance contract changes |
 | Waivers | only `exceptions[]` | `waivers[]` linked to claims and evidence refs |
 
 ### 4. Claim states
@@ -104,6 +105,7 @@ Use the fixture for a complete schema-valid sample, including `validationLanes`,
 - `runtimeControls`: runtime alerts and feature flags that mitigate but do not prove a claim.
 - `releaseControls`: pre-deploy checks, post-deploy checks, and rollback signals.
 - `residualRisks`: unresolved, failed, waived, runtime-mitigated, or assumption-driven risks requiring human review.
+- `contractMigrationNotes`: optional PR/release summary notes for assurance-facing schema, canonical route, policy-gate, or change-package contract changes. Each note records the contract ID, compatibility state, dual-write / dual-validate status, affected producers/consumers, migration note refs, rollback refs, and a concise summary. Use it only when the PR has contract migration impact; ordinary PRs should omit the section.
 - `waivers`: owner, expiry, reason, related claim IDs, and evidence refs.
 
 ### 6. Generation and validation
@@ -114,7 +116,8 @@ node scripts/change-package/generate.mjs \
   --claim-evidence-manifest artifacts/assurance/claim-evidence-manifest.json \
   --policy-decision artifacts/ci/policy-decision-js-v1.json \
   --assurance-summary artifacts/assurance/assurance-summary.json \
-  --claim-level-summary artifacts/assurance/claim-level-summary.json
+  --claim-level-summary artifacts/assurance/claim-level-summary.json \
+  --contract-migration-notes artifacts/change-package/contract-migration-notes.json
 
 node scripts/change-package/validate.mjs \
   --file artifacts/change-package/change-package-v2.json \
@@ -128,7 +131,7 @@ Use `pnpm run change-package:generate:dual` and `pnpm run change-package:validat
 
 ### 7. PR / release summary behavior
 
-The generated Markdown points to the evidence package path, lists claim-state counts, and includes policy decision, validation lanes, release controls, residual risks, proof obligations, and waivers. `scripts/summary/render-pr-summary.mjs` also adds a digest line when `artifacts/change-package/change-package-v2.json` is present.
+The generated Markdown points to the evidence package path, lists claim-state counts, and includes policy decision, validation lanes, release controls, residual risks, proof obligations, waivers, and contract migration notes when provided. `scripts/summary/render-pr-summary.mjs` also adds a digest line when `artifacts/change-package/change-package-v2.json` is present. If `contractMigrationNotes[]` is absent or empty, both change-package Markdown and PR summaries omit the contract migration section.
 
 ---
 
@@ -146,7 +149,7 @@ The generated Markdown points to the evidence package path, lists claim-state co
 - sample fixture: `fixtures/change-package/sample.change-package-v2.json`
 - 既定 contract: `schema/change-package.schema.json`（`change-package/v1`）
 
-完全な schema-valid sample は fixture を参照してください。fixture には `validationLanes`、`policyDecision`、`releaseControls`、`residualRisks` も含まれます。
+完全な schema-valid sample は fixture を参照してください。fixture には `validationLanes`、`policyDecision`、`releaseControls`、`residualRisks`、任意の `contractMigrationNotes` も含まれます。
 
 ## 3. v1 との差分
 
@@ -162,6 +165,7 @@ The generated Markdown points to the evidence package path, lists claim-state co
 | policy decision | 外部 artifact のみ | `policyDecision` として要約 |
 | residual risks | notes / exceptions に分散 | `residualRisks[]` に明示 |
 | release controls | rollout / monitoring のみ | pre-deploy / post-deploy / rollback を `releaseControls` に明示 |
+| contract migration notes | なし | 互換性影響のある assurance contract 変更向けの任意 `contractMigrationNotes[]` |
 | waivers | `exceptions[]` のみ | claim と evidence refs に紐づく `waivers[]` |
 
 ## 4. claim state
@@ -192,6 +196,7 @@ The generated Markdown points to the evidence package path, lists claim-state co
 - `runtimeControls`: claim を緩和する runtime alert / feature flag。proof には昇格しません。
 - `releaseControls`: pre-deploy check、post-deploy check、rollback signal。
 - `residualRisks`: human review が必要な unresolved / failed / waived / runtime-mitigated / assumption 起因のリスク。
+- `contractMigrationNotes`: assurance-facing schema、canonical route、policy-gate、change-package contract の変更に対する任意の PR/release summary 注記です。contract ID、compatibility state、dual-write / dual-validate status、affected producers/consumers、migration note refs、rollback refs、短い summary を記録します。contract migration impact がある PR のみで使い、通常 PR では省略します。
 - `waivers`: owner、expiry、reason、related claim IDs、evidence refs。
 
 ## 6. 生成・検証
@@ -202,7 +207,8 @@ node scripts/change-package/generate.mjs \
   --claim-evidence-manifest artifacts/assurance/claim-evidence-manifest.json \
   --policy-decision artifacts/ci/policy-decision-js-v1.json \
   --assurance-summary artifacts/assurance/assurance-summary.json \
-  --claim-level-summary artifacts/assurance/claim-level-summary.json
+  --claim-level-summary artifacts/assurance/claim-level-summary.json \
+  --contract-migration-notes artifacts/change-package/contract-migration-notes.json
 
 node scripts/change-package/validate.mjs \
   --file artifacts/change-package/change-package-v2.json \
@@ -216,4 +222,4 @@ v1/v2 互換性確認には `pnpm run change-package:generate:dual` と `pnpm ru
 
 ## 7. PR / release summary
 
-生成 Markdown は evidence package path を示し、claim-state counts、policy decision、validation lanes、release controls、residual risks、proof obligations、waivers を表示します。`artifacts/change-package/change-package-v2.json` が存在する場合、`scripts/summary/render-pr-summary.mjs` も PR summary digest に v2 情報を追加します。
+生成 Markdown は evidence package path を示し、claim-state counts、policy decision、validation lanes、release controls、residual risks、proof obligations、waivers、および提供された場合の contract migration notes を表示します。`artifacts/change-package/change-package-v2.json` が存在する場合、`scripts/summary/render-pr-summary.mjs` も PR summary digest に v2 情報を追加します。`contractMigrationNotes[]` が無い、または空の場合、change-package Markdown と PR summary は contract migration section を省略します。

@@ -499,6 +499,7 @@ describe('change-package generate', () => {
     const eventPath = join(workdir, 'event.json');
     const outputJsonPath = join(workdir, 'artifacts', 'change-package', 'change-package-v2.json');
     const outputMarkdownPath = join(workdir, 'artifacts', 'change-package', 'change-package-v2.md');
+    const contractMigrationNotesPath = join(workdir, 'artifacts', 'change-package', 'contract-migration-notes.json');
     const { manifestPath, policyDecisionPath, assuranceSummaryPath } = await writeV2InputArtifacts(workdir);
 
     await writeFile(changedFilesPath, ['scripts/change-package/generate.mjs'].join('\n'), 'utf8');
@@ -512,6 +513,21 @@ describe('change-package generate', () => {
         labels: [{ name: 'risk:low' }],
       },
     });
+    await writeJson(contractMigrationNotesPath, {
+      notes: [
+        {
+          contractId: 'change-package/v2',
+          compatibilityState: 'preview',
+          dualWriteStatus: 'active',
+          dualValidateStatus: 'planned',
+          affectedProducers: ['scripts/change-package/generate.mjs'],
+          affectedConsumers: ['scripts/summary/render-pr-summary.mjs'],
+          migrationNoteRefs: ['docs/reference/change-package-v2.md'],
+          rollbackRefs: ['docs/reference/SCHEMA-GOVERNANCE.md'],
+          summary: 'Preview contract migration note for summary surfaces.',
+        },
+      ],
+    });
 
     const result = spawnSync(process.execPath, [
       generateScript,
@@ -523,6 +539,7 @@ describe('change-package generate', () => {
       '--claim-evidence-manifest', manifestPath,
       '--policy-decision', policyDecisionPath,
       '--assurance-summary', assuranceSummaryPath,
+      '--contract-migration-notes', contractMigrationNotesPath,
       '--output-json', outputJsonPath,
       '--output-md', outputMarkdownPath,
       '--mode', 'detailed',
@@ -541,6 +558,13 @@ describe('change-package generate', () => {
       proofObligations: Array<{ id: string; claimId: string; status: string }>;
       waivers: Array<{ owner: string; relatedClaimIds: string[] }>;
       evidence: { items: Array<{ id: string; present: boolean }> };
+      contractMigrationNotes: Array<{
+        contractId: string;
+        compatibilityState: string;
+        dualWriteStatus: string;
+        dualValidateStatus: string;
+        migrationNoteRefs: string[];
+      }>;
     };
 
     expect(generated.schemaVersion).toBe('change-package/v2');
@@ -559,10 +583,21 @@ describe('change-package generate', () => {
     }));
     expect(generated.evidence.items).toContainEqual(expect.objectContaining({ id: 'claimEvidenceManifest', present: true }));
     expect(generated.evidence.items).toContainEqual(expect.objectContaining({ id: 'policyDecision', present: true }));
+    expect(generated.evidence.items).toContainEqual(expect.objectContaining({ id: 'contractMigrationNotes', present: true }));
+    expect(generated.contractMigrationNotes).toContainEqual(expect.objectContaining({
+      contractId: 'change-package/v2',
+      compatibilityState: 'preview',
+      dualWriteStatus: 'active',
+      dualValidateStatus: 'planned',
+      migrationNoteRefs: ['docs/reference/change-package-v2.md'],
+    }));
 
     const markdown = await readFile(outputMarkdownPath, 'utf8');
     expect(markdown).toContain('### Claims');
     expect(markdown).toContain('### Proof Obligations');
+    expect(markdown).toContain('### Contract Migration Notes');
+    expect(markdown).toContain('change-package/v2');
+    expect(markdown).toContain('preview');
     expect(markdown).toContain('### Waivers');
   });
 
@@ -634,12 +669,14 @@ describe('change-package generate', () => {
       expect.objectContaining({ id: 'assumption:assumption-rollout-window', claimIds: ['rollout-runtime'] }),
     ]));
     expect(generated.evidence.items).toContainEqual(expect.objectContaining({ id: 'claimLevelSummary', present: true }));
+    expect(generated.evidence.items).not.toContainEqual(expect.objectContaining({ id: 'contractMigrationNotes' }));
 
     const markdown = await readFile(outputMarkdownPath, 'utf8');
     expect(markdown).toContain('evidence package:');
     expect(markdown).toContain('claim states: satisfied=');
     expect(markdown).toContain('### Release / Post-deploy Controls');
     expect(markdown).toContain('### Residual Risks');
+    expect(markdown).not.toContain('### Contract Migration Notes');
   });
 
   it('derives v2 assurance status from unresolved and partial assurance-summary claims', async () => {

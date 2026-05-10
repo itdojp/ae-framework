@@ -194,14 +194,51 @@ const changePackageV2PolicyDecision = changePackageV2?.policyDecision && typeof 
 const changePackageV2ReleaseControls = changePackageV2?.releaseControls && typeof changePackageV2.releaseControls === 'object'
   ? changePackageV2.releaseControls
   : null;
+const changePackageV2ContractMigrationNotes = Array.isArray(changePackageV2?.contractMigrationNotes)
+  ? changePackageV2.contractMigrationNotes
+  : [];
+function compactList(values) {
+  return Array.isArray(values)
+    ? values.map((value) => String(value || '').trim()).filter(Boolean)
+    : [];
+}
+function renderContractMigrationDigest(notes, labels = {
+  dualWrite: 'dual-write',
+  dualValidate: 'dual-validate',
+  migration: 'migration',
+  rollback: 'rollback',
+}) {
+  return notes
+    .map((note) => {
+      const contractId = String(note?.contractId || 'unknown-contract').trim();
+      const state = String(note?.compatibilityState || 'unknown').trim();
+      const dualWrite = String(note?.dualWriteStatus || 'unknown').trim();
+      const dualValidate = String(note?.dualValidateStatus || 'unknown').trim();
+      const noteRefs = compactList(note?.migrationNoteRefs);
+      const rollbackRefs = compactList(note?.rollbackRefs);
+      return `${contractId}:${state} ${labels.dualWrite}=${dualWrite} ${labels.dualValidate}=${dualValidate} ${labels.migration}=${noteRefs[0] || 'n/a'} ${labels.rollback}=${rollbackRefs[0] || 'n/a'}`;
+    })
+    .join('; ');
+}
 const changePackageV2Line = changePackageV2?.schemaVersion === 'change-package/v2'
   ? t(
       `Change Package v2: claims=${changePackageV2Claims.length}, proofObligations=${changePackageV2ProofObligations.length}, waivers=${changePackageV2Waivers.length}, assurance=${changePackageV2Assurance?.targetLevel ?? 'n/a'}/${changePackageV2Assurance?.achievedLevel ?? 'n/a'}/${changePackageV2Assurance?.status ?? 'n/a'}, claimStates=${changePackageV2StateLine}, evidencePackage=artifacts/change-package/change-package-v2.json`,
       `Change Package v2: claims=${changePackageV2Claims.length}, proofObligations=${changePackageV2ProofObligations.length}, waivers=${changePackageV2Waivers.length}, assurance=${changePackageV2Assurance?.targetLevel ?? 'n/a'}/${changePackageV2Assurance?.achievedLevel ?? 'n/a'}/${changePackageV2Assurance?.status ?? 'n/a'}, claimStates=${changePackageV2StateLine}, evidencePackage=artifacts/change-package/change-package-v2.json`,
     )
   : '';
+const contractMigrationNotesLine = changePackageV2ContractMigrationNotes.length > 0
+  ? t(
+      `Contract migrations: ${renderContractMigrationDigest(changePackageV2ContractMigrationNotes)}`,
+      `契約移行: ${renderContractMigrationDigest(changePackageV2ContractMigrationNotes, {
+        dualWrite: 'dual-write',
+        dualValidate: 'dual-validate',
+        migration: '移行注記',
+        rollback: 'ロールバック',
+      })}`,
+    )
+  : '';
 const changePackageV2DetailBlock = changePackageV2Line
-  ? `- ${changePackageV2Line}\n${changePackageV2PolicyDecision ? `- Change Package v2 policy decision: ${changePackageV2PolicyDecision.result ?? 'n/a'} (${changePackageV2PolicyDecision.mode ?? 'n/a'}, enforced=${changePackageV2PolicyDecision.enforced ?? 'n/a'})\n` : ''}${changePackageV2ReleaseControls ? `- Change Package v2 release controls: pre=${Array.isArray(changePackageV2ReleaseControls.preDeployChecks) ? changePackageV2ReleaseControls.preDeployChecks.length : 'n/a'}, post=${Array.isArray(changePackageV2ReleaseControls.postDeployChecks) ? changePackageV2ReleaseControls.postDeployChecks.length : 'n/a'}, rollback=${Array.isArray(changePackageV2ReleaseControls.rollbackSignals) ? changePackageV2ReleaseControls.rollbackSignals.length : 'n/a'}\n` : ''}`
+  ? `- ${changePackageV2Line}\n${changePackageV2PolicyDecision ? `- Change Package v2 policy decision: ${changePackageV2PolicyDecision.result ?? 'n/a'} (${changePackageV2PolicyDecision.mode ?? 'n/a'}, enforced=${changePackageV2PolicyDecision.enforced ?? 'n/a'})\n` : ''}${changePackageV2ReleaseControls ? `- Change Package v2 release controls: pre=${Array.isArray(changePackageV2ReleaseControls.preDeployChecks) ? changePackageV2ReleaseControls.preDeployChecks.length : 'n/a'}, post=${Array.isArray(changePackageV2ReleaseControls.postDeployChecks) ? changePackageV2ReleaseControls.postDeployChecks.length : 'n/a'}, rollback=${Array.isArray(changePackageV2ReleaseControls.rollbackSignals) ? changePackageV2ReleaseControls.rollbackSignals.length : 'n/a'}\n` : ''}${contractMigrationNotesLine ? `- ${contractMigrationNotesLine}\n` : ''}`
   : '';
 const qualityScorecardSummary = qualityScorecard?.summary && typeof qualityScorecard.summary === 'object'
   ? qualityScorecard.summary
@@ -275,7 +312,7 @@ try {
 
 let md;
 if (mode === 'digest') {
-  md = `${qualityScorecardLine ? `${qualityScorecardLine}${qualityScorecardBlockersLine ? ` | ${qualityScorecardBlockersLine}` : ''} | ` : ''}${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''}${claimEvidenceDigestSegment ? ` | ${claimEvidenceDigestSegment}` : ''}${changePackageV2Line ? ` | ${changePackageV2Line}` : ''}${discoveryPackLine ? ` | ${discoveryPackLine}` : ''}${discoveryPackCompileLine ? ` | ${discoveryPackCompileLine}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
+  md = `${qualityScorecardLine ? `${qualityScorecardLine}${qualityScorecardBlockersLine ? ` | ${qualityScorecardBlockersLine}` : ''} | ` : ''}${coverageLine}${assuranceDigestSegment ? ` | ${assuranceDigestSegment}` : ''}${claimEvidenceDigestSegment ? ` | ${claimEvidenceDigestSegment}` : ''}${changePackageV2Line ? ` | ${changePackageV2Line}` : ''}${contractMigrationNotesLine ? ` | ${contractMigrationNotesLine}` : ''}${discoveryPackLine ? ` | ${discoveryPackLine}` : ''}${discoveryPackCompileLine ? ` | ${discoveryPackCompileLine}` : ''} | ${alertsLine} | ${t('Formal','フォーマル')}: ${formal}${alloyTemporalLine? ` | ${alloyTemporalLine}`:''}${conformanceLine? ` | ${conformanceLine}`:''} | ${bddLine} | ${ltlLine} | ${gwtLine} | ${adapterCountsLine} | ${adaptersLine} | ${replayLine} | ${t('Trace','トレース')}: ${Array.from(traceIds).join(', ')}`;
 } else {
   md = `## ${t('Quality Summary','品質サマリ')}\n${qualityScorecardLine ? `- ${qualityScorecardLine}\n${qualityScorecardBlockersLine ? `- ${qualityScorecardBlockersLine}\n` : ''}` : ''}- ${coverageLine}\n${assuranceDetailBlock}${claimEvidenceDetailBlock}${changePackageV2DetailBlock}${discoveryPackLine ? `- ${discoveryPackLine}\n` : ''}${discoveryPackCompileLine ? `- ${discoveryPackCompileLine}\n` : ''}- ${alertsLine}\n- ${t('Formal','フォーマル')}: ${formal}\n${alloyTemporalLine? `- ${alloyTemporalLine}\n`:''}${conformanceLine? `- ${conformanceLine}\n`:''}- ${adapterCountsLine}\n- ${t('Adapters','アダプタ')}:\n${adaptersList}\n- ${bddLine}\n- ${ltlLine}\n- ${gwtLine}\n- ${replayLine}\n- ${t('Trace IDs','トレースID')}: ${Array.from(traceIds).join(', ')}`;
 }
