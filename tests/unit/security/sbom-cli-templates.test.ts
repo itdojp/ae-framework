@@ -25,6 +25,8 @@ describe('SBOM CI integration templates', () => {
       expect(template).toContain('Dependency Track URL must not contain userinfo');
       expect(template).toContain('Dependency Track URL must include a hostname');
       expect(template).toContain('Dependency Track host must be allowlisted via DEPENDENCY_TRACK_ALLOWED_HOSTS');
+      expect(template.indexOf('node -e')).toBeGreaterThanOrEqual(0);
+      expect(template.indexOf('node -e')).toBeLessThan(template.indexOf('X-API-Key'));
       expect(template).toContain("--proto '=https'");
       expect(template).toContain('--fail --show-error --silent');
       expect(template).not.toMatch(/curl[^\n]+\$\{?DEPENDENCY_TRACK_URL\}?\/api\/v1\/bom/);

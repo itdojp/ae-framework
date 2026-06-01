@@ -410,8 +410,11 @@ describe('workflow permission boundaries', () => {
     expect(dependencyTrackStep?.env).toMatchObject({
       DT_ALLOWED_HOSTS: '${{ vars.DEPENDENCY_TRACK_ALLOWED_HOSTS }}',
     });
-    expect(run.indexOf('validate_dependency_track_url')).toBeGreaterThanOrEqual(0);
-    expect(run.indexOf('validate_dependency_track_url')).toBeLessThan(run.indexOf('-H "X-API-Key: $DT_API_KEY"'));
+    const runLines = String(run).split('\n');
+    const validatorInvocationIndex = runLines.findIndex((line) => line.trim() === 'validate_dependency_track_url');
+    const apiKeyHeaderIndex = runLines.findIndex((line) => line.includes('-H "X-API-Key: $DT_API_KEY"'));
+    expect(validatorInvocationIndex).toBeGreaterThanOrEqual(0);
+    expect(validatorInvocationIndex).toBeLessThan(apiKeyHeaderIndex);
     expect(run).toContain('Dependency Track URL must use HTTPS');
     expect(run).toContain('Dependency Track URL must not contain userinfo');
     expect(run).toContain('DEPENDENCY_TRACK_ALLOWED_HOSTS');

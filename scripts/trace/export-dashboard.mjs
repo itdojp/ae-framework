@@ -107,11 +107,13 @@ function loadDashboardConfig(configPath) {
 }
 
 async function exportDashboard({ host, uid, token, output, dryRun }) {
-  const grafanaBaseUrl = validateTokenBearingUrl(host, {
-    serviceName: 'Grafana',
-    allowedHostsEnv: 'GRAFANA_ALLOWED_HOSTS',
-    allowLocalhostHttp: true,
-  });
+  const grafanaBaseUrl = token
+    ? validateTokenBearingUrl(host, {
+      serviceName: 'Grafana',
+      allowedHostsEnv: 'GRAFANA_ALLOWED_HOSTS',
+      allowLocalhostHttp: true,
+    })
+    : new URL(host);
   const url = new URL(`/api/dashboards/uid/${encodeURIComponent(uid)}`, grafanaBaseUrl).toString();
   const headers = { 'Content-Type': 'application/json' };
   if (token) {
