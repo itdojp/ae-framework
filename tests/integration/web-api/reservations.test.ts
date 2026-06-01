@@ -205,7 +205,21 @@ describe('web api / reservations', () => {
     expect(repo.getStock('item-1')).toBe(5);
   });
 
-  it('returns 400 when requestId is missing', async () => {
+  it('rejects unauthenticated malformed requests before payload validation', async () => {
+    const { repo, app } = await buildTestApp();
+    seedRepo(repo, { 'item-1': 5 });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/reservations',
+      payload: { sku: 'item-1', quantity: 1, userId: 'u1' },
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.json()).toMatchObject({ error: 'unauthorized' });
+    expect(repo.getStock('item-1')).toBe(5);
+  });
+
+  it('returns 400 when requestId is missing for an authenticated principal', async () => {
     const { repo, app } = await buildTestApp();
     seedRepo(repo, { 'item-1': 5 });
     const res = await app.inject({

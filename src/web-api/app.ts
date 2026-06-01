@@ -57,14 +57,14 @@ export function buildApp(repo: ReservationRepository = createRepo(), options: Bu
       | ConflictResponse
       | IdempotencyConflictResponse;
   }>('/reservations', async (request, reply) => {
-    const validationErrors = validateRequest(request.body);
-    if (validationErrors.length > 0) {
-      return reply.code(400).send({ error: 'invalid_request', details: validationErrors });
-    }
-
     const principalId = normalizePrincipalId(await resolvePrincipal(request));
     if (!principalId) {
       return reply.code(401).send({ error: 'unauthorized', details: ['authenticated principal is required'] });
+    }
+
+    const validationErrors = validateRequest(request.body);
+    if (validationErrors.length > 0) {
+      return reply.code(400).send({ error: 'invalid_request', details: validationErrors });
     }
     if (request.body.userId !== undefined && request.body.userId !== principalId) {
       return reply.code(403).send({

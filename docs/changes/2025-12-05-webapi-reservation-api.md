@@ -18,7 +18,7 @@ lastVerified: '2026-06-02'
   - `tests/property/web-api/fast-check.config.ts` で FC_WEBAPI_RUNS 等の環境変数で実行回数を調整可能に。
 
 ## 2026-06-02 セキュリティ補強
-- `POST /reservations` は `buildApp(..., { resolvePrincipal })` で渡される認証済みプリンシパルを使用し、未設定時は fail-closed で 401 を返却する。
+- `POST /reservations` は `buildApp(..., { resolvePrincipal })` で渡される認証済みプリンシパルを使用し、未設定時は payload validation より前に fail-closed で 401 を返却する。
 - リクエストボディの `userId` は権威情報として使用せず、認証済みプリンシパルとの整合性チェックに限定する。
 - `requestId` の冪等性レコードはプリンシパルと正規化済み予約ペイロード（SKU/数量）のハッシュに束縛し、異なるプリンシパル・SKU・数量での再利用は既存レコードを返さず 409 `idempotency_conflict` とする。
 
