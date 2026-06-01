@@ -131,6 +131,12 @@ export class ContainerServer {
               description: 'Whether to push the image to a registry',
               default: false,
             },
+            pushApproval: {
+              type: 'string',
+              enum: ['none', 'approved-container-image-push'],
+              description: 'Required explicit approval token when push is true',
+              default: 'none',
+            },
             buildArgs: {
               type: 'object',
               additionalProperties: { type: 'string' },
@@ -221,6 +227,16 @@ export class ContainerServer {
               description: 'Force cleanup even if resources are in use',
               default: false,
             },
+            dryRun: {
+              type: 'boolean',
+              description: 'Preview ae-framework-scoped cleanup without deleting container resources',
+              default: true,
+            },
+            confirm: {
+              type: 'string',
+              enum: ['delete-ae-framework-resources', 'force-delete-ae-framework-resources'],
+              description: 'Required confirmation token when dryRun is false',
+            },
           },
           additionalProperties: false,
         },
@@ -296,6 +312,7 @@ export class ContainerServer {
               language: parsed.language,
               tools: parsed.tools,
               push: parsed.push,
+              pushApproval: parsed.pushApproval,
               buildArgs: parsed.buildArgs,
               ...(parsed.baseImage !== undefined ? { baseImage: parsed.baseImage } : {}),
               ...(parsed.tag !== undefined ? { tag: parsed.tag } : {}),
@@ -372,6 +389,8 @@ export class ContainerServer {
               maxAge: parsed.maxAge,
               keepCompleted: parsed.keepCompleted,
               force: parsed.force,
+              dryRun: parsed.dryRun,
+              ...(parsed.confirm !== undefined ? { confirm: parsed.confirm } : {}),
             };
             const result = await this.agent.cleanup(options);
             return {

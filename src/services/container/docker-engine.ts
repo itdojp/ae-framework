@@ -3,7 +3,7 @@
  * Phase 3 of Issue #37: Docker container engine implementation for comparison with Podman
  */
 
-import { exec, spawn } from 'child_process';
+import { exec, execFile, spawn } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import { ContainerEngine } from './container-engine.js';
@@ -25,6 +25,7 @@ import {
   splitUsagePair,
   toExecErrorLike
 } from './container-engine-utils.js';
+import { redactBuildArgsInMessage, redactImageBuildContext } from './container-security-policy.js';
 import type {
   DockerContainerListEntry,
   DockerImageListEntry,
@@ -33,6 +34,7 @@ import type {
 } from './container-engine-output-types.js';
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 const getErrorMessage = (error: unknown): string => toExecErrorLike(error).message;
 
 interface DockerInfoResponse {
@@ -261,7 +263,7 @@ export class DockerEngine extends ContainerEngine {
     if (config.args) args.push(...config.args);
 
     try {
-      const result = await execAsync(`${this.dockerPath} ${args.join(' ')}`, {
+      const result = await execFileAsync(this.dockerPath, args, {
         timeout: (options?.timeout || 300) * 1000,
         maxBuffer: 10 * 1024 * 1024 // 10MB buffer
       });
@@ -524,7 +526,7 @@ export class DockerEngine extends ContainerEngine {
     args.push(buildContext.contextPath);
 
     try {
-      const result = await execAsync(`${this.dockerPath} ${args.join(' ')}`, {
+      const result = await execFileAsync(this.dockerPath, args, {
         timeout: 600000, // 10 minutes timeout for builds
         maxBuffer: 50 * 1024 * 1024 // 50MB buffer
       });
@@ -536,18 +538,19 @@ export class DockerEngine extends ContainerEngine {
       this.emit('imageBuild', {
         imageTag,
         imageId,
-        buildContext
+        buildContext: redactImageBuildContext(buildContext)
       });
 
       return imageId;
     } catch (error: unknown) {
+      const message = redactBuildArgsInMessage(getErrorMessage(error));
       this.emit('error', {
         operation: 'buildImage',
-        error: getErrorMessage(error),
+        error: message,
         imageTag,
-        buildContext
+        buildContext: redactImageBuildContext(buildContext)
       });
-      throw new Error(`Failed to build image: ${getErrorMessage(error)}`);
+      throw new Error(`Failed to build image: ${message}`);
     }
   }
 
@@ -570,7 +573,7 @@ export class DockerEngine extends ContainerEngine {
   async pushImage(image: string, tag: string = 'latest'): Promise<void> {
     try {
       const fullImage = `${image}:${tag}`;
-      await execAsync(`${this.dockerPath} push ${fullImage}`);
+      await execFileAsync(this.dockerPath, ['push', fullImage]);
       
       this.emit('imagePushed', { image: fullImage });
     } catch (error: unknown) {
@@ -858,6 +861,7 @@ export class DockerEngine extends ContainerEngine {
     volumes?: boolean;
     networks?: boolean;
     force?: boolean;
+    labelFilters?: string[];
   }): Promise<{
     containers: number;
     images: number;
@@ -874,29 +878,39 @@ export class DockerEngine extends ContainerEngine {
     };
 
     try {
+      const pruneArgs = (resource: 'container' | 'image' | 'volume' | 'network') => {
+        const args = [resource, 'prune'];
+        if (options?.force) args.push('--force');
+        for (const filter of options?.labelFilters ?? []) {
+          args.push('--filter', filter);
+        }
+        args.push('--format', 'json');
+        return args;
+      };
+
       if (options?.containers !== false) {
-        const containerResult = await execAsync(`${this.dockerPath} container prune ${options?.force ? '--force' : ''} --format json`);
+        const containerResult = await execFileAsync(this.dockerPath, pruneArgs('container'));
         const containerData = JSON.parse(containerResult.stdout);
         results.containers = containerData.ContainersDeleted?.length || 0;
         results.spaceSaved += containerData.SpaceReclaimed || 0;
       }
 
       if (options?.images !== false) {
-        const imageResult = await execAsync(`${this.dockerPath} image prune ${options?.force ? '--force' : ''} --format json`);
+        const imageResult = await execFileAsync(this.dockerPath, pruneArgs('image'));
         const imageData = JSON.parse(imageResult.stdout);
         results.images = imageData.ImagesDeleted?.length || 0;
         results.spaceSaved += imageData.SpaceReclaimed || 0;
       }
 
       if (options?.volumes !== false) {
-        const volumeResult = await execAsync(`${this.dockerPath} volume prune ${options?.force ? '--force' : ''} --format json`);
+        const volumeResult = await execFileAsync(this.dockerPath, pruneArgs('volume'));
         const volumeData = JSON.parse(volumeResult.stdout);
         results.volumes = volumeData.VolumesDeleted?.length || 0;
         results.spaceSaved += volumeData.SpaceReclaimed || 0;
       }
 
       if (options?.networks !== false) {
-        const networkResult = await execAsync(`${this.dockerPath} network prune ${options?.force ? '--force' : ''} --format json`);
+        const networkResult = await execFileAsync(this.dockerPath, pruneArgs('network'));
         const networkData = JSON.parse(networkResult.stdout);
         results.networks = networkData.NetworksDeleted?.length || 0;
       }

@@ -288,6 +288,7 @@ export abstract class ContainerEngine extends EventEmitter {
     volumes?: boolean; 
     networks?: boolean; 
     force?: boolean;
+    labelFilters?: string[];
   }): Promise<{
     containers: number;
     images: number; 
