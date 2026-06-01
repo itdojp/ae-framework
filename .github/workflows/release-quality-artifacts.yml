@@ -31,7 +31,7 @@ jobs:
             cp artifacts/summary/combined.json dist-quality/artifacts/summary/
           fi
           printf "%s\n" "Bundled files:"
-          find dist-quality -type f -maxdepth 3 -print
+          find dist-quality -maxdepth 3 -type f -print
           if [ -f formal/summary.json ]; then
             mkdir -p dist-quality/formal
             cp formal/summary.json dist-quality/formal/
