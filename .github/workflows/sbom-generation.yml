@@ -56,6 +56,9 @@ jobs:
         node-version: '20'
         
     - name: Install dependencies
+      env:
+        NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+        NPM_CONFIG_GLOBALCONFIG: /dev/null
       run: pnpm install --frozen-lockfile
       
     - name: Build project

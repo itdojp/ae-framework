@@ -363,10 +363,23 @@ describe('workflow permission boundaries', () => {
       ? releaseSteps.find((step: any) => step?.name === 'Install dependencies (frozen lockfile)')
       : undefined;
     expect(releaseInstallStep?.run).toBe('pnpm install --frozen-lockfile');
+    expect(releaseInstallStep?.env).toMatchObject({
+      NPM_CONFIG_USERCONFIG: '${{ github.workspace }}/.npmrc',
+      NPM_CONFIG_GLOBALCONFIG: '/dev/null',
+    });
 
     const security = parseWorkflow('security.yml');
     const dependencyAudit = security.jobs?.['dependency-audit'];
+    const dependencyAuditSteps = dependencyAudit?.steps ?? [];
+    const dependencyAuditInstallStep = Array.isArray(dependencyAuditSteps)
+      ? dependencyAuditSteps.find((step: any) => step?.name === 'Install dependencies')
+      : undefined;
     expect(dependencyAudit?.['continue-on-error']).toBe("${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'enforce-security') }}");
+    expect(dependencyAuditInstallStep?.run).toBe('pnpm install --frozen-lockfile');
+    expect(dependencyAuditInstallStep?.env).toMatchObject({
+      NPM_CONFIG_USERCONFIG: '${{ github.workspace }}/.npmrc',
+      NPM_CONFIG_GLOBALCONFIG: '/dev/null',
+    });
     expect(securityRaw).toContain('pnpm audit --audit-level=moderate --json > audit-results.json');
     expect(securityRaw).toContain('Dependency audit did not produce parseable vulnerability metadata.');
     expect(securityRaw).toContain('High-risk vulnerabilities found under enforce-security mode.');
@@ -378,6 +391,10 @@ describe('workflow permission boundaries', () => {
       ? sbomSteps.find((step: any) => step?.name === 'Install dependencies')
       : undefined;
     expect(sbomInstallStep?.run).toBe('pnpm install --frozen-lockfile');
+    expect(sbomInstallStep?.env).toMatchObject({
+      NPM_CONFIG_USERCONFIG: '${{ github.workspace }}/.npmrc',
+      NPM_CONFIG_GLOBALCONFIG: '/dev/null',
+    });
     expect(sbomRaw).toContain('High-risk vulnerabilities found under enforced SBOM audit mode.');
     expect(sbomRaw).toContain('printf \'{"metadata":{"vulnerabilities":{}}}\\n\' > audit-results.json');
   });

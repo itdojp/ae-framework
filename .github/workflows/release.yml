@@ -46,6 +46,9 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies (frozen lockfile)
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
         run: pnpm install --frozen-lockfile
       - run: pnpm run build
 
