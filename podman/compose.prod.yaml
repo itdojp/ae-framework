@@ -55,13 +55,13 @@ services:
   db:
     image: docker.io/library/postgres:16-alpine
     environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: app
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER for production database access}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD from an external secret}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB for production database access}
     volumes:
       - pgdata:/var/lib/postgresql/data:Z
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -71,9 +71,9 @@ services:
     image: docker.io/otel/opentelemetry-collector:0.106.1
     volumes:
       - ../observability/otel-collector.yaml:/etc/otelcol/config.yaml:ro,Z
-    ports:
-      - "4317:4317"
-      - "4318:4318"
+    expose:
+      - "4317"
+      - "4318"
     restart: unless-stopped
 
 volumes:
