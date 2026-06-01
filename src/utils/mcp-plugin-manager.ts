@@ -5,6 +5,8 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { constants as fsConstants } from 'fs';
+import { pathToFileURL } from 'url';
 import type { MCPPlugin, MCPServer } from '../services/mcp-server.js';
 
 export interface PluginManifest {
@@ -45,6 +47,15 @@ export interface PluginDiscoveryOptions {
   includeDevPlugins: boolean;
   skipValidation: boolean;
 }
+
+interface PluginScanEntry {
+  manifest: PluginManifest;
+  manifestPath: string;
+}
+
+const SAFE_PLUGIN_NAME_PATTERN = /^[a-z][a-z0-9_-]*(?:\.[a-z0-9_-]+)*$/;
+const SAFE_PLUGIN_TEMPLATE_NAME_PATTERN = /^[a-z][a-z0-9-]{0,63}$/;
+const MAX_PLUGIN_NAME_LENGTH = 80;
 
 export class MCPPluginManager {
   private plugins: Map<string, PluginRegistration> = new Map();
@@ -118,8 +129,9 @@ export class MCPPluginManager {
         };
       }
 
-      // Load plugin module
-      const pluginModulePath = path.join(path.dirname(filePath), manifest.main);
+      // Load plugin module only after manifest-controlled paths have been
+      // constrained to the scanned plugin directory.
+      const pluginModulePath = await this.resolvePluginModulePath(manifest, filePath);
       const pluginModule = await this.loadPluginModule(pluginModulePath);
 
       if (!pluginModule || typeof pluginModule.initialize !== 'function') {
@@ -176,15 +188,14 @@ export class MCPPluginManager {
     const results: PluginLoadResult[] = [];
 
     try {
-      const plugins = await this.scanPluginDirectory(directoryPath, {
+      const plugins = await this.scanPluginDirectoryEntries(directoryPath, {
         searchPaths: [directoryPath],
         includeDevPlugins: true,
-        skipValidation: false
+        skipValidation: true
       });
 
-      for (const manifest of plugins) {
-        const manifestPath = path.join(directoryPath, manifest.name, 'plugin.json');
-        const result = await this.loadPlugin(manifest, manifestPath);
+      for (const plugin of plugins) {
+        const result = await this.loadPlugin(plugin.manifest, plugin.manifestPath);
         results.push(result);
       }
 
@@ -294,8 +305,16 @@ export class MCPPluginManager {
    * Create a new plugin template
    */
   async createPluginTemplate(name: string, targetDir: string): Promise<void> {
-    const pluginDir = path.join(targetDir, name);
+    const nameError = this.validatePluginTemplateName(name);
+    if (nameError) {
+      throw new Error(nameError);
+    }
+
+    const safeTargetDir = await this.resolvePluginTemplateTargetDirectory(targetDir);
+    const pluginDir = path.resolve(safeTargetDir, name);
+    this.assertPathInside(pluginDir, safeTargetDir, 'Plugin template directory escapes the target directory');
     await fs.mkdir(pluginDir, { recursive: true });
+    await this.assertRealPathInsideProject(pluginDir, 'Plugin template directory escapes the project root');
 
     // Create plugin manifest
     const manifest: PluginManifest = {
@@ -311,10 +330,13 @@ export class MCPPluginManager {
       }
     };
 
-    await fs.writeFile(
-      path.join(pluginDir, 'plugin.json'),
-      JSON.stringify(manifest, null, 2)
-    );
+    await this.writePluginTemplateFile(pluginDir, 'plugin.json', JSON.stringify(manifest, null, 2));
+
+    const initMessage = JSON.stringify(`${name} plugin initialized`);
+    const terminateMessage = JSON.stringify(`${name} plugin terminated`);
+    const endpointPath = JSON.stringify(`/${encodeURIComponent(name)}/hello`);
+    const helloMessage = JSON.stringify(`Hello from ${name} plugin!`);
+    const endpointDescription = JSON.stringify(`Test endpoint for ${name} plugin`);
 
     // Create plugin implementation
     const pluginCode = `/**
@@ -325,17 +347,17 @@ export class MCPPluginManager {
  * Initialize plugin
  */
 async function initialize(server) {
-  console.log('${name} plugin initialized');
+  console.log(${initMessage});
   
   // Register plugin endpoints
   server.registerEndpoint({
-    path: '/${name}/hello',
+    path: ${endpointPath},
     method: 'GET',
     handler: async (request) => ({
       status: 200,
-      data: { message: 'Hello from ${name} plugin!' }
+      data: { message: ${helloMessage} }
     }),
-    description: 'Test endpoint for ${name} plugin'
+    description: ${endpointDescription}
   });
 }
 
@@ -343,7 +365,7 @@ async function initialize(server) {
  * Terminate plugin
  */
 async function terminate(server) {
-  console.log('${name} plugin terminated');
+  console.log(${terminateMessage});
 }
 
 module.exports = {
@@ -352,7 +374,7 @@ module.exports = {
 };
 `;
 
-    await fs.writeFile(path.join(pluginDir, 'index.js'), pluginCode);
+    await this.writePluginTemplateFile(pluginDir, 'index.js', pluginCode);
 
     // Create README
     const readme = `# ${name} Plugin
@@ -374,7 +396,7 @@ This plugin provides the following endpoints:
 No additional configuration required.
 `;
 
-    await fs.writeFile(path.join(pluginDir, 'README.md'), readme);
+    await this.writePluginTemplateFile(pluginDir, 'README.md', readme);
   }
 
   // Private methods
@@ -383,14 +405,23 @@ No additional configuration required.
     directoryPath: string, 
     options: PluginDiscoveryOptions
   ): Promise<PluginManifest[]> {
-    const plugins: PluginManifest[] = [];
+    const entries = await this.scanPluginDirectoryEntries(directoryPath, options);
+    return entries.map((entry) => entry.manifest);
+  }
+
+  private async scanPluginDirectoryEntries(
+    directoryPath: string,
+    options: PluginDiscoveryOptions
+  ): Promise<PluginScanEntry[]> {
+    const plugins: PluginScanEntry[] = [];
 
     try {
       const entries = await fs.readdir(directoryPath, { withFileTypes: true });
 
       for (const entry of entries) {
         if (entry.isDirectory()) {
-          const pluginManifestPath = path.join(directoryPath, entry.name, 'plugin.json');
+          const pluginDirectory = path.join(directoryPath, entry.name);
+          const pluginManifestPath = path.join(pluginDirectory, 'plugin.json');
           
           try {
             const manifestContent = await fs.readFile(pluginManifestPath, 'utf-8');
@@ -401,7 +432,14 @@ No additional configuration required.
               continue;
             }
 
-            plugins.push(manifest);
+            if (!options.skipValidation && this.validateManifest(manifest)) {
+              continue;
+            }
+
+            plugins.push({
+              manifest,
+              manifestPath: pluginManifestPath
+            });
           } catch (error) {
             // Skip directories without valid plugin.json
             continue;
@@ -420,12 +458,22 @@ No additional configuration required.
       return 'Plugin name is required and must be a string';
     }
 
+    const pluginNameError = this.validatePluginManifestName(manifest.name);
+    if (pluginNameError) {
+      return pluginNameError;
+    }
+
     if (!manifest.version || typeof manifest.version !== 'string') {
       return 'Plugin version is required and must be a string';
     }
 
     if (!manifest.main || typeof manifest.main !== 'string') {
       return 'Plugin main file is required and must be a string';
+    }
+
+    const pluginMainError = this.validatePluginMainPath(manifest.main);
+    if (pluginMainError) {
+      return pluginMainError;
     }
 
     // Validate version format (basic semver check)
@@ -435,6 +483,206 @@ No additional configuration required.
     }
 
     return null;
+  }
+
+  private validatePluginManifestName(name: string): string | null {
+    if (name.length > MAX_PLUGIN_NAME_LENGTH) {
+      return `Plugin name must be ${MAX_PLUGIN_NAME_LENGTH} characters or fewer`;
+    }
+
+    if (this.hasUnsafePathCharacters(name)) {
+      return 'Plugin name must not contain path separators, control characters, or NUL bytes';
+    }
+
+    if (!SAFE_PLUGIN_NAME_PATTERN.test(name)) {
+      return 'Plugin name must be a safe lowercase plugin identifier';
+    }
+
+    return null;
+  }
+
+  private validatePluginTemplateName(name: string): string | null {
+    if (!name || typeof name !== 'string') {
+      return 'Plugin template name is required and must be a string';
+    }
+
+    if (this.hasUnsafePathCharacters(name)) {
+      return 'Plugin template name must not contain path separators, control characters, or NUL bytes';
+    }
+
+    if (!SAFE_PLUGIN_TEMPLATE_NAME_PATTERN.test(name)) {
+      return 'Plugin template name must be a lowercase slug using only letters, digits, and hyphens';
+    }
+
+    return null;
+  }
+
+  private validatePluginMainPath(main: string): string | null {
+    if (main.length === 0 || main.trim() !== main) {
+      return 'Plugin main file must be a non-empty relative path without surrounding whitespace';
+    }
+
+    if (this.hasControlOrNullByte(main) || main.includes('\\')) {
+      return 'Plugin main file must not contain backslashes, control characters, or NUL bytes';
+    }
+
+    if (path.isAbsolute(main) || /^[A-Za-z]:/.test(main) || main.startsWith('//')) {
+      return 'Plugin main file must be a relative path';
+    }
+
+    const parts = main.split('/');
+    if (parts.some((part) => part === '' || part === '.' || part === '..')) {
+      return 'Plugin main file must not contain empty, current-directory, or parent-directory segments';
+    }
+
+    const extension = path.posix.extname(main);
+    if (extension !== '.js' && extension !== '.mjs') {
+      return 'Plugin main file must be a JavaScript module ending in .js or .mjs';
+    }
+
+    return null;
+  }
+
+  private hasUnsafePathCharacters(value: string): boolean {
+    return this.hasControlOrNullByte(value) || value.includes('/') || value.includes('\\');
+  }
+
+  private hasControlOrNullByte(value: string): boolean {
+    for (let index = 0; index < value.length; index += 1) {
+      const codePoint = value.charCodeAt(index);
+      if (codePoint <= 0x1f || codePoint === 0x7f) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private async resolvePluginModulePath(manifest: PluginManifest, manifestPath: string): Promise<string> {
+    const pluginDirectory = path.dirname(manifestPath);
+    const candidateModulePath = path.resolve(pluginDirectory, manifest.main);
+    this.assertPathInside(candidateModulePath, pluginDirectory, 'Plugin main file escapes the plugin directory');
+
+    let realPluginDirectory: string;
+    let realModulePath: string;
+
+    try {
+      realPluginDirectory = await fs.realpath(pluginDirectory);
+      realModulePath = await fs.realpath(candidateModulePath);
+    } catch (error: any) {
+      if (error?.code === 'ENOENT') {
+        throw new Error(`Plugin module file not found: ${candidateModulePath}`);
+      }
+      throw error;
+    }
+
+    this.assertPathInside(realModulePath, realPluginDirectory, 'Plugin main file resolves outside the plugin directory');
+    return realModulePath;
+  }
+
+  private async resolvePluginTemplateTargetDirectory(targetDir: string): Promise<string> {
+    if (!targetDir || typeof targetDir !== 'string') {
+      throw new Error('Plugin template target directory is required and must be a string');
+    }
+
+    if (this.hasControlOrNullByte(targetDir) || targetDir.includes('\\') || /^[A-Za-z]:/.test(targetDir)) {
+      throw new Error('Plugin template target directory must not contain control characters, NUL bytes, backslashes, or Windows drive prefixes');
+    }
+
+    const resolvedProjectRoot = path.resolve(this.projectRoot);
+    const realProjectRoot = await fs.realpath(resolvedProjectRoot);
+    const resolvedTargetDir = path.isAbsolute(targetDir)
+      ? path.resolve(targetDir)
+      : path.resolve(resolvedProjectRoot, targetDir);
+
+    this.assertPathInside(resolvedTargetDir, resolvedProjectRoot, 'Plugin template target directory escapes the project root');
+
+    const realNearestAncestor = await this.realpathNearestExistingAncestor(resolvedTargetDir);
+    this.assertPathInside(realNearestAncestor, realProjectRoot, 'Plugin template target directory resolves outside the project root');
+
+    return resolvedTargetDir;
+  }
+
+  private async resolvePluginTemplateOutputPath(pluginDir: string, fileName: string): Promise<string> {
+    const candidatePath = path.resolve(pluginDir, fileName);
+    this.assertPathInside(candidatePath, pluginDir, 'Plugin template output file escapes the plugin directory');
+
+    const realPluginDir = await fs.realpath(pluginDir);
+    const realParentDir = await fs.realpath(path.dirname(candidatePath));
+    this.assertPathInside(realParentDir, realPluginDir, 'Plugin template output parent resolves outside the plugin directory');
+
+    try {
+      const existingOutput = await fs.lstat(candidatePath);
+      if (existingOutput.isSymbolicLink()) {
+        throw new Error('Plugin template output file must not be a symbolic link');
+      }
+
+      if (!existingOutput.isFile()) {
+        throw new Error('Plugin template output path must be a regular file when it already exists');
+      }
+
+      const realExistingOutput = await fs.realpath(candidatePath);
+      this.assertPathInside(realExistingOutput, realPluginDir, 'Plugin template output file resolves outside the plugin directory');
+    } catch (error: any) {
+      if (error?.code !== 'ENOENT') {
+        throw error;
+      }
+    }
+
+    return candidatePath;
+  }
+
+  private async writePluginTemplateFile(pluginDir: string, fileName: string, content: string): Promise<void> {
+    const outputPath = await this.resolvePluginTemplateOutputPath(pluginDir, fileName);
+    const noFollowFlag = fsConstants.O_NOFOLLOW ?? 0;
+    const handle = await fs.open(
+      outputPath,
+      fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_EXCL | noFollowFlag,
+      0o666
+    );
+
+    try {
+      await handle.writeFile(content);
+    } finally {
+      await handle.close();
+    }
+  }
+
+  private async assertRealPathInsideProject(targetPath: string, message: string): Promise<void> {
+    const realProjectRoot = await fs.realpath(this.projectRoot);
+    const realTargetPath = await fs.realpath(targetPath);
+    this.assertPathInside(realTargetPath, realProjectRoot, message);
+  }
+
+  private async realpathNearestExistingAncestor(targetPath: string): Promise<string> {
+    let current = path.resolve(targetPath);
+
+    while (true) {
+      try {
+        return await fs.realpath(current);
+      } catch (error: any) {
+        if (error?.code !== 'ENOENT') {
+          throw error;
+        }
+      }
+
+      const parent = path.dirname(current);
+      if (parent === current) {
+        throw new Error(`No existing ancestor found for ${targetPath}`);
+      }
+      current = parent;
+    }
+  }
+
+  private assertPathInside(candidatePath: string, parentPath: string, message: string): void {
+    const relative = path.relative(parentPath, candidatePath);
+    if (relative === '') {
+      return;
+    }
+
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      throw new Error(message);
+    }
   }
 
   private async loadPluginModule(modulePath: string): Promise<any> {
@@ -449,7 +697,7 @@ No additional configuration required.
         case '.mjs':
           try {
             // Dynamic import for ES modules
-            const module = await import(modulePath);
+            const module = await import(pathToFileURL(modulePath).href);
             return module.default || module;
           } catch (importError: any) {
             // Fallback to require for CommonJS modules
