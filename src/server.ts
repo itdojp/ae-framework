@@ -1,25 +1,26 @@
 import Fastify from 'fastify'
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath, pathToFileURL } from 'url'
 import yaml from 'yaml'
+import {
+  collectOpenApiRouteDescriptors,
+  OpenApiRouteRegistrationError,
+  resolveRouteModulePath,
+  type OpenApiLikeSpec,
+} from './server/openapi-route-security.js'
 import { handler as postReservation } from './routes/reservations-post.js'
 import { handler as deleteReservation } from './routes/reservations-id-delete.js'
 import { handler as getInventory } from './routes/inventory-sku-get.js'
 
 const server = Fastify({ logger: true })
+const moduleDir = path.dirname(fileURLToPath(import.meta.url))
+const routesDir = path.resolve(moduleDir, 'routes')
 
 type PlainObject = Record<string, unknown>
 
 interface RouteHandlerModule {
   handler: (input: unknown) => Promise<unknown>
-}
-
-interface OpenApiLikeSpec {
-  paths?: Record<string, unknown>
-}
-
-function safeName(p: string) {
-  return String(p).replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
 }
 
 function toPlainObject(value: unknown): PlainObject {
@@ -59,20 +60,38 @@ function isOpenApiLikeSpec(value: unknown): value is OpenApiLikeSpec {
   return value !== null && typeof value === 'object'
 }
 
-async function loadRouteModule(key: string): Promise<RouteHandlerModule | null> {
-  const file = path.join(__dirname, 'routes', `${key}.ts`)
-  const fileJs = path.join(__dirname, 'routes', `${key}.js`)
+function isPathWithin(baseDir: string, candidatePath: string): boolean {
+  const relative = path.relative(baseDir, candidatePath)
+  return relative === '' || (!!relative && !relative.startsWith('..') && !path.isAbsolute(relative))
+}
 
+function resolveExistingRouteModulePath(key: string, extension: 'js' | 'ts'): string | null {
+  const candidate = resolveRouteModulePath(key, extension, routesDir)
+  if (!fs.existsSync(candidate)) return null
+
+  const realBase = fs.realpathSync(routesDir)
+  const realCandidate = fs.realpathSync(candidate)
+  if (!isPathWithin(realBase, realCandidate)) {
+    throw new OpenApiRouteRegistrationError(`Route module realpath escaped routes directory: ${key}.${extension}`)
+  }
+  return realCandidate
+}
+
+async function loadRouteModule(key: string): Promise<RouteHandlerModule | null> {
   try {
-    if (fs.existsSync(fileJs)) {
-      const mod: unknown = await import(`./routes/${key}.js`)
+    const fileJs = resolveExistingRouteModulePath(key, 'js')
+    if (fileJs) {
+      const mod: unknown = await import(pathToFileURL(fileJs).href)
       return isRouteHandlerModule(mod) ? mod : null
     }
-    if (fs.existsSync(file)) {
-      const mod: unknown = await import(`./routes/${key}.ts`)
+
+    const fileTs = resolveExistingRouteModulePath(key, 'ts')
+    if (fileTs) {
+      const mod: unknown = await import(pathToFileURL(fileTs).href)
       return isRouteHandlerModule(mod) ? mod : null
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof OpenApiRouteRegistrationError) throw error
     // Optional route module may not exist for every operation.
   }
 
@@ -93,51 +112,48 @@ async function tryAutoRegisterFromOpenAPI() {
       if (isOpenApiLikeSpec(parsed)) spec = parsed
     }
     if (!spec || !spec.paths) return false
-    for (const [p, methods] of Object.entries(spec.paths)) {
-      const methodMap = toPlainObject(methods)
-      for (const [m] of Object.entries(methodMap)) {
-        const key = `${safeName(p)}-${String(m).toLowerCase()}`
-        const mod = await loadRouteModule(key)
-        if (mod?.handler) {
-          const routePath = p.replace(/\{([^}]+)\}/g, ':$1')
-          switch (String(m).toLowerCase()) {
-            case 'get':
-              server.get(routePath, async (req, rep) => {
-                const r = await mod.handler({ ...toPlainObject(req.params), ...toPlainObject(req.query) })
-                rep.code(getResponseStatus(r, 200)).send(r)
-              })
-              break
-            case 'post':
-              server.post(routePath, async (req, rep) => {
-                const r = await mod.handler(req.body)
-                rep.code(getResponseStatus(r, 200)).send(r)
-              })
-              break
-            case 'delete':
-              server.delete(routePath, async (req, rep) => {
-                const r = await mod.handler(toPlainObject(req.params))
-                rep.code(getResponseStatus(r, 204)).send(r)
-              })
-              break
-            case 'put':
-              server.put(routePath, async (req, rep) => {
-                const r = await mod.handler(req.body)
-                rep.code(getResponseStatus(r, 200)).send(r)
-              })
-              break
-            case 'patch':
-              server.patch(routePath, async (req, rep) => {
-                const r = await mod.handler(req.body)
-                rep.code(getResponseStatus(r, 200)).send(r)
-              })
-              break
-          }
-          server.log.info({ route: routePath, method: String(m).toUpperCase() }, 'auto-registered route')
+    const routeDescriptors = collectOpenApiRouteDescriptors(spec)
+    for (const descriptor of routeDescriptors) {
+      const mod = await loadRouteModule(descriptor.moduleKey)
+      if (mod?.handler) {
+        switch (descriptor.method) {
+          case 'get':
+            server.get(descriptor.fastifyPath, async (req, rep) => {
+              const r = await mod.handler({ ...toPlainObject(req.params), ...toPlainObject(req.query) })
+              rep.code(getResponseStatus(r, 200)).send(r)
+            })
+            break
+          case 'post':
+            server.post(descriptor.fastifyPath, async (req, rep) => {
+              const r = await mod.handler(req.body)
+              rep.code(getResponseStatus(r, 200)).send(r)
+            })
+            break
+          case 'delete':
+            server.delete(descriptor.fastifyPath, async (req, rep) => {
+              const r = await mod.handler(toPlainObject(req.params))
+              rep.code(getResponseStatus(r, 204)).send(r)
+            })
+            break
+          case 'put':
+            server.put(descriptor.fastifyPath, async (req, rep) => {
+              const r = await mod.handler(req.body)
+              rep.code(getResponseStatus(r, 200)).send(r)
+            })
+            break
+          case 'patch':
+            server.patch(descriptor.fastifyPath, async (req, rep) => {
+              const r = await mod.handler(req.body)
+              rep.code(getResponseStatus(r, 200)).send(r)
+            })
+            break
         }
+        server.log.info({ route: descriptor.fastifyPath, method: descriptor.method.toUpperCase() }, 'auto-registered route')
       }
     }
     return true
   } catch (e) {
+    if (e instanceof OpenApiRouteRegistrationError) throw e
     server.log.warn({ err: e }, 'OpenAPI auto-register skipped')
     return false
   }
@@ -185,6 +201,6 @@ export async function start() {
   }
 }
 
-if (require.main === module) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   void start()
 }
