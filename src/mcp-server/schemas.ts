@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  getTypeScriptIdentifierPolicyError,
+  SAFE_TYPESCRIPT_IDENTIFIER_MAX_LENGTH,
+} from '../utils/typescript-identifier-policy.js';
 
 export const VerificationTypeEnum = z.enum([
   'tests',
@@ -106,6 +110,14 @@ export function parseOrThrow<T extends z.ZodTypeAny>(schema: T, input: unknown):
 // ---------- Test Generation MCP Schemas ----------
 export const TestFrameworkEnum = z.enum(['vitest', 'jest', 'mocha']);
 
+const SafeTypeScriptIdentifierSchema = z.string()
+  .min(1)
+  .max(SAFE_TYPESCRIPT_IDENTIFIER_MAX_LENGTH)
+  .superRefine((value, context) => {
+    const message = getTypeScriptIdentifierPolicyError(value);
+    if (message) context.addIssue({ code: z.ZodIssueCode.custom, message });
+  });
+
 export const GenerateFromRequirementsArgsSchema = z.object({
   feature: z.string().min(1),
   requirements: z.array(z.string()).optional().default([]),
@@ -119,13 +131,13 @@ export const GenerateFromCodeArgsSchema = z.object({
 export type GenerateFromCodeArgs = z.infer<typeof GenerateFromCodeArgsSchema>;
 
 const InputParamSchema = z.object({
-  name: z.string().min(1),
+  name: SafeTypeScriptIdentifierSchema,
   type: z.string().min(1),
   constraints: z.array(z.string()).optional().default([]),
 });
 
 export const PropertyTestsArgsSchema = z.object({
-  functionName: z.string().min(1),
+  functionName: SafeTypeScriptIdentifierSchema,
   inputs: z.array(InputParamSchema).min(1),
   outputs: z
     .object({

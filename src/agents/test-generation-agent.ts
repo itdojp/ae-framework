@@ -5,6 +5,7 @@
 
 import type { execSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
+import { assertSafeTypeScriptIdentifier } from '../utils/typescript-identifier-policy.js';
 
 export interface TestGenerationRequest {
   feature: string;
@@ -397,13 +398,21 @@ export class TestGenerationAgent {
   }
 
   private generatePropertyTestCode(contract: PropertyTestContract, invariant: string): string {
+    const functionName = assertSafeTypeScriptIdentifier(contract.function, 'property-test function name');
+    const inputs = contract.inputs.map((input) => ({
+      ...input,
+      name: assertSafeTypeScriptIdentifier(input.name, 'property-test input name'),
+    }));
+    const inputNames = inputs.map((input) => input.name);
+    const title = JSON.stringify(String(invariant));
+
     return `
-  property('${invariant}', () => {
+  property(${title}, () => {
     fc.assert(
       fc.property(
-        ${contract.inputs.map((input) => this.generateArbitrary(input)).join(',\n        ')},
-        (${contract.inputs.map((input) => input.name).join(', ')}) => {
-          const result = ${contract.function}(${contract.inputs.map((input) => input.name).join(', ')});
+        ${inputs.map((input) => this.generateArbitrary(input)).join(',\n        ')},
+        (${inputNames.join(', ')}) => {
+          const result = ${functionName}(${inputNames.join(', ')});
           return ${this.invariantToAssertion(invariant)};
         }
       )
@@ -801,12 +810,18 @@ export class TestGenerationAgent {
 
   private invariantToAssertion(invariant: string): string {
     // Convert invariant string to assertion code
-    return `/* ${invariant} */ true`;
+    return `/* ${this.escapeBlockComment(invariant)} */ true`;
   }
 
   private applyConstraint(arbitrary: string, constraint: string): string {
     // Apply constraint to arbitrary generator
-    return `${arbitrary}.filter(/* ${constraint} */ () => true)`;
+    return `${arbitrary}.filter(/* ${this.escapeBlockComment(constraint)} */ () => true)`;
+  }
+
+  private escapeBlockComment(value: string): string {
+    return String(value)
+      .replace(/\*\//g, '* /')
+      .replace(/\r?\n/g, ' ');
   }
 }
 
