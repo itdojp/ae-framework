@@ -17,6 +17,7 @@ type WorkflowDocument = {
       workflows?: string[];
     };
   };
+  permissions?: Record<string, string>;
   jobs?: Record<string, any>;
 };
 
@@ -219,5 +220,91 @@ describe('workflow permission boundaries', () => {
     expect(workflow).toContain('Download verify-lite assurance artifacts');
     expect(workflow).toContain('name: verify-lite-report');
     expect(workflow).toContain('run-id: ${{ steps.assurance-policy.outputs.verify_lite_run_id }}');
+  });
+
+  it('release workflows attest official SBOM and quality release assets before upload', () => {
+    const release = parseWorkflow('release.yml');
+    const releaseRaw = readWorkflow('release.yml');
+    const releaseJob = release.jobs?.release;
+    const releaseSteps = Array.isArray(releaseJob?.steps) ? releaseJob.steps : [];
+    const releaseQualityJob = release.jobs?.['release-quality-artifacts'];
+
+    expect(releaseJob?.permissions).toMatchObject({
+      contents: 'write',
+      packages: 'write',
+      'id-token': 'write',
+      attestations: 'write',
+      'artifact-metadata': 'write',
+    });
+    expect(releaseQualityJob?.permissions).toMatchObject({
+      contents: 'write',
+      'id-token': 'write',
+      attestations: 'write',
+      'artifact-metadata': 'write',
+    });
+
+    const generateSbomIndex = releaseSteps.findIndex((step: any) => step?.name === 'Generate SBOM');
+    const attestSbomIndex = releaseSteps.findIndex((step: any) => step?.name === 'Attest SBOM release asset');
+    const stageSbomIndex = releaseSteps.findIndex((step: any) => step?.name === 'Stage SBOM attestation bundle');
+    const createReleaseIndex = releaseSteps.findIndex((step: any) => step?.name === 'Create Release');
+    const attestSbomStep = releaseSteps[attestSbomIndex];
+    const stageSbomStep = releaseSteps[stageSbomIndex];
+    const createReleaseStep = releaseSteps[createReleaseIndex];
+
+    expect(generateSbomIndex).toBeGreaterThanOrEqual(0);
+    expect(attestSbomIndex).toBeGreaterThan(generateSbomIndex);
+    expect(stageSbomIndex).toBeGreaterThan(attestSbomIndex);
+    expect(createReleaseIndex).toBeGreaterThan(stageSbomIndex);
+    expect(attestSbomStep?.uses).toBe('actions/attest@v4');
+    expect(attestSbomStep?.with?.['subject-path']).toBe('sbom.json');
+    expect(stageSbomStep?.run).toContain('steps.attest_sbom.outputs.bundle-path');
+    expect(stageSbomStep?.run).toContain('security/sigstore/sbom.intoto.jsonl');
+    expect(createReleaseStep?.with?.files).toContain('sbom.json');
+    expect(createReleaseStep?.with?.files).toContain('security/sigstore/sbom.intoto.jsonl');
+    expect(releaseRaw).not.toContain('Placeholder for Sigstore signing');
+    expect(releaseRaw).not.toContain('security/sigstore/*');
+
+    const workflowLint = parseWorkflow('workflow-lint.yml');
+    const actionlintSteps = Array.isArray(workflowLint.jobs?.actionlint?.steps)
+      ? workflowLint.jobs.actionlint.steps
+      : [];
+    expect(actionlintSteps.some((step: any) => step?.uses === 'rhysd/actionlint@v1.7.12')).toBe(true);
+
+    const quality = parseWorkflow('release-quality-artifacts.yml');
+    const qualityRaw = readWorkflow('release-quality-artifacts.yml');
+    const qualityJob = quality.jobs?.upload;
+    const qualitySteps = Array.isArray(qualityJob?.steps) ? qualityJob.steps : [];
+
+    expect(quality.permissions).toMatchObject({
+      contents: 'write',
+      'id-token': 'write',
+      attestations: 'write',
+      'artifact-metadata': 'write',
+    });
+
+    const prepareBundleIndex = qualitySteps.findIndex((step: any) => step?.name === 'Prepare bundle (include combined.json if present)');
+    const attestQualityIndex = qualitySteps.findIndex((step: any) => step?.name === 'Attest quality artifact bundle');
+    const stageQualityIndex = qualitySteps.findIndex((step: any) => step?.name === 'Stage quality attestation bundle');
+    const uploadReleaseIndex = qualitySteps.findIndex((step: any) => step?.name === 'Upload release assets');
+    const uploadManualIndex = qualitySteps.findIndex((step: any) => step?.name === 'Upload artifacts (manual)');
+    const attestQualityStep = qualitySteps[attestQualityIndex];
+    const stageQualityStep = qualitySteps[stageQualityIndex];
+    const uploadReleaseStep = qualitySteps[uploadReleaseIndex];
+    const uploadManualStep = qualitySteps[uploadManualIndex];
+
+    expect(prepareBundleIndex).toBeGreaterThanOrEqual(0);
+    expect(attestQualityIndex).toBeGreaterThan(prepareBundleIndex);
+    expect(stageQualityIndex).toBeGreaterThan(attestQualityIndex);
+    expect(uploadReleaseIndex).toBeGreaterThan(stageQualityIndex);
+    expect(uploadManualIndex).toBeGreaterThan(stageQualityIndex);
+    expect(attestQualityStep?.uses).toBe('actions/attest@v4');
+    expect(attestQualityStep?.with?.['subject-path']).toBe('quality-artifacts.tgz');
+    expect(stageQualityStep?.run).toContain('steps.attest_quality.outputs.bundle-path');
+    expect(stageQualityStep?.run).toContain('security/sigstore/quality-artifacts.intoto.jsonl');
+    expect(uploadReleaseStep?.with?.files).toContain('quality-artifacts.tgz');
+    expect(uploadReleaseStep?.with?.files).toContain('security/sigstore/quality-artifacts.intoto.jsonl');
+    expect(uploadManualStep?.with?.path).toContain('quality-artifacts.tgz');
+    expect(uploadManualStep?.with?.path).toContain('security/sigstore/quality-artifacts.intoto.jsonl');
+    expect(qualityRaw).toContain('actions/attest@v4');
   });
 });
