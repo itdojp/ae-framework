@@ -4,6 +4,7 @@
  */
 
 import { ContainerManager } from '../services/container/container-manager.js';
+import { resolveApprovedWorkspacePath } from '../services/container/container-security-policy.js';
 import type { ContainerManagerConfig, VerificationJob, VerificationEnvironment } from '../services/container/container-manager.js';
 import { ContainerEngineFactory, type ContainerEngineName } from '../services/container/container-engine.js';
 import * as path from 'path';
@@ -47,6 +48,7 @@ export interface ContainerBuildRequest {
   baseImage?: string;
   tag?: string;
   push?: boolean;
+  pushApproval?: 'none' | 'approved-container-image-push';
   buildArgs?: Record<string, string>;
 }
 
@@ -185,13 +187,19 @@ export class ContainerAgent {
     try {
       await this.ensureInitialized();
 
-      // Validate project path exists
+      let approvedProjectPath: string;
       try {
-        await fs.access(request.projectPath);
-      } catch {
+        const approved = await resolveApprovedWorkspacePath({
+          projectPath: request.projectPath,
+          ...(this.config.workspaceRoot !== undefined ? { workspaceRoot: this.config.workspaceRoot } : {}),
+        });
+        approvedProjectPath = approved.projectPath;
+        await fs.access(approvedProjectPath);
+      } catch (error: unknown) {
+        const message = toMessage(error);
         return {
           success: false,
-          message: `Project path does not exist: ${request.projectPath}`,
+          message,
           error: 'INVALID_PROJECT_PATH'
         };
       }
@@ -215,7 +223,7 @@ export class ContainerAgent {
       // Create and run verification job
       const job = await this.containerManager.runVerificationJob({
         name: request.jobName || `${request.language}-verification-${Date.now()}`,
-        projectPath: request.projectPath,
+        projectPath: approvedProjectPath,
         language: request.language,
         tools: request.tools
       });
@@ -260,7 +268,8 @@ export class ContainerAgent {
         {
           tag,
           ...(request.buildArgs ? { buildArgs: request.buildArgs } : {}),
-          ...(request.push !== undefined ? { push: request.push } : {})
+          ...(request.push !== undefined ? { push: request.push } : {}),
+          ...(request.pushApproval !== undefined ? { pushApproval: request.pushApproval } : {})
         }
       );
 
@@ -435,7 +444,7 @@ export class ContainerAgent {
   /**
    * Cleanup old containers and resources
    */
-  async cleanup(options?: { maxAge?: number; keepCompleted?: number; force?: boolean }): Promise<AgentResult> {
+  async cleanup(options?: { maxAge?: number; keepCompleted?: number; force?: boolean; dryRun?: boolean; confirm?: 'delete-ae-framework-resources' | 'force-delete-ae-framework-resources' }): Promise<AgentResult> {
     try {
       await this.ensureInitialized();
 
@@ -443,12 +452,15 @@ export class ContainerAgent {
 
       return {
         success: true,
-        message: `Cleanup completed: removed ${result.jobsRemoved} jobs, ${result.containersRemoved} containers`,
+        message: result.dryRun
+          ? `Cleanup dry-run completed: would remove ${result.jobsRemoved} jobs and ${result.containersRemoved} ae-framework containers`
+          : `Cleanup completed: removed ${result.jobsRemoved} jobs, ${result.containersRemoved} containers`,
         data: {
           jobsRemoved: result.jobsRemoved,
           containersRemoved: result.containersRemoved,
           spaceSaved: result.spaceSaved,
-          options
+          dryRun: result.dryRun,
+          labelFilter: result.labelFilter,
         }
       };
     } catch (error: unknown) {

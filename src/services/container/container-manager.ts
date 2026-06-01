@@ -9,6 +9,17 @@ import {
   ContainerEngine, 
   ContainerEngineFactory
 } from './container-engine.js';
+import {
+  AE_CONTAINER_LABEL_FILTER,
+  AE_CONTAINER_MANAGED_LABEL,
+  AE_CONTAINER_MANAGED_LABEL_VALUE,
+  assertCleanupConfirmation,
+  assertPushPolicy,
+  validateBuildArgs,
+  validateContainerToolsForLanguage,
+  validateImageReference,
+  type ContainerImagePolicy,
+} from './container-security-policy.js';
 import type {
   ContainerConfig, 
   ContainerRunOptions, 
@@ -32,6 +43,9 @@ export interface ContainerManagerConfig {
     readOnlyRootFilesystem?: boolean;
     noNewPrivileges?: boolean;
   };
+  workspaceRoot?: string;
+  imagePolicy?: ContainerImagePolicy;
+  allowShutdownCleanup?: boolean;
 }
 
 export interface VerificationEnvironment {
@@ -185,6 +199,7 @@ export class ContainerManager extends EventEmitter {
         resources: env.resources,
         security: this.config.securityDefaults ? { ...this.config.securityDefaults, readOnlyRootFilesystem: false } : { readOnlyRootFilesystem: false },
         labels: {
+          [AE_CONTAINER_MANAGED_LABEL]: AE_CONTAINER_MANAGED_LABEL_VALUE,
           'ae-framework.type': 'verification',
           'ae-framework.language': env.language,
           'ae-framework.tools': env.tools.join(','),
@@ -217,13 +232,15 @@ export class ContainerManager extends EventEmitter {
    * Run verification job in container
    */
   async runVerificationJob(job: Omit<VerificationJob, 'id' | 'status' | 'startTime'>): Promise<VerificationJob> {
+    const validatedTools = validateContainerToolsForLanguage(job.language, job.tools);
     const jobId = `verify-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
     const verificationJob: VerificationJob = {
       id: jobId,
       status: 'pending',
       startTime: new Date(),
-      ...job
+      ...job,
+      tools: validatedTools
     };
 
     this.activeJobs.set(jobId, verificationJob);
@@ -267,6 +284,7 @@ export class ContainerManager extends EventEmitter {
         },
         security: this.config.securityDefaults ? { ...this.config.securityDefaults } : {},
         labels: {
+          [AE_CONTAINER_MANAGED_LABEL]: AE_CONTAINER_MANAGED_LABEL_VALUE,
           'ae-framework.job-id': jobId,
           'ae-framework.type': 'verification-job',
           'ae-framework.language': job.language,
@@ -402,48 +420,50 @@ export class ContainerManager extends EventEmitter {
       tag?: string;
       buildArgs?: Record<string, string>;
       push?: boolean;
+      pushApproval?: 'none' | 'approved-container-image-push';
     }
   ): Promise<string> {
+    const sanitizedTools = validateContainerToolsForLanguage(language, tools);
     const tag = options?.tag || `ae-framework/verify-${language}:latest`;
-    
+    const imageRef = validateImageReference(tag);
+    assertPushPolicy({
+      imageRef,
+      ...(options?.push !== undefined ? { push: options.push } : {}),
+      ...(options?.pushApproval !== undefined ? { pushApproval: options.pushApproval } : {}),
+      ...(this.config.imagePolicy !== undefined ? { policy: this.config.imagePolicy } : {}),
+    });
+
     try {
       const buildContext: ImageBuildContext = {
         contextPath: path.join(process.cwd(), 'containers'),
         dockerfilePath: `Containerfile.${language}`,
         target: 'verification',
         buildArgs: {
-          VERIFICATION_TOOLS: tools.join(','),
-          ...options?.buildArgs
+          VERIFICATION_TOOLS: sanitizedTools.join(','),
+          ...validateBuildArgs(options?.buildArgs ?? {})
         },
         labels: {
+          [AE_CONTAINER_MANAGED_LABEL]: AE_CONTAINER_MANAGED_LABEL_VALUE,
           'ae-framework.type': 'verification-image',
           'ae-framework.language': language,
-          'ae-framework.tools': tools.join(','),
+          'ae-framework.tools': sanitizedTools.join(','),
           'ae-framework.version': '1.0.0'
         },
         cache: true,
         pullBaseImage: true
       };
 
-      const imageId = await this.engine.buildImage(buildContext, tag);
+      const imageId = await this.engine.buildImage(buildContext, imageRef.reference);
 
       if (options?.push) {
-        // Validate tag format before splitting
-        if (typeof tag !== 'string' || !tag.includes(':')) {
-          throw new Error(`Invalid image tag format: "${tag}". Expected format "name:tag".`);
-        }
-        const [imageName, imageTag] = tag.split(':');
-        if (!imageName) {
-          throw new Error(`Image name is empty in tag: "${tag}".`);
-        }
-        await this.engine.pushImage(imageName, imageTag || 'latest');
+        await this.engine.pushImage(imageRef.name, imageRef.tag);
       }
 
       this.emit('imageBuilt', {
-        tag,
+        tag: imageRef.reference,
         imageId,
         language,
-        tools
+        tools: sanitizedTools
       });
 
       return imageId;
@@ -542,10 +562,14 @@ export class ContainerManager extends EventEmitter {
     maxAge?: number; // seconds
     keepCompleted?: number;
     force?: boolean;
+    dryRun?: boolean;
+    confirm?: 'delete-ae-framework-resources' | 'force-delete-ae-framework-resources';
   }): Promise<{
     jobsRemoved: number;
     containersRemoved: number;
     spaceSaved: number;
+    dryRun: boolean;
+    labelFilter: string;
   }> {
     const maxAge = options?.maxAge || 3600; // 1 hour default
     const keepCompleted = options?.keepCompleted || 10;
@@ -556,46 +580,48 @@ export class ContainerManager extends EventEmitter {
     let spaceSaved = 0;
 
     try {
+      const confirmation = assertCleanupConfirmation(options);
       // Cleanup old jobs
       const completedJobs = Array.from(this.activeJobs.values())
         .filter(job => job.status === 'completed' && job.endTime && job.endTime.getTime() < cutoffTime)
         .sort((a, b) => (b.endTime?.getTime() || 0) - (a.endTime?.getTime() || 0))
         .slice(keepCompleted); // Keep most recent
 
-      for (const job of completedJobs) {
-        this.activeJobs.delete(job.id);
-        jobsRemoved++;
-      }
-
       // Cleanup failed jobs older than cutoff
       const failedJobs = Array.from(this.activeJobs.values())
         .filter(job => job.status === 'failed' && job.endTime && job.endTime.getTime() < cutoffTime);
 
-      for (const job of failedJobs) {
-        this.activeJobs.delete(job.id);
-        jobsRemoved++;
+      jobsRemoved = completedJobs.length + failedJobs.length;
+
+      if (!confirmation.dryRun) {
+        for (const job of [...completedJobs, ...failedJobs]) {
+          this.activeJobs.delete(job.id);
+        }
+
+        // Cleanup only ae-framework-managed containers and images. Volumes and networks stay disabled by default.
+        const cleanupOpts: Parameters<typeof this.engine.cleanup>[0] = {
+          containers: true,
+          images: true,
+          volumes: false, // Keep volumes for now
+          networks: false,
+          labelFilters: [AE_CONTAINER_LABEL_FILTER],
+          ...(options?.force !== undefined ? { force: options.force } : {})
+        };
+        const engineCleanup = await this.engine.cleanup(cleanupOpts);
+
+        containersRemoved = engineCleanup.containers;
+        spaceSaved = engineCleanup.spaceSaved;
       }
-
-      // Cleanup containers and images
-      const cleanupOpts: Parameters<typeof this.engine.cleanup>[0] = {
-        containers: true,
-        images: true,
-        volumes: false, // Keep volumes for now
-        networks: false,
-        ...(options?.force !== undefined ? { force: options.force } : {})
-      };
-      const engineCleanup = await this.engine.cleanup(cleanupOpts);
-
-      containersRemoved = engineCleanup.containers;
-      spaceSaved = engineCleanup.spaceSaved;
 
       this.emit('cleanupCompleted', {
         jobsRemoved,
         containersRemoved,
-        spaceSaved
+        spaceSaved,
+        dryRun: confirmation.dryRun,
+        labelFilter: AE_CONTAINER_LABEL_FILTER,
       });
 
-      return { jobsRemoved, containersRemoved, spaceSaved };
+      return { jobsRemoved, containersRemoved, spaceSaved, dryRun: confirmation.dryRun, labelFilter: AE_CONTAINER_LABEL_FILTER };
 
     } catch (error: any) {
       this.emit('error', {
@@ -626,9 +652,9 @@ export class ContainerManager extends EventEmitter {
         }
       }
 
-      // Cleanup if enabled
-      if (this.config.autoCleanup) {
-        await this.cleanup({ force: true });
+      // Cleanup on shutdown is intentionally disabled unless trusted policy opts in.
+      if (this.config.autoCleanup && this.config.allowShutdownCleanup) {
+        await this.cleanup({ force: true, dryRun: false, confirm: 'force-delete-ae-framework-resources' });
       }
 
       this.emit('shutdown');
@@ -667,7 +693,7 @@ export class ContainerManager extends EventEmitter {
     if (this.config.autoCleanup) {
       this.cleanupTimer = setInterval(async () => {
         try {
-          await this.cleanup();
+          await this.cleanup({ dryRun: false, confirm: 'delete-ae-framework-resources' });
         } catch (error) {
           console.warn('Cleanup failed:', error);
         }

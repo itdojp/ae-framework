@@ -182,10 +182,16 @@ export type AnalyzeCoverageArgs = z.infer<typeof AnalyzeCoverageArgsSchema>;
 // ---------- Container MCP Schemas ----------
 export const LanguageEnum = z.enum(['rust', 'elixir', 'multi']);
 
+const ContainerToolNameSchema = z.string().min(1).max(64).regex(/^[A-Za-z0-9][A-Za-z0-9._+@-]*$/, 'tool names may only contain letters, numbers, dot, underscore, plus, at, and dash');
+const BuildArgKeySchema = z.string().min(1).max(64).regex(/^[A-Za-z_][A-Za-z0-9_]*$/, 'build argument keys must be shell-safe identifiers');
+const BuildArgValueSchema = z.string()
+  .max(2048)
+  .regex(/^[A-Za-z0-9._+@:/,=-]*$/, 'build argument values may only contain URL/version-safe characters');
+
 export const RunContainerVerificationArgsSchema = z.object({
   projectPath: z.string().min(1),
   language: LanguageEnum,
-  tools: z.array(z.string()).min(1),
+  tools: z.array(ContainerToolNameSchema).min(1),
   jobName: z.string().optional(),
   timeout: z.number().optional(),
   buildImages: z.boolean().optional().default(false),
@@ -195,11 +201,12 @@ export type RunContainerVerificationArgs = z.infer<typeof RunContainerVerificati
 
 export const BuildVerificationImageArgsSchema = z.object({
   language: LanguageEnum,
-  tools: z.array(z.string()).min(1),
+  tools: z.array(ContainerToolNameSchema).min(1),
   baseImage: z.string().optional(),
   tag: z.string().optional(),
   push: z.boolean().optional().default(false),
-  buildArgs: z.record(z.string()).optional().default({}),
+  pushApproval: z.enum(['none', 'approved-container-image-push']).optional().default('none'),
+  buildArgs: z.record(BuildArgKeySchema, BuildArgValueSchema).optional().default({}),
 });
 export type BuildVerificationImageArgs = z.infer<typeof BuildVerificationImageArgsSchema>;
 
@@ -219,6 +226,8 @@ export const CleanupArgsSchema = z.object({
   maxAge: z.number().optional().default(3600),
   keepCompleted: z.number().optional().default(10),
   force: z.boolean().optional().default(false),
+  dryRun: z.boolean().optional().default(true),
+  confirm: z.enum(['delete-ae-framework-resources', 'force-delete-ae-framework-resources']).optional(),
 });
 export type CleanupArgs = z.infer<typeof CleanupArgsSchema>;
 
