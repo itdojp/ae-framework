@@ -8,8 +8,13 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import { resolve } from 'path';
 import type { SpecLintIssue } from '../../packages/spec-compiler/src/types.js';
+import {
+  createSpecCodegenChildProcessOptions,
+  resolveSpecCodegenPaths,
+  resolveSpecCompilePaths,
+  resolveSpecValidateInputPath,
+} from './spec-synthesis-path-policy.js';
 
 type LintIssueSummary = {
   severity: SpecLintIssue['severity'];
@@ -118,14 +123,15 @@ async function start() {
       switch (name) {
         case 'ae_spec_compile': {
           const parsed = CompileArgs.parse(args);
+          const paths = resolveSpecCompilePaths(parsed.inputPath, parsed.outputPath);
           const { AESpecCompiler } = await import('../..//packages/spec-compiler/src/index.js');
           const compiler = new AESpecCompiler();
           const prev = process.env['AE_SPEC_RELAXED'];
           if (parsed.relaxed) process.env['AE_SPEC_RELAXED'] = '1';
           try {
             const ir = await compiler.compile({
-              inputPath: resolve(parsed.inputPath),
-              ...(parsed.outputPath !== undefined ? { outputPath: resolve(parsed.outputPath) } : {}),
+              inputPath: paths.inputPath,
+              ...(paths.outputPath !== undefined ? { outputPath: paths.outputPath } : {}),
               ...(parsed.validate !== undefined ? { validate: parsed.validate } : {}),
             });
             const lint = await compiler.lint(ir);
@@ -160,12 +166,13 @@ async function start() {
 
         case 'ae_spec_validate': {
           const parsed = ValidateArgs.parse(args);
+          const inputPath = resolveSpecValidateInputPath(parsed.inputPath);
           const { AESpecCompiler } = await import('../..//packages/spec-compiler/src/index.js');
           const compiler = new AESpecCompiler();
           const prev = process.env['AE_SPEC_RELAXED'];
           if (parsed.relaxed) process.env['AE_SPEC_RELAXED'] = '1';
           try {
-            const ir = await compiler.compile({ inputPath: resolve(parsed.inputPath), validate: false });
+            const ir = await compiler.compile({ inputPath, validate: false });
             const lint = await compiler.lint(ir);
             const rawIssues: unknown[] = Array.isArray(lint.issues) ? lint.issues : [];
             const issues = rawIssues
@@ -182,24 +189,32 @@ async function start() {
         case 'ae_spec_codegen': {
           const parsed = CodegenArgs.parse(args);
           const { readFileSync } = await import('fs');
-          const irPath = resolve(parsed.irPath);
+          const paths = resolveSpecCodegenPaths(parsed.irPath, parsed.targets, parsed.outDir);
           type IRLike = { domain?: unknown[]; api?: unknown[] };
-          const ir = JSON.parse(readFileSync(irPath, 'utf-8')) as unknown as IRLike;
+          const ir = JSON.parse(readFileSync(paths.irPath, 'utf-8')) as unknown as IRLike;
           const { spawnSync } = await import('child_process');
-          const outBase = parsed.outDir || 'generated';
-          const run = (t: string, dir: string) =>
-            spawnSync(process.execPath, ['dist/src/cli/index.js', 'codegen', 'generate', '-i', irPath, '-o', resolve(dir), '-t', t], { stdio: 'inherit' });
+          const run = (t: string, dir: string) => {
+            const result = spawnSync(
+              process.execPath,
+              ['dist/src/cli/index.js', 'codegen', 'generate', '-i', paths.irPathArg, '-o', dir, '-t', t],
+              createSpecCodegenChildProcessOptions(paths.workspaceRoot),
+            );
+            if (result.error) throw result.error;
+            if (result.status !== 0) {
+              throw new Error(`Code generation failed for target ${t} with exit code ${result.status ?? 'unknown'}`);
+            }
+          };
           const results: Record<string, string> = {};
           for (const t of parsed.targets) {
-            const dir = `${outBase}/${t}`;
-            run(t, dir);
-            results[t] = dir;
+            const targetDirArg = paths.targetOutDirArgs[t];
+            run(t, targetDirArg);
+            results[t] = targetDirArg;
           }
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify({ outBase, results, counts: { entities: ir.domain?.length || 0, apis: ir.api?.length || 0 } }, null, 2),
+                text: JSON.stringify({ outBase: paths.outBaseArg, results, counts: { entities: ir.domain?.length || 0, apis: ir.api?.length || 0 } }, null, 2),
               },
             ],
           };
