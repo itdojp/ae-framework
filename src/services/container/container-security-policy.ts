@@ -301,12 +301,12 @@ export const resolveApprovedWorkspacePath = async ({
   let resolvedRoot: string;
   try {
     resolvedRoot = await fs.realpath(path.resolve(workspaceRoot));
-  } catch (error) {
-    throw new Error(`Approved workspace root does not exist: ${workspaceRoot}`);
+  } catch {
+    throw new Error('Approved workspace root does not exist');
   }
 
   if (isSensitiveHostPath(resolvedRoot)) {
-    throw new Error(`Approved workspace root is too broad or sensitive: ${resolvedRoot}`);
+    throw new Error('Approved workspace root is too broad or sensitive');
   }
 
   const candidate = path.isAbsolute(projectPath)
@@ -316,15 +316,15 @@ export const resolveApprovedWorkspacePath = async ({
   let resolvedProject: string;
   try {
     resolvedProject = await fs.realpath(candidate);
-  } catch (error) {
-    throw new Error(`Project path does not exist: ${projectPath}`);
+  } catch {
+    throw new Error('Project path does not exist');
   }
 
   if (!isPathInside(resolvedProject, resolvedRoot)) {
-    throw new Error(`Project path is outside approved workspace root: ${projectPath}`);
+    throw new Error('Project path is outside approved workspace root');
   }
   if (isSensitiveHostPath(resolvedProject)) {
-    throw new Error(`Project path points to a sensitive host directory: ${projectPath}`);
+    throw new Error('Project path points to a sensitive host directory');
   }
 
   return {

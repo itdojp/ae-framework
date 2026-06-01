@@ -22,16 +22,20 @@ import {
   validateImageReference,
 } from '../../../src/services/container/container-security-policy.js';
 
-const sandboxRoot = path.resolve(process.cwd(), '.codex-local/tmp/container-security-policy-test');
+const sandboxParent = path.resolve(process.cwd(), '.codex-local/tmp');
+let sandboxRoot = '';
 
 describe('container security policy', () => {
   beforeEach(async () => {
-    await fs.rm(sandboxRoot, { recursive: true, force: true });
-    await fs.mkdir(sandboxRoot, { recursive: true });
+    await fs.mkdir(sandboxParent, { recursive: true });
+    sandboxRoot = await fs.mkdtemp(path.join(sandboxParent, 'container-security-policy-test-'));
   });
 
   afterEach(async () => {
-    await fs.rm(sandboxRoot, { recursive: true, force: true });
+    if (sandboxRoot) {
+      await fs.rm(sandboxRoot, { recursive: true, force: true });
+      sandboxRoot = '';
+    }
   });
 
   it('accepts safe image references and rejects shell-shaped references', () => {
@@ -164,14 +168,14 @@ describe('container security policy', () => {
     const outside = path.join(sandboxRoot, 'outside');
     await fs.mkdir(project, { recursive: true });
     await fs.mkdir(outside, { recursive: true });
-    await fs.symlink(outside, path.join(workspace, 'escape'));
+    await fs.symlink(outside, path.join(workspace, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
 
     await expect(resolveApprovedWorkspacePath({ workspaceRoot: workspace, projectPath: 'project' }))
       .resolves.toMatchObject({ projectPath: await fs.realpath(project) });
     await expect(resolveApprovedWorkspacePath({ workspaceRoot: workspace, projectPath: path.join(workspace, 'escape') }))
-      .rejects.toThrow(/outside approved workspace/);
+      .rejects.toThrow(/^Project path is outside approved workspace root$/);
     await expect(resolveApprovedWorkspacePath({ workspaceRoot: workspace, projectPath: path.join(workspace, 'missing') }))
-      .rejects.toThrow(/does not exist/);
+      .rejects.toThrow(/^Project path does not exist$/);
   });
 
   it('redacts build argument values before build contexts and error messages are emitted or logged', () => {
