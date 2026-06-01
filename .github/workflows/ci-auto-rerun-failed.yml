@@ -19,7 +19,7 @@ permissions:
   actions: write
   contents: read
   issues: write
-  pull-requests: write
+  pull-requests: read
 
 jobs:
   rerun-failed:
@@ -35,19 +35,56 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const runId = context.payload.workflow_run.id;
-            const workflowName = context.payload.workflow_run.name;
+            const workflowRun = context.payload.workflow_run;
+            const runId = workflowRun.id;
+            const workflowName = workflowRun.name;
+            const pr = (context.payload.workflow_run.pull_requests || [])[0];
+            if (!pr || !pr.number) {
+              core.notice('No PR context available for rerun; skipping.');
+              return;
+            }
+
+            let currentPr = null;
+            try {
+              const { data } = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: pr.number
+              });
+              currentPr = data;
+            } catch (error) {
+              const message = error && error.message ? error.message : String(error);
+              core.warning(`Failed to fetch PR #${pr.number}; skipping rerun: ${message}`);
+              return;
+            }
+
+            const expectedRepo = `${owner}/${repo}`;
+            const headRepo = currentPr.head?.repo?.full_name || '';
+            const headSha = currentPr.head?.sha || '';
+            const workflowHeadSha = workflowRun.head_sha || '';
+            const workflowHeadRepo = workflowRun.head_repository?.full_name || '';
+            if (currentPr.state !== 'open') {
+              core.notice(`PR #${pr.number} state=${currentPr.state}; skipping rerun.`);
+              return;
+            }
+            if (currentPr.head?.repo?.fork || headRepo !== expectedRepo) {
+              core.notice(`PR #${pr.number} head repository is not ${expectedRepo}; skipping rerun.`);
+              return;
+            }
+            if (!workflowHeadSha || headSha !== workflowHeadSha) {
+              core.notice(`Workflow run head SHA does not match current PR #${pr.number} head; skipping rerun.`);
+              return;
+            }
+            if (workflowHeadRepo && workflowHeadRepo !== expectedRepo) {
+              core.notice(`Workflow run head repository is not ${expectedRepo}; skipping rerun.`);
+              return;
+            }
+
             try {
               await github.rest.actions.reRunWorkflowFailedJobs({ owner, repo, run_id: runId });
             } catch (error) {
               const message = error && error.message ? error.message : String(error);
               core.setFailed(`Failed to rerun failed jobs for workflow run ${runId}: ${message}`);
-              return;
-            }
-
-            const pr = (context.payload.workflow_run.pull_requests || [])[0];
-            if (!pr || !pr.number) {
-              core.notice('No PR context available for rerun comment.');
               return;
             }
 

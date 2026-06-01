@@ -10,6 +10,8 @@ const FAILURE_CONCLUSIONS = new Set(['FAILURE', 'CANCELLED', 'TIMED_OUT', 'ACTIO
 
 const repo = String(process.env.GITHUB_REPOSITORY || '').trim();
 const eventName = String(process.env.GITHUB_EVENT_NAME || '').trim();
+const workflowRunHeadSha = String(process.env.WORKFLOW_RUN_HEAD_SHA || '').trim();
+const workflowRunHeadRepository = String(process.env.WORKFLOW_RUN_HEAD_REPOSITORY || '').trim();
 
 const maxRounds = readIntEnv('AE_SELF_HEAL_MAX_ROUNDS', 3, 1);
 const maxAgeMinutes = readIntEnv('AE_SELF_HEAL_MAX_AGE_MINUTES', 180, 1);
@@ -44,6 +46,60 @@ function toBool(value) {
 function parseRunId(detailsUrl) {
   const match = String(detailsUrl || '').match(/\/actions\/runs\/([0-9]+)/);
   return match ? Number.parseInt(match[1], 10) : null;
+}
+
+function normalizeRepositoryFullName(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value.nameWithOwner === 'string') return value.nameWithOwner.trim();
+  if (typeof value.fullName === 'string') return value.fullName.trim();
+  if (typeof value.full_name === 'string') return value.full_name.trim();
+  const owner = value.owner?.login || value.owner?.name || value.owner;
+  const name = value.name;
+  if (owner && name) return `${owner}/${name}`;
+  return '';
+}
+
+function validatePrWriteTarget(view, context) {
+  const expectedRepo = normalizeRepositoryFullName(context.repo);
+  const headRepo = normalizeRepositoryFullName(view.headRepository);
+  const state = String(view.state || '').toUpperCase();
+  const headSha = String(view.headRefOid || '').trim();
+  const workflowHeadSha = String(context.workflowRunHeadSha || '').trim();
+  const workflowHeadRepo = normalizeRepositoryFullName(context.workflowRunHeadRepository);
+  const isCrossRepository = view.isCrossRepository === true;
+
+  if (!expectedRepo) {
+    return { ok: false, reason: 'base repository could not be verified' };
+  }
+  if (state !== 'OPEN') {
+    return { ok: false, reason: `PR is not open (state=${state || 'UNKNOWN'})` };
+  }
+  if (isCrossRepository) {
+    return { ok: false, reason: 'PR head is cross-repository' };
+  }
+  if (!headRepo) {
+    return { ok: false, reason: 'PR head repository could not be verified' };
+  }
+  if (headRepo !== expectedRepo) {
+    return { ok: false, reason: `PR head repository is not ${expectedRepo}` };
+  }
+  if (context.eventName === 'workflow_run') {
+    if (!workflowHeadSha) {
+      return { ok: false, reason: 'workflow_run head SHA is missing' };
+    }
+    if (!headSha) {
+      return { ok: false, reason: 'current PR head SHA could not be verified' };
+    }
+    if (headSha !== workflowHeadSha) {
+      return { ok: false, reason: 'workflow_run head SHA does not match current PR head' };
+    }
+    if (workflowHeadRepo && workflowHeadRepo !== expectedRepo) {
+      return { ok: false, reason: `workflow_run head repository is not ${expectedRepo}` };
+    }
+  }
+
+  return { ok: true, reason: '' };
 }
 
 function summarizeCheckRollup(rollup, { nowMs, maxAgeMs, rerunBlacklist }) {
@@ -266,11 +322,11 @@ function fetchPrView(prNumber) {
     '--repo',
     repo,
     '--json',
-    'number,title,url,isDraft,mergeable,mergeStateStatus,statusCheckRollup',
+    'number,title,url,state,isDraft,mergeable,mergeStateStatus,statusCheckRollup,headRefOid,headRepository,isCrossRepository',
   ]);
 }
 
-function dispatchUpdateBranch(prNumber) {
+function dispatchUpdateBranch(prNumber, expectedHeadSha) {
   execText([
     'workflow',
     'run',
@@ -281,6 +337,8 @@ function dispatchUpdateBranch(prNumber) {
     'mode=update-branch',
     '-f',
     `pr_number=${prNumber}`,
+    '-f',
+    `expected_head_sha=${expectedHeadSha}`,
   ]);
 }
 
@@ -334,6 +392,26 @@ async function processPr(prNumber) {
       maxAgeMinutes,
       rerunBlacklist,
     });
+    const guard = validatePrWriteTarget(view, {
+      repo,
+      eventName,
+      workflowRunHeadSha,
+      workflowRunHeadRepository,
+    });
+    if (!guard.ok) {
+      return {
+        number: state.number,
+        title: state.title,
+        status: 'skip',
+        reason: guard.reason,
+        rounds: round,
+        mergeable: state.mergeable,
+        mergeState: state.mergeState,
+        checks: state.checkSummary.counts,
+        failures: state.checkSummary.failureNames,
+        actions: [],
+      };
+    }
     finalState = state;
     const plan = planActions(state);
 
@@ -352,7 +430,7 @@ async function processPr(prNumber) {
       if (action.type === 'update-branch') {
         actionsTaken.push(`round${round}: update-branch dispatch`);
         if (!dryRun) {
-          dispatchUpdateBranch(prNumber);
+          dispatchUpdateBranch(prNumber, view.headRefOid);
         }
       }
       if (action.type === 'rerun-failed') {
@@ -580,4 +658,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { parseRunId, summarizeCheckRollup, classifyPr, planActions };
+export { parseRunId, summarizeCheckRollup, classifyPr, planActions, validatePrWriteTarget };

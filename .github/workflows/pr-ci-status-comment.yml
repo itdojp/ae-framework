@@ -20,6 +20,9 @@ on:
       pr_number:
         description: "PR number (required for eligibility or update-branch)"
         required: false
+      expected_head_sha:
+        description: "Expected current PR head SHA for update-branch dispatches"
+        required: false
       enable_auto_merge:
         description: "Enable auto-merge if eligible (eligibility mode only)"
         required: false
@@ -61,12 +64,14 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const inputNumber = context.payload.inputs?.pr_number ?? core.getInput('pr_number');
+            const expectedHeadSha = String(context.payload.inputs?.expected_head_sha ?? core.getInput('expected_head_sha') ?? '').trim();
             const parsedInput = inputNumber ? Number(inputNumber) : null;
             const prNumber = context.payload.pull_request?.number ?? parsedInput;
             if (!Number.isFinite(prNumber)) {
               core.notice('No PR number provided; skipping.');
               return;
             }
+            const isDispatchUpdate = context.eventName === 'workflow_dispatch';
 
             const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             const maxAttempts = 3;
@@ -121,6 +126,25 @@ jobs:
                 core.notice('PR is draft; skipping update.');
                 return;
               }
+              const expectedRepo = `${owner}/${repo}`;
+              const headRepo = pr.head?.repo?.full_name || '';
+              const headSha = pr.head?.sha || '';
+              if (pr.state !== 'open') {
+                core.notice(`PR #${prNumber} state=${pr.state}; skipping update.`);
+                return;
+              }
+              if (pr.head?.repo?.fork || headRepo !== expectedRepo) {
+                core.notice(`PR #${prNumber} head repository is not ${expectedRepo}; skipping update.`);
+                return;
+              }
+              if (isDispatchUpdate && !expectedHeadSha) {
+                core.setFailed('workflow_dispatch update-branch requires expected_head_sha.');
+                return;
+              }
+              if (expectedHeadSha && headSha !== expectedHeadSha) {
+                core.notice(`PR #${prNumber} head SHA changed; expected ${expectedHeadSha}, current ${headSha}. Skipping update.`);
+                return;
+              }
               mergeableState = pr.mergeable_state || 'unknown';
               if (mergeableState !== 'unknown') {
                 break;
@@ -145,7 +169,8 @@ jobs:
               await github.rest.pulls.updateBranch({
                 owner,
                 repo,
-                pull_number: prNumber
+                pull_number: prNumber,
+                expected_head_sha: expectedHeadSha || pr.head.sha
               });
             } catch (error) {
               const message = error?.message ?? String(error);

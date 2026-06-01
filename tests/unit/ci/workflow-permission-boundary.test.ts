@@ -22,6 +22,11 @@ type WorkflowDocument = {
 };
 
 const parseWorkflow = (name: string) => yaml.load(readWorkflow(name)) as WorkflowDocument;
+const workflowPermission = (workflow: WorkflowDocument, key: string) => (
+  workflow.permissions && typeof workflow.permissions === 'object'
+    ? workflow.permissions[key]
+    : undefined
+);
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -184,10 +189,38 @@ describe('workflow permission boundaries', () => {
   it('pr-maintenance update-branch enforces fork guard, explicit mode, and global kill-switch', () => {
     const workflow = readWorkflow('pr-ci-status-comment.yml');
     const updateBranch = extractJobBlock(workflow, 'update-branch');
+    const parsed = parseWorkflow('pr-ci-status-comment.yml');
+    const inputs = parsed.on?.workflow_dispatch?.inputs ?? {};
     expect(updateBranch).toContain("github.event.pull_request.head.repo.fork == false");
     expect(updateBranch).toContain("inputs.mode == 'update-branch'");
     expect(updateBranch).toContain('AE_AUTOMATION_GLOBAL_DISABLE');
     expect(updateBranch).toContain('github-token: ${{ github.token }}');
+    expect(inputs.expected_head_sha).toBeDefined();
+    expect(updateBranch).toContain('expectedHeadSha');
+    expect(updateBranch).toContain("workflow_dispatch update-branch requires expected_head_sha");
+    expect(updateBranch).toContain("pr.head?.repo?.fork || headRepo !== expectedRepo");
+    expect(updateBranch).toContain('headSha !== expectedHeadSha');
+    expect(updateBranch).toContain('expected_head_sha: expectedHeadSha || pr.head.sha');
+  });
+
+  it('write-capable workflow_run maintenance validates same-repo current-head PRs before mutation', () => {
+    const selfHealWorkflow = readWorkflow('pr-self-heal.yml');
+    const autoRerunWorkflow = readWorkflow('ci-auto-rerun-failed.yml');
+    const selfHealJob = extractJobBlock(selfHealWorkflow, 'self-heal');
+    const autoRerunJob = extractJobBlock(autoRerunWorkflow, 'rerun-failed');
+
+    expect(selfHealJob).toContain('WORKFLOW_RUN_HEAD_SHA');
+    expect(selfHealJob).toContain('github.event.workflow_run.head_sha');
+    expect(selfHealJob).toContain('WORKFLOW_RUN_HEAD_REPOSITORY');
+    expect(selfHealJob).toContain('github.event.workflow_run.head_repository.full_name');
+    expect(workflowPermission(parseWorkflow('pr-self-heal.yml'), 'pull-requests')).toBe('read');
+    expect(workflowPermission(parseWorkflow('ci-auto-rerun-failed.yml'), 'pull-requests')).toBe('read');
+
+    expect(autoRerunJob.indexOf('github.rest.pulls.get')).toBeGreaterThanOrEqual(0);
+    expect(autoRerunJob.indexOf('github.rest.pulls.get')).toBeLessThan(autoRerunJob.indexOf('github.rest.actions.reRunWorkflowFailedJobs'));
+    expect(autoRerunJob).toContain("currentPr.head?.repo?.fork || headRepo !== expectedRepo");
+    expect(autoRerunJob).toContain('headSha !== workflowHeadSha');
+    expect(autoRerunJob).toContain('workflowHeadRepo && workflowHeadRepo !== expectedRepo');
   });
 
   it('keeps pull-request DoD report-only while preserving push/main enforcement', () => {
