@@ -112,9 +112,9 @@ Representative variables for follow-on automation:
 Entry point: `.github/workflows/agent-commands.yml`
 
 Operational note:
-- Most PR commands are label-attachment commands and do not require trusted association.
-- `/review` is the main exception and is restricted to trusted actors (`MEMBER` / `OWNER` / `COLLABORATOR`).
-- Trace revalidation remains label-only through `run-trace` in the current repository.
+- PR commands that mutate labels or dispatch workflows require trusted actors (`MEMBER` / `OWNER` / `COLLABORATOR`).
+- Untrusted PR commenters can still receive read-only help output, such as `/formal-help` and `/formal-quickstart`, but cannot change labels or dispatch workflows.
+- Trace revalidation remains label-driven through `run-trace` in the current repository; changing control labels through PR comments is restricted to trusted actors.
 
 #### 5.1 Main commands
 - `/verify-lite`
@@ -279,7 +279,7 @@ Codex Autopilot Lane を使う場合:
 ## 4. PR向け Slash コマンド（PRコメント）
 
 > 入口: `.github/workflows/agent-commands.yml`  
-> 権限: 多くのコマンドは `author_association` 制限なし（ラベル付与型）。`/review` のみ trusted 必須（`MEMBER/OWNER/COLLABORATOR`）。
+> 権限: ラベル変更または `workflow_dispatch` を行う PR コマンドは trusted 必須（`MEMBER/OWNER/COLLABORATOR`）。untrusted PR commenter は `/formal-help` / `/formal-quickstart` のような read-only help のみ利用できます。
 
 ### 4.1 主要コマンド
 - `/verify-lite`  

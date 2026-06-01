@@ -26,15 +26,31 @@ jobs:
             const body = (context.payload.comment.body || '').trim();
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
+            const cmd = body.split(/\s+/)[0];
+            const arg = body.split(/\s+/)[1] || '';
+            const association = context.payload.comment.author_association || '';
+            const trustedAssociations = ['MEMBER', 'OWNER', 'COLLABORATOR'];
+            const isTrusted = trustedAssociations.includes(association);
+            const trustedAssociationText = trustedAssociations.join(' / ');
 
+            const reply = async (msg) => {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: `<!-- AE-AGENTS-REPLY -->\n${msg}` });
+            };
+            const assertTrustedForMutation = (operation) => {
+              if (isTrusted) return;
+              throw new Error(`Refusing ${operation} for untrusted PR commenter (association: ${association || 'NONE'}, command: ${cmd || '(none)'})`);
+            };
             const addLabels = async (labels) => {
               if (!labels || labels.length === 0) return;
+              assertTrustedForMutation('addLabels');
               await github.rest.issues.addLabels({ owner, repo, issue_number, labels });
             };
             const removeLabel = async (label) => {
+              assertTrustedForMutation('removeLabel');
               try { await github.rest.issues.removeLabel({ owner, repo, issue_number, name: label }); } catch {}
             };
             const removeLabelsByPrefix = async (prefix) => {
+              assertTrustedForMutation('removeLabelsByPrefix');
               const { data: labels } = await github.rest.issues.listLabelsOnIssue({ owner, repo, issue_number, per_page: 100 });
               const targets = labels.map(l=>l.name).filter(n => n.startsWith(prefix));
               for (const name of targets) {
@@ -42,13 +58,9 @@ jobs:
               }
             };
 
-            const reply = async (msg) => {
-              await github.rest.issues.createComment({ owner, repo, issue_number, body: `<!-- AE-AGENTS-REPLY -->\n${msg}` });
-            };
-            const association = context.payload.comment.author_association || '';
-            const isTrusted = ['MEMBER', 'OWNER', 'COLLABORATOR'].includes(association);
             const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
             const dispatchWorkflow = async (workflow_id, ref, inputs = undefined) => {
+              assertTrustedForMutation('createWorkflowDispatch');
               await github.rest.actions.createWorkflowDispatch({
                 owner,
                 repo,
@@ -107,8 +119,6 @@ jobs:
             // /formal-aggregate-dispatch (aggregate workflow_dispatch)
             // /formal-help (prints quick tips and docs links)
             // /formal-quickstart (alias of /formal-help)
-            const cmd = body.split(/\s+/)[0];
-            const arg = body.split(/\s+/)[1] || '';
             const autoFixMarker = '<!-- AE-COPILOT-AUTO-FIX v1 -->';
             const isAutoFixComment =
               context.payload.comment?.user?.type === 'Bot'
@@ -136,6 +146,64 @@ jobs:
                 inputs: { pr_number: String(issue_number) }
               });
               core.notice(`Dispatched copilot-review-gate for PR #${issue_number} on ${ref}`);
+              return;
+            }
+
+            const mutatingCommands = new Set([
+              '/enforce-bdd-lint',
+              '/run-qa',
+              '/run-security',
+              '/run-cedar',
+              '/non-blocking',
+              '/blocking',
+              '/ready',
+              '/run-hermetic',
+              '/run-spec',
+              '/run-drift',
+              '/enforce-typecov',
+              '/coverage',
+              '/enforce-coverage',
+              '/enforce-context-pack',
+              '/pr-digest',
+              '/pr-detailed',
+              '/handoff',
+              '/verify-lite',
+              '/review',
+              '/run-qa-dispatch',
+              '/run-security-dispatch',
+              '/ci-fast-dispatch',
+              '/formal-verify-dispatch',
+              '/formal-apalache-dispatch',
+              '/run-flake-dispatch',
+              '/spec-validation-dispatch',
+              '/run-cedar-dispatch',
+              '/formal-aggregate-dispatch',
+              '/qa-batch-commands',
+              '/run-qa:commands',
+              '/qa-batch-cli',
+              '/run-qa:cli',
+              '/qa-batch-property',
+              '/run-qa:property',
+              '/qa-batch-agents',
+              '/run-qa:agents',
+              '/run-adapters',
+              '/run-resilience',
+              '/enforce-perf',
+              '/enforce-lh',
+              '/perf',
+              '/lh',
+              '/enforce-a11y',
+              '/run-formal',
+              '/enforce-formal',
+              '/enforce-contracts'
+            ]);
+            const requireTrustedCommand = async () => {
+              if (isTrusted) return true;
+              await reply(`Permission denied for ${cmd || 'command'} (association: ${association || 'NONE'}). Mutating PR commands require ${trustedAssociationText}.`);
+              return false;
+            };
+            if (mutatingCommands.has(cmd) && !(await requireTrustedCommand())) {
+              core.notice(`Denied mutating PR command ${cmd} for association ${association || 'NONE'}.`);
               return;
             }
 
@@ -226,7 +294,7 @@ jobs:
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
-                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'verify-lite.yml', ref });
+                await dispatchWorkflow('verify-lite.yml', ref);
                 return reply(`Dispatched verify-lite on ${ref}`);
               }
               case '/review': {
@@ -268,56 +336,56 @@ jobs:
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
-                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'ae-ci.yml', ref });
+                await dispatchWorkflow('ae-ci.yml', ref);
                 return reply(`Dispatched ae-ci (QA) on ${ref}`);
               }
               case '/run-security-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
-                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'sbom-generation.yml', ref, inputs: { include_vulnerabilities: 'true' } });
+                await dispatchWorkflow('sbom-generation.yml', ref, { include_vulnerabilities: 'true' });
                 return reply(`Dispatched sbom-generation (security) on ${ref}`);
               }
               case '/ci-fast-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
-                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'ci-fast.yml', ref });
+                await dispatchWorkflow('ci-fast.yml', ref);
                 return reply(`Dispatched CI Fast on ${ref}`);
               }
               case '/formal-verify-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
-                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'formal-verify.yml', ref });
+                await dispatchWorkflow('formal-verify.yml', ref);
                 return reply(`Dispatched Formal Verify on ${ref}`);
               }
               case '/formal-apalache-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
-                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'formal-verify.yml', ref, inputs: { target: 'apalache' } });
+                await dispatchWorkflow('formal-verify.yml', ref, { target: 'apalache' });
                 return reply(`Dispatched Formal Verify (Apalache) on ${ref}`);
               }
               case '/run-flake-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
-                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'flake-detect.yml', ref });
+                await dispatchWorkflow('flake-detect.yml', ref);
                 return reply(`Dispatched flake-detect on ${ref}`);
               }
               case '/spec-validation-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
-                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'spec-validation.yml', ref });
+                await dispatchWorkflow('spec-validation.yml', ref);
                 return reply(`Dispatched spec-validation on ${ref}`);
               }
               case '/run-cedar-dispatch': {
                 if (!context.payload.issue.pull_request) return reply('Not a PR');
                 const pr = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
                 const ref = pr.data.head.ref;
-                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'cedar-quality-gates.yml', ref });
+                await dispatchWorkflow('cedar-quality-gates.yml', ref);
                 return reply(`Dispatched cedar-quality-gates on ${ref}`);
               }
               case '/formal-aggregate-dispatch': {
@@ -333,7 +401,7 @@ jobs:
                   const arts = await github.rest.actions.listArtifactsForRepo({ owner, repo, per_page: 100 });
                   hasAggArtifacts = arts.data.artifacts?.some(a => a?.name === 'formal-reports-aggregate-json' || a?.name === 'formal-reports-aggregate') || false;
                 } catch {}
-                await github.rest.actions.createWorkflowDispatch({ owner, repo, workflow_id: 'formal-aggregate.yml', ref });
+                await dispatchWorkflow('formal-aggregate.yml', ref);
                 const lines = [];
                 lines.push(`Dispatched formal-aggregate on ${ref}`);
                 if (last) lines.push(`- last post: ${new Date(last).toISOString()}`); else lines.push('- last post: n/a');

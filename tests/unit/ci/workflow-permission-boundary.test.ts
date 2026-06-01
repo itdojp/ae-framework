@@ -14,11 +14,63 @@ type WorkflowDocument = {
       workflows?: string[];
     };
   };
+  jobs?: Record<string, any>;
 };
 
 const parseWorkflow = (name: string) => yaml.load(readWorkflow(name)) as WorkflowDocument;
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const extractAgentCommandsPrScript = () => {
+  const workflow = parseWorkflow('agent-commands.yml');
+  const steps = workflow.jobs?.handle_pr?.steps;
+  if (!Array.isArray(steps)) {
+    throw new Error('agent-commands handle_pr steps not found');
+  }
+  const scriptStep = steps.find((step) => step?.uses === 'actions/github-script@v7');
+  const script = scriptStep?.with?.script;
+  if (typeof script !== 'string' || script.length === 0) {
+    throw new Error('agent-commands handle_pr github-script body not found');
+  }
+  return script;
+};
+
+const extractMutatingCommandSet = (prSection: string) => {
+  const match = prSection.match(/const mutatingCommands = new Set\(\[([\s\S]*?)\]\);/);
+  if (!match) {
+    throw new Error('mutatingCommands set not found');
+  }
+  return new Set([...match[1].matchAll(/'([^']+)'/g)].map((item) => item[1]));
+};
+
+const detectPrCommandsThatReachMutationSinks = (script: string) => {
+  const switchStart = script.indexOf('switch (cmd) {');
+  const switchEnd = script.indexOf('default:', switchStart);
+  if (switchStart < 0 || switchEnd < 0 || switchEnd <= switchStart) {
+    throw new Error('agent-commands PR switch not found');
+  }
+  const switchBody = script.slice(switchStart, switchEnd);
+  const mutating = new Set<string>();
+  let activeCases: string[] = [];
+
+  for (const line of switchBody.split('\n')) {
+    const caseMatch = line.match(/case '([^']+)':/);
+    if (caseMatch) {
+      activeCases.push(caseMatch[1]);
+      continue;
+    }
+    if (/(await\s+addLabels|await\s+removeLabel|await\s+removeLabelsByPrefix|await\s+dispatchWorkflow|dispatchWithResult\(|github\.rest\.issues\.addLabels|github\.rest\.issues\.removeLabel|github\.rest\.actions\.createWorkflowDispatch)/.test(line)) {
+      for (const command of activeCases) {
+        mutating.add(command);
+      }
+    }
+    if (/^\s*return\b/.test(line)) {
+      activeCases = [];
+    }
+  }
+
+  return mutating;
+};
 
 const extractJobBlock = (workflow: string, jobName: string) => {
   const pattern = new RegExp(
@@ -55,6 +107,30 @@ describe('workflow permission boundaries', () => {
     expect(workflow).toContain("context.payload.comment?.user?.login === 'github-actions[bot]'");
     expect(workflow).toContain('body.includes(autoFixMarker)');
     expect(workflow).toContain("workflow_id: 'copilot-review-gate.yml'");
+  });
+
+  it('agent-commands requires trusted PR commenters before label mutations or workflow dispatches', () => {
+    const prScript = extractAgentCommandsPrScript();
+    const mutatingCommands = extractMutatingCommandSet(prScript);
+    const commandsThatReachMutationSinks = detectPrCommandsThatReachMutationSinks(prScript);
+
+    expect(prScript).toContain("const trustedAssociations = ['MEMBER', 'OWNER', 'COLLABORATOR']");
+    expect(prScript).toContain('const isTrusted = trustedAssociations.includes(association)');
+    expect(prScript).toContain('assertTrustedForMutation');
+    expect(prScript).toContain("assertTrustedForMutation('addLabels')");
+    expect(prScript).toContain("assertTrustedForMutation('removeLabel')");
+    expect(prScript).toContain("assertTrustedForMutation('removeLabelsByPrefix')");
+    expect(prScript).toContain("assertTrustedForMutation('createWorkflowDispatch')");
+    expect(prScript.indexOf('if (mutatingCommands.has(cmd)')).toBeGreaterThanOrEqual(0);
+    expect(prScript.indexOf('if (mutatingCommands.has(cmd)')).toBeLessThan(prScript.indexOf('switch (cmd)'));
+    expect(prScript).toContain('Permission denied for ${cmd');
+
+    for (const command of commandsThatReachMutationSinks) {
+      expect(mutatingCommands.has(command), `${command} must require trusted association`).toBe(true);
+    }
+    expect([...mutatingCommands].sort()).toEqual([...commandsThatReachMutationSinks].sort());
+    expect(mutatingCommands.has('/formal-help')).toBe(false);
+    expect(mutatingCommands.has('/formal-quickstart')).toBe(false);
   });
 
   it('pr-maintenance update-branch enforces fork guard, explicit mode, and global kill-switch', () => {
