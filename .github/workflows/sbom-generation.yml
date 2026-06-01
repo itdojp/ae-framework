@@ -56,8 +56,7 @@ jobs:
         node-version: '20'
         
     - name: Install dependencies
-      # Exception: automation-generated diffs can arrive before `pnpm-lock.yaml` refresh; review when upstream lockfile updates are mandatory.
-      run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      run: pnpm install --frozen-lockfile
       
     - name: Build project
       run: pnpm run build
@@ -135,7 +134,40 @@ jobs:
     # Security scanning
     - name: Run dependency audit
       run: |
-        pnpm audit --audit-level=moderate --json > audit-results.json || true
+        set -euo pipefail
+        ENFORCE=1
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          ENFORCE=0
+          if jq -e '.pull_request.labels[]?.name | select(.=="enforce-security")' "$GITHUB_EVENT_PATH" >/dev/null; then
+            ENFORCE=1
+          fi
+        fi
+
+        set +e
+        pnpm audit --audit-level=moderate --json > audit-results.json
+        AUDIT_EXIT=$?
+        set -e
+
+        if ! jq -e '.metadata.vulnerabilities' audit-results.json >/dev/null 2>&1; then
+          if [ "${ENFORCE}" = "1" ]; then
+            printf "%s\n" "Dependency audit did not produce parseable vulnerability metadata."
+            exit 1
+          fi
+          echo "::warning::Dependency audit did not produce parseable vulnerability metadata."
+          printf '{"metadata":{"vulnerabilities":{}}}\n' > audit-results.json
+          exit 0
+        fi
+
+        HIGH="$(jq -r '.metadata.vulnerabilities.high // 0' audit-results.json)"
+        CRITICAL="$(jq -r '.metadata.vulnerabilities.critical // 0' audit-results.json)"
+        printf "%s\n" "Dependency audit summary: high=${HIGH}, critical=${CRITICAL}, audit_exit=${AUDIT_EXIT}, enforce=${ENFORCE}"
+        if [ "${HIGH}" -gt 0 ] || [ "${CRITICAL}" -gt 0 ]; then
+          if [ "${ENFORCE}" = "1" ]; then
+            printf "%s\n" "High-risk vulnerabilities found under enforced SBOM audit mode."
+            exit 1
+          fi
+          echo "::warning::High/critical vulnerabilities detected (non-blocking without enforce-security label)."
+        fi
         
     - name: Upload security scan results
       uses: actions/upload-artifact@v4

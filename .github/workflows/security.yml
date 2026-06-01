@@ -100,7 +100,7 @@ jobs:
     if: ${{ needs.gate.outputs.run_security == 'true' }}
     name: Dependency Audit
     runs-on: ubuntu-latest
-    continue-on-error: true
+    continue-on-error: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'enforce-security') }}
     
     steps:
       - name: Checkout code
@@ -112,18 +112,11 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        # Exception: automation-generated diffs can arrive before `pnpm-lock.yaml` refresh; review when upstream lockfile updates are mandatory.
-        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: Audit dependencies
-        run: pnpm audit --audit-level=moderate || true
-
-      - name: Check for high-risk packages
+      - name: Audit dependencies and enforce high-risk thresholds
         run: |
           set -euo pipefail
-          pnpm audit --audit-level=high --json > audit-results.json || true
-          HIGH="$(jq -r '.metadata.vulnerabilities.high // 0' audit-results.json 2>/dev/null || echo 0)"
-          CRITICAL="$(jq -r '.metadata.vulnerabilities.critical // 0' audit-results.json 2>/dev/null || echo 0)"
           ENFORCE=1
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             ENFORCE=0
@@ -132,13 +125,36 @@ jobs:
             fi
           fi
 
-          printf "%s\n" "Dependency audit summary: high=${HIGH}, critical=${CRITICAL}, enforce=${ENFORCE}"
+          set +e
+          pnpm audit --audit-level=moderate --json > audit-results.json
+          AUDIT_EXIT=$?
+          set -e
+
+          if ! jq -e '.metadata.vulnerabilities' audit-results.json >/dev/null 2>&1; then
+            if [ "${ENFORCE}" = "1" ]; then
+              printf "%s\n" "Dependency audit did not produce parseable vulnerability metadata."
+              exit 1
+            fi
+            echo "::warning::Dependency audit did not produce parseable vulnerability metadata."
+            exit 0
+          fi
+
+          LOW="$(jq -r '.metadata.vulnerabilities.low // 0' audit-results.json)"
+          MODERATE="$(jq -r '.metadata.vulnerabilities.moderate // 0' audit-results.json)"
+          HIGH="$(jq -r '.metadata.vulnerabilities.high // 0' audit-results.json)"
+          CRITICAL="$(jq -r '.metadata.vulnerabilities.critical // 0' audit-results.json)"
+
+          printf "%s\n" "Dependency audit summary: low=${LOW}, moderate=${MODERATE}, high=${HIGH}, critical=${CRITICAL}, audit_exit=${AUDIT_EXIT}, enforce=${ENFORCE}"
           if [ "${HIGH}" -gt 0 ] || [ "${CRITICAL}" -gt 0 ]; then
             if [ "${ENFORCE}" = "1" ]; then
               printf "%s\n" "High-risk vulnerabilities found under enforce-security mode."
               exit 1
             fi
             echo "::warning::High/critical vulnerabilities detected (non-blocking without enforce-security label)."
+          fi
+
+          if [ "${AUDIT_EXIT}" -ne 0 ] && [ "${HIGH}" -eq 0 ] && [ "${CRITICAL}" -eq 0 ]; then
+            echo "::warning::Dependency audit returned a nonzero exit code without high/critical findings."
           fi
 
   secrets-scan:

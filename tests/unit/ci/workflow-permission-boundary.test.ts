@@ -340,4 +340,45 @@ describe('workflow permission boundaries', () => {
     expect(uploadManualStep?.with?.path).toContain('security/sigstore/quality-artifacts.intoto.jsonl');
     expect(qualityRaw).toContain('actions/attest@v4');
   });
+
+  it('release and dependency security workflows fail closed on lockfile and audit failures', () => {
+    const releaseRaw = readWorkflow('release.yml');
+    const securityRaw = readWorkflow('security.yml');
+    const sbomRaw = readWorkflow('sbom-generation.yml');
+    const protectedWorkflowText = [
+      ['release.yml', releaseRaw],
+      ['security.yml', securityRaw],
+      ['sbom-generation.yml', sbomRaw],
+    ] as const;
+
+    for (const [workflowName, workflowText] of protectedWorkflowText) {
+      expect(workflowText, `${workflowName} must not allow mutable dependency installs`).not.toContain('--no-frozen-lockfile');
+      expect(workflowText, `${workflowName} must not suppress pnpm audit exits with || true`)
+        .not.toMatch(/pnpm\s+audit[^\n]*\|\|\s*true/);
+    }
+
+    const release = parseWorkflow('release.yml');
+    const releaseSteps = release.jobs?.release?.steps ?? [];
+    const releaseInstallStep = Array.isArray(releaseSteps)
+      ? releaseSteps.find((step: any) => step?.name === 'Install dependencies (frozen lockfile)')
+      : undefined;
+    expect(releaseInstallStep?.run).toBe('pnpm install --frozen-lockfile');
+
+    const security = parseWorkflow('security.yml');
+    const dependencyAudit = security.jobs?.['dependency-audit'];
+    expect(dependencyAudit?.['continue-on-error']).toBe("${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'enforce-security') }}");
+    expect(securityRaw).toContain('pnpm audit --audit-level=moderate --json > audit-results.json');
+    expect(securityRaw).toContain('Dependency audit did not produce parseable vulnerability metadata.');
+    expect(securityRaw).toContain('High-risk vulnerabilities found under enforce-security mode.');
+    expect(securityRaw).toContain('AUDIT_EXIT=$?');
+
+    const sbom = parseWorkflow('sbom-generation.yml');
+    const sbomSteps = sbom.jobs?.['sbom-generation']?.steps ?? [];
+    const sbomInstallStep = Array.isArray(sbomSteps)
+      ? sbomSteps.find((step: any) => step?.name === 'Install dependencies')
+      : undefined;
+    expect(sbomInstallStep?.run).toBe('pnpm install --frozen-lockfile');
+    expect(sbomRaw).toContain('High-risk vulnerabilities found under enforced SBOM audit mode.');
+    expect(sbomRaw).toContain('printf \'{"metadata":{"vulnerabilities":{}}}\\n\' > audit-results.json');
+  });
 });
