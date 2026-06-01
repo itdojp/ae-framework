@@ -1,26 +1,38 @@
 import fc from 'fast-check';
 import { describe, it, expect } from 'vitest';
-import { buildApp, seedRepo } from '../../../src/web-api/app';
+import { buildApp, resolvePrincipalFromHeaders, seedRepo } from '../../../src/web-api/app';
 import { InMemoryReservationRepository } from '../../../src/web-api/repository';
 import { reservationArb, insufficientArb, defaultRuns } from './fast-check.config';
 
-// property: idempotency and non-negative stock for reservations
+// property: principal-scoped idempotency and non-negative stock for reservations
 // test:property:webapi で実行
 
+const principalHeaders = (userId: string) => ({ 'x-user-id': userId });
+
 describe('property: web api reservations', () => {
-  it('idempotent by requestId and stock decreases once', async () => {
+  it('idempotent by principal, requestId, and payload; stock decreases once', async () => {
     await fc.assert(
       fc.asyncProperty(reservationArb, async ({ requestId, sku, quantity, userId }) => {
         const repo = new InMemoryReservationRepository();
-        const app = buildApp(repo);
+        const app = buildApp(repo, { resolvePrincipal: resolvePrincipalFromHeaders });
         await app.ready();
         try {
           const initialStock = Math.max(quantity + 1, 3);
           seedRepo(repo, { [sku]: initialStock });
 
           const payload = { requestId, sku, quantity, userId };
-          const first = await app.inject({ method: 'POST', url: '/reservations', payload });
-          const second = await app.inject({ method: 'POST', url: '/reservations', payload });
+          const first = await app.inject({
+            method: 'POST',
+            url: '/reservations',
+            headers: principalHeaders(userId),
+            payload,
+          });
+          const second = await app.inject({
+            method: 'POST',
+            url: '/reservations',
+            headers: principalHeaders(userId),
+            payload,
+          });
 
           expect(first.statusCode).toBe(200);
           expect(second.statusCode).toBe(200);
@@ -34,11 +46,49 @@ describe('property: web api reservations', () => {
     );
   });
 
+  it('does not return a duplicate record when another principal reuses the same requestId', async () => {
+    await fc.assert(
+      fc.asyncProperty(reservationArb, fc.constantFrom('u1', 'u2', 'u3'), async (reservation, otherUserId) => {
+        fc.pre(otherUserId !== reservation.userId);
+        const { requestId, sku, quantity, userId } = reservation;
+        const repo = new InMemoryReservationRepository();
+        const app = buildApp(repo, { resolvePrincipal: resolvePrincipalFromHeaders });
+        await app.ready();
+        try {
+          const initialStock = Math.max(quantity + 1, 3);
+          seedRepo(repo, { [sku]: initialStock });
+
+          const first = await app.inject({
+            method: 'POST',
+            url: '/reservations',
+            headers: principalHeaders(userId),
+            payload: { requestId, sku, quantity, userId },
+          });
+          const second = await app.inject({
+            method: 'POST',
+            url: '/reservations',
+            headers: principalHeaders(otherUserId),
+            payload: { requestId, sku, quantity, userId: otherUserId },
+          });
+
+          expect(first.statusCode).toBe(200);
+          expect(second.statusCode).toBe(409);
+          expect(second.json()).toMatchObject({ error: 'idempotency_conflict', reason: 'principal_mismatch' });
+          expect(second.json()).not.toHaveProperty('record');
+          expect(repo.getStock(sku)).toBe(initialStock - quantity);
+        } finally {
+          await app.close();
+        }
+      }),
+      { numRuns: defaultRuns },
+    );
+  });
+
   it('returns 409 when stock is insufficient and does not change stock', async () => {
     await fc.assert(
       fc.asyncProperty(insufficientArb, async ({ requestId, sku, stock, userId }) => {
         const repo = new InMemoryReservationRepository();
-        const app = buildApp(repo);
+        const app = buildApp(repo, { resolvePrincipal: resolvePrincipalFromHeaders });
         await app.ready();
         try {
           seedRepo(repo, { [sku]: stock });
@@ -47,6 +97,7 @@ describe('property: web api reservations', () => {
           const res = await app.inject({
             method: 'POST',
             url: '/reservations',
+            headers: principalHeaders(userId),
             payload: { requestId, sku, quantity, userId },
           });
 
