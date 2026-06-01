@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-12'
+lastVerified: '2026-06-02'
 ---
 # Web API 予約リポジトリ実装とプロパティテスト整備 (2025-12-05)
 
@@ -16,6 +16,11 @@ lastVerified: '2026-03-12'
   - `tests/integration/web-api/reservations.test.ts` で成功・冪等・在庫不足・バリデーションをカバー。
   - `tests/property/web-api/reservation.spec.ts` で fc.uuid を用いた requestId 生成、毎ケース新インスタンス生成で汚染防止。
   - `tests/property/web-api/fast-check.config.ts` で FC_WEBAPI_RUNS 等の環境変数で実行回数を調整可能に。
+
+## 2026-06-02 セキュリティ補強
+- `POST /reservations` は `buildApp(..., { resolvePrincipal })` で渡される認証済みプリンシパルを使用し、未設定時は fail-closed で 401 を返却する。
+- リクエストボディの `userId` は権威情報として使用せず、認証済みプリンシパルとの整合性チェックに限定する。
+- `requestId` の冪等性レコードはプリンシパルと正規化済み予約ペイロード（SKU/数量）のハッシュに束縛し、異なるプリンシパル・SKU・数量での再利用は既存レコードを返さず 409 `idempotency_conflict` とする。
 
 ## 影響/注意点
 - 既知警告: テスト実行時の MaxListenersExceededWarning は `tests/setup/ci-vitest.ts` で setMaxListeners(0) を設定済み。依然発生する場合は Socket などの追加対処を検討。
