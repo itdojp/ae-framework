@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { sanitizeExternalResponseText, validateTokenBearingUrl } from './outbound-url-policy.mjs';
 
 function isErrnoException(value) {
   if (!value || typeof value !== 'object') return false;
@@ -62,6 +63,7 @@ function parseArgs(argv) {
 Options:
   -i, --input <file>     Dashboard JSON (default: docs/trace/grafana/tempo-dashboard.json)
   -h, --host <url>       Grafana base URL (default: http://localhost:3000)
+                        Remote hosts require HTTPS and GRAFANA_ALLOWED_HOSTS allowlisting.
   -t, --token <token>    Grafana API token with dashboard:write scope
       --folder-id <id>   Target folder ID (default: 0)
       --no-overwrite     Do not overwrite existing dashboards (default: overwrite)
@@ -101,6 +103,11 @@ function readDashboard(filePath) {
 }
 
 async function importDashboard({ host, token, folderId, overwrite, input }) {
+  const grafanaBaseUrl = validateTokenBearingUrl(host, {
+    serviceName: 'Grafana',
+    allowedHostsEnv: 'GRAFANA_ALLOWED_HOSTS',
+    allowLocalhostHttp: true,
+  });
   const payload = readDashboard(input);
   const body = {
     dashboard: payload.dashboard ?? payload,
@@ -109,8 +116,9 @@ async function importDashboard({ host, token, folderId, overwrite, input }) {
   };
 
   // codeql[js/file-access-to-http] Uploading dashboards (including the payload) is an explicit CLI action.
-  const response = await fetch(new URL('/api/dashboards/db', host), {
+  const response = await fetch(new URL('/api/dashboards/db', grafanaBaseUrl), {
     method: 'POST',
+    redirect: 'error',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
@@ -120,7 +128,7 @@ async function importDashboard({ host, token, folderId, overwrite, input }) {
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Grafana import failed (${response.status}): ${text}`);
+    throw new Error(`Grafana import failed (${response.status}): ${sanitizeExternalResponseText(text)}`);
   }
 
   console.log('[import-dashboard] dashboard imported successfully');

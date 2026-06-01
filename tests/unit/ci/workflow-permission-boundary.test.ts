@@ -398,4 +398,28 @@ describe('workflow permission boundaries', () => {
     expect(sbomRaw).toContain('High-risk vulnerabilities found under enforced SBOM audit mode.');
     expect(sbomRaw).toContain('printf \'{"metadata":{"vulnerabilities":{}}}\\n\' > audit-results.json');
   });
+
+  it('dependency-track SBOM upload validates allowlisted HTTPS destinations before API-key use', () => {
+    const sbom = parseWorkflow('sbom-generation.yml');
+    const sbomSteps = sbom.jobs?.['sbom-generation']?.steps ?? [];
+    const dependencyTrackStep = Array.isArray(sbomSteps)
+      ? sbomSteps.find((step: any) => step?.name === 'Upload to Dependency Track')
+      : undefined;
+    const run = dependencyTrackStep?.run ?? '';
+
+    expect(dependencyTrackStep?.env).toMatchObject({
+      DT_ALLOWED_HOSTS: '${{ vars.DEPENDENCY_TRACK_ALLOWED_HOSTS }}',
+    });
+    const runLines = String(run).split('\n');
+    const validatorInvocationIndex = runLines.findIndex((line) => line.trim() === 'validate_dependency_track_url');
+    const apiKeyHeaderIndex = runLines.findIndex((line) => line.includes('-H "X-API-Key: $DT_API_KEY"'));
+    expect(validatorInvocationIndex).toBeGreaterThanOrEqual(0);
+    expect(validatorInvocationIndex).toBeLessThan(apiKeyHeaderIndex);
+    expect(run).toContain('Dependency Track URL must use HTTPS');
+    expect(run).toContain('Dependency Track URL must not contain userinfo');
+    expect(run).toContain('DEPENDENCY_TRACK_ALLOWED_HOSTS');
+    expect(run).toContain('--proto \'=https\'');
+    expect(run).toContain('${DT_BASE_URL%/}/api/v1/bom');
+    expect(run).not.toContain('$DT_BASE_URL/api/v1/bom');
+  });
 });
