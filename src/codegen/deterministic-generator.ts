@@ -5,12 +5,15 @@
 
 import { createHash } from 'crypto';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { dirname, join } from 'path';
+import { dirname } from 'path';
 import type { AEIR } from '@ae-framework/spec-compiler';
+import { resolveContainedWorkspacePath } from '../utils/workspace-path-policy.js';
 
 type AEIRDomainEntity = AEIR['domain'][number];
 type AEIRDomainField = AEIRDomainEntity['fields'][number];
 type AEIRApiEndpoint = NonNullable<AEIR['api']>[number];
+
+const codegenIdentifierPattern = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
 export interface CodegenOptions {
   /** Input AE-IR file path */
@@ -84,7 +87,7 @@ export class DeterministicCodeGenerator {
       preserveManualChanges: true,
       ...options,
     };
-    this.manifestPath = join(this.options.outputDir, '.codegen-manifest.json');
+    this.manifestPath = this.resolveOutputFile('.codegen-manifest.json');
   }
 
   /**
@@ -93,6 +96,7 @@ export class DeterministicCodeGenerator {
   async generate(): Promise<CodegenManifest> {
     // Load and validate AE-IR
     const ir = this.loadAEIR();
+    this.validateAEIRIdentifiers(ir);
     const specHash = this.calculateHash(JSON.stringify(ir, null, 2));
 
     // Perform drift detection if enabled
@@ -145,7 +149,7 @@ export class DeterministicCodeGenerator {
     if (manifest.metadata.specHash !== currentSpecHash) {
       // All files are potentially drifted due to spec changes
       for (const file of manifest.files) {
-        const filePath = join(this.options.outputDir, file.filePath);
+        const filePath = this.resolveOutputFile(file.filePath);
         if (existsSync(filePath)) {
           const currentContent = readFileSync(filePath, 'utf-8');
           const currentHash = this.calculateHash(currentContent);
@@ -164,7 +168,7 @@ export class DeterministicCodeGenerator {
     } else {
       // Check individual file modifications
       for (const file of manifest.files) {
-        const filePath = join(this.options.outputDir, file.filePath);
+        const filePath = this.resolveOutputFile(file.filePath);
         if (existsSync(filePath)) {
           const currentContent = readFileSync(filePath, 'utf-8');
           const currentHash = this.calculateHash(currentContent);
@@ -220,7 +224,7 @@ export class DeterministicCodeGenerator {
 
     // Write generated files in deterministic order
     for (const file of sortedFiles) {
-      const fullPath = join(this.options.outputDir, file.filePath);
+      const fullPath = this.resolveOutputFile(file.filePath);
       mkdirSync(dirname(fullPath), { recursive: true });
       writeFileSync(fullPath, file.content, 'utf-8');
     }
@@ -621,6 +625,30 @@ ${entity.fields.filter((field) => field.name !== 'id').map((field) => `
   private writeManifest(manifest: CodegenManifest): void {
     mkdirSync(dirname(this.manifestPath), { recursive: true });
     writeFileSync(this.manifestPath, JSON.stringify(manifest, null, 2), 'utf-8');
+  }
+
+  private resolveOutputFile(relativePath: string): string {
+    return resolveContainedWorkspacePath(this.options.outputDir, relativePath, 'generated code file');
+  }
+
+  private validateAEIRIdentifiers(ir: AEIR): void {
+    for (const entity of ir.domain) {
+      this.assertCodegenIdentifier(entity.name, 'domain entity name');
+      for (const field of entity.fields) {
+        this.assertCodegenIdentifier(field.name, `field name for ${entity.name}`);
+      }
+    }
+
+    const apis = ir.api ?? [];
+    for (const api of apis) {
+      this.assertCodegenIdentifier(api.method, `API method for ${api.path}`);
+    }
+  }
+
+  private assertCodegenIdentifier(value: string, label: string): void {
+    if (!codegenIdentifierPattern.test(value)) {
+      throw new Error(`Invalid AE-IR ${label} for deterministic codegen: ${JSON.stringify(value)}`);
+    }
   }
 
   private calculateHash(content: string): string {

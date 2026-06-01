@@ -15,6 +15,7 @@ import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { DriftDetector } from '../codegen/drift-detector.js';
 import type { DriftConfig } from '../codegen/drift-detector.js';
+import { resolveWorkspacePath, resolveWorkspaceRoot } from '../utils/workspace-path-policy.js';
 
 type GenerateCommandOptions = {
   input: string;
@@ -70,15 +71,18 @@ export function createCodegenCommand(): Command {
         console.log(chalk.gray(`   Output: ${options.output}`));
         console.log(chalk.gray(`   Target: ${options.target}`));
 
+        const workspaceRoot = resolveWorkspaceRoot({ envVar: 'AE_CODEGEN_WORKSPACE_ROOT' });
         const genOptions: CodegenOptions = {
-          inputPath: resolve(options.input),
-          outputDir: resolve(options.output),
+          inputPath: resolveWorkspacePath(options.input, { workspaceRoot, label: 'codegen input' }),
+          outputDir: resolveWorkspacePath(options.output, { workspaceRoot, label: 'codegen output' }),
           target: options.target,
           enableDriftDetection: options.driftDetection,
           preserveManualChanges: options.preserveChanges,
           hashAlgorithm: options.hashAlgorithm,
         };
-        if (options.templateDir) genOptions.templateDir = resolve(options.templateDir);
+        if (options.templateDir) {
+          genOptions.templateDir = resolveWorkspacePath(options.templateDir, { workspaceRoot, label: 'codegen templateDir' });
+        }
         const generator = new DeterministicCodeGenerator(genOptions);
 
         const manifest = await generator.generate();
@@ -212,15 +216,17 @@ export function createCodegenCommand(): Command {
         const regenerate = async () => {
           try {
             console.log(chalk.blue('\n🔄 Specification changed, regenerating...'));
-            
+            const workspaceRoot = resolveWorkspaceRoot({ envVar: 'AE_CODEGEN_WORKSPACE_ROOT' });
             const regenOptions: CodegenOptions = {
-              inputPath: resolve(options.input),
-              outputDir: resolve(options.output),
+              inputPath: resolveWorkspacePath(options.input, { workspaceRoot, label: 'codegen watch input' }),
+              outputDir: resolveWorkspacePath(options.output, { workspaceRoot, label: 'codegen watch output' }),
               target: options.target,
               enableDriftDetection: true,
               preserveManualChanges: true,
             };
-            if (options.templateDir) regenOptions.templateDir = resolve(options.templateDir);
+            if (options.templateDir) {
+              regenOptions.templateDir = resolveWorkspacePath(options.templateDir, { workspaceRoot, label: 'codegen watch templateDir' });
+            }
             const generator = new DeterministicCodeGenerator(regenOptions);
 
             const manifest = await generator.generate();
@@ -230,7 +236,8 @@ export function createCodegenCommand(): Command {
             console.error(chalk.red(`❌ Regeneration failed: ${toMessage(error)}`));
           }
         };
-        const watchTargets = [resolve(options.input)];
+        const workspaceRoot = resolveWorkspaceRoot({ envVar: 'AE_CODEGEN_WORKSPACE_ROOT' });
+        const watchTargets = [resolveWorkspacePath(options.input, { workspaceRoot, label: 'codegen watch input' })];
         const watcher = watchFn(watchTargets, { ignoreInitial: true });
         const scheduleRegenerate = () => {
           if (timeout) clearTimeout(timeout);
