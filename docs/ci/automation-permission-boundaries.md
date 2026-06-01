@@ -20,6 +20,7 @@ Primary sources:
 - `.github/workflows/codex-autopilot-lane.yml`
 - `.github/workflows/pr-ci-status-comment.yml`
 - `.github/workflows/copilot-auto-fix.yml`
+- `.github/workflows/branch-protection-apply.yml`
 
 ### 1. Permission boundary matrix
 
@@ -33,12 +34,14 @@ Primary sources:
 | Codex Autopilot Lane | `pull_request` | requires a non-fork PR with the `autopilot:on` label plus the global kill switch guard | prevent autopilot execution on forks or unlabeled PRs |
 | Codex Autopilot Lane | `workflow_dispatch` | requires `pr_number` input plus the global kill switch guard | prevent operators from accidentally targeting the wrong PR |
 | PR Maintenance (`update-branch`, `enable-auto-merge`) | `pull_request` / `workflow_dispatch` / `schedule` | excludes fork PRs for PR-origin runs, defaults `workflow_dispatch` `mode` to `both` unless narrowed by the operator, and respects the global kill switch | prevent unnecessary updates or auto-merge enablement |
+| Branch Protection Preset Apply | `workflow_dispatch` | runs in protected environment `branch-protection-admin`; restricts `branch`, `preset`, and `emergency_approval` to choice inputs; validates allowlisted branch/preset before any environment-scoped `BRANCH_PROTECTION_ADMIN_TOKEN` step; requires `approved-break-glass` for presets that relax review or check gates | prevent admin-scoped branch-protection mutation from free-form dispatch inputs |
 
 ### 2. Implementation notes
 
 - the global kill switch (`AE_AUTOMATION_GLOBAL_DISABLE`) is enforced in automation lanes that mutate or dispatch follow-up work (`Codex Autopilot Lane`, `PR Maintenance`, `Copilot Auto Fix`); `Copilot Review Gate` does not currently use that kill switch
 - `issue_comment` entrypoints must first prove that the comment is attached to a PR, then add actor or marker validation before repository mutations such as label changes or workflow dispatches
 - `workflow_dispatch` entrypoints must require or default critical inputs such as `pr_number` or `mode` so operators do not accidentally target the wrong PR or lane
+- ADMIN_TOKEN-backed manual workflows must keep the mutation token in the protected environment secret `BRANCH_PROTECTION_ADMIN_TOKEN`, validate allowlisted inputs before exporting admin-token API paths, avoid direct dispatch-input interpolation in shell `run` blocks, and use protected environments for approval
 
 ### 3. Test policy
 
@@ -70,12 +73,14 @@ The purpose of this test is to guarantee the presence of the boundary policy. It
 | Codex Autopilot Lane | `pull_request` | non-fork PR、`autopilot:on` label、global kill-switch を要求 | fork PR や unlabeled PR での autopilot 実行を防止 |
 | Codex Autopilot Lane | `workflow_dispatch` | `pr_number` 入力と global kill-switch を要求 | operator が誤った PR を対象にすることを防止 |
 | PR Maintenance (`update-branch`, `enable-auto-merge`) | `pull_request` / `workflow_dispatch` / `schedule` | fork PR除外（PR起点）、`workflow_dispatch` では `mode` の既定値が `both`、global kill-switch考慮 | 不要な更新/merge有効化を防止 |
+| Branch Protection Preset Apply | `workflow_dispatch` | protected environment `branch-protection-admin` 上で実行し、`branch` / `preset` / `emergency_approval` を choice input に限定。environment-scoped `BRANCH_PROTECTION_ADMIN_TOKEN` 利用前に allowlist 検証し、review/check gate を緩和する preset には `approved-break-glass` を要求 | free-form dispatch input による admin-scoped branch-protection 変更を防止 |
 
 ## 2. 実装上の補足
 
 - global kill-switch (`AE_AUTOMATION_GLOBAL_DISABLE`) は、更新系 / follow-up dispatch 系の lane（`Codex Autopilot Lane`, `PR Maintenance`, `Copilot Auto Fix`）で workflow 条件とスクリプト内部の両方からガードします。`Copilot Review Gate` 自体は現時点ではこの kill-switch の対象外です。
 - `issue_comment` 起点は「PRに紐づいているか」を必須条件とし、ラベル変更や workflow dispatch などの repository mutation の前に actor または marker を検証します。
 - `workflow_dispatch` 起点は `pr_number` や `mode` のような重要入力を必須化または既定化し、誤対象への実行を避けます。
+- `ADMIN_TOKEN` 相当の手動 workflow は protected environment secret `BRANCH_PROTECTION_ADMIN_TOKEN` に mutation token を限定し、admin token の API path を出力する前に allowlist 入力検証を行い、shell `run` block で dispatch input を直接展開せず、protected environment を approval boundary とします。
 
 ## 3. テスト方針
 

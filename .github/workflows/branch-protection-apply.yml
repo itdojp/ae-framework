@@ -4,15 +4,35 @@ on:
   workflow_dispatch:
     inputs:
       preset:
-        description: Preset JSON under .github (e.g. branch-protection.main.relax2.json)
+        description: Allowed branch-protection preset under .github
         required: true
-        default: branch-protection.main.relax2.json
+        type: choice
+        default: branch-protection.main.require-verify-lite-gate.json
+        options:
+          - branch-protection.main.require-verify-lite-gate.json
+          - branch-protection.main.require-verify-lite.json
+          - branch-protection.main.verify-lite-noreview.json
+          - branch-protection.main.verify-lite-trace-noreview.json
+          - branch-protection.main.restore.json
+          - branch-protection.main.relax.json
+          - branch-protection.main.relax2.json
       branch:
-        description: Target branch
+        description: Allowed target branch
         required: true
+        type: choice
         default: main
+        options:
+          - main
+      emergency_approval:
+        description: Select approved-break-glass only after branch-protection-admin environment approval for relaxing presets
+        required: true
+        type: choice
+        default: normal-change
+        options:
+          - normal-change
+          - approved-break-glass
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.inputs.branch }}-${{ github.event.inputs.preset }}
+  group: ${{ github.workflow }}-${{ inputs.branch }}-${{ inputs.preset }}
   cancel-in-progress: true
 
 permissions:
@@ -21,43 +41,60 @@ permissions:
 jobs:
   apply:
     runs-on: ubuntu-latest
+    environment:
+      name: branch-protection-admin
     steps:
-      - name: Check inputs
-        run: |
-          echo "Preset: ${{ github.event.inputs.preset }}"
-          echo "Branch: ${{ github.event.inputs.branch }}"
-
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate dispatch inputs
+        id: validate
+        env:
+          BRANCH_PROTECTION_PRESET: ${{ inputs.preset }}
+          BRANCH_PROTECTION_BRANCH: ${{ inputs.branch }}
+          BRANCH_PROTECTION_EMERGENCY_APPROVAL: ${{ inputs.emergency_approval }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/admin/validate-branch-protection-inputs.mjs
+
+      - name: Show validated inputs
+        env:
+          BRANCH_PROTECTION_PRESET: ${{ steps.validate.outputs.preset }}
+          BRANCH_PROTECTION_BRANCH: ${{ steps.validate.outputs.branch }}
+          BRANCH_PROTECTION_EMERGENCY: ${{ steps.validate.outputs.emergency }}
+        run: |
+          echo "Preset: $BRANCH_PROTECTION_PRESET"
+          echo "Branch: $BRANCH_PROTECTION_BRANCH"
+          echo "Emergency/break-glass preset: $BRANCH_PROTECTION_EMERGENCY"
+
       - name: Show current protection (GET)
         env:
-          GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          GH_TOKEN: ${{ secrets.BRANCH_PROTECTION_ADMIN_TOKEN }}
+          BRANCH_PROTECTION_API_PATH: ${{ steps.validate.outputs.api_path }}
         run: |
-          if [ -z "$GH_TOKEN" ]; then
-            echo "ADMIN_TOKEN secret is required (a PAT with repo admin scope)." >&2
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "BRANCH_PROTECTION_ADMIN_TOKEN environment secret is required (prefer a fine-grained token with Administration read/write only)." >&2
             exit 1
           fi
-          gh api \
-            repos/${{ github.repository }}/branches/${{ github.event.inputs.branch }}/protection \
+          gh api "$BRANCH_PROTECTION_API_PATH" \
             --jq '.required_pull_request_reviews, .required_status_checks'
 
       - name: Apply preset (PUT)
         env:
-          GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          GH_TOKEN: ${{ secrets.BRANCH_PROTECTION_ADMIN_TOKEN }}
+          BRANCH_PROTECTION_API_PATH: ${{ steps.validate.outputs.api_path }}
+          BRANCH_PROTECTION_PRESET_PATH: ${{ steps.validate.outputs.preset_path }}
         run: |
-          FILE=".github/${{ github.event.inputs.preset }}"
-          test -f "$FILE" || { echo "Preset file not found: $FILE" >&2; exit 1; }
+          test -f "$BRANCH_PROTECTION_PRESET_PATH" || { echo "Preset file not found: $BRANCH_PROTECTION_PRESET_PATH" >&2; exit 1; }
           gh api \
             --method PUT \
             -H "Accept: application/vnd.github.luke-cage-preview+json" \
-            repos/${{ github.repository }}/branches/${{ github.event.inputs.branch }}/protection \
-            --input "$FILE"
+            "$BRANCH_PROTECTION_API_PATH" \
+            --input "$BRANCH_PROTECTION_PRESET_PATH"
 
       - name: Show new protection (GET)
         env:
-          GH_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          GH_TOKEN: ${{ secrets.BRANCH_PROTECTION_ADMIN_TOKEN }}
+          BRANCH_PROTECTION_API_PATH: ${{ steps.validate.outputs.api_path }}
         run: |
-          gh api \
-            repos/${{ github.repository }}/branches/${{ github.event.inputs.branch }}/protection \
+          gh api "$BRANCH_PROTECTION_API_PATH" \
             --jq '.required_pull_request_reviews, .required_status_checks'

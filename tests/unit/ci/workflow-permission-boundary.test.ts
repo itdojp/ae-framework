@@ -10,6 +10,9 @@ const readWorkflow = (name: string) => fs.readFileSync(
 
 type WorkflowDocument = {
   on?: {
+    workflow_dispatch?: {
+      inputs?: Record<string, any>;
+    };
     workflow_run?: {
       workflows?: string[];
     };
@@ -131,6 +134,50 @@ describe('workflow permission boundaries', () => {
     expect([...mutatingCommands].sort()).toEqual([...commandsThatReachMutationSinks].sort());
     expect(mutatingCommands.has('/formal-help')).toBe(false);
     expect(mutatingCommands.has('/formal-quickstart')).toBe(false);
+  });
+
+  it('branch-protection admin workflow validates allowlisted inputs before ADMIN_TOKEN use', () => {
+    const workflow = parseWorkflow('branch-protection-apply.yml');
+    const rawWorkflow = readWorkflow('branch-protection-apply.yml');
+    const inputs = workflow.on?.workflow_dispatch?.inputs ?? {};
+    const job = workflow.jobs?.apply;
+    const steps = Array.isArray(job?.steps) ? job.steps : [];
+    const runBlocks = steps
+      .map((step: any) => step?.run)
+      .filter((run: unknown): run is string => typeof run === 'string')
+      .join('\n');
+
+    expect(inputs.preset?.type).toBe('choice');
+    expect(inputs.preset?.default).toBe('branch-protection.main.require-verify-lite-gate.json');
+    expect(inputs.preset?.default).not.toBe('branch-protection.main.relax2.json');
+    expect(inputs.preset?.options).toContain('branch-protection.main.require-verify-lite-gate.json');
+    expect(inputs.preset?.options).toContain('branch-protection.main.relax2.json');
+    expect(inputs.branch?.type).toBe('choice');
+    expect(inputs.branch?.options).toEqual(['main']);
+    expect(inputs.emergency_approval?.type).toBe('choice');
+    expect(inputs.emergency_approval?.options).toEqual(['normal-change', 'approved-break-glass']);
+    expect(job?.environment?.name).toBe('branch-protection-admin');
+
+    expect(runBlocks).toContain('node scripts/admin/validate-branch-protection-inputs.mjs');
+    expect(runBlocks).not.toContain('github.event.inputs');
+    expect(runBlocks).not.toMatch(/\$\{\{\s*inputs\.(branch|preset|emergency_approval)\s*\}\}/);
+    expect(runBlocks).not.toContain('branches/${{');
+    expect(rawWorkflow).toContain('secrets.BRANCH_PROTECTION_ADMIN_TOKEN');
+    expect(rawWorkflow).not.toContain('secrets.ADMIN_TOKEN');
+    expect(runBlocks).toContain('gh api "$BRANCH_PROTECTION_API_PATH"');
+    expect(runBlocks).toContain('--input "$BRANCH_PROTECTION_PRESET_PATH"');
+
+    const validateIndex = steps.findIndex((step: any) => step?.id === 'validate');
+    const adminTokenStepIndices = steps
+      .map((step: any, index: number) => ({ step, index }))
+      .filter(({ step }) => String(step?.env?.GH_TOKEN ?? '').includes('secrets.BRANCH_PROTECTION_ADMIN_TOKEN'))
+      .map(({ index }) => index);
+    expect(validateIndex).toBeGreaterThanOrEqual(0);
+    expect(adminTokenStepIndices.length).toBeGreaterThan(0);
+    for (const index of adminTokenStepIndices) {
+      expect(index).toBeGreaterThan(validateIndex);
+    }
+    expect(rawWorkflow).toContain('environment:\n      name: branch-protection-admin');
   });
 
   it('pr-maintenance update-branch enforces fork guard, explicit mode, and global kill-switch', () => {
