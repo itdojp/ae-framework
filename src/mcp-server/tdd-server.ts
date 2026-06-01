@@ -6,9 +6,10 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { execSync } from 'child_process';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, realpathSync } from 'fs';
 import { glob } from 'glob';
+import * as path from 'path';
+import { pathToFileURL } from 'url';
 import {
   AnalyzeTDDArgsSchema,
   GuideTDDArgsSchema,
@@ -22,9 +23,15 @@ import {
   type SuggestTestStructureArgs,
   type ValidateTestFirstArgs,
 } from './schemas.js';
+import {
+  ensureTDDTestExecutionApproved,
+  formatTDDTestCommand,
+  resolveSafeTDDTestCommand,
+  runSafeTDDTestCommand,
+} from './tdd-execution-policy.js';
 
 interface TDDViolation {
-  type: 'missing_test' | 'failing_test' | 'skip_red' | 'low_coverage';
+  type: 'missing_test' | 'failing_test' | 'skip_red' | 'low_coverage' | 'test_execution_skipped';
   severity: 'error' | 'warning';
   file?: string;
   message: string;
@@ -39,7 +46,7 @@ interface TDDAnalysis {
   canProceed: boolean;
 }
 
-class TDDGuardServer {
+export class TDDGuardServer {
   private server: Server;
 
   constructor() {
@@ -74,6 +81,23 @@ class TDDGuardServer {
               phase: {
                 type: 'string',
                 description: 'Current development phase (1-intent, 2-formal, 3-tests, 4-code, 5-verify, 6-operate)',
+              },
+              testCommand: {
+                type: 'string',
+                enum: ['npm test', 'pnpm test', 'yarn test'],
+                default: 'npm test',
+                description: 'Approved test command to use only when execution is explicitly approved',
+              },
+              dryRun: {
+                type: 'boolean',
+                default: true,
+                description: 'When true, analyze without executing package scripts',
+              },
+              testExecutionApproval: {
+                type: 'string',
+                enum: ['none', 'approved-tdd-test-execution'],
+                default: 'none',
+                description: 'Required approval token for MCP-triggered test execution',
               },
             },
           },
@@ -118,11 +142,23 @@ class TDDGuardServer {
             properties: {
               testCommand: {
                 type: 'string',
-                description: 'Command to run tests (defaults to "npm test")',
+                enum: ['npm test', 'pnpm test', 'yarn test'],
+                description: 'Approved test command to run without shell interpretation',
               },
               expectRed: {
                 type: 'boolean',
                 description: 'Whether tests should be failing (RED phase)',
+              },
+              dryRun: {
+                type: 'boolean',
+                default: true,
+                description: 'When true, report the approved executable/argv without running tests',
+              },
+              testExecutionApproval: {
+                type: 'string',
+                enum: ['none', 'approved-tdd-test-execution'],
+                default: 'none',
+                description: 'Required approval token for MCP-triggered test execution',
               },
             },
           },
@@ -176,7 +212,7 @@ class TDDGuardServer {
 
   private async analyzeTDDCompliance(args: unknown): Promise<{ content: { type: 'text'; text: string }[] }> {
     const parsed: AnalyzeTDDArgs = parseOrThrow(AnalyzeTDDArgsSchema, args);
-    const path = parsed.path;
+    const analysisPath = this.resolveApprovedWorkspacePath(parsed.path);
     const phase = parsed.phase || this.detectCurrentPhase();
 
     const analysis: TDDAnalysis = {
@@ -188,8 +224,8 @@ class TDDGuardServer {
     };
 
     // Check for source files without tests
-    const srcFiles = await glob('src/**/*.ts', { cwd: path });
-    const testFiles = await glob('tests/**/*.test.ts', { cwd: path });
+    const srcFiles = await glob('src/**/*.ts', { cwd: analysisPath });
+    const testFiles = await glob('tests/**/*.test.ts', { cwd: analysisPath });
 
     for (const srcFile of srcFiles) {
       if (srcFile.includes('index.ts') || srcFile.includes('/types.ts')) continue;
@@ -208,31 +244,50 @@ class TDDGuardServer {
       }
     }
 
-    // Check test execution status
-    try {
-      execSync('npm test --silent', { stdio: 'pipe' });
-      
-      if (phase === '3-tests') {
-        analysis.violations.push({
-          type: 'skip_red',
-          severity: 'warning',
-          message: 'Tests are passing but should be RED in test-first phase',
-          suggestion: 'Verify that tests fail initially to confirm they test the right behavior',
-        });
+    let skippedTestExecutionRecommendation: string | undefined;
+    const executionApproval = ensureTDDTestExecutionApproved(parsed.testExecutionApproval, parsed.dryRun);
+    if (executionApproval.approved) {
+      try {
+        runSafeTDDTestCommand(parsed.testCommand, { cwd: analysisPath });
+
+        if (phase === '3-tests') {
+          analysis.violations.push({
+            type: 'skip_red',
+            severity: 'warning',
+            message: 'Tests are passing but should be RED in test-first phase',
+            suggestion: 'Verify that tests fail initially to confirm they test the right behavior',
+          });
+        }
+      } catch (error) {
+        if (phase === '4-code') {
+          analysis.violations.push({
+            type: 'failing_test',
+            severity: 'error',
+            message: 'Tests are failing but should pass after implementation',
+            suggestion: 'Implement the minimum code required to make tests pass',
+          });
+        }
       }
-    } catch (error) {
-      if (phase === '4-code') {
+    } else {
+      const resolvedCommand = resolveSafeTDDTestCommand(parsed.testCommand);
+      skippedTestExecutionRecommendation =
+        `Test execution skipped (${executionApproval.reason}). Approved command would be: ${formatTDDTestCommand(resolvedCommand)}`;
+      if (phase === '3-tests' || phase === '4-code') {
+        const phaseExpectation = phase === '3-tests' ? 'RED' : 'GREEN';
         analysis.violations.push({
-          type: 'failing_test',
+          type: 'test_execution_skipped',
           severity: 'error',
-          message: 'Tests are failing but should pass after implementation',
-          suggestion: 'Implement the minimum code required to make tests pass',
+          message: `Test execution was skipped; cannot verify ${phaseExpectation} phase test results`,
+          suggestion: `Run with dryRun=false and testExecutionApproval='approved-tdd-test-execution' to execute ${formatTDDTestCommand(resolvedCommand)} in the approved workspace`,
         });
       }
     }
 
     // Generate recommendations
     analysis.recommendations = this.generateRecommendations(analysis.violations, phase);
+    if (skippedTestExecutionRecommendation) {
+      analysis.recommendations.push(skippedTestExecutionRecommendation);
+    }
     analysis.nextAction = this.determineNextAction(analysis.violations, phase);
     analysis.canProceed = analysis.violations.filter(v => v.severity === 'error').length === 0;
 
@@ -287,10 +342,26 @@ class TDDGuardServer {
   }
 
   private async checkRedGreenCycle(args: unknown): Promise<{ content: { type: 'text'; text: string }[] }> {
-    const { testCommand, expectRed }: RedGreenCycleArgs = parseOrThrow(RedGreenCycleArgsSchema, args);
+    const { testCommand, expectRed, dryRun, testExecutionApproval }: RedGreenCycleArgs = parseOrThrow(RedGreenCycleArgsSchema, args);
+    const resolvedCommand = resolveSafeTDDTestCommand(testCommand);
+    const executionApproval = ensureTDDTestExecutionApproved(testExecutionApproval, dryRun);
+
+    if (!executionApproval.approved) {
+      return {
+        content: [{
+          type: 'text',
+          text: [
+            'ℹ️ TDD test execution was not run.',
+            `Reason: ${executionApproval.reason}.`,
+            `Approved executable/argv: ${formatTDDTestCommand(resolvedCommand)}.`,
+            `Set dryRun=false and testExecutionApproval='approved-tdd-test-execution' to execute without shell interpretation.`,
+          ].join('\n'),
+        }],
+      };
+    }
     
     try {
-      execSync(`${testCommand} --silent`, { encoding: 'utf8', stdio: 'pipe' });
+      runSafeTDDTestCommand(testCommand, { cwd: this.resolveApprovedWorkspacePath('.') });
       
       if (expectRed) {
         return {
@@ -338,6 +409,26 @@ class TDDGuardServer {
     return stdout || stderr;
   }
 
+  private resolveApprovedWorkspacePath(inputPath: string): string {
+    if (inputPath.includes('\0')) {
+      throw new Error('TDD analysis path must not contain NUL bytes');
+    }
+
+    const workspaceRoot = path.resolve(process.env['AE_MCP_WORKSPACE_ROOT'] || process.cwd());
+    const realWorkspaceRoot = realpathSync(workspaceRoot);
+    const candidatePath = path.isAbsolute(inputPath)
+      ? path.resolve(inputPath)
+      : path.resolve(workspaceRoot, inputPath);
+    const containedPath = existsSync(candidatePath) ? realpathSync(candidatePath) : candidatePath;
+    const relative = path.relative(realWorkspaceRoot, containedPath);
+
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      throw new Error('TDD analysis path must stay inside the approved workspace');
+    }
+
+    return candidatePath;
+  }
+
   private async suggestTestStructure(args: unknown): Promise<{ content: { type: 'text'; text: string }[] }> {
     const { codeFile, framework }: SuggestTestStructureArgs = parseOrThrow(SuggestTestStructureArgsSchema, args);
     
@@ -382,6 +473,10 @@ class TDDGuardServer {
     const failingTests = violations.filter(v => v.type === 'failing_test');
     if (failingTests.length > 0) {
       recommendations.push('Fix failing tests by implementing the minimal code required');
+    }
+
+    if (violations.some(v => v.type === 'test_execution_skipped')) {
+      recommendations.push('Run approved TDD test execution before advancing phases that require RED/GREEN evidence');
     }
     
     if (phase === '3-tests' && violations.some(v => v.type === 'skip_red')) {
@@ -543,5 +638,7 @@ class TDDGuardServer {
   }
 }
 
-const server = new TDDGuardServer();
-server.run().catch(console.error);
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const server = new TDDGuardServer();
+  server.run().catch(console.error);
+}
