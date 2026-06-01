@@ -9,6 +9,9 @@ concurrency:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
 jobs:
   upload:
     runs-on: ubuntu-latest
@@ -20,22 +23,49 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist-quality
-          [ -d artifacts ] && cp -r artifacts dist-quality/ || true
-          [ -f artifacts/summary/combined.json ] && mkdir -p dist-quality/artifacts/summary && cp artifacts/summary/combined.json dist-quality/artifacts/summary/ || true
+          if [ -d artifacts ]; then
+            cp -r artifacts dist-quality/
+          fi
+          if [ -f artifacts/summary/combined.json ]; then
+            mkdir -p dist-quality/artifacts/summary
+            cp artifacts/summary/combined.json dist-quality/artifacts/summary/
+          fi
           printf "%s\n" "Bundled files:"
           find dist-quality -type f -maxdepth 3 -print
-          [ -f formal/summary.json ] && mkdir -p dist-quality/formal && cp formal/summary.json dist-quality/formal/ || true
-          [ -f artifacts/summary/PR_SUMMARY.md ] && cp artifacts/summary/PR_SUMMARY.md dist-quality/ || true
-          [ -f coverage/coverage-summary.json ] && mkdir -p dist-quality/coverage && cp coverage/coverage-summary.json dist-quality/coverage/ || true
+          if [ -f formal/summary.json ]; then
+            mkdir -p dist-quality/formal
+            cp formal/summary.json dist-quality/formal/
+          fi
+          if [ -f artifacts/summary/PR_SUMMARY.md ]; then
+            cp artifacts/summary/PR_SUMMARY.md dist-quality/
+          fi
+          if [ -f coverage/coverage-summary.json ]; then
+            mkdir -p dist-quality/coverage
+            cp coverage/coverage-summary.json dist-quality/coverage/
+          fi
           tar -czf quality-artifacts.tgz -C dist-quality .
+      - name: Attest quality artifact bundle
+        id: attest_quality
+        uses: actions/attest@v4
+        with:
+          subject-path: quality-artifacts.tgz
+      - name: Stage quality attestation bundle
+        shell: bash
+        run: |
+          mkdir -p security/sigstore
+          cp "${{ steps.attest_quality.outputs.bundle-path }}" security/sigstore/quality-artifacts.intoto.jsonl
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         if: github.event_name != 'workflow_dispatch'
         with:
-          files: quality-artifacts.tgz
+          files: |
+            quality-artifacts.tgz
+            security/sigstore/quality-artifacts.intoto.jsonl
       - name: Upload artifacts (manual)
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: quality-artifacts
-          path: quality-artifacts.tgz
+          path: |
+            quality-artifacts.tgz
+            security/sigstore/quality-artifacts.intoto.jsonl

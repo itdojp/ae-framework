@@ -17,7 +17,7 @@ jobs:
     continue-on-error: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking') }}
     steps:
       - uses: actions/checkout@v4
-      - uses: rhysd/actionlint@v1.7.1
+      - uses: rhysd/actionlint@v1.7.12
       - name: Check for unresolved merge markers in workflows
         run: |
           set -e
