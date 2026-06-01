@@ -4,6 +4,7 @@ import {
   summarizeCheckRollup,
   classifyPr,
   planActions,
+  validatePrWriteTarget,
 } from '../../../scripts/ci/pr-self-heal.mjs';
 
 describe('pr-self-heal helpers', () => {
@@ -138,5 +139,45 @@ describe('pr-self-heal helpers', () => {
     const plan = planActions(state);
     expect(plan.status).toBe('blocked');
     expect(plan.reason).toContain('conflict');
+  });
+
+  it('validates same-repository current-head write targets for workflow_run automation', () => {
+    const view = {
+      number: 3,
+      state: 'OPEN',
+      isCrossRepository: false,
+      headRefOid: 'abc123',
+      headRepository: { nameWithOwner: 'itdojp/ae-framework' },
+    };
+
+    expect(validatePrWriteTarget(view, {
+      repo: 'itdojp/ae-framework',
+      eventName: 'workflow_run',
+      workflowRunHeadSha: 'abc123',
+      workflowRunHeadRepository: 'itdojp/ae-framework',
+    })).toEqual({ ok: true, reason: '' });
+    expect(validatePrWriteTarget({
+      ...view,
+      headRepository: { nameWithOwner: 'fork/ae-framework' },
+      isCrossRepository: true,
+    }, {
+      repo: 'itdojp/ae-framework',
+      eventName: 'workflow_run',
+      workflowRunHeadSha: 'abc123',
+      workflowRunHeadRepository: 'fork/ae-framework',
+    }).reason).toContain('cross-repository');
+    expect(validatePrWriteTarget(view, {
+      repo: 'itdojp/ae-framework',
+      eventName: 'workflow_run',
+      workflowRunHeadSha: 'def456',
+      workflowRunHeadRepository: 'itdojp/ae-framework',
+    }).reason).toContain('does not match current PR head');
+    expect(validatePrWriteTarget({
+      ...view,
+      state: 'CLOSED',
+    }, {
+      repo: 'itdojp/ae-framework',
+      eventName: 'schedule',
+    }).reason).toContain('not open');
   });
 });

@@ -18,6 +18,7 @@ import {
   resolveReviewActors,
   toActorSet,
 } from './lib/automation-guards.mjs';
+import { collectResolvableReviewThreadIds } from './lib/review-thread-resolution.mjs';
 import { buildActionTaskFromComment, summarizeActionTasks } from './lib/review-comment-classifier.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
@@ -535,23 +536,29 @@ const main = async () => {
     }
   }
 
-  // Resolve threads where all Copilot comments were handled (applied or already-applied).
+  // Resolve only automation-only threads where every automation comment was handled
+  // (applied or already-applied). Mixed human/automation threads stay unresolved.
   const [owner, name] = repo.split('/');
   let resolvedThreads = 0;
   try {
-    const query = `query($owner:String!, $repo:String!, $number:Int!) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first: 100) {\n        nodes {\n          id\n          isResolved\n          comments(first: 100) {\n            nodes {\n              author { login }\n              databaseId\n            }\n          }\n        }\n      }\n    }\n  }\n}`;
-    const data = await graphqlQuery(query, { owner, repo: name, number: prNumber });
-    const threads = data?.data?.repository?.pullRequest?.reviewThreads?.nodes || [];
-    for (const thread of threads) {
-      const comments = thread?.comments?.nodes || [];
-      const copilotComments = comments.filter(
-        (c) => c?.author?.login && reviewActorSet.has(String(c.author.login).toLowerCase())
-      );
-      if (copilotComments.length === 0) continue;
-      const allHandled = copilotComments.every((c) => handledCommentIds.has(Number(c.databaseId)));
-      if (!allHandled) continue;
-      if (thread.isResolved) continue;
-      await resolveReviewThread(thread.id);
+    const fetchReviewThreadPage = async (cursor) => {
+      const afterClause = cursor ? ', after:$cursor' : '';
+      const query = `query($owner:String!, $repo:String!, $number:Int!${cursor ? ', $cursor:String!' : ''}) {\n  repository(owner:$owner, name:$repo) {\n    pullRequest(number:$number) {\n      reviewThreads(first: 100${afterClause}) {\n        pageInfo { hasNextPage endCursor }\n        nodes {\n          id\n          isResolved\n          comments(first: 100) {\n            pageInfo { hasNextPage }\n            nodes {\n              author { login }\n              databaseId\n            }\n          }\n        }\n      }\n    }\n  }\n}`;
+      const variables = cursor
+        ? { owner, repo: name, number: prNumber, cursor }
+        : { owner, repo: name, number: prNumber };
+      const data = await graphqlQuery(query, variables);
+      return data?.data?.repository?.pullRequest?.reviewThreads || { nodes: [], pageInfo: { hasNextPage: false } };
+    };
+
+    const resolvableThreadIds = await collectResolvableReviewThreadIds({
+      fetchPage: fetchReviewThreadPage,
+      handledCommentIds,
+      reviewActorSet,
+    });
+
+    for (const threadId of resolvableThreadIds) {
+      await resolveReviewThread(threadId);
       resolvedThreads += 1;
       await sleep(COPILOT_AUTO_FIX_THREAD_RESOLVE_SLEEP_MS_DEFAULT);
     }

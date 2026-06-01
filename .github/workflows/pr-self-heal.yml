@@ -37,7 +37,7 @@ permissions:
   actions: write
   contents: read
   issues: write
-  pull-requests: write
+  pull-requests: read
 
 jobs:
   self-heal:
@@ -95,6 +95,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number || '' }}
           WORKFLOW_RUN_PR_NUMBERS: ${{ github.event_name == 'workflow_run' && join(github.event.workflow_run.pull_requests.*.number, ',') || '' }}
+          WORKFLOW_RUN_HEAD_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || '' }}
+          WORKFLOW_RUN_HEAD_REPOSITORY: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name || '' }}
           AE_SELF_HEAL_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || vars.AE_SELF_HEAL_DRY_RUN || 'false' }}
           AE_SELF_HEAL_MAX_ROUNDS: ${{ github.event_name == 'workflow_dispatch' && inputs.max_rounds || vars.AE_SELF_HEAL_MAX_ROUNDS || '3' }}
           AE_SELF_HEAL_MAX_AGE_MINUTES: ${{ vars.AE_SELF_HEAL_MAX_AGE_MINUTES || '180' }}
