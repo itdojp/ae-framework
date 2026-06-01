@@ -58,7 +58,8 @@ export async function registerHealthEndpoint(
   if (!fastify.hasRoute({ method: 'GET', url: '/health' })) {
     fastify.get('/health', async (_request: FastifyRequest, reply: FastifyReply) => {
       reply.status(200).send({
-        status: 'ok',
+        status: 'healthy',
+        service: 'ae-framework-api',
         timestamp: new Date().toISOString(),
       });
     });

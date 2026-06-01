@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import Fastify from 'fastify';
 import type { FastifyInstance } from 'fastify';
 import { formatGWT } from '../utils/gwt-format';
 import { createServer } from '../../src/api/server.js';
+import { registerHealthEndpoint } from '../../src/health/health-endpoint.js';
 
 const closeApp = async (app: FastifyInstance) => {
   await app.close();
@@ -65,6 +67,34 @@ describe('diagnostic endpoint authorization', () => {
         });
         expect(aliveBody).not.toHaveProperty('pid');
         expect(aliveBody).not.toHaveProperty('argv');
+      } finally {
+        await closeApp(app);
+      }
+    },
+  );
+
+  it(
+    formatGWT(
+      'standalone health endpoint bundle',
+      'registerHealthEndpoint provides /health directly',
+      'uses the same minimal public health contract as the API server',
+    ),
+    async () => {
+      const app = Fastify({ logger: false });
+      await registerHealthEndpoint(app);
+      await app.ready();
+
+      try {
+        const health = await app.inject({ method: 'GET', url: '/health' });
+        const detailed = await app.inject({ method: 'GET', url: '/health/detailed' });
+
+        expect(health.statusCode).toBe(200);
+        expect(JSON.parse(health.body)).toEqual({
+          status: 'healthy',
+          service: 'ae-framework-api',
+          timestamp: expect.any(String),
+        });
+        expect(detailed.statusCode).toBe(403);
       } finally {
         await closeApp(app);
       }
