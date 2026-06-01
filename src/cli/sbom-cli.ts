@@ -430,9 +430,12 @@ jobs:
       env:
         DT_API_KEY: \${{ secrets.DEPENDENCY_TRACK_API_KEY }}
         DT_BASE_URL: \${{ secrets.DEPENDENCY_TRACK_URL }}
+        DT_ALLOWED_HOSTS: \${{ vars.DEPENDENCY_TRACK_ALLOWED_HOSTS }}
       run: |
         if [[ -n "\$DT_API_KEY" && -n "\$DT_BASE_URL" ]]; then
-          curl -X "PUT" "\$DT_BASE_URL/api/v1/bom" \\
+          node -e 'const [rawUrl, rawAllowedHosts] = process.argv.slice(1); const allowedHosts = new Set(String(rawAllowedHosts || "").split(/[\\s,]+/).filter(Boolean).map((value) => { try { return new URL(value).host.toLowerCase(); } catch { return value.toLowerCase(); } })); const url = new URL(rawUrl); if (url.protocol !== "https:") throw new Error("Dependency Track URL must use HTTPS"); if (url.username || url.password) throw new Error("Dependency Track URL must not contain userinfo"); if (!url.hostname) throw new Error("Dependency Track URL must include a hostname"); if (!allowedHosts.has(url.hostname.toLowerCase()) && !allowedHosts.has(url.host.toLowerCase())) throw new Error("Dependency Track host must be allowlisted via DEPENDENCY_TRACK_ALLOWED_HOSTS");' "\$DT_BASE_URL" "\$DT_ALLOWED_HOSTS"
+          DT_BOM_URL="\${DT_BASE_URL%/}/api/v1/bom"
+          curl --fail --show-error --silent --proto '=https' --tlsv1.2 -X "PUT" "\$DT_BOM_URL" \\
             -H "X-API-Key: \$DT_API_KEY" \\
             -H "Content-Type: application/json" \\
             -d @sbom.json
@@ -525,7 +528,9 @@ dependency_tracking:
   script:
     - |
       if [[ -n "\$DEPENDENCY_TRACK_API_KEY" && -n "\$DEPENDENCY_TRACK_URL" ]]; then
-        curl -X "PUT" "\$DEPENDENCY_TRACK_URL/api/v1/bom" \\
+        node -e 'const [rawUrl, rawAllowedHosts] = process.argv.slice(1); const allowedHosts = new Set(String(rawAllowedHosts || "").split(/[\\s,]+/).filter(Boolean).map((value) => { try { return new URL(value).host.toLowerCase(); } catch { return value.toLowerCase(); } })); const url = new URL(rawUrl); if (url.protocol !== "https:") throw new Error("Dependency Track URL must use HTTPS"); if (url.username || url.password) throw new Error("Dependency Track URL must not contain userinfo"); if (!url.hostname) throw new Error("Dependency Track URL must include a hostname"); if (!allowedHosts.has(url.hostname.toLowerCase()) && !allowedHosts.has(url.host.toLowerCase())) throw new Error("Dependency Track host must be allowlisted via DEPENDENCY_TRACK_ALLOWED_HOSTS");' "\$DEPENDENCY_TRACK_URL" "\$DEPENDENCY_TRACK_ALLOWED_HOSTS"
+        DEPENDENCY_TRACK_BOM_URL="\${DEPENDENCY_TRACK_URL%/}/api/v1/bom"
+        curl --fail --show-error --silent --proto '=https' --tlsv1.2 -X "PUT" "\$DEPENDENCY_TRACK_BOM_URL" \\
           -H "X-API-Key: \$DEPENDENCY_TRACK_API_KEY" \\
           -H "Content-Type: application/json" \\
           -d @sbom.json
@@ -765,7 +770,9 @@ stages:
                 script {
                     if (env.DEPENDENCY_TRACK_API_KEY && env.DEPENDENCY_TRACK_URL) {
                         sh '''
-                            curl -X "PUT" "\${DEPENDENCY_TRACK_URL}/api/v1/bom" \\
+                            node -e 'const [rawUrl, rawAllowedHosts] = process.argv.slice(1); const allowedHosts = new Set(String(rawAllowedHosts || "").split(/[\\s,]+/).filter(Boolean).map((value) => { try { return new URL(value).host.toLowerCase(); } catch { return value.toLowerCase(); } })); const url = new URL(rawUrl); if (url.protocol !== "https:") throw new Error("Dependency Track URL must use HTTPS"); if (url.username || url.password) throw new Error("Dependency Track URL must not contain userinfo"); if (!url.hostname) throw new Error("Dependency Track URL must include a hostname"); if (!allowedHosts.has(url.hostname.toLowerCase()) && !allowedHosts.has(url.host.toLowerCase())) throw new Error("Dependency Track host must be allowlisted via DEPENDENCY_TRACK_ALLOWED_HOSTS");' "\${DEPENDENCY_TRACK_URL}" "\${DEPENDENCY_TRACK_ALLOWED_HOSTS}"
+                            DEPENDENCY_TRACK_BOM_URL="\${DEPENDENCY_TRACK_URL%/}/api/v1/bom"
+                            curl --fail --show-error --silent --proto '=https' --tlsv1.2 -X "PUT" "\${DEPENDENCY_TRACK_BOM_URL}" \\
                               -H "X-API-Key: \${DEPENDENCY_TRACK_API_KEY}" \\
                               -H "Content-Type: application/json" \\
                               -d @sbom.json

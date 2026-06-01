@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
+import { sanitizeExternalResponseText, validateTokenBearingUrl } from './outbound-url-policy.mjs';
 
 function isErrnoException(value) {
   if (!value || typeof value !== 'object') return false;
@@ -55,6 +56,7 @@ function parseArgs(argv) {
 
 Options:
   -h, --host <url>     Grafana base URL (default: http://localhost:3000)
+                        Remote hosts require HTTPS and GRAFANA_ALLOWED_HOSTS allowlisting.
   -u, --uid <uid>      Dashboard UID to export (required if --config is absent)
   -t, --token <token>  Grafana API token with dashboard:read scope
   -o, --output <file>  Output JSON path (default: docs/trace/grafana/tempo-dashboard.json)
@@ -105,16 +107,21 @@ function loadDashboardConfig(configPath) {
 }
 
 async function exportDashboard({ host, uid, token, output, dryRun }) {
-  const url = new URL(`/api/dashboards/uid/${encodeURIComponent(uid)}`, host).toString();
+  const grafanaBaseUrl = validateTokenBearingUrl(host, {
+    serviceName: 'Grafana',
+    allowedHostsEnv: 'GRAFANA_ALLOWED_HOSTS',
+    allowLocalhostHttp: true,
+  });
+  const url = new URL(`/api/dashboards/uid/${encodeURIComponent(uid)}`, grafanaBaseUrl).toString();
   const headers = { 'Content-Type': 'application/json' };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, { headers });
+  const response = await fetch(url, { headers, redirect: 'error' });
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Failed to fetch dashboard (${response.status}): ${body}`);
+    throw new Error(`Failed to fetch dashboard (${response.status}): ${sanitizeExternalResponseText(body)}`);
   }
 
   const data = await response.json();

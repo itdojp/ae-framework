@@ -185,21 +185,53 @@ jobs:
       env:
         DT_API_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
         DT_BASE_URL: ${{ vars.DEPENDENCY_TRACK_URL }}
+        DT_ALLOWED_HOSTS: ${{ vars.DEPENDENCY_TRACK_ALLOWED_HOSTS }}
         DT_PROJECT_UUID: ${{ vars.DEPENDENCY_TRACK_PROJECT_UUID }}
       run: |
+        validate_dependency_track_url() {
+          node --input-type=module - "$DT_BASE_URL" "$DT_ALLOWED_HOSTS" <<'NODE'
+        const [rawUrl, rawAllowedHosts] = process.argv.slice(2);
+        const allowedHosts = new Set(String(rawAllowedHosts || '').split(/[\s,]+/).filter(Boolean).map((value) => {
+          try {
+            const parsed = new URL(value);
+            return parsed.host.toLowerCase();
+          } catch {
+            return value.toLowerCase();
+          }
+        }));
+        try {
+          const url = new URL(rawUrl);
+          if (url.protocol !== 'https:') throw new Error('Dependency Track URL must use HTTPS');
+          if (url.username || url.password) throw new Error('Dependency Track URL must not contain userinfo');
+          if (!url.hostname) throw new Error('Dependency Track URL must include a hostname');
+          const hostname = url.hostname.toLowerCase();
+          const host = url.host.toLowerCase();
+          if (!allowedHosts.has(hostname) && !allowedHosts.has(host)) {
+            throw new Error('Dependency Track host must be allowlisted via DEPENDENCY_TRACK_ALLOWED_HOSTS');
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error(`::error::${message}`);
+          process.exit(1);
+        }
+        NODE
+        }
+
         if [[ -n "$DT_API_KEY" && -n "$DT_BASE_URL" ]]; then
+          validate_dependency_track_url
           printf -- "%s\n" "Uploading SBOM to Dependency Track..."
+          DT_BOM_URL="${DT_BASE_URL%/}/api/v1/bom"
           
           # Upload to specific project if UUID is provided
           if [[ -n "$DT_PROJECT_UUID" ]]; then
-            curl -X "PUT" "$DT_BASE_URL/api/v1/bom" \
+            curl --fail --show-error --silent --proto '=https' --tlsv1.2 -X "PUT" "$DT_BOM_URL" \
               -H "X-API-Key: $DT_API_KEY" \
               -H "Content-Type: application/json" \
               -F "project=$DT_PROJECT_UUID" \
               -F "bom=@sbom.json"
           else
             # Auto-create project from SBOM metadata
-            curl -X "PUT" "$DT_BASE_URL/api/v1/bom" \
+            curl --fail --show-error --silent --proto '=https' --tlsv1.2 -X "PUT" "$DT_BOM_URL" \
               -H "X-API-Key: $DT_API_KEY" \
               -H "Content-Type: application/json" \
               -d @sbom.json
