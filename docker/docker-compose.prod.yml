@@ -67,10 +67,10 @@ services:
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./config/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
-    ports:
-      - "4317:4317"   # OTLP gRPC receiver
-      - "4318:4318"   # OTLP HTTP receiver
-      - "8889:8889"   # Prometheus metrics
+    expose:
+      - "4317"   # OTLP gRPC receiver, internal network only
+      - "4318"   # OTLP HTTP receiver, internal network only
+      - "8889"   # Prometheus metrics, internal network only
     environment:
       - OTEL_LOG_LEVEL=warn
     healthcheck:
@@ -90,8 +90,8 @@ services:
   # Redis for caching and session storage (production)
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    expose:
+      - "6379"   # Redis is internal network only; publish via an explicit operator override if needed.
     command: ["redis-server", "--appendonly", "yes", "--requirepass-file", "/run/secrets/redis_password"]
     volumes:
       - redis_data:/data

@@ -113,6 +113,18 @@ compose_run() {
   container::compose "$@"
 }
 
+compose_config() {
+  local file="$1"
+  if [[ "$file" == "podman/compose.prod.yaml" ]]; then
+    POSTGRES_USER="${POSTGRES_USER:-ae_framework_smoke}" \
+    POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-ae_framework_smoke_password}" \
+    POSTGRES_DB="${POSTGRES_DB:-ae_framework_smoke}" \
+      compose_run -f "$file" config
+    return
+  fi
+  compose_run -f "$file" config
+}
+
 cleanup() {
   local status=$?
   if [[ "$DO_COMPOSE_UP" == true ]]; then
@@ -160,7 +172,7 @@ if [[ "$SKIP_COMPOSE" == false ]]; then
       continue
     fi
     log "validating compose file: $file"
-    compose_run -f "$file" config >/dev/null || fail "Compose validation failed for $file"
+    compose_config "$file" >/dev/null || fail "Compose validation failed for $file"
   done
 else
   log "skipping compose validation (--skip-compose)"
