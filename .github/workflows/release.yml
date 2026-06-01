@@ -45,7 +45,11 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: 22
-      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Install dependencies (frozen lockfile)
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: pnpm install --frozen-lockfile
       - run: pnpm run build
 
       - name: Bin smoke check
