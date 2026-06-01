@@ -20,6 +20,7 @@ const buildArgValuePattern = /^[A-Za-z0-9._+@:/,=-]*$/;
 const registryComponentPattern = /^(?:localhost|[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*)(?::[0-9]{1,5})?$/;
 const repositoryComponentPattern = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 const tagPattern = /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/;
+const tagPrefixBoundaryPattern = /[._-]/;
 
 export interface ContainerImagePolicy {
   /** Prefixes of fully-qualified image references that may be pushed after request approval. */
@@ -102,32 +103,18 @@ export const validateBuildArgs = (buildArgs: Record<string, string> = {}): Recor
   return sanitized;
 };
 
-export const validateImageReference = (reference: string): ValidatedImageReference => {
-  if (typeof reference !== 'string' || reference.length === 0 || reference.length > MAX_IMAGE_REFERENCE_LENGTH) {
-    throw new Error('Image reference must be a non-empty string within length limits');
-  }
-  if ([...reference].some((char) => {
-    const code = char.charCodeAt(0);
-    return code <= 32 || code === 127 || ';$`|&<>\\'.includes(char);
-  })) {
-    throw new Error(`Image reference contains unsupported characters: ${JSON.stringify(reference)}`);
-  }
-  if (reference.includes('@')) {
-    throw new Error('Build image reference must use a tag, not a digest');
-  }
+const imageReferenceHasUnsupportedCharacters = (reference: string): boolean => [...reference].some((char) => {
+  const code = char.charCodeAt(0);
+  return code <= 32 || code === 127 || ';$`|&<>\\'.includes(char);
+});
 
+const getImageTagSeparatorIndex = (reference: string): number => {
   const lastSlash = reference.lastIndexOf('/');
   const lastColon = reference.lastIndexOf(':');
-  if (lastColon <= lastSlash) {
-    throw new Error(`Image reference must include an explicit tag: ${reference}`);
-  }
+  return lastColon > lastSlash ? lastColon : -1;
+};
 
-  const name = reference.slice(0, lastColon);
-  const tag = reference.slice(lastColon + 1);
-  if (!name || !tagPattern.test(tag)) {
-    throw new Error(`Invalid image tag in reference: ${reference}`);
-  }
-
+const validateImageRepositoryName = (name: string, reference: string): { registry?: string } => {
   const components = name.split('/');
   let registry: string | undefined;
   const first = components[0];
@@ -145,6 +132,89 @@ export const validateImageReference = (reference: string): ValidatedImageReferen
   if (repositoryComponents.length === 0 || repositoryComponents.some((component) => !repositoryComponentPattern.test(component))) {
     throw new Error(`Invalid image repository in reference: ${reference}`);
   }
+
+  return registry !== undefined ? { registry } : {};
+};
+
+const validateAllowedPushPrefix = (prefix: string): string => {
+  if (typeof prefix !== 'string' || prefix.length === 0 || prefix.length > MAX_IMAGE_REFERENCE_LENGTH) {
+    throw new Error('Allowed image push prefixes must be non-empty strings within length limits');
+  }
+  if (imageReferenceHasUnsupportedCharacters(prefix)) {
+    throw new Error(`Allowed image push prefix contains unsupported characters: ${JSON.stringify(prefix)}`);
+  }
+  if (prefix.includes('@')) {
+    throw new Error('Allowed image push prefix must use repository or tag prefixes, not digests');
+  }
+
+  const tagSeparator = getImageTagSeparatorIndex(prefix);
+  if (tagSeparator >= 0) {
+    const name = prefix.slice(0, tagSeparator);
+    const tagPrefix = prefix.slice(tagSeparator + 1);
+    if (!tagPrefix || !tagPattern.test(tagPrefix)) {
+      throw new Error(`Invalid image tag prefix in allowed push policy: ${prefix}`);
+    }
+    validateImageRepositoryName(name, prefix);
+    return prefix;
+  }
+
+  const namePrefix = prefix.endsWith('/') ? prefix.slice(0, -1) : prefix;
+  if (!namePrefix) {
+    throw new Error(`Invalid image repository prefix in allowed push policy: ${prefix}`);
+  }
+  validateImageRepositoryName(namePrefix, prefix);
+  return prefix;
+};
+
+const isTagPrefixBoundary = (tagPrefix: string, nextChar: string): boolean => {
+  const lastPrefixChar = tagPrefix.charAt(tagPrefix.length - 1);
+  return tagPrefixBoundaryPattern.test(lastPrefixChar) || tagPrefixBoundaryPattern.test(nextChar);
+};
+
+const matchesAllowedPushPrefix = (reference: string, rawPrefix: string): boolean => {
+  const prefix = validateAllowedPushPrefix(rawPrefix);
+  if (!reference.startsWith(prefix)) {
+    return false;
+  }
+  if (reference.length === prefix.length) {
+    return true;
+  }
+
+  const nextChar = reference.charAt(prefix.length);
+  const prefixTagSeparator = getImageTagSeparatorIndex(prefix);
+  if (prefixTagSeparator >= 0) {
+    return isTagPrefixBoundary(prefix.slice(prefixTagSeparator + 1), nextChar);
+  }
+
+  if (prefix.endsWith('/')) {
+    return true;
+  }
+  return nextChar === '/' || nextChar === ':';
+};
+
+export const validateImageReference = (reference: string): ValidatedImageReference => {
+  if (typeof reference !== 'string' || reference.length === 0 || reference.length > MAX_IMAGE_REFERENCE_LENGTH) {
+    throw new Error('Image reference must be a non-empty string within length limits');
+  }
+  if (imageReferenceHasUnsupportedCharacters(reference)) {
+    throw new Error(`Image reference contains unsupported characters: ${JSON.stringify(reference)}`);
+  }
+  if (reference.includes('@')) {
+    throw new Error('Build image reference must use a tag, not a digest');
+  }
+
+  const lastColon = getImageTagSeparatorIndex(reference);
+  if (lastColon < 0) {
+    throw new Error(`Image reference must include an explicit tag: ${reference}`);
+  }
+
+  const name = reference.slice(0, lastColon);
+  const tag = reference.slice(lastColon + 1);
+  if (!name || !tagPattern.test(tag)) {
+    throw new Error(`Invalid image tag in reference: ${reference}`);
+  }
+
+  const { registry } = validateImageRepositoryName(name, reference);
 
   return {
     reference,
@@ -164,7 +234,7 @@ export const assertPushPolicy = ({ imageRef, push, pushApproval, policy }: PushP
   if (allowedPrefixes.length === 0) {
     throw new Error('Pushing verification images is disabled until allowedPushPrefixes is configured');
   }
-  if (!allowedPrefixes.some((prefix) => imageRef.reference.startsWith(prefix))) {
+  if (!allowedPrefixes.some((prefix) => matchesAllowedPushPrefix(imageRef.reference, prefix))) {
     throw new Error(`Image reference is not allowed by container image push policy: ${imageRef.reference}`);
   }
 };

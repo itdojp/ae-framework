@@ -109,6 +109,43 @@ describe('container security policy', () => {
       pushApproval: CONTAINER_PUSH_APPROVAL,
       policy: { allowedPushPrefixes: ['ghcr.io/example/ae-framework/'] },
     })).not.toThrow();
+
+    expect(() => assertPushPolicy({
+      imageRef,
+      push: true,
+      pushApproval: CONTAINER_PUSH_APPROVAL,
+      policy: { allowedPushPrefixes: ['ghcr.io/example/ae-framework'] },
+    })).not.toThrow();
+    expect(() => assertPushPolicy({
+      imageRef: validateImageReference('ghcr.io/example/ae-framework:v1'),
+      push: true,
+      pushApproval: CONTAINER_PUSH_APPROVAL,
+      policy: { allowedPushPrefixes: ['ghcr.io/example/ae-framework'] },
+    })).not.toThrow();
+    expect(() => assertPushPolicy({
+      imageRef: validateImageReference('ghcr.io/example/ae-framework-evil:v1'),
+      push: true,
+      pushApproval: CONTAINER_PUSH_APPROVAL,
+      policy: { allowedPushPrefixes: ['ghcr.io/example/ae-framework'] },
+    })).toThrow(/not allowed/);
+    expect(() => assertPushPolicy({
+      imageRef: validateImageReference('ghcr.io/example/ae-framework:release-2026'),
+      push: true,
+      pushApproval: CONTAINER_PUSH_APPROVAL,
+      policy: { allowedPushPrefixes: ['ghcr.io/example/ae-framework:release'] },
+    })).not.toThrow();
+    expect(() => assertPushPolicy({
+      imageRef: validateImageReference('ghcr.io/example/ae-framework:releasecandidate'),
+      push: true,
+      pushApproval: CONTAINER_PUSH_APPROVAL,
+      policy: { allowedPushPrefixes: ['ghcr.io/example/ae-framework:release'] },
+    })).toThrow(/not allowed/);
+    expect(() => assertPushPolicy({
+      imageRef,
+      push: true,
+      pushApproval: CONTAINER_PUSH_APPROVAL,
+      policy: { allowedPushPrefixes: ['ghcr.io/example/ae-framework;id'] },
+    })).toThrow(/unsupported characters/);
   });
 
   it('defaults cleanup to dry-run and requires destructive confirmation tokens', () => {
