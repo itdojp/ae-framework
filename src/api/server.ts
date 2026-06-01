@@ -5,12 +5,14 @@ import { runtimeGuard, CommonSchemas, ViolationSeverity } from "../telemetry/run
 import { enhancedTelemetry, TELEMETRY_ATTRIBUTES } from "../telemetry/enhanced-telemetry.js";
 import { trace } from '@opentelemetry/api';
 import { registerHealthEndpoint } from '../health/health-endpoint.js';
+import { requireAdminDiagnosticsAuth } from '../security/admin-diagnostics-auth.js';
 import { IdempotencyConflictError, InsufficientStockError } from '../domain/entities.js';
 import { InMemoryInventoryRepository, InventoryServiceImpl } from '../domain/services.js';
 import type { InventoryService } from '../domain/services.js';
 
 interface CreateServerOptions {
   inventoryService?: InventoryService;
+  adminDiagnosticsToken?: string;
 }
 
 const createFallbackInventoryService = (): InventoryService =>
@@ -32,6 +34,9 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
 
   const tracer = trace.getTracer('ae-framework-api');
   const inventoryService = options.inventoryService ?? createFallbackInventoryService();
+  const adminDiagnosticsAuthOptions = options.adminDiagnosticsToken
+    ? { token: options.adminDiagnosticsToken }
+    : {};
 
   // Register security headers middleware with development config for testing
   const securityConfig = process.env['NODE_ENV'] === 'test' 
@@ -308,6 +313,10 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
   // Runtime guard statistics endpoint
   app.get("/api/runtime-guard/stats", async (req, reply) => {
     try {
+      if (!requireAdminDiagnosticsAuth(req, reply, adminDiagnosticsAuthOptions)) {
+        return;
+      }
+
       const stats = runtimeGuard.getViolationStats();
       return reply.code(200).send({
         violations: stats,
@@ -326,7 +335,7 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
   });
 
   // Register health check endpoints for Docker/Kubernetes
-  await registerHealthEndpoint(app);
+  await registerHealthEndpoint(app, adminDiagnosticsAuthOptions);
 
   return app;
 }

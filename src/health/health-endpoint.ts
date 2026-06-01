@@ -8,6 +8,10 @@ import { telemetryService } from '../telemetry/telemetry-service.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import {
+  type AdminDiagnosticsAuthOptions,
+  requireAdminDiagnosticsAuth,
+} from '../security/admin-diagnostics-auth.js';
 
 // Read version from package.json at startup
 const __filename = fileURLToPath(import.meta.url);
@@ -46,22 +50,28 @@ export interface HealthStatus {
   };
 }
 
-export async function registerHealthEndpoint(fastify: FastifyInstance): Promise<void> {
+export async function registerHealthEndpoint(
+  fastify: FastifyInstance,
+  options: AdminDiagnosticsAuthOptions = {},
+): Promise<void> {
   // Simple health check endpoint
   if (!fastify.hasRoute({ method: 'GET', url: '/health' })) {
-    fastify.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-      const healthStatus = await getHealthStatus();
-      
-      const httpStatus = healthStatus.status === 'healthy' ? 200 :
-                         healthStatus.status === 'degraded' ? 200 : 503;
-      
-      reply.status(httpStatus).send(healthStatus);
+    fastify.get('/health', async (_request: FastifyRequest, reply: FastifyReply) => {
+      reply.status(200).send({
+        status: 'healthy',
+        service: 'ae-framework-api',
+        timestamp: new Date().toISOString(),
+      });
     });
   }
 
   // Detailed health check for monitoring
   if (!fastify.hasRoute({ method: 'GET', url: '/health/detailed' })) {
     fastify.get('/health/detailed', async (request: FastifyRequest, reply: FastifyReply) => {
+      if (!requireAdminDiagnosticsAuth(request, reply, options)) {
+        return;
+      }
+
       const healthStatus = await getDetailedHealthStatus();
       
       const httpStatus = healthStatus.status === 'healthy' ? 200 :
@@ -87,12 +97,11 @@ export async function registerHealthEndpoint(fastify: FastifyInstance): Promise<
 
   // Liveness probe for Kubernetes/Docker orchestration
   if (!fastify.hasRoute({ method: 'GET', url: '/alive' })) {
-    fastify.get('/alive', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.get('/alive', async (_request: FastifyRequest, reply: FastifyReply) => {
       // Simple liveness check - if we can respond, we're alive
       reply.status(200).send({ 
         status: 'alive', 
-        timestamp: new Date().toISOString(),
-        pid: process.pid
+        timestamp: new Date().toISOString()
       });
     });
   }
@@ -156,20 +165,18 @@ async function getHealthStatus(): Promise<HealthStatus> {
 async function getDetailedHealthStatus(): Promise<HealthStatus & { 
   detailed: {
     process: {
-      pid: number;
-      ppid: number;
-      title: string;
-      argv: string[];
+      uptimeSeconds: number;
+      nodeVersion: string;
+      platform: string;
     };
     memory: {
-      rss: number;
-      heapTotal: number;
-      heapUsed: number;
-      external: number;
-      arrayBuffers: number;
+      heapUsedBytes: number;
+      heapTotalBytes: number;
+      usagePercent: number;
     };
     cpu: {
-      usage: NodeJS.CpuUsage;
+      userMicroseconds: number;
+      systemMicroseconds: number;
     };
   }
 }> {
@@ -181,14 +188,18 @@ async function getDetailedHealthStatus(): Promise<HealthStatus & {
     ...basicHealth,
     detailed: {
       process: {
-        pid: process.pid,
-        ppid: process.ppid,
-        title: process.title,
-        argv: process.argv
+        uptimeSeconds: Math.floor(process.uptime()),
+        nodeVersion: process.version,
+        platform: process.platform
       },
-      memory: memoryUsage,
+      memory: {
+        heapUsedBytes: memoryUsage.heapUsed,
+        heapTotalBytes: memoryUsage.heapTotal,
+        usagePercent: basicHealth.checks.memory.percentage
+      },
       cpu: {
-        usage: cpuUsage
+        userMicroseconds: cpuUsage.user,
+        systemMicroseconds: cpuUsage.system
       }
     }
   };

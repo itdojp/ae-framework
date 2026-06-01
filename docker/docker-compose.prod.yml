@@ -20,6 +20,9 @@ services:
       # Security configuration
       - HELMET_ENABLED=true
       - RATE_LIMIT_ENABLED=true
+      # Optional: set to enable authenticated /health/detailed and /api/runtime-guard/stats.
+      # Leave empty to keep detailed diagnostics disabled on the published app port.
+      - AE_ADMIN_TOKEN=${AE_ADMIN_TOKEN:-}
     volumes:
       # Production state directory (read-only filesystem except for app data)
       - ae_prod_data:/app/.ae
