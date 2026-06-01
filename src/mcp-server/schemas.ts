@@ -247,6 +247,9 @@ export type CleanupArgs = z.infer<typeof CleanupArgsSchema>;
 export const AnalyzeTDDArgsSchema = z.object({
   path: z.string().optional().default(process.cwd()),
   phase: z.string().optional(),
+  testCommand: z.enum(['npm test', 'pnpm test', 'yarn test']).optional().default('npm test'),
+  dryRun: z.boolean().optional().default(true),
+  testExecutionApproval: z.enum(['none', 'approved-tdd-test-execution']).optional().default('none'),
 });
 export type AnalyzeTDDArgs = z.infer<typeof AnalyzeTDDArgsSchema>;
 
@@ -262,8 +265,10 @@ export const ValidateTestFirstArgsSchema = z.object({
 export type ValidateTestFirstArgs = z.infer<typeof ValidateTestFirstArgsSchema>;
 
 export const RedGreenCycleArgsSchema = z.object({
-  testCommand: z.string().optional().default('npm test'),
+  testCommand: z.enum(['npm test', 'pnpm test', 'yarn test']).optional().default('npm test'),
   expectRed: z.boolean().optional().default(false),
+  dryRun: z.boolean().optional().default(true),
+  testExecutionApproval: z.enum(['none', 'approved-tdd-test-execution']).optional().default('none'),
 });
 export type RedGreenCycleArgs = z.infer<typeof RedGreenCycleArgsSchema>;
 
