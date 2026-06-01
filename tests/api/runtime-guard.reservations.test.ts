@@ -512,13 +512,14 @@ describe('Reservations API telemetry integration', () => {
       };
       runtimeGuardMocks.getViolationStats.mockReturnValue(mockStats);
 
-      const app: FastifyInstance = await createServer();
+      const app: FastifyInstance = await createServer({ adminDiagnosticsToken: 'test-admin-token' });
       await app.ready();
 
       try {
         const response = await app.inject({
           method: 'GET',
           url: '/api/runtime-guard/stats',
+          headers: { 'x-ae-admin-token': 'test-admin-token' },
         });
 
         expect(response.statusCode).toBe(200);
@@ -543,7 +544,7 @@ describe('Reservations API telemetry integration', () => {
         throw new Error('stats failed');
       });
 
-      const app: FastifyInstance = await createServer();
+      const app: FastifyInstance = await createServer({ adminDiagnosticsToken: 'test-admin-token' });
       const spanSpy = vi.fn();
       app.addHook('preHandler', (request, _reply, done) => {
         const span: any = request.span;
@@ -562,6 +563,7 @@ describe('Reservations API telemetry integration', () => {
         const response = await app.inject({
           method: 'GET',
           url: '/api/runtime-guard/stats',
+          headers: { 'x-ae-admin-token': 'test-admin-token' },
         });
 
         expect(response.statusCode).toBe(500);
@@ -583,7 +585,7 @@ describe('Reservations API telemetry integration', () => {
         throw new Error('stats failed');
       });
 
-      const app: FastifyInstance = await createServer();
+      const app: FastifyInstance = await createServer({ adminDiagnosticsToken: 'test-admin-token' });
       app.addHook('preHandler', (request, _reply, done) => {
         // @ts-expect-error span is cleared to simulate missing instrumentation
         delete request.span;
@@ -595,6 +597,7 @@ describe('Reservations API telemetry integration', () => {
         const response = await app.inject({
           method: 'GET',
           url: '/api/runtime-guard/stats',
+          headers: { 'x-ae-admin-token': 'test-admin-token' },
         });
 
         expect(response.statusCode).toBe(500);

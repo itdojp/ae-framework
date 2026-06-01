@@ -11,6 +11,9 @@ services:
       PORT: "3000"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel:4317
       OTEL_RESOURCE_ATTRIBUTES: service.name=ae-framework,service.version=1.0.0
+      # Optional: set to enable authenticated /health/detailed and /api/runtime-guard/stats.
+      # Leave empty to keep detailed diagnostics disabled on the published app port.
+      AE_ADMIN_TOKEN: ${AE_ADMIN_TOKEN:-}
     ports:
       - "3000:3000"
     user: "1001:1001"

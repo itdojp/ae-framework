@@ -31,7 +31,8 @@ hour,count
 - Verify Lite ワークフローで `export-runtime-guard-timeseries.mjs` を実行し、CSV をアーティファクトとして保存するタスクを追加予定。
 
 ## データソース
-- API: `/api/runtime-guard/stats` が最新違反状況を返却。Verify Lite pipeline ではこのエンドポイントを呼び出して `artifacts/runtime-guard/runtime-guard-stats.json` を生成する。
+- API: `/api/runtime-guard/stats` が最新違反状況を返却。Detailed diagnostics と同じ管理者向け endpoint のため、`AE_ADMIN_TOKEN`（または `AE_DIAGNOSTICS_ADMIN_TOKEN`）を設定し、`Authorization: Bearer <token>` または `x-ae-admin-token: <token>` で呼び出す。トークン未設定時は fail-closed で `403` を返す。
+- Verify Lite pipeline でこの API を使う場合は、公開ネットワークから直接叩かず、内部ネットワークまたは認証済み proxy 経由で `artifacts/runtime-guard/runtime-guard-stats.json` を生成する。
 - Step Summary: `scripts/telemetry/render-runtime-guard-summary.mjs` で Markdown を生成し、Gate から参照できるようにする。
 - 時系列変換: `scripts/telemetry/export-runtime-guard-timeseries.mjs` で 24h の hourly bucket を CSV 化し、Grafana や Observable notebook から参照可能にする。
 
