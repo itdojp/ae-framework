@@ -17,7 +17,7 @@ type WorkflowDocument = {
       workflows?: string[];
     };
   };
-  permissions?: Record<string, string>;
+  permissions?: Record<string, string> | 'read-all' | 'write-all';
   jobs?: Record<string, any>;
 };
 
