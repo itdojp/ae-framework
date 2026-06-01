@@ -22,10 +22,20 @@ const ALLOWED_TDD_TEST_COMMANDS: Record<TDDTestCommand, ResolvedTDDTestCommand> 
   'yarn test': { executable: 'yarn', args: ['test', '--silent'] },
 };
 
-export function resolveSafeTDDTestCommand(testCommand: TDDTestCommand): ResolvedTDDTestCommand {
+export function resolveSafeTDDTestCommand(
+  testCommand: TDDTestCommand,
+  platform: NodeJS.Platform = process.platform
+): ResolvedTDDTestCommand {
   const resolved = ALLOWED_TDD_TEST_COMMANDS[testCommand];
   if (!resolved) {
     throw new Error('Unsupported TDD test command');
+  }
+
+  if (platform === 'win32') {
+    return {
+      executable: 'cmd.exe',
+      args: ['/d', '/s', '/c', `${resolved.executable}.cmd`, ...resolved.args],
+    };
   }
 
   return {
@@ -61,9 +71,10 @@ export function runSafeTDDTestCommand(
   options: {
     cwd?: string;
     executor?: TDDTestExecutor;
+    platform?: NodeJS.Platform;
   } = {}
 ): string | Buffer {
-  const resolved = resolveSafeTDDTestCommand(testCommand);
+  const resolved = resolveSafeTDDTestCommand(testCommand, options.platform);
   const executor = options.executor ?? execFileSync;
   const execOptions: { encoding: 'utf8'; stdio: 'pipe'; shell: false; cwd?: string } = {
     encoding: 'utf8',

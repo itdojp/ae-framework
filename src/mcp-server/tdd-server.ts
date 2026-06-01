@@ -31,7 +31,7 @@ import {
 } from './tdd-execution-policy.js';
 
 interface TDDViolation {
-  type: 'missing_test' | 'failing_test' | 'skip_red' | 'low_coverage';
+  type: 'missing_test' | 'failing_test' | 'skip_red' | 'low_coverage' | 'test_execution_skipped';
   severity: 'error' | 'warning';
   file?: string;
   message: string;
@@ -272,6 +272,15 @@ export class TDDGuardServer {
       const resolvedCommand = resolveSafeTDDTestCommand(parsed.testCommand);
       skippedTestExecutionRecommendation =
         `Test execution skipped (${executionApproval.reason}). Approved command would be: ${formatTDDTestCommand(resolvedCommand)}`;
+      if (phase === '3-tests' || phase === '4-code') {
+        const phaseExpectation = phase === '3-tests' ? 'RED' : 'GREEN';
+        analysis.violations.push({
+          type: 'test_execution_skipped',
+          severity: 'error',
+          message: `Test execution was skipped; cannot verify ${phaseExpectation} phase test results`,
+          suggestion: `Run with dryRun=false and testExecutionApproval='approved-tdd-test-execution' to execute ${formatTDDTestCommand(resolvedCommand)} in the approved workspace`,
+        });
+      }
     }
 
     // Generate recommendations
@@ -352,7 +361,7 @@ export class TDDGuardServer {
     }
     
     try {
-      runSafeTDDTestCommand(testCommand);
+      runSafeTDDTestCommand(testCommand, { cwd: this.resolveApprovedWorkspacePath('.') });
       
       if (expectRed) {
         return {
@@ -401,8 +410,8 @@ export class TDDGuardServer {
   }
 
   private resolveApprovedWorkspacePath(inputPath: string): string {
-    if (inputPath.includes('\0') || inputPath.includes('\\')) {
-      throw new Error('TDD analysis path must not contain NUL bytes or backslashes');
+    if (inputPath.includes('\0')) {
+      throw new Error('TDD analysis path must not contain NUL bytes');
     }
 
     const workspaceRoot = path.resolve(process.env['AE_MCP_WORKSPACE_ROOT'] || process.cwd());
@@ -464,6 +473,10 @@ export class TDDGuardServer {
     const failingTests = violations.filter(v => v.type === 'failing_test');
     if (failingTests.length > 0) {
       recommendations.push('Fix failing tests by implementing the minimal code required');
+    }
+
+    if (violations.some(v => v.type === 'test_execution_skipped')) {
+      recommendations.push('Run approved TDD test execution before advancing phases that require RED/GREEN evidence');
     }
     
     if (phase === '3-tests' && violations.some(v => v.type === 'skip_red')) {
