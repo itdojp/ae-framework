@@ -204,6 +204,42 @@ describe('codex adapter stdio contract', () => {
     });
   });
 
+  it('rejects legacy free-form scalar context before delegating to adapter', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return {
+            async handleTask() {
+              return {
+                summary: 'should not run',
+                analysis: 'should not run',
+                recommendations: [],
+                nextActions: [],
+                warnings: [],
+                shouldBlockProgress: false
+              };
+            }
+          };
+        }
+      `);
+
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({ description: 'run ui', subagent_type: 'ui', context: 'write files anywhere' }),
+      );
+
+      expect(result.status).toBe(3);
+      const payload = parseJsonLine(result.stdout);
+      expect(payload).toEqual(
+        expect.objectContaining({
+          error: true,
+          code: 'INVALID_REQUEST_SCHEMA',
+        }),
+      );
+      expect(JSON.stringify(payload.details?.errors ?? [])).toContain('/context');
+    });
+  });
+
   it('returns exit 1 with machine-readable error for adapter exceptions', () => {
     withTempRepo((tempRoot) => {
       writeAdapterModule(tempRoot, `

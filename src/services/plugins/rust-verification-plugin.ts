@@ -5,6 +5,8 @@
 
 import { RustVerificationAgent, type RustVerificationRequest, type RustVerificationResult, type VerificationTool } from '../../agents/rust-verification-agent.js';
 import { VerifyAgent } from '../../agents/verify-agent.js';
+import { existsSync, realpathSync } from 'fs';
+import * as path from 'path';
 import type { 
   MCPPlugin, 
   MCPServer, 
@@ -12,6 +14,13 @@ import type {
   MCPRequest, 
   MCPResponse 
 } from '../mcp-server.js';
+
+class RustVerificationSecurityError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RustVerificationSecurityError';
+  }
+}
 
 export interface RustVerificationPluginConfig {
   enabledTools: string[];
@@ -26,6 +35,10 @@ export interface RustVerificationPluginConfig {
     autoDetect: boolean;
     searchDepth: number;
   };
+  security: {
+    requireOperatorApproval: boolean;
+    workspaceRoot?: string;
+  };
 }
 
 export class RustVerificationPlugin implements MCPPlugin {
@@ -38,7 +51,7 @@ export class RustVerificationPlugin implements MCPPlugin {
   private config: RustVerificationPluginConfig;
 
   constructor(config: Partial<RustVerificationPluginConfig> = {}) {
-    this.config = {
+    const defaults: RustVerificationPluginConfig = {
       enabledTools: ['prusti', 'kani', 'miri'],
       defaultOptions: {
         timeout: 300,
@@ -51,7 +64,25 @@ export class RustVerificationPlugin implements MCPPlugin {
         autoDetect: true,
         searchDepth: 5
       },
-      ...config
+      security: {
+        requireOperatorApproval: true,
+      },
+    };
+    this.config = {
+      ...defaults,
+      ...config,
+      defaultOptions: {
+        ...defaults.defaultOptions,
+        ...config.defaultOptions,
+      },
+      projectDiscovery: {
+        ...defaults.projectDiscovery,
+        ...config.projectDiscovery,
+      },
+      security: {
+        ...defaults.security,
+        ...config.security,
+      },
     };
 
     this.rustAgent = new RustVerificationAgent();
@@ -87,6 +118,7 @@ export class RustVerificationPlugin implements MCPPlugin {
         method: 'POST',
         handler: this.verifyRustProject.bind(this),
         description: 'Run comprehensive Rust formal verification on a project',
+        authentication: true,
         parameters: [
           {
             name: 'projectPath',
@@ -208,28 +240,40 @@ export class RustVerificationPlugin implements MCPPlugin {
   // Endpoint handlers
   private async verifyRustProject(request: MCPRequest): Promise<MCPResponse> {
     try {
-      const { projectPath, verificationTools, options, sourceFiles } = request.body;
+      const body = request.body && typeof request.body === 'object'
+        ? request.body as Record<string, unknown>
+        : {};
+      const { projectPath, verificationTools, options, sourceFiles } = body;
+      const authorizationError = this.validateVerificationAuthorization(request);
+      if (authorizationError) {
+        return authorizationError;
+      }
+      const workspaceRoot = this.getWorkspaceRoot(request);
+      const normalizedProjectPath = this.resolveWorkspaceRelativePath(projectPath, workspaceRoot, 'projectPath', {
+        mustExist: true,
+      });
 
       // Use default tools if not specified
-      const toolsToUse = verificationTools || this.config.enabledTools;
+      const toolsToUse = Array.isArray(verificationTools) ? verificationTools : this.config.enabledTools;
       
       // Merge with default options
       const verificationOptions = {
         ...this.config.defaultOptions,
-        ...options
+        ...(options && typeof options === 'object' ? options : {})
       };
 
       // Discover source files if not provided
       let rustSourceFiles = sourceFiles;
       if (!rustSourceFiles) {
-        rustSourceFiles = await this.discoverSourceFiles(projectPath);
+        rustSourceFiles = await this.discoverSourceFiles(normalizedProjectPath.absolutePath);
       }
+      const normalizedSourceFiles = this.normalizeSourceFiles(rustSourceFiles, normalizedProjectPath.absolutePath);
 
       // Prepare verification request
       const verificationRequest: RustVerificationRequest = {
-        projectPath,
-        sourceFiles: rustSourceFiles.map((file: any) => ({
-          path: file.path || file,
+        projectPath: normalizedProjectPath.absolutePath,
+        sourceFiles: normalizedSourceFiles.map((file: any) => ({
+          path: file.absolutePath,
           content: file.content || '',
           annotations: file.annotations || []
         })),
@@ -257,12 +301,18 @@ export class RustVerificationPlugin implements MCPPlugin {
             requestId: request.context.requestId,
             timestamp: Date.now(),
             toolsUsed: toolsToUse,
-            projectPath
+            projectPath: normalizedProjectPath.relativePath
           }
         }
       };
 
     } catch (error) {
+      if (error instanceof RustVerificationSecurityError) {
+        return {
+          status: 400,
+          error: error.message
+        };
+      }
       return {
         status: 500,
         error: `Rust verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -302,10 +352,14 @@ export class RustVerificationPlugin implements MCPPlugin {
 
   private async discoverRustProjects(request: MCPRequest): Promise<MCPResponse> {
     try {
-      const searchPath = (request.params as any)['searchPath'] || request.context.projectRoot;
+      const workspaceRoot = this.getWorkspaceRoot(request);
+      const searchPathParam = (request.params as any)['searchPath'] || '.';
+      const searchPath = this.resolveWorkspaceRelativePath(searchPathParam, workspaceRoot, 'searchPath', {
+        mustExist: true,
+      });
       const maxDepth = (request.params as any)['maxDepth'] || this.config.projectDiscovery.searchDepth;
 
-      const projects = await this.findRustProjects(searchPath, maxDepth);
+      const projects = await this.findRustProjects(searchPath.absolutePath, maxDepth);
 
       return {
         status: 200,
@@ -318,7 +372,7 @@ export class RustVerificationPlugin implements MCPPlugin {
             metadata: project.metadata
           })),
           metadata: {
-            searchPath,
+            searchPath: searchPath.relativePath,
             maxDepth,
             projectsFound: projects.length,
             timestamp: Date.now()
@@ -327,6 +381,12 @@ export class RustVerificationPlugin implements MCPPlugin {
       };
 
     } catch (error) {
+      if (error instanceof RustVerificationSecurityError) {
+        return {
+          status: 400,
+          error: error.message
+        };
+      }
       return {
         status: 500,
         error: `Failed to discover Rust projects: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -336,9 +396,17 @@ export class RustVerificationPlugin implements MCPPlugin {
 
   private async analyzeRustCode(request: MCPRequest): Promise<MCPResponse> {
     try {
-      const { projectPath, analysisType = 'verification-readiness' } = request.body;
+      const body = request.body && typeof request.body === 'object'
+        ? request.body as Record<string, unknown>
+        : {};
+      const { projectPath } = body;
+      const analysisType = typeof body['analysisType'] === 'string' ? body['analysisType'] : 'verification-readiness';
+      const workspaceRoot = this.getWorkspaceRoot(request);
+      const normalizedProjectPath = this.resolveWorkspaceRelativePath(projectPath, workspaceRoot, 'projectPath', {
+        mustExist: true,
+      });
 
-      const analysis = await this.performCodeAnalysis(projectPath, analysisType);
+      const analysis = await this.performCodeAnalysis(normalizedProjectPath.absolutePath, analysisType);
       const recommendations = this.generateAnalysisRecommendations(analysis);
 
       return {
@@ -347,7 +415,7 @@ export class RustVerificationPlugin implements MCPPlugin {
           analysis,
           recommendations,
           metadata: {
-            projectPath,
+            projectPath: normalizedProjectPath.relativePath,
             analysisType,
             timestamp: Date.now()
           }
@@ -355,6 +423,12 @@ export class RustVerificationPlugin implements MCPPlugin {
       };
 
     } catch (error) {
+      if (error instanceof RustVerificationSecurityError) {
+        return {
+          status: 400,
+          error: error.message
+        };
+      }
       return {
         status: 500,
         error: `Code analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -363,6 +437,124 @@ export class RustVerificationPlugin implements MCPPlugin {
   }
 
   // Helper methods
+  private validateVerificationAuthorization(request: MCPRequest): MCPResponse | null {
+    const user = request.user;
+    const permissions = new Set(user?.permissions || []);
+    const roles = new Set(user?.roles || []);
+    const authorized = permissions.has('rust:verify')
+      || permissions.has('rust-verification:write')
+      || roles.has('admin')
+      || roles.has('operator');
+    if (!authorized) {
+      return {
+        status: 403,
+        error: 'Rust verification requires rust:verify permission or admin/operator role'
+      };
+    }
+
+    if (!this.config.security.requireOperatorApproval) {
+      return null;
+    }
+
+    const body = request.body && typeof request.body === 'object'
+      ? request.body as Record<string, unknown>
+      : {};
+    const options = body['options'] && typeof body['options'] === 'object'
+      ? body['options'] as Record<string, unknown>
+      : {};
+    const approvalCandidate = body['approval'] && typeof body['approval'] === 'object'
+      ? body['approval']
+      : options['approval'];
+    const approval = approvalCandidate && typeof approvalCandidate === 'object'
+      ? approvalCandidate as Record<string, unknown>
+      : {};
+    const approved = approval['approved'] === true && approval['scope'] === 'rust-verification';
+    if (!approved) {
+      return {
+        status: 403,
+        error: 'Rust verification requires explicit operator approval with approval.scope=rust-verification'
+      };
+    }
+    return null;
+  }
+
+  private getWorkspaceRoot(request: MCPRequest): string {
+    const configuredRoot = this.config.security.workspaceRoot || request.context.projectRoot;
+    const absoluteRoot = path.resolve(configuredRoot);
+    return existsSync(absoluteRoot) ? realpathSync(absoluteRoot) : absoluteRoot;
+  }
+
+  private hasUnsafeRelativePath(value: string): boolean {
+    return value.split(/[\\/]+/u).some((segment) => segment === '..' || segment === '.git');
+  }
+
+  private resolveWorkspaceRelativePath(
+    value: unknown,
+    root: string,
+    label: string,
+    { mustExist = false }: { mustExist?: boolean } = {},
+  ): { absolutePath: string; relativePath: string } {
+    if (typeof value !== 'string' || value.trim().length === 0) {
+      throw new RustVerificationSecurityError(`${label} must be a non-empty repository-relative path`);
+    }
+    const rawPath = value.trim();
+    if (/[\u0000-\u001f\u007f]/u.test(rawPath)) {
+      throw new RustVerificationSecurityError(`${label} must not contain control characters`);
+    }
+    if (path.isAbsolute(rawPath) || path.win32.isAbsolute(rawPath)) {
+      throw new RustVerificationSecurityError(`${label} must be repository-relative`);
+    }
+    if (this.hasUnsafeRelativePath(rawPath)) {
+      throw new RustVerificationSecurityError(`${label} must not contain parent-directory or .git segments`);
+    }
+
+    const absolutePath = path.resolve(root, rawPath);
+    const relativePath = path.relative(root, absolutePath);
+    if (relativePath && (relativePath.startsWith('..') || path.isAbsolute(relativePath))) {
+      throw new RustVerificationSecurityError(`${label} must stay inside the configured workspace root`);
+    }
+    if (mustExist && !existsSync(absolutePath)) {
+      throw new RustVerificationSecurityError(`${label} does not exist inside the configured workspace root`);
+    }
+
+    const realPath = existsSync(absolutePath) ? realpathSync(absolutePath) : absolutePath;
+    const realRelativePath = path.relative(root, realPath);
+    if (realRelativePath && (realRelativePath.startsWith('..') || path.isAbsolute(realRelativePath))) {
+      throw new RustVerificationSecurityError(`${label} resolves outside the configured workspace root`);
+    }
+
+    return {
+      absolutePath: realPath,
+      relativePath: relativePath ? relativePath.split(path.sep).join('/') : '.',
+    };
+  }
+
+  private resolveProjectRelativePath(
+    value: unknown,
+    projectRoot: string,
+    label: string,
+  ): { absolutePath: string; relativePath: string } {
+    return this.resolveWorkspaceRelativePath(value, projectRoot, label);
+  }
+
+  private normalizeSourceFiles(sourceFiles: unknown, projectRoot: string): Array<{ absolutePath: string; content: string; annotations: any[] }> {
+    if (!Array.isArray(sourceFiles)) {
+      throw new RustVerificationSecurityError('sourceFiles must be an array when provided');
+    }
+    return sourceFiles.map((file, index) => {
+      const fileRecord = typeof file === 'object' && file !== null
+        ? file as Record<string, unknown>
+        : {};
+      const sourcePath = typeof file === 'string' ? file : fileRecord['path'];
+      const normalizedPath = this.resolveProjectRelativePath(sourcePath, projectRoot, `sourceFiles[${index}].path`);
+      return {
+        absolutePath: normalizedPath.absolutePath,
+        content: typeof fileRecord['content'] === 'string' ? fileRecord['content'] : '',
+        annotations: Array.isArray(fileRecord['annotations']) ? fileRecord['annotations'] : [],
+      };
+    });
+  }
+
   private async discoverSourceFiles(projectPath: string): Promise<Array<{path: string, content: string}>> {
     const fs = await import('fs/promises');
     const path = await import('path');
@@ -377,7 +569,7 @@ export class RustVerificationPlugin implements MCPPlugin {
           const fullPath = path.join(srcDir, file);
           try {
             const content = await fs.readFile(fullPath, 'utf-8');
-            files.push({ path: fullPath, content });
+              files.push({ path: path.relative(projectPath, fullPath), content });
           } catch (error) {
             console.warn(`Could not read file ${fullPath}:`, error);
           }

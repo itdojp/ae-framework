@@ -6,6 +6,28 @@ export interface TaskRequestContext {
   validationTaskType?: string;
   strict?: boolean;
   sources?: string | string[];
+  /**
+   * Phase-specific state. UI generation currently accepts `entities`.
+   */
+  phaseState?: unknown;
+  /**
+   * UI scaffold output root. The CodeX adapter accepts only repository-relative,
+   * non-traversing paths before any filesystem writes are allowed.
+   */
+  outputDir?: string;
+  /**
+   * Explicit operator approval for trusted write-capable phases.
+   */
+  approval?: {
+    approved?: boolean;
+    scope?: string;
+    actor?: string;
+    reason?: string;
+  };
+  /**
+   * When true, phases that support it must avoid writing generated files.
+   */
+  dryRun?: boolean;
   [key: string]: unknown;
 }
 

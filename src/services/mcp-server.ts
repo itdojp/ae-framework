@@ -572,6 +572,13 @@ export class MCPServer extends EventEmitter {
         break;
 
       case 'enum':
+        if (Array.isArray(value)) {
+          const invalidValue = value.find((item) => !rule.value.includes(item));
+          if (invalidValue !== undefined) {
+            return rule.message || `Parameter '${paramName}' must contain only: ${rule.value.join(', ')}`;
+          }
+          break;
+        }
         if (!rule.value.includes(value)) {
           return rule.message || `Parameter '${paramName}' must be one of: ${rule.value.join(', ')}`;
         }
@@ -614,6 +621,10 @@ export async function createRustVerificationServer(projectRoot: string): Promise
           unwindLimit: 10,
           strictMode: true,
           generateReport: true
+        },
+        security: {
+          requireOperatorApproval: true,
+          workspaceRoot: projectRoot
         }
       })
     ]
