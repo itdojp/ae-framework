@@ -7,6 +7,30 @@ import { z } from 'zod';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { enhancedTelemetry, TELEMETRY_ATTRIBUTES } from './enhanced-telemetry.js';
 import { trace } from '@opentelemetry/api';
+import { redactSensitiveData, safeUrlPath } from '../security/sensitive-redaction.js';
+
+const sanitizeEndpoint = (endpoint?: string): string | undefined => {
+  if (!endpoint) {
+    return undefined;
+  }
+  const methodPathMatch = endpoint.match(/^([A-Z]+)\s+(.+)$/);
+  if (methodPathMatch) {
+    return `${methodPathMatch[1]} ${safeUrlPath(methodPathMatch[2])}`;
+  }
+  return safeUrlPath(endpoint);
+};
+
+const getFastifyRoute = (request: FastifyRequest): string => {
+  const routeOptions = (request as unknown as { routeOptions?: { url?: string } }).routeOptions;
+  if (typeof routeOptions?.url === 'string' && routeOptions.url.length > 0) {
+    return routeOptions.url;
+  }
+  const routerPath = (request as unknown as { routerPath?: string }).routerPath;
+  if (typeof routerPath === 'string' && routerPath.length > 0) {
+    return routerPath;
+  }
+  return safeUrlPath(request.url);
+};
 
 // Contract violation types
 export enum ViolationType {
@@ -59,12 +83,23 @@ export class RuntimeGuard {
       operation?: string;
     } = {}
   ): ValidationResult<T> {
+    const sanitizedEndpoint = sanitizeEndpoint(context.endpoint);
+    const violationContext: {
+      requestId?: string;
+      endpoint?: string;
+      operation?: string;
+    } = { ...context };
+    if (typeof sanitizedEndpoint === 'string') {
+      violationContext.endpoint = sanitizedEndpoint;
+    } else {
+      delete violationContext.endpoint;
+    }
     const span = this.tracer.startSpan('runtime_guard.validate_request', {
       attributes: {
         [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'runtime-guard',
         [TELEMETRY_ATTRIBUTES.SERVICE_OPERATION]: context.operation || 'validate_request',
         [TELEMETRY_ATTRIBUTES.REQUEST_ID]: context.requestId || 'unknown',
-        endpoint: context.endpoint || 'unknown',
+        endpoint: sanitizedEndpoint || 'unknown',
       },
     });
 
@@ -73,7 +108,7 @@ export class RuntimeGuard {
       const result = schema.safeParse(data);
       const duration = timer.end({
         validation_type: 'request',
-        endpoint: context.endpoint,
+        endpoint: sanitizedEndpoint,
       });
 
       if (result.success) {
@@ -84,7 +119,7 @@ export class RuntimeGuard {
         
         enhancedTelemetry.recordCounter('runtime_guard.validations.success', 1, {
           validation_type: 'request',
-          endpoint: context.endpoint,
+          endpoint: sanitizedEndpoint,
         });
 
         span.end();
@@ -96,7 +131,7 @@ export class RuntimeGuard {
       } else {
         const violation = this.createValidationViolation(
           result.error,
-          context,
+          violationContext,
           ViolationSeverity.MEDIUM
         );
 
@@ -140,12 +175,23 @@ export class RuntimeGuard {
       statusCode?: number;
     } = {}
   ): ValidationResult<T> {
+    const sanitizedEndpoint = sanitizeEndpoint(context.endpoint);
+    const violationContext: {
+      requestId?: string;
+      endpoint?: string;
+      statusCode?: number;
+    } = { ...context };
+    if (typeof sanitizedEndpoint === 'string') {
+      violationContext.endpoint = sanitizedEndpoint;
+    } else {
+      delete violationContext.endpoint;
+    }
     const span = this.tracer.startSpan('runtime_guard.validate_response', {
       attributes: {
         [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'runtime-guard',
         [TELEMETRY_ATTRIBUTES.SERVICE_OPERATION]: 'validate_response',
         [TELEMETRY_ATTRIBUTES.REQUEST_ID]: context.requestId || 'unknown',
-        endpoint: context.endpoint || 'unknown',
+        endpoint: sanitizedEndpoint || 'unknown',
         status_code: context.statusCode || 0,
       },
     });
@@ -155,7 +201,7 @@ export class RuntimeGuard {
       const result = schema.safeParse(data);
       const duration = timer.end({
         validation_type: 'response',
-        endpoint: context.endpoint,
+        endpoint: sanitizedEndpoint,
       });
 
       if (result.success) {
@@ -166,7 +212,7 @@ export class RuntimeGuard {
 
         enhancedTelemetry.recordCounter('runtime_guard.validations.success', 1, {
           validation_type: 'response',
-          endpoint: context.endpoint,
+          endpoint: sanitizedEndpoint,
         });
 
         span.end();
@@ -178,7 +224,7 @@ export class RuntimeGuard {
       } else {
         const violation = this.createValidationViolation(
           result.error,
-          context,
+          violationContext,
           ViolationSeverity.HIGH // Response validation failures are more serious
         );
 
@@ -264,7 +310,7 @@ export class RuntimeGuard {
     return async (request: FastifyRequest, reply: FastifyReply) => {
       const result = this.validateRequest(schema, request.body, {
         requestId: request.id,
-        endpoint: `${request.method} ${request.url}`,
+        endpoint: `${request.method} ${getFastifyRoute(request)}`,
         operation: 'request_validation',
       });
 
@@ -293,7 +339,7 @@ export class RuntimeGuard {
     return async (request: FastifyRequest, reply: FastifyReply, payload: unknown) => {
       const result = this.validateResponse(schema, payload, {
         requestId: request.id,
-        endpoint: `${request.method} ${request.url}`,
+        endpoint: `${request.method} ${getFastifyRoute(request)}`,
         statusCode: reply.statusCode,
       });
 
@@ -301,7 +347,7 @@ export class RuntimeGuard {
         // Log the violation but don't modify the response in production
         // to avoid breaking the API contract
         const violation = result.violations[0];
-        console.error('Response validation failed:', violation);
+        console.error('Response validation failed:', redactSensitiveData(violation));
         
         if (process.env['NODE_ENV'] === 'development') {
           return {
@@ -309,7 +355,7 @@ export class RuntimeGuard {
             message: 'Response payload validation failed',
             details: violation?.details || 'Unknown validation error',
             violation_id: violation?.id || 'unknown',
-            original_payload: payload,
+            redacted_payload: redactSensitiveData(payload),
           };
         }
       }

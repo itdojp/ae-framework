@@ -53,9 +53,9 @@ export async function main() {
   cli.command('agent:complete', 'LLM completion with record/replay support')
     .option('--prompt <text>', 'Prompt text')
     .option('--system <text>', 'System message')
-    .option('--record', 'Record mode')
+    .option('--record', 'Record redacted cassette mode')
     .option('--replay', 'Replay mode') 
-    .option('--cassette-dir <dir>', 'Cassette directory')
+    .option('--cassette-dir <dir>', 'Cassette directory for local redacted fixtures')
     .action((opts) => agentComplete(opts.prompt, opts.system, opts));
 
   cli.command('tests:suggest', 'Generate tests-first prompt after intent capture')

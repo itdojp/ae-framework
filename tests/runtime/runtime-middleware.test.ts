@@ -6,20 +6,36 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
 import {
   ExpressConformanceMiddleware,
+  fastifyConformancePlugin,
   MiddlewareRegistry,
   OpenAPIConformanceIntegration,
 } from '../../src/runtime/runtime-middleware.js';
+
+const otelMock = vi.hoisted(() => ({
+  spans: [] as Array<{
+    name: string;
+    setStatus: ReturnType<typeof vi.fn>;
+    setAttributes: ReturnType<typeof vi.fn>;
+    recordException: ReturnType<typeof vi.fn>;
+    end: ReturnType<typeof vi.fn>;
+  }>,
+}));
 
 // Mock OpenTelemetry
 vi.mock('@opentelemetry/api', () => ({
   trace: {
     getTracer: () => ({
-      startSpan: () => ({
-        setStatus: vi.fn(),
-        setAttributes: vi.fn(),
-        recordException: vi.fn(),
-        end: vi.fn(),
-      }),
+      startSpan: (name: string) => {
+        const span = {
+          name,
+          setStatus: vi.fn(),
+          setAttributes: vi.fn(),
+          recordException: vi.fn(),
+          end: vi.fn(),
+        };
+        otelMock.spans.push(span);
+        return span;
+      },
     }),
   },
   SpanStatusCode: {
@@ -63,6 +79,7 @@ describe('ExpressConformanceMiddleware', () => {
   });
 
   beforeEach(() => {
+    otelMock.spans = [];
     middleware = new ExpressConformanceMiddleware({
       enabled: true,
       strictMode: false,
@@ -391,6 +408,42 @@ describe('ExpressConformanceMiddleware', () => {
       expect(mockNext).toHaveBeenCalledOnce();
       expect(mockRes.status).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('Fastify conformance telemetry redaction', () => {
+  it('uses route templates instead of raw request URLs for request and response spans', () => {
+    const hooks: Record<string, (...args: unknown[]) => unknown> = {};
+    const fastify = {
+      addSchema: vi.fn(),
+      addHook: vi.fn((name: string, handler: (...args: unknown[]) => unknown) => {
+        hooks[name] = handler;
+      }),
+    };
+
+    fastifyConformancePlugin(fastify as any, { config: { enabled: true } });
+
+    const request = {
+      method: 'GET',
+      url: '/users/123?token=raw-query-token&password=raw-query-password',
+      routeOptions: { url: '/users/:id' },
+    };
+    const reply = { statusCode: 200 };
+
+    hooks['preHandler']?.(request);
+    hooks['onSend']?.(request, reply, '{"ok":true}');
+
+    const attributes = otelMock.spans.flatMap((span) =>
+      span.setAttributes.mock.calls.map(([attrs]) => attrs as Record<string, unknown>)
+    );
+
+    expect(attributes).toHaveLength(2);
+    for (const attrs of attributes) {
+      expect(attrs['http.route']).toBe('/users/:id');
+      expect(attrs).not.toHaveProperty('http.url');
+      expect(JSON.stringify(attrs)).not.toContain('raw-query-token');
+      expect(JSON.stringify(attrs)).not.toContain('raw-query-password');
+    }
   });
 });
 

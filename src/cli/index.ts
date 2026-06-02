@@ -767,9 +767,9 @@ program
   .description('LLM completion for quick verification')
   .option('--prompt <prompt>', 'Prompt to send to LLM (required)')
   .option('--system <system>', 'System message for LLM (optional)')
-  .option('--record', 'Record LLM I/O to cassettes')
+  .option('--record', 'Record redacted LLM cassettes with restrictive local permissions')
   .option('--replay', 'Replay from cassettes (no network)')
-  .option('--cassette-dir <dir>', 'Cassette directory (default: artifacts/cassettes)')
+  .option('--cassette-dir <dir>', 'Cassette directory for local redacted fixtures (default: artifacts/cassettes)')
   .action(async (options) => {
     if (!options.prompt) {
       console.error(chalk.red('❌ --prompt is required'));

@@ -10,6 +10,7 @@ import { trace, metrics as otMetrics, SpanStatusCode } from '@opentelemetry/api'
 import type { Attributes, Span } from '@opentelemetry/api';
 import type { FailureLocation } from '../cegis/failure-artifact-schema.js';
 import { FailureArtifactFactory } from '../cegis/failure-artifact-schema.js';
+import { redactSensitiveData, safeErrorForLogging, safeJsonForLogging, safeUrlPath } from '../security/sensitive-redaction.js';
 
 // Telemetry instances (safe for partially mocked @opentelemetry/api)
 const tracer = trace.getTracer('ae-framework-runtime-conformance');
@@ -20,6 +21,7 @@ type MiddlewareRequest = {
   params: unknown;
   method: string;
   originalUrl: string;
+  route?: { path?: string } | null;
   ip?: string;
   get: (name: string) => string | undefined;
 };
@@ -178,6 +180,7 @@ export class ConformanceGuard<T> {
     context?: ConformanceContext
   ): ConformanceResult<T> {
     const mergedContext = mergeContext(this.config.context, context);
+    const redactedContext = safeJsonForLogging(mergedContext) as ConformanceContext | undefined;
 
     if (!this.config.enabled) {
       return {
@@ -189,7 +192,7 @@ export class ConformanceGuard<T> {
           schemaName: this.schemaName,
           duration: 0,
           timestamp: new Date().toISOString(),
-          ...(mergedContext ? { context: mergedContext } : {}),
+          ...(redactedContext ? { context: redactedContext } : {}),
         },
       };
     }
@@ -255,7 +258,7 @@ export class ConformanceGuard<T> {
             schemaName: this.schemaName,
             duration,
             timestamp: new Date().toISOString(),
-            ...(mergedContext ? { context: mergedContext } : {}),
+            ...(redactedContext ? { context: redactedContext } : {}),
           },
         };
       } else {
@@ -263,6 +266,7 @@ export class ConformanceGuard<T> {
         const errors = result.error.errors.map(err => 
           `${err.path.join('.')}: ${err.message}`
         );
+        const redactedData = safeJsonForLogging(data);
 
         if (span) {
           span.setStatus({
@@ -295,14 +299,14 @@ export class ConformanceGuard<T> {
         if (this.config.logViolations) {
           console.warn(`🚨 Conformance violation in ${this.schemaName} (${direction}):`, {
             errors,
-            data: this.sanitizeForLogging(data),
+            data: redactedData,
             duration,
           });
         }
 
         // Generate failure artifact if configured
         if (this.config.generateArtifacts) {
-          this.generateFailureArtifact(errors, data, direction, mergedContext);
+          this.generateFailureArtifact(errors, redactedData, direction, redactedContext);
         }
 
         // Throw error if configured to fail on violation
@@ -312,7 +316,7 @@ export class ConformanceGuard<T> {
             this.schemaName,
             direction,
             errors,
-            data
+            redactedData
           );
         }
 
@@ -324,7 +328,7 @@ export class ConformanceGuard<T> {
             schemaName: this.schemaName,
             duration,
             timestamp: new Date().toISOString(),
-            ...(mergedContext ? { context: mergedContext } : {}),
+            ...(redactedContext ? { context: redactedContext } : {}),
           },
         };
       }
@@ -359,7 +363,7 @@ export class ConformanceGuard<T> {
       const artifact = FailureArtifactFactory.fromContractViolation(
         `${this.schemaName} (${direction})`,
         'Schema validation',
-        data,
+        safeJsonForLogging(data),
         context?.location
       );
 
@@ -370,7 +374,7 @@ export class ConformanceGuard<T> {
       if (context) {
         let serializedContext: string | undefined;
         try {
-          serializedContext = JSON.stringify(context);
+          serializedContext = JSON.stringify(safeJsonForLogging(context));
         } catch {
           serializedContext = undefined;
         }
@@ -386,53 +390,8 @@ export class ConformanceGuard<T> {
       // In a real implementation, this would store the artifact
       console.debug('📝 Generated failure artifact:', artifact.id);
     } catch (error) {
-      console.error('Failed to generate failure artifact:', error);
+      console.error('Failed to generate failure artifact:', safeErrorForLogging(error));
     }
-  }
-
-  /**
-   * Sanitize data for logging (remove sensitive information)
-   */
-  private sanitizeForLogging(data: unknown): unknown {
-    if (data === null || typeof data !== 'object') {
-      return data;
-    }
-
-    const sensitiveFragments = ['password', 'token', 'secret', 'key', 'authorization'];
-
-    let clone: unknown;
-    try {
-      clone = JSON.parse(JSON.stringify(data));
-    } catch {
-      return '[Unserializable payload]';
-    }
-
-    const sanitizeInPlace = (value: unknown): unknown => {
-      if (Array.isArray(value)) {
-        const arrayValue = value as unknown[];
-        for (let index = 0; index < arrayValue.length; index += 1) {
-          arrayValue[index] = sanitizeInPlace(arrayValue[index]);
-        }
-        return arrayValue;
-      }
-
-      if (value && typeof value === 'object') {
-        const record = value as Record<string, unknown>;
-        for (const [key, nestedValue] of Object.entries(record)) {
-          const lowerKey = key.toLowerCase();
-          if (sensitiveFragments.some((fragment) => lowerKey.includes(fragment))) {
-            record[key] = '[REDACTED]';
-          } else {
-            record[key] = sanitizeInPlace(nestedValue);
-          }
-        }
-        return record;
-      }
-
-      return value;
-    };
-
-    return sanitizeInPlace(clone);
   }
 
   /**
@@ -458,15 +417,23 @@ export class ConformanceGuard<T> {
  * Conformance Violation Error
  */
 export class ConformanceViolationError extends Error {
+  public readonly data: unknown;
+
   constructor(
     message: string,
     public schemaName: string,
     public direction: 'input' | 'output',
     public validationErrors: string[],
-    public data: unknown
+    data: unknown
   ) {
     super(message);
     this.name = 'ConformanceViolationError';
+    Object.defineProperty(this, 'data', {
+      value: redactSensitiveData(data),
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
   }
 }
 
@@ -698,7 +665,9 @@ export function createExpressMiddleware<T>(
 
       const result = await guard.validateInput(data, {
         method: req.method,
-        url: req.originalUrl,
+        path: typeof req.route?.path === 'string' && req.route.path.length > 0
+          ? req.route.path
+          : safeUrlPath(req.originalUrl),
         userAgent: req.get('User-Agent'),
         ip: req.ip,
       });
@@ -730,7 +699,7 @@ export function createExpressMiddleware<T>(
 
       next();
     } catch (error) {
-      console.error('Conformance middleware error:', error);
+      console.error('Conformance middleware error:', safeErrorForLogging(error));
       if (guard.getConfig().failOnViolation) {
         res.status(500).json({
           error: 'Internal validation error',

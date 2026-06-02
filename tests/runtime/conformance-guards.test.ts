@@ -37,6 +37,7 @@ import {
   ValidateInput,
   ValidateOutput,
 } from '../../src/runtime/conformance-guards.js';
+import { FailureArtifactFactory } from '../../src/cegis/failure-artifact-schema.js';
 
 describe('ConformanceGuard', () => {
   const userSchema = z.object({
@@ -208,6 +209,7 @@ describe('ConformanceGuard', () => {
         expect((error as ConformanceViolationError).direction).toBe('input');
         expect((error as ConformanceViolationError).validationErrors).toBeDefined();
         expect((error as ConformanceViolationError).data).toEqual(invalidData);
+        expect(Object.keys(error as ConformanceViolationError)).not.toContain('data');
       }
     });
   });
@@ -526,5 +528,66 @@ describe('Edge Cases and Error Handling', () => {
     // Should either succeed or fail gracefully without performance issues
     expect(typeof result.success).toBe('boolean');
     expect(Array.isArray(result.errors)).toBe(true);
+  });
+
+  it('redacts validation logs, failure artifacts, and non-enumerable thrown error data', async () => {
+    const secretGuard = new ConformanceGuard(z.object({ id: z.number() }), 'secret-schema', {
+      failOnViolation: true,
+      logViolations: true,
+      generateArtifacts: true,
+      telemetryEnabled: false,
+    });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    const artifactSpy = vi.spyOn(FailureArtifactFactory, 'fromContractViolation');
+
+    const invalidData = {
+      id: 'not-a-number',
+      password: 'raw-password-secret',
+      key: 'raw-generic-key-secret',
+      sshKey: 'raw-ssh-key-secret',
+      nested: {
+        cookie: 'sid=raw-cookie-secret',
+        connectionString: 'postgres://app:raw-db-secret@example.test/app',
+      },
+      note: 'Authorization: Bearer raw-bearer-secret',
+      url: 'https://example.test/callback?token=raw-query-token',
+    };
+
+    let thrown: unknown;
+    try {
+      await secretGuard.validateInput(invalidData, {
+        source: 'test',
+        path: '/api/widgets?token=raw-context-token',
+      });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(ConformanceViolationError);
+    const error = thrown as ConformanceViolationError;
+    expect(Object.keys(error)).not.toContain('data');
+
+    const serializedEvidence = JSON.stringify({
+      warnCalls: warnSpy.mock.calls,
+      artifactActual: artifactSpy.mock.calls[0]?.[2],
+      artifactContext: artifactSpy.mock.calls[0]?.[3],
+      errorData: error.data,
+      serializedError: JSON.stringify(error),
+    });
+
+    expect(serializedEvidence).toContain('[REDACTED]');
+    expect(serializedEvidence).not.toContain('raw-password-secret');
+    expect(serializedEvidence).not.toContain('raw-generic-key-secret');
+    expect(serializedEvidence).not.toContain('raw-ssh-key-secret');
+    expect(serializedEvidence).not.toContain('raw-cookie-secret');
+    expect(serializedEvidence).not.toContain('raw-db-secret');
+    expect(serializedEvidence).not.toContain('raw-bearer-secret');
+    expect(serializedEvidence).not.toContain('raw-query-token');
+    expect(serializedEvidence).not.toContain('raw-context-token');
+
+    warnSpy.mockRestore();
+    debugSpy.mockRestore();
+    artifactSpy.mockRestore();
   });
 });

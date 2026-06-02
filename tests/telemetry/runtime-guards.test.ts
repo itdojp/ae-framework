@@ -3,7 +3,7 @@
  * Tests for request/response validation and contract violation tracking
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { z } from 'zod';
 import { RuntimeGuard, ViolationType, ViolationSeverity, CommonSchemas } from '../../src/telemetry/runtime-guards.js';
 
@@ -67,6 +67,26 @@ describe('Runtime Guards', () => {
       expect(violation.severity).toBe(ViolationSeverity.MEDIUM);
       expect(violation.requestId).toBe('test-req-456');
       expect(violation.endpoint).toBe('POST /users');
+    });
+
+    it('sanitizes secret-bearing endpoint query parameters in violations', () => {
+      const invalidData = {
+        name: '',
+        age: -5,
+        email: 'invalid-email',
+      };
+
+      const result = guard.validateRequest(testSchema, invalidData, {
+        requestId: 'test-req-secret',
+        endpoint: 'POST /users?token=raw-runtime-token&password=raw-runtime-password',
+        operation: 'create_user',
+      });
+
+      expect(result.valid).toBe(false);
+      const serialized = JSON.stringify(result.violations);
+      expect(result.violations[0]?.endpoint).toBe('POST /users');
+      expect(serialized).not.toContain('raw-runtime-token');
+      expect(serialized).not.toContain('raw-runtime-password');
     });
 
     it('should handle missing required fields', () => {
@@ -134,6 +154,48 @@ describe('Runtime Guards', () => {
       expect(violation.type).toBe(ViolationType.SCHEMA_VALIDATION);
       expect(violation.severity).toBe(ViolationSeverity.HIGH); // Response failures are high severity
       expect(violation.statusCode).toBeUndefined(); // statusCode not stored in violation
+    });
+
+    it('redacts development response-validator payloads and logs', async () => {
+      const originalNodeEnv = process.env['NODE_ENV'];
+      process.env['NODE_ENV'] = 'development';
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      try {
+        const validator = guard.createResponseValidator(responseSchema);
+        const response = await validator(
+          {
+            id: 'req-redacted',
+            method: 'GET',
+            url: '/status?token=raw-response-query-token',
+            routeOptions: { url: '/status' },
+          } as any,
+          { statusCode: 200 } as any,
+          {
+            id: 123,
+            success: 'yes',
+            password: 'raw-response-password',
+            nested: {
+              connectionString: 'postgres://app:raw-response-db-secret@example.test/app',
+            },
+          },
+        );
+
+        const serialized = JSON.stringify({ response, logs: errorSpy.mock.calls });
+        expect(serialized).toContain('redacted_payload');
+        expect(serialized).not.toContain('original_payload');
+        expect(serialized).not.toContain('raw-response-query-token');
+        expect(serialized).not.toContain('raw-response-password');
+        expect(serialized).not.toContain('raw-response-db-secret');
+        expect(serialized).toContain('[REDACTED]');
+      } finally {
+        if (typeof originalNodeEnv === 'string') {
+          process.env['NODE_ENV'] = originalNodeEnv;
+        } else {
+          delete process.env['NODE_ENV'];
+        }
+        errorSpy.mockRestore();
+      }
     });
   });
 

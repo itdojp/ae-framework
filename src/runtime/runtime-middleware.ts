@@ -10,6 +10,7 @@ import { z, type ZodRawShape, type ZodTypeAny } from 'zod';
 import { GuardFactory } from './conformance-guards.js';
 import type { ConformanceResult } from './conformance-guards.js';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
+import { safeErrorForLogging, safeUrlPath } from '../security/sensitive-redaction.js';
 
 /**
  * Minimal request/response types that remain compatible with Express but keep
@@ -51,6 +52,13 @@ type ExpressMiddleware = (
 type ResponseInvoker = (payload: unknown) => ExpressResponseLike;
 
 const tracer = trace.getTracer('ae-framework-runtime-middleware');
+
+const extractExpressRouteTemplate = (req: ExpressRequestLike): string => {
+  if (typeof req.route?.path === 'string' && req.route.path.length > 0) {
+    return req.route.path;
+  }
+  return safeUrlPath(req.path);
+};
 
 // Middleware configuration
 export interface MiddlewareConfig {
@@ -128,7 +136,7 @@ export class ExpressConformanceMiddleware {
 
         span.setAttributes({
           'http.method': req.method,
-          'http.route': req.route?.path || req.path,
+          'http.route': extractExpressRouteTemplate(req),
           'conformance.operation_id': operationId,
           'conformance.validation_result': result.success ? 'success' : 'failure',
         });
@@ -174,7 +182,7 @@ export class ExpressConformanceMiddleware {
 
         span.setAttributes({
           'http.method': req.method,
-          'http.route': req.route?.path || req.path,
+          'http.route': extractExpressRouteTemplate(req),
           'conformance.operation_id': operationId,
           'conformance.validation_result': result.success ? 'success' : 'failure',
         });
@@ -219,7 +227,7 @@ export class ExpressConformanceMiddleware {
 
         span.setAttributes({
           'http.method': req.method,
-          'http.route': req.route?.path || req.path,
+          'http.route': extractExpressRouteTemplate(req),
           'conformance.operation_id': operationId,
           'conformance.validation_result': result.success ? 'success' : 'failure',
         });
@@ -260,7 +268,7 @@ export class ExpressConformanceMiddleware {
         const span = tracer.startSpan(`validate_response_${operationId}`);
         span.setAttributes({
           'http.method': req.method,
-          'http.route': req.route?.path || req.path,
+          'http.route': extractExpressRouteTemplate(req),
           'conformance.operation_id': operationId,
           'http.status_code': res.statusCode,
         });
@@ -288,7 +296,7 @@ export class ExpressConformanceMiddleware {
             span.setStatus({ code: SpanStatusCode.ERROR });
 
             if (this.config.logErrors) {
-              console.error(`Response validation error for ${operationId}:`, error);
+              console.error(`Response validation error for ${operationId}:`, safeErrorForLogging(error));
             }
           })
           .finally(() => {
@@ -335,7 +343,7 @@ export class ExpressConformanceMiddleware {
     const context: ValidationContext = {
       operationId,
       method: req.method,
-      path: req.path,
+      path: extractExpressRouteTemplate(req),
       timestamp: new Date().toISOString(),
     };
 
@@ -383,7 +391,7 @@ export class ExpressConformanceMiddleware {
       message: `${target} validation failed`,
       details: result.errors,
       timestamp: result.metadata.timestamp,
-      path: req.path,
+      path: extractExpressRouteTemplate(req),
       method: req.method,
     };
 
@@ -414,7 +422,7 @@ export class ExpressConformanceMiddleware {
     }
 
     if (this.config.logErrors) {
-      console.error('Conformance middleware error:', error);
+      console.error('Conformance middleware error:', safeErrorForLogging(error));
     }
 
     if (this.config.strictMode) {
@@ -445,6 +453,18 @@ const extractOperationId = (request: FastifyRequest): string | undefined => {
   return candidate?.operationId;
 };
 
+const extractRouteTemplate = (request: FastifyRequest): string => {
+  const routeOptions = (request as unknown as { routeOptions?: { url?: string } }).routeOptions;
+  if (typeof routeOptions?.url === 'string' && routeOptions.url.length > 0) {
+    return routeOptions.url;
+  }
+  const routerPath = (request as unknown as { routerPath?: string }).routerPath;
+  if (typeof routerPath === 'string' && routerPath.length > 0) {
+    return routerPath;
+  }
+  return safeUrlPath(request.url);
+};
+
 /**
  * Fastify Plugin for Runtime Conformance
  */
@@ -470,14 +490,15 @@ export function fastifyConformancePlugin(
   fastify.addHook('preHandler', (request: FastifyRequest) => {
     if (!config.enabled) return;
 
-    const operationId = extractOperationId(request) ?? `${request.method}_${request.url}`;
+    const routeTemplate = extractRouteTemplate(request);
+    const operationId = extractOperationId(request) ?? `${request.method}_${routeTemplate}`;
 
     const span = tracer.startSpan(`fastify_validate_${operationId}`);
 
     try {
       span.setAttributes({
         'http.method': request.method,
-        'http.url': request.url,
+        'http.route': routeTemplate,
         'conformance.operation_id': operationId,
       });
 
@@ -499,14 +520,15 @@ export function fastifyConformancePlugin(
   fastify.addHook('onSend', (request: FastifyRequest, reply: FastifyReply, payload: unknown) => {
     if (!config.enabled) return payload;
 
-    const operationId = extractOperationId(request) ?? `${request.method}_${request.url}`;
+    const routeTemplate = extractRouteTemplate(request);
+    const operationId = extractOperationId(request) ?? `${request.method}_${routeTemplate}`;
 
     const span = tracer.startSpan(`fastify_validate_response_${operationId}`);
 
     try {
       span.setAttributes({
         'http.method': request.method,
-        'http.url': request.url,
+        'http.route': routeTemplate,
         'http.status_code': reply.statusCode,
         'conformance.operation_id': operationId,
       });
@@ -521,7 +543,7 @@ export function fastifyConformancePlugin(
       span.setStatus({ code: SpanStatusCode.ERROR });
       
       if (config.logErrors) {
-        console.error('Fastify response validation error:', error);
+        console.error('Fastify response validation error:', safeErrorForLogging(error));
       }
     } finally {
       span.end();
