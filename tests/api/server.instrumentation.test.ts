@@ -5,7 +5,7 @@ import { trace } from '@opentelemetry/api';
 import { formatGWT } from '../utils/gwt-format';
 import * as SecurityHeaders from '../../src/api/middleware/security-headers.js';
 import { TELEMETRY_ATTRIBUTES } from '../../src/telemetry/enhanced-telemetry.js';
-import getServer, { createServer } from '../../src/api/server.js';
+import getServer, { createServer, sanitizeFastifyRequestLog } from '../../src/api/server.js';
 const {
   timerEndSpy,
   createTimerSpy,
@@ -162,7 +162,7 @@ describe('Server instrumentation telemetry', () => {
               [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'api-server',
               [TELEMETRY_ATTRIBUTES.SERVICE_OPERATION]: 'GET /health',
               'http.method': 'GET',
-              'http.url': '/health',
+              'http.route': '/health',
               'http.user_agent': 'lightMyRequest',
             }),
           }),
@@ -200,6 +200,69 @@ describe('Server instrumentation telemetry', () => {
             status_code: '200',
           }),
         );
+      } finally {
+        await app.close();
+        tracerSpy?.mockRestore();
+        tracerSpy = undefined;
+      }
+    },
+  );
+
+  it(
+    formatGWT(
+      'Fastify request logger serializer',
+      'receives a request with secret-bearing query parameters',
+      'logs a query-stripped URL without raw secrets',
+    ),
+    () => {
+      const logged = sanitizeFastifyRequestLog({
+        method: 'GET',
+        url: '/health?token=raw-logger-query-token&password=raw-logger-query-password',
+        hostname: 'localhost:80',
+        remoteAddress: '127.0.0.1',
+      });
+
+      const serialized = JSON.stringify(logged);
+      expect(logged.url).toBe('/health');
+      expect(serialized).not.toContain('raw-logger-query-token');
+      expect(serialized).not.toContain('raw-logger-query-password');
+    },
+  );
+
+  it(
+    formatGWT(
+      'request tracing with secret-bearing query parameters',
+      'handles a traced API request',
+      'records sanitized route metadata instead of raw URL query values',
+    ),
+    async () => {
+      const spanStub = {
+        setAttributes: vi.fn(),
+        recordException: vi.fn(),
+        end: vi.fn(),
+      };
+      const startSpan = vi.fn(() => spanStub);
+      tracerSpy = vi.spyOn(trace, 'getTracer').mockReturnValue({ startSpan } as any);
+
+      const app: FastifyInstance = await createServer();
+      await app.ready();
+
+      try {
+        const response = await app.inject({
+          method: 'GET',
+          url: '/health?token=raw-api-query-token&password=raw-api-query-password',
+        });
+
+        expect(response.statusCode).toBe(200);
+        const startSpanPayload = JSON.stringify(startSpan.mock.calls);
+        const counterPayload = JSON.stringify(recordCounterSpy.mock.calls);
+
+        expect(startSpanPayload).toContain('GET /health');
+        expect(startSpanPayload).not.toContain('raw-api-query-token');
+        expect(startSpanPayload).not.toContain('raw-api-query-password');
+        expect(startSpanPayload).not.toContain('http.url');
+        expect(counterPayload).not.toContain('raw-api-query-token');
+        expect(counterPayload).not.toContain('raw-api-query-password');
       } finally {
         await app.close();
         tracerSpy?.mockRestore();

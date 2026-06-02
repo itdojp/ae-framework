@@ -483,7 +483,7 @@ ae setup list
  ae status
  ae board
 
-# Agent completion (LLM)
+# Agent completion (LLM; --record writes redacted local cassettes with restrictive permissions)
  ae agent:complete --prompt "Summarize failures" --record
 
 # CI scaffold

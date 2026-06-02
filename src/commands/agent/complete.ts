@@ -2,6 +2,7 @@ import { loadLLM } from '../../providers/index.js';
 import { withRecorder } from '../../providers/recorder.js';
 import { formatAppError, toExecAppError } from '../../core/command-errors.js';
 import type { AppError } from '../../core/errors.js';
+import { redactSensitiveString } from '../../security/sensitive-redaction.js';
 
 export async function agentComplete(prompt: string, system?: string, flags?: { record?: boolean; replay?: boolean; dir?: string }) {
   // Enhanced flag interpretation
@@ -37,7 +38,8 @@ export async function agentComplete(prompt: string, system?: string, flags?: { r
   const cassetteDir = flags?.dir ?? 'artifacts/cassettes';
   
   // Start execution log with prompt summary
-  const promptSummary = prompt.length > 100 ? `${prompt.slice(0, 100)}...` : prompt;
+  const redactedPrompt = redactSensitiveString(prompt);
+  const promptSummary = redactedPrompt.length > 100 ? `${redactedPrompt.slice(0, 100)}...` : redactedPrompt;
   console.log(`[ae][agent] Starting completion: "${promptSummary}"`);
   
   if (wantRecord) {
@@ -52,7 +54,7 @@ export async function agentComplete(prompt: string, system?: string, flags?: { r
     let llm = await loadLLM();
     
     if (wantReplay || wantRecord) {
-      llm = withRecorder(llm, { dir: cassetteDir, replay: wantReplay });
+      llm = withRecorder(llm, { dir: cassetteDir, replay: wantReplay, record: wantRecord });
     }
     
     console.log(`[ae][agent] Provider: ${llm.name}`);

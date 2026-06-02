@@ -6,6 +6,7 @@ import { enhancedTelemetry, TELEMETRY_ATTRIBUTES } from "../telemetry/enhanced-t
 import { trace } from '@opentelemetry/api';
 import { registerHealthEndpoint } from '../health/health-endpoint.js';
 import { requireAdminDiagnosticsAuth } from '../security/admin-diagnostics-auth.js';
+import { redactSensitiveData, safeUrlPath } from '../security/sensitive-redaction.js';
 import { IdempotencyConflictError, InsufficientStockError } from '../domain/entities.js';
 import { InMemoryInventoryRepository, InventoryServiceImpl } from '../domain/services.js';
 import type { InventoryService } from '../domain/services.js';
@@ -13,6 +14,14 @@ import type { InventoryService } from '../domain/services.js';
 interface CreateServerOptions {
   inventoryService?: InventoryService;
   adminDiagnosticsToken?: string;
+}
+
+interface FastifyRequestLogEntry {
+  method?: string;
+  url?: string;
+  hostname?: string;
+  remoteAddress?: string;
+  remotePort?: number;
 }
 
 const createFallbackInventoryService = (): InventoryService =>
@@ -23,12 +32,49 @@ const createFallbackInventoryService = (): InventoryService =>
     }),
   );
 
+const getTelemetryRoute = (request: { url: string }): string => {
+  const routeOptions = (request as unknown as { routeOptions?: { url?: string } }).routeOptions;
+  if (typeof routeOptions?.url === 'string' && routeOptions.url.length > 0) {
+    return routeOptions.url;
+  }
+  const routerPath = (request as unknown as { routerPath?: string }).routerPath;
+  if (typeof routerPath === 'string' && routerPath.length > 0) {
+    return routerPath;
+  }
+  return safeUrlPath(request.url);
+};
+
+export const sanitizeFastifyRequestLog = (request: FastifyRequestLogEntry): Record<string, unknown> => {
+  const logged: Record<string, unknown> = {
+    url: safeUrlPath(request.url),
+  };
+  if (typeof request.method === 'string') {
+    logged['method'] = request.method;
+  }
+  if (typeof request.hostname === 'string') {
+    logged['host'] = request.hostname;
+  }
+  if (typeof request.remoteAddress === 'string') {
+    logged['remoteAddress'] = request.remoteAddress;
+  }
+  if (typeof request.remotePort === 'number') {
+    logged['remotePort'] = request.remotePort;
+  }
+  return logged;
+};
+
+const apiServerLoggerOptions = {
+  serializers: {
+    req: (request: unknown) => sanitizeFastifyRequestLog(request as FastifyRequestLogEntry),
+  },
+};
+
 /**
  * Create and configure Fastify server instance
  */
 export async function createServer(options: CreateServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({ 
-    logger: true,
+    logger: apiServerLoggerOptions,
     genReqId: () => `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
   });
 
@@ -56,13 +102,14 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
 
   // Add request tracing hook
   app.addHook('onRequest', async (request, reply) => {
-    const span = tracer.startSpan(`${request.method} ${request.url}`, {
+    const telemetryRoute = getTelemetryRoute(request);
+    const span = tracer.startSpan(`${request.method} ${telemetryRoute}`, {
       attributes: {
         [TELEMETRY_ATTRIBUTES.REQUEST_ID]: request.id,
         [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'api-server',
-        [TELEMETRY_ATTRIBUTES.SERVICE_OPERATION]: `${request.method} ${request.url}`,
+        [TELEMETRY_ATTRIBUTES.SERVICE_OPERATION]: `${request.method} ${telemetryRoute}`,
         'http.method': request.method,
-        'http.url': request.url,
+        'http.route': telemetryRoute,
         'http.user_agent': request.headers['user-agent'] || 'unknown',
       },
     });
@@ -71,15 +118,16 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
     request.startTime = Date.now();
     enhancedTelemetry.recordCounter('api.requests.total', 1, {
       method: request.method,
-      endpoint: request.url,
+      endpoint: telemetryRoute,
     });
   });
 
   // Add response timing hook
   app.addHook('onResponse', async (request, reply) => {
+    const telemetryRoute = getTelemetryRoute(request);
     const responseMetadata = {
       method: request.method,
-      endpoint: request.url,
+      endpoint: telemetryRoute,
       status_code: reply.statusCode.toString(),
     };
 
@@ -168,7 +216,7 @@ export async function createServer(options: CreateServerOptions = {}): Promise<F
         },
       );
       if (!validation.valid) {
-        console.error('Reservation error response validation failed:', validation.violations);
+        console.error('Reservation error response validation failed:', redactSensitiveData(validation.violations));
       }
       return validation.valid ? 'success' : 'failure';
     };
