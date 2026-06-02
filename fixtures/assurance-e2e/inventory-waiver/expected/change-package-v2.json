@@ -214,7 +214,10 @@
     "mode": "report-only",
     "enforced": false,
     "reason": "Policy decision assurance result is waived.",
-    "warnings": [],
+    "warnings": [
+      "provenance: claim evidence provenance not found: artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json",
+      "provenance: claim evidence provenance missing: artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json"
+    ],
     "errors": []
   },
   "releaseControls": {

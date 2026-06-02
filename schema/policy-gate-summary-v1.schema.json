@@ -369,6 +369,45 @@
                 "null"
               ],
               "format": "date-time"
+            },
+            "provenance": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": true,
+              "required": [
+                "path",
+                "present",
+                "trusted",
+                "schemaVersion",
+                "generatedAt"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "present": {
+                  "type": "boolean"
+                },
+                "trusted": {
+                  "type": "boolean"
+                },
+                "schemaVersion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "generatedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                }
+              }
             }
           }
         },
