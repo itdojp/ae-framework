@@ -40,13 +40,21 @@ const nearestExistingAncestor = (resolvedPath: string): string | null => {
   return current;
 };
 
+const safeRealpathSync = (value: string, label: string): string => {
+  try {
+    return realpathSync(value);
+  } catch {
+    throw new WorkspacePathPolicyError(`${label} could not be resolved safely`);
+  }
+};
+
 const assertExistingAncestorWithin = (workspaceRoot: string, resolvedPath: string, label: string): void => {
   if (!existsSync(workspaceRoot)) return;
   const ancestor = nearestExistingAncestor(resolvedPath);
   if (!ancestor) return;
 
-  const realRoot = realpathSync(workspaceRoot);
-  const realAncestor = realpathSync(ancestor);
+  const realRoot = safeRealpathSync(workspaceRoot, label);
+  const realAncestor = safeRealpathSync(ancestor, label);
   if (!isPathWithin(realRoot, realAncestor)) {
     throw new WorkspacePathPolicyError(`${label} resolves through a filesystem entry outside the approved workspace`);
   }
@@ -77,6 +85,9 @@ export function resolveWorkspacePath(input: string, options: WorkspacePathOption
   const segments = splitInputPath(raw);
   if (segments.some((segment) => segment === '.' || segment === '..')) {
     throw new WorkspacePathPolicyError(`${label} must not contain dot-segment path components`);
+  }
+  if (segments.some((segment) => segment.toLowerCase() === '.git')) {
+    throw new WorkspacePathPolicyError(`${label} must not target Git metadata directories`);
   }
 
   const workspaceRoot = path.resolve(options.workspaceRoot ?? resolveWorkspaceRoot());

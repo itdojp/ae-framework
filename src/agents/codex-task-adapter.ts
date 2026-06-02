@@ -231,7 +231,7 @@ function hasTrustedUIApproval(context: Record<string, unknown>): boolean {
 }
 
 function hasUnsafePathSegment(value: string): boolean {
-  return value.split(/[\\/]+/u).some((segment) => segment === '..' || segment === '.git');
+  return value.split(/[\\/]+/u).some((segment) => segment === '..' || segment.toLowerCase() === '.git');
 }
 
 function findExistingAncestor(absolutePath: string): string {

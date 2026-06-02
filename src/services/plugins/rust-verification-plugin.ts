@@ -7,6 +7,11 @@ import { RustVerificationAgent, type RustVerificationRequest, type RustVerificat
 import { VerifyAgent } from '../../agents/verify-agent.js';
 import { existsSync, realpathSync } from 'fs';
 import * as path from 'path';
+import {
+  resolveWorkspacePath,
+  toWorkspaceRelativePath,
+  WorkspacePathPolicyError,
+} from '../../utils/workspace-path-policy.js';
 import type { 
   MCPPlugin, 
   MCPServer, 
@@ -442,7 +447,6 @@ export class RustVerificationPlugin implements MCPPlugin {
     const permissions = new Set(user?.permissions || []);
     const roles = new Set(user?.roles || []);
     const authorized = permissions.has('rust:verify')
-      || permissions.has('rust-verification:write')
       || roles.has('admin')
       || roles.has('operator');
     if (!authorized) {
@@ -481,11 +485,19 @@ export class RustVerificationPlugin implements MCPPlugin {
   private getWorkspaceRoot(request: MCPRequest): string {
     const configuredRoot = this.config.security.workspaceRoot || request.context.projectRoot;
     const absoluteRoot = path.resolve(configuredRoot);
-    return existsSync(absoluteRoot) ? realpathSync(absoluteRoot) : absoluteRoot;
+    return existsSync(absoluteRoot) ? this.safeRealpath(absoluteRoot, 'workspaceRoot') : absoluteRoot;
   }
 
   private hasUnsafeRelativePath(value: string): boolean {
-    return value.split(/[\\/]+/u).some((segment) => segment === '..' || segment === '.git');
+    return value.split(/[\\/]+/u).some((segment) => segment === '..' || segment.toLowerCase() === '.git');
+  }
+
+  private safeRealpath(value: string, label: string): string {
+    try {
+      return realpathSync(value);
+    } catch {
+      throw new RustVerificationSecurityError(`${label} could not be resolved safely`);
+    }
   }
 
   private resolveWorkspaceRelativePath(
@@ -508,25 +520,33 @@ export class RustVerificationPlugin implements MCPPlugin {
       throw new RustVerificationSecurityError(`${label} must not contain parent-directory or .git segments`);
     }
 
-    const absolutePath = path.resolve(root, rawPath);
-    const relativePath = path.relative(root, absolutePath);
-    if (relativePath && (relativePath.startsWith('..') || path.isAbsolute(relativePath))) {
-      throw new RustVerificationSecurityError(`${label} must stay inside the configured workspace root`);
+    let absolutePath: string;
+    try {
+      absolutePath = rawPath === '.'
+        ? root
+        : resolveWorkspacePath(rawPath, { workspaceRoot: root, label });
+    } catch (error) {
+      if (error instanceof WorkspacePathPolicyError) {
+        throw new RustVerificationSecurityError(error.message);
+      }
+      throw error;
     }
     if (mustExist && !existsSync(absolutePath)) {
       throw new RustVerificationSecurityError(`${label} does not exist inside the configured workspace root`);
     }
 
-    const realPath = existsSync(absolutePath) ? realpathSync(absolutePath) : absolutePath;
-    const realRelativePath = path.relative(root, realPath);
-    if (realRelativePath && (realRelativePath.startsWith('..') || path.isAbsolute(realRelativePath))) {
-      throw new RustVerificationSecurityError(`${label} resolves outside the configured workspace root`);
+    const realPath = existsSync(absolutePath) ? this.safeRealpath(absolutePath, label) : absolutePath;
+    try {
+      return {
+        absolutePath: realPath,
+        relativePath: toWorkspaceRelativePath(realPath, { workspaceRoot: root, label }),
+      };
+    } catch (error) {
+      if (error instanceof WorkspacePathPolicyError) {
+        throw new RustVerificationSecurityError(error.message);
+      }
+      throw error;
     }
-
-    return {
-      absolutePath: realPath,
-      relativePath: relativePath ? relativePath.split(path.sep).join('/') : '.',
-    };
   }
 
   private resolveProjectRelativePath(

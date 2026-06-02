@@ -188,6 +188,65 @@ describe('RustVerificationPlugin security boundary', () => {
     expect(rustAgent.verifyRustProject).not.toHaveBeenCalled();
   });
 
+  it('rejects case-insensitive Git metadata path segments before executing tools', async () => {
+    const fixture = makeWorkspace();
+    cleanup = fixture.cleanup;
+    const rustAgent = { getAvailableTools: () => [], verifyRustProject: vi.fn() };
+    const server = await makeServer(fixture.workspace, rustAgent);
+
+    const response = await server.processRequest(makeRequest(fixture.workspace, {
+      body: {
+        projectPath: 'crate',
+        sourceFiles: [{ path: '.GIT/config', content: '' }],
+        options: { generateReport: false },
+        approval: { approved: true, scope: 'rust-verification' },
+      },
+    }));
+
+    expect(response.status).toBe(400);
+    expect(response.error).toContain('sourceFiles[0].path must not contain parent-directory or .git segments');
+    expect(rustAgent.verifyRustProject).not.toHaveBeenCalled();
+  });
+
+  it('returns a controlled policy error for unusable workspace roots', async () => {
+    const fixture = makeWorkspace();
+    cleanup = fixture.cleanup;
+    const rustAgent = { getAvailableTools: () => [], verifyRustProject: vi.fn() };
+    const server = await makeServer(join(fixture.workspace, 'missing-root'), rustAgent);
+
+    const response = await server.processRequest(makeRequest(fixture.workspace));
+
+    expect(response.status).toBe(400);
+    expect(response.error).toContain('projectPath does not exist inside the configured workspace root');
+    expect(rustAgent.verifyRustProject).not.toHaveBeenCalled();
+  });
+
+  it('returns a controlled policy error when path realpath resolution fails', async () => {
+    const fixture = makeWorkspace();
+    cleanup = fixture.cleanup;
+    const loopPath = join(fixture.workspace, 'loop');
+    try {
+      symlinkSync(loopPath, loopPath, 'dir');
+    } catch {
+      return;
+    }
+    const rustAgent = { getAvailableTools: () => [], verifyRustProject: vi.fn() };
+    const server = await makeServer(fixture.workspace, rustAgent);
+
+    const response = await server.processRequest(makeRequest(fixture.workspace, {
+      body: {
+        projectPath: 'loop',
+        sourceFiles: [{ path: 'src/main.rs', content: '' }],
+        options: { generateReport: false },
+        approval: { approved: true, scope: 'rust-verification' },
+      },
+    }));
+
+    expect(response.status).toBe(400);
+    expect(response.error).toMatch(/projectPath (could not be resolved safely|does not exist inside the configured workspace root)/u);
+    expect(rustAgent.verifyRustProject).not.toHaveBeenCalled();
+  });
+
   it('rejects workspace symlink escapes before executing tools', async () => {
     const fixture = makeWorkspace();
     cleanup = fixture.cleanup;
@@ -219,7 +278,7 @@ describe('RustVerificationPlugin security boundary', () => {
     }));
 
     expect(response.status).toBe(400);
-    expect(response.error).toContain('projectPath resolves outside');
+    expect(response.error).toContain('outside');
     expect(rustAgent.verifyRustProject).not.toHaveBeenCalled();
   });
 

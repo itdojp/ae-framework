@@ -70,4 +70,28 @@ describe('RustVerificationAgent mutation policy', () => {
     expect(existsSync(join(fixture.projectPath, 'verification-report.json'))).toBe(false);
     expect(existsSync(join(fixture.projectPath, 'target', 'ae-verification', 'verification-report.json'))).toBe(true);
   });
+
+  it('keeps verifier environment secret-minimized while preserving OS runtime variables', () => {
+    const previousUserProfile = process.env['USERPROFILE'];
+    const previousTemp = process.env['TEMP'];
+    const previousSecret = process.env['AWS_SECRET_ACCESS_KEY'];
+    process.env['USERPROFILE'] = 'C:\\Users\\runner';
+    process.env['TEMP'] = 'C:\\Temp';
+    process.env['AWS_SECRET_ACCESS_KEY'] = 'do-not-copy';
+    try {
+      const agent = new RustVerificationAgent();
+      const env = (agent as unknown as { buildVerifierEnv: () => NodeJS.ProcessEnv }).buildVerifierEnv();
+
+      expect(env['USERPROFILE']).toBe('C:\\Users\\runner');
+      expect(env['TEMP']).toBe('C:\\Temp');
+      expect(env['AWS_SECRET_ACCESS_KEY']).toBeUndefined();
+    } finally {
+      if (previousUserProfile === undefined) delete process.env['USERPROFILE'];
+      else process.env['USERPROFILE'] = previousUserProfile;
+      if (previousTemp === undefined) delete process.env['TEMP'];
+      else process.env['TEMP'] = previousTemp;
+      if (previousSecret === undefined) delete process.env['AWS_SECRET_ACCESS_KEY'];
+      else process.env['AWS_SECRET_ACCESS_KEY'] = previousSecret;
+    }
+  });
 });

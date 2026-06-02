@@ -86,6 +86,23 @@ describe('CodeX Task UI scaffold security boundary', () => {
     ]));
   });
 
+  it('blocks case-insensitive Git metadata segments in UI output roots', async () => {
+    const adapter = createCodexTaskAdapter();
+
+    const response = await adapter.handleTask(makeRequest({
+      phaseState: makePhaseState(),
+      outputDir: 'artifacts/testing/.GIT/generated-ui',
+      dryRun: false,
+      approval: { approved: true, scope: 'ui-scaffold' },
+    }));
+
+    expect(response.shouldBlockProgress).toBe(true);
+    expect(response.blockingReason).toBe('unsafe-ui-output-dir');
+    expect(response.warnings).toEqual(expect.arrayContaining([
+      expect.stringContaining('context.outputDir must not contain parent-directory or .git segments'),
+    ]));
+  });
+
   it('blocks UI output roots whose existing ancestor resolves outside the repository', async () => {
     mkdirSync(artifactRoot, { recursive: true });
     const outside = join(process.cwd(), '..', `codex-ui-outside-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);

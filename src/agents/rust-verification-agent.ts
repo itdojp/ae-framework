@@ -847,12 +847,23 @@ export class RustVerificationAgent {
     const allowList = [
       'PATH',
       'HOME',
+      'USERPROFILE',
+      'HOMEDRIVE',
+      'HOMEPATH',
+      'APPDATA',
+      'LOCALAPPDATA',
       'CARGO_HOME',
       'RUSTUP_HOME',
       'RUSTFLAGS',
       'RUST_BACKTRACE',
       'TERM',
       'CI',
+      'TMPDIR',
+      'TEMP',
+      'TMP',
+      'SystemRoot',
+      'ComSpec',
+      'PATHEXT',
     ];
     const env: NodeJS.ProcessEnv = {};
     for (const key of allowList) {
