@@ -48,9 +48,19 @@ describe('formal-verify workflow dispatch security', () => {
     expect(inputs.alloyJar).toBeUndefined();
     expect(inputs.tlaToolsJar).toBeUndefined();
     expect(workflow).not.toContain('ALLOY_RUN_CMD');
+    expect(workflow).not.toContain("TLA_TOOLS_JAR: ''");
     expect(workflow).not.toMatch(/run:\s*\|[\s\S]*\$\{\{\s*inputs\.tlaFile/);
     expect(workflow).toContain('TLA_FILE: ${{ github.event_name == \'workflow_dispatch\' && inputs.tlaFile || \'spec/tla/DomainSpec.tla\' }}');
     expect(workflow).toContain('APALACHE_FILE: ${{ github.event_name == \'workflow_dispatch\' && inputs.tlaFile || \'spec/tla/DomainSpec.tla\' }}');
+  });
+
+  it('restores a trusted TLC jar path without exposing a dispatch jar override', () => {
+    const workflow = rawWorkflow();
+
+    expect(workflow).toContain("TLA_TOOLS_VERSION: '1.8.0'");
+    expect(workflow).toContain('key: ${{ runner.os }}-tla2tools-${{ env.TLA_TOOLS_VERSION }}');
+    expect(workflow).toContain('https://github.com/tlaplus/tlaplus/releases/download/v${TLA_TOOLS_VERSION}/tla2tools.jar');
+    expect(workflow).toContain("TLA_TOOLS_JAR: ${{ format('{0}/.cache/tools/tla2tools.jar', github.workspace) }}");
   });
 
   it('uses least-privilege permissions and disables persisted checkout credentials', () => {

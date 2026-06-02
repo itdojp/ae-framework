@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 export function parseAllowedPermissions(value = 'admin,maintain,write') {
   return new Set(
@@ -23,6 +25,12 @@ export function parsePermissionResponse(stdout) {
   } catch {
     return text.split(/\r?\n/)[0].trim().toLowerCase();
   }
+}
+
+export function isDirectInvocation(moduleUrl = import.meta.url, argv = process.argv) {
+  const scriptPath = argv?.[1] || '';
+  if (!scriptPath) return false;
+  return pathToFileURL(path.resolve(scriptPath)).href === moduleUrl;
 }
 
 export function main(env = process.env) {
@@ -69,7 +77,7 @@ export function main(env = process.env) {
   return 0;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isDirectInvocation(import.meta.url, process.argv)) {
   try {
     process.exit(main());
   } catch (error) {

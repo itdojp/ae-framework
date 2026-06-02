@@ -27,6 +27,7 @@ This guide shows how to run **all formal verification tools** end-to-end for a s
   - `engine`: `tlc` or `apalache` (for TLA)
   - `solver`: `z3` or `cvc5` (for SMT)
   - `tlaFile`: approved repository-relative TLA file under `spec/tla`; jar path overrides are intentionally not exposed through `workflow_dispatch`
+  - TLC uses a workflow-owned, cached `tla2tools.jar` from the pinned `TLA_TOOLS_VERSION`; operators do not provide a jar path.
 
 3) **Artifacts to confirm**
 - `formal-reports` artifact (folder): `artifacts/hermetic-reports/formal/*`
@@ -150,6 +151,7 @@ Outputs:
   - `engine`: `tlc` または `apalache`
   - `solver`: `z3` または `cvc5`
   - `tlaFile`: `spec/tla` 配下の repository-relative TLA ファイル。jar パス上書きは `workflow_dispatch` では受け付けません。
+  - TLC は workflow 管理の `TLA_TOOLS_VERSION` に基づくキャッシュ済み `tla2tools.jar` を使用します。実行者は jar パスを指定しません。
 
 3) **成果物の確認**
 - `formal-reports`（`artifacts/hermetic-reports/formal/*`）

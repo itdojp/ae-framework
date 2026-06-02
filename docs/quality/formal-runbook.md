@@ -207,6 +207,7 @@ jobs:
 - Example SMT run: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
 - Alloy / TLA jar configuration:
   - `workflow_dispatch` accepts only approved repository-relative `tlaFile` values under `spec/tla`; jar path overrides are intentionally not accepted.
+  - The `Formal Verify` workflow downloads/caches `tla2tools.jar` from its pinned `TLA_TOOLS_VERSION` and sets `TLA_TOOLS_JAR` internally for TLC.
   - set `ALLOY_JAR` / `TLA_TOOLS_JAR` locally when reproducing outside CI
 
 ### `verify:conformance` options
@@ -281,6 +282,7 @@ jobs:
 - ツール有無の確認: `pnpm run tools:formal:check`
 - Apalache（`apalache-mc` 導入済みの場合）: `pnpm run verify:tla -- --engine=apalache`
 - TLC（`TLA_TOOLS_JAR` 設定時）: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`
+- CI の `Formal Verify` workflow は固定された `TLA_TOOLS_VERSION` から `tla2tools.jar` を取得・キャッシュし、TLC 用の `TLA_TOOLS_JAR` を内部設定します。`workflow_dispatch` から jar パスは指定しません。
 - SMT（`z3` または `cvc5` がある場合）: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
 
 ### Apalache クイックスタート
