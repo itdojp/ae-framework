@@ -142,15 +142,13 @@ jobs:
           path: |
             artifacts/codex/model-check.json
             artifacts/codex/*.tlc.log.txt
-  post-summary:
-    if: ${{ github.event_name == 'pull_request' }}
+  build-summary:
+    if: ${{ github.event_name == 'pull_request' || inputs.trigger == 'pull_request' }}
     runs-on: ubuntu-latest
     needs: [traceability, model-check, contracts-check, contracts-exec]
     permissions:
       contents: read
       actions: read
-      issues: write
-      pull-requests: write
     continue-on-error: >-
       ${{
         (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking'))
@@ -291,12 +289,37 @@ jobs:
             fi
           } > pr-summary.md
           cat pr-summary.md
+      - name: Upload PR summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-pr-summary
+          path: pr-summary.md
+  post-summary:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    needs: [build-summary]
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+      pull-requests: write
+    continue-on-error: >-
+      ${{
+        (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking'))
+        || (inputs.trigger == 'pull_request' && contains(inputs.pr_labels, 'ci-non-blocking'))
+      }}
+    steps:
+      - name: Download PR summary
+        uses: actions/download-artifact@v4
+        with:
+          name: verify-pr-summary
+          path: artifacts_dl/verify-pr-summary
       - name: Post PR comment
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const body = fs.readFileSync('pr-summary.md', 'utf8');
+            const body = fs.readFileSync('artifacts_dl/verify-pr-summary/pr-summary.md', 'utf8');
             const issueNumber = context.payload.pull_request?.number || Number(process.env.PR_NUMBER || 0);
             if (!issueNumber) {
               return;

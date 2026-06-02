@@ -602,6 +602,15 @@ describe('CI workflow read-only PR validation boundaries', () => {
     const ci = parseWorkflow('ci.yml');
     expect(ci.jobs?.['verify-entry']?.permissions).toEqual({ contents: 'read' });
 
+    const verifyPublisher = ci.jobs?.['verify-summary-publisher'];
+    expect(verifyPublisher?.needs).toEqual(['verify-entry']);
+    expect(verifyPublisher?.permissions).toMatchObject({
+      actions: 'read',
+      issues: 'write',
+      'pull-requests': 'write',
+    });
+    expect(jobSteps(ci, 'verify-summary-publisher').some((step) => step?.uses === 'actions/checkout@v4')).toBe(false);
+
     const workflow = parseWorkflow('verify.yml');
     const raw = readWorkflow('verify.yml');
     expect(workflow.permissions).toMatchObject({ contents: 'read', actions: 'read' });
@@ -613,7 +622,12 @@ describe('CI workflow read-only PR validation boundaries', () => {
       expectCheckoutCredentialsDisabled(jobSteps(workflow, jobName));
     }
 
+    expectReadOnlyJobPermissions(workflow, 'build-summary');
+    expect(jobSteps(workflow, 'build-summary').some((step) => step?.uses === 'actions/checkout@v4')).toBe(false);
+    expect(jobSteps(workflow, 'build-summary').some((step) => step?.uses === 'actions/github-script@v7')).toBe(false);
+
     const postSummary = workflow.jobs?.['post-summary'];
+    expect(postSummary?.needs).toEqual(['build-summary']);
     expect(postSummary?.permissions).toMatchObject({
       actions: 'read',
       issues: 'write',
