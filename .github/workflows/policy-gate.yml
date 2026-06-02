@@ -40,6 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
@@ -108,6 +110,7 @@ jobs:
           AE_POLICY_ASSURANCE_MODE_CONFIG: ${{ vars.AE_POLICY_ASSURANCE_MODE || '' }}
         with:
           script: |
+            const crypto = require('crypto');
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const prNumber = Number(process.env.PR_NUMBER || 0);
@@ -156,7 +159,51 @@ jobs:
               return;
             }
 
+            async function exportTrustedDigest(envName, path) {
+              try {
+                const response = await github.rest.repos.getContent({
+                  owner,
+                  repo,
+                  path,
+                  ref: pr.base.sha,
+                });
+                const content = response.data;
+                if (Array.isArray(content) || content.type !== 'file' || typeof content.content !== 'string') {
+                  core.warning(`Trusted provenance digest skipped for ${path}: content is not a file`);
+                  return;
+                }
+                const encoding = content.encoding === 'base64' ? 'base64' : 'utf8';
+                const digest = crypto
+                  .createHash('sha256')
+                  .update(Buffer.from(content.content, encoding))
+                  .digest('hex');
+                core.exportVariable(envName, digest);
+              } catch (error) {
+                core.warning(`Trusted provenance digest skipped for ${path}: ${error instanceof Error ? error.message : String(error)}`);
+              }
+            }
+
             core.setOutput('verify_lite_run_id', String(run.id));
+            core.exportVariable('AE_VERIFY_LITE_RUN_ID', String(run.id));
+            core.exportVariable('AE_VERIFY_LITE_RUN_ATTEMPT', String(run.run_attempt || ''));
+            core.exportVariable('AE_VERIFY_LITE_HEAD_SHA', pr.head.sha);
+            core.exportVariable('AE_VERIFY_LITE_WORKFLOW_NAME', run.name || 'Verify Lite');
+            core.exportVariable('AE_VERIFY_LITE_EVENT_NAME', run.event || 'pull_request');
+            core.exportVariable('AE_VERIFY_LITE_CONCLUSION', run.conclusion || '');
+            core.exportVariable('AE_VERIFY_LITE_REPOSITORY', `${owner}/${repo}`);
+            core.exportVariable('AE_VERIFY_LITE_TRUSTED_REF', pr.base.sha);
+            await exportTrustedDigest(
+              'AE_VERIFY_LITE_TRUSTED_GENERATOR_SHA256',
+              'scripts/assurance/build-claim-evidence-manifest.mjs',
+            );
+            await exportTrustedDigest(
+              'AE_VERIFY_LITE_TRUSTED_SCHEMA_SHA256',
+              'schema/claim-evidence-manifest.schema.json',
+            );
+            await exportTrustedDigest(
+              'AE_VERIFY_LITE_TRUSTED_CONTRACT_SHA256',
+              'scripts/ci/lib/claim-evidence-manifest-contract.mjs',
+            );
             if (labelStrict && !explicitMode) {
               core.exportVariable('AE_POLICY_ASSURANCE_MODE', 'strict');
             }
@@ -166,7 +213,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: verify-lite-report
-          path: .
+          path: artifacts
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ steps.assurance-policy.outputs.verify_lite_run_id }}

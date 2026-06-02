@@ -34,6 +34,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       # Intentional: run before docs-only detection to fail fast on root pollution
       # regardless of PR change scope.
       - name: Enforce root layout policy
@@ -316,6 +317,12 @@ jobs:
             fi
           done
           pnpm -s run claim-evidence:generate "${args[@]}"
+      - name: Write claim evidence provenance (report-only)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        continue-on-error: true
+        env:
+          VERIFY_LITE_PR_HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/ci/write-verify-lite-assurance-provenance.mjs
       - name: Enforce assurance summary (strict; label-gated)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'enforce-assurance') }}
         run: |
@@ -404,6 +411,7 @@ jobs:
             artifacts/assurance/assurance-summary.md
             artifacts/assurance/claim-evidence-manifest.json
             artifacts/assurance/claim-evidence-manifest.md
+            artifacts/assurance/claim-evidence-provenance.json
             artifacts/quality/quality-scorecard.json
             artifacts/quality/quality-scorecard.md
             artifacts/discovery-pack/discovery-pack-validate-report.json

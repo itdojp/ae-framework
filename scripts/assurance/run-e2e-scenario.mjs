@@ -286,6 +286,16 @@ function buildPolicyArtifacts({ scenarioName, generatedAt, manifestPath, outputD
   const policy = loadRiskPolicy('policy/risk-policy.yml');
   const assurance = inspectClaimEvidenceManifest(manifestPath, generatedAt);
   assurance.path = canonical.claimEvidenceManifest;
+  if (assurance.provenance) {
+    const originalProvenancePath = assurance.provenance.path;
+    const canonicalProvenancePath = `${path.posix.dirname(canonical.claimEvidenceManifest)}/claim-evidence-provenance.json`;
+    const normalizeProvenancePath = (message) => String(message).split(originalProvenancePath).join(canonicalProvenancePath);
+    assurance.provenance.path = canonicalProvenancePath;
+    assurance.provenance.warnings = (Array.isArray(assurance.provenance.warnings) ? assurance.provenance.warnings : [])
+      .map(normalizeProvenancePath);
+    assurance.provenance.errors = (Array.isArray(assurance.provenance.errors) ? assurance.provenance.errors : [])
+      .map(normalizeProvenancePath);
+  }
   const pullRequest = {
     labels: [{ name: 'risk:low' }],
     body: '## Acceptance\nFixture scenario reproduces verify-lite, assurance summary, claim evidence manifest, and policy decision artifacts.\n\n## Rollback\nRevert the fixture scenario, runner, and expected golden artifacts.',

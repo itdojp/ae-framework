@@ -13,7 +13,10 @@
   "evaluation": {
     "ok": true,
     "errors": [],
-    "warnings": [],
+    "warnings": [
+      "assurance: provenance: claim evidence provenance not found: artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json",
+      "assurance: provenance: claim evidence provenance missing: artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json"
+    ],
     "inferredRisk": {
       "level": "risk:low",
       "labels": {
@@ -66,7 +69,14 @@
         "path": "artifacts/assurance-e2e/inventory-waiver/claim-evidence-manifest.json",
         "present": true,
         "schemaVersion": "claim-evidence-manifest/v1",
-        "generatedAt": "2026-05-06T00:00:00.000Z"
+        "generatedAt": "2026-05-06T00:00:00.000Z",
+        "provenance": {
+          "path": "artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json",
+          "present": false,
+          "trusted": false,
+          "schemaVersion": null,
+          "generatedAt": null
+        }
       },
       "summary": {
         "totalClaims": 3,
@@ -138,7 +148,10 @@
           "claimId": "manual-fraud-review"
         }
       ],
-      "warnings": [],
+      "warnings": [
+        "provenance: claim evidence provenance not found: artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json",
+        "provenance: claim evidence provenance missing: artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json"
+      ],
       "errors": []
     }
   }

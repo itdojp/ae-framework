@@ -308,6 +308,23 @@
         "waivers": []
       }
     ],
+    "provenance": {
+      "path": "artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json",
+      "present": false,
+      "trusted": false,
+      "schemaVersion": null,
+      "generatedAt": null,
+      "workflow": null,
+      "source": null,
+      "artifact": null,
+      "generator": null,
+      "warnings": [
+        "claim evidence provenance not found: artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json"
+      ],
+      "errors": [
+        "claim evidence provenance missing: artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json"
+      ]
+    },
     "warnings": [],
     "errors": []
   }

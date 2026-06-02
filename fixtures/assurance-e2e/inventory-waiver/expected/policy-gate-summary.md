@@ -14,4 +14,7 @@
     - id=change-package-v2:waiver:0:manual-fraud-review, claim=manual-fraud-review, status=active, owner=@team-risk, expires=2099-12-31, reason=Manual fraud review is active while automated model validation evidence is being collected.
 - required checks:
   - verify-lite: success
+- warnings:
+  - assurance: provenance: claim evidence provenance not found: artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json
+  - assurance: provenance: claim evidence provenance missing: artifacts/assurance-e2e/inventory-waiver/claim-evidence-provenance.json
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -33,7 +34,9 @@ const SUMMARY_CONTRACT_ID = 'policy-gate-summary.v1';
 const POLICY_INPUT_PATH = 'artifacts/ci/policy-input-v1.json';
 const POLICY_DECISION_PATH = 'artifacts/ci/policy-decision-js-v1.json';
 const CLAIM_EVIDENCE_MANIFEST_PATH = 'artifacts/assurance/claim-evidence-manifest.json';
+const CLAIM_EVIDENCE_PROVENANCE_PATH = 'artifacts/assurance/claim-evidence-provenance.json';
 const CLAIM_LEVEL_SUMMARY_PATH = 'artifacts/assurance/claim-level-summary.json';
+const CLAIM_EVIDENCE_PROVENANCE_SCHEMA_VERSION = 'verify-lite-assurance-provenance/v1';
 const PLAN_ARTIFACT_PATH = 'artifacts/plan/plan-artifact.json';
 const PLAN_ARTIFACT_SCHEMA_PATH = 'schema/plan-artifact.schema.json';
 const PLAN_ARTIFACT_VALIDATION_JSON_PATH = 'artifacts/plan/plan-artifact-validation.json';
@@ -718,7 +721,168 @@ function normalizeClaimLevelSummaryClaim(claim, nowDate) {
   };
 }
 
-function inspectClaimEvidenceManifest(manifestPath = CLAIM_EVIDENCE_MANIFEST_PATH, now = new Date().toISOString()) {
+function optionalString(value) {
+  const normalized = String(value ?? '').trim();
+  return normalized || null;
+}
+
+function sha256File(filePath) {
+  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+}
+
+function displayPath(filePath) {
+  const relativePath = path.relative(process.cwd(), filePath);
+  if (relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath)) {
+    return relativePath.split(path.sep).join('/');
+  }
+  return filePath;
+}
+
+function trustedProvenanceContextFromEnv(env = process.env) {
+  return {
+    runId: optionalString(env.AE_VERIFY_LITE_RUN_ID),
+    runAttempt: optionalString(env.AE_VERIFY_LITE_RUN_ATTEMPT),
+    headSha: optionalString(env.AE_VERIFY_LITE_HEAD_SHA),
+    workflowName: optionalString(env.AE_VERIFY_LITE_WORKFLOW_NAME),
+    eventName: optionalString(env.AE_VERIFY_LITE_EVENT_NAME),
+    conclusion: optionalString(env.AE_VERIFY_LITE_CONCLUSION),
+    repository: optionalString(env.AE_VERIFY_LITE_REPOSITORY),
+    generatorSha256: optionalString(env.AE_VERIFY_LITE_TRUSTED_GENERATOR_SHA256),
+    schemaSha256: optionalString(env.AE_VERIFY_LITE_TRUSTED_SCHEMA_SHA256),
+    contractSha256: optionalString(env.AE_VERIFY_LITE_TRUSTED_CONTRACT_SHA256),
+  };
+}
+
+const REQUIRED_TRUSTED_PROVENANCE_FIELDS = [
+  ['run id', 'runId'],
+  ['run attempt', 'runAttempt'],
+  ['head sha', 'headSha'],
+  ['workflow name', 'workflowName'],
+  ['event name', 'eventName'],
+  ['conclusion', 'conclusion'],
+  ['repository', 'repository'],
+  ['generator sha256', 'generatorSha256'],
+  ['schema sha256', 'schemaSha256'],
+  ['contract sha256', 'contractSha256'],
+];
+
+function compareTrustedValue(errors, label, expected, actual, { required = false } = {}) {
+  if (!expected) {
+    if (required) {
+      errors.push(`trusted provenance ${label} context missing`);
+    }
+    return false;
+  }
+  if (!actual) {
+    errors.push(`trusted provenance ${label} missing`);
+    return true;
+  }
+  if (String(actual) !== String(expected)) {
+    errors.push(`trusted provenance ${label} mismatch: expected ${expected}, got ${actual}`);
+  }
+  return true;
+}
+
+function inspectClaimEvidenceProvenance({
+  manifestPath,
+  provenancePath = CLAIM_EVIDENCE_PROVENANCE_PATH,
+  trustedContext = trustedProvenanceContextFromEnv(),
+} = {}) {
+  const absoluteProvenancePath = path.resolve(provenancePath);
+  const displayProvenancePath = displayPath(absoluteProvenancePath);
+  const baseState = {
+    path: displayProvenancePath,
+    present: false,
+    trusted: false,
+    schemaVersion: null,
+    generatedAt: null,
+    workflow: null,
+    source: null,
+    artifact: null,
+    generator: null,
+    warnings: [],
+    errors: [],
+  };
+
+  if (!fs.existsSync(absoluteProvenancePath)) {
+    return {
+      ...baseState,
+      warnings: [`claim evidence provenance not found: ${displayProvenancePath}`],
+      errors: [`claim evidence provenance missing: ${displayProvenancePath}`],
+    };
+  }
+
+  try {
+    const payload = JSON.parse(fs.readFileSync(absoluteProvenancePath, 'utf8'));
+    const errors = [];
+    const warnings = [];
+    const schemaVersion = optionalString(payload?.schemaVersion);
+    const generatedAt = optionalString(payload?.generatedAt);
+    const workflow = payload?.workflow && typeof payload.workflow === 'object' ? payload.workflow : {};
+    const source = payload?.source && typeof payload.source === 'object' ? payload.source : {};
+    const artifact = payload?.artifact && typeof payload.artifact === 'object' ? payload.artifact : {};
+    const generator = payload?.generator && typeof payload.generator === 'object' ? payload.generator : {};
+
+    if (schemaVersion !== CLAIM_EVIDENCE_PROVENANCE_SCHEMA_VERSION) {
+      errors.push(`claim evidence provenance schemaVersion must be ${CLAIM_EVIDENCE_PROVENANCE_SCHEMA_VERSION}`);
+    }
+
+    const absoluteManifestPath = path.resolve(manifestPath || CLAIM_EVIDENCE_MANIFEST_PATH);
+    if (!fs.existsSync(absoluteManifestPath)) {
+      errors.push(`claim evidence manifest missing for provenance digest check: ${displayPath(absoluteManifestPath)}`);
+    } else {
+      const actualDigest = sha256File(absoluteManifestPath);
+      compareTrustedValue(errors, 'manifest sha256', actualDigest, artifact.manifestSha256);
+    }
+
+    const trustedComparisons = [
+      ['run id', 'runId', workflow.runId],
+      ['run attempt', 'runAttempt', workflow.runAttempt],
+      ['head sha', 'headSha', source.sha],
+      ['workflow name', 'workflowName', workflow.name],
+      ['event name', 'eventName', workflow.eventName],
+      ['conclusion', 'conclusion', 'success'],
+      ['repository', 'repository', payload.repository],
+      ['generator sha256', 'generatorSha256', generator.sha256],
+      ['schema sha256', 'schemaSha256', generator.schemaSha256],
+      ['contract sha256', 'contractSha256', generator.contractSha256],
+    ];
+    for (const [label, key, actual] of trustedComparisons) {
+      compareTrustedValue(errors, label, trustedContext[key], actual, { required: true });
+    }
+
+    const missingTrustedContext = REQUIRED_TRUSTED_PROVENANCE_FIELDS
+      .filter(([, key]) => !trustedContext[key])
+      .map(([label]) => label);
+    if (missingTrustedContext.length > 0) {
+      warnings.push(`trusted Verify Lite run metadata incomplete; missing ${missingTrustedContext.join(', ')}`);
+    }
+
+    return {
+      ...baseState,
+      present: true,
+      trusted: errors.length === 0,
+      schemaVersion,
+      generatedAt,
+      workflow,
+      source,
+      artifact,
+      generator,
+      warnings,
+      errors,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ...baseState,
+      present: true,
+      warnings: [`failed to parse claim evidence provenance: ${message}`],
+      errors: [`failed to parse claim evidence provenance: ${message}`],
+    };
+  }
+}
+
+function inspectClaimEvidenceManifest(manifestPath = CLAIM_EVIDENCE_MANIFEST_PATH, now = new Date().toISOString(), options = {}) {
   const absolutePath = path.resolve(manifestPath);
   const nowDate = toDateOnly(now);
   const baseState = {
@@ -734,9 +898,15 @@ function inspectClaimEvidenceManifest(manifestPath = CLAIM_EVIDENCE_MANIFEST_PAT
       unresolved: 0,
     },
     claims: [],
+    provenance: null,
     warnings: [],
     errors: [],
   };
+  const provenanceState = inspectClaimEvidenceProvenance({
+    manifestPath: absolutePath,
+    provenancePath: options.provenancePath || path.join(path.dirname(absolutePath), 'claim-evidence-provenance.json'),
+    trustedContext: options.trustedContext,
+  });
 
   if (!fs.existsSync(absolutePath)) {
     return baseState;
@@ -762,6 +932,7 @@ function inspectClaimEvidenceManifest(manifestPath = CLAIM_EVIDENCE_MANIFEST_PAT
         ...(securitySummary ? { security: securitySummary } : {}),
       },
       claims,
+      provenance: provenanceState,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -855,6 +1026,25 @@ function buildAssuranceEvaluation(manifestState, options = {}) {
     }
   }
 
+  const provenance = manifestState?.provenance;
+  if (manifestState?.present && manifestState?.schemaVersion === 'claim-evidence-manifest/v1') {
+    if (provenance?.warnings?.length > 0) {
+      warnings.push(...provenance.warnings.map((warning) => `provenance: ${warning}`));
+    }
+    if (modeState.value === 'strict') {
+      if (!provenance?.present) {
+        errors.push('assurance provenance missing; next action: generate and upload claim-evidence-provenance.json with verify-lite-report');
+      } else if (provenance.trusted !== true) {
+        const provenanceErrors = Array.isArray(provenance.errors) && provenance.errors.length > 0
+          ? provenance.errors
+          : ['claim evidence provenance is not trusted'];
+        errors.push(...provenanceErrors.map((error) => `assurance provenance not trusted: ${error}`));
+      }
+    } else if (provenance?.errors?.length > 0) {
+      warnings.push(...provenance.errors.map((error) => `provenance: ${error}`));
+    }
+  }
+
   const claims = Array.isArray(manifestState?.claims) ? manifestState.claims : [];
   const waivers = flattenAssuranceWaivers(claims);
   for (const claim of claims) {
@@ -909,6 +1099,13 @@ function buildAssuranceEvaluation(manifestState, options = {}) {
       present: Boolean(manifestState?.present),
       schemaVersion: manifestState?.schemaVersion ?? null,
       generatedAt: manifestState?.generatedAt ?? null,
+      provenance: provenance ? {
+        path: provenance.path,
+        present: Boolean(provenance.present),
+        trusted: Boolean(provenance.trusted),
+        schemaVersion: provenance.schemaVersion ?? null,
+        generatedAt: provenance.generatedAt ?? null,
+      } : null,
     },
     summary,
     claims: claims.map((claim) => {
@@ -1508,6 +1705,7 @@ export {
   buildPolicyGateReport,
   inspectAssuranceEvidence,
   inspectClaimEvidenceManifest,
+  inspectClaimEvidenceProvenance,
   inspectClaimLevelSummary,
   run,
   toCheckEntries,

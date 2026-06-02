@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import crypto from 'node:crypto';
 import { join } from 'node:path';
 import {
   buildMarkdownSummary,
@@ -99,10 +100,104 @@ function assuranceState(overrides: Record<string, unknown> = {}) {
         ],
       },
     ],
+    provenance: {
+      path: '/workspace/artifacts/assurance/claim-evidence-provenance.json',
+      present: true,
+      trusted: true,
+      schemaVersion: 'verify-lite-assurance-provenance/v1',
+      generatedAt: '2026-04-28T18:20:00.000Z',
+      warnings: [],
+      errors: [],
+    },
     warnings: [],
     errors: [],
     ...overrides,
   };
+}
+
+function sha256File(filePath: string) {
+  return crypto.createHash('sha256').update(readFileSync(filePath)).digest('hex');
+}
+
+function trustedProvenanceContext(overrides: Record<string, unknown> = {}) {
+  return {
+    runId: '123456789',
+    runAttempt: '1',
+    headSha: 'abc123trustedhead',
+    workflowName: 'Verify Lite',
+    eventName: 'pull_request',
+    conclusion: 'success',
+    repository: 'itdojp/ae-framework',
+    generatorSha256: 'generator-sha',
+    schemaSha256: 'schema-sha',
+    contractSha256: 'contract-sha',
+    ...overrides,
+  };
+}
+
+function writeClaimEvidenceManifest(manifestPath: string) {
+  writeFileSync(
+    manifestPath,
+    JSON.stringify({
+      schemaVersion: 'claim-evidence-manifest/v1',
+      generatedAt: '2026-05-08T00:00:00.000Z',
+      summary: {
+        totalClaims: 1,
+        fullySupported: 1,
+        partiallySupported: 0,
+        waived: 0,
+        unresolved: 0,
+      },
+      claims: [
+        {
+          id: 'trusted-claim',
+          status: 'satisfied',
+          evidenceRefs: [],
+          missingEvidenceRefs: [],
+          waiverRefs: [],
+        },
+      ],
+    }),
+  );
+}
+
+function writeClaimEvidenceProvenance(
+  provenancePath: string,
+  manifestPath: string,
+  trustedContext: Record<string, unknown>,
+  overrides: Record<string, unknown> = {},
+) {
+  writeFileSync(
+    provenancePath,
+    JSON.stringify({
+      schemaVersion: 'verify-lite-assurance-provenance/v1',
+      generatedAt: '2026-05-08T00:01:00.000Z',
+      repository: trustedContext.repository,
+      workflow: {
+        name: trustedContext.workflowName,
+        runId: trustedContext.runId,
+        runAttempt: trustedContext.runAttempt,
+        eventName: trustedContext.eventName,
+      },
+      source: {
+        sha: trustedContext.headSha,
+      },
+      artifact: {
+        name: 'verify-lite-report',
+        manifestPath: 'artifacts/assurance/claim-evidence-manifest.json',
+        manifestSha256: sha256File(manifestPath),
+      },
+      generator: {
+        path: 'scripts/assurance/build-claim-evidence-manifest.mjs',
+        sha256: trustedContext.generatorSha256,
+        schemaPath: 'schema/claim-evidence-manifest.schema.json',
+        schemaSha256: trustedContext.schemaSha256,
+        contractPath: 'scripts/ci/lib/claim-evidence-manifest-contract.mjs',
+        contractSha256: trustedContext.contractSha256,
+      },
+      ...overrides,
+    }),
+  );
 }
 
 describe('policy-gate', () => {
@@ -811,6 +906,216 @@ describe('policy-gate', () => {
       expect(result.ok).toBe(false);
       expect(result.errors).toEqual(expect.arrayContaining([
         expect.stringContaining('assurance claim partial-proof is missing required evidence'),
+        'assurance decision is block',
+      ]));
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('trusts strict claim evidence only when Verify Lite provenance matches run metadata and trusted digests', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-provenance-valid-'));
+    const manifestPath = join(tempDir, 'claim-evidence-manifest.json');
+    const provenancePath = join(tempDir, 'claim-evidence-provenance.json');
+    const trustedContext = trustedProvenanceContext();
+
+    try {
+      writeClaimEvidenceManifest(manifestPath);
+      writeClaimEvidenceProvenance(provenancePath, manifestPath, trustedContext);
+
+      const assurance = inspectClaimEvidenceManifest(manifestPath, '2026-05-08T00:00:00.000Z', {
+        provenancePath,
+        trustedContext,
+      });
+      const result = evaluatePolicyGate({
+        policy,
+        pullRequest: {
+          labels: [{ name: 'risk:low' }],
+          body: '## Rollback\nnone\n\n## Acceptance\nok',
+        },
+        changedFiles: ['src/feature/example.ts'],
+        reviews: [],
+        statusRollup: [checkRun('verify-lite')],
+        assurance,
+        assuranceMode: 'strict',
+      });
+
+      expect(assurance.provenance.trusted).toBe(true);
+      expect(result.ok).toBe(true);
+      expect(result.assurance.manifest.provenance).toMatchObject({
+        present: true,
+        trusted: true,
+        schemaVersion: 'verify-lite-assurance-provenance/v1',
+      });
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails strict claim evidence when Verify Lite provenance is missing', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-provenance-missing-'));
+    const manifestPath = join(tempDir, 'claim-evidence-manifest.json');
+    const provenancePath = join(tempDir, 'claim-evidence-provenance.json');
+
+    try {
+      writeClaimEvidenceManifest(manifestPath);
+
+      const assurance = inspectClaimEvidenceManifest(manifestPath, '2026-05-08T00:00:00.000Z', {
+        provenancePath,
+        trustedContext: trustedProvenanceContext(),
+      });
+      const result = evaluatePolicyGate({
+        policy,
+        pullRequest: {
+          labels: [{ name: 'risk:low' }],
+          body: '## Rollback\nnone\n\n## Acceptance\nok',
+        },
+        changedFiles: ['src/feature/example.ts'],
+        reviews: [],
+        statusRollup: [checkRun('verify-lite')],
+        assurance,
+        assuranceMode: 'strict',
+      });
+
+      expect(assurance.provenance).toMatchObject({
+        present: false,
+        trusted: false,
+      });
+      expect(result.ok).toBe(false);
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.stringContaining('assurance provenance missing'),
+        'assurance decision is block',
+      ]));
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('surfaces missing claim evidence provenance as report-only warning', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-provenance-report-only-'));
+    const manifestPath = join(tempDir, 'claim-evidence-manifest.json');
+    const provenancePath = join(tempDir, 'claim-evidence-provenance.json');
+
+    try {
+      writeClaimEvidenceManifest(manifestPath);
+
+      const assurance = inspectClaimEvidenceManifest(manifestPath, '2026-05-08T00:00:00.000Z', {
+        provenancePath,
+        trustedContext: trustedProvenanceContext(),
+      });
+      const result = evaluatePolicyGate({
+        policy,
+        pullRequest: {
+          labels: [{ name: 'risk:low' }],
+          body: '## Rollback\nnone\n\n## Acceptance\nok',
+        },
+        changedFiles: ['src/feature/example.ts'],
+        reviews: [],
+        statusRollup: [checkRun('verify-lite')],
+        assurance,
+        assuranceMode: 'report-only',
+      });
+
+      expect(result.ok).toBe(true);
+      expect(result.assurance.manifest.provenance).toMatchObject({
+        present: false,
+        trusted: false,
+      });
+      expect(result.warnings).toEqual(expect.arrayContaining([
+        expect.stringContaining('provenance: claim evidence provenance not found'),
+        expect.stringContaining('provenance: claim evidence provenance missing'),
+      ]));
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails strict claim evidence when trusted provenance context digests are incomplete', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-provenance-context-'));
+    const manifestPath = join(tempDir, 'claim-evidence-manifest.json');
+    const provenancePath = join(tempDir, 'claim-evidence-provenance.json');
+    const trustedContext = trustedProvenanceContext();
+
+    try {
+      writeClaimEvidenceManifest(manifestPath);
+      writeClaimEvidenceProvenance(provenancePath, manifestPath, trustedContext);
+
+      const assurance = inspectClaimEvidenceManifest(manifestPath, '2026-05-08T00:00:00.000Z', {
+        provenancePath,
+        trustedContext: trustedProvenanceContext({
+          generatorSha256: '',
+          schemaSha256: '',
+          contractSha256: '',
+        }),
+      });
+      const result = evaluatePolicyGate({
+        policy,
+        pullRequest: {
+          labels: [{ name: 'risk:low' }],
+          body: '## Rollback\nnone\n\n## Acceptance\nok',
+        },
+        changedFiles: ['src/feature/example.ts'],
+        reviews: [],
+        statusRollup: [checkRun('verify-lite')],
+        assurance,
+        assuranceMode: 'strict',
+      });
+
+      expect(assurance.provenance.trusted).toBe(false);
+      expect(result.ok).toBe(false);
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.stringContaining('assurance provenance not trusted: trusted provenance generator sha256 context missing'),
+        expect.stringContaining('assurance provenance not trusted: trusted provenance schema sha256 context missing'),
+        expect.stringContaining('assurance provenance not trusted: trusted provenance contract sha256 context missing'),
+        'assurance decision is block',
+      ]));
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails strict claim evidence when provenance manifest digest does not match the downloaded artifact', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-provenance-digest-'));
+    const manifestPath = join(tempDir, 'claim-evidence-manifest.json');
+    const provenancePath = join(tempDir, 'claim-evidence-provenance.json');
+    const trustedContext = trustedProvenanceContext();
+
+    try {
+      writeClaimEvidenceManifest(manifestPath);
+      writeClaimEvidenceProvenance(provenancePath, manifestPath, trustedContext, {
+        artifact: {
+          name: 'verify-lite-report',
+          manifestPath: 'artifacts/assurance/claim-evidence-manifest.json',
+          manifestSha256: '0'.repeat(64),
+        },
+      });
+
+      const assurance = inspectClaimEvidenceManifest(manifestPath, '2026-05-08T00:00:00.000Z', {
+        provenancePath,
+        trustedContext,
+      });
+      const result = evaluatePolicyGate({
+        policy,
+        pullRequest: {
+          labels: [{ name: 'risk:low' }],
+          body: '## Rollback\nnone\n\n## Acceptance\nok',
+        },
+        changedFiles: ['src/feature/example.ts'],
+        reviews: [],
+        statusRollup: [checkRun('verify-lite')],
+        assurance,
+        assuranceMode: 'strict',
+      });
+
+      expect(assurance.provenance.trusted).toBe(false);
+      expect(result.ok).toBe(false);
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.stringContaining('assurance provenance not trusted: trusted provenance manifest sha256 mismatch'),
         'assurance decision is block',
       ]));
     } finally {

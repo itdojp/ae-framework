@@ -320,12 +320,25 @@ describe('workflow permission boundaries', () => {
   it('policy-gate downloads verify-lite assurance artifacts before label-derived strict mode', () => {
     const workflow = readWorkflow('policy-gate.yml');
     expect(workflow).toContain('actions: read');
+    expect(workflow).toContain('persist-credentials: false');
     expect(workflow).toContain('Resolve assurance policy inputs');
     expect(workflow).toContain("labels.has('enforce-assurance')");
     expect(workflow).toContain("core.exportVariable('AE_POLICY_ASSURANCE_MODE', 'strict')");
+    expect(workflow).toContain("core.exportVariable('AE_VERIFY_LITE_RUN_ID', String(run.id));");
+    expect(workflow).toContain('AE_VERIFY_LITE_TRUSTED_GENERATOR_SHA256');
     expect(workflow).toContain('Download verify-lite assurance artifacts');
     expect(workflow).toContain('name: verify-lite-report');
+    expect(workflow).toContain('path: artifacts');
     expect(workflow).toContain('run-id: ${{ steps.assurance-policy.outputs.verify_lite_run_id }}');
+  });
+
+  it('verify-lite records claim evidence provenance before uploading assurance artifacts', () => {
+    const workflow = readWorkflow('verify-lite.yml');
+    expect(workflow).toContain('persist-credentials: false');
+    expect(workflow).toContain('Write claim evidence provenance (report-only)');
+    expect(workflow).toContain('VERIFY_LITE_PR_HEAD_SHA');
+    expect(workflow).toContain('node scripts/ci/write-verify-lite-assurance-provenance.mjs');
+    expect(workflow).toContain('artifacts/assurance/claim-evidence-provenance.json');
   });
 
   it('release workflows attest official SBOM and quality release assets before upload', () => {
