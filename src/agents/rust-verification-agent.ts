@@ -4,7 +4,7 @@
  */
 
 import { execFileSync } from 'child_process';
-import { readFileSync, existsSync, writeFileSync, readdirSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync, readdirSync, mkdirSync } from 'fs';
 import * as path from 'path';
 
 export interface RustVerificationRequest {
@@ -34,6 +34,11 @@ export interface VerificationOptions {
   unwindLimit?: number; // for CBMC
   strictMode?: boolean;
   generateReport?: boolean;
+  /**
+   * Source mutations are disabled by default. Set to true only after the caller
+   * has passed an authenticated, approved write-capable policy boundary.
+   */
+  allowSourceMutation?: boolean;
   checkOverflow?: boolean;
   checkConcurrency?: boolean;
 }
@@ -178,6 +183,7 @@ export class RustVerificationAgent {
       // Run Prusti verification
       const output = execFileSync('cargo', ['prusti'], {
         cwd: request.projectPath,
+        env: this.buildVerifierEnv(),
         timeout: (request.options.timeout || 300) * 1000,
         encoding: 'utf8',
         maxBuffer: 10 * 1024 * 1024 // 10MB buffer
@@ -251,6 +257,7 @@ export class RustVerificationAgent {
 
       const output = execFileSync('cargo', kaniArgs, {
         cwd: request.projectPath,
+        env: this.buildVerifierEnv(),
         timeout: (request.options.timeout || 600) * 1000,
         encoding: 'utf8',
         maxBuffer: 20 * 1024 * 1024 // 20MB buffer
@@ -315,7 +322,10 @@ export class RustVerificationAgent {
       const rustSources = this.resolveRustSources(request.projectPath);
       execFileSync('goto-cc', ['-o', 'program.goto', ...rustSources], {
         cwd: request.projectPath,
-        encoding: 'utf8'
+        env: this.buildVerifierEnv(),
+        timeout: (request.options.timeout || 1200) * 1000,
+        encoding: 'utf8',
+        maxBuffer: 20 * 1024 * 1024
       });
 
       // Run CBMC
@@ -331,6 +341,7 @@ export class RustVerificationAgent {
 
       const output = execFileSync('cbmc', cbmcArgs, {
         cwd: request.projectPath,
+        env: this.buildVerifierEnv(),
         timeout: (request.options.timeout || 1200) * 1000,
         encoding: 'utf8',
         maxBuffer: 50 * 1024 * 1024 // 50MB buffer
@@ -393,8 +404,10 @@ export class RustVerificationAgent {
     try {
       const output = execFileSync('cargo', ['miri', 'test'], {
         cwd: request.projectPath,
+        env: this.buildVerifierEnv(),
         timeout: (request.options.timeout || 600) * 1000,
-        encoding: 'utf8'
+        encoding: 'utf8',
+        maxBuffer: 20 * 1024 * 1024
       });
 
       // Parse Miri output
@@ -450,19 +463,19 @@ export class RustVerificationAgent {
       try {
         switch (tool) {
           case 'prusti':
-            execFileSync('cargo', ['prusti', '--version'], { stdio: 'pipe' });
+            execFileSync('cargo', ['prusti', '--version'], { stdio: 'pipe', env: this.buildVerifierEnv() });
             this.installedTools.add(tool);
             break;
           case 'kani':
-            execFileSync('cargo', ['kani', '--version'], { stdio: 'pipe' });
+            execFileSync('cargo', ['kani', '--version'], { stdio: 'pipe', env: this.buildVerifierEnv() });
             this.installedTools.add(tool);
             break;
           case 'cbmc':
-            execFileSync('cbmc', ['--version'], { stdio: 'pipe' });
+            execFileSync('cbmc', ['--version'], { stdio: 'pipe', env: this.buildVerifierEnv() });
             this.installedTools.add(tool);
             break;
           case 'miri':
-            execFileSync('cargo', ['miri', '--version'], { stdio: 'pipe' });
+            execFileSync('cargo', ['miri', '--version'], { stdio: 'pipe', env: this.buildVerifierEnv() });
             this.installedTools.add(tool);
             break;
           case 'loom':
@@ -502,8 +515,10 @@ export class RustVerificationAgent {
     try {
       const output = execFileSync('cargo', ['test', '--features', 'loom'], {
         cwd: request.projectPath,
+        env: this.buildVerifierEnv(),
         timeout: (request.options.timeout || 300) * 1000,
-        encoding: 'utf8'
+        encoding: 'utf8',
+        maxBuffer: 20 * 1024 * 1024
       });
 
       const checks: VerificationCheck[] = [{
@@ -593,6 +608,10 @@ export class RustVerificationAgent {
   }
 
   private async prepareProjectForVerification(request: RustVerificationRequest): Promise<void> {
+    if (request.options.allowSourceMutation !== true) {
+      return;
+    }
+
     // Add verification dependencies to Cargo.toml if needed
     const cargoTomlPath = path.join(request.projectPath, 'Cargo.toml');
     let cargoContent = readFileSync(cargoTomlPath, 'utf8');
@@ -818,8 +837,42 @@ export class RustVerificationAgent {
       summary: this.generateSummary(results)
     };
 
-    const reportPath = path.join(projectPath, 'verification-report.json');
+    const reportDir = path.join(projectPath, 'target', 'ae-verification');
+    mkdirSync(reportDir, { recursive: true });
+    const reportPath = path.join(reportDir, 'verification-report.json');
     writeFileSync(reportPath, JSON.stringify(report, null, 2));
+  }
+
+  private buildVerifierEnv(): NodeJS.ProcessEnv {
+    const allowList = [
+      'PATH',
+      'HOME',
+      'USERPROFILE',
+      'HOMEDRIVE',
+      'HOMEPATH',
+      'APPDATA',
+      'LOCALAPPDATA',
+      'CARGO_HOME',
+      'RUSTUP_HOME',
+      'RUSTFLAGS',
+      'RUST_BACKTRACE',
+      'TERM',
+      'CI',
+      'TMPDIR',
+      'TEMP',
+      'TMP',
+      'SystemRoot',
+      'ComSpec',
+      'PATHEXT',
+    ];
+    const env: NodeJS.ProcessEnv = {};
+    for (const key of allowList) {
+      const value = process.env[key];
+      if (value !== undefined) {
+        env[key] = value;
+      }
+    }
+    return env;
   }
 
   private generateSummary(results: RustVerificationResult[]): string {

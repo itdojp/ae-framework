@@ -28,6 +28,7 @@ describe('workspace path policy', () => {
       '../generated',
       'generated/../outside',
       'generated/./typescript',
+      '.GIT/config',
       'C:\\temp\\generated',
       'generated\\typescript',
       '//server/share/generated',

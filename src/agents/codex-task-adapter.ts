@@ -221,18 +221,105 @@ function recommendNextActions(phase: Phase): string[] {
   }
 }
 
+function hasTrustedUIApproval(context: Record<string, unknown>): boolean {
+  const approval = context['approval'];
+  if (!approval || typeof approval !== 'object') {
+    return false;
+  }
+  const approvalRecord = approval as Record<string, unknown>;
+  return approvalRecord['approved'] === true && approvalRecord['scope'] === 'ui-scaffold';
+}
+
+function hasUnsafePathSegment(value: string): boolean {
+  return value.split(/[\\/]+/u).some((segment) => segment === '..' || segment.toLowerCase() === '.git');
+}
+
+function findExistingAncestor(absolutePath: string): string {
+  let current = absolutePath;
+  while (!fs.existsSync(current)) {
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return current;
+    }
+    current = parent;
+  }
+  return current;
+}
+
+function resolveUIOutputDir(outputDir: unknown): { ok: true; absolutePath: string; relativePath: string } | { ok: false; errors: string[] } {
+  const rawOutputDir = typeof outputDir === 'string' && outputDir.trim().length > 0
+    ? outputDir.trim()
+    : 'apps';
+  const errors: string[] = [];
+  if (/[\u0000-\u001f\u007f]/u.test(rawOutputDir)) {
+    errors.push('context.outputDir must not contain control characters');
+  }
+  if (path.isAbsolute(rawOutputDir) || path.win32.isAbsolute(rawOutputDir)) {
+    errors.push('context.outputDir must be repository-relative');
+  }
+  if (hasUnsafePathSegment(rawOutputDir)) {
+    errors.push('context.outputDir must not contain parent-directory or .git segments');
+  }
+
+  const repoRoot = process.cwd();
+  const realRepoRoot = fs.existsSync(repoRoot) ? fs.realpathSync(repoRoot) : repoRoot;
+  const absolutePath = path.resolve(repoRoot, rawOutputDir);
+  const relativePath = path.relative(repoRoot, absolutePath);
+  if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    errors.push('context.outputDir must stay inside the repository workspace');
+  }
+  const existingAncestor = findExistingAncestor(absolutePath);
+  const realExistingAncestor = fs.existsSync(existingAncestor) ? fs.realpathSync(existingAncestor) : existingAncestor;
+  const realAncestorRelative = path.relative(realRepoRoot, realExistingAncestor);
+  if (realAncestorRelative && (realAncestorRelative.startsWith('..') || path.isAbsolute(realAncestorRelative))) {
+    errors.push('context.outputDir must not resolve through a symlink outside the repository workspace');
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+  return { ok: true, absolutePath, relativePath };
+}
+
 async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskResponse> {
-  const ctx = (request as any).context || {};
+  const ctx = ((request as any).context && typeof (request as any).context === 'object') ? (request as any).context : {};
   const phaseState = ctx.phaseState;
-  const outputDir = ctx.outputDir || 'apps';
+  const outputDirPolicy = resolveUIOutputDir(ctx.outputDir);
+  const policyWarnings: string[] = [];
+  if (outputDirPolicy.ok === false) {
+    const outputDirErrors = outputDirPolicy.errors;
+    return {
+      summary: 'Blocked: invalid UI scaffold output policy',
+      analysis: outputDirErrors.join('\n'),
+      recommendations: [
+        'Use a repository-relative outputDir such as artifacts/ui-scaffold or apps',
+        'Remove absolute paths, parent-directory escapes, and .git path segments from context.outputDir',
+      ],
+      nextActions: ['Provide a safe context.outputDir and rerun codex task (ui)'],
+      warnings: outputDirErrors,
+      shouldBlockProgress: true,
+      blockingReason: 'unsafe-ui-output-dir',
+      requiredHumanInput: 'safe repository-relative context.outputDir',
+    };
+  }
+  const outputDir = outputDirPolicy.absolutePath;
+  const trustedApproval = hasTrustedUIApproval(ctx);
 
   let effectiveState = phaseState;
-  // Resolve dryRun precedence: context.dryRun > CODEX_UI_DRY_RUN env > fallback
+  // Resolve dryRun precedence: context.dryRun > CODEX_UI_DRY_RUN env > fallback.
+  // Untrusted requests are always forced to dry-run so prompt-injected context cannot
+  // turn UI scaffolding into filesystem writes.
   let dryRun: boolean | undefined = typeof ctx.dryRun === 'boolean' ? ctx.dryRun : undefined;
   if (dryRun === undefined) {
     const env = process.env['CODEX_UI_DRY_RUN'];
     if (env === '0') dryRun = false;
     else if (env === '1') dryRun = true;
+  }
+  if (!trustedApproval) {
+    if (dryRun === false) {
+      policyWarnings.push('untrusted-ui-request-forced-dry-run: context.approval.scope=ui-scaffold with approved=true is required before file writes');
+    }
+    dryRun = true;
   }
   if (dryRun === undefined && (!phaseState?.entities || Object.keys(phaseState.entities).length === 0)) {
     dryRun = true;
@@ -310,10 +397,11 @@ async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskRes
     analysis: files.length ? files.map(f => `• ${f}`).join('\n') : 'No files generated',
     recommendations: [
       dryRun ? 'Provide context.phaseState.entities to generate real files' : `Files generated: ${files.length}`,
+      dryRun && !trustedApproval ? 'Provide context.approval={ approved: true, scope: "ui-scaffold" } only for trusted write-capable runs' : '',
       'Review a11y/performance metrics'
-    ],
+    ].filter(Boolean),
     nextActions: ['pnpm run test:a11y', 'pnpm run test:coverage'],
-    warnings: [],
+    warnings: policyWarnings,
     shouldBlockProgress: false,
   };
   span.end();

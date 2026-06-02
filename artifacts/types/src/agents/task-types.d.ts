@@ -5,7 +5,21 @@ export interface TaskRequest {
     description: string;
     prompt: string;
     subagent_type: string;
-    context?: any;
+    context?: {
+        validationTaskType?: string;
+        strict?: boolean;
+        sources?: string | string[];
+        phaseState?: unknown;
+        outputDir?: string;
+        approval?: {
+            approved?: boolean;
+            scope?: string;
+            actor?: string;
+            reason?: string;
+        };
+        dryRun?: boolean;
+        [key: string]: unknown;
+    };
 }
 export interface TaskResponse {
     summary: string;
@@ -14,6 +28,8 @@ export interface TaskResponse {
     nextActions: string[];
     warnings: string[];
     shouldBlockProgress: boolean;
+    blockingReason?: string;
+    requiredHumanInput?: string;
 }
 export interface TaskHandler {
     handleTask: (request: TaskRequest) => Promise<TaskResponse>;

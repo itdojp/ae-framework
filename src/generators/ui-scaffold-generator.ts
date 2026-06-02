@@ -55,7 +55,10 @@ export class UIScaffoldGenerator {
 
   constructor(phaseState: PhaseState, options: GeneratorOptions) {
     this.phaseState = phaseState;
-    this.options = options;
+    this.options = {
+      ...options,
+      outputDir: path.resolve(options.outputDir),
+    };
     // Find ae-framework root directory
     const currentDir = process.cwd();
     const frameworkRoot = this.findFrameworkRoot(currentDir);
@@ -92,6 +95,59 @@ export class UIScaffoldGenerator {
     
     // Fallback to current working directory
     return process.cwd();
+  }
+
+  private sanitizePathSegment(value: string, fallback = 'entity'): string {
+    const normalized = value
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/gu, '')
+      .replace(/[^a-zA-Z0-9_-]+/gu, '-')
+      .replace(/^-+|-+$/gu, '')
+      .toLowerCase();
+    return normalized || fallback;
+  }
+
+  private sanitizeComponentName(value: string): string {
+    const words = value
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/gu, '')
+      .split(/[^a-zA-Z0-9]+/u)
+      .filter((part) => part.length > 0);
+    const candidate = words
+      .map((word) => `${word.slice(0, 1).toUpperCase()}${word.slice(1)}`)
+      .join('');
+    return /^[A-Za-z]/u.test(candidate) ? candidate : `Entity${candidate || 'Scaffold'}`;
+  }
+
+  private findExistingAncestor(absolutePath: string): string {
+    let current = absolutePath;
+    while (!fs.existsSync(current)) {
+      const parent = path.dirname(current);
+      if (parent === current) {
+        return current;
+      }
+      current = parent;
+    }
+    return current;
+  }
+
+  private resolveOutputPath(relativeOutputPath: string): string {
+    const outputRoot = path.resolve(this.options.outputDir);
+    const absolutePath = path.resolve(outputRoot, relativeOutputPath);
+    const relativeToRoot = path.relative(outputRoot, absolutePath);
+    if (!relativeToRoot || relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
+      throw new Error(`Generated UI output escaped approved output directory: ${relativeOutputPath}`);
+    }
+    if (fs.existsSync(outputRoot)) {
+      const realOutputRoot = fs.realpathSync(outputRoot);
+      const existingAncestor = this.findExistingAncestor(absolutePath);
+      const realExistingAncestor = fs.realpathSync(existingAncestor);
+      const realRelativeToRoot = path.relative(realOutputRoot, realExistingAncestor);
+      if (realRelativeToRoot && (realRelativeToRoot.startsWith('..') || path.isAbsolute(realRelativeToRoot))) {
+        throw new Error(`Generated UI output resolved outside approved output directory: ${relativeOutputPath}`);
+      }
+    }
+    return absolutePath;
   }
 
   async generateAll(): Promise<Record<string, GenerationResult>> {
@@ -155,7 +211,7 @@ export class UIScaffoldGenerator {
     ];
 
     for (const { template, output } of templates) {
-      const outputPath = path.join(this.options.outputDir, output);
+      const outputPath = this.resolveOutputPath(output);
       
       if (!this.options.dryRun) {
         if (fs.existsSync(outputPath) && !this.options.overwrite) {
@@ -175,7 +231,8 @@ export class UIScaffoldGenerator {
 
   private buildTemplateContext(entityName: string, entityDef: EntityDefinition): any {
     const attributes = entityDef.attributes;
-    const entityNameLower = entityName.toLowerCase();
+    const entityNameLower = this.sanitizePathSegment(entityName);
+    const entityComponentName = this.sanitizeComponentName(entityName);
     
     // Find key fields
     const displayNameField = this.findDisplayNameField(attributes);
@@ -191,8 +248,9 @@ export class UIScaffoldGenerator {
     const optionalFormFields = this.getOptionalFormFields(editableAttributes);
 
     return {
-      EntityName: entityName,
+      EntityName: entityComponentName,
       entityName: entityNameLower,
+      originalEntityName: entityName,
       description: entityDef.description,
       attributes,
       editableAttributes,

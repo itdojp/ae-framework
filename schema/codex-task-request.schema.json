@@ -22,12 +22,106 @@
     "context": {
       "type": [
         "object",
-        "array",
-        "string",
-        "number",
-        "boolean",
         "null"
-      ]
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "validationTaskType": {
+          "type": "string"
+        },
+        "strict": {
+          "type": "boolean"
+        },
+        "sources": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "phaseState": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "entities": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": [
+                  "attributes"
+                ],
+                "additionalProperties": true,
+                "properties": {
+                  "description": {
+                    "type": "string"
+                  },
+                  "attributes": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "required": [
+                        "type"
+                      ],
+                      "additionalProperties": true,
+                      "properties": {
+                        "type": {
+                          "type": "string"
+                        },
+                        "required": {
+                          "type": "boolean"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "acceptance_criteria": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "outputDir": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dryRun": {
+          "type": "boolean"
+        },
+        "approval": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "approved": {
+              "type": "boolean"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "ui-scaffold"
+              ]
+            },
+            "actor": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            }
+          }
+        }
+      }
     }
   },
   "anyOf": [
