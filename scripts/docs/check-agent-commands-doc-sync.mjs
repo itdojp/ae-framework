@@ -53,11 +53,16 @@ function extractPrCommands(prSection) {
 
 function extractIssueCommands(issueSection) {
   const commands = [];
-  const pattern = /body\.startsWith\('([^']+)'\)/g;
-  for (const match of issueSection.matchAll(pattern)) {
-    const command = String(match[1] || '').trim();
-    if (!command.startsWith('/')) continue;
-    commands.push(command);
+  const patterns = [
+    /body\.startsWith\('([^']+)'\)/g,
+    /case\s+'([^']+)':/g,
+  ];
+  for (const pattern of patterns) {
+    for (const match of issueSection.matchAll(pattern)) {
+      const command = String(match[1] || '').trim();
+      if (!command.startsWith('/')) continue;
+      commands.push(command);
+    }
   }
   return toSortedUnique(commands);
 }

@@ -46,6 +46,13 @@ jobs:
               await add(['status:done']);
               return;
             }
+            switch (cmd) {
+              case '/block':
+                await add(['status:blocked']);
+                return;
+              default:
+                return;
+            }
 `;
 
 describe('check-agent-commands-doc-sync', () => {
@@ -58,13 +65,13 @@ describe('check-agent-commands-doc-sync', () => {
   it('extracts PR and issue commands', () => {
     const sections = splitWorkflowSections(SAMPLE_WORKFLOW);
     expect(extractPrCommands(sections.prSection)).toEqual(['/coverage', '/handoff', '/run-qa']);
-    expect(extractIssueCommands(sections.issueSection)).toEqual(['/done', '/start']);
+    expect(extractIssueCommands(sections.issueSection)).toEqual(['/block', '/done', '/start']);
   });
 
   it('extracts static and dynamic label metadata', () => {
     const labels = extractLabelMetadata(SAMPLE_WORKFLOW);
     expect(labels.prLabels).toEqual(['run-qa']);
-    expect(labels.issueLabels).toEqual(['status:done', 'status:in-progress']);
+    expect(labels.issueLabels).toEqual(['status:blocked', 'status:done', 'status:in-progress']);
     expect(labels.dynamicLabels).toEqual(['coverage:<0-100>', 'handoff:agent-{a|b|c}']);
   });
 

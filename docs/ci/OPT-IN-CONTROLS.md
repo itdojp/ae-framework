@@ -154,7 +154,7 @@ These call workflow-dispatch entry points directly when the repository wants the
 Dual entrypoints exist:
 - `.github/workflows/agent-commands.yml`
   - always enabled
-  - no `author_association` restriction
+  - mutating Issue commands require trusted actors (`MEMBER` / `OWNER` / `COLLABORATOR`) before label changes, assignee changes, or plan-comment creation
 - `.github/workflows/slash-commands.yml`
   - enabled only when `AE_SLASH_COMMANDS_ISSUE=1`
   - restricted to `MEMBER` / `OWNER` / `COLLABORATOR`
@@ -318,7 +318,7 @@ Codex Autopilot Lane を使う場合:
 ## 5. Issue向け Slash コマンド（Issueコメント）
 
 > 入口（2系統）:  
-> - `.github/workflows/agent-commands.yml`（常時有効 / `author_association` 制限なし）  
+> - `.github/workflows/agent-commands.yml`（常時有効 / Issue metadata変更・assignee変更・planコメント作成は `MEMBER/OWNER/COLLABORATOR` のみ）
 > - `.github/workflows/slash-commands.yml`（`AE_SLASH_COMMANDS_ISSUE=1` かつ `MEMBER/OWNER/COLLABORATOR` のみ）
 
 - `/start` → `status:in-progress` 付与（commenter をアサイン）

@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-06-01'
+lastVerified: '2026-06-02'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -27,6 +27,7 @@ Primary sources:
 | Workflow | Trigger | Boundary condition | Intent |
 | --- | --- | --- | --- |
 | agent-commands (`PR slash command mutations`) | `issue_comment` | requires a comment attached to a PR plus trusted `author_association` (`MEMBER` / `OWNER` / `COLLABORATOR`) before label mutation or workflow dispatch commands execute | prevent arbitrary PR commenters from changing control labels or starting privileged workflows |
+| agent-commands (`Issue slash command mutations`) | `issue_comment` | requires a non-PR Issue comment plus trusted `author_association` (`MEMBER` / `OWNER` / `COLLABORATOR`) before label mutation, assignee mutation, or plan-comment creation executes | prevent arbitrary Issue commenters from changing triage metadata or posting bot-authored plan comments |
 | agent-commands (`copilot-review-gate dispatch`) | `issue_comment` | requires a comment attached to a PR plus `github-actions[bot]` and `<!-- AE-COPILOT-AUTO-FIX v1 -->` marker | prevent arbitrary comment-driven dispatch |
 | Copilot Review Gate (`gate`) | `workflow_dispatch` | on the default branch, manual runs must provide `pr_number`; otherwise the gate skips or errors | prevent accidental execution against unrelated branches |
 | Copilot Auto Fix | `pull_request_review` | excludes fork PRs, limits actors to Copilot identities, and respects the global kill switch | constrain write permission and apply authority |
@@ -39,7 +40,7 @@ Primary sources:
 ### 2. Implementation notes
 
 - the global kill switch (`AE_AUTOMATION_GLOBAL_DISABLE`) is enforced in automation lanes that mutate or dispatch follow-up work (`Codex Autopilot Lane`, `PR Maintenance`, `Copilot Auto Fix`); `Copilot Review Gate` does not currently use that kill switch
-- `issue_comment` entrypoints must first prove that the comment is attached to a PR, then add actor or marker validation before repository mutations such as label changes or workflow dispatches
+- `issue_comment` entrypoints must first distinguish PR comments from non-PR Issue comments, then add actor or marker validation before repository mutations such as label changes, assignee changes, plan-comment creation, or workflow dispatches
 - `workflow_dispatch` entrypoints must require or default critical inputs such as `pr_number` or `mode` so operators do not accidentally target the wrong PR or lane
 - ADMIN_TOKEN-backed manual workflows must keep the mutation token in the protected environment secret `BRANCH_PROTECTION_ADMIN_TOKEN`, validate allowlisted inputs before exporting admin-token API paths, avoid direct dispatch-input interpolation in shell `run` blocks, and use protected environments for approval
 
@@ -66,6 +67,7 @@ The purpose of this test is to guarantee the presence of the boundary policy. It
 | Workflow | Trigger | 境界条件 | 意図 |
 | --- | --- | --- | --- |
 | agent-commands（`PR slash command mutations`） | `issue_comment` | PRに紐づくコメントのみ、ラベル変更または workflow dispatch の前に trusted `author_association`（`MEMBER` / `OWNER` / `COLLABORATOR`）を要求 | 任意のPRコメント投稿者による制御ラベル変更や特権workflow起動を防止 |
+| agent-commands（`Issue slash command mutations`） | `issue_comment` | 非PR Issueコメントのみ、ラベル変更・assignee変更・planコメント作成の前に trusted `author_association`（`MEMBER` / `OWNER` / `COLLABORATOR`）を要求 | 任意のIssueコメント投稿者によるtriage metadata変更やbot-authored planコメント投稿を防止 |
 | agent-commands (`copilot-review-gate dispatch`) | `issue_comment` | PRに紐づくコメントのみ、`github-actions[bot]` + `<!-- AE-COPILOT-AUTO-FIX v1 -->` を要求 | 任意コメントからのdispatch起動を防止 |
 | Copilot Review Gate (`gate`) | `workflow_dispatch` | default branch 上の手動実行では `pr_number` が必要。未指定なら gate は skip または error になる | 無関係ブランチでの誤起動を防止 |
 | Copilot Auto Fix | `pull_request_review` | fork PR除外、Copilot actor限定、global kill-switch考慮 | 書き込み権限と適用主体を制限 |
@@ -78,7 +80,7 @@ The purpose of this test is to guarantee the presence of the boundary policy. It
 ## 2. 実装上の補足
 
 - global kill-switch (`AE_AUTOMATION_GLOBAL_DISABLE`) は、更新系 / follow-up dispatch 系の lane（`Codex Autopilot Lane`, `PR Maintenance`, `Copilot Auto Fix`）で workflow 条件とスクリプト内部の両方からガードします。`Copilot Review Gate` 自体は現時点ではこの kill-switch の対象外です。
-- `issue_comment` 起点は「PRに紐づいているか」を必須条件とし、ラベル変更や workflow dispatch などの repository mutation の前に actor または marker を検証します。
+- `issue_comment` 起点は PRコメントと非PR Issueコメントを分離し、ラベル変更・assignee変更・planコメント作成・workflow dispatch などの repository mutation の前に actor または marker を検証します。
 - `workflow_dispatch` 起点は `pr_number` や `mode` のような重要入力を必須化または既定化し、誤対象への実行を避けます。
 - `ADMIN_TOKEN` 相当の手動 workflow は protected environment secret `BRANCH_PROTECTION_ADMIN_TOKEN` に mutation token を限定し、admin token の API path を出力する前に allowlist 入力検証を行い、shell `run` block で dispatch input を直接展開せず、protected environment を approval boundary とします。
 

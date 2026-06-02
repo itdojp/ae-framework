@@ -44,10 +44,32 @@ const extractAgentCommandsPrScript = () => {
   return script;
 };
 
+const extractAgentCommandsIssueScript = () => {
+  const workflow = parseWorkflow('agent-commands.yml');
+  const steps = workflow.jobs?.handle_issue?.steps;
+  if (!Array.isArray(steps)) {
+    throw new Error('agent-commands handle_issue steps not found');
+  }
+  const scriptStep = steps.find((step) => step?.uses === 'actions/github-script@v7');
+  const script = scriptStep?.with?.script;
+  if (typeof script !== 'string' || script.length === 0) {
+    throw new Error('agent-commands handle_issue github-script body not found');
+  }
+  return script;
+};
+
 const extractMutatingCommandSet = (prSection: string) => {
   const match = prSection.match(/const mutatingCommands = new Set\(\[([\s\S]*?)\]\);/);
   if (!match) {
     throw new Error('mutatingCommands set not found');
+  }
+  return new Set([...match[1].matchAll(/'([^']+)'/g)].map((item) => item[1]));
+};
+
+const extractMutatingIssueCommandSet = (issueSection: string) => {
+  const match = issueSection.match(/const mutatingIssueCommands = new Set\(\[([\s\S]*?)\]\);/);
+  if (!match) {
+    throw new Error('mutatingIssueCommands set not found');
   }
   return new Set([...match[1].matchAll(/'([^']+)'/g)].map((item) => item[1]));
 };
@@ -69,6 +91,35 @@ const detectPrCommandsThatReachMutationSinks = (script: string) => {
       continue;
     }
     if (/(await\s+addLabels|await\s+removeLabel|await\s+removeLabelsByPrefix|await\s+dispatchWorkflow|dispatchWithResult\(|github\.rest\.issues\.addLabels|github\.rest\.issues\.removeLabel|github\.rest\.actions\.createWorkflowDispatch)/.test(line)) {
+      for (const command of activeCases) {
+        mutating.add(command);
+      }
+    }
+    if (/^\s*return\b/.test(line)) {
+      activeCases = [];
+    }
+  }
+
+  return mutating;
+};
+
+const detectIssueCommandsThatReachMutationSinks = (script: string) => {
+  const switchStart = script.indexOf('switch (cmd) {');
+  const switchEnd = script.indexOf('default:', switchStart);
+  if (switchStart < 0 || switchEnd < 0 || switchEnd <= switchStart) {
+    throw new Error('agent-commands issue switch not found');
+  }
+  const switchBody = script.slice(switchStart, switchEnd);
+  const mutating = new Set<string>();
+  let activeCases: string[] = [];
+
+  for (const line of switchBody.split('\n')) {
+    const caseMatch = line.match(/case '([^']+)':/);
+    if (caseMatch) {
+      activeCases.push(caseMatch[1]);
+      continue;
+    }
+    if (/(await\s+add\(|await\s+remove\(|await\s+assign\(|github\.rest\.issues\.addLabels|github\.rest\.issues\.removeLabel|github\.rest\.issues\.addAssignees|github\.rest\.issues\.createComment)/.test(line)) {
       for (const command of activeCases) {
         mutating.add(command);
       }
@@ -140,6 +191,28 @@ describe('workflow permission boundaries', () => {
     expect([...mutatingCommands].sort()).toEqual([...commandsThatReachMutationSinks].sort());
     expect(mutatingCommands.has('/formal-help')).toBe(false);
     expect(mutatingCommands.has('/formal-quickstart')).toBe(false);
+  });
+
+  it('agent-commands requires trusted issue commenters before label, assignee, or plan-comment mutations', () => {
+    const issueScript = extractAgentCommandsIssueScript();
+    const mutatingIssueCommands = extractMutatingIssueCommandSet(issueScript);
+    const commandsThatReachMutationSinks = detectIssueCommandsThatReachMutationSinks(issueScript);
+
+    expect(issueScript).toContain("const trustedAssociations = ['MEMBER', 'OWNER', 'COLLABORATOR']");
+    expect(issueScript).toContain('const isTrusted = trustedAssociations.includes(association)');
+    expect(issueScript).toContain('assertTrustedForIssueMutation');
+    expect(issueScript).toContain("assertTrustedForIssueMutation('addLabels')");
+    expect(issueScript).toContain("assertTrustedForIssueMutation('removeLabel')");
+    expect(issueScript).toContain("assertTrustedForIssueMutation('addAssignees')");
+    expect(issueScript).toContain("assertTrustedForIssueMutation('createComment')");
+    expect(issueScript.indexOf('if (mutatingIssueCommands.has(cmd)')).toBeGreaterThanOrEqual(0);
+    expect(issueScript.indexOf('if (mutatingIssueCommands.has(cmd)')).toBeLessThan(issueScript.indexOf('switch (cmd)'));
+    expect(issueScript).toContain('Mutating issue commands require ${trustedAssociationText}');
+
+    for (const command of commandsThatReachMutationSinks) {
+      expect(mutatingIssueCommands.has(command), `${command} must require trusted association`).toBe(true);
+    }
+    expect([...mutatingIssueCommands].sort()).toEqual([...commandsThatReachMutationSinks].sort());
   });
 
   it('branch-protection admin workflow validates allowlisted inputs before ADMIN_TOKEN use', () => {
