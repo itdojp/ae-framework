@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: 2026-03-11
+lastVerified: 2026-06-02
 owner: phase-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -15,6 +15,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 Phase 6 turns user stories and domain models into production‑ready UI/UX via automated scaffolding, design system integration, a11y/perf quality gates, and telemetry. Inputs: Phase 3/5 outputs. Outputs: components, tokens, state architecture, and reports.
 
 > Status note (2026-02-18): adapter thresholds in `.github/workflows/adapter-thresholds.yml` run only when the PR includes `run-adapters`. Within those runs, a11y/perf/lighthouse are report-only by default and become blocking only with `enforce-*` labels. Treat threshold values in this document as targets unless explicitly tied to a specific workflow policy.
+> Security note (2026-06-02): `.github/workflows/phase6-validation.yml` runs pull-request Lighthouse collection without `LHCI_GITHUB_APP_TOKEN`; token-backed upload/status posting must stay in a trusted-ref follow-up lane, not in PR-controlled validation code.
 
 ## English (Detailed)
 
@@ -81,6 +82,7 @@ lhci autorun --upload.target=temporary-public-storage
 Phase 6は、Phase 3（ユーザーストーリー）とPhase 5（ドメインモデル）の成果を受けて、**実用的なUI/UXを自動生成・検証・承認**するフェーズです。
 
 > 現行ステータス（2026-02-18）: `.github/workflows/adapter-thresholds.yml` のアダプタしきい値は PR に `run-adapters` ラベルがある場合のみ実行されます。実行時は a11y/perf/lighthouse が既定 report-only で、`enforce-*` ラベル付与時のみブロッキングです。本書のしきい値は、個別workflowで明示しない限り目標値として扱ってください。
+> セキュリティ注記（2026-06-02）: `.github/workflows/phase6-validation.yml` の pull-request Lighthouse collection は `LHCI_GITHUB_APP_TOKEN` を使用しません。token-backed upload/status posting は PR-controlled validation code ではなく trusted-ref follow-up lane に限定してください。
 
 Design Systems統合、アクセシビリティ確保、パフォーマンス最適化、品質ゲートを通じて、**Production Ready**なフロントエンド成果物を提供します。
 
