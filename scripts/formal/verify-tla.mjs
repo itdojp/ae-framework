@@ -3,6 +3,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { resolveRepoRelativeFileInput, validateChoice, TLA_ENGINES } from './input-policy.mjs';
 
 function parseArgs(argv){
   const args = { _: [] };
@@ -62,10 +63,7 @@ if (args.help){
   process.exit(0);
 }
 
-const engine = (args.engine || 'tlc').toLowerCase();
 const repoRoot = process.cwd();
-const file = args.file || path.join('spec','tla','DomainSpec.tla');
-const absFile = path.resolve(repoRoot, file);
 
 const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'tla-summary.json');
@@ -78,8 +76,33 @@ let output = '';
 let exitCode = null;
 let ok = null;
 let timeMs = null;
+let engine = 'tlc';
+let file = path.join('spec','tla','DomainSpec.tla');
+let absFile = path.resolve(repoRoot, file);
 
-if (!fs.existsSync(absFile)){
+try {
+  engine = validateChoice((args.engine || 'tlc').toLowerCase(), {
+    allowed: TLA_ENGINES,
+    name: 'TLA engine',
+    defaultValue: 'tlc',
+  });
+  const resolvedFile = resolveRepoRelativeFileInput(args.file, {
+    repoRoot,
+    defaultPath: path.join('spec','tla','DomainSpec.tla'),
+    allowedRoots: ['spec/tla'],
+    allowedExtensions: ['.tla'],
+    name: 'TLA file',
+  });
+  file = resolvedFile.relativePath;
+  absFile = resolvedFile.absolutePath;
+} catch (error) {
+  status = 'invalid_input';
+  output = error?.message ?? String(error);
+}
+
+if (status === 'invalid_input') {
+  ok = false;
+} else if (!fs.existsSync(absFile)){
   status = 'file_not_found';
   output = `TLA file not found: ${absFile}`;
 } else if (engine === 'apalache'){

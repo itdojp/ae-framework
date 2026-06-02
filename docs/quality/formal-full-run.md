@@ -26,7 +26,8 @@ This guide shows how to run **all formal verification tools** end-to-end for a s
   - `target`: `all`
   - `engine`: `tlc` or `apalache` (for TLA)
   - `solver`: `z3` or `cvc5` (for SMT)
-  - `alloyJar` / `tlaToolsJar`: optional jar path overrides
+  - `tlaFile`: approved repository-relative TLA file under `spec/tla`; jar path overrides are intentionally not exposed through `workflow_dispatch`
+  - TLC uses a workflow-owned, cached `tla2tools.jar` from the pinned `TLA_TOOLS_VERSION`; operators do not provide a jar path.
 
 3) **Artifacts to confirm**
 - `formal-reports` artifact (folder): `artifacts/hermetic-reports/formal/*`
@@ -60,7 +61,7 @@ pnpm run verify:formal
 ```
 
 Notes:
-- Alloy needs `ALLOY_JAR` or `ALLOY_RUN_CMD` to run (otherwise `tool_not_available`).
+- Alloy needs the `alloy` CLI or `ALLOY_JAR` to run (otherwise `tool_not_available`). `ALLOY_RUN_CMD` shell templates are rejected by `scripts/formal/verify-alloy.mjs`.
 - SMT needs an input file to run. Use the sample below.
 - SPIN/Lean/CSP are non-blocking; if tools are not installed, they will report `tool_not_available`.
 
@@ -76,7 +77,6 @@ curl -L -sS -o .cache/tools/alloy.jar \
   "https://github.com/AlloyTools/org.alloytools.alloy/releases/download/v6.2.0/org.alloytools.alloy.dist.jar"
 
 ALLOY_JAR=$PWD/.cache/tools/alloy.jar \
-ALLOY_RUN_CMD='java -jar $ALLOY_JAR exec -q -o - -f {file}' \
   pnpm run verify:alloy -- --file spec/alloy/Domain.als
 ```
 
@@ -150,7 +150,8 @@ Outputs:
   - `target`: `all`
   - `engine`: `tlc` または `apalache`
   - `solver`: `z3` または `cvc5`
-  - `alloyJar` / `tlaToolsJar`: 任意（jar パスの上書き）
+  - `tlaFile`: `spec/tla` 配下の repository-relative TLA ファイル。jar パス上書きは `workflow_dispatch` では受け付けません。
+  - TLC は workflow 管理の `TLA_TOOLS_VERSION` に基づくキャッシュ済み `tla2tools.jar` を使用します。実行者は jar パスを指定しません。
 
 3) **成果物の確認**
 - `formal-reports`（`artifacts/hermetic-reports/formal/*`）
@@ -183,7 +184,7 @@ pnpm run verify:formal
 ```
 
 補足:
-- Alloy は `ALLOY_JAR` / `ALLOY_RUN_CMD` 未設定だと `tool_not_available` になります。
+- Alloy は `alloy` CLI または `ALLOY_JAR` 未設定だと `tool_not_available` になります。`scripts/formal/verify-alloy.mjs` は `ALLOY_RUN_CMD` の shell template を拒否します。
 - SMT は入力ファイル指定が必要です（次の手順）。
 - SPIN / Lean / CSP は非ブロッキングです。未導入の場合は `tool_not_available` として記録されます。
 
@@ -199,7 +200,6 @@ curl -L -sS -o .cache/tools/alloy.jar \
   "https://github.com/AlloyTools/org.alloytools.alloy/releases/download/v6.2.0/org.alloytools.alloy.dist.jar"
 
 ALLOY_JAR=$PWD/.cache/tools/alloy.jar \
-ALLOY_RUN_CMD='java -jar $ALLOY_JAR exec -q -o - -f {file}' \
   pnpm run verify:alloy -- --file spec/alloy/Domain.als
 ```
 

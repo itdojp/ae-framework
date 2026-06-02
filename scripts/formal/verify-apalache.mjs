@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { computeOkFromOutput } from './heuristics.mjs';
+import { resolveRepoRelativeFileInput } from './input-policy.mjs';
 
 function parseArgs(argv){
   const args = { _: [] };
@@ -140,12 +141,6 @@ export function main(argv = process.argv){
   }
 
   const repoRoot = path.resolve(process.cwd());
-  const file = args.file || process.env.APALACHE_FILE || path.join('spec','tla','DomainSpec.tla');
-  const absFile = path.resolve(repoRoot, file);
-  const cfgFromArg = args.config || process.env.APALACHE_CONFIG || process.env.APALACHE_CFG || '';
-  const autoCfg = path.format({ ...path.parse(absFile), base: '', ext: '.cfg' });
-  const absCfg = path.resolve(repoRoot, cfgFromArg || autoCfg);
-  const hasCfg = fs.existsSync(absCfg);
   const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
   const outFile = path.join(outDir, 'apalache-summary.json');
   const outLog = path.join(outDir, 'apalache-output.txt');
@@ -162,8 +157,45 @@ export function main(argv = process.argv){
   let toolPath = '';
   let timeMs = 0;
   let exitCode = null;
+  let file = path.join('spec','tla','DomainSpec.tla');
+  let absFile = path.resolve(repoRoot, file);
+  let cfgFromArg = args.config || process.env.APALACHE_CONFIG || process.env.APALACHE_CFG || '';
+  let absCfg = '';
+  let hasCfg = false;
 
-  if (!fs.existsSync(absFile)){
+  try {
+    const resolvedFile = resolveRepoRelativeFileInput(args.file || process.env.APALACHE_FILE, {
+      repoRoot,
+      defaultPath: path.join('spec','tla','DomainSpec.tla'),
+      allowedRoots: ['spec/tla'],
+      allowedExtensions: ['.tla'],
+      name: 'Apalache TLA file',
+    });
+    file = resolvedFile.relativePath;
+    absFile = resolvedFile.absolutePath;
+    const autoCfg = path.format({ ...path.parse(absFile), base: '', ext: '.cfg' });
+    if (cfgFromArg) {
+      const resolvedCfg = resolveRepoRelativeFileInput(cfgFromArg, {
+        repoRoot,
+        defaultPath: path.relative(repoRoot, autoCfg),
+        allowedRoots: ['spec/tla'],
+        allowedExtensions: ['.cfg'],
+        name: 'Apalache config file',
+      });
+      cfgFromArg = resolvedCfg.relativePath;
+      absCfg = resolvedCfg.absolutePath;
+    } else {
+      absCfg = autoCfg;
+    }
+    hasCfg = fs.existsSync(absCfg);
+  } catch (error) {
+    status = 'invalid_input';
+    output = error?.message ?? String(error);
+  }
+
+  if (status === 'invalid_input') {
+    // fail closed before invoking external formal tools
+  } else if (!fs.existsSync(absFile)){
     status = 'file_not_found';
     output = `TLA file not found: ${absFile}\nSee docs/quality/formal-runbook.md (Reproduce Locally).`;
   } else if (cfgFromArg && !hasCfg) {

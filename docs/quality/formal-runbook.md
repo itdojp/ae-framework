@@ -27,12 +27,11 @@ This runbook describes the lowest-friction way to operate formal verification in
   - `target`: `all|conformance|alloy|tla|smt|apalache|kani|spin|csp|lean`
   - `engine`: `tlc|apalache` (for TLA)
   - `solver`: `z3|cvc5` (for SMT)
-  - `alloyJar`: optional path to the Alloy jar
-  - `tlaToolsJar`: optional path to `tla2tools.jar`
+  - `tlaFile`: approved repository-relative TLA file under `spec/tla`
 
 ### CLI Runners (non-blocking)
 - `pnpm run verify:conformance` - conformance summary runner. Use together with `ae conformance verify` when you need a narrower replay/conformance check.
-- `pnpm run verify:alloy` - Alloy runner. Resolves `ALLOY_RUN_CMD`, `ALLOY_JAR`, or the `alloy` CLI.
+- `pnpm run verify:alloy` - Alloy runner. Resolves the `alloy` CLI or runs `java` with argv-safe arguments when `ALLOY_JAR` is set. Shell command templates such as `ALLOY_RUN_CMD` are not executed by this runner.
 - `pnpm run verify:tla -- --engine=apalache|tlc` - TLA runner. Resolves `TLA_TOOLS_JAR` or `apalache-mc`.
 - `pnpm run verify:smt -- --solver=z3|cvc5` - SMT runner.
 - `pnpm run verify:kani` - Kani presence summary runner.
@@ -207,8 +206,9 @@ jobs:
 - SMT sample: `spec/smt/sample.smt2`
 - Example SMT run: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
 - Alloy / TLA jar configuration:
-  - set `alloyJar` / `tlaToolsJar` in `workflow_dispatch`
-  - or set `ALLOY_JAR` / `TLA_TOOLS_JAR` locally
+  - `workflow_dispatch` accepts only approved repository-relative `tlaFile` values under `spec/tla`; jar path overrides are intentionally not accepted.
+  - The `Formal Verify` workflow downloads/caches `tla2tools.jar` from its pinned `TLA_TOOLS_VERSION` and sets `TLA_TOOLS_JAR` internally for TLC.
+  - set `ALLOY_JAR` / `TLA_TOOLS_JAR` locally when reproducing outside CI
 
 ### `verify:conformance` options
 - `-i, --in <file>` - input event JSON. Default: `samples/conformance/sample-traces.json`.
@@ -251,7 +251,7 @@ jobs:
 
 ### CLI ランナー（非ブロッキング）
 - `pnpm run verify:conformance` - conformance サマリーランナー。必要に応じて `ae conformance verify` と併用する。
-- `pnpm run verify:alloy` - Alloy ランナー。`ALLOY_RUN_CMD`、`ALLOY_JAR`、`alloy` CLI を順に解決する。
+- `pnpm run verify:alloy` - Alloy ランナー。`alloy` CLI、または `ALLOY_JAR` を使った argv-safe な `java` 実行を使う。`ALLOY_RUN_CMD` のような shell command template は実行しない。
 - `pnpm run verify:tla -- --engine=apalache|tlc` - TLA ランナー。`TLA_TOOLS_JAR` または `apalache-mc` を解決する。
 - `pnpm run verify:smt -- --solver=z3|cvc5` - SMT ランナー。
 - `pnpm run verify:kani` - Kani の presence サマリーランナー。
@@ -282,6 +282,7 @@ jobs:
 - ツール有無の確認: `pnpm run tools:formal:check`
 - Apalache（`apalache-mc` 導入済みの場合）: `pnpm run verify:tla -- --engine=apalache`
 - TLC（`TLA_TOOLS_JAR` 設定時）: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`
+- CI の `Formal Verify` workflow は固定された `TLA_TOOLS_VERSION` から `tla2tools.jar` を取得・キャッシュし、TLC 用の `TLA_TOOLS_JAR` を内部設定します。`workflow_dispatch` から jar パスは指定しません。
 - SMT（`z3` または `cvc5` がある場合）: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
 
 ### Apalache クイックスタート

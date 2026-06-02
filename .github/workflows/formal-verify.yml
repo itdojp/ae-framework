@@ -8,27 +8,39 @@ on:
       target:
         description: "Target to run (all|conformance|alloy|tla|smt|apalache|kani|spin|csp|lean)"
         required: false
+        type: choice
         default: "all"
+        options:
+          - all
+          - conformance
+          - alloy
+          - tla
+          - smt
+          - apalache
+          - kani
+          - spin
+          - csp
+          - lean
       tlaFile:
-        description: "TLA file to run (for Apalache/TLA)"
+        description: "Approved repository-relative TLA file under spec/tla"
         required: false
         default: "spec/tla/DomainSpec.tla"
       engine:
         description: "TLA+ engine (tlc|apalache)"
         required: false
+        type: choice
         default: "tlc"
+        options:
+          - tlc
+          - apalache
       solver:
         description: "SMT solver (z3|cvc5)"
         required: false
+        type: choice
         default: "z3"
-      alloyJar:
-        description: "Path to Alloy jar (optional)"
-        required: false
-        default: ""
-      tlaToolsJar:
-        description: "Path to TLA+ tla2tools.jar (optional)"
-        required: false
-        default: ""
+        options:
+          - z3
+          - cvc5
 concurrency:
   group: >-
     ${{ github.event_name == 'workflow_dispatch'
@@ -38,11 +50,15 @@ concurrency:
 
 env:
   APALACHE_VERSION: '0.50.3'
+  TLA_TOOLS_VERSION: '1.8.0'
   KANI_VERSION: '0.67.0'
   CSPX_REPO: 'https://github.com/itdojp/cspx'
   # Pinned for reproducibility and supply-chain hardening (immutable commit).
   # Includes expanded cspx docs/report updates and ae-framework summary contract.
   CSPX_REF: '8a67639ea4d3f715e27feb8cd728f46866a905db'
+
+permissions:
+  contents: read
 
 jobs:
   verify-conformance:
@@ -51,6 +67,13 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'conformance'))
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authorize workflow_dispatch actor
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/assert-workflow-dispatch-actor.mjs
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -93,6 +116,13 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'alloy'))
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authorize workflow_dispatch actor
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/assert-workflow-dispatch-actor.mjs
       - name: Setup Java (Alloy)
         uses: actions/setup-java@v4
         with:
@@ -121,8 +151,7 @@ jobs:
           node -e "console.log('Alloy tooling check stub ok')"
       - name: Run verify:alloy (sample)
         env:
-          ALLOY_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.alloyJar || format('{0}/.cache/tools/alloy.jar', github.workspace) }}
-          ALLOY_RUN_CMD: java -jar $ALLOY_JAR exec -q -o - -f {file}
+          ALLOY_JAR: ${{ format('{0}/.cache/tools/alloy.jar', github.workspace) }}
           JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
         run: node scripts/formal/verify-alloy.mjs --file spec/alloy/Domain.als || true
       - name: Upload Alloy summary (artifact)
@@ -140,14 +169,40 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'tla'))
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authorize workflow_dispatch actor
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/assert-workflow-dispatch-actor.mjs
+      - name: Setup Java (TLC)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Cache TLA+ tools jar
+        uses: actions/cache@v4
+        with:
+          path: .cache/tools/tla2tools.jar
+          key: ${{ runner.os }}-tla2tools-${{ env.TLA_TOOLS_VERSION }}
+      - name: Download TLA+ tools jar
+        run: |
+          set -euo pipefail
+          JAR_PATH="$PWD/.cache/tools/tla2tools.jar"
+          if [ ! -f "$JAR_PATH" ]; then
+            mkdir -p "$(dirname "$JAR_PATH")"
+            curl -L -sS -o "$JAR_PATH" "https://github.com/tlaplus/tlaplus/releases/download/v${TLA_TOOLS_VERSION}/tla2tools.jar"
+          fi
+          test -s "$JAR_PATH"
       - name: Run verify:tla stub
         env:
           TLA_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.engine || 'tlc' }}
-          TLA_TOOLS_JAR: ${{ github.event_name == 'workflow_dispatch' && inputs.tlaToolsJar || '' }}
+          TLA_TOOLS_JAR: ${{ format('{0}/.cache/tools/tla2tools.jar', github.workspace) }}
           TLA_FILE: ${{ github.event_name == 'workflow_dispatch' && inputs.tlaFile || 'spec/tla/DomainSpec.tla' }}
         run: node scripts/formal/verify-tla.mjs --engine="$TLA_ENGINE" --file "$TLA_FILE" || true
       - name: Upload TLA summary (artifact)
@@ -165,6 +220,13 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'smt'))
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authorize workflow_dispatch actor
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/assert-workflow-dispatch-actor.mjs
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -204,6 +266,13 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'apalache'))
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authorize workflow_dispatch actor
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/assert-workflow-dispatch-actor.mjs
       - name: Setup Java (Apalache)
         uses: actions/setup-java@v4
         with:
@@ -234,8 +303,10 @@ jobs:
         run: |
           node scripts/formal/check-apalache.mjs || true
       - name: Run verify:apalache (summary, non-blocking)
+        env:
+          APALACHE_FILE: ${{ github.event_name == 'workflow_dispatch' && inputs.tlaFile || 'spec/tla/DomainSpec.tla' }}
         run: |
-          node scripts/formal/verify-apalache.mjs --file "${{ inputs.tlaFile || 'spec/tla/DomainSpec.tla' }}" || true
+          node scripts/formal/verify-apalache.mjs --file "$APALACHE_FILE" || true
       - name: Upload Apalache summary (artifact)
         uses: actions/upload-artifact@v4
         if: always()
@@ -274,6 +345,13 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'kani'))
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authorize workflow_dispatch actor
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/assert-workflow-dispatch-actor.mjs
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -310,6 +388,13 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'spin'))
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authorize workflow_dispatch actor
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/assert-workflow-dispatch-actor.mjs
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -338,6 +423,13 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'csp'))
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authorize workflow_dispatch actor
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/assert-workflow-dispatch-actor.mjs
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -384,6 +476,13 @@ jobs:
     if: (github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && contains(github.event.pull_request.labels.*.name, 'run-formal')) || (github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'lean'))
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authorize workflow_dispatch actor
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/assert-workflow-dispatch-actor.mjs
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:

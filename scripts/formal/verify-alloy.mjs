@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { resolveRepoRelativeFileInput } from './input-policy.mjs';
 
 function parseArgs(argv){
   const args = { _: [] };
@@ -32,23 +33,6 @@ function runCommand(cmd, cmdArgs){
   return { available: true, success: result.status === 0, status: result.status ?? null, output: `${stdout}${stderr}` };
 }
 
-function runShell(cmd){
-  // ALLOY_RUN_CMD is intentionally executed via shell to allow flexible commands.
-  // Only use with trusted inputs (CI/env-controlled).
-  const result = spawnSync(cmd, { shell: true, encoding: 'utf8' });
-  const stdout = result.stdout ?? '';
-  const stderr = result.stderr ?? '';
-  if (result.error) {
-    return {
-      available: false,
-      success: false,
-      status: result.status ?? null,
-      output: `${stdout}${stderr}${result.error.message ? `\n${result.error.message}` : ''}`.trim()
-    };
-  }
-  return { available: true, success: result.status === 0, status: result.status ?? null, output: `${stdout}${stderr}` };
-}
-
 function expandHome(inputPath){
   if (!inputPath || inputPath[0] !== '~') return inputPath;
   if (inputPath === '~') return os.homedir();
@@ -65,8 +49,6 @@ if (args.help){
 }
 
 const repoRoot = path.resolve(process.cwd());
-const file = args.file || path.join('spec','alloy','Domain.als');
-const absFile = path.resolve(repoRoot, file);
 const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'alloy-summary.json');
 const outLog = path.join(outDir, 'alloy-output.txt');
@@ -79,39 +61,35 @@ let temporal = { present: false, operators: [], pastOperators: [] };
 let exitCode = null;
 let ok = null;
 let timeMs = null;
+let file = path.join('spec','alloy','Domain.als');
+let absFile = path.resolve(repoRoot, file);
 
-if (!fs.existsSync(absFile)){
+try {
+  const resolvedFile = resolveRepoRelativeFileInput(args.file, {
+    repoRoot,
+    defaultPath: path.join('spec','alloy','Domain.als'),
+    allowedRoots: ['spec/alloy'],
+    allowedExtensions: ['.als'],
+    name: 'Alloy file',
+  });
+  file = resolvedFile.relativePath;
+  absFile = resolvedFile.absolutePath;
+} catch (error) {
+  status = 'invalid_input';
+  output = error?.message ?? String(error);
+  ok = false;
+}
+
+if (status === 'invalid_input') {
+  // fail closed before invoking external formal tools
+} else if (!fs.existsSync(absFile)){
   status = 'file_not_found';
   output = `Alloy file not found: ${absFile}`;
 } else {
   const runCmd = process.env.ALLOY_RUN_CMD;
   if (runCmd) {
-    const jar = args.jar || process.env.ALLOY_JAR || '';
-    const jarPath = jar ? path.resolve(expandHome(jar)) : '';
-    if (runCmd.includes('$ALLOY_JAR') && !jarPath) {
-      status = 'jar_not_set';
-      output = 'ALLOY_RUN_CMD requires $ALLOY_JAR, but ALLOY_JAR is not set.';
-    } else if (runCmd.includes('$ALLOY_JAR') && !fs.existsSync(jarPath)) {
-      status = 'jar_not_found';
-      output = `Alloy jar not found: ${jarPath}. Set ALLOY_JAR to a valid path, use --jar /path/to/alloy.jar, or check that the file exists.`;
-    } else {
-      const cmd = runCmd
-        .replace(/{file}/g, absFile)
-        .replace(/\$ALLOY_JAR/g, jarPath);
-      const t0 = Date.now();
-      const res = runShell(cmd);
-      if (res.available) timeMs = Date.now() - t0;
-      if (!res.available) {
-        status = 'tool_not_available';
-        output = res.output || 'Failed to execute ALLOY_RUN_CMD.';
-      } else {
-        output = res.output;
-        ran = true;
-        exitCode = res.status;
-        status = res.success ? 'ran' : 'failed';
-        ok = status === 'ran';
-      }
-    }
+    status = 'run_cmd_unsupported';
+    output = 'ALLOY_RUN_CMD shell execution is disabled. Use ALLOY_JAR or the Alloy CLI so the runner can invoke java/alloy with argv-safe arguments.';
   } else {
     const t0 = Date.now();
     const alloyResult = runCommand('alloy', [absFile]);
@@ -130,7 +108,7 @@ if (!fs.existsSync(absFile)){
         output = `Alloy jar not found: ${jarPath}. Set ALLOY_JAR to a valid path, use --jar /path/to/alloy.jar, or check that the file exists.`;
       } else {
         const t1 = Date.now();
-        const javaResult = runCommand('java', ['-jar', jarPath, absFile]);
+        const javaResult = runCommand('java', ['-jar', jarPath, 'exec', '-q', '-o', '-', '-f', absFile]);
         if (!javaResult.available) {
           status = 'java_not_available';
           output = 'Java runtime not found. Ensure `java` is installed and on PATH to run the Alloy jar.';
