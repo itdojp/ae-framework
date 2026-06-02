@@ -520,46 +520,73 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const actor = context.actor;
+            const cmd = body.split(/\s+/)[0];
+            const association = context.payload.comment.author_association || '';
+            const trustedAssociations = ['MEMBER', 'OWNER', 'COLLABORATOR'];
+            const isTrusted = trustedAssociations.includes(association);
+            const trustedAssociationText = trustedAssociations.join(' / ');
+            const mutatingIssueCommands = new Set([
+              '/start',
+              '/ready-for-review',
+              '/done',
+              '/block',
+              '/unblock',
+              '/assign',
+              '/handoff',
+              '/plan'
+            ]);
+            const assertTrustedForIssueMutation = (operation) => {
+              if (isTrusted) return;
+              throw new Error(`Refusing ${operation} for untrusted issue commenter (association: ${association || 'NONE'}, command: ${cmd || '(none)'})`);
+            };
+            const requireTrustedIssueCommand = () => {
+              if (isTrusted) return true;
+              core.notice(`Permission denied for ${cmd || 'command'} (association: ${association || 'NONE'}). Mutating issue commands require ${trustedAssociationText}.`);
+              return false;
+            };
 
             async function add(labels){
               if (!labels || labels.length===0) return;
+              assertTrustedForIssueMutation('addLabels');
               await github.rest.issues.addLabels({ owner, repo, issue_number, labels });
             }
             async function remove(name){
+              assertTrustedForIssueMutation('removeLabel');
               try { await github.rest.issues.removeLabel({ owner, repo, issue_number, name }); } catch {}
             }
             async function assign(user){
+              assertTrustedForIssueMutation('addAssignees');
               try { await github.rest.issues.addAssignees({ owner, repo, issue_number, assignees: [user] }); } catch {}
             }
 
-            if (body.startsWith('/start')) {
+            if (mutatingIssueCommands.has(cmd) && !requireTrustedIssueCommand()) {
+              return;
+            }
+
+            switch (cmd) {
+            case '/start':
               await remove('status:ready');
               await add(['status:in-progress']);
               await assign(actor);
               return core.notice(`Moved to in-progress and assigned to ${actor}`);
-            }
-            if (body.startsWith('/ready-for-review')) {
+            case '/ready-for-review':
               await remove('status:in-progress');
               await add(['status:review']);
               return core.notice('Moved to review');
-            }
-            if (body.startsWith('/done')) {
+            case '/done':
               await remove('status:review');
               await remove('status:in-progress');
               await add(['status:done']);
               return core.notice('Marked as done');
-            }
-            if (body.startsWith('/block')) {
+            case '/block':
               await add(['status:blocked']);
               return core.notice('Marked as blocked');
-            }
-            if (body.startsWith('/unblock')) {
+            case '/unblock':
               await remove('status:blocked');
               await add(['status:in-progress']);
               return core.notice('Unblocked');
-            }
-            // /assign @user or /assign user
-            if (body.startsWith('/assign')) {
+            case '/assign': {
+              // /assign @user or /assign user
               const m = body.match(/^\/assign\s+@?([A-Za-z0-9-]+)/);
               if (m && m[1]) {
                 await assign(m[1]);
@@ -567,9 +594,9 @@ jobs:
               }
               return core.info('No assignee parsed');
             }
-            // /handoff @user → assign and set status:review
-            // NOTE: PR comments use /handoff A|B|C for agent handoff; issues use /handoff @user.
-            if (body.startsWith('/handoff')) {
+            case '/handoff': {
+              // /handoff @user → assign and set status:review
+              // NOTE: PR comments use /handoff A|B|C for agent handoff; issues use /handoff @user.
               const m = body.match(/^\/handoff\s+@?([A-Za-z0-9-]+)/);
               if (m && m[1]) {
                 await assign(m[1]);
@@ -579,8 +606,8 @@ jobs:
               }
               return core.info('No handoff target parsed');
             }
-            // /plan → post a standard checklist as a comment
-            if (body.startsWith('/plan')) {
+            case '/plan': {
+              // /plan → post a standard checklist as a comment
               const plan = [
                 '## Plan Checklist',
                 '',
@@ -591,7 +618,10 @@ jobs:
                 '- [ ] CI policy noted: fix PR-caused failures here; global failures in separate PR',
                 '- [ ] Stop: leave in review and await automation rollout',
               ].join('\n');
+              assertTrustedForIssueMutation('createComment');
               await github.rest.issues.createComment({ owner, repo, issue_number, body: plan });
               return core.notice('Posted plan checklist');
             }
-            core.info('No recognized slash command');
+            default:
+              core.info('No recognized slash command');
+            }
