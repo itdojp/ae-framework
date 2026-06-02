@@ -22,6 +22,7 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.
 - PR comment header: `<!-- AE-CEDAR-SUMMARY -->`
 - Trigger: add label `run-security` (or `run-cedar`)
 - Enforcement: add label `enforce-security` (fails when `ngCount > 0`)
+- Permission boundary: the validation job runs with read-only repository permissions; PR commenting is isolated in a separate job with `issues: write` / `pull-requests: write`.
 
 ### Environment variables
 
@@ -52,7 +53,7 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.
 
 - JSON validation is intentionally minimal. The checker looks for `policySet` or a `policies` array-like structure.
 - Text `.cedar` files are only checked for non-empty content.
-- The lane is report-only by default. Add `enforce-security` only when you want `ngCount > 0` to block the job.
+- The lane is report-only by default. Add `enforce-security` only when you want `ngCount > 0` to block the job. The enforcement step reads the validated summary through `scripts/policies/cedar-summary-guard.mjs`; it does not embed step outputs into shell.
 
 ## 日本語
 
@@ -65,6 +66,7 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.
 - PR comment header: `<!-- AE-CEDAR-SUMMARY -->`
 - 起動条件: `run-security` または `run-cedar` ラベルを付与
 - 強制条件: `enforce-security` ラベルを付与すると `ngCount > 0` で失敗させます
+- 権限境界: 検証 job は repository read-only 権限で実行し、PR コメントは `issues: write` / `pull-requests: write` を持つ別 job に分離します。
 
 ### 環境変数
 
@@ -95,4 +97,4 @@ This workflow scans `policies/cedar/` for `.json` (Cedar JSON) and `.cedar` / `.
 
 - JSON 検証は意図的に最小限です。チェッカーは `policySet` または `policies` の array-like structure の有無を確認します。
 - テキスト `.cedar` ファイルは non-empty かどうかだけを確認します。
-- このレーンは既定で報告専用（report-only）です。`ngCount > 0` を失敗条件にしたい PR のみ `enforce-security` を付けてください。
+- このレーンは既定で報告専用（report-only）です。`ngCount > 0` を失敗条件にしたい PR のみ `enforce-security` を付けてください。強制ステップは `scripts/policies/cedar-summary-guard.mjs` で検証済み summary を読み取り、step output を shell に直接埋め込みません。
