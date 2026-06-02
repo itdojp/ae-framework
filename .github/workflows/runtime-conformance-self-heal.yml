@@ -31,8 +31,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
   actions: read
 
 jobs:
@@ -44,9 +43,23 @@ jobs:
         || vars.AE_RUNTIME_CONFORMANCE_SELF_HEAL_ENABLED == '1'
       )
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      status: ${{ steps.pipeline.outputs.status || 'error' }}
+      reason: ${{ steps.pipeline.outputs.reason || '' }}
+      ingest_mode: ${{ steps.pipeline.outputs.ingest_mode || '' }}
+      apply_fixes: ${{ steps.config.outputs.apply_fixes || 'false' }}
+      dry_run: ${{ steps.config.outputs.dry_run || 'true' }}
+      patch_created: ${{ steps.patch.outputs.created || 'false' }}
+      patch_artifact: ${{ steps.patch.outputs.artifact_name || '' }}
+      violation_count: ${{ steps.pipeline.outputs.violation_count || '0' }}
+      failure_count: ${{ steps.pipeline.outputs.failure_count || '0' }}
     env:
       AE_RUNTIME_CONFORMANCE_TRACE_INPUT: ${{ vars.AE_RUNTIME_CONFORMANCE_TRACE_INPUT || '' }}
       AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE: ${{ vars.AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE || '' }}
+      AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE_DIR: ${{ vars.AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE_DIR || 'artifacts/observability/runtime-self-heal-inputs' }}
       AE_RUNTIME_CONFORMANCE_RULES: ${{ vars.AE_RUNTIME_CONFORMANCE_RULES || '' }}
       AE_RUNTIME_CONFORMANCE_APPLY_FIXES: ${{ vars.AE_RUNTIME_CONFORMANCE_APPLY_FIXES || '' }}
       AE_RUNTIME_CONFORMANCE_DRY_RUN: ${{ vars.AE_RUNTIME_CONFORMANCE_DRY_RUN || '' }}
@@ -57,6 +70,8 @@ jobs:
       DISPATCH_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
@@ -82,8 +97,18 @@ jobs:
             esac
           }
 
+          reject_output_control_chars() {
+            local name="$1"
+            local value="${2:-}"
+            if [[ "${value}" == *$'\n'* || "${value}" == *$'\r'* || "${value}" == *$'\t'* ]]; then
+              echo "::error::${name} must not contain control characters" >&2
+              exit 1
+            fi
+          }
+
           TRACE_INPUT="${DISPATCH_TRACE_INPUT:-${AE_RUNTIME_CONFORMANCE_TRACE_INPUT:-samples/conformance/sample-traces.json}}"
           TRACE_BUNDLE_INPUT="${DISPATCH_TRACE_BUNDLE:-${AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE:-}}"
+          TRACE_BUNDLE_INPUT_DIR="${AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE_DIR:-artifacts/observability/runtime-self-heal-inputs}"
           CONFORMANCE_RULES="${DISPATCH_CONFORMANCE_RULES:-${AE_RUNTIME_CONFORMANCE_RULES:-}}"
           APPLY_FIXES_RAW="${DISPATCH_APPLY_FIXES:-${AE_RUNTIME_CONFORMANCE_APPLY_FIXES:-false}}"
           DRY_RUN_RAW="${DISPATCH_DRY_RUN:-${AE_RUNTIME_CONFORMANCE_DRY_RUN:-true}}"
@@ -97,9 +122,15 @@ jobs:
           FAILURE_ARTIFACTS_PATH="artifacts/fix/runtime-self-heal-failures.json"
           FIX_OUTPUT_DIR=".ae/runtime-self-heal"
 
+          reject_output_control_chars "trace_input" "${TRACE_INPUT}"
+          reject_output_control_chars "trace_bundle_input" "${TRACE_BUNDLE_INPUT}"
+          reject_output_control_chars "trace_bundle_input_dir" "${TRACE_BUNDLE_INPUT_DIR}"
+          reject_output_control_chars "conformance_rules" "${CONFORMANCE_RULES}"
+
           {
             echo "trace_input=${TRACE_INPUT}"
             echo "trace_bundle_input=${TRACE_BUNDLE_INPUT}"
+            echo "trace_bundle_input_dir=${TRACE_BUNDLE_INPUT_DIR}"
             echo "conformance_rules=${CONFORMANCE_RULES}"
             echo "apply_fixes=${APPLY_FIXES}"
             echo "dry_run=${DRY_RUN}"
@@ -114,6 +145,7 @@ jobs:
             echo "## Runtime Conformance Self-Heal Config"
             echo "- trace_input: ${TRACE_INPUT}"
             echo "- trace_bundle_input: ${TRACE_BUNDLE_INPUT:-<none>}"
+            echo "- trace_bundle_input_dir: ${TRACE_BUNDLE_INPUT_DIR}"
             echo "- conformance_rules: ${CONFORMANCE_RULES:-<none>}"
             echo "- apply_fixes: ${APPLY_FIXES}"
             echo "- dry_run: ${DRY_RUN}"
@@ -124,6 +156,7 @@ jobs:
         env:
           TRACE_INPUT: ${{ steps.config.outputs.trace_input }}
           TRACE_BUNDLE_INPUT: ${{ steps.config.outputs.trace_bundle_input }}
+          TRACE_BUNDLE_INPUT_DIR: ${{ steps.config.outputs.trace_bundle_input_dir }}
           CONFORMANCE_RULES: ${{ steps.config.outputs.conformance_rules }}
           APPLY_FIXES: ${{ steps.config.outputs.apply_fixes }}
           DRY_RUN: ${{ steps.config.outputs.dry_run }}
@@ -141,13 +174,14 @@ jobs:
           INGEST_MODE=""
 
           if [ -n "${TRACE_BUNDLE_INPUT}" ]; then
-            if [ ! -f "${TRACE_BUNDLE_INPUT}" ]; then
-              STATUS="error"
-              REASON="trace_bundle not found: ${TRACE_BUNDLE_INPUT}"
-            else
-              mkdir -p "$(dirname "${TRACE_BUNDLE_PATH}")"
-              cp "${TRACE_BUNDLE_INPUT}" "${TRACE_BUNDLE_PATH}"
+            if node scripts/ci/validate-runtime-self-heal-trace-bundle.mjs \
+              --input "${TRACE_BUNDLE_INPUT}" \
+              --allowed-dir "${TRACE_BUNDLE_INPUT_DIR}" \
+              --output "${TRACE_BUNDLE_PATH}"; then
               INGEST_MODE="bundle-input"
+            else
+              STATUS="error"
+              REASON="trace_bundle validation failed"
             fi
           else
             if [ ! -f "${TRACE_INPUT}" ]; then
@@ -241,52 +275,50 @@ jobs:
             exit 1
           fi
 
-      - name: Create PR for auto-fix changes
-        id: pr
+      - name: Prepare auto-fix patch artifact
+        id: patch
         if: ${{ steps.pipeline.outputs.status == 'success' && steps.config.outputs.apply_fixes == 'true' && steps.config.outputs.dry_run == 'false' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
         shell: bash
         run: |
           set -euo pipefail
 
-          git add -A . ':(exclude)artifacts/**' ':(exclude).ae/**' ':(exclude)reports/**'
-          if git diff --cached --quiet; then
+          PATCH_PATH="artifacts/automation/runtime-conformance-self-heal.patch"
+          PATCH_ARTIFACT="runtime-conformance-self-heal-patch-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$(dirname "${PATCH_PATH}")"
+
+          git add -AN -- . ':(exclude)artifacts/**' ':(exclude).ae/**' ':(exclude)reports/**'
+
+          if git diff --quiet -- . ':(exclude)artifacts/**' ':(exclude).ae/**' ':(exclude)reports/**'; then
+            : > "${PATCH_PATH}"
             {
               echo "created=false"
-              echo "number="
-              echo "url="
+              echo "path=${PATCH_PATH}"
+              echo "artifact_name=${PATCH_ARTIFACT}"
             } >> "${GITHUB_OUTPUT}"
             {
-              echo "- auto-fix applied but no commit-ready changes were detected."
+              echo "- auto-fix applied but no patch-ready changes were detected."
             } >> "${GITHUB_STEP_SUMMARY}"
             exit 0
           fi
 
-          BRANCH="bot/runtime-conformance-self-heal-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "${BRANCH}"
-          git commit -m "chore(self-heal): runtime conformance auto-fix"
-          git push origin "${BRANCH}"
-
-          PR_JSON="$(gh pr create \
-            --base main \
-            --head "${BRANCH}" \
-            --title "chore(self-heal): runtime conformance auto-fix" \
-            --body "Automated runtime conformance self-heal pipeline output.\n\n- workflow: ${GITHUB_WORKFLOW}\n- run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\n- violations: ${{ steps.pipeline.outputs.violation_count }}\n- failure artifacts: ${{ steps.pipeline.outputs.failure_count }}\n\nRefs: #2287" \
-            --json number,url)"
-
-          PR_NUMBER="$(echo "${PR_JSON}" | jq -r '.number')"
-          PR_URL="$(echo "${PR_JSON}" | jq -r '.url')"
+          git diff --binary -- . ':(exclude)artifacts/**' ':(exclude).ae/**' ':(exclude)reports/**' > "${PATCH_PATH}"
 
           {
             echo "created=true"
-            echo "number=${PR_NUMBER}"
-            echo "url=${PR_URL}"
+            echo "path=${PATCH_PATH}"
+            echo "artifact_name=${PATCH_ARTIFACT}"
           } >> "${GITHUB_OUTPUT}"
 
-          echo "- auto-fix PR created: ${PR_URL}" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- auto-fix patch prepared for isolated PR creation." >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload auto-fix patch artifact
+        if: ${{ steps.patch.outputs.artifact_name != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.patch.outputs.artifact_name }}
+          path: ${{ steps.patch.outputs.path }}
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Explain PR creation skip on non-default branch
         if: ${{ steps.pipeline.outputs.status == 'success' && steps.config.outputs.apply_fixes == 'true' && steps.config.outputs.dry_run == 'false' && github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
@@ -294,7 +326,16 @@ jobs:
           echo "- auto-fix PR creation skipped because workflow ref is not the default branch (${GITHUB_REF})." >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Emit automation report
-        if: always()
+        if: >-
+          ${{
+            always()
+            && (
+              steps.pipeline.outputs.status != 'success'
+              || steps.config.outputs.apply_fixes != 'true'
+              || steps.config.outputs.dry_run != 'false'
+              || github.ref != format('refs/heads/{0}', github.event.repository.default_branch)
+            )
+          }}
         env:
           AE_AUTOMATION_REPORT_FILE: artifacts/automation/runtime-conformance-self-heal-report.json
           PIPELINE_STATUS: ${{ steps.pipeline.outputs.status || 'error' }}
@@ -304,8 +345,8 @@ jobs:
           PIPELINE_FAILURE_COUNT: ${{ steps.pipeline.outputs.failure_count || '0' }}
           PIPELINE_APPLY_FIXES: ${{ steps.config.outputs.apply_fixes || 'false' }}
           PIPELINE_DRY_RUN: ${{ steps.config.outputs.dry_run || 'true' }}
-          PIPELINE_CREATED_PR: ${{ steps.pr.outputs.created || 'false' }}
-          PIPELINE_CREATED_PR_NUMBER: ${{ steps.pr.outputs.number || '' }}
+          PIPELINE_CREATED_PR: 'false'
+          PIPELINE_CREATED_PR_NUMBER: ''
         run: |
           node --input-type=module <<'NODE'
           import { emitAutomationReport } from './scripts/ci/lib/automation-report.mjs';
@@ -348,3 +389,141 @@ jobs:
             artifacts/automation/runtime-conformance-self-heal-report.json
             .ae/runtime-self-heal/**
           if-no-files-found: warn
+          retention-days: 7
+
+  create-pr:
+    needs: self-heal
+    if: ${{ needs.self-heal.outputs.status == 'success' && needs.self-heal.outputs.apply_fixes == 'true' && needs.self-heal.outputs.dry_run == 'false' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Download auto-fix patch artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.self-heal.outputs.patch_artifact }}
+          path: artifacts/automation
+
+      - name: Create PR for auto-fix changes
+        id: pr
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+          PATCH_CREATED: ${{ needs.self-heal.outputs.patch_created }}
+          PATCH_PATH: artifacts/automation/runtime-conformance-self-heal.patch
+          PIPELINE_VIOLATION_COUNT: ${{ needs.self-heal.outputs.violation_count }}
+          PIPELINE_FAILURE_COUNT: ${{ needs.self-heal.outputs.failure_count }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${PATCH_CREATED}" != "true" ] || [ ! -s "${PATCH_PATH}" ]; then
+            {
+              echo "created=false"
+              echo "number="
+              echo "url="
+            } >> "${GITHUB_OUTPUT}"
+            {
+              echo "- auto-fix applied but no commit-ready changes were detected."
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          git apply --check --binary "${PATCH_PATH}"
+          git apply --binary "${PATCH_PATH}"
+
+          git add -A . ':(exclude)artifacts/**' ':(exclude).ae/**' ':(exclude)reports/**'
+          if git diff --cached --quiet; then
+            {
+              echo "created=false"
+              echo "number="
+              echo "url="
+            } >> "${GITHUB_OUTPUT}"
+            {
+              echo "- auto-fix patch applied but no commit-ready changes were detected."
+            } >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          BRANCH="bot/runtime-conformance-self-heal-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${BRANCH}"
+          git commit -m "chore(self-heal): runtime conformance auto-fix"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "${BRANCH}"
+
+          PR_JSON="$(gh pr create \
+            --base "${DEFAULT_BRANCH}" \
+            --head "${BRANCH}" \
+            --title "chore(self-heal): runtime conformance auto-fix" \
+            --body "Automated runtime conformance self-heal pipeline output.\n\n- workflow: ${GITHUB_WORKFLOW}\n- run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}\n- violations: ${PIPELINE_VIOLATION_COUNT}\n- failure artifacts: ${PIPELINE_FAILURE_COUNT}\n\nRefs: #2287" \
+            --json number,url)"
+
+          PR_NUMBER="$(echo "${PR_JSON}" | jq -r '.number')"
+          PR_URL="$(echo "${PR_JSON}" | jq -r '.url')"
+
+          {
+            echo "created=true"
+            echo "number=${PR_NUMBER}"
+            echo "url=${PR_URL}"
+          } >> "${GITHUB_OUTPUT}"
+
+          echo "- auto-fix PR created: ${PR_URL}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Emit final automation report
+        if: always()
+        env:
+          AE_AUTOMATION_REPORT_FILE: artifacts/automation/runtime-conformance-self-heal-report.json
+          PIPELINE_STATUS: ${{ needs.self-heal.outputs.status || 'error' }}
+          PIPELINE_REASON: ${{ needs.self-heal.outputs.reason || '' }}
+          PIPELINE_INGEST_MODE: ${{ needs.self-heal.outputs.ingest_mode || '' }}
+          PIPELINE_VIOLATION_COUNT: ${{ needs.self-heal.outputs.violation_count || '0' }}
+          PIPELINE_FAILURE_COUNT: ${{ needs.self-heal.outputs.failure_count || '0' }}
+          PIPELINE_APPLY_FIXES: ${{ needs.self-heal.outputs.apply_fixes || 'false' }}
+          PIPELINE_DRY_RUN: ${{ needs.self-heal.outputs.dry_run || 'true' }}
+          PIPELINE_CREATED_PR: ${{ steps.pr.outputs.created || 'false' }}
+          PIPELINE_CREATED_PR_NUMBER: ${{ steps.pr.outputs.number || '' }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { emitAutomationReport } from './scripts/ci/lib/automation-report.mjs';
+
+          const toInt = (value) => {
+            const parsed = Number.parseInt(String(value ?? ''), 10);
+            return Number.isFinite(parsed) ? parsed : 0;
+          };
+
+          const createdPrNumber = toInt(process.env.PIPELINE_CREATED_PR_NUMBER);
+          emitAutomationReport({
+            tool: 'runtime-conformance-self-heal',
+            mode: process.env.PIPELINE_DRY_RUN === 'true' ? 'dry-run' : 'apply',
+            status: process.env.PIPELINE_STATUS || 'error',
+            reason: process.env.PIPELINE_REASON || '',
+            prNumber: createdPrNumber > 0 ? createdPrNumber : undefined,
+            metrics: {
+              violations: toInt(process.env.PIPELINE_VIOLATION_COUNT),
+              failureArtifacts: toInt(process.env.PIPELINE_FAILURE_COUNT),
+              applyFixes: process.env.PIPELINE_APPLY_FIXES === 'true' ? 1 : 0,
+              dryRun: process.env.PIPELINE_DRY_RUN === 'true' ? 1 : 0,
+              createdPr: process.env.PIPELINE_CREATED_PR === 'true' ? 1 : 0,
+            },
+            data: {
+              ingestMode: process.env.PIPELINE_INGEST_MODE || '',
+            },
+          });
+          NODE
+
+      - name: Upload final automation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-conformance-self-heal-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/automation/runtime-conformance-self-heal-report.json
+          if-no-files-found: warn
+          retention-days: 7
