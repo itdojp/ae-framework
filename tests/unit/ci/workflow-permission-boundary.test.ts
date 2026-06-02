@@ -472,9 +472,83 @@ describe('workflow permission boundaries', () => {
     expect(sbomRaw).toContain('printf \'{"metadata":{"vulnerabilities":{}}}\\n\' > audit-results.json');
   });
 
+  it('SBOM pull request execution stays read-only and isolates publication credentials', () => {
+    const sbom = parseWorkflow('sbom-generation.yml');
+    const generationJob = sbom.jobs?.['sbom-generation'];
+    const generationSteps = Array.isArray(generationJob?.steps) ? generationJob.steps : [];
+    const generationCheckout = generationSteps.find((step: any) => step?.uses === 'actions/checkout@v4');
+
+    expect(generationJob?.permissions).toMatchObject({
+      contents: 'read',
+      actions: 'read',
+    });
+    expect(generationJob?.permissions).not.toMatchObject({
+      'security-events': 'write',
+    });
+    expect(Object.values(generationJob?.permissions ?? {})).not.toContain('write');
+    expect(generationCheckout?.with).toMatchObject({
+      'persist-credentials': false,
+    });
+    expect(generationSteps.some((step: any) => String(step?.uses ?? '').startsWith('./'))).toBe(true);
+    expect(generationSteps.some((step: any) => String(step?.run ?? '').includes('pnpm run build'))).toBe(true);
+
+    const publicationJob = sbom.jobs?.['sbom-publication'];
+    const publicationSteps = Array.isArray(publicationJob?.steps) ? publicationJob.steps : [];
+    expect(publicationJob?.if).toContain("github.event_name != 'pull_request'");
+    expect(publicationJob?.if).toContain("github.ref == 'refs/heads/main'");
+    expect(publicationJob?.permissions).toMatchObject({
+      contents: 'read',
+      actions: 'read',
+    });
+    expect(Object.values(publicationJob?.permissions ?? {})).not.toContain('write');
+    expect(publicationSteps.some((step: any) => step?.uses === 'actions/checkout@v4')).toBe(false);
+    expect(publicationSteps.some((step: any) => String(step?.uses ?? '').startsWith('./'))).toBe(false);
+    expect(publicationSteps.find((step: any) => step?.name === 'Upload to Dependency Track')).toBeDefined();
+
+    const analysisJob = sbom.jobs?.['security-analysis'];
+    const analysisSteps = Array.isArray(analysisJob?.steps) ? analysisJob.steps : [];
+    const analysisCheckout = analysisSteps.find((step: any) => step?.uses === 'actions/checkout@v4');
+    expect(analysisJob?.permissions).toMatchObject({
+      contents: 'read',
+      actions: 'read',
+    });
+    expect(Object.values(analysisJob?.permissions ?? {})).not.toContain('write');
+    expect(analysisCheckout?.with).toMatchObject({
+      'persist-credentials': false,
+    });
+    expect(analysisSteps.some((step: any) => String(step?.uses ?? '').startsWith('github/codeql-action/'))).toBe(false);
+    expect(analysisSteps.some((step: any) => step?.uses === 'actions/github-script@v7')).toBe(false);
+
+    const codeqlJob = sbom.jobs?.['codeql-analysis'];
+    const codeqlSteps = Array.isArray(codeqlJob?.steps) ? codeqlJob.steps : [];
+    const codeqlCheckout = codeqlSteps.find((step: any) => step?.uses === 'actions/checkout@v4');
+    expect(codeqlJob?.if).toContain("github.event_name != 'pull_request'");
+    expect(codeqlJob?.if).toContain("github.ref == 'refs/heads/main'");
+    expect(codeqlJob?.permissions).toMatchObject({
+      contents: 'read',
+      'security-events': 'write',
+    });
+    expect(codeqlCheckout?.with).toMatchObject({
+      'persist-credentials': false,
+    });
+
+    const commentJob = sbom.jobs?.['security-summary-comment'];
+    const commentSteps = Array.isArray(commentJob?.steps) ? commentJob.steps : [];
+    expect(commentJob?.permissions).toMatchObject({
+      contents: 'read',
+      actions: 'read',
+      issues: 'write',
+      'pull-requests': 'read',
+    });
+    expect(commentSteps.some((step: any) => step?.uses === 'actions/checkout@v4')).toBe(false);
+    expect(commentSteps.some((step: any) => String(step?.uses ?? '').startsWith('./'))).toBe(false);
+    expect(commentSteps.some((step: any) => String(step?.run ?? '').includes('pnpm'))).toBe(false);
+    expect(commentSteps.filter((step: any) => step?.uses === 'actions/github-script@v7')).toHaveLength(1);
+  });
+
   it('dependency-track SBOM upload validates allowlisted HTTPS destinations before API-key use', () => {
     const sbom = parseWorkflow('sbom-generation.yml');
-    const sbomSteps = sbom.jobs?.['sbom-generation']?.steps ?? [];
+    const sbomSteps = sbom.jobs?.['sbom-publication']?.steps ?? [];
     const dependencyTrackStep = Array.isArray(sbomSteps)
       ? sbomSteps.find((step: any) => step?.name === 'Upload to Dependency Track')
       : undefined;

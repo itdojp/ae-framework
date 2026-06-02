@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-23'
+lastVerified: '2026-06-02'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -51,6 +51,7 @@ Primary sources:
 
 Operational note:
 - PR automation itself is usually enabled through Repository Variables rather than labels.
+- PR-side `run-security` SBOM generation and security-report construction use read-only workflow credentials and checkout with persisted credentials disabled. SBOM publication / Dependency Track upload and CodeQL `security-events: write` execution are isolated to trusted `main` follow-up jobs, with `security-events: write` limited to the CodeQL job. PR security summary comments run in a separate comment-only job that does not check out PR code or execute package scripts.
 
 ### 4. Repository Variables used with opt-in automation
 
@@ -220,6 +221,7 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 | `autopilot:on` | Codex Autopilot Lane 対象化 | `codex-autopilot-lane.yml` | touchless merge の opt-in |
 
 補足: PR の自動化（auto-fix / auto-merge）は、ラベルではなく **Repository Variables** でプロジェクト単位に有効化できます。
+`run-security` の PR 側 SBOM 生成と security report 作成は read-only workflow credentials で実行し、checkout の persisted credentials は無効化します。SBOM publication / Dependency Track upload と CodeQL の `security-events: write` 実行は trusted `main` follow-up job に分離し、`security-events: write` は CodeQL job に限定します。PR security summary comment は、PR code の checkout や package script 実行を行わない comment-only job で処理します。
 
 | 変数 | 役割 | 既定 | 詳細 |
 | --- | --- | --- | --- |
