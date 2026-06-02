@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-25'
+lastVerified: '2026-06-02'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -14,7 +14,7 @@ This document classifies `.github/workflows/*.yml` by operational role so requir
 
 ## English
 
-Update summary: 2026-03-25
+Update summary: 2026-06-02
 
 Scope: operational role mapping for `.github/workflows/*.yml` (Issue #2031 / Phase 3).
 
@@ -72,6 +72,11 @@ Notes:
 | `flake-detect.yml` / `flake-stability.yml` | flake detection / retry stability | schedule / dispatch / call |
 | `podman-smoke.yml` / `docker-tests.yml` | container execution validation | call / dispatch / schedule |
 | `mutation-quick.yml` | mutation quick validation | dispatch |
+
+SBOM operational boundary:
+- PR `sbom-generation` / `security-analysis` jobs are read-only validation/reporting lanes with checkout credentials disabled.
+- SBOM publication / Dependency Track upload and CodeQL `security-events: write` execution are trusted-`main` follow-up jobs; `security-events: write` is limited to the CodeQL job.
+- PR security comments run in a separate comment-only job that downloads sanitized artifacts instead of checking out PR code.
 
 #### 3.3 report
 
@@ -160,6 +165,11 @@ Notes:
 | `flake-detect.yml` / `flake-stability.yml` | flake検出/再試行 | schedule / dispatch / call |
 | `podman-smoke.yml` / `docker-tests.yml` | コンテナ実行検証 | call/dispatch/schedule |
 | `mutation-quick.yml` | mutation quick検証 | dispatch |
+
+SBOM 運用境界:
+- PR の `sbom-generation` / `security-analysis` jobs は read-only 検証・reporting lane とし、checkout credentials を保持しません。
+- SBOM publication / Dependency Track upload と CodeQL の `security-events: write` 実行は trusted `main` follow-up jobs に分離し、`security-events: write` は CodeQL job に限定します。
+- PR security comment は、PR code を checkout せず sanitized artifact を download する comment-only job で処理します。
 
 ### 3.3 report
 
