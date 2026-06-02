@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-23'
+lastVerified: '2026-06-02'
 owner: observability-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -97,10 +97,12 @@ gh workflow run runtime-conformance-self-heal.yml   -f trace_input=samples/confo
 #### Main inputs
 
 - `trace_input`: NDJSON/JSON path used for ingest
-- `trace_bundle`: existing Trace Bundle path; skips ingest when supplied
+- `trace_bundle`: existing Trace Bundle path; skips ingest when supplied. The workflow accepts this path only under `AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE_DIR` (default: `artifacts/observability/runtime-self-heal-inputs`) and rejects absolute paths, parent traversal, `.git` metadata paths, symlinks, files outside the allowlist, and files that do not validate as `ae-trace-bundle/v1`.
 - `conformance_rules`: optional custom rules JSON
 - `apply_fixes`: run `ae fix apply` only when `true`
 - `dry_run`: run `ae fix apply --dry-run` when `true`
+
+The trace-processing job runs with read-only repository permissions. When `apply_fixes=true`, `dry_run=false`, and the workflow is running on the default branch, it writes a short-lived patch artifact and a separate `create-pr` job is the only job granted `contents: write` / `pull-requests: write` to apply that patch and open the auto-fix PR.
 
 #### Main outputs
 
@@ -113,6 +115,8 @@ gh workflow run runtime-conformance-self-heal.yml   -f trace_input=samples/confo
 ### 7. Security / PII handling
 
 - The CI self-heal workflow assumes that `trace_input` is already redacted upstream. When running `ae conformance ingest` manually, always pass `--redact` so sensitive fields such as email, tokens, or session identifiers are removed before ingest.
+- A supplied `trace_bundle` is validated and copied into the upload artifact set only after it passes the allowlisted-path and `ae-trace-bundle/v1` schema checks. Store dispatch-supplied bundles under `artifacts/observability/runtime-self-heal-inputs` unless `AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE_DIR` is deliberately changed.
+- Repository write credentials are isolated to the auto-fix PR creation job. The trace-processing job uses read-only `GITHUB_TOKEN` permissions, disables persisted checkout credentials, and rejects control characters in path-like values before writing step outputs.
 - When production data is involved, store the Trace Bundle in encrypted storage and do not paste raw events into the PR body.
 - During incident analysis, review `runtime-conformance-self-heal-report.json` and `runtime-self-heal-results.json` first, and only share the minimum necessary event excerpts.
 - `artifacts/ci/harness-health.json` aggregates the `runtimeConformance` gate. When the status is `fail` or `warn`, rerun with `run-trace` (legacy name: `run-conformance`) and only enable `autopilot:on` when continuous operation is justified.
@@ -202,10 +206,12 @@ gh workflow run runtime-conformance-self-heal.yml \
 ### 主な入力
 
 - `trace_input`: ingest 元の NDJSON/JSON パス
-- `trace_bundle`: 既存 trace bundle パス（指定時は ingest を省略）
+- `trace_bundle`: 既存 trace bundle パス（指定時は ingest を省略）。workflow では `AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE_DIR`（既定: `artifacts/observability/runtime-self-heal-inputs`）配下のみを許可し、絶対パス、親ディレクトリ遡り、`.git` metadata パス、symlink、allowlist 外ファイル、`ae-trace-bundle/v1` schema に合わないファイルを拒否する。
 - `conformance_rules`: 任意の custom rules JSON
 - `apply_fixes`: `true` の場合のみ `ae fix apply` を実行
 - `dry_run`: `true` の場合は `ae fix apply --dry-run`
+
+trace 処理 job は repository read-only 権限で実行する。`apply_fixes=true`、`dry_run=false`、かつ default branch 上で実行している場合のみ短期保持の patch artifact を作成し、その patch を適用して自動修正 PR を作成する `create-pr` job だけに `contents: write` / `pull-requests: write` を付与する。
 
 ### 出力
 
@@ -218,6 +224,8 @@ gh workflow run runtime-conformance-self-heal.yml \
 ## 7. セキュリティ / PII 運用
 
 - CI の self-heal workflow は `trace_input` が upstream 側で redaction 済みであることを前提とする。手動で `ae conformance ingest` を実行する場合は、`--redact` を必ず指定し、機微情報（例: email/token/sessionId）を除去する。
+- 指定された `trace_bundle` は allowlisted path と `ae-trace-bundle/v1` schema 検証に合格した場合のみ upload artifact set へコピーされる。dispatch で渡す bundle は、`AE_RUNTIME_CONFORMANCE_TRACE_BUNDLE_DIR` を意図的に変更しない限り `artifacts/observability/runtime-self-heal-inputs` 配下へ配置する。
+- repository write credential は自動修正 PR 作成 job に隔離する。trace 処理 job は read-only `GITHUB_TOKEN` 権限で実行し、checkout の persisted credential を無効化し、path 系の値を step output に書き出す前に制御文字を拒否する。
 - 本番データを扱う場合、trace bundle は暗号化ストレージへ保管し、PR本文へ生データを貼り付けない。
 - 失敗調査時は `runtime-conformance-self-heal-report.json` と `runtime-self-heal-results.json` を優先参照し、必要最小限の event 抜粋のみ共有する。
 - `artifacts/ci/harness-health.json` に `runtimeConformance` ゲートが集約されるため、fail/warn 時は `run-trace`（旧表記: `run-conformance`）で再実行し、継続運用時のみ `autopilot:on` を付与する。
