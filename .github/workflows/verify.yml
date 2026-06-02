@@ -50,9 +50,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   traceability:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     continue-on-error: >-
       ${{
         (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking'))
@@ -60,6 +67,8 @@ jobs:
       }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Generate traceability matrix
         run: |
           chmod +x ./scripts/verify/traceability.sh
@@ -83,6 +92,9 @@ jobs:
           fi
   model-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     continue-on-error: >-
       ${{
         (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking'))
@@ -90,6 +102,8 @@ jobs:
       }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -115,7 +129,7 @@ jobs:
       - name: Run model checks (TLA+)
         env:
           ALLOY_JAR: ${{ github.workspace }}/.cache/tools/alloy.jar
-          ALLOY_RUN_CMD: java -jar $ALLOY_JAR exec -q -o - -f {file}
+          ALLOY_CMD_JSON: '["exec","-q","-o","-","-f","{file}"]'
           JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
         run: |
           node --version
@@ -129,16 +143,20 @@ jobs:
             artifacts/codex/model-check.json
             artifacts/codex/*.tlc.log.txt
   post-summary:
-    if: ${{ github.event_name == 'pull_request' || inputs.trigger == 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     needs: [traceability, model-check, contracts-check, contracts-exec]
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+      pull-requests: write
     continue-on-error: >-
       ${{
         (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci-non-blocking'))
         || (inputs.trigger == 'pull_request' && contains(inputs.pr_labels, 'ci-non-blocking'))
       }}
     steps:
-      - uses: actions/checkout@v4
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
@@ -293,8 +311,13 @@ jobs:
           PR_NUMBER: ${{ inputs.pr_number }}
   contracts-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Run contracts presence check (report-only)
         run: |
           node scripts/verify/run-contracts-check.mjs
@@ -311,8 +334,13 @@ jobs:
   contracts-exec:
     if: ${{ github.event_name == 'pull_request' || inputs.trigger == 'pull_request' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Determine enforcement from labels
         if: >-
           ${{
@@ -350,6 +378,9 @@ jobs:
   formal-enforce:
     if: ${{ github.event_name == 'pull_request' || inputs.trigger == 'pull_request' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     needs: [model-check]
     steps:
       - name: Determine enforcement from labels
@@ -379,9 +410,14 @@ jobs:
   formal-conformance-optin:
     if: ${{ github.event_name == 'pull_request' || inputs.trigger == 'pull_request' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Determine if run-formal label is present
         if: >-
           ${{

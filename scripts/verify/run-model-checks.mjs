@@ -8,7 +8,6 @@ const outDir = path.join(repoRoot, 'artifacts', 'codex');
 const toolsDir = path.join(repoRoot, '.cache', 'tools');
 const tlaJar = path.join(toolsDir, 'tla2tools.jar');
 const alloyJar = process.env.ALLOY_JAR || path.join(toolsDir, 'alloy.jar');
-const alloyRunCmd = process.env.ALLOY_RUN_CMD || null; // e.g. 'java -jar $ALLOY_JAR -f {file}'
 
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
@@ -63,6 +62,38 @@ async function download(url, dest) {
     const curl = spawn('curl', ['-L', '-sS', url, '-o', dest], { stdio: 'inherit' });
     curl.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`curl exit ${code}`))));
   });
+}
+
+function parseAlloyArgTemplate() {
+  const jsonTemplate = (process.env.ALLOY_CMD_JSON || '').trim();
+  const rawTemplate = (process.env.ALLOY_CMD_ARGS || '').trim();
+  if (jsonTemplate) {
+    try {
+      const parsed = JSON.parse(jsonTemplate);
+      if (!Array.isArray(parsed)) {
+        console.warn(`[run-model-checks] Warning: ALLOY_CMD_JSON is valid JSON but not an array. Value: ${jsonTemplate}`);
+      } else {
+        return parsed.map(String);
+      }
+    } catch (err) {
+      console.warn(`[run-model-checks] Warning: Invalid JSON in ALLOY_CMD_JSON: ${jsonTemplate}`);
+      console.warn(`[run-model-checks] Error: ${err?.message ?? String(err)}`);
+    }
+    console.warn('[run-model-checks] Falling back to ALLOY_CMD_ARGS or default argv template.');
+  }
+  if (rawTemplate) {
+    return rawTemplate.split(/\s+/u).filter(Boolean);
+  }
+  return ['exec', '-q', '-o', '-', '-f', '{file}'];
+}
+
+function buildAlloyJavaArgs(file) {
+  const template = parseAlloyArgTemplate();
+  const rendered = template.map((arg) => (arg === '{file}' ? file : arg));
+  if (!template.includes('{file}')) {
+    rendered.push(file);
+  }
+  return ['-jar', alloyJar, ...rendered];
 }
 
 async function resolveTlaConfig(modulePath) {
@@ -160,88 +191,21 @@ async function main() {
   if (alsFiles.length === 0) {
     summary.alloy.skipped.push('No .als found');
   } else {
-    // Optional execution via ALLOY_RUN_CMD (with {file} placeholder)
+    if (process.env.ALLOY_RUN_CMD) {
+      console.warn('[run-model-checks] Warning: ALLOY_RUN_CMD shell templates are ignored. Use ALLOY_CMD_JSON/ALLOY_CMD_ARGS for argv-safe Alloy arguments.');
+    }
     let haveJar = false;
     try { await fs.stat(alloyJar); haveJar = true; } catch {}
-    if (!alloyRunCmd) {
-      // Safe default: if ALLOY_JAR is available, run `java -jar $ALLOY_JAR {file}`
-      if (haveJar) {
-        const timeoutMs = parseInt(process.env.ALLOY_TIMEOUT_MS || '', 10) || (3 * 60 * 1000);
-        for (const f of alsFiles) {
-          const name = path.basename(f, '.als');
-          const logPath = path.join(outDir, `${name}.alloy.log.txt`);
-          try {
-            await ensureDir(outDir);
-            const res = await new Promise((resolve) => {
-              const args = ['-jar', alloyJar, f];
-              const addArgsJson = (process.env.ALLOY_CMD_JSON || '').trim();
-              const addArgs = (process.env.ALLOY_CMD_ARGS || '').trim();
-              if (addArgsJson) {
-                try {
-                  const arr = JSON.parse(addArgsJson);
-                  if (Array.isArray(arr)) {
-                    args.push(...arr.map(String));
-                  } else {
-                    console.warn(`[run-model-checks] Warning: ALLOY_CMD_JSON is valid JSON but not an array. Value: ${addArgsJson}`);
-                    console.warn('[run-model-checks] Falling back to ALLOY_CMD_ARGS or no extra arguments.');
-                    if (addArgs) args.push(...addArgs.split(/\s+/));
-                  }
-                } catch (err) {
-                  console.warn(`[run-model-checks] Warning: Invalid JSON in ALLOY_CMD_JSON: ${addArgsJson}`);
-                  console.warn(`[run-model-checks] Error: ${err?.message ?? String(err)}`);
-                  console.warn('[run-model-checks] Falling back to ALLOY_CMD_ARGS or no extra arguments.');
-                  if (addArgs) args.push(...addArgs.split(/\s+/));
-                }
-              } else if (addArgs) {
-                // Fallback: simple whitespace split (avoid quotes/escaping); prefer ALLOY_CMD_JSON
-                args.push(...addArgs.split(/\s+/));
-              }
-              const sh = spawn('java', args, { cwd: repoRoot });
-              let out = ''; let err = '';
-              let terminated = false;
-              const timer = setTimeout(() => {
-                if (!terminated && sh.exitCode === null) {
-                  sh.kill('SIGTERM');
-                  setTimeout(() => { if (!terminated && sh.exitCode === null) sh.kill('SIGKILL'); }, 10 * 1000);
-                }
-              }, timeoutMs);
-              sh.stdout.on('data', d => out += d.toString());
-              sh.stderr.on('data', d => err += d.toString());
-              sh.on('exit', async (code, signal) => {
-                terminated = true;
-                clearTimeout(timer);
-                await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
-                const timeout = code === null && signal === 'SIGKILL';
-                let failRegex;
-                try {
-                  failRegex = new RegExp(process.env.ALLOY_FAIL_REGEX || 'Exception|ERROR|FAILED|Counterexample|assertion', 'i');
-                } catch (reErr) {
-                  console.warn(`[run-model-checks] Warning: Invalid ALLOY_FAIL_REGEX '${process.env.ALLOY_FAIL_REGEX}'. Using default.`);
-                  failRegex = /Exception|ERROR|FAILED|Counterexample|assertion/i;
-                }
-                const okHeuristic = code === 0 && !timeout && !failRegex.test(out + err);
-                resolve({ ok: okHeuristic, code, signal, timeout, log: path.relative(repoRoot, logPath) });
-              });
-            });
-            summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: res.ok, code: res.code, signal: res.signal, timeout: res.timeout, log: res.log });
-          } catch (e) {
-            summary.alloy.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
-          }
-        }
-      } else {
-        summary.alloy.skipped.push('No ALLOY_RUN_CMD; detection only.');
-        for (const f of alsFiles) summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: null });
-      }
-    } else {
+    if (haveJar) {
+      const timeoutMs = parseInt(process.env.ALLOY_TIMEOUT_MS || '', 10) || (3 * 60 * 1000);
       for (const f of alsFiles) {
         const name = path.basename(f, '.als');
         const logPath = path.join(outDir, `${name}.alloy.log.txt`);
-        const cmd = alloyRunCmd.replace('{file}', f).replace('$ALLOY_JAR', alloyJar);
         try {
           await ensureDir(outDir);
           const res = await new Promise((resolve) => {
-            const timeoutMs = parseInt(process.env.ALLOY_TIMEOUT_MS || '', 10) || (3 * 60 * 1000);
-            const sh = spawn(cmd, { shell: true, cwd: repoRoot });
+            const args = buildAlloyJavaArgs(f);
+            const sh = spawn('java', args, { cwd: repoRoot });
             let out = ''; let err = '';
             let terminated = false;
             const timer = setTimeout(() => {
@@ -257,7 +221,15 @@ async function main() {
               clearTimeout(timer);
               await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
               const timeout = code === null && signal === 'SIGKILL';
-              resolve({ ok: code === 0 && !timeout, code, signal, timeout, log: path.relative(repoRoot, logPath) });
+              let failRegex;
+              try {
+                failRegex = new RegExp(process.env.ALLOY_FAIL_REGEX || 'Exception|ERROR|FAILED|Counterexample|assertion', 'i');
+              } catch {
+                console.warn(`[run-model-checks] Warning: Invalid ALLOY_FAIL_REGEX '${process.env.ALLOY_FAIL_REGEX}'. Using default.`);
+                failRegex = /Exception|ERROR|FAILED|Counterexample|assertion/i;
+              }
+              const okHeuristic = code === 0 && !timeout && !failRegex.test(out + err);
+              resolve({ ok: okHeuristic, code, signal, timeout, log: path.relative(repoRoot, logPath) });
             });
           });
           summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: res.ok, code: res.code, signal: res.signal, timeout: res.timeout, log: res.log });
@@ -265,6 +237,9 @@ async function main() {
           summary.alloy.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
         }
       }
+    } else {
+      summary.alloy.skipped.push('No Alloy jar available; detection only.');
+      for (const f of alsFiles) summary.alloy.results.push({ file: path.relative(repoRoot, f), ok: null });
     }
   }
   await ensureDir(outDir);

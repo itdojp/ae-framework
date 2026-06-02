@@ -570,3 +570,115 @@ describe('workflow permission boundaries', () => {
     expect(run).not.toContain('$DT_BASE_URL/api/v1/bom');
   });
 });
+
+const jobSteps = (workflow: WorkflowDocument, jobName: string) => {
+  const steps = workflow.jobs?.[jobName]?.steps;
+  if (!Array.isArray(steps)) {
+    throw new Error(`steps not found for ${jobName}`);
+  }
+  return steps;
+};
+
+const expectCheckoutCredentialsDisabled = (steps: any[]) => {
+  const checkouts = steps.filter((step) => step?.uses === 'actions/checkout@v4');
+  expect(checkouts.length).toBeGreaterThan(0);
+  for (const checkout of checkouts) {
+    expect(checkout.with).toMatchObject({ 'persist-credentials': false });
+  }
+};
+
+const expectReadOnlyJobPermissions = (workflow: WorkflowDocument, jobName: string) => {
+  expect(workflow.jobs?.[jobName]?.permissions).toMatchObject({
+    contents: 'read',
+    actions: 'read',
+  });
+  expect(workflow.jobs?.[jobName]?.permissions).not.toHaveProperty('issues');
+  expect(workflow.jobs?.[jobName]?.permissions).not.toHaveProperty('pull-requests');
+  expect(workflow.jobs?.[jobName]?.permissions).not.toHaveProperty('checks');
+};
+
+describe('CI workflow read-only PR validation boundaries', () => {
+  it('Verify Traceability uses argv-safe Alloy arguments and read-only validation jobs', () => {
+    const ci = parseWorkflow('ci.yml');
+    expect(ci.jobs?.['verify-entry']?.permissions).toEqual({ contents: 'read' });
+
+    const workflow = parseWorkflow('verify.yml');
+    const raw = readWorkflow('verify.yml');
+    expect(workflow.permissions).toMatchObject({ contents: 'read', actions: 'read' });
+    expect(raw).not.toContain('ALLOY_RUN_CMD');
+    expect(raw).toContain('ALLOY_CMD_JSON');
+
+    for (const jobName of ['traceability', 'model-check', 'contracts-check', 'contracts-exec', 'formal-conformance-optin']) {
+      expectReadOnlyJobPermissions(workflow, jobName);
+      expectCheckoutCredentialsDisabled(jobSteps(workflow, jobName));
+    }
+
+    const postSummary = workflow.jobs?.['post-summary'];
+    expect(postSummary?.permissions).toMatchObject({
+      actions: 'read',
+      issues: 'write',
+      'pull-requests': 'write',
+    });
+    expect(jobSteps(workflow, 'post-summary').some((step) => step?.uses === 'actions/checkout@v4')).toBe(false);
+  });
+
+  it('Spec Validation keeps PR validation read-only and publishes comments from a separate job', () => {
+    const workflow = parseWorkflow('spec-validation.yml');
+    expect(workflow.permissions).toMatchObject({ contents: 'read', actions: 'read' });
+    expect(workflow.permissions).not.toHaveProperty('pull-requests');
+
+    expect(workflow.jobs?.['fail-fast-spec']?.permissions).toMatchObject({ contents: 'read', actions: 'read' });
+    expect(workflow.jobs?.['spec-check']?.permissions).toMatchObject({ contents: 'read', actions: 'read' });
+    expectReadOnlyJobPermissions(workflow, 'spec-validation');
+    expectCheckoutCredentialsDisabled(jobSteps(workflow, 'spec-validation'));
+    expect(jobSteps(workflow, 'spec-validation').some((step) => step?.uses === 'actions/github-script@v7')).toBe(false);
+
+    const postJob = workflow.jobs?.['post-spec-validation-comment'];
+    expect(postJob?.permissions).toMatchObject({
+      actions: 'read',
+      issues: 'write',
+      'pull-requests': 'write',
+    });
+    expect(jobSteps(workflow, 'post-spec-validation-comment').some((step) => step?.uses === 'actions/checkout@v4')).toBe(false);
+
+    const failFast = parseWorkflow('fail-fast-spec-validation.yml');
+    expect(failFast.permissions).toMatchObject({ contents: 'read', actions: 'read' });
+    expectCheckoutCredentialsDisabled(jobSteps(failFast, 'fail-fast-validation'));
+
+    const specCheck = parseWorkflow('spec-check.yml');
+    expect(specCheck.permissions).toMatchObject({ contents: 'read', actions: 'read' });
+    expectReadOnlyJobPermissions(specCheck, 'tla');
+    expectCheckoutCredentialsDisabled(jobSteps(specCheck, 'tla'));
+  });
+
+  it('Spec Generate and Model PR validation jobs are read-only and publication jobs do not checkout PR content', () => {
+    const workflow = parseWorkflow('spec-generate-model.yml');
+    expect(workflow.permissions).toMatchObject({ contents: 'read', actions: 'read' });
+    expect(workflow.permissions).not.toHaveProperty('checks');
+    expect(workflow.permissions).not.toHaveProperty('issues');
+    expect(workflow.permissions).not.toHaveProperty('pull-requests');
+
+    for (const jobName of ['generate-artifacts', 'model-based-tests', 'trace-conformance']) {
+      expectReadOnlyJobPermissions(workflow, jobName);
+      expectCheckoutCredentialsDisabled(jobSteps(workflow, jobName));
+      expect(jobSteps(workflow, jobName).some((step) => step?.uses === 'actions/github-script@v7')).toBe(false);
+    }
+
+    const preview = workflow.jobs?.['publish-generate-artifacts-preview'];
+    expect(preview?.permissions).toMatchObject({
+      actions: 'read',
+      issues: 'write',
+      'pull-requests': 'write',
+    });
+    expect(jobSteps(workflow, 'publish-generate-artifacts-preview').some((step) => step?.uses === 'actions/checkout@v4')).toBe(false);
+
+    const trace = workflow.jobs?.['publish-trace-summary'];
+    expect(trace?.permissions).toMatchObject({
+      actions: 'read',
+      checks: 'write',
+      issues: 'write',
+      'pull-requests': 'write',
+    });
+    expect(jobSteps(workflow, 'publish-trace-summary').some((step) => step?.uses === 'actions/checkout@v4')).toBe(false);
+  });
+});

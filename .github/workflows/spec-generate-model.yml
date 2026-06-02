@@ -22,18 +22,20 @@ concurrency:
 permissions:
   contents: read
   actions: read
-  checks: write
-  pull-requests: write
-  issues: write
 
 jobs:
   generate-artifacts:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     env:
       AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -88,67 +90,19 @@ jobs:
             echo '## Generate Artifacts Summary' >> "$GITHUB_STEP_SUMMARY"
             echo 'No diff summary produced.' >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: Comment diff on PR
-        if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = 'artifacts/hermetic-reports/spec/generate-artifacts-diff.json';
-            const summary = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : null;
-            const lines = [];
-            lines.push('### Generate Artifacts Preview');
-            if (!summary) {
-              lines.push('No diff summary generated.');
-            } else {
-              lines.push(`Generated at: ${summary.generatedAt}`);
-              for (const target of summary.targets || []) {
-                const status = target.hasChanges ? 'CHANGED' : 'clean';
-                lines.push(`- ${target.path}: ${status}`);
-                if (target.hasChanges && target.files) {
-                  const sample = target.files.slice(0, 10);
-                  for (const file of sample) {
-                    lines.push(`  - ${file.status} ${file.file}`);
-                  }
-                  if (target.files.length > sample.length) {
-                    lines.push(`  - … (${target.files.length - sample.length} more)`);
-                  }
-                }
-              }
-            }
-            const body = lines.join("\n");
-            const { data: existing } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number
-            });
-            const marker = '<!-- generate-artifacts-preview -->';
-            const decoratedBody = [body, marker].join("\n\n");
-            const previous = existing.find((c) => c.user.login === 'github-actions[bot]' && c.body.includes(marker));
-            if (previous) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: previous.id,
-                body: decoratedBody
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: decoratedBody
-              });
-            }
-
   model-based-tests:
     runs-on: ubuntu-latest
     needs: generate-artifacts
+    permissions:
+      contents: read
+      actions: read
     env:
       AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -200,6 +154,9 @@ jobs:
   trace-conformance:
     runs-on: ubuntu-latest
     needs: model-based-tests
+    permissions:
+      contents: read
+      actions: read
     env:
       AE_HOST_STORE: ${{ github.workspace }}/.pnpm-store
       PNPM_STORE_PATH: ${{ github.workspace }}/.pnpm-store
@@ -208,6 +165,8 @@ jobs:
       KVONCE_OTLP_PAYLOAD_URL: ${{ github.event.inputs.kvonce_otlp_payload_url || '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -431,8 +390,94 @@ jobs:
             artifacts/hermetic-reports/trace/ndjson/kvonce-validation.json
             artifacts/automation/kvonce-trace-validation-report.json
           if-no-files-found: warn
+  publish-generate-artifacts-preview:
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    runs-on: ubuntu-latest
+    needs: generate-artifacts
+    permissions:
+      actions: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Download diff summary
+        id: download
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: generate-artifacts-diff
+          path: artifacts/hermetic-reports/spec
+      - name: Comment diff on PR
+        if: ${{ steps.download.outcome == 'success' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'artifacts/hermetic-reports/spec/generate-artifacts-diff.json';
+            const summary = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : null;
+            const lines = [];
+            lines.push('### Generate Artifacts Preview');
+            if (!summary) {
+              lines.push('No diff summary generated.');
+            } else {
+              lines.push(`Generated at: ${summary.generatedAt}`);
+              for (const target of summary.targets || []) {
+                const status = target.hasChanges ? 'CHANGED' : 'clean';
+                lines.push(`- ${target.path}: ${status}`);
+                if (target.hasChanges && target.files) {
+                  const sample = target.files.slice(0, 10);
+                  for (const file of sample) {
+                    lines.push(`  - ${file.status} ${file.file}`);
+                  }
+                  if (target.files.length > sample.length) {
+                    lines.push(`  - … (${target.files.length - sample.length} more)`);
+                  }
+                }
+              }
+            }
+            const body = lines.join("\n");
+            const { data: existing } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            const marker = '<!-- generate-artifacts-preview -->';
+            const decoratedBody = [body, marker].join("\n\n");
+            const previous = existing.find((c) => c.user.login === 'github-actions[bot]' && c.body.includes(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previous.id,
+                body: decoratedBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: decoratedBody
+              });
+            }
+
+  publish-trace-summary:
+    if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+    runs-on: ubuntu-latest
+    needs: trace-conformance
+    permissions:
+      actions: read
+      checks: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Download trace artifacts
+        id: download
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: kvonce-trace-results
+          path: artifacts
       - name: Update PR with trace summary
-        if: github.event_name == 'pull_request'
+        if: ${{ steps.download.outcome == 'success' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -440,19 +485,18 @@ jobs:
             const path = require('path');
             const marker = '<!-- kvonce-trace-summary -->';
             const cases = [
-              { key: 'OTLP', dir: 'artifacts/hermetic-reports/trace/otlp' },
-              { key: 'NDJSON', dir: 'artifacts/hermetic-reports/trace/ndjson' },
+              { key: 'OTLP', file: 'artifacts/hermetic-reports/trace/otlp/kvonce-validation.json' },
+              { key: 'NDJSON', file: 'artifacts/hermetic-reports/trace/ndjson/kvonce-validation.json' },
             ];
 
             let body = `${marker}\n### KvOnce Trace Validation`;
 
             for (const item of cases) {
-              const reportPath = path.join(process.cwd(), item.dir, 'kvonce-validation.json');
-              if (!fs.existsSync(reportPath)) {
+              if (!fs.existsSync(item.file)) {
                 body += `\n- ${item.key}: ⚠️ validation file missing`;
                 continue;
               }
-              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              const report = JSON.parse(fs.readFileSync(item.file, 'utf8'));
               const issues = Array.isArray(report.issues) ? report.issues : [];
               const renderedIssues = issues.slice(0, 10).map((issue) => {
                 const key = issue.key ?? 'unknown';
@@ -479,16 +523,13 @@ jobs:
             }
 
       - name: Publish trace validation check
-        if: ${{ always() && github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+        if: ${{ always() }}
         uses: actions/github-script@v7
         env:
-          TRACE_JOB_STATUS: ${{ job.status }}
-          VALID_OTLP: ${{ steps.trace_summary.outputs.valid_otlp }}
-          VALID_NDJSON: ${{ steps.trace_summary.outputs.valid_ndjson }}
-          ISSUES_OTLP: ${{ steps.trace_summary.outputs.issues_otlp }}
-          ISSUES_NDJSON: ${{ steps.trace_summary.outputs.issues_ndjson }}
+          TRACE_JOB_RESULT: ${{ needs.trace-conformance.result }}
         with:
           script: |
+            const fs = require('fs');
             const { owner, repo } = context.repo;
             const headSha = context.payload.pull_request?.head?.sha;
             if (!headSha) {
@@ -496,25 +537,31 @@ jobs:
               return;
             }
 
-            const validOtlp = process.env.VALID_OTLP || 'missing';
-            const validNdjson = process.env.VALID_NDJSON || 'missing';
-            const issuesOtlp = process.env.ISSUES_OTLP || 'N/A';
-            const issuesNdjson = process.env.ISSUES_NDJSON || 'N/A';
+            const readReport = (file) => {
+              if (!fs.existsSync(file)) {
+                return { valid: 'missing', issues: 'N/A' };
+              }
+              const report = JSON.parse(fs.readFileSync(file, 'utf8'));
+              const issues = Array.isArray(report.issues) ? report.issues.length : 0;
+              return { valid: String(report.valid), issues: String(issues) };
+            };
 
-            const traceJobStatus = (process.env.TRACE_JOB_STATUS || '').toLowerCase();
+            const otlp = readReport('artifacts/hermetic-reports/trace/otlp/kvonce-validation.json');
+            const ndjson = readReport('artifacts/hermetic-reports/trace/ndjson/kvonce-validation.json');
+            const traceJobResult = (process.env.TRACE_JOB_RESULT || '').toLowerCase();
 
             let conclusion = 'success';
-            if (traceJobStatus && traceJobStatus !== 'success') {
+            if (traceJobResult && traceJobResult !== 'success') {
               conclusion = 'failure';
-            } else if (validOtlp === 'false' || validNdjson === 'false') {
+            } else if (otlp.valid === 'false' || ndjson.valid === 'false') {
               conclusion = 'failure';
-            } else if (validOtlp === 'missing' && validNdjson === 'missing') {
+            } else if (otlp.valid === 'missing' && ndjson.valid === 'missing') {
               conclusion = 'neutral';
             }
 
             const summaryLines = [
-              `OTLP: ${validOtlp} (issues: ${issuesOtlp})`,
-              `NDJSON: ${validNdjson} (issues: ${issuesNdjson})`,
+              `OTLP: ${otlp.valid} (issues: ${otlp.issues})`,
+              `NDJSON: ${ndjson.valid} (issues: ${ndjson.issues})`,
             ];
 
             const checkName = 'KvOnce Trace Validation';
