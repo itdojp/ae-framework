@@ -6,8 +6,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-
-const DEFAULT_E2E_OUTPUT_DIR = join('artifacts', 'integration', 'test-results');
+import {
+  createIntegrationPathContext,
+  getDefaultIntegrationOutputDir,
+  resolveIntegrationOutputPath,
+  type IntegrationPathContext,
+} from '../path-policy.js';
 
 /**
  * Test step result interface - for internal step tracking
@@ -100,13 +104,19 @@ export class E2ETestRunner implements TestRunner {
 
   private config: E2EConfig;
   private outputDir: string;
+  private pathContext: IntegrationPathContext;
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
   private currentPage: BrowserPage | null = null;
 
   constructor(config: E2EConfig) {
     this.config = config;
-    this.outputDir = config.outputDir ?? DEFAULT_E2E_OUTPUT_DIR;
+    this.pathContext = createIntegrationPathContext();
+    this.outputDir = this.resolveOutputDir(config.outputDir ?? getDefaultIntegrationOutputDir(this.pathContext));
+  }
+
+  setOutputDir(outputDir: string): void {
+    this.outputDir = this.resolveOutputDir(outputDir);
   }
 
   /**
@@ -630,5 +640,13 @@ export class E2ETestRunner implements TestRunner {
     if (result.screenshots.length > 0) {
       console.log(`E2E: Captured ${result.screenshots.length} screenshots`);
     }
+  }
+
+  private resolveOutputDir(outputDir: string): string {
+    return resolveIntegrationOutputPath(
+      outputDir,
+      this.pathContext,
+      'e2e runner output directory',
+    ).resolvedPath;
   }
 }

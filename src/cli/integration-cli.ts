@@ -8,12 +8,21 @@ import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import chalk from 'chalk';
 import { promises as fs, existsSync, statSync } from 'node:fs';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { loadConfig } from '../core/config.js';
 import { IntegrationTestOrchestrator } from '../integration/test-orchestrator.js';
 import { E2ETestRunner } from '../integration/runners/e2e-runner.js';
 import { APITestRunner } from '../integration/runners/api-runner.js';
 import { HTMLTestReporter } from '../integration/reporters/html-reporter.js';
+import {
+  INTEGRATION_WRITE_APPROVAL_SCOPE,
+  createIntegrationPathContext,
+  getDefaultIntegrationOutputDir,
+  isIntegrationAgentContext,
+  resolveIntegrationInputPath,
+  resolveIntegrationOutputPath,
+  type IntegrationPathContext,
+} from '../integration/path-policy.js';
 import type { 
   TestCase,
   TestSuite,
@@ -24,8 +33,6 @@ import type {
   TestDiscovery
 } from '../integration/types.js';
 
-const DEFAULT_INTEGRATION_OUTPUT_DIR = join('artifacts', 'integration', 'test-results');
-
 const parseOptionalBoolean = (value?: string | boolean): boolean => {
   if (value === undefined) return true;
   if (typeof value === 'boolean') return value;
@@ -33,14 +40,23 @@ const parseOptionalBoolean = (value?: string | boolean): boolean => {
   return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'y';
 };
 
+interface IntegrationWritePolicy {
+  dryRun: boolean;
+  agentContext: boolean;
+  approvalRequired: boolean;
+}
+
 // Simple test discovery implementation
 class FileSystemTestDiscovery implements TestDiscovery {
+  constructor(private readonly pathContext: IntegrationPathContext) {}
+
   async discoverTests(patterns: string[]): Promise<TestCase[]> {
     const tests: TestCase[] = [];
     
     for (const pattern of patterns) {
-      if (existsSync(pattern)) {
-        const content = await fs.readFile(pattern, 'utf-8');
+      const resolved = resolveIntegrationInputPath(pattern, this.pathContext, 'integration test discovery path');
+      if (existsSync(resolved.resolvedPath)) {
+        const content = await fs.readFile(resolved.resolvedPath, 'utf-8');
         try {
           const data = JSON.parse(content);
           if (Array.isArray(data)) {
@@ -49,7 +65,7 @@ class FileSystemTestDiscovery implements TestDiscovery {
             tests.push(data);
           }
         } catch (error) {
-          console.warn(`Failed to parse test file ${pattern}:`, error);
+          console.warn(`Failed to parse test file ${resolved.workspaceRelativePath}:`, error);
         }
       }
     }
@@ -61,8 +77,9 @@ class FileSystemTestDiscovery implements TestDiscovery {
     const suites: TestSuite[] = [];
     
     for (const pattern of patterns) {
-      if (existsSync(pattern)) {
-        const content = await fs.readFile(pattern, 'utf-8');
+      const resolved = resolveIntegrationInputPath(pattern, this.pathContext, 'integration suite discovery path');
+      if (existsSync(resolved.resolvedPath)) {
+        const content = await fs.readFile(resolved.resolvedPath, 'utf-8');
         try {
           const data = JSON.parse(content);
           if (Array.isArray(data)) {
@@ -71,7 +88,7 @@ class FileSystemTestDiscovery implements TestDiscovery {
             suites.push(data);
           }
         } catch (error) {
-          console.warn(`Failed to parse suite file ${pattern}:`, error);
+          console.warn(`Failed to parse suite file ${resolved.workspaceRelativePath}:`, error);
         }
       }
     }
@@ -83,8 +100,9 @@ class FileSystemTestDiscovery implements TestDiscovery {
     const fixtures: TestFixture[] = [];
     
     for (const pattern of patterns) {
-      if (existsSync(pattern)) {
-        const content = await fs.readFile(pattern, 'utf-8');
+      const resolved = resolveIntegrationInputPath(pattern, this.pathContext, 'integration fixture discovery path');
+      if (existsSync(resolved.resolvedPath)) {
+        const content = await fs.readFile(resolved.resolvedPath, 'utf-8');
         try {
           const data = JSON.parse(content);
           if (Array.isArray(data)) {
@@ -93,7 +111,7 @@ class FileSystemTestDiscovery implements TestDiscovery {
             fixtures.push(data);
           }
         } catch (error) {
-          console.warn(`Failed to parse fixtures file ${pattern}:`, error);
+          console.warn(`Failed to parse fixtures file ${resolved.workspaceRelativePath}:`, error);
         }
       }
     }
@@ -105,8 +123,10 @@ class FileSystemTestDiscovery implements TestDiscovery {
 export class IntegrationTestingCli {
   private orchestrator: IntegrationTestOrchestrator;
   private discovery: TestDiscovery;
+  private pathContext: IntegrationPathContext;
 
   constructor() {
+    this.pathContext = createIntegrationPathContext();
     // Default configuration
     const config: IntegrationTestConfig = {
       environments: [this.createDefaultEnvironment()],
@@ -122,7 +142,7 @@ export class IntegrationTestingCli {
           video: false,
           trace: false,
           slowMo: 0,
-          outputDir: DEFAULT_INTEGRATION_OUTPUT_DIR
+          outputDir: this.getDefaultOutputDir()
         }),
         new APITestRunner({
           timeout: 10000,
@@ -156,7 +176,7 @@ export class IntegrationTestingCli {
     };
 
     this.orchestrator = new IntegrationTestOrchestrator(config);
-    this.discovery = new FileSystemTestDiscovery();
+    this.discovery = new FileSystemTestDiscovery(this.pathContext);
   }
 
   /**
@@ -180,7 +200,7 @@ export class IntegrationTestingCli {
       .option('--retries <num>', 'Number of retries for failed tests', '1')
       .option('--fail-fast', 'Stop execution on first failure')
       .option('--skip-on-failure', 'Skip remaining tests on failure')
-      .option('--output-dir <dir>', 'Output directory for results', DEFAULT_INTEGRATION_OUTPUT_DIR)
+      .option('--output-dir <dir>', 'Output directory for results', this.getDefaultOutputDir())
       .option('--report-format <formats>', 'Report formats (comma-separated)', 'html,json')
       .option('--categories <categories>', 'Test categories to run (comma-separated)')
       .option('--tags <tags>', 'Test tags to run (comma-separated)')
@@ -188,6 +208,9 @@ export class IntegrationTestingCli {
       .option('--screenshots', 'Capture screenshots on failures')
       .option('--video', 'Record video of test execution')
       .option('--coverage', 'Measure code coverage')
+      .option('--dry-run', 'Preview write-capable integration execution without writing artifacts')
+      .option('--apply', 'Apply write-capable integration execution in an agent context')
+      .option('--approval-scope <scope>', `Trusted write approval scope (${INTEGRATION_WRITE_APPROVAL_SCOPE})`)
       .action(async (options) => {
         await this.handleRunCommand(options);
       });
@@ -200,6 +223,9 @@ export class IntegrationTestingCli {
       .option('-t, --type <type>', 'Discovery type (tests, suites, fixtures, all)', 'all')
       .option('-o, --output <file>', 'Output file for discovered items')
       .option('--format <format>', 'Output format (json, table)', 'table')
+      .option('--dry-run', 'Preview discovery output writes without writing files')
+      .option('--apply', 'Apply discovery output writes in an agent context')
+      .option('--approval-scope <scope>', `Trusted write approval scope (${INTEGRATION_WRITE_APPROVAL_SCOPE})`)
       .action(async (options) => {
         await this.handleDiscoverCommand(options);
       });
@@ -221,6 +247,9 @@ export class IntegrationTestingCli {
       .option('-o, --output <file>', 'Output file')
       .option('--test-type <testType>', 'Test type for generation (e2e, api, unit)', 'e2e')
       .option('--name <name>', 'Name for generated item', 'Sample Test')
+      .option('--dry-run', 'Preview generated output without writing files')
+      .option('--apply', 'Apply generated output writes in an agent context')
+      .option('--approval-scope <scope>', `Trusted write approval scope (${INTEGRATION_WRITE_APPROVAL_SCOPE})`)
       .action(async (options) => {
         await this.handleGenerateCommand(options);
       });
@@ -243,6 +272,9 @@ export class IntegrationTestingCli {
       .option('-v, --view <reportId>', 'View specific report')
       .option('-c, --clean', 'Clean old reports')
       .option('--days <days>', 'Report retention days', '30')
+      .option('--dry-run', 'Preview report cleanup without deleting files')
+      .option('--apply', 'Apply report cleanup in an agent context')
+      .option('--approval-scope <scope>', `Trusted write approval scope (${INTEGRATION_WRITE_APPROVAL_SCOPE})`)
       .action(async (options) => {
         await this.handleReportsCommand(options);
       });
@@ -257,24 +289,46 @@ export class IntegrationTestingCli {
     try {
       const cfg = await loadConfig();
       const mode = cfg.mode ?? 'copilot';
+      const writePolicy = this.getWritePolicy(options);
       console.log('🚀 Starting integration test execution...');
 
-      // Initialize orchestrator
-      await this.orchestrator.initialize();
-
       // Parse patterns
-      const suitePatterns = options.suites ? options.suites.split(',').map((s: string) => s.trim()) : [];
-      const testPatterns = options.tests ? options.tests.split(',').map((s: string) => s.trim()) : [];
+      const suitePatterns = this.parsePathList(options.suites);
+      const testPatterns = this.parsePathList(options.tests);
       const allPatterns = [...suitePatterns, ...testPatterns];
 
       if (allPatterns.length === 0) {
         // Default patterns
-        allPatterns.push('./tests/**/*.json', './tests/**/*.test.json');
+        allPatterns.push('tests/**/*.json', 'tests/**/*.test.json');
       }
+      const safePatterns = allPatterns.map((pattern) =>
+        resolveIntegrationInputPath(pattern, this.pathContext, 'integration test pattern').workspaceRelativePath
+      );
+      const outputDir = resolveIntegrationOutputPath(
+        options.outputDir,
+        this.pathContext,
+        'integration output directory',
+      ).workspaceRelativePath;
+
+      if (writePolicy.approvalRequired) {
+        console.error(chalk.red(`❌ Integration writes require --approval-scope ${INTEGRATION_WRITE_APPROVAL_SCOPE} when --apply is used in an agent context`));
+        safeExit(1);
+        return;
+      }
+
+      if (writePolicy.dryRun) {
+        console.log('🔎 Dry-run preview: no tests will be executed and no integration artifacts will be written.');
+        console.log(`   Read patterns: ${safePatterns.join(', ')}`);
+        console.log(`   Planned output directory: ${outputDir}`);
+        return;
+      }
+
+      // Initialize orchestrator only after path policy and write approval checks pass.
+      await this.orchestrator.initialize();
 
       // Discover tests
       console.log('🔍 Discovering tests...');
-      const discovered = await this.orchestrator.discoverTests(this.discovery, allPatterns);
+      const discovered = await this.orchestrator.discoverTests(this.discovery, safePatterns);
       
       console.log(`📋 Found ${discovered.tests.length} tests, ${discovered.suites.length} suites, ${discovered.fixtures.length} fixtures`);
 
@@ -306,7 +360,7 @@ export class IntegrationTestingCli {
         recordVideo: options.video || false,
         collectLogs: true,
         measureCoverage: options.coverage || false,
-        outputDir: options.outputDir,
+        outputDir,
         reportFormat: options.reportFormat.split(',').map((f: string) => f.trim()),
         filters: {
           categories: options.categories ? options.categories.split(',').map((c: string) => c.trim()) : undefined,
@@ -397,9 +451,15 @@ export class IntegrationTestingCli {
    */
   private async handleDiscoverCommand(options: any): Promise<void> {
     try {
+      const writePolicy = this.getWritePolicy(options);
       console.log('🔍 Discovering test resources...');
 
-      const patterns = options.patterns.split(',').map((p: string) => p.trim());
+      const patterns = this.parsePathList(options.patterns).map((pattern) =>
+        resolveIntegrationInputPath(pattern, this.pathContext, 'integration discovery pattern').workspaceRelativePath
+      );
+      const outputPath = options.output
+        ? resolveIntegrationOutputPath(options.output, this.pathContext, 'integration discovery output').workspaceRelativePath
+        : undefined;
       
       let items: any = [];
       let itemType = '';
@@ -436,9 +496,24 @@ export class IntegrationTestingCli {
         console.log(JSON.stringify(items, null, 2));
       }
 
-      if (options.output) {
-        await fs.writeFile(options.output, JSON.stringify(items, null, 2));
-        console.log(`💾 Results saved to ${options.output}`);
+      if (outputPath) {
+        if (writePolicy.approvalRequired) {
+          console.error(chalk.red(`❌ Integration discovery output writes require --approval-scope ${INTEGRATION_WRITE_APPROVAL_SCOPE} when --apply is used in an agent context`));
+          safeExit(1);
+          return;
+        }
+        if (writePolicy.dryRun) {
+          console.log(`🔎 Dry-run preview: discovery results would be saved to ${outputPath}`);
+          return;
+        }
+        const resolvedOutput = resolveIntegrationOutputPath(
+          outputPath,
+          this.pathContext,
+          'integration discovery output',
+        ).resolvedPath;
+        await fs.mkdir(dirname(resolvedOutput), { recursive: true });
+        await fs.writeFile(resolvedOutput, JSON.stringify(items, null, 2));
+        console.log(`💾 Results saved to ${outputPath}`);
       }
 
     } catch (error) {
@@ -492,6 +567,7 @@ export class IntegrationTestingCli {
    */
   private async handleGenerateCommand(options: any): Promise<void> {
     try {
+      const writePolicy = this.getWritePolicy(options);
       console.log(`🛠️ Generating sample ${options.type}...`);
 
       let generatedItem: any;
@@ -514,8 +590,23 @@ export class IntegrationTestingCli {
       }
 
       if (options.output) {
-        await fs.writeFile(options.output, JSON.stringify(generatedItem, null, 2));
-        console.log(`✅ Generated ${options.type} saved to ${options.output}`);
+        const outputPath = resolveIntegrationOutputPath(
+          options.output,
+          this.pathContext,
+          'integration generated output',
+        );
+        if (writePolicy.approvalRequired) {
+          console.error(chalk.red(`❌ Integration generated output writes require --approval-scope ${INTEGRATION_WRITE_APPROVAL_SCOPE} when --apply is used in an agent context`));
+          safeExit(1);
+          return;
+        }
+        if (writePolicy.dryRun) {
+          console.log(`🔎 Dry-run preview: generated ${options.type} would be saved to ${outputPath.workspaceRelativePath}`);
+          return;
+        }
+        await fs.mkdir(dirname(outputPath.resolvedPath), { recursive: true });
+        await fs.writeFile(outputPath.resolvedPath, JSON.stringify(generatedItem, null, 2));
+        console.log(`✅ Generated ${options.type} saved to ${outputPath.workspaceRelativePath}`);
       } else {
         console.log(JSON.stringify(generatedItem, null, 2));
       }
@@ -562,14 +653,19 @@ export class IntegrationTestingCli {
    * Handle the reports command
    */
   private async handleReportsCommand(options: any): Promise<void> {
-    const reportsDir = DEFAULT_INTEGRATION_OUTPUT_DIR;
+    const writePolicy = this.getWritePolicy(options);
+    const reportsDir = resolveIntegrationOutputPath(
+      this.getDefaultOutputDir(),
+      this.pathContext,
+      'integration reports directory',
+    );
 
     if (options.list) {
       console.log('📄 Available Test Reports:\n');
       
       try {
-        if (existsSync(reportsDir)) {
-          const files = await fs.readdir(reportsDir);
+        if (existsSync(reportsDir.resolvedPath)) {
+          const files = await fs.readdir(reportsDir.resolvedPath);
           const reportFiles = files.filter(f => f.endsWith('.html') || f.endsWith('.json'));
           
           if (reportFiles.length === 0) {
@@ -577,7 +673,7 @@ export class IntegrationTestingCli {
           } else {
             reportFiles.forEach((file, index) => {
               console.log(`${index + 1}. ${file}`);
-              const filePath = join(reportsDir, file);
+              const filePath = join(reportsDir.resolvedPath, file);
               if (existsSync(filePath)) {
                 const stats = statSync(filePath);
                 console.log(`   Created: ${stats.ctime.toLocaleString()}`);
@@ -596,31 +692,67 @@ export class IntegrationTestingCli {
 
     if (options.clean) {
       console.log('🧹 Cleaning old reports...');
+      if (writePolicy.approvalRequired) {
+        console.error(chalk.red(`❌ Integration report cleanup requires --approval-scope ${INTEGRATION_WRITE_APPROVAL_SCOPE} when --apply is used in an agent context`));
+        safeExit(1);
+        return;
+      }
       
       const retentionDays = parseInt(options.days);
       const cutoffDate = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
       
       try {
-        if (existsSync(reportsDir)) {
-          const files = await fs.readdir(reportsDir);
+        if (existsSync(reportsDir.resolvedPath)) {
+          const files = await fs.readdir(reportsDir.resolvedPath);
           let cleaned = 0;
           
           for (const file of files) {
-            const filePath = join(reportsDir, file);
+            const filePath = join(reportsDir.resolvedPath, file);
             const stats = statSync(filePath);
             
             if (stats.ctime < cutoffDate) {
-              await fs.unlink(filePath);
+              if (!writePolicy.dryRun) {
+                await fs.unlink(filePath);
+              }
               cleaned++;
             }
           }
           
-          console.log(`✅ Cleaned ${cleaned} old reports (older than ${retentionDays} days)`);
+          if (writePolicy.dryRun) {
+            console.log(`🔎 Dry-run preview: would clean ${cleaned} old reports (older than ${retentionDays} days)`);
+          } else {
+            console.log(`✅ Cleaned ${cleaned} old reports (older than ${retentionDays} days)`);
+          }
         }
       } catch (error) {
                 console.error(chalk.red(`❌ Failed to clean reports: ${toMessage(error)}`));
       }
     }
+  }
+
+  private parsePathList(value?: string): string[] {
+    if (!value) return [];
+    return value
+      .split(',')
+      .map((item: string) => item.trim())
+      .filter((item: string) => item.length > 0);
+  }
+
+  private getWritePolicy(options: any): IntegrationWritePolicy {
+    const agentContext = isIntegrationAgentContext();
+    const applyRequested = options.apply === true;
+    const approved = options.approvalScope === INTEGRATION_WRITE_APPROVAL_SCOPE;
+    const approvalRequired = agentContext && applyRequested && !approved;
+    const dryRun = options.dryRun === true || (agentContext && !applyRequested);
+    return {
+      dryRun,
+      agentContext,
+      approvalRequired,
+    };
+  }
+
+  private getDefaultOutputDir(): string {
+    return getDefaultIntegrationOutputDir(this.pathContext);
   }
 
   /**
