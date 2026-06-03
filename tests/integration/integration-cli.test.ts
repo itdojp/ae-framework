@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { IntegrationTestingCli } from '../../src/cli/integration-cli.js';
-import { writeFileSync, existsSync, mkdirSync } from 'fs';
+import { promises as fsp, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { createIntegrationTempDir, applyIntegrationRetry } from '../_helpers/integration-test-utils.js';
 import './setup';
@@ -20,6 +20,7 @@ describe('IntegrationTestingCli', () => {
   let tempDir: string;
   let cwdSpy: ReturnType<typeof vi.spyOn>;
   const inTemp = (name: string): string => join(tempDir, name);
+  const artifactPath = (name: string): string => ['artifacts', 'integration', name].join('/');
 
   beforeEach(async () => {
     tempDir = await createIntegrationTempDir('integration-cli-');
@@ -76,8 +77,8 @@ describe('IntegrationTestingCli', () => {
         }
       }];
 
-      const testFile = inTemp('test-discovery.json');
-      writeFileSync(testFile, JSON.stringify(testData, null, 2));
+      const testFile = 'test-discovery.json';
+      writeFileSync(inTemp(testFile), JSON.stringify(testData, null, 2));
 
       const command = cli.createCommand();
       const args = ['node', 'cli', 'discover', '--patterns', testFile, '--type', 'tests'];
@@ -95,13 +96,13 @@ describe('IntegrationTestingCli', () => {
       const suiteData = createSampleSuiteData();
       const fixtureData = createSampleFixtureData();
 
-      const testFile = inTemp('discover-tests.json');
-      const suiteFile = inTemp('discover-suites.json');
-      const fixtureFile = inTemp('discover-fixtures.json');
+      const testFile = 'discover-tests.json';
+      const suiteFile = 'discover-suites.json';
+      const fixtureFile = 'discover-fixtures.json';
 
-      writeFileSync(testFile, JSON.stringify([testData], null, 2));
-      writeFileSync(suiteFile, JSON.stringify([suiteData], null, 2));
-      writeFileSync(fixtureFile, JSON.stringify([fixtureData], null, 2));
+      writeFileSync(inTemp(testFile), JSON.stringify([testData], null, 2));
+      writeFileSync(inTemp(suiteFile), JSON.stringify([suiteData], null, 2));
+      writeFileSync(inTemp(fixtureFile), JSON.stringify([fixtureData], null, 2));
 
       const command = cli.createCommand();
       const args = [
@@ -119,10 +120,10 @@ describe('IntegrationTestingCli', () => {
 
     it('should save discovery results to file', async () => {
       const testData = createSampleTestData();
-      const testFile = inTemp('discover-input.json');
-      const outputFile = inTemp('discovery-output.json');
+      const testFile = 'discover-input.json';
+      const outputFile = artifactPath('discovery-output.json');
 
-      writeFileSync(testFile, JSON.stringify([testData], null, 2));
+      writeFileSync(inTemp(testFile), JSON.stringify([testData], null, 2));
 
       const command = cli.createCommand();
       const args = [
@@ -137,7 +138,7 @@ describe('IntegrationTestingCli', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining(`Results saved to ${outputFile}`)
       );
-      expect(existsSync(outputFile)).toBe(true);
+      expect(existsSync(inTemp(outputFile))).toBe(true);
     });
 
     it('should handle invalid patterns gracefully', async () => {
@@ -153,6 +154,23 @@ describe('IntegrationTestingCli', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('Discovering test resources')
       );
+    });
+
+    it('should reject absolute discovery paths before filesystem reads', async () => {
+      const readSpy = vi.spyOn(fsp, 'readFile');
+      const command = cli.createCommand();
+      const args = [
+        'node', 'cli', 'discover',
+        '--patterns', join(tempDir, 'outside.json'),
+        '--type', 'tests'
+      ];
+
+      await command.parseAsync(args);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Discovery failed')
+      );
+      expect(readSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -204,7 +222,7 @@ describe('IntegrationTestingCli', () => {
 
   describe('generate command', () => {
     it('should generate sample test', async () => {
-      const outputFile = inTemp('generated-test.json');
+      const outputFile = artifactPath('generated-test.json');
 
       const command = cli.createCommand();
       const args = [
@@ -223,11 +241,11 @@ describe('IntegrationTestingCli', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining(`Generated test saved to ${outputFile}`)
       );
-      expect(existsSync(outputFile)).toBe(true);
+      expect(existsSync(inTemp(outputFile))).toBe(true);
     });
 
     it('should generate sample suite', async () => {
-      const outputFile = inTemp('generated-suite.json');
+      const outputFile = artifactPath('generated-suite.json');
 
       const command = cli.createCommand();
       const args = [
@@ -242,11 +260,11 @@ describe('IntegrationTestingCli', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('Generated suite saved to')
       );
-      expect(existsSync(outputFile)).toBe(true);
+      expect(existsSync(inTemp(outputFile))).toBe(true);
     });
 
     it('should generate sample fixture', async () => {
-      const outputFile = inTemp('generated-fixture.json');
+      const outputFile = artifactPath('generated-fixture.json');
 
       const command = cli.createCommand();
       const args = [
@@ -261,11 +279,11 @@ describe('IntegrationTestingCli', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('Generated fixture saved to')
       );
-      expect(existsSync(outputFile)).toBe(true);
+      expect(existsSync(inTemp(outputFile))).toBe(true);
     });
 
     it('should generate sample environment', async () => {
-      const outputFile = inTemp('generated-environment.json');
+      const outputFile = artifactPath('generated-environment.json');
 
       const command = cli.createCommand();
       const args = [
@@ -280,7 +298,7 @@ describe('IntegrationTestingCli', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('Generated environment saved to')
       );
-      expect(existsSync(outputFile)).toBe(true);
+      expect(existsSync(inTemp(outputFile))).toBe(true);
     });
 
     it('should output to console without file', async () => {
@@ -310,6 +328,108 @@ describe('IntegrationTestingCli', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Generation failed')
       );
+    });
+
+    it('should reject generated output outside the integration artifact root before writing', async () => {
+      const writeSpy = vi.spyOn(fsp, 'writeFile');
+      const command = cli.createCommand();
+      const args = [
+        'node', 'cli', 'generate',
+        '--type', 'test',
+        '--output', 'generated-outside-artifacts.json'
+      ];
+
+      await command.parseAsync(args);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Generation failed')
+      );
+      expect(writeSpy).not.toHaveBeenCalled();
+      expect(existsSync(inTemp('generated-outside-artifacts.json'))).toBe(false);
+    });
+
+    it('should default agent-context generated output writes to dry-run', async () => {
+      const previous = process.env['AE_INTEGRATION_AGENT_CONTEXT'];
+      process.env['AE_INTEGRATION_AGENT_CONTEXT'] = '1';
+      try {
+        const outputFile = artifactPath('agent-generated-test.json');
+        const command = cli.createCommand();
+        const args = [
+          'node', 'cli', 'generate',
+          '--type', 'test',
+          '--output', outputFile
+        ];
+
+        await command.parseAsync(args);
+
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Dry-run preview')
+        );
+        expect(existsSync(inTemp(outputFile))).toBe(false);
+      } finally {
+        if (previous === undefined) {
+          delete process.env['AE_INTEGRATION_AGENT_CONTEXT'];
+        } else {
+          process.env['AE_INTEGRATION_AGENT_CONTEXT'] = previous;
+        }
+      }
+    });
+
+    it('should require trusted approval for agent-context apply writes', async () => {
+      const previous = process.env['AE_INTEGRATION_AGENT_CONTEXT'];
+      process.env['AE_INTEGRATION_AGENT_CONTEXT'] = '1';
+      try {
+        const outputFile = artifactPath('agent-apply-without-approval.json');
+        const command = cli.createCommand();
+        const args = [
+          'node', 'cli', 'generate',
+          '--type', 'test',
+          '--output', outputFile,
+          '--apply'
+        ];
+
+        await command.parseAsync(args);
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          expect.stringContaining('approval-scope integration-cli-write')
+        );
+        expect(existsSync(inTemp(outputFile))).toBe(false);
+      } finally {
+        if (previous === undefined) {
+          delete process.env['AE_INTEGRATION_AGENT_CONTEXT'];
+        } else {
+          process.env['AE_INTEGRATION_AGENT_CONTEXT'] = previous;
+        }
+      }
+    });
+
+    it('should allow agent-context apply writes with trusted approval scope', async () => {
+      const previous = process.env['AE_INTEGRATION_AGENT_CONTEXT'];
+      process.env['AE_INTEGRATION_AGENT_CONTEXT'] = '1';
+      try {
+        const outputFile = artifactPath('agent-apply-approved.json');
+        const command = cli.createCommand();
+        const args = [
+          'node', 'cli', 'generate',
+          '--type', 'test',
+          '--output', outputFile,
+          '--apply',
+          '--approval-scope', 'integration-cli-write'
+        ];
+
+        await command.parseAsync(args);
+
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining(`Generated test saved to ${outputFile}`)
+        );
+        expect(existsSync(inTemp(outputFile))).toBe(true);
+      } finally {
+        if (previous === undefined) {
+          delete process.env['AE_INTEGRATION_AGENT_CONTEXT'];
+        } else {
+          process.env['AE_INTEGRATION_AGENT_CONTEXT'] = previous;
+        }
+      }
     });
   });
 
@@ -424,13 +544,13 @@ describe('IntegrationTestingCli', () => {
         tests: [testData.id]
       };
 
-      const testFile = inTemp('run-test.json');
-      const suiteFile = inTemp('run-suite.json');
+      const testFile = 'run-test.json';
+      const suiteFile = 'run-suite.json';
 
-      writeFileSync(testFile, JSON.stringify([testData], null, 2));
-      writeFileSync(suiteFile, JSON.stringify([suiteData], null, 2));
+      writeFileSync(inTemp(testFile), JSON.stringify([testData], null, 2));
+      writeFileSync(inTemp(suiteFile), JSON.stringify([suiteData], null, 2));
 
-      const outputDir = inTemp('test-results-run');
+      const outputDir = artifactPath('test-results-run');
 
       const command = cli.createCommand();
       const args = [
@@ -451,8 +571,8 @@ describe('IntegrationTestingCli', () => {
 
     it('should handle execution filters', async () => {
       const testData = createSampleTestData();
-      const testFile = inTemp('filtered-test.json');
-      writeFileSync(testFile, JSON.stringify([testData], null, 2));
+      const testFile = 'filtered-test.json';
+      writeFileSync(inTemp(testFile), JSON.stringify([testData], null, 2));
 
       const command = cli.createCommand();
       const args = [
@@ -473,8 +593,8 @@ describe('IntegrationTestingCli', () => {
 
     it('should handle parallel execution options', async () => {
       const testData = createSampleTestData();
-      const testFile = inTemp('parallel-test.json');
-      writeFileSync(testFile, JSON.stringify([testData], null, 2));
+      const testFile = 'parallel-test.json';
+      writeFileSync(inTemp(testFile), JSON.stringify([testData], null, 2));
 
       const command = cli.createCommand();
       const args = [
@@ -491,6 +611,32 @@ describe('IntegrationTestingCli', () => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         expect.stringContaining('Starting integration test execution')
       );
+    });
+
+    it('should keep default run output under an overridden artifact root', async () => {
+      const previous = process.env['AE_INTEGRATION_ARTIFACT_ROOT'];
+      process.env['AE_INTEGRATION_ARTIFACT_ROOT'] = 'artifacts/custom-integration';
+      try {
+        const customCli = new IntegrationTestingCli();
+        const command = customCli.createCommand();
+        const args = [
+          'node', 'cli', 'run',
+          '--tests', 'nonexistent.json',
+          '--dry-run'
+        ];
+
+        await command.parseAsync(args);
+
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Planned output directory: artifacts/custom-integration/test-results')
+        );
+      } finally {
+        if (previous === undefined) {
+          delete process.env['AE_INTEGRATION_ARTIFACT_ROOT'];
+        } else {
+          process.env['AE_INTEGRATION_ARTIFACT_ROOT'] = previous;
+        }
+      }
     });
   });
 
@@ -528,7 +674,7 @@ describe('IntegrationTestingCli', () => {
   describe('integration workflow', () => {
     it('should support complete testing workflow', async () => {
       // 1. Generate sample test
-      const testFile = inTemp('workflow-test.json');
+      const testFile = artifactPath('workflow-test.json');
 
       let command = cli.createCommand();
       await command.parseAsync([
@@ -564,7 +710,8 @@ describe('IntegrationTestingCli', () => {
       await command.parseAsync([
         'node', 'cli', 'run',
         '--tests', testFile,
-        '--environment', 'default'
+        '--environment', 'default',
+        '--output-dir', artifactPath('workflow-results')
       ]);
 
       expect(consoleLogSpy).toHaveBeenCalledWith(

@@ -7,6 +7,11 @@ import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import {
+  createIntegrationPathContext,
+  resolveIntegrationOutputPath,
+  type IntegrationPathContext,
+} from './path-policy.js';
 import type {
   TestCase,
   TestSuite,
@@ -32,10 +37,12 @@ export class IntegrationTestOrchestrator extends EventEmitter {
   private testFixtures: Map<string, TestFixture> = new Map();
   private activeExecutions: Map<string, Promise<TestExecutionSummary>> = new Map();
   private runnerLocks: Map<string, Promise<void>> = new Map();
+  private pathContext: IntegrationPathContext;
 
   constructor(config: IntegrationTestConfig) {
     super();
     this.config = config;
+    this.pathContext = createIntegrationPathContext();
     this.setupEnvironments();
     this.setupRunners();
     this.setupReporters();
@@ -102,6 +109,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
     environmentName: string,
     config: TestExecutionConfig
   ): Promise<TestResult> {
+    this.resolveOutputDir(config.outputDir, 'integration test output directory');
     const test = this.testCases.get(testId);
     if (!test) {
       throw new Error(`Test not found: ${testId}`);
@@ -122,6 +130,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
     return await this.withRunnerLock(runner.id, async () => {
       let setupCompleted = false;
       let testResult: TestResult | null = null;
+      this.configureRunnerOutputDir(runner, config.outputDir);
 
       const buildErrorResult = (error: unknown): TestResult => ({
         id: uuidv4(),
@@ -249,6 +258,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
     if (!environment) {
       throw new Error(`Environment not found: ${environmentName}`);
     }
+    this.resolveOutputDir(config.outputDir, 'integration suite output directory');
 
     this.emit('suite_started', { suiteId, environment: environmentName, executionId });
 
@@ -626,7 +636,11 @@ export class IntegrationTestOrchestrator extends EventEmitter {
     size: number;
   }>> {
     const artifacts: Array<{ name: string; path: string; size: number }> = [];
-    const artifactDir = join(outputDir, executionId);
+    const safeOutputDir = this.resolveOutputDir(
+      outputDir,
+      'integration artifact collection directory',
+    );
+    const artifactDir = join(safeOutputDir.resolvedPath, executionId);
 
     try {
       const files = await fs.readdir(artifactDir);
@@ -664,8 +678,11 @@ export class IntegrationTestOrchestrator extends EventEmitter {
     summary: TestExecutionSummary, 
     config: TestExecutionConfig
   ): Promise<void> {
-    const outputDir = config.outputDir;
-    await fs.mkdir(outputDir, { recursive: true });
+    const outputDir = this.resolveOutputDir(
+      config.outputDir,
+      'integration report output directory',
+    );
+    await fs.mkdir(outputDir.resolvedPath, { recursive: true });
 
     for (const format of config.reportFormat) {
       const reporter = Array.from(this.reporters.values())
@@ -675,7 +692,7 @@ export class IntegrationTestOrchestrator extends EventEmitter {
         try {
           const content = await reporter.generateReport(summary);
           const fileName = `test-report-${summary.id}.${format}`;
-          const filePath = join(outputDir, fileName);
+          const filePath = join(outputDir.resolvedPath, fileName);
           await reporter.saveReport(content, filePath);
 
           this.emit('report_generated', { format, filePath });
@@ -712,6 +729,21 @@ export class IntegrationTestOrchestrator extends EventEmitter {
         this.runnerLocks.delete(runnerId);
       }
     }
+  }
+
+  private configureRunnerOutputDir(runner: TestRunner, outputDir: string): void {
+    const runnerWithOutputDir = runner as TestRunner & {
+      setOutputDir?: (nextOutputDir: string) => void;
+    };
+    runnerWithOutputDir.setOutputDir?.(outputDir);
+  }
+
+  private resolveOutputDir(outputDir: string, label: string) {
+    return resolveIntegrationOutputPath(
+      outputDir,
+      this.pathContext,
+      label,
+    );
   }
 
   private formatError(error: unknown): string {

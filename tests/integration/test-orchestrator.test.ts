@@ -3,7 +3,8 @@
  * Phase 2.3: Test suite for integration test orchestrator
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { promises as fsp } from 'fs';
 import { join } from 'path';
 import { IntegrationTestOrchestrator } from '../../src/integration/test-orchestrator.js';
 import { E2ETestRunner } from '../../src/integration/runners/e2e-runner.js';
@@ -151,11 +152,13 @@ describe('IntegrationTestOrchestrator', () => {
   let mockDiscovery: TestDiscovery;
   let config: IntegrationTestConfig;
   let integrationTempDir: string;
+  let cwdSpy: ReturnType<typeof vi.spyOn>;
   const getOutputDir = (suffix = 'test-results') =>
-    join(integrationTempDir, suffix);
+    ['artifacts', 'integration', suffix].join('/');
 
   beforeEach(async () => {
     integrationTempDir = await createIntegrationTempDir('integration-orchestrator-');
+    cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(integrationTempDir);
 
     config = {
       environments: [createMockEnvironment()],
@@ -199,6 +202,10 @@ describe('IntegrationTestOrchestrator', () => {
     registerIntegrationCleanup(() => {
       orchestrator.removeAllListeners();
     });
+  });
+
+  afterEach(() => {
+    cwdSpy.mockRestore();
   });
 
   describe('initialization', () => {
@@ -382,6 +389,43 @@ describe('IntegrationTestOrchestrator', () => {
 
       // Wait for first execution to complete
       await firstExecution;
+    });
+
+    it('should reject suite output directories outside the artifact root before report writes', async () => {
+      const mkdirSpy = vi.spyOn(fsp, 'mkdir');
+      const config: TestExecutionConfig = {
+        environment: 'test',
+        parallel: false,
+        maxConcurrency: 1,
+        timeout: 60000,
+        retries: 1,
+        generateReport: true,
+        outputDir: 'outside-integration-results',
+        reportFormat: ['html']
+      };
+
+      await expect(orchestrator.executeSuite('suite-1', 'test', config))
+        .rejects.toThrow('approved integration artifact root');
+      expect(mkdirSpy).not.toHaveBeenCalled();
+    });
+
+    it('should reject absolute output directories even when they point inside the artifact root', async () => {
+      const mkdirSpy = vi.spyOn(fsp, 'mkdir');
+      const absoluteOutputDir = join(integrationTempDir, 'artifacts', 'integration', 'absolute-results');
+      const config: TestExecutionConfig = {
+        environment: 'test',
+        parallel: false,
+        maxConcurrency: 1,
+        timeout: 60000,
+        retries: 1,
+        generateReport: true,
+        outputDir: absoluteOutputDir,
+        reportFormat: ['html']
+      };
+
+      await expect(orchestrator.executeSuite('suite-1', 'test', config))
+        .rejects.toThrow('must be relative');
+      expect(mkdirSpy).not.toHaveBeenCalled();
     });
   });
 
