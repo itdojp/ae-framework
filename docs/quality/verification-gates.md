@@ -61,7 +61,7 @@ Related documents:
 | DbC condition | Representative verification method | Representative evidence |
 | --- | --- | --- |
 | Preconditions | request validation / negative tests / type guards | `artifacts/verify-lite/verify-lite-run-summary.json` (see `docs/quality/ARTIFACTS-CONTRACT.md`) |
-| Postconditions | state assertions / event assertions / integration tests | `reports/quality-gates/quality-report-*.json`, `artifacts/hermetic-reports/conformance/summary.json` |
+| Postconditions | state assertions / event assertions / integration tests | `artifacts/quality/reports/quality-report-*.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 | Invariants | property tests / runtime conformance monitors / DB constraints | `artifacts/properties/summary.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 
 ### PR レポート
@@ -72,7 +72,7 @@ Related documents:
 
 ### Report metadata
 
-Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `meta` object for run-level metadata. That object may contain `runId`, `commitSha`, `branch`, `createdAt`, `agent`, `model`, and `traceId`. Values are taken from CI/local environment variables when available; only `runId` and `createdAt` are always populated.
+Quality gate reports (`artifacts/quality/reports/quality-report-*.json`) include a `meta` object for run-level metadata. That object may contain `runId`, `commitSha`, `branch`, `createdAt`, `agent`, `model`, and `traceId`. Values are taken from CI/local environment variables when available; only `runId` and `createdAt` are always populated.
 
 ### Operational caution
 
@@ -132,7 +132,7 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 | DbC 条件 | 代表的な検証手段 | 代表的な証跡 |
 | --- | --- | --- |
 | Preconditions | request validation / negative tests / type guards | `artifacts/verify-lite/verify-lite-run-summary.json`（詳細は `docs/quality/ARTIFACTS-CONTRACT.md`） |
-| Postconditions | state assertions / event assertions / integration tests | `reports/quality-gates/quality-report-*.json`, `artifacts/hermetic-reports/conformance/summary.json` |
+| Postconditions | state assertions / event assertions / integration tests | `artifacts/quality/reports/quality-report-*.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 | Invariants | property tests / runtime conformance monitors / DB constraints | `artifacts/properties/summary.json`, `artifacts/hermetic-reports/conformance/summary.json` |
 
 ### PR レポート
@@ -143,7 +143,7 @@ Quality gate reports (`reports/quality-gates/quality-report-*.json`) include a `
 
 ### レポートメタデータ
 
-quality gate report（`reports/quality-gates/quality-report-*.json`）には、run-level metadata を表す `meta` object が含まれます。代表項目は `runId`、`commitSha`、`branch`、`createdAt`、`agent`、`model`、`traceId` です。値は CI / local environment variable から取得できるものだけを使用し、`runId` と `createdAt` は常に設定されます。
+quality gate report（`artifacts/quality/reports/quality-report-*.json`）には、run-level metadata を表す `meta` object が含まれます。代表項目は `runId`、`commitSha`、`branch`、`createdAt`、`agent`、`model`、`traceId` です。値は CI / local environment variable から取得できるものだけを使用し、`runId` と `createdAt` は常に設定されます。
 
 ### 運用上の注意
 

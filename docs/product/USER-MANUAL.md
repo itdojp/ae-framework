@@ -248,7 +248,7 @@ pnpm run ae-framework -- validate --traceability --strict --sources docs/specs/I
 pnpm run evaluate:usefulness -- --strict-inputs --min-score 70 \
   --traceability docs/specs/ISSUE-TRACEABILITY-MATRIX.json \
   --verify-profile artifacts/verify-profile-summary.json \
-  --quality-report reports/quality-gates/quality-report-ci-latest.json \
+  --quality-report artifacts/quality/reports/quality-report-ci-latest.json \
   --run-manifest-check artifacts/run-manifest-check.json
 
 # dependency audit
@@ -534,7 +534,7 @@ pnpm run ae-framework -- validate --traceability --strict --sources docs/specs/I
 pnpm run evaluate:usefulness -- --strict-inputs --min-score 70 \
   --traceability docs/specs/ISSUE-TRACEABILITY-MATRIX.json \
   --verify-profile artifacts/verify-profile-summary.json \
-  --quality-report reports/quality-gates/quality-report-ci-latest.json \
+  --quality-report artifacts/quality/reports/quality-report-ci-latest.json \
   --run-manifest-check artifacts/run-manifest-check.json
 
 # 依存監査

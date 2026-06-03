@@ -27,7 +27,7 @@ pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 - Run index: `artifacts/runs/index.json`
 - Traceability: `traceability.json`
 - Verify profile summary: `artifacts/verify-profile-summary.json`
-- Quality report: `reports/quality-gates/quality-report-ci-latest.json`
+- Quality report: `artifacts/quality/reports/quality-report-ci-latest.json`
 - Run manifest check: `artifacts/run-manifest-check.json`
 
 Override these with `--run-index`, `--traceability`, `--verify-profile`, `--quality-report`, and `--run-manifest-check` when the defaults do not match the current workspace or CI artifact layout.
@@ -82,7 +82,7 @@ pnpm run evaluate:usefulness -- --strict-inputs --min-score 70
 - 実行インデックス（Run index）: `artifacts/runs/index.json`
 - トレーサビリティ（Traceability）: `traceability.json`
 - Verify profile summary: `artifacts/verify-profile-summary.json`
-- Quality report: `reports/quality-gates/quality-report-ci-latest.json`
+- Quality report: `artifacts/quality/reports/quality-report-ci-latest.json`
 - Run manifest check: `artifacts/run-manifest-check.json`
 
 必要に応じて `--run-index` / `--traceability` / `--verify-profile` / `--quality-report` / `--run-manifest-check` で上書き可能です。

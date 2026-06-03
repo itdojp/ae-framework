@@ -435,7 +435,7 @@
 
   "reporting": {
     "formats": ["json", "html", "junit"],
-    "outputDirectory": "reports/quality-gates",
+    "outputDirectory": "artifacts/quality/reports",
     "retention": {
       "days": 30,
       "maxReports": 100

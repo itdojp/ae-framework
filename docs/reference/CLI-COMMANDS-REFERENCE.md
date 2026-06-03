@@ -396,7 +396,7 @@ ae domain-model --language --sources "glossary.md"
   --run-index artifacts/runs/index.json \
   --traceability traceability.json \
   --verify-profile artifacts/verify-profile-summary.json \
-  --quality-report reports/quality-gates/quality-report-ci-latest.json \
+  --quality-report artifacts/quality/reports/quality-report-ci-latest.json \
   --run-manifest-check artifacts/run-manifest-check.json \
   --out-json artifacts/evaluation/ae-framework-usefulness-latest.json \
   --out-markdown artifacts/evaluation/ae-framework-usefulness-latest.md
