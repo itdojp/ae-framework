@@ -209,7 +209,29 @@ describe('InstallerManager', () => {
       expect(result.success).toBe(true);
       expect(result.dryRun).toBe(true);
       expect(result.message).toContain('Dry-run preview');
-      expect(result.plannedChanges?.some(change => change.type === 'dependency')).toBe(true);
+      const dependencyPlans =
+        result.plannedChanges?.filter(change => change.type === 'dependency') ?? [];
+      const devDependencyPlans =
+        result.plannedChanges?.filter(change => change.type === 'devDependency') ?? [];
+      expect(dependencyPlans).toHaveLength(1);
+      expect(dependencyPlans[0]?.args).toEqual([
+        'add',
+        '--ignore-scripts',
+        'react@^18.2.0',
+        'react-dom@^18.2.0',
+      ]);
+      expect(devDependencyPlans).toHaveLength(1);
+      expect(devDependencyPlans[0]?.args).toEqual([
+        'add',
+        '--ignore-scripts',
+        '-D',
+        'typescript@^5.0.0',
+        '@types/react@^18.2.0',
+        '@types/react-dom@^18.2.0',
+        '@vitejs/plugin-react@^4.0.0',
+        'vite@^5.0.0',
+        'eslint@^8.0.0',
+      ]);
       expect(vi.mocked(spawn)).not.toHaveBeenCalled();
       expect(vi.mocked(fs.writeFile)).not.toHaveBeenCalled();
       expect(vi.mocked(fs.mkdir)).not.toHaveBeenCalled();

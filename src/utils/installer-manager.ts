@@ -879,18 +879,20 @@ end
       });
     }
 
-    for (const dependency of template.dependencies) {
-      const spec = this.formatDependencySpec(dependency);
+    const dependencySpecs = template.dependencies.map(dependency =>
+      this.formatDependencySpec(dependency)
+    );
+    if (dependencySpecs.length > 0) {
       const { command, args } = this.buildPackageManagerInvocation(
         context.packageManager,
-        [spec],
+        dependencySpecs,
         false,
         context.allowLifecycleScripts === true
       );
       result.plannedChanges?.push({
         type: 'dependency',
         action: 'install',
-        target: spec,
+        target: dependencySpecs.join(', '),
         command,
         args,
         details: context.allowLifecycleScripts === true
@@ -899,18 +901,20 @@ end
       });
     }
 
-    for (const dependency of template.devDependencies ?? []) {
-      const spec = this.formatDependencySpec(dependency);
+    const devDependencySpecs = (template.devDependencies ?? []).map(dependency =>
+      this.formatDependencySpec(dependency)
+    );
+    if (devDependencySpecs.length > 0) {
       const { command, args } = this.buildPackageManagerInvocation(
         context.packageManager,
-        [spec],
+        devDependencySpecs,
         true,
         context.allowLifecycleScripts === true
       );
       result.plannedChanges?.push({
         type: 'devDependency',
         action: 'install',
-        target: spec,
+        target: devDependencySpecs.join(', '),
         command,
         args,
         details: context.allowLifecycleScripts === true
