@@ -8,7 +8,13 @@ import chalk from 'chalk';
 import { qualityPolicy } from '../quality/policy-loader.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
-import { QualityGateRunner } from '../quality/quality-gate-runner.js';
+import { QualityGateRunner, type QualityGateExecutionOptions } from '../quality/quality-gate-runner.js';
+import {
+  createQualityPathContext,
+  getDefaultQualityReportDir,
+  isQualityAgentContext,
+  QUALITY_GATE_EXECUTION_APPROVAL_SCOPE,
+} from '../quality/quality-command-policy.js';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import type { FailureArtifact as EngineFailureArtifact, FailureCategory as EngineFailureCategory } from '../cegis/types.js';
 import { FailureArtifactSchema as EngineFailureArtifactSchema } from '../cegis/types.js';
@@ -186,12 +192,48 @@ const loadFailureArtifacts = (inputPath?: string): EngineFailureArtifact[] => {
 
 type QualityOutputFormat = 'text' | 'json';
 
+interface QualityExecutionPolicy {
+  dryRun: boolean;
+  apply: boolean;
+  approvalScope?: string;
+  approvalRequired: boolean;
+}
+
 const normalizeQualityOutputFormat = (rawFormat: string | undefined): QualityOutputFormat => {
   const normalized = (rawFormat ?? 'text').toLowerCase();
   if (normalized === 'text' || normalized === 'json') {
     return normalized;
   }
   throw new Error(`Unsupported --format: ${rawFormat}. Expected one of: text, json`);
+};
+
+const getDefaultQualityOutputDir = (): string => getDefaultQualityReportDir(createQualityPathContext());
+
+const getQualityExecutionPolicy = (options: { dryRun?: boolean; apply?: boolean; approvalScope?: string }): QualityExecutionPolicy => {
+  const agentContext = isQualityAgentContext();
+  const apply = options.apply === true;
+  const approvalScope = options.approvalScope;
+  const dryRun = options.dryRun === true || (agentContext && !apply);
+  const approvalRequired = agentContext && apply && approvalScope !== QUALITY_GATE_EXECUTION_APPROVAL_SCOPE;
+  const policy: QualityExecutionPolicy = {
+    dryRun,
+    apply,
+    approvalRequired,
+  };
+  if (approvalScope !== undefined) {
+    policy.approvalScope = approvalScope;
+  }
+  return policy;
+};
+
+const applyApprovalScope = (
+  options: QualityGateExecutionOptions,
+  executionPolicy: QualityExecutionPolicy
+): QualityGateExecutionOptions => {
+  if (executionPolicy.approvalScope !== undefined) {
+    options.approvalScope = executionPolicy.approvalScope;
+  }
+  return options;
 };
 
 export function createQualityCommand(): Command {
@@ -206,9 +248,11 @@ export function createQualityCommand(): Command {
     .option('-g, --gates <gates>', 'Comma-separated list of specific gates to run')
     .option('--sequential', 'Run gates sequentially instead of in parallel')
     .option('--dry-run', 'Show what would be executed without running')
+    .option('--apply', 'Execute quality gates in an agent context after trusted approval')
+    .option('--approval-scope <scope>', `Trusted execution approval scope (${QUALITY_GATE_EXECUTION_APPROVAL_SCOPE})`)
     .option('-v, --verbose', 'Verbose output with detailed results')
     .option('-t, --timeout <ms>', 'Timeout for each gate in milliseconds', '300000')
-    .option('-o, --output <dir>', 'Output directory for reports', 'reports/quality-gates')
+    .option('-o, --output <dir>', 'Output directory for reports', getDefaultQualityOutputDir())
     .option('--format <format>', 'Output format (text|json)', 'text')
     .option('--no-history', 'Skip timestamped history report and write latest report only')
     .action(async (options) => {
@@ -224,23 +268,34 @@ export function createQualityCommand(): Command {
 
       const printJson = outputFormat === 'json';
       try {
+        const executionPolicy = getQualityExecutionPolicy(options);
+        if (executionPolicy.approvalRequired) {
+          console.error(chalk.red(`❌ Quality gate execution requires --approval-scope ${QUALITY_GATE_EXECUTION_APPROVAL_SCOPE} when --apply is used in an agent context`));
+          safeExit(1);
+          return;
+        }
+
         if (!printJson) {
           console.log(chalk.blue(`🔍 Running quality gates for ${options.env} environment`));
+          if (executionPolicy.dryRun) {
+            console.log(chalk.yellow('🔎 Dry-run preview: quality gate processes and report writes will not run.'));
+          }
         }
         
         const runner = new QualityGateRunner();
-        const report = await runner.executeGates({
+        const report = await runner.executeGates(applyApprovalScope({
           environment: options.env,
           gates: options.gates ? options.gates.split(',').map((g: string) => g.trim()) : undefined,
           parallel: !options.sequential,
-          dryRun: options.dryRun,
+          dryRun: executionPolicy.dryRun,
+          apply: executionPolicy.apply,
           verbose: options.verbose,
           timeout: parseInt(options.timeout),
           outputDir: options.output,
           noHistory: options.history === false,
           printSummary: !printJson,
           silent: printJson,
-        });
+        }, executionPolicy));
 
         if (printJson) {
           console.log(JSON.stringify(report, null, 2));
@@ -274,9 +329,11 @@ export function createQualityCommand(): Command {
     .option('-g, --gates <gates>', 'Comma-separated list of specific gates to run')
     .option('--sequential', 'Run gates sequentially instead of in parallel')
     .option('--dry-run', 'Show what would be executed without running')
+    .option('--apply', 'Execute quality gates and auto-fix in an agent context after trusted approval')
+    .option('--approval-scope <scope>', `Trusted execution approval scope (${QUALITY_GATE_EXECUTION_APPROVAL_SCOPE})`)
     .option('-v, --verbose', 'Verbose output with detailed results')
     .option('-t, --timeout <ms>', 'Timeout for each gate in milliseconds', '300000')
-    .option('-o, --output <dir>', 'Output directory for reports', 'reports/quality-gates')
+    .option('-o, --output <dir>', 'Output directory for reports', getDefaultQualityOutputDir())
     .option('--format <format>', 'Output format (text|json)', 'text')
     .option('--no-history', 'Skip timestamped history report and write latest report only')
     .option('--max-rounds <number>', 'Maximum reconciliation rounds', '3')
@@ -297,6 +354,13 @@ export function createQualityCommand(): Command {
 
       const printJson = outputFormat === 'json';
       try {
+        const executionPolicy = getQualityExecutionPolicy(options);
+        if (executionPolicy.approvalRequired) {
+          console.error(chalk.red(`❌ Quality gate execution requires --approval-scope ${QUALITY_GATE_EXECUTION_APPROVAL_SCOPE} when --apply is used in an agent context`));
+          safeExit(1);
+          return;
+        }
+
         const maxRounds = Math.max(1, parseInt(options.maxRounds, 10) || 1);
         const runner = new QualityGateRunner();
         let lastReport: Awaited<ReturnType<QualityGateRunner['executeGates']>> | null = null;
@@ -306,20 +370,24 @@ export function createQualityCommand(): Command {
           if (!printJson) {
             console.log(chalk.blue(`🔁 Reconciliation round ${round}/${maxRounds}`));
             console.log(chalk.blue(`🔍 Running quality gates for ${options.env} environment`));
+            if (executionPolicy.dryRun) {
+              console.log(chalk.yellow('🔎 Dry-run preview: quality gate processes, report writes, and auto-fix writes will not run.'));
+            }
           }
 
-          const report = await runner.executeGates({
+          const report = await runner.executeGates(applyApprovalScope({
             environment: options.env,
             gates: options.gates ? options.gates.split(',').map((g: string) => g.trim()) : undefined,
             parallel: !options.sequential,
-            dryRun: options.dryRun,
+            dryRun: executionPolicy.dryRun,
+            apply: executionPolicy.apply,
             verbose: options.verbose,
             timeout: parseInt(options.timeout, 10) || 300000,
             outputDir: options.output,
             noHistory: options.history === false,
             printSummary: !printJson,
             silent: printJson,
-          });
+          }, executionPolicy));
 
           lastReport = report;
 
@@ -339,7 +407,7 @@ export function createQualityCommand(): Command {
             break;
           }
 
-          if (options.dryRun) {
+          if (executionPolicy.dryRun) {
             if (!printJson) {
               console.log(chalk.yellow('ℹ️  Dry-run mode enabled; skipping auto-fix.'));
             }

@@ -22,7 +22,7 @@ pnpm run progress:summary
 
 ### Default inputs
 - `metrics/project-metrics.json`
-- `reports/quality-gates/quality-report-*-latest.json` (preferred; if none exist, the generator falls back to the most recent `quality-report-*.json` under `reports/quality-gates/`)
+- `artifacts/quality/reports/quality-report-*-latest.json` (preferred; if none exist, the generator falls back to the most recent `quality-report-*.json` under `artifacts/quality/reports/`)
 - `traceability.json`
 - `.ae/phase-state.json`
 
@@ -72,7 +72,7 @@ pnpm run progress:summary
 
 ### 既定の入力
 - `metrics/project-metrics.json`
-- `reports/quality-gates/quality-report-*-latest.json`（優先。存在しない場合は、generator が `reports/quality-gates/` 配下の最新 `quality-report-*.json` へフォールバックします）
+- `artifacts/quality/reports/quality-report-*-latest.json`（優先。存在しない場合は、generator が `artifacts/quality/reports/` 配下の最新 `quality-report-*.json` へフォールバックします）
 - `traceability.json`
 - `.ae/phase-state.json`
 

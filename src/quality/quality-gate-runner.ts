@@ -3,17 +3,31 @@
  * Executes quality gates based on centralized policy configuration
  */
 
-import { spawn } from 'child_process';
+import { spawn } from 'node:child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { QualityPolicyLoader, type QualityGateResult, type QualityReport, type QualityGate } from './policy-loader.js';
 import { buildReportMeta } from '../utils/report-meta.js';
+import {
+  type ApprovedQualityGateCommand,
+  createQualityPathContext,
+  getApprovedQualityGateCommand,
+  getDefaultQualityReportDir,
+  isQualityAgentContext,
+  QUALITY_GATE_EXECUTION_APPROVAL_SCOPE,
+  resolveQualityReportOutputDir,
+} from './quality-command-policy.js';
 
 type CoverageThreshold = { lines?: number; functions?: number; branches?: number; statements?: number };
 type LintThreshold = { maxErrors?: number; maxWarnings?: number };
 type SecurityThreshold = { maxCritical?: number; maxHigh?: number; maxMedium?: number };
 type PerfThreshold = Record<string, number | undefined>;
 type A11yThreshold = Record<string, number | undefined>;
+type QualityGateExecutionRecord = {
+  gate: QualityGate;
+  key: string;
+  command: ApprovedQualityGateCommand;
+};
 
 // Mock telemetry for main branch compatibility
 type Attributes = Record<string, unknown>;
@@ -36,6 +50,8 @@ export interface QualityGateExecutionOptions {
   parallel?: boolean;
   timeout?: number;
   dryRun?: boolean;
+  apply?: boolean;
+  approvalScope?: string;
   verbose?: boolean;
   outputDir?: string;
   noHistory?: boolean;
@@ -43,13 +59,19 @@ export interface QualityGateExecutionOptions {
   silent?: boolean;
 }
 
+export interface QualityGateRunnerOptions {
+  spawnProcess?: typeof spawn;
+}
+
 export class QualityGateRunner {
   private policyLoader: QualityPolicyLoader;
+  private spawnProcess: typeof spawn;
   private results: QualityGateResult[] = [];
   private silent = false;
 
-  constructor(policyLoader?: QualityPolicyLoader) {
+  constructor(policyLoader?: QualityPolicyLoader, options: QualityGateRunnerOptions = {}) {
     this.policyLoader = policyLoader || new QualityPolicyLoader();
+    this.spawnProcess = options.spawnProcess ?? spawn;
   }
 
   /**
@@ -62,13 +84,24 @@ export class QualityGateRunner {
       parallel = true,
       timeout = 300000, // 5 minutes default
       dryRun = false,
+      apply = false,
+      approvalScope,
       verbose = false,
-      outputDir = 'reports/quality-gates',
       noHistory = false,
       printSummary = true,
       silent = false,
     } = options;
     this.silent = silent;
+    const pathContext = createQualityPathContext();
+    const outputDir = options.outputDir ?? getDefaultQualityReportDir(pathContext);
+    const resolvedOutputDir = resolveQualityReportOutputDir(outputDir, pathContext);
+    const agentContext = isQualityAgentContext();
+    if (agentContext && apply && approvalScope !== QUALITY_GATE_EXECUTION_APPROVAL_SCOPE) {
+      throw new Error(
+        `Quality gate execution requires approval scope '${QUALITY_GATE_EXECUTION_APPROVAL_SCOPE}' when --apply is used in an agent context`
+      );
+    }
+    const effectiveDryRun = dryRun || (agentContext && !apply);
 
     const timer = mockTelemetry.createTimer('quality_gates.execution.total', {
       [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'quality-gates',
@@ -138,11 +171,17 @@ export class QualityGateRunner {
         this.log('⚠️  No quality gates found for execution');
         return this.generateEmptyReport(environment);
       }
+      const executionRecords: QualityGateExecutionRecord[] = gateRecords.map(({ gate, key }) => ({
+        gate,
+        key,
+        command: getApprovedQualityGateCommand(key, gate),
+      }));
 
-      this.log(`📋 Found ${gateRecords.length} quality gates to execute`);
+      this.log(`📋 Found ${executionRecords.length} quality gates to execute`);
       if (verbose) {
-        gateRecords.forEach(({ gate, key }) => {
+        executionRecords.forEach(({ gate, key, command }) => {
           this.log(`   • ${gate.name} (${gate.category}) [${key}]`);
+          this.log(`     Command: ${command.displayCommand}`);
         });
       }
 
@@ -150,14 +189,14 @@ export class QualityGateRunner {
       this.results = [];
       if (parallel) {
         this.log('🚀 Executing gates in parallel...');
-        const promises = gateRecords.map(({ gate, key }) =>
-          this.executeGate(gate, key, environment, { timeout, dryRun, verbose, silent })
+        const promises = executionRecords.map(({ gate, key, command }) =>
+          this.executeGate(gate, key, command, environment, { timeout, dryRun: effectiveDryRun, verbose, silent })
         );
         this.results = await Promise.all(promises);
       } else {
         this.log('⏭️  Executing gates sequentially...');
-        for (const { gate, key } of gateRecords) {
-          const result = await this.executeGate(gate, key, environment, { timeout, dryRun, verbose, silent });
+        for (const { gate, key, command } of executionRecords) {
+          const result = await this.executeGate(gate, key, command, environment, { timeout, dryRun: effectiveDryRun, verbose, silent });
           this.results.push(result);
         }
       }
@@ -181,8 +220,8 @@ export class QualityGateRunner {
       }
       
       // Save report
-      if (!dryRun) {
-        await this.saveReport(report, outputDir, { noHistory });
+      if (!effectiveDryRun) {
+        await this.saveReport(report, resolvedOutputDir.workspaceRelativePath, { noHistory });
       }
 
       // Record metrics
@@ -220,6 +259,7 @@ export class QualityGateRunner {
   private async executeGate(
     gate: QualityGate,
     gateKey: string,
+    approvedCommand: ApprovedQualityGateCommand,
     environment: string,
     options: { timeout: number; dryRun: boolean; verbose: boolean; silent: boolean }
   ): Promise<QualityGateResult> {
@@ -237,13 +277,15 @@ export class QualityGateRunner {
       if (verbose) {
         this.log(`\n🔍 Executing: ${gate.name}`);
         this.log(`   Description: ${gate.description}`);
-        this.log(`   Command: ${gate.commands.test}`);
       }
 
       const threshold = this.policyLoader.getThreshold(gateKey, environment);
+      if (verbose) {
+        this.log(`   Command: ${approvedCommand.displayCommand}`);
+      }
       
       if (dryRun) {
-        this.log(`   🔄 DRY RUN: Would execute '${gate.commands.test}'`);
+        this.log(`   🔄 DRY RUN: Would execute '${approvedCommand.displayCommand}'`);
         return {
           gateKey,
           gateName: gate.name,
@@ -253,13 +295,16 @@ export class QualityGateRunner {
           executionTime: 0,
           environment,
           threshold,
-          details: { dryRun: true },
+          details: {
+            dryRun: true,
+            command: approvedCommand.displayCommand,
+          },
         };
       }
 
       // Execute the gate command
       const startTime = Date.now();
-      const result = await this.executeCommand(gate.commands.test, timeout, { silent });
+      const result = await this.executeCommand(approvedCommand, timeout);
       const executionTime = Date.now() - startTime;
 
       // Parse result based on gate type
@@ -309,60 +354,40 @@ export class QualityGateRunner {
   }
 
   /**
-   * Execute a command with timeout
+   * Execute an allowlisted command with timeout.
    */
   private async executeCommand(
-    command: string,
-    timeout: number,
-    options: { silent?: boolean } = {}
+    command: ApprovedQualityGateCommand,
+    timeout: number
   ): Promise<{ stdout: string; stderr: string; code: number }> {
-    const { silent = false } = options;
     return new Promise((resolve, reject) => {
-      // Check if command needs shell features (pipes, redirects, etc.)
-      const needsShell = command.includes('|') || command.includes('>') || command.includes('<') || 
-                        command.includes('&&') || command.includes('||') || command.includes('$');
-      
-      let process: import('child_process').ChildProcessWithoutNullStreams;
-      
-      if (needsShell) {
-        // Use shell for complex commands with enhanced security validation
-        this.validateShellCommand(command, { silent });
-        process = spawn(command, {
-          shell: true,
-          stdio: ['pipe', 'pipe', 'pipe'],
-          timeout,
-        });
-      } else {
-        // Parse command to avoid shell injection for simple commands
-        const commandParts = this.parseCommand(command);
-        const [execName, ...args] = commandParts as [string, ...string[]];
-        process = spawn(execName, args, {
-          stdio: ['pipe', 'pipe', 'pipe'],
-          timeout,
-        });
-      }
+      const child = this.spawnProcess(command.executable, [...command.args], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout,
+        shell: false,
+      });
 
       let stdout = '';
       let stderr = '';
       let finished = false;
 
-      process.stdout?.on('data', (data) => {
+      child.stdout?.on('data', (data) => {
         stdout += data.toString();
       });
 
-      process.stderr?.on('data', (data) => {
+      child.stderr?.on('data', (data) => {
         stderr += data.toString();
       });
 
-      process.on('close', (code) => {
+      child.on('close', (code) => {
         if (!finished) {
           finished = true;
           clearTimeout(timeoutHandle);
-          resolve({ stdout, stderr, code: code || 0 });
+          resolve({ stdout, stderr, code: command.allowNonZeroExit ? 0 : (code || 0) });
         }
       });
 
-      process.on('error', (error) => {
+      child.on('error', (error) => {
         if (!finished) {
           finished = true;
           clearTimeout(timeoutHandle);
@@ -374,99 +399,11 @@ export class QualityGateRunner {
       const timeoutHandle = setTimeout(() => {
         if (!finished) {
           finished = true;
-          process.kill('SIGTERM');
+          child.kill('SIGTERM');
           reject(new Error(`Command timed out after ${timeout}ms`));
         }
       }, timeout);
     });
-  }
-
-  /**
-   * Parse command string into executable and arguments safely
-   */
-  private parseCommand(command: string): string[] {
-    // Simple command parsing to avoid shell injection
-    // For production use, consider using a proper shell parser library
-    const trimmed = command.trim();
-    
-    // Handle npm/npx commands specially as they are common in quality gates
-    if (trimmed.startsWith('npm ') || trimmed.startsWith('npx ')) {
-      return trimmed.split(/\s+/);
-    }
-    
-    // For other commands, use a basic splitting approach
-    // In a production environment, consider using a library like shell-quote
-    const parts = trimmed.split(/\s+/);
-    
-    // Security validation - use allowlist for common commands, blacklist for dangerous ones
-    const executable = parts[0];
-    if (!executable) {
-      throw new Error('Empty command');
-    }
-    
-    // Allowlist of commonly used quality gate commands
-    const allowedCommands = [
-      'npm', 'npx', 'yarn', 'pnpm', 'node',
-      'jest', 'mocha', 'vitest', 'nyc',
-      'eslint', 'prettier', 'tsc', 'tslint',
-      'lighthouse', 'axe', 'pa11y',
-      'audit', 'license-checker'
-    ];
-    
-    // Dangerous commands that should never be allowed
-    const dangerousCommands = [
-      'rm', 'rmdir', 'del', 'sudo', 'su',
-      'curl', 'wget', 'eval', 'exec',
-      'bash', 'sh', 'zsh', 'fish',
-      'chmod', 'chown', 'kill', 'killall'
-    ];
-    
-    if (dangerousCommands.includes(executable)) {
-      throw new Error(`Command '${executable}' is not allowed for security reasons`);
-    }
-    
-    // For non-allowlisted commands, require they don't start with dangerous prefixes
-    if (!allowedCommands.includes(executable)) {
-      this.warn(`⚠️ Command '${executable}' is not in the allowlist. Proceeding with caution.`);
-      
-      // Additional check for suspicious patterns
-      if (executable.includes('/') || executable.includes('\\') || executable.startsWith('.')) {
-        throw new Error(`Command '${executable}' contains suspicious path characters`);
-      }
-    }
-    return parts;
-  }
-
-  /**
-   * Validate shell commands for security
-   */
-  private validateShellCommand(command: string, options: { silent?: boolean } = {}): void {
-    const { silent = false } = options;
-    // Check for obviously dangerous patterns
-    const dangerousPatterns = [
-      /rm\s+-rf/,           // Dangerous rm commands
-      /sudo\s+/,            // Sudo usage
-      /su\s+/,              // Su usage  
-      /eval\s+/,            // Eval usage
-      /exec\s+/,            // Exec usage
-      /\$\(/,               // Command substitution
-      /`[^`]*`/,            // Backtick command substitution
-      /wget\s+/,            // Network downloads
-      /curl\s+.*-o/,        // Curl with output to file
-      />\s*\/etc/,          // Writing to system directories
-      />\s*\/usr/,
-      />\s*\/bin/,
-    ];
-
-    for (const pattern of dangerousPatterns) {
-      if (pattern.test(command)) {
-        throw new Error(`Command contains dangerous pattern: ${pattern.source}`);
-      }
-    }
-
-    if (!silent) {
-      this.log(`ℹ️ Using shell mode for command: ${command.substring(0, 50)}...`);
-    }
   }
 
   private pickNumericThresholds(input: Record<string, unknown>): Record<string, number | undefined> {
@@ -763,22 +700,24 @@ export class QualityGateRunner {
     options: { noHistory?: boolean } = {}
   ): Promise<void> {
     try {
+      const pathContext = createQualityPathContext();
+      const safeOutputDir = resolveQualityReportOutputDir(outputDir, pathContext).resolvedPath;
       // Ensure output directory exists
-      if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
+      if (!fs.existsSync(safeOutputDir)) {
+        fs.mkdirSync(safeOutputDir, { recursive: true });
       }
 
       if (!options.noHistory) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `quality-report-${report.environment}-${timestamp}.json`;
-        const filepath = path.join(outputDir, filename);
+        const filepath = path.join(safeOutputDir, filename);
 
         fs.writeFileSync(filepath, JSON.stringify(report, null, 2));
         this.log(`📝 Quality report saved to: ${filepath}`);
       }
 
       // Also save as latest
-      const latestPath = path.join(outputDir, `quality-report-${report.environment}-latest.json`);
+      const latestPath = path.join(safeOutputDir, `quality-report-${report.environment}-latest.json`);
       fs.writeFileSync(latestPath, JSON.stringify(report, null, 2));
       this.log(`📝 Quality report latest updated: ${latestPath}`);
 
@@ -868,12 +807,6 @@ export class QualityGateRunner {
       console.log(message);
     }
   }
-
-  private warn(message: string): void {
-    if (!this.silent) {
-      console.warn(message);
-    }
-  }
 }
 
 // CLI interface for quality gate runner
@@ -917,6 +850,17 @@ export async function runQualityGatesCLI(args: string[]): Promise<void> {
       case '--dry-run':
         options.dryRun = true;
         break;
+      case '--apply':
+        options.apply = true;
+        break;
+      case '--approval-scope': {
+        const val = args[i + 1];
+        if (val !== undefined) {
+          options.approvalScope = val;
+          i++;
+        }
+        break;
+      }
       case '--timeout': {
         const val = args[i + 1];
         if (val !== undefined) {

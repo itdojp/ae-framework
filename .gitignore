@@ -84,6 +84,7 @@ clean-sample-*.json
 artifacts/cassettes/
 artifacts/codex/
 artifacts/hermetic-reports/
+artifacts/quality/
 artifacts/testing/
 artifacts/schema-validation/
 artifacts/api/.tmp/

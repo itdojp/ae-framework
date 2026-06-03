@@ -104,6 +104,94 @@ describe('quality CLI format option', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  it('run defaults agent-context execution to dry-run before delegating to the runner', async () => {
+    const previous = process.env['AE_QUALITY_AGENT_CONTEXT'];
+    process.env['AE_QUALITY_AGENT_CONTEXT'] = '1';
+    executeGatesMock.mockResolvedValueOnce(createReport());
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    try {
+      const command = createQualityCommand();
+      await command.parseAsync(['node', 'cli', 'run', '--format', 'json']);
+
+      expect(executeGatesMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dryRun: true,
+          apply: false,
+        }),
+      );
+      expect(safeExitMock).not.toHaveBeenCalled();
+    } finally {
+      consoleLogSpy.mockRestore();
+      if (previous === undefined) {
+        delete process.env['AE_QUALITY_AGENT_CONTEXT'];
+      } else {
+        process.env['AE_QUALITY_AGENT_CONTEXT'] = previous;
+      }
+    }
+  });
+
+  it('run rejects agent-context --apply without the trusted approval scope', async () => {
+    const previous = process.env['AE_QUALITY_AGENT_CONTEXT'];
+    process.env['AE_QUALITY_AGENT_CONTEXT'] = '1';
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      const command = createQualityCommand();
+      await command.parseAsync(['node', 'cli', 'run', '--apply']);
+
+      expect(executeGatesMock).not.toHaveBeenCalled();
+      expect(safeExitMock).toHaveBeenCalledWith(1);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('approval-scope quality-gate-execution')
+      );
+    } finally {
+      consoleErrorSpy.mockRestore();
+      if (previous === undefined) {
+        delete process.env['AE_QUALITY_AGENT_CONTEXT'];
+      } else {
+        process.env['AE_QUALITY_AGENT_CONTEXT'] = previous;
+      }
+    }
+  });
+
+  it('run forwards trusted agent-context approval for explicit apply', async () => {
+    const previous = process.env['AE_QUALITY_AGENT_CONTEXT'];
+    process.env['AE_QUALITY_AGENT_CONTEXT'] = '1';
+    executeGatesMock.mockResolvedValueOnce(createReport());
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    try {
+      const command = createQualityCommand();
+      await command.parseAsync([
+        'node',
+        'cli',
+        'run',
+        '--format',
+        'json',
+        '--apply',
+        '--approval-scope',
+        'quality-gate-execution',
+      ]);
+
+      expect(executeGatesMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dryRun: false,
+          apply: true,
+          approvalScope: 'quality-gate-execution',
+        }),
+      );
+      expect(safeExitMock).not.toHaveBeenCalled();
+    } finally {
+      consoleLogSpy.mockRestore();
+      if (previous === undefined) {
+        delete process.env['AE_QUALITY_AGENT_CONTEXT'];
+      } else {
+        process.env['AE_QUALITY_AGENT_CONTEXT'] = previous;
+      }
+    }
+  });
+
   it('reconcile --format json emits final report JSON and keeps blocker exit code', async () => {
     executeGatesMock.mockResolvedValueOnce(
       createReport({

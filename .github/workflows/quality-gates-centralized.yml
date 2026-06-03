@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: quality-gates-report
-          path: reports/quality-gates
+          path: artifacts/quality/reports
           if-no-files-found: warn
   type-coverage:
     uses: ./.github/workflows/ci-core.yml
@@ -143,11 +143,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: quality-gates-report
-          path: reports/quality-gates
+          path: artifacts/quality/reports
       - name: Locate quality report
         id: report
         run: |
-          REPORT=$(find reports/quality-gates -name 'quality-report-*-latest.json' | head -n1 || true)
+          REPORT=$(find artifacts/quality/reports -name 'quality-report-*-latest.json' | head -n1 || true)
           printf "report=%s\n" "$REPORT" >> "$GITHUB_OUTPUT"
       - name: Load previous quality summary
         env:
