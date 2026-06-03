@@ -9,6 +9,7 @@ import * as ts from 'typescript';
 import { BaseExtendedCommand } from './base-command.js';
 import type { ExtendedCommandResult } from './base-command.js';
 import type { CommandContext } from '../slash-command-manager.js';
+import { resolveExtendedCommandPath } from './workspace-paths.js';
 import type { 
   CodeAnalysis, 
   AnalysisTarget, 
@@ -61,7 +62,7 @@ export class UnifiedAnalyzeCommand extends BaseExtendedCommand {
     if (!target) {
       throw new Error('Target path is required for analysis');
     }
-    const fullPath = path.resolve(context.projectRoot, target);
+    const fullPath = resolveExtendedCommandPath(context, target, 'analysis target path');
     
     try {
       const stats = await fs.stat(fullPath);
