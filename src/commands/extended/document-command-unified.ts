@@ -107,6 +107,9 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     context: CommandContext
   ): Promise<DocumentationResult> {
     const startTime = Date.now();
+    const outputDir = options.output
+      ? resolveExtendedCommandPath(context, options.output, 'documentation output directory')
+      : undefined;
     
     let files: string[] = [];
     if (target.type === 'directory') {
@@ -120,9 +123,6 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     const dependencies = new Set<string>();
     let totalLines = 0;
     let outputPath: string | undefined;
-    const outputDir = options.output
-      ? resolveExtendedCommandPath(context, options.output, 'documentation output directory')
-      : undefined;
 
     // Process each file
     for (const file of files) {

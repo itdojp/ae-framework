@@ -192,11 +192,14 @@ describe('Extended Commands', () => {
       expect(fs.readdir).not.toHaveBeenCalled();
     });
 
-    test('rejects unsafe documentation output directory before write', async () => {
-      vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => false } as any);
+    test.each([
+      ['/ae:document src/test.ts --output=../outside-docs', false],
+      ['/ae:document src --output=../outside-docs', true],
+    ])('rejects unsafe documentation output directory before source IO for %s', async (command, isDirectory) => {
+      vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => isDirectory } as any);
       vi.mocked(fs.readFile).mockResolvedValue('export function test() {}');
 
-      const result = await manager.execute('/ae:document src/test.ts --output=../outside-docs');
+      const result = await manager.execute(command);
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('documentation output directory');
