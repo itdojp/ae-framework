@@ -1,5 +1,9 @@
 import { describe, test, expect, beforeEach, vi, afterEach } from 'vitest';
-import { InstallerManager, InstallationTemplate } from '../../src/utils/installer-manager.js';
+import {
+  INSTALLER_APPROVAL_SCOPE,
+  InstallerManager,
+  InstallationTemplate,
+} from '../../src/utils/installer-manager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { spawn } from 'child_process';
@@ -12,6 +16,13 @@ vi.mock('child_process');
 describe('InstallerManager', () => {
   let installerManager: InstallerManager;
   const testProjectRoot = '/test/project';
+  const approvedContext = {
+    dryRun: false,
+    approval: {
+      approved: true,
+      scope: INSTALLER_APPROVAL_SCOPE,
+    },
+  } as const;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -132,7 +143,7 @@ describe('InstallerManager', () => {
       };
       vi.mocked(spawn).mockReturnValue(mockProcess as any);
 
-      const result = await installerManager.installTemplate('typescript-node');
+      const result = await installerManager.installTemplate('typescript-node', approvedContext);
       
       expect(result.success).toBe(true);
       expect(result.message).toContain('Successfully installed');
@@ -160,7 +171,7 @@ describe('InstallerManager', () => {
       };
       vi.mocked(spawn).mockReturnValue(mockProcess as any);
 
-      const result = await installerManager.installTemplate('typescript-node');
+      const result = await installerManager.installTemplate('typescript-node', approvedContext);
       
       expect(result.success).toBe(false);
       expect(result.message).toContain('Installation failed');
@@ -179,6 +190,7 @@ describe('InstallerManager', () => {
       vi.mocked(spawn).mockReturnValue(mockProcess as any);
 
       await installerManager.installTemplate('typescript-node', {
+        ...approvedContext,
         projectName: 'test-project'
       });
       
@@ -187,6 +199,100 @@ describe('InstallerManager', () => {
         path.join(testProjectRoot, 'package.json'),
         expect.stringContaining('"name": "test"')
       );
+    });
+
+    test('should default to dry-run without approval and avoid writes or package-manager spawn', async () => {
+      const result = await installerManager.installTemplate('react-vite', {
+        packageManager: 'pnpm',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.dryRun).toBe(true);
+      expect(result.message).toContain('Dry-run preview');
+      expect(result.plannedChanges?.some(change => change.type === 'dependency')).toBe(true);
+      expect(vi.mocked(spawn)).not.toHaveBeenCalled();
+      expect(vi.mocked(fs.writeFile)).not.toHaveBeenCalled();
+      expect(vi.mocked(fs.mkdir)).not.toHaveBeenCalled();
+    });
+
+    test('should reject explicit apply without installer approval before writes or package-manager spawn', async () => {
+      vi.mocked(fs.access).mockRejectedValue(new Error('not found'));
+
+      const result = await installerManager.installTemplate('react-vite', {
+        dryRun: false,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.approvalRequired).toBe(true);
+      expect(result.message).toContain(INSTALLER_APPROVAL_SCOPE);
+      expect(result.plannedChanges?.length).toBeGreaterThan(0);
+      expect(vi.mocked(spawn)).not.toHaveBeenCalled();
+      expect(vi.mocked(fs.writeFile)).not.toHaveBeenCalled();
+      expect(vi.mocked(fs.mkdir)).not.toHaveBeenCalled();
+    });
+
+    test('should install dependencies with argv-safe spawn and lifecycle scripts suppressed by default', async () => {
+      const mockProcess = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn().mockImplementation((event, callback) => {
+          if (event === 'close') callback(0);
+        })
+      };
+      vi.mocked(spawn).mockReturnValue(mockProcess as any);
+
+      const result = await installerManager.installTemplate('react-vite', {
+        ...approvedContext,
+        packageManager: 'npm',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.dryRun).toBe(false);
+      expect(vi.mocked(spawn)).toHaveBeenNthCalledWith(
+        1,
+        'npm',
+        ['install', '--ignore-scripts', 'react@^18.2.0', 'react-dom@^18.2.0'],
+        expect.objectContaining({ shell: false, cwd: path.resolve(testProjectRoot) })
+      );
+      expect(vi.mocked(spawn)).toHaveBeenNthCalledWith(
+        2,
+        'npm',
+        [
+          'install',
+          '--ignore-scripts',
+          '--save-dev',
+          'typescript@^5.0.0',
+          '@types/react@^18.2.0',
+          '@types/react-dom@^18.2.0',
+          '@vitejs/plugin-react@^4.0.0',
+          'vite@^5.0.0',
+          'eslint@^8.0.0',
+        ],
+        expect.objectContaining({ shell: false, cwd: path.resolve(testProjectRoot) })
+      );
+    });
+
+    test('should validate template file paths before applying package or file writes', async () => {
+      const unsafeTemplate: InstallationTemplate = {
+        id: 'unsafe-path-template',
+        name: 'Unsafe Path Template',
+        description: 'Template with unsafe relative output',
+        category: 'library',
+        language: 'typescript',
+        dependencies: [{ name: 'left-pad' }],
+        scripts: { test: 'vitest' },
+        files: [{ path: '../outside.ts', content: 'export {}' }],
+        configurations: [],
+      };
+      installerManager['templates'].set(unsafeTemplate.id, unsafeTemplate);
+
+      const result = await installerManager.installTemplate(unsafeTemplate.id, approvedContext);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('Installation failed');
+      expect(vi.mocked(spawn)).not.toHaveBeenCalled();
+      expect(vi.mocked(fs.writeFile)).not.toHaveBeenCalled();
+      expect(vi.mocked(fs.mkdir)).not.toHaveBeenCalled();
     });
   });
 
@@ -409,6 +515,73 @@ describe('InstallerManager', () => {
       expect(result.warnings).toEqual([]);
       expect(result.configuredFiles).toEqual(expect.arrayContaining(['.env', 'config/app.ini']));
     });
+
+    test('should merge JSON configurations when merge policy is enabled', async () => {
+      const template: InstallationTemplate = {
+        id: 'json-merge-config-template',
+        name: 'JSON Merge Config Template',
+        description: 'Template for JSON configuration merge test',
+        category: 'library',
+        language: 'typescript',
+        dependencies: [],
+        scripts: {},
+        files: [],
+        configurations: [
+          {
+            file: 'tsconfig.json',
+            format: 'json',
+            merge: true,
+            content: {
+              compilerOptions: {
+                target: 'ES2022',
+                strict: true,
+              },
+            },
+          },
+        ],
+      };
+
+      vi.mocked(fs.readFile).mockResolvedValueOnce(JSON.stringify({
+        compilerOptions: {
+          module: 'commonjs',
+          strict: false,
+        },
+        include: ['src/**/*'],
+      }));
+
+      const result = {
+        success: true,
+        message: '',
+        installedDependencies: [],
+        createdFiles: [],
+        configuredFiles: [],
+        executedSteps: [],
+        warnings: [],
+        errors: [],
+        duration: 0,
+      };
+
+      await installerManager['applyConfigurations'](template, {
+        projectRoot: testProjectRoot,
+        projectName: 'test-project',
+        packageManager: 'pnpm',
+      }, result);
+
+      const writeCall = vi.mocked(fs.writeFile).mock.calls.find(
+        ([filePath]) => filePath === path.join(testProjectRoot, 'tsconfig.json')
+      );
+      expect(writeCall).toBeDefined();
+      const writtenConfig = JSON.parse(String(writeCall?.[1]));
+      expect(writtenConfig).toEqual({
+        compilerOptions: {
+          module: 'commonjs',
+          strict: true,
+          target: 'ES2022',
+        },
+        include: ['src/**/*'],
+      });
+      expect(result.configuredFiles).toContain('tsconfig.json');
+    });
   });
 
   describe('File Operations', () => {
@@ -422,7 +595,7 @@ describe('InstallerManager', () => {
       };
       vi.mocked(spawn).mockReturnValue(mockProcess as any);
 
-      await installerManager.installTemplate('typescript-node');
+      await installerManager.installTemplate('typescript-node', approvedContext);
       
       // Verify package.json was created (this is the first file created)
       expect(vi.mocked(fs.writeFile)).toHaveBeenCalledWith(
@@ -448,7 +621,7 @@ describe('InstallerManager', () => {
       };
       vi.mocked(spawn).mockReturnValue(mockProcess as any);
 
-      const result = await installerManager.installTemplate('typescript-node');
+      const result = await installerManager.installTemplate('typescript-node', approvedContext);
       
       expect(result.warnings.some(w => w.includes('already exists, skipping'))).toBe(true);
     });

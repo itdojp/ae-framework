@@ -7,7 +7,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import path from 'node:path';
 import { createInterface } from 'node:readline/promises';
-import { InstallerManager } from '../utils/installer-manager.js';
+import { INSTALLER_APPROVAL_SCOPE, InstallerManager } from '../utils/installer-manager.js';
 import { safeExit } from '../utils/safe-exit.js';
 
 type PackageManager = 'npm' | 'yarn' | 'pnpm';
@@ -17,6 +17,13 @@ type SetupOptions = {
   name?: string;
   packageManager?: string;
 };
+
+const CLI_INSTALL_APPROVAL = {
+  approved: true,
+  scope: INSTALLER_APPROVAL_SCOPE,
+  approvedBy: 'ae setup CLI',
+  reason: 'operator invoked setup command',
+} as const;
 
 const PACKAGE_MANAGERS = new Set<PackageManager>(['npm', 'yarn', 'pnpm']);
 
@@ -281,7 +288,10 @@ export function createSetupCommand(): Command {
         return;
       }
 
-      const installContext: { projectName?: string; packageManager?: PackageManager } = {};
+      const installContext: { projectName?: string; packageManager?: PackageManager; dryRun: false; approval: typeof CLI_INSTALL_APPROVAL } = {
+        dryRun: false,
+        approval: CLI_INSTALL_APPROVAL,
+      };
       if (projectName) {
         installContext.projectName = projectName;
       }
@@ -323,7 +333,10 @@ export function createSetupCommand(): Command {
         return;
       }
 
-      const installContext: { projectName?: string; packageManager?: PackageManager } = {};
+      const installContext: { projectName?: string; packageManager?: PackageManager; dryRun: false; approval: typeof CLI_INSTALL_APPROVAL } = {
+        dryRun: false,
+        approval: CLI_INSTALL_APPROVAL,
+      };
       if (options.name) {
         installContext.projectName = options.name;
       }

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { InstallerCommand } from '../../src/commands/extended/installer-command.js';
-import { InstallerManager } from '../../src/utils/installer-manager.js';
+import { INSTALLER_APPROVAL_SCOPE, InstallerManager } from '../../src/utils/installer-manager.js';
 import { ContextManager } from '../../src/utils/context-manager.js';
 import * as fs from 'fs/promises';
 
@@ -15,6 +15,14 @@ describe('InstallerCommand', () => {
   let mockInstallerManager: any;
   let mockContextManager: any;
   const testContext = { projectRoot: '/test/project' };
+  const approvedTestContext = {
+    projectRoot: '/test/project',
+    approval: {
+      approved: true,
+      scope: INSTALLER_APPROVAL_SCOPE,
+      approvedBy: 'operator',
+    },
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -134,7 +142,55 @@ describe('InstallerCommand', () => {
   });
 
   describe('Template Installation', () => {
-    test('should install template successfully', async () => {
+    test('should preview template installation by default without updating project memory', async () => {
+      const mockTemplate = {
+        id: 'typescript-node',
+        name: 'TypeScript Node.js',
+        description: 'TypeScript Node.js project',
+        category: 'api',
+        language: 'typescript',
+        dependencies: [],
+        scripts: { dev: 'tsx src/index.ts' },
+        files: [],
+        configurations: []
+      };
+
+      const mockPreviewResult = {
+        success: true,
+        message: 'Dry-run preview',
+        installedDependencies: [],
+        createdFiles: [],
+        configuredFiles: [],
+        executedSteps: [],
+        warnings: [],
+        errors: [],
+        duration: 100,
+        dryRun: true,
+        plannedChanges: [
+          { type: 'script', action: 'write', target: 'package.json#scripts.dev' },
+        ],
+      };
+
+      mockInstallerManager.getTemplate.mockReturnValue(mockTemplate);
+      mockInstallerManager.installTemplate.mockResolvedValue(mockPreviewResult);
+
+      const result = await installerCommand.handler(['typescript-node'], testContext);
+
+      expect(result.success).toBe(true);
+      expect(result.dryRun).toBe(true);
+      expect(result.message).toContain('Previewed');
+      expect(result.message).toContain('No dependencies were installed');
+      expect(mockInstallerManager.installTemplate).toHaveBeenCalledWith(
+        'typescript-node',
+        expect.objectContaining({
+          dryRun: true,
+          projectRoot: '/test/project',
+        })
+      );
+      expect(mockContextManager.addToMemory).not.toHaveBeenCalled();
+    });
+
+    test('should install template successfully with explicit approval and --apply', async () => {
       const mockTemplate = {
         id: 'typescript-node',
         name: 'TypeScript Node.js',
@@ -162,7 +218,7 @@ describe('InstallerCommand', () => {
       mockInstallerManager.getTemplate.mockReturnValue(mockTemplate);
       mockInstallerManager.installTemplate.mockResolvedValue(mockInstallResult);
 
-      const result = await installerCommand.handler(['typescript-node'], testContext);
+      const result = await installerCommand.handler(['typescript-node', '--apply'], approvedTestContext);
 
       expect(result.success).toBe(true);
       expect(result.message).toContain('Successfully installed');
@@ -178,6 +234,51 @@ describe('InstallerCommand', () => {
           projectFramework: undefined
         }
       );
+      expect(mockInstallerManager.installTemplate).toHaveBeenCalledWith(
+        'typescript-node',
+        expect.objectContaining({
+          dryRun: false,
+          approval: expect.objectContaining({
+            approved: true,
+            scope: INSTALLER_APPROVAL_SCOPE,
+          }),
+        })
+      );
+    });
+
+    test('should reject --apply when trusted installer approval is missing', async () => {
+      const mockTemplate = {
+        id: 'typescript-node',
+        name: 'TypeScript Node.js',
+        category: 'api',
+        language: 'typescript',
+        dependencies: [],
+        scripts: {},
+        files: [],
+        configurations: []
+      };
+
+      mockInstallerManager.getTemplate.mockReturnValue(mockTemplate);
+      mockInstallerManager.installTemplate.mockResolvedValue({
+        success: false,
+        message: `Installation requires explicit ${INSTALLER_APPROVAL_SCOPE} approval`,
+        installedDependencies: [],
+        createdFiles: [],
+        configuredFiles: [],
+        executedSteps: [],
+        warnings: [],
+        errors: [`Installation requires explicit ${INSTALLER_APPROVAL_SCOPE} approval`],
+        duration: 1,
+        approvalRequired: true,
+        plannedChanges: [{ type: 'script', action: 'write', target: 'package.json#scripts.dev' }],
+      });
+
+      const result = await installerCommand.handler(['typescript-node', '--apply'], testContext);
+
+      expect(result.success).toBe(false);
+      expect(result.approvalRequired).toBe(true);
+      expect(result.message).toContain(INSTALLER_APPROVAL_SCOPE);
+      expect(mockContextManager.addToMemory).not.toHaveBeenCalled();
     });
 
     test('should handle non-existent template', async () => {
@@ -225,7 +326,7 @@ describe('InstallerCommand', () => {
       mockInstallerManager.getTemplate.mockReturnValue(mockTemplate);
       mockInstallerManager.installTemplate.mockResolvedValue(mockInstallResult);
 
-      const result = await installerCommand.handler(['failing-template'], testContext);
+      const result = await installerCommand.handler(['failing-template', '--apply'], approvedTestContext);
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('Failed to install template');
@@ -263,14 +364,20 @@ describe('InstallerCommand', () => {
       await installerCommand.handler([
         'typescript-node',
         '--name=my-project',
-        '--packageManager=pnpm'
-      ], testContext);
+        '--packageManager=pnpm',
+        '--apply'
+      ], approvedTestContext);
 
       expect(mockInstallerManager.installTemplate).toHaveBeenCalledWith(
         'typescript-node',
         expect.objectContaining({
           projectName: 'my-project',
-          packageManager: 'pnpm'
+          packageManager: 'pnpm',
+          dryRun: false,
+          approval: expect.objectContaining({
+            approved: true,
+            scope: INSTALLER_APPROVAL_SCOPE,
+          }),
         })
       );
     });
@@ -337,7 +444,7 @@ describe('InstallerCommand', () => {
       mockInstallerManager.getTemplate.mockReturnValue(mockTemplate);
       mockInstallerManager.installTemplate.mockResolvedValue(mockInstallResult);
 
-      const result = await installerCommand.handler(['typescript-node'], testContext);
+      const result = await installerCommand.handler(['typescript-node', '--apply'], approvedTestContext);
 
       expect(result.success).toBe(true);
       expect(result.recommendations).toContain('Run type checking with npm run type-check or similar');
@@ -372,7 +479,7 @@ describe('InstallerCommand', () => {
       mockInstallerManager.getTemplate.mockReturnValue(mockTemplate);
       mockInstallerManager.installTemplate.mockResolvedValue(mockInstallResult);
 
-      const result = await installerCommand.handler(['react-vite'], testContext);
+      const result = await installerCommand.handler(['react-vite', '--apply'], approvedTestContext);
 
       expect(result.success).toBe(true);
       expect(result.recommendations?.some(r => r.includes('Start development server'))).toBe(true);

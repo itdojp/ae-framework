@@ -7,6 +7,13 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { spawn } from 'child_process';
 import { stringify as toYamlString } from 'yaml';
+import {
+  resolveContainedWorkspacePath,
+  resolveWorkspacePath,
+  WorkspacePathPolicyError,
+} from './workspace-path-policy.js';
+
+export const INSTALLER_APPROVAL_SCOPE = 'installer-apply' as const;
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -106,6 +113,32 @@ export interface InstallationContext {
   nodeVersion?: string;
   existingPackageJson?: any;
   userPreferences?: Record<string, any>;
+  dryRun?: boolean;
+  approval?: InstallerApproval;
+  allowLifecycleScripts?: boolean;
+}
+
+export interface InstallerApproval {
+  approved: boolean;
+  scope: typeof INSTALLER_APPROVAL_SCOPE;
+  approvedBy?: string;
+  reason?: string;
+}
+
+export interface PlannedInstallationChange {
+  type:
+    | 'dependency'
+    | 'devDependency'
+    | 'packageJson'
+    | 'script'
+    | 'file'
+    | 'configuration'
+    | 'postInstallStep';
+  action: 'install' | 'write' | 'merge' | 'skip' | 'execute';
+  target: string;
+  command?: string;
+  args?: string[];
+  details?: string;
 }
 
 export interface InstallationResult {
@@ -118,6 +151,9 @@ export interface InstallationResult {
   warnings: string[];
   errors: string[];
   duration: number;
+  dryRun?: boolean;
+  approvalRequired?: boolean;
+  plannedChanges?: PlannedInstallationChange[];
 }
 
 export class InstallerManager {
@@ -125,7 +161,7 @@ export class InstallerManager {
   private projectRoot: string;
 
   constructor(projectRoot: string) {
-    this.projectRoot = projectRoot;
+    this.projectRoot = path.resolve(projectRoot);
     this.loadDefaultTemplates();
   }
 
@@ -184,10 +220,30 @@ export class InstallerManager {
       executedSteps: [],
       warnings: [],
       errors: [],
-      duration: 0
+      duration: 0,
+      dryRun: installContext.dryRun === true,
+      approvalRequired: false,
+      plannedChanges: []
     };
 
     try {
+      await this.collectPlannedChanges(template, installContext, result);
+
+      if (installContext.dryRun === true) {
+        result.message = `Dry-run preview for ${template.name}; no installer changes were applied`;
+        result.duration = Date.now() - startTime;
+        return result;
+      }
+
+      if (!this.hasTrustedApproval(installContext)) {
+        result.success = false;
+        result.approvalRequired = true;
+        result.message = `Installation requires explicit ${INSTALLER_APPROVAL_SCOPE} approval`;
+        result.errors.push(result.message);
+        result.duration = Date.now() - startTime;
+        return result;
+      }
+
       // Install dependencies
       await this.installDependencies(template, installContext, result);
       
@@ -297,6 +353,10 @@ export class InstallerManager {
    * Update package manager detection
    */
   async detectPackageManager(): Promise<'npm' | 'yarn' | 'pnpm'> {
+    return this.detectPackageManagerInternal({ allowExecutableProbe: true });
+  }
+
+  private async detectPackageManagerInternal(options: { allowExecutableProbe: boolean }): Promise<'npm' | 'yarn' | 'pnpm'> {
     const lockFiles = [
       { file: 'pnpm-lock.yaml', manager: 'pnpm' as const },
       { file: 'yarn.lock', manager: 'yarn' as const },
@@ -310,14 +370,18 @@ export class InstallerManager {
       }
     }
 
+    if (!options.allowExecutableProbe) {
+      return 'npm';
+    }
+
     // Check if package managers are globally available
     try {
-      await this.runCommand('pnpm --version', { silent: true });
+      await this.runCommandArgs('pnpm', ['--version'], { silent: true });
       return 'pnpm';
     } catch {}
 
     try {
-      await this.runCommand('yarn --version', { silent: true });
+      await this.runCommandArgs('yarn', ['--version'], { silent: true });
       return 'yarn';
     } catch {}
 
@@ -739,14 +803,40 @@ end
     }
   }
 
+  private hasTrustedApproval(context: Pick<InstallationContext, 'approval'>): boolean {
+    return context.approval?.approved === true && context.approval.scope === INSTALLER_APPROVAL_SCOPE;
+  }
+
+  private resolveProjectPath(context: InstallationContext, relativePath: string, label: string): string {
+    return resolveWorkspacePath(relativePath, {
+      workspaceRoot: context.projectRoot,
+      label,
+    });
+  }
+
+  private resolveProjectContainedPath(context: InstallationContext, relativePath: string, label: string): string {
+    return resolveContainedWorkspacePath(context.projectRoot, relativePath, label);
+  }
+
   private async prepareContext(context: Partial<InstallationContext>): Promise<InstallationContext> {
-    const packageManager = context.packageManager || await this.detectPackageManager();
+    const requestedProjectRoot = context.projectRoot ? path.resolve(context.projectRoot) : this.projectRoot;
+    if (requestedProjectRoot !== this.projectRoot) {
+      throw new WorkspacePathPolicyError('installer project root must match the approved manager workspace');
+    }
+
+    const trustedApproval = this.hasTrustedApproval(context);
+    const dryRun = context.dryRun ?? !trustedApproval;
+    const packageManager = context.packageManager
+      || await this.detectPackageManagerInternal({ allowExecutableProbe: dryRun !== true && trustedApproval });
     const projectName = context.projectName || path.basename(this.projectRoot);
     
     let existingPackageJson;
     try {
       const packageJsonContent = await fs.readFile(
-        path.join(this.projectRoot, 'package.json'),
+        resolveWorkspacePath('package.json', {
+          workspaceRoot: this.projectRoot,
+          label: 'installer package manifest',
+        }),
         'utf-8'
       );
       existingPackageJson = JSON.parse(packageJsonContent);
@@ -754,13 +844,119 @@ end
       // No existing package.json
     }
 
-    return {
+    const preparedContext: InstallationContext = {
       projectRoot: this.projectRoot,
       projectName,
       packageManager,
-      existingPackageJson,
-      ...context
+      dryRun,
+      allowLifecycleScripts: context.allowLifecycleScripts === true
     };
+    if (existingPackageJson !== undefined) {
+      preparedContext.existingPackageJson = existingPackageJson;
+    }
+    if (context.userPreferences !== undefined) {
+      preparedContext.userPreferences = context.userPreferences;
+    }
+    if (context.approval) {
+      preparedContext.approval = context.approval;
+    }
+    return preparedContext;
+  }
+
+  private async collectPlannedChanges(
+    template: InstallationTemplate,
+    context: InstallationContext,
+    result: InstallationResult
+  ): Promise<void> {
+    const packageJsonPath = this.resolveProjectPath(context, 'package.json', 'installer package manifest');
+    const packageJsonExists = await this.fileExists(packageJsonPath);
+    if (!packageJsonExists) {
+      result.plannedChanges?.push({
+        type: 'packageJson',
+        action: 'write',
+        target: 'package.json',
+        details: 'Create minimal package.json before dependency installation',
+      });
+    }
+
+    for (const dependency of template.dependencies) {
+      const spec = this.formatDependencySpec(dependency);
+      const { command, args } = this.buildPackageManagerInvocation(
+        context.packageManager,
+        [spec],
+        false,
+        context.allowLifecycleScripts === true
+      );
+      result.plannedChanges?.push({
+        type: 'dependency',
+        action: 'install',
+        target: spec,
+        command,
+        args,
+        details: context.allowLifecycleScripts === true
+          ? 'Lifecycle scripts are allowed by explicit installer context'
+          : 'Lifecycle scripts are suppressed by default',
+      });
+    }
+
+    for (const dependency of template.devDependencies ?? []) {
+      const spec = this.formatDependencySpec(dependency);
+      const { command, args } = this.buildPackageManagerInvocation(
+        context.packageManager,
+        [spec],
+        true,
+        context.allowLifecycleScripts === true
+      );
+      result.plannedChanges?.push({
+        type: 'devDependency',
+        action: 'install',
+        target: spec,
+        command,
+        args,
+        details: context.allowLifecycleScripts === true
+          ? 'Lifecycle scripts are allowed by explicit installer context'
+          : 'Lifecycle scripts are suppressed by default',
+      });
+    }
+
+    for (const scriptName of Object.keys(template.scripts)) {
+      result.plannedChanges?.push({
+        type: 'script',
+        action: 'write',
+        target: `package.json#scripts.${scriptName}`,
+        details: `Set npm script "${scriptName}"`,
+      });
+    }
+
+    for (const file of template.files) {
+      const resolved = this.resolveProjectContainedPath(context, file.path, 'installer template file');
+      const exists = await this.fileExists(resolved);
+      result.plannedChanges?.push({
+        type: 'file',
+        action: exists && !file.overwrite ? 'skip' : 'write',
+        target: file.path,
+        details: exists && !file.overwrite ? 'Existing file is protected by overwrite policy' : 'Create or overwrite template file',
+      });
+    }
+
+    for (const config of template.configurations) {
+      this.resolveProjectContainedPath(context, config.file, 'installer configuration file');
+      result.plannedChanges?.push({
+        type: 'configuration',
+        action: config.merge ? 'merge' : 'write',
+        target: config.file,
+        details: config.merge ? 'Merge with existing configuration where supported' : 'Write configuration file',
+      });
+    }
+
+    for (const step of template.postInstallSteps ?? []) {
+      result.plannedChanges?.push({
+        type: 'postInstallStep',
+        action: 'execute',
+        target: step.description,
+        details: 'Run post-install step after files and dependencies are applied',
+      });
+    }
   }
 
   private async installDependencies(
@@ -773,20 +969,34 @@ end
 
     // Install regular dependencies
     if (template.dependencies.length > 0) {
-      const depNames = template.dependencies.map(d => d.version ? `${d.name}@${d.version}` : d.name);
-      await this.runPackageManagerCommand(context.packageManager, 'install', depNames);
+      const depNames = template.dependencies.map(dependency => this.formatDependencySpec(dependency));
+      await this.runPackageManagerCommand(
+        context.packageManager,
+        'install',
+        depNames,
+        false,
+        context.allowLifecycleScripts === true
+      );
       result.installedDependencies.push(...depNames);
     }
 
     // Install dev dependencies
     if (template.devDependencies && template.devDependencies.length > 0) {
-      const devDepNames = template.devDependencies.map(d => d.version ? `${d.name}@${d.version}` : d.name);
-      await this.runPackageManagerCommand(context.packageManager, 'install', devDepNames, true);
+      const devDepNames = template.devDependencies.map(dependency => this.formatDependencySpec(dependency));
+      await this.runPackageManagerCommand(
+        context.packageManager,
+        'install',
+        devDepNames,
+        true,
+        context.allowLifecycleScripts === true
+      );
       result.installedDependencies.push(...devDepNames.map(d => `${d} (dev)`));
     }
 
     // Update scripts
-    await this.updatePackageJsonScripts(template.scripts, context);
+    if (Object.keys(template.scripts).length > 0) {
+      await this.updatePackageJsonScripts(template.scripts, context);
+    }
   }
 
   private async createTemplateFiles(
@@ -795,7 +1005,7 @@ end
     result: InstallationResult
   ): Promise<void> {
     for (const file of template.files) {
-      const filePath = path.join(context.projectRoot, file.path);
+      const filePath = this.resolveProjectContainedPath(context, file.path, 'installer template file');
       const dir = path.dirname(filePath);
 
       // Ensure directory exists
@@ -822,7 +1032,7 @@ end
     result: InstallationResult
   ): Promise<void> {
     for (const config of template.configurations) {
-      const configPath = path.join(context.projectRoot, config.file);
+      const configPath = this.resolveProjectContainedPath(context, config.file, 'installer configuration file');
       
       let configContent: string;
       if (typeof config.content === 'string') {
@@ -856,6 +1066,20 @@ end
             configContent = JSON.stringify(config.content, null, 2);
             result.warnings.push(`Configuration format "${config.format}" is not implemented, falling back to JSON`);
         }
+      }
+
+      if (config.merge && config.format === 'json') {
+        try {
+          const existingContent = await fs.readFile(configPath, 'utf-8');
+          const existingConfig = JSON.parse(existingContent);
+          if (isPlainObject(existingConfig) && isPlainObject(config.content)) {
+            configContent = JSON.stringify(this.mergePlainObjects(existingConfig, config.content), null, 2);
+          }
+        } catch {
+          // Missing or invalid existing JSON falls back to writing the generated configuration.
+        }
+      } else if (config.merge) {
+        result.warnings.push(`Configuration ${config.file} requested merge but ${config.format} merge is not implemented; writing generated content`);
       }
 
       const dir = path.dirname(configPath);
@@ -893,7 +1117,7 @@ end
   }
 
   private async ensurePackageJson(context: InstallationContext): Promise<void> {
-    const packageJsonPath = path.join(context.projectRoot, 'package.json');
+    const packageJsonPath = this.resolveProjectPath(context, 'package.json', 'installer package manifest');
     const exists = await this.fileExists(packageJsonPath);
     
     if (!exists) {
@@ -913,7 +1137,7 @@ end
   }
 
   private async updatePackageJsonScripts(scripts: Record<string, string>, context: InstallationContext): Promise<void> {
-    const packageJsonPath = path.join(context.projectRoot, 'package.json');
+    const packageJsonPath = this.resolveProjectPath(context, 'package.json', 'installer package manifest');
     const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
     const packageJson = JSON.parse(packageJsonContent);
     
@@ -926,35 +1150,39 @@ end
     packageManager: string, 
     command: string, 
     packages: string[], 
-    dev: boolean = false
+    dev: boolean = false,
+    allowLifecycleScripts: boolean = false
   ): Promise<void> {
-    let cmd: string;
-    
-    switch (packageManager) {
-      case 'yarn':
-        cmd = dev ? `yarn add -D ${packages.join(' ')}` : `yarn add ${packages.join(' ')}`;
-        break;
-      case 'pnpm':
-        cmd = dev ? `pnpm add -D ${packages.join(' ')}` : `pnpm add ${packages.join(' ')}`;
-        break;
-      default: // npm
-        cmd = dev ? `npm install --save-dev ${packages.join(' ')}` : `npm install ${packages.join(' ')}`;
+    if (command !== 'install') {
+      throw new Error(`Unsupported package manager command: ${command}`);
     }
-    
-    await this.runCommand(cmd);
+
+    const invocation = this.buildPackageManagerInvocation(packageManager, packages, dev, allowLifecycleScripts);
+    await this.runCommandArgs(invocation.command, invocation.args);
   }
 
   private async runCommand(command: string, options: { silent?: boolean } = {}): Promise<string> {
+    const trimmed = command.trim();
+    if (!trimmed || trimmed.includes('\0') || /[\r\n]/.test(trimmed)) {
+      throw new Error(`Cannot execute unsafe command: "${command}"`);
+    }
+    const [cmd, ...args] = trimmed.split(/\s+/);
+    if (!cmd) {
+      throw new Error(`Cannot execute empty command: "${command}"`);
+    }
+    return this.runCommandArgs(cmd, args, options);
+  }
+
+  private async runCommandArgs(command: string, args: string[], options: { silent?: boolean } = {}): Promise<string> {
     return new Promise((resolve, reject) => {
-      const [cmd, ...args] = command.split(' ');
-      
-      if (!cmd) {
-        reject(new Error(`Cannot execute empty command: "${command}"`));
+      if (!command) {
+        reject(new Error('Cannot execute empty command'));
         return;
       }
       
-      const process = spawn(cmd, args, { 
+      const process = spawn(command, args, {
         cwd: this.projectRoot,
+        shell: false,
         stdio: options.silent ? 'pipe' : 'inherit'
       });
       
@@ -974,7 +1202,7 @@ end
         if (code === 0) {
           resolve(output);
         } else {
-          reject(new Error(`Command failed with exit code ${code}: ${command}`));
+          reject(new Error(`Command failed with exit code ${code}: ${command} ${args.join(' ')}`.trim()));
         }
       });
       
@@ -1018,7 +1246,10 @@ end
   }
 
   private async saveCustomTemplate(template: InstallationTemplate): Promise<void> {
-    const customTemplatesPath = path.join(this.projectRoot, '.ae-framework', 'custom-templates.json');
+    const customTemplatesPath = resolveWorkspacePath('.ae-framework/custom-templates.json', {
+      workspaceRoot: this.projectRoot,
+      label: 'installer custom template registry',
+    });
     
     let customTemplates: InstallationTemplate[] = [];
     
@@ -1042,5 +1273,79 @@ end
     const dir = path.dirname(customTemplatesPath);
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(customTemplatesPath, JSON.stringify(customTemplates, null, 2));
+  }
+
+  private formatDependencySpec(dependency: Dependency): string {
+    const spec = dependency.version ? `${dependency.name}@${dependency.version}` : dependency.name;
+    this.assertSafePackageSpec(spec);
+    return spec;
+  }
+
+  private assertSafePackageSpec(spec: string): void {
+    if (!spec || spec.includes('\0') || /\s/.test(spec) || spec.startsWith('-')) {
+      throw new Error(`Unsafe package spec: ${spec}`);
+    }
+  }
+
+  private buildPackageManagerInvocation(
+    packageManager: string,
+    packages: string[],
+    dev: boolean,
+    allowLifecycleScripts: boolean
+  ): { command: string; args: string[] } {
+    for (const packageSpec of packages) {
+      this.assertSafePackageSpec(packageSpec);
+    }
+
+    switch (packageManager) {
+      case 'yarn':
+        return {
+          command: 'yarn',
+          args: [
+            'add',
+            ...(allowLifecycleScripts ? [] : ['--ignore-scripts']),
+            ...(dev ? ['-D'] : []),
+            ...packages,
+          ],
+        };
+      case 'pnpm':
+        return {
+          command: 'pnpm',
+          args: [
+            'add',
+            ...(allowLifecycleScripts ? [] : ['--ignore-scripts']),
+            ...(dev ? ['-D'] : []),
+            ...packages,
+          ],
+        };
+      case 'npm':
+        return {
+          command: 'npm',
+          args: [
+            'install',
+            ...(allowLifecycleScripts ? [] : ['--ignore-scripts']),
+            ...(dev ? ['--save-dev'] : []),
+            ...packages,
+          ],
+        };
+      default:
+        throw new Error(`Unsupported package manager: ${packageManager}`);
+    }
+  }
+
+  private mergePlainObjects(
+    base: Record<string, unknown>,
+    override: Record<string, unknown>
+  ): Record<string, unknown> {
+    const merged: Record<string, unknown> = { ...base };
+    for (const [key, value] of Object.entries(override)) {
+      const current = merged[key];
+      if (isPlainObject(current) && isPlainObject(value)) {
+        merged[key] = this.mergePlainObjects(current, value);
+      } else {
+        merged[key] = value;
+      }
+    }
+    return merged;
   }
 }

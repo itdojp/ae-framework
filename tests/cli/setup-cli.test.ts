@@ -25,6 +25,7 @@ vi.mock('node:readline/promises', () => ({
 }));
 
 vi.mock('../../src/utils/installer-manager.js', () => ({
+  INSTALLER_APPROVAL_SCOPE: 'installer-apply',
   InstallerManager: class {
     constructor(root: string) {
       lastRoot = root;
@@ -156,10 +157,15 @@ describe('setup CLI', () => {
       'pnpm',
     ]);
 
-    expect(installTemplateMock).toHaveBeenCalledWith('typescript-node', {
+    expect(installTemplateMock).toHaveBeenCalledWith('typescript-node', expect.objectContaining({
       projectName: 'my-app',
       packageManager: 'pnpm',
-    });
+      dryRun: false,
+      approval: expect.objectContaining({
+        approved: true,
+        scope: 'installer-apply',
+      }),
+    }));
     expect(safeExitMock).not.toHaveBeenCalled();
     consoleLogSpy.mockRestore();
   });
@@ -216,10 +222,15 @@ describe('setup CLI', () => {
     const command = createSetupCommand();
     await command.parseAsync(['node', 'cli', 'wizard']);
 
-    expect(installTemplateMock).toHaveBeenCalledWith('typescript-node', {
+    expect(installTemplateMock).toHaveBeenCalledWith('typescript-node', expect.objectContaining({
       projectName: 'my-app',
       packageManager: 'pnpm',
-    });
+      dryRun: false,
+      approval: expect.objectContaining({
+        approved: true,
+        scope: 'installer-apply',
+      }),
+    }));
     expect(readlineCloseMock).toHaveBeenCalledTimes(4);
 
     Object.defineProperty(process.stdin, 'isTTY', { value: originalStdinTTY, configurable: true });
