@@ -6,7 +6,6 @@
  * user stories, specifications, and code quality.
  */
 
-import { VerifyAgent } from './verify-agent.js';
 import type { TaskRequest, TaskResponse } from './task-types.js';
 import { extractValidationInput, formatSourceSummary, toValidationInput } from './validation-task-input.js';
 import { extractTraceabilityMatrixRows } from './validation-task-traceability.js';
@@ -32,13 +31,6 @@ export { VALIDATION_TASK_TYPES };
 export type { CoverageReport, ValidationIssue, ValidationResult, ValidationTaskType } from './validation-task-adapter.types.js';
 
 export class ValidationTaskAdapter {
-  private agent: VerifyAgent;
-
-  constructor() {
-    // VerifyAgent doesn't use config pattern like FormalAgent
-    this.agent = new VerifyAgent();
-  }
-
   /**
    * Main handler for Validation tasks from Claude Code
    */
