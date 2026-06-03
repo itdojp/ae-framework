@@ -8,6 +8,7 @@ import * as path from 'path';
 import { BaseExtendedCommand } from './base-command.js';
 import type { ExtendedCommandResult } from './base-command.js';
 import type { CommandContext } from '../slash-command-manager.js';
+import { resolveExtendedCommandPath, toExtendedCommandRelativePath } from './workspace-paths.js';
 import type { 
   TroubleshootResult, 
   AnalysisTarget, 
@@ -109,6 +110,10 @@ export class UnifiedTroubleshootCommand extends BaseExtendedCommand {
     const solutions: Solution[] = [];
     const issues: Issue[] = [];
     const suggestions: any[] = [];
+    const logPath = options.logs
+      ? resolveExtendedCommandPath(context, options.logs, 'troubleshoot log path')
+      : undefined;
+    const displayLogPath = logPath ? toExtendedCommandRelativePath(context, logPath) : undefined;
 
     // Auto-detect common issues if --auto flag is used
     if (options.auto || !description || description === 'General troubleshooting') {
@@ -127,8 +132,8 @@ export class UnifiedTroubleshootCommand extends BaseExtendedCommand {
     }
 
     // Analyze logs if provided
-    if (options.logs) {
-      const logAnalysis = await this.analyzeLogs(options.logs);
+    if (logPath && displayLogPath) {
+      const logAnalysis = await this.analyzeLogs(logPath, displayLogPath);
       detectedIssues.push(...logAnalysis.issues);
       diagnosis.push(...logAnalysis.diagnosis);
       solutions.push(...logAnalysis.solutions);
@@ -663,7 +668,7 @@ export class UnifiedTroubleshootCommand extends BaseExtendedCommand {
     return { issues, diagnosis, solutions };
   }
 
-  private async analyzeLogs(logsPath: string): Promise<{
+  private async analyzeLogs(logsPath: string, displayPath = logsPath): Promise<{
     issues: DetectedIssue[];
     diagnosis: Diagnosis[];
     solutions: Solution[];
@@ -692,7 +697,7 @@ export class UnifiedTroubleshootCommand extends BaseExtendedCommand {
             type: 'log-error',
             severity: 'medium',
             message: errorLine.trim(),
-            location: { file: logsPath },
+            location: { file: displayPath },
             frequency: errorLines.filter(line => line.includes(errorLine.split(' ')[0] || '')).length
           });
         }
@@ -722,8 +727,8 @@ export class UnifiedTroubleshootCommand extends BaseExtendedCommand {
       issues.push({
         type: 'log-access-error',
         severity: 'low',
-        message: `Cannot access log file: ${logsPath}`,
-        location: { file: logsPath }
+        message: `Cannot access log file: ${displayPath}`,
+        location: { file: displayPath }
       });
     }
 

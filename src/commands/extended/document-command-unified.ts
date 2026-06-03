@@ -9,6 +9,10 @@ import * as ts from 'typescript';
 import { BaseExtendedCommand } from './base-command.js';
 import type { ExtendedCommandResult } from './base-command.js';
 import type { CommandContext } from '../slash-command-manager.js';
+import {
+  resolveExtendedCommandContainedPath,
+  resolveExtendedCommandPath,
+} from './workspace-paths.js';
 import type { 
   DocumentationResult, 
   AnalysisTarget, 
@@ -63,7 +67,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     if (!target) {
       throw new Error('Target path is required for documentation generation');
     }
-    const fullPath = path.resolve(context.projectRoot, target);
+    const fullPath = resolveExtendedCommandPath(context, target, 'documentation target path');
     
     try {
       const stats = await fs.stat(fullPath);
@@ -72,7 +76,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
         type: stats.isDirectory() ? 'directory' : 'file'
       };
 
-      const result = await this.generateDocumentation(analysisTarget, options);
+      const result = await this.generateDocumentation(analysisTarget, options, context);
       const summary = this.generateSummary(result);
 
       return {
@@ -97,8 +101,15 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
     }
   }
 
-  private async generateDocumentation(target: AnalysisTarget, options: DocumentationOptions): Promise<DocumentationResult> {
+  private async generateDocumentation(
+    target: AnalysisTarget,
+    options: DocumentationOptions,
+    context: CommandContext
+  ): Promise<DocumentationResult> {
     const startTime = Date.now();
+    const outputDir = options.output
+      ? resolveExtendedCommandPath(context, options.output, 'documentation output directory')
+      : undefined;
     
     let files: string[] = [];
     if (target.type === 'directory') {
@@ -123,8 +134,8 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
       totalLines += fileDoc.fileMetrics.linesOfCode;
 
       // Write individual file documentation if requested
-      if (options.output) {
-        const fileOutputPath = this.getOutputPath(file, options.output, options.format || 'markdown');
+      if (outputDir) {
+        const fileOutputPath = this.getOutputPath(file, outputDir, options.format || 'markdown');
         const formatted = this.formatDocumentation(fileDoc, options.format || 'markdown');
         await fs.writeFile(fileOutputPath, formatted);
         outputPath = options.output;
@@ -606,7 +617,7 @@ export class UnifiedDocumentCommand extends BaseExtendedCommand {
   private getOutputPath(inputFile: string, outputDir: string, format: string): string {
     const basename = path.basename(inputFile, path.extname(inputFile));
     const extension = format === 'api-json' ? 'json' : 'md';
-    return path.join(outputDir, `${basename}.${extension}`);
+    return resolveExtendedCommandContainedPath(outputDir, `${basename}.${extension}`, 'documentation output file');
   }
 
   private calculateDocumentationCompleteness(result: DocumentationResult): number {

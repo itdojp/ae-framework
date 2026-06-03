@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { SlashCommandManager } from '../../src/commands/slash-command-manager.js';
 import * as fs from 'fs/promises';
@@ -22,6 +23,21 @@ describe('Extended Commands', () => {
       expect(analyzeCommand).toBeDefined();
       expect(analyzeCommand?.description).toContain('Deep code analysis');
       expect(analyzeCommand?.aliases).toContain('/analyze');
+    });
+
+
+    test.each([
+      ['/ae:analyze /etc/passwd', 'analysis target path'],
+      ['/ae:analyze ../outside.ts', 'analysis target path'],
+      ['/ae:analyze src/../outside.ts', 'analysis target path'],
+    ])('rejects unsafe analysis target %s before filesystem access', async (command, label) => {
+      const result = await manager.execute(command);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain(label);
+      expect(fs.stat).not.toHaveBeenCalled();
+      expect(fs.readFile).not.toHaveBeenCalled();
+      expect(fs.readdir).not.toHaveBeenCalled();
     });
 
     test('should analyze a file', async () => {
@@ -55,6 +71,29 @@ describe('Extended Commands', () => {
       expect(troubleshootCommand?.aliases).toContain('/a:troubleshoot');
     });
 
+
+    test.each([
+      ['/ae:troubleshoot --logs=/etc/passwd', 'troubleshoot log path'],
+      ['/ae:troubleshoot --logs=../outside.log', 'troubleshoot log path'],
+      ['/ae:troubleshoot --logs=logs/../outside.log', 'troubleshoot log path'],
+    ])('rejects unsafe troubleshoot log path %s before filesystem access', async (command, label) => {
+      const result = await manager.execute(command);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain(label);
+      expect(fs.readFile).not.toHaveBeenCalled();
+    });
+
+    test('reads troubleshoot logs only under the approved project root', async () => {
+      vi.mocked(fs.readFile).mockResolvedValue('ERROR failed to connect\ninfo recovered');
+
+      const result = await manager.execute('/ae:troubleshoot log analysis --logs=logs/app.log');
+
+      expect(result.success).toBe(true);
+      expect(fs.readFile).toHaveBeenCalledWith(path.join(testProjectRoot, 'logs', 'app.log'), 'utf-8');
+      expect(result.data?.detectedIssues?.[0]?.location?.file).toBe('logs/app.log');
+    });
+
     test('should analyze described issue', async () => {
       const result = await manager.execute('/ae:troubleshoot Cannot find module express');
       
@@ -81,6 +120,22 @@ describe('Extended Commands', () => {
       expect(improveCommand).toBeDefined();
       expect(improveCommand?.aliases).toContain('/improve');
       expect(improveCommand?.aliases).toContain('/a:improve');
+    });
+
+
+    test.each([
+      ['/ae:improve /etc/passwd', 'improvement target path'],
+      ['/ae:improve ../outside.ts', 'improvement target path'],
+      ['/ae:improve src/../outside.ts', 'improvement target path'],
+    ])('rejects unsafe improvement target %s before filesystem access', async (command, label) => {
+      const result = await manager.execute(command);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain(label);
+      expect(fs.stat).not.toHaveBeenCalled();
+      expect(fs.readFile).not.toHaveBeenCalled();
+      expect(fs.writeFile).not.toHaveBeenCalled();
+      expect(fs.readdir).not.toHaveBeenCalled();
     });
 
     test('should suggest improvements for code', async () => {
@@ -119,6 +174,50 @@ describe('Extended Commands', () => {
       expect(documentCommand).toBeDefined();
       expect(documentCommand?.aliases).toContain('/document');
       expect(documentCommand?.aliases).toContain('/a:document');
+    });
+
+
+    test.each([
+      ['/ae:document /etc/passwd', 'documentation target path'],
+      ['/ae:document ../outside.ts', 'documentation target path'],
+      ['/ae:document src/../outside.ts', 'documentation target path'],
+    ])('rejects unsafe documentation target %s before filesystem access', async (command, label) => {
+      const result = await manager.execute(command);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain(label);
+      expect(fs.stat).not.toHaveBeenCalled();
+      expect(fs.readFile).not.toHaveBeenCalled();
+      expect(fs.writeFile).not.toHaveBeenCalled();
+      expect(fs.readdir).not.toHaveBeenCalled();
+    });
+
+    test.each([
+      ['/ae:document src/test.ts --output=../outside-docs', false],
+      ['/ae:document src --output=../outside-docs', true],
+    ])('rejects unsafe documentation output directory before source IO for %s', async (command, isDirectory) => {
+      vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => isDirectory } as any);
+      vi.mocked(fs.readFile).mockResolvedValue('export function test() {}');
+
+      const result = await manager.execute(command);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('documentation output directory');
+      expect(fs.readFile).not.toHaveBeenCalled();
+      expect(fs.readdir).not.toHaveBeenCalled();
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    test('writes documentation only under the approved project root', async () => {
+      vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => false } as any);
+      vi.mocked(fs.readFile).mockResolvedValue('export function test() {}');
+      vi.mocked(fs.writeFile).mockResolvedValue(undefined as any);
+
+      const result = await manager.execute('/ae:document src/test.ts --output=docs/generated');
+
+      expect(result.success).toBe(true);
+      expect(fs.writeFile).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(fs.writeFile).mock.calls[0]?.[0]).toBe(path.join(testProjectRoot, 'docs', 'generated', 'test.md'));
     });
 
     test.skip('should generate documentation for TypeScript file', async () => {
