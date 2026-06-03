@@ -5,8 +5,13 @@
 
 import { BaseExtendedCommand } from './base-command.js';
 import type { ExtendedCommandResult, ExtendedCommandConfig } from './base-command.js';
-import { InstallerManager } from '../../utils/installer-manager.js';
-import type { InstallationTemplate, InstallationResult } from '../../utils/installer-manager.js';
+import { INSTALLER_APPROVAL_SCOPE, InstallerManager } from '../../utils/installer-manager.js';
+import type {
+  InstallationTemplate,
+  InstallationResult,
+  InstallerApproval,
+  PlannedInstallationChange,
+} from '../../utils/installer-manager.js';
 import { ContextManager } from '../../utils/context-manager.js';
 import { TokenOptimizer } from '../../utils/token-optimizer.js';
 import type * as fs from 'fs/promises';
@@ -19,6 +24,9 @@ export interface InstallerCommandResult extends ExtendedCommandResult {
   suggestions?: string[];
   recommendations?: string[];
   availableTemplates?: InstallationTemplate[];
+  dryRun?: boolean;
+  approvalRequired?: boolean;
+  plannedChanges?: PlannedInstallationChange[];
 }
 
 export class InstallerCommand extends BaseExtendedCommand {
@@ -86,7 +94,15 @@ export class InstallerCommand extends BaseExtendedCommand {
 
         default:
           // Treat as template installation
-          return await this.handleInstallTemplate(action, args.slice(1), installerManager, contextManager, tokenOptimizer, projectRoot);
+          return await this.handleInstallTemplate(
+            action,
+            args.slice(1),
+            installerManager,
+            contextManager,
+            tokenOptimizer,
+            projectRoot,
+            context
+          );
       }
 
     } catch (error: any) {
@@ -119,7 +135,8 @@ export class InstallerCommand extends BaseExtendedCommand {
         }
       }
 
-      message += 'Usage: /ae:installer <template-id> to install a template\n';
+      message += 'Usage: /ae:installer <template-id> to preview a template installation\n';
+      message += `Use /ae:installer <template-id> --apply only with ${INSTALLER_APPROVAL_SCOPE} approval\n`;
       message += 'Use /ae:installer suggest for project-specific recommendations';
 
       this.recordMetric('success');
@@ -162,7 +179,7 @@ export class InstallerCommand extends BaseExtendedCommand {
           message += `   Reason: ${reason}\n\n`;
         }
         
-        message += `Use /ae:installer <template-id> to install any of these templates`;
+        message += `Use /ae:installer <template-id> to preview any of these templates`;
       } else {
         message += 'No specific suggestions for this project.\n';
         message += 'Use /ae:installer list to see all available templates';
@@ -191,7 +208,8 @@ export class InstallerCommand extends BaseExtendedCommand {
     installerManager: InstallerManager, 
     contextManager: ContextManager, 
     tokenOptimizer: TokenOptimizer,
-    projectRoot: string
+    projectRoot: string,
+    commandContext: any
   ): Promise<InstallerCommandResult> {
     try {
       // Check if template exists
@@ -218,7 +236,7 @@ export class InstallerCommand extends BaseExtendedCommand {
       }
 
       // Parse additional options from args
-      const installationContext = this.parseInstallationOptions(additionalArgs, projectRoot);
+      const installationContext = this.parseInstallationOptions(additionalArgs, projectRoot, commandContext);
 
       // Install the template
       const result: InstallationResult = await installerManager.installTemplate(templateId, installationContext);
@@ -241,7 +259,58 @@ export class InstallerCommand extends BaseExtendedCommand {
           });
         }
 
+        if (result.approvalRequired) {
+          return {
+            success: false,
+            message: errorMessage,
+            approvalRequired: true,
+            plannedChanges: result.plannedChanges ?? [],
+            evidence: [
+              'Installer apply was rejected before dependency installation or project writes',
+              `Required approval scope: ${INSTALLER_APPROVAL_SCOPE}`,
+            ],
+            recommendations: [
+              `Rerun with --apply only after trusted-operator approval scope "${INSTALLER_APPROVAL_SCOPE}" is present`,
+            ],
+          };
+        }
+
         return this.createErrorResult(errorMessage);
+      }
+
+      if (result.dryRun === true) {
+        this.recordMetric('preview');
+        let message = `Previewed '${template.name}' template installation (dry run).\n`;
+        message += 'No dependencies were installed and no project files were changed.\n\n';
+
+        if (result.plannedChanges && result.plannedChanges.length > 0) {
+          message += 'Planned changes:\n';
+          result.plannedChanges.forEach(change => {
+            const commandPreview = change.command
+              ? ` [${[change.command, ...(change.args ?? [])].join(' ')}]`
+              : '';
+            message += `  • ${change.action}: ${change.target}${commandPreview}\n`;
+          });
+          message += '\n';
+        }
+
+        message += `To apply these changes, rerun with --apply from a context that carries `;
+        message += `approval.scope="${INSTALLER_APPROVAL_SCOPE}" and approval.approved=true.`;
+
+        return {
+          success: true,
+          message,
+          dryRun: true,
+          plannedChanges: result.plannedChanges ?? [],
+          evidence: [
+            `Previewed template: ${template.name}`,
+            `Planned ${result.plannedChanges?.length ?? 0} installer changes`,
+            'No installer writes or package-manager commands were executed'
+          ],
+          recommendations: [
+            `Obtain trusted-operator approval with scope "${INSTALLER_APPROVAL_SCOPE}" before using --apply`
+          ]
+        };
       }
 
       // Build success message
@@ -315,6 +384,8 @@ export class InstallerCommand extends BaseExtendedCommand {
         installedTemplate: templateId,
         installedDependencies: result.installedDependencies,
         createdFiles: result.createdFiles,
+        dryRun: false,
+        plannedChanges: result.plannedChanges ?? [],
         evidence,
         recommendations
       };
@@ -325,11 +396,17 @@ export class InstallerCommand extends BaseExtendedCommand {
     }
   }
 
-  private parseInstallationOptions(args: string[], projectRoot: string): any {
+  private parseInstallationOptions(args: string[], projectRoot: string, commandContext: any): any {
     const options: any = {
       projectRoot,
-      projectName: path.basename(projectRoot)
+      projectName: path.basename(projectRoot),
+      dryRun: true
     };
+
+    const approval = this.extractInstallerApproval(commandContext);
+    if (approval) {
+      options.approval = approval;
+    }
 
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
@@ -350,10 +427,29 @@ export class InstallerCommand extends BaseExtendedCommand {
           options.packageManager = manager;
         }
         i++; // Skip next arg
+      } else if (arg === '--apply') {
+        options.dryRun = false;
+      } else if (arg === '--dry-run' || arg === '--preview') {
+        options.dryRun = true;
+      } else if (arg === '--allow-lifecycle-scripts') {
+        options.allowLifecycleScripts = true;
       }
     }
 
     return options;
+  }
+
+  private extractInstallerApproval(commandContext: any): InstallerApproval | undefined {
+    const approval = commandContext?.approval;
+    if (approval?.approved === true && approval?.scope === INSTALLER_APPROVAL_SCOPE) {
+      return {
+        approved: true,
+        scope: INSTALLER_APPROVAL_SCOPE,
+        ...(typeof approval.approvedBy === 'string' ? { approvedBy: approval.approvedBy } : {}),
+        ...(typeof approval.reason === 'string' ? { reason: approval.reason } : {}),
+      };
+    }
+    return undefined;
   }
 
   private generatePostInstallationRecommendations(template: InstallationTemplate, result: InstallationResult): string[] {
@@ -407,19 +503,22 @@ Actions:
   • help                 Show this help message
 
 Template Installation:
-  /ae:installer typescript-node --name=myproject
-  /ae:installer react-vite --packageManager=pnpm
-  /ae:installer express-api --name=api-server
+  /ae:installer typescript-node --name=myproject          # Preview only
+  /ae:installer react-vite --packageManager=pnpm          # Preview only
+  /ae:installer express-api --name=api-server --apply     # Requires trusted approval
 
 Options:
   --name=<name>           Set project name
   --packageManager=<mgr>  Use specific package manager (npm/yarn/pnpm)
+  --dry-run/--preview     Preview planned changes without writes or dependency installs (default)
+  --apply                 Apply planned changes only when context.approval.scope="${INSTALLER_APPROVAL_SCOPE}"
+  --allow-lifecycle-scripts Allow dependency lifecycle scripts during approved package installs
 
 Examples:
   /ae:installer list                    # List all templates
   /ae:installer suggest                 # Get recommendations  
-  /ae:installer typescript-node         # Install TypeScript Node.js template
-  /ae:installer react-vite --name=app   # Install React template with custom name`;
+  /ae:installer typescript-node         # Preview TypeScript Node.js template
+  /ae:installer react-vite --name=app   # Preview React template with custom name`;
 
     this.recordMetric('help_requested');
     return {
@@ -459,6 +558,9 @@ Examples:
   }
 
   protected override generateValidationClaim(data: any): string {
+    if (data.dryRun) {
+      return `Template "${data.installedTemplate ?? 'installer'}" installation was previewed without local changes`;
+    }
     if (data.installedTemplate) {
       return `Template "${data.installedTemplate}" was successfully installed`;
     } else if (data.availableTemplates) {
@@ -468,6 +570,9 @@ Examples:
   }
 
   protected override generateSummary(data: any): string {
+    if (data.dryRun) {
+      return 'Installer dry-run preview completed without applying changes';
+    }
     if (data.installedTemplate) {
       return `Successfully installed template: ${data.installedTemplate}`;
     } else if (data.availableTemplates) {
