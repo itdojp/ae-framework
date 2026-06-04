@@ -10,11 +10,19 @@ import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
-function runStdio(action, args) {
-  const req = JSON.stringify({ action, args });
+function runStdio(action, args, approvalScope = null) {
+  const req = JSON.stringify({
+    action,
+    ...(approvalScope ? { approval: { approved: true, scope: approvalScope } } : {}),
+    args,
+  });
   const res = spawnSync('pnpm', ['run', 'codex:spec:stdio'], {
     input: req + '\n',
     encoding: 'utf8',
+    env: {
+      ...process.env,
+      ...(approvalScope ? { AE_CODEX_SPEC_STDIO_TRUSTED_APPROVAL: '1' } : {}),
+    },
   });
   if (res.error) throw res.error;
   const line = (res.stdout || '').trim().split('\n').filter(Boolean).pop() || '{}';
@@ -41,23 +49,32 @@ async function main() {
   const maxIter = parseInt(args[1] || '5', 10);
   const maxWarnings = parseInt(args[2] || '10', 10);
   const artifactsDir = 'artifacts/spec-iterate';
+  const irPath = 'artifacts/spec-synthesis/ae-ir.json';
 
   console.log(`[iter] Starting iteration for ${spec} (maxIter=${maxIter}, maxWarnings=${maxWarnings})`);
 
   for (let i = 1; i <= maxIter; i++) {
     console.log(`\n[iter] ${i}/${maxIter} validate (lenient)`);
-    const v = runStdio('validate', { inputPath: spec, relaxed: true, maxWarnings });
+    const v = runStdio('validate', { inputPath: spec, relaxed: true, maxWarnings }, 'codex-spec-stdio');
     if (!v.ok) { console.error('[iter] validate failed:', v.error || v.raw); process.exit(1); }
     const { passed, summary, issues } = v.data;
     write(`${artifactsDir}/issues-${String(i).padStart(2,'0')}.json`, JSON.stringify(v.data, null, 2));
     console.log(`[iter] lenient summary: errors=${summary.errors}, warnings=${summary.warnings}`);
 
     if (summary.errors === 0 && summary.warnings <= maxWarnings) {
-      console.log(`[iter] Attempt strict compile → .ae/ae-ir.json`);
-      const c = runStdio('compile', { inputPath: spec, outputPath: '.ae/ae-ir.json', relaxed: false, validate: true });
+      console.log(`[iter] Attempt strict compile → ${irPath}`);
+      const c = runStdio(
+        'compile',
+        { inputPath: spec, outputPath: irPath, relaxed: false, validate: true },
+        'codex-spec-stdio',
+      );
       if (c.ok) {
         console.log('[iter] strict compile ok, run codegen (typescript, api, database)');
-        const g = runStdio('codegen', { irPath: '.ae/ae-ir.json', targets: ['typescript','api','database'] });
+        const g = runStdio(
+          'codegen',
+          { irPath, targets: ['typescript','api','database'] },
+          'codex-spec-stdio',
+        );
         if (!g.ok) console.warn('[iter] codegen returned:', g.error || g.data);
         console.log('[iter] done');
         process.exit(0);
