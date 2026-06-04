@@ -258,6 +258,8 @@ jobs:
             const detailed = labels.includes('pr-summary:detailed');
             core.setOutput('mode', detailed ? 'detailed' : 'digest');
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:

@@ -275,6 +275,10 @@ describe('workflow permission boundaries', () => {
       issues: 'read',
       'pull-requests': 'read',
     });
+    const summarizeCheckout = parsed.jobs?.summarize?.steps?.find(
+      (step: any) => step?.uses === 'actions/checkout@v4',
+    );
+    expect(summarizeCheckout?.with).toMatchObject({ 'persist-credentials': false });
     expect(parsed.jobs?.label?.permissions).toEqual({
       issues: 'write',
     });

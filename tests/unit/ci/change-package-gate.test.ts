@@ -134,6 +134,26 @@ describe('change-package gate helpers', () => {
         completedAt: '2026-06-04T00:00:00Z',
       },
     ])).toEqual({ status: 'fail', sourceUrl: null });
+
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'COMPLETED',
+        conclusion: 'STARTUP_FAILURE',
+        completedAt: '2026-06-04T00:00:00Z',
+      },
+    ])).toEqual({ status: 'fail', sourceUrl: null });
+
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'COMPLETED',
+        conclusion: 'UNKNOWN_CONCLUSION',
+        completedAt: '2026-06-04T00:00:00Z',
+      },
+    ])).toEqual({ status: 'fail', sourceUrl: null });
   });
 
   it('fails closed for missing, pending, and ambiguous check-run evidence', () => {
@@ -166,6 +186,37 @@ describe('change-package gate helpers', () => {
         completedAt: '2026-06-04T00:00:00Z',
       },
     ])).toEqual({ status: 'ambiguous', sourceUrl: null });
+  });
+
+  it('treats a timestamp-less queued rerun as pending over older completed evidence', () => {
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'COMPLETED',
+        conclusion: 'SUCCESS',
+        completedAt: '2026-06-04T00:01:00Z',
+      },
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'QUEUED',
+        conclusion: null,
+      },
+    ])).toEqual({ status: 'pending', sourceUrl: null });
+  });
+
+  it('ignores similarly named non-CheckRun status rollup entries', () => {
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'StatusContext',
+        name: 'Change Package Validation',
+        context: 'Change Package Validation',
+        status: 'COMPLETED',
+        conclusion: 'SUCCESS',
+        completedAt: '2026-06-04T00:00:00Z',
+      },
+    ])).toEqual({ status: 'missing', sourceUrl: null });
   });
 
 });

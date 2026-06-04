@@ -63,17 +63,20 @@ function normalizeCheckRunName(checkRun) {
 }
 
 function isChangePackageValidationCheck(checkRun) {
+  if (checkRun?.__typename !== 'CheckRun') {
+    return false;
+  }
   return CHANGE_PACKAGE_VALIDATION_CHECK_NAMES.has(normalizeCheckRunName(checkRun));
 }
 
 function checkRunSourceUrl(checkRun) {
-  return typeof checkRun?.detailsUrl === 'string'
-    ? checkRun.detailsUrl
-    : (typeof checkRun?.details_url === 'string'
-      ? checkRun.details_url
-      : (typeof checkRun?.html_url === 'string'
-        ? checkRun.html_url
-        : (typeof checkRun?.url === 'string' ? checkRun.url : null)));
+  for (const key of ['detailsUrl', 'details_url', 'html_url', 'url']) {
+    const value = checkRun?.[key];
+    if (typeof value === 'string' && value.length > 0) {
+      return value;
+    }
+  }
+  return null;
 }
 
 function mapCheckRunToChangePackageStatus(checkRun) {
@@ -91,11 +94,12 @@ function mapCheckRunToChangePackageStatus(checkRun) {
     case 'CANCELLED':
     case 'SKIPPED':
     case 'TIMED_OUT':
+    case 'STARTUP_FAILURE':
     case 'ACTION_REQUIRED':
     case 'STALE':
       return 'fail';
     default:
-      return 'missing';
+      return 'fail';
   }
 }
 
@@ -107,6 +111,15 @@ function resolveChangePackageValidationStatusFromChecks(checkRuns = []) {
   const candidates = checkRuns.filter(isChangePackageValidationCheck);
   if (candidates.length === 0) {
     return { status: 'missing', sourceUrl: null };
+  }
+
+  const timestampLessPendingCandidates = candidates.filter(
+    (candidate) => normalizeCheckRunTimestamp(candidate) === 0
+      && mapCheckRunToChangePackageStatus(candidate) === 'pending',
+  );
+  if (timestampLessPendingCandidates.length > 0) {
+    const latestPending = timestampLessPendingCandidates[timestampLessPendingCandidates.length - 1];
+    return { status: 'pending', sourceUrl: checkRunSourceUrl(latestPending) };
   }
 
   const latestTimestamp = Math.max(...candidates.map(normalizeCheckRunTimestamp));
