@@ -165,9 +165,13 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 ## 4) CodeX (no MCP) – Spec Tools over stdio
 - Script: `pnpm run codex:spec:stdio`
 - Actions:
-  - `compile`: `echo '{"action":"compile","args":{"inputPath":"spec/my.ae-spec.md","outputPath":".ae/ae-ir.json","relaxed":true}}' | pnpm run codex:spec:stdio`
   - `validate`: `echo '{"action":"validate","args":{"inputPath":"spec/my.ae-spec.md","relaxed":true,"maxWarnings":999}}' | pnpm run codex:spec:stdio`
-  - `codegen`: `echo '{"action":"codegen","args":{"irPath":".ae/ae-ir.json","targets":["typescript","api","database"]}}' | pnpm run codex:spec:stdio`
+  - `compile`: `printf '%s\n' '{"action":"compile","approval":{"approved":true,"scope":"codex-spec-stdio"},"args":{"inputPath":"spec/my.ae-spec.md","outputPath":"artifacts/spec-synthesis/ae-ir.json","relaxed":true}}' | AE_CODEX_SPEC_STDIO_TRUSTED_APPROVAL=1 pnpm run codex:spec:stdio`
+  - `codegen`: `printf '%s\n' '{"action":"codegen","approval":{"approved":true,"scope":"codex-spec-stdio"},"args":{"irPath":"artifacts/spec-synthesis/ae-ir.json","targets":["typescript","api","database"]}}' | AE_CODEX_SPEC_STDIO_TRUSTED_APPROVAL=1 pnpm run codex:spec:stdio`
+- Path and approval policy:
+  - Caller-supplied paths must be workspace-relative POSIX paths; absolute paths, `..` / `.` segments, backslashes, and `.git` targets are rejected.
+  - AE-IR and generated-code writes are constrained to `artifacts/spec-synthesis` by default.
+  - `compile` with `outputPath`, `codegen`, and cold-checkout spec-compiler auto-build require trusted approval (`AE_CODEX_SPEC_STDIO_TRUSTED_CONTEXT=1`, or `AE_CODEX_SPEC_STDIO_TRUSTED_APPROVAL=1` plus `approval.approved=true` with an accepted `codex-spec-stdio` scope).
 
 Flow suggestion:
 - CodeX LLM drafts AE‑Spec → call `validate` to get issues → revise → repeat → when stable, `compile` (strict) → `codegen`.
@@ -348,6 +352,7 @@ set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
 ### 4) MCP なしの stdio ツール（Spec）
 - `codex:spec:stdio` の `compile/validate/codegen` アクションで AE-Spec をコンパイル/検証/コード生成
 - CodeX の LLM で下書き→ lenient validate で指摘収集→ strict compile→ codegen の反復
+- 書き込み系アクションは既定で `artifacts/spec-synthesis` 配下に限定され、trusted approval が必要
 
 ### 運用上の考慮
 - 環境: Node >= 20.11 (<23), pnpm 10（Corepack 推奨）
