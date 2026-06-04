@@ -140,6 +140,33 @@ const upsertComment = (number, body) => {
   execGh(['api', `repos/${repo}/issues/${number}/comments`, '--input', '-'], { input: payload });
 };
 
+const buildAuthenticatedGitEnv = () => {
+  const token = String(process.env.GH_TOKEN || process.env.GITHUB_TOKEN || '').trim();
+  if (!token) {
+    throw new Error('GH_TOKEN is required for authenticated git push');
+  }
+  const existingConfigCount = Number.parseInt(String(process.env.GIT_CONFIG_COUNT || '0'), 10);
+  const configIndex = Number.isFinite(existingConfigCount) && existingConfigCount >= 0
+    ? existingConfigCount
+    : 0;
+  const authHeader = Buffer.from(`x-access-token:${token}`, 'utf8').toString('base64');
+  return {
+    ...process.env,
+    GIT_CONFIG_COUNT: String(configIndex + 1),
+    [`GIT_CONFIG_KEY_${configIndex}`]: `http.https://github.com/${repo}.git.extraheader`,
+    [`GIT_CONFIG_VALUE_${configIndex}`]: `AUTHORIZATION: basic ${authHeader}`,
+  };
+};
+
+const pushHeadToPrBranch = () => {
+  const remoteUrl = `https://github.com/${repo}.git`;
+  const refspec = prHeadRef ? `HEAD:${prHeadRef}` : 'HEAD';
+  execFileSync('git', ['push', remoteUrl, refspec], {
+    stdio: 'inherit',
+    env: buildAuthenticatedGitEnv(),
+  });
+};
+
 const listPullFiles = async (number) => {
   const files = [];
   let page = 1;
@@ -529,11 +556,7 @@ const main = async () => {
     execFileSync('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com']);
     execFileSync('git', ['add', ...changedFiles], { stdio: 'inherit' });
     execFileSync('git', ['commit', '-m', `chore(copilot): apply suggestions (#${prNumber})`], { stdio: 'inherit' });
-    if (prHeadRef) {
-      execFileSync('git', ['push', 'origin', `HEAD:${prHeadRef}`], { stdio: 'inherit' });
-    } else {
-      execFileSync('git', ['push'], { stdio: 'inherit' });
-    }
+    pushHeadToPrBranch();
   }
 
   // Resolve only automation-only threads where every automation comment was handled
