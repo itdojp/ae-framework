@@ -13,9 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 jobs:
   auto-fix:
@@ -32,13 +30,23 @@ jobs:
         || contains(format(',{0},', vars.COPILOT_ACTORS || ''), format(',{0},', github.actor))
       )
     runs-on: ubuntu-latest
+    # This job can write to the same-repository PR branch, so execute only
+    # trusted automation code from the base commit and treat the PR checkout as
+    # data with persisted credentials disabled.
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout trusted automation code
+        uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
           fetch-depth: 0
-      - name: Setup Node + pnpm
-        uses: ./.github/actions/setup-node-pnpm
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
       - name: Resolve automation config
@@ -65,12 +73,20 @@ jobs:
           COPILOT_REVIEW_WAIT_MINUTES: ${{ vars.COPILOT_REVIEW_WAIT_MINUTES || '' }}
           COPILOT_REVIEW_MAX_ATTEMPTS: ${{ vars.COPILOT_REVIEW_MAX_ATTEMPTS || '' }}
         run: |
-          node scripts/ci/lib/automation-config.mjs --format github-env >> "$GITHUB_ENV"
-          node scripts/ci/lib/automation-config.mjs --format summary >> "$GITHUB_STEP_SUMMARY"
+          node trusted/scripts/ci/lib/automation-config.mjs --format github-env >> "$GITHUB_ENV"
+          node trusted/scripts/ci/lib/automation-config.mjs --format summary >> "$GITHUB_STEP_SUMMARY"
+      - name: Checkout PR head workspace
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+          fetch-depth: 0
+          persist-credentials: false
       - name: Apply Copilot suggestions
+        working-directory: pr
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node scripts/ci/copilot-auto-fix.mjs
+        run: node ../trusted/scripts/ci/copilot-auto-fix.mjs

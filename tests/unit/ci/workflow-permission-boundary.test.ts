@@ -150,6 +150,54 @@ describe('workflow permission boundaries', () => {
     expect(workflow).toContain('AE_AUTOMATION_GLOBAL_DISABLE');
   });
 
+  it('copilot-auto-fix runs trusted automation code in its write-scoped job', () => {
+    const workflow = readWorkflow('copilot-auto-fix.yml');
+    const parsed = parseWorkflow('copilot-auto-fix.yml');
+    const autoFixJob = parsed.jobs?.['auto-fix'];
+    const autoFixBlock = extractJobBlock(workflow, 'auto-fix');
+    const steps = Array.isArray(autoFixJob?.steps) ? autoFixJob.steps : [];
+
+    expect(parsed.permissions).toEqual({ contents: 'read' });
+    expect(autoFixJob?.permissions).toEqual({
+      contents: 'write',
+      issues: 'write',
+      'pull-requests': 'write',
+    });
+
+    const trustedCheckout = steps.find((step: any) => step?.name === 'Checkout trusted automation code');
+    expect(trustedCheckout?.uses).toBe('actions/checkout@v4');
+    expect(trustedCheckout?.with).toMatchObject({
+      ref: '${{ github.event.pull_request.base.sha }}',
+      path: 'trusted',
+      'persist-credentials': false,
+    });
+
+    const prCheckout = steps.find((step: any) => step?.name === 'Checkout PR head workspace');
+    expect(prCheckout?.uses).toBe('actions/checkout@v4');
+    expect(prCheckout?.with).toMatchObject({
+      ref: '${{ github.event.pull_request.head.sha }}',
+      path: 'pr',
+      'persist-credentials': false,
+    });
+
+    expect(autoFixBlock).not.toContain('uses: ./.github/actions/setup-node-pnpm');
+    expect(autoFixBlock).toContain('uses: actions/setup-node@v4');
+    expect(autoFixBlock).toContain('node trusted/scripts/ci/lib/automation-config.mjs');
+    expect(autoFixBlock).toContain('working-directory: pr');
+    expect(autoFixBlock).toContain('node ../trusted/scripts/ci/copilot-auto-fix.mjs');
+    expect(autoFixBlock).not.toContain('run: node scripts/ci/copilot-auto-fix.mjs');
+
+    const autoFixSource = fs.readFileSync(
+      path.resolve(process.cwd(), 'scripts/ci/copilot-auto-fix.mjs'),
+      'utf8',
+    );
+    expect(autoFixSource).toContain('const buildAuthenticatedGitEnv = () =>');
+    expect(autoFixSource).toContain('GIT_CONFIG_COUNT');
+    expect(autoFixSource).toContain('http.https://github.com/${repo}.git.extraheader');
+    expect(autoFixSource).toContain("execFileSync('git', ['push', remoteUrl, refspec]");
+    expect(autoFixSource).not.toContain("['push', 'origin'");
+  });
+
   it('codex-autopilot-lane issue_comment path requires trusted command + association + kill-switch', () => {
     const workflow = readWorkflow('codex-autopilot-lane.yml');
     expect(workflow).toContain("github.event.issue.pull_request");
