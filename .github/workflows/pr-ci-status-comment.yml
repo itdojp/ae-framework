@@ -651,6 +651,8 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Install trusted validation dependencies
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
       - name: Download PR summary publish artifact
         uses: actions/download-artifact@v4
         with:

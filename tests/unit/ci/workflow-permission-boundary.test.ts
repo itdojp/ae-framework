@@ -293,6 +293,8 @@ describe('workflow permission boundaries', () => {
     expect(summarize).toContain('Upload PR summary publish artifact');
     expect(summarize).toContain('artifacts/change-package/change-package.json');
     expect(validateChangePackage).toContain('ref: ${{ github.event.pull_request.base.sha }}');
+    expect(validateChangePackage).toContain('Install trusted validation dependencies');
+    expect(validateChangePackage).toContain('pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true');
     expect(validateChangePackage).toContain('Download PR summary publish artifact');
     expect(validateChangePackage).toContain('Validate Change Package with trusted base code');
     expect(validateChangePackage).toContain('node scripts/change-package/validate.mjs');
