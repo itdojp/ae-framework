@@ -291,8 +291,12 @@ describe('workflow permission boundaries', () => {
     expect(publishSummary).toContain("readJson('change-package/change-package-validation.json')");
     expect(publishSummary).toContain('const listAllIssueComments = async () =>');
     expect(publishSummary).toContain('page += 1');
-    expect(publishSummary).toContain('const existing = comments.find');
+    expect(publishSummary).toContain('const isTrustedAutomationComment = (comment, marker) =>');
+    expect(publishSummary).toContain("login === 'github-actions' || login === 'github-actions[bot]'");
+    expect(publishSummary).toContain('body.startsWith(marker)');
+    expect(publishSummary).toContain('const existing = comments.find((comment) => isTrustedAutomationComment(comment, marker))');
     expect(publishSummary).toContain('Progress summary JSON omitted because it would exceed the PR comment size cap.');
+    expect(publishSummary).toContain('Progress summary JSON could not be parsed; publishing Markdown without embedded JSON');
     expect(publishSummary).toContain("name: 'Change Package Validation'");
     expect(publishSummary).toContain('head_sha: headSha');
     expect(enableAutoMerge).not.toContain("github.event_name == 'pull_request'");

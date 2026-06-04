@@ -695,10 +695,18 @@ jobs:
               }
               return comments;
             };
+            const isTrustedAutomationComment = (comment, marker) => {
+              const login = String(comment?.user?.login || '').trim().toLowerCase();
+              const body = typeof comment?.body === 'string' ? comment.body : '';
+              return (
+                (login === 'github-actions' || login === 'github-actions[bot]')
+                && body.startsWith(marker)
+              );
+            };
             const upsertComment = async (marker, body) => {
               const payload = limitComment(`${marker}\n\n${body}`, marker);
               const comments = await listAllIssueComments();
-              const existing = comments.find((comment) => typeof comment.body === 'string' && comment.body.includes(marker));
+              const existing = comments.find((comment) => isTrustedAutomationComment(comment, marker));
               if (existing) {
                 await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: payload });
               } else {
@@ -715,24 +723,33 @@ jobs:
 
             const progressBody = readText('progress/PR_PROGRESS.md');
             const progressJsonText = readText('progress/summary.json');
-            if (progressBody && progressJsonText) {
-              const progressJson = JSON.parse(progressJsonText);
-              const progressJsonBlock = `\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(progressJson)} -->`;
-              const progressCommentBody = isCommentPayloadWithinLimit(
-                '<!-- AE-PR-PROGRESS -->',
-                `${progressBody}${progressJsonBlock}`,
-              )
-                ? `${progressBody}${progressJsonBlock}`
-                : progressBody;
-              if (progressCommentBody === progressBody) {
-                core.warning('Progress summary JSON omitted because it would exceed the PR comment size cap.');
+            if (progressBody) {
+              let progressCommentBody = progressBody;
+              if (progressJsonText) {
+                try {
+                  const progressJson = JSON.parse(progressJsonText);
+                  const progressJsonBlock = `\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(progressJson)} -->`;
+                  progressCommentBody = isCommentPayloadWithinLimit(
+                    '<!-- AE-PR-PROGRESS -->',
+                    `${progressBody}${progressJsonBlock}`,
+                  )
+                    ? `${progressBody}${progressJsonBlock}`
+                    : progressBody;
+                  if (progressCommentBody === progressBody) {
+                    core.warning('Progress summary JSON omitted because it would exceed the PR comment size cap.');
+                  }
+                } catch (error) {
+                  core.warning(`Progress summary JSON could not be parsed; publishing Markdown without embedded JSON: ${error.message}`);
+                }
+              } else {
+                core.warning('Progress summary JSON was not present in the publish artifact; publishing Markdown only.');
               }
               await upsertComment(
                 '<!-- AE-PR-PROGRESS -->',
                 progressCommentBody,
               );
             } else {
-              core.warning('Progress summary files were not both present in the publish artifact.');
+              core.warning('Progress summary Markdown was not present in the publish artifact.');
             }
 
             const readJson = (relativePath) => {
