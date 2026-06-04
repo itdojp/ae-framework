@@ -297,10 +297,14 @@ describe('workflow permission boundaries', () => {
     expect(publishSummary).toContain('availableBytes');
     expect(publishSummary).toContain('const listAllIssueComments = async () =>');
     expect(publishSummary).toContain('page += 1');
+    expect(publishSummary).toContain('let issueCommentsCache = null;');
+    expect(publishSummary).toContain('const getIssueComments = async () =>');
+    expect(publishSummary).toContain('issueCommentsCache = await listAllIssueComments();');
     expect(publishSummary).toContain('const isTrustedAutomationComment = (comment, marker) =>');
     expect(publishSummary).toContain("login === 'github-actions' || login === 'github-actions[bot]'");
     expect(publishSummary).toContain('body.startsWith(marker)');
-    expect(publishSummary).toContain('const existing = comments.find((comment) => isTrustedAutomationComment(comment, marker))');
+    expect(publishSummary).toContain('const comments = await getIssueComments();');
+    expect(publishSummary).toContain('const existing = [...comments].reverse().find((comment) => isTrustedAutomationComment(comment, marker))');
     expect(publishSummary).toContain('Progress summary JSON omitted because it would exceed the PR comment size cap.');
     expect(publishSummary).toContain('Progress summary JSON could not be parsed; publishing Markdown without embedded JSON');
     expect(publishSummary).toContain('could not be parsed; treating as missing structured JSON');

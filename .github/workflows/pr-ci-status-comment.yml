@@ -692,6 +692,7 @@ jobs:
             };
             const isCommentPayloadWithinLimit = (marker, body) =>
               Buffer.byteLength(`${marker}\n\n${body}`, 'utf8') <= MAX_COMMENT_BYTES;
+            let issueCommentsCache = null;
             const listAllIssueComments = async () => {
               const comments = [];
               for (let page = 1; ; page += 1) {
@@ -707,6 +708,12 @@ jobs:
               }
               return comments;
             };
+            const getIssueComments = async () => {
+              if (!issueCommentsCache) {
+                issueCommentsCache = await listAllIssueComments();
+              }
+              return issueCommentsCache;
+            };
             const isTrustedAutomationComment = (comment, marker) => {
               const login = String(comment?.user?.login || '').trim().toLowerCase();
               const body = typeof comment?.body === 'string' ? comment.body : '';
@@ -717,8 +724,8 @@ jobs:
             };
             const upsertComment = async (marker, body) => {
               const payload = limitComment(`${marker}\n\n${body}`, marker);
-              const comments = await listAllIssueComments();
-              const existing = comments.find((comment) => isTrustedAutomationComment(comment, marker));
+              const comments = await getIssueComments();
+              const existing = [...comments].reverse().find((comment) => isTrustedAutomationComment(comment, marker));
               if (existing) {
                 await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: payload });
               } else {
