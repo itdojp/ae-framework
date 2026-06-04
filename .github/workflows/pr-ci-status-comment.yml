@@ -36,8 +36,6 @@ concurrency:
 permissions:
   actions: read
   contents: read
-  issues: write
-  pull-requests: write
 
 jobs:
   update-branch:
@@ -204,6 +202,9 @@ jobs:
       && github.event_name == 'pull_request'
       && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
     steps:
       - uses: actions/github-script@v7
         with:
@@ -235,6 +236,11 @@ jobs:
       && !github.event.pull_request.head.repo.fork
       && github.event.action != 'edited'
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      issues: read
+      pull-requests: read
     steps:
       - name: Determine summary language
         id: lang
@@ -386,7 +392,7 @@ jobs:
       - name: Build harness health summary
         if: ${{ always() }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token }}
           SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
         run: |
           if [ ! -f artifacts/summary/PR_SUMMARY.md ]; then
@@ -578,21 +584,6 @@ jobs:
             artifacts/agents/hook-feedback.md
           if-no-files-found: warn
           retention-days: 14
-      - name: Post or update PR comment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const body = fs.readFileSync('artifacts/summary/PR_SUMMARY.md','utf-8');
-            const header = '<!-- AE-PR-SUMMARY -->\n' + body;
-            const { owner, repo, number } = context.issue;
-            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
-            const mine = comments.data.find(c => c.body && c.body.startsWith('<!-- AE-PR-SUMMARY -->'));
-            if (mine) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body: header });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: number, body: header });
-            }
       - name: Generate progress summary
         run: node scripts/progress/aggregate-progress.mjs
       - name: Load previous progress summary
@@ -618,23 +609,18 @@ jobs:
         env:
           PROGRESS_SUMMARY_PREVIOUS: artifacts/progress/summary.prev.json
         run: node scripts/progress/render-progress-summary.mjs
-      - name: Post or update progress comment
-        uses: actions/github-script@v7
+      - name: Upload PR summary publish artifact
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const fs = require('fs');
-            const marker = '<!-- AE-PR-PROGRESS -->';
-            const summary = JSON.parse(fs.readFileSync('artifacts/progress/summary.json','utf-8'));
-            const body = fs.readFileSync('artifacts/progress/PR_PROGRESS.md','utf-8');
-            const payload = `${marker}\n\n${body}\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(summary)} -->`;
-            const { owner, repo, number } = context.issue;
-            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
-            const existing = comments.data.find(c => c.body && c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: payload });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: number, body: payload });
-            }
+          name: pr-summary-publish-pr-${{ github.event.pull_request.number }}
+          path: |
+            artifacts/summary/PR_SUMMARY.md
+            artifacts/progress/PR_PROGRESS.md
+            artifacts/progress/summary.json
+            artifacts/change-package/change-package-validation.json
+            artifacts/change-package/change-package-v2-validation.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Write job summary
         run: |
           cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
@@ -642,6 +628,122 @@ jobs:
             printf "\n\n" >> "$GITHUB_STEP_SUMMARY"
             cat artifacts/progress/PR_PROGRESS.md >> "$GITHUB_STEP_SUMMARY"
           fi
+
+  publish-summary:
+    needs: summarize
+    if: >-
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
+      && github.event_name == 'pull_request'
+      && !github.event.pull_request.head.repo.fork
+      && github.event.action != 'edited'
+      && needs.summarize.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      checks: write
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Download PR summary publish artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-summary-publish-pr-${{ github.event.pull_request.number }}
+          path: artifacts/publish/pr-summary
+      - name: Publish PR summary, progress, and Change Package check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { owner, repo, number } = context.issue;
+            const pr = context.payload.pull_request;
+            const headSha = pr?.head?.sha;
+            if (!headSha) {
+              core.setFailed('No pull_request head SHA found; cannot publish summary artifacts.');
+              return;
+            }
+
+            const artifactRoot = 'artifacts/publish/pr-summary';
+            const MAX_COMMENT_BYTES = 60000;
+            const readText = (relativePath) => {
+              const filePath = path.join(artifactRoot, relativePath);
+              if (!fs.existsSync(filePath)) return null;
+              return fs.readFileSync(filePath, 'utf8').replace(/\u0000/g, '\uFFFD');
+            };
+            const limitComment = (text, label) => {
+              const bytes = Buffer.byteLength(text, 'utf8');
+              if (bytes <= MAX_COMMENT_BYTES) return text;
+              const truncated = Buffer.from(text, 'utf8').subarray(0, MAX_COMMENT_BYTES).toString('utf8');
+              return `${truncated}\n\n_[${label} truncated to ${MAX_COMMENT_BYTES} bytes before publication.]_`;
+            };
+            const upsertComment = async (marker, body) => {
+              const payload = limitComment(`${marker}\n\n${body}`, marker);
+              const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
+              const existing = comments.data.find((comment) => typeof comment.body === 'string' && comment.body.includes(marker));
+              if (existing) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: payload });
+              } else {
+                await github.rest.issues.createComment({ owner, repo, issue_number: number, body: payload });
+              }
+            };
+
+            const summaryBody = readText('PR_SUMMARY.md');
+            if (summaryBody) {
+              await upsertComment('<!-- AE-PR-SUMMARY -->', summaryBody);
+            } else {
+              core.warning('PR_SUMMARY.md was not present in the publish artifact.');
+            }
+
+            const progressBody = readText('PR_PROGRESS.md');
+            const progressJsonText = readText('summary.json');
+            if (progressBody && progressJsonText) {
+              const progressJson = JSON.parse(progressJsonText);
+              await upsertComment(
+                '<!-- AE-PR-PROGRESS -->',
+                `${progressBody}\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(progressJson)} -->`,
+              );
+            } else {
+              core.warning('Progress summary files were not both present in the publish artifact.');
+            }
+
+            const readJson = (relativePath) => {
+              const text = readText(relativePath);
+              if (!text) return null;
+              return JSON.parse(text);
+            };
+            const validation = readJson('change-package-validation.json');
+            const result = String(validation?.result || '').trim().toLowerCase();
+            const conclusion = result === 'pass'
+              ? 'success'
+              : (result === 'warn' ? 'neutral' : 'failure');
+            const title = result
+              ? `Change Package Validation: ${result.toUpperCase()}`
+              : 'Change Package Validation: MISSING';
+            const summary = validation
+              ? [
+                  `schemaVersion: ${validation.schemaVersion || 'unknown'}`,
+                  `result: ${result || 'missing'}`,
+                  `strict: ${validation.strict ?? 'unknown'}`,
+                  `errors: ${Array.isArray(validation.errors) ? validation.errors.length : 'unknown'}`,
+                  `warnings: ${Array.isArray(validation.warnings) ? validation.warnings.length : 'unknown'}`,
+                  `workflowRunId: ${context.runId}`,
+                  `headSha: ${headSha}`,
+                ].join('\n')
+              : `No structured change-package-validation.json artifact was available for head ${headSha}.`;
+
+            await github.rest.checks.create({
+              owner,
+              repo,
+              name: 'Change Package Validation',
+              head_sha: headSha,
+              status: 'completed',
+              conclusion,
+              output: {
+                title,
+                summary,
+              },
+            });
+
 
   post-status:
     if: >-
@@ -651,8 +753,14 @@ jobs:
         || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'status' || inputs.mode == 'both'))
       )
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -690,13 +798,18 @@ jobs:
     if: >-
       !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
       && (
-        (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false)
-        || (github.event_name == 'schedule')
+        (github.event_name == 'schedule')
         || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'auto-merge' || inputs.mode == 'both'))
       )
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -737,8 +850,14 @@ jobs:
       && (inputs.mode == 'eligibility')
       && (inputs.pr_number != '')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:

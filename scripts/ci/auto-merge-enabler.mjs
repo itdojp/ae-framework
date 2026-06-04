@@ -2,7 +2,7 @@
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
 import { emitAutomationReport } from './lib/automation-report.mjs';
 import { hasLabel, normalizeLabelNames } from './lib/automation-guards.mjs';
-import { resolveChangePackageValidationStatus } from './lib/change-package-gate.mjs';
+import { resolveChangePackageValidationStatusFromChecks } from './lib/change-package-gate.mjs';
 import { sleep } from './lib/timing.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
@@ -330,7 +330,7 @@ const main = async () => {
         ? summarizeChecks(view.statusCheckRollup || [], requiredContexts)
         : { counts: { success: 0, failure: 0, pending: 0, skipped: 0, neutral: 0 }, failed: [] };
       const comments = listComments(pr.number);
-      const changePackageStatus = resolveChangePackageValidationStatus(comments);
+      const changePackageStatus = resolveChangePackageValidationStatusFromChecks(view.statusCheckRollup || []);
       const reasons = [];
       if (view.isDraft) reasons.push('draft');
       if (view.mergeable !== 'MERGEABLE') reasons.push(`mergeable=${view.mergeable || 'UNKNOWN'}`);
@@ -352,7 +352,11 @@ const main = async () => {
       }
       if (AUTO_MERGE_REQUIRE_CHANGE_PACKAGE) {
         if (changePackageStatus.status === 'missing') {
-          reasons.push('missing change-package validation summary');
+          reasons.push('missing change-package validation check');
+        } else if (changePackageStatus.status === 'pending') {
+          reasons.push('change-package validation check pending');
+        } else if (changePackageStatus.status === 'ambiguous') {
+          reasons.push('ambiguous change-package validation checks');
         } else if (changePackageStatus.status === 'fail') {
           reasons.push('change-package validation failed');
         } else if (changePackageStatus.status === 'warn' && !AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN) {

@@ -3,6 +3,7 @@ import {
   isTrustedSummaryAuthor,
   parseChangePackageValidationResult,
   resolveChangePackageValidationStatus,
+  resolveChangePackageValidationStatusFromChecks,
 } from '../../../scripts/ci/lib/change-package-gate.mjs';
 
 describe('change-package gate helpers', () => {
@@ -77,4 +78,74 @@ describe('change-package gate helpers', () => {
     expect(isTrustedSummaryAuthor({ author: { login: 'github-actions[bot]' } })).toBe(true);
     expect(isTrustedSummaryAuthor({ user: { login: 'someone-else' } })).toBe(false);
   });
+
+
+  it('resolves change-package validation from trusted PR-head check runs', () => {
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'COMPLETED',
+        conclusion: 'SUCCESS',
+        completedAt: '2026-06-04T00:00:00Z',
+        detailsUrl: 'https://example.test/checks/1',
+      },
+    ])).toEqual({
+      status: 'pass',
+      sourceUrl: 'https://example.test/checks/1',
+    });
+
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'COMPLETED',
+        conclusion: 'NEUTRAL',
+        completedAt: '2026-06-04T00:00:00Z',
+      },
+    ])).toEqual({ status: 'warn', sourceUrl: null });
+
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'COMPLETED',
+        conclusion: 'FAILURE',
+        completedAt: '2026-06-04T00:00:00Z',
+      },
+    ])).toEqual({ status: 'fail', sourceUrl: null });
+  });
+
+  it('fails closed for missing, pending, and ambiguous check-run evidence', () => {
+    expect(resolveChangePackageValidationStatusFromChecks([])).toEqual({
+      status: 'missing',
+      sourceUrl: null,
+    });
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'IN_PROGRESS',
+        conclusion: '',
+        startedAt: '2026-06-04T00:00:00Z',
+      },
+    ])).toEqual({ status: 'pending', sourceUrl: null });
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'COMPLETED',
+        conclusion: 'SUCCESS',
+        completedAt: '2026-06-04T00:00:00Z',
+      },
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'COMPLETED',
+        conclusion: 'FAILURE',
+        completedAt: '2026-06-04T00:00:00Z',
+      },
+    ])).toEqual({ status: 'ambiguous', sourceUrl: null });
+  });
+
 });

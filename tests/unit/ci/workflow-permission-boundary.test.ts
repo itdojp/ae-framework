@@ -259,6 +259,49 @@ describe('workflow permission boundaries', () => {
     expect(rawWorkflow).toContain('environment:\n      name: branch-protection-admin');
   });
 
+  it('pr-maintenance renders PR summary read-only and publishes from a checkout-free writer job', () => {
+    const workflow = readWorkflow('pr-ci-status-comment.yml');
+    const parsed = parseWorkflow('pr-ci-status-comment.yml');
+    const summarize = extractJobBlock(workflow, 'summarize');
+    const publishSummary = extractJobBlock(workflow, 'publish-summary');
+    const enableAutoMerge = extractJobBlock(workflow, 'enable-auto-merge');
+
+    expect(workflowPermission(parsed, 'issues')).toBeUndefined();
+    expect(workflowPermission(parsed, 'pull-requests')).toBeUndefined();
+    expect(parsed.jobs?.summarize?.permissions).toEqual({
+      actions: 'read',
+      contents: 'read',
+      issues: 'read',
+      'pull-requests': 'read',
+    });
+    expect(parsed.jobs?.['publish-summary']?.needs).toBe('summarize');
+    expect(parsed.jobs?.['publish-summary']?.permissions).toEqual({
+      actions: 'read',
+      checks: 'write',
+      issues: 'write',
+      'pull-requests': 'read',
+    });
+    expect(summarize).toContain('Upload PR summary publish artifact');
+    expect(summarize).not.toContain('issues.createComment');
+    expect(summarize).not.toContain('issues.updateComment');
+    expect(publishSummary).not.toContain('actions/checkout@v4');
+    expect(publishSummary).toContain('Download PR summary publish artifact');
+    expect(publishSummary).toContain("name: 'Change Package Validation'");
+    expect(publishSummary).toContain('head_sha: headSha');
+    expect(enableAutoMerge).not.toContain("github.event_name == 'pull_request'");
+  });
+
+  it('auto-merge consumes Change Package check-run evidence instead of PR summary markdown', () => {
+    const source = fs.readFileSync(
+      path.resolve(process.cwd(), 'scripts/ci/auto-merge-enabler.mjs'),
+      'utf8',
+    );
+    expect(source).toContain('resolveChangePackageValidationStatusFromChecks(view.statusCheckRollup || [])');
+    expect(source).not.toContain('resolveChangePackageValidationStatus(comments)');
+    expect(source).toContain('missing change-package validation check');
+    expect(source).toContain('ambiguous change-package validation checks');
+  });
+
   it('pr-maintenance update-branch enforces fork guard, explicit mode, and global kill-switch', () => {
     const workflow = readWorkflow('pr-ci-status-comment.yml');
     const updateBranch = extractJobBlock(workflow, 'update-branch');

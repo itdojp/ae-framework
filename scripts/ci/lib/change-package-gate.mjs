@@ -1,5 +1,9 @@
 const PR_SUMMARY_MARKER = '<!-- AE-PR-SUMMARY -->';
 const DEFAULT_TRUSTED_SUMMARY_AUTHORS = new Set(['github-actions', 'github-actions[bot]']);
+const CHANGE_PACKAGE_VALIDATION_CHECK_NAMES = new Set([
+  'Change Package Validation',
+  'change-package-validation',
+]);
 
 function normalizeTimestamp(comment) {
   const raw = comment?.created_at ?? comment?.createdAt ?? '';
@@ -44,6 +48,82 @@ function parseChangePackageValidationResult(body) {
   return null;
 }
 
+function normalizeCheckRunTimestamp(checkRun) {
+  const raw = checkRun?.completedAt
+    ?? checkRun?.completed_at
+    ?? checkRun?.startedAt
+    ?? checkRun?.started_at
+    ?? '';
+  const ts = Date.parse(String(raw));
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+function normalizeCheckRunName(checkRun) {
+  return String(checkRun?.name ?? '').trim();
+}
+
+function isChangePackageValidationCheck(checkRun) {
+  return CHANGE_PACKAGE_VALIDATION_CHECK_NAMES.has(normalizeCheckRunName(checkRun));
+}
+
+function checkRunSourceUrl(checkRun) {
+  return typeof checkRun?.detailsUrl === 'string'
+    ? checkRun.detailsUrl
+    : (typeof checkRun?.details_url === 'string'
+      ? checkRun.details_url
+      : (typeof checkRun?.html_url === 'string'
+        ? checkRun.html_url
+        : (typeof checkRun?.url === 'string' ? checkRun.url : null)));
+}
+
+function mapCheckRunToChangePackageStatus(checkRun) {
+  const status = String(checkRun?.status ?? '').trim().toUpperCase();
+  if (status !== 'COMPLETED') {
+    return 'pending';
+  }
+
+  switch (String(checkRun?.conclusion ?? '').trim().toUpperCase()) {
+    case 'SUCCESS':
+      return 'pass';
+    case 'NEUTRAL':
+      return 'warn';
+    case 'FAILURE':
+    case 'CANCELLED':
+    case 'TIMED_OUT':
+    case 'ACTION_REQUIRED':
+    case 'STALE':
+      return 'fail';
+    default:
+      return 'missing';
+  }
+}
+
+function resolveChangePackageValidationStatusFromChecks(checkRuns = []) {
+  if (!Array.isArray(checkRuns) || checkRuns.length === 0) {
+    return { status: 'missing', sourceUrl: null };
+  }
+
+  const candidates = checkRuns.filter(isChangePackageValidationCheck);
+  if (candidates.length === 0) {
+    return { status: 'missing', sourceUrl: null };
+  }
+
+  const latestTimestamp = Math.max(...candidates.map(normalizeCheckRunTimestamp));
+  const latestCandidates = candidates.filter(
+    (candidate) => normalizeCheckRunTimestamp(candidate) === latestTimestamp,
+  );
+  const latestStatuses = new Set(latestCandidates.map(mapCheckRunToChangePackageStatus));
+  if (latestStatuses.size > 1) {
+    return { status: 'ambiguous', sourceUrl: null };
+  }
+
+  const latest = latestCandidates[latestCandidates.length - 1];
+  return {
+    status: mapCheckRunToChangePackageStatus(latest),
+    sourceUrl: checkRunSourceUrl(latest),
+  };
+}
+
 function resolveChangePackageValidationStatus(comments = []) {
   if (!Array.isArray(comments) || comments.length === 0) {
     return { status: 'missing', sourceUrl: null };
@@ -64,7 +144,9 @@ function resolveChangePackageValidationStatus(comments = []) {
 }
 
 export {
+  CHANGE_PACKAGE_VALIDATION_CHECK_NAMES,
   isTrustedSummaryAuthor,
   parseChangePackageValidationResult,
   resolveChangePackageValidationStatus,
+  resolveChangePackageValidationStatusFromChecks,
 };
