@@ -286,8 +286,9 @@ describe('workflow permission boundaries', () => {
     expect(summarize).not.toContain('issues.updateComment');
     expect(publishSummary).not.toContain('actions/checkout@v4');
     expect(publishSummary).toContain('Download PR summary publish artifact');
-    expect(publishSummary).toContain("readText('artifacts/summary/PR_SUMMARY.md')");
-    expect(publishSummary).toContain("readJson('artifacts/change-package/change-package-validation.json')");
+    expect(publishSummary).toContain("readText('summary/PR_SUMMARY.md')");
+    expect(publishSummary).toContain("readText('progress/PR_PROGRESS.md')");
+    expect(publishSummary).toContain("readJson('change-package/change-package-validation.json')");
     expect(publishSummary).toContain('const listAllIssueComments = async () =>');
     expect(publishSummary).toContain('page += 1');
     expect(publishSummary).toContain('const existing = comments.find');

@@ -704,15 +704,15 @@ jobs:
               }
             };
 
-            const summaryBody = readText('artifacts/summary/PR_SUMMARY.md');
+            const summaryBody = readText('summary/PR_SUMMARY.md');
             if (summaryBody) {
               await upsertComment('<!-- AE-PR-SUMMARY -->', summaryBody);
             } else {
               core.warning('PR_SUMMARY.md was not present in the publish artifact.');
             }
 
-            const progressBody = readText('artifacts/progress/PR_PROGRESS.md');
-            const progressJsonText = readText('artifacts/progress/summary.json');
+            const progressBody = readText('progress/PR_PROGRESS.md');
+            const progressJsonText = readText('progress/summary.json');
             if (progressBody && progressJsonText) {
               const progressJson = JSON.parse(progressJsonText);
               const progressJsonBlock = `\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(progressJson)} -->`;
@@ -738,7 +738,7 @@ jobs:
               if (!text) return null;
               return JSON.parse(text);
             };
-            const validation = readJson('artifacts/change-package/change-package-validation.json');
+            const validation = readJson('change-package/change-package-validation.json');
             const result = String(validation?.result || '').trim().toLowerCase();
             const conclusion = result === 'pass'
               ? 'success'
