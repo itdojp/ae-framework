@@ -642,7 +642,9 @@ jobs:
       actions: read
       checks: write
       issues: write
-      pull-requests: read
+      # GitHub PR issue-comment creation can require pull_requests=write;
+      # this writer job remains checkout-free and does not execute local code.
+      pull-requests: write
     steps:
       - name: Download PR summary publish artifact
         uses: actions/download-artifact@v4

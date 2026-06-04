@@ -279,7 +279,7 @@ describe('workflow permission boundaries', () => {
       actions: 'read',
       checks: 'write',
       issues: 'write',
-      'pull-requests': 'read',
+      'pull-requests': 'write',
     });
     expect(summarize).toContain('Upload PR summary publish artifact');
     expect(summarize).not.toContain('issues.createComment');
