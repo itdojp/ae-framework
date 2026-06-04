@@ -98,6 +98,16 @@ describe('change-package gate helpers', () => {
     expect(resolveChangePackageValidationStatusFromChecks([
       {
         __typename: 'CheckRun',
+        name: 'cHaNgE pAcKaGe VaLiDaTiOn',
+        status: 'COMPLETED',
+        conclusion: 'SUCCESS',
+        completedAt: '2026-06-04T00:00:00Z',
+      },
+    ])).toEqual({ status: 'pass', sourceUrl: null });
+
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'CheckRun',
         name: 'Change Package Validation',
         status: 'COMPLETED',
         conclusion: 'NEUTRAL',

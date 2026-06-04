@@ -1,7 +1,7 @@
 const PR_SUMMARY_MARKER = '<!-- AE-PR-SUMMARY -->';
 const DEFAULT_TRUSTED_SUMMARY_AUTHORS = new Set(['github-actions', 'github-actions[bot]']);
 const CHANGE_PACKAGE_VALIDATION_CHECK_NAMES = new Set([
-  'Change Package Validation',
+  'change package validation',
   'change-package-validation',
 ]);
 
@@ -59,7 +59,7 @@ function normalizeCheckRunTimestamp(checkRun) {
 }
 
 function normalizeCheckRunName(checkRun) {
-  return String(checkRun?.name ?? '').trim();
+  return String(checkRun?.name ?? '').trim().toLowerCase();
 }
 
 function isChangePackageValidationCheck(checkRun) {

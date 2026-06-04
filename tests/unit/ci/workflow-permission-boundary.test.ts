@@ -286,20 +286,35 @@ describe('workflow permission boundaries', () => {
     expect(summarize).not.toContain('issues.updateComment');
     expect(publishSummary).not.toContain('actions/checkout@v4');
     expect(publishSummary).toContain('Download PR summary publish artifact');
+    expect(publishSummary).toContain("readText('artifacts/summary/PR_SUMMARY.md')");
+    expect(publishSummary).toContain("readJson('artifacts/change-package/change-package-validation.json')");
+    expect(publishSummary).toContain('const listAllIssueComments = async () =>');
+    expect(publishSummary).toContain('page += 1');
+    expect(publishSummary).toContain('const existing = comments.find');
+    expect(publishSummary).toContain('Progress summary JSON omitted because it would exceed the PR comment size cap.');
     expect(publishSummary).toContain("name: 'Change Package Validation'");
     expect(publishSummary).toContain('head_sha: headSha');
     expect(enableAutoMerge).not.toContain("github.event_name == 'pull_request'");
   });
 
-  it('auto-merge consumes Change Package check-run evidence instead of PR summary markdown', () => {
-    const source = fs.readFileSync(
+  it('auto-merge jobs consume Change Package check-run evidence instead of PR summary markdown', () => {
+    const enablerSource = fs.readFileSync(
       path.resolve(process.cwd(), 'scripts/ci/auto-merge-enabler.mjs'),
       'utf8',
     );
-    expect(source).toContain('resolveChangePackageValidationStatusFromChecks(view.statusCheckRollup || [])');
-    expect(source).not.toContain('resolveChangePackageValidationStatus(comments)');
-    expect(source).toContain('missing change-package validation check');
-    expect(source).toContain('ambiguous change-package validation checks');
+    const eligibilitySource = fs.readFileSync(
+      path.resolve(process.cwd(), 'scripts/ci/auto-merge-eligible.mjs'),
+      'utf8',
+    );
+    expect(enablerSource).toContain('resolveChangePackageValidationStatusFromChecks(view.statusCheckRollup || [])');
+    expect(enablerSource).not.toContain('resolveChangePackageValidationStatus(comments)');
+    expect(enablerSource).toContain('missing change-package validation check');
+    expect(enablerSource).toContain('ambiguous change-package validation checks');
+    expect(eligibilitySource).toContain('resolveChangePackageValidationStatusFromChecks(pr.statusCheckRollup || [])');
+    expect(eligibilitySource).not.toContain('resolveChangePackageValidationStatus(listComments');
+    expect(eligibilitySource).not.toContain('const listComments');
+    expect(eligibilitySource).toContain('change-package validation check pending');
+    expect(eligibilitySource).toContain('ambiguous change-package validation checks');
   });
 
   it('pr-maintenance update-branch enforces fork guard, explicit mode, and global kill-switch', () => {

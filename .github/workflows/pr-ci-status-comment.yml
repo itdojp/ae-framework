@@ -676,10 +676,27 @@ jobs:
               const truncated = Buffer.from(text, 'utf8').subarray(0, MAX_COMMENT_BYTES).toString('utf8');
               return `${truncated}\n\n_[${label} truncated to ${MAX_COMMENT_BYTES} bytes before publication.]_`;
             };
+            const isCommentPayloadWithinLimit = (marker, body) =>
+              Buffer.byteLength(`${marker}\n\n${body}`, 'utf8') <= MAX_COMMENT_BYTES;
+            const listAllIssueComments = async () => {
+              const comments = [];
+              for (let page = 1; ; page += 1) {
+                const response = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: number,
+                  per_page: 100,
+                  page,
+                });
+                comments.push(...response.data);
+                if (response.data.length < 100) break;
+              }
+              return comments;
+            };
             const upsertComment = async (marker, body) => {
               const payload = limitComment(`${marker}\n\n${body}`, marker);
-              const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
-              const existing = comments.data.find((comment) => typeof comment.body === 'string' && comment.body.includes(marker));
+              const comments = await listAllIssueComments();
+              const existing = comments.find((comment) => typeof comment.body === 'string' && comment.body.includes(marker));
               if (existing) {
                 await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: payload });
               } else {
@@ -687,20 +704,30 @@ jobs:
               }
             };
 
-            const summaryBody = readText('PR_SUMMARY.md');
+            const summaryBody = readText('artifacts/summary/PR_SUMMARY.md');
             if (summaryBody) {
               await upsertComment('<!-- AE-PR-SUMMARY -->', summaryBody);
             } else {
               core.warning('PR_SUMMARY.md was not present in the publish artifact.');
             }
 
-            const progressBody = readText('PR_PROGRESS.md');
-            const progressJsonText = readText('summary.json');
+            const progressBody = readText('artifacts/progress/PR_PROGRESS.md');
+            const progressJsonText = readText('artifacts/progress/summary.json');
             if (progressBody && progressJsonText) {
               const progressJson = JSON.parse(progressJsonText);
+              const progressJsonBlock = `\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(progressJson)} -->`;
+              const progressCommentBody = isCommentPayloadWithinLimit(
+                '<!-- AE-PR-PROGRESS -->',
+                `${progressBody}${progressJsonBlock}`,
+              )
+                ? `${progressBody}${progressJsonBlock}`
+                : progressBody;
+              if (progressCommentBody === progressBody) {
+                core.warning('Progress summary JSON omitted because it would exceed the PR comment size cap.');
+              }
               await upsertComment(
                 '<!-- AE-PR-PROGRESS -->',
-                `${progressBody}\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(progressJson)} -->`,
+                progressCommentBody,
               );
             } else {
               core.warning('Progress summary files were not both present in the publish artifact.');
@@ -711,7 +738,7 @@ jobs:
               if (!text) return null;
               return JSON.parse(text);
             };
-            const validation = readJson('change-package-validation.json');
+            const validation = readJson('artifacts/change-package/change-package-validation.json');
             const result = String(validation?.result || '').trim().toLowerCase();
             const conclusion = result === 'pass'
               ? 'success'
