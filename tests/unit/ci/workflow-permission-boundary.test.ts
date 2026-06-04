@@ -259,6 +259,104 @@ describe('workflow permission boundaries', () => {
     expect(rawWorkflow).toContain('environment:\n      name: branch-protection-admin');
   });
 
+  it('pr-maintenance renders PR summary read-only and publishes from a checkout-free writer job', () => {
+    const workflow = readWorkflow('pr-ci-status-comment.yml');
+    const parsed = parseWorkflow('pr-ci-status-comment.yml');
+    const summarize = extractJobBlock(workflow, 'summarize');
+    const validateChangePackage = extractJobBlock(workflow, 'validate-change-package');
+    const publishSummary = extractJobBlock(workflow, 'publish-summary');
+    const enableAutoMerge = extractJobBlock(workflow, 'enable-auto-merge');
+
+    expect(workflowPermission(parsed, 'issues')).toBeUndefined();
+    expect(workflowPermission(parsed, 'pull-requests')).toBeUndefined();
+    expect(parsed.jobs?.summarize?.permissions).toEqual({
+      actions: 'read',
+      contents: 'read',
+      issues: 'read',
+      'pull-requests': 'read',
+    });
+    const summarizeCheckout = parsed.jobs?.summarize?.steps?.find(
+      (step: any) => step?.uses === 'actions/checkout@v4',
+    );
+    expect(summarizeCheckout?.with).toMatchObject({ 'persist-credentials': false });
+    expect(parsed.jobs?.label?.permissions).toEqual({
+      issues: 'write',
+    });
+    expect(parsed.jobs?.['validate-change-package']?.needs).toBe('summarize');
+    expect(parsed.jobs?.['validate-change-package']?.permissions).toEqual({
+      actions: 'read',
+      contents: 'read',
+    });
+    expect(parsed.jobs?.['publish-summary']?.needs).toEqual(['summarize', 'validate-change-package']);
+    expect(parsed.jobs?.['publish-summary']?.permissions).toEqual({
+      actions: 'read',
+      checks: 'write',
+      issues: 'write',
+      'pull-requests': 'write',
+    });
+    expect(summarize).toContain('Upload PR summary publish artifact');
+    expect(summarize).toContain('artifacts/change-package/change-package.json');
+    expect(validateChangePackage).toContain('ref: ${{ github.event.pull_request.base.sha }}');
+    expect(validateChangePackage).toContain('Install trusted validation dependencies');
+    expect(validateChangePackage).toContain('pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true');
+    expect(validateChangePackage).toContain('Download PR summary publish artifact');
+    expect(validateChangePackage).toContain('Validate Change Package with trusted base code');
+    expect(validateChangePackage).toContain('node scripts/change-package/validate.mjs');
+    expect(validateChangePackage).toContain('trusted-change-package-validation-pr-${{ github.event.pull_request.number }}');
+    expect(validateChangePackage).toContain("source: 'base-ref-code'");
+    expect(summarize).not.toContain('issues.createComment');
+    expect(summarize).not.toContain('issues.updateComment');
+    expect(publishSummary).not.toContain('actions/checkout@v4');
+    expect(publishSummary).toContain('Download PR summary publish artifact');
+    expect(publishSummary).toContain('Download trusted Change Package validation artifact');
+    expect(publishSummary).toContain("const trustedArtifactRoot = 'artifacts/publish/trusted-change-package'");
+    expect(publishSummary).toContain("readText('summary/PR_SUMMARY.md')");
+    expect(publishSummary).toContain("readText('progress/PR_PROGRESS.md')");
+    expect(publishSummary).toContain("readJson('change-package-validation.json', trustedArtifactRoot)");
+    expect(publishSummary).toContain('const truncateUtf8 = (text, maxBytes) =>');
+    expect(publishSummary).toContain('MAX_COMMENT_BYTES - Buffer.byteLength(notice');
+    expect(publishSummary).toContain('availableBytes');
+    expect(publishSummary).toContain('const listAllIssueComments = async () =>');
+    expect(publishSummary).toContain('page += 1');
+    expect(publishSummary).toContain('let issueCommentsCache = null;');
+    expect(publishSummary).toContain('const getIssueComments = async () =>');
+    expect(publishSummary).toContain('issueCommentsCache = await listAllIssueComments();');
+    expect(publishSummary).toContain('const isTrustedAutomationComment = (comment, marker) =>');
+    expect(publishSummary).toContain("login === 'github-actions' || login === 'github-actions[bot]'");
+    expect(publishSummary).toContain('body.startsWith(marker)');
+    expect(publishSummary).toContain('const markerDisplayLabel = (marker) =>');
+    expect(publishSummary).toContain("return label || 'PR comment';");
+    expect(publishSummary).toContain('limitComment(`${marker}\\n\\n${body}`, markerDisplayLabel(marker))');
+    expect(publishSummary).toContain('const comments = await getIssueComments();');
+    expect(publishSummary).toContain('const existing = [...comments].reverse().find((comment) => isTrustedAutomationComment(comment, marker))');
+    expect(publishSummary).toContain('Progress summary JSON omitted because it would exceed the PR comment size cap.');
+    expect(publishSummary).toContain('Progress summary JSON could not be parsed; publishing Markdown without embedded JSON');
+    expect(publishSummary).toContain('could not be parsed; treating as missing structured JSON');
+    expect(publishSummary).toContain("name: 'Change Package Validation'");
+    expect(publishSummary).toContain('head_sha: headSha');
+    expect(enableAutoMerge).not.toContain("github.event_name == 'pull_request'");
+  });
+
+  it('auto-merge jobs consume Change Package check-run evidence instead of PR summary markdown', () => {
+    const enablerSource = fs.readFileSync(
+      path.resolve(process.cwd(), 'scripts/ci/auto-merge-enabler.mjs'),
+      'utf8',
+    );
+    const eligibilitySource = fs.readFileSync(
+      path.resolve(process.cwd(), 'scripts/ci/auto-merge-eligible.mjs'),
+      'utf8',
+    );
+    expect(enablerSource).toContain('resolveChangePackageValidationStatusFromChecks(view.statusCheckRollup || [])');
+    expect(enablerSource).not.toContain('resolveChangePackageValidationStatus(comments)');
+    expect(enablerSource).toContain('missing change-package validation check');
+    expect(enablerSource).toContain('ambiguous change-package validation checks');
+    expect(eligibilitySource).toContain('resolveChangePackageValidationStatusFromChecks(pr.statusCheckRollup || [])');
+    expect(eligibilitySource).not.toContain('resolveChangePackageValidationStatus(listComments');
+    expect(eligibilitySource).not.toContain('const listComments');
+    expect(eligibilitySource).toContain('change-package validation check pending');
+    expect(eligibilitySource).toContain('ambiguous change-package validation checks');
+  });
+
   it('pr-maintenance update-branch enforces fork guard, explicit mode, and global kill-switch', () => {
     const workflow = readWorkflow('pr-ci-status-comment.yml');
     const updateBranch = extractJobBlock(workflow, 'update-branch');

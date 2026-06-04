@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execGh, execGhJson } from './lib/gh-exec.mjs';
-import { resolveChangePackageValidationStatus } from './lib/change-package-gate.mjs';
+import { resolveChangePackageValidationStatusFromChecks } from './lib/change-package-gate.mjs';
 
 const repo = process.env.GITHUB_REPOSITORY;
 const prNumber = process.env.PR_NUMBER;
@@ -163,22 +163,6 @@ const summarizeChecks = (rollup = [], requiredContexts = []) => {
   return { counts, failed };
 };
 
-const listComments = (repoName, number) => {
-  const comments = [];
-  let page = 1;
-  while (true) {
-    const chunk = execJson([
-      'api',
-      `repos/${repoName}/issues/${number}/comments?per_page=100&page=${page}`,
-    ]);
-    if (!Array.isArray(chunk) || chunk.length === 0) break;
-    comments.push(...chunk);
-    if (chunk.length < 100) break;
-    page += 1;
-  }
-  return comments;
-};
-
 const pr = execJson([
   'pr',
   'view',
@@ -203,7 +187,7 @@ if (protectionSummary === null) {
 const { requiredContexts, reviewRequirement } = protectionSummary;
 const { counts, failed } = summarizeChecks(pr.statusCheckRollup || [], requiredContexts);
 const labels = Array.isArray(pr.labels) ? pr.labels.map((l) => l && l.name).filter(Boolean) : [];
-const changePackageStatus = resolveChangePackageValidationStatus(listComments(repo, pr.number));
+const changePackageStatus = resolveChangePackageValidationStatusFromChecks(pr.statusCheckRollup || []);
 const labelEligible = (() => {
   if (autoMergeMode === 'all') return true;
   if (autoMergeMode !== 'label') return false;
@@ -215,6 +199,8 @@ const riskEligible = !requireRiskLow || labels.includes(riskLowLabel);
 const changePackageEligible = (() => {
   if (!requireChangePackage) return true;
   if (changePackageStatus.status === 'missing') return false;
+  if (changePackageStatus.status === 'pending') return false;
+  if (changePackageStatus.status === 'ambiguous') return false;
   if (changePackageStatus.status === 'fail') return false;
   if (changePackageStatus.status === 'warn' && !allowChangePackageWarn) return false;
   return true;
@@ -227,7 +213,11 @@ if (!reviewEligible) reasons.push(`review=${pr.reviewDecision || 'NONE'}`);
 if (!riskEligible) reasons.push(`missing risk label=${riskLowLabel}`);
 if (!changePackageEligible) {
   if (changePackageStatus.status === 'missing') {
-    reasons.push('change-package validation summary missing');
+    reasons.push('missing change-package validation check');
+  } else if (changePackageStatus.status === 'pending') {
+    reasons.push('change-package validation check pending');
+  } else if (changePackageStatus.status === 'ambiguous') {
+    reasons.push('ambiguous change-package validation checks');
   } else if (changePackageStatus.status === 'fail') {
     reasons.push('change-package validation failed');
   } else {

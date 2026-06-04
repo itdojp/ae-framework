@@ -36,8 +36,6 @@ concurrency:
 permissions:
   actions: read
   contents: read
-  issues: write
-  pull-requests: write
 
 jobs:
   update-branch:
@@ -204,6 +202,8 @@ jobs:
       && github.event_name == 'pull_request'
       && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
       - uses: actions/github-script@v7
         with:
@@ -235,6 +235,11 @@ jobs:
       && !github.event.pull_request.head.repo.fork
       && github.event.action != 'edited'
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      issues: read
+      pull-requests: read
     steps:
       - name: Determine summary language
         id: lang
@@ -253,6 +258,8 @@ jobs:
             const detailed = labels.includes('pr-summary:detailed');
             core.setOutput('mode', detailed ? 'detailed' : 'digest');
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -386,7 +393,7 @@ jobs:
       - name: Build harness health summary
         if: ${{ always() }}
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token }}
           SUMMARY_MODE: ${{ steps.mode.outputs.mode }}
         run: |
           if [ ! -f artifacts/summary/PR_SUMMARY.md ]; then
@@ -578,21 +585,6 @@ jobs:
             artifacts/agents/hook-feedback.md
           if-no-files-found: warn
           retention-days: 14
-      - name: Post or update PR comment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const body = fs.readFileSync('artifacts/summary/PR_SUMMARY.md','utf-8');
-            const header = '<!-- AE-PR-SUMMARY -->\n' + body;
-            const { owner, repo, number } = context.issue;
-            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
-            const mine = comments.data.find(c => c.body && c.body.startsWith('<!-- AE-PR-SUMMARY -->'));
-            if (mine) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body: header });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: number, body: header });
-            }
       - name: Generate progress summary
         run: node scripts/progress/aggregate-progress.mjs
       - name: Load previous progress summary
@@ -618,23 +610,20 @@ jobs:
         env:
           PROGRESS_SUMMARY_PREVIOUS: artifacts/progress/summary.prev.json
         run: node scripts/progress/render-progress-summary.mjs
-      - name: Post or update progress comment
-        uses: actions/github-script@v7
+      - name: Upload PR summary publish artifact
+        uses: actions/upload-artifact@v4
         with:
-          script: |
-            const fs = require('fs');
-            const marker = '<!-- AE-PR-PROGRESS -->';
-            const summary = JSON.parse(fs.readFileSync('artifacts/progress/summary.json','utf-8'));
-            const body = fs.readFileSync('artifacts/progress/PR_PROGRESS.md','utf-8');
-            const payload = `${marker}\n\n${body}\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(summary)} -->`;
-            const { owner, repo, number } = context.issue;
-            const comments = await github.rest.issues.listComments({ owner, repo, issue_number: number, per_page: 100 });
-            const existing = comments.data.find(c => c.body && c.body.includes(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: payload });
-            } else {
-              await github.rest.issues.createComment({ owner, repo, issue_number: number, body: payload });
-            }
+          name: pr-summary-publish-pr-${{ github.event.pull_request.number }}
+          path: |
+            artifacts/summary/PR_SUMMARY.md
+            artifacts/progress/PR_PROGRESS.md
+            artifacts/progress/summary.json
+            artifacts/change-package/change-package.json
+            artifacts/change-package/change-package-v2.json
+            artifacts/change-package/change-package-validation.json
+            artifacts/change-package/change-package-v2-validation.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Write job summary
         run: |
           cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
@@ -642,6 +631,337 @@ jobs:
             printf "\n\n" >> "$GITHUB_STEP_SUMMARY"
             cat artifacts/progress/PR_PROGRESS.md >> "$GITHUB_STEP_SUMMARY"
           fi
+
+  validate-change-package:
+    needs: summarize
+    if: >-
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
+      && github.event_name == 'pull_request'
+      && !github.event.pull_request.head.repo.fork
+      && github.event.action != 'edited'
+      && needs.summarize.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+      - name: Install trusted validation dependencies
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+      - name: Download PR summary publish artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-summary-publish-pr-${{ github.event.pull_request.number }}
+          path: artifacts/publish/pr-summary
+      - name: Validate Change Package with trusted base code
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+        run: |
+          mkdir -p artifacts/trusted-change-package
+          input="artifacts/publish/pr-summary/change-package/change-package.json"
+          output_json="artifacts/trusted-change-package/change-package-validation.json"
+          output_md="artifacts/trusted-change-package/change-package-validation.md"
+          if [ -f "$input" ]; then
+            set +e
+            node scripts/change-package/validate.mjs \
+              --file "$input" \
+              --schema schema/change-package.schema.json \
+              --artifact-root artifacts/publish/pr-summary \
+              --output-json "$output_json" \
+              --output-md "$output_md"
+            validation_exit=$?
+            set -e
+            if [ ! -f "$output_json" ]; then
+              printf '%s\n' "Trusted Change Package validation did not produce $output_json; creating fail-closed report." >&2
+            fi
+          else
+            validation_exit=1
+            printf '%s\n' "PR-produced change-package.json artifact missing; creating fail-closed report." >&2
+          fi
+          if [ ! -f "$output_json" ]; then
+          node <<'JS'
+          const fs = require('fs');
+          const report = {
+            schemaVersion: 'change-package-validation/v1',
+            generatedAt: new Date().toISOString(),
+            strict: false,
+            result: 'fail',
+            schema: {
+              path: 'schema/change-package.schema.json',
+              ok: false,
+              errors: ['PR-produced change-package.json artifact is missing or could not be validated by trusted base-ref code'],
+            },
+            evidence: {
+              requiredEvidenceIds: [],
+              missingRequiredEvidence: [],
+              itemCount: 0,
+              presentCountActual: 0,
+              missingCountActual: 0,
+            },
+            v2: {
+              checked: false,
+              claimCount: 0,
+              proofObligationCount: 0,
+              waiverCount: 0,
+              missingArtifactRefs: [],
+              errors: [],
+              warnings: [],
+              policyDecision: { checked: false, errors: [], warnings: [] },
+            },
+            errors: [`No trusted Change Package validation result could be produced for head ${process.env.PR_HEAD_SHA || 'unknown'}.`],
+            warnings: [],
+          };
+          fs.writeFileSync('artifacts/trusted-change-package/change-package-validation.json', `${JSON.stringify(report, null, 2)}\n`);
+          fs.writeFileSync(
+            'artifacts/trusted-change-package/change-package-validation.md',
+            [
+              '### Change Package Validation',
+              '- result: FAIL',
+              '- strict: false',
+              '- schema: FAIL',
+              '- required evidence: (none)',
+              '- missing required evidence: (none)',
+              '- evidence present/missing(actual): 0/0',
+              '- errors:',
+              `  - ${report.errors[0]}`,
+            ].join('\n') + '\n',
+          );
+          JS
+          fi
+          node <<'JS'
+          const fs = require('fs');
+          const jsonPath = 'artifacts/trusted-change-package/change-package-validation.json';
+          const report = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+          report.trustedValidation = {
+            source: 'base-ref-code',
+            baseSha: process.env.PR_BASE_SHA || 'unknown',
+            headSha: process.env.PR_HEAD_SHA || 'unknown',
+            workflowRunId: process.env.WORKFLOW_RUN_ID || 'unknown',
+          };
+          fs.writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`);
+          JS
+          if [ "$validation_exit" -ne 0 ]; then
+            printf '%s\n' "Trusted Change Package validation result is not pass; check run will publish the fail/warn result."
+          fi
+      - name: Upload trusted Change Package validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusted-change-package-validation-pr-${{ github.event.pull_request.number }}
+          path: |
+            artifacts/trusted-change-package/change-package-validation.json
+            artifacts/trusted-change-package/change-package-validation.md
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-summary:
+    needs: [summarize, validate-change-package]
+    if: >-
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
+      && github.event_name == 'pull_request'
+      && !github.event.pull_request.head.repo.fork
+      && github.event.action != 'edited'
+      && needs.summarize.result == 'success'
+      && needs.validate-change-package.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      checks: write
+      issues: write
+      # GitHub PR issue-comment creation can require pull_requests=write;
+      # this writer job remains checkout-free and does not execute local code.
+      pull-requests: write
+    steps:
+      - name: Download PR summary publish artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-summary-publish-pr-${{ github.event.pull_request.number }}
+          path: artifacts/publish/pr-summary
+      - name: Download trusted Change Package validation artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trusted-change-package-validation-pr-${{ github.event.pull_request.number }}
+          path: artifacts/publish/trusted-change-package
+      - name: Publish PR summary, progress, and Change Package check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { owner, repo, number } = context.issue;
+            const pr = context.payload.pull_request;
+            const headSha = pr?.head?.sha;
+            if (!headSha) {
+              core.setFailed('No pull_request head SHA found; cannot publish summary artifacts.');
+              return;
+            }
+
+            const artifactRoot = 'artifacts/publish/pr-summary';
+            const trustedArtifactRoot = 'artifacts/publish/trusted-change-package';
+            const MAX_COMMENT_BYTES = 60000;
+            const readText = (relativePath, root = artifactRoot) => {
+              const filePath = path.join(root, relativePath);
+              if (!fs.existsSync(filePath)) return null;
+              return fs.readFileSync(filePath, 'utf8').replace(/\u0000/g, '\uFFFD');
+            };
+            const truncateUtf8 = (text, maxBytes) => {
+              let truncated = Buffer.from(text, 'utf8')
+                .subarray(0, Math.max(0, maxBytes))
+                .toString('utf8');
+              while (Buffer.byteLength(truncated, 'utf8') > maxBytes) {
+                truncated = truncated.slice(0, -1);
+              }
+              return truncated;
+            };
+            const limitComment = (text, label) => {
+              const bytes = Buffer.byteLength(text, 'utf8');
+              if (bytes <= MAX_COMMENT_BYTES) return text;
+              const notice = `\n\n_[${label} truncated to ${MAX_COMMENT_BYTES} bytes before publication.]_`;
+              const availableBytes = Math.max(
+                0,
+                MAX_COMMENT_BYTES - Buffer.byteLength(notice, 'utf8'),
+              );
+              return `${truncateUtf8(text, availableBytes)}${notice}`;
+            };
+            const isCommentPayloadWithinLimit = (marker, body) =>
+              Buffer.byteLength(`${marker}\n\n${body}`, 'utf8') <= MAX_COMMENT_BYTES;
+            let issueCommentsCache = null;
+            const listAllIssueComments = async () => {
+              const comments = [];
+              for (let page = 1; ; page += 1) {
+                const response = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: number,
+                  per_page: 100,
+                  page,
+                });
+                comments.push(...response.data);
+                if (response.data.length < 100) break;
+              }
+              return comments;
+            };
+            const getIssueComments = async () => {
+              if (!issueCommentsCache) {
+                issueCommentsCache = await listAllIssueComments();
+              }
+              return issueCommentsCache;
+            };
+            const isTrustedAutomationComment = (comment, marker) => {
+              const login = String(comment?.user?.login || '').trim().toLowerCase();
+              const body = typeof comment?.body === 'string' ? comment.body : '';
+              return (
+                (login === 'github-actions' || login === 'github-actions[bot]')
+                && body.startsWith(marker)
+              );
+            };
+            const markerDisplayLabel = (marker) => {
+              const label = String(marker || '')
+                .replace(/^<!--\s*/, '')
+                .replace(/\s*-->$/, '')
+                .trim();
+              return label || 'PR comment';
+            };
+            const upsertComment = async (marker, body) => {
+              const payload = limitComment(`${marker}\n\n${body}`, markerDisplayLabel(marker));
+              const comments = await getIssueComments();
+              const existing = [...comments].reverse().find((comment) => isTrustedAutomationComment(comment, marker));
+              if (existing) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: payload });
+              } else {
+                await github.rest.issues.createComment({ owner, repo, issue_number: number, body: payload });
+              }
+            };
+
+            const summaryBody = readText('summary/PR_SUMMARY.md');
+            if (summaryBody) {
+              await upsertComment('<!-- AE-PR-SUMMARY -->', summaryBody);
+            } else {
+              core.warning('PR_SUMMARY.md was not present in the publish artifact.');
+            }
+
+            const progressBody = readText('progress/PR_PROGRESS.md');
+            const progressJsonText = readText('progress/summary.json');
+            if (progressBody) {
+              let progressCommentBody = progressBody;
+              if (progressJsonText) {
+                try {
+                  const progressJson = JSON.parse(progressJsonText);
+                  const progressJsonBlock = `\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(progressJson)} -->`;
+                  progressCommentBody = isCommentPayloadWithinLimit(
+                    '<!-- AE-PR-PROGRESS -->',
+                    `${progressBody}${progressJsonBlock}`,
+                  )
+                    ? `${progressBody}${progressJsonBlock}`
+                    : progressBody;
+                  if (progressCommentBody === progressBody) {
+                    core.warning('Progress summary JSON omitted because it would exceed the PR comment size cap.');
+                  }
+                } catch (error) {
+                  core.warning(`Progress summary JSON could not be parsed; publishing Markdown without embedded JSON: ${error.message}`);
+                }
+              } else {
+                core.warning('Progress summary JSON was not present in the publish artifact; publishing Markdown only.');
+              }
+              await upsertComment(
+                '<!-- AE-PR-PROGRESS -->',
+                progressCommentBody,
+              );
+            } else {
+              core.warning('Progress summary Markdown was not present in the publish artifact.');
+            }
+
+            const readJson = (relativePath, root = artifactRoot) => {
+              const text = readText(relativePath, root);
+              if (!text) return null;
+              try {
+                return JSON.parse(text);
+              } catch (error) {
+                core.warning(`${relativePath} could not be parsed; treating as missing structured JSON: ${error.message}`);
+                return null;
+              }
+            };
+            const validation = readJson('change-package-validation.json', trustedArtifactRoot);
+            const result = String(validation?.result || '').trim().toLowerCase();
+            const conclusion = result === 'pass'
+              ? 'success'
+              : (result === 'warn' ? 'neutral' : 'failure');
+            const title = result
+              ? `Change Package Validation: ${result.toUpperCase()}`
+              : 'Change Package Validation: MISSING';
+            const summary = validation
+              ? [
+                  `schemaVersion: ${validation.schemaVersion || 'unknown'}`,
+                  `result: ${result || 'missing'}`,
+                  `strict: ${validation.strict ?? 'unknown'}`,
+                  `errors: ${Array.isArray(validation.errors) ? validation.errors.length : 'unknown'}`,
+                  `warnings: ${Array.isArray(validation.warnings) ? validation.warnings.length : 'unknown'}`,
+                  `workflowRunId: ${context.runId}`,
+                  `headSha: ${headSha}`,
+                ].join('\n')
+              : `No structured change-package-validation.json artifact was available for head ${headSha}.`;
+
+            await github.rest.checks.create({
+              owner,
+              repo,
+              name: 'Change Package Validation',
+              head_sha: headSha,
+              status: 'completed',
+              conclusion,
+              output: {
+                title,
+                summary,
+              },
+            });
+
 
   post-status:
     if: >-
@@ -651,8 +971,14 @@ jobs:
         || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'status' || inputs.mode == 'both'))
       )
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -690,13 +1016,18 @@ jobs:
     if: >-
       !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
       && (
-        (github.event_name == 'pull_request' && github.event.action != 'edited' && github.event.pull_request.head.repo.fork == false)
-        || (github.event_name == 'schedule')
+        (github.event_name == 'schedule')
         || (github.event_name == 'workflow_dispatch' && (inputs.mode == 'auto-merge' || inputs.mode == 'both'))
       )
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
@@ -737,8 +1068,14 @@ jobs:
       && (inputs.mode == 'eligibility')
       && (inputs.pr_number != '')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Node + pnpm
         uses: ./.github/actions/setup-node-pnpm
         with:
