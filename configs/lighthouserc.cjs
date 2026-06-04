@@ -4,6 +4,8 @@ const DEFAULT_LIGHTHOUSE_URLS = [
   'http://localhost:3000/ja/health',
   'http://localhost:3000/ja/e2e/semantic-form'
 ];
+const APPROVED_LIGHTHOUSE_HOSTS = new Set(['localhost', '127.0.0.1']);
+const APPROVED_LIGHTHOUSE_PORT = '3000';
 
 function remapLegacyLighthouseUrl(rawUrl) {
   try {
@@ -26,9 +28,34 @@ function remapLegacyLighthouseUrl(rawUrl) {
   }
 }
 
+function isApprovedLocalLighthouseUrl(rawUrl) {
+  try {
+    const parsedUrl = new URL(rawUrl);
+    const hostname = parsedUrl.hostname.toLowerCase();
+
+    return parsedUrl.protocol === 'http:'
+      && APPROVED_LIGHTHOUSE_HOSTS.has(hostname)
+      && parsedUrl.port === APPROVED_LIGHTHOUSE_PORT
+      && parsedUrl.username === ''
+      && parsedUrl.password === '';
+  } catch {
+    return false;
+  }
+}
+
+function normalizeApprovedLighthouseUrl(rawUrl) {
+  const remappedUrl = remapLegacyLighthouseUrl(rawUrl);
+  if (!remappedUrl || !isApprovedLocalLighthouseUrl(remappedUrl)) {
+    return null;
+  }
+  const parsedUrl = new URL(remappedUrl);
+  parsedUrl.hash = '';
+  return parsedUrl.toString();
+}
+
 function resolveCollectUrls(configuredUrls) {
   const normalizedUrls = (configuredUrls || [])
-    .map(remapLegacyLighthouseUrl)
+    .map(normalizeApprovedLighthouseUrl)
     .filter(Boolean);
 
   return normalizedUrls.length > 0
