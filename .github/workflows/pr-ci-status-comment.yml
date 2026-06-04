@@ -204,7 +204,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      pull-requests: read
     steps:
       - uses: actions/github-script@v7
         with:
@@ -672,11 +671,24 @@ jobs:
               if (!fs.existsSync(filePath)) return null;
               return fs.readFileSync(filePath, 'utf8').replace(/\u0000/g, '\uFFFD');
             };
+            const truncateUtf8 = (text, maxBytes) => {
+              let truncated = Buffer.from(text, 'utf8')
+                .subarray(0, Math.max(0, maxBytes))
+                .toString('utf8');
+              while (Buffer.byteLength(truncated, 'utf8') > maxBytes) {
+                truncated = truncated.slice(0, -1);
+              }
+              return truncated;
+            };
             const limitComment = (text, label) => {
               const bytes = Buffer.byteLength(text, 'utf8');
               if (bytes <= MAX_COMMENT_BYTES) return text;
-              const truncated = Buffer.from(text, 'utf8').subarray(0, MAX_COMMENT_BYTES).toString('utf8');
-              return `${truncated}\n\n_[${label} truncated to ${MAX_COMMENT_BYTES} bytes before publication.]_`;
+              const notice = `\n\n_[${label} truncated to ${MAX_COMMENT_BYTES} bytes before publication.]_`;
+              const availableBytes = Math.max(
+                0,
+                MAX_COMMENT_BYTES - Buffer.byteLength(notice, 'utf8'),
+              );
+              return `${truncateUtf8(text, availableBytes)}${notice}`;
             };
             const isCommentPayloadWithinLimit = (marker, body) =>
               Buffer.byteLength(`${marker}\n\n${body}`, 'utf8') <= MAX_COMMENT_BYTES;
@@ -755,7 +767,12 @@ jobs:
             const readJson = (relativePath) => {
               const text = readText(relativePath);
               if (!text) return null;
-              return JSON.parse(text);
+              try {
+                return JSON.parse(text);
+              } catch (error) {
+                core.warning(`${relativePath} could not be parsed; treating as missing structured JSON: ${error.message}`);
+                return null;
+              }
             };
             const validation = readJson('change-package/change-package-validation.json');
             const result = String(validation?.result || '').trim().toLowerCase();

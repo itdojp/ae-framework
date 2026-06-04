@@ -124,6 +124,16 @@ describe('change-package gate helpers', () => {
         completedAt: '2026-06-04T00:00:00Z',
       },
     ])).toEqual({ status: 'fail', sourceUrl: null });
+
+    expect(resolveChangePackageValidationStatusFromChecks([
+      {
+        __typename: 'CheckRun',
+        name: 'Change Package Validation',
+        status: 'COMPLETED',
+        conclusion: 'SKIPPED',
+        completedAt: '2026-06-04T00:00:00Z',
+      },
+    ])).toEqual({ status: 'fail', sourceUrl: null });
   });
 
   it('fails closed for missing, pending, and ambiguous check-run evidence', () => {

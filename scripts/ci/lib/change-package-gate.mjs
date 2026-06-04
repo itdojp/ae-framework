@@ -89,6 +89,7 @@ function mapCheckRunToChangePackageStatus(checkRun) {
       return 'warn';
     case 'FAILURE':
     case 'CANCELLED':
+    case 'SKIPPED':
     case 'TIMED_OUT':
     case 'ACTION_REQUIRED':
     case 'STALE':

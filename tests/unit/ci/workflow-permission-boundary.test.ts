@@ -274,6 +274,9 @@ describe('workflow permission boundaries', () => {
       issues: 'read',
       'pull-requests': 'read',
     });
+    expect(parsed.jobs?.label?.permissions).toEqual({
+      issues: 'write',
+    });
     expect(parsed.jobs?.['publish-summary']?.needs).toBe('summarize');
     expect(parsed.jobs?.['publish-summary']?.permissions).toEqual({
       actions: 'read',
@@ -289,6 +292,9 @@ describe('workflow permission boundaries', () => {
     expect(publishSummary).toContain("readText('summary/PR_SUMMARY.md')");
     expect(publishSummary).toContain("readText('progress/PR_PROGRESS.md')");
     expect(publishSummary).toContain("readJson('change-package/change-package-validation.json')");
+    expect(publishSummary).toContain('const truncateUtf8 = (text, maxBytes) =>');
+    expect(publishSummary).toContain('MAX_COMMENT_BYTES - Buffer.byteLength(notice');
+    expect(publishSummary).toContain('availableBytes');
     expect(publishSummary).toContain('const listAllIssueComments = async () =>');
     expect(publishSummary).toContain('page += 1');
     expect(publishSummary).toContain('const isTrustedAutomationComment = (comment, marker) =>');
@@ -297,6 +303,7 @@ describe('workflow permission boundaries', () => {
     expect(publishSummary).toContain('const existing = comments.find((comment) => isTrustedAutomationComment(comment, marker))');
     expect(publishSummary).toContain('Progress summary JSON omitted because it would exceed the PR comment size cap.');
     expect(publishSummary).toContain('Progress summary JSON could not be parsed; publishing Markdown without embedded JSON');
+    expect(publishSummary).toContain('could not be parsed; treating as missing structured JSON');
     expect(publishSummary).toContain("name: 'Change Package Validation'");
     expect(publishSummary).toContain('head_sha: headSha');
     expect(enableAutoMerge).not.toContain("github.event_name == 'pull_request'");
