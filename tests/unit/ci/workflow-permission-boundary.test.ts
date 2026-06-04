@@ -705,6 +705,61 @@ describe('workflow permission boundaries', () => {
     expect(commentSteps.filter((step: any) => step?.uses === 'actions/github-script@v7')).toHaveLength(1);
   });
 
+  it('security analyzer pull request runs stay read-only and isolate security-events writes', () => {
+    const security = parseWorkflow('security.yml');
+
+    expect(security.permissions).toMatchObject({
+      contents: 'read',
+      actions: 'read',
+    });
+    expect(security.permissions).not.toMatchObject({
+      'security-events': 'write',
+    });
+
+    const securityScanJob = security.jobs?.['security-scan'];
+    const securityScanSteps = Array.isArray(securityScanJob?.steps) ? securityScanJob.steps : [];
+    const securityScanCheckout = securityScanSteps.find((step: any) => step?.uses === 'actions/checkout@v4');
+
+    expect(securityScanJob?.permissions).toMatchObject({
+      contents: 'read',
+      actions: 'read',
+    });
+    expect(Object.values(securityScanJob?.permissions ?? {})).not.toContain('write');
+    expect(securityScanCheckout?.with).toMatchObject({
+      'persist-credentials': false,
+    });
+    expect(securityScanSteps.some((step: any) => String(step?.uses ?? '').startsWith('./'))).toBe(false);
+    expect(securityScanSteps.some((step: any) => String(step?.run ?? '').includes('pnpm run security:analyze')))
+      .toBe(true);
+
+    const codeqlJob = security.jobs?.['codeql-analysis'];
+    const codeqlSteps = Array.isArray(codeqlJob?.steps) ? codeqlJob.steps : [];
+    const codeqlCheckout = codeqlSteps.find((step: any) => step?.uses === 'actions/checkout@v4');
+    expect(codeqlJob?.if).toContain("github.event_name != 'pull_request'");
+    expect(codeqlJob?.permissions).toMatchObject({
+      contents: 'read',
+      actions: 'read',
+      'security-events': 'write',
+    });
+    expect(codeqlCheckout?.with).toMatchObject({
+      'persist-credentials': false,
+    });
+
+    const containerJob = security.jobs?.['container-security'];
+    const containerSteps = Array.isArray(containerJob?.steps) ? containerJob.steps : [];
+    const containerCheckout = containerSteps.find((step: any) => step?.uses === 'actions/checkout@v4');
+    expect(containerJob?.if).toContain("github.event_name != 'pull_request'");
+    expect(containerJob?.permissions).toMatchObject({
+      contents: 'read',
+      actions: 'read',
+      'security-events': 'write',
+    });
+    expect(containerCheckout?.with).toMatchObject({
+      'persist-credentials': false,
+    });
+    expect(containerSteps.some((step: any) => step?.uses === 'github/codeql-action/upload-sarif@v3')).toBe(true);
+  });
+
   it('dependency-track SBOM upload validates allowlisted HTTPS destinations before API-key use', () => {
     const sbom = parseWorkflow('sbom-generation.yml');
     const sbomSteps = sbom.jobs?.['sbom-publication']?.steps ?? [];

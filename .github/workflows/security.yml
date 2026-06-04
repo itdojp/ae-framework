@@ -21,7 +21,6 @@ concurrency:
 
 permissions:
   contents: read
-  security-events: write
   actions: read
 
 jobs:
@@ -46,6 +45,9 @@ jobs:
     name: Security Scanning
     runs-on: ubuntu-latest
     continue-on-error: true
+    permissions:
+      contents: read
+      actions: read
     
     steps:
       - name: Checkout code
@@ -53,11 +55,16 @@ jobs:
         with:
           # Fetch full history for gitleaks
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Setup Node + pnpm
-        uses: ./.github/actions/setup-node-pnpm
+      - name: Prepare pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
       - name: Install dependencies
         env:
@@ -200,7 +207,7 @@ jobs:
 
   codeql-analysis:
     needs: gate
-    if: ${{ needs.gate.outputs.run_security == 'true' }}
+    if: ${{ needs.gate.outputs.run_security == 'true' && github.event_name != 'pull_request' }}
     name: CodeQL Analysis
     runs-on: ubuntu-latest
     # schedule は別トリガーで動く
@@ -218,6 +225,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -352,11 +361,17 @@ jobs:
     name: Container Security
     runs-on: ubuntu-latest
     needs: gate
-    if: ${{ needs.gate.outputs.run_security == 'true' }}
+    if: ${{ needs.gate.outputs.run_security == 'true' && github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Detect container manifest
         id: container_manifest
