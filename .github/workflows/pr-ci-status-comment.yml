@@ -616,6 +616,8 @@ jobs:
             artifacts/summary/PR_SUMMARY.md
             artifacts/progress/PR_PROGRESS.md
             artifacts/progress/summary.json
+            artifacts/change-package/change-package.json
+            artifacts/change-package/change-package-v2.json
             artifacts/change-package/change-package-validation.json
             artifacts/change-package/change-package-v2-validation.json
           if-no-files-found: warn
@@ -628,7 +630,7 @@ jobs:
             cat artifacts/progress/PR_PROGRESS.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
-  publish-summary:
+  validate-change-package:
     needs: summarize
     if: >-
       !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
@@ -636,6 +638,135 @@ jobs:
       && !github.event.pull_request.head.repo.fork
       && github.event.action != 'edited'
       && needs.summarize.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+      - name: Download PR summary publish artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-summary-publish-pr-${{ github.event.pull_request.number }}
+          path: artifacts/publish/pr-summary
+      - name: Validate Change Package with trusted base code
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+        run: |
+          mkdir -p artifacts/trusted-change-package
+          input="artifacts/publish/pr-summary/change-package/change-package.json"
+          output_json="artifacts/trusted-change-package/change-package-validation.json"
+          output_md="artifacts/trusted-change-package/change-package-validation.md"
+          if [ -f "$input" ]; then
+            set +e
+            node scripts/change-package/validate.mjs \
+              --file "$input" \
+              --schema schema/change-package.schema.json \
+              --artifact-root artifacts/publish/pr-summary \
+              --output-json "$output_json" \
+              --output-md "$output_md"
+            validation_exit=$?
+            set -e
+            if [ ! -f "$output_json" ]; then
+              printf '%s\n' "Trusted Change Package validation did not produce $output_json; creating fail-closed report." >&2
+            fi
+          else
+            validation_exit=1
+            printf '%s\n' "PR-produced change-package.json artifact missing; creating fail-closed report." >&2
+          fi
+          if [ ! -f "$output_json" ]; then
+          node <<'JS'
+          const fs = require('fs');
+          const report = {
+            schemaVersion: 'change-package-validation/v1',
+            generatedAt: new Date().toISOString(),
+            strict: false,
+            result: 'fail',
+            schema: {
+              path: 'schema/change-package.schema.json',
+              ok: false,
+              errors: ['PR-produced change-package.json artifact is missing or could not be validated by trusted base-ref code'],
+            },
+            evidence: {
+              requiredEvidenceIds: [],
+              missingRequiredEvidence: [],
+              itemCount: 0,
+              presentCountActual: 0,
+              missingCountActual: 0,
+            },
+            v2: {
+              checked: false,
+              claimCount: 0,
+              proofObligationCount: 0,
+              waiverCount: 0,
+              missingArtifactRefs: [],
+              errors: [],
+              warnings: [],
+              policyDecision: { checked: false, errors: [], warnings: [] },
+            },
+            errors: [`No trusted Change Package validation result could be produced for head ${process.env.PR_HEAD_SHA || 'unknown'}.`],
+            warnings: [],
+          };
+          fs.writeFileSync('artifacts/trusted-change-package/change-package-validation.json', `${JSON.stringify(report, null, 2)}\n`);
+          fs.writeFileSync(
+            'artifacts/trusted-change-package/change-package-validation.md',
+            [
+              '### Change Package Validation',
+              '- result: FAIL',
+              '- strict: false',
+              '- schema: FAIL',
+              '- required evidence: (none)',
+              '- missing required evidence: (none)',
+              '- evidence present/missing(actual): 0/0',
+              '- errors:',
+              `  - ${report.errors[0]}`,
+            ].join('\n') + '\n',
+          );
+          JS
+          fi
+          node <<'JS'
+          const fs = require('fs');
+          const jsonPath = 'artifacts/trusted-change-package/change-package-validation.json';
+          const report = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+          report.trustedValidation = {
+            source: 'base-ref-code',
+            baseSha: process.env.PR_BASE_SHA || 'unknown',
+            headSha: process.env.PR_HEAD_SHA || 'unknown',
+            workflowRunId: process.env.WORKFLOW_RUN_ID || 'unknown',
+          };
+          fs.writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`);
+          JS
+          if [ "$validation_exit" -ne 0 ]; then
+            printf '%s\n' "Trusted Change Package validation result is not pass; check run will publish the fail/warn result."
+          fi
+      - name: Upload trusted Change Package validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusted-change-package-validation-pr-${{ github.event.pull_request.number }}
+          path: |
+            artifacts/trusted-change-package/change-package-validation.json
+            artifacts/trusted-change-package/change-package-validation.md
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-summary:
+    needs: [summarize, validate-change-package]
+    if: >-
+      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
+      && github.event_name == 'pull_request'
+      && !github.event.pull_request.head.repo.fork
+      && github.event.action != 'edited'
+      && needs.summarize.result == 'success'
+      && needs.validate-change-package.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -650,6 +781,11 @@ jobs:
         with:
           name: pr-summary-publish-pr-${{ github.event.pull_request.number }}
           path: artifacts/publish/pr-summary
+      - name: Download trusted Change Package validation artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trusted-change-package-validation-pr-${{ github.event.pull_request.number }}
+          path: artifacts/publish/trusted-change-package
       - name: Publish PR summary, progress, and Change Package check
         uses: actions/github-script@v7
         with:
@@ -665,9 +801,10 @@ jobs:
             }
 
             const artifactRoot = 'artifacts/publish/pr-summary';
+            const trustedArtifactRoot = 'artifacts/publish/trusted-change-package';
             const MAX_COMMENT_BYTES = 60000;
-            const readText = (relativePath) => {
-              const filePath = path.join(artifactRoot, relativePath);
+            const readText = (relativePath, root = artifactRoot) => {
+              const filePath = path.join(root, relativePath);
               if (!fs.existsSync(filePath)) return null;
               return fs.readFileSync(filePath, 'utf8').replace(/\u0000/g, '\uFFFD');
             };
@@ -722,8 +859,15 @@ jobs:
                 && body.startsWith(marker)
               );
             };
+            const markerDisplayLabel = (marker) => {
+              const label = String(marker || '')
+                .replace(/^<!--\s*/, '')
+                .replace(/\s*-->$/, '')
+                .trim();
+              return label || 'PR comment';
+            };
             const upsertComment = async (marker, body) => {
-              const payload = limitComment(`${marker}\n\n${body}`, marker);
+              const payload = limitComment(`${marker}\n\n${body}`, markerDisplayLabel(marker));
               const comments = await getIssueComments();
               const existing = [...comments].reverse().find((comment) => isTrustedAutomationComment(comment, marker));
               if (existing) {
@@ -771,8 +915,8 @@ jobs:
               core.warning('Progress summary Markdown was not present in the publish artifact.');
             }
 
-            const readJson = (relativePath) => {
-              const text = readText(relativePath);
+            const readJson = (relativePath, root = artifactRoot) => {
+              const text = readText(relativePath, root);
               if (!text) return null;
               try {
                 return JSON.parse(text);
@@ -781,7 +925,7 @@ jobs:
                 return null;
               }
             };
-            const validation = readJson('change-package/change-package-validation.json');
+            const validation = readJson('change-package-validation.json', trustedArtifactRoot);
             const result = String(validation?.result || '').trim().toLowerCase();
             const conclusion = result === 'pass'
               ? 'success'
