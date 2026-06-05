@@ -52,6 +52,7 @@ npm-shrinkwrap.json
 tmp/
 temp/
 temp-reports/
+.codex-local/tasks/
 .cache/
 _apalache-out/
 
