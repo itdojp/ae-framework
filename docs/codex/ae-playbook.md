@@ -5,10 +5,10 @@ owner: codex-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
 
-# CodeX CLI 0.38 × ae-framework プレイブック設計（最小版）
+# Codex CLI 0.38 × ae-framework プレイブック設計（最小版）
 
 目的
-- CodeX CLI 0.38 を外部オーケストレータとして用い、ae-framework の主要フェーズを順次実行しながら中間生成物（artifacts）を受け渡し、最終的に「ビルド・軽量テスト通過」まで到達する最小プレイブックを提供する。
+- Codex CLI 0.38 を外部オーケストレータとして用い、ae-framework の主要フェーズを順次実行しながら中間生成物（artifacts）を受け渡し、最終的に「ビルド・軽量テスト通過」まで到達する最小プレイブックを提供する。
 
 スコープ（段階導入）
 - Phase-1（本PR範囲: 設計）
@@ -78,7 +78,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 - ネットワークを要する処理は既定 off、明示フラグで opt-in
 - 外部バイナリ（例: Apalache）は presence チェックのみで非ブロッキング
 
-CodeX CLI 0.38 からの実行例
+Codex CLI 0.38 からの実行例
 - 初回〜軽量ルート
   - `codex run node scripts/codex/ae-playbook.mjs --resume --skip=formal,adapters`
 - Formal を含む

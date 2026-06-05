@@ -2,11 +2,11 @@
 docRole: narrative
 lastVerified: '2026-03-12'
 ---
-# CodeX: OpenAPI → Contract/E2E Templates, Quickstart Quality Controls (2025-08-31)
+# Codex: OpenAPI → Contract/E2E Templates, Quickstart Quality Controls (2025-08-31)
 
 > 🌍 Language / 言語: English | 日本語
 
-This change adds contract/E2E test template generation from OpenAPI and improves the CodeX quickstart developer experience.
+This change adds contract/E2E test template generation from OpenAPI and improves the Codex quickstart developer experience.
 
 ## Highlights
 - Contract/E2E templates generator:
@@ -23,8 +23,8 @@ This change adds contract/E2E test template generation from OpenAPI and improves
   - Integration docs list new env vars and artifacts
 
 ## Related
-- Closes #292 (Docs: Update CodeX integration to reflect current adapter status and build prerequisites)
-- Refs #295 (Generate contract/E2E test templates from OpenAPI in CodeX flow)
+- Closes #292 (Docs: Update Codex integration to reflect current adapter status and build prerequisites)
+- Refs #295 (Generate contract/E2E test templates from OpenAPI in Codex flow)
 
 ## Usage
 ```bash no-doctest

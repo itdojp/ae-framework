@@ -98,7 +98,7 @@ ae-framework は、エージェント協調型のSDLCを実行するための **
 - `assurance-summary`、`quality-scorecard`、`hook-feedback`、`ae-handoff` などの判断用 artifact
 - `Context Pack` / `boundary-map` / `change-package` を使った仕様レジストリと検証結果の集約
 - `policy-gate`、`gate`、release/post-deploy summary による判断面の自動化
-- Claude Code / CodeX などのエージェント統合の導線
+- Claude Code / Codex などのエージェント統合の導線
 
 ### 5. 対象ユーザーと利用シーン
 - プロダクト開発チーム（PM、開発、QA、運用）

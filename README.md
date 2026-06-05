@@ -39,11 +39,11 @@ flowchart TB
 
 ### What this repository provides
 - **Agent-neutral assurance control plane**: Context Pack, formal/conformance summaries, artifact validation, policy gates, and PR/release automation that turn producer outputs into reviewable assurance evidence.
-- **Agentic SDLC orchestrator**: Ready-to-run GitHub Actions (PR verify / verify-lite, nightly heavy tests, Slack alerts) and CLI scripts that keep requirements, tests, and regression signals aligned.
+- **Assurance orchestration for agent-driven SDLC**: Ready-to-run GitHub Actions (PR verify / verify-lite, nightly heavy tests, Slack alerts) and CLI scripts that keep requirements, tests, and regression signals aligned without turning ae-framework into a coding-agent runtime.
 - **Spec & Verification Kit**: Traceable spec format, mutation/MBT/property verification pipelines, and formal runners for Alloy/TLA/SMT/Apalache/Kani/SPIN/CSP(cspx)/Lean4 with unified summaries.
 - **Project scaffolding & policies**: pnpm workspace layout, lint/test/type-coverage gates, label gating (typecov, flake), and TDD-friendly Git hooks.
 - **Cacheable heavy test artifacts**: `scripts/pipelines/sync-test-results.mjs` to restore/store/snapshot mutation + MBT results; `heavy-test-trends` artifacts for CI triage.
-- **Agent integrations**: Playbooks and connectors for Claude Code / CodeX; JSON-first outputs and AJV validation to keep agent-produced artifacts safe.
+- **Agent integrations**: Playbooks and connectors for Claude Code / Codex; JSON-first outputs and AJV validation to keep agent-produced artifacts safe.
 
 ### What this is not
 - Not a single-model code generator — code generation is one producer, not the system of record.
@@ -148,7 +148,7 @@ flowchart TB
 - **仕様・検証キット**: トレーサブルな仕様フォーマット、mutation/MBT/Propertyテストのパイプライン、`scripts/pipelines/compare-test-trends.mjs` によるトレンド比較。
 - **プロジェクト骨子とポリシー**: pnpmワークスペース、Lint/Test/型カバレッジのゲート、ラベルゲーティング（typecov・flake）、TDDフック。
 - **ヘビーテスト成果物のキャッシュ**: `scripts/pipelines/sync-test-results.mjs` による store/restore/snapshot、`heavy-test-trends` アーティファクトでCIトリアージを高速化。
-- **エージェント統合指針**: Claude Code / CodeX 向けプレイブック、JSON成果物のAJV検証など、エージェント生成物を安全に扱うための手順。
+- **エージェント統合指針**: Claude Code / Codex 向けプレイブック、JSON成果物のAJV検証など、エージェント生成物を安全に扱うための手順。
 
 ### 提供しないもの
 - 単一モデル依存のコード生成専用ツール。codegen は producer の一つであり、SSOT は spec / contract / artifact に置く。
@@ -267,7 +267,7 @@ Apache-2.0 - see [LICENSE](LICENSE). Scope, trademark, and third-party notice ha
 
 ## 🙏 Acknowledgments
 
-Built with: MCP SDK, Claude/CodeX task tools, pnpm workspace, Vitest, AJV, GitHub Actions.
+Built with: MCP SDK, Claude/Codex task tools, pnpm workspace, Vitest, AJV, GitHub Actions.
 
 ---
 

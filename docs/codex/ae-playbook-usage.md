@@ -7,15 +7,15 @@ canonicalSource:
 lastVerified: '2026-03-11'
 ---
 
-# CodeX CLI 0.38 × ae‑framework プレイブック実行ガイド
+# Codex CLI 0.38 × ae‑framework プレイブック実行ガイド
 
-本書は、CodeX CLI 0.38 から ae‑framework のプレイブックを実行し、セットアップ→軽量QA→Spec/IR→Sim→Formal（任意）→Coverage/Adapters 検出→PRサマリ反映までを一気通貫で動かすための実践ガイドです。
+本書は、Codex CLI 0.38 から ae‑framework のプレイブックを実行し、セットアップ→軽量QA→Spec/IR→Sim→Formal（任意）→Coverage/Adapters 検出→PRサマリ反映までを一気通貫で動かすための実践ガイドです。
 
 - 実行中は標準出力へフェーズ開始/終了ログと heartbeat を継続表示し、無出力タイムアウトを回避します。
 
 ## 前提（環境/権限）
 - 実行場所
-  - ローカル開発端末（推奨）: Node.js 18+、Git、pnpm、任意で gh（GitHub CLI）/CodeX CLI 0.38
+  - ローカル開発端末（推奨）: Node.js 18+、Git、pnpm、任意で gh（GitHub CLI）/Codex CLI 0.38
   - CI（GitHub Actions）: PRコメントのスラッシュコマンド（例: `/verify-lite`）で検証を起動
 - 権限
   - ローカル実行: 権限不要（リポジトリのクローンがあれば可）
@@ -26,7 +26,7 @@ lastVerified: '2026-03-11'
 
 ## 主要ファイル
 - プレイブック本体: `scripts/codex/ae-playbook.mjs`
-- プリセット（CodeX向け）: `codex/ae.playbook.yaml`
+- プリセット（Codex向け）: `codex/ae.playbook.yaml`
 - npm補助スクリプト: `package.json`（`scripts.codex:run`）
 - 設計/仕様ドキュメント: `docs/codex/ae-playbook.md`
 - 本ガイド: `docs/codex/ae-playbook-usage.md`
@@ -58,7 +58,7 @@ lastVerified: '2026-03-11'
 - 目的: 実行負荷を避けつつ検出情報だけ更新（report-only）
 - コマンド: `node scripts/codex/ae-playbook.mjs --resume --skip=setup,qa,spec,sim,formal`
 
-4) CodeX プリセット（任意）
+4) Codex プリセット（任意）
 - `codex/ae.playbook.yaml` にプリセットを用意
   - `playbook:light`: setup→qa→spec→sim（Formalなし）
   - `playbook:formal`: Formal込み（`--formal-timeout=60000`）
@@ -116,4 +116,4 @@ lastVerified: '2026-03-11'
 - 検出のみ: `node scripts/codex/ae-playbook.mjs --resume --skip=setup,qa,spec,sim,formal`
 - heartbeat 10秒: `node scripts/codex/ae-playbook.mjs --resume --heartbeat-ms=10000`
 - npm 補助: `pnpm run codex:run`
-- CodeX プリセット（例）: `codex run playbook:light` / `codex run playbook:formal` / `codex run playbook:detect`
+- Codex プリセット（例）: `codex run playbook:light` / `codex run playbook:formal` / `codex run playbook:detect`

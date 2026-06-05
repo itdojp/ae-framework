@@ -322,10 +322,10 @@ pnpm run security:integrated:quick
 
 ---
 
-## 7. エージェント統合（CodeX）: playbook で Setup→QA→（任意）Formal を回す
+## 7. エージェント統合（Codex）: playbook で Setup→QA→（任意）Formal を回す
 
 ### 目的
-外部オーケストレータ（CodeX等）でフェーズを段階実行し、`artifacts/ae/context.json` に実行ログ/成果物パスを集約して継続運用を容易にする。
+外部オーケストレータ（Codex等）でフェーズを段階実行し、`artifacts/ae/context.json` に実行ログ/成果物パスを集約して継続運用を容易にする。
 
 ### 手順（最小）
 ```bash
@@ -339,4 +339,4 @@ node scripts/codex/ae-playbook.mjs --resume --enable-formal --formal-timeout=600
 
 ### 参考（根拠）
 - 設計と運用詳細: `docs/codex/ae-playbook.md`
-- CodeX統合: `docs/integrations/CODEX-INTEGRATION.md`
+- Codex統合: `docs/integrations/CODEX-INTEGRATION.md`

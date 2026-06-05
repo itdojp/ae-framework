@@ -173,7 +173,7 @@ class AEFrameworkCLI {
 - `src/cli/index.ts` wires phase-specific task handlers into a single maintained CLI surface.
 - Claude Code integrations reuse those handlers instead of introducing a separate undocumented runtime.
 - Phase-specific adapters normalize request/response payloads, while quality and artifact validation are handled downstream by `verify-lite` and CI workflows.
-- Standard PR summary rendering consumes repository summary artifacts; CodeX task outputs are summarized separately by `pr-verify.yml` via `scripts/verify/render-codex-summary.mjs`.
+- Standard PR summary rendering consumes repository summary artifacts; Codex task outputs are summarized separately by `pr-verify.yml` via `scripts/verify/render-codex-summary.mjs`.
 
 ### Phase-by-Phase Integration
 
@@ -215,8 +215,8 @@ class AEFrameworkCLI {
 2. The hybrid integration layer decides whether Task Tool, CLI, or MCP is the best current route.
 3. The relevant phase handler parses input and produces structured outputs plus optional task-specific artifacts under `artifacts/codex/*`.
 4. `verify-lite` and the standard PR summary pipeline consume repository summary artifacts such as `artifacts/summary/combined.json` and formal/coverage/replay inputs.
-5. Ordinary CodeX task outputs are not part of the standard `verify-lite` PR summary path.
-6. When `pr-verify.yml` runs, `scripts/verify/render-codex-summary.mjs` can generate a separate CodeX-oriented summary.
+5. Ordinary Codex task outputs are not part of the standard `verify-lite` PR summary path.
+6. When `pr-verify.yml` runs, `scripts/verify/render-codex-summary.mjs` can generate a separate Codex-oriented summary.
 
 #### Phase 1 Example Result
 

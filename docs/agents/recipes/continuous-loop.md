@@ -9,7 +9,7 @@ canonicalSource:
 lastVerified: '2026-03-31'
 ---
 
-# Recipe: Continuous Loop Contract (CodeX)
+# Recipe: Continuous Loop Contract (Codex)
 
 > 🌍 Language / 言語: English | 日本語
 
@@ -18,7 +18,7 @@ lastVerified: '2026-03-31'
 ## English
 
 ### When to use
-- when you want to reduce how often CodeX stops with a generic "waiting for next instruction" response
+- when you want to reduce how often Codex stops with a generic "waiting for next instruction" response
 - when you need to verify that `TaskResponse` satisfies Continuation Contract v1
 - when you need deterministic handling for blocked reasons and unblock steps in the `autopilot:on` lane
 
@@ -95,7 +95,7 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 ## 日本語
 
 ### When to use
-- CodeX 運用で「次の指示待ち」で止まる頻度を減らしたいとき
+- Codex 運用で「次の指示待ち」で止まる頻度を減らしたいとき
 - `TaskResponse` が継続実行 Contract v1 を満たしているか確認したいとき
 - `autopilot:on` レーンで blocked 理由と解除手順を deterministic に扱いたいとき
 

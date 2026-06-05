@@ -112,7 +112,7 @@ ae-framework ui scaffold --input domain-model.json
 
 - **[Assurance Agent Runbook](./ASSURANCE-AGENT-RUNBOOK.md)** - canonical producer-agent execution path for Codex / Claude / MCP
 - **[Claude Code Integration Guide](./CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 🔥 Primary integration method
-- **[CodeX Security Assurance Audit Runbook](./CODEX-SECURITY-AUDIT.md)** - Security Assurance Lane operation for Codex / CodeX
+- **[Codex Security Assurance Audit Runbook](./CODEX-SECURITY-AUDIT.md)** - Security Assurance Lane operation for Codex
 - **[Technical Implementation Details](../architecture/TECHNICAL-IMPLEMENTATION-DETAILS.md)** - Architecture details
 - **[Phase 6 UI Generation](../phases/phase-6-uiux.md)** - UI auto-generation details
 - **[Quality Assurance System](../quality/quality-implementation-status.md)** - Quality management details
@@ -225,7 +225,7 @@ ae-framework ui scaffold --input domain-model.json
 
 - **[Assurance Agent Runbook](./ASSURANCE-AGENT-RUNBOOK.md)** - Codex / Claude / MCP 向け canonical producer-agent execution path
 - **[Claude Code統合ガイド](./CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - 🔥 メイン統合方式
-- **[CodeX Security Assurance Audit Runbook](./CODEX-SECURITY-AUDIT.md)** - Codex / CodeX 向け Security Assurance Lane 運用手順
+- **[Codex Security Assurance Audit Runbook](./CODEX-SECURITY-AUDIT.md)** - Codex 向け Security Assurance Lane 運用手順
 - **[技術実装詳細](../architecture/TECHNICAL-IMPLEMENTATION-DETAILS.md)** - アーキテクチャ詳細
 - **[Phase 6 UI生成](../phases/phase-6-uiux.md)** - UI自動生成詳細
 - **[品質保証システム](../quality/quality-implementation-status.md)** - 品質管理詳細
