@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "2.0.0",
+  "tokens": {
+    "prompt": null,
+    "completion": null,
+    "tool": null,
+    "total": null
+  },
+  "costUsd": null,
+  "memoryHitRatio": null,
+  "turns": {
+    "count": 9,
+    "avgLen": 1420
+  },
+  "latencyMs": 67890,
+  "agentPrAssurance": {
+    "reportOnly": true,
+    "generatedAt": "2026-06-05T00:00:00.000Z",
+    "source": "manual-fixture",
+    "metrics": {
+      "claim_coverage": {
+        "numerator": 4,
+        "denominator": 5,
+        "ratio": 0.8,
+        "inputArtifacts": [
+          "artifacts/assurance/claim-evidence-manifest.json"
+        ]
+      },
+      "unresolved_claim_count": {
+        "count": 1,
+        "inputArtifacts": [
+          "artifacts/assurance/claim-level-summary.json"
+        ]
+      },
+      "waiver_count": {
+        "active": 1,
+        "inputArtifacts": [
+          "artifacts/assurance/temporary-overrides/override-manual-waiver-2026-06.json"
+        ]
+      },
+      "waiver_expiry_risk": {
+        "expired": 0,
+        "expiringSoon": 0,
+        "windowDays": 14
+      },
+      "required_lane_compliance": {
+        "satisfied": 3,
+        "required": 4,
+        "ratio": 0.75,
+        "missingLanes": [
+          "model"
+        ]
+      },
+      "evidence_completeness": {
+        "present": 5,
+        "required": 6,
+        "ratio": 0.8333,
+        "missingArtifacts": [
+          "artifacts/formal/formal-summary-v2.json"
+        ]
+      },
+      "agent_regression_signal": {
+        "currentFailures": 0,
+        "staleOrSupersededFailures": 1,
+        "regressed": false
+      },
+      "blocked_to_merge_eligible_mttr": {
+        "minutes": 18,
+        "from": "blocked",
+        "to": "merge-eligible"
+      },
+      "false_block_rate": {
+        "annotatedFalseBlocks": null,
+        "totalBlocks": 1,
+        "ratio": null,
+        "annotationRequired": true
+      }
+    },
+    "summary": "Report-only fixture for agent PR assurance metrics; no policy-gate enforcement is implied."
+  }
+}

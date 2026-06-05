@@ -39,8 +39,171 @@
     "latencyMs": {
       "type": "integer",
       "minimum": 0
+    },
+    "agentPrAssurance": {
+      "$ref": "#/$defs/agentPrAssurance"
     }
   },
   "required": ["schemaVersion", "turns", "latencyMs"],
-  "additionalProperties": true
+  "additionalProperties": true,
+  "$defs": {
+    "nonNegativeInteger": { "type": "integer", "minimum": 0 },
+    "nonNegativeNumber": { "type": "number", "minimum": 0 },
+    "ratioOrNull": {
+      "oneOf": [
+        { "type": "number", "minimum": 0, "maximum": 1 },
+        { "type": "null" }
+      ]
+    },
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "stringArray": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "artifactArray": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "coverageMetric": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["numerator", "denominator", "ratio"],
+      "properties": {
+        "numerator": { "$ref": "#/$defs/nonNegativeInteger" },
+        "denominator": { "$ref": "#/$defs/nonNegativeInteger" },
+        "ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "inputArtifacts": { "$ref": "#/$defs/artifactArray" }
+      }
+    },
+    "countMetric": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["count"],
+      "properties": {
+        "count": { "$ref": "#/$defs/nonNegativeInteger" },
+        "inputArtifacts": { "$ref": "#/$defs/artifactArray" }
+      }
+    },
+    "waiverCountMetric": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["active"],
+      "properties": {
+        "active": { "$ref": "#/$defs/nonNegativeInteger" },
+        "inputArtifacts": { "$ref": "#/$defs/artifactArray" }
+      }
+    },
+    "waiverExpiryRiskMetric": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["expired", "expiringSoon"],
+      "properties": {
+        "expired": { "$ref": "#/$defs/nonNegativeInteger" },
+        "expiringSoon": { "$ref": "#/$defs/nonNegativeInteger" },
+        "windowDays": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "laneComplianceMetric": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["satisfied", "required", "ratio"],
+      "properties": {
+        "satisfied": { "$ref": "#/$defs/nonNegativeInteger" },
+        "required": { "$ref": "#/$defs/nonNegativeInteger" },
+        "ratio": { "$ref": "#/$defs/ratioOrNull" },
+        "missingLanes": { "$ref": "#/$defs/stringArray" },
+        "notApplicable": { "type": "boolean" }
+      }
+    },
+    "evidenceCompletenessMetric": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["present", "required", "ratio"],
+      "properties": {
+        "present": { "$ref": "#/$defs/nonNegativeInteger" },
+        "required": { "$ref": "#/$defs/nonNegativeInteger" },
+        "ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "missingArtifacts": { "$ref": "#/$defs/artifactArray" }
+      }
+    },
+    "agentRegressionSignalMetric": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["currentFailures", "staleOrSupersededFailures", "regressed"],
+      "properties": {
+        "currentFailures": { "$ref": "#/$defs/nonNegativeInteger" },
+        "staleOrSupersededFailures": { "$ref": "#/$defs/nonNegativeInteger" },
+        "regressed": { "type": "boolean" }
+      }
+    },
+    "mttrMetric": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["minutes"],
+      "properties": {
+        "minutes": {
+          "oneOf": [
+            { "$ref": "#/$defs/nonNegativeNumber" },
+            { "type": "null" }
+          ]
+        },
+        "from": { "$ref": "#/$defs/nonEmptyString" },
+        "to": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "falseBlockRateMetric": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["annotatedFalseBlocks", "totalBlocks", "ratio"],
+      "properties": {
+        "annotatedFalseBlocks": {
+          "oneOf": [
+            { "$ref": "#/$defs/nonNegativeInteger" },
+            { "type": "null" }
+          ]
+        },
+        "totalBlocks": { "$ref": "#/$defs/nonNegativeInteger" },
+        "ratio": { "$ref": "#/$defs/ratioOrNull" },
+        "annotationRequired": { "type": "boolean" }
+      }
+    },
+    "agentPrAssuranceMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim_coverage",
+        "unresolved_claim_count",
+        "waiver_count",
+        "waiver_expiry_risk",
+        "required_lane_compliance",
+        "evidence_completeness",
+        "agent_regression_signal",
+        "blocked_to_merge_eligible_mttr",
+        "false_block_rate"
+      ],
+      "properties": {
+        "claim_coverage": { "$ref": "#/$defs/coverageMetric" },
+        "unresolved_claim_count": { "$ref": "#/$defs/countMetric" },
+        "waiver_count": { "$ref": "#/$defs/waiverCountMetric" },
+        "waiver_expiry_risk": { "$ref": "#/$defs/waiverExpiryRiskMetric" },
+        "required_lane_compliance": { "$ref": "#/$defs/laneComplianceMetric" },
+        "evidence_completeness": { "$ref": "#/$defs/evidenceCompletenessMetric" },
+        "agent_regression_signal": { "$ref": "#/$defs/agentRegressionSignalMetric" },
+        "blocked_to_merge_eligible_mttr": { "$ref": "#/$defs/mttrMetric" },
+        "false_block_rate": { "$ref": "#/$defs/falseBlockRateMetric" }
+      }
+    },
+    "agentPrAssurance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["reportOnly", "metrics"],
+      "properties": {
+        "reportOnly": { "const": true },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "source": { "$ref": "#/$defs/nonEmptyString" },
+        "metrics": { "$ref": "#/$defs/agentPrAssuranceMetrics" },
+        "summary": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  }
 }

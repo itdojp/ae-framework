@@ -315,7 +315,10 @@ const checks = [
   },
   {
     schema: 'schema/agentic-metrics.schema.json',
-    fixtures: ['fixtures/agentic-metrics/sample.agentic-metrics.json'],
+    fixtures: [
+      'fixtures/agentic-metrics/sample.agentic-metrics.json',
+      'fixtures/agentic-metrics/agent-pr-assurance-metrics.example.json',
+    ],
     label: 'Agentic metrics schema validation'
   },
   {

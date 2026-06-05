@@ -85,6 +85,7 @@ Primary sources / 一次情報:
 - To reduce false positives, consider a mode that escalates only after the `Δ` threshold is crossed twice in a row.
 - Slack delivery will often occur during JST late-night windows. Confirm channel silence rules before enabling broad notifications.
 - When an issue is created, always attach the corresponding `reports/heavy-test-trends-history/<timestamp>.json`, `reports/heavy-test-trends-history/summary.md`, and the run URL.
+- Treat heavy-test alert outcomes as inputs to the report-only `agent_regression_signal` metric in `docs/ci/agent-pr-assurance-metrics.md` when assessing agent-created PRs.
 - Before applying revised thresholds to the workflow, run the recommendation helper and confirm `Status: ready`.
   - `node scripts/pipelines/recommend-heavy-trend-thresholds.mjs --history-dir reports/heavy-test-trends-history --min-snapshots 14`
 
@@ -157,6 +158,7 @@ Primary sources / 一次情報:
 - false positive を避けるため、`Δ` 判定は 2 回連続で閾値を下回った場合にエスカレーションするモードも検討する。
 - Slack 通知は深夜帯（JST）に偏るため、通知チャンネルのサイレンス設定を確認する。
 - Issue 起票時には関連する `reports/heavy-test-trends-history/<timestamp>.json` と `reports/heavy-test-trends-history/summary.md`、該当 run の URL を必ず添付する。
+- agent-created PR を評価する場合、heavy-test alert の結果は `docs/ci/agent-pr-assurance-metrics.md` の report-only `agent_regression_signal` metric への入力として扱う。
 - 閾値見直し時は次を実行し、`Status: ready` を確認してから workflow 閾値へ反映する。
   - `node scripts/pipelines/recommend-heavy-trend-thresholds.mjs --history-dir reports/heavy-test-trends-history --min-snapshots 14`
 
