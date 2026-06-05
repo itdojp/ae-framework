@@ -32,10 +32,12 @@ function expectSemanticError(
 
   const errors = validateAgenticMetricsSemantics(fixture);
   expect(errors).not.toEqual([]);
-  expect(errors.some((entry) => entry.instancePath === expectedPath)).toBe(true);
-  if (expectedKeyword) {
-    expect(errors.some((entry) => entry.keyword === expectedKeyword)).toBe(true);
-  }
+  expect(
+    errors.some(
+      (entry) => entry.instancePath === expectedPath
+        && (expectedKeyword === undefined || entry.keyword === expectedKeyword),
+    ),
+  ).toBe(true);
 }
 
 describe('agentic-metrics contract', () => {
