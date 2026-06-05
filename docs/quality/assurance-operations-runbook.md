@@ -164,6 +164,32 @@ Check these fields per claim:
 - `independenceWarnings`
 - `counterexamples.open`
 
+#### 6.3 claim status, policy action, and PR summary
+
+Use the vocabulary from `docs/quality/ASSURANCE-MODEL.md` when summarizing claim-level assurance.
+
+| Claim status | Default policy action | Escalation path |
+| --- | --- | --- |
+| `proved` | supported | keep proof scope and assumptions visible |
+| `model-checked` | supported for the modeled scope | require human review if the production claim exceeds model assumptions |
+| `tested` | supported by behavior evidence | escalate when the target assurance level requires model/proof lanes |
+| `runtime-mitigated` | warn / report-only by default | block or require manual approval for critical core claims that require proof/model evidence |
+| `waived` | warn with waiver metadata | block when owner, reason, expiry, affected claim, or evidence link is missing or expired |
+| `unresolved` | report-only for ordinary changes | block or require manual approval when `risk:high`, `enforce-assurance`, or critical core policy requires the missing lane |
+
+PR summaries or comments should be able to include this compact shape:
+
+```text
+Claim summary:
+- supported: N
+- unresolved: N
+- waived: N
+- required lanes missing: N
+- high-risk claims requiring human review: N
+```
+
+Do not append raw logs as the primary review surface. Link normalized summary artifacts first, then raw logs as supporting evidence.
+
 ### 7. First-pass triage
 
 #### 7.1 `summary not found`
@@ -361,6 +387,32 @@ claim ごとに確認する項目:
 - `missingEvidenceKinds`
 - `independenceWarnings`
 - `counterexamples.open`
+
+### 6.3 claim status、policy action、PR summary
+
+Claim-level assurance を要約するときは `docs/quality/ASSURANCE-MODEL.md` の語彙を使います。
+
+| Claim status | 既定の policy action | 昇格条件 |
+| --- | --- | --- |
+| `proved` | supported | proof scope と assumption を表示したままにする |
+| `model-checked` | modeled scope に対して supported | production claim が model assumption を超える場合は human review を要求 |
+| `tested` | behavior evidence により supported | target assurance level が model/proof lane を要求する場合は昇格 |
+| `runtime-mitigated` | 既定では warn / report-only | critical core claim が proof/model evidence を要求する場合は block または manual approval |
+| `waived` | waiver metadata 付きで warn | owner、reason、expiry、affected claim、evidence link が不足または期限切れなら block |
+| `unresolved` | 通常変更では report-only | `risk:high`、`enforce-assurance`、critical core policy が missing lane を要求する場合は block または manual approval |
+
+PR summary / comment は次の compact shape を載せられる必要があります。
+
+```text
+Claim summary:
+- supported: N
+- unresolved: N
+- waived: N
+- required lanes missing: N
+- high-risk claims requiring human review: N
+```
+
+Raw log を review surface の一次情報にしないでください。normalized summary artifact を先に link し、raw log は supporting evidence として扱います。
 
 ### 7. 失敗時の一次切り分け
 
