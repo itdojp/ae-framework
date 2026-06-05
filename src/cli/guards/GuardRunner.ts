@@ -1,9 +1,156 @@
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import { existsSync } from 'fs';
 import { glob } from 'glob';
 import type { AEFrameworkConfig, Guard, GuardResult } from '../types.js';
 import { toMessage } from '../../utils/error-utils.js';
 import { getCurrentPhase, shouldEnforceGate, getThreshold } from '../../utils/quality-policy-loader.js';
+
+
+export const GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE = 'guard-script-execution' as const;
+
+export interface GuardRunnerOptions {
+  dryRun?: boolean;
+  apply?: boolean;
+  approvalScope?: string;
+  agentContext?: boolean;
+  cwd?: string;
+  env?: NodeJS.ProcessEnv;
+}
+
+export interface GuardScriptExecutionPolicy {
+  dryRun: boolean;
+  apply: boolean;
+  approvalRequired: boolean;
+  approvalScope?: string;
+  agentContext: boolean;
+}
+
+type GuardCommandResult = {
+  executed: boolean;
+  output: string;
+  message?: string;
+};
+
+type SpawnLikeResult = {
+  status?: number | null;
+  signal?: NodeJS.Signals | null;
+  stdout?: string | Buffer | null;
+  stderr?: string | Buffer | null;
+  error?: Error;
+};
+
+type GuardNpmInvocation = {
+  command: string;
+  args: string[];
+};
+
+export function createGuardNpmInvocation(
+  args: string[],
+  platform: NodeJS.Platform = process.platform,
+  env: NodeJS.ProcessEnv = process.env,
+): GuardNpmInvocation {
+  if (platform !== 'win32') {
+    return { command: 'npm', args };
+  }
+  return {
+    command: env['ComSpec'] ?? env['COMSPEC'] ?? 'cmd.exe',
+    args: ['/d', '/s', '/c', 'npm.cmd', ...args],
+  };
+}
+
+const isTruthyEnv = (value: string | undefined): boolean => {
+  if (value === undefined) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized.length > 0 && !['0', 'false', 'no', 'off'].includes(normalized);
+};
+
+const isGuardAgentContext = (env: NodeJS.ProcessEnv = process.env): boolean => (
+  isTruthyEnv(env['AE_GUARD_AGENT_CONTEXT']) ||
+  isTruthyEnv(env['AE_AGENT_CONTEXT']) ||
+  isTruthyEnv(env['AE_GUARD_UNTRUSTED_CHECKOUT']) ||
+  isTruthyEnv(env['AE_UNTRUSTED_CHECKOUT'])
+);
+
+export function getGuardScriptExecutionPolicy(options: GuardRunnerOptions = {}): GuardScriptExecutionPolicy {
+  const env = options.env ?? process.env;
+  const agentContext = options.agentContext ?? isGuardAgentContext(env);
+  const apply = options.apply === true;
+  const approvalScope = options.approvalScope;
+  const dryRun = options.dryRun === true || (agentContext && !apply);
+  const approvalRequired = agentContext && apply && approvalScope !== GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE;
+  const policy: GuardScriptExecutionPolicy = {
+    dryRun,
+    apply,
+    approvalRequired,
+    agentContext,
+  };
+  if (approvalScope !== undefined) {
+    policy.approvalScope = approvalScope;
+  }
+  return policy;
+}
+
+const SENSITIVE_ENV_NAME_PATTERN = /(?:^|_)(?:token|secret|password|passwd|credential|credentials|cookie|session|authorization|auth|private(?:_key)?|access_key|api_key)(?:_|$)/i;
+const SENSITIVE_ENV_EXACT_NAMES = new Set([
+  'GITHUB_TOKEN',
+  'GH_TOKEN',
+  'NPM_TOKEN',
+  'NODE_AUTH_TOKEN',
+  'ACTIONS_ID_TOKEN_REQUEST_TOKEN',
+]);
+
+export function createGuardProcessEnv(source: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (value === undefined) continue;
+    if (SENSITIVE_ENV_EXACT_NAMES.has(key) || SENSITIVE_ENV_NAME_PATTERN.test(key)) {
+      continue;
+    }
+    env[key] = value;
+  }
+  return env;
+}
+
+class GuardScriptApprovalRequiredError extends Error {
+  constructor(command: string) {
+    super(
+      `Guard script execution requires --apply --approval-scope ${GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE} before running ${command} in an agent or untrusted-checkout context`
+    );
+    this.name = 'GuardScriptApprovalRequiredError';
+  }
+}
+
+class GuardCommandFailedError extends Error {
+  readonly stdout?: string;
+  readonly stderr?: string;
+
+  constructor(command: string, result: SpawnLikeResult) {
+    const status = result.status ?? (result.signal ? `signal ${result.signal}` : 'unknown');
+    super(`Guard command failed (${command}) with status ${status}`);
+    this.name = 'GuardCommandFailedError';
+    const stdout = toOutputText(result.stdout);
+    const stderr = toOutputText(result.stderr);
+    if (stdout !== undefined) {
+      this.stdout = stdout;
+    }
+    if (stderr !== undefined) {
+      this.stderr = stderr;
+    }
+  }
+}
+
+const toOutputText = (value: string | Buffer | null | undefined): string | undefined => {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (Buffer.isBuffer(value)) {
+    return value.toString('utf8');
+  }
+  if (value === null) {
+    return undefined;
+  }
+  return value;
+};
 
 type ExecErrorOutput = {
   stdout?: string | Buffer;
@@ -43,7 +190,15 @@ const readExecOutput = (error: unknown): string => {
 };
 
 export class GuardRunner {
-  constructor(private config: AEFrameworkConfig) {}
+  private readonly executionPolicy: GuardScriptExecutionPolicy;
+  private readonly cwd: string;
+  private readonly env: NodeJS.ProcessEnv;
+
+  constructor(private config: AEFrameworkConfig, options: GuardRunnerOptions = {}) {
+    this.executionPolicy = getGuardScriptExecutionPolicy(options);
+    this.cwd = options.cwd ?? process.cwd();
+    this.env = options.env ?? process.env;
+  }
 
   async run(guard: Guard): Promise<GuardResult> {
     switch (guard.name) {
@@ -112,7 +267,11 @@ export class GuardRunner {
   private async runTestExecutionGuard(): Promise<GuardResult> {
     try {
       // Check if tests pass
-      const result = execSync('npm test --silent', { encoding: 'utf8', stdio: 'pipe' });
+      const commandResult = this.runNpmScript(['test', '--silent'], 'npm test --silent');
+      if (!commandResult.executed) {
+        return { success: true, message: commandResult.message ?? 'Dry-run preview: npm test --silent was not executed' };
+      }
+      const result = commandResult.output;
       
       // Look for successful test indicators
       const hasPassedTests = result.includes('passing') || result.includes('✓') || !result.includes('failing');
@@ -123,10 +282,13 @@ export class GuardRunner {
         return { success: false, message: 'Some tests are failing' };
       }
     } catch (error: unknown) {
+      if (error instanceof GuardScriptApprovalRequiredError) {
+        return { success: false, message: error.message };
+      }
       const output = readExecOutput(error);
       return {
         success: false,
-        message: `Tests failed: ${output.split('\n').slice(-3).join('\n').trim()}`
+        message: `Tests failed: ${output.split('\n').slice(-3).join('\n').trim() || toMessage(error)}`
       };
     }
   }
@@ -166,19 +328,20 @@ export class GuardRunner {
   private async runCoverageGuard(): Promise<GuardResult> {
     try {
       // Run coverage check
-      let result: string;
+      let commandResult: GuardCommandResult;
       try {
-        result = execSync('npm run coverage --silent', {
-          encoding: 'utf8',
-          stdio: 'pipe'
-        });
-      } catch (e) {
+        commandResult = this.runNpmScript(['run', 'coverage', '--silent'], 'npm run coverage --silent');
+      } catch (error) {
+        if (error instanceof GuardScriptApprovalRequiredError) {
+          throw error;
+        }
         // Fallback to npm test with coverage if npm run coverage fails
-        result = execSync('npm test -- --coverage --silent', {
-          encoding: 'utf8',
-          stdio: 'pipe'
-        });
+        commandResult = this.runNpmScript(['test', '--', '--coverage', '--silent'], 'npm test -- --coverage --silent');
       }
+      if (!commandResult.executed) {
+        return { success: true, message: commandResult.message ?? 'Dry-run preview: coverage guard npm scripts were not executed' };
+      }
+      const result = commandResult.output;
       
       // Parse coverage output
       const coverageMatch = result.match(/All files[^\d]*(\d+(?:\.\d+)?)/);
@@ -196,14 +359,52 @@ export class GuardRunner {
         return { success: false, message: `Coverage: ${coverage}% (< ${threshold}%)` };
       }
     } catch (error: unknown) {
+      if (error instanceof GuardScriptApprovalRequiredError) {
+        return { success: false, message: error.message };
+      }
       // If coverage command fails, check if at least tests exist and pass
       try {
-        await this.runTestExecutionGuard();
-        return { success: true, message: 'Coverage tool not available, but tests pass' };
+        const testResult = await this.runTestExecutionGuard();
+        if (testResult.success) {
+          return { success: true, message: 'Coverage tool not available, but tests pass' };
+        }
+        return { success: false, message: 'Cannot determine coverage and tests fail' };
       } catch {
         return { success: false, message: 'Cannot determine coverage and tests fail' };
       }
     }
+  }
+
+  private runNpmScript(args: string[], displayCommand: string): GuardCommandResult {
+    if (this.executionPolicy.approvalRequired) {
+      throw new GuardScriptApprovalRequiredError(displayCommand);
+    }
+    if (this.executionPolicy.dryRun) {
+      return {
+        executed: false,
+        output: '',
+        message: `Dry-run preview: would execute ${displayCommand}. Use --apply --approval-scope ${GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE} in an agent or untrusted-checkout context to run repository scripts.`,
+      };
+    }
+
+    const invocation = createGuardNpmInvocation(args, process.platform, this.env);
+    const result = spawnSync(invocation.command, invocation.args, {
+      cwd: this.cwd,
+      encoding: 'utf8',
+      env: createGuardProcessEnv(this.env),
+      shell: false,
+      stdio: 'pipe',
+    }) as SpawnLikeResult;
+    if (result.error) {
+      throw result.error;
+    }
+    if (result.status !== 0) {
+      throw new GuardCommandFailedError(displayCommand, result);
+    }
+    return {
+      executed: true,
+      output: `${toOutputText(result.stdout) ?? ''}${toOutputText(result.stderr) ?? ''}`,
+    };
   }
 
   // Utility method to check git status for TDD violations

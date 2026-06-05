@@ -8,7 +8,12 @@ import { createSpecCommand } from './spec-cli.js';
 import { createStateMachineCommand } from './state-machine-cli.js';
 import { createCodegenCommand } from './codegen-cli.js';
 import { CEGISCli } from './cegis-cli.js';
-import { GuardRunner } from './guards/GuardRunner.js';
+import {
+  GuardRunner,
+  GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE,
+  getGuardScriptExecutionPolicy,
+  type GuardRunnerOptions,
+} from './guards/GuardRunner.js';
 import { ConfigLoader } from './config/ConfigLoader.js';
 import type { AEFrameworkConfig, Phase } from './types.js';
 import { createHybridIntentSystem, type HybridIntentSystem } from '../integration/hybrid-intent-system.js';
@@ -56,6 +61,38 @@ const parseCommaSeparatedSources = (value?: string): string[] => {
     .filter(Boolean);
 };
 
+
+interface GuardExecutionCliOptions {
+  dryRun?: boolean;
+  apply?: boolean;
+  approvalScope?: string;
+}
+
+const toGuardRunnerOptions = (options: GuardExecutionCliOptions = {}): GuardRunnerOptions => {
+  const runnerOptions: GuardRunnerOptions = {
+    dryRun: options.dryRun === true,
+    apply: options.apply === true,
+  };
+  if (options.approvalScope !== undefined) {
+    runnerOptions.approvalScope = options.approvalScope;
+  }
+  return runnerOptions;
+};
+
+const prepareGuardScriptExecution = (options: GuardExecutionCliOptions = {}): GuardRunnerOptions | undefined => {
+  const runnerOptions = toGuardRunnerOptions(options);
+  const policy = getGuardScriptExecutionPolicy(runnerOptions);
+  if (policy.approvalRequired) {
+    console.error(chalk.red(`❌ Guard script execution requires --approval-scope ${GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE} when --apply is used in an agent or untrusted-checkout context`));
+    safeExit(1);
+    return undefined;
+  }
+  if (policy.dryRun) {
+    console.log(chalk.yellow('🔎 Dry-run preview: process-starting guards will not run repository npm scripts.'));
+  }
+  return runnerOptions;
+};
+
 const resolveValidationTaskTypeFromOptions = (options: Record<string, unknown>): ValidationTaskType => {
   if (options['requirements']) {
     return 'validate-requirements';
@@ -78,7 +115,6 @@ const resolveValidationTaskTypeFromOptions = (options: Record<string, unknown>):
 class AEFrameworkCLI {
   private config: AEFrameworkConfig;
   private phaseValidator: PhaseValidator;
-  private guardRunner: GuardRunner;
   private intentSystem: HybridIntentSystem;
   public naturalLanguageHandler: TaskHandler;
   public userStoriesHandler: TaskHandler;
@@ -89,7 +125,6 @@ class AEFrameworkCLI {
   constructor() {
     this.config = ConfigLoader.load();
     this.phaseValidator = new PhaseValidator(this.config);
-    this.guardRunner = new GuardRunner(this.config);
     this.intentSystem = createHybridIntentSystem({
       enableCLI: true,
       enableMCPServer: false, // Disabled for CLI mode
@@ -134,7 +169,7 @@ class AEFrameworkCLI {
     }
   }
 
-  async runGuards(guardName?: string): Promise<void> {
+  async runGuards(guardName?: string, options: GuardRunnerOptions = {}): Promise<void> {
     const guards = guardName 
       ? [this.config.guards.find(g => g.name === guardName)].filter(Boolean)
       : this.config.guards;
@@ -148,7 +183,7 @@ class AEFrameworkCLI {
 
     let allPassed = true;
     for (const guard of guards) {
-      const result = await this.guardRunner.run(guard!);
+      const result = await new GuardRunner(this.config, options).run(guard!);
       
       if (result.success) {
         console.log(chalk.green(`✅ ${guard!.name}: PASSED`));
@@ -417,9 +452,14 @@ program
   .command('guard')
   .description('Run guard validations')
   .option('-n, --name <name>', 'Specific guard to run')
+  .option('--dry-run', 'Preview process-starting guards without running repository npm scripts')
+  .option('--apply', 'Execute repository npm scripts in an agent or untrusted-checkout context after trusted approval')
+  .option('--approval-scope <scope>', `Trusted guard script execution approval scope (${GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE})`)
   .action(async (options) => {
+    const runnerOptions = prepareGuardScriptExecution(options);
+    if (!runnerOptions) return;
     const cli = new AEFrameworkCLI();
-    await cli.runGuards(options.name);
+    await cli.runGuards(options.name, runnerOptions);
   });
 
 program
@@ -433,14 +473,19 @@ program
 program
   .command('tdd')
   .description('Run TDD cycle validation')
-  .action(async () => {
+  .option('--dry-run', 'Preview process-starting TDD guards without running repository npm scripts')
+  .option('--apply', 'Execute repository npm scripts in an agent or untrusted-checkout context after trusted approval')
+  .option('--approval-scope <scope>', `Trusted guard script execution approval scope (${GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE})`)
+  .action(async (options) => {
+    const runnerOptions = prepareGuardScriptExecution(options);
+    if (!runnerOptions) return;
     const cli = new AEFrameworkCLI();
     console.log(chalk.blue('🔄 Validating TDD cycle...'));
     
     // Check TDD Guards
-    await cli.runGuards('TDD Guard');
-    await cli.runGuards('Test Execution Guard');
-    await cli.runGuards('RED-GREEN Cycle Guard');
+    await cli.runGuards('TDD Guard', runnerOptions);
+    await cli.runGuards('Test Execution Guard', runnerOptions);
+    await cli.runGuards('RED-GREEN Cycle Guard', runnerOptions);
     
     console.log(chalk.green('✅ TDD cycle validation complete'));
   });
