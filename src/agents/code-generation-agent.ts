@@ -49,6 +49,11 @@ import {
   getTestExtension,
 } from './code-generation-language.js';
 
+const toRelativeImportSpecifier = (fromDirectory: string, targetModule: string): string => {
+  const relative = path.posix.relative(fromDirectory, targetModule);
+  return relative.startsWith('.') ? relative : `./${relative}`;
+};
+
 export type {
   CodeGenerationRequest,
   TestFile,
@@ -158,6 +163,9 @@ export class CodeGenerationAgent {
         ? toSafeFileSlug(opIdRaw, 'operation')
         : `${safeName}-${method}`;
       const routeImport = toSafeFileSlug(fileBase, 'route');
+      const generatedPath = buildSafeRelativePath(outputRoot, `${fileBase}.spec.ts`, 'generated OpenAPI test path');
+      const routeModulePath = buildSafeRelativePath('src/routes', routeImport, 'generated route import path');
+      const routeImportSpecifier = toRelativeImportSpecifier(path.posix.dirname(generatedPath), routeModulePath);
       const titleLiteral = toTsStringLiteral(title);
       const operationComment = toSafeLineCommentText(opIdRaw);
       // Try to derive minimal input from requestBody schema when requested
@@ -174,9 +182,9 @@ export class CodeGenerationAgent {
         }
         sample = buildSampleLiteral(schema, ep?.components || {});
       }
-      const content = `import { describe, it, expect } from 'vitest'\nimport { handler } from '../../src/routes/${routeImport}'\n\n// OperationId: ${operationComment}\ndescribe(${titleLiteral}, () => {\n  it('returns success on minimal input (skeleton)', async () => {\n    const res: any = await handler(${sample})\n    expect(typeof res.status).toBe('number')\n  })\n})\n`;
+      const content = `import { describe, it, expect } from 'vitest'\nimport { handler } from '${routeImportSpecifier}'\n\n// OperationId: ${operationComment}\ndescribe(${titleLiteral}, () => {\n  it('returns success on minimal input (skeleton)', async () => {\n    const res: any = await handler(${sample})\n    expect(typeof res.status).toBe('number')\n  })\n})\n`;
       out.push({
-        path: buildSafeRelativePath(outputRoot, `${fileBase}.spec.ts`, 'generated OpenAPI test path'),
+        path: generatedPath,
         content,
         purpose: `Test for ${toSafeLineCommentText(title)}`,
         tests: [],

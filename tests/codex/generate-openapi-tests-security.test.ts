@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 const scriptPath = resolve('scripts/codex/generate-openapi-tests.ts');
@@ -8,6 +8,7 @@ const tsxBin = resolve('node_modules/.bin/tsx');
 const fixturePath = 'artifacts/codex/generate-openapi-tests-security/openapi.json';
 const defaultOutputDir = resolve('artifacts/codex/generated-tests');
 const fixtureDir = resolve(dirname(fixturePath));
+const outsideRepoDir = resolve('..', 'generate-openapi-tests-security-outside');
 
 const writeSpec = () => {
   mkdirSync(fixtureDir, { recursive: true });
@@ -71,6 +72,45 @@ describe('generate-openapi-tests security policy', () => {
       expect(result.stderr).toContain('Writing generated tests under tests/ requires');
     } finally {
       rmSync(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects writing generated tests directly to the tests directory without explicit reviewed approval', () => {
+    rmSync(fixtureDir, { recursive: true, force: true });
+    writeSpec();
+
+    try {
+      const result = runGenerator(['--output-dir', 'tests']);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('Writing generated tests under tests/ requires');
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects output directories that resolve through symlinks outside the workspace', () => {
+    rmSync(fixtureDir, { recursive: true, force: true });
+    rmSync(outsideRepoDir, { recursive: true, force: true });
+    writeSpec();
+    mkdirSync(outsideRepoDir, { recursive: true });
+    const symlinkPath = resolve('artifacts/codex/generate-openapi-tests-security/symlink-out');
+    try {
+      symlinkSync(outsideRepoDir, symlinkPath, 'dir');
+    } catch {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(outsideRepoDir, { recursive: true, force: true });
+      return;
+    }
+
+    try {
+      const result = runGenerator(['--output-dir', 'artifacts/codex/generate-openapi-tests-security/symlink-out']);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('resolves through a filesystem entry outside the approved workspace');
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+      rmSync(outsideRepoDir, { recursive: true, force: true });
     }
   });
 

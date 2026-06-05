@@ -111,11 +111,10 @@ export function toTsStringLiteral(input: string): string {
 export function toSafeLineCommentText(input: string | undefined, fallback = 'N/A'): string {
   const normalized = String(input ?? '')
     .replace(/\r\n?/g, '\n')
-    .replace(/[\u0000-\u001F\u007F]/g, ' ')
     .replace(/\*\//g, '*\\/');
   const singleLine = normalized
     .split('\n')
-    .map((part) => part.trim())
+    .map((part) => part.replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, ' ').trim())
     .filter(Boolean)
     .join(' | ');
   return singleLine || fallback;

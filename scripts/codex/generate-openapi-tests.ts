@@ -3,6 +3,7 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import yaml from 'yaml'
+import { resolveWorkspacePath } from '../../src/utils/workspace-path-policy.js'
 
 const DEFAULT_REVIEW_OUTPUT_DIR = 'artifacts/codex/generated-tests'
 const REVIEWED_TEST_OUTPUT_APPROVAL = 'reviewed-generated-tests'
@@ -43,7 +44,12 @@ function normalizeWorkspacePath(repo: string, inputPath: string, label: string):
   if (segments.some((segment) => segment.toLowerCase() === '.git')) {
     throw new Error(`${label} must not target Git metadata directories`)
   }
-  return { absolutePath, relativePath: segments.join('/') }
+  const safeRelativePath = segments.join('/')
+  const realpathCheckedPath = resolveWorkspacePath(safeRelativePath, {
+    workspaceRoot: repo,
+    label,
+  })
+  return { absolutePath: realpathCheckedPath, relativePath: safeRelativePath }
 }
 
 function getArgValue(name: string): string | undefined {
@@ -76,7 +82,7 @@ async function main() {
   const withInput = process.argv.includes('--with-input') || process.argv.includes('--sample')
   const requestedOutputDir = getArgValue('--output-dir') || process.env.CODEX_GENERATE_TESTS_OUTPUT_DIR || DEFAULT_REVIEW_OUTPUT_DIR
   const outputDir = normalizeWorkspacePath(repo, requestedOutputDir, 'generated test output directory')
-  if (outputDir.relativePath.startsWith('tests/') && !hasReviewedTestsApproval()) {
+  if ((outputDir.relativePath === 'tests' || outputDir.relativePath.startsWith('tests/')) && !hasReviewedTestsApproval()) {
     throw new Error(
       `Writing generated tests under tests/ requires --approve-generated-tests and CODEX_GENERATE_TESTS_APPROVAL=${REVIEWED_TEST_OUTPUT_APPROVAL}`
     )

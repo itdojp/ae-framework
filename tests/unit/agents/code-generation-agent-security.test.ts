@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { CodeGenerationAgent } from '../../../src/agents/code-generation-agent';
+import { toSafeLineCommentText } from '../../../src/agents/code-generation-safety';
 
 describe('CodeGenerationAgent generated output safety', () => {
+  it('preserves readable line delimiters while removing line comment injection characters', () => {
+    expect(toSafeLineCommentText('alpha\nbeta */\rgamma\u0007')).toBe('alpha | beta *\\/ | gamma');
+  });
+
   it('sanitizes test-derived describe and it text before generating implementation code', async () => {
     const agent = new CodeGenerationAgent();
 
@@ -56,9 +61,33 @@ describe('../evil'); import fs from "fs"', () => {
 
     expect(files).toHaveLength(1);
     expect(files[0]?.path).toBe('artifacts/codex/generated-tests/evil-import-fs-from-fs.spec.ts');
+    expect(files[0]?.content).toContain("import { handler } from '../../../src/routes/evil-import-fs-from-fs'");
     expect(files[0]?.content).toContain('describe("evil');
     expect(files[0]?.content).not.toContain("describe('");
     expect(files[0]?.content).not.toContain("evil');\nimport fs");
     expect(files[0]?.content.split('\n').filter((line) => line.startsWith('// OperationId:'))).toHaveLength(1);
+  });
+
+  it('derives route imports from custom generated test output roots', async () => {
+    const agent = new CodeGenerationAgent();
+    const spec = JSON.stringify({
+      openapi: '3.0.0',
+      paths: {
+        '/orders': {
+          get: {
+            operationId: 'listOrders',
+            responses: { 200: { content: { 'application/json': { schema: { type: 'object' } } } } },
+          },
+        },
+      },
+    });
+
+    const files = await agent.generateTestsFromOpenAPI(spec, {
+      useOperationIdForTestNames: true,
+      outputRoot: 'artifacts/codex/generated-tests/deep/review',
+    });
+
+    expect(files[0]?.path).toBe('artifacts/codex/generated-tests/deep/review/listorders.spec.ts');
+    expect(files[0]?.content).toContain("import { handler } from '../../../../../src/routes/listorders'");
   });
 });
