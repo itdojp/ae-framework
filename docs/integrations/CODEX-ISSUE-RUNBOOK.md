@@ -31,7 +31,7 @@ gh issue view "$ISSUE" --repo "$REPO" \
   > "$WORK/.codex-local/tasks/issue-$ISSUE.md"
 ```
 
-Record the source URL in the task file so later PRs can show which Issue was used.
+The task file is local operator input. `.gitignore` excludes `.codex-local/tasks/`, and agents must not stage task files. Record the source URL in the task file so later PRs can show which Issue was used without copying the full local file into the commit.
 
 ### 2. Non-interactive Codex execution
 
@@ -85,6 +85,7 @@ Before opening or updating a PR:
 ```bash
 git diff --stat
 git diff --check
+git status --short --untracked-files=all
 ```
 
 Run the Issue-specific validation commands. At minimum for docs/contracts work:
@@ -94,7 +95,7 @@ pnpm -s run check:doc-consistency
 pnpm -s run check:schemas
 ```
 
-If commands cannot be run, write the command and the concrete reason in the PR body. If generated artifacts are expected, inspect their paths and include them in the PR summary.
+If commands cannot be run, write the command and the concrete reason in the PR body. If generated artifacts are expected, inspect their paths and include them in the PR summary. Before staging, remove or keep ignored any local task files under `.codex-local/tasks/`; do not use broad staging until `git status --short --untracked-files=all` confirms that no local task input can be committed.
 
 ### 6. PR and review checklist
 
@@ -104,7 +105,7 @@ If commands cannot be run, write the command and the concrete reason in the PR b
 4. Inspect review bodies and inline comments.
 5. Reply to each actionable comment and resolve each review thread.
 6. Use review-completeness checking before declaring review done.
-7. Wait for required checks (`verify-lite`, `policy-gate`, and `gate`) and inspect full check board for non-pass entries.
+7. Wait for the authoritative required checks (`verify-lite`, `policy-gate`) and inspect `gate` / the full check board for non-pass entries.
 
 ### 7. Subagent / parallel task safety boundary
 
@@ -148,7 +149,7 @@ gh issue view "$ISSUE" --repo "$REPO" \
   > "$WORK/.codex-local/tasks/issue-$ISSUE.md"
 ```
 
-後続 PR で参照元を示せるよう、task file には Issue URL を残します。
+task file は local operator input です。`.gitignore` は `.codex-local/tasks/` を除外し、agent は task file を stage してはいけません。後続 PR で参照元を示せるよう、task file には Issue URL を残しますが、local file 全文を commit に含めないでください。
 
 ### 2. 非対話実行
 
@@ -202,6 +203,7 @@ PR 作成または更新前に次を確認します。
 ```bash
 git diff --stat
 git diff --check
+git status --short --untracked-files=all
 ```
 
 Issue 固有の validation command を実行します。docs/contracts work の最低限は次です。
@@ -211,7 +213,7 @@ pnpm -s run check:doc-consistency
 pnpm -s run check:schemas
 ```
 
-実行できない command がある場合は、command と具体的な理由を PR body に残します。生成 artifact が期待される場合は、path を確認して PR summary に含めます。
+実行できない command がある場合は、command と具体的な理由を PR body に残します。生成 artifact が期待される場合は、path を確認して PR summary に含めます。stage 前に `.codex-local/tasks/` 配下の local task file を削除するか ignored のままにし、`git status --short --untracked-files=all` で local task input が commit されないことを確認するまで broad staging は使わないでください。
 
 ### 6. PR / review checklist
 
@@ -221,7 +223,7 @@ pnpm -s run check:schemas
 4. review body と inline comment を確認する。
 5. actionable comment へ返信し、review thread を解決する。
 6. review 完了宣言前に review completeness を確認する。
-7. required checks（`verify-lite`, `policy-gate`, `gate`）と full check board を確認する。
+7. 権威ある required checks（`verify-lite`, `policy-gate`）を待ち、`gate` / full check board に non-pass entry がないか確認する。
 
 ### 7. subagent / parallel task の安全境界
 
