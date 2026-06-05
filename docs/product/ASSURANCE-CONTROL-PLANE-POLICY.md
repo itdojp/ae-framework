@@ -134,6 +134,8 @@ Agent PR assurance metrics are observability signals. They can be shown in quali
 
 Policy gates may consume these metrics for context, but a metric must not become a new block condition without an explicit policy change tied to risk labels, assurance profiles, or high-assurance critical core scope.
 
+`agentPrAssurance.metrics.required_lane_compliance.notApplicable` is a metric-level denominator state for "no required lanes." It is not a claim-level `not-applicable` assurance state and does not authorize producers to emit new primary claim states.
+
 ### 10. References
 
 - Product overview: `docs/product/ASSURANCE-CONTROL-PLANE.md`
@@ -185,7 +187,7 @@ Policy gates may consume these metrics for context, but a metric must not become
 | Claim-based assurance | assurance は claim 単位で評価し、repository 全体の green status だけでは判断しない。 |
 | Claim status escalation | 通常変更の unresolved claim は report-only に留める場合があるが、`risk:high`、`enforce-assurance`、critical core policy では required lane 不足を block または manual approval へ昇格できる。 |
 | Summary-first evidence | summary artifact を主な判断入力とし、raw log は補助証跡とする。 |
-| Distinct evidence states | 現行 contract が emit できる state は `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved`。将来 `not-applicable` を追加する場合は、producer が emit する前に schema/docs migration を行う。 |
+| Distinct evidence states | 現行 primary producer が emit できる state は `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved`。preview `claim-level-summary/v1` は PR / release projection として `not-applicable` を表現できるが、primary producer が emit するには事前の schema/docs migration と明示的な promotion が必要。 |
 | Human override | human override には owner、reason、expiry、related claim IDs、evidence link を必要とする。 |
 | Contract evolution | contract 変更には compatibility window、dual-write/dual-validate、または migration note を使う。 |
 | Enforcement default | 新しい assurance evaluation は、明示的な policy / label / risk profile が enforcement を選択しない限り report-only から開始する。 |
@@ -216,6 +218,7 @@ Claim status は claim 単位で評価し、PR / release summary では状態を
 | `runtime-mitigated` | runtime guard / feature flag / alert などで緩和済み | warn / report-only が既定。critical core では manual approval または block へ昇格可能 |
 | `waived` | owner / reason / expiry / claim / evidence link 付きで期限付き免除 | metadata 不足・期限切れは block。satisfied claim ではない |
 | `unresolved` | evidence 不足または未判断 | 通常変更では report-only 可。ただし `risk:high` / `enforce-assurance` / critical core では block または manual approval |
+| `not-applicable` | 明示的に scope 外 / 非対象である claim の preview-only claim-level summary projection | 現行 `claim-evidence-manifest/v1` / `change-package/v2` の primary emitted state ではない |
 
 ### 6. 有効/無効な表現例
 
@@ -244,3 +247,5 @@ Claim status は claim 単位で評価し、PR / release summary では状態を
 Agent PR assurance metrics は observability signal です。quality scorecard、PR comment、release summary、または `agentic-metrics` extension に表示できますが、初期状態は report-only です。
 
 Policy gate は文脈情報としてこれらのmetricsを参照できます。ただし、risk label、assurance profile、high-assurance critical core scope に結びついた明示的なpolicy変更がない限り、新しいblock条件にはしません。
+
+`agentPrAssurance.metrics.required_lane_compliance.notApplicable` は「required lane がない」ことを表す metric-level denominator state です。claim-level の `not-applicable` assurance state ではなく、producer に新しい primary claim state の emit を許可するものではありません。
