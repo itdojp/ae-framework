@@ -38,6 +38,10 @@ Primary review surface:
 | `blocked_to_merge_eligible_mttr` | Time from first blocked state to merge-eligible state. | PR state timeline, `policy-gate-summary`, automation observability reports | Measure from first `blocked`/failed-required-check observation to `mergeStateStatus=CLEAN` or equivalent merge-eligible state. | Trend metric; do not block a PR by itself. |
 | `false_block_rate` | Rate of blocks later judged unnecessary. | manual annotation, automation observability reports, PR comments, policy-decision notes | Initially manual: `false_blocks / total_blocks` for a defined observation window. | Report-only until the annotation taxonomy is stable. |
 
+Semantic validation uses a tolerance of `0.0001` for rounded ratio values. Count-based ratios must keep the numerator less than or equal to the denominator. When `claim_coverage.denominator` or `evidence_completeness.required` is `0`, the corresponding numerator must also be `0` and `ratio` is represented as `1` to mean there were no required items left uncovered. `required_lane_compliance` uses a stricter not-applicable representation: `required=0`, `satisfied=0`, `ratio=null`, and `notApplicable=true`. `false_block_rate.totalBlocks=0` has no meaningful percentage, so the metric uses `ratio=null`; if `annotatedFalseBlocks` is `null`, `annotationRequired=true` records that manual classification is still missing.
+
+`agent_regression_signal.regressed` is producer-supplied rather than derived solely from `currentFailures` and `staleOrSupersededFailures`. Producers may incorporate trend history or external check classifications not represented by the two count fields, so the contract validates the shape and records the counts separately without over-constraining the flag.
+
 ### 3. Connection to existing artifacts
 
 `quality-scorecard/v1` is the preferred aggregation surface when the metric can be expressed as one of its current dimensions:
@@ -115,6 +119,10 @@ Agent PR assurance metrics は、agent が作成またはreviewした pull reque
 | `agent_regression_signal` | agent-created PR のreview loopで test/gate regression が発生したか。 | GitHub checks, `verify-lite-run-summary`, `harness-health`, heavy-test trend summaries, review-gate history | PR head系列の failed gate/test をflagまたは件数化する。stale/superseded failure と current failureを分ける。 | current/stale counts を分けて表示する。 |
 | `blocked_to_merge_eligible_mttr` | blocked から merge eligible に戻るまでの時間。 | PR state timeline, `policy-gate-summary`, automation observability reports | 最初の blocked / failed required check 観測から `mergeStateStatus=CLEAN` 相当までを測る。 | trend metric。単独ではblockしない。 |
 | `false_block_rate` | 後で不要と判断されたblockの割合。 | manual annotation, automation observability reports, PR comments, policy-decision notes | 初期はmanual annotationで `false_blocks / total_blocks` を観測期間ごとに計算する。 | annotation taxonomy が安定するまで report-only。 |
+
+Semantic validation は、丸め済み ratio に `0.0001` の許容差を使います。count-based ratio では numerator が denominator 以下でなければなりません。`claim_coverage.denominator` または `evidence_completeness.required` が `0` の場合、対応する numerator も `0` とし、未充足項目が存在しないことを `ratio=1` で表します。`required_lane_compliance` はより厳密な not-applicable 表現を使い、`required=0`、`satisfied=0`、`ratio=null`、`notApplicable=true` とします。`false_block_rate.totalBlocks=0` は有意な割合を持たないため `ratio=null` とし、`annotatedFalseBlocks` が `null` の場合は manual classification が未実施であることを `annotationRequired=true` で記録します。
+
+`agent_regression_signal.regressed` は `currentFailures` と `staleOrSupersededFailures` だけから導出する値ではなく、producer-supplied な要約flagです。producer は2つのcount fieldに表れないtrend historyや外部check分類を含められるため、contractはshapeとcountを検証し、flagを過度に制約しません。
 
 ### 3. 既存artifactとの接続
 

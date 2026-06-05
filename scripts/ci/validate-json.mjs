@@ -6,6 +6,7 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import yaml from 'yaml';
 import { runSchemaIdPolicyCheck } from './check-schema-id-policy.mjs';
+import { validateAgenticMetricsSemantics } from './lib/agentic-metrics-contract.mjs';
 import { validateClaimEvidenceManifestSemantics } from './lib/claim-evidence-manifest-contract.mjs';
 import {
   validateSecurityAuditTaskBundleSemantics,
@@ -319,7 +320,8 @@ const checks = [
       'fixtures/agentic-metrics/sample.agentic-metrics.json',
       'fixtures/agentic-metrics/agent-pr-assurance-metrics.example.json',
     ],
-    label: 'Agentic metrics schema validation'
+    label: 'Agentic metrics schema validation',
+    semanticValidate: validateAgenticMetricsSemantics
   },
   {
     schema: 'schema/formal-plan.schema.json',
