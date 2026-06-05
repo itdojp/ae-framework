@@ -23,6 +23,7 @@ lastVerified: '2026-03-09'
 | Slash Command運用 | `.github/workflows/agent-commands.yml` | 受理コマンド・付与ラベルの実装値 | PRコメント / 付与ラベル |
 | 形式手法・仕様検証 | `docs/quality/formal-runbook.md` | 実行対象（TLA+/CSP/Lean/Alloy等）と証跡 | `artifacts/formal/*` |
 | GitHub IssueをCodex CLIで処理 | `docs/integrations/CODEX-ISSUE-RUNBOOK.md` | Issue本文、target files、validation commandを作業入力として固定したか | PR本文 / review completeness / required checks |
+| Context Pack / design SSOT に関わる変更 | `docs/spec/context-pack.md` / `spec/context-pack/boundary-map.json` | 要求変更が design SSOT、boundary map、acceptance tests と矛盾しないか | `context-pack:validate` / `context-pack:verify-boundary-map` / `context-pack:deps` |
 | Producer outputのartifact接続 | `docs/agents/agent-producer-matrix.md` / `docs/agents/evidence-adapters.md` | producer outputをどのjudgment artifactへ正規化するか | Contract Catalog / schema validation / PR summary |
 | Multi-agent / subagent 運用 | `docs/agents/multi-agent-safety.md` | repo 共有作業か、専用worktree分離が必要か | `git status` / `git worktree list` / 差分確認 |
 
@@ -42,21 +43,22 @@ lastVerified: '2026-03-09'
 ## Progressive Disclosure（参照順）
 
 1. `docs/agents/README.md`（エージェント向け索引）
-2. `docs/agents/agent-producer-matrix.md`（producer output と judgment artifact の接続）
-3. `docs/agents/evidence-adapters.md`（raw producer output の normalized artifact mapping）
-4. `docs/integrations/CODEX-ISSUE-RUNBOOK.md`（GitHub IssueをCodex CLI入力にする手順）
-5. `docs/agents/multi-agent-safety.md`（subagent安全運用のSSOT）
-6. `docs/maintenance/subagent-worktree-runbook.md`（専用worktreeの作成・回収手順）
-7. `docs/agents/agents-doc-boundary-matrix.md`（一次情報/二次情報の境界定義）
-8. `docs/agents/handoff.md`（AE-HANDOFFの標準プロトコル）
-9. `docs/agents/recipes/README.md`（検証プロンプト集 / Prompt Pack）
-10. `docs/ci-policy.md`（CI方針のSSOT）
-11. `docs/ci/ci-operations-handbook.md`（日次運用）
-12. `docs/ci/ci-troubleshooting-guide.md`（失敗時の復旧手順）
-13. `docs/ci/pr-automation.md`（Copilotレビュー後の自動化フロー）
-14. `docs/ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment 権限境界）
-15. `.github/workflows/agent-commands.yml`（Slash Commands 実装値）
-16. `policy/risk-policy.yml`（risk/label 判定のSSOT）
+2. `docs/spec/context-pack.md` / `spec/context-pack/boundary-map.json`（design SSOT と implementation slice 境界）
+3. `docs/agents/agent-producer-matrix.md`（producer output と judgment artifact の接続）
+4. `docs/agents/evidence-adapters.md`（raw producer output の normalized artifact mapping）
+5. `docs/integrations/CODEX-ISSUE-RUNBOOK.md`（GitHub IssueをCodex CLI入力にする手順）
+6. `docs/agents/multi-agent-safety.md`（subagent安全運用のSSOT）
+7. `docs/maintenance/subagent-worktree-runbook.md`（専用worktreeの作成・回収手順）
+8. `docs/agents/agents-doc-boundary-matrix.md`（一次情報/二次情報の境界定義）
+9. `docs/agents/handoff.md`（AE-HANDOFFの標準プロトコル）
+10. `docs/agents/recipes/README.md`（検証プロンプト集 / Prompt Pack）
+11. `docs/ci-policy.md`（CI方針のSSOT）
+12. `docs/ci/ci-operations-handbook.md`（日次運用）
+13. `docs/ci/ci-troubleshooting-guide.md`（失敗時の復旧手順）
+14. `docs/ci/pr-automation.md`（Copilotレビュー後の自動化フロー）
+15. `docs/ci/automation-permission-boundaries.md`（workflow_dispatch / issue_comment 権限境界）
+16. `.github/workflows/agent-commands.yml`（Slash Commands 実装値）
+17. `policy/risk-policy.yml`（risk/label 判定のSSOT）
 
 ## Scope
 
