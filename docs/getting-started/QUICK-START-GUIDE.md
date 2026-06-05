@@ -333,7 +333,10 @@ pnpm run start:server
 
 # Generate minimal API tests from OpenAPI (prefer operationId in names)
 pnpm run codex:generate:tests -- --use-operation-id
-# Files are written under tests/api/generated/
+# Files are written under artifacts/codex/generated-tests/ for review.
+# To intentionally promote into the active test tree after review:
+# CODEX_GENERATE_TESTS_APPROVAL=reviewed-generated-tests \
+#   pnpm run codex:generate:tests -- --use-operation-id --output-dir tests/api/generated --approve-generated-tests
 ```
 
 #### Scenario 2: Legacy System Partial Modernization

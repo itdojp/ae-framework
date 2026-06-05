@@ -26,6 +26,13 @@ import type {
 } from './code-generation-agent.types.js';
 import type { OpenApiGenerationOptions } from './code-generation-openapi.js';
 import {
+  buildSafeRelativePath,
+  toSafeFileSlug,
+  toSafeIdentifier,
+  toSafeLineCommentText,
+  toTsStringLiteral,
+} from './code-generation-safety.js';
+import {
   buildSampleLiteral,
   generateAuthMiddleware,
   generateModel,
@@ -135,17 +142,24 @@ export class CodeGenerationAgent {
   /**
    * Optionally generate minimal test skeletons from OpenAPI using operationId or path+method.
    */
-  async generateTestsFromOpenAPI(spec: string, options?: { useOperationIdForTestNames?: boolean; includeSampleInput?: boolean }): Promise<CodeFile[]> {
+  async generateTestsFromOpenAPI(
+    spec: string,
+    options?: { useOperationIdForTestNames?: boolean; includeSampleInput?: boolean; outputRoot?: string }
+  ): Promise<CodeFile[]> {
     const api = parseOpenAPI(spec);
     const out: CodeFile[] = [];
+    const outputRoot = options?.outputRoot ?? 'artifacts/codex/generated-tests';
     for (const ep of api.endpoints) {
       const opIdRaw = (ep?.definition as any)?.operationId as string | undefined;
       const title = options?.useOperationIdForTestNames && opIdRaw ? opIdRaw : `${ep.method} ${ep.path}`;
-      const safeName = String(ep.path).replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      const safeName = toSafeFileSlug(String(ep.path), 'route');
       const method = String(ep.method).toLowerCase();
       const fileBase = (options?.useOperationIdForTestNames && opIdRaw)
-        ? opIdRaw.replace(/[^a-zA-Z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase()
+        ? toSafeFileSlug(opIdRaw, 'operation')
         : `${safeName}-${method}`;
+      const routeImport = toSafeFileSlug(fileBase, 'route');
+      const titleLiteral = toTsStringLiteral(title);
+      const operationComment = toSafeLineCommentText(opIdRaw);
       // Try to derive minimal input from requestBody schema when requested
       let sample = '{}';
       if (options?.includeSampleInput) {
@@ -160,8 +174,13 @@ export class CodeGenerationAgent {
         }
         sample = buildSampleLiteral(schema, ep?.components || {});
       }
-      const content = `import { describe, it, expect } from 'vitest'\nimport { handler } from '../../src/routes/${fileBase}'\n\n// OperationId: ${opIdRaw ?? 'N/A'}\ndescribe('${title}', () => {\n  it('returns success on minimal input (skeleton)', async () => {\n    const res: any = await handler(${sample})\n    expect(typeof res.status).toBe('number')\n  })\n})\n`;
-      out.push({ path: `tests/api/generated/${fileBase}.spec.ts`, content, purpose: `Test for ${title}`, tests: [] });
+      const content = `import { describe, it, expect } from 'vitest'\nimport { handler } from '../../src/routes/${routeImport}'\n\n// OperationId: ${operationComment}\ndescribe(${titleLiteral}, () => {\n  it('returns success on minimal input (skeleton)', async () => {\n    const res: any = await handler(${sample})\n    expect(typeof res.status).toBe('number')\n  })\n})\n`;
+      out.push({
+        path: buildSafeRelativePath(outputRoot, `${fileBase}.spec.ts`, 'generated OpenAPI test path'),
+        content,
+        purpose: `Test for ${toSafeLineCommentText(title)}`,
+        tests: [],
+      });
     }
     return out;
   }
@@ -419,11 +438,11 @@ export class CodeGenerationAgent {
     for (const test of tests) {
       // Extract function names being tested
       const funcMatches = test.content.match(/describe\s*\(['"]([^'"]+)/g) || [];
-      functions.push(...funcMatches.map(m => m.replace(/describe\s*\(['"]/, '')));
+      functions.push(...funcMatches.map(m => toSafeIdentifier(m.replace(/describe\s*\(['"]/, ''), 'generatedFunction')));
       
       // Extract expected behaviors
       const itMatches = test.content.match(/it\s*\(['"]([^'"]+)/g) || [];
-      expectedBehaviors.push(...itMatches.map(m => m.replace(/it\s*\(['"]/, '')));
+      expectedBehaviors.push(...itMatches.map(m => toSafeLineCommentText(m.replace(/it\s*\(['"]/, ''))));
     }
     
     return { functions, classes, expectedBehaviors };
@@ -466,11 +485,22 @@ export class CodeGenerationAgent {
       const fileExtension = getFileExtension(request.language);
       const testExtension = getTestExtension(request.language);
       
+      const implementationPath = buildSafeRelativePath(
+        getSourceDirectory(request.language),
+        `${toSafeFileSlug(func, 'generated')}.${fileExtension}`,
+        'generated implementation path'
+      );
+      const testPath = buildSafeRelativePath(
+        getTestDirectory(request.language),
+        `${toSafeFileSlug(func, 'generated')}.${testExtension}`,
+        'generated test reference path'
+      );
+
       files.push({
-        path: `${getSourceDirectory(request.language)}/${func}.${fileExtension}`,
+        path: implementationPath,
         content: implementation,
         purpose: `Implementation of ${func}`,
-        tests: [`${getTestDirectory(request.language)}/${func}.${testExtension}`],
+        tests: [testPath],
       });
     }
     

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildSampleLiteral,
   generateAuthMiddleware,
+  generateModel,
   generateRouteHandler,
   generateServerSetup,
   generateValidationMiddleware,
@@ -78,6 +79,50 @@ describe('code-generation-openapi helpers', () => {
     expect(route.path).toBe('src/routes/create-user.ts');
     expect(route.content).toContain('CreateUserInput.parse');
     expect(route.content).toContain('return { status: 201, data: output }');
+  });
+
+  it('sanitizes OpenAPI operation identifiers, comments, and route paths before code emission', () => {
+    const endpoint = {
+      path: '/users\n*/\nconsole.log("path injection")',
+      method: 'post',
+      components: {},
+      definition: {
+        operationId: "class */\n../evil'); import fs from 'fs'",
+        responses: {
+          200: {
+            content: {
+              'application/json': {
+                schema: { type: 'object' },
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const route = generateRouteHandler(endpoint, {
+      includeContracts: true,
+      useOperationIdForFilenames: true,
+    });
+
+    expect(route.path).toBe('src/routes/class-evil-import-fs-from-fs.ts');
+    expect(route.content).toContain('ClassEvilImportFsFromFsInput.parse');
+    expect(route.content).not.toContain('*/\n');
+    const operationLines = route.content.split('\n').filter((line) => line.startsWith('// OperationId:'));
+    expect(operationLines).toHaveLength(1);
+    expect(operationLines[0]).toContain('*\\/');
+  });
+
+  it('sanitizes schema names before generating model paths and metadata', () => {
+    const model = generateModel({
+      name: '../Admin\n*/\nInjected',
+      schema: { type: 'object' },
+    });
+
+    expect(model.path).toBe('src/models/admin-injected.ts');
+    expect(model.content).toContain('Admin');
+    expect(model.content).toContain('Injected');
+    expect(model.content).not.toContain('\nInjected');
   });
 
   it('falls back to string sample for XML responses without schema', () => {

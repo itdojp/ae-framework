@@ -211,9 +211,11 @@ Flow suggestion:
 - CI integration and PR summary details are described in `docs/verify/FORMAL-CHECKS.md` and `docs/verify/TRACEABILITY-GUIDE.md`.
 
 ### OpenAPI Test Generator
-- Script: `pnpm run codex:generate:tests [-- --use-operation-id] [--with-input]`
+- Script: `pnpm run codex:generate:tests [-- --use-operation-id] [--with-input] [--output-dir <dir>]`
 - Reads `artifacts/codex/openapi.(json|yaml)` (or `CONTRACTS_OPENAPI_PATH`).
-- Generates minimal tests under `tests/api/generated/` using:
+- Generates minimal tests under `artifacts/codex/generated-tests/` by default so generated executable tests are review artifacts before they enter the active test tree.
+- Writing directly under `tests/` requires both `--approve-generated-tests` and `CODEX_GENERATE_TESTS_APPROVAL=reviewed-generated-tests`.
+- Uses:
   - OperationId in file/test names when `--use-operation-id` is provided
   - Minimal sample input from requestBody schema when `--with-input` is provided
 
@@ -369,7 +371,8 @@ set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
 - `docs/verify/RUNTIME-CONTRACTS.md` 参照
 
 ### OpenAPI テストジェネレーター
-- `pnpm run codex:generate:tests` で `tests/api/generated/` に最小テンプレートを生成
+- `pnpm run codex:generate:tests` で `artifacts/codex/generated-tests/` にレビュー用の最小テンプレートを生成
+- `tests/` 配下へ直接書く場合は `--output-dir tests/api/generated --approve-generated-tests` と `CODEX_GENERATE_TESTS_APPROVAL=reviewed-generated-tests` を併用
 - `--use-operation-id` / `--with-input` で命名/最小入力を調整
 
 ### Codegen オプション（OpenAPI）
