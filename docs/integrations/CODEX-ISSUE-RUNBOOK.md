@@ -75,7 +75,7 @@ Before changing files:
 
    ```bash
    git fetch origin main --prune
-   git worktree add ../ae-framework-issue-$ISSUE -b work/issue-$ISSUE origin/main
+   git worktree add ../ae-framework-$ISSUE-work -b work/issue-$ISSUE origin/main
    ```
 
 ### 5. Post-work checklist
@@ -111,7 +111,7 @@ If commands cannot be run, write the command and the concrete reason in the PR b
 
 - Main agent owns writes, commits, pushes, PR creation, and Issue updates.
 - Subagents are read-only investigation helpers unless the human explicitly approves otherwise.
-- Parallel Issue work must use separate worktrees, for example `../ae-framework-3434-*` and `../ae-framework-3435-*`.
+- Parallel Issue work must use separate worktrees, for example `../ae-framework-$ISSUE-*` for each Issue number.
 - Never let two agents write the same file set without an integration owner.
 - After any delegated investigation, inspect `git status --short`, `git diff --stat`, and the final response before adopting findings.
 - Producer output from a subagent is not trusted evidence until the main agent validates it against repository files and commands.
@@ -193,7 +193,7 @@ codex --cd "$WORK"
 
    ```bash
    git fetch origin main --prune
-   git worktree add ../ae-framework-issue-$ISSUE -b work/issue-$ISSUE origin/main
+   git worktree add ../ae-framework-$ISSUE-work -b work/issue-$ISSUE origin/main
    ```
 
 ### 5. 作業後 checklist
@@ -229,7 +229,7 @@ pnpm -s run check:schemas
 
 - 書き込み、commit、push、PR作成、Issue更新は main agent が行います。
 - subagent は、人間が明示承認しない限り read-only investigation helper として扱います。
-- 複数 Issue を並行処理する場合は `../ae-framework-3434-*` / `../ae-framework-3435-*` のように worktree を分けます。
+- 複数 Issue を並行処理する場合は Issue 番号ごとに `../ae-framework-$ISSUE-*` のような worktree を分けます。
 - integration owner なしに複数 agent が同じ file set を書き換えないようにします。
 - delegated investigation 後は `git status --short`、`git diff --stat`、final response を確認してから採用します。
 - subagent output は、main agent が repository files と commands で検証するまで信頼済み evidence ではありません。
