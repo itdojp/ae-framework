@@ -28,7 +28,7 @@ Context Pack 検証（`context-pack:*`, `verify:lite`）の失敗時に、診断
 4. report の `violations[].type` と対象 ID（object/morphism/diagram）を確認する
 5. agent生成差分が Context Pack / boundary map / acceptance tests と矛盾していないか確認する
 6. 矛盾がある場合は、実装を無理に合わせず、Context Pack が古いのか要求変更が誤っているのかを判断する
-7. `spec/context-pack/*.json` または Context Pack 本体を修正する
+7. `spec/context-pack/**/*.{yml,yaml,json}` または Context Pack 本体を修正する
 8. 対象コマンドをローカル再実行する
 9. `summary.totalViolations == 0` を確認して再 push する
 
@@ -206,7 +206,7 @@ The normative contract lives in `docs/spec/context-pack.md`. The practical recip
 4. Read `violations[].type` and the affected object/morphism/diagram IDs.
 5. Check whether an agent-generated diff conflicts with the Context Pack, Boundary Map, or acceptance tests.
 6. If there is a conflict, decide whether the Context Pack is stale or the requested change is wrong instead of forcing the implementation through.
-7. Fix the Context Pack source or the map file under `spec/context-pack/`.
+7. Fix the Context Pack source under `spec/context-pack/**/*.{yml,yaml,json}` or the map file under `spec/context-pack/`.
 8. Re-run the focused command locally.
 9. Confirm `summary.totalViolations == 0` before pushing again.
 

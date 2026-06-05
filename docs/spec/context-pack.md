@@ -18,7 +18,7 @@ Context Pack v1 は、AI/人間が共有する **design SSOT（single source of 
 - 設計仕様（objects / morphisms / diagrams / acceptance_tests など）を YAML/JSON で管理する
 - human maintainer / Codex / Claude Code / GitHub Copilot などが同じ設計SSOTを参照できるようにする
 - agent や solver が変わっても、仕様・境界・acceptance の判断入力を安定させる
-- `verify:lite` で schema 検証を必須化し、仕様破損を早期に検出する
+- `pnpm -s run verify:lite` で schema 検証を必須化し、仕様破損を早期に検出する
 - JSON/Markdown レポートを artifacts に出力し、失敗原因を追跡可能にする
 
 ### agent作業時の参照順
@@ -30,7 +30,7 @@ Context Pack v1 は、AI/人間が共有する **design SSOT（single source of 
 6. 実装変更後に `pnpm -s run context-pack:validate`、`pnpm -s run context-pack:verify-boundary-map`、必要に応じて `pnpm -s run context-pack:deps` を実行する。
 
 ### 過度なformalizationを避ける導入方針
-- Baselineでは最小の Context Pack と `verify-lite` / schema validation で十分です。すべての通常PRにMBT、property、formal proofを要求しません。
+- Baselineでは最小の Context Pack と `pnpm -s run verify:lite` / schema validation で十分です。すべての通常PRにMBT、property、formal proofを要求しません。
 - Structured assuranceでは、traceability、boundary map、MBT/property/conformance などを追加し、どの仕様断片がどの証跡で支えられるかを明確にします。
 - High-assurance critical coreでは、重要claimだけをformal/model/proof laneやより厳しいpolicy gateへ昇格します。
 - lane昇格は risk label、assurance profile、critical core の境界に基づき、agentやcode generatorの種類だけでは決めません。
@@ -520,7 +520,7 @@ Context Pack v1 is the **design SSOT (single source of truth)** input contract s
 - Manage design metadata such as `objects`, `morphisms`, `diagrams`, and `acceptance_tests` in YAML/JSON.
 - Give human maintainers, Codex, Claude Code, GitHub Copilot, and other producers the same design SSOT.
 - Keep specification, boundary, and acceptance inputs stable even when the underlying agent or solver changes.
-- Make schema validation mandatory in `verify:lite` so contract drift is detected before merge.
+- Make schema validation mandatory with `pnpm -s run verify:lite` so contract drift is detected before merge.
 - Emit JSON/Markdown reports to `artifacts/` so violations, affected IDs, and recovery steps remain traceable.
 
 ### Agent work reference order
@@ -532,7 +532,7 @@ Context Pack v1 is the **design SSOT (single source of truth)** input contract s
 6. After implementation, run `pnpm -s run context-pack:validate`, `pnpm -s run context-pack:verify-boundary-map`, and, when boundary/dependency assumptions changed, `pnpm -s run context-pack:deps`.
 
 ### Avoiding over-formalization
-- Baseline rollout can use a minimal Context Pack plus `verify-lite` / schema validation. It does not require MBT, property tests, or formal proof on every ordinary PR.
+- Baseline rollout can use a minimal Context Pack plus `pnpm -s run verify:lite` / schema validation. It does not require MBT, property tests, or formal proof on every ordinary PR.
 - Structured assurance adds traceability, Boundary Map checks, MBT/property/conformance evidence, and clearer claim-to-evidence links.
 - High-assurance critical core promotes only selected critical claims to formal/model/proof lanes and stricter policy gates.
 - Promotion is driven by risk labels, assurance profiles, and critical-core boundaries, not by which agent or code generator produced the change.
