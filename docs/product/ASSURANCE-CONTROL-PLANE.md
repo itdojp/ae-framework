@@ -71,6 +71,7 @@ Assurance control plane
 
 - The Harness layer executes checks and produces raw outputs.
 - The Assurance control plane converts those outputs into contract-bound artifacts that can be reviewed and judged.
+- `docs/agents/evidence-adapters.md` defines how raw agent and human producer output is mapped into existing evidence and change-package artifacts.
 - The differentiator of ae-framework is not the individual harness feature, but the ability to keep the judgment-side contract stable.
 
 ### 5. Rollout profiles
@@ -115,6 +116,7 @@ Control-plane elements that already exist today:
 - `artifacts/ci/policy-decision-js-v1.json`, `artifacts/ci/policy-decision-opa-v1.json`
 - `artifacts/ci/automation-report.json`
 - `docs/ci/pr-automation.md`
+- `docs/agents/evidence-adapters.md`
 
 Conditional or preview elements:
 - strict assurance enforcement (only when the `enforce-assurance` label is set)
@@ -193,6 +195,7 @@ flowchart TB
 
 - Harness layer は「実行して結果を出す層」です。
 - Assurance control plane は「結果を契約化し、判断可能な artifact に変換する層」です。
+- `docs/agents/evidence-adapters.md` は、agent / human の raw producer output を既存 evidence / change-package artifact へ接続する方針を定義します。
 - ae-framework の差別化は前者の個別機能ではなく、後者の判断面契約を固定できる点にあります。
 
 ## 5. 導入プロファイル
@@ -237,6 +240,7 @@ flowchart TB
 - `artifacts/ci/policy-decision-js-v1.json`, `artifacts/ci/policy-decision-opa-v1.json`
 - `artifacts/ci/automation-report.json`
 - `docs/ci/pr-automation.md`
+- `docs/agents/evidence-adapters.md`
 
 条件付きまたは preview 扱いの要素:
 - strict assurance enforcement（`enforce-assurance` ラベル時のみ）

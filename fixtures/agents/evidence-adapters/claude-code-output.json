@@ -1,0 +1,50 @@
+{
+  "fixtureKind": "raw-agent-output-example",
+  "producer": "claude-code",
+  "capturedAt": "2026-06-05T00:00:00Z",
+  "source": {
+    "router": "CLAUDE.md",
+    "entrypoint": "Claude Code task in a dedicated repository worktree"
+  },
+  "rawOutput": {
+    "taskResponse": {
+      "conclusion": "Implementation complete; validation is pending maintainer review.",
+      "filesTouched": [
+        "src/example.ts",
+        "tests/example.test.ts"
+      ],
+      "toolLogSummary": [
+        "read target files",
+        "edited source and tests",
+        "ran focused test suite"
+      ],
+      "nextActions": [
+        "main agent validates diff",
+        "open PR and request AI review"
+      ]
+    },
+    "commands": [
+      {
+        "command": "pnpm -s exec vitest run tests/example.test.ts --reporter dot",
+        "status": "passed"
+      }
+    ],
+    "unresolvedRisks": [
+      "Full build not run in producer session."
+    ]
+  },
+  "expectedNormalizedArtifacts": [
+    {
+      "artifact": "ae-handoff/v1",
+      "purpose": "Preserve files touched, completed steps, unresolved risks, and next decisions."
+    },
+    {
+      "artifact": "hook-feedback/v1",
+      "purpose": "Tell the producer or main agent that broader validation remains missing."
+    },
+    {
+      "artifact": "change-package/v2",
+      "purpose": "Normalize changed-file scope after the main agent validates the diff."
+    }
+  ]
+}

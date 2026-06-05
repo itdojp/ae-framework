@@ -24,6 +24,7 @@ Use this document with:
 - `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md` for implementation-aligned architecture.
 - `docs/architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md` for detailed claim/evidence/policy/package design.
 - `docs/reference/CONTRACT-CATALOG.md` for current schema, producer, and consumer mappings.
+- `docs/agents/evidence-adapters.md` for raw producer output normalization into existing judgment artifacts.
 - `docs/reports/ASSURANCE-CONTROL-PLANE-CURRENT-STATE.md` for the 2026-05 current-state audit.
 
 ### 2. Product boundary
@@ -133,6 +134,7 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 - Detailed design: `docs/architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md`
 - Artifacts contract: `docs/quality/ARTIFACTS-CONTRACT.md`
 - Contract catalog: `docs/reference/CONTRACT-CATALOG.md`
+- Evidence adapters: `docs/agents/evidence-adapters.md`
 - Change package v2: `docs/reference/change-package-v2.md`
 - Codex integration: `docs/integrations/CODEX-INTEGRATION.md`
 - Security Assurance Lane: `docs/security/security-assurance-lane.md`
