@@ -101,7 +101,7 @@ jq '{status, blockingReasons, nextActions, reproCommands}' artifacts/agents/hook
 
 ## 日本語
 
-既存の CI / evidence artifact を、Claude Code や Codexが次の continuation step にそのまま再入力できる短い feedback に正規化する最小 adapter です。
+既存の CI / evidence artifact を、Claude Code や Codex が次の continuation step にそのまま再入力できる短い feedback に正規化する最小 adapter です。
 
 ### Standard outputs
 
