@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-23'
+lastVerified: '2026-06-05'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -255,6 +255,19 @@ Supplement:
 - assurance summary is optional and report-only for post-deploy judgement
 - manually running `release-quality-artifacts` only creates an Actions artifact; `release_tag` can reference only a published release asset
 - details: `docs/operate/release-engineering.md`
+
+#### 4.2 PR warning category semantics
+
+PR comments, summaries, and check outputs should classify warning-like entries before operators decide whether to merge, rerun, or defer. When a touched code path emits raw warning text, include one of these category labels in the message or the adjacent summary. Existing unprefixed warnings are interpreted with this table until that producer is migrated.
+
+| Category | Meaning | Typical action |
+|---|---|---|
+| `blocking` | Required evidence, a required check, or a policy-controlled artifact is missing or failed under the current policy. `strict` Change Package validation and required-check failures are examples. | Fix before merge, or explicitly change the policy/waiver path. |
+| `report-only` | Non-blocking evidence or diagnostic information is surfaced for review. It remains visible, but it does not block unless configuration promotes it, for example `AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN=0`. | Record the disposition in the PR and track follow-up when needed. |
+| `not-applicable` | The artifact or lane is not expected for the current change type, risk profile, or assurance profile. Do not use this category for `verifyLiteSummary` when the active Change Package configuration lists it as required. | State why the lane/artifact is out of scope and avoid treating it as missing evidence. |
+| `stale-artifact` | The artifact, changed-files list, or summary was produced for an older head SHA, base/head pair, or missing artifact source. `files=0` is stale when it comes from an outdated changed-files source; it is `not-applicable` only when the current head truly has no relevant files. | Regenerate or rerun the producer against the current head before making a policy decision. |
+
+For docs-only or docs-led PRs, warning handling must not silently downgrade a required evidence gap. Classify missing `verifyLiteSummary` as `blocking` or `report-only` according to the active Change Package and auto-merge configuration; classify optional high-risk-only artifacts such as `harnessHealth` as `not-applicable` when the PR is not in that lane; classify old generated comments or downloaded artifacts as `stale-artifact` when their recorded head SHA does not match the PR head.
 
 ### 5. Troubleshooting
 
@@ -631,6 +644,19 @@ Settings（Repository）で次を確認してください。
 - assurance summary は optional / report-only であり、`post-deploy-verify.json` の gate 判定そのものは変えません。
 - `release-quality-artifacts` を manual 実行しただけでは Actions artifact しか作られないため、`release_tag` で参照できるのは公開済み release asset がある場合だけです。
 - 手順詳細: `docs/operate/release-engineering.md`
+
+### 4.2 PR warning category semantics
+
+PRコメント、PR summary、check出力に warning 相当の項目を出す場合は、operator が merge / rerun / defer を判断する前に分類を明示します。対象コードパスを触る場合は raw warning text または隣接する summary に次の category label のいずれかを含めます。既存の未prefix warning は、producer が移行されるまでこの表で解釈します。
+
+| Category | 意味 | 代表的な対応 |
+|---|---|---|
+| `blocking` | 現在の policy 上、必須evidence、required check、またはpolicy管理artifactが欠落・失敗している状態。`strict` Change Package validation や required check failure が該当します。 | merge前に修正する。例外にする場合は policy / waiver 経路を明示変更する。 |
+| `report-only` | 非blockingの証跡または診断情報。表示は維持しますが、`AE_AUTO_MERGE_CHANGE_PACKAGE_ALLOW_WARN=0` のような設定で昇格しない限り block しません。 | PR上で扱いを記録し、必要なら follow-up を追跡する。 |
+| `not-applicable` | 現在の変更種別、risk profile、assurance profile では artifact / lane が期待されない状態。active な Change Package 設定が `verifyLiteSummary` を required としている場合は、この分類にしません。 | out of scope の理由を明記し、missing evidence として扱わない。 |
+| `stale-artifact` | artifact、changed-files list、summary が古い head SHA、古い base/head、または欠落した artifact source に基づいている状態。`files=0` は古い changed-files source 由来なら stale、現在headで本当に関連ファイルがない場合だけ `not-applicable` です。 | 現在headに対して producer を再実行・再生成してから policy 判断する。 |
+
+docs-only / docs-led PR では、required evidence gap を無言で格下げしません。missing `verifyLiteSummary` は active な Change Package / auto-merge 設定に従って `blocking` または `report-only` と分類します。`harnessHealth` のような high-risk-only artifact は、そのPRが対象laneでない場合 `not-applicable` と分類します。生成済みコメントやダウンロード済み artifact の記録head SHAがPR headと一致しない場合は `stale-artifact` と分類します。
 
 ## 5. トラブルシューティング
 
