@@ -117,7 +117,7 @@ Common operator flow in both models:
 PR automation treats claim-level assurance as a summary-artifact input, not as raw log parsing.
 
 - Ordinary changes may carry `unresolved` claims in report-only summaries; the PR summary must keep the unresolved count visible.
-- `risk:high`, `enforce-assurance`, and critical-core changes can escalate missing required lanes or missing evidence to a block or manual approval requirement.
+- `risk:high`, `enforce-assurance`, and critical core changes can escalate missing required lanes or missing evidence to a block or manual approval requirement.
 - Waivers must include owner, reason, expiry, affected claim, and evidence link before automation treats them as valid.
 - Review comments should prefer this compact shape when claim-level evidence is present:
 
@@ -482,7 +482,7 @@ PR運用を以下の形に収束させます。
 PR automation は claim-level assurance を raw log 解析ではなく summary artifact input として扱います。
 
 - 通常変更では `unresolved` claim を report-only summary に残せますが、PR summary では unresolved count を隠しません。
-- `risk:high`、`enforce-assurance`、critical-core 変更では required lane / evidence 不足を block または manual approval へ昇格できます。
+- `risk:high`、`enforce-assurance`、critical core 変更では required lane / evidence 不足を block または manual approval へ昇格できます。
 - waiver は owner、reason、expiry、affected claim、evidence link を持つ場合だけ automation が valid として扱います。
 - claim-level evidence がある場合、review comment は次の compact shape を優先します。
 

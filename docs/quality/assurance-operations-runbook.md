@@ -173,9 +173,9 @@ Use the vocabulary from `docs/quality/ASSURANCE-MODEL.md` when summarizing claim
 | `proved` | supported | keep proof scope and assumptions visible |
 | `model-checked` | supported for the modeled scope | require human review if the production claim exceeds model assumptions |
 | `tested` | supported by behavior evidence | escalate when the target assurance level requires model/proof lanes |
-| `runtime-mitigated` | warn / report-only by default | block or require manual approval for critical-core claims that require proof/model evidence |
+| `runtime-mitigated` | warn / report-only by default | block or require manual approval for critical core claims that require proof/model evidence |
 | `waived` | warn with waiver metadata | block when owner, reason, expiry, affected claim, or evidence link is missing or expired |
-| `unresolved` | report-only for ordinary changes | block or require manual approval when `risk:high`, `enforce-assurance`, or critical-core policy requires the missing lane |
+| `unresolved` | report-only for ordinary changes | block or require manual approval when `risk:high`, `enforce-assurance`, or critical core policy requires the missing lane |
 
 PR summaries or comments should be able to include this compact shape:
 
@@ -397,9 +397,9 @@ Claim-level assurance を要約するときは `docs/quality/ASSURANCE-MODEL.md`
 | `proved` | supported | proof scope と assumption を表示したままにする |
 | `model-checked` | modeled scope に対して supported | production claim が model assumption を超える場合は human review を要求 |
 | `tested` | behavior evidence により supported | target assurance level が model/proof lane を要求する場合は昇格 |
-| `runtime-mitigated` | 既定では warn / report-only | critical-core claim が proof/model evidence を要求する場合は block または manual approval |
+| `runtime-mitigated` | 既定では warn / report-only | critical core claim が proof/model evidence を要求する場合は block または manual approval |
 | `waived` | waiver metadata 付きで warn | owner、reason、expiry、affected claim、evidence link が不足または期限切れなら block |
-| `unresolved` | 通常変更では report-only | `risk:high`、`enforce-assurance`、critical-core policy が missing lane を要求する場合は block または manual approval |
+| `unresolved` | 通常変更では report-only | `risk:high`、`enforce-assurance`、critical core policy が missing lane を要求する場合は block または manual approval |
 
 PR summary / comment は次の compact shape を載せられる必要があります。
 
