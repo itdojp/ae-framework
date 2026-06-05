@@ -16,6 +16,11 @@ import type {
   ViolationSeverity,
   ConformanceRuleCategory
 } from './types.js';
+import {
+  createConditionValidators,
+  evaluateConformanceConditionExpression,
+  validateConformanceConditionExpressionSyntax,
+} from './condition-dsl.js';
 
 // Default values for rule execution context
 const DEFAULT_METRICS = { executionTime: 0, cpuUsage: 0, memoryUsage: 0, networkCalls: 0, dbQueries: 0 };
@@ -322,25 +327,8 @@ export class ConformanceRuleEngine {
     metrics?: Record<string, number>;
     logs?: string[];
   }> {
-    // This is a simplified evaluation - in production, you'd want a safer eval
-    // using a proper expression parser/evaluator like expr-eval or similar
-    
     try {
-      // Create a safe evaluation context
-      const safeContext = {
-        ...context,
-        // Prevent access to dangerous globals
-        global: undefined,
-        process: undefined,
-        require: undefined,
-        module: undefined,
-        console: {
-          log: (msg: string) => context.logs?.push(msg)
-        }
-      };
-
-      // Simple expression evaluation (replace with proper parser in production)
-      const result = this.safeEvaluate(expression, safeContext);
+      const result = evaluateConformanceConditionExpression(expression, context);
       
       return {
         passed: Boolean(result),
@@ -348,72 +336,6 @@ export class ConformanceRuleEngine {
         expectedValue: true
       };
 
-    } catch (error) {
-      throw error instanceof Error ? error : new Error(String(error));
-    }
-  }
-
-  /**
-   * Safe expression evaluation (simplified)
-   */
-  private safeEvaluate(expression: string, context: any): any {
-    const trimmed = expression.trim();
-    if (!trimmed) {
-      return true;
-    }
-
-    // Simple keywords-only expressions (legacy rules) are treated as permissive
-    if (/^[\w\s&|]+$/.test(trimmed)) {
-      return true;
-    }
-
-    const forbiddenKeywords = [
-      '__proto__',
-      'constructor',
-      'prototype',
-      'process',
-      'global',
-      'globalThis',
-      'require',
-      'Function',
-      'eval',
-      'import',
-      'export',
-      'while',
-      'for',
-      'class'
-    ];
-
-    for (const keyword of forbiddenKeywords) {
-      if (new RegExp(`\\b${keyword}\\b`).test(trimmed)) {
-        throw new Error(`Unsafe expression keyword: ${keyword}`);
-      }
-    }
-
-    if (trimmed.includes(';') || trimmed.includes('`')) {
-      throw new Error('Unsafe expression syntax detected');
-    }
-
-    if (!/^[\w\s.$<>=!&|?:+\-*/%(),'"[\]\\^{}]+$/.test(trimmed)) {
-      throw new Error('Expression contains unsupported characters');
-    }
-
-    try {
-      // Evaluate expression within a restricted context
-      const evaluator = new Function(
-        'data',
-        'context',
-        'validators',
-        'utils',
-        `"use strict"; return (${trimmed});`
-      );
-
-      return evaluator(
-        context.data,
-        context.context,
-        context.validators,
-        context.utils
-      );
     } catch (error) {
       throw error instanceof Error ? error : new Error(String(error));
     }
@@ -591,6 +513,7 @@ export class ConformanceRuleEngine {
 
   private getValidatorHelpers() {
     return {
+      ...createConditionValidators(),
       isEmail: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
       isUrl: (value: string) => {
         try {
@@ -735,6 +658,7 @@ export class ConformanceRuleEngine {
     if (!rule.condition || typeof rule.condition.expression !== 'string' || rule.condition.expression.trim() === '') {
       throw new Error('Invalid rule: condition expression is required');
     }
+    validateConformanceConditionExpressionSyntax(rule.condition.expression);
 
     if (!Array.isArray(rule.condition.variables)) {
       throw new Error('Invalid rule: condition variables must be an array');

@@ -35,7 +35,7 @@ const ENCRYPTED_CHAT_RULE_TEMPLATES: RuleTemplate[] = [
     category: 'security_policy',
     severity: 'major',
     expression:
-      'validators.isString(data.message?.authTag) && data.message.authTag.length === 24 && /^[A-Za-z0-9+/=]+$/.test(data.message.authTag)',
+      'validators.isString(data.message?.authTag) && data.message.authTag.length === 24 && validators.isBase64Like(data.message.authTag)',
     variables: ['message.authTag'],
     tags: ['encrypted-chat', 'security', 'auth-tag']
   },
@@ -156,4 +156,3 @@ export function createEncryptedChatDefaultRules(now = new Date().toISOString()):
     }
   }));
 }
-
