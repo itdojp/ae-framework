@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-31'
+lastVerified: '2026-06-05'
 owner: agent-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -13,7 +13,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## English
 
-Last updated: 2026-03-31
+Last updated: 2026-06-05
 
 Purpose: define the ownership boundary that keeps `AGENTS.md` and `docs/agents/*` from duplicating primary-source policy text.
 
@@ -29,6 +29,7 @@ Purpose: define the ownership boundary that keeps `AGENTS.md` and `docs/agents/*
 | Slash command implementation | `.github/workflows/agent-commands.yml` | `AGENTS.md`, `docs/agents/README.md` | accepted commands, attached labels, dispatch implementation |
 | Workflow permission boundary | `docs/ci/automation-permission-boundaries.md` | `AGENTS.md` progressive disclosure | boundary between `workflow_dispatch` and `issue_comment` |
 | PR automation operations | `docs/ci/pr-automation.md` | `AGENTS.md` decision table | review gate, auto-fix, auto-merge operations |
+| Producer output artifact routing | `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`, `docs/agents/agent-producer-matrix.md`, `docs/agents/evidence-adapters.md`, `docs/reference/CONTRACT-CATALOG.md` | `AGENTS.md`, `docs/agents/README.md` | producer boundary, raw output fixture mapping, normalized judgment artifacts |
 | Multi-agent safety operations | `docs/agents/multi-agent-safety.md` | `AGENTS.md`, `docs/agents/README.md` | subagent permissions, ownership boundary, post-run checks |
 | Dedicated worktree lifecycle | `docs/maintenance/subagent-worktree-runbook.md` | `docs/agents/multi-agent-safety.md` | worktree creation, isolation, integration, cleanup |
 
@@ -46,7 +47,7 @@ Purpose: define the ownership boundary that keeps `AGENTS.md` and `docs/agents/*
 
 ## 日本語
 
-最終更新: 2026-03-31
+最終更新: 2026-06-05
 
 目的: `AGENTS.md` と `docs/agents/*` が一次情報を重複再掲しないための責務境界を定義する。
 
@@ -62,6 +63,7 @@ Purpose: define the ownership boundary that keeps `AGENTS.md` and `docs/agents/*
 | slash command 実装 | `.github/workflows/agent-commands.yml` | `AGENTS.md`, `docs/agents/README.md` | 受理コマンド、付与ラベル、dispatch 実装 |
 | workflow 権限境界 | `docs/ci/automation-permission-boundaries.md` | `AGENTS.md` progressive disclosure | `workflow_dispatch` / `issue_comment` の境界 |
 | PR 自動化運用 | `docs/ci/pr-automation.md` | `AGENTS.md` decision table | review gate / auto-fix / auto-merge の運用 |
+| producer output の artifact routing | `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`, `docs/agents/agent-producer-matrix.md`, `docs/agents/evidence-adapters.md`, `docs/reference/CONTRACT-CATALOG.md` | `AGENTS.md`, `docs/agents/README.md` | producer boundary、raw output fixture mapping、normalized judgment artifact |
 | multi-agent 安全運用 | `docs/agents/multi-agent-safety.md` | `AGENTS.md`, `docs/agents/README.md` | subagent 権限、担当境界、完了後確認 |
 | 専用 worktree ライフサイクル | `docs/maintenance/subagent-worktree-runbook.md` | `docs/agents/multi-agent-safety.md` | worktree 作成、隔離、統合、回収 |
 

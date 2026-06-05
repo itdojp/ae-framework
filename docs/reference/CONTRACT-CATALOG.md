@@ -216,6 +216,7 @@ The produced/consumed table lists implementation entry points. When more than on
 
 - `docs/reference/SCHEMA-GOVERNANCE.md`
 - `docs/reference/ASSURANCE-CANONICAL-ROUTES.md`
+- `docs/agents/evidence-adapters.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`
 - `docs/architecture/DELIVERY-CONTRACT-COMPATIBILITY-MATRIX.md`
 - `scripts/ci/validate-artifacts-ajv.mjs`
@@ -428,6 +429,7 @@ Produced/consumed table は実装 entry point を列挙します。複数導線�
 
 - `docs/reference/SCHEMA-GOVERNANCE.md`
 - `docs/reference/ASSURANCE-CANONICAL-ROUTES.md`
+- `docs/agents/evidence-adapters.md`
 - `docs/quality/ARTIFACTS-CONTRACT.md`
 - `docs/architecture/DELIVERY-CONTRACT-COMPATIBILITY-MATRIX.md`
 - `scripts/ci/validate-artifacts-ajv.mjs`

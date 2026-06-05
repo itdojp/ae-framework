@@ -192,6 +192,8 @@ Use `docs/integrations/CODEX-ISSUE-RUNBOOK.md` when a GitHub Issue is the task i
 
 Use `docs/agents/agent-producer-matrix.md` to decide whether Codex CLI output should become `change-package/v2`, `ae-handoff/v1`, `hook-feedback/v1`, `claim-evidence-manifest/v1`, or another judgment artifact.
 
+Use `docs/agents/evidence-adapters.md` when Codex CLI output must be normalized from raw task summaries, command logs, or PR evidence into existing ae-framework artifacts without treating the Codex conclusion as a control-plane judgment.
+
 ## Operational Considerations
 
 - Environment: Node >= 20.11 (<23), pnpm 10 (Corepack recommended: `corepack enable`).

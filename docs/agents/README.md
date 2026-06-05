@@ -31,6 +31,7 @@ This is the agent-facing index referenced from `AGENTS.md`. It points only to th
 ### Primary domains and primary sources
 - boundary definitions (primary / secondary): `docs/agents/agents-doc-boundary-matrix.md`
 - agent producer matrix: `docs/agents/agent-producer-matrix.md`
+- evidence adapters: `docs/agents/evidence-adapters.md`
 - producer-agent assurance runbook: `docs/integrations/ASSURANCE-AGENT-RUNBOOK.md`
 - Codex Issue runbook: `docs/integrations/CODEX-ISSUE-RUNBOOK.md`
 - CI policy (SSOT): `docs/ci-policy.md`
@@ -53,7 +54,7 @@ This is the agent-facing index referenced from `AGENTS.md`. It points only to th
 ### Recommended usage order
 1. use the decision table in `AGENTS.md` to determine the work type
 2. if subagents are involved, read `docs/agents/multi-agent-safety.md` and `docs/maintenance/subagent-worktree-runbook.md` first
-3. for producer/control-plane routing, read `docs/agents/agent-producer-matrix.md` before choosing artifacts
+3. for producer/control-plane routing, read `docs/agents/agent-producer-matrix.md` and `docs/agents/evidence-adapters.md` before choosing artifacts
 4. open the relevant primary source or runbook from this index
 5. leave execution results in PR comments and artifacts
 
@@ -82,6 +83,7 @@ This is the agent-facing index referenced from `AGENTS.md`. It points only to th
 ### 主要ドメインと一次情報
 - 境界定義（一次 / 二次）: `docs/agents/agents-doc-boundary-matrix.md`
 - agent producer matrix: `docs/agents/agent-producer-matrix.md`
+- evidence adapters: `docs/agents/evidence-adapters.md`
 - producer-agent assurance runbook: `docs/integrations/ASSURANCE-AGENT-RUNBOOK.md`
 - Codex Issue runbook: `docs/integrations/CODEX-ISSUE-RUNBOOK.md`
 - CI 方針（SSOT）: `docs/ci-policy.md`
@@ -104,7 +106,7 @@ This is the agent-facing index referenced from `AGENTS.md`. It points only to th
 ### 利用順
 1. `AGENTS.md` の decision table で作業タイプを決める
 2. subagent を使う場合は `docs/agents/multi-agent-safety.md` と `docs/maintenance/subagent-worktree-runbook.md` を先に確認する
-3. producer / control plane routing が必要な場合は、artifact 選択前に `docs/agents/agent-producer-matrix.md` を読む
+3. producer / control plane routing が必要な場合は、artifact 選択前に `docs/agents/agent-producer-matrix.md` と `docs/agents/evidence-adapters.md` を読む
 4. この索引から一次情報と runbook を開く
 5. 実行結果を PR comment と artifacts に残す
 
