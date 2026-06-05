@@ -3,7 +3,7 @@ docRole: narrative
 lastVerified: '2026-03-09'
 ---
 
-# ae-framework: Assurance Control Plane for Agent-Driven SDLC
+# ae-framework: Agent-Neutral Assurance Control Plane for Agent-Driven SDLC
 
 [![validate-artifacts-ajv](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/validate-artifacts-ajv.yml)
 [![testing-ddd-scripts](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml/badge.svg)](https://github.com/itdojp/ae-framework/actions/workflows/testing-ddd-scripts.yml)
@@ -16,7 +16,7 @@ lastVerified: '2026-03-09'
 
 ## English
 
-ae-framework is an **assurance control plane for agent-driven SDLC**. It standardises specifications, verification, evidence, and CI/policy automation so human/agent collaboration stays auditable and repeatable even when the underlying coding agent changes.
+ae-framework is an **agent-neutral assurance control plane for agent-driven SDLC**. Coding agents, human maintainers, CI jobs, and formal tools produce changes and raw signals; ae-framework standardises the specifications, verification evidence, policy gates, and release judgments used to decide whether those changes can be trusted.
 
 ### Two-layer model
 
@@ -38,7 +38,7 @@ flowchart TB
 - **High-assurance critical core** strengthens the control plane for selected high-risk changes with formal/model/proof lanes.
 
 ### What this repository provides
-- **Assurance control plane**: Context Pack, formal/conformance summaries, artifact validation, policy gates, and PR/release automation that turn raw test runs into reviewable assurance evidence.
+- **Agent-neutral assurance control plane**: Context Pack, formal/conformance summaries, artifact validation, policy gates, and PR/release automation that turn producer outputs into reviewable assurance evidence.
 - **Agentic SDLC orchestrator**: Ready-to-run GitHub Actions (PR verify / verify-lite, nightly heavy tests, Slack alerts) and CLI scripts that keep requirements, tests, and regression signals aligned.
 - **Spec & Verification Kit**: Traceable spec format, mutation/MBT/property verification pipelines, and formal runners for Alloy/TLA/SMT/Apalache/Kani/SPIN/CSP(cspx)/Lean4 with unified summaries.
 - **Project scaffolding & policies**: pnpm workspace layout, lint/test/type-coverage gates, label gating (typecov, flake), and TDD-friendly Git hooks.
@@ -50,6 +50,7 @@ flowchart TB
 - Not an agent runtime or IDE plugin — bring your own agent.
 - Not a general-purpose Next.js UI kit or design system starter.
 - Not a hosted CI/CD service — workflows are provided for self-hosted GitHub runners or forks.
+- Not mandatory formal proof for every change — routine changes stay on the fast lane unless risk or policy selects heavier assurance.
 
 ### Adoption profiles
 - **Baseline**: `verify:lite`, schema/AJV validation, PR gates for routine application delivery.
@@ -120,7 +121,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 
 ## Japanese
 
-ae-framework は **エージェント協調型開発の assurance control plane** です。基礎となる coding agent やモデルが変わっても、仕様・検証・証跡・policy gate を同じ契約で束ね、レビューと運用判断を再現可能にします。
+ae-framework は **エージェント協調型SDLCのための、エージェント非依存の assurance control plane** です。coding agent、人間のmaintainer、CI job、formal tool は変更やraw signalを生成する producer であり、ae-framework はその変更を信頼して merge / release できるかを、仕様・検証・証跡・policy gate・release judgment に基づいて判断可能にします。
 
 ### 二層モデル
 
@@ -142,7 +143,7 @@ flowchart TB
 - **High-assurance critical core** は selected high-risk change に対して control plane を強化する段階です。
 
 ### 提供するもの
-- **Assurance control plane**: Context Pack、形式検証/Conformance要約、artifact validation、policy gate、PR/release 自動化を束ね、単発のテスト実行結果を判断可能な証跡へ変換。
+- **Agent-neutral assurance control plane**: Context Pack、形式検証/Conformance要約、artifact validation、policy gate、PR/release 自動化を束ね、producer output を判断可能な証跡へ変換。
 - **SDLCオーケストレーター**: PR Verify／夜間ヘビーテスト／Slack通知などのGitHub ActionsとCLIスクリプトで、要件・テスト・退行検知を一元化。
 - **仕様・検証キット**: トレーサブルな仕様フォーマット、mutation/MBT/Propertyテストのパイプライン、`scripts/pipelines/compare-test-trends.mjs` によるトレンド比較。
 - **プロジェクト骨子とポリシー**: pnpmワークスペース、Lint/Test/型カバレッジのゲート、ラベルゲーティング（typecov・flake）、TDDフック。
@@ -154,6 +155,7 @@ flowchart TB
 - エージェント実行ランタイムやIDEプラグイン（各自のエージェントを利用）。
 - 汎用のNext.js UIスターターやデザインシステム配布物。
 - ホスト型CI/CDサービス（GitHub Actionsの定義を提供）。
+- すべての変更に formal proof を強制する運用。通常変更は fast lane に留め、risk や policy が必要とする場合だけ heavy lane へ昇格する。
 
 ### 導入プロファイル
 - **Baseline**: `verify:lite`、schema/AJV、PRゲートで通常の業務アプリを安定化。

@@ -15,7 +15,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ### 1. Purpose
 
-This policy is the canonical product decision record for ae-framework as an assurance control plane. It is written for human maintainers and Codex-driven work so that future implementation issues strengthen judgment-side assurance instead of rebuilding a coding-agent harness.
+This policy is the canonical product decision record for ae-framework as an agent-neutral assurance control plane. It is written for human maintainers and Codex-driven work so that future implementation issues strengthen judgment-side assurance instead of rebuilding a coding-agent harness.
 
 Use this document with:
 
@@ -30,7 +30,7 @@ Use this document with:
 
 #### 2.1 What ae-framework is
 
-- A BYO-agent assurance control plane.
+- An agent-neutral BYO-agent assurance control plane for agent-driven SDLC.
 - A judgment-side contract layer for specifications, verification outputs, evidence artifacts, policy decisions, PR summaries, release summaries, and post-deploy assurance.
 - A risk-based operating model that can add heavier verification only when a claim, risk profile, or policy requires it.
 - A contract catalog and artifact validation surface that keeps producer outputs reviewable and comparable over time.
@@ -39,6 +39,7 @@ Use this document with:
 
 - It is not a replacement for Codex CLI, Claude Code, Copilot, Cursor, or other coding agents.
 - It is not an IDE plugin or universal agent runtime.
+- It is not a hosted CI/CD service.
 - It is not a requirement that every change has formal proof.
 - It is not a claim that green CI alone proves high assurance.
 - It is not a guarantee beyond the stated claim, evidence scope, assumptions, waivers, and runtime controls.
@@ -47,7 +48,7 @@ Use this document with:
 
 | Decision | Policy |
 | --- | --- |
-| Producer boundary | Coding agents, test runners, formal tools, conformance tools, and MCP servers are replaceable producers. |
+| Producer boundary | Coding agents, human maintainers, test runners, formal tools, conformance tools, and MCP servers are replaceable producers. |
 | Control-plane ownership | ae-framework owns judgment-side contracts, evidence normalization, policy evaluation, and PR/release assurance summaries. |
 | Risk-based verification | Heavy verification is conditional and risk-based, not universal. |
 | Claim-based assurance | Assurance is evaluated per claim, not by repository-wide green status alone. |
@@ -143,13 +144,13 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 
 ### 1. 目的
 
-この文書は、ae-framework を assurance control plane として扱うための canonical policy です。今後の Codex-driven work が agent harness を作る方向へ逸れず、判断側の契約・証跡・policy・PR/release assurance を強化するための判断基準を固定します。
+この文書は、ae-framework をエージェント協調型SDLCのための agent-neutral assurance control plane として扱うための canonical policy です。今後の Codex-driven work が agent harness を作る方向へ逸れず、判断側の契約・証跡・policy・PR/release assurance を強化するための判断基準を固定します。
 
 ### 2. 境界
 
 #### 2.1 ae-framework が担うもの
 
-- BYO-agent 前提の assurance control plane。
+- BYO-agent 前提の、エージェント非依存な assurance control plane。
 - 仕様、検証出力、証跡 artifact、policy decision、PR/release summary、post-deploy assurance の判断側契約。
 - claim と risk に応じて重い検証を選択する運用モデル。
 - producer output を長期的に比較・レビュー可能にする contract catalog と artifact validation surface。
@@ -158,6 +159,7 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 
 - Codex CLI、Claude Code、Copilot、Cursor などの coding agent の代替。
 - IDE plugin または汎用 agent runtime。
+- ホスト型CI/CDサービス。
 - すべての変更への formal proof 強制。
 - green CI だけを根拠にした high assurance の宣言。
 - claim、証跡範囲、assumption、waiver、runtime control を超えた保証。
@@ -166,7 +168,7 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 
 | Decision | Policy |
 | --- | --- |
-| Producer boundary | coding agent、test runner、formal tool、conformance tool、MCP server は交換可能な producer として扱う。 |
+| Producer boundary | coding agent、人間のmaintainer、test runner、formal tool、conformance tool、MCP server は交換可能な producer として扱う。 |
 | Control-plane ownership | ae-framework は判断側 contract、evidence normalization、policy evaluation、PR/release assurance summary を担う。 |
 | Risk-based verification | 重い検証は条件付き・risk-based であり、常時強制しない。 |
 | Claim-based assurance | assurance は claim 単位で評価し、repository 全体の green status だけでは判断しない。 |
