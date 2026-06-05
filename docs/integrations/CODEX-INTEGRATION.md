@@ -13,7 +13,7 @@ lastVerified: '2026-03-10'
 ---
 
 
-This guide explains how to use ae-framework in the CodeX (agentic coding) environment. While Claude Code is the primary integration, CodeX can leverage ae-framework via CLI (PoC), MCP servers, or a future dedicated adapter.
+This guide explains how to use ae-framework in the CodeX (agentic coding) environment. CodeX is a producer; ae-framework remains the agent-neutral assurance control plane that normalizes producer output into evidence, policy, and review artifacts. For GitHub Issue driven work, start with `docs/integrations/CODEX-ISSUE-RUNBOOK.md`.
 
 ## Overview
 
@@ -185,6 +185,12 @@ Flow suggestion:
   - `ae_spec_codegen`: generate code from `.ae/ae-ir.json`
 - Flow: CodeX uses its own LLM for drafting the AE‑Spec and calls these tools to compile/lint/codegen, iterating until strict validation passes.
  
+
+## GitHub Issue driven Codex work
+
+Use `docs/integrations/CODEX-ISSUE-RUNBOOK.md` when a GitHub Issue is the task input. It includes copy/paste `gh issue view` extraction, non-interactive `codex exec`, interactive `codex --cd`, pre-work/post-work checklists, and subagent/worktree safety boundaries.
+
+Use `docs/agents/agent-producer-matrix.md` to decide whether CodeX output should become `change-package/v2`, `ae-handoff/v1`, `hook-feedback/v1`, `claim-evidence-manifest/v1`, or another judgment artifact.
 
 ## Operational Considerations
 
