@@ -1,4 +1,10 @@
 import type { CodeFile } from './code-generation-agent.types.js';
+import {
+  buildSafeRelativePath,
+  toSafeFileSlug,
+  toSafeLineCommentText,
+  toSafePascalIdentifier,
+} from './code-generation-safety.js';
 
 export interface OpenApiEndpoint {
   path: string;
@@ -102,13 +108,7 @@ function pickErrorStatus(codes: number[], kind: 'client' | 'server'): number {
   return fivexx[0] ?? 500;
 }
 
-function toPascalCase(input: string): string {
-  return input
-    .split('-')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-}
+const OPENAPI_HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']);
 
 export function parseOpenAPI(spec: string): ParsedOpenApiDocument {
   try {
@@ -121,9 +121,13 @@ export function parseOpenAPI(spec: string): ParsedOpenApiDocument {
     for (const [path, methodsRaw] of Object.entries(paths)) {
       const methods = asRecord(methodsRaw);
       for (const [method, definitionRaw] of Object.entries(methods)) {
+        const normalizedMethod = method.toLowerCase();
+        if (!OPENAPI_HTTP_METHODS.has(normalizedMethod)) {
+          continue;
+        }
         endpoints.push({
           path,
-          method,
+          method: normalizedMethod,
           definition: asRecord(definitionRaw),
           components,
         });
@@ -278,35 +282,34 @@ export function generateRouteHandler(
   endpoint: OpenApiEndpoint,
   options: Pick<OpenApiGenerationOptions, 'includeContracts' | 'useOperationIdForFilenames'>,
 ): CodeFile {
-  const safePathName = String(endpoint.path)
-    .replace(/[^a-zA-Z0-9]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-  const method = String(endpoint.method || 'get').toLowerCase();
+  const safePathName = toSafeFileSlug(endpoint.path, 'route');
+  const method = OPENAPI_HTTP_METHODS.has(String(endpoint.method).toLowerCase())
+    ? String(endpoint.method).toLowerCase()
+    : 'get';
   const operationId = typeof endpoint.definition['operationId'] === 'string'
     ? endpoint.definition['operationId']
     : undefined;
   const operationIdSafe = operationId
-    ? operationId
-      .replace(/[^a-zA-Z0-9]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
+    ? toSafeFileSlug(operationId, '')
     : '';
   const fileSafe = options.useOperationIdForFilenames && operationIdSafe
-    ? operationIdSafe.toLowerCase()
+    ? operationIdSafe
     : `${safePathName}-${method}`;
-  const contractBase = operationIdSafe
-    ? toPascalCase(operationIdSafe)
-    : `${toPascalCase(safePathName)}${method.charAt(0).toUpperCase()}${method.slice(1)}`;
+  const contractBase = toSafePascalIdentifier(
+    operationId ?? `${safePathName}-${method}`,
+    'GeneratedRoute'
+  );
+  const routeComment = toSafeLineCommentText(`${method.toUpperCase()} ${endpoint.path}`);
+  const operationComment = toSafeLineCommentText(operationId);
 
-  const base = `// Route handler implementation for ${endpoint.method} ${endpoint.path}\n`;
+  const base = `// Route handler implementation for ${routeComment}\n`;
   let content = base;
 
   if (options.includeContracts) {
     content += `import { z } from 'zod';\n`;
     content += `import { ${contractBase}Input, ${contractBase}Output } from '../contracts/schemas';\n`;
     content += `import { pre, post } from '../contracts/conditions';\n`;
-    content += `\n// OperationId: ${operationId ?? 'N/A'}\n`;
+    content += `\n// OperationId: ${operationComment}\n`;
     content += `export async function handler(input: unknown): Promise<unknown> {\n`;
     content += `  try {\n`;
     content += `    // Validate input and pre-condition (skeleton)\n`;
@@ -339,18 +342,22 @@ export function generateRouteHandler(
   }
 
   return {
-    path: `src/routes/${fileSafe}.ts`,
+    path: buildSafeRelativePath('src/routes', `${fileSafe}.ts`, 'route handler path'),
     content,
-    purpose: `Handle ${endpoint.method} ${endpoint.path}`,
+    purpose: `Handle ${routeComment}`,
     tests: [],
   };
 }
 
 export function generateModel(schema: OpenApiSchemaModel, database?: string): CodeFile {
+  const modelName = toSafeLineCommentText(schema.name, 'model');
+  const fileSlug = toSafeFileSlug(schema.name, 'model');
+  const modelPath = buildSafeRelativePath('src/models', `${fileSlug}.ts`, 'model path');
+  const databaseNote = database ? ` (${toSafeLineCommentText(database)})` : '';
   return {
-    path: `src/models/${schema.name}.ts`,
-    content: '// Model implementation',
-    purpose: `Model for ${schema.name}`,
+    path: modelPath,
+    content: `// Model implementation for ${modelName}${databaseNote}`,
+    purpose: `Model for ${modelName}`,
     tests: [],
   };
 }
