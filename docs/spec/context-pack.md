@@ -506,6 +506,24 @@ node scripts/ci/enforce-assurance-summary.mjs \
 - `kleisli-boundary-overlap` / `kleisli-impure-boundary-missing`: Kleisli 境界不整合
 - `phase5-evidence-missing`: Phase5+ 証跡パス不足
 
+### 現行 `context-pack:deps` warning inventory（Issue #3451）
+
+2026-06-05 UTC に `pnpm -s run context-pack:deps` を実行した結果は `status=warn`、`strict=false`、`scannedFiles=317`、`edgeCount=610`、`boundaryViolationCount=0`、`cycleCount=11` でした。境界ルール違反はなく、残存 warning はすべて `dependency-cycle` です。これは現時点では **accepted report-only warning** として扱い、`context-pack:deps` を blocking に昇格する前に architecture/module owner と分割・依存反転計画を作成します。warning は抑止していません。
+
+| # | 影響する cycle | classification | owner / follow-up path | review date |
+|---:|---|---|---|---|
+| 1 | `src/utils -> src/services -> src/utils` | accepted report-only warning（cycle debt） | `context-pack-ops` と utils/services owner が shared contract 抽出または依存反転を検討 | 2026-09-30 UTC |
+| 2 | `src/utils -> src/services -> src/commands -> src/utils` | accepted report-only warning（cycle debt） | `context-pack-ops` と commands/services owner が command adapter 境界を整理 | 2026-09-30 UTC |
+| 3 | `src/utils -> src/services -> src/commands -> src/providers -> src/security -> src/utils` | accepted report-only warning（cycle debt） | `context-pack-ops` と security/provider owner が security utility 境界を分離 | 2026-09-30 UTC |
+| 4 | `src/services -> src/commands -> src/services` | accepted report-only warning（cycle debt） | `context-pack-ops` と services/commands owner が service interface の一方向化を検討 | 2026-09-30 UTC |
+| 5 | `src/agents -> src/utils -> src/services -> src/commands -> src/agents` | accepted report-only warning（cycle debt） | `context-pack-ops` と agent orchestration owner が agent-facing adapter を分離 | 2026-09-30 UTC |
+| 6 | `src/agents -> src/utils -> src/services -> src/agents` | accepted report-only warning（cycle debt） | `context-pack-ops` と agent/services owner が shared DTO/port を抽出 | 2026-09-30 UTC |
+| 7 | `src/cli -> src/cegis -> src/cli` | accepted report-only warning（cycle debt） | `context-pack-ops` と CLI/CEGIS owner が CLI shell と CEGIS core を分離 | 2026-09-30 UTC |
+| 8 | `src/agents -> src/cli -> src/benchmark -> src/agents` | accepted report-only warning（cycle debt） | `context-pack-ops` と benchmark/agent owner が benchmark runner 依存を adapter 化 | 2026-09-30 UTC |
+| 9 | `src/agents -> src/cli -> src/integration -> src/agents` | accepted report-only warning（cycle debt） | `context-pack-ops` と integration/agent owner が integration runner 依存を adapter 化 | 2026-09-30 UTC |
+| 10 | `src/cli -> src/integration -> src/cli` | accepted report-only warning（cycle debt） | `context-pack-ops` と CLI/integration owner が integration CLI boundary を一方向化 | 2026-09-30 UTC |
+| 11 | `src/agents -> src/cli -> src/agents` | accepted report-only warning（cycle debt） | `context-pack-ops` と CLI/agent owner が CLI entrypoint と agent runtime を分離 | 2026-09-30 UTC |
+
 ### 運用時の診断・復旧
 CI失敗時の詳細な診断フロー（Phase 3/4/5+）は `docs/operations/context-pack-troubleshooting.md` を参照してください。
 本ドキュメントは入力契約と違反種別の定義を正として扱います。
@@ -947,6 +965,24 @@ node scripts/ci/enforce-assurance-summary.mjs   artifacts/assurance/assurance-su
 - `*-template-duplicate`: duplicate Phase5+ template ID
 - `kleisli-boundary-overlap` / `kleisli-impure-boundary-missing`: invalid Kleisli boundary split
 - `phase5-evidence-missing`: missing Phase5+ evidence path
+
+### Current `context-pack:deps` warning inventory (Issue #3451)
+
+The 2026-06-05 UTC run of `pnpm -s run context-pack:deps` returned `status=warn`, `strict=false`, `scannedFiles=317`, `edgeCount=610`, `boundaryViolationCount=0`, and `cycleCount=11`. There are no boundary-rule violations; every retained warning is a `dependency-cycle`. Treat these as **accepted report-only warnings** for now, and create an architecture/module-owner cycle-breaking or dependency-inversion plan before promoting `context-pack:deps` to a blocking gate. No warning is suppressed.
+
+| # | Affected cycle | Classification | Owner / follow-up path | Review date |
+|---:|---|---|---|---|
+| 1 | `src/utils -> src/services -> src/utils` | accepted report-only warning (cycle debt) | `context-pack-ops` with utils/services owners to evaluate shared-contract extraction or dependency inversion | 2026-09-30 UTC |
+| 2 | `src/utils -> src/services -> src/commands -> src/utils` | accepted report-only warning (cycle debt) | `context-pack-ops` with commands/services owners to clarify command-adapter boundaries | 2026-09-30 UTC |
+| 3 | `src/utils -> src/services -> src/commands -> src/providers -> src/security -> src/utils` | accepted report-only warning (cycle debt) | `context-pack-ops` with security/provider owners to split security utility boundaries | 2026-09-30 UTC |
+| 4 | `src/services -> src/commands -> src/services` | accepted report-only warning (cycle debt) | `context-pack-ops` with services/commands owners to make service interfaces one-way | 2026-09-30 UTC |
+| 5 | `src/agents -> src/utils -> src/services -> src/commands -> src/agents` | accepted report-only warning (cycle debt) | `context-pack-ops` with agent-orchestration owners to isolate agent-facing adapters | 2026-09-30 UTC |
+| 6 | `src/agents -> src/utils -> src/services -> src/agents` | accepted report-only warning (cycle debt) | `context-pack-ops` with agent/services owners to extract shared DTOs or ports | 2026-09-30 UTC |
+| 7 | `src/cli -> src/cegis -> src/cli` | accepted report-only warning (cycle debt) | `context-pack-ops` with CLI/CEGIS owners to split CLI shell from CEGIS core | 2026-09-30 UTC |
+| 8 | `src/agents -> src/cli -> src/benchmark -> src/agents` | accepted report-only warning (cycle debt) | `context-pack-ops` with benchmark/agent owners to adapterize benchmark-runner dependencies | 2026-09-30 UTC |
+| 9 | `src/agents -> src/cli -> src/integration -> src/agents` | accepted report-only warning (cycle debt) | `context-pack-ops` with integration/agent owners to adapterize integration-runner dependencies | 2026-09-30 UTC |
+| 10 | `src/cli -> src/integration -> src/cli` | accepted report-only warning (cycle debt) | `context-pack-ops` with CLI/integration owners to make the integration CLI boundary one-way | 2026-09-30 UTC |
+| 11 | `src/agents -> src/cli -> src/agents` | accepted report-only warning (cycle debt) | `context-pack-ops` with CLI/agent owners to split CLI entrypoints from agent runtime | 2026-09-30 UTC |
 
 ### Operational diagnosis and recovery
 For the detailed CI/local recovery flow (Phase 3/4/5+, boundary, discovery upstream), see `docs/operations/context-pack-troubleshooting.md`.
