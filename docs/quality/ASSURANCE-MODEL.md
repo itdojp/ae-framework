@@ -77,6 +77,21 @@ Evidence kind is the type used to explain why a claim is considered supported.
 - runtime-control
 - waiver
 
+#### 2.5 Claim status vocabulary
+
+Claim status is the per-claim review vocabulary used by PR and release summaries. It describes the strongest current evidence state for the claim, not the trustworthiness of the producer that reported it.
+
+| Status | Meaning | Policy note |
+| --- | --- | --- |
+| `proved` | Proof-lane evidence, such as Lean/Kani/equivalence proof, is linked and scoped to the claim. | Strongest evidence state; assumptions and proof scope must remain visible. |
+| `model-checked` | Model checking or counterexample exploration has covered the stated model scope. | Record bounded scope, model assumptions, and any counterexample closure. |
+| `tested` | Unit, integration, property, conformance, MBT, or equivalent behavior evidence supports the claim. | Do not describe this as proof. |
+| `runtime-mitigated` | Runtime guard, circuit breaker, feature flag, alert, rollout guard, or monitor reduces operational risk. | Mitigation is not proof or model checking. |
+| `waived` | A time-bounded exception was approved with owner, reason, expiry, affected claim, and evidence link. | Waiver keeps risk visible; it does not satisfy the claim. |
+| `unresolved` | Evidence is missing, stale, failed, insufficient, or not yet judged. | Default PR behavior may be report-only, but summaries must preserve the unresolved count. |
+
+`claim-level-summary/v1` also uses projection states such as `satisfied`, `failed`, and `not-applicable` for PR/release reporting. Those projection states do not replace the six primary evidence states above.
+
 ### 3. Supporting elements
 
 #### 3.1 Assumption
@@ -197,6 +212,21 @@ taxonomy と独立性ルール（independence rule）の詳細は `docs/quality/
 - proof
 - runtime-control
 - waiver
+
+#### 2.5 claim status vocabulary
+
+Claim status は、PR / release summary で使う claim 単位の review 語彙です。claim に対する現時点の最も強い evidence state を示し、その producer が正しいかどうかを示すものではありません。
+
+| Status | 意味 | Policy note |
+| --- | --- | --- |
+| `proved` | Lean / Kani / equivalence proof などの proof lane evidence が claim に scope 付きで紐付く。 | 最も強い evidence state。assumption と proof scope を残す。 |
+| `model-checked` | model checking または counterexample exploration が明示された model scope を探索済み。 | bounded scope、model assumption、counterexample closure を記録する。 |
+| `tested` | unit / integration / property / conformance / MBT などの behavior evidence が claim を支える。 | proof と表現しない。 |
+| `runtime-mitigated` | runtime guard、circuit breaker、feature flag、alert、rollout guard、monitor などで operational risk を緩和済み。 | mitigation は proof / model checking ではない。 |
+| `waived` | owner、reason、expiry、affected claim、evidence link を持つ期限付き例外として承認済み。 | risk を可視化し続ける。claim を satisfied に変換しない。 |
+| `unresolved` | evidence が不足、古い、失敗、不十分、または未判断。 | 通常 PR では report-only の場合があるが、summary には unresolved count を残す。 |
+
+`claim-level-summary/v1` は PR / release projection 用に `satisfied`、`failed`、`not-applicable` なども扱います。これらの projection state は上記6つの primary evidence state を置き換えるものではありません。
 
 ### 3. 補助要素
 

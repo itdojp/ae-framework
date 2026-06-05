@@ -53,6 +53,7 @@ Use this document with:
 | Control-plane ownership | ae-framework owns judgment-side contracts, evidence normalization, policy evaluation, and PR/release assurance summaries. |
 | Risk-based verification | Heavy verification is conditional and risk-based, not universal. |
 | Claim-based assurance | Assurance is evaluated per claim, not by repository-wide green status alone. |
+| Claim status escalation | Ordinary unresolved claims may stay report-only, but `risk:high`, `enforce-assurance`, and critical-core policy can escalate missing required lanes to block or manual approval. |
 | Summary-first evidence | Summary artifacts are primary judgment inputs; raw logs are supporting evidence. |
 | Distinct evidence states | Current primary emitted evidence states are `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved`. Preview `claim-level-summary/v1` can represent `not-applicable` for PR/release projection, but current primary producers must not emit it until promotion is explicit. |
 | Human override | Human override requires owner, reason, expiry, related claim IDs, and evidence link. |
@@ -174,6 +175,7 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 | Control-plane ownership | ae-framework は判断側 contract、evidence normalization、policy evaluation、PR/release assurance summary を担う。 |
 | Risk-based verification | 重い検証は条件付き・risk-based であり、常時強制しない。 |
 | Claim-based assurance | assurance は claim 単位で評価し、repository 全体の green status だけでは判断しない。 |
+| Claim status escalation | 通常変更の unresolved claim は report-only に留める場合があるが、`risk:high`、`enforce-assurance`、critical-core policy では required lane 不足を block または manual approval へ昇格できる。 |
 | Summary-first evidence | summary artifact を主な判断入力とし、raw log は補助証跡とする。 |
 | Distinct evidence states | 現行 contract が emit できる state は `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved`。将来 `not-applicable` を追加する場合は、producer が emit する前に schema/docs migration を行う。 |
 | Human override | human override には owner、reason、expiry、related claim IDs、evidence link を必要とする。 |
@@ -194,7 +196,20 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 - **Unresolved risk**: 証跡が不足、失敗、古い、対象外、または target assurance level に足りない claim / finding。
 - **Proof-carrying change package**: changed claim、evidence、assumption、waiver、runtime control、residual risk、policy decision を結び付ける review/release package。
 
-### 5. 有効/無効な表現例
+### 5. Claim status policy
+
+Claim status is evaluated per claim and must remain distinct in PR / release summaries.
+
+| Status | Meaning | Policy handling |
+| --- | --- | --- |
+| `proved` | proof lane の machine-checked evidence が scope 付きで紐付く | supported として扱えるが assumption / scope を隠さない |
+| `model-checked` | model checking が bounded scope / assumption の範囲で探索済み | model scope を超える claim は human review へ昇格 |
+| `tested` | unit / integration / property / conformance などで検証済み | behavior evidence。proof と表現しない |
+| `runtime-mitigated` | runtime guard / feature flag / alert などで緩和済み | warn / report-only が既定。critical core では manual approval または block へ昇格可能 |
+| `waived` | owner / reason / expiry / claim / evidence link 付きで期限付き免除 | metadata 不足・期限切れは block。satisfied claim ではない |
+| `unresolved` | evidence 不足または未判断 | 通常変更では report-only 可。ただし `risk:high` / `enforce-assurance` / critical core では block または manual approval |
+
+### 6. 有効/無効な表現例
 
 | Intent | 有効な表現 | 無効な表現 |
 | --- | --- | --- |
@@ -205,7 +220,7 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 | Formal scope | TLA evidence は summary に記載された assumption の範囲で state transition model を model-check した。 | formal verification により製品全体が証明済み。 |
 | Producer boundary | Codex が変更を生成し、ae-framework が review evidence を生成した。 | ae-framework は coding agent である。 |
 
-### 6. Codex-driven work への指針
+### 7. Codex-driven work への指針
 
 1. 編集前に current HEAD と current contracts を確認する。
 2. 並列概念を増やす前に canonical docs / schemas を更新する。
