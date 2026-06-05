@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-06-06'
+lastVerified: '2026-06-05'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
