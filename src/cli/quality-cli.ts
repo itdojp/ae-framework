@@ -12,8 +12,11 @@ import { QualityGateRunner, type QualityGateExecutionOptions } from '../quality/
 import {
   createQualityPathContext,
   getDefaultQualityReportDir,
+  isQualityCiContext,
   isQualityAgentContext,
   QUALITY_GATE_EXECUTION_APPROVAL_SCOPE,
+  resolveQualityWorkspacePath,
+  type QualityPathContext,
 } from '../quality/quality-command-policy.js';
 import { AutoFixEngine } from '../cegis/auto-fix-engine.js';
 import type { FailureArtifact as EngineFailureArtifact, FailureCategory as EngineFailureCategory } from '../cegis/types.js';
@@ -92,7 +95,31 @@ const normalizePhase = (phase?: string): 'intent' | 'formal' | 'test' | 'code' |
   return allowed.includes(phase as (typeof allowed)[number]) ? (phase as (typeof allowed)[number]) : undefined;
 };
 
-const convertLegacyFailureArtifact = (legacy: LegacyFailureArtifact): EngineFailureArtifact => {
+const constrainEngineFailureArtifactPath = (
+  failure: EngineFailureArtifact,
+  pathContext: QualityPathContext
+): EngineFailureArtifact => {
+  if (!failure.location?.filePath) {
+    return failure;
+  }
+  const resolved = resolveQualityWorkspacePath(
+    failure.location.filePath,
+    pathContext,
+    `failure artifact location for ${failure.id}`
+  );
+  return {
+    ...failure,
+    location: {
+      ...failure.location,
+      filePath: resolved.workspaceRelativePath,
+    },
+  };
+};
+
+const convertLegacyFailureArtifact = (
+  legacy: LegacyFailureArtifact,
+  pathContext: QualityPathContext
+): EngineFailureArtifact => {
   const now = new Date().toISOString();
   const createdAt = legacy.createdAt ?? legacy.context.timestamp ?? now;
   const updatedAt = legacy.updatedAt ?? legacy.context.timestamp ?? createdAt;
@@ -112,7 +139,7 @@ const convertLegacyFailureArtifact = (legacy: LegacyFailureArtifact): EngineFail
       }
     : undefined;
 
-  return EngineFailureArtifactSchema.parse({
+  return constrainEngineFailureArtifactPath(EngineFailureArtifactSchema.parse({
     id: legacy.id,
     title: legacy.title,
     description: legacy.description,
@@ -144,28 +171,49 @@ const convertLegacyFailureArtifact = (legacy: LegacyFailureArtifact): EngineFail
       tags: legacy.tags ?? [],
       source: legacy.context.component ?? 'failure-artifact-schema',
     },
-  });
+  }), pathContext);
 };
 
-const normalizeFailureArtifact = (item: unknown): EngineFailureArtifact => {
-  try {
-    return EngineFailureArtifactSchema.parse(item);
-  } catch {
-    const legacy = validateFailureArtifact(item);
-    return convertLegacyFailureArtifact(legacy);
+const normalizeFailureArtifact = (
+  item: unknown,
+  pathContext: QualityPathContext
+): EngineFailureArtifact => {
+  const parsed = EngineFailureArtifactSchema.safeParse(item);
+  if (parsed.success) {
+    return constrainEngineFailureArtifactPath(parsed.data, pathContext);
   }
+  const legacy = validateFailureArtifact(item);
+  return convertLegacyFailureArtifact(legacy, pathContext);
 };
 
-const loadFailureArtifacts = (inputPath?: string): EngineFailureArtifact[] => {
-  let resolvedPath = inputPath;
-  if (!resolvedPath) {
+const loadFailureArtifacts = (
+  inputPath: string | undefined,
+  pathContext: QualityPathContext
+): EngineFailureArtifact[] => {
+  let artifactPath: string | undefined;
+  let resolvedPath: string | undefined;
+  if (!inputPath) {
     for (const tryPath of COMMON_FAILURE_PATHS) {
-      if (fs.existsSync(tryPath)) {
-        resolvedPath = tryPath;
-        console.log(chalk.gray(`📁 Found failure artifacts at: ${tryPath}`));
+      const candidate = resolveQualityWorkspacePath(
+        tryPath,
+        pathContext,
+        'failure artifact input file'
+      );
+      if (fs.existsSync(candidate.resolvedPath)) {
+        artifactPath = candidate.workspaceRelativePath;
+        resolvedPath = candidate.resolvedPath;
+        console.log(chalk.gray(`📁 Found failure artifacts at: ${candidate.workspaceRelativePath}`));
         break;
       }
     }
+  } else {
+    const resolved = resolveQualityWorkspacePath(
+      inputPath,
+      pathContext,
+      'failure artifact input file'
+    );
+    artifactPath = resolved.workspaceRelativePath;
+    resolvedPath = resolved.resolvedPath;
   }
 
   if (!resolvedPath) {
@@ -176,18 +224,18 @@ const loadFailureArtifacts = (inputPath?: string): EngineFailureArtifact[] => {
   }
 
   if (!fs.existsSync(resolvedPath)) {
-    throw new Error(`Input file not found: ${resolvedPath}`);
+    throw new Error(`Input file not found: ${artifactPath ?? inputPath ?? resolvedPath}`);
   }
 
   const data = JSON.parse(fs.readFileSync(resolvedPath, 'utf8')) as unknown;
   if (Array.isArray(data)) {
-    return data.map((item) => normalizeFailureArtifact(item));
+    return data.map((item) => normalizeFailureArtifact(item, pathContext));
   }
   if (data && typeof data === 'object' && 'failures' in data) {
     const legacyCollection = validateFailureArtifactCollection(data as LegacyFailureArtifactCollection);
-    return legacyCollection.failures.map((failure) => convertLegacyFailureArtifact(failure));
+    return legacyCollection.failures.map((failure) => convertLegacyFailureArtifact(failure, pathContext));
   }
-  return [normalizeFailureArtifact(data)];
+  return [normalizeFailureArtifact(data, pathContext)];
 };
 
 type QualityOutputFormat = 'text' | 'json';
@@ -209,12 +257,15 @@ const normalizeQualityOutputFormat = (rawFormat: string | undefined): QualityOut
 
 const getDefaultQualityOutputDir = (): string => getDefaultQualityReportDir(createQualityPathContext());
 
-const getQualityExecutionPolicy = (options: { dryRun?: boolean; apply?: boolean; approvalScope?: string }): QualityExecutionPolicy => {
-  const agentContext = isQualityAgentContext();
+const getQualityExecutionPolicy = (
+  options: { dryRun?: boolean; apply?: boolean; approvalScope?: string },
+  policyOptions: { protectCi?: boolean } = {}
+): QualityExecutionPolicy => {
+  const guardedAutomationContext = isQualityAgentContext() || (policyOptions.protectCi === true && isQualityCiContext());
   const apply = options.apply === true;
   const approvalScope = options.approvalScope;
-  const dryRun = options.dryRun === true || (agentContext && !apply);
-  const approvalRequired = agentContext && apply && approvalScope !== QUALITY_GATE_EXECUTION_APPROVAL_SCOPE;
+  const dryRun = options.dryRun === true || (guardedAutomationContext && !apply);
+  const approvalRequired = guardedAutomationContext && apply && approvalScope !== QUALITY_GATE_EXECUTION_APPROVAL_SCOPE;
   const policy: QualityExecutionPolicy = {
     dryRun,
     apply,
@@ -354,13 +405,19 @@ export function createQualityCommand(): Command {
 
       const printJson = outputFormat === 'json';
       try {
-        const executionPolicy = getQualityExecutionPolicy(options);
+        const executionPolicy = getQualityExecutionPolicy(options, { protectCi: true });
         if (executionPolicy.approvalRequired) {
-          console.error(chalk.red(`❌ Quality gate execution requires --approval-scope ${QUALITY_GATE_EXECUTION_APPROVAL_SCOPE} when --apply is used in an agent context`));
+          console.error(chalk.red(`❌ Quality reconciliation requires --approval-scope ${QUALITY_GATE_EXECUTION_APPROVAL_SCOPE} when --apply is used in an agent or CI context`));
           safeExit(1);
           return;
         }
 
+        const pathContext = createQualityPathContext();
+        const fixOutput = resolveQualityWorkspacePath(
+          options.fixOutput,
+          pathContext,
+          'auto-fix output directory'
+        );
         const maxRounds = Math.max(1, parseInt(options.maxRounds, 10) || 1);
         const runner = new QualityGateRunner();
         let lastReport: Awaited<ReturnType<QualityGateRunner['executeGates']>> | null = null;
@@ -430,7 +487,7 @@ export function createQualityCommand(): Command {
 
           let failures: EngineFailureArtifact[];
           try {
-            failures = loadFailureArtifacts(options.fixInput);
+            failures = loadFailureArtifacts(options.fixInput, pathContext);
           } catch (error) {
             console.error(chalk.red('\n❌ Unable to load failure artifacts for auto-fix.'));
             if (!printJson) {
@@ -443,9 +500,10 @@ export function createQualityCommand(): Command {
 
           const engine = new AutoFixEngine();
           const fixResult = await engine.executeFixes(failures, {
-            outputDir: options.fixOutput,
+            outputDir: fixOutput.workspaceRelativePath,
             maxIterations: parseInt(options.fixIterations, 10) || 10,
             confidenceThreshold: parseFloat(options.fixConfidence) || 0.7,
+            workspaceRoot: pathContext.workspaceRoot,
           });
 
           const appliedFixCount = fixResult.appliedFixes?.length ?? 0;

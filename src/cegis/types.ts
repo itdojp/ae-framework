@@ -180,6 +180,7 @@ export interface AutoFixConfig {
   timeoutMs: number;
   backupFiles: boolean;
   generateReport: boolean;
+  workspaceRoot?: string;
 }
 
 // Fix execution result
@@ -224,6 +225,7 @@ export interface AutoFixOptions {
   timeoutMs?: number;
   maxIterations?: number;
   outputDir?: string;
+  workspaceRoot?: string;
 }
 
 // Pattern analysis result

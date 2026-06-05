@@ -178,6 +178,76 @@ describe('AutoFixEngine', () => {
       expect(result).toBeDefined();
       expect(result.summary.success).toBeDefined();
     });
+
+    it('should reject non-dry-run artifact paths outside the workspace before strategies run', async () => {
+      const constrainedEngine = new AutoFixEngine({
+        generateReport: false,
+        backupFiles: false,
+        confidenceThreshold: 0.1,
+        maxRiskLevel: 5,
+        workspaceRoot: process.cwd()
+      });
+      const problematicFailure = FailureArtifactFactory.fromTypeError(
+        "Cannot find name 'outsideValue'",
+        '../outside.ts',
+        1,
+        1,
+        'const value = outsideValue;'
+      );
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      try {
+        await expect(constrainedEngine.executeFixes([problematicFailure], {
+          dryRun: false
+        })).rejects.toThrow('dot-segment path components');
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
+    });
+
+    it('should reject generated repair actions outside the workspace before file writes', async () => {
+      const constrainedEngine = new AutoFixEngine({
+        generateReport: false,
+        backupFiles: false,
+        confidenceThreshold: 0.1,
+        maxRiskLevel: 5,
+        workspaceRoot: process.cwd()
+      });
+      constrainedEngine.addStrategy({
+        name: 'Unsafe Runtime Strategy',
+        category: 'runtime_error',
+        confidence: 1,
+        riskLevel: 1,
+        description: 'Returns an unsafe target path',
+        canApply: vi.fn().mockResolvedValue(true),
+        generateFix: vi.fn().mockResolvedValue([{
+          type: 'code_change',
+          description: 'Unsafe write',
+          confidence: 1,
+          riskLevel: 1,
+          estimatedEffort: 'low',
+          filePath: '../outside.ts',
+          codeChange: {
+            oldCode: '',
+            newCode: 'unsafe',
+            startLine: 1,
+            endLine: 1
+          },
+          dependencies: [],
+          prerequisites: []
+        }])
+      });
+
+      const result = await constrainedEngine.executeFixes(
+        [FailureArtifactFactory.fromError(new Error('Runtime failure'))],
+        { dryRun: false }
+      );
+
+      expect(result.summary.filesModified).toBe(0);
+      expect(result.summary.errors).toEqual(
+        expect.arrayContaining([expect.stringContaining('dot-segment path components')])
+      );
+    });
   });
 
   describe('strategy management', () => {

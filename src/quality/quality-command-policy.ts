@@ -215,8 +215,35 @@ export function resolveQualityReportOutputDir(
   };
 }
 
+export function resolveQualityWorkspacePath(
+  input: string,
+  context: QualityPathContext,
+  label = 'quality workspace path'
+): ResolvedQualityPath {
+  const resolvedPath = resolveWorkspacePath(input, {
+    workspaceRoot: context.workspaceRoot,
+    label,
+  });
+
+  return {
+    resolvedPath,
+    workspaceRelativePath: toWorkspaceRelativePath(resolvedPath, {
+      workspaceRoot: context.workspaceRoot,
+      label,
+    }),
+  };
+}
+
+const isTruthyFlag = (value: string | undefined): boolean => {
+  if (!value) return false;
+  return ['1', 'true', 'yes', 'y'].includes(value.trim().toLowerCase());
+};
+
 export function isQualityAgentContext(): boolean {
   const raw = process.env['AE_QUALITY_AGENT_CONTEXT'] ?? process.env['AE_AGENT_CONTEXT'];
-  if (!raw) return false;
-  return ['1', 'true', 'yes', 'y'].includes(raw.trim().toLowerCase());
+  return isTruthyFlag(raw);
+}
+
+export function isQualityCiContext(): boolean {
+  return isTruthyFlag(process.env['CI']);
 }

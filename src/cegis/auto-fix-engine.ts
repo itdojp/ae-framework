@@ -5,6 +5,11 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import {
+  resolveWorkspacePath,
+  toWorkspaceRelativePath,
+  WorkspacePathPolicyError,
+} from '../utils/workspace-path-policy.js';
 import type {
   FailureArtifact,
   FixStrategy,
@@ -25,6 +30,11 @@ import { TestFailureFixStrategy } from './strategies/test-failure-strategy.js';
 import { ContractViolationFixStrategy } from './strategies/contract-violation-strategy.js';
 
 const DEFAULT_CEGIS_REPORT_DIR = path.join('temp-reports', 'cegis');
+
+interface ResolvedAutoFixPath {
+  resolvedPath: string;
+  workspaceRelativePath: string;
+}
 
 export class AutoFixEngine {
   private strategies: Map<FailureCategory, FixStrategy[]> = new Map();
@@ -52,6 +62,7 @@ export class AutoFixEngine {
       timeoutMs: 30000,
       backupFiles: true,
       generateReport: true,
+      workspaceRoot: process.cwd(),
       ...config
     };
 
@@ -68,12 +79,18 @@ export class AutoFixEngine {
   ): Promise<FixResult> {
     const startTime = Date.now();
     const effectiveConfig: AutoFixConfig & AutoFixOptions = { ...this.config, ...options };
+    if (effectiveConfig.workspaceRoot !== undefined) {
+      effectiveConfig.workspaceRoot = path.resolve(effectiveConfig.workspaceRoot);
+    }
     
     console.log(`🔧 Starting auto-fix process for ${failures.length} failures...`);
     
     try {
       // 1. Filter and validate failures
-      const validFailures = this.filterValidFailures(failures, effectiveConfig);
+      const validFailures = this.constrainFailurePaths(
+        this.filterValidFailures(failures, effectiveConfig),
+        effectiveConfig
+      );
       console.log(`📋 Processing ${validFailures.length} valid failures`);
       
       // 2. Analyze failure patterns
@@ -108,7 +125,7 @@ export class AutoFixEngine {
           skippedFixes,
           summary,
           recommendations,
-          effectiveConfig.outputDir
+          effectiveConfig
         );
       }
       
@@ -229,6 +246,64 @@ export class AutoFixEngine {
       }
       
       return true;
+    });
+  }
+
+  private shouldEnforceWorkspacePathPolicy(config: AutoFixConfig): boolean {
+    return !config.dryRun && !!config.workspaceRoot?.trim();
+  }
+
+  private resolveAutoFixWorkspacePath(
+    filePath: string,
+    config: AutoFixConfig,
+    label: string
+  ): ResolvedAutoFixPath {
+    if (!this.shouldEnforceWorkspacePathPolicy(config)) {
+      return {
+        resolvedPath: filePath,
+        workspaceRelativePath: filePath,
+      };
+    }
+
+    const workspaceRoot = path.resolve(config.workspaceRoot!);
+    const resolvedPath = resolveWorkspacePath(filePath, {
+      workspaceRoot,
+      label,
+    });
+    return {
+      resolvedPath,
+      workspaceRelativePath: toWorkspaceRelativePath(resolvedPath, {
+        workspaceRoot,
+        label,
+      }),
+    };
+  }
+
+  private constrainFailurePaths(
+    failures: FailureArtifact[],
+    config: AutoFixConfig
+  ): FailureArtifact[] {
+    if (!this.shouldEnforceWorkspacePathPolicy(config)) {
+      return failures;
+    }
+
+    return failures.map((failure) => {
+      if (!failure.location?.filePath) {
+        return failure;
+      }
+
+      const resolved = this.resolveAutoFixWorkspacePath(
+        failure.location.filePath,
+        config,
+        `failure artifact location for ${failure.id}`
+      );
+      return {
+        ...failure,
+        location: {
+          ...failure.location,
+          filePath: resolved.workspaceRelativePath,
+        },
+      };
     });
   }
 
@@ -353,27 +428,52 @@ export class AutoFixEngine {
     
     for (const failure of failures) {
       // Skip if file already processed
-      if (failure.location?.filePath && processedFiles.has(failure.location.filePath)) {
-        warnings.push(`File already processed: ${failure.location.filePath}`);
+      const failureFileKey = failure.location?.filePath
+        ? this.resolveAutoFixWorkspacePath(
+            failure.location.filePath,
+            config,
+            `failure artifact location for ${failure.id}`
+          ).workspaceRelativePath
+        : undefined;
+      if (failureFileKey && processedFiles.has(failureFileKey)) {
+        warnings.push(`File already processed: ${failureFileKey}`);
         continue;
       }
       
       const actions = await strategy.generateFix(failure);
-      allActions.push(...actions);
       
       for (const action of actions) {
         try {
+          let recordAction = action;
+          let resolvedActionPath: ResolvedAutoFixPath | undefined;
+          if (action.filePath) {
+            resolvedActionPath = this.resolveAutoFixWorkspacePath(
+              action.filePath,
+              config,
+              `auto-fix action target for ${strategy.name}`
+            );
+            recordAction = {
+              ...action,
+              filePath: resolvedActionPath.workspaceRelativePath,
+            };
+          }
+          allActions.push(recordAction);
+
           if (action.filePath && !config.dryRun) {
+            if (!resolvedActionPath) {
+              throw new WorkspacePathPolicyError(`auto-fix action target for ${strategy.name} is missing`);
+            }
+
             // Backup file if requested
             if (config.backupFiles) {
-              await this.backupFile(action.filePath);
+              await this.backupFile(resolvedActionPath.resolvedPath);
             }
             
             // Apply the fix
-            await this.applyAction(action);
+            await this.applyAction(action, resolvedActionPath.resolvedPath);
             
-            if (action.filePath && !filesModified.includes(action.filePath)) {
-              filesModified.push(action.filePath);
+            if (!filesModified.includes(resolvedActionPath.workspaceRelativePath)) {
+              filesModified.push(resolvedActionPath.workspaceRelativePath);
             }
           }
         } catch (error) {
@@ -400,10 +500,9 @@ export class AutoFixEngine {
     };
   }
 
-  private async applyAction(action: RepairAction): Promise<void> {
+  private async applyAction(action: RepairAction, resolvedFilePath: string): Promise<void> {
     if (action.type === 'code_change' && action.codeChange && action.filePath) {
-      const fs = await import('fs');
-      const content = await fs.promises.readFile(action.filePath, 'utf-8');
+      const content = await fs.readFile(resolvedFilePath, 'utf-8');
       const lines = content.split('\n');
       
       // Replace the specified lines
@@ -412,17 +511,15 @@ export class AutoFixEngine {
       
       lines.splice(startIdx, endIdx - startIdx, action.codeChange.newCode);
       
-      await fs.promises.writeFile(action.filePath, lines.join('\n'));
+      await fs.writeFile(resolvedFilePath, lines.join('\n'));
     }
     
     // Handle other action types as needed
   }
 
   private async backupFile(filePath: string): Promise<void> {
-    const fs = await import('fs');
-
     const backupPath = `${filePath}.backup.${Date.now()}`;
-    await fs.promises.copyFile(filePath, backupPath);
+    await fs.copyFile(filePath, backupPath);
   }
 
   private groupByCategory(failures: FailureArtifact[]): Map<FailureCategory, FailureArtifact[]> {
@@ -541,12 +638,17 @@ export class AutoFixEngine {
     skippedFixes: SkippedFix[],
     summary: FixResult['summary'],
     recommendations: string[],
-    outputDir?: string
+    config: AutoFixConfig & AutoFixOptions
   ): Promise<string> {
-    const configuredDir = outputDir?.trim() || process.env['AE_CEGIS_REPORT_DIR']?.trim();
-    const reportDir = configuredDir && configuredDir.length > 0
+    const configuredDir = config.outputDir?.trim() || process.env['AE_CEGIS_REPORT_DIR']?.trim();
+    const rawReportDir = configuredDir && configuredDir.length > 0
       ? configuredDir
       : DEFAULT_CEGIS_REPORT_DIR;
+    const reportDir = this.resolveAutoFixWorkspacePath(
+      rawReportDir,
+      config,
+      'auto-fix report output directory'
+    ).resolvedPath;
     const reportPath = path.join(reportDir, `cegis-report-${Date.now()}.json`);
     
     const report = {
