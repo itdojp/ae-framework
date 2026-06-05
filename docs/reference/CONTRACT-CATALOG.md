@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-05-08'
+lastVerified: '2026-06-05'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -25,7 +25,7 @@ This document is the baseline inventory created for Issue #2406. It classifies t
 
 Some schemas are dual-role. This catalog records the primary role used in the current implementation.
 
-### 3. Schema inventory (snapshot: 2026-05-08)
+### 3. Schema inventory (snapshot: 2026-06-05)
 
 #### 3.1 input
 
