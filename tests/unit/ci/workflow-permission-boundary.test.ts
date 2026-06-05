@@ -752,6 +752,56 @@ describe('workflow permission boundaries', () => {
     expect(containerSteps.some((step: any) => step?.uses === 'github/codeql-action/upload-sarif@v3')).toBe(true);
   });
 
+  it('formal aggregate publishes PR comments from a separate trusted workflow-run publisher', () => {
+    const aggregate = parseWorkflow('formal-aggregate.yml');
+    const aggregateRaw = readWorkflow('formal-aggregate.yml');
+    const verifyRaw = readWorkflow('formal-verify.yml');
+    const verifyAggregate = extractJobBlock(verifyRaw, 'formal-aggregate');
+    const publisher = parseWorkflow('formal-aggregate-publisher.yml');
+    const publisherRaw = readWorkflow('formal-aggregate-publisher.yml');
+    const publisherJob = extractJobBlock(publisherRaw, 'publish');
+    const aggregateSteps = jobSteps(aggregate, 'aggregate');
+
+    expect(workflowPermission(aggregate, 'issues')).toBeUndefined();
+    expect(aggregate.on?.workflow_dispatch?.inputs?.pr_number).toBeUndefined();
+    expect(aggregateRaw).not.toContain('Pull request number to comment on');
+    expectReadOnlyJobPermissions(aggregate, 'aggregate');
+    expectCheckoutCredentialsDisabled(aggregateSteps);
+    expect(aggregateRaw).not.toContain('github.rest.issues');
+    expect(aggregateRaw).not.toContain('issues.createComment');
+    expect(aggregateRaw).not.toContain('issues.updateComment');
+    expect(verifyAggregate).toContain('uses: ./.github/workflows/formal-aggregate.yml');
+    expect(verifyAggregate).not.toContain('issues: write');
+
+    expect(publisher.on?.workflow_run?.workflows).toContain('Formal Verify');
+    expect(publisher.permissions).toMatchObject({
+      actions: 'read',
+      issues: 'write',
+      'pull-requests': 'read',
+    });
+    expect(jobSteps(publisher, 'publish').some((step) => step?.uses === 'actions/checkout@v4')).toBe(false);
+    expect(jobSteps(publisher, 'publish').some((step) => String(step?.uses ?? '').startsWith('./'))).toBe(false);
+    expect(publisher.on?.workflow_dispatch?.inputs?.pr_head_sha?.required).toBe(true);
+    expect(publisherJob).toContain("workflowRun.head_sha");
+    expect(publisherJob).toContain('/^[0-9a-f]{40}$/i.test(expectedHeadSha)');
+    expect(publisherJob).toContain('Invalid or missing PR head SHA');
+    expect(publisherJob).toContain('workflowHeadRepository !== `${owner}/${repo}`');
+    expect(publisherJob).toContain('pr.head.sha !== expectedHeadSha');
+    expect(publisherJob).not.toContain('expectedHeadSha || pr.head.sha');
+    expect(publisherJob).toContain("labels.has('run-formal')");
+    expect(publisherJob).toContain('actions/download-artifact@v4');
+    expect(publisherJob).toContain('run-id: ${{ steps.context.outputs.source_run_id }}');
+    expect(publisherJob).toContain('FORMAL_AGGREGATE_MARKER');
+    expect(publisherJob).toContain('MAX_COMMENT_BYTES');
+    expect(publisherJob).toContain('sanitizeAggregateMarkdown');
+    expect(publisherJob).toContain(".replace(/&/g, '&amp;')");
+    expect(publisherJob).toContain('truncateUtf8');
+    expect(publisherJob).toContain('listAllIssueComments');
+    expect(publisherJob).toContain('isTrustedAutomationComment');
+    expect(publisherJob).toContain("login === 'github-actions' || login === 'github-actions[bot]'");
+    expect(publisherJob).toContain('startsWith(FORMAL_AGGREGATE_MARKER)');
+  });
+
   it('dependency-track SBOM upload validates allowlisted HTTPS destinations before API-key use', () => {
     const sbom = parseWorkflow('sbom-generation.yml');
     const sbomSteps = sbom.jobs?.['sbom-publication']?.steps ?? [];

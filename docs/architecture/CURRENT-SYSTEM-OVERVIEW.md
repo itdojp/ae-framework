@@ -106,7 +106,7 @@ Design implications:
 | Auto-merge lane | `pr-ci-status-comment.yml` | Enables auto-merge when conditions are satisfied |
 | Trace conformance | `spec-generate-model.yml` | Emits `KvOnce Trace Validation` and related trace evidence |
 | Formal verification (opt-in) | `formal-verify.yml` | Heavy verification on `run-formal` label or workflow dispatch |
-| Formal aggregation | `formal-aggregate.yml` | Aggregates formal outputs for PR-facing summaries |
+| Formal aggregation | `formal-aggregate.yml` | Aggregates formal outputs; PR comments are published by trusted `formal-aggregate-publisher.yml` |
 | Security | `security.yml`, `sbom-generation.yml` | Dependency, vulnerability, and SBOM operations |
 | Release verification | `post-deploy-verify.yml` | Workflow-dispatch post-deploy verification with preserved evidence |
 
@@ -335,7 +335,7 @@ Primary implementation sources:
 | 自動マージ（auto-merge） | `pr-ci-status-comment.yml` | 条件成立時に auto-merge を自動有効化し、人手マージを省略（任意） |
 | トレース適合性 | `spec-generate-model.yml` | KvOnce trace conformance と `KvOnce Trace Validation` check を出力 |
 | 形式検証（opt-in） | `formal-verify.yml` | `run-formal` ラベル/dispatchで重い検証を実行 |
-| 形式集約 | `formal-aggregate.yml` | formal出力をPRコメント向けに集約 |
+| 形式集約 | `formal-aggregate.yml` | formal出力を集約し、PRコメント投稿は trusted `formal-aggregate-publisher.yml` が担当 |
 | セキュリティ | `security.yml`, `sbom-generation.yml` | 依存・脆弱性・SBOM運用 |
 | リリース検証 | `post-deploy-verify.yml` | workflow_dispatch 起点の post-deploy verify と証跡保存 |
 

@@ -86,7 +86,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
     - `/run-security-dispatch` … sbom-generation（Security/SBOM）を実行
     - `/ci-fast-dispatch` … CI Fast を実行（バッチ系は対応ラベル付与時のみ稼働）
     - `/formal-verify-dispatch` … Formal Verify を実行（`run-formal` との併用推奨）
-    - `/formal-aggregate-dispatch` … Formal Reports Aggregate を実行（`run-formal` 併用時に集約コメントを生成）
+    - `/formal-aggregate-dispatch` … Formal Reports Aggregate のartifact生成を実行（PRコメント投稿は trusted `formal-aggregate-publisher.yml` が担当）
     - `/run-flake-dispatch` … flake-detect を実行
     - `/spec-validation-dispatch` … spec-validation を実行
   - 手動実行（Actions UI）
