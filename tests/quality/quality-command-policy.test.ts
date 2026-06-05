@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
-import { mkdirSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { QualityPolicyLoader } from '../../src/quality/policy-loader.js';
@@ -8,7 +8,9 @@ import { QualityGateRunner } from '../../src/quality/quality-gate-runner.js';
 import {
   QUALITY_GATE_EXECUTION_APPROVAL_SCOPE,
   resolveQualityReportOutputDir,
+  resolveQualityWorkspacePath,
   createQualityPathContext,
+  isQualityCiContext,
 } from '../../src/quality/quality-command-policy.js';
 
 class FakeChildProcess extends EventEmitter {
@@ -127,6 +129,7 @@ describe('quality gate command policy', () => {
   let policyPath: string;
   let previousQualityAgentContext: string | undefined;
   let previousAgentContext: string | undefined;
+  let previousCiContext: string | undefined;
 
   const writePolicy = (
     command = 'node scripts/quality/check-lint-summary.mjs',
@@ -153,8 +156,10 @@ describe('quality gate command policy', () => {
     testRoot = ['artifacts', 'quality', `unit-${Date.now()}-${Math.random().toString(16).slice(2)}`].join('/');
     previousQualityAgentContext = process.env['AE_QUALITY_AGENT_CONTEXT'];
     previousAgentContext = process.env['AE_AGENT_CONTEXT'];
+    previousCiContext = process.env['CI'];
     delete process.env['AE_QUALITY_AGENT_CONTEXT'];
     delete process.env['AE_AGENT_CONTEXT'];
+    delete process.env['CI'];
   });
 
   afterEach(() => {
@@ -167,6 +172,11 @@ describe('quality gate command policy', () => {
       delete process.env['AE_AGENT_CONTEXT'];
     } else {
       process.env['AE_AGENT_CONTEXT'] = previousAgentContext;
+    }
+    if (previousCiContext === undefined) {
+      delete process.env['CI'];
+    } else {
+      process.env['CI'] = previousCiContext;
     }
     rmSync(join(process.cwd(), testRoot), { recursive: true, force: true });
   });
@@ -317,5 +327,46 @@ describe('quality gate command policy', () => {
     expect(() => resolveQualityReportOutputDir('/tmp/quality-gates', context)).toThrow(
       'relative to the approved quality artifact root'
     );
+  });
+
+  it('constrains quality workspace paths to relative non-traversing paths', () => {
+    const context = createQualityPathContext();
+
+    expect(resolveQualityWorkspacePath('src/index.ts', context, 'auto-fix target')).toMatchObject({
+      workspaceRelativePath: 'src/index.ts',
+    });
+    expect(() => resolveQualityWorkspacePath('/tmp/outside.ts', context, 'auto-fix target')).toThrow(
+      'relative to the approved workspace'
+    );
+    expect(() => resolveQualityWorkspacePath('../outside.ts', context, 'auto-fix target')).toThrow(
+      'dot-segment path components'
+    );
+    expect(() => resolveQualityWorkspacePath('.git/config', context, 'auto-fix target')).toThrow(
+      'Git metadata'
+    );
+  });
+
+  it('rejects quality workspace paths that escape through symlinks', () => {
+    const root = join(process.cwd(), testRoot, 'workspace');
+    const outside = join(process.cwd(), testRoot, 'outside');
+    mkdirSync(root, { recursive: true });
+    mkdirSync(outside, { recursive: true });
+    try {
+      symlinkSync(outside, join(root, 'escape'), 'dir');
+    } catch {
+      return;
+    }
+
+    const context = createQualityPathContext({ workspaceRoot: root });
+
+    expect(() => resolveQualityWorkspacePath('escape/file.ts', context, 'auto-fix target')).toThrow(
+      'outside the approved workspace'
+    );
+  });
+
+  it('detects CI automation context without changing agent-context detection', () => {
+    expect(isQualityCiContext()).toBe(false);
+    process.env['CI'] = 'true';
+    expect(isQualityCiContext()).toBe(true);
   });
 });
