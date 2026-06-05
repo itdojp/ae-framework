@@ -333,7 +333,12 @@ export class HybridTDDSystem {
     if (data.command === 'check') {
       return this.cli?.checkPhase(data.phase || 'current');
     } else if (data.command === 'guard') {
-      return this.cli?.runGuards(data.guardName);
+      return this.cli?.runGuards(data.guardName, {
+        agentContext: true,
+        dryRun: data.dryRun === true,
+        apply: data.apply === true,
+        ...(typeof data.approvalScope === 'string' ? { approvalScope: data.approvalScope } : {}),
+      });
     } else if (data.command === 'next') {
       return this.cli?.nextPhase();
     }
