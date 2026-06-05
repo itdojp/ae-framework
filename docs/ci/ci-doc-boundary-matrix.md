@@ -12,7 +12,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## English
 
-Update summary: 2026-03-25
+Update summary: 2026-06-05
 
 Purpose: define responsibility boundaries for `docs/ci` operational documents so guidance stays deduplicated and the current escalation path remains clear.
 
@@ -37,7 +37,7 @@ For the agent-document boundary on the CI side, see `docs/agents/agents-doc-boun
 
 ## 日本語
 
-最終更新: 2026-03-25
+最終更新: 2026-06-05
 
 目的: `docs/ci` 配下の運用ドキュメントについて、重複を抑えた責務境界を定義する。
 
