@@ -1,0 +1,195 @@
+name: Formal Aggregate Publisher
+
+on:
+  workflow_run:
+    workflows: ["Formal Verify"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Formal Verify workflow run id containing formal-reports-aggregate"
+        required: true
+        type: string
+      pr_number:
+        description: "Pull request number to comment on"
+        required: true
+        type: string
+      pr_head_sha:
+        description: "Expected current pull request head SHA"
+        required: true
+        type: string
+
+concurrency:
+  group: formal-aggregate-publisher-${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_run_id || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  publish:
+    name: Publish Formal Reports Aggregate
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.pull_requests[0].number != '')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve publish context
+        id: context
+        uses: actions/github-script@v7
+        env:
+          DISPATCH_SOURCE_RUN_ID: ${{ inputs.source_run_id || '' }}
+          DISPATCH_PR_NUMBER: ${{ inputs.pr_number || '' }}
+          DISPATCH_PR_HEAD_SHA: ${{ inputs.pr_head_sha || '' }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const eventName = context.eventName;
+            const payload = context.payload || {};
+            let sourceRunId = '';
+            let prNumber = '';
+            let expectedHeadSha = '';
+            let workflowHeadRepository = '';
+
+            if (eventName === 'workflow_run') {
+              const workflowRun = payload.workflow_run || {};
+              sourceRunId = String(workflowRun.id || '');
+              prNumber = String((workflowRun.pull_requests || [])[0]?.number || '');
+              expectedHeadSha = String(workflowRun.head_sha || '');
+              workflowHeadRepository = String(workflowRun.head_repository?.full_name || '');
+            } else {
+              sourceRunId = String(process.env.DISPATCH_SOURCE_RUN_ID || '');
+              prNumber = String(process.env.DISPATCH_PR_NUMBER || '');
+              expectedHeadSha = String(process.env.DISPATCH_PR_HEAD_SHA || '');
+            }
+
+            if (!/^\d+$/.test(sourceRunId) || !/^\d+$/.test(prNumber)) {
+              core.warning(`Invalid publish context: sourceRunId=${JSON.stringify(sourceRunId)} prNumber=${JSON.stringify(prNumber)}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            if (!/^[0-9a-f]{40}$/i.test(expectedHeadSha)) {
+              core.warning(`Invalid or missing PR head SHA for formal aggregate publication: ${JSON.stringify(expectedHeadSha)}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+
+            const issueNumber = Number(prNumber);
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: issueNumber });
+            if (workflowHeadRepository && workflowHeadRepository !== `${owner}/${repo}`) {
+              core.warning(`Skipping formal aggregate publication for non-repository head ${workflowHeadRepository}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            if (pr.head.sha !== expectedHeadSha) {
+              core.warning(`Skipping stale formal aggregate for PR #${issueNumber}: expected ${expectedHeadSha}, current ${pr.head.sha}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+
+            if (eventName === 'workflow_run') {
+              const labels = new Set((pr.labels || []).map((label) => String(label.name || '')));
+              if (!labels.has('run-formal')) {
+                core.info(`PR #${issueNumber} no longer has run-formal; skipping formal aggregate publication.`);
+                core.setOutput('skip', 'true');
+                return;
+              }
+            }
+
+            core.setOutput('skip', 'false');
+            core.setOutput('source_run_id', sourceRunId);
+            core.setOutput('pr_number', prNumber);
+            core.setOutput('pr_head_sha', expectedHeadSha);
+
+      - name: Download formal aggregate artifact
+        if: steps.context.outputs.skip != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: formal-reports-aggregate
+          path: artifacts/formal
+          run-id: ${{ steps.context.outputs.source_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Publish formal aggregate PR comment
+        if: steps.context.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.context.outputs.pr_number }}
+          PR_HEAD_SHA: ${{ steps.context.outputs.pr_head_sha }}
+          SOURCE_RUN_ID: ${{ steps.context.outputs.source_run_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { owner, repo } = context.repo;
+            const issue_number = Number(process.env.PR_NUMBER || 0);
+            const sourceRunId = String(process.env.SOURCE_RUN_ID || '');
+            const prHeadSha = String(process.env.PR_HEAD_SHA || '');
+            const FORMAL_AGGREGATE_MARKER = '<!-- AE-FORMAL-AGGREGATE -->';
+            const MAX_COMMENT_BYTES = 60000;
+            const aggregatePath = path.join('artifacts', 'formal', 'formal-aggregate.md');
+
+            if (!issue_number) {
+              core.info('PR number not provided; skipping comment.');
+              return;
+            }
+            if (!fs.existsSync(aggregatePath)) {
+              core.warning(`Formal aggregate markdown artifact not found at ${aggregatePath}; skipping comment.`);
+              return;
+            }
+
+            const sanitizeAggregateMarkdown = (value) => String(value || '')
+              .replace(/\u0000/g, '')
+              .replace(/\r\n/g, '\n')
+              .replace(/\r/g, '\n')
+              .replace(/&/g, '&amp;')
+              .replace(/@/g, '@\u200b')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
+            const truncateUtf8 = (text, maxBytes) => {
+              if (Buffer.byteLength(text, 'utf8') <= maxBytes) return text;
+              const suffix = '\n\n_Formal aggregate truncated to stay within the PR comment size limit._\n';
+              const available = Math.max(0, maxBytes - Buffer.byteLength(suffix, 'utf8'));
+              let used = 0;
+              let output = '';
+              for (const char of text) {
+                const size = Buffer.byteLength(char, 'utf8');
+                if (used + size > available) break;
+                output += char;
+                used += size;
+              }
+              return `${output}${suffix}`;
+            };
+            const listAllIssueComments = async () => {
+              const comments = [];
+              for (let page = 1; ; page += 1) {
+                const response = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number,
+                  per_page: 100,
+                  page,
+                });
+                comments.push(...response.data);
+                if (response.data.length < 100) break;
+              }
+              return comments;
+            };
+            const isTrustedAutomationComment = (comment) => {
+              const login = String(comment.user?.login || '');
+              return (login === 'github-actions' || login === 'github-actions[bot]')
+                && String(comment.body || '').startsWith(FORMAL_AGGREGATE_MARKER);
+            };
+
+            const aggregateMarkdown = sanitizeAggregateMarkdown(fs.readFileSync(aggregatePath, 'utf8'));
+            const metadata = `<!-- AE-FORMAL-AGGREGATE-META source_run_id=${sourceRunId} pr_head_sha=${prHeadSha} -->`;
+            const body = truncateUtf8(`${FORMAL_AGGREGATE_MARKER}\n${metadata}\n\n${aggregateMarkdown}`, MAX_COMMENT_BYTES);
+            const comments = await listAllIssueComments();
+            const existing = [...comments].reverse().find(isTrustedAutomationComment);
+            if (existing && existing.body === body) {
+              core.info('Aggregate unchanged; skipping update');
+            } else if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
