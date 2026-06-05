@@ -22,7 +22,7 @@ This document is the implementation-aligned architecture overview of `ae-framewo
 - the `cspx` integration contract and normalized summary/result artifacts
 - the operational entrypoints for local execution, label-triggered execution, and aggregated evidence review
 
-The architectural position is that `ae-framework` acts as an **assurance control plane**. Individual coding agents, test runners, and formal tools are producers. The framework's core value is the control surface that fixes and evaluates:
+The architectural position is that `ae-framework` acts as an **agent-neutral assurance control plane** for agent-driven SDLC. Individual coding agents, human maintainers, test runners, and formal tools are producers. The framework's core value is the control surface that fixes and evaluates:
 
 - specifications and contracts
 - verification-lane activation and aggregation
@@ -49,7 +49,7 @@ Baseline assumptions:
 
 | Category | Main elements | Role |
 | --- | --- | --- |
-| Producer | coding agents, AE-Spec compiler, unit/integration tests, formal runners, conformance tools | Generate specs, code, and raw verification outputs |
+| Producer | coding agents, human maintainers, AE-Spec compiler, unit/integration tests, formal runners, conformance tools | Generate specs, code, review inputs, and raw verification outputs |
 | Control plane | Context Pack, artifact schemas, verify-lite summary, assurance summary, quality scorecard, policy gate, hook feedback / handoff, PR automation | Normalize producer outputs into contract-backed evidence and gate decisions |
 
 Design implications:
@@ -251,7 +251,7 @@ Primary implementation sources:
 - `cspx` 連携の契約（summary/result artifact）
 - 運用導線（ローカル実行、PRラベル実行、集約確認）
 
-本資料での位置付けは、ae-framework を **assurance control plane** として説明することです。個々の coding agent、テストランナー、formal tool は producer であり、ae-framework の中核価値は次を束ねる制御面にあります。
+本資料での位置付けは、ae-framework を **エージェント協調型SDLCのための agent-neutral assurance control plane** として説明することです。個々の coding agent、人間のmaintainer、テストランナー、formal tool は producer であり、ae-framework の中核価値は次を束ねる制御面にあります。
 
 - spec / contract の固定
 - verification lane の起動と集約
@@ -278,7 +278,7 @@ Primary implementation sources:
 
 | 区分 | 主な要素 | 役割 |
 | --- | --- | --- |
-| Producer | coding agent, AE-Spec compiler, unit/integration tests, formal runners, conformance tools | 仕様・コード・検証結果を生成する |
+| Producer | coding agent、人間のmaintainer、AE-Spec compiler、unit/integration tests、formal runners、conformance tools | 仕様・コード・review input・検証結果を生成する |
 | Control plane | Context Pack, artifact schemas, verify-lite summary, assurance summary, quality scorecard, policy gate, hook feedback / handoff, PR automation | 生成結果を contract と gate の観点で集約し、判断可能な証跡へ変換する |
 
 設計上の含意:

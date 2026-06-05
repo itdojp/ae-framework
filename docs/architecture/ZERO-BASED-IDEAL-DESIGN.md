@@ -29,7 +29,7 @@ Assumptions as of 2026-03:
 - the GitHub PR-driven delivery flow remains in place
 - AI review, auto-fix, and gate decisions must stay auditable
 - artifacts remain contractual evidence
-- code generators are replaceable producers, while the assurance control plane stays centered on spec, verification, evidence, and policy gates
+- code generators, coding agents, and human maintainers are replaceable producers, while the agent-neutral assurance control plane stays centered on spec, verification, evidence, and policy gates
 
 ### 2. Zero-based design principles
 
@@ -63,7 +63,7 @@ The ideal design separates `ae-framework` into five planes:
 - Observability Plane
   - audit logs, metrics, alerts, and operational reports
 
-Even in the ideal shape, code generators and review AIs remain replaceable producers in the Execution Plane. The differentiated value stays in the Control, Policy, and Evidence planes, where PR and release assurance becomes standardized.
+Even in the ideal shape, code generators, coding agents, review AIs, and human maintainers remain replaceable producers in the Execution Plane. The differentiated value stays in the Control, Policy, and Evidence planes, where PR and release assurance becomes standardized.
 
 #### 3.2 Ideal component split
 
@@ -306,7 +306,7 @@ Defer when:
 - GitHub PR駆動の開発フローを継続
 - AIレビュー + 自動修正 + ゲート判定の監査可能性を維持
 - 証跡（artifacts）を契約として扱う
-- codegen は交換可能な producer とみなし、spec / verification / evidence / policy gate を束ねる assurance control plane を中核に置く
+- codegen、coding agent、人間のmaintainer は交換可能な producer とみなし、spec / verification / evidence / policy gate を束ねる agent-neutral assurance control plane を中核に置く
 
 ## 2. 設計原則（ゼロベース）
 
@@ -340,7 +340,7 @@ Defer when:
 - Observability Plane
   - 監査ログ、メトリクス、アラート、運用レポート
 
-この理想像でも、コード生成器やレビューAIは Execution Plane の producer として入れ替え可能である。差別化要因は、それらを横断して PR / release の assurance 判断を標準化する Control/Policy/Evidence Plane 側に置く。
+この理想像でも、コード生成器、coding agent、レビューAI、人間のmaintainer は Execution Plane の producer として入れ替え可能である。差別化要因は、それらを横断して PR / release の assurance 判断を標準化する Control/Policy/Evidence Plane 側に置く。
 
 ### 3.2 コンポーネント（理想責務）
 

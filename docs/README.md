@@ -11,7 +11,7 @@ lastVerified: '2026-05-09'
 
 ## English
 
-Comprehensive documentation for the agentic SDLC orchestrator and assurance control plane.
+Comprehensive documentation for the agent-neutral assurance control plane for agent-driven SDLC.
 
 ### Trust tiers
 
@@ -22,6 +22,7 @@ Comprehensive documentation for the agentic SDLC orchestrator and assurance cont
 See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 
 ### Recommended first reading
+- Assurance control plane positioning: `product/ASSURANCE-CONTROL-PLANE.md`, `product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - System overview (implementation-aligned): `architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Product summary: `product/OVERVIEW.md`, `product/DETAIL.md`, `product/USER-MANUAL.md`
 - Quick activation path: `getting-started/QUICK-START-GUIDE.md`
@@ -277,7 +278,7 @@ For the complete navigation with stronger annotations and the same link set, see
 
 ---
 
-> エージェント協調型SDLCオーケストレーター兼 assurance control plane の包括的ドキュメント
+> エージェント協調型SDLCのための、エージェント非依存の assurance control plane に関する包括的ドキュメント
 
 ## 信頼階層（trust tiers）
 
@@ -289,7 +290,7 @@ front matter の仕様と lint ルールは `reference/DOC-GOVERNANCE.md` を参
 
 ## 🚀 はじめに
 
-ae-frameworkは、エージェント協調型のSDLCオーケストレーター兼 assurance control plane です。Claude Code / CodeX 連携やMCPサーバを通じて、要件→仕様→検証→証跡→運用判断のフローを統一します。
+ae-framework は、エージェント協調型SDLCのためのエージェント非依存な assurance control plane です。Codex、Claude Code、GitHub Copilot、人間、MCP server、CI job は producer であり、ae-framework は要件→仕様→検証→証跡→policy gate→merge/release 判断を同じ契約で束ねます。
 
 ## 📖 ドキュメント構成
 
