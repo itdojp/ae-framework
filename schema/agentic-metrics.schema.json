@@ -110,8 +110,9 @@
       "properties": {
         "satisfied": { "$ref": "#/$defs/nonNegativeInteger" },
         "required": { "$ref": "#/$defs/nonNegativeInteger" },
-        "ratio": { "type": "number", "minimum": 0, "maximum": 1 },
-        "missingLanes": { "$ref": "#/$defs/stringArray" }
+        "ratio": { "$ref": "#/$defs/ratioOrNull" },
+        "missingLanes": { "$ref": "#/$defs/stringArray" },
+        "notApplicable": { "type": "boolean" }
       }
     },
     "evidenceCompletenessMetric": {

@@ -40,6 +40,33 @@ describe('agentic-metrics contract', () => {
     expect(validate.errors?.some((entry) => entry.instancePath === '/agentPrAssurance/reportOnly')).toBe(true);
   });
 
+  it('allows n/a lane compliance when no lanes are required', () => {
+    const validate = compileSchema();
+    const nAComplianceFixture = structuredClone(agentPrAssuranceFixture) as {
+      agentPrAssurance: {
+        metrics: {
+          required_lane_compliance: {
+            satisfied: number;
+            required: number;
+            ratio: number | null;
+            missingLanes?: string[];
+            notApplicable?: boolean;
+          };
+        };
+      };
+    };
+
+    nAComplianceFixture.agentPrAssurance.metrics.required_lane_compliance = {
+      satisfied: 0,
+      required: 0,
+      ratio: null,
+      missingLanes: [],
+      notApplicable: true,
+    };
+
+    expect(validate(nAComplianceFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
   it('requires all named report-only agent PR assurance metrics when the extension is present', () => {
     const validate = compileSchema();
     const invalidFixture = structuredClone(agentPrAssuranceFixture) as {
