@@ -116,6 +116,7 @@ The current minimum-change recommendation is option A. If Nightly uses `workflow
 - Scheduled `reports/heavy-test-trends-history/<timestamp>.json` files should carry the same context so downstream tooling can correlate runs.
 - `render-heavy-trend-summary.mjs` already acts as the summary PoC. It scans the history directory and writes recent snapshots to stdout, `reports/heavy-test-trends-history/summary.md`, and the Step Summary.
 - The scheduled Slack notification step reads `summary.json` and decides whether to alert based on Warning / Critical thresholds.
+- For agent-created PR assessment, heavy-test history and summaries are supporting inputs to the report-only `agent_regression_signal` metric defined in `docs/ci/agent-pr-assurance-metrics.md`.
 
 ### 8. Candidate next steps
 1. Build a visualization PoC using Observable Notebook or generated Markdown reports.
@@ -218,6 +219,7 @@ The current minimum-change recommendation is option A. If Nightly uses `workflow
 - スケジュール実行で生成された `reports/heavy-test-trends-history/<timestamp>.json` には同じ `context` 情報が含まれるため、後段で履歴解析する際に run 単位で突合できる。
 - `scripts/pipelines/render-heavy-trend-summary.mjs` は履歴ディレクトリを走査し、直近スナップショットを Markdown として標準出力・`reports/heavy-test-trends-history/summary.md`・Step Summary に出力する PoC として機能する。
 - スケジュール実行の Slack 通知ステップでは上記 `summary.json` を参照し、Warning / critical 判定をもとにチャンネルへ連絡する。
+- agent-created PR の評価では、heavy-test 履歴とsummaryを `docs/ci/agent-pr-assurance-metrics.md` の report-only `agent_regression_signal` metric の補助入力として扱う。
 
 ### 8. 次ステップ候補
 1. 収集データの可視化 PoC（Observable Notebook または static Markdown レポート生成）。

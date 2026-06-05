@@ -25,6 +25,7 @@ Use this document with:
 - `docs/architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md` for detailed claim/evidence/policy/package design.
 - `docs/reference/CONTRACT-CATALOG.md` for current schema, producer, and consumer mappings.
 - `docs/agents/evidence-adapters.md` for raw producer output normalization into existing judgment artifacts.
+- `docs/ci/agent-pr-assurance-metrics.md` for report-only agent PR quality metrics.
 - `docs/reports/ASSURANCE-CONTROL-PLANE-CURRENT-STATE.md` for the 2026-05 current-state audit.
 
 ### 2. Product boundary
@@ -127,7 +128,13 @@ Contract changes are safe when they follow at least one of these routes:
 
 Breaking changes require explicit migration notes in the relevant contract docs and PR summary.
 
-### 9. References
+### 9. Agent PR metrics policy
+
+Agent PR assurance metrics are observability signals. They can be shown in quality scorecards, PR comments, release summaries, or `agentic-metrics` extensions, but their initial state is report-only.
+
+Policy gates may consume these metrics for context, but a metric must not become a new block condition without an explicit policy change tied to risk labels, assurance profiles, or high-assurance critical core scope.
+
+### 10. References
 
 - Product overview: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance model: `docs/quality/ASSURANCE-MODEL.md`
@@ -139,6 +146,7 @@ Breaking changes require explicit migration notes in the relevant contract docs 
 - Change package v2: `docs/reference/change-package-v2.md`
 - Codex integration: `docs/integrations/CODEX-INTEGRATION.md`
 - Security Assurance Lane: `docs/security/security-assurance-lane.md`
+- Agent PR assurance metrics: `docs/ci/agent-pr-assurance-metrics.md`
 - Current-state audit: `docs/reports/ASSURANCE-CONTROL-PLANE-CURRENT-STATE.md`
 
 ---
@@ -230,3 +238,9 @@ Claim status は claim 単位で評価し、PR / release summary では状態を
 6. schema を追加・厳格化する場合は positive / negative fixture を追加する。
 7. PR/release の判断には summary artifact を使い、raw log は補助証跡とする。
 8. evidence が missing、waived、runtime-mitigated、out-of-scope の場合は、現行 contract では `unresolved` または waiver として residual risk を記録する。
+
+### 8. Agent PR metrics policy
+
+Agent PR assurance metrics は observability signal です。quality scorecard、PR comment、release summary、または `agentic-metrics` extension に表示できますが、初期状態は report-only です。
+
+Policy gate は文脈情報としてこれらのmetricsを参照できます。ただし、risk label、assurance profile、high-assurance critical core scope に結びついた明示的なpolicy変更がない限り、新しいblock条件にはしません。

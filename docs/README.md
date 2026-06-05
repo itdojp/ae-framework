@@ -28,6 +28,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Quick activation path: `getting-started/QUICK-START-GUIDE.md`
 - Daily operator flow: `guides/THREAD-REPO-CI-FLOW.md`
 - Current PR automation / gate baseline: `ci/pr-automation.md`, `ci/OPT-IN-CONTROLS.md`
+- Agent PR trust-calibration metrics: `ci/agent-pr-assurance-metrics.md`
 
 ### How to use this index
 - If you need the shortest route to a working repository, start with `getting-started/`.
@@ -249,6 +250,7 @@ Current verification baseline, assurance model, artifact contracts, automation p
 - CI troubleshooting guide: `ci/ci-troubleshooting-guide.md`（失敗分類/復旧runbook）
 - Harness failure taxonomy: `ci/harness-taxonomy.md`（ゲート横断の分類/重要度/次アクション）
 - PR automation runbook: `ci/pr-automation.md`（Copilot→auto-fix→auto-merge）
+- Agent PR assurance metrics: `ci/agent-pr-assurance-metrics.md`（report-only品質指標）
 - Review topology matrix validation: `ci/review-topology-matrix.md`（solo/team/override の比較検証）
 - Change Package runbook: `ci/change-package.md`（証跡パッケージ生成/検証/PR要約連携）
 - Plan Artifact runbook: `ci/plan-artifact.md`（high-risk PR の事前レビュー契約）

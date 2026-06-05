@@ -223,7 +223,15 @@ Check in this order:
 - [ ] record the reason for `enforce-assurance` in the PR body or linked Issue when the label is used
 - [ ] do not leave warnings or open counterexamples before strict runs
 
-### 9. References
+### 9. Agent PR assurance metrics (report-only)
+
+Use `docs/ci/agent-pr-assurance-metrics.md` when an agent-created PR needs trust-calibration evidence beyond green checks.
+
+- Read `quality-scorecard/v1`, `claim-evidence-manifest/v1`, `claim-level-summary/v1`, `policy-decision/v1`, and optional `agentPrAssurance` metrics before raw logs.
+- Keep the first rollout report-only; do not add new block conditions during triage.
+- Escalate only when existing `risk:high`, `enforce-assurance`, or critical-core policy already requires missing lane/evidence handling.
+
+### 10. References
 
 - `docs/quality/assurance-profile.md`
 - `docs/quality/assurance-lanes.md`
@@ -447,7 +455,15 @@ Raw log を review surface の一次情報にしないでください。normaliz
 - [ ] `enforce-assurance` を付ける理由を PR 本文または Issue に記録した
 - [ ] strict 運用時に warning / open counterexample を残していない
 
-### 9. 参照
+### 9. Agent PR assurance metrics（report-only）
+
+Agent-created PR で green check 以上の信頼判断が必要な場合は `docs/ci/agent-pr-assurance-metrics.md` を使います。
+
+- raw log より先に `quality-scorecard/v1`、`claim-evidence-manifest/v1`、`claim-level-summary/v1`、`policy-decision/v1`、optional な `agentPrAssurance` metrics を読む。
+- 初期導入は report-only に留め、triage 中に新しいblock条件を追加しない。
+- `risk:high`、`enforce-assurance`、critical-core policy が既に missing lane/evidence handling を要求する場合だけ昇格する。
+
+### 10. 参照
 
 - `docs/quality/assurance-profile.md`
 - `docs/quality/assurance-lanes.md`

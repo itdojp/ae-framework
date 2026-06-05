@@ -24,7 +24,7 @@ For the agent-document boundary on the CI side, see `docs/agents/agents-doc-boun
 | --- | --- | --- | --- |
 | Global policy | `docs/ci-policy.md` | `docs/ci/workflow-role-matrix.md`, `docs/ci/OPT-IN-CONTROLS.md` | required checks, opt-in labels, dispatch policy |
 | Daily operations | `docs/ci/ci-operations-handbook.md` | `docs/ci/ci-troubleshooting-guide.md` | monitoring, rerun, stop/recovery standard procedures |
-| PR automation | `docs/ci/pr-automation.md` | `docs/ci/copilot-review-gate.md`, `docs/ci/copilot-auto-fix.md`, `docs/ci/auto-merge.md`, `docs/ci/change-package.md` | Copilot review gate, auto-fix, auto-merge, Change Package |
+| PR automation | `docs/ci/pr-automation.md` | `docs/ci/copilot-review-gate.md`, `docs/ci/copilot-auto-fix.md`, `docs/ci/auto-merge.md`, `docs/ci/change-package.md`, `docs/ci/agent-pr-assurance-metrics.md` | Copilot review gate, auto-fix, auto-merge, Change Package, report-only agent PR metrics |
 | Docs verification | `docs/ci/docs-doctest-policy.md` | `scripts/ci/check-docs-doctest-policy-sync.mjs` | docs-doctest execution boundary and sync check |
 | Failure handling | `docs/ci/automation-failure-policies.md` | `docs/ci/automation-rollback-runbook.md`, `docs/ci/automation-alerting.md` | fail-open / fail-closed, rollback, notifications |
 
@@ -49,7 +49,7 @@ Agent文書側の境界定義は `docs/agents/agents-doc-boundary-matrix.md` を
 | --- | --- | --- | --- |
 | 全体方針 | `docs/ci-policy.md` | `docs/ci/workflow-role-matrix.md`, `docs/ci/OPT-IN-CONTROLS.md` | Required checks / opt-in labels / dispatch方針 |
 | 日次運用 | `docs/ci/ci-operations-handbook.md` | `docs/ci/ci-troubleshooting-guide.md` | 監視・再実行・停止/復帰の標準手順 |
-| PR自動化 | `docs/ci/pr-automation.md` | `docs/ci/copilot-review-gate.md`, `docs/ci/copilot-auto-fix.md`, `docs/ci/auto-merge.md`, `docs/ci/change-package.md` | Copilot review gate / auto-fix / auto-merge / Change Package |
+| PR自動化 | `docs/ci/pr-automation.md` | `docs/ci/copilot-review-gate.md`, `docs/ci/copilot-auto-fix.md`, `docs/ci/auto-merge.md`, `docs/ci/change-package.md`, `docs/ci/agent-pr-assurance-metrics.md` | Copilot review gate / auto-fix / auto-merge / Change Package / report-only agent PR metrics |
 | Docs検証 | `docs/ci/docs-doctest-policy.md` | `scripts/ci/check-docs-doctest-policy-sync.mjs` | docs-doctest 実行境界と同期チェック |
 | 障害対応 | `docs/ci/automation-failure-policies.md` | `docs/ci/automation-rollback-runbook.md`, `docs/ci/automation-alerting.md` | fail-open/fail-closed, rollback, 通知 |
 

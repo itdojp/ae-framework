@@ -130,6 +130,15 @@ Claim summary:
 - high-risk claims requiring human review: N
 ```
 
+#### Agent PR assurance metrics
+
+Agent-created PR quality is observed through report-only assurance metrics, not only green checks. Use `docs/ci/agent-pr-assurance-metrics.md` as the metric definition source.
+
+- Initial operation is report-only and does not add new `policy-gate` block conditions.
+- Preferred summary surfaces are `quality-scorecard/v1`, `claim-evidence-manifest/v1`, `policy-decision/v1`, and optional `agentic-metrics` extension `agentPrAssurance`.
+- PR comments should show compact counts such as claim coverage, unresolved claims, waiver expiry risk, required lane compliance, evidence completeness, agent regression signal, blocked-to-merge-eligible MTTR, and false block rate.
+- Promote metrics to blocking only through explicit risk/profile/critical-core policy changes.
+
 #### 3.1.2 Recommended baseline by team shape
 
 | Item | solo | team |
@@ -494,6 +503,15 @@ Claim summary:
 - required lanes missing: N
 - high-risk claims requiring human review: N
 ```
+
+#### Agent PR assurance metrics
+
+Agent-created PR の品質は green check だけでなく、report-only assurance metrics で観測します。metric定義の一次情報は `docs/ci/agent-pr-assurance-metrics.md` です。
+
+- 初期運用は report-only であり、新しい `policy-gate` block 条件を追加しません。
+- 推奨summary surfaceは `quality-scorecard/v1`、`claim-evidence-manifest/v1`、`policy-decision/v1`、optional な `agentic-metrics` extension `agentPrAssurance` です。
+- PR comment では claim coverage、unresolved claims、waiver expiry risk、required lane compliance、evidence completeness、agent regression signal、blocked-to-merge-eligible MTTR、false block rate を短く表示します。
+- blocking へ昇格する場合は、risk/profile/critical-core policy の明示変更を必要とします。
 
 ### 3.1.2 体制別ベースライン設定（推奨）
 

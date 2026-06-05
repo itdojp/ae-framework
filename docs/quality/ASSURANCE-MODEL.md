@@ -115,6 +115,7 @@ Implemented on current `main`:
 - strict assurance enforcement when the `enforce-assurance` label is set
 - assurance display in PR / release / post-deploy summaries
 - policy-gate decision artifacts carry a report-only waiver-aware assurance section when `claim-evidence-manifest/v1` is available
+- report-only agent PR assurance metrics are defined for claim coverage, unresolved claims, waiver expiry risk, required lane compliance, evidence completeness, agent regression signal, MTTR, and false block observation
 
 Not yet implemented or still being phased in:
 - change-package v2 preview contract (schema / docs only)
@@ -127,6 +128,7 @@ Not yet implemented or still being phased in:
 3. Limit heavy assurance to high-risk changes and keep the normal PR lane fast.
 4. Use summary artifacts as the primary input for judgment; raw logs are supporting evidence.
 5. Retain assumptions and trust boundaries so that the guarantee scope is not overstated.
+6. Treat agent PR assurance metrics as report-only judgment aids until policy explicitly promotes them.
 
 ### 6. Related contracts
 
@@ -139,6 +141,8 @@ Contracts already present on `main`:
 - `schema/claim-evidence-manifest.schema.json`
 - `schema/policy-input-v1.schema.json`
 - `schema/policy-decision-v1.schema.json`
+- `schema/quality-scorecard.schema.json`
+- `schema/agentic-metrics.schema.json`
 
 Contracts that remain incremental candidates:
 - `schema/verify-lite-run-summary.schema.json`
@@ -251,6 +255,7 @@ proof や model-check で閉じない部分を、feature flag / alert / rollout 
 - `enforce-assurance` ラベル時の strict assurance enforcement
 - PR / release / post-deploy summary への assurance 表示
 - `claim-evidence-manifest/v1` がある場合の、policy-gate decision artifact 内の report-only な waiver-aware assurance section
+- claim coverage、unresolved claim、waiver expiry risk、required lane compliance、evidence completeness、agent regression signal、MTTR、false block observation を対象にした report-only agent PR assurance metrics
 
 未実装または段階導入中:
 - change-package v2 preview 契約（schema / docs のみ）
@@ -263,6 +268,7 @@ proof や model-check で閉じない部分を、feature flag / alert / rollout 
 3. heavy assurance は high-risk change に限定し、通常の PR レーンを維持する
 4. サマリー成果物を判断面の一次情報とし、raw log は補助とする
 5. 前提条件（assumption）と trust boundary を残し、保証範囲を過大表現しない
+6. agent PR assurance metrics は、明示的にpolicy昇格されるまでは report-only の判断補助として扱う
 
 ### 6. 関連契約
 
@@ -275,6 +281,8 @@ main に存在する契約:
 - `schema/claim-evidence-manifest.schema.json`
 - `schema/policy-input-v1.schema.json`
 - `schema/policy-decision-v1.schema.json`
+- `schema/quality-scorecard.schema.json`
+- `schema/agentic-metrics.schema.json`
 
 段階導入中の契約:
 - `schema/verify-lite-run-summary.schema.json`（将来拡張候補）
