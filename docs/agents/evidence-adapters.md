@@ -67,8 +67,8 @@ For this Issue, the recommended implementation is documentation and fixtures onl
 4. Run the existing generators where applicable:
    - `pnpm run change-package:generate:v2`
    - `pnpm run claim-evidence:generate`
-   - `node scripts/agents/create-handoff.mjs`
-   - `node scripts/agents/build-hook-feedback.mjs`
+   - `pnpm run handoff:create`
+   - `pnpm run hook-feedback:build`
 5. Validate generated artifacts with the Contract Catalog's listed validators.
 6. Record any missing command, unresolved claim, or waiver reason in the PR body and artifact summary.
 
@@ -134,8 +134,8 @@ Evidence adapter は raw producer output を受け取り、既存 ae-framework a
 4. 必要に応じて既存 generator を実行する。
    - `pnpm run change-package:generate:v2`
    - `pnpm run claim-evidence:generate`
-   - `node scripts/agents/create-handoff.mjs`
-   - `node scripts/agents/build-hook-feedback.mjs`
+   - `pnpm run handoff:create`
+   - `pnpm run hook-feedback:build`
 5. Contract Catalog に記載された validator で生成 artifact を検証する。
 6. 未実行 command、unresolved claim、waiver reason は PR body と artifact summary に記録する。
 
