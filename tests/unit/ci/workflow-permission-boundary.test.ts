@@ -716,24 +716,16 @@ describe('workflow permission boundaries', () => {
       'security-events': 'write',
     });
 
-    const securityScanJob = security.jobs?.['security-scan'];
-    const securityScanSteps = Array.isArray(securityScanJob?.steps) ? securityScanJob.steps : [];
-    const securityScanCheckout = securityScanSteps.find((step: any) => step?.uses === 'actions/checkout@v4');
+    const securityScanSteps = jobSteps(security, 'security-scan');
 
-    expect(securityScanJob?.permissions).toMatchObject({
-      contents: 'read',
-      actions: 'read',
-    });
-    expect(Object.values(securityScanJob?.permissions ?? {})).not.toContain('write');
-    expect(securityScanCheckout?.with).toMatchObject({
-      'persist-credentials': false,
-    });
+    expectReadOnlyJobPermissions(security, 'security-scan');
+    expectCheckoutCredentialsDisabled(securityScanSteps);
     expect(securityScanSteps.some((step: any) => String(step?.uses ?? '').startsWith('./'))).toBe(false);
     expect(securityScanSteps.some((step: any) => String(step?.run ?? '').includes('pnpm run security:analyze')))
       .toBe(true);
 
     const codeqlJob = security.jobs?.['codeql-analysis'];
-    const codeqlSteps = Array.isArray(codeqlJob?.steps) ? codeqlJob.steps : [];
+    const codeqlSteps = jobSteps(security, 'codeql-analysis');
     const codeqlCheckout = codeqlSteps.find((step: any) => step?.uses === 'actions/checkout@v4');
     expect(codeqlJob?.if).toContain("github.event_name != 'pull_request'");
     expect(codeqlJob?.permissions).toMatchObject({
@@ -746,7 +738,7 @@ describe('workflow permission boundaries', () => {
     });
 
     const containerJob = security.jobs?.['container-security'];
-    const containerSteps = Array.isArray(containerJob?.steps) ? containerJob.steps : [];
+    const containerSteps = jobSteps(security, 'container-security');
     const containerCheckout = containerSteps.find((step: any) => step?.uses === 'actions/checkout@v4');
     expect(containerJob?.if).toContain("github.event_name != 'pull_request'");
     expect(containerJob?.permissions).toMatchObject({
