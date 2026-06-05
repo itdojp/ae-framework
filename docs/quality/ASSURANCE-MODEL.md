@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-04-05'
+lastVerified: '2026-06-06'
 owner: assurance-model
 verificationCommand: pnpm -s run check:doc-consistency
 ---

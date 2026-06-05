@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - docs/reference/DOC-GOVERNANCE.md
 - scripts/docs/check-doc-consistency-all.mjs
-lastVerified: '2026-03-26'
+lastVerified: '2026-06-06'
 ---
 # Doc Consistency Lint
 
@@ -36,6 +36,7 @@ Checks:
 - TODO/FIXME markers under `docs/ci/*` require issue references such as `TODO(#<issue>)` or `FIXME(#<issue>)`.
 - Governed docs must provide valid `docRole`, `canonicalSource`, and `lastVerified` front matter.
 - `docs/legacy/**/*.md` and `docs/notes/*.md` are treated as archival / working-note narrative, so narrative warnings intentionally ignore historical wording and issue-memo language.
+- `lastVerified` means the documented verification command or an equivalent docs-governance validation suite last passed for that document slice; it is not a last-edited date.
 
 Current default targets:
 - Base: the repository-root README file, `docs/README.md`, and the primary documents listed in `DEFAULT_DOC_FILES` such as the Getting Started, Product, and Integrations guides
@@ -116,6 +117,7 @@ If a new docs section needs additional exclusions, update `scripts/docs/check-do
 - `docs/ci/*` の TODO/FIXME marker が Issue 参照付きであること（`TODO(#<issue>)` / `FIXME(#<issue>)`）
 - governed docs の `docRole` / `canonicalSource` / `lastVerified` front matter を検証すること
 - `docs/legacy/**/*.md` と `docs/notes/*.md` を archival / working-note narrative として扱い、歴史的文言や issue memo の文言に対する narrative warning を除外すること
+- `lastVerified` は、記載された verification command または同等の docs-governance 検証がその文書スライスで最後に通過した日付であり、最終編集日ではないこと
 
 既定の対象:
 - Base: リポジトリルートの README ファイル、`docs/README.md`、および `DEFAULT_DOC_FILES` に含まれる Getting Started / Product / Integrations の主要ドキュメント

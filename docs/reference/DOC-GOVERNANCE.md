@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-21'
+lastVerified: '2026-06-06'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -29,6 +29,8 @@ owner: team-or-doc-owner        # required for ssot
 verificationCommand: pnpm ...   # required for ssot
 ---
 ```
+
+`lastVerified` records the date when the listed `verificationCommand` or an equivalent docs-governance validation suite last passed for the document slice. It is not a "last edited" timestamp and does not, by itself, claim a full assurance audit or maintainer sign-off. If a document has an explicit inventory or snapshot date, that date records the source data snapshot for that section; keep it separate from `lastVerified` and update it only when that inventory is rechecked.
 
 ### 3. Roles
 
@@ -138,6 +140,8 @@ owner: team-or-doc-owner        # ssot のとき必須
 verificationCommand: pnpm ...   # ssot のとき必須
 ---
 ```
+
+`lastVerified` は、その文書スライスに対して記載済みの `verificationCommand` または同等の docs-governance 検証が最後に通過した日付です。「最終編集日」ではなく、それだけで full assurance audit や maintainer sign-off を意味しません。文書内に inventory / snapshot date がある場合、その日付は当該セクションの入力データのスナップショットを表します。`lastVerified` とは分け、inventory を再確認した場合のみ更新します。
 
 ## 3. Roles
 

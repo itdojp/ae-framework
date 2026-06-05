@@ -4,7 +4,7 @@ canonicalSource:
 - docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
 - docs/quality/ASSURANCE-MODEL.md
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
-lastVerified: '2026-05-08'
+lastVerified: '2026-06-06'
 ---
 # Assurance Control Plane
 

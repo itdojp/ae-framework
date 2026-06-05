@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-09'
+lastVerified: '2026-06-06'
 ---
 
 # ae-framework: Agent-Neutral Assurance Control Plane for Agent-Driven SDLC

@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-24'
+lastVerified: '2026-06-06'
 owner: context-pack-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
