@@ -274,6 +274,54 @@ describe('ConformanceCli', () => {
       );
     });
 
+    it('rejects unsafe custom rule expressions without running verification output', async () => {
+      const inputData = { test: true };
+      const rules = [
+        {
+          id: 'unsafe-rule-1',
+          name: 'Unsafe Rule',
+          description: 'A rule that should be rejected before execution',
+          category: 'security_policy',
+          severity: 'critical',
+          enabled: true,
+          condition: {
+            expression: 'process.env.SECRET',
+            variables: ['data'],
+            constraints: {}
+          },
+          actions: ['log_violation'],
+          metadata: {
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            version: '1.0.0',
+            tags: ['security']
+          }
+        }
+      ];
+
+      const inputFile = 'test-input-unsafe-rules.json';
+      const rulesFile = 'test-unsafe-rules.json';
+      const outputFile = 'test-unsafe-rules-output.json';
+      writeFileSync(inputFile, JSON.stringify(inputData, null, 2));
+      writeFileSync(rulesFile, JSON.stringify(rules, null, 2));
+      testFiles.push(inputFile, rulesFile, outputFile);
+
+      const command = cli.createCommand();
+      const args = [
+        'node', 'cli', 'verify',
+        '--input', inputFile,
+        '--rules', rulesFile,
+        '--output', outputFile,
+      ];
+
+      await command.parseAsync(args);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('condition expression uses unsupported identifier: process')
+      );
+      expect(existsSync(outputFile)).toBe(false);
+    });
+
     it('should handle rule IDs filtering', async () => {
       const inputData = { test: true };
       const inputFile = 'test-input-filter.json';

@@ -209,6 +209,12 @@ describe('ConformanceVerificationEngine', () => {
       expect(apiRules.some(r => r.id === apiRule.id)).toBe(true);
     });
 
+    it('rejects unsafe condition expressions before rule execution', async () => {
+      const unsafeRule = createTestRule('security_policy', 'critical', 'process.env.SECRET');
+
+      await expect(engine.addRule(unsafeRule)).rejects.toThrow(/unsupported identifier/i);
+    });
+
     it('should emit events for rule operations', async () => {
       let addedEvent = false;
       let updatedEvent = false;
@@ -284,7 +290,7 @@ describe('ConformanceVerificationEngine', () => {
     });
 
     it('should handle verification errors gracefully', async () => {
-      const rule: ConformanceRule = createTestRule('data_validation', 'major', 'invalid.expression.that.throws');
+      const rule: ConformanceRule = createTestRule('data_validation', 'major', 'utils.hash() === "0"');
       await engine.addRule(rule);
 
       const result = await engine.verify(createValidConformanceData(), context);

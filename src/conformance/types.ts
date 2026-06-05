@@ -71,7 +71,7 @@ export const ConformanceRuleSchema = z.object({
   severity: ViolationSeveritySchema,
   enabled: z.boolean().default(true),
   condition: z.object({
-    expression: z.string(), // JavaScript-like expression
+    expression: z.string(), // Constrained conformance condition DSL expression
     variables: z.array(z.string()).default([]),
     constraints: z.record(z.unknown()).default({})
   }),
