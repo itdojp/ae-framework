@@ -98,7 +98,7 @@ lastVerified: '2026-03-12'
 
 ### Minimal Pipeline Workflow（実装済み）
 - `.github/workflows/minimal-pipeline.yml` を作成（manual dispatch 専用）。
-  - CodeX quickstart（品質ゲートスキップ）、EnhancedStateManager ユニットテスト、verify-lite（lint サマリ出力）、KvOnce TLC を順次実行。
+  - Codex quickstart（品質ゲートスキップ）、EnhancedStateManager ユニットテスト、verify-lite（lint サマリ出力）、KvOnce TLC を順次実行。
   - `VERIFY_LITE_ENFORCE_LINT` を入力で切り替え可能。
 - `scripts/ci/verify-lite-lint-summary.mjs` により lint 結果を `artifacts/verify-lite/verify-lite-lint-summary.json` として保存し、Step Summary へ上位ルールを表示。
 - 今後: 差分 mutation quick の実行や生成アーティファクト比較を統合予定。

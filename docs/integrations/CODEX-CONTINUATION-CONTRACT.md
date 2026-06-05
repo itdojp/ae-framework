@@ -6,7 +6,7 @@ canonicalSource:
 lastVerified: '2026-03-23'
 ---
 
-# CodeX Continuation Contract (No Human Bottleneck v1)
+# Codex Continuation Contract (No Human Bottleneck v1)
 
 > Language / 言語: English | 日本語
 
@@ -16,7 +16,7 @@ lastVerified: '2026-03-23'
 
 ### 1. Purpose
 
-This document defines the continuation contract for CodeX task responses so execution does not stall on open-ended human handoffs. The output must always tell the operator or the automation lane whether work can continue immediately, and if not, what the minimum restart input is.
+This document defines the continuation contract for Codex task responses so execution does not stall on open-ended human handoffs. The output must always tell the operator or the automation lane whether work can continue immediately, and if not, what the minimum restart input is.
 
 Applies to:
 - local adapter execution (`pnpm run codex:adapter`)
@@ -196,7 +196,7 @@ Notes:
 
 ### 1. 目的
 
-CodeX 実行で「確認待ち」「追加指示待ち」による停止を減らすため、`TaskResponse` の出力を継続実行可能な形に統一します。
+Codex 実行で「確認待ち」「追加指示待ち」による停止を減らすため、`TaskResponse` の出力を継続実行可能な形に統一します。
 
 適用範囲:
 - ローカル実行（`pnpm run codex:adapter`）

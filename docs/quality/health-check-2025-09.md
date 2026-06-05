@@ -18,7 +18,7 @@ This report captures the repository health snapshot for Types Gate, Verify, Benc
 
 ### Current gates and policies
 - PR Verify (`pr-verify.yml`)
-  - CodeX quickstart runs in tolerant mode through `CODEX_SKIP_QUALITY=1` and `CODEX_TOLERANT=1`.
+  - Codex quickstart runs in tolerant mode through `CODEX_SKIP_QUALITY=1` and `CODEX_TOLERANT=1`.
   - Summary comments and artifacts are uploaded while the job remains green by design.
 - Quality Gates (`quality-gates-centralized.yml`)
   - Trigger only on code changes through `paths` filters over `src/**`, `packages/**`, `apps/**`, `tests/**`, `configs/**`, `scripts/**`, and `types/**`.
@@ -56,7 +56,7 @@ This report captures the repository health snapshot for Types Gate, Verify, Benc
 
 ### 現行のゲートとポリシー
 - PR Verify (`pr-verify.yml`)
-  - CodeX quickstart は `CODEX_SKIP_QUALITY=1` と `CODEX_TOLERANT=1` による tolerant mode で動作します。
+  - Codex quickstart は `CODEX_SKIP_QUALITY=1` と `CODEX_TOLERANT=1` による tolerant mode で動作します。
   - summary comment と artifact は upload されますが、job は設計上 green のままです。
 - Quality Gates (`quality-gates-centralized.yml`)
   - `src/**`, `packages/**`, `apps/**`, `tests/**`, `configs/**`, `scripts/**`, `types/**` に対する `paths` filter により、code change 時のみ起動します。

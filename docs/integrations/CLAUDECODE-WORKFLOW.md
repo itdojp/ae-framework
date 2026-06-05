@@ -153,7 +153,7 @@ Artifacts (examples)
 - `artifacts/summary/PR_SUMMARY.md` — condensed PR report
 - `coverage/coverage-summary.json` — coverage
 - `artifacts/hermetic-reports/formal/summary.json` — formal summary (if enabled)
-- `artifacts/codex/*` — when running via CodeX quickstart/adapter
+- `artifacts/codex/*` — when running via Codex quickstart/adapter
 
 CI tips
 - Label-gated runs: use `run-formal` to trigger Formal Verify

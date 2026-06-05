@@ -21,7 +21,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 - Spec / IR / Drift: `docs/agents/recipes/spec-ir-drift.md`
 - Quality Profile: `docs/agents/recipes/quality-profile.md`
 - Formal Quickstart: `docs/agents/recipes/formal-quickstart.md`
-- Continuous Loop Contract (CodeX): `docs/agents/recipes/continuous-loop.md`
+- Continuous Loop Contract (Codex): `docs/agents/recipes/continuous-loop.md`
 
 ### Operating rules
 - every recipe must link to its primary sources such as policy, workflow, or runbook documents
@@ -38,7 +38,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 - Spec / IR / Drift: `docs/agents/recipes/spec-ir-drift.md`
 - Quality Profile: `docs/agents/recipes/quality-profile.md`
 - Formal Quickstart: `docs/agents/recipes/formal-quickstart.md`
-- Continuous Loop Contract (CodeX): `docs/agents/recipes/continuous-loop.md`
+- Continuous Loop Contract (Codex): `docs/agents/recipes/continuous-loop.md`
 
 ### 運用ルール
 - 各 recipe は、policy / workflow / runbook などの一次情報へのリンクを必ず持つ

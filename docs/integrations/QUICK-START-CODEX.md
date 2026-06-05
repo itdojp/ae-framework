@@ -6,7 +6,7 @@ canonicalSource:
 lastVerified: '2026-03-10'
 ---
 
-# CodeX Quick Start (ae-framework)
+# Codex Quick Start (ae-framework)
 
 > 🌍 Language / 言語: English | 日本語
 
@@ -14,7 +14,7 @@ lastVerified: '2026-03-10'
 
 ## 日本語（概要）
 
-このガイドは CodeX から ae-framework を最短で使うための手順をまとめています（CLI/MCP）。
+このガイドは Codex から ae-framework を最短で使うための手順をまとめています（CLI/MCP）。
 
 - 前提: Node 20.11+, pnpm 10（Corepack 推奨）、最初に `pnpm run doctor:env`
 - 1) ワンコマンド PoC（Verify + Formal）: `CODEX_RUN_FORMAL=1 pnpm run codex:quickstart`
@@ -25,7 +25,7 @@ lastVerified: '2026-03-10'
 
 詳細は以下の英語セクションに記載のとおりです。
 
-This guide shows the fastest way to use ae-framework from CodeX via CLI/MCP.
+This guide shows the fastest way to use ae-framework from Codex via CLI/MCP.
 
 ## Prerequisites
 - Node.js 20.11+
@@ -69,7 +69,7 @@ pnpm run codex:quickstart
  - To change where artifacts are written, set `CODEX_ARTIFACTS_DIR` (adapter) or run quickstart from the repo root.
 
 ## 3) MCP Integration
-Start MCP servers and connect from CodeX:
+Start MCP servers and connect from Codex:
 ```bash
 pnpm run codex:mcp:intent &
 pnpm run codex:mcp:verify &
@@ -107,7 +107,7 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 
 ## 日本語
 
-このガイドは、CodeX から ae-framework を最短で使う手順（CLI/MCP）をまとめたものです。
+このガイドは、Codex から ae-framework を最短で使う手順（CLI/MCP）をまとめたものです。
 
 ### 前提条件
 - Node.js 20.11+
@@ -151,7 +151,7 @@ pnpm run codex:quickstart
 - 出力ディレクトリ変更: `CODEX_ARTIFACTS_DIR`
 
 ### 3) MCP 統合
-MCP サーバを起動し、CodeX から接続。
+MCP サーバを起動し、Codex から接続。
 ```bash
 pnpm run codex:mcp:intent &
 pnpm run codex:mcp:verify &

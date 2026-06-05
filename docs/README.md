@@ -174,7 +174,7 @@ Integration contracts and operating guides for Claude Code, Codex, handoff sidec
 - Assurance Agent Runbook: `integrations/ASSURANCE-AGENT-RUNBOOK.md`
 - Claude Code Task Tool Integration: `integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
 - Claude Code Workflow: `integrations/CLAUDECODE-WORKFLOW.md`
-- CodeX Integration (PoC/MCP/Adapter): `integrations/CODEX-INTEGRATION.md`
+- Codex Integration (PoC/MCP/Adapter): `integrations/CODEX-INTEGRATION.md`
 - Codex boundary + vendor-neutral core: `integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md`
 - Hook feedback adapter: `agents/hook-feedback.md`
 - AE handoff sidecar: `agents/handoff.md`
@@ -364,7 +364,7 @@ Claude CodeやMCPとの統合
 - [ASSURANCE-AGENT-RUNBOOK.md](./integrations/ASSURANCE-AGENT-RUNBOOK.md) - Codex / Claude / MCP producer agent の標準実行手順
 - **[CLAUDE-CODE-TASK-TOOL-INTEGRATION.md](./integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** ⭐ **重要** - Task Tool統合仕様
 - [CLAUDECODE-WORKFLOW.md](./integrations/CLAUDECODE-WORKFLOW.md) - Claude Codeワークフロー
-- [CODEX-INTEGRATION.md](./integrations/CODEX-INTEGRATION.md) - CodeX統合（PoC/MCP/Adapter）
+- [CODEX-INTEGRATION.md](./integrations/CODEX-INTEGRATION.md) - Codex統合（PoC/MCP/Adapter）
 - [CODEX-CONTINUATION-CONTRACT.md](./integrations/CODEX-CONTINUATION-CONTRACT.md) - 継続実行 Contract（No Human Bottleneck v1）
 - [CODEX-VENDOR-NEUTRAL-BOUNDARY.md](./integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md) - Codex連携の責務境界とVendor-neutral最小コア
 

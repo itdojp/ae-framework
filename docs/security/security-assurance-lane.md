@@ -91,7 +91,7 @@ Expected behavior for the canonical `cache-key` scenario:
 - The assumption-derived out-of-scope finding is retained as `assumptionHandling.mode=residual-risk` in review, assurance summary, and claim-evidence manifest artifacts.
 - Assurance summary and claim-evidence manifest are generated and compared with golden artifacts.
 
-For step-by-step Codex / CodeX operation, use `docs/integrations/CODEX-SECURITY-AUDIT.md`.
+For step-by-step Codex operation, use `docs/integrations/CODEX-SECURITY-AUDIT.md`.
 
 ## Candidate and review semantics
 
@@ -116,7 +116,7 @@ node scripts/ci/validate-json.mjs
 pnpm -s run check:schemas
 ```
 
-When documentation or CodeX operation instructions change, also run:
+When documentation or Codex operation instructions change, also run:
 
 ```bash
 pnpm -s run check:doc-consistency
@@ -124,7 +124,7 @@ pnpm -s run check:doc-consistency
 
 ## Related documentation
 
-- Codex / CodeX runbook: `docs/integrations/CODEX-SECURITY-AUDIT.md`
+- Codex runbook: `docs/integrations/CODEX-SECURITY-AUDIT.md`
 - Contract catalog: `docs/reference/CONTRACT-CATALOG.md`
 - Security agent runbook: `docs/agents/security.md`
 - Repository security process: `SECURITY.md`
@@ -210,7 +210,7 @@ pnpm -s run test:security-assurance
 - assumption 由来の out-of-scope finding は review、assurance summary、claim-evidence manifest の各 artifact で `assumptionHandling.mode=residual-risk` として保持される。
 - assurance summary と claim-evidence manifest が生成され、golden artifact と比較される。
 
-Codex / CodeX で段階実行する場合は `docs/integrations/CODEX-SECURITY-AUDIT.md` を使います。
+Codex で段階実行する場合は `docs/integrations/CODEX-SECURITY-AUDIT.md` を使います。
 
 ## Candidate / review semantics
 
@@ -235,7 +235,7 @@ node scripts/ci/validate-json.mjs
 pnpm -s run check:schemas
 ```
 
-ドキュメントまたは CodeX 運用手順を変更した場合は、次も実行します。
+ドキュメントまたは Codex 運用手順を変更した場合は、次も実行します。
 
 ```bash
 pnpm -s run check:doc-consistency
@@ -243,7 +243,7 @@ pnpm -s run check:doc-consistency
 
 ## 関連ドキュメント
 
-- Codex / CodeX runbook: `docs/integrations/CODEX-SECURITY-AUDIT.md`
+- Codex runbook: `docs/integrations/CODEX-SECURITY-AUDIT.md`
 - Contract catalog: `docs/reference/CONTRACT-CATALOG.md`
 - Security agent runbook: `docs/agents/security.md`
 - Repository security process: `SECURITY.md`

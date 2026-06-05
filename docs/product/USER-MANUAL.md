@@ -506,7 +506,7 @@ pnpm run ae-framework -- sbom --help
 - 成果物配置の契約（`artifacts/**`）と root 汚染検知は `docs/quality/ARTIFACTS-CONTRACT.md` と `scripts/ci/check-no-root-generated-files.mjs` を参照してください。
 
 ## 6. エージェント統合
-- CodeX 連携: `docs/integrations/CODEX-INTEGRATION.md`
+- Codex 連携: `docs/integrations/CODEX-INTEGRATION.md`
 - Claude Code 連携: `docs/integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
 - Playbook 実行例: `pnpm run codex:run`
 
