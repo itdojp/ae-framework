@@ -19,6 +19,7 @@ This matrix defines how producer output enters the ae-framework assurance contro
 
 Use this document with:
 
+- `docs/spec/context-pack.md` and `spec/context-pack/boundary-map.json` for the design SSOT and implementation slice boundaries that producers must read before changing code.
 - `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md` for the producer/control-plane boundary.
 - `docs/reference/CONTRACT-CATALOG.md` for schema-backed artifact names.
 - `docs/agents/evidence-adapters.md` for raw producer output fixture mapping.
@@ -41,10 +42,11 @@ Use this document with:
 ### Operating rules
 
 1. Producer outputs are inputs to judgment, not judgment themselves.
-2. Summary artifacts are the primary review surface; raw logs are supporting evidence.
-3. Code generation, agent review, formal proof, and CI execution are separate producer lanes and must not be conflated.
-4. `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved` remain distinct claim states.
-5. New producers should start report-only unless a policy, label, or risk profile explicitly selects enforcement.
+2. Context Pack and Boundary Map are pre-change design inputs, not producer outputs; if a producer diff conflicts with them, stop and resolve the design conflict first.
+3. Summary artifacts are the primary review surface; raw logs are supporting evidence.
+4. Code generation, agent review, formal proof, and CI execution are separate producer lanes and must not be conflated.
+5. `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved` remain distinct claim states.
+6. New producers should start report-only unless a policy, label, or risk profile explicitly selects enforcement.
 
 ### Artifact routing quick reference
 
@@ -66,6 +68,7 @@ Use this document with:
 
 併読資料:
 
+- `docs/spec/context-pack.md` と `spec/context-pack/boundary-map.json`: producer がコード変更前に読む design SSOT と実装slice境界。
 - `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`: producer と control plane の境界。
 - `docs/reference/CONTRACT-CATALOG.md`: schema-backed artifact 名。
 - `docs/agents/evidence-adapters.md`: raw producer output の fixture mapping。
@@ -88,10 +91,11 @@ Use this document with:
 ### 運用ルール
 
 1. Producer output は判断の入力であり、判断そのものではありません。
-2. Summary artifact を review の一次情報とし、raw log は補助証跡に留めます。
-3. Code generation、agent review、formal proof、CI execution は別々の producer lane であり、混同しません。
-4. `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved` は別状態として扱います。
-5. 新しい producer は、policy / label / risk profile が enforcement を選ぶまで report-only から始めます。
+2. Context Pack と Boundary Map は producer output ではなく、変更前に参照するdesign inputです。producer差分がこれらと衝突する場合は、先に設計衝突を解決します。
+3. Summary artifact を review の一次情報とし、raw log は補助証跡に留めます。
+4. Code generation、agent review、formal proof、CI execution は別々の producer lane であり、混同しません。
+5. `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved` は別状態として扱います。
+6. 新しい producer は、policy / label / risk profile が enforcement を選ぶまで report-only から始めます。
 
 ### Artifact routing quick reference
 

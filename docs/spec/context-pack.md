@@ -12,12 +12,37 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ## 日本語
 
-Context Pack v1 は、AI/人間が更新する設計情報を SSOT として固定し、CI で機械検証するための入力契約です。
+Context Pack v1 は、AI/人間が共有する **design SSOT（single source of truth）** を固定し、CI で機械検証するための入力契約です。code generation のための一時入力ではなく、仕様、境界、acceptance criteria、traceability を継続利用可能な判断面の契約として保持します。
 
 ### 目的
 - 設計仕様（objects / morphisms / diagrams / acceptance_tests など）を YAML/JSON で管理する
+- human maintainer / Codex / Claude Code / GitHub Copilot などが同じ設計SSOTを参照できるようにする
+- agent や solver が変わっても、仕様・境界・acceptance の判断入力を安定させる
 - `verify:lite` で schema 検証を必須化し、仕様破損を早期に検出する
 - JSON/Markdown レポートを artifacts に出力し、失敗原因を追跡可能にする
+
+### agent作業時の参照順
+1. GitHub Issue本文で目的、対象ファイル、acceptance criteria、validation commandを確認する。
+2. `AGENTS.md` でリポジトリ共通の参照順、権限境界、required check基準を確認する。
+3. `docs/spec/context-pack.md` と `spec/context-pack/boundary-map.json` を読み、design SSOT と slice境界を把握する。
+4. 対象変更に対応する Context Pack の `objects` / `morphisms` / `diagrams` / `acceptance_tests` と既存テストを確認する。
+5. 要求変更が Context Pack の制約と矛盾する場合は、無言で実装を進めず、矛盾点を報告して Context Pack 更新または要求修正を先に判断する。
+6. 実装変更後に `pnpm -s run context-pack:validate`、`pnpm -s run context-pack:verify-boundary-map`、必要に応じて `pnpm -s run context-pack:deps` を実行する。
+
+### 過度なformalizationを避ける導入方針
+- Baselineでは最小の Context Pack と `verify-lite` / schema validation で十分です。すべての通常PRにMBT、property、formal proofを要求しません。
+- Structured assuranceでは、traceability、boundary map、MBT/property/conformance などを追加し、どの仕様断片がどの証跡で支えられるかを明確にします。
+- High-assurance critical coreでは、重要claimだけをformal/model/proof laneやより厳しいpolicy gateへ昇格します。
+- lane昇格は risk label、assurance profile、critical core の境界に基づき、agentやcode generatorの種類だけでは決めません。
+
+### Codex prompt snippet
+```text
+Before changing code, read the Context Pack and boundary map. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop and report the conflict instead of silently editing code.
+```
+
+```text
+コードを変更する前に、Context Pack と boundary map を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、無言でコードを編集せず、作業を止めて矛盾点を報告してください。
+```
 
 ### 関連ドキュメント
 - 実践手順（Phase5+ cookbook）: `docs/guides/context-pack-phase5-cookbook.md`
@@ -489,12 +514,37 @@ CI失敗時の詳細な診断フロー（Phase 3/4/5+）は `docs/operations/con
 
 ## English
 
-Context Pack v1 is the SSOT input contract for design metadata that both AI agents and human operators update and validate in CI.
+Context Pack v1 is the **design SSOT (single source of truth)** input contract shared by human maintainers and AI agents, then validated in CI. It is not a transient code-generation input; it preserves specifications, boundaries, acceptance criteria, and traceability as judgment-side contracts that survive agent, model, or solver replacement.
 
 ### Purpose
 - Manage design metadata such as `objects`, `morphisms`, `diagrams`, and `acceptance_tests` in YAML/JSON.
+- Give human maintainers, Codex, Claude Code, GitHub Copilot, and other producers the same design SSOT.
+- Keep specification, boundary, and acceptance inputs stable even when the underlying agent or solver changes.
 - Make schema validation mandatory in `verify:lite` so contract drift is detected before merge.
 - Emit JSON/Markdown reports to `artifacts/` so violations, affected IDs, and recovery steps remain traceable.
+
+### Agent work reference order
+1. Read the GitHub Issue body for the objective, target files, acceptance criteria, and validation commands.
+2. Read `AGENTS.md` for repository-wide routing, permission boundaries, and required-check expectations.
+3. Read `docs/spec/context-pack.md` and `spec/context-pack/boundary-map.json` to understand the design SSOT and slice boundaries.
+4. Inspect the Context Pack `objects`, `morphisms`, `diagrams`, `acceptance_tests`, and existing tests relevant to the change.
+5. If the requested change conflicts with Context Pack constraints, stop and report the conflict instead of silently editing code; resolve the Context Pack or requirement first.
+6. After implementation, run `pnpm -s run context-pack:validate`, `pnpm -s run context-pack:verify-boundary-map`, and, when boundary/dependency assumptions changed, `pnpm -s run context-pack:deps`.
+
+### Avoiding over-formalization
+- Baseline rollout can use a minimal Context Pack plus `verify-lite` / schema validation. It does not require MBT, property tests, or formal proof on every ordinary PR.
+- Structured assurance adds traceability, Boundary Map checks, MBT/property/conformance evidence, and clearer claim-to-evidence links.
+- High-assurance critical core promotes only selected critical claims to formal/model/proof lanes and stricter policy gates.
+- Promotion is driven by risk labels, assurance profiles, and critical-core boundaries, not by which agent or code generator produced the change.
+
+### Codex prompt snippet
+```text
+Before changing code, read the Context Pack and boundary map. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop and report the conflict instead of silently editing code.
+```
+
+```text
+コードを変更する前に、Context Pack と boundary map を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、無言でコードを編集せず、作業を止めて矛盾点を報告してください。
+```
 
 ### Related docs
 - Practical recipes (Phase5+ cookbook): `docs/guides/context-pack-phase5-cookbook.md`

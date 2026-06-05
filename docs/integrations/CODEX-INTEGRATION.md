@@ -194,6 +194,24 @@ Use `docs/agents/agent-producer-matrix.md` to decide whether Codex CLI output sh
 
 Use `docs/agents/evidence-adapters.md` when Codex CLI output must be normalized from raw task summaries, command logs, or PR evidence into existing ae-framework artifacts without treating the Codex conclusion as a control-plane judgment.
 
+### Context Pack preflight for Codex
+Before asking Codex to edit code, treat Context Pack as the design SSOT rather than as a code-generation prompt. Use this reference order:
+
+1. GitHub Issue body.
+2. `AGENTS.md`.
+3. `docs/spec/context-pack.md` and `spec/context-pack/boundary-map.json`.
+4. Relevant acceptance tests and validation commands.
+
+Run the real package scripts after the change: `pnpm -s run context-pack:validate`, `pnpm -s run context-pack:verify-boundary-map`, and `pnpm -s run context-pack:deps` when dependency or slice assumptions changed. Use the heavier Context Pack checks only when the touched fixture/schema or risk profile requires them.
+
+```text
+Before changing code, read the Context Pack and boundary map. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop and report the conflict instead of silently editing code.
+```
+
+```text
+コードを変更する前に、Context Pack と boundary map を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、無言でコードを編集せず、作業を止めて矛盾点を報告してください。
+```
+
 ## Operational Considerations
 
 - Environment: Node >= 20.11 (<23), pnpm 10 (Corepack recommended: `corepack enable`).
@@ -385,6 +403,24 @@ set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
 
 ### Codegen オプション（OpenAPI）
 - `includeContracts` / `useOperationIdForFilenames` / `useOperationIdForTestNames`
+
+### Codex向けContext Pack事前確認
+Codexにコード編集を依頼する前に、Context Packをcode generation promptではなくdesign SSOTとして扱います。参照順は次です。
+
+1. GitHub Issue本文。
+2. `AGENTS.md`。
+3. `docs/spec/context-pack.md` と `spec/context-pack/boundary-map.json`。
+4. 関連するacceptance testsとvalidation command。
+
+変更後は実在するpackage scriptである `pnpm -s run context-pack:validate`、`pnpm -s run context-pack:verify-boundary-map`、依存やslice前提を変えた場合は `pnpm -s run context-pack:deps` を実行します。fixture/schemaやrisk profileが要求する場合だけ、より重いContext Pack検証へ昇格します。
+
+```text
+Before changing code, read the Context Pack and boundary map. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop and report the conflict instead of silently editing code.
+```
+
+```text
+コードを変更する前に、Context Pack と boundary map を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、無言でコードを編集せず、作業を止めて矛盾点を報告してください。
+```
 
 ### 受け入れ基準（漸進）
 1) PoC 成果物が生成される（任意で UI）
