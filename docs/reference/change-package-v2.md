@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-05-08'
+lastVerified: '2026-06-06'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -70,7 +70,7 @@ Use the fixture for a complete schema-valid sample, including `validationLanes`,
 | Validation lanes | inferred from CI artifacts | explicit `validationLanes[]` with `pass` / `warn` / `fail` / `missing` |
 | Evidence manifest link | evidence catalog only | explicit `claimEvidenceManifest` / `claimLevelSummary` evidence items |
 | Achieved level | absent | package-level and per-claim `targetLevel` / `achievedLevel` |
-| Claims | absent | `claims[]` with first-class status |
+| Claims | absent | `claims[]` with package/release outcome status |
 | Policy decision | external artifact only | summarized as `policyDecision` |
 | Residual risks | notes or exceptions | explicit `residualRisks[]` |
 | Release controls | rollout / monitoring only | explicit `releaseControls` for pre-deploy, post-deploy, rollback |
@@ -79,7 +79,7 @@ Use the fixture for a complete schema-valid sample, including `validationLanes`,
 
 ### 4. Claim states
 
-`claims[].status` distinguishes review-relevant outcomes instead of collapsing them into a generic pass/fail result:
+`claims[].status` is a package / release-decision outcome field. It preserves review-relevant outcomes instead of collapsing a package into a generic pass/fail result:
 
 - `satisfied`
 - `tested`
@@ -91,14 +91,16 @@ Use the fixture for a complete schema-valid sample, including `validationLanes`,
 - `failed`
 - `not-applicable`
 
-`runtime-mitigated` is not proof. `waived` is not satisfied. `failed` and `not-applicable` are first-class states, not comments.
+These values are `change-package/v2` package states, not `claim-evidence-manifest/v1` primary evidence states. `failed` means the package records a failed or insufficient claim outcome; it is not an evidence kind. `not-applicable` means the package explicitly records that a claim is out of scope or non-applicable for this package, with reviewable references or rationale. It must not be silently inferred from missing requirements, empty `requirements` arrays, or absent artifacts.
+
+`runtime-mitigated` is not proof. `waived` is not satisfied. `change-package/v2` status values must not expand primary producer-emitted evidence states or agent PR metric states without an explicit schema and policy migration.
 
 ### 5. Core sections
 
 - `requirements`: changed requirement references plus claim-to-requirement links. Empty arrays mean no requirement reference was found, not that the field was skipped.
 - `validationLanes`: validation lanes and their status with evidence refs.
 - `policyDecision`: policy-gate result, mode, enforcement flag, reason, warnings, and errors.
-- `claims`: claim statements, criticality, target/achieved levels, status, requirement refs, artifact refs, and optional per-claim decision.
+- `claims`: claim statements, criticality, target/achieved levels, package/release outcome status, requirement refs, artifact refs, and optional per-claim decision.
 - `assumptions`: assumptions on which assurance depends.
 - `proofObligations`: claim-specific verification obligations and their discharge state.
 - `counterexamples`: open, resolved, or accepted-risk counterexample artifacts.
@@ -161,7 +163,7 @@ The generated Markdown points to the evidence package path, lists claim-state co
 | validation lanes | CI artifact から推測 | `validationLanes[]` に `pass` / `warn` / `fail` / `missing` として明示 |
 | evidence manifest link | evidence catalog のみ | `claimEvidenceManifest` / `claimLevelSummary` evidence item として明示 |
 | achieved level | なし | package-level と claim-level の `targetLevel` / `achievedLevel` |
-| claims | なし | first-class status 付きの `claims[]` |
+| claims | なし | package / release outcome status 付きの `claims[]` |
 | policy decision | 外部 artifact のみ | `policyDecision` として要約 |
 | residual risks | notes / exceptions に分散 | `residualRisks[]` に明示 |
 | release controls | rollout / monitoring のみ | pre-deploy / post-deploy / rollback を `releaseControls` に明示 |
@@ -170,7 +172,7 @@ The generated Markdown points to the evidence package path, lists claim-state co
 
 ## 4. claim state
 
-`claims[].status` は次を区別します。
+`claims[].status` は package / release-decision outcome field です。package 全体を generic pass/fail に潰さず、review に必要な outcome を保持します。
 
 - `satisfied`
 - `tested`
@@ -182,14 +184,16 @@ The generated Markdown points to the evidence package path, lists claim-state co
 - `failed`
 - `not-applicable`
 
-`runtime-mitigated` は proof ではありません。`waived` は satisfied ではありません。`failed` と `not-applicable` はコメントではなく first-class state です。
+これらは `change-package/v2` の package state であり、`claim-evidence-manifest/v1` の primary evidence state ではありません。`failed` は package が failed / insufficient な claim outcome を記録したことを表し、evidence kind ではありません。`not-applicable` は、その package において claim が明示的に scope 外 / 非対象であることを、review 可能な reference または rationale とともに記録する state です。missing requirements、空の `requirements` 配列、artifact 欠落から暗黙推論してはいけません。
+
+`runtime-mitigated` は proof ではありません。`waived` は satisfied ではありません。`change-package/v2` の status value は、明示的な schema / policy migration なしに primary producer-emitted evidence state や agent PR metric state を拡張しません。
 
 ## 5. 主要セクション
 
 - `requirements`: 変更された requirement reference と claim-to-requirement link。空配列は「対象なし」を意味し、「未評価」と区別します。
 - `validationLanes`: 検証レーン、状態、evidence refs。
 - `policyDecision`: policy-gate の result / mode / enforcement / reason / warnings / errors。
-- `claims`: claim statement、criticality、target/achieved level、status、requirement refs、artifact refs、任意の per-claim decision。
+- `claims`: claim statement、criticality、target/achieved level、package / release outcome status、requirement refs、artifact refs、任意の per-claim decision。
 - `assumptions`: assurance の前提。
 - `proofObligations`: claim 単位の検証 obligation と discharge 状態。
 - `counterexamples`: open / resolved / accepted-risk の counterexample artifact。

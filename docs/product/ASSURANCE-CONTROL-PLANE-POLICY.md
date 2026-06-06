@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-06-05'
+lastVerified: '2026-06-06'
 owner: product-assurance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -56,7 +56,7 @@ Use this document with:
 | Claim-based assurance | Assurance is evaluated per claim, not by repository-wide green status alone. |
 | Claim status escalation | Ordinary unresolved claims may stay report-only, but `risk:high`, `enforce-assurance`, and critical core policy can escalate missing required lanes to block or manual approval. |
 | Summary-first evidence | Summary artifacts are primary judgment inputs; raw logs are supporting evidence. |
-| Distinct evidence states | Current primary emitted evidence states are `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved`. Preview `claim-level-summary/v1` can represent `not-applicable` for PR/release projection, but current primary producers must not emit it until promotion is explicit. |
+| Distinct state layers | `claim-evidence-manifest/v1` primary evidence states remain `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved`. Preview projection and packaging surfaces may summarize additional outcomes, but they must not redefine primary producer-emitted evidence states without explicit schema and policy migration. |
 | Human override | Human override requires owner, reason, expiry, related claim IDs, and evidence link. |
 | Contract evolution | Contract changes use compatibility windows, dual-write/dual-validate behavior, or explicit migration notes. |
 | Enforcement default | New assurance evaluation should start report-only unless an explicit policy, label, or risk profile selects enforcement. |
@@ -89,9 +89,18 @@ A claim state must not be upgraded beyond the supporting evidence.
 | `runtime-mitigated` | Runtime control reduces operational risk. | Proof or model checking. |
 | `waived` | An owner accepted a time-bounded exception with evidence link. | Satisfied claim. |
 | `unresolved` | Required evidence is absent, stale, failed, insufficient, or intentionally out of current primary-contract scope. | Passing build. |
-| `not-applicable` | Preview-only claim-level summary projection for an explicitly out-of-scope/non-applicable claim. | A current `claim-evidence-manifest/v1` or `change-package/v2` emitted state. |
+| `not-applicable` | Preview claim-level summary projection or `change-package/v2` package/release outcome for an explicitly out-of-scope/non-applicable claim. | A current `claim-evidence-manifest/v1` primary evidence state or evidence kind. |
 
-### 6. Valid and invalid wording examples
+### 6. State-layer separation
+
+These state vocabularies are intentionally separate:
+
+1. **Primary evidence states**: `claim-evidence-manifest/v1` and current primary claim/evidence producers remain bounded to `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved`.
+2. **Claim-level summary projection states**: preview `claim-level-summary/v1` may report projection states such as `satisfied`, `failed`, and `not-applicable` for PR/release review, but those projection states do not become source manifest states.
+3. **Change-package v2 packaging / release-decision states**: `change-package/v2.claims[].status` may preserve package-level outcomes such as `satisfied`, `failed`, and `not-applicable` when summarizing a review or release package. Those states must not be projected back into `claim-evidence-manifest/v1` or agent PR metric state without an explicit schema and policy migration.
+4. **Metric-level denominator state**: `agentPrAssurance.metrics.required_lane_compliance.notApplicable` means there are no required lanes in the metric denominator. It is not a claim-level assurance state.
+
+### 7. Valid and invalid wording examples
 
 | Intent | Valid wording | Invalid wording |
 | --- | --- | --- |
@@ -103,7 +112,7 @@ A claim state must not be upgraded beyond the supporting evidence.
 | Producer boundary | Codex generated a change and ae-framework produced evidence for review. | ae-framework is the coding agent. |
 | Change package | `change-package/v2` is a proof-carrying preview package linked to claim evidence and policy decisions. | v2 is the mandatory production package for every PR. |
 
-### 7. Implementation guidance for Codex-driven work
+### 8. Implementation guidance for Codex-driven work
 
 For issues that touch assurance behavior:
 
@@ -116,7 +125,7 @@ For issues that touch assurance behavior:
 7. Use summary artifacts for PR/release judgment and keep raw logs as supporting evidence.
 8. Record residual risk when evidence is missing, waived, runtime-mitigated, or out of scope.
 
-### 8. Contract change policy
+### 9. Contract change policy
 
 Contract changes are safe when they follow at least one of these routes:
 
@@ -128,7 +137,7 @@ Contract changes are safe when they follow at least one of these routes:
 
 Breaking changes require explicit migration notes in the relevant contract docs and PR summary.
 
-### 9. Agent PR metrics policy
+### 10. Agent PR metrics policy
 
 Agent PR assurance metrics are observability signals. They can be shown in quality scorecards, PR comments, release summaries, or `agentic-metrics` extensions, but their initial state is report-only.
 
@@ -136,7 +145,7 @@ Policy gates may consume these metrics for context, but a metric must not become
 
 `agentPrAssurance.metrics.required_lane_compliance.notApplicable` is a metric-level denominator state for "no required lanes." It is not a claim-level `not-applicable` assurance state and does not authorize producers to emit new primary claim states.
 
-### 10. References
+### 11. References
 
 - Product overview: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance model: `docs/quality/ASSURANCE-MODEL.md`
@@ -187,7 +196,7 @@ Policy gates may consume these metrics for context, but a metric must not become
 | Claim-based assurance | assurance は claim 単位で評価し、repository 全体の green status だけでは判断しない。 |
 | Claim status escalation | 通常変更の unresolved claim は report-only に留める場合があるが、`risk:high`、`enforce-assurance`、critical core policy では required lane 不足を block または manual approval へ昇格できる。 |
 | Summary-first evidence | summary artifact を主な判断入力とし、raw log は補助証跡とする。 |
-| Distinct evidence states | 現行 primary producer が emit できる state は `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved`。preview `claim-level-summary/v1` は PR / release projection として `not-applicable` を表現できるが、primary producer が emit するには事前の schema/docs migration と明示的な promotion が必要。 |
+| Distinct state layers | `claim-evidence-manifest/v1` と現行 primary claim/evidence producer が emit できる state は `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved` に限定する。preview projection や packaging surface は追加 outcome を要約できるが、明示的な schema / policy migration なしに primary producer-emitted evidence state を再定義しない。 |
 | Human override | human override には owner、reason、expiry、related claim IDs、evidence link を必要とする。 |
 | Contract evolution | contract 変更には compatibility window、dual-write/dual-validate、または migration note を使う。 |
 | Enforcement default | 新しい assurance evaluation は、明示的な policy / label / risk profile が enforcement を選択しない限り report-only から開始する。 |
@@ -218,9 +227,18 @@ Claim status は claim 単位で評価し、PR / release summary では状態を
 | `runtime-mitigated` | runtime guard / feature flag / alert などで緩和済み | warn / report-only が既定。critical core では manual approval または block へ昇格可能 |
 | `waived` | owner / reason / expiry / claim / evidence link 付きで期限付き免除 | metadata 不足・期限切れは block。satisfied claim ではない |
 | `unresolved` | evidence 不足または未判断 | 通常変更では report-only 可。ただし `risk:high` / `enforce-assurance` / critical core では block または manual approval |
-| `not-applicable` | 明示的に scope 外 / 非対象である claim の preview-only claim-level summary projection | 現行 `claim-evidence-manifest/v1` / `change-package/v2` の primary emitted state ではない |
+| `not-applicable` | 明示的に scope 外 / 非対象である claim の preview claim-level summary projection、または `change-package/v2` package / release outcome | 現行 `claim-evidence-manifest/v1` の primary evidence state や evidence kind ではない |
 
-### 6. 有効/無効な表現例
+### 6. state layer の分離
+
+次の state vocabulary は意図的に分離します。
+
+1. **Primary evidence state**: `claim-evidence-manifest/v1` と現行 primary claim/evidence producer は `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved` に限定します。
+2. **Claim-level summary projection state**: preview `claim-level-summary/v1` は PR / release review 向けに `satisfied`、`failed`、`not-applicable` などの projection state を表示できますが、source manifest state にはしません。
+3. **Change-package v2 packaging / release-decision state**: `change-package/v2.claims[].status` は review / release package の要約として `satisfied`、`failed`、`not-applicable` などの package-level outcome を保持できます。これらを `claim-evidence-manifest/v1` や agent PR metric state に戻すには、明示的な schema / policy migration が必要です。
+4. **Metric-level denominator state**: `agentPrAssurance.metrics.required_lane_compliance.notApplicable` は metric denominator に required lane がないことを表します。claim-level assurance state ではありません。
+
+### 7. 有効/無効な表現例
 
 | Intent | 有効な表現 | 無効な表現 |
 | --- | --- | --- |
@@ -231,7 +249,7 @@ Claim status は claim 単位で評価し、PR / release summary では状態を
 | Formal scope | TLA evidence は summary に記載された assumption の範囲で state transition model を model-check した。 | formal verification により製品全体が証明済み。 |
 | Producer boundary | Codex が変更を生成し、ae-framework が review evidence を生成した。 | ae-framework は coding agent である。 |
 
-### 7. Codex-driven work への指針
+### 8. Codex-driven work への指針
 
 1. 編集前に current HEAD と current contracts を確認する。
 2. 並列概念を増やす前に canonical docs / schemas を更新する。
@@ -242,7 +260,7 @@ Claim status は claim 単位で評価し、PR / release summary では状態を
 7. PR/release の判断には summary artifact を使い、raw log は補助証跡とする。
 8. evidence が missing、waived、runtime-mitigated、out-of-scope の場合は、現行 contract では `unresolved` または waiver として residual risk を記録する。
 
-### 8. Agent PR metrics policy
+### 9. Agent PR metrics policy
 
 Agent PR assurance metrics は observability signal です。quality scorecard、PR comment、release summary、または `agentic-metrics` extension に表示できますが、初期状態は report-only です。
 

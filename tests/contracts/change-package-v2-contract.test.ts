@@ -41,7 +41,7 @@ describe('change-package v2 contract', () => {
     expect(validate.errors?.some((entry) => entry.instancePath === '/waivers/0/relatedClaimIds')).toBe(true);
   });
 
-  it('preserves failed and not-applicable as first-class claim states', () => {
+  it('preserves failed and not-applicable as package outcome states', () => {
     const claims = (fixture as { claims: Array<{ id: string; status: string }> }).claims;
 
     expect(claims).toEqual(expect.arrayContaining([
