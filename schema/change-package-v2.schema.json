@@ -491,6 +491,7 @@
           ]
         },
         "status": {
+          "description": "Package-level assurance outcome for change-package/v2. Values such as failed and not-applicable are review/release decision outcomes and do not redefine claim-evidence-manifest/v1 claimStatus or evidence-kind vocabularies.",
           "type": "string",
           "enum": [
             "unassessed",
@@ -536,6 +537,7 @@
           "minLength": 1
         },
         "status": {
+          "description": "change-package/v2 package/release outcome for this claim. failed records a failed or insufficient claim outcome; not-applicable must be explicit and reviewable, not inferred from missing requirement references or empty requirementRefs arrays. These values do not expand claim-evidence-manifest/v1 claimStatus or evidence-kind vocabularies.",
           "type": "string",
           "enum": [
             "proved",

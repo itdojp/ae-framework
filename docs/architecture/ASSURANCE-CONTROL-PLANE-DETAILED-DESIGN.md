@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-05-08'
+lastVerified: '2026-06-06'
 owner: architecture-docs
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -25,7 +25,7 @@ Use this design with:
 - `docs/reports/ASSURANCE-CONTROL-PLANE-CURRENT-STATE.md` for the current-state inventory.
 - `docs/reference/CONTRACT-CATALOG.md` and `docs/reference/change-package-v2.md` for schema and package references.
 
-Baseline assumptions (as of `lastVerified: 2026-05-08`):
+Baseline assumptions (as of `lastVerified: 2026-06-06`):
 
 - Node.js engine: `>=20.11 <23` from `package.json`.
 - pnpm package manager: `pnpm@10.0.0` from `package.json`.
@@ -52,7 +52,7 @@ Baseline assumptions (as of `lastVerified: 2026-05-08`):
 
 - This design does not require formal proof for every change.
 - This design does not replace Codex, Claude Code, Copilot, Cursor, or other producer agents.
-- This design does not introduce `not-applicable` as a current emitted evidence state. Current schemas do not accept it; out-of-scope or not-relevant situations remain `unresolved`, waiver/residual-risk records, or omitted non-claims until an explicit schema migration adds a new state.
+- This design does not introduce `not-applicable` as a current `claim-evidence-manifest/v1` claim status or evidence kind. `change-package/v2` may preserve `not-applicable` as a package/release outcome state, and `claim-level-summary/v1` may project it for PR/release review, but neither surface redefines the manifest claim-status vocabulary without explicit migration.
 - This design does not make `change-package/v2` mandatory for all PRs in this slice; v2 remains a preview/dual-write path until policy selects enforcement.
 
 ### 3. Component responsibilities and I/O
@@ -131,18 +131,18 @@ An evidence item is a linkable artifact reference that supports, weakens, or qua
 - `sourceArtifactId`: source artifact provenance.
 - `description`: concise evidence description.
 
-Current emitted evidence states for change-package claims are:
+Current support outcomes and contract representations are:
 
 | State | Meaning | Current representation |
 | --- | --- | --- |
-| `proved` | Proof-level evidence is linked and scoped. | `change-package/v2.claims[].status`; proof evidence/proof obligation records. |
-| `model-checked` | Model checking supports the modeled scope and assumptions. | `change-package/v2.claims[].status`; formal/model artifact references. |
-| `tested` | Behavior evidence supports the claim. | `change-package/v2.claims[].status`; behavior/test evidence references. |
-| `runtime-mitigated` | Runtime controls reduce operational risk. | `change-package/v2.claims[].status`; runtime evidence and `runtimeControls`. |
-| `waived` | Human exception exists and is traceable. | `claim-evidence-manifest/v1.status=waived` plus `waiverRefs`; `change-package/v2.claims[].status=waived`. |
-| `unresolved` | Evidence is missing, failed, stale, insufficient, out of scope, or not accepted. | `claim-evidence-manifest/v1.status=unresolved`/`partial`, `missingEvidenceRefs`, policy result `block` or `report-only`. |
+| `proved` | Proof-level evidence is linked and scoped. | `claim-evidence-manifest/v1.claims[].status=satisfied` with proof evidence refs when applicable; `change-package/v2.claims[].status`; proof evidence/proof obligation records. |
+| `model-checked` | Model checking supports the modeled scope and assumptions. | Manifest claim status remains `satisfied`/`partial`/`unresolved` based on support; `change-package/v2.claims[].status`; formal/model artifact references. |
+| `tested` | Behavior evidence supports the claim. | Manifest claim status remains `satisfied`/`partial`/`unresolved` based on support; `change-package/v2.claims[].status`; behavior/test evidence references. |
+| `runtime-mitigated` | Runtime controls reduce operational risk. | Runtime evidence refs plus manifest `partial`/`unresolved` or qualified `satisfied` as policy permits; `change-package/v2.claims[].status`; runtime evidence and `runtimeControls`. |
+| `waived` | Human exception exists and is traceable. | `claim-evidence-manifest/v1.claims[].status=waived` plus `waiverRefs`; `change-package/v2.claims[].status=waived`. |
+| `unresolved` | Evidence is missing, failed, stale, insufficient, out of scope, or not accepted. | `claim-evidence-manifest/v1.claims[].status=unresolved`/`partial`, `missingEvidenceRefs`, policy result `block` or `report-only`. |
 
-`not-applicable` is intentionally not part of the current `claim-evidence-manifest/v1` or `change-package/v2` emitted state set. The preview `claim-level-summary/v1` schema can represent `not-applicable` for PR/release projection and migration testing, but producers should not emit it into current primary contracts until promotion is explicit.
+`not-applicable` is intentionally not part of the current `claim-evidence-manifest/v1.claims[].status` or evidence-kind vocabulary. `change-package/v2` can preserve it as an explicit package/release outcome state, and preview `claim-level-summary/v1` can project it for PR/release review and migration testing. Producers must not project that package/projection state back into `claim-evidence-manifest/v1` or agent PR metrics until promotion is explicit.
 
 #### 4.6 Evidence manifest
 
@@ -269,7 +269,7 @@ Summaries must avoid wording that claims proof beyond the linked evidence scope.
 | Stale evidence | Current contracts do not have a dedicated stale field. Use `unresolved`/`partial`, notes, warnings, or missing evidence until freshness metadata is added. | Report-only by default; strict mode can block once schema/policy defines freshness checks. |
 | Waived evidence | `waiverRefs[]` and claim status `waived`; policy waiver status flattened as active/expiring/expired/orphan/unknown. | Active/expiring waivers produce `waived`; expired/orphan waivers block in strict mode. |
 | Runtime mitigation | Runtime evidence refs, runtime controls, or `runtime-mitigated` change-package claim status. | Does not satisfy proof/model obligations; may reduce residual operational risk. |
-| Out of scope / not applicable | Current emitted state is not `not-applicable`. Use omitted non-claim, `unresolved` with note, or waiver/residual risk. | Report-only until a future schema migration adds first-class `not-applicable`. |
+| Out of scope / not applicable | Manifest claim status remains omitted non-claim, `unresolved` with note, or waiver/residual risk. `change-package/v2` may record explicit `not-applicable` as a package/release outcome with reviewable rationale. | Report-only unless a future schema/policy migration promotes the state into primary evidence enforcement. |
 
 ### 7. Policy-gate semantics
 
@@ -305,7 +305,7 @@ Summaries must avoid wording that claims proof beyond the linked evidence scope.
 4. Dual-write and dual-validate when promoting preview artifacts to default production outputs.
 5. Keep Markdown sidecars during migration so human review does not depend on raw JSON.
 6. Document producer, consumer, artifact path, validation command, and rollback plan for every schema change.
-7. Do not emit `not-applicable` until the schema, fixtures, docs, producer, policy-gate, and summary consumers accept it.
+7. Do not emit `not-applicable` as a `claim-evidence-manifest/v1` claim status or evidence kind until the schema, fixtures, docs, producer, policy-gate, and summary consumers accept that promotion. `change-package/v2` may continue to carry it as a package/release outcome state.
 
 ### 9. Test and fixture strategy
 
@@ -351,8 +351,8 @@ git diff --check
 - `A0` から `A4` までの achieved level は、利用可能な evidence を超えて上げない。
 - waiver は satisfied claim ではなく、owner、reason、expiry、related claim ID、evidence link を持つ期限付き例外として扱う。
 - runtime control は operational risk の緩和であり、proof / model checking ではない。
-- 現行 contract が emit できる state は `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved` である。
-- `not-applicable` は現行 schema では未対応のため、現時点では emit しない。対象外や非該当は、non-claim として除外するか、`unresolved`、note、waiver / residual risk として表現する。
+- 現行 `claim-evidence-manifest/v1.claims[].status` が emit できる value は `partial`、`satisfied`、`waived`、`unresolved` であり、evidence kind は `evidenceRefs[].kind` に分離する。
+- `not-applicable` は `claim-evidence-manifest/v1` の claim status や evidence kind ではない。`change-package/v2` では package / release outcome state として保持でき、`claim-level-summary/v1` では PR / release projection として表示できるが、manifest 側へ戻すには明示的な schema / policy migration が必要である。
 - policy-gate は既定で `report-only` とし、明示的な policy がある場合のみ `strict` enforcement を選択する。
 - schema 変更は additive、preview version、または dual-write / dual-validate で移行する。
 
