@@ -91,13 +91,13 @@ Use the fixture for a complete schema-valid sample, including `validationLanes`,
 - `failed`
 - `not-applicable`
 
-These values are `change-package/v2` package states, not `claim-evidence-manifest/v1` primary evidence states. `failed` means the package records a failed or insufficient claim outcome; it is not an evidence kind. `not-applicable` means the package explicitly records that a claim is out of scope or non-applicable for this package, with reviewable references or rationale. It must not be silently inferred from missing requirements, empty `requirements` arrays, or absent artifacts.
+These values are `change-package/v2` package states, not `claim-evidence-manifest/v1` claim statuses or evidence kinds. `failed` means the package records a failed or insufficient claim outcome; it is not an evidence kind. `not-applicable` means the package explicitly records that a claim is out of scope or non-applicable for this package, with reviewable references or rationale. It must not be silently inferred from missing requirement references, empty per-claim `requirementRefs` arrays, or absent artifacts.
 
-`runtime-mitigated` is not proof. `waived` is not satisfied. `change-package/v2` status values must not expand primary producer-emitted evidence states or agent PR metric states without an explicit schema and policy migration.
+`runtime-mitigated` is not proof. `waived` is not satisfied. `change-package/v2` status values must not expand `claim-evidence-manifest/v1` claim-status or evidence-kind vocabularies, or agent PR metric states, without an explicit schema and policy migration.
 
 ### 5. Core sections
 
-- `requirements`: changed requirement references plus claim-to-requirement links. Empty arrays mean no requirement reference was found, not that the field was skipped.
+- `requirements`: changed requirement references plus claim-to-requirement links. Empty requirement-reference arrays mean no requirement reference was found, not that the field was skipped or that claims are automatically non-applicable.
 - `validationLanes`: validation lanes and their status with evidence refs.
 - `policyDecision`: policy-gate result, mode, enforcement flag, reason, warnings, and errors.
 - `claims`: claim statements, criticality, target/achieved levels, package/release outcome status, requirement refs, artifact refs, and optional per-claim decision.
@@ -184,13 +184,13 @@ The generated Markdown points to the evidence package path, lists claim-state co
 - `failed`
 - `not-applicable`
 
-これらは `change-package/v2` の package state であり、`claim-evidence-manifest/v1` の primary evidence state ではありません。`failed` は package が failed / insufficient な claim outcome を記録したことを表し、evidence kind ではありません。`not-applicable` は、その package において claim が明示的に scope 外 / 非対象であることを、review 可能な reference または rationale とともに記録する state です。missing requirements、空の `requirements` 配列、artifact 欠落から暗黙推論してはいけません。
+これらは `change-package/v2` の package state であり、`claim-evidence-manifest/v1` の claim status や evidence kind ではありません。`failed` は package が failed / insufficient な claim outcome を記録したことを表し、evidence kind ではありません。`not-applicable` は、その package において claim が明示的に scope 外 / 非対象であることを、review 可能な reference または rationale とともに記録する state です。missing requirement references、空の per-claim `requirementRefs` 配列、artifact 欠落から暗黙推論してはいけません。
 
-`runtime-mitigated` は proof ではありません。`waived` は satisfied ではありません。`change-package/v2` の status value は、明示的な schema / policy migration なしに primary producer-emitted evidence state や agent PR metric state を拡張しません。
+`runtime-mitigated` は proof ではありません。`waived` は satisfied ではありません。`change-package/v2` の status value は、明示的な schema / policy migration なしに `claim-evidence-manifest/v1` の claim-status / evidence-kind vocabulary や agent PR metric state を拡張しません。
 
 ## 5. 主要セクション
 
-- `requirements`: 変更された requirement reference と claim-to-requirement link。空配列は「対象なし」を意味し、「未評価」と区別します。
+- `requirements`: 変更された requirement reference と claim-to-requirement link。空の requirement-reference 配列は requirement reference が見つからなかったことを表し、field skipped や claim の自動的な non-applicable を意味しません。
 - `validationLanes`: 検証レーン、状態、evidence refs。
 - `policyDecision`: policy-gate の result / mode / enforcement / reason / warnings / errors。
 - `claims`: claim statement、criticality、target/achieved level、package / release outcome status、requirement refs、artifact refs、任意の per-claim decision。
