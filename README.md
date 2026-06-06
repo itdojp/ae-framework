@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-06-05'
+lastVerified: '2026-06-06'
 ---
 
 # ae-framework: Agent-Neutral Assurance Control Plane for Agent-Driven SDLC
@@ -144,7 +144,7 @@ flowchart TB
 
 ### 提供するもの
 - **Agent-neutral assurance control plane**: Context Pack、形式検証/Conformance要約、artifact validation、policy gate、PR/release 自動化を束ね、producer output を判断可能な証跡へ変換。
-- **SDLCオーケストレーター**: PR Verify／夜間ヘビーテスト／Slack通知などのGitHub ActionsとCLIスクリプトで、要件・テスト・退行検知を一元化。
+- **AIエージェント協調型SDLCの証跡・検証オーケストレーション**: PR Verify／夜間ヘビーテスト／Slack通知などのGitHub ActionsとCLIスクリプトで、要件・テスト・退行検知を review / release judgment 向けの証跡として整列させる。
 - **仕様・検証キット**: トレーサブルな仕様フォーマット、mutation/MBT/Propertyテストのパイプライン、`scripts/pipelines/compare-test-trends.mjs` によるトレンド比較。
 - **プロジェクト骨子とポリシー**: pnpmワークスペース、Lint/Test/型カバレッジのゲート、ラベルゲーティング（typecov・flake）、TDDフック。
 - **ヘビーテスト成果物のキャッシュ**: `scripts/pipelines/sync-test-results.mjs` による store/restore/snapshot、`heavy-test-trends` アーティファクトでCIトリアージを高速化。
