@@ -155,6 +155,69 @@ describe('CEGISCli', () => {
         expect.stringContaining('No input file specified')
       );
     });
+
+    it('should reject --apply without explicit auto-fix approval before executing fixes', async () => {
+      const failures = [
+        FailureArtifactFactory.fromError(new Error('test error'))
+      ];
+
+      const inputFile = 'test-apply-without-approval.json';
+      writeFileSync(inputFile, JSON.stringify(failures, null, 2));
+      testFiles.push(inputFile);
+
+      const command = cli.createCommand();
+      const args = ['node', 'cli', 'apply', '--input', inputFile, '--apply'];
+
+      await command.parseAsync(args);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("approval scope 'cegis-auto-fix'")
+      );
+      expect(consoleLogSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Starting CEGIS auto-fix process')
+      );
+    });
+
+    it('should force approved auto-fix apply to dry-run in untrusted checkouts', async () => {
+      const previousUntrustedCheckout = process.env['AE_UNTRUSTED_CHECKOUT'];
+      process.env['AE_UNTRUSTED_CHECKOUT'] = '1';
+      const failures = [
+        FailureArtifactFactory.fromError(new Error('test error'))
+      ];
+
+      const inputFile = 'test-apply-untrusted-dry-run.json';
+      writeFileSync(inputFile, JSON.stringify(failures, null, 2));
+      testFiles.push(inputFile);
+
+      try {
+        const command = cli.createCommand();
+        const args = [
+          'node',
+          'cli',
+          'apply',
+          '--input',
+          inputFile,
+          '--apply',
+          '--approval-scope',
+          'cegis-auto-fix',
+        ];
+
+        await command.parseAsync(args);
+
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining('forced to dry-run')
+        );
+        expect(consoleLogSpy).toHaveBeenCalledWith(
+          expect.stringContaining('DRY RUN - No changes were applied')
+        );
+      } finally {
+        if (previousUntrustedCheckout === undefined) {
+          delete process.env['AE_UNTRUSTED_CHECKOUT'];
+        } else {
+          process.env['AE_UNTRUSTED_CHECKOUT'] = previousUntrustedCheckout;
+        }
+      }
+    });
   });
 
   describe('analyze command', () => {

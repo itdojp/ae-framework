@@ -170,8 +170,9 @@ describe('GuardRunner process-starting guard execution policy', () => {
     });
     expect(getGuardScriptExecutionPolicy({ apply: true, env: { AE_UNTRUSTED_CHECKOUT: '1' } })).toMatchObject({
       agentContext: true,
-      dryRun: false,
-      approvalRequired: true,
+      dryRun: true,
+      approvalRequired: false,
+      reason: 'untrusted-workspace-or-ref-forces-dry-run',
     });
   });
 

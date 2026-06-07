@@ -12,6 +12,11 @@ import {
   resolveWorkspacePath,
   WorkspacePathPolicyError,
 } from './workspace-path-policy.js';
+import {
+  createHighImpactChildEnv,
+  evaluateHighImpactActionPolicy,
+  formatHighImpactDecisionMessage,
+} from './high-impact-action-policy.js';
 
 export const INSTALLER_APPROVAL_SCOPE = 'installer-apply' as const;
 
@@ -229,16 +234,20 @@ export class InstallerManager {
     try {
       await this.collectPlannedChanges(template, installContext, result);
 
-      if (installContext.dryRun === true) {
+      const applyPolicy = this.evaluateInstallerApplyPolicy(installContext);
+      if (applyPolicy.dryRun) {
+        result.dryRun = true;
         result.message = `Dry-run preview for ${template.name}; no installer changes were applied`;
         result.duration = Date.now() - startTime;
         return result;
       }
 
-      if (!this.hasTrustedApproval(installContext)) {
+      if (!applyPolicy.allowed) {
         result.success = false;
-        result.approvalRequired = true;
-        result.message = `Installation requires explicit ${INSTALLER_APPROVAL_SCOPE} approval`;
+        result.approvalRequired = applyPolicy.approvalRequired;
+        result.message = applyPolicy.approvalRequired
+          ? `Installation requires explicit ${INSTALLER_APPROVAL_SCOPE} approval`
+          : formatHighImpactDecisionMessage(applyPolicy);
         result.errors.push(result.message);
         result.duration = Date.now() - startTime;
         return result;
@@ -807,6 +816,30 @@ end
     return context.approval?.approved === true && context.approval.scope === INSTALLER_APPROVAL_SCOPE;
   }
 
+  private evaluateInstallerApplyPolicy(context: InstallationContext): ReturnType<typeof evaluateHighImpactActionPolicy> {
+    return evaluateHighImpactActionPolicy({
+      actionKind: 'package-manager',
+      actionName: 'installer-template-apply',
+      apply: context.dryRun === false,
+      dryRun: context.dryRun,
+      approval: context.approval,
+      requiredApprovalScope: INSTALLER_APPROVAL_SCOPE,
+      env: createHighImpactChildEnv(),
+    });
+  }
+
+  private canProbePackageManager(context: Partial<InstallationContext>, dryRun: boolean, trustedApproval: boolean): boolean {
+    return evaluateHighImpactActionPolicy({
+      actionKind: 'package-manager',
+      actionName: 'installer-package-manager-probe',
+      apply: dryRun !== true && trustedApproval,
+      dryRun,
+      approval: context.approval,
+      requiredApprovalScope: INSTALLER_APPROVAL_SCOPE,
+      env: createHighImpactChildEnv(),
+    }).allowed;
+  }
+
   private resolveProjectPath(context: InstallationContext, relativePath: string, label: string): string {
     return resolveWorkspacePath(relativePath, {
       workspaceRoot: context.projectRoot,
@@ -826,8 +859,9 @@ end
 
     const trustedApproval = this.hasTrustedApproval(context);
     const dryRun = context.dryRun ?? !trustedApproval;
+    const allowExecutableProbe = this.canProbePackageManager(context, dryRun, trustedApproval);
     const packageManager = context.packageManager
-      || await this.detectPackageManagerInternal({ allowExecutableProbe: dryRun !== true && trustedApproval });
+      || await this.detectPackageManagerInternal({ allowExecutableProbe });
     const projectName = context.projectName || path.basename(this.projectRoot);
     
     let existingPackageJson;
@@ -1186,6 +1220,7 @@ end
       
       const process = spawn(command, args, {
         cwd: this.projectRoot,
+        env: createHighImpactChildEnv(),
         shell: false,
         stdio: options.silent ? 'pipe' : 'inherit'
       });

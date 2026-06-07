@@ -25,6 +25,7 @@ import type { FailureArtifact as LegacyFailureArtifact, FailureArtifactCollectio
 import { validateFailureArtifact, validateFailureArtifactCollection } from '../cegis/failure-artifact-schema.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { evaluateHighImpactActionPolicy } from '../utils/high-impact-action-policy.js';
 
 const isErrnoException = (value: unknown): value is NodeJS.ErrnoException => {
   if (!value || typeof value !== 'object') {
@@ -262,14 +263,26 @@ const getQualityExecutionPolicy = (
   policyOptions: { protectCi?: boolean } = {}
 ): QualityExecutionPolicy => {
   const guardedAutomationContext = isQualityAgentContext() || (policyOptions.protectCi === true && isQualityCiContext());
-  const apply = options.apply === true;
+  // Trusted local invocations keep the historical execute-by-default behavior.
+  // Agent contexts and CI-protected entry points require explicit apply/approval.
+  const apply = options.apply === true || !guardedAutomationContext;
   const approvalScope = options.approvalScope;
-  const dryRun = options.dryRun === true || (guardedAutomationContext && !apply);
-  const approvalRequired = guardedAutomationContext && apply && approvalScope !== QUALITY_GATE_EXECUTION_APPROVAL_SCOPE;
-  const policy: QualityExecutionPolicy = {
-    dryRun,
+  const decision = evaluateHighImpactActionPolicy({
+    actionKind: 'package-manager',
+    actionName: 'quality-gate-execution',
     apply,
-    approvalRequired,
+    dryRun: options.dryRun,
+    approvalScope,
+    requiredApprovalScope: QUALITY_GATE_EXECUTION_APPROVAL_SCOPE,
+    agentContext: isQualityAgentContext(),
+    ciContext: policyOptions.protectCi === true && isQualityCiContext(),
+    blockAmbientSecrets: false,
+    enforceApproval: guardedAutomationContext,
+  });
+  const policy: QualityExecutionPolicy = {
+    dryRun: decision.dryRun,
+    apply,
+    approvalRequired: decision.approvalRequired || decision.blocked,
   };
   if (approvalScope !== undefined) {
     policy.approvalScope = approvalScope;

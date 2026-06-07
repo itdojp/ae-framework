@@ -253,6 +253,31 @@ describe('InstallerManager', () => {
       expect(vi.mocked(fs.mkdir)).not.toHaveBeenCalled();
     });
 
+    test('should force approved apply to dry-run in an untrusted checkout', async () => {
+      const previous = process.env['AE_UNTRUSTED_CHECKOUT'];
+      process.env['AE_UNTRUSTED_CHECKOUT'] = '1';
+      vi.mocked(fs.access).mockRejectedValue(new Error('not found'));
+
+      try {
+        const result = await installerManager.installTemplate('react-vite', {
+          ...approvedContext,
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.dryRun).toBe(true);
+        expect(result.message).toContain('Dry-run preview');
+        expect(result.plannedChanges?.length).toBeGreaterThan(0);
+        expect(vi.mocked(spawn)).not.toHaveBeenCalled();
+        expect(vi.mocked(fs.writeFile)).not.toHaveBeenCalled();
+      } finally {
+        if (previous === undefined) {
+          delete process.env['AE_UNTRUSTED_CHECKOUT'];
+        } else {
+          process.env['AE_UNTRUSTED_CHECKOUT'] = previous;
+        }
+      }
+    });
+
     test('should install dependencies with argv-safe spawn and lifecycle scripts suppressed by default', async () => {
       const mockProcess = {
         stdout: { on: vi.fn() },
@@ -292,6 +317,42 @@ describe('InstallerManager', () => {
         ],
         expect.objectContaining({ shell: false, cwd: path.resolve(testProjectRoot) })
       );
+    });
+
+    test('should redact ambient secret variables from package-manager child environments', async () => {
+      const previousGithubToken = process.env['GITHUB_TOKEN'];
+      const previousNpmToken = process.env['NPM_TOKEN'];
+      const previousCi = process.env['CI'];
+      process.env['GITHUB_TOKEN'] = 'ghs-secret';
+      process.env['NPM_TOKEN'] = 'npm-secret';
+      process.env['CI'] = 'true';
+      const mockProcess = {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn().mockImplementation((event, callback) => {
+          if (event === 'close') callback(0);
+        })
+      };
+      vi.mocked(spawn).mockReturnValue(mockProcess as any);
+
+      try {
+        const result = await installerManager.installTemplate('react-vite', {
+          ...approvedContext,
+          packageManager: 'npm',
+        });
+
+        expect(result.success).toBe(true);
+        const spawnOptions = vi.mocked(spawn).mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv };
+        expect(spawnOptions.env?.['GITHUB_TOKEN']).toBeUndefined();
+        expect(spawnOptions.env?.['NPM_TOKEN']).toBeUndefined();
+      } finally {
+        if (previousGithubToken === undefined) delete process.env['GITHUB_TOKEN'];
+        else process.env['GITHUB_TOKEN'] = previousGithubToken;
+        if (previousNpmToken === undefined) delete process.env['NPM_TOKEN'];
+        else process.env['NPM_TOKEN'] = previousNpmToken;
+        if (previousCi === undefined) delete process.env['CI'];
+        else process.env['CI'] = previousCi;
+      }
     });
 
     test('should validate template file paths before applying package or file writes', async () => {
