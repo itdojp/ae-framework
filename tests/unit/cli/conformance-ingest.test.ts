@@ -1,13 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { parseTraceRedactionRule, runConformanceIngest } from '../../../src/cli/conformance-ingest.js';
 
 const workdirs: string[] = [];
 
 const createWorkdir = async (): Promise<string> => {
-  const workdir = await mkdtemp(join(tmpdir(), 'ae-trace-ingest-'));
+  const root = join(process.cwd(), 'artifacts', 'conformance-ingest-tests');
+  await mkdir(root, { recursive: true });
+  const workdir = await mkdtemp(join(root, 'ae-trace-ingest-'));
   workdirs.push(workdir);
   return workdir;
 };
@@ -65,6 +66,7 @@ describe('conformance ingest utilities', () => {
     );
 
     const { bundle, summary } = runConformanceIngest({
+      workspaceRoot: workdir,
       inputPath,
       outputPath,
       summaryOutputPath,
@@ -114,6 +116,7 @@ describe('conformance ingest utilities', () => {
     );
 
     const sampledOut = runConformanceIngest({
+      workspaceRoot: workdir,
       inputPath,
       outputPath,
       summaryOutputPath,
@@ -123,6 +126,7 @@ describe('conformance ingest utilities', () => {
     expect(sampledOut.bundle.summary.sampledOutCount).toBe(3);
 
     const capped = runConformanceIngest({
+      workspaceRoot: workdir,
       inputPath,
       outputPath,
       summaryOutputPath,
@@ -151,6 +155,7 @@ describe('conformance ingest utilities', () => {
     );
 
     const { bundle } = runConformanceIngest({
+      workspaceRoot: workdir,
       inputPath,
       outputPath,
       summaryOutputPath,
@@ -171,11 +176,64 @@ describe('conformance ingest utilities', () => {
 
     expect(() =>
       runConformanceIngest({
+        workspaceRoot: workdir,
         inputPath,
         outputPath,
         summaryOutputPath,
       }),
     ).toThrowError();
+  });
+
+  it('rejects absolute ingest paths outside the configured workspace root', async () => {
+    const workdir = await createWorkdir();
+    const outside = await mkdtemp(join(process.cwd(), 'artifacts', 'conformance-ingest-outside-'));
+    workdirs.push(outside);
+    const inputPath = join(outside, 'trace.json');
+    const outputPath = join(workdir, 'trace-bundle.json');
+    const summaryOutputPath = join(workdir, 'trace-bundle-summary.json');
+    await writeFile(
+      inputPath,
+      `${JSON.stringify([
+        { traceId: 'a', timestamp: '2026-02-27T00:00:00.000Z', actor: 'svc', event: 'E1' },
+      ])}\n`,
+      'utf-8',
+    );
+
+    expect(() =>
+      runConformanceIngest({
+        workspaceRoot: workdir,
+        inputPath,
+        outputPath,
+        summaryOutputPath,
+      }),
+    ).toThrowError(/outside the approved workspace/);
+  });
+
+  it('rejects ingest paths that traverse symlink ancestors outside the workspace', async () => {
+    const workdir = await createWorkdir();
+    const outside = await mkdtemp(join(process.cwd(), 'artifacts', 'conformance-ingest-linked-outside-'));
+    workdirs.push(outside);
+    await writeFile(
+      join(outside, 'trace.json'),
+      `${JSON.stringify([
+        { traceId: 'a', timestamp: '2026-02-27T00:00:00.000Z', actor: 'svc', event: 'E1' },
+      ])}\n`,
+      'utf-8',
+    );
+    try {
+      await symlink(outside, join(workdir, 'linked-outside'), 'dir');
+    } catch {
+      return;
+    }
+
+    expect(() =>
+      runConformanceIngest({
+        workspaceRoot: workdir,
+        inputPath: 'linked-outside/trace.json',
+        outputPath: 'trace-bundle.json',
+        summaryOutputPath: 'trace-bundle-summary.json',
+      }),
+    ).toThrowError(/resolves through a filesystem entry outside the approved workspace/);
   });
 
   it('fails when JSON input is malformed', async () => {
@@ -187,6 +245,7 @@ describe('conformance ingest utilities', () => {
 
     expect(() =>
       runConformanceIngest({
+        workspaceRoot: workdir,
         inputPath,
         outputPath,
         summaryOutputPath,
@@ -203,6 +262,7 @@ describe('conformance ingest utilities', () => {
 
     expect(() =>
       runConformanceIngest({
+        workspaceRoot: workdir,
         inputPath,
         outputPath,
         summaryOutputPath,
@@ -226,6 +286,7 @@ describe('conformance ingest utilities', () => {
 
     expect(() =>
       runConformanceIngest({
+        workspaceRoot: workdir,
         inputPath,
         outputPath: join(outputPath, 'trace-bundle.json'),
         summaryOutputPath,

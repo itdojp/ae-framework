@@ -11,6 +11,11 @@ export interface WorkspacePathOptions {
   label?: string;
 }
 
+export interface ArtifactPathOptions extends WorkspacePathOptions {
+  artifactRoot?: string;
+  allowAbsolute?: boolean;
+}
+
 export class WorkspacePathPolicyError extends Error {
   constructor(message: string) {
     super(message);
@@ -19,7 +24,7 @@ export class WorkspacePathPolicyError extends Error {
 }
 
 const hasWindowsAbsolutePrefix = (value: string): boolean =>
-  path.win32.isAbsolute(value) || /^[A-Za-z]:[\\/]/.test(value);
+  /^[A-Za-z]:[\\/]/.test(value);
 
 const isPathWithin = (baseDir: string, candidatePath: string): boolean => {
   const relative = path.relative(baseDir, candidatePath);
@@ -29,6 +34,41 @@ const isPathWithin = (baseDir: string, candidatePath: string): boolean => {
 const pathPolicyLabel = (label: string | undefined): string => label ?? 'workspace path';
 
 const splitInputPath = (value: string): string[] => value.replace(/\\/g, '/').split('/');
+
+const hasDotSegment = (segments: string[]): boolean =>
+  segments.some((segment) => segment === '.' || segment === '..');
+
+const hasGitMetadataSegment = (segments: string[]): boolean =>
+  segments.some((segment) => segment.toLowerCase() === '.git');
+
+const assertNoUnsafeSegments = (segments: string[], label: string): void => {
+  if (hasDotSegment(segments)) {
+    throw new WorkspacePathPolicyError(`${label} must not contain dot-segment path components`);
+  }
+  if (hasGitMetadataSegment(segments)) {
+    throw new WorkspacePathPolicyError(`${label} must not target Git metadata directories`);
+  }
+};
+
+const normalizeWorkspaceRelativeInput = (input: string, label: string): string => {
+  const raw = String(input).trim();
+  if (!raw) {
+    throw new WorkspacePathPolicyError(`${label} must be a non-empty workspace-relative path`);
+  }
+  if (raw.includes('\0')) {
+    throw new WorkspacePathPolicyError(`${label} must not contain NUL bytes`);
+  }
+  if (raw.includes('\\')) {
+    throw new WorkspacePathPolicyError(`${label} must use POSIX-style '/' separators`);
+  }
+  if (raw.startsWith('//') || path.isAbsolute(raw) || hasWindowsAbsolutePrefix(raw)) {
+    throw new WorkspacePathPolicyError(`${label} must be relative to the approved workspace`);
+  }
+
+  const segments = splitInputPath(raw);
+  assertNoUnsafeSegments(segments, label);
+  return raw;
+};
 
 const nearestExistingAncestor = (resolvedPath: string): string | null => {
   let current = path.resolve(resolvedPath);
@@ -66,11 +106,11 @@ export function resolveWorkspaceRoot(options: WorkspaceRootOptions = {}): string
   return path.resolve(fromEnv && fromEnv.length > 0 ? fromEnv : (options.defaultRoot ?? process.cwd()));
 }
 
-export function resolveWorkspacePath(input: string, options: WorkspacePathOptions = {}): string {
+export function assertWithinWorkspace(resolvedPath: string, options: WorkspacePathOptions = {}): string {
   const label = pathPolicyLabel(options.label);
-  const raw = String(input).trim();
+  const raw = String(resolvedPath).trim();
   if (!raw) {
-    throw new WorkspacePathPolicyError(`${label} must be a non-empty workspace-relative path`);
+    throw new WorkspacePathPolicyError(`${label} must be a non-empty path`);
   }
   if (raw.includes('\0')) {
     throw new WorkspacePathPolicyError(`${label} must not contain NUL bytes`);
@@ -78,25 +118,27 @@ export function resolveWorkspacePath(input: string, options: WorkspacePathOption
   if (raw.includes('\\')) {
     throw new WorkspacePathPolicyError(`${label} must use POSIX-style '/' separators`);
   }
-  if (raw.startsWith('//') || path.isAbsolute(raw) || hasWindowsAbsolutePrefix(raw)) {
-    throw new WorkspacePathPolicyError(`${label} must be relative to the approved workspace`);
+  if (hasWindowsAbsolutePrefix(raw)) {
+    throw new WorkspacePathPolicyError(`${label} must not use Windows absolute paths`);
   }
-
-  const segments = splitInputPath(raw);
-  if (segments.some((segment) => segment === '.' || segment === '..')) {
-    throw new WorkspacePathPolicyError(`${label} must not contain dot-segment path components`);
-  }
-  if (segments.some((segment) => segment.toLowerCase() === '.git')) {
-    throw new WorkspacePathPolicyError(`${label} must not target Git metadata directories`);
-  }
-
   const workspaceRoot = path.resolve(options.workspaceRoot ?? resolveWorkspaceRoot());
-  const resolved = path.resolve(workspaceRoot, raw);
+  const resolved = path.isAbsolute(raw)
+    ? path.resolve(raw)
+    : path.resolve(workspaceRoot, raw);
+
   if (!isPathWithin(workspaceRoot, resolved)) {
-    throw new WorkspacePathPolicyError(`${label} escaped the approved workspace`);
+    throw new WorkspacePathPolicyError(`${label} is outside the approved workspace`);
   }
   assertExistingAncestorWithin(workspaceRoot, resolved, label);
   return resolved;
+}
+
+export function resolveWorkspacePath(input: string, options: WorkspacePathOptions = {}): string {
+  const label = pathPolicyLabel(options.label);
+  const raw = normalizeWorkspaceRelativeInput(input, label);
+  const workspaceRoot = path.resolve(options.workspaceRoot ?? resolveWorkspaceRoot());
+  const resolved = path.resolve(workspaceRoot, raw);
+  return assertWithinWorkspace(resolved, { workspaceRoot, label });
 }
 
 export function resolveContainedWorkspacePath(baseDir: string, relativePath: string, label?: string): string {
@@ -111,13 +153,68 @@ export function resolveContainedWorkspacePath(baseDir: string, relativePath: str
   return resolved;
 }
 
+export function resolveArtifactPath(input: string, options: ArtifactPathOptions = {}): string {
+  const label = pathPolicyLabel(options.label);
+  const workspaceRoot = path.resolve(options.workspaceRoot ?? resolveWorkspaceRoot());
+  const artifactRootInput = String(options.artifactRoot ?? 'artifacts').trim();
+  if (!artifactRootInput) {
+    throw new WorkspacePathPolicyError(`${label} artifact root must be a non-empty path`);
+  }
+  if (artifactRootInput.includes('\0')) {
+    throw new WorkspacePathPolicyError(`${label} artifact root must not contain NUL bytes`);
+  }
+
+  const artifactRoot = path.isAbsolute(artifactRootInput) || hasWindowsAbsolutePrefix(artifactRootInput)
+    ? assertWithinWorkspace(artifactRootInput, { workspaceRoot, label: `${label} artifact root` })
+    : resolveWorkspacePath(artifactRootInput, {
+        workspaceRoot,
+        label: `${label} artifact root`,
+      });
+  const artifactRootRelative = toWorkspaceRelativePath(artifactRoot, {
+    workspaceRoot,
+    label: `${label} artifact root`,
+  });
+
+  const raw = String(input).trim();
+  if (!raw) {
+    throw new WorkspacePathPolicyError(`${label} must be a non-empty artifact path`);
+  }
+  if (raw.includes('\0')) {
+    throw new WorkspacePathPolicyError(`${label} must not contain NUL bytes`);
+  }
+  if (raw.includes('\\')) {
+    throw new WorkspacePathPolicyError(`${label} must use POSIX-style '/' separators`);
+  }
+
+  let resolved: string;
+  if (path.isAbsolute(raw) || hasWindowsAbsolutePrefix(raw) || raw.startsWith('//')) {
+    if (!options.allowAbsolute) {
+      throw new WorkspacePathPolicyError(`${label} must be relative to the approved artifact root`);
+    }
+    resolved = assertWithinWorkspace(raw, { workspaceRoot, label });
+  } else {
+    const segments = splitInputPath(raw);
+    assertNoUnsafeSegments(segments, label);
+    const normalized = segments.join('/');
+    const isWorkspaceRelativeArtifact =
+      normalized === artifactRootRelative || normalized.startsWith(`${artifactRootRelative}/`);
+    resolved = isWorkspaceRelativeArtifact
+      ? path.resolve(workspaceRoot, normalized)
+      : path.resolve(artifactRoot, normalized);
+    resolved = assertWithinWorkspace(resolved, { workspaceRoot, label });
+  }
+
+  if (!isPathWithin(artifactRoot, resolved)) {
+    throw new WorkspacePathPolicyError(`${label} must stay under the approved artifact root`);
+  }
+  assertExistingAncestorWithin(artifactRoot, resolved, label);
+  return resolved;
+}
+
 export function toWorkspaceRelativePath(resolvedPath: string, options: WorkspacePathOptions = {}): string {
   const label = pathPolicyLabel(options.label);
   const workspaceRoot = path.resolve(options.workspaceRoot ?? resolveWorkspaceRoot());
-  const absolutePath = path.resolve(resolvedPath);
-  if (!isPathWithin(workspaceRoot, absolutePath)) {
-    throw new WorkspacePathPolicyError(`${label} is outside the approved workspace`);
-  }
+  const absolutePath = assertWithinWorkspace(resolvedPath, { workspaceRoot, label });
   const relative = path.relative(workspaceRoot, absolutePath);
   return relative === '' ? '.' : relative.replace(/\\/g, '/');
 }

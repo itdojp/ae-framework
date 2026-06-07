@@ -1,6 +1,6 @@
 import path from 'node:path';
 import {
-  resolveContainedWorkspacePath,
+  resolveArtifactPath,
   resolveWorkspacePath,
   resolveWorkspaceRoot,
   toWorkspaceRelativePath,
@@ -28,11 +28,6 @@ export interface IntegrationPathContextOptions {
 
 const hasWindowsAbsolutePrefix = (value: string): boolean =>
   path.win32.isAbsolute(value) || /^[A-Za-z]:[\\/]/.test(value);
-
-const isPathWithin = (baseDir: string, candidatePath: string): boolean => {
-  const relative = path.relative(baseDir, candidatePath);
-  return relative === '' || (!!relative && !relative.startsWith('..') && !path.isAbsolute(relative));
-};
 
 const normalizeWorkspaceRelativePath = (input: string, label: string): string => {
   const raw = String(input).trim();
@@ -104,26 +99,23 @@ export function resolveIntegrationOutputPath(
   context: IntegrationPathContext,
   label = 'integration output path',
 ): ResolvedIntegrationPath {
-  let resolvedPath: string;
-
   if (path.isAbsolute(input) || hasWindowsAbsolutePrefix(input)) {
     throw new WorkspacePathPolicyError(`${label} must be relative to the approved integration artifact root`);
-  } else {
-    const workspaceRelative = normalizeWorkspaceRelativePath(input, label);
-    resolvedPath = resolveWorkspacePath(workspaceRelative, {
-      workspaceRoot: context.workspaceRoot,
-      label,
-    });
   }
 
-  if (!isPathWithin(context.artifactRoot, resolvedPath)) {
+  const workspaceRelative = normalizeWorkspaceRelativePath(input, label);
+  const artifactRootRelative = toWorkspaceRelativePath(context.artifactRoot, {
+    workspaceRoot: context.workspaceRoot,
+    label: 'integration artifact root',
+  });
+  if (workspaceRelative !== artifactRootRelative && !workspaceRelative.startsWith(`${artifactRootRelative}/`)) {
     throw new WorkspacePathPolicyError(`${label} must stay under the approved integration artifact root`);
   }
-
-  const artifactRelative = path.relative(context.artifactRoot, resolvedPath).replace(/\\/g, '/');
-  if (artifactRelative !== '') {
-    resolvedPath = resolveContainedWorkspacePath(context.artifactRoot, artifactRelative, label);
-  }
+  const resolvedPath = resolveArtifactPath(workspaceRelative, {
+    workspaceRoot: context.workspaceRoot,
+    artifactRoot: context.artifactRoot,
+    label,
+  });
 
   return {
     resolvedPath,

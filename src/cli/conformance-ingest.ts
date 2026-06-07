@@ -2,6 +2,11 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { toMessage } from '../utils/error-utils.js';
+import {
+  assertWithinWorkspace,
+  resolveWorkspacePath,
+  toWorkspaceRelativePath,
+} from '../utils/workspace-path-policy.js';
 
 export type TraceRedactionAction = 'remove' | 'mask' | 'hash';
 
@@ -20,6 +25,7 @@ export interface ConformanceIngestOptions {
   inputPath: string;
   outputPath: string;
   summaryOutputPath: string;
+  workspaceRoot?: string;
   sourceEnv?: string;
   sourceService?: string;
   sourceTimeStart?: string;
@@ -133,8 +139,15 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
 
-const toRelativePath = (filePath: string): string =>
-  path.relative(process.cwd(), filePath) || '.';
+const resolveConformanceWorkspacePath = (input: string, workspaceRoot: string, label: string): string => {
+  const raw = String(input).trim();
+  return path.isAbsolute(raw)
+    ? assertWithinWorkspace(raw, { workspaceRoot, label })
+    : resolveWorkspacePath(raw, { workspaceRoot, label });
+};
+
+const toRelativePath = (filePath: string, workspaceRoot: string): string =>
+  toWorkspaceRelativePath(filePath, { workspaceRoot, label: 'conformance ingest path' });
 
 const parseSimpleJsonPath = (jsonPath: string): string[] | null => {
   if (!jsonPath.startsWith('$.')) {
@@ -350,9 +363,14 @@ export const runConformanceIngest = (options: ConformanceIngestOptions): {
   bundle: TraceBundle;
   summary: TraceBundleSummary;
 } => {
-  const inputPath = path.resolve(options.inputPath);
-  const outputPath = path.resolve(options.outputPath);
-  const summaryOutputPath = path.resolve(options.summaryOutputPath);
+  const workspaceRoot = path.resolve(options.workspaceRoot ?? process.cwd());
+  const inputPath = resolveConformanceWorkspacePath(options.inputPath, workspaceRoot, 'conformance ingest input path');
+  const outputPath = resolveConformanceWorkspacePath(options.outputPath, workspaceRoot, 'conformance ingest output path');
+  const summaryOutputPath = resolveConformanceWorkspacePath(
+    options.summaryOutputPath,
+    workspaceRoot,
+    'conformance ingest summary output path',
+  );
   const sampleRate = toNormalizedSampleRate(options.sampleRate);
   const maxEvents = toNormalizedMaxEvents(options.maxEvents);
   const redactRules = options.redactRules ?? [];
@@ -383,7 +401,7 @@ export const runConformanceIngest = (options: ConformanceIngestOptions): {
       ...(options.sourceBuildId ? { buildId: options.sourceBuildId } : {}),
       ...(options.sourceGitSha ? { gitSha: options.sourceGitSha } : {}),
       input: {
-        path: toRelativePath(inputPath),
+        path: toRelativePath(inputPath, workspaceRoot),
         format,
       },
       timeWindow: resolveTimeWindowFromSortedEvents(sortedEvents, options.sourceTimeStart, options.sourceTimeEnd),
@@ -407,12 +425,12 @@ export const runConformanceIngest = (options: ConformanceIngestOptions): {
     schemaVersion: 'ae-trace-bundle-summary/v1',
     generatedAt,
     input: {
-      path: toRelativePath(inputPath),
+      path: toRelativePath(inputPath, workspaceRoot),
       format,
     },
     output: {
-      bundlePath: toRelativePath(outputPath),
-      summaryPath: toRelativePath(summaryOutputPath),
+      bundlePath: toRelativePath(outputPath, workspaceRoot),
+      summaryPath: toRelativePath(summaryOutputPath, workspaceRoot),
     },
     counts: {
       rawEventCount: rawEvents.length,

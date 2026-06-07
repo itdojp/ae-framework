@@ -3,7 +3,11 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import yaml from 'yaml'
-import { resolveWorkspacePath } from '../../src/utils/workspace-path-policy.js'
+import {
+  assertWithinWorkspace,
+  resolveWorkspacePath,
+  toWorkspaceRelativePath,
+} from '../../src/utils/workspace-path-policy.js'
 
 const DEFAULT_REVIEW_OUTPUT_DIR = 'artifacts/codex/generated-tests'
 const REVIEWED_TEST_OUTPUT_APPROVAL = 'reviewed-generated-tests'
@@ -12,44 +16,19 @@ async function exists(p: string) {
   try { await fs.stat(p); return true } catch { return false }
 }
 
-function isPathWithin(baseDir: string, candidatePath: string): boolean {
-  const relative = path.relative(baseDir, candidatePath)
-  return relative === '' || (!!relative && !relative.startsWith('..') && !path.isAbsolute(relative))
-}
-
 function normalizeWorkspacePath(repo: string, inputPath: string, label: string): { absolutePath: string; relativePath: string } {
   const raw = String(inputPath).trim()
   if (!raw) throw new Error(`${label} must be non-empty`)
-  if (raw.includes('\0')) throw new Error(`${label} must not contain NUL bytes`)
-  if (raw.includes('\\')) throw new Error(`${label} must use POSIX-style '/' separators`)
-  if (/^[A-Za-z]:[\\/]/.test(raw)) throw new Error(`${label} must be inside the approved workspace`)
-  const rawSegments = raw.split('/').filter(Boolean)
-  if (rawSegments.some((segment) => segment === '.' || segment === '..')) {
-    throw new Error(`${label} must not contain dot-segment path components`)
-  }
-  if (rawSegments.some((segment) => segment.toLowerCase() === '.git')) {
-    throw new Error(`${label} must not target Git metadata directories`)
-  }
-
-  const absolutePath = path.isAbsolute(raw) ? path.resolve(raw) : path.resolve(repo, raw)
-  if (!isPathWithin(repo, absolutePath)) {
-    throw new Error(`${label} must stay inside the approved workspace`)
-  }
-  const relativePath = path.relative(repo, absolutePath).replace(/\\/g, '/')
+  const absolutePath = path.isAbsolute(raw)
+    ? assertWithinWorkspace(raw, { workspaceRoot: repo, label })
+    : resolveWorkspacePath(raw, { workspaceRoot: repo, label })
+  const relativePath = toWorkspaceRelativePath(absolutePath, { workspaceRoot: repo, label })
   const segments = relativePath.split('/').filter(Boolean)
   if (segments.length === 0) throw new Error(`${label} must not target the workspace root`)
-  if (segments.some((segment) => segment === '.' || segment === '..')) {
-    throw new Error(`${label} must not contain dot-segment path components`)
-  }
   if (segments.some((segment) => segment.toLowerCase() === '.git')) {
     throw new Error(`${label} must not target Git metadata directories`)
   }
-  const safeRelativePath = segments.join('/')
-  const realpathCheckedPath = resolveWorkspacePath(safeRelativePath, {
-    workspaceRoot: repo,
-    label,
-  })
-  return { absolutePath: realpathCheckedPath, relativePath: safeRelativePath }
+  return { absolutePath, relativePath }
 }
 
 function getArgValue(name: string): string | undefined {
