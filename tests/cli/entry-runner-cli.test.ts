@@ -53,20 +53,30 @@ describe('entry runner CLI', () => {
     const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const root = process.cwd();
     const runnerPath = path.join(root, 'scripts', 'test', 'run.mjs');
+    const previousToken = process.env['GITHUB_TOKEN'];
+    process.env['GITHUB_TOKEN'] = 'raw-entry-token';
 
     spawnSyncMock.mockReturnValueOnce({ status: 0, error: null });
 
-    const command = createEntryRunnerCommand();
-    await command.parseAsync([
-      'node',
-      'cli',
-      'test',
-      '--root',
-      root,
-      '--profile',
-      'fast',
-      '--dry-run',
-    ]);
+    try {
+      const command = createEntryRunnerCommand();
+      await command.parseAsync([
+        'node',
+        'cli',
+        'test',
+        '--root',
+        root,
+        '--profile',
+        'fast',
+        '--dry-run',
+      ]);
+    } finally {
+      if (previousToken === undefined) {
+        delete process.env['GITHUB_TOKEN'];
+      } else {
+        process.env['GITHUB_TOKEN'] = previousToken;
+      }
+    }
 
     expect(spawnSyncMock).toHaveBeenCalledWith(
       process.execPath,
@@ -74,7 +84,9 @@ describe('entry runner CLI', () => {
       expect.objectContaining({
         cwd: root,
         stdio: 'inherit',
-        env: process.env,
+        env: expect.not.objectContaining({
+          GITHUB_TOKEN: 'raw-entry-token',
+        }),
       })
     );
     expect(safeExitMock).toHaveBeenCalledWith(0);
@@ -96,7 +108,7 @@ describe('entry runner CLI', () => {
       expect.objectContaining({
         cwd: root,
         stdio: 'inherit',
-        env: process.env,
+        env: expect.any(Object),
       })
     );
     expect(safeExitMock).toHaveBeenCalledWith(5);

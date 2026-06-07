@@ -41,11 +41,21 @@ describe('help CLI', () => {
   it('runs help script from the provided root', async () => {
     const root = process.cwd();
     const scriptPath = path.join(root, 'scripts', 'project', 'help.mjs');
+    const previousToken = process.env['GITHUB_TOKEN'];
+    process.env['GITHUB_TOKEN'] = 'raw-help-token';
 
     spawnSyncMock.mockReturnValueOnce({ status: 0, error: null });
 
-    const command = createHelpCommand();
-    await command.parseAsync(['node', 'cli', '--root', root]);
+    try {
+      const command = createHelpCommand();
+      await command.parseAsync(['node', 'cli', '--root', root]);
+    } finally {
+      if (previousToken === undefined) {
+        delete process.env['GITHUB_TOKEN'];
+      } else {
+        process.env['GITHUB_TOKEN'] = previousToken;
+      }
+    }
 
     expect(spawnSyncMock).toHaveBeenCalledWith(
       process.execPath,
@@ -53,7 +63,9 @@ describe('help CLI', () => {
       expect.objectContaining({
         cwd: root,
         stdio: 'inherit',
-        env: process.env,
+        env: expect.not.objectContaining({
+          GITHUB_TOKEN: 'raw-help-token',
+        }),
       })
     );
     expect(safeExitMock).toHaveBeenCalledWith(0);

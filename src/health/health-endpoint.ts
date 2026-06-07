@@ -12,6 +12,7 @@ import {
   type AdminDiagnosticsAuthOptions,
   requireAdminDiagnosticsAuth,
 } from '../security/admin-diagnostics-auth.js';
+import { redactSensitiveString } from '../security/sensitive-redaction.js';
 
 // Read version from package.json at startup
 const __filename = fileURLToPath(import.meta.url);
@@ -128,7 +129,7 @@ async function getHealthStatus(): Promise<HealthStatus> {
     }
   } catch (error) {
     telemetryStatus = 'error';
-    telemetryMessage = `Telemetry error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    telemetryMessage = `Telemetry error: ${error instanceof Error ? redactSensitiveString(error.message) : 'Unknown error'}`;
   }
 
   const systemStatus = 'ok'; // Basic system check

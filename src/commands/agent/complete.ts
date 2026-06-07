@@ -62,10 +62,11 @@ export async function agentComplete(prompt: string, system?: string, flags?: { r
     const llmOpts: { prompt: string; system?: string } = { prompt };
     if (system) llmOpts.system = system;
     const output = await llm.complete(llmOpts);
+    const redactedOutput = redactSensitiveString(output);
     
     // End execution log with character count
     console.log(`[ae][agent] Completed: ${output.length} characters`);
-    console.log(`[${llm.name}]`, output);
+    console.log(`[${llm.name}]`, redactedOutput);
   } catch (error) {
     const appError = toExecAppError('agent.complete', error);
     console.error(`[ae][agent] ${formatAppError(appError)}`);

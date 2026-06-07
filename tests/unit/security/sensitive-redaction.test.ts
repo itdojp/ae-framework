@@ -4,6 +4,7 @@ import {
   redactSensitiveData,
   redactSensitiveString,
   safeErrorForLogging,
+  sanitizeTelemetryAttributes,
   safeUrlPath,
 } from '../../../src/security/sensitive-redaction.js';
 
@@ -67,5 +68,31 @@ describe('sensitive redaction policy', () => {
     expect(value).not.toContain('raw-dsn-secret');
     expect(value).not.toContain('raw-api-key');
     expect(value).toContain('[REDACTED]');
+  });
+
+  it('TGT-015-F001: sanitizes telemetry attributes through the shared redaction pipeline', () => {
+    const attributes = sanitizeTelemetryAttributes({
+      endpoint: '/callback?token=raw-query-token',
+      authorization: 'Bearer raw-bearer-token',
+      details: {
+        password: 'raw-password-secret',
+        nested: 'api_key=raw-api-key',
+      },
+      status_code: 500,
+      sampled: true,
+    });
+
+    const serialized = JSON.stringify(attributes);
+
+    expect(attributes).toMatchObject({
+      authorization: REDACTED_VALUE,
+      status_code: 500,
+      sampled: true,
+    });
+    expect(serialized).toContain('[REDACTED]');
+    expect(serialized).not.toContain('raw-query-token');
+    expect(serialized).not.toContain('raw-bearer-token');
+    expect(serialized).not.toContain('raw-password-secret');
+    expect(serialized).not.toContain('raw-api-key');
   });
 });

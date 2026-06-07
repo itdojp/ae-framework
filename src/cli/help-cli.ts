@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { safeExit } from '../utils/safe-exit.js';
+import { createHighImpactChildEnv } from '../utils/high-impact-action-policy.js';
 
 export function createHelpCommand(): Command {
   const help = new Command('help');
@@ -27,7 +28,7 @@ export function createHelpCommand(): Command {
 
       const result = spawnSync(process.execPath, [scriptPath], {
         stdio: 'inherit',
-        env: process.env,
+        env: createHighImpactChildEnv(process.env),
         cwd: root,
       });
 
