@@ -8,6 +8,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const DEFAULT_ARTIFACT_ROOT = 'artifacts/spec-synthesis';
+const CODEGEN_MATERIALIZE_APPROVAL_SCOPE = 'high-impact:codegen-materialize';
 const CODEGEN_TARGETS = new Set(['typescript', 'api', 'database', 'react']);
 const TRUSTED_TRUE_VALUES = new Set(['1', 'true', 'yes', 'on', 'TRUE', 'YES', 'ON', 'True', 'Yes', 'On']);
 
@@ -262,6 +263,21 @@ const createCodegenChildProcessOptions = (workspaceRoot) => ({
   },
 });
 
+const buildCodegenCliArgs = (paths, target, dir) => [
+  'dist/src/cli/index.js',
+  'codegen',
+  'generate',
+  '-i',
+  paths.irPathArg,
+  '-o',
+  dir,
+  '-t',
+  target,
+  '--apply',
+  '--approval-scope',
+  CODEGEN_MATERIALIZE_APPROVAL_SCOPE,
+];
+
 async function loadSpecCompiler(req, workspaceRoot) {
   const importErrors = [];
   try {
@@ -371,7 +387,7 @@ async function main() {
         requireTrustedApproval(req, 'codex-spec-stdio-codegen', 'Code generation child process and filesystem writes');
         const run = (t, dir) => spawnSync(
           process.execPath,
-          ['dist/src/cli/index.js', 'codegen', 'generate', '-i', paths.irPathArg, '-o', dir, '-t', t],
+          buildCodegenCliArgs(paths, t, dir),
           createCodegenChildProcessOptions(paths.workspaceRoot),
         );
         const results = {};

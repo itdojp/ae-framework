@@ -18,8 +18,10 @@ type AnthropicModule = { default: new (options: { apiKey?: string }) => Anthropi
 const isAnthropicModule = (value: unknown): value is AnthropicModule =>
   hasConstructorProperty(value, 'default');
 
+const ANTHROPIC_PACKAGE = '@anthropic-ai/sdk';
+
 const loadAnthropicModule = async (): Promise<AnthropicModule> => {
-  const raw: unknown = await eval('import("@anthropic-ai/sdk")');
+  const raw: unknown = await import(ANTHROPIC_PACKAGE);
   if (!isAnthropicModule(raw)) {
     throw new Error('Anthropic SDK module did not provide a default export.');
   }

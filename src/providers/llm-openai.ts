@@ -19,8 +19,10 @@ type OpenAIModule = { default: new (options: { apiKey?: string }) => OpenAIChatC
 const isOpenAIModule = (value: unknown): value is OpenAIModule =>
   hasConstructorProperty(value, 'default');
 
+const OPENAI_PACKAGE = 'openai';
+
 const loadOpenAIModule = async (): Promise<OpenAIModule> => {
-  const raw: unknown = await eval('import("openai")');
+  const raw: unknown = await import(OPENAI_PACKAGE);
   if (!isOpenAIModule(raw)) {
     throw new Error('OpenAI SDK module did not provide a default export.');
   }

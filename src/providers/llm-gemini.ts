@@ -20,8 +20,10 @@ type GeminiModule = {
 const isGeminiModule = (value: unknown): value is GeminiModule =>
   hasConstructorProperty(value, 'GoogleGenerativeAI');
 
+const GEMINI_PACKAGE = '@google/generative-ai';
+
 const loadGeminiModule = async (): Promise<GeminiModule> => {
-  const raw: unknown = await eval('import("@google/generative-ai")');
+  const raw: unknown = await import(GEMINI_PACKAGE);
   if (!isGeminiModule(raw)) {
     throw new Error('Gemini SDK module did not provide GoogleGenerativeAI.');
   }

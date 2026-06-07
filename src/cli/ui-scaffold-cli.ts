@@ -2,14 +2,19 @@
 
 import { Command } from 'commander';
 import * as fs from 'fs';
-import * as path from 'path';
 import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { UIScaffoldGenerator } from '../generators/ui-scaffold-generator.js';
-import type { spawn } from 'child_process';
+import { assertWithinWorkspace, resolveWorkspacePath, resolveWorkspaceRoot } from '../utils/workspace-path-policy.js';
+import {
+  DEFAULT_HIGH_IMPACT_APPROVAL_SCOPES,
+  evaluateHighImpactActionPolicy,
+  formatHighImpactDecisionMessage,
+} from '../utils/high-impact-action-policy.js';
 
 const program = new Command();
+const UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE = DEFAULT_HIGH_IMPACT_APPROVAL_SCOPES['codegen-materialize'];
 
 program
   .name('ae-ui scaffold')
@@ -23,18 +28,43 @@ program
   .option('-o, --output <path>', 'Output directory for generated files', '.')
   .option('-e, --entity <name>', 'Generate for specific entity only')
   .option('--dry-run', 'Show what would be generated without creating files')
+  .option('--apply', `Materialize generated UI files after approval (${UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE})`)
+  .option('--approval-scope <scope>', `Trusted UI scaffold materialization approval scope (${UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE})`)
   .option('--overwrite', 'Overwrite existing files')
   .action(async (options) => {
     try {
       console.log(chalk.blue('🎨 ae-ui scaffold - UI Generation Tool'));
       console.log(chalk.gray('─'.repeat(50)));
 
+      const workspaceRoot = resolveWorkspaceRoot({ envVar: 'AE_UI_SCAFFOLD_WORKSPACE_ROOT' });
+      const materializationPolicy = evaluateHighImpactActionPolicy({
+        actionKind: 'codegen-materialize',
+        actionName: 'ae-ui scaffold generate',
+        apply: options.apply === true,
+        dryRun: options.dryRun === true,
+        ...(options.approvalScope !== undefined ? { approvalScope: options.approvalScope } : {}),
+        requiredApprovalScope: UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE,
+      });
+      if (
+        materializationPolicy.blocked ||
+        materializationPolicy.approvalRequired ||
+        (!materializationPolicy.allowed && !materializationPolicy.dryRun)
+      ) {
+        console.error(chalk.red(`✗ ${formatHighImpactDecisionMessage(materializationPolicy)}`));
+        safeExit(1);
+        return;
+      }
+      if (materializationPolicy.dryRun) {
+        console.log(chalk.yellow(`⚠️  ${formatHighImpactDecisionMessage(materializationPolicy)}`));
+      }
+
       // Load phase state
-      const stateFile = path.resolve(options.state);
+      const stateFile = resolveWorkspacePath(options.state, { workspaceRoot, label: 'UI scaffold state file' });
       if (!fs.existsSync(stateFile)) {
         console.error(chalk.red(`✗ Phase state file not found: ${stateFile}`));
         console.log(chalk.yellow('  Run this command from your project root, or specify --state path'));
         safeExit(1);
+        return;
       }
 
       const phaseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
@@ -42,8 +72,8 @@ program
 
       // Initialize generator
       const generator = new UIScaffoldGenerator(phaseState, {
-        outputDir: path.resolve(options.output),
-        dryRun: options.dryRun,
+        outputDir: assertWithinWorkspace(options.output, { workspaceRoot, label: 'UI scaffold output directory' }),
+        dryRun: materializationPolicy.dryRun,
         overwrite: options.overwrite,
         targetEntity: options.entity
       });
@@ -60,7 +90,7 @@ program
         
         if (result.success) {
           result.files.forEach(file => {
-            const status = options.dryRun ? '(would create)' : '✓';
+            const status = materializationPolicy.dryRun ? '(would create)' : '✓';
             console.log(chalk.green(`  ${status} ${file}`));
           });
         } else {
@@ -73,9 +103,9 @@ program
         .reduce((sum, r) => sum + r.files.length, 0);
 
       console.log(chalk.gray('─'.repeat(50)));
-      if (options.dryRun) {
+      if (materializationPolicy.dryRun) {
         console.log(chalk.yellow(`🔍 Dry run completed. Would generate ${totalFiles} files.`));
-        console.log(chalk.gray('  Run without --dry-run to create files.'));
+        console.log(chalk.gray(`  Rerun with --apply --approval-scope ${UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE} from a trusted workspace/ref to create files.`));
       } else {
         console.log(chalk.green(`🎉 Successfully generated ${totalFiles} files!`));
         console.log(chalk.gray('  Run npm run lint to ensure code quality.'));
@@ -96,10 +126,12 @@ program
   .option('-s, --state <path>', 'Path to phase-state.json file', '.ae/phase-state.json')
   .action(async (options) => {
     try {
-      const stateFile = path.resolve(options.state);
+      const workspaceRoot = resolveWorkspaceRoot({ envVar: 'AE_UI_SCAFFOLD_WORKSPACE_ROOT' });
+      const stateFile = resolveWorkspacePath(options.state, { workspaceRoot, label: 'UI scaffold state file' });
       if (!fs.existsSync(stateFile)) {
         console.error(chalk.red(`✗ Phase state file not found: ${stateFile}`));
         safeExit(1);
+        return;
       }
 
       const phaseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
@@ -131,10 +163,12 @@ program
   .option('-s, --state <path>', 'Path to phase-state.json file', '.ae/phase-state.json')
   .action(async (options) => {
     try {
-      const stateFile = path.resolve(options.state);
+      const workspaceRoot = resolveWorkspaceRoot({ envVar: 'AE_UI_SCAFFOLD_WORKSPACE_ROOT' });
+      const stateFile = resolveWorkspacePath(options.state, { workspaceRoot, label: 'UI scaffold state file' });
       if (!fs.existsSync(stateFile)) {
         console.error(chalk.red(`✗ Phase state file not found: ${stateFile}`));
         safeExit(1);
+        return;
       }
 
       const phaseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));

@@ -14,6 +14,76 @@ type AEIRDomainField = AEIRDomainEntity['fields'][number];
 type AEIRApiEndpoint = NonNullable<AEIR['api']>[number];
 
 const codegenIdentifierPattern = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+const reservedCodegenIdentifiers = new Set([
+  'arguments',
+  'await',
+  'break',
+  'case',
+  'catch',
+  'class',
+  'const',
+  'continue',
+  'debugger',
+  'default',
+  'delete',
+  'do',
+  'else',
+  'enum',
+  'eval',
+  'export',
+  'extends',
+  'false',
+  'finally',
+  'for',
+  'function',
+  'if',
+  'implements',
+  'import',
+  'in',
+  'instanceof',
+  'interface',
+  'let',
+  'new',
+  'null',
+  'package',
+  'private',
+  'protected',
+  'public',
+  'return',
+  'static',
+  'super',
+  'switch',
+  'this',
+  'throw',
+  'true',
+  'try',
+  'typeof',
+  'undefined',
+  'var',
+  'void',
+  'while',
+  'with',
+  'yield',
+]);
+
+const toGeneratedLineCommentText = (input: string | undefined, fallback = 'N/A'): string => {
+  const normalized = (input ?? '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/\*\//g, '*\\/');
+  const singleLine = normalized
+    .split('\n')
+    .map((part) => part
+      .split('')
+      .map((char) => {
+        const code = char.charCodeAt(0);
+        return (code <= 8 || code === 11 || (code >= 12 && code <= 31) || code === 127) ? ' ' : char;
+      })
+      .join('')
+      .trim())
+    .filter(Boolean)
+    .join(' | ');
+  return singleLine || fallback;
+};
 
 export interface CodegenOptions {
   /** Input AE-IR file path */
@@ -30,6 +100,10 @@ export interface CodegenOptions {
   hashAlgorithm?: 'sha256' | 'md5';
   /** Preserve existing manual modifications */
   preserveManualChanges?: boolean;
+  /** Write generated artifacts to disk. Set false for policy dry-run/preview mode. */
+  materialize?: boolean;
+  /** Approval scope that authorized materialization, when applicable. */
+  approvalScope?: string;
 }
 
 export interface GeneratedFile {
@@ -43,6 +117,13 @@ export interface GeneratedFile {
   timestamp: string;
   /** Source specification hash */
   specHash: string;
+  /** Explicit generated/source boundary metadata for downstream policy checks. */
+  boundary: {
+    kind: 'generated-code';
+    source: 'ae-ir';
+    target: CodegenOptions['target'];
+    materialized: boolean;
+  };
 }
 
 export interface DriftDetectionResult {
@@ -71,6 +152,12 @@ export interface CodegenManifest {
     specHash: string;
     templateHash: string;
     options: CodegenOptions;
+    boundary: {
+      kind: 'generated-code';
+      source: 'ae-ir';
+      materialized: boolean;
+      approvalScope?: string;
+    };
   };
   /** Generated files registry */
   files: GeneratedFile[];
@@ -85,6 +172,7 @@ export class DeterministicCodeGenerator {
       hashAlgorithm: 'sha256',
       enableDriftDetection: true,
       preserveManualChanges: true,
+      materialize: true,
       ...options,
     };
     this.manifestPath = this.resolveOutputFile('.codegen-manifest.json');
@@ -120,12 +208,20 @@ export class DeterministicCodeGenerator {
         specHash,
         templateHash: this.calculateTemplateHash(),
         options: this.options,
+        boundary: {
+          kind: 'generated-code',
+          source: 'ae-ir',
+          materialized: this.shouldMaterialize(),
+          ...(this.shouldMaterialize() && this.options.approvalScope !== undefined ? { approvalScope: this.options.approvalScope } : {}),
+        },
       },
       files: generatedFiles,
     };
 
-    // Write manifest
-    this.writeManifest(manifest);
+    // Write manifest only when this run has been explicitly authorized to materialize.
+    if (this.shouldMaterialize()) {
+      this.writeManifest(manifest);
+    }
 
     return manifest;
   }
@@ -222,11 +318,13 @@ export class DeterministicCodeGenerator {
     // Sort files by path to ensure deterministic output order
     const sortedFiles = files.sort((a, b) => a.filePath.localeCompare(b.filePath));
 
-    // Write generated files in deterministic order
-    for (const file of sortedFiles) {
-      const fullPath = this.resolveOutputFile(file.filePath);
-      mkdirSync(dirname(fullPath), { recursive: true });
-      writeFileSync(fullPath, file.content, 'utf-8');
+    if (this.shouldMaterialize()) {
+      // Write generated files in deterministic order
+      for (const file of sortedFiles) {
+        const fullPath = this.resolveOutputFile(file.filePath);
+        mkdirSync(dirname(fullPath), { recursive: true });
+        writeFileSync(fullPath, file.content, 'utf-8');
+      }
     }
 
     return files;
@@ -246,6 +344,7 @@ export class DeterministicCodeGenerator {
       hash: this.calculateHash(typesContent),
       timestamp,
       specHash,
+      boundary: this.createGeneratedFileBoundary(),
     });
 
     // Generate API interfaces
@@ -258,6 +357,7 @@ export class DeterministicCodeGenerator {
         hash: this.calculateHash(apiContent),
         timestamp,
         specHash,
+        boundary: this.createGeneratedFileBoundary(),
       });
     }
 
@@ -269,6 +369,7 @@ export class DeterministicCodeGenerator {
       hash: this.calculateHash(validationContent),
       timestamp,
       specHash,
+      boundary: this.createGeneratedFileBoundary(),
     });
 
     return files;
@@ -289,6 +390,7 @@ export class DeterministicCodeGenerator {
         hash: this.calculateHash(formContent),
         timestamp,
         specHash,
+        boundary: this.createGeneratedFileBoundary(),
       });
 
       // Generate entity list component
@@ -299,6 +401,7 @@ export class DeterministicCodeGenerator {
         hash: this.calculateHash(listContent),
         timestamp,
         specHash,
+        boundary: this.createGeneratedFileBoundary(),
       });
     }
 
@@ -321,6 +424,7 @@ export class DeterministicCodeGenerator {
         hash: this.calculateHash(handlerContent),
         timestamp,
         specHash,
+        boundary: this.createGeneratedFileBoundary(),
       });
     }
 
@@ -341,6 +445,7 @@ export class DeterministicCodeGenerator {
       hash: this.calculateHash(migrationContent),
       timestamp,
       specHash,
+      boundary: this.createGeneratedFileBoundary(),
     });
 
     // Generate ORM models
@@ -352,6 +457,7 @@ export class DeterministicCodeGenerator {
         hash: this.calculateHash(modelContent),
         timestamp,
         specHash,
+        boundary: this.createGeneratedFileBoundary(),
       });
     }
 
@@ -480,7 +586,7 @@ ${entity.fields.slice(0, 3).map((field) => `          <span>{item.${field.name}}
   }
 
   private generateAPIHandler(api: AEIRApiEndpoint): string {
-    return `// Generated API handler for ${api.method} ${api.path}
+    return `// Generated API handler for ${toGeneratedLineCommentText(`${api.method} ${api.path}`)}
 // DO NOT MODIFY - This file is automatically generated
 
 import { Request, Response } from 'express';
@@ -631,6 +737,19 @@ ${entity.fields.filter((field) => field.name !== 'id').map((field) => `
     return resolveContainedWorkspacePath(this.options.outputDir, relativePath, 'generated code file');
   }
 
+  private shouldMaterialize(): boolean {
+    return this.options.materialize !== false;
+  }
+
+  private createGeneratedFileBoundary(): GeneratedFile['boundary'] {
+    return {
+      kind: 'generated-code',
+      source: 'ae-ir',
+      target: this.options.target,
+      materialized: this.shouldMaterialize(),
+    };
+  }
+
   private validateAEIRIdentifiers(ir: AEIR): void {
     for (const entity of ir.domain) {
       this.assertCodegenIdentifier(entity.name, 'domain entity name');
@@ -641,13 +760,16 @@ ${entity.fields.filter((field) => field.name !== 'id').map((field) => `
 
     const apis = ir.api ?? [];
     for (const api of apis) {
-      this.assertCodegenIdentifier(api.method, `API method for ${api.path}`);
+      this.assertCodegenIdentifier(api.method, `API method for ${api.path}`, { allowReserved: true });
     }
   }
 
-  private assertCodegenIdentifier(value: string, label: string): void {
+  private assertCodegenIdentifier(value: string, label: string, options: { allowReserved?: boolean } = {}): void {
     if (!codegenIdentifierPattern.test(value)) {
       throw new Error(`Invalid AE-IR ${label} for deterministic codegen: ${JSON.stringify(value)}`);
+    }
+    if (options.allowReserved !== true && reservedCodegenIdentifiers.has(value)) {
+      throw new Error(`Invalid AE-IR ${label} for deterministic codegen: reserved identifier ${JSON.stringify(value)}`);
     }
   }
 

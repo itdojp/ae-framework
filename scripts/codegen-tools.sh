@@ -29,6 +29,60 @@ print_header() {
 AE_IR_FILE=".ae/ae-ir.json"
 GENERATED_DIR="generated"
 SPEC_DIR="spec"
+CODEGEN_MATERIALIZE_APPROVAL_SCOPE="high-impact:codegen-materialize"
+CODEGEN_APPLY="${CODEGEN_APPLY:-0}"
+CODEGEN_APPROVAL_SCOPE="${CODEGEN_APPROVAL_SCOPE:-$CODEGEN_MATERIALIZE_APPROVAL_SCOPE}"
+
+is_truthy() {
+    case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
+        1|true|yes|on) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+parse_codegen_materialization_flags() {
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --apply)
+                CODEGEN_APPLY=1
+                ;;
+            --dry-run)
+                CODEGEN_APPLY=0
+                ;;
+            --approval-scope)
+                shift
+                if [ $# -eq 0 ]; then
+                    print_colored $RED "--approval-scope requires a value"
+                    exit 1
+                fi
+                CODEGEN_APPROVAL_SCOPE="$1"
+                ;;
+            --approval-scope=*)
+                CODEGEN_APPROVAL_SCOPE="${1#--approval-scope=}"
+                ;;
+            *)
+                print_colored $YELLOW "Ignoring unknown codegen-tools option: $1"
+                ;;
+        esac
+        shift
+    done
+}
+
+set_codegen_materialization_args() {
+    if is_truthy "$CODEGEN_APPLY"; then
+        CODEGEN_MATERIALIZATION_ARGS=(--apply --approval-scope "$CODEGEN_APPROVAL_SCOPE")
+    else
+        CODEGEN_MATERIALIZATION_ARGS=(--dry-run)
+    fi
+}
+
+print_codegen_materialization_mode() {
+    if is_truthy "$CODEGEN_APPLY"; then
+        print_colored $YELLOW "🔐 Materialization mode: apply with approval scope $CODEGEN_APPROVAL_SCOPE"
+    else
+        print_colored $YELLOW "🔎 Materialization mode: dry-run preview. Add --apply --approval-scope $CODEGEN_MATERIALIZE_APPROVAL_SCOPE to write generated files."
+    fi
+}
 
 # Function to check prerequisites
 check_prerequisites() {
@@ -64,6 +118,8 @@ check_prerequisites() {
 # Function to generate all target types
 generate_all() {
     print_header "Generating All Target Types"
+    print_codegen_materialization_mode
+    set_codegen_materialization_args
     
     local targets=("typescript" "react" "api" "database")
     local generated_count=0
@@ -77,7 +133,8 @@ generate_all() {
         if npx tsx src/cli/index.ts codegen generate \
             -i "$AE_IR_FILE" \
             -o "$target_dir" \
-            -t "$target"; then
+            -t "$target" \
+            "${CODEGEN_MATERIALIZATION_ARGS[@]}"; then
             print_colored $GREEN "✅ $target generation completed"
             generated_count=$((generated_count + 1))
         else
@@ -173,6 +230,8 @@ check_drift_all() {
 # Function to regenerate drifted code
 regenerate_drifted() {
     print_header "Regenerating Drifted Code"
+    print_codegen_materialization_mode
+    set_codegen_materialization_args
     
     local regenerated_count=0
     
@@ -190,7 +249,8 @@ regenerate_drifted() {
                 if npx tsx src/cli/index.ts codegen generate \
                     -i "$AE_IR_FILE" \
                     -o "$target_dir" \
-                    -t "$target_name"; then
+                    -t "$target_name" \
+                    "${CODEGEN_MATERIALIZATION_ARGS[@]}"; then
                     print_colored $GREEN "✅ $target_name regenerated successfully"
                     regenerated_count=$((regenerated_count + 1))
                 else
@@ -224,7 +284,7 @@ watch_and_regenerate() {
         npm install -g chokidar-cli
     fi
     
-    chokidar "$AE_IR_FILE" "$SPEC_DIR/**/*.md" -c "bash $0 regenerate-drifted"
+    chokidar "$AE_IR_FILE" "$SPEC_DIR/**/*.md" -c "CODEGEN_APPLY=$CODEGEN_APPLY CODEGEN_APPROVAL_SCOPE=$CODEGEN_APPROVAL_SCOPE bash $0 regenerate-drifted"
 }
 
 # Function to validate generated code
@@ -346,12 +406,12 @@ show_help() {
     echo "AE-Framework Code Generation Tools"
     echo ""
     echo "USAGE:"
-    echo "  $0 <command>"
+    echo "  $0 <command> [--apply] [--approval-scope high-impact:codegen-materialize]"
     echo ""
     echo "COMMANDS:"
-    echo "  generate-all       Generate code for all targets (typescript, react, api, database)"
+    echo "  generate-all       Preview or generate code for all targets (typescript, react, api, database)"
     echo "  check-drift        Check for drift across all generated code"
-    echo "  regenerate-drifted Regenerate only code that has drifted"
+    echo "  regenerate-drifted Preview or regenerate only code that has drifted"
     echo "  watch              Watch for changes and auto-regenerate"
     echo "  validate           Validate generated code"
     echo "  status             Show current generation status"
@@ -359,15 +419,22 @@ show_help() {
     echo "  help               Show this help message"
     echo ""
     echo "EXAMPLES:"
-    echo "  $0 generate-all    # Generate all target types"
+    echo "  $0 generate-all    # Dry-run preview for all target types"
+    echo "  $0 generate-all --apply --approval-scope high-impact:codegen-materialize"
     echo "  $0 check-drift     # Check for drift in existing code"
-    echo "  $0 watch           # Watch for changes and auto-regenerate"
+    echo "  $0 watch --apply --approval-scope high-impact:codegen-materialize"
     echo ""
 }
 
 # Main execution
 main() {
-    case "${1:-help}" in
+    local command="${1:-help}"
+    if [ $# -gt 0 ]; then
+        shift
+    fi
+    parse_codegen_materialization_flags "$@"
+
+    case "$command" in
         "generate-all"|"gen-all"|"generate")
             check_prerequisites
             generate_all
@@ -397,7 +464,7 @@ main() {
             show_help
             ;;
         *)
-            print_colored $RED "Unknown command: $1"
+            print_colored $RED "Unknown command: $command"
             echo ""
             show_help
             exit 1

@@ -213,7 +213,9 @@ jobs:
     name: Regenerate Code if Needed
     needs: drift-detection
     runs-on: ubuntu-latest
-    if: needs.drift-detection.outputs.needs-regeneration == 'true'
+    # Pull request checkouts are untrusted for materializing executable generated artifacts.
+    # PRs still receive drift comments; actual regeneration must happen in a trusted local/default-branch context.
+    if: needs.drift-detection.outputs.needs-regeneration == 'true' && github.event_name != 'pull_request'
     
     strategy:
       matrix:
@@ -247,6 +249,8 @@ jobs:
               -i .ae/ae-ir.json \
               -o "$TARGET_DIR" \
               -t ${{ matrix.target }} \
+              --apply \
+              --approval-scope high-impact:codegen-materialize \
               --verbose
             printf "%s\n" "✅ Code regeneration completed for ${{ matrix.target }}"
           else
@@ -377,7 +381,7 @@ jobs:
             if (needsRegeneration === 'true') {
               comment += `\n💡 **Next steps:**\n`;
               comment += `- Review the drift details above\n`;
-              comment += `- Run \`pnpm ae-framework codegen generate\` locally to regenerate code\n`;
+              comment += `- Run \`pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/<target> -t <target> --apply --approval-scope high-impact:codegen-materialize\` from a trusted workspace/ref to regenerate code\n`;
               comment += `- Commit the regenerated code if the changes look correct\n`;
             }
             

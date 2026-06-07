@@ -10,6 +10,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const root = process.cwd();
+const CODEGEN_MATERIALIZE_APPROVAL_SCOPE = 'high-impact:codegen-materialize';
 export const CLI_CANDIDATES = [
   'dist/src/cli/index.js',
   'dist/cli.js',
@@ -114,15 +115,23 @@ async function main() {
   // 2) Optional UI scaffold
   let uiCode = 0;
   if (process.env.CODEX_RUN_UI === '1') {
+    const uiApply = process.env.CODEX_UI_APPLY === '1';
+    const uiApprovalScope = process.env.CODEX_UI_APPROVAL_SCOPE || CODEGEN_MATERIALIZE_APPROVAL_SCOPE;
+    if (process.env.CODEX_UI_DRY_RUN === '0' && !uiApply) {
+      console.warn(`[codex] CODEX_UI_DRY_RUN=0 is no longer sufficient to materialize UI output; set CODEX_UI_APPLY=1 with approval scope ${CODEGEN_MATERIALIZE_APPROVAL_SCOPE}.`);
+    }
+    const materializationArgs = uiApply
+      ? ['--apply', '--approval-scope', uiApprovalScope]
+      : ['--dry-run'];
     const stateFile = process.env.CODEX_PHASE_STATE_FILE;
     if (stateFile) {
-      console.log(`[codex] Running ui-scaffold-cli generate --state=${stateFile} ...`);
+      console.log(`[codex] Running ui-scaffold-cli generate --state=${stateFile} (${uiApply ? 'apply' : 'dry-run'}) ...`);
       const uiCli = path.resolve('dist/src/cli/ui-scaffold-cli.js');
-      const args = [uiCli, 'generate', '--state', stateFile, '--output', '.', process.env.CODEX_UI_DRY_RUN === '0' ? '' : '--dry-run'].filter(Boolean);
+      const args = [uiCli, 'generate', '--state', stateFile, '--output', '.', ...materializationArgs];
       uiCode = runNode(args);
     } else {
-      console.log('[codex] Running ae ui-scaffold --components ...');
-      uiCode = runNode([cli, 'ui-scaffold', '--components']);
+      console.log(`[codex] Running ae ui-scaffold --components (${uiApply ? 'apply' : 'dry-run'}) ...`);
+      uiCode = runNode([cli, 'ui-scaffold', '--components', ...materializationArgs]);
     }
   }
 

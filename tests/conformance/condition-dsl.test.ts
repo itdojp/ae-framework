@@ -74,7 +74,7 @@ describe('conformance condition DSL', () => {
     expect(Boolean(evaluate('data.missing'))).toBe(false);
   });
 
-  it('rejects code execution syntax and ambient authority identifiers', () => {
+  it('TGT-AGENT-232-F001: rejects code execution syntax and ambient authority identifiers', () => {
     const expressions = [
       'process.env.SECRET',
       'globalThis.fetch',

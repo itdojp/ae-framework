@@ -153,14 +153,17 @@ ae domain-model --language --sources "glossary.md"
 
 ### UI Scaffold (Phase 6)
 ```bash
-# Generate components from .ae/phase-state.json
- ae ui-scaffold --components
- ae ui-scaffold --state
- ae ui-scaffold --tokens
- ae ui-scaffold --a11y
+# Preview components from .ae/phase-state.json (dry-run by default)
+ ae ui-scaffold --components --dry-run
+ ae ui-scaffold --state --dry-run
+ ae ui-scaffold --tokens --dry-run
+ ae ui-scaffold --a11y --dry-run
+
+# Materialize generated UI only from a trusted workspace/ref after approval
+ ae ui-scaffold --components --apply --approval-scope high-impact:codegen-materialize
 
 # UI alias (ae-ui = ae-framework ui-scaffold; subcommand required)
- ae-ui scaffold --components
+ ae-ui scaffold --components --dry-run
 ```
 
 ---
@@ -597,11 +600,12 @@ ae domain-model --analyze --sources "requirements.md,user-stories.md"
  ae domain-model --language --sources "glossary.md"
 
 # UI Scaffold
-ae ui-scaffold --components
- ae ui-scaffold --state
- ae ui-scaffold --tokens
- ae ui-scaffold --a11y
- ae-ui scaffold --components
+ae ui-scaffold --components --dry-run
+ ae ui-scaffold --state --dry-run
+ ae ui-scaffold --tokens --dry-run
+ ae ui-scaffold --a11y --dry-run
+ ae ui-scaffold --components --apply --approval-scope high-impact:codegen-materialize
+ ae-ui scaffold --components --dry-run
 ```
 
 ---
