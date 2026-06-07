@@ -190,6 +190,29 @@ describe('quality CLI format option', () => {
     }
   });
 
+  it('run preserves CI execution for direct quality gates without explicit untrusted marker', async () => {
+    process.env['GITHUB_ACTIONS'] = 'true';
+    process.env['GITHUB_EVENT_NAME'] = 'pull_request';
+    process.env['GITHUB_REF_PROTECTED'] = 'false';
+    executeGatesMock.mockResolvedValueOnce(createReport());
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    try {
+      const command = createQualityCommand();
+      await command.parseAsync(['node', 'cli', 'run', '--format', 'json']);
+
+      expect(executeGatesMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dryRun: false,
+          apply: true,
+        }),
+      );
+      expect(safeExitMock).not.toHaveBeenCalled();
+    } finally {
+      consoleLogSpy.mockRestore();
+    }
+  });
+
   it('run rejects agent-context --apply without the trusted approval scope', async () => {
     const previous = process.env['AE_QUALITY_AGENT_CONTEXT'];
     process.env['AE_QUALITY_AGENT_CONTEXT'] = '1';

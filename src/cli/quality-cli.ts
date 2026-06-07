@@ -258,6 +258,19 @@ const normalizeQualityOutputFormat = (rawFormat: string | undefined): QualityOut
 
 const getDefaultQualityOutputDir = (): string => getDefaultQualityReportDir(createQualityPathContext());
 
+const isExplicitQualityUntrustedCheckout = (env: NodeJS.ProcessEnv = process.env): boolean => {
+  const markers = [
+    env['AE_UNTRUSTED_CHECKOUT'],
+    env['AE_QUALITY_UNTRUSTED_CHECKOUT'],
+    env['AE_CI_UNTRUSTED_CHECKOUT'],
+  ];
+  return markers.some(value => {
+    if (value === undefined) return false;
+    const normalized = value.trim().toLowerCase();
+    return normalized.length > 0 && !['0', 'false', 'no', 'off'].includes(normalized);
+  });
+};
+
 const getQualityExecutionPolicy = (
   options: { dryRun?: boolean; apply?: boolean; approvalScope?: string },
   policyOptions: { protectCi?: boolean } = {}
@@ -267,6 +280,7 @@ const getQualityExecutionPolicy = (
   // Agent contexts and CI-protected entry points require explicit apply/approval.
   const apply = options.apply === true || !guardedAutomationContext;
   const approvalScope = options.approvalScope;
+  const explicitUntrustedCheckout = isExplicitQualityUntrustedCheckout();
   const decision = evaluateHighImpactActionPolicy({
     actionKind: 'package-manager',
     actionName: 'quality-gate-execution',
@@ -276,6 +290,11 @@ const getQualityExecutionPolicy = (
     requiredApprovalScope: QUALITY_GATE_EXECUTION_APPROVAL_SCOPE,
     agentContext: isQualityAgentContext(),
     ciContext: policyOptions.protectCi === true && isQualityCiContext(),
+    ...(guardedAutomationContext ? {} : {
+      untrustedCheckout: explicitUntrustedCheckout,
+      trustedWorkspace: !explicitUntrustedCheckout,
+      trustedRef: !explicitUntrustedCheckout,
+    }),
     blockAmbientSecrets: false,
     enforceApproval: guardedAutomationContext,
   });
