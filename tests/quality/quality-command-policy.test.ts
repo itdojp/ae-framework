@@ -130,6 +130,13 @@ describe('quality gate command policy', () => {
   let previousQualityAgentContext: string | undefined;
   let previousAgentContext: string | undefined;
   let previousCiContext: string | undefined;
+  let previousUntrustedCheckout: string | undefined;
+  let previousGithubActions: string | undefined;
+  let previousGithubEventName: string | undefined;
+  let previousGithubRefProtected: string | undefined;
+  let previousGithubToken: string | undefined;
+  let previousNpmToken: string | undefined;
+  let previousActionsRuntimeToken: string | undefined;
 
   const writePolicy = (
     command = 'node scripts/quality/check-lint-summary.mjs',
@@ -157,9 +164,23 @@ describe('quality gate command policy', () => {
     previousQualityAgentContext = process.env['AE_QUALITY_AGENT_CONTEXT'];
     previousAgentContext = process.env['AE_AGENT_CONTEXT'];
     previousCiContext = process.env['CI'];
+    previousUntrustedCheckout = process.env['AE_UNTRUSTED_CHECKOUT'];
+    previousGithubActions = process.env['GITHUB_ACTIONS'];
+    previousGithubEventName = process.env['GITHUB_EVENT_NAME'];
+    previousGithubRefProtected = process.env['GITHUB_REF_PROTECTED'];
+    previousGithubToken = process.env['GITHUB_TOKEN'];
+    previousNpmToken = process.env['NPM_TOKEN'];
+    previousActionsRuntimeToken = process.env['ACTIONS_RUNTIME_TOKEN'];
     delete process.env['AE_QUALITY_AGENT_CONTEXT'];
     delete process.env['AE_AGENT_CONTEXT'];
     delete process.env['CI'];
+    delete process.env['AE_UNTRUSTED_CHECKOUT'];
+    delete process.env['GITHUB_ACTIONS'];
+    delete process.env['GITHUB_EVENT_NAME'];
+    delete process.env['GITHUB_REF_PROTECTED'];
+    delete process.env['GITHUB_TOKEN'];
+    delete process.env['NPM_TOKEN'];
+    delete process.env['ACTIONS_RUNTIME_TOKEN'];
   });
 
   afterEach(() => {
@@ -177,6 +198,41 @@ describe('quality gate command policy', () => {
       delete process.env['CI'];
     } else {
       process.env['CI'] = previousCiContext;
+    }
+    if (previousUntrustedCheckout === undefined) {
+      delete process.env['AE_UNTRUSTED_CHECKOUT'];
+    } else {
+      process.env['AE_UNTRUSTED_CHECKOUT'] = previousUntrustedCheckout;
+    }
+    if (previousGithubActions === undefined) {
+      delete process.env['GITHUB_ACTIONS'];
+    } else {
+      process.env['GITHUB_ACTIONS'] = previousGithubActions;
+    }
+    if (previousGithubEventName === undefined) {
+      delete process.env['GITHUB_EVENT_NAME'];
+    } else {
+      process.env['GITHUB_EVENT_NAME'] = previousGithubEventName;
+    }
+    if (previousGithubRefProtected === undefined) {
+      delete process.env['GITHUB_REF_PROTECTED'];
+    } else {
+      process.env['GITHUB_REF_PROTECTED'] = previousGithubRefProtected;
+    }
+    if (previousGithubToken === undefined) {
+      delete process.env['GITHUB_TOKEN'];
+    } else {
+      process.env['GITHUB_TOKEN'] = previousGithubToken;
+    }
+    if (previousNpmToken === undefined) {
+      delete process.env['NPM_TOKEN'];
+    } else {
+      process.env['NPM_TOKEN'] = previousNpmToken;
+    }
+    if (previousActionsRuntimeToken === undefined) {
+      delete process.env['ACTIONS_RUNTIME_TOKEN'];
+    } else {
+      process.env['ACTIONS_RUNTIME_TOKEN'] = previousActionsRuntimeToken;
     }
     rmSync(join(process.cwd(), testRoot), { recursive: true, force: true });
   });
@@ -277,6 +333,54 @@ describe('quality gate command policy', () => {
     expect(existsSync(join(process.cwd(), testRoot, 'reports', 'quality-report-testing-latest.json'))).toBe(false);
   });
 
+  it('forces untrusted checkouts to dry-run and avoids process and report writes', async () => {
+    process.env['AE_UNTRUSTED_CHECKOUT'] = '1';
+    const spawnMock = createSpawnMock();
+    const runner = new QualityGateRunner(writePolicy(), {
+      spawnProcess: spawnMock as unknown as typeof spawn,
+    });
+
+    const report = await runner.executeGates({
+      environment: 'testing',
+      gates: ['linting'],
+      parallel: false,
+      outputDir: `${testRoot}/reports`,
+      printSummary: false,
+      silent: true,
+    });
+
+    expect(spawnMock).not.toHaveBeenCalled();
+    expect(report.results[0]?.details).toMatchObject({
+      dryRun: true,
+      command: 'node scripts/quality/check-lint-summary.mjs',
+    });
+    expect(existsSync(join(process.cwd(), testRoot, 'reports', 'quality-report-testing-latest.json'))).toBe(false);
+  });
+
+  it('preserves direct quality execution in CI when no explicit untrusted marker is set', async () => {
+    process.env['GITHUB_ACTIONS'] = 'true';
+    process.env['GITHUB_EVENT_NAME'] = 'push';
+    process.env['GITHUB_REF_PROTECTED'] = 'false';
+    const spawnMock = createSpawnMock();
+    const runner = new QualityGateRunner(writePolicy(), {
+      spawnProcess: spawnMock as unknown as typeof spawn,
+    });
+
+    const report = await runner.executeGates({
+      environment: 'testing',
+      gates: ['linting'],
+      parallel: false,
+      outputDir: `${testRoot}/reports`,
+      noHistory: true,
+      printSummary: false,
+      silent: true,
+    });
+
+    expect(report.failedGates).toBe(0);
+    expect(spawnMock).toHaveBeenCalledTimes(1);
+    expect(existsSync(join(process.cwd(), testRoot, 'reports', 'quality-report-testing-latest.json'))).toBe(true);
+  });
+
   it('requires trusted approval before agent-context apply can execute', async () => {
     process.env['AE_QUALITY_AGENT_CONTEXT'] = '1';
     const spawnMock = createSpawnMock();
@@ -297,6 +401,8 @@ describe('quality gate command policy', () => {
 
   it('executes in agent context when apply uses the trusted approval scope', async () => {
     process.env['AE_QUALITY_AGENT_CONTEXT'] = '1';
+    process.env['GITHUB_TOKEN'] = 'ghs-secret';
+    process.env['NPM_TOKEN'] = 'npm-secret';
     const spawnMock = createSpawnMock();
     const runner = new QualityGateRunner(writePolicy(), {
       spawnProcess: spawnMock as unknown as typeof spawn,
@@ -315,6 +421,9 @@ describe('quality gate command policy', () => {
 
     expect(report.failedGates).toBe(0);
     expect(spawnMock).toHaveBeenCalledTimes(1);
+    const spawnOptions = spawnMock.mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv };
+    expect(spawnOptions.env?.['GITHUB_TOKEN']).toBeUndefined();
+    expect(spawnOptions.env?.['NPM_TOKEN']).toBeUndefined();
     const latest = readFileSync(join(process.cwd(), testRoot, 'reports', 'quality-report-testing-latest.json'), 'utf8');
     expect(JSON.parse(latest).environment).toBe('testing');
   });

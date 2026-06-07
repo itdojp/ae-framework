@@ -96,9 +96,6 @@ describe('GuardRunner process-starting guard execution policy', () => {
       env: {
         PATH: '/usr/bin',
         HOME: '/home/operator',
-        GITHUB_TOKEN: 'ghs-secret',
-        SECRET_VALUE: 'secret',
-        NPM_TOKEN: 'npm-secret',
       },
     });
 
@@ -115,6 +112,50 @@ describe('GuardRunner process-starting guard execution policy', () => {
         stdio: 'pipe',
       })
     );
+    const spawnOptions = childProcessMock.spawnSync.mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv };
+    expect(spawnOptions.env).toMatchObject({ PATH: '/usr/bin', HOME: '/home/operator' });
+  });
+
+  it('blocks approved agent-context guard scripts when ambient secrets are present', async () => {
+    const runner = new GuardRunner(config, {
+      agentContext: true,
+      apply: true,
+      approvalScope: GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE,
+      cwd: '/repo',
+      env: {
+        PATH: '/usr/bin',
+        GITHUB_TOKEN: 'ghs-secret',
+      },
+    });
+
+    const result = await runner.run(testExecutionGuard);
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain(`--approval-scope ${GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE}`);
+    expect(childProcessMock.spawnSync).not.toHaveBeenCalled();
+  });
+
+  it('redacts secret variables from trusted local guard process environments', async () => {
+    childProcessMock.spawnSync.mockReturnValueOnce({
+      status: 0,
+      stdout: '2 passing\n',
+      stderr: '',
+    });
+
+    const runner = new GuardRunner(config, {
+      cwd: '/repo',
+      env: {
+        PATH: '/usr/bin',
+        HOME: '/home/operator',
+        GITHUB_TOKEN: 'ghs-secret',
+        SECRET_VALUE: 'secret',
+        NPM_TOKEN: 'npm-secret',
+      },
+    });
+
+    const result = await runner.run(testExecutionGuard);
+
+    expect(result).toEqual({ success: true, message: 'All tests pass' });
     const spawnOptions = childProcessMock.spawnSync.mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv };
     expect(spawnOptions.env).toMatchObject({ PATH: '/usr/bin', HOME: '/home/operator' });
     expect(spawnOptions.env?.['GITHUB_TOKEN']).toBeUndefined();
@@ -170,8 +211,9 @@ describe('GuardRunner process-starting guard execution policy', () => {
     });
     expect(getGuardScriptExecutionPolicy({ apply: true, env: { AE_UNTRUSTED_CHECKOUT: '1' } })).toMatchObject({
       agentContext: true,
-      dryRun: false,
-      approvalRequired: true,
+      dryRun: true,
+      approvalRequired: false,
+      reason: 'untrusted-workspace-or-ref-forces-dry-run',
     });
   });
 

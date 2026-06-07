@@ -1,6 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const safeExitMock = vi.fn();
 const executeGatesMock = vi.fn();
@@ -27,15 +27,26 @@ vi.mock('../../src/cegis/auto-fix-engine.js', () => ({
 }));
 
 let createQualityCommand: () => any;
+let previousEnv: NodeJS.ProcessEnv;
 
 beforeAll(async () => {
   ({ createQualityCommand } = await import('../../src/cli/quality-cli.js'));
 });
 
 beforeEach(() => {
+  previousEnv = { ...process.env };
+  process.env = {
+    PATH: previousEnv['PATH'],
+    HOME: previousEnv['HOME'],
+    NODE_ENV: previousEnv['NODE_ENV'],
+  };
   safeExitMock.mockReset();
   executeGatesMock.mockReset();
   executeFixesMock.mockReset();
+});
+
+afterEach(() => {
+  process.env = previousEnv;
 });
 
 const createReport = (overrides: Partial<Record<string, unknown>> = {}) => ({
@@ -176,6 +187,29 @@ describe('quality CLI format option', () => {
       } else {
         process.env['AE_QUALITY_AGENT_CONTEXT'] = previous;
       }
+    }
+  });
+
+  it('run preserves CI execution for direct quality gates without explicit untrusted marker', async () => {
+    process.env['GITHUB_ACTIONS'] = 'true';
+    process.env['GITHUB_EVENT_NAME'] = 'pull_request';
+    process.env['GITHUB_REF_PROTECTED'] = 'false';
+    executeGatesMock.mockResolvedValueOnce(createReport());
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    try {
+      const command = createQualityCommand();
+      await command.parseAsync(['node', 'cli', 'run', '--format', 'json']);
+
+      expect(executeGatesMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dryRun: false,
+          apply: true,
+        }),
+      );
+      expect(safeExitMock).not.toHaveBeenCalled();
+    } finally {
+      consoleLogSpy.mockRestore();
     }
   });
 

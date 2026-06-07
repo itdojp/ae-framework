@@ -20,6 +20,13 @@ import {
   assertWithinWorkspace,
   resolveWorkspacePath,
 } from '../utils/workspace-path-policy.js';
+import {
+  createHighImpactChildEnv,
+  evaluateHighImpactActionPolicy,
+  formatHighImpactDecisionMessage,
+} from '../utils/high-impact-action-policy.js';
+
+export const CEGIS_AUTO_FIX_APPROVAL_SCOPE = 'cegis-auto-fix' as const;
 
 interface ConformanceViolationInput {
   ruleId?: string;
@@ -97,6 +104,7 @@ export class CEGISCli {
       .option('-o, --output <dir>', 'Output directory for fixed files', './cegis-output')
       .option('--dry-run', 'Show proposed fixes without applying them')
       .option('--apply', 'Apply fixes even when mode=copilot')
+      .option('--approval-scope <scope>', `Trusted auto-fix approval scope (${CEGIS_AUTO_FIX_APPROVAL_SCOPE})`)
       .option('--confidence <threshold>', 'Minimum confidence threshold (0.0-1.0)', '0.7')
       .option('--max-risk <level>', 'Maximum risk level (1-5)', '3')
       .option('--max-fixes <count>', 'Maximum number of fixes to apply', '10')
@@ -179,10 +187,27 @@ export class CEGISCli {
       const config = await loadConfig();
       const mode = config.mode ?? 'copilot';
       const enforcedDryRun = mode === 'copilot' && !options.apply;
-      const dryRun = Boolean(options.dryRun || enforcedDryRun);
+      const requestedDryRun = Boolean(options.dryRun || enforcedDryRun);
+      const policyDecision = evaluateHighImpactActionPolicy({
+        actionKind: 'auto-fix',
+        actionName: 'cegis-auto-fix-apply',
+        apply: options.apply === true,
+        dryRun: requestedDryRun,
+        approvalScope: options.approvalScope,
+        requiredApprovalScope: CEGIS_AUTO_FIX_APPROVAL_SCOPE,
+      });
+      if (policyDecision.approvalRequired || policyDecision.blocked) {
+        console.error(chalk.red(`❌ ${formatHighImpactDecisionMessage(policyDecision)}`));
+        safeExit(1);
+        return;
+      }
+      const dryRun = policyDecision.dryRun;
       options.dryRun = dryRun;
       if (enforcedDryRun) {
         console.log('[ae:fix] copilot mode defaults to dry-run. Use --apply to execute fixes.');
+      }
+      if (dryRun && !requestedDryRun) {
+        console.log(`[ae:fix] ${formatHighImpactDecisionMessage(policyDecision)}`);
       }
 
       console.log('🔧 Starting CEGIS auto-fix process...');
@@ -237,7 +262,7 @@ export class CEGISCli {
         console.log(chalk.blue(`🔍 Running verify profile: ${profile}`));
         const verifyResult = spawnSync(process.execPath, [verifyScript, '--profile', profile], {
           stdio: 'inherit',
-          env: process.env,
+          env: createHighImpactChildEnv(),
         });
         if (verifyResult.error) {
           console.error(chalk.red(`❌ verify failed to start: ${toMessage(verifyResult.error)}`));

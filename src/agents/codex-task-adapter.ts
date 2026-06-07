@@ -10,6 +10,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { trace } from '@opentelemetry/api';
 import { z } from 'zod';
+import {
+  evaluateHighImpactActionPolicy,
+  formatHighImpactDecisionMessage,
+} from '../utils/high-impact-action-policy.js';
 
 export type Phase = 'intent' | 'formal' | 'stories' | 'validation' | 'modeling' | 'ui';
 
@@ -230,6 +234,15 @@ function hasTrustedUIApproval(context: Record<string, unknown>): boolean {
   return approvalRecord['approved'] === true && approvalRecord['scope'] === 'ui-scaffold';
 }
 
+function getUIApprovalScope(context: Record<string, unknown>): string | undefined {
+  const approval = context['approval'];
+  if (!approval || typeof approval !== 'object') {
+    return undefined;
+  }
+  const approvalRecord = approval as Record<string, unknown>;
+  return typeof approvalRecord['scope'] === 'string' ? approvalRecord['scope'] : undefined;
+}
+
 function hasUnsafePathSegment(value: string): boolean {
   return value.split(/[\\/]+/u).some((segment) => segment === '..' || segment.toLowerCase() === '.git');
 }
@@ -315,9 +328,37 @@ async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskRes
     if (env === '0') dryRun = false;
     else if (env === '1') dryRun = true;
   }
-  if (!trustedApproval) {
-    if (dryRun === false) {
-      policyWarnings.push('untrusted-ui-request-forced-dry-run: context.approval.scope=ui-scaffold with approved=true is required before file writes');
+  const approvalCandidate = typeof ctx.approval === 'object' && ctx.approval !== null
+    ? ctx.approval as { approved?: boolean; scope?: string }
+    : undefined;
+  const uiWritePolicy = evaluateHighImpactActionPolicy({
+    actionKind: 'codegen-materialize',
+    actionName: 'codex-ui-scaffold',
+    apply: trustedApproval && dryRun === false,
+    dryRun,
+    approvalScope: getUIApprovalScope(ctx),
+    ...(approvalCandidate !== undefined ? { approval: approvalCandidate } : {}),
+    requiredApprovalScope: 'ui-scaffold',
+    agentContext: true,
+  });
+  if (uiWritePolicy.blocked || uiWritePolicy.approvalRequired || (!uiWritePolicy.allowed && !uiWritePolicy.dryRun)) {
+    return {
+      summary: 'Blocked: UI scaffold write policy not satisfied',
+      analysis: formatHighImpactDecisionMessage(uiWritePolicy),
+      recommendations: [
+        'Run UI scaffolding in dry-run mode for untrusted agent requests',
+        'Use context.dryRun=false only with context.approval.scope=ui-scaffold and approved=true in a trusted workspace/ref',
+      ],
+      nextActions: ['Provide explicit UI scaffold approval or rerun with dry-run enabled'],
+      warnings: [uiWritePolicy.reason],
+      shouldBlockProgress: true,
+      blockingReason: 'high-impact-ui-write-policy',
+      requiredHumanInput: 'explicit ui-scaffold approval for trusted write-capable run',
+    };
+  }
+  if (uiWritePolicy.dryRun) {
+    if (dryRun === false || !trustedApproval) {
+      policyWarnings.push(`untrusted-ui-request-forced-dry-run: ${formatHighImpactDecisionMessage(uiWritePolicy)}`);
     }
     dryRun = true;
   }

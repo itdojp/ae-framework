@@ -1,4 +1,8 @@
 import { execFileSync } from 'child_process';
+import {
+  createHighImpactChildEnv,
+  evaluateHighImpactActionPolicy,
+} from '../utils/high-impact-action-policy.js';
 
 export type TDDTestCommand = 'npm test' | 'pnpm test' | 'yarn test';
 export type TDDTestExecutionApproval = 'none' | 'approved-tdd-test-execution';
@@ -11,7 +15,7 @@ export interface ResolvedTDDTestCommand {
 export type TDDTestExecutor = (
   executable: string,
   args: string[],
-  options: { encoding: 'utf8'; stdio: 'pipe'; shell: false; cwd?: string }
+  options: { encoding: 'utf8'; stdio: 'pipe'; shell: false; cwd?: string; env?: NodeJS.ProcessEnv }
 ) => string | Buffer;
 
 export const APPROVED_TDD_TEST_EXECUTION = 'approved-tdd-test-execution' as const;
@@ -52,18 +56,29 @@ export function ensureTDDTestExecutionApproved(
   approval: TDDTestExecutionApproval,
   dryRun: boolean
 ): { approved: boolean; reason?: string } {
-  if (dryRun) {
+  const decision = evaluateHighImpactActionPolicy({
+    actionKind: 'package-manager',
+    actionName: 'mcp-tdd-test-execution',
+    apply: dryRun === false,
+    dryRun,
+    approvalScope: approval,
+    requiredApprovalScope: APPROVED_TDD_TEST_EXECUTION,
+    agentContext: true,
+  });
+
+  if (decision.allowed) {
+    return { approved: true };
+  }
+  if (decision.reason === 'explicit-dry-run') {
     return { approved: false, reason: 'dry-run mode is enabled' };
   }
-
-  if (approval !== APPROVED_TDD_TEST_EXECUTION) {
+  if (decision.approvalRequired) {
     return {
       approved: false,
       reason: `test execution requires approval token '${APPROVED_TDD_TEST_EXECUTION}'`,
     };
   }
-
-  return { approved: true };
+  return { approved: false, reason: decision.reason };
 }
 
 export function runSafeTDDTestCommand(
@@ -76,10 +91,11 @@ export function runSafeTDDTestCommand(
 ): string | Buffer {
   const resolved = resolveSafeTDDTestCommand(testCommand, options.platform);
   const executor = options.executor ?? execFileSync;
-  const execOptions: { encoding: 'utf8'; stdio: 'pipe'; shell: false; cwd?: string } = {
+  const execOptions: { encoding: 'utf8'; stdio: 'pipe'; shell: false; cwd?: string; env?: NodeJS.ProcessEnv } = {
     encoding: 'utf8',
     stdio: 'pipe',
     shell: false,
+    env: createHighImpactChildEnv(),
   };
 
   if (options.cwd) {

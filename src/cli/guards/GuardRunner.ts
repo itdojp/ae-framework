@@ -4,6 +4,10 @@ import { glob } from 'glob';
 import type { AEFrameworkConfig, Guard, GuardResult } from '../types.js';
 import { toMessage } from '../../utils/error-utils.js';
 import { getCurrentPhase, shouldEnforceGate, getThreshold } from '../../utils/quality-policy-loader.js';
+import {
+  evaluateHighImpactActionPolicy,
+  isHighImpactUntrustedCheckout,
+} from '../../utils/high-impact-action-policy.js';
 
 
 export const GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE = 'guard-script-execution' as const;
@@ -23,6 +27,7 @@ export interface GuardScriptExecutionPolicy {
   approvalRequired: boolean;
   approvalScope?: string;
   agentContext: boolean;
+  reason: string;
 }
 
 type GuardCommandResult = {
@@ -74,15 +79,30 @@ const isGuardAgentContext = (env: NodeJS.ProcessEnv = process.env): boolean => (
 export function getGuardScriptExecutionPolicy(options: GuardRunnerOptions = {}): GuardScriptExecutionPolicy {
   const env = options.env ?? process.env;
   const agentContext = options.agentContext ?? isGuardAgentContext(env);
-  const apply = options.apply === true;
+  const untrustedCheckout = isHighImpactUntrustedCheckout(env);
+  const protectedContext = agentContext || untrustedCheckout;
+  // Preserve trusted local operator compatibility while enforcing explicit approval
+  // for agent/untrusted contexts where repository-controlled commands are high impact.
+  const apply = options.apply === true || !protectedContext;
   const approvalScope = options.approvalScope;
-  const dryRun = options.dryRun === true || (agentContext && !apply);
-  const approvalRequired = agentContext && apply && approvalScope !== GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE;
-  const policy: GuardScriptExecutionPolicy = {
-    dryRun,
+  const decision = evaluateHighImpactActionPolicy({
+    actionKind: 'package-manager',
+    actionName: 'guard-script-execution',
     apply,
-    approvalRequired,
+    dryRun: options.dryRun,
+    approvalScope,
+    requiredApprovalScope: GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE,
+    env,
     agentContext,
+    untrustedCheckout,
+    enforceApproval: protectedContext,
+  });
+  const policy: GuardScriptExecutionPolicy = {
+    dryRun: decision.dryRun,
+    apply,
+    approvalRequired: decision.approvalRequired || decision.blocked,
+    agentContext,
+    reason: decision.reason,
   };
   if (approvalScope !== undefined) {
     policy.approvalScope = approvalScope;

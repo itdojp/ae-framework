@@ -14,9 +14,14 @@ import {
   getApprovedQualityGateCommand,
   getDefaultQualityReportDir,
   isQualityAgentContext,
+  isQualityCiContext,
   QUALITY_GATE_EXECUTION_APPROVAL_SCOPE,
   resolveQualityReportOutputDir,
 } from './quality-command-policy.js';
+import {
+  createHighImpactChildEnv,
+  evaluateHighImpactActionPolicy,
+} from '../utils/high-impact-action-policy.js';
 
 type CoverageThreshold = { lines?: number; functions?: number; branches?: number; statements?: number };
 type LintThreshold = { maxErrors?: number; maxWarnings?: number };
@@ -27,6 +32,19 @@ type QualityGateExecutionRecord = {
   gate: QualityGate;
   key: string;
   command: ApprovedQualityGateCommand;
+};
+
+const isExplicitUntrustedCheckout = (env: NodeJS.ProcessEnv = process.env): boolean => {
+  const markers = [
+    env['AE_UNTRUSTED_CHECKOUT'],
+    env['AE_QUALITY_UNTRUSTED_CHECKOUT'],
+    env['AE_CI_UNTRUSTED_CHECKOUT'],
+  ];
+  return markers.some(value => {
+    if (value === undefined) return false;
+    const normalized = value.trim().toLowerCase();
+    return normalized.length > 0 && !['0', 'false', 'no', 'off'].includes(normalized);
+  });
 };
 
 // Mock telemetry for main branch compatibility
@@ -96,12 +114,33 @@ export class QualityGateRunner {
     const outputDir = options.outputDir ?? getDefaultQualityReportDir(pathContext);
     const resolvedOutputDir = resolveQualityReportOutputDir(outputDir, pathContext);
     const agentContext = isQualityAgentContext();
-    if (agentContext && apply && approvalScope !== QUALITY_GATE_EXECUTION_APPROVAL_SCOPE) {
+    const ciContext = isQualityCiContext();
+    const protectedContext = agentContext;
+    // The runner preserves trusted local/CI compatibility; the CLI reconcile path
+    // opts CI into approval enforcement when needed via protectCi.
+    const requestedApply = apply || !protectedContext;
+    const explicitUntrustedCheckout = isExplicitUntrustedCheckout();
+    const executionDecision = evaluateHighImpactActionPolicy({
+      actionKind: 'package-manager',
+      actionName: 'quality-gate-runner',
+      apply: requestedApply,
+      dryRun,
+      approvalScope,
+      requiredApprovalScope: QUALITY_GATE_EXECUTION_APPROVAL_SCOPE,
+      agentContext,
+      ciContext,
+      untrustedCheckout: explicitUntrustedCheckout,
+      trustedWorkspace: !explicitUntrustedCheckout,
+      trustedRef: !explicitUntrustedCheckout,
+      blockAmbientSecrets: false,
+      enforceApproval: protectedContext,
+    });
+    if (executionDecision.approvalRequired || executionDecision.blocked) {
       throw new Error(
         `Quality gate execution requires approval scope '${QUALITY_GATE_EXECUTION_APPROVAL_SCOPE}' when --apply is used in an agent context`
       );
     }
-    const effectiveDryRun = dryRun || (agentContext && !apply);
+    const effectiveDryRun = executionDecision.dryRun;
 
     const timer = mockTelemetry.createTimer('quality_gates.execution.total', {
       [TELEMETRY_ATTRIBUTES.SERVICE_COMPONENT]: 'quality-gates',
@@ -364,6 +403,7 @@ export class QualityGateRunner {
       const child = this.spawnProcess(command.executable, [...command.args], {
         stdio: ['pipe', 'pipe', 'pipe'],
         timeout,
+        env: createHighImpactChildEnv(),
         shell: false,
       });
 
