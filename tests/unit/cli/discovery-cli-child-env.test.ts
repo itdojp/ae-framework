@@ -28,6 +28,7 @@ describe('discovery CLI child process environment', () => {
     process.env['GITHUB_TOKEN'] = 'raw-discovery-token';
     spawnSyncMock.mockReturnValueOnce({ status: 0, error: null });
 
+    let childEnvSnapshot: NodeJS.ProcessEnv = {};
     try {
       const command = createDiscoveryCommand();
       await command.parseAsync([
@@ -39,6 +40,8 @@ describe('discovery CLI child process environment', () => {
         '--sources',
         'docs/**/*.md',
       ]);
+      const spawnOptions = spawnSyncMock.mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv } | undefined;
+      childEnvSnapshot = { ...(spawnOptions?.env ?? {}) };
     } finally {
       if (previousToken === undefined) {
         delete process.env['GITHUB_TOKEN'];
@@ -47,15 +50,14 @@ describe('discovery CLI child process environment', () => {
       }
     }
 
+    expect(childEnvSnapshot).not.toHaveProperty('GITHUB_TOKEN');
     expect(spawnSyncMock).toHaveBeenCalledWith(
       process.execPath,
       expect.arrayContaining(['--format', 'json', '--sources', 'docs/**/*.md']),
       expect.objectContaining({
         cwd: process.cwd(),
         encoding: 'utf8',
-        env: expect.not.objectContaining({
-          GITHUB_TOKEN: 'raw-discovery-token',
-        }),
+        env: expect.any(Object),
       }),
     );
     expect(safeExitMock).toHaveBeenCalledWith(0);

@@ -58,6 +58,7 @@ describe('entry runner CLI', () => {
 
     spawnSyncMock.mockReturnValueOnce({ status: 0, error: null });
 
+    let childEnvSnapshot: NodeJS.ProcessEnv = {};
     try {
       const command = createEntryRunnerCommand();
       await command.parseAsync([
@@ -70,6 +71,8 @@ describe('entry runner CLI', () => {
         'fast',
         '--dry-run',
       ]);
+      const spawnOptions = spawnSyncMock.mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv } | undefined;
+      childEnvSnapshot = { ...(spawnOptions?.env ?? {}) };
     } finally {
       if (previousToken === undefined) {
         delete process.env['GITHUB_TOKEN'];
@@ -78,15 +81,14 @@ describe('entry runner CLI', () => {
       }
     }
 
+    expect(childEnvSnapshot).not.toHaveProperty('GITHUB_TOKEN');
     expect(spawnSyncMock).toHaveBeenCalledWith(
       process.execPath,
       [runnerPath, '--profile', 'fast', '--dry-run'],
       expect.objectContaining({
         cwd: root,
         stdio: 'inherit',
-        env: expect.not.objectContaining({
-          GITHUB_TOKEN: 'raw-entry-token',
-        }),
+        env: expect.any(Object),
       })
     );
     expect(safeExitMock).toHaveBeenCalledWith(0);

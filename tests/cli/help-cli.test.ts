@@ -46,9 +46,12 @@ describe('help CLI', () => {
 
     spawnSyncMock.mockReturnValueOnce({ status: 0, error: null });
 
+    let childEnvSnapshot: NodeJS.ProcessEnv = {};
     try {
       const command = createHelpCommand();
       await command.parseAsync(['node', 'cli', '--root', root]);
+      const spawnOptions = spawnSyncMock.mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv } | undefined;
+      childEnvSnapshot = { ...(spawnOptions?.env ?? {}) };
     } finally {
       if (previousToken === undefined) {
         delete process.env['GITHUB_TOKEN'];
@@ -57,15 +60,14 @@ describe('help CLI', () => {
       }
     }
 
+    expect(childEnvSnapshot).not.toHaveProperty('GITHUB_TOKEN');
     expect(spawnSyncMock).toHaveBeenCalledWith(
       process.execPath,
       [scriptPath],
       expect.objectContaining({
         cwd: root,
         stdio: 'inherit',
-        env: expect.not.objectContaining({
-          GITHUB_TOKEN: 'raw-help-token',
-        }),
+        env: expect.any(Object),
       })
     );
     expect(safeExitMock).toHaveBeenCalledWith(0);
