@@ -439,6 +439,12 @@ pnpm tsx src/cli/ui-scaffold-cli.ts generate \
   --state samples/phase-state.example.json \
   --output ./.ae/ui --dry-run
 
+# UI Scaffold（trusted workspace/ref で materialize する場合）
+pnpm tsx src/cli/ui-scaffold-cli.ts generate \
+  --state samples/phase-state.example.json \
+  --output ./.ae/ui \
+  --apply --approval-scope high-impact:codegen-materialize
+
 # ベンチマーク一覧とドライラン
 pnpm tsx src/cli/benchmark-cli.ts list --enabled-only
 pnpm tsx src/cli/benchmark-cli.ts run --ci --dry-run

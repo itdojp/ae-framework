@@ -33,6 +33,11 @@ import { createHelpCommand } from './help-cli.js';
 import { createSetupCommand } from './setup-cli.js';
 import { createReleaseCommand } from './release-cli.js';
 import { safeExit } from '../utils/safe-exit.js';
+import {
+  DEFAULT_HIGH_IMPACT_APPROVAL_SCOPES,
+  evaluateHighImpactActionPolicy,
+  formatHighImpactDecisionMessage,
+} from '../utils/high-impact-action-policy.js';
 import { handleTestsSuggest } from '../commands/tdd/suggest.js';
 import { handleTestsScaffold } from '../commands/tdd/scaffold.js';
 import { createProgressCommands } from './progress-cli.js';
@@ -41,6 +46,7 @@ import { createDiscoveryCommand } from './discovery-cli.js';
 import { normalizeProgramArgv } from './argv-normalize.js';
 
 const program = new Command();
+const UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE = DEFAULT_HIGH_IMPACT_APPROVAL_SCOPES['codegen-materialize'];
 
 if (typeof process !== 'undefined' && process.env['DISABLE_TELEMETRY'] !== 'true') {
   void initializeTelemetry().catch((error: unknown) => {
@@ -377,6 +383,36 @@ class AEFrameworkCLI {
     return await Phase6Telemetry.instrumentScaffoldOperation(
       'ui_scaffold_task',
       async () => {
+        const ctx = ((request as any).context && typeof (request as any).context === 'object')
+          ? (request as any).context
+          : {};
+        const materializationPolicy = evaluateHighImpactActionPolicy({
+          actionKind: 'codegen-materialize',
+          actionName: 'ae-framework ui-scaffold',
+          apply: ctx.apply === true,
+          dryRun: ctx.dryRun === true,
+          ...(typeof ctx.approvalScope === 'string' ? { approvalScope: ctx.approvalScope } : {}),
+          requiredApprovalScope: UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE,
+        });
+        if (
+          materializationPolicy.blocked ||
+          materializationPolicy.approvalRequired ||
+          (!materializationPolicy.allowed && !materializationPolicy.dryRun)
+        ) {
+          return {
+            summary: 'Blocked: UI scaffold materialization policy not satisfied',
+            analysis: formatHighImpactDecisionMessage(materializationPolicy),
+            recommendations: [
+              'Run UI scaffolding in dry-run mode for untrusted or unapproved requests',
+              `Use --apply --approval-scope ${UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE} only from a trusted workspace/ref`,
+            ],
+            nextActions: ['Provide trusted UI scaffold materialization approval or rerun with --dry-run'],
+            warnings: [materializationPolicy.reason],
+            shouldBlockProgress: true,
+            blockingReason: 'high-impact-ui-scaffold-materialization-policy',
+            requiredHumanInput: `explicit ${UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE} approval for write-capable run`,
+          };
+        }
         const stateFile = path.join(process.cwd(), '.ae', 'phase-state.json');
         
         if (!fs.existsSync(stateFile)) {
@@ -393,7 +429,10 @@ class AEFrameworkCLI {
         const phaseState = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
         const outputDir = path.join(process.cwd(), 'src', 'ui', 'components', 'generated');
         
-        const generator = new UIScaffoldGenerator(phaseState, { outputDir });
+        const generator = new UIScaffoldGenerator(phaseState, {
+          outputDir,
+          dryRun: materializationPolicy.dryRun,
+        });
         const results = await generator.generateAll();
         
         const successCount = Object.values(results).filter(r => r.success).length;
@@ -406,7 +445,7 @@ class AEFrameworkCLI {
         });
 
         return {
-          summary: `Generated ${totalFiles} files for ${successCount}/${totalCount} entities`,
+          summary: `${materializationPolicy.dryRun ? 'Dry-run previewed' : 'Generated'} ${totalFiles} files for ${successCount}/${totalCount} entities`,
           analysis: `UI scaffold generation completed:\n${Object.entries(results).map(([entity, result]) => 
             `  • ${entity}: ${result.success ? `✅ ${result.files.length} files` : `❌ ${result.error}`}`
           ).join('\n')}`,
@@ -706,6 +745,9 @@ program
   .option('--tokens', 'Integrate design tokens')
   .option('--a11y', 'Validate accessibility')
   .option('--sources <sources>', 'Source files or globs')
+  .option('--dry-run', 'Preview generated UI components without materializing files')
+  .option('--apply', `Materialize generated UI components after approval (${UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE})`)
+  .option('--approval-scope <scope>', `Trusted UI scaffold materialization approval scope (${UI_SCAFFOLD_MATERIALIZE_APPROVAL_SCOPE})`)
   .action(async (options) => {
     const cli = new AEFrameworkCLI();
     console.log(chalk.blue('🎨 Generating UI Components...'));
@@ -720,6 +762,11 @@ program
       description: `UI/UX processing: ${taskType}`,
       prompt: options.sources || 'Process available domain model and user stories',
       subagent_type: 'ui-processing',
+      context: {
+        dryRun: options.dryRun,
+        apply: options.apply,
+        approvalScope: options.approvalScope,
+      },
     };
 
     try {

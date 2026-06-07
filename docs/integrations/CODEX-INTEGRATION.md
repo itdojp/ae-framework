@@ -53,8 +53,11 @@ If you want to try UI scaffolding with a minimal domain, use:
 ```bash
 cat samples/phase-state.example.json | jq .
 
-# Run UI scaffold directly via CLI (outside Codex adapter):
-pnpm run build && node dist/src/cli/index.js ui-scaffold --components
+# Preview UI scaffold directly via CLI (outside Codex adapter; dry-run by default):
+pnpm run build && node dist/src/cli/index.js ui-scaffold --components --dry-run
+
+# Materialize only from a trusted workspace/ref after explicit approval:
+node dist/src/cli/index.js ui-scaffold --components --apply --approval-scope high-impact:codegen-materialize
 ```
 
 ## 2) MCP Integration (Recommended)
@@ -167,11 +170,12 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 - Actions:
   - `validate`: `echo '{"action":"validate","args":{"inputPath":"spec/my.ae-spec.md","relaxed":true,"maxWarnings":999}}' | pnpm run codex:spec:stdio`
   - `compile`: `printf '%s\n' '{"action":"compile","approval":{"approved":true,"scope":"codex-spec-stdio"},"args":{"inputPath":"spec/my.ae-spec.md","outputPath":"artifacts/spec-synthesis/ae-ir.json","relaxed":true}}' | AE_CODEX_SPEC_STDIO_TRUSTED_APPROVAL=1 pnpm run codex:spec:stdio`
-  - `codegen`: `printf '%s\n' '{"action":"codegen","approval":{"approved":true,"scope":"codex-spec-stdio"},"args":{"irPath":"artifacts/spec-synthesis/ae-ir.json","targets":["typescript","api","database"]}}' | AE_CODEX_SPEC_STDIO_TRUSTED_APPROVAL=1 pnpm run codex:spec:stdio`
+  - `codegen`: `printf '%s\n' '{"action":"codegen","approval":{"approved":true,"scope":"codex-spec-stdio-codegen"},"args":{"irPath":"artifacts/spec-synthesis/ae-ir.json","targets":["typescript","api","database"]}}' | AE_CODEX_SPEC_STDIO_TRUSTED_APPROVAL=1 pnpm run codex:spec:stdio`
 - Path and approval policy:
   - Caller-supplied paths must be workspace-relative POSIX paths; absolute paths, `..` / `.` segments, backslashes, and `.git` targets are rejected.
   - AE-IR and generated-code writes are constrained to `artifacts/spec-synthesis` by default.
-  - `compile` with `outputPath`, `codegen`, and cold-checkout spec-compiler auto-build require trusted approval (`AE_CODEX_SPEC_STDIO_TRUSTED_CONTEXT=1`, or `AE_CODEX_SPEC_STDIO_TRUSTED_APPROVAL=1` plus `approval.approved=true` with an accepted `codex-spec-stdio` scope).
+  - `compile` with `outputPath`, `codegen`, and cold-checkout spec-compiler auto-build require trusted approval (`AE_CODEX_SPEC_STDIO_TRUSTED_CONTEXT=1`, or `AE_CODEX_SPEC_STDIO_TRUSTED_APPROVAL=1` plus `approval.approved=true`; codegen should use `codex-spec-stdio-codegen` or an accepted umbrella scope).
+  - `codegen` materialization is delegated to `codegen generate --apply --approval-scope high-impact:codegen-materialize`; untrusted workspaces/refs remain dry-run at the child CLI boundary.
 
 Flow suggestion:
 - Codex LLM drafts AE‑Spec → call `validate` to get issues → revise → repeat → when stable, `compile` (strict) → `codegen`.
@@ -182,7 +186,7 @@ Flow suggestion:
 - Tools:
   - `ae_spec_compile`: compile AE-Spec to AE-IR (lenient or strict)
   - `ae_spec_validate`: validate with summary of issues (lenient/strict)
-  - `ae_spec_codegen`: generate code from `.ae/ae-ir.json`
+  - `ae_spec_codegen`: generate code from `.ae/ae-ir.json` with `approvalScope: "high-impact:codegen-materialize"` for materialization
 - Flow: Codex uses its own LLM for drafting the AE‑Spec and calls these tools to compile/lint/codegen, iterating until strict validation passes.
  
 
@@ -280,8 +284,11 @@ pnpm run codex:mcp:verify &
 # Use minimal sample
 cat samples/phase-state.example.json | jq .
 
-# CLI scaffold
-node dist/src/cli/index.js ui-scaffold --components
+# CLI scaffold preview
+node dist/src/cli/index.js ui-scaffold --components --dry-run
+
+# Approved materialization
+node dist/src/cli/index.js ui-scaffold --components --apply --approval-scope high-impact:codegen-materialize
 ```
 
 Quickstart with a custom phase-state (optional):
@@ -429,9 +436,9 @@ Before changing code, read the Context Pack and boundary map. Treat them as the 
 
 ### E2E 手順（CLI/MCP 要約）
 1. `pnpm run build`
-2. `pnpm run codex:quickstart`（UI は `CODEX_RUN_UI=1`）
+2. `pnpm run codex:quickstart`（UI は `CODEX_RUN_UI=1`。materialize する場合のみ `CODEX_UI_APPLY=1 CODEX_UI_APPROVAL_SCOPE=high-impact:codegen-materialize`）
 3. `pnpm run codex:mcp:intent & pnpm run codex:mcp:verify &` に接続
-4. `node dist/src/cli/index.js ui-scaffold --components`
+4. preview: `node dist/src/cli/index.js ui-scaffold --components --dry-run`; materialize: `node dist/src/cli/index.js ui-scaffold --components --apply --approval-scope high-impact:codegen-materialize`
 
 ### 機械可読アーティファクト
 - `artifacts/codex/result-*.json`, `openapi.yaml`, `model-check.json`（有無に応じて）

@@ -1,9 +1,11 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  buildSpecCodegenCliArgs,
   createSpecCodegenChildProcessOptions,
   resolveSpecCodegenPaths,
   resolveSpecCompilePaths,
+  SPEC_CODEGEN_MATERIALIZE_APPROVAL_SCOPE,
 } from '../../../src/mcp-server/spec-synthesis-path-policy.js';
 import { WorkspacePathPolicyError } from '../../../src/utils/workspace-path-policy.js';
 
@@ -50,6 +52,25 @@ describe('spec synthesis MCP path policy', () => {
     expect(options.env).toMatchObject({
       AE_CODEGEN_WORKSPACE_ROOT: workspaceRoot,
     });
+  });
+
+  it('passes explicit materialization approval to spawned codegen CLI arguments', () => {
+    const args = buildSpecCodegenCliArgs('.ae/ae-ir.json', 'artifacts/generated/typescript', 'typescript');
+
+    expect(args).toEqual([
+      'dist/src/cli/index.js',
+      'codegen',
+      'generate',
+      '-i',
+      '.ae/ae-ir.json',
+      '-o',
+      'artifacts/generated/typescript',
+      '-t',
+      'typescript',
+      '--apply',
+      '--approval-scope',
+      SPEC_CODEGEN_MATERIALIZE_APPROVAL_SCOPE,
+    ]);
   });
 
   it('rejects codegen path escapes before spawnSync receives paths', () => {

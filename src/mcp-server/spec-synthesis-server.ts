@@ -10,10 +10,13 @@ import { CallToolRequestSchema, ErrorCode, ListToolsRequestSchema, McpError } fr
 import { z } from 'zod';
 import type { SpecLintIssue } from '../../packages/spec-compiler/src/types.js';
 import {
+  buildSpecCodegenCliArgs,
   createSpecCodegenChildProcessOptions,
   resolveSpecCodegenPaths,
   resolveSpecCompilePaths,
   resolveSpecValidateInputPath,
+  SPEC_CODEGEN_MATERIALIZE_APPROVAL_SCOPE,
+  type SpecCodegenTarget,
 } from './spec-synthesis-path-policy.js';
 
 type LintIssueSummary = {
@@ -69,6 +72,7 @@ async function start() {
     irPath: z.string().default('.ae/ae-ir.json'),
     targets: z.array(z.enum(['typescript', 'api', 'database', 'react'])).default(['typescript', 'api', 'database']),
     outDir: z.string().optional(),
+    approvalScope: z.literal(SPEC_CODEGEN_MATERIALIZE_APPROVAL_SCOPE),
   });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -110,7 +114,9 @@ async function start() {
               irPath: { type: 'string' },
               targets: { type: 'array', items: { type: 'string', enum: ['typescript', 'api', 'database', 'react'] } },
               outDir: { type: 'string' },
+              approvalScope: { type: 'string', enum: [SPEC_CODEGEN_MATERIALIZE_APPROVAL_SCOPE], description: `Required trusted approval scope for materializing generated code (${SPEC_CODEGEN_MATERIALIZE_APPROVAL_SCOPE})` },
             },
+            required: ['approvalScope'],
           },
         },
       ],
@@ -188,15 +194,21 @@ async function start() {
 
         case 'ae_spec_codegen': {
           const parsed = CodegenArgs.parse(args);
-          const { readFileSync } = await import('fs');
           const paths = resolveSpecCodegenPaths(parsed.irPath, parsed.targets, parsed.outDir);
+          if (parsed.approvalScope !== SPEC_CODEGEN_MATERIALIZE_APPROVAL_SCOPE) {
+            throw new McpError(
+              ErrorCode.InvalidParams,
+              `ae_spec_codegen requires trusted approvalScope=${SPEC_CODEGEN_MATERIALIZE_APPROVAL_SCOPE} before codegen materialization`,
+            );
+          }
+          const { readFileSync } = await import('fs');
           type IRLike = { domain?: unknown[]; api?: unknown[] };
           const ir = JSON.parse(readFileSync(paths.irPath, 'utf-8')) as unknown as IRLike;
           const { spawnSync } = await import('child_process');
-          const run = (t: string, dir: string) => {
+          const run = (t: SpecCodegenTarget, dir: string) => {
             const result = spawnSync(
               process.execPath,
-              ['dist/src/cli/index.js', 'codegen', 'generate', '-i', paths.irPathArg, '-o', dir, '-t', t],
+              buildSpecCodegenCliArgs(paths.irPathArg, dir, t, parsed.approvalScope),
               createSpecCodegenChildProcessOptions(paths.workspaceRoot),
             );
             if (result.error) throw result.error;

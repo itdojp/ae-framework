@@ -16,6 +16,13 @@ import { safeExit } from '../utils/safe-exit.js';
 import { DriftDetector } from '../codegen/drift-detector.js';
 import type { DriftConfig } from '../codegen/drift-detector.js';
 import { resolveWorkspacePath, resolveWorkspaceRoot } from '../utils/workspace-path-policy.js';
+import {
+  DEFAULT_HIGH_IMPACT_APPROVAL_SCOPES,
+  evaluateHighImpactActionPolicy,
+  formatHighImpactDecisionMessage,
+} from '../utils/high-impact-action-policy.js';
+
+const CODEGEN_MATERIALIZE_APPROVAL_SCOPE = DEFAULT_HIGH_IMPACT_APPROVAL_SCOPES['codegen-materialize'];
 
 type GenerateCommandOptions = {
   input: string;
@@ -25,6 +32,9 @@ type GenerateCommandOptions = {
   driftDetection: boolean;
   preserveChanges: boolean;
   hashAlgorithm: NonNullable<CodegenOptions['hashAlgorithm']>;
+  apply?: boolean;
+  dryRun?: boolean;
+  approvalScope?: string;
 };
 
 type DriftCommandOptions = {
@@ -43,7 +53,38 @@ type WatchCommandOptions = {
   target: CodegenOptions['target'];
   debounce: string;
   templateDir?: string;
+  apply?: boolean;
+  dryRun?: boolean;
+  approvalScope?: string;
 };
+
+function evaluateCodegenMaterializationPolicy(
+  commandName: string,
+  options: { apply?: boolean; dryRun?: boolean; approvalScope?: string },
+) {
+  return evaluateHighImpactActionPolicy({
+    actionKind: 'codegen-materialize',
+    actionName: commandName,
+    apply: options.apply === true,
+    dryRun: options.dryRun === true,
+    ...(options.approvalScope !== undefined ? { approvalScope: options.approvalScope } : {}),
+    requiredApprovalScope: CODEGEN_MATERIALIZE_APPROVAL_SCOPE,
+  });
+}
+
+function enforceCodegenMaterializationPolicy(
+  decision: ReturnType<typeof evaluateHighImpactActionPolicy>,
+): boolean {
+  if (decision.blocked || decision.approvalRequired || (!decision.allowed && !decision.dryRun)) {
+    console.error(chalk.red(`❌ ${formatHighImpactDecisionMessage(decision)}`));
+    return false;
+  }
+  if (decision.dryRun) {
+    console.log(chalk.yellow(`⚠️  ${formatHighImpactDecisionMessage(decision)}`));
+    console.log(chalk.yellow('   No generated code files or manifest will be written.'));
+  }
+  return true;
+}
 
 type StatusCommandOptions = {
   codeDir: string;
@@ -64,12 +105,21 @@ export function createCodegenCommand(): Command {
     .option('--no-drift-detection', 'Disable drift detection')
     .option('--no-preserve-changes', 'Do not preserve manual changes')
     .option('--hash-algorithm <algo>', 'Hash algorithm (sha256|md5)', 'sha256')
+    .option('--apply', `Materialize generated files after approval (${CODEGEN_MATERIALIZE_APPROVAL_SCOPE})`)
+    .option('--dry-run', 'Preview generated files without writing them')
+    .option('--approval-scope <scope>', `Trusted codegen materialization approval scope (${CODEGEN_MATERIALIZE_APPROVAL_SCOPE})`)
     .action(async (options: GenerateCommandOptions) => {
       try {
         console.log(chalk.blue('🏗️  Starting code generation...'));
         console.log(chalk.gray(`   Input: ${options.input}`));
         console.log(chalk.gray(`   Output: ${options.output}`));
         console.log(chalk.gray(`   Target: ${options.target}`));
+
+        const materializationPolicy = evaluateCodegenMaterializationPolicy('codegen generate', options);
+        if (!enforceCodegenMaterializationPolicy(materializationPolicy)) {
+          safeExit(1);
+          return;
+        }
 
         const workspaceRoot = resolveWorkspaceRoot({ envVar: 'AE_CODEGEN_WORKSPACE_ROOT' });
         const genOptions: CodegenOptions = {
@@ -79,6 +129,8 @@ export function createCodegenCommand(): Command {
           enableDriftDetection: options.driftDetection,
           preserveManualChanges: options.preserveChanges,
           hashAlgorithm: options.hashAlgorithm,
+          materialize: materializationPolicy.allowed,
+          ...(options.approvalScope !== undefined ? { approvalScope: options.approvalScope } : {}),
         };
         if (options.templateDir) {
           genOptions.templateDir = resolveWorkspacePath(options.templateDir, { workspaceRoot, label: 'codegen templateDir' });
@@ -87,9 +139,11 @@ export function createCodegenCommand(): Command {
 
         const manifest = await generator.generate();
 
-        console.log(chalk.green('✅ Code generation completed!'));
+        console.log(chalk.green(materializationPolicy.allowed ? '✅ Code generation completed!' : '✅ Code generation dry-run completed!'));
         console.log(chalk.gray(`   Files generated: ${manifest.files.length}`));
-        console.log(chalk.gray(`   Manifest: ${join(options.output, '.codegen-manifest.json')}`));
+        if (materializationPolicy.allowed) {
+          console.log(chalk.gray(`   Manifest: ${join(options.output, '.codegen-manifest.json')}`));
+        }
 
         // Display generated files summary
         const filesByType = manifest.files.reduce((acc, file) => {
@@ -189,10 +243,19 @@ export function createCodegenCommand(): Command {
     .requiredOption('-t, --target <type>', 'Target type (typescript|react|api|database)')
     .option('--debounce <ms>', 'Debounce time for file changes (ms)', '1000')
     .option('--template-dir <dir>', 'Template directory')
+    .option('--apply', `Materialize regenerated files after approval (${CODEGEN_MATERIALIZE_APPROVAL_SCOPE})`)
+    .option('--dry-run', 'Preview regeneration without writing files')
+    .option('--approval-scope <scope>', `Trusted codegen materialization approval scope (${CODEGEN_MATERIALIZE_APPROVAL_SCOPE})`)
     .action(async (options: WatchCommandOptions) => {
       try {
         console.log(chalk.blue('👀 Starting watch mode...'));
         console.log(chalk.yellow('  Press Ctrl+C to stop'));
+
+        const materializationPolicy = evaluateCodegenMaterializationPolicy('codegen watch', options);
+        if (!enforceCodegenMaterializationPolicy(materializationPolicy)) {
+          safeExit(1);
+          return;
+        }
 
         type Watcher = {
           on(event: 'add' | 'change', handler: () => void): Watcher;
@@ -223,6 +286,8 @@ export function createCodegenCommand(): Command {
               target: options.target,
               enableDriftDetection: true,
               preserveManualChanges: true,
+              materialize: materializationPolicy.allowed,
+              ...(options.approvalScope !== undefined ? { approvalScope: options.approvalScope } : {}),
             };
             if (options.templateDir) {
               regenOptions.templateDir = resolveWorkspacePath(options.templateDir, { workspaceRoot, label: 'codegen watch templateDir' });

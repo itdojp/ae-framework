@@ -4,9 +4,11 @@ import {
   resolveWorkspaceRoot,
   toWorkspaceRelativePath,
 } from '../utils/workspace-path-policy.js';
+import { DEFAULT_HIGH_IMPACT_APPROVAL_SCOPES } from '../utils/high-impact-action-policy.js';
 import type { SpawnSyncOptions } from 'node:child_process';
 
 export type SpecCodegenTarget = 'typescript' | 'api' | 'database' | 'react';
+export const SPEC_CODEGEN_MATERIALIZE_APPROVAL_SCOPE = DEFAULT_HIGH_IMPACT_APPROVAL_SCOPES['codegen-materialize'];
 
 export interface ResolvedSpecCompilePaths {
   workspaceRoot: string;
@@ -33,6 +35,28 @@ export function createSpecCodegenChildProcessOptions(workspaceRoot: string): Spa
       AE_CODEGEN_WORKSPACE_ROOT: workspaceRoot,
     },
   };
+}
+
+export function buildSpecCodegenCliArgs(
+  irPathArg: string,
+  targetOutDirArg: string,
+  target: SpecCodegenTarget,
+  approvalScope = SPEC_CODEGEN_MATERIALIZE_APPROVAL_SCOPE,
+): string[] {
+  return [
+    'dist/src/cli/index.js',
+    'codegen',
+    'generate',
+    '-i',
+    irPathArg,
+    '-o',
+    targetOutDirArg,
+    '-t',
+    target,
+    '--apply',
+    '--approval-scope',
+    approvalScope,
+  ];
 }
 
 export function resolveSpecSynthesisWorkspaceRoot(): string {

@@ -67,20 +67,23 @@ export class DriftDetector {
 | `database` | SQL schemas and ORM models | `migrations/*.sql`, `models/*.ts` |
 
 ### Usage
+
+> Security boundary: `codegen generate` now defaults to dry-run preview. To materialize executable generated artifacts, run from a trusted workspace/ref and pass `--apply --approval-scope high-impact:codegen-materialize`. Dry-run returns the manifest in memory but does not write generated files or `.codegen-manifest.json`.
+
 #### Command line interface
 ##### Basic code generation
 ```bash
 # Generate TypeScript types
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --apply --approval-scope high-impact:codegen-materialize
 
 # Generate React components
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/react -t react
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/react -t react --apply --approval-scope high-impact:codegen-materialize
 
 # Generate API handlers
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/api -t api
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/api -t api --apply --approval-scope high-impact:codegen-materialize
 
 # Generate database schemas
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/database -t database
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/database -t database --apply --approval-scope high-impact:codegen-materialize
 ```
 
 ##### Drift detection
@@ -97,22 +100,31 @@ pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --form
 
 ##### Watch mode
 ```bash
-# Watch for changes and auto-regenerate
-pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/typescript -t typescript
+# Watch for changes and preview regeneration
+pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/typescript -t typescript --dry-run
+
+# Watch and materialize regeneration after approval
+pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/typescript -t typescript --apply --approval-scope high-impact:codegen-materialize
 ```
 
 #### Scripts
 ```bash
-# Generate all target types
+# Preview all target types
 pnpm codegen:generate
+
+# Materialize all target types after approval
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:generate
 
 # Check drift across all targets
 pnpm codegen:drift
 
-# Regenerate only drifted code
+# Preview regeneration for drifted code
 pnpm codegen:regen
 
-# Watch mode for development
+# Materialize regeneration for drifted code after approval
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:regen
+
+# Watch mode for development (dry-run preview by default)
 pnpm codegen:watch
 
 # Validate generated code
@@ -129,14 +141,20 @@ pnpm codegen:clean
 The `scripts/codegen-tools.sh` helper supports batch operations.
 
 ```bash
-# Generate all targets at once
+# Preview all targets at once
 ./scripts/codegen-tools.sh generate-all
+
+# Materialize all targets after approval
+./scripts/codegen-tools.sh generate-all --apply --approval-scope high-impact:codegen-materialize
 
 # Check drift across all generated code
 ./scripts/codegen-tools.sh check-drift
 
-# Watch for changes and auto-regenerate
+# Watch for changes and preview regeneration
 ./scripts/codegen-tools.sh watch
+
+# Watch and materialize regeneration after approval
+./scripts/codegen-tools.sh watch --apply --approval-scope high-impact:codegen-materialize
 ```
 
 ### Configuration
@@ -218,17 +236,23 @@ pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
 # Check what needs regeneration
 pnpm codegen:drift
 
-# Regenerate affected code
+# Preview affected regeneration
 pnpm codegen:regen
+
+# Materialize affected regeneration after approval
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:regen
 ```
 
 #### 2. Local development
 ```bash
-# Start watch mode for real-time updates
+# Start watch mode for real-time dry-run previews
 pnpm codegen:watch
 
+# To materialize watch regenerations after approval:
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:watch
+
 # In another terminal, edit specifications
-# Watch mode will automatically regenerate code
+# Watch mode will preview or regenerate code depending on approval mode
 ```
 
 #### 3. Pre-commit validation
@@ -344,15 +368,15 @@ pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
 # Solution: verify that the manifest exists
 ls generated/*/.codegen-manifest.json
 
-# Regenerate if the manifest is missing
-pnpm codegen:generate
+# Materialize regeneration if the manifest is missing
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:generate
 ```
 
 ##### Generated code does not compile
 ```bash
-# Solution: validate and regenerate
+# Solution: validate and materialize regeneration after approval
 pnpm codegen:validate
-pnpm codegen:regen
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:regen
 ```
 
 #### Debug mode
@@ -361,7 +385,7 @@ pnpm codegen:regen
 pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --verbose
 
 # Verbose generation
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --verbose
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --apply --approval-scope high-impact:codegen-materialize --verbose
 ```
 
 #### Manual recovery
@@ -369,8 +393,8 @@ pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t 
 # Clean all generated code
 pnpm codegen:clean
 
-# Regenerate everything from scratch
-pnpm codegen:generate
+# Regenerate everything from scratch after approval
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:generate
 
 # Verify status
 pnpm codegen:status
@@ -381,7 +405,7 @@ pnpm codegen:status
 ```bash
 # Compile spec and generate code in one workflow
 pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --apply --approval-scope high-impact:codegen-materialize
 ```
 
 #### Build system integration
@@ -465,20 +489,23 @@ export class DriftDetector {
 | `database` | SQL schema と ORM model | `migrations/*.sql`, `models/*.ts` |
 
 ### 使い方
+
+> Security boundary: `codegen generate` は既定で dry-run preview です。実行可能な generated artifact を materialize する場合は、trusted workspace/ref で `--apply --approval-scope high-impact:codegen-materialize` を明示してください。dry-run は manifest をメモリ上で返しますが、generated files や `.codegen-manifest.json` は書き込みません。
+
 #### Command line interface
 ##### 基本的な code generation
 ```bash
 # TypeScript types を生成
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --apply --approval-scope high-impact:codegen-materialize
 
 # React components を生成
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/react -t react
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/react -t react --apply --approval-scope high-impact:codegen-materialize
 
 # API handlers を生成
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/api -t api
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/api -t api --apply --approval-scope high-impact:codegen-materialize
 
 # Database schemas を生成
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/database -t database
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/database -t database --apply --approval-scope high-impact:codegen-materialize
 ```
 
 ##### Drift detection
@@ -495,22 +522,31 @@ pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --form
 
 ##### Watch mode
 ```bash
-# change を watch して自動再生成
-pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/typescript -t typescript
+# change を watch して再生成を preview
+pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/typescript -t typescript --dry-run
+
+# approval 後に watch 再生成を materialize
+pnpm ae-framework codegen watch -i .ae/ae-ir.json -o generated/typescript -t typescript --apply --approval-scope high-impact:codegen-materialize
 ```
 
 #### Scripts
 ```bash
-# すべての target を生成
+# すべての target を preview
 pnpm codegen:generate
+
+# approval 後にすべての target を materialize
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:generate
 
 # 全 target の drift を確認
 pnpm codegen:drift
 
-# drift した code のみ再生成
+# drift した code の再生成を preview
 pnpm codegen:regen
 
-# 開発用 watch mode
+# approval 後に drift した code を materialize
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:regen
+
+# 開発用 watch mode（既定は dry-run preview）
 pnpm codegen:watch
 
 # generated code を検証
@@ -527,14 +563,20 @@ pnpm codegen:clean
 `scripts/codegen-tools.sh` は batch operation を補助します。
 
 ```bash
-# 全 target を一括生成
+# 全 target を一括 preview
 ./scripts/codegen-tools.sh generate-all
+
+# approval 後に全 target を materialize
+./scripts/codegen-tools.sh generate-all --apply --approval-scope high-impact:codegen-materialize
 
 # 全 generated code の drift を確認
 ./scripts/codegen-tools.sh check-drift
 
-# change を watch して自動再生成
+# change を watch して再生成を preview
 ./scripts/codegen-tools.sh watch
+
+# approval 後に watch 再生成を materialize
+./scripts/codegen-tools.sh watch --apply --approval-scope high-impact:codegen-materialize
 ```
 
 ### 設定
@@ -616,17 +658,23 @@ pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
 # 再生成が必要な対象を確認
 pnpm codegen:drift
 
-# 影響範囲を再生成
+# 影響範囲の再生成を preview
 pnpm codegen:regen
+
+# approval 後に影響範囲を materialize
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:regen
 ```
 
 #### 2. Local development
 ```bash
-# watch mode を開始
+# watch mode を dry-run preview で開始
 pnpm codegen:watch
 
+# approval 後に watch 再生成を materialize する場合:
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:watch
+
 # 別 terminal で specification を編集
-# watch mode が自動再生成する
+# watch mode は approval mode に応じて preview または再生成する
 ```
 
 #### 3. Pre-commit validation
@@ -742,15 +790,15 @@ pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
 # Solution: manifest の存在を確認する
 ls generated/*/.codegen-manifest.json
 
-# manifest が無ければ再生成
-pnpm codegen:generate
+# manifest が無ければ approval 後に再生成を materialize
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:generate
 ```
 
 ##### Generated code does not compile
 ```bash
-# Solution: validate と regenerate を実行
+# Solution: validate と approval 付き regenerate を実行
 pnpm codegen:validate
-pnpm codegen:regen
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:regen
 ```
 
 #### Debug mode
@@ -759,7 +807,7 @@ pnpm codegen:regen
 pnpm ae-framework codegen drift -d generated/typescript -s .ae/ae-ir.json --verbose
 
 # Verbose generation
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --verbose
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --apply --approval-scope high-impact:codegen-materialize --verbose
 ```
 
 #### Manual recovery
@@ -767,8 +815,8 @@ pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t 
 # generated code を全削除
 pnpm codegen:clean
 
-# すべて再生成
-pnpm codegen:generate
+# approval 後にすべて再生成
+CODEGEN_APPLY=1 CODEGEN_APPROVAL_SCOPE=high-impact:codegen-materialize pnpm codegen:generate
 
 # status を確認
 pnpm codegen:status
@@ -779,7 +827,7 @@ pnpm codegen:status
 ```bash
 # spec compile と code generation を連続実行
 pnpm ae-framework spec compile -i spec/my-spec.md -o .ae/ae-ir.json
-pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript
+pnpm ae-framework codegen generate -i .ae/ae-ir.json -o generated/typescript -t typescript --apply --approval-scope high-impact:codegen-materialize
 ```
 
 #### Build system integration

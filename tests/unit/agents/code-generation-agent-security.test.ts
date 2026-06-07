@@ -32,7 +32,7 @@ describe('../evil'); import fs from "fs"', () => {
     expect(generated.files[0]?.content).not.toContain('*/\n');
   });
 
-  it('emits OpenAPI test skeletons under review artifacts with safe literals and paths', async () => {
+  it('TGT-AGENT-211-F001: emits OpenAPI test skeletons under review artifacts with safe literals and paths', async () => {
     const agent = new CodeGenerationAgent();
     const spec = JSON.stringify({
       openapi: '3.0.0',

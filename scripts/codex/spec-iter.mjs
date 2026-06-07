@@ -73,7 +73,7 @@ async function main() {
         const g = runStdio(
           'codegen',
           { irPath, targets: ['typescript','api','database'] },
-          'codex-spec-stdio',
+          'codex-spec-stdio-codegen',
         );
         if (!g.ok) console.warn('[iter] codegen returned:', g.error || g.data);
         console.log('[iter] done');

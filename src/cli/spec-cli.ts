@@ -13,10 +13,12 @@ import chalk from 'chalk';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { exportKiroSpec } from './spec-exporter.js';
+import { DEFAULT_HIGH_IMPACT_APPROVAL_SCOPES } from '../utils/high-impact-action-policy.js';
 import type { SpecLintIssue, SpecLintReport } from '../../packages/spec-compiler/src/types.js';
 
 type SpecOutputFormat = 'text' | 'json';
 type SpecIssueSeverity = 'error' | 'warning' | 'info';
+const SPEC_SYNTH_CODEGEN_APPROVAL_SCOPE = DEFAULT_HIGH_IMPACT_APPROVAL_SCOPES['codegen-materialize'];
 
 interface SpecCommandReportIssue {
   ruleId: string;
@@ -538,6 +540,8 @@ export function createSpecCommand(): Command {
     .option('-n, --iterations <n>', 'Max refinement iterations', parseInt, 5)
     .option('--relaxed-first', 'Start in relaxed mode (recommended)', true)
     .option('--max-warnings <n>', 'Allowed warnings in final strict validation', parseInt, 10)
+    .option('--codegen-apply', `Materialize optional quick codegen output after approval (${SPEC_SYNTH_CODEGEN_APPROVAL_SCOPE})`)
+    .option('--codegen-approval-scope <scope>', `Approval scope for optional quick codegen materialization (${SPEC_SYNTH_CODEGEN_APPROVAL_SCOPE})`)
     .action(async (options) => {
       const { input, iterations, maxWarnings } = options;
       const out = options.output || `spec/generated-${Date.now()}.ae-spec.md`;
@@ -609,11 +613,16 @@ export function createSpecCommand(): Command {
               // Optional: run quick codegen
               await import('child_process').then(({ spawnSync }) => {
                 const run = (args: string[]) => spawnSync(process.execPath, ['dist/src/cli/index.js', ...args], { stdio: 'inherit' });
-                run(['codegen', 'generate', '-i', '.ae/ae-ir.json', '-o', 'generated/typescript', '-t', 'typescript']);
-                run(['codegen', 'generate', '-i', '.ae/ae-ir.json', '-o', 'generated/api', '-t', 'api']);
-                run(['codegen', 'generate', '-i', '.ae/ae-ir.json', '-o', 'generated/database', '-t', 'database']);
+                const materializeArgs = options.codegenApply === true
+                  ? ['--apply', '--approval-scope', options.codegenApprovalScope || SPEC_SYNTH_CODEGEN_APPROVAL_SCOPE]
+                  : [];
+                run(['codegen', 'generate', '-i', '.ae/ae-ir.json', '-o', 'generated/typescript', '-t', 'typescript', ...materializeArgs]);
+                run(['codegen', 'generate', '-i', '.ae/ae-ir.json', '-o', 'generated/api', '-t', 'api', ...materializeArgs]);
+                run(['codegen', 'generate', '-i', '.ae/ae-ir.json', '-o', 'generated/database', '-t', 'database', ...materializeArgs]);
               });
-              console.log(chalk.green('✅ Code generation completed (typescript/api/database).'));
+              console.log(chalk.green(options.codegenApply === true
+                ? '✅ Code generation completed (typescript/api/database).'
+                : `✅ Code generation dry-run completed (typescript/api/database). Use --codegen-apply --codegen-approval-scope ${SPEC_SYNTH_CODEGEN_APPROVAL_SCOPE} to materialize.`));
               return;
             } catch (e) {
               console.log(chalk.yellow('Strict validation attempt failed; continuing iterations...'));
