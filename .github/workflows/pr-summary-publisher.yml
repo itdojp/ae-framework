@@ -1,0 +1,376 @@
+name: PR Summary Publisher
+
+on:
+  workflow_run:
+    workflows: ["PR Maintenance"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "PR Maintenance workflow run id containing PR summary artifacts"
+        required: true
+        type: string
+      source_run_attempt:
+        description: "PR Maintenance workflow run attempt"
+        required: false
+        type: string
+      pr_number:
+        description: "Pull request number to publish to"
+        required: true
+        type: string
+      pr_head_sha:
+        description: "Expected current pull request head SHA"
+        required: true
+        type: string
+
+concurrency:
+  group: pr-summary-publisher-${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_run_id || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  checks: write
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  publish:
+    name: Publish PR summary and Change Package check
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve publish context
+        id: context
+        uses: actions/github-script@v7
+        env:
+          DISPATCH_SOURCE_RUN_ID: ${{ inputs.source_run_id || '' }}
+          DISPATCH_SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt || '' }}
+          DISPATCH_PR_NUMBER: ${{ inputs.pr_number || '' }}
+          DISPATCH_PR_HEAD_SHA: ${{ inputs.pr_head_sha || '' }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const eventName = context.eventName;
+            const payload = context.payload || {};
+            let sourceRunId = '';
+            let sourceRunAttempt = '';
+            let prNumber = '';
+            let expectedHeadSha = '';
+            let workflowHeadRepository = '';
+            let sourceConclusion = 'success';
+
+            if (eventName === 'workflow_run') {
+              const workflowRun = payload.workflow_run || {};
+              sourceRunId = String(workflowRun.id || '');
+              sourceRunAttempt = String(workflowRun.run_attempt || '');
+              prNumber = String((workflowRun.pull_requests || [])[0]?.number || '');
+              expectedHeadSha = String(workflowRun.head_sha || '');
+              workflowHeadRepository = String(workflowRun.head_repository?.full_name || '');
+              sourceConclusion = String(workflowRun.conclusion || '');
+            } else {
+              sourceRunId = String(process.env.DISPATCH_SOURCE_RUN_ID || '');
+              sourceRunAttempt = String(process.env.DISPATCH_SOURCE_RUN_ATTEMPT || '');
+              prNumber = String(process.env.DISPATCH_PR_NUMBER || '');
+              expectedHeadSha = String(process.env.DISPATCH_PR_HEAD_SHA || '');
+            }
+
+            if (sourceConclusion !== 'success') {
+              core.info(`Skipping PR summary publication for source conclusion=${sourceConclusion}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            if (!/^\d+$/.test(sourceRunId) || !/^\d+$/.test(prNumber)) {
+              core.warning(`Invalid PR summary publish context: sourceRunId=${JSON.stringify(sourceRunId)} prNumber=${JSON.stringify(prNumber)}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            if (!/^[0-9a-f]{40}$/i.test(expectedHeadSha)) {
+              core.warning(`Invalid or missing PR head SHA for PR summary publication: ${JSON.stringify(expectedHeadSha)}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+
+            const issueNumber = Number(prNumber);
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: issueNumber });
+            if (workflowHeadRepository && workflowHeadRepository !== `${owner}/${repo}`) {
+              core.warning(`Skipping PR summary publication for non-repository head ${workflowHeadRepository}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            if (pr.head?.repo?.fork || pr.head?.repo?.full_name !== `${owner}/${repo}`) {
+              core.warning(`Skipping PR summary publication for fork or external head repository on PR #${issueNumber}.`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            if (pr.head.sha !== expectedHeadSha) {
+              core.warning(`Skipping stale PR summary for PR #${issueNumber}: expected ${expectedHeadSha}, current ${pr.head.sha}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+
+            const summaryArtifactName = `pr-summary-publish-pr-${issueNumber}`;
+            const validationArtifactName = `trusted-change-package-validation-pr-${issueNumber}`;
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner,
+              repo,
+              run_id: Number(sourceRunId),
+              per_page: 100,
+            });
+            const artifactNames = new Set((artifacts.data.artifacts || []).filter((artifact) => !artifact.expired).map((artifact) => artifact.name));
+            for (const required of [summaryArtifactName, validationArtifactName]) {
+              if (!artifactNames.has(required)) {
+                core.info(`Required PR summary publisher artifact ${required} not found for run ${sourceRunId}; skipping publication.`);
+                core.setOutput('skip', 'true');
+                return;
+              }
+            }
+
+            core.setOutput('skip', 'false');
+            core.setOutput('source_run_id', sourceRunId);
+            core.setOutput('source_run_attempt', sourceRunAttempt);
+            core.setOutput('pr_number', prNumber);
+            core.setOutput('pr_head_sha', expectedHeadSha);
+            core.setOutput('summary_artifact_name', summaryArtifactName);
+            core.setOutput('validation_artifact_name', validationArtifactName);
+
+      - name: Checkout trusted publisher code
+        if: steps.context.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Download PR summary publish artifact
+        if: steps.context.outputs.skip != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.context.outputs.summary_artifact_name }}
+          path: artifacts/publish/pr-summary
+          run-id: ${{ steps.context.outputs.source_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Download trusted Change Package validation artifact
+        if: steps.context.outputs.skip != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.context.outputs.validation_artifact_name }}
+          path: artifacts/publish/trusted-change-package
+          run-id: ${{ steps.context.outputs.source_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Validate PR summary artifact provenance
+        if: steps.context.outputs.skip != 'true'
+        env:
+          SOURCE_RUN_ATTEMPT: ${{ steps.context.outputs.source_run_attempt }}
+        run: |
+          set -euo pipefail
+          args=(
+            --provenance artifacts/publish/pr-summary/summary/pr-summary-publish.provenance.json
+            --root artifacts/publish/pr-summary
+            --artifact-name "${{ steps.context.outputs.summary_artifact_name }}"
+            --repository "${GITHUB_REPOSITORY}"
+            --workflow "PR Maintenance"
+            --run-id "${{ steps.context.outputs.source_run_id }}"
+            --event-name pull_request
+            --head-sha "${{ steps.context.outputs.pr_head_sha }}"
+            --pr-number "${{ steps.context.outputs.pr_number }}"
+            --require-subject summary/PR_SUMMARY.md
+          )
+          if [ -n "${SOURCE_RUN_ATTEMPT}" ]; then
+            args+=(--run-attempt "${SOURCE_RUN_ATTEMPT}")
+          fi
+          node scripts/ci/validate-artifact-provenance.mjs "${args[@]}"
+
+      - name: Publish PR summary, progress, and Change Package check
+        if: steps.context.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        env:
+          SOURCE_RUN_ID: ${{ steps.context.outputs.source_run_id }}
+          PR_HEAD_SHA: ${{ steps.context.outputs.pr_head_sha }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { owner, repo } = context.repo;
+            const number = Number('${{ steps.context.outputs.pr_number }}');
+            const headSha = String(process.env.PR_HEAD_SHA || '');
+            const sourceRunId = String(process.env.SOURCE_RUN_ID || '');
+            if (!number || !headSha) {
+              core.setFailed('No PR number or head SHA found; cannot publish summary artifacts.');
+              return;
+            }
+
+            const artifactRoot = 'artifacts/publish/pr-summary';
+            const trustedArtifactRoot = 'artifacts/publish/trusted-change-package';
+            const MAX_COMMENT_BYTES = 60000;
+            const readText = (relativePath, root = artifactRoot) => {
+              const filePath = path.join(root, relativePath);
+              if (!fs.existsSync(filePath)) return null;
+              return fs.readFileSync(filePath, 'utf8').replace(/\u0000/g, '\uFFFD');
+            };
+            const truncateUtf8 = (text, maxBytes) => {
+              let truncated = Buffer.from(text, 'utf8')
+                .subarray(0, Math.max(0, maxBytes))
+                .toString('utf8');
+              while (Buffer.byteLength(truncated, 'utf8') > maxBytes) {
+                truncated = truncated.slice(0, -1);
+              }
+              return truncated;
+            };
+            const limitComment = (text, label) => {
+              const bytes = Buffer.byteLength(text, 'utf8');
+              if (bytes <= MAX_COMMENT_BYTES) return text;
+              const notice = `\n\n_[${label} truncated to ${MAX_COMMENT_BYTES} bytes before publication.]_`;
+              const availableBytes = Math.max(
+                0,
+                MAX_COMMENT_BYTES - Buffer.byteLength(notice, 'utf8'),
+              );
+              return `${truncateUtf8(text, availableBytes)}${notice}`;
+            };
+            const isCommentPayloadWithinLimit = (marker, body) =>
+              Buffer.byteLength(`${marker}\n\n${body}`, 'utf8') <= MAX_COMMENT_BYTES;
+            let issueCommentsCache = null;
+            const listAllIssueComments = async () => {
+              const comments = [];
+              for (let page = 1; ; page += 1) {
+                const response = await github.rest.issues.listComments({
+                  owner,
+                  repo,
+                  issue_number: number,
+                  per_page: 100,
+                  page,
+                });
+                comments.push(...response.data);
+                if (response.data.length < 100) break;
+              }
+              return comments;
+            };
+            const getIssueComments = async () => {
+              if (!issueCommentsCache) {
+                issueCommentsCache = await listAllIssueComments();
+              }
+              return issueCommentsCache;
+            };
+            const isTrustedAutomationComment = (comment, marker) => {
+              const login = String(comment?.user?.login || '').trim().toLowerCase();
+              const body = typeof comment?.body === 'string' ? comment.body : '';
+              return (
+                (login === 'github-actions' || login === 'github-actions[bot]')
+                && body.startsWith(marker)
+              );
+            };
+            const markerDisplayLabel = (marker) => {
+              const label = String(marker || '')
+                .replace(/^<!--\s*/, '')
+                .replace(/\s*-->$/, '')
+                .trim();
+              return label || 'PR comment';
+            };
+            const upsertComment = async (marker, body) => {
+              const payload = limitComment(`${marker}\n\n${body}`, markerDisplayLabel(marker));
+              const comments = await getIssueComments();
+              const existing = [...comments].reverse().find((comment) => isTrustedAutomationComment(comment, marker));
+              if (existing) {
+                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: payload });
+              } else {
+                await github.rest.issues.createComment({ owner, repo, issue_number: number, body: payload });
+              }
+            };
+
+            const summaryBody = readText('summary/PR_SUMMARY.md');
+            if (summaryBody) {
+              await upsertComment('<!-- AE-PR-SUMMARY -->', summaryBody);
+            } else {
+              core.warning('PR_SUMMARY.md was not present in the publish artifact.');
+            }
+
+            const progressBody = readText('progress/PR_PROGRESS.md');
+            const progressJsonText = readText('progress/summary.json');
+            if (progressBody) {
+              let progressCommentBody = progressBody;
+              if (progressJsonText) {
+                try {
+                  const progressJson = JSON.parse(progressJsonText);
+                  const progressJsonBlock = `\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(progressJson)} -->`;
+                  progressCommentBody = isCommentPayloadWithinLimit(
+                    '<!-- AE-PR-PROGRESS -->',
+                    `${progressBody}${progressJsonBlock}`,
+                  )
+                    ? `${progressBody}${progressJsonBlock}`
+                    : progressBody;
+                  if (progressCommentBody === progressBody) {
+                    core.warning('Progress summary JSON omitted because it would exceed the PR comment size cap.');
+                  }
+                } catch (error) {
+                  core.warning(`Progress summary JSON could not be parsed; publishing Markdown without embedded JSON: ${error.message}`);
+                }
+              } else {
+                core.warning('Progress summary JSON was not present in the publish artifact; publishing Markdown only.');
+              }
+              await upsertComment(
+                '<!-- AE-PR-PROGRESS -->',
+                progressCommentBody,
+              );
+            } else {
+              core.warning('Progress summary Markdown was not present in the publish artifact.');
+            }
+
+            const readJson = (relativePath, root = artifactRoot) => {
+              const text = readText(relativePath, root);
+              if (!text) return null;
+              try {
+                return JSON.parse(text);
+              } catch (error) {
+                core.warning(`${relativePath} could not be parsed; treating as missing structured JSON: ${error.message}`);
+                return null;
+              }
+            };
+            const validation = readJson('change-package-validation.json', trustedArtifactRoot);
+            const trusted = validation?.trustedValidation || {};
+            const trustedErrors = [];
+            if (validation && trusted.source !== 'base-ref-code') trustedErrors.push('trustedValidation.source is not base-ref-code');
+            if (validation && String(trusted.headSha || '') !== headSha) trustedErrors.push('trustedValidation.headSha does not match current head');
+            if (validation && String(trusted.workflowRunId || '') !== sourceRunId) trustedErrors.push('trustedValidation.workflowRunId does not match source run');
+            const validationForCheck = trustedErrors.length
+              ? {
+                  schemaVersion: validation?.schemaVersion || 'change-package-validation/v1',
+                  result: 'fail',
+                  strict: validation?.strict ?? false,
+                  errors: [...(Array.isArray(validation?.errors) ? validation.errors : []), ...trustedErrors],
+                  warnings: Array.isArray(validation?.warnings) ? validation.warnings : [],
+                }
+              : validation;
+            const result = String(validationForCheck?.result || '').trim().toLowerCase();
+            const conclusion = result === 'pass'
+              ? 'success'
+              : (result === 'warn' ? 'neutral' : 'failure');
+            const title = result
+              ? `Change Package Validation: ${result.toUpperCase()}`
+              : 'Change Package Validation: MISSING';
+            const summary = validationForCheck
+              ? [
+                  `schemaVersion: ${validationForCheck.schemaVersion || 'unknown'}`,
+                  `result: ${result || 'missing'}`,
+                  `strict: ${validationForCheck.strict ?? 'unknown'}`,
+                  `errors: ${Array.isArray(validationForCheck.errors) ? validationForCheck.errors.length : 'unknown'}`,
+                  `warnings: ${Array.isArray(validationForCheck.warnings) ? validationForCheck.warnings.length : 'unknown'}`,
+                  `sourceWorkflowRunId: ${sourceRunId}`,
+                  `publisherRunId: ${context.runId}`,
+                  `headSha: ${headSha}`,
+                  ...(trustedErrors.length ? ['', 'Trusted validation errors:', ...trustedErrors.map((error) => `- ${error}`)] : []),
+                ].join('\n')
+              : `No structured change-package-validation.json artifact was available for head ${headSha}.`;
+
+            await github.rest.checks.create({
+              owner,
+              repo,
+              name: 'Change Package Validation',
+              head_sha: headSha,
+              status: 'completed',
+              conclusion,
+              output: {
+                title,
+                summary,
+              },
+            });

@@ -307,12 +307,14 @@ describe('workflow permission boundaries', () => {
     expect(rawWorkflow).toContain('environment:\n      name: branch-protection-admin');
   });
 
-  it('pr-maintenance renders PR summary read-only and publishes from a checkout-free writer job', () => {
+  it('pr-maintenance renders PR summary read-only and publishes through a trusted workflow-run publisher', () => {
     const workflow = readWorkflow('pr-ci-status-comment.yml');
     const parsed = parseWorkflow('pr-ci-status-comment.yml');
     const summarize = extractJobBlock(workflow, 'summarize');
     const validateChangePackage = extractJobBlock(workflow, 'validate-change-package');
-    const publishSummary = extractJobBlock(workflow, 'publish-summary');
+    const publisher = parseWorkflow('pr-summary-publisher.yml');
+    const publisherRaw = readWorkflow('pr-summary-publisher.yml');
+    const publisherJob = extractJobBlock(publisherRaw, 'publish');
     const enableAutoMerge = extractJobBlock(workflow, 'enable-auto-merge');
 
     expect(workflowPermission(parsed, 'issues')).toBeUndefined();
@@ -335,14 +337,18 @@ describe('workflow permission boundaries', () => {
       actions: 'read',
       contents: 'read',
     });
-    expect(parsed.jobs?.['publish-summary']?.needs).toEqual(['summarize', 'validate-change-package']);
-    expect(parsed.jobs?.['publish-summary']?.permissions).toEqual({
+    expect(parsed.jobs?.['publish-summary']).toBeUndefined();
+    expect(publisher.on?.workflow_run?.workflows).toContain('PR Maintenance');
+    expect(publisher.permissions).toEqual({
       actions: 'read',
       checks: 'write',
+      contents: 'read',
       issues: 'write',
-      'pull-requests': 'write',
+      'pull-requests': 'read',
     });
     expect(summarize).toContain('Upload PR summary publish artifact');
+    expect(summarize).toContain('Write PR summary publish provenance');
+    expect(summarize).toContain('pr-summary-publish.provenance.json');
     expect(summarize).toContain('artifacts/change-package/change-package.json');
     expect(validateChangePackage).toContain('ref: ${{ github.event.pull_request.base.sha }}');
     expect(validateChangePackage).toContain('Install trusted validation dependencies');
@@ -354,34 +360,41 @@ describe('workflow permission boundaries', () => {
     expect(validateChangePackage).toContain("source: 'base-ref-code'");
     expect(summarize).not.toContain('issues.createComment');
     expect(summarize).not.toContain('issues.updateComment');
-    expect(publishSummary).not.toContain('actions/checkout@v4');
-    expect(publishSummary).toContain('Download PR summary publish artifact');
-    expect(publishSummary).toContain('Download trusted Change Package validation artifact');
-    expect(publishSummary).toContain("const trustedArtifactRoot = 'artifacts/publish/trusted-change-package'");
-    expect(publishSummary).toContain("readText('summary/PR_SUMMARY.md')");
-    expect(publishSummary).toContain("readText('progress/PR_PROGRESS.md')");
-    expect(publishSummary).toContain("readJson('change-package-validation.json', trustedArtifactRoot)");
-    expect(publishSummary).toContain('const truncateUtf8 = (text, maxBytes) =>');
-    expect(publishSummary).toContain('MAX_COMMENT_BYTES - Buffer.byteLength(notice');
-    expect(publishSummary).toContain('availableBytes');
-    expect(publishSummary).toContain('const listAllIssueComments = async () =>');
-    expect(publishSummary).toContain('page += 1');
-    expect(publishSummary).toContain('let issueCommentsCache = null;');
-    expect(publishSummary).toContain('const getIssueComments = async () =>');
-    expect(publishSummary).toContain('issueCommentsCache = await listAllIssueComments();');
-    expect(publishSummary).toContain('const isTrustedAutomationComment = (comment, marker) =>');
-    expect(publishSummary).toContain("login === 'github-actions' || login === 'github-actions[bot]'");
-    expect(publishSummary).toContain('body.startsWith(marker)');
-    expect(publishSummary).toContain('const markerDisplayLabel = (marker) =>');
-    expect(publishSummary).toContain("return label || 'PR comment';");
-    expect(publishSummary).toContain('limitComment(`${marker}\\n\\n${body}`, markerDisplayLabel(marker))');
-    expect(publishSummary).toContain('const comments = await getIssueComments();');
-    expect(publishSummary).toContain('const existing = [...comments].reverse().find((comment) => isTrustedAutomationComment(comment, marker))');
-    expect(publishSummary).toContain('Progress summary JSON omitted because it would exceed the PR comment size cap.');
-    expect(publishSummary).toContain('Progress summary JSON could not be parsed; publishing Markdown without embedded JSON');
-    expect(publishSummary).toContain('could not be parsed; treating as missing structured JSON');
-    expect(publishSummary).toContain("name: 'Change Package Validation'");
-    expect(publishSummary).toContain('head_sha: headSha');
+    expect(publisherJob).toContain('ref: ${{ github.event.repository.default_branch }}');
+    expect(publisherJob).toContain('Download PR summary publish artifact');
+    expect(publisherJob).toContain('Download trusted Change Package validation artifact');
+    expect(publisherJob).toContain('Validate PR summary artifact provenance');
+    expect(publisherJob).toContain('validate-artifact-provenance.mjs');
+    expect(publisherJob).toContain('--workflow "PR Maintenance"');
+    expect(publisherJob).toContain('--require-subject summary/PR_SUMMARY.md');
+    expect(publisherJob).toContain("const trustedArtifactRoot = 'artifacts/publish/trusted-change-package'");
+    expect(publisherJob).toContain("readText('summary/PR_SUMMARY.md')");
+    expect(publisherJob).toContain("readText('progress/PR_PROGRESS.md')");
+    expect(publisherJob).toContain("readJson('change-package-validation.json', trustedArtifactRoot)");
+    expect(publisherJob).toContain("trusted.source !== 'base-ref-code'");
+    expect(publisherJob).toContain("String(trusted.headSha || '') !== headSha");
+    expect(publisherJob).toContain("String(trusted.workflowRunId || '') !== sourceRunId");
+    expect(publisherJob).toContain('const truncateUtf8 = (text, maxBytes) =>');
+    expect(publisherJob).toContain('MAX_COMMENT_BYTES - Buffer.byteLength(notice');
+    expect(publisherJob).toContain('availableBytes');
+    expect(publisherJob).toContain('const listAllIssueComments = async () =>');
+    expect(publisherJob).toContain('page += 1');
+    expect(publisherJob).toContain('let issueCommentsCache = null;');
+    expect(publisherJob).toContain('const getIssueComments = async () =>');
+    expect(publisherJob).toContain('issueCommentsCache = await listAllIssueComments();');
+    expect(publisherJob).toContain('const isTrustedAutomationComment = (comment, marker) =>');
+    expect(publisherJob).toContain("login === 'github-actions' || login === 'github-actions[bot]'");
+    expect(publisherJob).toContain('body.startsWith(marker)');
+    expect(publisherJob).toContain('const markerDisplayLabel = (marker) =>');
+    expect(publisherJob).toContain("return label || 'PR comment';");
+    expect(publisherJob).toContain('limitComment(`${marker}\\n\\n${body}`, markerDisplayLabel(marker))');
+    expect(publisherJob).toContain('const comments = await getIssueComments();');
+    expect(publisherJob).toContain('const existing = [...comments].reverse().find((comment) => isTrustedAutomationComment(comment, marker))');
+    expect(publisherJob).toContain('Progress summary JSON omitted because it would exceed the PR comment size cap.');
+    expect(publisherJob).toContain('Progress summary JSON could not be parsed; publishing Markdown without embedded JSON');
+    expect(publisherJob).toContain('could not be parsed; treating as missing structured JSON');
+    expect(publisherJob).toContain("name: 'Change Package Validation'");
+    expect(publisherJob).toContain('head_sha: headSha');
     expect(enableAutoMerge).not.toContain("github.event_name == 'pull_request'");
   });
 
@@ -445,8 +458,28 @@ describe('workflow permission boundaries', () => {
   it('keeps pull-request DoD report-only while preserving push/main enforcement', () => {
     const workflow = readWorkflow('quality-gates-centralized.yml');
     const dod = extractJobBlock(workflow, 'dod');
+    const publisher = parseWorkflow('quality-gates-publisher.yml');
+    const publisherRaw = readWorkflow('quality-gates-publisher.yml');
+    const publisherJob = extractJobBlock(publisherRaw, 'publish');
     expect(dod).toContain("continue-on-error: ${{ github.event_name == 'pull_request' }}");
     expect(dod).toContain('run: pnpm run quality:run -- --env=testing --gates=dod --sequential');
+    expect(dod).toContain('Write quality report provenance');
+    expect(dod).toContain('write-artifact-provenance.mjs');
+    expect(workflow).not.toContain('  pr-quality-comment:');
+    expect(publisher.on?.workflow_run?.workflows).toContain('Quality Gates');
+    expect(publisher.permissions).toEqual({
+      actions: 'read',
+      contents: 'read',
+      issues: 'write',
+      'pull-requests': 'read',
+    });
+    expect(publisherJob).toContain('ref: ${{ github.event.repository.default_branch }}');
+    expect(publisherJob).toContain('Validate quality report provenance');
+    expect(publisherJob).toContain('--workflow "Quality Gates"');
+    expect(publisherJob).toContain('validate-artifact-provenance.mjs');
+    expect(publisherJob).toContain('render-quality-pr-comment.mjs');
+    expect(publisherJob).toContain('gh api -X PATCH');
+    expect(publisherJob).toContain('gh api -X POST');
   });
 
   it('copilot-review-gate delegates fork-safe behavior to trusted script with explicit actor env', () => {
@@ -691,18 +724,27 @@ describe('workflow permission boundaries', () => {
       'persist-credentials': false,
     });
 
-    const commentJob = sbom.jobs?.['security-summary-comment'];
-    const commentSteps = Array.isArray(commentJob?.steps) ? commentJob.steps : [];
-    expect(commentJob?.permissions).toMatchObject({
+    expect(sbom.jobs?.['security-summary-comment']).toBeUndefined();
+    expect(generationSteps.some((step: any) => step?.name === 'Write SBOM provenance')).toBe(true);
+    expect(generationSteps.some((step: any) => step?.name === 'Write security scan provenance')).toBe(true);
+
+    const publisher = parseWorkflow('sbom-security-publisher.yml');
+    const publisherRaw = readWorkflow('sbom-security-publisher.yml');
+    const publisherJob = extractJobBlock(publisherRaw, 'publish');
+    expect(publisher.on?.workflow_run?.workflows).toContain('SBOM Generation and Security Scanning');
+    expect(publisher.permissions).toMatchObject({
       contents: 'read',
       actions: 'read',
       issues: 'write',
       'pull-requests': 'read',
     });
-    expect(commentSteps.some((step: any) => step?.uses === 'actions/checkout@v4')).toBe(false);
-    expect(commentSteps.some((step: any) => String(step?.uses ?? '').startsWith('./'))).toBe(false);
-    expect(commentSteps.some((step: any) => String(step?.run ?? '').includes('pnpm'))).toBe(false);
-    expect(commentSteps.filter((step: any) => step?.uses === 'actions/github-script@v7')).toHaveLength(1);
+    expect(publisherJob).toContain('ref: ${{ github.event.repository.default_branch }}');
+    expect(publisherJob).toContain('Validate SBOM and security scan provenance');
+    expect(publisherJob).toContain('validate-artifact-provenance.mjs');
+    expect(publisherJob).toContain('--workflow "SBOM Generation and Security Scanning"');
+    expect(publisherJob).toContain('--require-subject sbom.json');
+    expect(publisherJob).toContain('--require-subject audit-results.json');
+    expect(publisherJob).toContain('Post Security/Compliance summary');
   });
 
   it('security analyzer pull request runs stay read-only and isolate security-events writes', () => {
@@ -776,13 +818,17 @@ describe('workflow permission boundaries', () => {
     expect(publisher.on?.workflow_run?.workflows).toContain('Formal Verify');
     expect(publisher.permissions).toMatchObject({
       actions: 'read',
+      contents: 'read',
       issues: 'write',
       'pull-requests': 'read',
     });
-    expect(jobSteps(publisher, 'publish').some((step) => step?.uses === 'actions/checkout@v4')).toBe(false);
+    expect(jobSteps(publisher, 'publish').some((step) => step?.uses === 'actions/checkout@v4')).toBe(true);
+    expect(publisherJob).toContain('ref: ${{ github.event.repository.default_branch }}');
     expect(jobSteps(publisher, 'publish').some((step) => String(step?.uses ?? '').startsWith('./'))).toBe(false);
     expect(publisher.on?.workflow_dispatch?.inputs?.pr_head_sha?.required).toBe(true);
+    expect(publisher.on?.workflow_dispatch?.inputs?.source_run_attempt?.required).toBe(false);
     expect(publisherJob).toContain("workflowRun.head_sha");
+    expect(publisherJob).toContain("workflowRun.run_attempt");
     expect(publisherJob).toContain('/^[0-9a-f]{40}$/i.test(expectedHeadSha)');
     expect(publisherJob).toContain('Invalid or missing PR head SHA');
     expect(publisherJob).toContain('workflowHeadRepository !== `${owner}/${repo}`');
@@ -791,6 +837,10 @@ describe('workflow permission boundaries', () => {
     expect(publisherJob).toContain("labels.has('run-formal')");
     expect(publisherJob).toContain('actions/download-artifact@v4');
     expect(publisherJob).toContain('run-id: ${{ steps.context.outputs.source_run_id }}');
+    expect(publisherJob).toContain('Validate formal aggregate provenance');
+    expect(publisherJob).toContain('validate-artifact-provenance.mjs');
+    expect(publisherJob).toContain('--workflow "Formal Verify"');
+    expect(publisherJob).toContain('--require-subject formal-aggregate.md');
     expect(publisherJob).toContain('FORMAL_AGGREGATE_MARKER');
     expect(publisherJob).toContain('MAX_COMMENT_BYTES');
     expect(publisherJob).toContain('sanitizeAggregateMarkdown');

@@ -63,12 +63,34 @@ jobs:
         continue-on-error: ${{ inputs.strict_formal_summary_v1 != true }}
         run: |
           node scripts/formal/generate-formal-summary-v1.mjs --in artifacts_dl --out artifacts/formal/formal-summary-v1.json --out-v2 artifacts/formal/formal-summary-v2.json
+      - name: Write formal aggregate provenance
+        if: always()
+        run: |
+          set -euo pipefail
+          subjects=()
+          for subject in formal-aggregate.md formal-aggregate.json; do
+            if [ -f "artifacts/formal/$subject" ]; then
+              subjects+=(--subject "$subject")
+            fi
+          done
+          if [ "${#subjects[@]}" -eq 0 ]; then
+            printf '%s\n' '::error::formal aggregate artifact has no subjects to bind.'
+            exit 1
+          fi
+          node scripts/ci/write-artifact-provenance.mjs \
+            --output artifacts/formal/formal-reports-aggregate.provenance.json \
+            --artifact-name formal-reports-aggregate \
+            --root artifacts/formal \
+            "${subjects[@]}"
       - name: Upload aggregate
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: formal-reports-aggregate
-          path: artifacts/formal/formal-aggregate.md
+          path: |
+            artifacts/formal/formal-aggregate.md
+            artifacts/formal/formal-aggregate.json
+            artifacts/formal/formal-reports-aggregate.provenance.json
       - name: Upload aggregate JSON
         if: always()
         uses: actions/upload-artifact@v4
