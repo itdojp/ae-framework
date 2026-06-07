@@ -36,11 +36,47 @@ const environmentEntries = (environment: ComposeService['environment']): Array<[
 
 const volumeSource = (volume: string | { source?: string }): string | undefined => {
   if (typeof volume === 'object') return volume.source;
-  const [source] = volume.split(':');
-  return source;
+  let expansionDepth = 0;
+  for (let index = 0; index < volume.length; index += 1) {
+    const char = volume[index];
+    if (char === '$' && volume[index + 1] === '{') {
+      expansionDepth += 1;
+      index += 1;
+      continue;
+    }
+    if (char === '}' && expansionDepth > 0) {
+      expansionDepth -= 1;
+      continue;
+    }
+    const isWindowsDriveSeparator = index === 1
+      && /^[A-Za-z]$/.test(volume[0] ?? '')
+      && (volume[2] === '\\' || volume[2] === '/');
+    if (char === ':' && expansionDepth === 0 && !isWindowsDriveSeparator) {
+      return volume.slice(0, index);
+    }
+  }
+  return volume;
+};
+
+const variableExpansionPattern = /^\$\{[A-Z0-9_]+(?::[-?][^}]*)?\}$/;
+const variableDefaultPattern = /^\$\{[A-Z0-9_]+:-(.+)\}$/;
+const windowsAbsolutePathPattern = /^[A-Za-z]:[\\/]/;
+
+const isVariableExpansion = (value: string): boolean => variableExpansionPattern.test(value);
+
+const staticallyValidatedVolumeSources = (source: string): string[] => {
+  const defaultMatch = source.match(variableDefaultPattern);
+  if (defaultMatch?.[1]) {
+    return [defaultMatch[1]];
+  }
+  if (source.includes('${')) {
+    return [];
+  }
+  return [source];
 };
 
 const isSensitiveHostSource = (source: string): boolean => source.startsWith('/')
+  || windowsAbsolutePathPattern.test(source)
   || source.startsWith('~')
   || source === '..'
   || source.startsWith('/etc')
@@ -53,7 +89,7 @@ const isNamedVolumeSource = (source: string): boolean => /^[A-Za-z0-9][A-Za-z0-9
 
 const isRepoContainedSource = (filePath: string, source: string): boolean => {
   if (isNamedVolumeSource(source)) return true;
-  if (path.isAbsolute(source) || source.startsWith('~')) return false;
+  if (path.isAbsolute(source) || windowsAbsolutePathPattern.test(source) || source.startsWith('~')) return false;
   const repoRoot = process.cwd();
   const composeDir = path.dirname(path.resolve(repoRoot, filePath));
   const resolvedSource = path.resolve(composeDir, source);
@@ -62,6 +98,22 @@ const isRepoContainedSource = (filePath: string, source: string): boolean => {
 };
 
 describe('compose runtime isolation', () => {
+  it('parses compose volume sources with interpolation defaults and Windows drive prefixes', () => {
+    const interpolatedSource = '${AE_HOST_STORE:-../../.pnpm-store}';
+    expect(volumeSource(`${interpolatedSource}:/root/.local/share/pnpm/store/v3:Z`)).toBe(interpolatedSource);
+    expect(staticallyValidatedVolumeSources(interpolatedSource)).toEqual(['../../.pnpm-store']);
+    expect(isRepoContainedSource('infra/podman/unit-compose.yml', '../../.pnpm-store')).toBe(true);
+
+    expect(volumeSource('C:\\cache:/cache:ro')).toBe('C:\\cache');
+    expect(isSensitiveHostSource('C:\\cache')).toBe(true);
+    expect(isRepoContainedSource('docker/compose.yaml', 'C:\\cache')).toBe(false);
+  });
+
+  it('requires credential variables to be full compose expansions except assembled URLs', () => {
+    expect(isVariableExpansion('${AE_DEV_POSTGRES_PASSWORD:?set AE_DEV_POSTGRES_PASSWORD}')).toBe(true);
+    expect(isVariableExpansion('static-${AE_DEV_POSTGRES_PASSWORD}')).toBe(false);
+  });
+
   it('TGT-017-F001: does not keep literal database credentials in compose manifests', () => {
     const credentialKey = /(?:POSTGRES_(?:USER|PASSWORD|DB)|DATABASE_URL|.*(?:PASSWORD|SECRET|TOKEN|API_KEY).*)/i;
 
@@ -70,7 +122,11 @@ describe('compose runtime isolation', () => {
       for (const [serviceName, service] of Object.entries(compose.services ?? {})) {
         for (const [key, value] of environmentEntries(service.environment)) {
           if (!credentialKey.test(key)) continue;
-          expect(value, `${filePath}:${serviceName}.${key} must use environment injection`).toContain('${');
+          if (key === 'DATABASE_URL') {
+            expect(value, `${filePath}:${serviceName}.${key} must use environment injection`).toContain('${');
+            continue;
+          }
+          expect(isVariableExpansion(value), `${filePath}:${serviceName}.${key} must use a full compose variable expansion`).toBe(true);
         }
       }
     }
@@ -83,8 +139,13 @@ describe('compose runtime isolation', () => {
         for (const volume of service.volumes ?? []) {
           const source = volumeSource(volume);
           if (!source || isNamedVolumeSource(source)) continue;
-          expect(isSensitiveHostSource(source), `${filePath}:${serviceName} mounts sensitive host source ${source}`).toBe(false);
-          expect(isRepoContainedSource(filePath, source), `${filePath}:${serviceName} host source ${source} must stay inside the repository workspace`).toBe(true);
+          const candidates = staticallyValidatedVolumeSources(source);
+          expect(candidates, `${filePath}:${serviceName} host source ${source} must be statically validated`).not.toHaveLength(0);
+          for (const candidate of candidates) {
+            if (isNamedVolumeSource(candidate)) continue;
+            expect(isSensitiveHostSource(candidate), `${filePath}:${serviceName} mounts sensitive host source ${candidate}`).toBe(false);
+            expect(isRepoContainedSource(filePath, candidate), `${filePath}:${serviceName} host source ${candidate} must stay inside the repository workspace`).toBe(true);
+          }
         }
       }
     }
