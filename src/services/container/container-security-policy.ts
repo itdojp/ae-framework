@@ -1,6 +1,7 @@
 import * as fs from 'fs/promises';
+import { realpathSync } from 'fs';
 import * as path from 'path';
-import type { ImageBuildContext } from './container-engine.js';
+import type { ImageBuildContext, VolumeMount } from './container-engine.js';
 
 export const AE_CONTAINER_MANAGED_LABEL = 'ae-framework.managed';
 export const AE_CONTAINER_MANAGED_LABEL_VALUE = 'true';
@@ -56,6 +57,72 @@ export interface WorkspaceResolutionResult {
   workspaceRoot: string;
   projectPath: string;
 }
+
+
+export interface ApprovedVolumeMountOptions {
+  workspaceRoot?: string;
+}
+
+const namedVolumePattern = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
+const windowsAbsolutePathPattern = /^[A-Za-z]:[\\/]/;
+
+const isHostPathLikeVolumeSource = (source: string): boolean => path.isAbsolute(source)
+  || windowsAbsolutePathPattern.test(source)
+  || source.startsWith('.')
+  || source.startsWith('~')
+  || source.includes('/')
+  || source.includes('\\');
+
+const resolveExistingPathSync = (candidate: string, errorMessage: string): string => {
+  try {
+    return realpathSync(candidate);
+  } catch {
+    throw new Error(errorMessage);
+  }
+};
+
+export const resolveApprovedVolumeMount = (
+  volume: VolumeMount,
+  { workspaceRoot = process.env['AE_CONTAINER_WORKSPACE_ROOT'] || process.cwd() }: ApprovedVolumeMountOptions = {},
+): VolumeMount => {
+  if (volume.type === 'tmpfs') {
+    return { ...volume };
+  }
+
+  if (typeof volume.source !== 'string' || volume.source.length === 0) {
+    throw new Error('Volume source is required');
+  }
+
+  if (volume.type === 'volume' || !isHostPathLikeVolumeSource(volume.source)) {
+    if (!namedVolumePattern.test(volume.source)) {
+      throw new Error(`Invalid named volume source: ${JSON.stringify(volume.source)}`);
+    }
+    return { ...volume, type: 'volume' };
+  }
+
+  const resolvedRoot = resolveExistingPathSync(path.resolve(workspaceRoot), 'Approved workspace root does not exist');
+  if (isSensitiveHostPath(resolvedRoot)) {
+    throw new Error('Approved workspace root is too broad or sensitive');
+  }
+
+  const candidate = path.isAbsolute(volume.source)
+    ? path.resolve(volume.source)
+    : path.resolve(resolvedRoot, volume.source);
+  const resolvedSource = resolveExistingPathSync(candidate, 'Volume source path does not exist');
+
+  if (!isPathInside(resolvedSource, resolvedRoot)) {
+    throw new Error('Volume source path is outside approved workspace root');
+  }
+  if (isSensitiveHostPath(resolvedSource)) {
+    throw new Error('Volume source path points to a sensitive host directory');
+  }
+
+  return {
+    ...volume,
+    source: resolvedSource,
+    type: 'bind',
+  };
+};
 
 const allowedToolsByLanguage: Record<'rust' | 'elixir' | 'multi', Set<string>> = {
   rust: new Set(['cargo', 'rustc', 'prusti', 'kani', 'miri']),

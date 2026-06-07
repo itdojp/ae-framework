@@ -64,14 +64,14 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=ae_framework
-      - POSTGRES_USER=ae_user
-      - POSTGRES_PASSWORD=ae_password
+      - POSTGRES_DB=${AE_DEV_POSTGRES_DB:?set AE_DEV_POSTGRES_DB}
+      - POSTGRES_USER=${AE_DEV_POSTGRES_USER:?set AE_DEV_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${AE_DEV_POSTGRES_PASSWORD:?set AE_DEV_POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ae_user -d ae_framework"]
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
       interval: 10s
       timeout: 5s
       retries: 5

@@ -3,7 +3,7 @@
  * Phase 3 of Issue #37: Docker container engine implementation for comparison with Podman
  */
 
-import { exec, execFile, spawn } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import { ContainerEngine } from './container-engine.js';
@@ -25,7 +25,7 @@ import {
   splitUsagePair,
   toExecErrorLike
 } from './container-engine-utils.js';
-import { redactBuildArgsInMessage, redactImageBuildContext } from './container-security-policy.js';
+import { AE_CONTAINER_LABEL_FILTER, redactBuildArgsInMessage, redactImageBuildContext } from './container-security-policy.js';
 import type {
   DockerContainerListEntry,
   DockerImageListEntry,
@@ -33,7 +33,6 @@ import type {
   DockerVolumeListEntry
 } from './container-engine-output-types.js';
 
-const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 const getErrorMessage = (error: unknown): string => toExecErrorLike(error).message;
 
@@ -68,7 +67,7 @@ export class DockerEngine extends ContainerEngine {
     try {
       const checkTimeout = process.env['CI'] ? 2000 : 5000;
       // Check if docker is available
-      const versionResult = await execAsync(`${this.dockerPath} --version`, { timeout: checkTimeout });
+      const versionResult = await execFileAsync(this.dockerPath, ['--version'], { timeout: checkTimeout });
       const versionMatch = versionResult.stdout.match(/Docker version (\d+\.\d+\.\d+)/);
       
       if (!versionMatch) {
@@ -81,7 +80,7 @@ export class DockerEngine extends ContainerEngine {
       // Keep this bounded with a timeout to avoid hanging in CI.
       let info: DockerInfoResponse = {};
       try {
-        const infoResult = await execAsync(`${this.dockerPath} info --format json`, { timeout: checkTimeout });
+        const infoResult = await execFileAsync(this.dockerPath, ['info', '--format', 'json'], { timeout: checkTimeout });
         info = JSON.parse(infoResult.stdout) as DockerInfoResponse;
       } catch {
         this.engineInfo.available = false;
@@ -92,14 +91,14 @@ export class DockerEngine extends ContainerEngine {
 
       // Check for docker-compose
       try {
-        await execAsync('docker-compose --version', { timeout: checkTimeout });
+        await execFileAsync('docker-compose', ['--version'], { timeout: checkTimeout });
         this.engineInfo.composeCommand = 'docker-compose';
         this.engineInfo.capabilities.compose = true;
         this.composePath = 'docker-compose';
       } catch {
         // Check for docker compose (newer syntax)
         try {
-          await execAsync(`${this.dockerPath} compose version`, { timeout: checkTimeout });
+          await execFileAsync(this.dockerPath, ['compose', 'version'], { timeout: checkTimeout });
           this.engineInfo.composeCommand = 'docker compose';
           this.engineInfo.capabilities.compose = true;
           this.composePath = 'docker compose';
@@ -110,7 +109,7 @@ export class DockerEngine extends ContainerEngine {
 
       // Check for buildx
       try {
-        await execAsync(`${this.dockerPath} buildx version`, { timeout: checkTimeout });
+        await execFileAsync(this.dockerPath, ['buildx', 'version'], { timeout: checkTimeout });
         this.engineInfo.capabilities.buildx = true;
       } catch {
         // Buildx not available
@@ -152,7 +151,7 @@ export class DockerEngine extends ContainerEngine {
     if (config.args) args.push(...config.args);
 
     try {
-      const result = await execAsync(`${this.dockerPath} ${args.join(' ')}`);
+      const result = await execFileAsync(this.dockerPath, args);
       const containerId = result.stdout.trim();
       
       this.emit('containerCreated', {
@@ -178,7 +177,7 @@ export class DockerEngine extends ContainerEngine {
       if (options?.capture) args.push('--attach');
       args.push(containerId);
 
-      await execAsync(`${this.dockerPath} ${args.join(' ')}`, {
+      await execFileAsync(this.dockerPath, args, {
         timeout: (options?.timeout || 60) * 1000
       });
 
@@ -195,7 +194,7 @@ export class DockerEngine extends ContainerEngine {
 
   async stopContainer(containerId: string, timeout: number = 10): Promise<void> {
     try {
-      await execAsync(`${this.dockerPath} stop --time ${timeout} ${containerId}`);
+      await execFileAsync(this.dockerPath, ['stop', '--time', String(timeout), containerId]);
       
       this.emit('containerStopped', { containerId });
     } catch (error: unknown) {
@@ -214,7 +213,7 @@ export class DockerEngine extends ContainerEngine {
       if (force) args.push('--force');
       args.push(containerId);
 
-      await execAsync(`${this.dockerPath} ${args.join(' ')}`);
+      await execFileAsync(this.dockerPath, args);
       
       this.emit('containerRemoved', { containerId, force });
     } catch (error: unknown) {
@@ -229,7 +228,7 @@ export class DockerEngine extends ContainerEngine {
 
   async restartContainer(containerId: string): Promise<void> {
     try {
-      await execAsync(`${this.dockerPath} restart ${containerId}`);
+      await execFileAsync(this.dockerPath, ['restart', containerId]);
       
       this.emit('containerRestarted', { containerId });
     } catch (error: unknown) {
@@ -332,7 +331,7 @@ export class DockerEngine extends ContainerEngine {
     args.push(...command);
 
     try {
-      const result = await execAsync(`${this.dockerPath} ${args.join(' ')}`);
+      const result = await execFileAsync(this.dockerPath, args);
       
       const logs: ContainerLogs = {
         stdout: result.stdout,
@@ -363,7 +362,7 @@ export class DockerEngine extends ContainerEngine {
 
   async getContainerStatus(containerId: string): Promise<ContainerStatus> {
     try {
-      const result = await execAsync(`${this.dockerPath} inspect ${containerId} --format json`);
+      const result = await execFileAsync(this.dockerPath, ['inspect', containerId, '--format', 'json']);
       const containerInfo = JSON.parse(result.stdout)[0];
 
       return {
@@ -393,7 +392,7 @@ export class DockerEngine extends ContainerEngine {
         });
       }
 
-      const result = await execAsync(`${this.dockerPath} ${args.join(' ')}`);
+      const result = await execFileAsync(this.dockerPath, args);
       
       // Docker returns JSONL (one JSON object per line) instead of a JSON array
       const containers = parseJsonLines<DockerContainerListEntry>(result.stdout);
@@ -428,7 +427,7 @@ export class DockerEngine extends ContainerEngine {
       return this.streamLogs(args);
     } else {
       try {
-        const result = await execAsync(`${this.dockerPath} ${args.join(' ')}`);
+        const result = await execFileAsync(this.dockerPath, args);
         
         return {
           stdout: result.stdout,
@@ -467,7 +466,7 @@ export class DockerEngine extends ContainerEngine {
 
   async getContainerStats(containerId: string): Promise<ContainerStats> {
     try {
-      const result = await execAsync(`${this.dockerPath} stats ${containerId} --no-stream --format json`);
+      const result = await execFileAsync(this.dockerPath, ['stats', containerId, '--no-stream', '--format', 'json']);
       const stats = JSON.parse(result.stdout);
       const [memoryUsageRaw, memoryLimitRaw] = splitUsagePair(stats.MemUsage);
       const [networkRxRaw, networkTxRaw] = splitUsagePair(stats.NetIO);
@@ -557,7 +556,7 @@ export class DockerEngine extends ContainerEngine {
   async pullImage(image: string, tag: string = 'latest'): Promise<void> {
     try {
       const fullImage = `${image}:${tag}`;
-      await execAsync(`${this.dockerPath} pull ${fullImage}`);
+      await execFileAsync(this.dockerPath, ['pull', fullImage]);
       
       this.emit('imagePulled', { image: fullImage });
     } catch (error: unknown) {
@@ -592,7 +591,7 @@ export class DockerEngine extends ContainerEngine {
       if (force) args.push('--force');
       args.push(image);
 
-      await execAsync(`${this.dockerPath} ${args.join(' ')}`);
+      await execFileAsync(this.dockerPath, args);
       
       this.emit('imageRemoved', { image, force });
     } catch (error: unknown) {
@@ -615,7 +614,7 @@ export class DockerEngine extends ContainerEngine {
         });
       }
 
-      const result = await execAsync(`${this.dockerPath} ${args.join(' ')}`);
+      const result = await execFileAsync(this.dockerPath, args);
       
       // Docker returns JSONL format
       const images = parseJsonLines<DockerImageListEntry>(result.stdout);
@@ -634,7 +633,7 @@ export class DockerEngine extends ContainerEngine {
 
   async tagImage(sourceImage: string, targetImage: string): Promise<void> {
     try {
-      await execAsync(`${this.dockerPath} tag ${sourceImage} ${targetImage}`);
+      await execFileAsync(this.dockerPath, ['tag', sourceImage, targetImage]);
       
       this.emit('imageTagged', { sourceImage, targetImage });
     } catch (error: unknown) {
@@ -661,7 +660,7 @@ export class DockerEngine extends ContainerEngine {
       
       args.push(name);
 
-      await execAsync(`${this.dockerPath} ${args.join(' ')}`);
+      await execFileAsync(this.dockerPath, args);
       
       this.emit('volumeCreated', { name, labels });
     } catch (error: unknown) {
@@ -680,7 +679,7 @@ export class DockerEngine extends ContainerEngine {
       if (force) args.push('--force');
       args.push(name);
 
-      await execAsync(`${this.dockerPath} ${args.join(' ')}`);
+      await execFileAsync(this.dockerPath, args);
       
       this.emit('volumeRemoved', { name, force });
     } catch (error: unknown) {
@@ -701,7 +700,7 @@ export class DockerEngine extends ContainerEngine {
     size?: number;
   }>> {
     try {
-      const result = await execAsync(`${this.dockerPath} volume ls --format json`);
+      const result = await execFileAsync(this.dockerPath, ['volume', 'ls', '--format', 'json']);
       
       // Docker returns JSONL format
       const volumes = parseJsonLines<DockerVolumeListEntry>(result.stdout);
@@ -737,7 +736,7 @@ export class DockerEngine extends ContainerEngine {
       
       args.push(name);
 
-      await execAsync(`${this.dockerPath} ${args.join(' ')}`);
+      await execFileAsync(this.dockerPath, args);
       
       this.emit('networkCreated', { name, options });
     } catch (error: unknown) {
@@ -752,7 +751,7 @@ export class DockerEngine extends ContainerEngine {
 
   async removeNetwork(name: string): Promise<void> {
     try {
-      await execAsync(`${this.dockerPath} network rm ${name}`);
+      await execFileAsync(this.dockerPath, ['network', 'rm', name]);
       
       this.emit('networkRemoved', { name });
     } catch (error: unknown) {
@@ -774,7 +773,7 @@ export class DockerEngine extends ContainerEngine {
     labels?: Record<string, string>;
   }>> {
     try {
-      const result = await execAsync(`${this.dockerPath} network ls --format json`);
+      const result = await execFileAsync(this.dockerPath, ['network', 'ls', '--format', 'json']);
       
       // Docker returns JSONL format
       const networks = parseJsonLines<DockerNetworkListEntry>(result.stdout);
@@ -787,6 +786,17 @@ export class DockerEngine extends ContainerEngine {
     } catch (error: unknown) {
       throw new Error(`Failed to list networks: ${getErrorMessage(error)}`);
     }
+  }
+
+  private getComposeInvocation(): { command: string; argsPrefix: string[] } {
+    if (!this.composePath) {
+      throw new Error('Compose command is not configured');
+    }
+    const [command, ...argsPrefix] = this.composePath.split(' ');
+    if (!command) {
+      throw new Error('Compose command is not configured');
+    }
+    return { command, argsPrefix };
   }
 
   // Compose operations
@@ -814,7 +824,8 @@ export class DockerEngine extends ContainerEngine {
       if (options?.detached !== false) args.push('-d');
 
       const env = { ...process.env, ...options?.environment };
-      await execAsync(`${this.composePath} ${args.join(' ')}`, { env });
+      const compose = this.getComposeInvocation();
+      await execFileAsync(compose.command, [...compose.argsPrefix, ...args], { env });
       
       this.emit('composeUp', { composeFile, options });
     } catch (error: unknown) {
@@ -841,7 +852,8 @@ export class DockerEngine extends ContainerEngine {
       
       args.push('down');
 
-      await execAsync(`${this.composePath} ${args.join(' ')}`);
+      const compose = this.getComposeInvocation();
+      await execFileAsync(compose.command, [...compose.argsPrefix, ...args]);
       
       this.emit('composeDown', { composeFile, projectName });
     } catch (error: unknown) {
@@ -878,10 +890,13 @@ export class DockerEngine extends ContainerEngine {
     };
 
     try {
+      const scopedLabelFilters = options?.labelFilters && options.labelFilters.length > 0
+        ? options.labelFilters
+        : [AE_CONTAINER_LABEL_FILTER];
       const pruneArgs = (resource: 'container' | 'image' | 'volume' | 'network') => {
         const args = [resource, 'prune'];
         if (options?.force) args.push('--force');
-        for (const filter of options?.labelFilters ?? []) {
+        for (const filter of scopedLabelFilters) {
           args.push('--filter', filter);
         }
         args.push('--format', 'json');

@@ -5,7 +5,7 @@ services:
     command: ["npm","run","dev"]
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgres://app:app@db:5432/app
+      - DATABASE_URL=postgres://${AE_DEV_POSTGRES_USER:?set AE_DEV_POSTGRES_USER}:${AE_DEV_POSTGRES_PASSWORD:?set AE_DEV_POSTGRES_PASSWORD}@db:5432/${AE_DEV_POSTGRES_DB:?set AE_DEV_POSTGRES_DB}
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel:4317
     ports: ["3000:3000"]
     depends_on: [db, otel]
@@ -13,9 +13,9 @@ services:
   db:
     image: docker.io/library/postgres:16-alpine
     environment:
-      - POSTGRES_USER=app
-      - POSTGRES_PASSWORD=app
-      - POSTGRES_DB=app
+      - POSTGRES_USER=${AE_DEV_POSTGRES_USER:?set AE_DEV_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${AE_DEV_POSTGRES_PASSWORD:?set AE_DEV_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${AE_DEV_POSTGRES_DB:?set AE_DEV_POSTGRES_DB}
     ports: ["5432:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data

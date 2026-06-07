@@ -3,7 +3,7 @@
  * Phase 3 of Issue #37: Podman-specific container engine implementation
  */
 
-import { exec, execFile, spawn } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import type * as fs from 'fs/promises';
@@ -25,7 +25,7 @@ import {
   splitUsagePair,
   toExecErrorLike
 } from './container-engine-utils.js';
-import { redactBuildArgsInMessage, redactImageBuildContext } from './container-security-policy.js';
+import { AE_CONTAINER_LABEL_FILTER, redactBuildArgsInMessage, redactImageBuildContext } from './container-security-policy.js';
 import type {
   PodmanContainerListEntry,
   PodmanImageListEntry,
@@ -33,7 +33,6 @@ import type {
   PodmanVolumeListEntry
 } from './container-engine-output-types.js';
 
-const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 const getErrorMessage = (error: unknown): string => toExecErrorLike(error).message;
 
@@ -72,7 +71,7 @@ export class PodmanEngine extends ContainerEngine {
     try {
       const checkTimeout = process.env['CI'] ? 2000 : 5000;
       // Check if podman is available
-      const versionResult = await execAsync(`${this.podmanPath} --version`, { timeout: checkTimeout });
+      const versionResult = await execFileAsync(this.podmanPath, ['--version'], { timeout: checkTimeout });
       const versionMatch = versionResult.stdout.match(/podman version (\d+\.\d+\.\d+)/);
       
       if (!versionMatch) {
@@ -85,7 +84,7 @@ export class PodmanEngine extends ContainerEngine {
       // Keep this bounded with a timeout to avoid hanging in CI.
       let info: PodmanInfoResponse = {};
       try {
-        const infoResult = await execAsync(`${this.podmanPath} info --format json`, { timeout: checkTimeout });
+        const infoResult = await execFileAsync(this.podmanPath, ['info', '--format', 'json'], { timeout: checkTimeout });
         info = JSON.parse(infoResult.stdout) as PodmanInfoResponse;
       } catch {
         this.engineInfo.available = false;
@@ -96,14 +95,14 @@ export class PodmanEngine extends ContainerEngine {
 
       // Check for podman-compose
       try {
-        await execAsync('podman-compose --version', { timeout: checkTimeout });
+        await execFileAsync('podman-compose', ['--version'], { timeout: checkTimeout });
         this.engineInfo.composeCommand = 'podman-compose';
         this.engineInfo.capabilities.compose = true;
         this.composePath = 'podman-compose';
       } catch {
         // Check for docker-compose with podman
         try {
-          await execAsync('docker-compose --version', { timeout: checkTimeout });
+          await execFileAsync('docker-compose', ['--version'], { timeout: checkTimeout });
           this.engineInfo.composeCommand = 'docker-compose';
           this.engineInfo.capabilities.compose = true;
           this.composePath = 'docker-compose';
@@ -148,7 +147,7 @@ export class PodmanEngine extends ContainerEngine {
     if (config.args) args.push(...config.args);
 
     try {
-      const result = await execAsync(`${this.podmanPath} ${args.join(' ')}`);
+      const result = await execFileAsync(this.podmanPath, args);
       const containerId = result.stdout.trim();
       
       this.emit('containerCreated', {
@@ -174,7 +173,7 @@ export class PodmanEngine extends ContainerEngine {
       if (options?.capture) args.push('--attach');
       args.push(containerId);
 
-      await execAsync(`${this.podmanPath} ${args.join(' ')}`, {
+      await execFileAsync(this.podmanPath, args, {
         timeout: (options?.timeout || 60) * 1000
       });
 
@@ -191,7 +190,7 @@ export class PodmanEngine extends ContainerEngine {
 
   async stopContainer(containerId: string, timeout: number = 10): Promise<void> {
     try {
-      await execAsync(`${this.podmanPath} stop --time ${timeout} ${containerId}`);
+      await execFileAsync(this.podmanPath, ['stop', '--time', String(timeout), containerId]);
       
       this.emit('containerStopped', { containerId });
     } catch (error: unknown) {
@@ -210,7 +209,7 @@ export class PodmanEngine extends ContainerEngine {
       if (force) args.push('--force');
       args.push(containerId);
 
-      await execAsync(`${this.podmanPath} ${args.join(' ')}`);
+      await execFileAsync(this.podmanPath, args);
       
       this.emit('containerRemoved', { containerId, force });
     } catch (error: unknown) {
@@ -225,7 +224,7 @@ export class PodmanEngine extends ContainerEngine {
 
   async restartContainer(containerId: string): Promise<void> {
     try {
-      await execAsync(`${this.podmanPath} restart ${containerId}`);
+      await execFileAsync(this.podmanPath, ['restart', containerId]);
       
       this.emit('containerRestarted', { containerId });
     } catch (error: unknown) {
@@ -328,7 +327,7 @@ export class PodmanEngine extends ContainerEngine {
     args.push(...command);
 
     try {
-      const result = await execAsync(`${this.podmanPath} ${args.join(' ')}`);
+      const result = await execFileAsync(this.podmanPath, args);
       
       const logs: ContainerLogs = {
         stdout: result.stdout,
@@ -359,7 +358,7 @@ export class PodmanEngine extends ContainerEngine {
 
   async getContainerStatus(containerId: string): Promise<ContainerStatus> {
     try {
-      const result = await execAsync(`${this.podmanPath} inspect ${containerId} --format json`);
+      const result = await execFileAsync(this.podmanPath, ['inspect', containerId, '--format', 'json']);
       const containerInfo = JSON.parse(result.stdout)[0];
 
       return {
@@ -389,7 +388,7 @@ export class PodmanEngine extends ContainerEngine {
         });
       }
 
-      const result = await execAsync(`${this.podmanPath} ${args.join(' ')}`);
+      const result = await execFileAsync(this.podmanPath, args);
       const containers = JSON.parse(result.stdout) as PodmanContainerListEntry[];
       return containers.map(container => ({
         id: container.Id,
@@ -422,7 +421,7 @@ export class PodmanEngine extends ContainerEngine {
       return this.streamLogs(args);
     } else {
       try {
-        const result = await execAsync(`${this.podmanPath} ${args.join(' ')}`);
+        const result = await execFileAsync(this.podmanPath, args);
         
         return {
           stdout: result.stdout,
@@ -461,7 +460,7 @@ export class PodmanEngine extends ContainerEngine {
 
   async getContainerStats(containerId: string): Promise<ContainerStats> {
     try {
-      const result = await execAsync(`${this.podmanPath} stats ${containerId} --no-stream --format json`);
+      const result = await execFileAsync(this.podmanPath, ['stats', containerId, '--no-stream', '--format', 'json']);
       const stats = JSON.parse(result.stdout);
       const [memoryUsageRaw, memoryLimitRaw] = splitUsagePair(stats.MemUsage);
       const [networkRxRaw, networkTxRaw] = splitUsagePair(stats.NetIO);
@@ -551,7 +550,7 @@ export class PodmanEngine extends ContainerEngine {
   async pullImage(image: string, tag: string = 'latest'): Promise<void> {
     try {
       const fullImage = `${image}:${tag}`;
-      await execAsync(`${this.podmanPath} pull ${fullImage}`);
+      await execFileAsync(this.podmanPath, ['pull', fullImage]);
       
       this.emit('imagePulled', { image: fullImage });
     } catch (error: unknown) {
@@ -586,7 +585,7 @@ export class PodmanEngine extends ContainerEngine {
       if (force) args.push('--force');
       args.push(image);
 
-      await execAsync(`${this.podmanPath} ${args.join(' ')}`);
+      await execFileAsync(this.podmanPath, args);
       
       this.emit('imageRemoved', { image, force });
     } catch (error: unknown) {
@@ -609,7 +608,7 @@ export class PodmanEngine extends ContainerEngine {
         });
       }
 
-      const result = await execAsync(`${this.podmanPath} ${args.join(' ')}`);
+      const result = await execFileAsync(this.podmanPath, args);
       const images = JSON.parse(result.stdout) as PodmanImageListEntry[];
       return images.map(image => ({
         id: image.Id,
@@ -627,7 +626,7 @@ export class PodmanEngine extends ContainerEngine {
 
   async tagImage(sourceImage: string, targetImage: string): Promise<void> {
     try {
-      await execAsync(`${this.podmanPath} tag ${sourceImage} ${targetImage}`);
+      await execFileAsync(this.podmanPath, ['tag', sourceImage, targetImage]);
       
       this.emit('imageTagged', { sourceImage, targetImage });
     } catch (error: unknown) {
@@ -654,7 +653,7 @@ export class PodmanEngine extends ContainerEngine {
       
       args.push(name);
 
-      await execAsync(`${this.podmanPath} ${args.join(' ')}`);
+      await execFileAsync(this.podmanPath, args);
       
       this.emit('volumeCreated', { name, labels });
     } catch (error: unknown) {
@@ -673,7 +672,7 @@ export class PodmanEngine extends ContainerEngine {
       if (force) args.push('--force');
       args.push(name);
 
-      await execAsync(`${this.podmanPath} ${args.join(' ')}`);
+      await execFileAsync(this.podmanPath, args);
       
       this.emit('volumeRemoved', { name, force });
     } catch (error: unknown) {
@@ -694,7 +693,7 @@ export class PodmanEngine extends ContainerEngine {
     size?: number;
   }>> {
     try {
-      const result = await execAsync(`${this.podmanPath} volume ls --format json`);
+      const result = await execFileAsync(this.podmanPath, ['volume', 'ls', '--format', 'json']);
       const volumes = JSON.parse(result.stdout) as PodmanVolumeListEntry[];
       return volumes.map(volume => ({
         name: volume.Name,
@@ -728,7 +727,7 @@ export class PodmanEngine extends ContainerEngine {
       
       args.push(name);
 
-      await execAsync(`${this.podmanPath} ${args.join(' ')}`);
+      await execFileAsync(this.podmanPath, args);
       
       this.emit('networkCreated', { name, options });
     } catch (error: unknown) {
@@ -743,7 +742,7 @@ export class PodmanEngine extends ContainerEngine {
 
   async removeNetwork(name: string): Promise<void> {
     try {
-      await execAsync(`${this.podmanPath} network rm ${name}`);
+      await execFileAsync(this.podmanPath, ['network', 'rm', name]);
       
       this.emit('networkRemoved', { name });
     } catch (error: unknown) {
@@ -765,7 +764,7 @@ export class PodmanEngine extends ContainerEngine {
     labels?: Record<string, string>;
   }>> {
     try {
-      const result = await execAsync(`${this.podmanPath} network ls --format json`);
+      const result = await execFileAsync(this.podmanPath, ['network', 'ls', '--format', 'json']);
       const networks = JSON.parse(result.stdout) as PodmanNetworkListEntry[];
       return networks.map(network => ({
         id: network.NetworkID,
@@ -776,6 +775,17 @@ export class PodmanEngine extends ContainerEngine {
     } catch (error: unknown) {
       throw new Error(`Failed to list networks: ${getErrorMessage(error)}`);
     }
+  }
+
+  private getComposeInvocation(): { command: string; argsPrefix: string[] } {
+    if (!this.composePath) {
+      throw new Error('Compose command is not configured');
+    }
+    const [command, ...argsPrefix] = this.composePath.split(' ');
+    if (!command) {
+      throw new Error('Compose command is not configured');
+    }
+    return { command, argsPrefix };
   }
 
   // Compose operations
@@ -803,7 +813,8 @@ export class PodmanEngine extends ContainerEngine {
       if (options?.detached !== false) args.push('-d');
 
       const env = { ...process.env, ...options?.environment };
-      await execAsync(`${this.composePath} ${args.join(' ')}`, { env });
+      const compose = this.getComposeInvocation();
+      await execFileAsync(compose.command, [...compose.argsPrefix, ...args], { env });
       
       this.emit('composeUp', { composeFile, options });
     } catch (error: unknown) {
@@ -830,7 +841,8 @@ export class PodmanEngine extends ContainerEngine {
       
       args.push('down');
 
-      await execAsync(`${this.composePath} ${args.join(' ')}`);
+      const compose = this.getComposeInvocation();
+      await execFileAsync(compose.command, [...compose.argsPrefix, ...args]);
       
       this.emit('composeDown', { composeFile, projectName });
     } catch (error: unknown) {
@@ -867,10 +879,13 @@ export class PodmanEngine extends ContainerEngine {
     };
 
     try {
+      const scopedLabelFilters = options?.labelFilters && options.labelFilters.length > 0
+        ? options.labelFilters
+        : [AE_CONTAINER_LABEL_FILTER];
       const pruneArgs = (resource: 'container' | 'image' | 'volume' | 'network') => {
         const args = [resource, 'prune'];
         if (options?.force) args.push('--force');
-        for (const filter of options?.labelFilters ?? []) {
+        for (const filter of scopedLabelFilters) {
           args.push('--filter', filter);
         }
         args.push('--format', 'json');

@@ -196,6 +196,7 @@ export class ContainerManager extends EventEmitter {
           ...env.environment
         },
         volumes: env.volumes,
+        ...(this.config.workspaceRoot !== undefined ? { volumeWorkspaceRoot: this.config.workspaceRoot } : {}),
         resources: env.resources,
         security: this.config.securityDefaults ? { ...this.config.securityDefaults, readOnlyRootFilesystem: false } : { readOnlyRootFilesystem: false },
         labels: {
@@ -278,6 +279,7 @@ export class ContainerManager extends EventEmitter {
             type: 'volume'
           }
         ],
+        ...(this.config.workspaceRoot !== undefined ? { volumeWorkspaceRoot: this.config.workspaceRoot } : {}),
         resources: {
           ...this.config.resourceLimits,
           ...environment.resources

@@ -173,9 +173,9 @@ services:
   test-db:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=ae_framework_test
-      - POSTGRES_USER=test_user
-      - POSTGRES_PASSWORD=test_password
+      - POSTGRES_DB=${AE_TEST_POSTGRES_DB:?set AE_TEST_POSTGRES_DB}
+      - POSTGRES_USER=${AE_TEST_POSTGRES_USER:?set AE_TEST_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${AE_TEST_POSTGRES_PASSWORD:?set AE_TEST_POSTGRES_PASSWORD}
       - POSTGRES_HOST_AUTH_METHOD=trust
     deploy:
       resources:
@@ -190,7 +190,7 @@ services:
     networks:
       - test-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U test_user -d ae_framework_test"]
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
       interval: 10s
       timeout: 5s
       retries: 5

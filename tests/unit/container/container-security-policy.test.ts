@@ -15,6 +15,7 @@ import {
   assertPushPolicy,
   redactBuildArgsInMessage,
   redactImageBuildContext,
+  resolveApprovedVolumeMount,
   resolveApprovedWorkspacePath,
   validateBuildArgs,
   validateContainerTools,
@@ -160,6 +161,38 @@ describe('container security policy', () => {
     expect(() => assertCleanupConfirmation({ dryRun: false, force: true, confirm: CONTAINER_CLEANUP_CONFIRM })).toThrow(CONTAINER_FORCE_CLEANUP_CONFIRM);
     expect(assertCleanupConfirmation({ dryRun: false, confirm: CONTAINER_CLEANUP_CONFIRM })).toEqual({ dryRun: false });
     expect(assertCleanupConfirmation({ dryRun: false, force: true, confirm: CONTAINER_FORCE_CLEANUP_CONFIRM })).toEqual({ dryRun: false });
+  });
+
+
+  it('TGT-004-F003: resolves bind mounts under the approved workspace and rejects arbitrary host paths', async () => {
+    const workspace = path.join(sandboxRoot, 'workspace');
+    const project = path.join(workspace, 'project');
+    const outside = path.join(sandboxRoot, 'outside');
+    await fs.mkdir(project, { recursive: true });
+    await fs.mkdir(outside, { recursive: true });
+
+    expect(resolveApprovedVolumeMount(
+      { source: project, target: '/workspace', readonly: true },
+      { workspaceRoot: workspace },
+    )).toMatchObject({ source: await fs.realpath(project), target: '/workspace', readonly: true, type: 'bind' });
+
+    expect(resolveApprovedVolumeMount(
+      { source: 'ae-verify-output', target: '/output', type: 'volume' },
+      { workspaceRoot: workspace },
+    )).toMatchObject({ source: 'ae-verify-output', target: '/output', type: 'volume' });
+
+    expect(() => resolveApprovedVolumeMount(
+      { source: outside, target: '/host' },
+      { workspaceRoot: workspace },
+    )).toThrow(/^Volume source path is outside approved workspace root$/);
+    expect(() => resolveApprovedVolumeMount(
+      { source: '../outside', target: '/host' },
+      { workspaceRoot: workspace },
+    )).toThrow(/^Volume source path is outside approved workspace root$/);
+    expect(() => resolveApprovedVolumeMount(
+      { source: '../outside', target: '/host', type: 'volume' },
+      { workspaceRoot: workspace },
+    )).toThrow(/^Invalid named volume source/);
   });
 
   it('resolves project paths under the approved workspace and rejects symlink escapes', async () => {

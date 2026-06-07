@@ -4,6 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { resolveApprovedVolumeMount } from './container-security-policy.js';
 
 export type ContainerEngineName = 'docker' | 'podman';
 
@@ -76,6 +77,8 @@ export interface ContainerConfig {
   environment?: Record<string, string>;
   workingDir?: string;
   volumes?: VolumeMount[];
+  /** Approved host workspace root used to validate bind-mount sources. */
+  volumeWorkspaceRoot?: string;
   ports?: PortMapping[];
   resources?: ResourceLimits;
   network?: ContainerNetworkConfig;
@@ -325,8 +328,12 @@ export abstract class ContainerEngine extends EventEmitter {
     // Volume mounts
     if (config.volumes) {
       config.volumes.forEach(volume => {
-        let mountStr = `${volume.source}:${volume.target}`;
-        if (volume.readonly) mountStr += ':ro';
+        const approvedVolume = resolveApprovedVolumeMount(
+          volume,
+          config.volumeWorkspaceRoot !== undefined ? { workspaceRoot: config.volumeWorkspaceRoot } : {},
+        );
+        let mountStr = `${approvedVolume.source}:${approvedVolume.target}`;
+        if (approvedVolume.readonly) mountStr += ':ro';
         args.push('--volume', mountStr);
       });
     }
