@@ -23,6 +23,7 @@ function normalizeWorkspacePath(repo: string, inputPath: string, label: string):
     ? assertWithinWorkspace(raw, { workspaceRoot: repo, label })
     : resolveWorkspacePath(raw, { workspaceRoot: repo, label })
   const relativePath = toWorkspaceRelativePath(absolutePath, { workspaceRoot: repo, label })
+  if (relativePath === '.') throw new Error(`${label} must not target the workspace root`)
   const segments = relativePath.split('/').filter(Boolean)
   if (segments.length === 0) throw new Error(`${label} must not target the workspace root`)
   if (segments.some((segment) => segment.toLowerCase() === '.git')) {

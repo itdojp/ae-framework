@@ -48,6 +48,12 @@ describe('workspace path policy', () => {
         label: 'candidate path',
       }),
     ).toThrow(WorkspacePathPolicyError);
+    expect(() =>
+      assertWithinWorkspace(path.join(workspaceRoot, '.git', 'config'), {
+        workspaceRoot,
+        label: 'candidate path',
+      }),
+    ).toThrow(WorkspacePathPolicyError);
   });
 
   it('rejects absolute paths and dot-segment traversal before filesystem access', () => {

@@ -35,6 +35,8 @@ const pathPolicyLabel = (label: string | undefined): string => label ?? 'workspa
 
 const splitInputPath = (value: string): string[] => value.replace(/\\/g, '/').split('/');
 
+const isWindowsRuntime = (): boolean => process.platform === 'win32';
+
 const hasDotSegment = (segments: string[]): boolean =>
   segments.some((segment) => segment === '.' || segment === '..');
 
@@ -115,10 +117,10 @@ export function assertWithinWorkspace(resolvedPath: string, options: WorkspacePa
   if (raw.includes('\0')) {
     throw new WorkspacePathPolicyError(`${label} must not contain NUL bytes`);
   }
-  if (raw.includes('\\')) {
+  if (!isWindowsRuntime() && raw.includes('\\')) {
     throw new WorkspacePathPolicyError(`${label} must use POSIX-style '/' separators`);
   }
-  if (hasWindowsAbsolutePrefix(raw)) {
+  if (!isWindowsRuntime() && hasWindowsAbsolutePrefix(raw)) {
     throw new WorkspacePathPolicyError(`${label} must not use Windows absolute paths`);
   }
   const workspaceRoot = path.resolve(options.workspaceRoot ?? resolveWorkspaceRoot());
@@ -128,6 +130,10 @@ export function assertWithinWorkspace(resolvedPath: string, options: WorkspacePa
 
   if (!isPathWithin(workspaceRoot, resolved)) {
     throw new WorkspacePathPolicyError(`${label} is outside the approved workspace`);
+  }
+  const relativePath = path.relative(workspaceRoot, resolved);
+  if (hasGitMetadataSegment(splitInputPath(relativePath).filter(Boolean))) {
+    throw new WorkspacePathPolicyError(`${label} must not target Git metadata directories`);
   }
   assertExistingAncestorWithin(workspaceRoot, resolved, label);
   return resolved;
@@ -182,12 +188,13 @@ export function resolveArtifactPath(input: string, options: ArtifactPathOptions 
   if (raw.includes('\0')) {
     throw new WorkspacePathPolicyError(`${label} must not contain NUL bytes`);
   }
-  if (raw.includes('\\')) {
+  const rawIsAbsolute = path.isAbsolute(raw) || hasWindowsAbsolutePrefix(raw) || raw.startsWith('//');
+  if (!rawIsAbsolute && raw.includes('\\')) {
     throw new WorkspacePathPolicyError(`${label} must use POSIX-style '/' separators`);
   }
 
   let resolved: string;
-  if (path.isAbsolute(raw) || hasWindowsAbsolutePrefix(raw) || raw.startsWith('//')) {
+  if (rawIsAbsolute) {
     if (!options.allowAbsolute) {
       throw new WorkspacePathPolicyError(`${label} must be relative to the approved artifact root`);
     }
