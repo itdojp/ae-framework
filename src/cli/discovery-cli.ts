@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
 
 import { safeExit } from '../utils/safe-exit.js';
+import { createHighImpactChildEnv } from '../utils/high-impact-action-policy.js';
 
 // Traceability anchors for #2732:
 // REQ-UCP-001 REQ-UCP-003 REQ-UCP-005 REQ-UCP-006 REQ-UCP-007
@@ -104,7 +105,7 @@ const runNodeScript = (scriptPath: string, args: string[]) => {
   const result = spawnSync(process.execPath, [scriptPath, ...args], {
     cwd: process.cwd(),
     encoding: 'utf8',
-    env: process.env,
+    env: createHighImpactChildEnv(process.env),
   });
 
   if (result.stdout) {

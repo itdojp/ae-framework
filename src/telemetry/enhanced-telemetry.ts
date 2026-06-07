@@ -16,6 +16,7 @@ import { toMessage } from '../utils/error-utils.js';
 import type { logs } from '@opentelemetry/api-logs';
 import * as os from 'os';
 import * as process from 'process';
+import { redactSensitiveString, sanitizeTelemetryAttributes } from '../security/sensitive-redaction.js';
 
 // Enhanced configuration with standardized attributes
 export interface TelemetryConfig {
@@ -250,7 +251,7 @@ export class EnhancedTelemetry {
         console.log(`   OTLP: ${this.config.otlpEndpoint ? '✅' : '❌'}`);
       }
     } catch (error: unknown) {
-      console.error('❌ Failed to initialize Enhanced OpenTelemetry:', toMessage(error));
+      console.error('❌ Failed to initialize Enhanced OpenTelemetry:', redactSensitiveString(toMessage(error)));
     }
   }
 
@@ -264,7 +265,7 @@ export class EnhancedTelemetry {
       }
       console.log('📊 Enhanced OpenTelemetry shutdown complete');
     } catch (error: unknown) {
-      console.error('❌ Error during Enhanced OpenTelemetry shutdown:', toMessage(error));
+      console.error('❌ Error during Enhanced OpenTelemetry shutdown:', redactSensitiveString(toMessage(error)));
     }
   }
 
@@ -279,7 +280,7 @@ export class EnhancedTelemetry {
             description: `Duration of ${name} operation`,
             unit: 'ms',
           });
-          histogram.record(duration, { ...attributes, ...additionalAttributes });
+          histogram.record(duration, sanitizeTelemetryAttributes({ ...attributes, ...additionalAttributes }));
         }
         return duration;
       },
@@ -291,7 +292,7 @@ export class EnhancedTelemetry {
       const counter: Counter = this.meter.createCounter(name, {
         description: `Counter for ${name}`,
       });
-      counter.add(value, attributes);
+      counter.add(value, sanitizeTelemetryAttributes(attributes));
     }
   }
 
@@ -300,7 +301,7 @@ export class EnhancedTelemetry {
       const gauge: UpDownCounter = this.meter.createUpDownCounter(name, {
         description: `Gauge for ${name}`,
       });
-      gauge.add(value, attributes);
+      gauge.add(value, sanitizeTelemetryAttributes(attributes));
     }
   }
 
@@ -311,25 +312,22 @@ export class EnhancedTelemetry {
     severity: 'low' | 'medium' | 'high' | 'critical',
     attributes?: Record<string, any>
   ) {
-    this.recordCounter('contract.violations.total', 1, {
+    const violationAttributes = sanitizeTelemetryAttributes({
       [TELEMETRY_ATTRIBUTES.ERROR_TYPE]: violationType,
       contract_id: contractId,
       severity,
       ...attributes,
-    });
+    }) ?? {};
+
+    this.recordCounter('contract.violations.total', 1, violationAttributes);
 
     // Create a span for contract violation
     const tracer = trace.getTracer(this.config.serviceName);
     const span = tracer.startSpan('contract.violation', {
-      attributes: {
-        [TELEMETRY_ATTRIBUTES.ERROR_TYPE]: violationType,
-        contract_id: contractId,
-        severity,
-        ...attributes,
-      },
+      attributes: violationAttributes,
     });
     
-    span.recordException(new Error(`Contract violation: ${violationType}`));
+    span.recordException(new Error(redactSensitiveString(`Contract violation: ${violationType}`)));
     span.end();
   }
 

@@ -80,3 +80,39 @@ export function safeErrorForLogging(error: unknown): unknown {
 export function safeStringForCassette(value: string): string {
   return redactSensitiveString(value);
 }
+
+export type SafeTelemetryAttributeValue = string | number | boolean;
+
+export function sanitizeTelemetryAttributes(
+  attributes: Record<string, unknown> | undefined,
+): Record<string, SafeTelemetryAttributeValue> | undefined {
+  if (attributes === undefined) {
+    return undefined;
+  }
+
+  const safeAttributes: Record<string, SafeTelemetryAttributeValue> = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+    if (isSensitiveKey(key)) {
+      safeAttributes[key] = REDACTED_VALUE;
+      continue;
+    }
+    if (typeof value === 'string') {
+      safeAttributes[key] = redactSensitiveString(value);
+      continue;
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      safeAttributes[key] = value;
+      continue;
+    }
+    try {
+      safeAttributes[key] = JSON.stringify(redactSensitiveData(value));
+    } catch {
+      safeAttributes[key] = '[Unserializable payload]';
+    }
+  }
+
+  return safeAttributes;
+}

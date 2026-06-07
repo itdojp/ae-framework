@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { safeExit } from '../utils/safe-exit.js';
+import { createHighImpactChildEnv } from '../utils/high-impact-action-policy.js';
 
 type RunnerKey = 'test' | 'quality' | 'verify' | 'flake' | 'security';
 
@@ -72,7 +73,7 @@ export function createEntryRunnerCommand(): Command {
 
       const result = spawnSync(process.execPath, args, {
         stdio: 'inherit',
-        env: process.env,
+        env: createHighImpactChildEnv(process.env),
         cwd: root,
       });
 

@@ -8,6 +8,7 @@ import { trace, metrics } from '@opentelemetry/api';
 import type { Tracer, Meter } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import type { Logger } from '@opentelemetry/api-logs';
+import { sanitizeTelemetryAttributes } from '../security/sensitive-redaction.js';
 
 export enum PhaseType {
   INTENT_ANALYSIS = 'intent_analysis',
@@ -131,17 +132,17 @@ export class TelemetryService {
   ): Promise<void> {
     // Create trace span
     const span = this.tracer.startSpan(`phase_${phase}_execution`);
-    span.setAttributes({
+    span.setAttributes(sanitizeTelemetryAttributes({
       'phase.type': phase,
       'phase.success': success,
       'phase.duration': duration
-    });
+    }) ?? {});
 
     // Record metrics
-    this.phaseExecutionHistogram.record(duration, {
+    this.phaseExecutionHistogram.record(duration, sanitizeTelemetryAttributes({
       phase: phase,
       success: success.toString()
-    });
+    }));
 
     if (qualityMetrics) {
       // Quality metrics are recorded via ObservableGauge callback
@@ -149,23 +150,23 @@ export class TelemetryService {
     }
 
     if (!success) {
-      this.errorRateCounter.add(1, {
+      this.errorRateCounter.add(1, sanitizeTelemetryAttributes({
         phase: phase,
         error_type: 'execution_failure'
-      });
+      }));
     }
 
     span.end();
   }
 
   recordCegisFix(confidence: number, strategy: string): void {
-    this.cegisFixCounter.add(1, {
+    this.cegisFixCounter.add(1, sanitizeTelemetryAttributes({
       strategy: strategy
-    });
+    }));
 
-    this.cegisConfidenceHistogram.record(confidence, {
+    this.cegisConfidenceHistogram.record(confidence, sanitizeTelemetryAttributes({
       strategy: strategy
-    });
+    }));
   }
 
   recordConformanceViolation(
@@ -173,15 +174,15 @@ export class TelemetryService {
     direction: 'input' | 'output',
     duration: number
   ): void {
-    this.conformanceViolationCounter.add(1, {
+    this.conformanceViolationCounter.add(1, sanitizeTelemetryAttributes({
       schema_name: schemaName,
       direction: direction
-    });
+    }));
 
-    this.conformanceLatencyHistogram.record(duration, {
+    this.conformanceLatencyHistogram.record(duration, sanitizeTelemetryAttributes({
       schema_name: schemaName,
       direction: direction
-    });
+    }));
   }
 
   private getLatestQualityScore(): number {
