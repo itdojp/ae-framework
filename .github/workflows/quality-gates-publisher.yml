@@ -1,0 +1,225 @@
+name: Quality Gates Publisher
+
+on:
+  workflow_run:
+    workflows: ["Quality Gates"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Quality Gates workflow run id containing quality-gates-report"
+        required: true
+        type: string
+      source_run_attempt:
+        description: "Quality Gates workflow run attempt"
+        required: false
+        type: string
+      pr_number:
+        description: "Pull request number to comment on"
+        required: true
+        type: string
+      pr_head_sha:
+        description: "Expected current pull request head SHA"
+        required: true
+        type: string
+
+concurrency:
+  group: quality-gates-publisher-${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.source_run_id || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  publish:
+    name: Publish quality gate PR comment
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve publish context
+        id: context
+        uses: actions/github-script@v7
+        env:
+          DISPATCH_SOURCE_RUN_ID: ${{ inputs.source_run_id || '' }}
+          DISPATCH_SOURCE_RUN_ATTEMPT: ${{ inputs.source_run_attempt || '' }}
+          DISPATCH_PR_NUMBER: ${{ inputs.pr_number || '' }}
+          DISPATCH_PR_HEAD_SHA: ${{ inputs.pr_head_sha || '' }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const eventName = context.eventName;
+            const payload = context.payload || {};
+            const artifactName = 'quality-gates-report';
+            let sourceRunId = '';
+            let sourceRunAttempt = '';
+            let prNumber = '';
+            let expectedHeadSha = '';
+            let workflowHeadRepository = '';
+
+            if (eventName === 'workflow_run') {
+              const workflowRun = payload.workflow_run || {};
+              sourceRunId = String(workflowRun.id || '');
+              sourceRunAttempt = String(workflowRun.run_attempt || '');
+              prNumber = String((workflowRun.pull_requests || [])[0]?.number || '');
+              expectedHeadSha = String(workflowRun.head_sha || '');
+              workflowHeadRepository = String(workflowRun.head_repository?.full_name || '');
+            } else {
+              sourceRunId = String(process.env.DISPATCH_SOURCE_RUN_ID || '');
+              sourceRunAttempt = String(process.env.DISPATCH_SOURCE_RUN_ATTEMPT || '');
+              prNumber = String(process.env.DISPATCH_PR_NUMBER || '');
+              expectedHeadSha = String(process.env.DISPATCH_PR_HEAD_SHA || '');
+            }
+
+            if (!/^\d+$/.test(sourceRunId) || !/^\d+$/.test(prNumber)) {
+              core.warning(`Invalid quality publish context: sourceRunId=${JSON.stringify(sourceRunId)} prNumber=${JSON.stringify(prNumber)}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            if (!/^[0-9a-f]{40}$/i.test(expectedHeadSha)) {
+              core.warning(`Invalid or missing PR head SHA for quality publication: ${JSON.stringify(expectedHeadSha)}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+
+            const issueNumber = Number(prNumber);
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: issueNumber });
+            if (workflowHeadRepository && workflowHeadRepository !== `${owner}/${repo}`) {
+              core.warning(`Skipping quality publication for non-repository head ${workflowHeadRepository}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            if (pr.head?.repo?.fork || pr.head?.repo?.full_name !== `${owner}/${repo}`) {
+              core.warning(`Skipping quality publication for fork or external head repository on PR #${issueNumber}.`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            if (pr.head.sha !== expectedHeadSha) {
+              core.warning(`Skipping stale quality report for PR #${issueNumber}: expected ${expectedHeadSha}, current ${pr.head.sha}`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner,
+              repo,
+              run_id: Number(sourceRunId),
+              per_page: 100,
+            });
+            if (!(artifacts.data.artifacts || []).some((artifact) => artifact.name === artifactName && !artifact.expired)) {
+              core.warning(`Quality report artifact ${artifactName} not found for run ${sourceRunId}; skipping publication.`);
+              core.setOutput('skip', 'true');
+              return;
+            }
+
+            core.setOutput('skip', 'false');
+            core.setOutput('source_run_id', sourceRunId);
+            core.setOutput('source_run_attempt', sourceRunAttempt);
+            core.setOutput('pr_number', prNumber);
+            core.setOutput('pr_head_sha', expectedHeadSha);
+            core.setOutput('artifact_name', artifactName);
+
+      - name: Checkout trusted publisher code
+        if: steps.context.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Download quality report artifact
+        if: steps.context.outputs.skip != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.context.outputs.artifact_name }}
+          path: artifacts/quality/reports
+          run-id: ${{ steps.context.outputs.source_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Validate quality report provenance
+        id: quality_report
+        if: steps.context.outputs.skip != 'true'
+        env:
+          SOURCE_RUN_ATTEMPT: ${{ steps.context.outputs.source_run_attempt }}
+        run: |
+          set -euo pipefail
+          args=(
+            --provenance artifacts/quality/reports/quality-gates-report.provenance.json
+            --root artifacts/quality/reports
+            --artifact-name "${{ steps.context.outputs.artifact_name }}"
+            --repository "${GITHUB_REPOSITORY}"
+            --workflow "Quality Gates"
+            --run-id "${{ steps.context.outputs.source_run_id }}"
+            --event-name pull_request
+            --head-sha "${{ steps.context.outputs.pr_head_sha }}"
+            --pr-number "${{ steps.context.outputs.pr_number }}"
+          )
+          if [ -n "${SOURCE_RUN_ATTEMPT}" ]; then
+            args+=(--run-attempt "${SOURCE_RUN_ATTEMPT}")
+          fi
+          report=$(find artifacts/quality/reports -name 'quality-report-*-latest.json' -type f | sort | head -n1 || true)
+          if [ -z "$report" ]; then
+            printf '%s\n' '::error::quality report missing from downloaded artifact.'
+            exit 1
+          fi
+          args+=(--require-subject "${report#artifacts/quality/reports/}")
+          node scripts/ci/validate-artifact-provenance.mjs "${args[@]}"
+          printf 'report=%s\n' "$report" >> "$GITHUB_OUTPUT"
+
+      - name: Load previous quality summary
+        if: steps.context.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.context.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/quality
+          marker='<!-- AE-PR-QUALITY -->'
+          comment=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .body' | head -n1 || true)
+          if [ -n "$comment" ]; then
+            export BODY="$comment"
+            node - <<'NODE' || true
+            const fs = require('fs');
+            const body = process.env.BODY || '';
+            const match = body.match(/<!-- AE-PR-QUALITY-JSON ([\s\S]*?) -->/);
+            if (match && match[1]) {
+              fs.mkdirSync('artifacts/quality', { recursive: true });
+              fs.writeFileSync('artifacts/quality/summary.prev.json', match[1]);
+              console.log('Loaded previous quality summary');
+            }
+          NODE
+          fi
+
+      - name: Render quality summary
+        if: steps.context.outputs.skip != 'true'
+        env:
+          QUALITY_REPORT_PATH: ${{ steps.quality_report.outputs.report }}
+          QUALITY_PREVIOUS_SUMMARY: artifacts/quality/summary.prev.json
+        run: node scripts/quality/render-quality-pr-comment.mjs
+
+      - name: Post or update quality comment
+        if: steps.context.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.context.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          marker='<!-- AE-PR-QUALITY -->'
+          {
+            printf '%s\n\n' "$marker"
+            cat artifacts/quality/PR_QUALITY.md
+            printf '\n\n<!-- AE-PR-QUALITY-JSON '
+            cat artifacts/quality/summary.json
+            printf ' -->\n'
+          } > artifacts/quality/comment-body.txt
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = fs.readFileSync('artifacts/quality/comment-body.txt', 'utf8');
+          fs.writeFileSync('artifacts/quality/comment-body.json', JSON.stringify({ body }));
+          NODE
+          existing_id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .id' | head -n1 || true)
+          if [ -n "$existing_id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing_id" --input artifacts/quality/comment-body.json
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --input artifacts/quality/comment-body.json
+          fi

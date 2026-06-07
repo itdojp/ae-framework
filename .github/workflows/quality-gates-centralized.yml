@@ -67,6 +67,25 @@ jobs:
         # leave non-required PR checks red. Push/main and workflow_call still enforce DoD.
         continue-on-error: ${{ github.event_name == 'pull_request' }}
         run: pnpm run quality:run -- --env=testing --gates=dod --sequential
+      - name: Write quality report provenance
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          mapfile -t reports < <(find artifacts/quality/reports -name 'quality-report-*-latest.json' -type f | sort || true)
+          if [ "${#reports[@]}" -eq 0 ]; then
+            printf '%s\n' '::error::quality-gates-report did not contain a latest quality report for provenance binding.'
+            exit 1
+          fi
+          args=(
+            --output quality-gates-report.provenance.json
+            --artifact-name quality-gates-report
+            --root artifacts/quality/reports
+          )
+          for report in "${reports[@]}"; do
+            args+=(--subject "${report#artifacts/quality/reports/}")
+          done
+          node scripts/ci/write-artifact-provenance.mjs "${args[@]}"
+          mv quality-gates-report.provenance.json artifacts/quality/reports/quality-gates-report.provenance.json
       - name: Upload quality report
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -129,79 +148,6 @@ jobs:
     with:
       node-version: '20'
       run-script: typecov:check:70
-  pr-quality-comment:
-    if: ${{ always() && github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
-    needs: [dod]
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download quality report
-        uses: actions/download-artifact@v4
-        with:
-          name: quality-gates-report
-          path: artifacts/quality/reports
-      - name: Locate quality report
-        id: report
-        run: |
-          REPORT=$(find artifacts/quality/reports -name 'quality-report-*-latest.json' | head -n1 || true)
-          printf "report=%s\n" "$REPORT" >> "$GITHUB_OUTPUT"
-      - name: Load previous quality summary
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          set -e
-          mkdir -p artifacts/quality
-          marker='<!-- AE-PR-QUALITY -->'
-          comment=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .body' | head -n1 || true)
-          if [ -n "$comment" ]; then
-            export BODY="$comment"
-            node - <<'NODE' || true
-            const fs = require('fs');
-            const body = process.env.BODY || '';
-            const match = body.match(/<!-- AE-PR-QUALITY-JSON ([\s\S]*?) -->/);
-            if (match && match[1]) {
-              fs.mkdirSync('artifacts/quality', { recursive: true });
-              fs.writeFileSync('artifacts/quality/summary.prev.json', match[1]);
-              console.log('Loaded previous quality summary');
-            }
-          NODE
-          fi
-      - name: Render quality summary
-        env:
-          QUALITY_REPORT_PATH: ${{ steps.report.outputs.report }}
-          QUALITY_PREVIOUS_SUMMARY: artifacts/quality/summary.prev.json
-        run: node scripts/quality/render-quality-pr-comment.mjs
-      - name: Post or update quality comment
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          set -e
-          marker='<!-- AE-PR-QUALITY -->'
-          {
-            printf '%s\n\n' "$marker"
-            cat artifacts/quality/PR_QUALITY.md
-            printf '\n\n<!-- AE-PR-QUALITY-JSON '
-            cat artifacts/quality/summary.json
-            printf ' -->\n'
-          } > artifacts/quality/comment-body.txt
-          node - <<'NODE'
-          const fs = require('fs');
-          const body = fs.readFileSync('artifacts/quality/comment-body.txt', 'utf8');
-          fs.writeFileSync('artifacts/quality/comment-body.json', JSON.stringify({ body }));
-          NODE
-          existing_id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .id' | head -n1 || true)
-          if [ -n "$existing_id" ]; then
-            # Use --input with JSON payload so gh api posts file contents, not the literal path string.
-            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing_id" --input artifacts/quality/comment-body.json
-          else
-            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --input artifacts/quality/comment-body.json
-          fi
   types-tests:
     uses: ./.github/workflows/ci-core.yml
     with:

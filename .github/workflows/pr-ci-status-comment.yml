@@ -610,12 +610,39 @@ jobs:
         env:
           PROGRESS_SUMMARY_PREVIOUS: artifacts/progress/summary.prev.json
         run: node scripts/progress/render-progress-summary.mjs
+      - name: Write PR summary publish provenance
+        run: |
+          set -euo pipefail
+          subjects=()
+          for subject in \
+            summary/PR_SUMMARY.md \
+            progress/PR_PROGRESS.md \
+            progress/summary.json \
+            change-package/change-package.json \
+            change-package/change-package-v2.json \
+            change-package/change-package-validation.json \
+            change-package/change-package-v2-validation.json
+          do
+            if [ -f "artifacts/$subject" ]; then
+              subjects+=(--subject "$subject")
+            fi
+          done
+          if [ "${#subjects[@]}" -eq 0 ]; then
+            printf '%s\n' '::error::PR summary publish artifact has no subjects to bind.'
+            exit 1
+          fi
+          node scripts/ci/write-artifact-provenance.mjs \
+            --output artifacts/summary/pr-summary-publish.provenance.json \
+            --artifact-name pr-summary-publish-pr-${{ github.event.pull_request.number }} \
+            --root artifacts \
+            "${subjects[@]}"
       - name: Upload PR summary publish artifact
         uses: actions/upload-artifact@v4
         with:
           name: pr-summary-publish-pr-${{ github.event.pull_request.number }}
           path: |
             artifacts/summary/PR_SUMMARY.md
+            artifacts/summary/pr-summary-publish.provenance.json
             artifacts/progress/PR_PROGRESS.md
             artifacts/progress/summary.json
             artifacts/change-package/change-package.json
@@ -761,207 +788,6 @@ jobs:
             artifacts/trusted-change-package/change-package-validation.md
           if-no-files-found: error
           retention-days: 14
-
-  publish-summary:
-    needs: [summarize, validate-change-package]
-    if: >-
-      !contains(fromJSON('["1","true","yes","on","TRUE","YES","ON","True","Yes","On"]'), vars.AE_AUTOMATION_GLOBAL_DISABLE)
-      && github.event_name == 'pull_request'
-      && !github.event.pull_request.head.repo.fork
-      && github.event.action != 'edited'
-      && needs.summarize.result == 'success'
-      && needs.validate-change-package.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      checks: write
-      issues: write
-      # GitHub PR issue-comment creation can require pull_requests=write;
-      # this writer job remains checkout-free and does not execute local code.
-      pull-requests: write
-    steps:
-      - name: Download PR summary publish artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: pr-summary-publish-pr-${{ github.event.pull_request.number }}
-          path: artifacts/publish/pr-summary
-      - name: Download trusted Change Package validation artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: trusted-change-package-validation-pr-${{ github.event.pull_request.number }}
-          path: artifacts/publish/trusted-change-package
-      - name: Publish PR summary, progress, and Change Package check
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            const { owner, repo, number } = context.issue;
-            const pr = context.payload.pull_request;
-            const headSha = pr?.head?.sha;
-            if (!headSha) {
-              core.setFailed('No pull_request head SHA found; cannot publish summary artifacts.');
-              return;
-            }
-
-            const artifactRoot = 'artifacts/publish/pr-summary';
-            const trustedArtifactRoot = 'artifacts/publish/trusted-change-package';
-            const MAX_COMMENT_BYTES = 60000;
-            const readText = (relativePath, root = artifactRoot) => {
-              const filePath = path.join(root, relativePath);
-              if (!fs.existsSync(filePath)) return null;
-              return fs.readFileSync(filePath, 'utf8').replace(/\u0000/g, '\uFFFD');
-            };
-            const truncateUtf8 = (text, maxBytes) => {
-              let truncated = Buffer.from(text, 'utf8')
-                .subarray(0, Math.max(0, maxBytes))
-                .toString('utf8');
-              while (Buffer.byteLength(truncated, 'utf8') > maxBytes) {
-                truncated = truncated.slice(0, -1);
-              }
-              return truncated;
-            };
-            const limitComment = (text, label) => {
-              const bytes = Buffer.byteLength(text, 'utf8');
-              if (bytes <= MAX_COMMENT_BYTES) return text;
-              const notice = `\n\n_[${label} truncated to ${MAX_COMMENT_BYTES} bytes before publication.]_`;
-              const availableBytes = Math.max(
-                0,
-                MAX_COMMENT_BYTES - Buffer.byteLength(notice, 'utf8'),
-              );
-              return `${truncateUtf8(text, availableBytes)}${notice}`;
-            };
-            const isCommentPayloadWithinLimit = (marker, body) =>
-              Buffer.byteLength(`${marker}\n\n${body}`, 'utf8') <= MAX_COMMENT_BYTES;
-            let issueCommentsCache = null;
-            const listAllIssueComments = async () => {
-              const comments = [];
-              for (let page = 1; ; page += 1) {
-                const response = await github.rest.issues.listComments({
-                  owner,
-                  repo,
-                  issue_number: number,
-                  per_page: 100,
-                  page,
-                });
-                comments.push(...response.data);
-                if (response.data.length < 100) break;
-              }
-              return comments;
-            };
-            const getIssueComments = async () => {
-              if (!issueCommentsCache) {
-                issueCommentsCache = await listAllIssueComments();
-              }
-              return issueCommentsCache;
-            };
-            const isTrustedAutomationComment = (comment, marker) => {
-              const login = String(comment?.user?.login || '').trim().toLowerCase();
-              const body = typeof comment?.body === 'string' ? comment.body : '';
-              return (
-                (login === 'github-actions' || login === 'github-actions[bot]')
-                && body.startsWith(marker)
-              );
-            };
-            const markerDisplayLabel = (marker) => {
-              const label = String(marker || '')
-                .replace(/^<!--\s*/, '')
-                .replace(/\s*-->$/, '')
-                .trim();
-              return label || 'PR comment';
-            };
-            const upsertComment = async (marker, body) => {
-              const payload = limitComment(`${marker}\n\n${body}`, markerDisplayLabel(marker));
-              const comments = await getIssueComments();
-              const existing = [...comments].reverse().find((comment) => isTrustedAutomationComment(comment, marker));
-              if (existing) {
-                await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: payload });
-              } else {
-                await github.rest.issues.createComment({ owner, repo, issue_number: number, body: payload });
-              }
-            };
-
-            const summaryBody = readText('summary/PR_SUMMARY.md');
-            if (summaryBody) {
-              await upsertComment('<!-- AE-PR-SUMMARY -->', summaryBody);
-            } else {
-              core.warning('PR_SUMMARY.md was not present in the publish artifact.');
-            }
-
-            const progressBody = readText('progress/PR_PROGRESS.md');
-            const progressJsonText = readText('progress/summary.json');
-            if (progressBody) {
-              let progressCommentBody = progressBody;
-              if (progressJsonText) {
-                try {
-                  const progressJson = JSON.parse(progressJsonText);
-                  const progressJsonBlock = `\n\n<!-- AE-PR-PROGRESS-JSON ${JSON.stringify(progressJson)} -->`;
-                  progressCommentBody = isCommentPayloadWithinLimit(
-                    '<!-- AE-PR-PROGRESS -->',
-                    `${progressBody}${progressJsonBlock}`,
-                  )
-                    ? `${progressBody}${progressJsonBlock}`
-                    : progressBody;
-                  if (progressCommentBody === progressBody) {
-                    core.warning('Progress summary JSON omitted because it would exceed the PR comment size cap.');
-                  }
-                } catch (error) {
-                  core.warning(`Progress summary JSON could not be parsed; publishing Markdown without embedded JSON: ${error.message}`);
-                }
-              } else {
-                core.warning('Progress summary JSON was not present in the publish artifact; publishing Markdown only.');
-              }
-              await upsertComment(
-                '<!-- AE-PR-PROGRESS -->',
-                progressCommentBody,
-              );
-            } else {
-              core.warning('Progress summary Markdown was not present in the publish artifact.');
-            }
-
-            const readJson = (relativePath, root = artifactRoot) => {
-              const text = readText(relativePath, root);
-              if (!text) return null;
-              try {
-                return JSON.parse(text);
-              } catch (error) {
-                core.warning(`${relativePath} could not be parsed; treating as missing structured JSON: ${error.message}`);
-                return null;
-              }
-            };
-            const validation = readJson('change-package-validation.json', trustedArtifactRoot);
-            const result = String(validation?.result || '').trim().toLowerCase();
-            const conclusion = result === 'pass'
-              ? 'success'
-              : (result === 'warn' ? 'neutral' : 'failure');
-            const title = result
-              ? `Change Package Validation: ${result.toUpperCase()}`
-              : 'Change Package Validation: MISSING';
-            const summary = validation
-              ? [
-                  `schemaVersion: ${validation.schemaVersion || 'unknown'}`,
-                  `result: ${result || 'missing'}`,
-                  `strict: ${validation.strict ?? 'unknown'}`,
-                  `errors: ${Array.isArray(validation.errors) ? validation.errors.length : 'unknown'}`,
-                  `warnings: ${Array.isArray(validation.warnings) ? validation.warnings.length : 'unknown'}`,
-                  `workflowRunId: ${context.runId}`,
-                  `headSha: ${headSha}`,
-                ].join('\n')
-              : `No structured change-package-validation.json artifact was available for head ${headSha}.`;
-
-            await github.rest.checks.create({
-              owner,
-              repo,
-              name: 'Change Package Validation',
-              head_sha: headSha,
-              status: 'completed',
-              conclusion,
-              output: {
-                title,
-                summary,
-              },
-            });
-
 
   post-status:
     if: >-
