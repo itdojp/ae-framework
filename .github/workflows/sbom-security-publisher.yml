@@ -170,6 +170,7 @@ jobs:
           common=(
             --repository "${GITHUB_REPOSITORY}"
             --workflow "SBOM Generation and Security Scanning"
+            --workflow-ref-prefix "${GITHUB_REPOSITORY}/.github/workflows/sbom-generation.yml@"
             --run-id "${{ steps.context.outputs.source_run_id }}"
             --event-name pull_request
             --head-sha "${{ steps.context.outputs.pr_head_sha }}"

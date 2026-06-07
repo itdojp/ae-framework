@@ -776,6 +776,12 @@ jobs:
           };
           fs.writeFileSync(jsonPath, `${JSON.stringify(report, null, 2)}\n`);
           JS
+          node scripts/ci/write-artifact-provenance.mjs \
+            --output artifacts/trusted-change-package/change-package-validation.provenance.json \
+            --artifact-name trusted-change-package-validation-pr-${{ github.event.pull_request.number }} \
+            --root artifacts/trusted-change-package \
+            --subject change-package-validation.json \
+            --subject change-package-validation.md
           if [ "$validation_exit" -ne 0 ]; then
             printf '%s\n' "Trusted Change Package validation result is not pass; check run will publish the fail/warn result."
           fi
@@ -786,6 +792,7 @@ jobs:
           path: |
             artifacts/trusted-change-package/change-package-validation.json
             artifacts/trusted-change-package/change-package-validation.md
+            artifacts/trusted-change-package/change-package-validation.provenance.json
           if-no-files-found: error
           retention-days: 14
 

@@ -297,6 +297,19 @@ describe('validate-artifacts-ajv', () => {
     expect(harnessHealthRule?.schemaPath).toBe('schema/harness-health.schema.json');
     expect(harnessHealthRule?.patterns).toContain('artifacts/ci/harness-health.json');
 
+    const policyInputRule = DEFAULT_RULES.find((rule) => rule.id === 'policy-input-v1');
+    expect(policyInputRule).toBeDefined();
+    expect(policyInputRule?.patterns).toContain('artifacts/ci/policy-input-v1.json');
+
+    const policyDecisionRule = DEFAULT_RULES.find((rule) => rule.id === 'policy-decision-v1');
+    expect(policyDecisionRule).toBeDefined();
+    expect(policyDecisionRule?.patterns).toContain('artifacts/ci/policy-decision-js-v1.json');
+
+    const ciProvenanceRule = DEFAULT_RULES.find((rule) => rule.id === 'ci-artifact-provenance-v1');
+    expect(ciProvenanceRule).toBeDefined();
+    expect(ciProvenanceRule?.schemaPath).toBe('schema/ci-artifact-provenance-v1.schema.json');
+    expect(ciProvenanceRule?.patterns).toContain('artifacts/**/*.provenance.json');
+
     const qualityScorecardRule = DEFAULT_RULES.find((rule) => rule.id === 'quality-scorecard');
     expect(qualityScorecardRule).toBeDefined();
     expect(qualityScorecardRule?.schemaPath).toBe('schema/quality-scorecard.schema.json');

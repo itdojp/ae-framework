@@ -1,10 +1,17 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import Ajv2020 from 'ajv/dist/2020.js';
+import addFormats from 'ajv-formats';
 
 export const ARTIFACT_PROVENANCE_SCHEMA_VERSION = 'ci-artifact-provenance/v1';
+export const ARTIFACT_PROVENANCE_SCHEMA_PATH = 'schema/ci-artifact-provenance-v1.schema.json';
 
 const HEX_SHA_RE = /^[0-9a-f]{64}$/;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, '..', '..', '..');
+let provenanceSchemaValidator = null;
 
 export function normalizeSubjectPath(subjectPath) {
   const raw = String(subjectPath ?? '').trim();
@@ -35,17 +42,64 @@ function readJsonOptional(filePath) {
   }
 }
 
+function normalizeOptionalPrNumber(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+  if (!/^[1-9][0-9]*$/.test(raw)) return null;
+  return Number(raw);
+}
+
+function applyProvenanceEnvOverrides(resolved, env = process.env) {
+  const prNumber = normalizeOptionalPrNumber(env.AE_ARTIFACT_PROVENANCE_PR_NUMBER);
+  return {
+    ...resolved,
+    prNumber: prNumber ?? resolved.prNumber,
+    headSha: String(env.AE_ARTIFACT_PROVENANCE_HEAD_SHA || '').trim() || resolved.headSha,
+    baseSha: String(env.AE_ARTIFACT_PROVENANCE_BASE_SHA || '').trim() || resolved.baseSha,
+    headRepository: String(env.AE_ARTIFACT_PROVENANCE_HEAD_REPOSITORY || '').trim() || resolved.headRepository,
+    baseRepository: String(env.AE_ARTIFACT_PROVENANCE_BASE_REPOSITORY || '').trim() || resolved.baseRepository,
+  };
+}
+
 function parsePullRequestEvent(env = process.env) {
   const eventPath = env.GITHUB_EVENT_PATH;
   const event = eventPath ? readJsonOptional(eventPath) : undefined;
+  const repositoryFallback = typeof event?.repository?.full_name === 'string'
+    ? event.repository.full_name
+    : (env.GITHUB_REPOSITORY || '');
   const pr = event?.pull_request;
-  return {
-    prNumber: pr?.number ?? null,
+  const workflowRun = event?.workflow_run;
+  const workflowRunPr = Array.isArray(workflowRun?.pull_requests) && workflowRun.pull_requests.length > 0
+    ? workflowRun.pull_requests[0]
+    : null;
+  const workflowDispatchPrNumber = event?.inputs?.pr_number ?? event?.inputs?.pull_request_number ?? null;
+  const workflowRunHeadRepository =
+    workflowRun?.head_repository?.full_name
+    ?? workflowRunPr?.head?.repo?.full_name
+    ?? workflowRunPr?.head_repository?.full_name
+    ?? repositoryFallback;
+  const workflowRunBaseRepository =
+    workflowRunPr?.base?.repo?.full_name
+    ?? workflowRunPr?.base_repository?.full_name
+    ?? repositoryFallback;
+  if (workflowRun && typeof workflowRun === 'object') {
+    return applyProvenanceEnvOverrides({
+      prNumber: workflowRunPr?.number ?? workflowDispatchPrNumber ?? null,
+      headSha: typeof workflowRun?.head_sha === 'string'
+        ? workflowRun.head_sha
+        : (typeof workflowRunPr?.head?.sha === 'string' ? workflowRunPr.head.sha : (env.GITHUB_SHA || '')),
+      baseSha: typeof workflowRunPr?.base?.sha === 'string' ? workflowRunPr.base.sha : '',
+      headRepository: typeof workflowRunHeadRepository === 'string' ? workflowRunHeadRepository : '',
+      baseRepository: typeof workflowRunBaseRepository === 'string' ? workflowRunBaseRepository : '',
+    }, env);
+  }
+  return applyProvenanceEnvOverrides({
+    prNumber: pr?.number ?? workflowDispatchPrNumber ?? null,
     headSha: typeof pr?.head?.sha === 'string' ? pr.head.sha : (env.GITHUB_SHA || ''),
     baseSha: typeof pr?.base?.sha === 'string' ? pr.base.sha : '',
-    headRepository: typeof pr?.head?.repo?.full_name === 'string' ? pr.head.repo.full_name : '',
-    baseRepository: typeof pr?.base?.repo?.full_name === 'string' ? pr.base.repo.full_name : '',
-  };
+    headRepository: typeof pr?.head?.repo?.full_name === 'string' ? pr.head.repo.full_name : repositoryFallback,
+    baseRepository: typeof pr?.base?.repo?.full_name === 'string' ? pr.base.repo.full_name : repositoryFallback,
+  }, env);
 }
 
 export function collectSubjects({ root = '.', subjects = [] } = {}) {
@@ -117,6 +171,38 @@ function maybeCompare(errors, label, actual, expected) {
   }
 }
 
+function maybeComparePrefix(errors, label, actual, expectedPrefix) {
+  const prefix = String(expectedPrefix ?? '').trim();
+  if (!prefix) return;
+  const act = String(actual ?? '').trim();
+  if (!act.startsWith(prefix)) {
+    errors.push(`${label} prefix mismatch: expected prefix ${JSON.stringify(prefix)}, actual ${JSON.stringify(act)}`);
+  }
+}
+
+function loadProvenanceSchemaValidator() {
+  if (provenanceSchemaValidator) {
+    return provenanceSchemaValidator;
+  }
+  const schemaPath = path.resolve(repoRoot, ARTIFACT_PROVENANCE_SCHEMA_PATH);
+  const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+  const ajv = new Ajv2020({ allErrors: true, strict: true });
+  addFormats(ajv);
+  provenanceSchemaValidator = ajv.compile(schema);
+  return provenanceSchemaValidator;
+}
+
+export function validateArtifactProvenanceSchema(provenance) {
+  const validate = loadProvenanceSchemaValidator();
+  if (validate(provenance)) {
+    return [];
+  }
+  return (validate.errors ?? []).map((error) => {
+    const location = error.instancePath || '/';
+    return `artifact provenance schema ${location} ${error.message}`;
+  });
+}
+
 export function validateArtifactProvenance({
   provenance,
   root = '.',
@@ -127,6 +213,7 @@ export function validateArtifactProvenance({
   if (!provenance || typeof provenance !== 'object') {
     return ['provenance must be a JSON object'];
   }
+  errors.push(...validateArtifactProvenanceSchema(provenance));
   if (provenance.schemaVersion !== ARTIFACT_PROVENANCE_SCHEMA_VERSION) {
     errors.push(`schemaVersion mismatch: expected ${ARTIFACT_PROVENANCE_SCHEMA_VERSION}, actual ${JSON.stringify(provenance.schemaVersion)}`);
   }
@@ -145,11 +232,14 @@ export function validateArtifactProvenance({
     maybeCompare(errors, 'producer.repository', producer.repository, expected.repository);
     maybeCompare(errors, 'producer.workflow', producer.workflow, expected.workflow);
     maybeCompare(errors, 'producer.workflowRef', producer.workflowRef, expected.workflowRef);
+    maybeComparePrefix(errors, 'producer.workflowRef', producer.workflowRef, expected.workflowRefPrefix);
     maybeCompare(errors, 'producer.runId', producer.runId, expected.runId);
     maybeCompare(errors, 'producer.runAttempt', producer.runAttempt, expected.runAttempt);
     maybeCompare(errors, 'producer.eventName', producer.eventName, expected.eventName);
     maybeCompare(errors, 'producer.headSha', producer.headSha, expected.headSha);
     maybeCompare(errors, 'producer.baseSha', producer.baseSha, expected.baseSha);
+    maybeCompare(errors, 'producer.headRepository', producer.headRepository, expected.headRepository);
+    maybeCompare(errors, 'producer.baseRepository', producer.baseRepository, expected.baseRepository);
     if (String(expected.prNumber ?? '').trim()) {
       const actualPr = producer.prNumber == null ? '' : String(producer.prNumber);
       maybeCompare(errors, 'producer.prNumber', actualPr, expected.prNumber);

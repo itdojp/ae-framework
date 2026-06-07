@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "ci-artifact-provenance/v1",
+  "generatedAt": "2026-06-07T00:00:00.000Z",
+  "artifact": {
+    "name": "policy-gate-artifacts",
+    "subjects": [
+      {
+        "path": "ci/policy-gate-summary.json",
+        "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "size": 2048
+      }
+    ]
+  },
+  "producer": {
+    "repository": "itdojp/ae-framework",
+    "workflow": "Policy Gate",
+    "workflowRef": "itdojp/ae-framework/.github/workflows/policy-gate.yml@refs/pull/3468/merge",
+    "runId": "27086228694",
+    "runAttempt": "1",
+    "eventName": "pull_request",
+    "headSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "baseSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "prNumber": 3468,
+    "headRepository": "itdojp/ae-framework",
+    "baseRepository": "itdojp/ae-framework"
+  }
+}

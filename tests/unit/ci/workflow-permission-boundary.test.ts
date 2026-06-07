@@ -356,6 +356,8 @@ describe('workflow permission boundaries', () => {
     expect(validateChangePackage).toContain('Download PR summary publish artifact');
     expect(validateChangePackage).toContain('Validate Change Package with trusted base code');
     expect(validateChangePackage).toContain('node scripts/change-package/validate.mjs');
+    expect(validateChangePackage).toContain('change-package-validation.provenance.json');
+    expect(validateChangePackage).toContain('write-artifact-provenance.mjs');
     expect(validateChangePackage).toContain('trusted-change-package-validation-pr-${{ github.event.pull_request.number }}');
     expect(validateChangePackage).toContain("source: 'base-ref-code'");
     expect(summarize).not.toContain('issues.createComment');
@@ -364,9 +366,12 @@ describe('workflow permission boundaries', () => {
     expect(publisherJob).toContain('Download PR summary publish artifact');
     expect(publisherJob).toContain('Download trusted Change Package validation artifact');
     expect(publisherJob).toContain('Validate PR summary artifact provenance');
+    expect(publisherJob).toContain('Validate trusted Change Package validation provenance');
     expect(publisherJob).toContain('validate-artifact-provenance.mjs');
     expect(publisherJob).toContain('--workflow "PR Maintenance"');
+    expect(publisherJob).toContain('--workflow-ref-prefix "${GITHUB_REPOSITORY}/.github/workflows/pr-ci-status-comment.yml@"');
     expect(publisherJob).toContain('--require-subject summary/PR_SUMMARY.md');
+    expect(publisherJob).toContain('--require-subject change-package-validation.json');
     expect(publisherJob).toContain("const trustedArtifactRoot = 'artifacts/publish/trusted-change-package'");
     expect(publisherJob).toContain("readText('summary/PR_SUMMARY.md')");
     expect(publisherJob).toContain("readText('progress/PR_PROGRESS.md')");
@@ -478,6 +483,7 @@ describe('workflow permission boundaries', () => {
     expect(publisherJob).not.toContain("sourceConclusion !== 'success'");
     expect(publisherJob).toContain('gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments"');
     expect(publisherJob).toContain('--workflow "Quality Gates"');
+    expect(publisherJob).toContain('--workflow-ref-prefix "${GITHUB_REPOSITORY}/.github/workflows/quality-gates-centralized.yml@"');
     expect(publisherJob).toContain('validate-artifact-provenance.mjs');
     expect(publisherJob).toContain('render-quality-pr-comment.mjs');
     expect(publisherJob).toContain('gh api -X PATCH');
@@ -502,6 +508,10 @@ describe('workflow permission boundaries', () => {
     const workflow = readWorkflow('policy-gate.yml');
     expect(workflow).toContain('actions: read');
     expect(workflow).toContain('persist-credentials: false');
+    expect(workflow).toContain('PR_HEAD_SHA=');
+    expect(workflow).toContain('head_sha=${PR_HEAD_SHA}');
+    expect(workflow).toContain('PR_HEAD_REPOSITORY=');
+    expect(workflow).toContain('head_repository=${PR_HEAD_REPOSITORY}');
     expect(workflow).toContain('Resolve assurance policy inputs');
     expect(workflow).toContain("labels.has('enforce-assurance')");
     expect(workflow).toContain("core.exportVariable('AE_POLICY_ASSURANCE_MODE', 'strict')");
@@ -511,6 +521,15 @@ describe('workflow permission boundaries', () => {
     expect(workflow).toContain('name: verify-lite-report');
     expect(workflow).toContain('path: artifacts');
     expect(workflow).toContain('run-id: ${{ steps.assurance-policy.outputs.verify_lite_run_id }}');
+    expect(workflow).toContain('Write policy-gate artifact provenance');
+    expect(workflow).toContain('Validate policy-gate artifact provenance');
+    expect(workflow).toContain('policy-gate.provenance.json');
+    expect(workflow).toContain('--artifact-name policy-gate-artifacts');
+    expect(workflow).toContain('--workflow-ref-prefix "${GITHUB_REPOSITORY}/.github/workflows/policy-gate.yml@"');
+    expect(workflow).toContain('--head-repository "${PR_HEAD_REPOSITORY}"');
+    expect(workflow).toContain('--base-repository "${PR_BASE_REPOSITORY}"');
+    expect(workflow).toContain('--require-subject ci/policy-gate-summary.json');
+    expect(workflow).toContain('--require-subject ci/policy-decision-js-v1.json');
   });
 
   it('verify-lite records claim evidence provenance before uploading assurance artifacts', () => {
@@ -744,6 +763,7 @@ describe('workflow permission boundaries', () => {
     expect(publisherJob).toContain('Validate SBOM and security scan provenance');
     expect(publisherJob).toContain('validate-artifact-provenance.mjs');
     expect(publisherJob).toContain('--workflow "SBOM Generation and Security Scanning"');
+    expect(publisherJob).toContain('--workflow-ref-prefix "${GITHUB_REPOSITORY}/.github/workflows/sbom-generation.yml@"');
     expect(publisherJob).toContain('--require-subject sbom.json');
     expect(publisherJob).toContain('--require-subject audit-results.json');
     expect(publisherJob).toContain('Post Security/Compliance summary');
