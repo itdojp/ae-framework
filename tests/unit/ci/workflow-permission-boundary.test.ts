@@ -475,6 +475,8 @@ describe('workflow permission boundaries', () => {
     });
     expect(publisherJob).toContain('ref: ${{ github.event.repository.default_branch }}');
     expect(publisherJob).toContain('Validate quality report provenance');
+    expect(publisherJob).not.toContain("sourceConclusion !== 'success'");
+    expect(publisherJob).toContain('gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments"');
     expect(publisherJob).toContain('--workflow "Quality Gates"');
     expect(publisherJob).toContain('validate-artifact-provenance.mjs');
     expect(publisherJob).toContain('render-quality-pr-comment.mjs');
@@ -745,6 +747,7 @@ describe('workflow permission boundaries', () => {
     expect(publisherJob).toContain('--require-subject sbom.json');
     expect(publisherJob).toContain('--require-subject audit-results.json');
     expect(publisherJob).toContain('Post Security/Compliance summary');
+    expect(publisherJob).toContain('github.paginate(github.rest.issues.listComments');
   });
 
   it('security analyzer pull request runs stay read-only and isolate security-events writes', () => {

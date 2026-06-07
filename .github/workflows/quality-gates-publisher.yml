@@ -58,7 +58,6 @@ jobs:
             let prNumber = '';
             let expectedHeadSha = '';
             let workflowHeadRepository = '';
-            let sourceConclusion = 'success';
 
             if (eventName === 'workflow_run') {
               const workflowRun = payload.workflow_run || {};
@@ -67,7 +66,6 @@ jobs:
               prNumber = String((workflowRun.pull_requests || [])[0]?.number || '');
               expectedHeadSha = String(workflowRun.head_sha || '');
               workflowHeadRepository = String(workflowRun.head_repository?.full_name || '');
-              sourceConclusion = String(workflowRun.conclusion || '');
             } else {
               sourceRunId = String(process.env.DISPATCH_SOURCE_RUN_ID || '');
               sourceRunAttempt = String(process.env.DISPATCH_SOURCE_RUN_ATTEMPT || '');
@@ -75,11 +73,6 @@ jobs:
               expectedHeadSha = String(process.env.DISPATCH_PR_HEAD_SHA || '');
             }
 
-            if (sourceConclusion !== 'success') {
-              core.info(`Skipping quality publication for source conclusion=${sourceConclusion}`);
-              core.setOutput('skip', 'true');
-              return;
-            }
             if (!/^\d+$/.test(sourceRunId) || !/^\d+$/.test(prNumber)) {
               core.warning(`Invalid quality publish context: sourceRunId=${JSON.stringify(sourceRunId)} prNumber=${JSON.stringify(prNumber)}`);
               core.setOutput('skip', 'true');
@@ -182,7 +175,7 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/quality
           marker='<!-- AE-PR-QUALITY -->'
-          comment=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .body' | head -n1 || true)
+          comment=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .body' | head -n1 || true)
           if [ -n "$comment" ]; then
             export BODY="$comment"
             node - <<'NODE' || true
@@ -224,7 +217,7 @@ jobs:
           const body = fs.readFileSync('artifacts/quality/comment-body.txt', 'utf8');
           fs.writeFileSync('artifacts/quality/comment-body.json', JSON.stringify({ body }));
           NODE
-          existing_id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .id' | head -n1 || true)
+          existing_id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | contains("'"$marker"'")) | .id' | head -n1 || true)
           if [ -n "$existing_id" ]; then
             gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing_id" --input artifacts/quality/comment-body.json
           else
