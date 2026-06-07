@@ -12,21 +12,56 @@ const methodBody = (source: string, signature: string) => {
 };
 
 describe('container engine security boundaries', () => {
-  for (const [file, executable] of [
-    ['docker-engine.ts', 'this.dockerPath'],
-    ['podman-engine.ts', 'this.podmanPath'],
+  for (const file of [
+    'docker-engine.ts',
+    'podman-engine.ts',
   ] as const) {
     it(`${file} uses argv-safe execution for caller-influenced run/build/push/cleanup paths`, () => {
       const source = readSource(file);
       expect(source).toContain('execFileAsync');
+      expect(source).not.toContain('execAsync');
+      expect(source).not.toContain('promisify(exec)');
+      expect(source).not.toMatch(/args\.join\(' '\)/);
 
-      for (const signature of ['async runContainer', 'async buildImage', 'async pushImage', 'async cleanup']) {
+      for (const signature of [
+        'async createContainer',
+        'async startContainer',
+        'async stopContainer',
+        'async removeContainer',
+        'async restartContainer',
+        'async runContainer',
+        'async executeInContainer',
+        'async getContainerStatus',
+        'async listContainers',
+        'async getContainerStats',
+        'async buildImage',
+        'async pullImage',
+        'async pushImage',
+        'async removeImage',
+        'async listImages',
+        'async tagImage',
+        'async createVolume',
+        'async removeVolume',
+        'async listVolumes',
+        'async createNetwork',
+        'async removeNetwork',
+        'async listNetworks',
+        'async runCompose',
+        'async stopCompose',
+        'async cleanup',
+      ]) {
         const body = methodBody(source, signature);
-        expect(body).toContain(`execFileAsync(${executable}`);
-        expect(body).not.toMatch(/execAsync\(`\$\{this\.(?:dockerPath|podmanPath)\} \$\{args\.join\(' '\)\}`/);
-        expect(body).not.toMatch(/execAsync\(`\$\{this\.(?:dockerPath|podmanPath)\} push/);
+        expect(body).toContain('execFileAsync(');
+        expect(body).not.toMatch(/execAsync\(`\$\{this\.(?:dockerPath|podmanPath)\}/);
         expect(body).not.toMatch(/(?:container|image|volume|network) prune \$\{/);
       }
+    });
+
+    it(`${file} defaults cleanup prune filters to ae-framework-managed resources`, () => {
+      const body = methodBody(readSource(file), 'async cleanup');
+      expect(body).toContain('AE_CONTAINER_LABEL_FILTER');
+      expect(body).toContain('scopedLabelFilters');
+      expect(body).toContain("[AE_CONTAINER_LABEL_FILTER]");
     });
 
     it(`${file} redacts build args from build-image events and errors`, () => {

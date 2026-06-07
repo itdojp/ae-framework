@@ -45,15 +45,15 @@ services:
   db:
     image: docker.io/library/postgres:16-alpine
     environment:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: app
+      POSTGRES_USER: ${AE_DEV_POSTGRES_USER:?set AE_DEV_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AE_DEV_POSTGRES_PASSWORD:?set AE_DEV_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AE_DEV_POSTGRES_DB:?set AE_DEV_POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data:Z
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
       interval: 10s
       timeout: 5s
       retries: 5

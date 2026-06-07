@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/container.sh
+source "$SCRIPT_DIR/../lib/container.sh"
+
+COMPOSE_FILE="${AE_DEV_COMPOSE_FILE:-podman/compose.dev.yaml}"
+
 echo "Stopping development environment..."
 
-# Check if podman is available, fallback to docker
-if command -v podman &> /dev/null; then
-    COMPOSE_CMD="podman compose"
-elif command -v docker &> /dev/null; then
-    COMPOSE_CMD="docker compose"
-else
-    echo "Error: Neither podman nor docker found!"
-    exit 1
+if ! container::select_engine; then
+  echo "Error: Neither podman nor docker found!" >&2
+  exit 1
+fi
+if ! container::select_compose_command "$CONTAINER_ENGINE_BIN"; then
+  echo "Error: compose command unavailable for $CONTAINER_ENGINE_BIN" >&2
+  exit 1
 fi
 
-# Stop and remove containers
-$COMPOSE_CMD down -v
+container::compose --project-name ae-framework-dev -f "$COMPOSE_FILE" down -v --remove-orphans
 
 echo "Development environment stopped"

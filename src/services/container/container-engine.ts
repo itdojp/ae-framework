@@ -4,6 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { resolveApprovedVolumeMount } from './container-security-policy.js';
 
 export type ContainerEngineName = 'docker' | 'podman';
 
@@ -325,8 +326,9 @@ export abstract class ContainerEngine extends EventEmitter {
     // Volume mounts
     if (config.volumes) {
       config.volumes.forEach(volume => {
-        let mountStr = `${volume.source}:${volume.target}`;
-        if (volume.readonly) mountStr += ':ro';
+        const approvedVolume = resolveApprovedVolumeMount(volume);
+        let mountStr = `${approvedVolume.source}:${approvedVolume.target}`;
+        if (approvedVolume.readonly) mountStr += ':ro';
         args.push('--volume', mountStr);
       });
     }

@@ -23,6 +23,9 @@ jobs:
       TARGET_SHA: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.target_sha) || github.sha }}
       REPORT_DIR: reports
       LOG_DIR: logs
+      AE_TEST_POSTGRES_DB: ae_test_${{ github.run_id }}
+      AE_TEST_POSTGRES_USER: ae_test_${{ github.run_id }}
+      AE_TEST_POSTGRES_PASSWORD: ae-test-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout target
         uses: actions/checkout@v4
