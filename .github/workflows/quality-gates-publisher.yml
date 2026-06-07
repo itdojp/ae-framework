@@ -149,6 +149,7 @@ jobs:
             --artifact-name "${{ steps.context.outputs.artifact_name }}"
             --repository "${GITHUB_REPOSITORY}"
             --workflow "Quality Gates"
+            --workflow-ref-prefix "${GITHUB_REPOSITORY}/.github/workflows/quality-gates-centralized.yml@"
             --run-id "${{ steps.context.outputs.source_run_id }}"
             --event-name pull_request
             --head-sha "${{ steps.context.outputs.pr_head_sha }}"

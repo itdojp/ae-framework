@@ -310,6 +310,11 @@ const checks = [
     label: 'Policy decision v1 schema validation'
   },
   {
+    schema: 'schema/ci-artifact-provenance-v1.schema.json',
+    fixtures: ['fixtures/ci/sample.ci-artifact-provenance-v1.json'],
+    label: 'CI artifact provenance v1 schema validation'
+  },
+  {
     schema: 'schema/counterexample.schema.json',
     fixtures: ['fixtures/counterexample/sample.counterexample.json'],
     label: 'Counterexample schema validation'

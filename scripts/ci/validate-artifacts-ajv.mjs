@@ -98,6 +98,21 @@ export const DEFAULT_RULES = [
     patterns: ['artifacts/ci/policy-gate-summary.json'],
   },
   {
+    id: 'policy-input-v1',
+    schemaPath: 'schema/policy-input-v1.schema.json',
+    patterns: ['artifacts/ci/policy-input-v1.json'],
+  },
+  {
+    id: 'policy-decision-v1',
+    schemaPath: 'schema/policy-decision-v1.schema.json',
+    patterns: ['artifacts/ci/policy-decision-js-v1.json', 'artifacts/ci/policy-decision-opa-v1.json'],
+  },
+  {
+    id: 'ci-artifact-provenance-v1',
+    schemaPath: 'schema/ci-artifact-provenance-v1.schema.json',
+    patterns: ['artifacts/**/*.provenance.json'],
+  },
+  {
     id: 'harness-health',
     schemaPath: 'schema/harness-health.schema.json',
     patterns: ['artifacts/ci/harness-health.json'],

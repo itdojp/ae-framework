@@ -171,11 +171,36 @@ jobs:
             --artifact-name "${{ steps.context.outputs.summary_artifact_name }}"
             --repository "${GITHUB_REPOSITORY}"
             --workflow "PR Maintenance"
+            --workflow-ref-prefix "${GITHUB_REPOSITORY}/.github/workflows/pr-ci-status-comment.yml@"
             --run-id "${{ steps.context.outputs.source_run_id }}"
             --event-name pull_request
             --head-sha "${{ steps.context.outputs.pr_head_sha }}"
             --pr-number "${{ steps.context.outputs.pr_number }}"
             --require-subject summary/PR_SUMMARY.md
+          )
+          if [ -n "${SOURCE_RUN_ATTEMPT}" ]; then
+            args+=(--run-attempt "${SOURCE_RUN_ATTEMPT}")
+          fi
+          node scripts/ci/validate-artifact-provenance.mjs "${args[@]}"
+
+      - name: Validate trusted Change Package validation provenance
+        if: steps.context.outputs.skip != 'true'
+        env:
+          SOURCE_RUN_ATTEMPT: ${{ steps.context.outputs.source_run_attempt }}
+        run: |
+          set -euo pipefail
+          args=(
+            --provenance artifacts/publish/trusted-change-package/change-package-validation.provenance.json
+            --root artifacts/publish/trusted-change-package
+            --artifact-name "${{ steps.context.outputs.validation_artifact_name }}"
+            --repository "${GITHUB_REPOSITORY}"
+            --workflow "PR Maintenance"
+            --workflow-ref-prefix "${GITHUB_REPOSITORY}/.github/workflows/pr-ci-status-comment.yml@"
+            --run-id "${{ steps.context.outputs.source_run_id }}"
+            --event-name pull_request
+            --head-sha "${{ steps.context.outputs.pr_head_sha }}"
+            --pr-number "${{ steps.context.outputs.pr_number }}"
+            --require-subject change-package-validation.json
           )
           if [ -n "${SOURCE_RUN_ATTEMPT}" ]; then
             args+=(--run-attempt "${SOURCE_RUN_ATTEMPT}")

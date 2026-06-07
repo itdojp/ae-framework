@@ -86,20 +86,55 @@ jobs:
       - name: Resolve PR number
         id: pr
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           PR_NUMBER="${{ github.event.pull_request.number || github.event.pull_request_review.pull_request.number || inputs.pr_number || '' }}"
+          PR_HEAD_SHA="${{ github.event.pull_request.head.sha || github.event.pull_request_review.pull_request.head.sha || github.event.workflow_run.head_sha || '' }}"
+          PR_BASE_SHA="${{ github.event.pull_request.base.sha || github.event.pull_request_review.pull_request.base.sha || '' }}"
+          PR_HEAD_REPOSITORY="${{ github.event.pull_request.head.repo.full_name || github.event.pull_request_review.pull_request.head.repo.full_name || github.event.workflow_run.head_repository.full_name || '' }}"
+          PR_BASE_REPOSITORY="${{ github.event.pull_request.base.repo.full_name || github.event.pull_request_review.pull_request.base.repo.full_name || github.repository }}"
           if [ -z "${PR_NUMBER}" ] && [ "${{ github.event_name }}" = "workflow_run" ]; then
             PR_NUMBER="$(jq -r '.workflow_run.pull_requests[0].number // ""' "$GITHUB_EVENT_PATH")"
           fi
           if [ -z "${PR_NUMBER}" ]; then
-            printf '%s\n' 'skip=true' >> "$GITHUB_OUTPUT"
-            printf '%s\n' 'pr_number=' >> "$GITHUB_OUTPUT"
+            {
+              printf '%s\n' 'skip=true'
+              printf '%s\n' 'pr_number='
+              printf '%s\n' 'head_sha='
+              printf '%s\n' 'base_sha='
+              printf '%s\n' 'head_repository='
+              printf '%s\n' 'base_repository='
+            } >> "$GITHUB_OUTPUT"
             printf '%s\n' 'Policy Gate skipped: no PR context for this event.' >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          printf '%s\n' "skip=false" >> "$GITHUB_OUTPUT"
-          printf '%s\n' "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          if [ -z "${PR_HEAD_SHA}" ] || [ -z "${PR_BASE_SHA}" ] || [ -z "${PR_HEAD_REPOSITORY}" ] || [ -z "${PR_BASE_REPOSITORY}" ]; then
+            pr_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" 2>/dev/null || printf '{}')"
+            if [ -z "${PR_HEAD_SHA}" ]; then
+              PR_HEAD_SHA="$(jq -r '.head.sha // ""' <<<"${pr_json}")"
+            fi
+            if [ -z "${PR_BASE_SHA}" ]; then
+              PR_BASE_SHA="$(jq -r '.base.sha // ""' <<<"${pr_json}")"
+            fi
+            if [ -z "${PR_HEAD_REPOSITORY}" ]; then
+              PR_HEAD_REPOSITORY="$(jq -r '.head.repo.full_name // ""' <<<"${pr_json}")"
+            fi
+            if [ -z "${PR_BASE_REPOSITORY}" ]; then
+              PR_BASE_REPOSITORY="$(jq -r '.base.repo.full_name // ""' <<<"${pr_json}")"
+            fi
+          fi
+          PR_HEAD_REPOSITORY="${PR_HEAD_REPOSITORY:-${GITHUB_REPOSITORY}}"
+          PR_BASE_REPOSITORY="${PR_BASE_REPOSITORY:-${GITHUB_REPOSITORY}}"
+          {
+            printf '%s\n' "skip=false"
+            printf '%s\n' "pr_number=${PR_NUMBER}"
+            printf '%s\n' "head_sha=${PR_HEAD_SHA}"
+            printf '%s\n' "base_sha=${PR_BASE_SHA}"
+            printf '%s\n' "head_repository=${PR_HEAD_REPOSITORY}"
+            printf '%s\n' "base_repository=${PR_BASE_REPOSITORY}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Resolve assurance policy inputs
         if: ${{ steps.pr.outputs.skip != 'true' }}
@@ -233,7 +268,7 @@ jobs:
         run: node scripts/ci/policy-gate.mjs
 
       - name: Validate policy-gate summary schema
-        if: ${{ steps.pr.outputs.skip != 'true' }}
+        if: ${{ always() && steps.pr.outputs.skip != 'true' }}
         run: |
           node scripts/ci/validate-policy-gate-summary.mjs \
             artifacts/ci/policy-gate-summary.json \
@@ -251,6 +286,85 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/ci/policy-shadow-compare.mjs --mode "${AE_POLICY_ENGINE_MODE}"
+
+      - name: Write policy-gate artifact provenance
+        if: ${{ always() && steps.pr.outputs.skip != 'true' }}
+        env:
+          AE_ARTIFACT_PROVENANCE_PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          AE_ARTIFACT_PROVENANCE_HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          AE_ARTIFACT_PROVENANCE_BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          AE_ARTIFACT_PROVENANCE_HEAD_REPOSITORY: ${{ steps.pr.outputs.head_repository }}
+          AE_ARTIFACT_PROVENANCE_BASE_REPOSITORY: ${{ steps.pr.outputs.base_repository }}
+        run: |
+          set -euo pipefail
+          subjects=()
+          for required in \
+            artifacts/ci/policy-gate-summary.json \
+            artifacts/ci/policy-gate-summary.md \
+            artifacts/ci/policy-input-v1.json \
+            artifacts/ci/policy-decision-js-v1.json
+          do
+            if [ ! -f "$required" ]; then
+              printf '%s\n' "::warning::Policy Gate artifact provenance skipped because $required is missing."
+              exit 0
+            fi
+            subjects+=(--subject "${required#artifacts/}")
+          done
+          for optional in \
+            artifacts/ci/policy-decision-opa-v1.json \
+            artifacts/ci/policy-shadow-compare-v1.json
+          do
+            if [ -f "$optional" ]; then
+              subjects+=(--subject "${optional#artifacts/}")
+            fi
+          done
+          node scripts/ci/write-artifact-provenance.mjs \
+            --output artifacts/ci/policy-gate.provenance.json \
+            --artifact-name policy-gate-artifacts \
+            --root artifacts \
+            "${subjects[@]}"
+
+      - name: Validate policy-gate artifact provenance
+        if: ${{ always() && steps.pr.outputs.skip != 'true' }}
+        env:
+          PR_HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          PR_BASE_SHA: ${{ steps.pr.outputs.base_sha }}
+          PR_HEAD_REPOSITORY: ${{ steps.pr.outputs.head_repository }}
+          PR_BASE_REPOSITORY: ${{ steps.pr.outputs.base_repository }}
+        run: |
+          set -euo pipefail
+          if [ ! -f artifacts/ci/policy-gate.provenance.json ]; then
+            printf '%s\n' '::warning::Policy Gate artifact provenance is missing; earlier policy-gate step likely failed before producing decision artifacts.'
+            exit 0
+          fi
+          args=(
+            --provenance artifacts/ci/policy-gate.provenance.json
+            --root artifacts
+            --artifact-name policy-gate-artifacts
+            --repository "${GITHUB_REPOSITORY}"
+            --workflow "Policy Gate"
+            --workflow-ref-prefix "${GITHUB_REPOSITORY}/.github/workflows/policy-gate.yml@"
+            --run-id "${GITHUB_RUN_ID}"
+            --run-attempt "${GITHUB_RUN_ATTEMPT}"
+            --event-name "${GITHUB_EVENT_NAME}"
+            --pr-number "${{ steps.pr.outputs.pr_number }}"
+            --require-subject ci/policy-gate-summary.json
+            --require-subject ci/policy-input-v1.json
+            --require-subject ci/policy-decision-js-v1.json
+          )
+          if [ -n "${PR_HEAD_SHA}" ]; then
+            args+=(--head-sha "${PR_HEAD_SHA}")
+          fi
+          if [ -n "${PR_BASE_SHA}" ]; then
+            args+=(--base-sha "${PR_BASE_SHA}")
+          fi
+          if [ -n "${PR_HEAD_REPOSITORY}" ]; then
+            args+=(--head-repository "${PR_HEAD_REPOSITORY}")
+          fi
+          if [ -n "${PR_BASE_REPOSITORY}" ]; then
+            args+=(--base-repository "${PR_BASE_REPOSITORY}")
+          fi
+          node scripts/ci/validate-artifact-provenance.mjs "${args[@]}"
       - name: Upload policy artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -265,6 +379,7 @@ jobs:
             artifacts/ci/risk-labeler-summary.md
             artifacts/ci/policy-gate-summary.json
             artifacts/ci/policy-gate-summary.md
+            artifacts/ci/policy-gate.provenance.json
             artifacts/ci/policy-input-v1.json
             artifacts/ci/policy-decision-js-v1.json
             artifacts/ci/policy-decision-opa-v1.json

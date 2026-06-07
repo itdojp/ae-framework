@@ -7,11 +7,14 @@ const expectedFlagMap = new Map([
   ['--repository', 'repository'],
   ['--workflow', 'workflow'],
   ['--workflow-ref', 'workflowRef'],
+  ['--workflow-ref-prefix', 'workflowRefPrefix'],
   ['--run-id', 'runId'],
   ['--run-attempt', 'runAttempt'],
   ['--event-name', 'eventName'],
   ['--head-sha', 'headSha'],
   ['--base-sha', 'baseSha'],
+  ['--head-repository', 'headRepository'],
+  ['--base-repository', 'baseRepository'],
   ['--pr-number', 'prNumber'],
 ]);
 
