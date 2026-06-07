@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CEGISCli } from '../../src/cli/cegis-cli.js';
 import { writeFileSync, readFileSync, unlinkSync, existsSync } from 'fs';
+import path from 'node:path';
 import { FailureArtifactFactory } from '../../src/cegis/failure-artifact-factory.js';
 
 describe('CEGISCli', () => {
@@ -331,6 +332,21 @@ describe('CEGISCli', () => {
         expect.stringContaining('Unknown artifact type: unknown')
       );
     });
+
+    it('should reject artifact output paths outside the workspace', async () => {
+      const command = cli.createCommand();
+      const args = [
+        'node', 'cli', 'create-artifact',
+        '--type', 'error',
+        '--message', 'Test runtime error',
+        '--output', path.resolve('..', 'outside-failure-artifact.json')
+      ];
+
+      await expect(command.parseAsync(args)).rejects.toThrow();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('outside the approved workspace')
+      );
+    });
   });
 
   describe('from-conformance command', () => {
@@ -426,6 +442,24 @@ describe('CEGISCli', () => {
       await expect(command.parseAsync(args)).rejects.toThrow();
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Conformance result file not found')
+      );
+    });
+
+    it('should reject conformance input paths outside the workspace', async () => {
+      const command = cli.createCommand();
+      const args = [
+        'node',
+        'cli',
+        'from-conformance',
+        '--input',
+        path.resolve('..', 'outside-conformance-results.json'),
+        '--output',
+        'test-output.json'
+      ];
+
+      await expect(command.parseAsync(args)).rejects.toThrow();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('outside the approved workspace')
       );
     });
   });

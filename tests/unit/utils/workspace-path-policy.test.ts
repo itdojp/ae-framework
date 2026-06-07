@@ -2,6 +2,8 @@ import path from 'node:path';
 import { mkdirSync, rmSync, symlinkSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  assertWithinWorkspace,
+  resolveArtifactPath,
   resolveContainedWorkspacePath,
   resolveWorkspacePath,
   toWorkspaceRelativePath,
@@ -19,6 +21,39 @@ describe('workspace path policy', () => {
 
     expect(resolved).toBe(path.join(workspaceRoot, 'generated', 'typescript'));
     expect(toWorkspaceRelativePath(resolved, { workspaceRoot })).toBe('generated/typescript');
+  });
+
+  it('asserts absolute or normalized candidate paths stay inside the approved workspace', () => {
+    const resolved = assertWithinWorkspace(path.join(workspaceRoot, 'generated', '..', 'reports'), {
+      workspaceRoot,
+      label: 'candidate path',
+    });
+
+    expect(resolved).toBe(path.join(workspaceRoot, 'reports'));
+    expect(() =>
+      assertWithinWorkspace(path.join(workspaceRoot, '..', 'outside'), {
+        workspaceRoot,
+        label: 'candidate path',
+      }),
+    ).toThrow(WorkspacePathPolicyError);
+    expect(() =>
+      assertWithinWorkspace('C:\\temp\\outside', {
+        workspaceRoot,
+        label: 'candidate path',
+      }),
+    ).toThrow(WorkspacePathPolicyError);
+    expect(() =>
+      assertWithinWorkspace('C:/temp/outside', {
+        workspaceRoot,
+        label: 'candidate path',
+      }),
+    ).toThrow(WorkspacePathPolicyError);
+    expect(() =>
+      assertWithinWorkspace(path.join(workspaceRoot, '.git', 'config'), {
+        workspaceRoot,
+        label: 'candidate path',
+      }),
+    ).toThrow(WorkspacePathPolicyError);
   });
 
   it('rejects absolute paths and dot-segment traversal before filesystem access', () => {
@@ -51,6 +86,44 @@ describe('workspace path policy', () => {
     );
   });
 
+  it('resolves artifact paths under an approved artifact root', () => {
+    expect(resolveArtifactPath('reports/summary.json', { workspaceRoot, label: 'artifact output' })).toBe(
+      path.join(workspaceRoot, 'artifacts', 'reports', 'summary.json'),
+    );
+    expect(resolveArtifactPath('artifacts/reports/summary.json', { workspaceRoot, label: 'artifact output' })).toBe(
+      path.join(workspaceRoot, 'artifacts', 'reports', 'summary.json'),
+    );
+    expect(
+      resolveArtifactPath('summary.json', {
+        workspaceRoot,
+        artifactRoot: 'reports/conformance',
+        label: 'custom artifact output',
+      }),
+    ).toBe(path.join(workspaceRoot, 'reports', 'conformance', 'summary.json'));
+  });
+
+  it('rejects artifact paths outside the approved artifact root', () => {
+    expect(() =>
+      resolveArtifactPath(path.join(workspaceRoot, 'artifacts', 'summary.json'), {
+        workspaceRoot,
+        label: 'artifact output',
+      }),
+    ).toThrow(WorkspacePathPolicyError);
+    expect(() =>
+      resolveArtifactPath(path.join(workspaceRoot, 'reports', 'summary.json'), {
+        workspaceRoot,
+        allowAbsolute: true,
+        label: 'artifact output',
+      }),
+    ).toThrow(WorkspacePathPolicyError);
+    expect(() =>
+      resolveArtifactPath('../summary.json', {
+        workspaceRoot,
+        label: 'artifact output',
+      }),
+    ).toThrow(WorkspacePathPolicyError);
+  });
+
   it('rejects existing symlink ancestors that resolve outside the workspace', () => {
     const root = path.join(workspaceRoot, `symlink-${Date.now()}`);
     const outside = path.join(process.cwd(), 'artifacts', `workspace-path-policy-outside-${Date.now()}`);
@@ -69,6 +142,35 @@ describe('workspace path policy', () => {
       expect(() => resolveWorkspacePath('linked-outside/generated', { workspaceRoot: root })).toThrow(
         WorkspacePathPolicyError,
       );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects artifact symlink ancestors that resolve outside the approved artifact root', () => {
+    const root = path.join(workspaceRoot, `artifact-symlink-${Date.now()}`);
+    const artifactRoot = path.join(root, 'artifacts');
+    const outside = path.join(process.cwd(), 'artifacts', `workspace-artifact-policy-outside-${Date.now()}`);
+    mkdirSync(artifactRoot, { recursive: true });
+    mkdirSync(outside, { recursive: true });
+
+    try {
+      symlinkSync(outside, path.join(artifactRoot, 'linked-outside'), 'dir');
+    } catch {
+      rmSync(root, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
+      return;
+    }
+
+    try {
+      expect(() =>
+        resolveArtifactPath('linked-outside/report.json', {
+          workspaceRoot: root,
+          artifactRoot,
+          label: 'artifact output',
+        }),
+      ).toThrow(WorkspacePathPolicyError);
     } finally {
       rmSync(root, { recursive: true, force: true });
       rmSync(outside, { recursive: true, force: true });

@@ -16,6 +16,10 @@ import type { FailureArtifact, AutoFixOptions } from '../cegis/types.js';
 import { toMessage } from '../utils/error-utils.js';
 import { safeExit } from '../utils/safe-exit.js';
 import { loadConfig } from '../core/config.js';
+import {
+  assertWithinWorkspace,
+  resolveWorkspacePath,
+} from '../utils/workspace-path-policy.js';
 
 interface ConformanceViolationInput {
   ruleId?: string;
@@ -67,6 +71,14 @@ export class CEGISCli {
 
   constructor() {
     this.engine = new AutoFixEngine();
+  }
+
+  private resolveCliWorkspacePath(input: string, label: string): string {
+    const workspaceRoot = process.cwd();
+    const raw = String(input).trim();
+    return path.isAbsolute(raw)
+      ? assertWithinWorkspace(raw, { workspaceRoot, label })
+      : resolveWorkspacePath(raw, { workspaceRoot, label });
   }
 
   /**
@@ -370,7 +382,9 @@ export class CEGISCli {
       }
 
       // Save artifact
-      writeFileSync(options.output, JSON.stringify([artifact], null, 2));
+      const outputPath = this.resolveCliWorkspacePath(options.output, 'CEGIS failure artifact output path');
+      mkdirSync(path.dirname(outputPath), { recursive: true });
+      writeFileSync(outputPath, JSON.stringify([artifact], null, 2));
       console.log(`✅ Failure artifact created: ${options.output}`);
 
     } catch (error: unknown) {
@@ -387,11 +401,27 @@ export class CEGISCli {
     try {
       console.log('🧪 Converting conformance violations to failure artifacts...');
 
-      if (!options.input || !existsSync(options.input)) {
+      if (!options.input) {
+        throw new Error('Conformance result file not specified');
+      }
+      if (!options.output) {
+        throw new Error('Conformance failure artifact output file not specified');
+      }
+
+      const inputPath = this.resolveCliWorkspacePath(
+        options.input,
+        'CEGIS conformance result input path',
+      );
+      const outputPath = this.resolveCliWorkspacePath(
+        options.output,
+        'CEGIS conformance failure artifact output path',
+      );
+
+      if (!existsSync(inputPath)) {
         throw new Error(`Conformance result file not found: ${options.input}`);
       }
 
-      const content = readFileSync(options.input, 'utf-8');
+      const content = readFileSync(inputPath, 'utf-8');
       const parsed = JSON.parse(content) as ConformanceVerifyResultInput;
       const violations = Array.isArray(parsed.violations) ? parsed.violations : [];
 
@@ -401,9 +431,9 @@ export class CEGISCli {
         ),
       );
 
-      const outputDir = path.dirname(options.output);
+      const outputDir = path.dirname(outputPath);
       mkdirSync(outputDir, { recursive: true });
-      writeFileSync(options.output, JSON.stringify(failures, null, 2));
+      writeFileSync(outputPath, JSON.stringify(failures, null, 2));
 
       console.log(`📋 Conformance violations: ${violations.length}`);
       console.log(`✅ Generated failure artifacts: ${failures.length}`);
@@ -751,12 +781,13 @@ export class CEGISCli {
       return [];
     }
 
-    if (!existsSync(inputFile)) {
+    const inputPath = this.resolveCliWorkspacePath(inputFile, 'CEGIS failure artifact input path');
+    if (!existsSync(inputPath)) {
       throw new Error(`Input file not found: ${inputFile}`);
     }
 
     try {
-      const content = readFileSync(inputFile, 'utf-8');
+      const content = readFileSync(inputPath, 'utf-8');
       const data = JSON.parse(content);
       
       // Handle both single artifact and array

@@ -114,6 +114,34 @@ describe('generate-openapi-tests security policy', () => {
     }
   });
 
+  it('rejects absolute output directories outside the workspace', () => {
+    rmSync(fixtureDir, { recursive: true, force: true });
+    writeSpec();
+
+    try {
+      const result = runGenerator(['--output-dir', outsideRepoDir]);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('outside the approved workspace');
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects absolute output directories that target the workspace root', () => {
+    rmSync(fixtureDir, { recursive: true, force: true });
+    writeSpec();
+
+    try {
+      const result = runGenerator(['--output-dir', resolve('.')]);
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain('must not target the workspace root');
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
+    }
+  });
+
   it('allows writing under tests only with explicit reviewed approval', () => {
     rmSync(fixtureDir, { recursive: true, force: true });
     rmSync(resolve('tests/api/generated/evil-import-fs-from-fs.spec.ts'), { force: true });
