@@ -661,7 +661,9 @@ describe('workflow permission boundaries', () => {
       ? dependencyAuditSteps.find((step: any) => step?.name === 'Install dependencies')
       : undefined;
     expect(dependencyAudit?.['continue-on-error']).toBe("${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'enforce-security') }}");
-    expect(dependencyAuditInstallStep?.run).toBe('pnpm install --frozen-lockfile');
+    expect(dependencyAuditInstallStep?.run).toBe(
+      'pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true'
+    );
     expect(dependencyAuditInstallStep?.env).toMatchObject({
       NPM_CONFIG_USERCONFIG: '${{ github.workspace }}/.npmrc',
       NPM_CONFIG_GLOBALCONFIG: '/dev/null',
@@ -676,7 +678,9 @@ describe('workflow permission boundaries', () => {
     const sbomInstallStep = Array.isArray(sbomSteps)
       ? sbomSteps.find((step: any) => step?.name === 'Install dependencies')
       : undefined;
-    expect(sbomInstallStep?.run).toBe('pnpm install --frozen-lockfile');
+    expect(sbomInstallStep?.run).toBe(
+      'pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true'
+    );
     expect(sbomInstallStep?.env).toMatchObject({
       NPM_CONFIG_USERCONFIG: '${{ github.workspace }}/.npmrc',
       NPM_CONFIG_GLOBALCONFIG: '/dev/null',
