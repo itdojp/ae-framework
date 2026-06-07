@@ -77,6 +77,8 @@ export interface ContainerConfig {
   environment?: Record<string, string>;
   workingDir?: string;
   volumes?: VolumeMount[];
+  /** Approved host workspace root used to validate bind-mount sources. */
+  volumeWorkspaceRoot?: string;
   ports?: PortMapping[];
   resources?: ResourceLimits;
   network?: ContainerNetworkConfig;
@@ -326,7 +328,10 @@ export abstract class ContainerEngine extends EventEmitter {
     // Volume mounts
     if (config.volumes) {
       config.volumes.forEach(volume => {
-        const approvedVolume = resolveApprovedVolumeMount(volume);
+        const approvedVolume = resolveApprovedVolumeMount(
+          volume,
+          config.volumeWorkspaceRoot !== undefined ? { workspaceRoot: config.volumeWorkspaceRoot } : {},
+        );
         let mountStr = `${approvedVolume.source}:${approvedVolume.target}`;
         if (approvedVolume.readonly) mountStr += ':ro';
         args.push('--volume', mountStr);

@@ -1,8 +1,11 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { DockerEngine } from '../../../src/services/container/docker-engine.js';
+import type { ContainerConfig } from '../../../src/services/container/container-engine.js';
 
 const readSource = (name: string) => fs.readFileSync(path.resolve(process.cwd(), 'src/services/container', name), 'utf8');
+const readContainerManagerSource = () => fs.readFileSync(path.resolve(process.cwd(), 'src/services/container/container-manager.ts'), 'utf8');
 
 const methodBody = (source: string, signature: string) => {
   const start = source.indexOf(signature);
@@ -70,4 +73,44 @@ describe('container engine security boundaries', () => {
       expect(body).not.toContain('buildContext\n');
     });
   }
+
+  it('TGT-004-F003: honors configured workspaceRoot when approving container bind mounts', () => {
+    const sandboxParent = path.resolve(process.cwd(), '..', '.codex-local/tmp');
+    fs.mkdirSync(sandboxParent, { recursive: true });
+    const sandboxRoot = fs.mkdtempSync(path.join(sandboxParent, 'container-engine-volume-root-'));
+
+    try {
+      const workspaceRoot = path.join(sandboxRoot, 'approved-workspace');
+      const projectPath = path.join(workspaceRoot, 'project');
+      fs.mkdirSync(projectPath, { recursive: true });
+
+      const engine = new DockerEngine() as unknown as {
+        buildCommandArgs(config: ContainerConfig): string[];
+      };
+      const config: ContainerConfig = {
+        name: 'ae-verify-test',
+        image: 'node:22-alpine',
+        volumes: [{
+          source: projectPath,
+          target: '/workspace',
+          readonly: true,
+        }],
+      };
+
+      expect(() => engine.buildCommandArgs(config)).toThrow(/^Volume source path is outside approved workspace root$/);
+      const args = engine.buildCommandArgs({
+        ...config,
+        volumeWorkspaceRoot: workspaceRoot,
+      });
+
+      expect(args).toContain(`${fs.realpathSync(projectPath)}:/workspace:ro`);
+    } finally {
+      fs.rmSync(sandboxRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('container manager propagates its workspaceRoot to volume approval', () => {
+    const source = readContainerManagerSource();
+    expect(source).toContain('volumeWorkspaceRoot: this.config.workspaceRoot');
+  });
 });
