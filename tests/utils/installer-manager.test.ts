@@ -15,6 +15,7 @@ vi.mock('child_process');
 
 describe('InstallerManager', () => {
   let installerManager: InstallerManager;
+  let previousEnv: NodeJS.ProcessEnv;
   const testProjectRoot = '/test/project';
   const approvedContext = {
     dryRun: false,
@@ -25,6 +26,11 @@ describe('InstallerManager', () => {
   } as const;
 
   beforeEach(() => {
+    previousEnv = { ...process.env };
+    process.env = {
+      PATH: previousEnv['PATH'],
+      HOME: previousEnv['HOME'],
+    };
     vi.clearAllMocks();
     
     // Mock file system operations
@@ -38,6 +44,7 @@ describe('InstallerManager', () => {
   });
 
   afterEach(() => {
+    process.env = previousEnv;
     vi.restoreAllMocks();
   });
 
@@ -320,12 +327,8 @@ describe('InstallerManager', () => {
     });
 
     test('should redact ambient secret variables from package-manager child environments', async () => {
-      const previousGithubToken = process.env['GITHUB_TOKEN'];
-      const previousNpmToken = process.env['NPM_TOKEN'];
-      const previousCi = process.env['CI'];
       process.env['GITHUB_TOKEN'] = 'ghs-secret';
       process.env['NPM_TOKEN'] = 'npm-secret';
-      process.env['CI'] = 'true';
       const mockProcess = {
         stdout: { on: vi.fn() },
         stderr: { on: vi.fn() },
@@ -335,24 +338,30 @@ describe('InstallerManager', () => {
       };
       vi.mocked(spawn).mockReturnValue(mockProcess as any);
 
-      try {
-        const result = await installerManager.installTemplate('react-vite', {
-          ...approvedContext,
-          packageManager: 'npm',
-        });
+      const result = await installerManager.installTemplate('react-vite', {
+        ...approvedContext,
+        packageManager: 'npm',
+      });
 
-        expect(result.success).toBe(true);
-        const spawnOptions = vi.mocked(spawn).mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv };
-        expect(spawnOptions.env?.['GITHUB_TOKEN']).toBeUndefined();
-        expect(spawnOptions.env?.['NPM_TOKEN']).toBeUndefined();
-      } finally {
-        if (previousGithubToken === undefined) delete process.env['GITHUB_TOKEN'];
-        else process.env['GITHUB_TOKEN'] = previousGithubToken;
-        if (previousNpmToken === undefined) delete process.env['NPM_TOKEN'];
-        else process.env['NPM_TOKEN'] = previousNpmToken;
-        if (previousCi === undefined) delete process.env['CI'];
-        else process.env['CI'] = previousCi;
-      }
+      expect(result.success).toBe(true);
+      const spawnOptions = vi.mocked(spawn).mock.calls[0]?.[2] as { env?: NodeJS.ProcessEnv };
+      expect(spawnOptions.env?.['GITHUB_TOKEN']).toBeUndefined();
+      expect(spawnOptions.env?.['NPM_TOKEN']).toBeUndefined();
+    });
+
+    test('should block approved CI apply when ambient secrets are present', async () => {
+      process.env['CI'] = 'true';
+      process.env['GITHUB_TOKEN'] = 'ghs-secret';
+
+      const result = await installerManager.installTemplate('react-vite', {
+        ...approvedContext,
+        packageManager: 'npm',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('ambient secrets');
+      expect(vi.mocked(spawn)).not.toHaveBeenCalled();
+      expect(vi.mocked(fs.writeFile)).not.toHaveBeenCalled();
     });
 
     test('should validate template file paths before applying package or file writes', async () => {

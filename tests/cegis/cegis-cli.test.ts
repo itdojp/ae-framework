@@ -14,8 +14,15 @@ describe('CEGISCli', () => {
   let consoleLogSpy: any;
   let consoleErrorSpy: any;
   let testFiles: string[] = [];
+  let previousEnv: NodeJS.ProcessEnv;
 
   beforeEach(() => {
+    previousEnv = { ...process.env };
+    process.env = {
+      PATH: previousEnv['PATH'],
+      HOME: previousEnv['HOME'],
+      NODE_ENV: previousEnv['NODE_ENV'],
+    };
     cli = new CEGISCli();
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -23,6 +30,7 @@ describe('CEGISCli', () => {
   });
 
   afterEach(() => {
+    process.env = previousEnv;
     consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
     
@@ -217,6 +225,39 @@ describe('CEGISCli', () => {
           process.env['AE_UNTRUSTED_CHECKOUT'] = previousUntrustedCheckout;
         }
       }
+    });
+
+    it('should block approved auto-fix apply when ambient secrets are present in agent context', async () => {
+      process.env['AE_AGENT_CONTEXT'] = '1';
+      process.env['GITHUB_TOKEN'] = 'ghs-secret';
+      const failures = [
+        FailureArtifactFactory.fromError(new Error('test error'))
+      ];
+
+      const inputFile = 'test-apply-ambient-secret.json';
+      writeFileSync(inputFile, JSON.stringify(failures, null, 2));
+      testFiles.push(inputFile);
+
+      const command = cli.createCommand();
+      const args = [
+        'node',
+        'cli',
+        'apply',
+        '--input',
+        inputFile,
+        '--apply',
+        '--approval-scope',
+        'cegis-auto-fix',
+      ];
+
+      await command.parseAsync(args);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('ambient secrets')
+      );
+      expect(consoleLogSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Starting CEGIS auto-fix process')
+      );
     });
   });
 

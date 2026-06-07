@@ -1,6 +1,6 @@
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises';
 import * as path from 'path';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { RedGreenCycleArgsSchema } from '../../../src/mcp-server/schemas.js';
 import { TDDGuardServer } from '../../../src/mcp-server/tdd-server.js';
 import {
@@ -15,6 +15,13 @@ import {
 describe('TDD MCP execution policy', () => {
   const testRoots: string[] = [];
   const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    process.env = {
+      PATH: originalEnv.PATH,
+      HOME: originalEnv.HOME,
+    };
+  });
 
   afterEach(async () => {
     process.env = { ...originalEnv };
@@ -55,6 +62,15 @@ describe('TDD MCP execution policy', () => {
       reason: `test execution requires approval token '${APPROVED_TDD_TEST_EXECUTION}'`,
     });
     expect(ensureTDDTestExecutionApproved(APPROVED_TDD_TEST_EXECUTION, false)).toEqual({ approved: true });
+  });
+
+  test('approved agent execution is blocked when the raw environment contains ambient secrets', () => {
+    process.env['GITHUB_TOKEN'] = 'ghs-secret';
+
+    expect(ensureTDDTestExecutionApproved(APPROVED_TDD_TEST_EXECUTION, false)).toEqual({
+      approved: false,
+      reason: 'ambient-secrets-present',
+    });
   });
 
   test('runs approved commands through an executable and argv array with shell disabled', () => {

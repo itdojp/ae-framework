@@ -34,6 +34,19 @@ type QualityGateExecutionRecord = {
   command: ApprovedQualityGateCommand;
 };
 
+const isExplicitUntrustedCheckout = (env: NodeJS.ProcessEnv = process.env): boolean => {
+  const markers = [
+    env['AE_UNTRUSTED_CHECKOUT'],
+    env['AE_QUALITY_UNTRUSTED_CHECKOUT'],
+    env['AE_CI_UNTRUSTED_CHECKOUT'],
+  ];
+  return markers.some(value => {
+    if (value === undefined) return false;
+    const normalized = value.trim().toLowerCase();
+    return normalized.length > 0 && !['0', 'false', 'no', 'off'].includes(normalized);
+  });
+};
+
 // Mock telemetry for main branch compatibility
 type Attributes = Record<string, unknown>;
 const mockTelemetry = {
@@ -106,6 +119,7 @@ export class QualityGateRunner {
     // The runner preserves trusted local/CI compatibility; the CLI reconcile path
     // opts CI into approval enforcement when needed via protectCi.
     const requestedApply = apply || !protectedContext;
+    const explicitUntrustedCheckout = isExplicitUntrustedCheckout();
     const executionDecision = evaluateHighImpactActionPolicy({
       actionKind: 'package-manager',
       actionName: 'quality-gate-runner',
@@ -115,6 +129,9 @@ export class QualityGateRunner {
       requiredApprovalScope: QUALITY_GATE_EXECUTION_APPROVAL_SCOPE,
       agentContext,
       ciContext,
+      untrustedCheckout: explicitUntrustedCheckout,
+      trustedWorkspace: !explicitUntrustedCheckout,
+      trustedRef: !explicitUntrustedCheckout,
       blockAmbientSecrets: false,
       enforceApproval: protectedContext,
     });

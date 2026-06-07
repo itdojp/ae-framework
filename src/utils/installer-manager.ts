@@ -235,20 +235,20 @@ export class InstallerManager {
       await this.collectPlannedChanges(template, installContext, result);
 
       const applyPolicy = this.evaluateInstallerApplyPolicy(installContext);
-      if (applyPolicy.dryRun) {
-        result.dryRun = true;
-        result.message = `Dry-run preview for ${template.name}; no installer changes were applied`;
-        result.duration = Date.now() - startTime;
-        return result;
-      }
-
-      if (!applyPolicy.allowed) {
+      if (applyPolicy.approvalRequired || applyPolicy.blocked || (!applyPolicy.allowed && !applyPolicy.dryRun)) {
         result.success = false;
         result.approvalRequired = applyPolicy.approvalRequired;
         result.message = applyPolicy.approvalRequired
           ? `Installation requires explicit ${INSTALLER_APPROVAL_SCOPE} approval`
           : formatHighImpactDecisionMessage(applyPolicy);
         result.errors.push(result.message);
+        result.duration = Date.now() - startTime;
+        return result;
+      }
+
+      if (applyPolicy.dryRun) {
+        result.dryRun = true;
+        result.message = `Dry-run preview for ${template.name}; no installer changes were applied`;
         result.duration = Date.now() - startTime;
         return result;
       }
@@ -824,7 +824,6 @@ end
       dryRun: context.dryRun,
       approval: context.approval,
       requiredApprovalScope: INSTALLER_APPROVAL_SCOPE,
-      env: createHighImpactChildEnv(),
     });
   }
 
@@ -836,7 +835,6 @@ end
       dryRun,
       approval: context.approval,
       requiredApprovalScope: INSTALLER_APPROVAL_SCOPE,
-      env: createHighImpactChildEnv(),
     }).allowed;
   }
 

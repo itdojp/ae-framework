@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { existsSync, mkdirSync, rmSync, symlinkSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { createCodexTaskAdapter } from '../../../src/agents/codex-task-adapter.js';
@@ -44,8 +44,18 @@ function makeRequest(context: TaskRequest['context']): TaskRequest {
 
 describe('CodeX Task UI scaffold security boundary', () => {
   let cleanup: (() => void) | undefined;
+  let previousEnv: NodeJS.ProcessEnv;
+
+  beforeEach(() => {
+    previousEnv = { ...process.env };
+    process.env = {
+      PATH: previousEnv['PATH'],
+      HOME: previousEnv['HOME'],
+    };
+  });
 
   afterEach(() => {
+    process.env = previousEnv;
     cleanup?.();
     cleanup = undefined;
   });
@@ -151,5 +161,24 @@ describe('CodeX Task UI scaffold security boundary', () => {
     expect(response.analysis).toContain('apps/web/app/admin-panel/page.tsx');
     expect(existsSync(join(output.absoluteDir, 'apps', 'web', 'app', 'admin-panel', 'page.tsx'))).toBe(true);
     expect(existsSync(join(output.absoluteDir, '..', 'Admin Panel', 'page.tsx'))).toBe(false);
+  });
+
+  it('blocks approved UI materialization when ambient secrets are present', async () => {
+    process.env['GITHUB_TOKEN'] = 'ghs-secret';
+    const output = makeOutputDir();
+    cleanup = output.cleanup;
+    const adapter = createCodexTaskAdapter();
+
+    const response = await adapter.handleTask(makeRequest({
+      phaseState: makePhaseState(),
+      outputDir: output.relativeDir,
+      dryRun: false,
+      approval: { approved: true, scope: 'ui-scaffold', actor: 'operator' },
+    }));
+
+    expect(response.shouldBlockProgress).toBe(true);
+    expect(response.blockingReason).toBe('high-impact-ui-write-policy');
+    expect(response.warnings).toEqual(expect.arrayContaining(['ambient-secrets-present']));
+    expect(existsSync(join(output.absoluteDir, 'apps', 'web', 'app', 'admin-panel', 'page.tsx'))).toBe(false);
   });
 });

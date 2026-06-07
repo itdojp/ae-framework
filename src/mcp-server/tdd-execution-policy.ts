@@ -63,7 +63,6 @@ export function ensureTDDTestExecutionApproved(
     dryRun,
     approvalScope: approval,
     requiredApprovalScope: APPROVED_TDD_TEST_EXECUTION,
-    env: createHighImpactChildEnv(),
     agentContext: true,
   });
 

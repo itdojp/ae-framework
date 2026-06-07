@@ -92,7 +92,7 @@ export function getGuardScriptExecutionPolicy(options: GuardRunnerOptions = {}):
     dryRun: options.dryRun,
     approvalScope,
     requiredApprovalScope: GUARD_SCRIPT_EXECUTION_APPROVAL_SCOPE,
-    env: createGuardProcessEnv(env),
+    env,
     agentContext,
     untrustedCheckout,
     enforceApproval: protectedContext,

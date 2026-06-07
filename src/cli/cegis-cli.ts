@@ -195,7 +195,6 @@ export class CEGISCli {
         dryRun: requestedDryRun,
         approvalScope: options.approvalScope,
         requiredApprovalScope: CEGIS_AUTO_FIX_APPROVAL_SCOPE,
-        env: createHighImpactChildEnv(),
       });
       if (policyDecision.approvalRequired || policyDecision.blocked) {
         console.error(chalk.red(`❌ ${formatHighImpactDecisionMessage(policyDecision)}`));

@@ -11,7 +11,6 @@ import * as path from 'path';
 import { trace } from '@opentelemetry/api';
 import { z } from 'zod';
 import {
-  createHighImpactChildEnv,
   evaluateHighImpactActionPolicy,
   formatHighImpactDecisionMessage,
 } from '../utils/high-impact-action-policy.js';
@@ -340,15 +339,9 @@ async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskRes
     approvalScope: getUIApprovalScope(ctx),
     ...(approvalCandidate !== undefined ? { approval: approvalCandidate } : {}),
     requiredApprovalScope: 'ui-scaffold',
-    env: createHighImpactChildEnv(),
     agentContext: true,
   });
-  if (uiWritePolicy.dryRun) {
-    if (dryRun === false || !trustedApproval) {
-      policyWarnings.push(`untrusted-ui-request-forced-dry-run: ${formatHighImpactDecisionMessage(uiWritePolicy)}`);
-    }
-    dryRun = true;
-  } else if (!uiWritePolicy.allowed) {
+  if (uiWritePolicy.blocked || uiWritePolicy.approvalRequired || (!uiWritePolicy.allowed && !uiWritePolicy.dryRun)) {
     return {
       summary: 'Blocked: UI scaffold write policy not satisfied',
       analysis: formatHighImpactDecisionMessage(uiWritePolicy),
@@ -362,6 +355,12 @@ async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskRes
       blockingReason: 'high-impact-ui-write-policy',
       requiredHumanInput: 'explicit ui-scaffold approval for trusted write-capable run',
     };
+  }
+  if (uiWritePolicy.dryRun) {
+    if (dryRun === false || !trustedApproval) {
+      policyWarnings.push(`untrusted-ui-request-forced-dry-run: ${formatHighImpactDecisionMessage(uiWritePolicy)}`);
+    }
+    dryRun = true;
   }
   if (dryRun === undefined && (!phaseState?.entities || Object.keys(phaseState.entities).length === 0)) {
     dryRun = true;
