@@ -64,12 +64,13 @@
       "claimId": "agent-output-fixtures-document-routing-only",
       "rawAssertion": "The fixture examples document routing and do not create a new raw-output contract.",
       "targetArtifact": "claim-evidence-manifest/v1",
-      "expectedClaimStatus": "tested",
       "supportingEvidence": [
         "json.tool syntax checks",
         "check:doc-consistency"
       ],
-      "controlPlaneBoundary": "The Codex conclusion is not proof; the claim status depends on reviewed evidence."
+      "controlPlaneBoundary": "The Codex conclusion is not proof; the claim status depends on reviewed evidence.",
+      "expectedManifestStatus": "satisfied",
+      "evidenceKind": "test"
     }
   ],
   "expectedArtifacts": [

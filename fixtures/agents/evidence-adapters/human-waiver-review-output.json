@@ -59,7 +59,6 @@
       "claimId": "extended-coverage-available",
       "rawAssertion": "The non-required extended coverage lane is unavailable for this docs-only change.",
       "targetArtifact": "claim-evidence-manifest/v1",
-      "expectedClaimStatus": "waived",
       "supportingEvidence": [
         "PR comment with required-check evidence",
         "maintainer waiver decision"
@@ -70,7 +69,8 @@
         "expiresAt": "2026-06-30T23:59:59Z",
         "evidence": "PR comment with required-check evidence"
       },
-      "controlPlaneBoundary": "A waiver is not a tested or proved result; downstream summaries must keep it distinct."
+      "controlPlaneBoundary": "A waiver is not a tested or proved result; downstream summaries must keep it distinct.",
+      "expectedManifestStatus": "waived"
     }
   ],
   "expectedArtifacts": [

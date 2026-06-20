@@ -40,7 +40,7 @@ An evidence adapter accepts raw producer output and emits or routes to existing 
 
 ### Producer examples and fixture mapping
 
-The fixtures under `fixtures/agents/evidence-adapters/` are raw-output examples. They are intentionally not new contracts; each fixture records the expected existing artifacts an adapter would populate or request from existing generators. Each fixture uses a common descriptive shape with `producer`, `source`, `rawSignals`, `changedFiles`, `commands`, `claimsMentioned`, `expectedArtifacts`, and `knownGaps`. That shape is documentation-only until a later issue introduces a schema; JSON syntax checks do not replace Contract Catalog validation for generated artifacts.
+The fixtures under `fixtures/agents/evidence-adapters/` are raw-output examples. They are intentionally not new contracts; each fixture records the expected existing artifacts an adapter would populate or request from existing generators. Each fixture uses a common descriptive shape with `producer`, `source`, `rawSignals`, `changedFiles`, `commands`, `claimsMentioned`, `expectedArtifacts`, and `knownGaps`. That shape is documentation-only until a later issue introduces a schema; JSON syntax checks do not replace Contract Catalog validation for generated artifacts. `claimsMentioned` uses target-artifact-specific vocabulary: manifest routes use `partial`, `satisfied`, `waived`, or `unresolved`, while policy decision routes use `pass`, `waived`, `report-only`, or `block`.
 
 | Producer | Fixture | Raw output captured | Primary normalized artifacts | Notes |
 | --- | --- | --- | --- | --- |
@@ -119,7 +119,7 @@ Evidence adapter は raw producer output を受け取り、既存 ae-framework a
 
 ### Producer example と fixture mapping
 
-`fixtures/agents/evidence-adapters/` 配下の fixture は raw output 例です。新しい contract ではありません。各 fixture は、adapter が populate する、または既存 generator へ要求する想定の existing artifact を記録します。各 fixture は `producer`、`source`、`rawSignals`、`changedFiles`、`commands`、`claimsMentioned`、`expectedArtifacts`、`knownGaps` を持つ共通の説明用 shape に揃えます。この shape は後続 Issue が schema を導入するまで documentation-only であり、JSON 構文確認は生成 artifact の Contract Catalog validation を代替しません。
+`fixtures/agents/evidence-adapters/` 配下の fixture は raw output 例です。新しい contract ではありません。各 fixture は、adapter が populate する、または既存 generator へ要求する想定の existing artifact を記録します。各 fixture は `producer`、`source`、`rawSignals`、`changedFiles`、`commands`、`claimsMentioned`、`expectedArtifacts`、`knownGaps` を持つ共通の説明用 shape に揃えます。この shape は後続 Issue が schema を導入するまで documentation-only であり、JSON 構文確認は生成 artifact の Contract Catalog validation を代替しません。`claimsMentioned` は target artifact ごとの語彙を使います。manifest への routing は `partial`、`satisfied`、`waived`、`unresolved`、policy decision への routing は `pass`、`waived`、`report-only`、`block` を使います。
 
 | Producer | Fixture | Captured raw output | 主な normalized artifact | Notes |
 | --- | --- | --- | --- | --- |

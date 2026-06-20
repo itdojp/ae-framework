@@ -59,12 +59,12 @@
       "claimId": "ai-review-threads-resolved",
       "rawAssertion": "All actionable AI review threads were replied to and resolved.",
       "targetArtifact": "policy-decision/v1",
-      "expectedClaimStatus": "tested",
       "supportingEvidence": [
         "review completeness report",
         "required checks"
       ],
-      "controlPlaneBoundary": "Resolved thread state can support a policy decision; Copilot text alone cannot approve the PR."
+      "controlPlaneBoundary": "Resolved thread state can support a policy decision; Copilot text alone cannot approve the PR.",
+      "expectedPolicyResult": "pass"
     }
   ],
   "expectedArtifacts": [

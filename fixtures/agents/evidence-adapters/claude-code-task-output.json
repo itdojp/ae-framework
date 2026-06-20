@@ -59,11 +59,12 @@
       "claimId": "focused-test-covered-edited-path",
       "rawAssertion": "The focused test suite covers the changed behavior.",
       "targetArtifact": "claim-evidence-manifest/v1",
-      "expectedClaimStatus": "partial",
       "supportingEvidence": [
         "focused vitest command"
       ],
-      "controlPlaneBoundary": "A focused test can support a claim but does not prove the full product state."
+      "controlPlaneBoundary": "A focused test can support a claim but does not prove the full product state.",
+      "expectedManifestStatus": "partial",
+      "evidenceKind": "test"
     }
   ],
   "expectedArtifacts": [
