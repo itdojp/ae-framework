@@ -65,14 +65,16 @@ For this Issue, the recommended implementation is documentation and fixtures onl
 1. Capture producer output as JSON or Markdown in a local or CI artifact path.
 2. Classify the producer and trust boundary using `docs/agents/agent-producer-matrix.md`.
 3. Select the existing target artifacts from the table above.
-4. Run the existing generators where applicable:
+4. Optionally run the report-only normalizer to summarize the fixture routing without creating a control-plane judgment:
+   - `pnpm run producer-output:normalize -- --input fixtures/agents/evidence-adapters/codex-cli-task-output.json`
+5. Run the existing generators where applicable:
    - `pnpm run change-package:generate:v2`
    - `pnpm run claim-evidence:generate`
    - `pnpm run handoff:create`
    - `pnpm run hook-feedback:build`
-5. Validate generated artifacts with the Contract Catalog's listed validators.
-6. Record any missing command, unresolved claim, or waiver reason in the PR body and artifact summary.
-7. If the adapter cannot route a producer output to an existing artifact, record the applicable ACP-GAP ID from `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` instead of creating a new guarantee vocabulary.
+6. Validate generated artifacts with the Contract Catalog's listed validators.
+7. Record any missing command, unresolved claim, or waiver reason in the PR body and artifact summary.
+8. If the adapter cannot route a producer output to an existing artifact, record the applicable ACP-GAP ID from `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` instead of creating a new guarantee vocabulary.
 
 ### ACP gap IDs for adapter work
 
@@ -144,14 +146,16 @@ Evidence adapter は raw producer output を受け取り、既存 ae-framework a
 1. Producer output を JSON または Markdown として local / CI artifact path に保存する。
 2. `docs/agents/agent-producer-matrix.md` で producer と trust boundary を分類する。
 3. 上の表から既存 target artifact を選ぶ。
-4. 必要に応じて既存 generator を実行する。
+4. 必要に応じて report-only normalizer を実行し、control-plane judgment を作らず fixture routing を要約する。
+   - `pnpm run producer-output:normalize -- --input fixtures/agents/evidence-adapters/codex-cli-task-output.json`
+5. 必要に応じて既存 generator を実行する。
    - `pnpm run change-package:generate:v2`
    - `pnpm run claim-evidence:generate`
    - `pnpm run handoff:create`
    - `pnpm run hook-feedback:build`
-5. Contract Catalog に記載された validator で生成 artifact を検証する。
-6. 未実行 command、unresolved claim、waiver reason は PR body と artifact summary に記録する。
-7. producer output を既存 artifact へ routing できない場合、新しい保証語彙を作らず `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` の ACP-GAP ID を記録する。
+6. Contract Catalog に記載された validator で生成 artifact を検証する。
+7. 未実行 command、unresolved claim、waiver reason は PR body と artifact summary に記録する。
+8. producer output を既存 artifact へ routing できない場合、新しい保証語彙を作らず `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` の ACP-GAP ID を記録する。
 
 ### ACP gap IDs for adapter work
 

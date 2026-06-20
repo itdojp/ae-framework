@@ -396,6 +396,11 @@ const checks = [
     label: 'Hook feedback schema validation'
   },
   {
+    schema: 'schema/producer-normalization-summary.schema.json',
+    fixtures: ['fixtures/agents/producer-normalization-summary.codex.json'],
+    label: 'Producer normalization summary schema validation'
+  },
+  {
     schema: 'schema/harness-health.schema.json',
     fixtures: ['fixtures/ci/sample.harness-health.json'],
     label: 'Harness health schema validation'
