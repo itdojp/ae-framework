@@ -555,6 +555,10 @@
               "type": "integer",
               "minimum": 0
             },
+            "agentAssuranceFindings": {
+              "type": "integer",
+              "minimum": 0
+            },
             "security": {
               "type": "object",
               "additionalProperties": false,
@@ -735,6 +739,9 @@
             }
           }
         },
+        "agentAssuranceFindings": {
+          "$ref": "#/$defs/agentAssuranceFindings"
+        },
         "warnings": {
           "type": "array",
           "items": {
@@ -748,6 +755,98 @@
             "type": "string",
             "minLength": 1
           }
+        }
+      }
+    },
+    "agentAssuranceFindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "bySeverity",
+        "sources",
+        "findings"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bySeverity": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/agentAssuranceFinding"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "agentAssuranceFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "severity",
+        "enforcement",
+        "summary",
+        "sourceArtifactPath",
+        "relatedArtifactPath",
+        "claimId"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "enforcement": {
+          "type": "string",
+          "const": "report-only"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceArtifactPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relatedArtifactPath": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "claimId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
         }
       }
     }

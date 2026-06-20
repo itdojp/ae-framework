@@ -121,6 +121,7 @@ PR automation treats claim-level assurance as a summary-artifact input, not as r
 - Waivers must include owner, reason, expiry, affected claim, and evidence link before automation treats them as valid.
 - `assurance-summary/v1.reviewSurface` is the preferred compact PR surface when available. It summarizes `producerSignals`, `contextPack`, `boundaryMap`, `claimEvidence`, `waivers`, `policyDecision`, `residualRisks`, and `recommendedReviewerAction` without treating the summary as merge approval.
 - Producer assertions shown in `producerSignals` remain producer assertions. Control-plane judgment comes from reviewed schema-backed evidence and policy artifacts.
+- `policy-gate-summary/v1.evaluation.assurance.agentAssuranceFindings` may surface producer or assurance-summary findings with count, severity, and source artifact path. These findings are report-only by default and do not add a new blocking condition for ordinary PRs.
 - Boundary Map drift is design-boundary evidence and remains report-only unless a risk label, `enforce-assurance`, or critical-core policy promotes it.
 - Review comments should prefer this compact shape when claim-level evidence is present:
 
@@ -514,6 +515,7 @@ PR automation は claim-level assurance を raw log 解析ではなく summary a
 - waiver は owner、reason、expiry、affected claim、evidence link を持つ場合だけ automation が valid として扱います。
 - 利用可能な場合、compact PR surface は `assurance-summary/v1.reviewSurface` を優先します。`producerSignals`、`contextPack`、`boundaryMap`、`claimEvidence`、`waivers`、`policyDecision`、`residualRisks`、`recommendedReviewerAction` を集約しますが、summary 自体を merge approval として扱いません。
 - `producerSignals` に表示される producer assertion は producer assertion のままです。control-plane judgment は review 済みの schema-backed evidence と policy artifact から判断します。
+- `policy-gate-summary/v1.evaluation.assurance.agentAssuranceFindings` は producer または assurance summary 由来の finding を count、severity、source artifact path 付きで表示できます。これらは既定で report-only であり、通常PRに新しい blocking 条件を追加しません。
 - Boundary Map drift は design-boundary evidence であり、risk label、`enforce-assurance`、critical-core policy が昇格するまでは report-only です。
 - claim-level evidence がある場合、review comment は次の compact shape を優先します。
 

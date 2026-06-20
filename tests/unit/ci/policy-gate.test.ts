@@ -7,6 +7,7 @@ import {
   buildPolicyGateReport,
   buildPolicyInputV1,
   evaluatePolicyGate,
+  inspectAgentAssuranceFindings,
   inspectClaimEvidenceManifest,
   inspectClaimLevelSummary,
 } from '../../../scripts/ci/policy-gate.mjs';
@@ -659,7 +660,7 @@ describe('policy-gate', () => {
     expect(markdown).toContain('waivers: active=1, expiringSoon=0, expired=0, orphan=0');
     expect(markdown).toContain('id=waiver-manual-fraud-review-001');
     expect(markdown).toContain('claim=manual-fraud-review');
-    expect(markdown).toContain('owner=@team-risk');
+    expect(markdown).toContain('owner=@\u200bteam-risk');
     expect(markdown).toContain('expires=2026-06-30');
     expect(markdown).toContain('reason=Runtime manual review control is active during model validation.');
   });
@@ -1514,6 +1515,221 @@ describe('policy-gate', () => {
       expect(result.ok).toBe(true);
       expect(result.assurance.result).toBe('waived');
       expect(result.assurance.summary).toMatchObject({ pass: 1, waived: 1, block: 0 });
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('surfaces producer normalization findings as report-only policy gate evidence without blocking', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-agent-findings-'));
+    const producerSummaryPath = join(tempDir, 'producer-normalization-summary.json');
+
+    try {
+      writeFileSync(
+        producerSummaryPath,
+        JSON.stringify({
+          schemaVersion: 'producer-normalization-summary/v1',
+          controlPlaneRouting: {
+            reportOnlyFindings: [
+              {
+                id: 'waiver-metadata:missing-owner',
+                severity: 'report-only',
+                kind: 'waiver-metadata',
+                summary: 'Waiver metadata is missing an owner and expiry.',
+                details: {
+                  artifact: 'artifacts/assurance/temporary-overrides/waiver-missing-owner.json',
+                },
+              },
+            ],
+            missingEvidence: [],
+          },
+        }),
+      );
+
+      const agentAssuranceFindings = inspectAgentAssuranceFindings({
+        producerSummaryPath,
+        assuranceSummaryPath: join(tempDir, 'missing-assurance-summary.json'),
+      });
+      const result = evaluatePolicyGate({
+        policy,
+        pullRequest: {
+          labels: [{ name: 'risk:low' }],
+          body: '## Rollback\nnone\n\n## Acceptance\nok',
+        },
+        changedFiles: ['src/feature/example.ts'],
+        reviews: [],
+        statusRollup: [checkRun('verify-lite')],
+        assurance: assuranceState(),
+        assuranceMode: 'report-only',
+        agentAssuranceFindings,
+      });
+      const markdown = buildMarkdownSummary(3488, result);
+
+      expect(result.ok).toBe(true);
+      expect(result.errors).toHaveLength(0);
+      expect(result.assurance.summary.agentAssuranceFindings).toBe(1);
+      expect(result.assurance.agentAssuranceFindings).toMatchObject({
+        count: 1,
+        bySeverity: { 'report-only': 1 },
+      });
+      expect(result.assurance.agentAssuranceFindings.findings[0]).toMatchObject({
+        kind: 'waiver-metadata',
+        enforcement: 'report-only',
+        relatedArtifactPath: 'artifacts/assurance/temporary-overrides/waiver-missing-owner.json',
+      });
+      expect(markdown).toContain('agent assurance findings (report-only): total=1');
+      expect(markdown).toContain('Waiver metadata is missing an owner and expiry.');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('preserves producer missing-evidence metadata when report-only findings are deduplicated', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-agent-dedupe-'));
+    const producerSummaryPath = join(tempDir, 'producer-normalization-summary.json');
+
+    try {
+      writeFileSync(
+        producerSummaryPath,
+        JSON.stringify({
+          schemaVersion: 'producer-normalization-summary/v1',
+          controlPlaneRouting: {
+            reportOnlyFindings: [
+              {
+                id: 'missing-evidence:claim-cache-key-proof',
+                severity: 'report-only',
+                kind: 'missing-evidence',
+                summary: 'Claim evidence is missing a proof artifact.',
+              },
+            ],
+            missingEvidence: [
+              {
+                kind: 'missing-evidence',
+                summary: 'Claim evidence is missing a proof artifact.',
+                artifact: 'artifacts/assurance/claim-evidence-manifest.json',
+                claimId: 'claim-cache-key-proof',
+              },
+            ],
+          },
+        }),
+      );
+
+      const agentAssuranceFindings = inspectAgentAssuranceFindings({
+        producerSummaryPath,
+        assuranceSummaryPath: join(tempDir, 'missing-assurance-summary.json'),
+      });
+
+      expect(agentAssuranceFindings.count).toBe(1);
+      expect(agentAssuranceFindings.findings[0]).toMatchObject({
+        kind: 'missing-evidence',
+        summary: 'Claim evidence is missing a proof artifact.',
+        relatedArtifactPath: 'artifacts/assurance/claim-evidence-manifest.json',
+        claimId: 'claim-cache-key-proof',
+      });
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('escapes untrusted agent assurance finding text in markdown summaries', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState(),
+      assuranceMode: 'report-only',
+      agentAssuranceFindings: [
+        {
+          id: 'finding:markdown-injection',
+          kind: 'waiver<metadata>&risk',
+          severity: '@ops <sev>&risk',
+          summary: '@ops `check` <script>&risk',
+          sourceArtifactPath: 'artifacts/agents/@producer-summary&risk.json',
+          relatedArtifactPath: 'artifacts/<assurance>/claim`evidence`.json',
+          claimId: '@claim`id`',
+        },
+      ],
+    });
+
+    const markdown = buildMarkdownSummary(3488, result);
+
+    expect(markdown).toContain('(@\u200bops &lt;sev&gt;&amp;risk=1)');
+    expect(markdown).toContain('waiver&lt;metadata&gt;&amp;risk');
+    expect(markdown).toContain('@\u200bops &lt;sev&gt;&amp;risk/waiver&lt;metadata&gt;&amp;risk');
+    expect(markdown).toContain('@\u200bops \\`check\\` &lt;script&gt;&amp;risk');
+    expect(markdown).toContain('source=artifacts/agents/@\u200bproducer-summary&amp;risk.json');
+    expect(markdown).toContain('related=artifacts/&lt;assurance&gt;/claim\\`evidence\\`.json');
+    expect(markdown).toContain('claim=@\u200bclaim\\`id\\`');
+  });
+
+  it('surfaces assurance summary residual risks with source artifact paths as report-only findings', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-assurance-summary-findings-'));
+    const assuranceSummaryPath = join(tempDir, 'assurance-summary.json');
+
+    try {
+      writeFileSync(
+        assuranceSummaryPath,
+        JSON.stringify({
+          schemaVersion: 'assurance-summary/v1',
+          reviewSurface: {
+            producerSignals: {
+              artifactPaths: ['artifacts/agents/producer-normalization-summary.json'],
+              findingRefs: [
+                {
+                  id: 'missing-command:3',
+                  kind: 'missing-evidence',
+                  summary: 'Producer output omitted schema validation evidence.',
+                },
+              ],
+            },
+            claimEvidence: {
+              artifactPaths: ['artifacts/assurance/claim-evidence-manifest.json'],
+            },
+            residualRisks: [
+              {
+                kind: 'unresolved-claim',
+                claimId: 'claim-cache-key-proof',
+                severity: 'review',
+                reason: 'Claim status is unresolved; do not treat it as satisfied.',
+                source: 'claim-evidence-manifest',
+              },
+            ],
+          },
+        }),
+      );
+
+      const agentAssuranceFindings = inspectAgentAssuranceFindings({
+        producerSummaryPath: join(tempDir, 'missing-producer-summary.json'),
+        assuranceSummaryPath,
+      });
+
+      expect(agentAssuranceFindings.count).toBe(2);
+      expect(agentAssuranceFindings.sources).toContain(
+        assuranceSummaryPath.replace(`${process.cwd()}/`, ''),
+      );
+      expect(agentAssuranceFindings.findings).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'missing-evidence',
+          severity: 'report-only',
+          enforcement: 'report-only',
+          relatedArtifactPath: 'artifacts/agents/producer-normalization-summary.json',
+        }),
+        expect.objectContaining({
+          kind: 'unresolved-claim',
+          severity: 'review',
+          enforcement: 'report-only',
+          relatedArtifactPath: 'artifacts/assurance/claim-evidence-manifest.json',
+          claimId: 'claim-cache-key-proof',
+        }),
+      ]));
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }

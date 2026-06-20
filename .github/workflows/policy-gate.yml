@@ -168,9 +168,6 @@ jobs:
             const labels = new Set((pr.labels || []).map((label) => label.name));
             const explicitStrict = ['strict', 'enforcement', 'enforced'].includes(explicitMode.toLowerCase());
             const labelStrict = labels.has('enforce-assurance');
-            if (!explicitStrict && !labelStrict) {
-              return;
-            }
 
             const { data } = await github.rest.actions.listWorkflowRuns({
               owner,
@@ -188,7 +185,7 @@ jobs:
             if (!run) {
               if (labelStrict && !explicitStrict) {
                 core.notice('enforce-assurance label is present, but no successful Verify Lite artifact exists for this head yet; policy-gate remains report-only until workflow_run re-evaluation.');
-              } else {
+              } else if (explicitStrict) {
                 core.warning('Strict assurance mode is configured, but no successful Verify Lite artifact exists for this head; policy-gate will fail closed if the assurance artifact is missing.');
               }
               return;
