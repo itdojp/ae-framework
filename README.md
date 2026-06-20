@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-06-06'
+lastVerified: '2026-06-20'
 ---
 
 # ae-framework: Agent-Neutral Assurance Control Plane for Agent-Driven SDLC
@@ -17,6 +17,8 @@ lastVerified: '2026-06-06'
 ## English
 
 ae-framework is an **agent-neutral assurance control plane for agent-driven SDLC**. Coding agents, human maintainers, CI jobs, and formal tools produce changes and raw signals; ae-framework standardises the specifications, verification evidence, policy gates, and release judgments used to decide whether those changes can be trusted.
+
+**Product thesis**: Bring your own agent. Keep your assurance plane. Codex, Claude Code, GitHub Copilot, Gemini-family coding tools, human maintainers, CI jobs, and formal tools are replaceable producers; ae-framework keeps judgment artifacts, policy gates, and release decisions stable across those producer choices.
 
 ### Two-layer model
 
@@ -43,11 +45,11 @@ flowchart TB
 - **Spec & Verification Kit**: Traceable spec format, mutation/MBT/property verification pipelines, and formal runners for Alloy/TLA/SMT/Apalache/Kani/SPIN/CSP(cspx)/Lean4 with unified summaries.
 - **Project scaffolding & policies**: pnpm workspace layout, lint/test/type-coverage gates, label gating (typecov, flake), and TDD-friendly Git hooks.
 - **Cacheable heavy test artifacts**: `scripts/pipelines/sync-test-results.mjs` to restore/store/snapshot mutation + MBT results; `heavy-test-trends` artifacts for CI triage.
-- **Agent integrations**: Playbooks and connectors for Claude Code / Codex; JSON-first outputs and AJV validation to keep agent-produced artifacts safe.
+- **Producer integration guidance**: Playbooks and connectors for Claude Code / Codex plus producer-boundary guidance for Copilot, Gemini-family tools, humans, and CI jobs; JSON-first outputs and AJV validation keep producer artifacts safe before they enter judgment.
 
 ### What this is not
 - Not a single-model code generator — code generation is one producer, not the system of record.
-- Not an agent runtime or IDE plugin — bring your own agent.
+- Not an agent runtime or IDE plugin — bring your own agent and keep agent choice outside the judgment contracts.
 - Not a general-purpose Next.js UI kit or design system starter.
 - Not a hosted CI/CD service — workflows are provided for self-hosted GitHub runners or forks.
 - Not mandatory formal proof for every change — routine changes stay on the fast lane unless risk or policy selects heavier assurance.
@@ -124,6 +126,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 
 ae-framework は **エージェント協調型SDLCのための、エージェント非依存の assurance control plane** です。coding agent、人間のmaintainer、CI job、formal tool は変更やraw signalを生成する producer であり、ae-framework はその変更を信頼して merge / release できるかを、仕様・検証・証跡・policy gate・release judgment に基づいて判断可能にします。
 
+**Product thesis**: Bring your own agent. Keep your assurance plane. Codex、Claude Code、GitHub Copilot、Gemini系tool、人間のmaintainer、CI job、formal tool は交換可能な producer であり、ae-framework は producer の選択に依存しない judgment artifact、policy gate、release decision を維持します。
+
 ### 二層モデル
 
 ```mermaid
@@ -149,11 +153,11 @@ flowchart TB
 - **仕様・検証キット**: トレーサブルな仕様フォーマット、mutation/MBT/Propertyテストのパイプライン、`scripts/pipelines/compare-test-trends.mjs` によるトレンド比較。
 - **プロジェクト骨子とポリシー**: pnpmワークスペース、Lint/Test/型カバレッジのゲート、ラベルゲーティング（typecov・flake）、TDDフック。
 - **ヘビーテスト成果物のキャッシュ**: `scripts/pipelines/sync-test-results.mjs` による store/restore/snapshot、`heavy-test-trends` アーティファクトでCIトリアージを高速化。
-- **エージェント統合指針**: Claude Code / Codex 向けプレイブック、JSON成果物のAJV検証など、エージェント生成物を安全に扱うための手順。
+- **Producer統合指針**: Claude Code / Codex 向けプレイブックに加え、Copilot、Gemini系tool、人間、CI job を producer として扱う境界を示し、JSON-first成果物とAJV検証で judgment に入る前の生成物を安全に扱う。
 
 ### 提供しないもの
 - 単一モデル依存のコード生成専用ツール。codegen は producer の一つであり、SSOT は spec / contract / artifact に置く。
-- エージェント実行ランタイムやIDEプラグイン（各自のエージェントを利用）。
+- エージェント実行ランタイムやIDEプラグイン（各自のエージェントを利用し、agent選択を judgment contract から分離）。
 - 汎用のNext.js UIスターターやデザインシステム配布物。
 - ホスト型CI/CDサービス（GitHub Actionsの定義を提供）。
 - すべての変更に formal proof を強制する運用。通常変更は fast lane に留め、risk や policy が必要とする場合だけ heavy lane へ昇格する。

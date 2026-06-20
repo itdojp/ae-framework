@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-06-06'
+lastVerified: '2026-06-20'
 owner: product-assurance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -15,7 +15,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ### 1. Purpose
 
-This policy is the canonical product decision record for ae-framework as an agent-neutral assurance control plane. It is written for human maintainers and Codex-driven work so that future implementation issues strengthen judgment-side assurance instead of rebuilding a coding-agent harness.
+This policy is the canonical product decision record for ae-framework as an agent-neutral assurance control plane. It is written for human maintainers and Codex-driven work so that future implementation issues strengthen judgment-side assurance instead of rebuilding a coding-agent harness. The product thesis is `Bring your own agent. Keep your assurance plane.`
 
 Use this document with:
 
@@ -40,7 +40,7 @@ Use this document with:
 
 #### 2.2 What ae-framework is not
 
-- It is not a replacement for Codex CLI, Claude Code, Copilot, Cursor, or other coding agents.
+- It is not a replacement for Codex CLI, Claude Code, Copilot, Gemini-family tools, Cursor, or other coding agents.
 - It is not an IDE plugin or universal agent runtime.
 - It is not a hosted CI/CD service.
 - It is not a requirement that every change has formal proof.
@@ -51,7 +51,7 @@ Use this document with:
 
 | Decision | Policy |
 | --- | --- |
-| Producer boundary | Coding agents, human maintainers, test runners, formal tools, conformance tools, and MCP servers are replaceable producers. |
+| Producer boundary | Codex, Claude Code, Copilot, Gemini-family tools, other coding agents, human maintainers, test runners, formal tools, conformance tools, and MCP servers are replaceable producers. |
 | Control-plane ownership | ae-framework owns judgment-side contracts, evidence normalization, policy evaluation, and PR/release assurance summaries. |
 | Risk-based verification | Heavy verification is conditional and risk-based, not universal. |
 | Claim-based assurance | Assurance is evaluated per claim, not by repository-wide green status alone. |
@@ -66,7 +66,7 @@ Use this document with:
 
 | Term | Meaning | Current references |
 | --- | --- | --- |
-| Producer agent | Agent or tool that creates code, specs, tests, verification output, or review artifacts. Producers include Codex, Claude, Copilot, MCP tools, test runners, formal tools, and security producers. | `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`, `docs/integrations/CODEX-INTEGRATION.md` |
+| Producer agent | Agent or tool that creates code, specs, tests, verification output, or review artifacts. Producers include Codex, Claude Code, Copilot, Gemini-family tools, MCP tools, test runners, formal tools, human maintainers, and security producers. | `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`, `docs/integrations/CODEX-INTEGRATION.md` |
 | Control plane | Layer that normalizes producer outputs into schema-backed evidence and policy decisions. | `docs/product/ASSURANCE-CONTROL-PLANE.md` |
 | Policy plane | Policy-gate, risk labels, review topology, approvals, enforcement profiles, and release/post-deploy rules. | `docs/ci/OPT-IN-CONTROLS.md`, `docs/ci/pr-automation.md`, `.github/workflows/policy-gate.yml` |
 | Evidence plane | Schemas, fixtures, generated JSON/Markdown summaries, and contract validation. | `docs/quality/ARTIFACTS-CONTRACT.md`, `docs/reference/CONTRACT-CATALOG.md` |
@@ -168,7 +168,7 @@ Policy gates may consume these metrics for context, but a metric must not become
 
 ### 1. 目的
 
-この文書は、ae-framework をエージェント協調型SDLCのための agent-neutral assurance control plane として扱うための canonical policy です。今後の Codex-driven work が agent harness を作る方向へ逸れず、判断側の契約・証跡・policy・PR/release assurance を強化するための判断基準を固定します。
+この文書は、ae-framework をエージェント協調型SDLCのための agent-neutral assurance control plane として扱うための canonical policy です。今後の Codex-driven work が agent harness を作る方向へ逸れず、判断側の契約・証跡・policy・PR/release assurance を強化するための判断基準を固定します。Product thesis は `Bring your own agent. Keep your assurance plane.` です。
 
 ### 2. 境界
 
@@ -181,7 +181,7 @@ Policy gates may consume these metrics for context, but a metric must not become
 
 #### 2.2 ae-framework が担わないもの
 
-- Codex CLI、Claude Code、Copilot、Cursor などの coding agent の代替。
+- Codex CLI、Claude Code、Copilot、Gemini系tool、Cursor などの coding agent の代替。
 - IDE plugin または汎用 agent runtime。
 - ホスト型CI/CDサービス。
 - すべての変更への formal proof 強制。
@@ -192,7 +192,7 @@ Policy gates may consume these metrics for context, but a metric must not become
 
 | Decision | Policy |
 | --- | --- |
-| Producer boundary | coding agent、人間のmaintainer、test runner、formal tool、conformance tool、MCP server は交換可能な producer として扱う。 |
+| Producer boundary | Codex、Claude Code、Copilot、Gemini系tool、その他coding agent、人間のmaintainer、test runner、formal tool、conformance tool、MCP server は交換可能な producer として扱う。 |
 | Control-plane ownership | ae-framework は判断側 contract、evidence normalization、policy evaluation、PR/release assurance summary を担う。 |
 | Risk-based verification | 重い検証は条件付き・risk-based であり、常時強制しない。 |
 | Claim-based assurance | assurance は claim 単位で評価し、repository 全体の green status だけでは判断しない。 |
@@ -205,7 +205,7 @@ Policy gates may consume these metrics for context, but a metric must not become
 
 ### 4. 用語
 
-- **Producer agent**: code、spec、test、verification output、review artifact を生成する agent/tool。
+- **Producer agent**: code、spec、test、verification output、review artifact を生成する agent/tool。Codex、Claude Code、Copilot、Gemini系tool、MCP tool、人間、test runner、formal tool を含む。
 - **Control plane**: producer output を schema-backed evidence と policy decision に正規化する層。
 - **Policy plane**: policy-gate、risk label、review topology、approval、enforcement profile、release/post-deploy rule。
 - **Evidence plane**: schema、fixture、生成された JSON/Markdown summary、contract validation。
