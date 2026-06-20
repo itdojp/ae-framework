@@ -192,7 +192,7 @@ Flow suggestion:
 
 ## GitHub Issue driven Codex work
 
-Use `docs/integrations/CODEX-ISSUE-RUNBOOK.md` when a GitHub Issue is the task input. It includes copy/paste `gh issue view` extraction, non-interactive `codex exec`, interactive `codex --cd`, pre-work/post-work checklists, and subagent/worktree safety boundaries.
+Use `docs/integrations/CODEX-ISSUE-RUNBOOK.md` when a GitHub Issue is the task input. It includes the `scripts/codex/export-issue-task.mjs` and `scripts/codex/Export-CodexIssueTask.ps1` helpers, copy/paste `gh issue view` extraction, non-interactive `codex exec`, interactive `codex --cd`, pre-work/post-work checklists, and subagent/worktree safety boundaries.
 
 Use `docs/agents/agent-producer-matrix.md` to decide whether Codex CLI output should become `change-package/v2`, `ae-handoff/v1`, `hook-feedback/v1`, `claim-evidence-manifest/v1`, or another judgment artifact.
 
