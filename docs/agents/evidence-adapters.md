@@ -5,7 +5,7 @@ canonicalSource:
 - docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
 - docs/agents/agent-producer-matrix.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-06-05'
+lastVerified: '2026-06-20'
 ---
 
 # Agent Evidence Adapters
@@ -25,6 +25,7 @@ Use this document with:
 - `docs/agents/handoff.md` for `ae-handoff/v1` continuation evidence.
 - `docs/agents/hook-feedback.md` for `hook-feedback/v1` blockers and next actions.
 - `docs/integrations/CODEX-INTEGRATION.md` and `docs/integrations/CODEX-ISSUE-RUNBOOK.md` for Codex CLI task input handling.
+- `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` for ACP-GAP IDs that later fixture, adapter, summary, and policy-gate issues should reference.
 
 ### Adapter boundary
 
@@ -71,6 +72,17 @@ For this Issue, the recommended implementation is documentation and fixtures onl
    - `pnpm run hook-feedback:build`
 5. Validate generated artifacts with the Contract Catalog's listed validators.
 6. Record any missing command, unresolved claim, or waiver reason in the PR body and artifact summary.
+7. If the adapter cannot route a producer output to an existing artifact, record the applicable ACP-GAP ID from `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` instead of creating a new guarantee vocabulary.
+
+### ACP gap IDs for adapter work
+
+| Gap ID | Adapter implication | Enforcement default |
+| --- | --- | --- |
+| ACP-GAP-001 | Fixture-set work may add or refresh examples, but raw examples remain non-contractual until a schema issue says otherwise. | report-only |
+| ACP-GAP-002 | A report-only normalizer skeleton can route raw examples to existing artifacts; it must not emit new claim states. | report-only |
+| ACP-GAP-003 | PR/reviewer surfaces should display missing evidence and gap IDs without requiring heavy lanes for ordinary PRs. | report-only |
+| ACP-GAP-004 | Policy Gate integration can consume normalized findings as context before any enforcement rule is added. | report-only |
+| ACP-GAP-006 | Vendor-specific raw APIs stay outside the adapter contract; route by output type through existing artifacts. | out of scope |
 
 ### Non-goals
 
@@ -92,6 +104,7 @@ Evidence adapter は、coding agent や人間の raw producer output を ae-fram
 - `docs/agents/handoff.md`: `ae-handoff/v1` の continuation evidence。
 - `docs/agents/hook-feedback.md`: `hook-feedback/v1` の blocker / next action。
 - `docs/integrations/CODEX-INTEGRATION.md` / `docs/integrations/CODEX-ISSUE-RUNBOOK.md`: Codex CLI の task input handling。
+- `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md`: 後続の fixture、adapter、summary、policy-gate Issue が参照する ACP-GAP ID。
 
 ### Adapter boundary
 
@@ -138,6 +151,17 @@ Evidence adapter は raw producer output を受け取り、既存 ae-framework a
    - `pnpm run hook-feedback:build`
 5. Contract Catalog に記載された validator で生成 artifact を検証する。
 6. 未実行 command、unresolved claim、waiver reason は PR body と artifact summary に記録する。
+7. producer output を既存 artifact へ routing できない場合、新しい保証語彙を作らず `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` の ACP-GAP ID を記録する。
+
+### ACP gap IDs for adapter work
+
+| Gap ID | Adapter implication | Enforcement default |
+| --- | --- | --- |
+| ACP-GAP-001 | fixture-set work は例を追加・更新できるが、schema Issue が明示するまで raw example は contract ではない。 | report-only |
+| ACP-GAP-002 | report-only normalizer skeleton は raw example を既存 artifact へ routing できるが、新しい claim state を emit しない。 | report-only |
+| ACP-GAP-003 | PR/reviewer surface は missing evidence と gap ID を表示し、通常PRに heavy lane を要求しない。 | report-only |
+| ACP-GAP-004 | Policy Gate integration は enforcement rule 追加前に normalized finding を context として消費できる。 | report-only |
+| ACP-GAP-006 | vendor-specific raw API は adapter contract の外側に置き、output type により既存 artifact へ routing する。 | out of scope |
 
 ### Non-goals
 
