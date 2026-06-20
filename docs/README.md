@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-05-09'
+lastVerified: '2026-06-20'
 ---
 
 # 📚 ae-framework Documentation / ドキュメント
@@ -11,7 +11,7 @@ lastVerified: '2026-05-09'
 
 ## English
 
-Comprehensive documentation for the agent-neutral assurance control plane for agent-driven SDLC.
+Comprehensive documentation for the agent-neutral assurance control plane for agent-driven SDLC. Bring your own agent; use these docs to keep specifications, evidence artifacts, policy gates, and release judgments under one stable assurance plane.
 
 ### Trust tiers
 
@@ -22,7 +22,7 @@ Comprehensive documentation for the agent-neutral assurance control plane for ag
 See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 
 ### Recommended first reading
-- Assurance control plane positioning: `product/ASSURANCE-CONTROL-PLANE.md`, `product/ASSURANCE-CONTROL-PLANE-POLICY.md`, `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
+- Assurance control plane positioning: start with `product/ASSURANCE-CONTROL-PLANE.md`, then use `product/ASSURANCE-CONTROL-PLANE-POLICY.md` and `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md` to align BYO-agent adoption.
 - System overview (implementation-aligned): `architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Product summary: `product/OVERVIEW.md`, `product/DETAIL.md`, `product/USER-MANUAL.md`
 - Quick activation path: `getting-started/QUICK-START-GUIDE.md`
@@ -293,7 +293,7 @@ front matter の仕様と lint ルールは `reference/DOC-GOVERNANCE.md` を参
 
 ## 🚀 はじめに
 
-ae-framework は、エージェント協調型SDLCのためのエージェント非依存な assurance control plane です。Codex、Claude Code、GitHub Copilot、人間、MCP server、CI job は producer であり、ae-framework は要件→仕様→検証→証跡→policy gate→merge/release 判断を同じ契約で束ねます。
+ae-framework は、エージェント協調型SDLCのためのエージェント非依存な assurance control plane です。Codex、Claude Code、GitHub Copilot、Gemini系tool、人間、MCP server、CI job は交換可能な producer であり、ae-framework は要件→仕様→検証→証跡→policy gate→merge/release 判断を同じ契約で束ねます。Bring your own agent; keep your assurance plane.
 
 ## 📖 ドキュメント構成
 
@@ -310,6 +310,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
 - [POSITIONING.md](./product/POSITIONING.md) - 類似ツールとの棲み分け・導入指針
 - [ASSURANCE-CONTROL-PLANE.md](./product/ASSURANCE-CONTROL-PLANE.md) - assurance control plane としての価値定義
+- [ASSURANCE-CONTROL-PLANE-POLICY.md](./product/ASSURANCE-CONTROL-PLANE-POLICY.md) - BYO-agent / producer boundary / judgment contract のcanonical policy
 - [AGENT-NEUTRAL-ASSURANCE-ROADMAP.md](./product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md) - BYO-agent assurance control plane の実行ロードマップ
 - [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性
 

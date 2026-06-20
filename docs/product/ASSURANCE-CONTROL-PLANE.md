@@ -4,7 +4,7 @@ canonicalSource:
 - docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
 - docs/quality/ASSURANCE-MODEL.md
 - docs/architecture/CURRENT-SYSTEM-OVERVIEW.md
-lastVerified: '2026-06-05'
+lastVerified: '2026-06-20'
 ---
 # Assurance Control Plane
 
@@ -17,7 +17,7 @@ lastVerified: '2026-06-05'
 Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`. The 90-day implementation sequence is tracked in `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`. This overview is derived from the policy and current architecture; use the policy for implementation decisions.
 
 ### 1. Definition
-This document defines ae-framework as an agent-neutral assurance control plane that sits on top of BYO agents, human maintainers, CI jobs, and verification tools.
+This document defines ae-framework as an agent-neutral assurance control plane that sits on top of BYO agents, human maintainers, CI jobs, and verification tools. The product thesis is: bring your own agent, keep the assurance plane.
 
 Here, “control plane” means the layer that keeps the following under a consistent contract:
 - specification
@@ -52,10 +52,10 @@ The center of value is not an isolated code-generation feature. In the current i
 
 | Category | Examples | Primary responsibility |
 | --- | --- | --- |
-| Producer | Codex, Claude Code, GitHub Copilot, human maintainers, test runners, TLA/Alloy/SMT/CSP/Lean tools | generate code, specifications, review comments, and raw verification results |
+| Producer | Codex, Claude Code, GitHub Copilot, Gemini-family coding tools, human maintainers, test runners, TLA/Alloy/SMT/CSP/Lean tools | generate code, specifications, review comments, and raw verification results |
 | Assurance control plane | Context Pack, `verify-lite`, formal aggregate, `policy-gate`, change package | collect outputs, validate contracts, and convert results into judgment artifacts |
 
-Because of this separation, teams can replace the underlying agents or solvers while keeping the judgment-side contracts stable.
+Because of this separation, teams can replace the underlying agents or solvers while keeping the judgment-side contracts stable. Producer output is raw input to the control plane, not a release judgment by itself.
 
 #### 4.1 Context Pack as design SSOT
 Context Pack is the design SSOT/input contract for agent-driven SDLC. It fixes the specification fragments, implementation boundaries, acceptance tests, and traceability anchors that producers should read before generating or reviewing code. It is not a vendor-specific prompt or a disposable code-generation input.
@@ -148,7 +148,7 @@ Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`。90日実装
 
 ## 1. 定義
 
-本資料では、ae-framework を **BYO-agent、人間のmaintainer、CI job、検証toolの上に載る、エージェント非依存の assurance control plane** と定義します。
+本資料では、ae-framework を **BYO-agent、人間のmaintainer、CI job、検証toolの上に載る、エージェント非依存の assurance control plane** と定義します。Product thesis は `Bring your own agent. Keep your assurance plane.` です。
 
 ここでいう control plane とは、次を一貫した契約で束ねる層です。
 
@@ -185,10 +185,10 @@ Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`。90日実装
 
 | 区分 | 例 | 主責務 |
 | --- | --- | --- |
-| Producer | Codex、Claude Code、GitHub Copilot、人間のmaintainer、test runner、TLA/Alloy/SMT/CSP/Lean ツール | コード、仕様、review comment、検証結果を生成する |
+| Producer | Codex、Claude Code、GitHub Copilot、Gemini系coding tool、人間のmaintainer、test runner、TLA/Alloy/SMT/CSP/Lean ツール | コード、仕様、review comment、検証結果を生成する |
 | Assurance control plane | Context Pack, verify-lite, formal aggregate, policy gate, change package | 結果を収集し、契約検証し、判断用 artifact に変換する |
 
-この分離により、基礎となる agent や solver が変わっても、判断面の契約を継続利用できます。
+この分離により、基礎となる agent や solver が変わっても、判断面の契約を継続利用できます。Producer output は control plane への raw input であり、それ自体は release judgment ではありません。
 
 ### 4.1 design SSOTとしてのContext Pack
 Context Pack は agent-driven SDLC の design SSOT / input contract です。producer がコード生成やreviewを行う前に参照すべき仕様断片、実装境界、acceptance tests、traceability anchor を固定します。vendor固有のpromptや一時的なcode generation inputではありません。
