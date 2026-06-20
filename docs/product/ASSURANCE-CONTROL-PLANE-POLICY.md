@@ -15,7 +15,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ### 1. Purpose
 
-This policy is the canonical product decision record for ae-framework as an agent-neutral assurance control plane. It is written for human maintainers and Codex-driven work so that future implementation issues strengthen judgment-side assurance instead of rebuilding a coding-agent harness. The product thesis is: bring your own agent, keep the assurance plane.
+This policy is the canonical product decision record for ae-framework as an agent-neutral assurance control plane. It is written for human maintainers and Codex-driven work so that future implementation issues strengthen judgment-side assurance instead of rebuilding a coding-agent harness. The product thesis is `Bring your own agent. Keep your assurance plane.`
 
 Use this document with:
 

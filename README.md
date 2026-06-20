@@ -126,7 +126,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 
 ae-framework は **エージェント協調型SDLCのための、エージェント非依存の assurance control plane** です。coding agent、人間のmaintainer、CI job、formal tool は変更やraw signalを生成する producer であり、ae-framework はその変更を信頼して merge / release できるかを、仕様・検証・証跡・policy gate・release judgment に基づいて判断可能にします。
 
-**Product thesis**: Bring your own agent. Keep your assurance plane. Codex、Claude Code、GitHub Copilot、Gemini系coding tool、人間のmaintainer、CI job、formal tool は交換可能な producer であり、ae-framework は producer の選択に依存しない judgment artifact、policy gate、release decision を維持します。
+**Product thesis**: Bring your own agent. Keep your assurance plane. Codex、Claude Code、GitHub Copilot、Gemini系tool、人間のmaintainer、CI job、formal tool は交換可能な producer であり、ae-framework は producer の選択に依存しない judgment artifact、policy gate、release decision を維持します。
 
 ### 二層モデル
 

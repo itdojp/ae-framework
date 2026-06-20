@@ -17,7 +17,7 @@ lastVerified: '2026-06-20'
 Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`. The 90-day implementation sequence is tracked in `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`. This overview is derived from the policy and current architecture; use the policy for implementation decisions.
 
 ### 1. Definition
-This document defines ae-framework as an agent-neutral assurance control plane that sits on top of BYO agents, human maintainers, CI jobs, and verification tools. The product thesis is: bring your own agent, keep the assurance plane.
+This document defines ae-framework as an agent-neutral assurance control plane that sits on top of BYO agents, human maintainers, CI jobs, and verification tools. The product thesis is `Bring your own agent. Keep your assurance plane.`
 
 Here, “control plane” means the layer that keeps the following under a consistent contract:
 - specification
