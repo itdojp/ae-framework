@@ -1,0 +1,101 @@
+{
+  "fixtureKind": "raw-agent-output-example",
+  "fixturePurpose": "Documentation-only example for ACP-GAP-001; this file is not a production schema and does not bypass artifact validation.",
+  "capturedAt": "2026-06-20T00:00:00Z",
+  "producer": {
+    "id": "claude-code",
+    "displayName": "Claude Code task",
+    "category": "local-or-hosted-agent",
+    "trustBoundary": "Claude Code task output is producer input. Repository validation, reviewer disposition, and schema-backed artifacts remain authoritative."
+  },
+  "source": {
+    "router": "CLAUDE.md",
+    "entrypoint": "Claude Code task in a dedicated repository worktree",
+    "handoffSurface": "Task response, tool log summary, and continuation notes"
+  },
+  "rawSignals": [
+    {
+      "kind": "tool-log-summary",
+      "value": "Read target files, edited implementation, and ran a focused test suite.",
+      "rawAssertionBoundary": "Tool log summary is not sufficient evidence until the main agent inspects the diff and validates commands."
+    },
+    {
+      "kind": "continuation-note",
+      "value": "Full build and PR review remain pending.",
+      "rawAssertionBoundary": "Continuation notes should be routed to ae-handoff/v1 and hook-feedback/v1."
+    },
+    {
+      "kind": "risk-note",
+      "value": "One broader validation command was not run in the producer session.",
+      "rawAssertionBoundary": "Missing validation remains unresolved until a reviewer or CI supplies evidence."
+    }
+  ],
+  "changedFiles": [
+    {
+      "path": "src/example.ts",
+      "role": "producer-touched source file",
+      "expectedArtifact": "change-package/v2"
+    },
+    {
+      "path": "tests/example.test.ts",
+      "role": "producer-touched test file",
+      "expectedArtifact": "change-package/v2"
+    }
+  ],
+  "commands": [
+    {
+      "command": "pnpm -s exec vitest run tests/example.test.ts --reporter dot",
+      "status": "passed",
+      "evidenceUse": "Focused behavior evidence; broader validation may still be missing."
+    },
+    {
+      "command": "pnpm -s run build",
+      "status": "not-run-in-producer-output",
+      "evidenceUse": "Missing command should be surfaced as hook-feedback/v1 or PR-body note."
+    }
+  ],
+  "claimsMentioned": [
+    {
+      "claimId": "focused-test-covered-edited-path",
+      "rawAssertion": "The focused test suite covers the changed behavior.",
+      "targetArtifact": "claim-evidence-manifest/v1",
+      "expectedClaimStatus": "partial",
+      "supportingEvidence": [
+        "focused vitest command"
+      ],
+      "controlPlaneBoundary": "A focused test can support a claim but does not prove the full product state."
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "artifact": "ae-handoff/v1",
+      "purpose": "Preserve files touched, completed steps, unresolved risks, and next decisions.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "hook-feedback/v1",
+      "purpose": "Tell the producer or main agent that broader validation remains missing.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "change-package/v2",
+      "purpose": "Normalize changed-file scope after the main agent validates the diff.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "claim-evidence-manifest/v1",
+      "purpose": "Represent any supported or unresolved claims using existing claim status vocabulary.",
+      "requiredForThisFixture": false
+    }
+  ],
+  "knownGaps": [
+    {
+      "gapId": "ACP-GAP-001",
+      "summary": "The fixture documents example raw signals without making Claude Code output a contract."
+    },
+    {
+      "gapId": "ACP-GAP-002",
+      "summary": "A future report-only normalizer can map this shape to handoff and feedback artifacts."
+    }
+  ]
+}

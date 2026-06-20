@@ -49,6 +49,17 @@ Use this document with:
 5. `proved`, `model-checked`, `tested`, `runtime-mitigated`, `waived`, and `unresolved` remain distinct claim states.
 6. New producers should start report-only unless a policy, label, or risk profile explicitly selects enforcement.
 
+### Fixture examples
+
+Raw producer examples live under `fixtures/agents/evidence-adapters/` and remain non-contractual ACP-GAP-001 examples. They use the common documentation-only fields `producer`, `source`, `rawSignals`, `changedFiles`, `commands`, `claimsMentioned`, `expectedArtifacts`, and `knownGaps` so reviewers can see which existing artifact a future adapter should populate.
+
+| Producer | Fixture example | Expected routing |
+| --- | --- | --- |
+| Codex CLI local task | `fixtures/agents/evidence-adapters/codex-cli-task-output.json` | `change-package/v2`, `claim-evidence-manifest/v1`, `ae-handoff/v1`, `hook-feedback/v1` |
+| Claude Code task | `fixtures/agents/evidence-adapters/claude-code-task-output.json` | `ae-handoff/v1`, `hook-feedback/v1`, `change-package/v2`, optional `claim-evidence-manifest/v1` |
+| GitHub Copilot PR review/agent | `fixtures/agents/evidence-adapters/copilot-pr-review-output.json` | `policy-decision/v1`, optional `change-package/v2`, optional `hook-feedback/v1` |
+| Human maintainer | `fixtures/agents/evidence-adapters/human-waiver-review-output.json` | `change-package/v2`, `policy-decision/v1`, `claim-evidence-manifest/v1` waiver entries |
+
 ### Artifact routing quick reference
 
 | Need | Prefer this artifact | Notes |
@@ -99,6 +110,17 @@ Use this document with:
 4. Code generation、agent review、formal proof、CI execution は別々の producer lane であり、混同しません。
 5. `proved`、`model-checked`、`tested`、`runtime-mitigated`、`waived`、`unresolved` は別状態として扱います。
 6. 新しい producer は、policy / label / risk profile が enforcement を選ぶまで report-only から始めます。
+
+### Fixture examples
+
+Raw producer example は `fixtures/agents/evidence-adapters/` 配下に置き、ACP-GAP-001 の非 contract fixture として扱います。各 fixture は `producer`、`source`、`rawSignals`、`changedFiles`、`commands`、`claimsMentioned`、`expectedArtifacts`、`knownGaps` という documentation-only の共通 field を持ち、将来 adapter がどの既存 artifact を populate すべきかを review 可能にします。
+
+| Producer | Fixture example | Expected routing |
+| --- | --- | --- |
+| Codex CLI local task | `fixtures/agents/evidence-adapters/codex-cli-task-output.json` | `change-package/v2`, `claim-evidence-manifest/v1`, `ae-handoff/v1`, `hook-feedback/v1` |
+| Claude Code task | `fixtures/agents/evidence-adapters/claude-code-task-output.json` | `ae-handoff/v1`, `hook-feedback/v1`, `change-package/v2`, optional `claim-evidence-manifest/v1` |
+| GitHub Copilot PR review/agent | `fixtures/agents/evidence-adapters/copilot-pr-review-output.json` | `policy-decision/v1`, optional `change-package/v2`, optional `hook-feedback/v1` |
+| Human maintainer | `fixtures/agents/evidence-adapters/human-waiver-review-output.json` | `change-package/v2`, `policy-decision/v1`, `claim-evidence-manifest/v1` waiver entries |
 
 ### Artifact routing quick reference
 

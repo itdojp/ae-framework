@@ -1,0 +1,107 @@
+{
+  "fixtureKind": "raw-agent-output-example",
+  "fixturePurpose": "Documentation-only example for ACP-GAP-001; this file is not a production schema and does not bypass artifact validation.",
+  "capturedAt": "2026-06-20T00:00:00Z",
+  "producer": {
+    "id": "codex-cli",
+    "displayName": "Codex CLI local task",
+    "category": "local-agent",
+    "trustBoundary": "Local workspace, configured sandbox, and tool permissions are producer-side. The control plane trusts only reviewed diffs, validation evidence, and schema-backed artifacts."
+  },
+  "source": {
+    "issue": "https://github.com/itdojp/ae-framework/issues/3482",
+    "entrypoint": "codex exec --cd <repo> --sandbox workspace-write --ask-for-approval never - < .codex-local/tasks/issue-3482.md",
+    "workspacePolicy": "Keep work under the declared repository or dedicated worktree; do not stage .codex-local/tasks/."
+  },
+  "rawSignals": [
+    {
+      "kind": "task-summary",
+      "value": "Added fixture examples and updated evidence-adapter documentation.",
+      "rawAssertionBoundary": "Producer-authored summary; reviewers must verify the diff and command evidence before accepting the claim."
+    },
+    {
+      "kind": "validation-result",
+      "value": "pnpm -s run check:doc-consistency passed",
+      "rawAssertionBoundary": "Command result should be recorded as evidence and, where applicable, linked from claim-evidence-manifest/v1."
+    },
+    {
+      "kind": "open-question",
+      "value": "No schema added for raw agent output in this slice.",
+      "rawAssertionBoundary": "Use ACP-GAP-001/002 rather than introducing a new guarantee vocabulary."
+    }
+  ],
+  "changedFiles": [
+    {
+      "path": "fixtures/agents/evidence-adapters/codex-cli-task-output.json",
+      "role": "raw fixture example",
+      "expectedArtifact": "change-package/v2"
+    },
+    {
+      "path": "docs/agents/evidence-adapters.md",
+      "role": "mapping documentation",
+      "expectedArtifact": "change-package/v2"
+    }
+  ],
+  "commands": [
+    {
+      "command": "python -m json.tool fixtures/agents/evidence-adapters/codex-cli-task-output.json",
+      "status": "passed",
+      "evidenceUse": "JSON syntax evidence only; not contract validation."
+    },
+    {
+      "command": "pnpm -s run check:doc-consistency",
+      "status": "passed",
+      "evidenceUse": "Documentation consistency evidence for the change package."
+    },
+    {
+      "command": "pnpm -s run check:schemas",
+      "status": "not-run-in-producer-output",
+      "evidenceUse": "If omitted, hook-feedback/v1 should report missing broader schema validation."
+    }
+  ],
+  "claimsMentioned": [
+    {
+      "claimId": "agent-output-fixtures-document-routing-only",
+      "rawAssertion": "The fixture examples document routing and do not create a new raw-output contract.",
+      "targetArtifact": "claim-evidence-manifest/v1",
+      "expectedClaimStatus": "tested",
+      "supportingEvidence": [
+        "json.tool syntax checks",
+        "check:doc-consistency"
+      ],
+      "controlPlaneBoundary": "The Codex conclusion is not proof; the claim status depends on reviewed evidence."
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "artifact": "change-package/v2",
+      "purpose": "Summarize changed files, scope, evidence, and reviewability for the PR.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "claim-evidence-manifest/v1",
+      "purpose": "Connect claims to command evidence without treating the Codex summary as proof.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "ae-handoff/v1",
+      "purpose": "Carry continuation context if the task pauses before PR review or CI completion.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "hook-feedback/v1",
+      "purpose": "Return missing validation or unresolved review blockers to the producer.",
+      "requiredForThisFixture": false
+    }
+  ],
+  "knownGaps": [
+    {
+      "gapId": "ACP-GAP-001",
+      "summary": "Raw producer examples are descriptive fixtures, not mandatory schemas."
+    },
+    {
+      "gapId": "ACP-GAP-002",
+      "summary": "Report-only normalizer skeleton is not implemented in this fixture-only slice."
+    }
+  ]
+}
