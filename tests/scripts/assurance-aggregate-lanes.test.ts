@@ -635,6 +635,104 @@ describe.sequential('assurance aggregate lanes script', () => {
     }
   });
 
+  it('counts policy-decision waiver claims when no claim-evidence manifest is provided', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-review-policy-only-waiver-'));
+    const assuranceProfilePath = join(sandbox, 'assurance-profile.json');
+    const contextPackPath = join(sandbox, 'context-pack.json');
+    const policyDecisionPath = join(sandbox, 'policy-decision.json');
+    const outputJson = join(sandbox, 'assurance-summary.json');
+    const outputMd = join(sandbox, 'assurance-summary.md');
+
+    try {
+      writeJson(assuranceProfilePath, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'policy-only-waiver-profile',
+        claims: [],
+      });
+      writeJson(contextPackPath, {
+        schemaVersion: 'context-pack/v1',
+        assurance: {
+          profile: 'policy-only-waiver-profile',
+          claim_refs: [],
+        },
+      });
+      writeJson(policyDecisionPath, {
+        schemaVersion: '1.0.0',
+        evaluation: {
+          ok: true,
+          assurance: {
+            mode: 'report-only',
+            result: 'waived',
+            summary: {
+              totalClaims: 1,
+              pass: 0,
+              waived: 1,
+              reportOnly: 0,
+              block: 0,
+              activeWaivers: 1,
+              expiringSoonWaivers: 0,
+              expiredWaivers: 0,
+              orphanWaivers: 0,
+            },
+            claims: [],
+            waivers: [
+              {
+                id: 'waiver-policy-only-001',
+                claimId: 'policy-only-waiver-claim',
+                status: 'active',
+                owner: '@team-risk',
+                expires: '2026-07-31',
+                reason: 'Policy decision records waiver before claim-evidence manifest exists.',
+              },
+            ],
+          },
+        },
+      });
+
+      const result = runScript([
+        '--assurance-profile',
+        assuranceProfilePath,
+        '--context-pack',
+        contextPackPath,
+        '--policy-decision',
+        policyDecisionPath,
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const summary = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(summary.reviewSurface).toMatchObject({
+        summary: {
+          manifestClaimStatusCounts: {
+            waived: 0,
+          },
+          waivedClaims: 1,
+          activeWaivers: 1,
+        },
+        recommendedReviewerAction: {
+          action: 'review-waivers',
+        },
+        waivers: {
+          claims: ['policy-only-waiver-claim'],
+          waiverRefs: [
+            expect.objectContaining({
+              id: 'waiver-policy-only-001',
+              claimId: 'policy-only-waiver-claim',
+              status: 'active',
+              source: 'policy-decision',
+            }),
+          ],
+        },
+      });
+      expect(readFileSync(outputMd, 'utf8')).toContain('- waivedClaims: 1');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('treats assumption validation requirements as claim warnings', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-aggregate-assumption-warning-'));
     const assuranceProfilePath = join(sandbox, 'assurance-profile.json');

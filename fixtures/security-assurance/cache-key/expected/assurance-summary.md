@@ -14,6 +14,7 @@
 - manifestClaims: satisfied=0, partial=0, waived=0, unresolved=0, failed=0
 - assuranceSummaryClaims: satisfied=0, warning=3
 - missingEvidenceClaims: 0
+- waivedClaims: 0
 - activeWaivers: 0
 - producerSignals: not-provided (reportOnlyFindings=0, missingEvidence=0)
 - boundaryMap: not-provided (findings=0)

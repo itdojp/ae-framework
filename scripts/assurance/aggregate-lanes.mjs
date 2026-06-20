@@ -736,6 +736,10 @@ const buildReviewSurface = ({ summary, options, producerSummaryInputs, boundaryM
     policyDecision,
     residualRisks,
   });
+  const waivedClaims = Math.max(
+    claimEvidence.manifestStatusCounts.waived,
+    waivers.claims.length,
+  );
 
   return {
     schemaVersion: 'assurance-review-surface/v1',
@@ -744,7 +748,7 @@ const buildReviewSurface = ({ summary, options, producerSummaryInputs, boundaryM
       assuranceClaimStatusCounts: claimEvidence.assuranceStatusCounts,
       manifestClaimStatusCounts: claimEvidence.manifestStatusCounts,
       unresolvedClaims: claimEvidence.unresolvedClaims.length,
-      waivedClaims: claimEvidence.manifestStatusCounts.waived,
+      waivedClaims,
       missingEvidenceClaims: claimEvidence.missingEvidenceClaims.length,
       activeWaivers: waivers.active,
       producerReportOnlyFindings: producerSignals.reportOnlyFindings,
@@ -1476,6 +1480,7 @@ const buildMarkdown = (summary) => {
       `- manifestClaims: satisfied=${surface.summary.manifestClaimStatusCounts.satisfied}, partial=${surface.summary.manifestClaimStatusCounts.partial}, waived=${surface.summary.manifestClaimStatusCounts.waived}, unresolved=${surface.summary.manifestClaimStatusCounts.unresolved}, failed=${surface.summary.manifestClaimStatusCounts.failed}`,
       `- assuranceSummaryClaims: satisfied=${surface.summary.assuranceClaimStatusCounts.satisfied}, warning=${surface.summary.assuranceClaimStatusCounts.warning}`,
       `- missingEvidenceClaims: ${surface.summary.missingEvidenceClaims}`,
+      `- waivedClaims: ${surface.summary.waivedClaims}`,
       `- activeWaivers: ${surface.summary.activeWaivers}`,
       `- producerSignals: ${surface.producerSignals.status} (reportOnlyFindings=${surface.producerSignals.reportOnlyFindings}, missingEvidence=${surface.producerSignals.missingEvidence})`,
       `- boundaryMap: ${surface.boundaryMap.status} (findings=${surface.boundaryMap.totalFindings})`,
