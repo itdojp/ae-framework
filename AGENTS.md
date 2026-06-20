@@ -22,7 +22,7 @@ lastVerified: '2026-03-09'
 | GitHub Actions修正 | `.github/workflows/*.yml` | `printf`運用・権限境界・再現性 | `actionlint` / 対象workflow結果 |
 | Slash Command運用 | `.github/workflows/agent-commands.yml` | 受理コマンド・付与ラベルの実装値 | PRコメント / 付与ラベル |
 | 形式手法・仕様検証 | `docs/quality/formal-runbook.md` | 実行対象（TLA+/CSP/Lean/Alloy等）と証跡 | `artifacts/formal/*` |
-| GitHub IssueをCodex CLIで処理 | `docs/integrations/CODEX-ISSUE-RUNBOOK.md` | Issue本文、target files、validation commandを作業入力として固定したか | PR本文 / review completeness / required checks |
+| GitHub IssueをCodex CLIで処理 | `docs/integrations/CODEX-ISSUE-RUNBOOK.md` / `docs/spec/context-pack.md` / `spec/context-pack/boundary-map.json` | Issue本文、target files、validation commandを固定し、Context Pack preflight で矛盾時に停止するか | PR本文 / Context Pack conflict 記録 / review completeness / required checks |
 | Context Pack / design SSOT に関わる変更 | `docs/spec/context-pack.md` / `spec/context-pack/boundary-map.json` | 要求変更が design SSOT、boundary map、acceptance tests と矛盾しないか | `context-pack:validate` / `context-pack:verify-boundary-map` / `context-pack:deps` |
 | Producer outputのartifact接続 | `docs/agents/agent-producer-matrix.md` / `docs/agents/evidence-adapters.md` | producer outputをどのjudgment artifactへ正規化するか | Contract Catalog / schema validation / PR summary |
 | Multi-agent / subagent 運用 | `docs/agents/multi-agent-safety.md` | repo 共有作業か、専用worktree分離が必要か | `git status` / `git worktree list` / 差分確認 |

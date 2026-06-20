@@ -37,11 +37,11 @@ Context Pack v1 は、AI/人間が共有する **design SSOT（single source of 
 
 ### Codex prompt snippet
 ```text
-Before changing code, read the Context Pack and boundary map. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop and report the conflict instead of silently editing code.
+Before changing code, read the Context Pack, boundary map, and acceptance tests relevant to the Issue target files. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop before implementation and report `Context Pack conflict: found`; otherwise record `Context Pack conflict: none` in the PR body. Do not add MBT, property, or formal lanes for routine changes unless the Issue, risk label, assurance profile, or critical-core boundary requires them.
 ```
 
 ```text
-コードを変更する前に、Context Pack と boundary map を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、無言でコードを編集せず、作業を止めて矛盾点を報告してください。
+コードを変更する前に、Issue target files に関係する Context Pack、boundary map、acceptance tests を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、実装前に停止して `Context Pack conflict: found` を報告し、矛盾がない場合は PR body に `Context Pack conflict: none` を記録してください。Issue、risk label、assurance profile、critical-core boundary が要求しない限り、通常変更に MBT / property / formal lane を追加しないでください。
 ```
 
 ### 関連ドキュメント
@@ -557,11 +557,11 @@ Context Pack v1 is the **design SSOT (single source of truth)** input contract s
 
 ### Codex prompt snippet
 ```text
-Before changing code, read the Context Pack and boundary map. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop and report the conflict instead of silently editing code.
+Before changing code, read the Context Pack, boundary map, and acceptance tests relevant to the Issue target files. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop before implementation and report `Context Pack conflict: found`; otherwise record `Context Pack conflict: none` in the PR body. Do not add MBT, property, or formal lanes for routine changes unless the Issue, risk label, assurance profile, or critical-core boundary requires them.
 ```
 
 ```text
-コードを変更する前に、Context Pack と boundary map を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、無言でコードを編集せず、作業を止めて矛盾点を報告してください。
+コードを変更する前に、Issue target files に関係する Context Pack、boundary map、acceptance tests を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、実装前に停止して `Context Pack conflict: found` を報告し、矛盾がない場合は PR body に `Context Pack conflict: none` を記録してください。Issue、risk label、assurance profile、critical-core boundary が要求しない限り、通常変更に MBT / property / formal lane を追加しないでください。
 ```
 
 ### Related docs
