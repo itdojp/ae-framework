@@ -58,6 +58,8 @@ describe('context-pack boundary map validate CLI', () => {
 
   const reportJsonPath = () => join(reportDir, 'context-pack-boundary-map-report.json');
   const reportMarkdownPath = () => join(reportDir, 'context-pack-boundary-map-report.md');
+  const summaryJsonPath = () => join(reportDir, 'boundary-map-summary.json');
+  const summaryMarkdownPath = () => join(reportDir, 'boundary-map-summary.md');
 
   const runVerify = () =>
     spawnSync(
@@ -72,6 +74,10 @@ describe('context-pack boundary map validate CLI', () => {
         reportJsonPath(),
         '--report-md',
         reportMarkdownPath(),
+        '--summary-json',
+        summaryJsonPath(),
+        '--summary-md',
+        summaryMarkdownPath(),
       ],
       {
         cwd: workdir,
@@ -142,6 +148,18 @@ describe('context-pack boundary map validate CLI', () => {
     expect(report.summary.totalViolations).toBe(0);
     expect(report.checkedSlices).toBe(2);
     expect(report.checkedConsumes).toBe(2);
+
+    const summary = JSON.parse(await readFile(summaryJsonPath(), 'utf8'));
+    expect(summary.schemaVersion).toBe('context-pack-boundary-map-summary/v1');
+    expect(summary.status).toBe('ok');
+    expect(summary.reviewStatus).toBe('boundary map ok');
+    expect(summary.evidenceKind).toBe('design-boundary');
+    expect(summary.defaultDecision).toBe('no-drift-evidence');
+    expect(summary.reviewEvidence).toHaveLength(0);
+
+    const markdown = await readFile(summaryMarkdownPath(), 'utf8');
+    expect(markdown).toContain('Status: boundary map ok');
+    expect(markdown).toContain('No boundary map drift detected.');
   });
 
   it('fails when a consumed ref has no upstream producer', async () => {
@@ -182,6 +200,31 @@ describe('context-pack boundary map validate CLI', () => {
     expect(report.status).toBe('fail');
     expect(report.summary.missingUpstreamProducers).toBe(1);
     expect(report.violations.some((entry: { type: string }) => entry.type === 'boundary-upstream-producer-missing')).toBe(true);
+
+    const summary = JSON.parse(await readFile(summaryJsonPath(), 'utf8'));
+    expect(summary.status).toBe('drift');
+    expect(summary.reviewStatus).toBe('boundary map drift');
+    expect(summary.defaultDecision).toBe('report-only-evidence-gap');
+    expect(summary.interpretation).toContain('not proof evidence');
+    expect(summary.policyEscalation.candidateBlockingConditions).toContain('risk:high');
+    expect(summary.reviewEvidence).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: 'boundary-upstream-producer-missing',
+          file: 'spec/context-pack/boundary-map.json',
+          slice: 'reservation-flow',
+          ref: { kind: 'object', refId: 'InventoryItem' },
+          expectedOwner: 'upstream-placeholder',
+          observedDependency: 'no slice produces the ref',
+        }),
+      ]),
+    );
+
+    const markdown = await readFile(summaryMarkdownPath(), 'utf8');
+    expect(markdown).toContain('Status: boundary map drift');
+    expect(markdown).toContain('design-boundary evidence');
+    expect(markdown).toContain('upstream-placeholder');
+    expect(markdown).toContain('no slice produces the ref');
   });
 
   it('fails when a consumed ref points to a missing upstream slice', async () => {
@@ -293,6 +336,10 @@ describe('context-pack boundary map validate CLI', () => {
     expect(report.status).toBe('fail');
     expect(report.scannedContextPackFiles).toBe(0);
     expect(report.violations.some((entry: { type: string }) => entry.type === 'context-pack-sources-empty')).toBe(true);
+
+    const summary = JSON.parse(await readFile(summaryJsonPath(), 'utf8'));
+    expect(summary.status).toBe('unresolved');
+    expect(summary.reviewStatus).toBe('boundary map unresolved');
   });
 
   it('counts auxiliary context-pack sidecars as skipped files', async () => {
@@ -329,6 +376,46 @@ describe('context-pack boundary map validate CLI', () => {
     expect(report.status).toBe('pass');
     expect(report.scannedContextPackFiles).toBe(1);
     expect(report.skippedAuxiliaryFiles).toBe(1);
+  });
+
+  it('marks the summary unresolved when only auxiliary context-pack sidecars are scanned', async () => {
+    await writeFile(
+      join(contextPackDir, 'functor-map.json'),
+      `${JSON.stringify(
+        {
+          schemaVersion: 'context-pack-functor-map/v1',
+          contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+          objects: [{ id: 'InventoryItem', moduleGlobs: ['src/domain/**/*.ts'] }],
+          morphisms: [{ id: 'ReserveInventory', entrypoints: [{ file: 'src/domain/services.ts' }] }],
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+    await writeMap({
+      schemaVersion: 'context-pack-boundary-map/v1',
+      contextPackSources: ['spec/context-pack/functor-map.json'],
+      slices: [
+        {
+          id: 'inventory-item-model',
+          produces: [{ kind: 'object', refId: 'InventoryItem' }],
+        },
+      ],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.scannedContextPackFiles).toBe(0);
+    expect(report.skippedAuxiliaryFiles).toBe(1);
+    expect(report.summary.missingContextPackRefs).toBe(1);
+
+    const summary = JSON.parse(await readFile(summaryJsonPath(), 'utf8'));
+    expect(summary.status).toBe('unresolved');
+    expect(summary.reviewStatus).toBe('boundary map unresolved');
+    expect(summary.statusReason).toContain('could not produce a complete drift judgment');
   });
 
   it('escapes backslashes in markdown report cells', async () => {

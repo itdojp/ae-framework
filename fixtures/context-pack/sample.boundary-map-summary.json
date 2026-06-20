@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "context-pack-boundary-map-summary/v1",
+  "generatedAt": "2026-06-20T00:00:00.000Z",
+  "status": "drift",
+  "reviewStatus": "boundary map drift",
+  "statusReason": "Boundary Map drift was detected and should be treated as a design-boundary evidence gap, not as a proof failure.",
+  "evidenceKind": "design-boundary",
+  "defaultDecision": "report-only-evidence-gap",
+  "interpretation": "Boundary Map drift is design-boundary evidence. It is not proof evidence and is not a proof failure by itself.",
+  "policyEscalation": {
+    "defaultMode": "report-only",
+    "candidateBlockingConditions": [
+      "risk:high",
+      "enforce-assurance",
+      "critical-core boundary policy"
+    ],
+    "followUpIssue": "#3489"
+  },
+  "source": {
+    "mapPath": "spec/context-pack/boundary-map.json",
+    "schemaPath": "schema/context-pack-boundary-map.schema.json",
+    "reportJsonPath": "artifacts/context-pack/context-pack-boundary-map-report.json",
+    "reportMarkdownPath": "artifacts/context-pack/context-pack-boundary-map-report.md"
+  },
+  "counts": {
+    "scannedContextPackFiles": 1,
+    "skippedAuxiliaryFiles": 0,
+    "checkedSlices": 2,
+    "checkedProduces": 1,
+    "checkedConsumes": 1,
+    "totalFindings": 1,
+    "duplicateSliceIds": 0,
+    "missingContextPackRefs": 0,
+    "duplicateProducedRefs": 0,
+    "missingUpstreamSlices": 0,
+    "missingUpstreamProducers": 1,
+    "cycleViolations": 0
+  },
+  "reviewEvidence": [
+    {
+      "type": "boundary-upstream-producer-missing",
+      "severity": "error",
+      "file": "spec/context-pack/boundary-map.json",
+      "slice": "reservation-flow",
+      "ref": {
+        "kind": "object",
+        "refId": "InventoryItem"
+      },
+      "expectedOwner": "inventory-item-model",
+      "observedDependency": "no slice produces the ref",
+      "message": "slice 'reservation-flow' consumes object 'InventoryItem' from 'inventory-item-model', but no slice produces the ref"
+    }
+  ]
+}
