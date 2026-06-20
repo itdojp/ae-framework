@@ -372,10 +372,30 @@ function mapAssuranceStatus(value, missingCount) {
 }
 
 function mapChangeClaimStatus(claimStatus, assuranceStatus, targetLevel, achievedLevel) {
-  if (claimStatus === 'waived' || assuranceStatus === 'waived') return 'waived';
-  if (claimStatus === 'unresolved' || assuranceStatus === 'unresolved' || assuranceStatus === 'unassessed') return 'unresolved';
-  if (assuranceStatus === 'partial') return 'partial';
-  if (assuranceStatus === 'satisfied') return 'satisfied';
+  const normalizedClaimStatus = String(claimStatus ?? '').trim().toLowerCase();
+  const normalizedAssuranceStatus = String(assuranceStatus ?? '').trim().toLowerCase();
+  if (normalizedClaimStatus === 'waived' || normalizedAssuranceStatus === 'waived') return 'waived';
+  if (
+    normalizedAssuranceStatus === 'failed'
+    || normalizedAssuranceStatus === 'unresolved'
+    || normalizedAssuranceStatus === 'unassessed'
+  ) {
+    return 'unresolved';
+  }
+  if (
+    normalizedClaimStatus === 'runtime-mitigated'
+    || normalizedClaimStatus === 'not-applicable'
+    || normalizedAssuranceStatus === 'not-applicable'
+  ) {
+    return 'partial';
+  }
+  if (
+    ['unresolved', 'failed'].includes(normalizedClaimStatus)
+  ) {
+    return 'unresolved';
+  }
+  if (normalizedAssuranceStatus === 'partial') return 'partial';
+  if (normalizedAssuranceStatus === 'satisfied') return 'satisfied';
   return levelIndex(achievedLevel) >= levelIndex(targetLevel) ? 'satisfied' : 'partial';
 }
 
@@ -752,8 +772,9 @@ function addVerifyLiteEvidenceNotes(claimsById, artifact) {
 function evidenceKindForChangeClaimStatus(status) {
   switch (status) {
     case 'proved':
-    case 'model-checked':
       return 'proof';
+    case 'model-checked':
+      return 'model';
     case 'tested':
       return 'behavior';
     case 'runtime-mitigated':
@@ -896,10 +917,13 @@ function ingestChangePackageV2(claimsById, artifact) {
 
   for (const claim of claimsById.values()) {
     if ((claim.status === 'partial' || claim.status === 'unresolved') && claim.missingEvidenceRefs.length === 0) {
+      const targetReached = levelIndex(claim.achievedLevel) >= levelIndex(claim.targetLevel);
       addMissingEvidence(claim, {
         id: `${sourceArtifactId}:${claim.id}:target-${claim.targetLevel}:achieved-${claim.achievedLevel}`,
         expectedKind: 'other',
-        reason: `achievedLevel ${claim.achievedLevel} is below targetLevel ${claim.targetLevel}; additional evidence is required.`,
+        reason: targetReached
+          ? `claim status ${claim.status} is not satisfied even though achievedLevel ${claim.achievedLevel} reaches targetLevel ${claim.targetLevel}; additional qualifying evidence or an explicit waiver is required.`
+          : `achievedLevel ${claim.achievedLevel} is below targetLevel ${claim.targetLevel}; additional evidence is required.`,
         sourceArtifactId,
       });
     }
@@ -1388,6 +1412,17 @@ function formatAssumptionHandlingForTable(handlingRefs) {
   return rendered.join(', ');
 }
 
+function uniqueSortedStrings(values) {
+  return Array.from(new Set(
+    values.map((value) => String(value ?? '').trim()).filter(Boolean),
+  )).sort((left, right) => left.localeCompare(right));
+}
+
+function formatEvidenceKindsForTable(claim) {
+  const kinds = uniqueSortedStrings(ensureArray(claim.evidenceRefs).map((entry) => entry.kind));
+  return kinds.length > 0 ? kinds.join(', ') : 'n/a';
+}
+
 export function renderClaimEvidenceManifestMarkdown(manifest) {
   const missingEvidence = manifest.claims.flatMap((claim) =>
     claim.missingEvidenceRefs.map((entry) => ({ claimId: claim.id, ...entry })),
@@ -1405,6 +1440,8 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
     `- generatedAt: ${manifest.generatedAt}`,
     `- sourceArtifacts: ${presentSourceCount}/${manifest.sourceArtifacts.length} present`,
     `- claims: ${manifest.summary.totalClaims} total; ${manifest.summary.fullySupported} satisfied, ${manifest.summary.partiallySupported} partial, ${manifest.summary.waived} waived, ${manifest.summary.unresolved} unresolved`,
+    '- status vocabulary: satisfied, partial, waived, unresolved (claim-evidence-manifest/v1 primary status)',
+    '- evidence state guide: behavior=tested, model=model-checked, proof=proved, runtime=runtime-mitigated; evidence kinds do not redefine claim status',
     ...(manifest.summary.security ? [`- securityFindings: ${manifest.summary.security.findings} total; highOrCriticalOpen=${manifest.summary.security.highOrCriticalOpen}, needsHumanReview=${manifest.summary.security.needsHumanReview}, outOfScope=${manifest.summary.security.outOfScope}, rejected=${manifest.summary.security.rejected}, assumptionValidationRequired=${manifest.summary.security.assumptionValidationRequired ?? 0}, assumptionResidualRisk=${manifest.summary.security.assumptionResidualRisk ?? 0}`] : []),
     `- missingEvidenceRefs: ${missingEvidence.length}`,
     `- waiverRefs: ${waivers.length}`,
@@ -1426,7 +1463,7 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
     '## Claims',
     '',
     renderTable(
-      ['claim', 'securityType', 'criticality', 'target', 'achieved', 'status', 'evidence', 'missing', 'waivers', 'assumptionHandling', 'externalIds'],
+      ['claim', 'securityType', 'criticality', 'target', 'achieved', 'status', 'evidenceKinds', 'evidence', 'missing', 'waivers', 'assumptionHandling', 'externalIds'],
       manifest.claims.map((claim) => [
         claim.id,
         claim.securityClaimType ?? 'n/a',
@@ -1434,6 +1471,7 @@ export function renderClaimEvidenceManifestMarkdown(manifest) {
         claim.targetLevel,
         claim.achievedLevel,
         claim.status,
+        formatEvidenceKindsForTable(claim),
         String(claim.evidenceRefs.length),
         String(claim.missingEvidenceRefs.length),
         String(claim.waiverRefs.length),

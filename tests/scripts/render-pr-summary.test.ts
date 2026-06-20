@@ -170,9 +170,9 @@ describe.sequential('render-pr-summary', () => {
               },
             },
             claims: [
-              { id: 'satisfied-claim', missingEvidenceRefs: [], waiverRefs: [] },
-              { id: 'partial-claim', missingEvidenceRefs: [{ id: 'missing-runtime' }], waiverRefs: [] },
-              { id: 'waived-claim', missingEvidenceRefs: [], waiverRefs: [{ id: 'waiver-001' }] },
+              { id: 'satisfied-claim', evidenceRefs: [{ kind: 'behavior' }], missingEvidenceRefs: [], waiverRefs: [] },
+              { id: 'partial-claim', evidenceRefs: [{ kind: 'runtime' }], missingEvidenceRefs: [{ id: 'missing-runtime' }], waiverRefs: [] },
+              { id: 'waived-claim', evidenceRefs: [{ kind: 'manual' }], missingEvidenceRefs: [], waiverRefs: [{ id: 'waiver-001' }] },
             ],
           },
           null,
@@ -184,8 +184,9 @@ describe.sequential('render-pr-summary', () => {
       expect(result.status, result.stderr || result.stdout).toBe(0);
 
       const output = readFileSync(join(sandbox, 'artifacts', 'summary', 'PR_SUMMARY.md'), 'utf8');
-      expect(output).toContain('Claim evidence: satisfied=1/3, partial=1, waived=1, unresolved=0');
+      expect(output).toContain('Claim evidence status: satisfied=1/3 (manifest status, not proof), partial=1, waived=1, unresolved=0');
       expect(output).toContain('Claim evidence refs: missing=1, waivers=1');
+      expect(output).toContain('Claim evidence review states: behavior/tested=1, model/model-checked=0, proof/proved=0, runtime/runtime-mitigated=1');
       expect(output).toContain('Security findings: total=3, needs-human-review=1, high/critical-open=1');
       expect(output).toContain('assumption-validation-required=n/a, assumption-residual-risk=n/a');
     } finally {

@@ -36,6 +36,8 @@ Detailed achieved-level judgement remains a later phase. Default operation stays
 | `proof` | Has the system reached machine-checked proof or equivalence? | Lean, Kani, equivalence proof | `formal-summary` proof entries |
 | `runtime` | Can runtime guards, monitors, and alerts contain residual risk? | runtime conformance, rollout guard, monitor/alert config | runtime conformance summary, runtime control manifests |
 
+Review-state labels map to lanes without changing the manifest status vocabulary: `behavior` displays as `tested`, `model` as `model-checked`, `proof` as `proved`, and `runtime` as `runtime-mitigated`. These labels are not interchangeable. Runtime controls mitigate operational risk, but they do not count as proof or model checking by themselves.
+
 ### 3. Independence rule
 
 ### 3.1 Minimum rule
@@ -158,6 +160,8 @@ Deferred or incomplete:
 | `model` | 状態機械・モデル・規則系の観点で矛盾しないか | conformance, TLA, Alloy, SMT, CSP, SPIN | `formal-summary`, conformance report |
 | `proof` | 機械的 proof / equivalence まで到達しているか | Lean, Kani, equivalence proof | `formal-summary` proof entries |
 | `runtime` | 運用中の guard / monitor / alert で残余リスクを抑制できるか | runtime conformance, rollout guard, monitor/alert config | runtime conformance summary, runtime control manifests |
+
+review state label は manifest status vocabulary を変更せずに lane へ対応付けます。`behavior` は `tested`、`model` は `model-checked`、`proof` は `proved`、`runtime` は `runtime-mitigated` と表示します。これらの label は相互に置換できません。runtime control は operational risk を緩和しますが、それ単体では proof や model checking として扱いません。
 
 ### 3. 独立性ルール
 

@@ -94,6 +94,8 @@ PR and release summaries use a richer per-claim review vocabulary. The canonical
 
 `change-package/v2.claims[].status` is a package / release-decision outcome field. It may retain `satisfied`, `failed`, and `not-applicable` package states for reviewable release packages, but those package states do not redefine `claim-evidence-manifest/v1` claim status or evidence-kind vocabulary.
 
+Manifest and PR-summary displays must label manifest counts as manifest support status, not proof status. When a `change-package/v2` claim is imported, `tested` contributes behavior evidence, `model-checked` contributes model evidence, and `proved` contributes proof evidence. Imported `runtime-mitigated` and `not-applicable` package states remain `partial` manifest support unless another explicit contract migration changes the source vocabulary; imported `failed` package states remain `unresolved`. A waiver stays `waived` only with an explicit waiver reference and must never be displayed as `satisfied`.
+
 `agentPrAssurance.metrics.required_lane_compliance.notApplicable` is separate from the claim-status vocabulary. It is only a metric-level denominator state for "no required lanes"; producers must not emit `not-applicable` as a manifest claim-status value unless the manifest schema and migration policy explicitly allow it.
 
 ### 3. Supporting elements
@@ -240,6 +242,8 @@ PR / release summary は、claim 単位の richer review vocabulary を使いま
 `claim-level-summary/v1` は PR / release projection 用に `satisfied`、`failed`、`not-applicable` なども扱います。これらの projection state は manifest claim-status vocabulary を置き換えるものではありません。
 
 `change-package/v2.claims[].status` は package / release-decision outcome field です。review 可能な release package のために `satisfied`、`failed`、`not-applicable` などの package state を保持できますが、それらは `claim-evidence-manifest/v1` の claim status や evidence-kind vocabulary を再定義しません。
+
+Manifest と PR summary の表示では、manifest count を proof status ではなく manifest support status として明示します。`change-package/v2` claim を取り込む場合、`tested` は behavior evidence、`model-checked` は model evidence、`proved` は proof evidence として扱います。`runtime-mitigated` と `not-applicable` の package state は、source vocabulary を変更する明示的な contract migration がない限り `partial` manifest support のままにし、`failed` package state は `unresolved` のままにします。waiver は明示的な waiver reference がある場合だけ `waived` とし、`satisfied` として表示してはいけません。
 
 `agentPrAssurance.metrics.required_lane_compliance.notApplicable` は claim status vocabulary とは別の概念です。「required lane がない」ことを表す metric-level denominator state に限られ、manifest schema と migration policy が明示的に許可するまで、producer は `not-applicable` を manifest claim-status value として emit してはいけません。
 

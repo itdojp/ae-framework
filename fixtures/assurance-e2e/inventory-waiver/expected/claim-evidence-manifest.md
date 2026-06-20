@@ -4,6 +4,8 @@
 - generatedAt: 2026-05-06T00:00:00.000Z
 - sourceArtifacts: 4/8 present
 - claims: 3 total; 1 satisfied, 1 partial, 1 waived, 0 unresolved
+- status vocabulary: satisfied, partial, waived, unresolved (claim-evidence-manifest/v1 primary status)
+- evidence state guide: behavior=tested, model=model-checked, proof=proved, runtime=runtime-mitigated; evidence kinds do not redefine claim status
 - missingEvidenceRefs: 1
 - waiverRefs: 1
 
@@ -22,11 +24,11 @@
 
 ## Claims
 
-| claim | securityType | criticality | target | achieved | status | evidence | missing | waivers | assumptionHandling | externalIds |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| manual-fraud-review | n/a | medium | A3 | A2 | waived | 3 | 0 | 1 | n/a | n/a |
-| no-negative-balance | n/a | high | A3 | A2 | partial | 5 | 1 | 0 | n/a | n/a |
-| no-negative-stock | n/a | high | A2 | A2 | satisfied | 7 | 0 | 0 | n/a | n/a |
+| claim | securityType | criticality | target | achieved | status | evidenceKinds | evidence | missing | waivers | assumptionHandling | externalIds |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| manual-fraud-review | n/a | medium | A3 | A2 | waived | manual, quality, runtime | 3 | 0 | 1 | n/a | n/a |
+| no-negative-balance | n/a | high | A3 | A2 | partial | adversarial, model, proof, quality | 5 | 1 | 0 | n/a | n/a |
+| no-negative-stock | n/a | high | A2 | A2 | satisfied | adversarial, behavior, model, quality, runtime, spec | 7 | 0 | 0 | n/a | n/a |
 
 ## External IDs
 

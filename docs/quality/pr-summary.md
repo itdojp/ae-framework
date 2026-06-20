@@ -70,7 +70,7 @@ Minimal one-line summary example:
 - Coverage: the current renderer prints only `Coverage: <pct>%` from the coverage summary; `Threshold (effective)`, `Derived`, `Policy`, and `Policy source` belong to the workflow-level coverage comment contract rather than the renderer output contract
 - Discovery Pack: mode, reason, orphan counts, compile counts from `verify-lite-run-summary.json.discoveryPack`
 - Assurance: satisfied claims, warning claims, warning codes from `artifacts/assurance/assurance-summary.json`
-- Claim evidence: per-claim satisfied / partial / waived / unresolved counts and missing / waiver reference counts from `artifacts/assurance/claim-evidence-manifest.json`
+- Claim evidence: per-claim satisfied / partial / waived / unresolved manifest-status counts, missing / waiver reference counts, and separate review-state counts (`behavior/tested`, `model/model-checked`, `proof/proved`, `runtime/runtime-mitigated`) from `artifacts/assurance/claim-evidence-manifest.json`
 - Change Package v2: claim-state counts, policy/release-control digest, and optional `contractMigrationNotes[]`. Contract migration notes are displayed only when the v2 artifact provides them; ordinary PRs without assurance contract impact omit the section.
 - Failing GWT: short counterexamples derived from `artifacts/formal/gwt.summary.json.items`, using the count and the first `property` or GWT fragment (`traceId` is not currently rendered)
 - Adapters: one-line summaries from `artifacts/summary/combined.json`
@@ -236,7 +236,7 @@ Formal: pass | Adapters: lighthouse(warn: Perf 78, A11y 96), playwright(ok)
 - Coverage: current renderer は coverage summary から `Coverage: <pct>%` だけを出力します。`Threshold (effective)`、`Derived`、`Policy`、`Policy source` は renderer 出力契約ではなく、workflow 側の coverage comment 契約です。
 - Discovery Pack: `verify-lite-run-summary.json.discoveryPack` から mode / reason / orphan counts / compile counts を出力します。
 - Assurance: `artifacts/assurance/assurance-summary.json` から satisfied claims / warning claims / warning codes を出力します。
-- Claim evidence: `artifacts/assurance/claim-evidence-manifest.json` から claim 単位の satisfied / partial / waived / unresolved 件数と missing / waiver reference 件数を出力します。
+- Claim evidence: `artifacts/assurance/claim-evidence-manifest.json` から claim 単位の satisfied / partial / waived / unresolved という manifest-status 件数、missing / waiver reference 件数、および `behavior/tested`、`model/model-checked`、`proof/proved`、`runtime/runtime-mitigated` の review-state 件数を分離して出力します。
 - Change Package v2: claim-state counts、policy / release-control digest、および任意の `contractMigrationNotes[]` を出力します。契約移行注記は v2 artifact が提供する場合だけ表示し、assurance contract 影響のない通常 PR では省略します。
 - Failing GWT: `artifacts/formal/gwt.summary.json.items` から件数と先頭の `property` または GWT 断片を使った短い counterexample を出力します（現状 `traceId` は出力しません）。
 - Adapters: `artifacts/summary/combined.json` から 1 行 summary を生成します。

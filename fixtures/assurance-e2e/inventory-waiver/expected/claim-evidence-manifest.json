@@ -132,14 +132,14 @@
       "evidenceRefs": [
         {
           "id": "change-package-v2:no-negative-balance",
-          "kind": "proof",
+          "kind": "model",
           "artifactPath": "fixtures/assurance-e2e/inventory-waiver/inputs/change-package-v2.json#/claims/0",
           "sourceArtifactId": "change-package-v2",
           "description": "Change-package v2 claim anchor is present (status=model-checked)."
         },
         {
           "id": "change-package-v2:no-negative-balance:artifact:0",
-          "kind": "proof",
+          "kind": "model",
           "artifactPath": "artifacts/assurance/assurance-summary.json",
           "sourceArtifactId": "change-package-v2",
           "description": "Change-package v2 artifactRef linked to claim"

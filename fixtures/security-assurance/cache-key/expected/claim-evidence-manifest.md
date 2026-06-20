@@ -4,6 +4,8 @@
 - generatedAt: 2026-05-07T00:00:00.000Z
 - sourceArtifacts: 4/8 present
 - claims: 3 total; 0 satisfied, 3 partial, 0 waived, 0 unresolved
+- status vocabulary: satisfied, partial, waived, unresolved (claim-evidence-manifest/v1 primary status)
+- evidence state guide: behavior=tested, model=model-checked, proof=proved, runtime=runtime-mitigated; evidence kinds do not redefine claim status
 - securityFindings: 2 total; highOrCriticalOpen=1, needsHumanReview=1, outOfScope=1, rejected=0, assumptionValidationRequired=0, assumptionResidualRisk=1
 - missingEvidenceRefs: 4
 - waiverRefs: 0
@@ -23,11 +25,11 @@
 
 ## Claims
 
-| claim | securityType | criticality | target | achieved | status | evidence | missing | waivers | assumptionHandling | externalIds |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| sec-claim-001 | invariant | high | A2 | A1 | partial | 6 | 2 | 0 | n/a | security-claim:SEC-CLAIM-001 (security-claims) |
-| sec-claim-002 | precondition | medium | A1 | A0 | partial | 2 | 1 | 0 | n/a | security-claim:SEC-CLAIM-002 (security-claims) |
-| sec-claim-003 | assumption | low | A2 | A0 | partial | 6 | 1 | 0 | SEC-FINDING-002:residual-risk | security-claim:SEC-CLAIM-003 (security-claims) |
+| claim | securityType | criticality | target | achieved | status | evidenceKinds | evidence | missing | waivers | assumptionHandling | externalIds |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| sec-claim-001 | invariant | high | A2 | A1 | partial | adversarial, manual, spec | 6 | 2 | 0 | n/a | security-claim:SEC-CLAIM-001 (security-claims) |
+| sec-claim-002 | precondition | medium | A1 | A0 | partial | spec | 2 | 1 | 0 | n/a | security-claim:SEC-CLAIM-002 (security-claims) |
+| sec-claim-003 | assumption | low | A2 | A0 | partial | adversarial, manual, spec | 6 | 1 | 0 | SEC-FINDING-002:residual-risk | security-claim:SEC-CLAIM-003 (security-claims) |
 
 ## External IDs
 
