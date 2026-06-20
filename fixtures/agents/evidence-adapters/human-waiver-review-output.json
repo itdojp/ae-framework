@@ -1,0 +1,99 @@
+{
+  "fixtureKind": "raw-agent-output-example",
+  "fixturePurpose": "Documentation-only example for ACP-GAP-001; this file is not a production schema and does not bypass artifact validation.",
+  "capturedAt": "2026-06-20T00:00:00Z",
+  "producer": {
+    "id": "human-maintainer",
+    "displayName": "Human maintainer review and waiver decision",
+    "category": "human-reviewer",
+    "trustBoundary": "Human approval can influence policy only when branch protection, required checks, and waiver metadata are traceable."
+  },
+  "source": {
+    "pullRequest": "https://github.com/itdojp/ae-framework/pull/3495",
+    "entrypoint": "Maintainer review, waiver disposition, and merge decision",
+    "decisionSurface": "PR review, PR comment, branch protection, and policy-gate summary"
+  },
+  "rawSignals": [
+    {
+      "kind": "approval",
+      "value": "Approved with one report-only waiver for an unavailable non-required extended check.",
+      "rawAssertionBoundary": "Approval does not erase unresolved risk; waiver metadata must remain visible."
+    },
+    {
+      "kind": "waiver-rationale",
+      "value": "Documentation-only change; required checks and review completeness are satisfied.",
+      "rawAssertionBoundary": "Rationale must be connected to affected claim, owner, expiry, and evidence link."
+    },
+    {
+      "kind": "merge-decision",
+      "value": "Merged after required checks passed and AI review threads were resolved.",
+      "rawAssertionBoundary": "Merge is a release action, not proof that every possible claim is satisfied."
+    }
+  ],
+  "changedFiles": [
+    {
+      "path": "docs/agents/evidence-adapters.md",
+      "role": "documentation-only change reviewed by maintainer",
+      "expectedArtifact": "change-package/v2"
+    }
+  ],
+  "commands": [
+    {
+      "command": "pnpm -s run check:doc-consistency",
+      "status": "reviewed-passed",
+      "evidenceUse": "Required documentation consistency evidence reviewed by maintainer."
+    },
+    {
+      "command": "pnpm -s run check:schemas",
+      "status": "reviewed-passed",
+      "evidenceUse": "Schema validation evidence reviewed by maintainer."
+    },
+    {
+      "command": "pnpm -s run coverage",
+      "status": "waived-report-only",
+      "evidenceUse": "Non-required broader coverage gap; waiver keeps it visible instead of marking it satisfied."
+    }
+  ],
+  "claimsMentioned": [
+    {
+      "claimId": "extended-coverage-available",
+      "rawAssertion": "The non-required extended coverage lane is unavailable for this docs-only change.",
+      "targetArtifact": "claim-evidence-manifest/v1",
+      "supportingEvidence": [
+        "PR comment with required-check evidence",
+        "maintainer waiver decision"
+      ],
+      "waiver": {
+        "owner": "docs-maintainer",
+        "reason": "Extended coverage job is outside the docs-only acceptance scope.",
+        "expiresAt": "2026-06-30T23:59:59Z",
+        "evidence": "PR comment with required-check evidence"
+      },
+      "controlPlaneBoundary": "A waiver is not a tested or proved result; downstream summaries must keep it distinct.",
+      "expectedManifestStatus": "waived"
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "artifact": "policy-decision/v1",
+      "purpose": "Record pass, waived, report-only, or block decision without hiding the waiver.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "claim-evidence-manifest/v1",
+      "purpose": "Attach waiver metadata to the affected claim and keep it distinct from tested or proved evidence.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "change-package/v2",
+      "purpose": "Expose the human disposition and command evidence in the change evidence package.",
+      "requiredForThisFixture": false
+    }
+  ],
+  "knownGaps": [
+    {
+      "gapId": "ACP-GAP-001",
+      "summary": "Human review and waiver examples are descriptive fixtures until a schema issue defines a raw input contract."
+    }
+  ]
+}

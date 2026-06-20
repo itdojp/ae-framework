@@ -1,0 +1,101 @@
+{
+  "fixtureKind": "raw-agent-output-example",
+  "fixturePurpose": "Documentation-only example for ACP-GAP-001; this file is not a production schema and does not bypass artifact validation.",
+  "capturedAt": "2026-06-20T00:00:00Z",
+  "producer": {
+    "id": "github-copilot-pr-reviewer",
+    "displayName": "GitHub Copilot PR review / agent",
+    "category": "hosted-review-agent",
+    "trustBoundary": "Copilot review text, suggestions, and thread state are review input. The control plane uses resolved-thread evidence and policy decisions, not raw generated text alone."
+  },
+  "source": {
+    "pullRequest": "https://github.com/itdojp/ae-framework/pull/3495",
+    "entrypoint": "GitHub Copilot pull request review",
+    "reviewSurface": "review body, inline comments, suggestions, requested changes, and thread resolution state"
+  },
+  "rawSignals": [
+    {
+      "kind": "review-body",
+      "value": "Copilot reviewed changed files and generated actionable comments.",
+      "rawAssertionBoundary": "The review body is source evidence only; each actionable item needs disposition."
+    },
+    {
+      "kind": "inline-comment",
+      "value": "Rename a column to avoid implying raw output is already a judgment artifact.",
+      "rawAssertionBoundary": "The comment becomes resolved review evidence only after a maintainer replies and resolves the thread."
+    },
+    {
+      "kind": "suggestion",
+      "value": "Use exact canonical product terminology in documentation.",
+      "rawAssertionBoundary": "Suggested text must be reviewed like any other producer output before merge."
+    }
+  ],
+  "changedFiles": [
+    {
+      "path": "docs/reference/CONTRACT-CATALOG.md",
+      "role": "reviewed file with documentation suggestion",
+      "expectedArtifact": "change-package/v2"
+    },
+    {
+      "path": "docs/agents/evidence-adapters.md",
+      "role": "reviewed file with terminology disposition",
+      "expectedArtifact": "policy-decision/v1"
+    }
+  ],
+  "commands": [
+    {
+      "command": "python3 <pr-review-completeness checker> --repo itdojp/ae-framework --pr 3495 --format json",
+      "status": "passed",
+      "evidenceUse": "Review completeness evidence; command path is environment-specific and should be recorded in PR evidence."
+    },
+    {
+      "command": "gh pr checks 3495 --repo itdojp/ae-framework --required",
+      "status": "passed",
+      "evidenceUse": "Required-check evidence after review disposition."
+    }
+  ],
+  "claimsMentioned": [
+    {
+      "claimId": "ai-review-threads-resolved",
+      "rawAssertion": "All actionable AI review threads were replied to and resolved.",
+      "targetArtifact": "policy-decision/v1",
+      "supportingEvidence": [
+        "review completeness report",
+        "required checks"
+      ],
+      "controlPlaneBoundary": "Resolved thread state can support a policy decision; Copilot text alone cannot approve the PR.",
+      "expectedPolicyResult": "pass"
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "artifact": "policy-decision/v1",
+      "purpose": "Allow gates to treat unresolved AI review threads as blockers and resolved threads as satisfied review evidence.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "change-package/v2",
+      "purpose": "Optionally connect review-driven commits to the changed-file and evidence summary.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "hook-feedback/v1",
+      "purpose": "Return unresolved AI comments as compact blockers when they remain open.",
+      "requiredForThisFixture": false
+    }
+  ],
+  "knownGaps": [
+    {
+      "gapId": "ACP-GAP-001",
+      "summary": "Raw Copilot review examples are descriptive fixtures, not a raw review schema."
+    },
+    {
+      "gapId": "ACP-GAP-003",
+      "summary": "Future PR summary surface should show missing evidence and gap IDs without requiring heavy lanes for ordinary PRs."
+    },
+    {
+      "gapId": "ACP-GAP-004",
+      "summary": "Future policy-gate report-only context may consume normalized agent-assurance findings."
+    }
+  ]
+}
