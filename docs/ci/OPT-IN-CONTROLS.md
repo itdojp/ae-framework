@@ -58,7 +58,7 @@ Assurance escalation note:
 - Without `risk:high`, `enforce-assurance`, or a critical-core boundary/profile, missing evidence and agent assurance findings stay report-only.
 - `risk:high` promotes those findings to manual reviewer disposition through the configured human-approval, required-label, and plan-artifact requirements.
 - `enforce-assurance` is the PR label that makes strict assurance blocking after successful Verify Lite artifacts are available.
-- Waiver exceptions need owner, reason, expiry, affected claim, and evidence link; incomplete metadata is blocking in strict assurance mode.
+- Waiver exceptions need canonical `owner`, `reason`, `expires`, `relatedClaimIds`, `evidenceRefs`, and `sourceArtifactId` provenance; incomplete metadata is blocking in strict assurance mode.
 
 ### 4. Repository Variables used with opt-in automation
 
@@ -235,7 +235,7 @@ Assurance escalation 補足:
 - `risk:high`、`enforce-assurance`、critical-core boundary/profile がない場合、evidence 不足や agent assurance finding は report-only のままです。
 - `risk:high` は、設定済み human approval、required label、plan artifact により finding を reviewer disposition へ昇格します。
 - `enforce-assurance` は、成功した Verify Lite artifact が揃った後に strict assurance を blocking にする PR ラベルです。
-- waiver 例外は owner、reason、expiry、affected claim、evidence link を必要とし、strict assurance mode では metadata 不足を blocking とします。
+- waiver 例外は canonical な `owner`、`reason`、`expires`、`relatedClaimIds`、`evidenceRefs`、`sourceArtifactId` provenance を必要とし、strict assurance mode では metadata 不足を blocking とします。
 
 | 変数 | 役割 | 既定 | 詳細 |
 | --- | --- | --- | --- |

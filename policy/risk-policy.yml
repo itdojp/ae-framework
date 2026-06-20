@@ -37,9 +37,10 @@ assurance_escalation:
   waiver_required_fields:
     - "owner"
     - "reason"
-    - "expiry"
-    - "affected_claim"
-    - "evidence_link"
+    - "expires"
+    - "relatedClaimIds"
+    - "evidenceRefs"
+    - "sourceArtifactId"
   lanes:
     ordinary:
       trigger: "risk:low without enforce-assurance or critical-core boundary policy"

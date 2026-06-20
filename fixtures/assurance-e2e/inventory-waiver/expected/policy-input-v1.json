@@ -32,6 +32,94 @@
       "requirePlanArtifact": true,
       "failWhenRequiredGateIsPending": false
     },
+    "assuranceEscalation": {
+      "defaultMode": "report-only",
+      "waiverRequiredFields": [
+        "owner",
+        "reason",
+        "expires",
+        "relatedClaimIds",
+        "evidenceRefs",
+        "sourceArtifactId"
+      ],
+      "lanes": {
+        "critical_core": {
+          "trigger": "critical-core boundary policy or explicit assurance profile",
+          "triggerLabels": [],
+          "decision": "manual-approval-or-block",
+          "requiredResponse": [
+            "require the lane set declared by the assurance profile or critical-core boundary",
+            "promote unresolved required evidence to block when strict assurance is selected",
+            "otherwise require manual reviewer disposition and keep counts visible"
+          ]
+        },
+        "enforce_assurance": {
+          "trigger": null,
+          "triggerLabels": [
+            "enforce-assurance"
+          ],
+          "decision": "block",
+          "requiredResponse": [
+            "run strict assurance enforcement after successful verify-lite artifacts are available",
+            "block missing required lanes, missing evidence, failed evidence, expired or orphan waivers, and unresolved claims"
+          ]
+        },
+        "ordinary": {
+          "trigger": "risk:low without enforce-assurance or critical-core boundary policy",
+          "triggerLabels": [],
+          "decision": "report-only",
+          "requiredResponse": [
+            "show missing evidence, unresolved claims, Boundary Map drift, and waiver metadata gaps in summaries",
+            "do not require heavy lanes or human approval by default"
+          ]
+        },
+        "risk_high": {
+          "trigger": null,
+          "triggerLabels": [
+            "risk:high"
+          ],
+          "decision": "manual-approval",
+          "requiredResponse": [
+            "require the configured minimum human approvals",
+            "require policy labels derived from changed files",
+            "require a valid plan artifact before implementation review",
+            "surface missing evidence, unresolved claims, Boundary Map drift, and waiver metadata gaps for reviewer disposition"
+          ]
+        }
+      },
+      "findingClasses": {
+        "boundary_drift": {
+          "critical_core": "manual-approval-or-block",
+          "enforce_assurance": "block-when-required-by-profile",
+          "ordinary": "report-only",
+          "risk_high": "manual-approval"
+        },
+        "missing_evidence": {
+          "critical_core": "manual-approval-or-block",
+          "enforce_assurance": "block",
+          "ordinary": "report-only",
+          "risk_high": "manual-approval"
+        },
+        "missing_required_lane": {
+          "critical_core": "manual-approval-or-block",
+          "enforce_assurance": "block",
+          "ordinary": "report-only",
+          "risk_high": "manual-approval"
+        },
+        "unresolved_claim": {
+          "critical_core": "manual-approval-or-block",
+          "enforce_assurance": "block",
+          "ordinary": "report-only",
+          "risk_high": "manual-approval"
+        },
+        "waiver_metadata_gap": {
+          "critical_core": "manual-approval-or-block",
+          "enforce_assurance": "block",
+          "ordinary": "report-only",
+          "risk_high": "manual-approval"
+        }
+      }
+    },
     "classification": {
       "highRiskPaths": [
         ".github/workflows/**",

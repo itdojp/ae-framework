@@ -82,9 +82,10 @@ describe('risk-policy', () => {
     expect(escalation.waiverRequiredFields).toEqual([
       'owner',
       'reason',
-      'expiry',
-      'affected_claim',
-      'evidence_link',
+      'expires',
+      'relatedClaimIds',
+      'evidenceRefs',
+      'sourceArtifactId',
     ]);
     expect(escalation.lanes).toMatchObject({
       ordinary: { decision: 'report-only' },

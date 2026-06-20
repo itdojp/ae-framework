@@ -25,6 +25,12 @@
       "requirePlanArtifact": true,
       "failWhenRequiredGateIsPending": false
     },
+    "assuranceEscalation": {
+      "defaultMode": "report-only",
+      "waiverRequiredFields": [],
+      "lanes": {},
+      "findingClasses": {}
+    },
     "classification": {
       "highRiskPaths": [
         ".github/workflows/**"

@@ -15,6 +15,7 @@ import { normalizeLabelNames } from './lib/automation-guards.mjs';
 import {
   DEFAULT_POLICY_PATH,
   collectRequiredLabels,
+  getAssuranceEscalationPolicy,
   getGateCheckPatternsForLabel,
   getMinHumanApprovals,
   getOptionalGateLabels,
@@ -544,9 +545,10 @@ function normalizeAssuranceMode(value) {
   };
 }
 
-function resolveAssuranceMode(value) {
-  const modeState = normalizeAssuranceMode(value);
-  return modeState;
+function resolveAssuranceMode(value, policy = null) {
+  const raw = String(value ?? '').trim();
+  const selectedMode = raw || getAssuranceEscalationPolicy(policy).defaultMode;
+  return normalizeAssuranceMode(selectedMode);
 }
 
 function normalizeIdRefs(value) {
@@ -1437,7 +1439,7 @@ function evaluatePolicyGate({
   errors.push(...planArtifactEvaluation.errors);
   warnings.push(...planArtifactEvaluation.warnings);
 
-  const assuranceModeState = resolveAssuranceMode(assuranceMode);
+  const assuranceModeState = resolveAssuranceMode(assuranceMode, policy);
   if (assuranceModeState.warning) warnings.push(`assurance: ${assuranceModeState.warning}`);
   const assuranceEvaluation = buildAssuranceEvaluation(
     assurance || inspectAssuranceEvidence(),
@@ -1681,6 +1683,66 @@ function normalizeUniqueStringArray(value) {
   return [...new Set(normalizeStringArray(value))];
 }
 
+function normalizeAssuranceLaneForInput(lane) {
+  const value = lane && typeof lane === 'object' && !Array.isArray(lane) ? lane : {};
+  const trigger = String(value?.trigger || '').trim();
+  return {
+    trigger: trigger || null,
+    triggerLabels: normalizeUniqueStringArray(value?.trigger_labels),
+    decision: String(value?.decision || '').trim(),
+    requiredResponse: normalizeUniqueStringArray(value?.required_response),
+  };
+}
+
+function normalizeAssuranceFindingClassesForInput(findingClasses) {
+  if (!findingClasses || typeof findingClasses !== 'object' || Array.isArray(findingClasses)) {
+    return {};
+  }
+  const entries = Object.entries(findingClasses)
+    .map(([className, decisions]) => {
+      if (!decisions || typeof decisions !== 'object' || Array.isArray(decisions)) {
+        return null;
+      }
+      const normalizedDecisions = Object.fromEntries(
+        Object.entries(decisions)
+          .map(([laneName, decision]) => [
+            String(laneName || '').trim(),
+            String(decision || '').trim(),
+          ])
+          .filter(([laneName, decision]) => laneName && decision)
+          .sort(([left], [right]) => left.localeCompare(right)),
+      );
+      const normalizedClassName = String(className || '').trim();
+      if (!normalizedClassName) return null;
+      return [normalizedClassName, normalizedDecisions];
+    })
+    .filter(Boolean)
+    .sort(([left], [right]) => left.localeCompare(right));
+  return Object.fromEntries(entries);
+}
+
+function normalizeAssuranceEscalationForInput(policy) {
+  const escalation = getAssuranceEscalationPolicy(policy);
+  const lanes = escalation.lanes && typeof escalation.lanes === 'object'
+    ? Object.fromEntries(
+      Object.entries(escalation.lanes)
+        .map(([laneName, lane]) => [
+          String(laneName || '').trim(),
+          normalizeAssuranceLaneForInput(lane),
+        ])
+        .filter(([laneName]) => laneName)
+        .sort(([left], [right]) => left.localeCompare(right)),
+    )
+    : {};
+
+  return {
+    defaultMode: escalation.defaultMode,
+    waiverRequiredFields: normalizeUniqueStringArray(escalation.waiverRequiredFields),
+    lanes,
+    findingClasses: normalizeAssuranceFindingClassesForInput(escalation.findingClasses),
+  };
+}
+
 function buildPolicyInputPolicy(policy) {
   const riskLabels = getRiskLabels(policy);
   const optionalGates = normalizeUniqueStringArray(getOptionalGateLabels(policy));
@@ -1717,6 +1779,7 @@ function buildPolicyInputPolicy(policy) {
       requirePlanArtifact: isPlanArtifactRequired(policy),
       failWhenRequiredGateIsPending: isPendingGateFailureEnabled(policy),
     },
+    assuranceEscalation: normalizeAssuranceEscalationForInput(policy),
     classification: {
       highRiskPaths,
       forceHighRiskWhen,
@@ -1812,7 +1875,7 @@ function buildPolicyInputV1({
   assurance,
   now = new Date().toISOString(),
 }) {
-  const normalizedAssuranceMode = resolveAssuranceMode(assuranceMode).value;
+  const normalizedAssuranceMode = resolveAssuranceMode(assuranceMode, policy).value;
   const input = {
     schemaVersion: '1.0.0',
     contractId: 'policy-input.v1',
@@ -1913,7 +1976,7 @@ async function run(options = parseArgs(process.argv)) {
     statusRollup,
     reviewTopology: process.env.AE_REVIEW_TOPOLOGY,
     approvalOverride: process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
-    assuranceMode: resolveAssuranceMode(process.env.AE_POLICY_ASSURANCE_MODE).value,
+    assuranceMode: resolveAssuranceMode(process.env.AE_POLICY_ASSURANCE_MODE, policy).value,
     assurance,
     now,
   });

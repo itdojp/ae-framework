@@ -1286,6 +1286,67 @@ describe('policy-gate', () => {
     });
 
     expect(input.config.assuranceMode).toBe('report-only');
+    expect(input.policy.assuranceEscalation).toMatchObject({
+      defaultMode: 'report-only',
+      waiverRequiredFields: [
+        'owner',
+        'reason',
+        'expires',
+        'relatedClaimIds',
+        'evidenceRefs',
+        'sourceArtifactId',
+      ],
+      lanes: {
+        enforce_assurance: {
+          decision: 'block',
+          triggerLabels: ['enforce-assurance'],
+        },
+        risk_high: {
+          decision: 'manual-approval',
+          triggerLabels: ['risk:high'],
+        },
+      },
+    });
+  });
+
+  it('uses the policy assurance escalation default mode when no explicit mode is provided', () => {
+    const strictByDefaultPolicy = {
+      ...policy,
+      assurance_escalation: {
+        ...(policy.assurance_escalation || {}),
+        default_mode: 'strict',
+      },
+    };
+    const result = evaluatePolicyGate({
+      policy: strictByDefaultPolicy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState({
+        claims: [
+          {
+            claimId: 'proof-required',
+            result: 'block',
+            status: 'unresolved',
+            evidenceRefs: [],
+            missingEvidenceRefs: ['missing-proof:proof-required'],
+            waiverRefs: [],
+            waivers: [],
+          },
+        ],
+      }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.assurance.mode).toBe('strict');
+    expect(result.errors).toEqual(expect.arrayContaining([
+      expect.stringContaining('assurance claim proof-required is missing required evidence'),
+      'assurance decision is block',
+    ]));
   });
 
   it('does not enforce discovery labels on low-risk discovery changes', () => {
