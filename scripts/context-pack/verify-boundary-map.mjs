@@ -12,6 +12,21 @@ const DEFAULT_MAP_PATH = 'spec/context-pack/boundary-map.json';
 const DEFAULT_SCHEMA_PATH = 'schema/context-pack-boundary-map.schema.json';
 const DEFAULT_REPORT_JSON = 'artifacts/context-pack/context-pack-boundary-map-report.json';
 const DEFAULT_REPORT_MD = 'artifacts/context-pack/context-pack-boundary-map-report.md';
+const DEFAULT_SUMMARY_JSON = 'artifacts/context-pack/boundary-map-summary.json';
+const DEFAULT_SUMMARY_MD = 'artifacts/context-pack/boundary-map-summary.md';
+
+const SUMMARY_STATUS_LABELS = {
+  ok: 'boundary map ok',
+  drift: 'boundary map drift',
+  skipped: 'boundary map skipped',
+  unresolved: 'boundary map unresolved',
+};
+
+const UNRESOLVED_VIOLATION_TYPES = new Set([
+  'boundary-map-schema-invalid',
+  'context-pack-parse-failed',
+  'context-pack-sources-empty',
+]);
 
 const normalizePath = (value) => value.replace(/\\/g, '/');
 const toRelativePath = (absolutePath) => normalizePath(path.relative(process.cwd(), absolutePath) || '.');
@@ -27,6 +42,8 @@ Options:
   --schema <path>               JSON Schema path (default: ${DEFAULT_SCHEMA_PATH})
   --report-json <path>          JSON report path (default: ${DEFAULT_REPORT_JSON})
   --report-md <path>            Markdown report path (default: ${DEFAULT_REPORT_MD})
+  --summary-json <path>         PR evidence JSON summary path (default: ${DEFAULT_SUMMARY_JSON})
+  --summary-md <path>           PR evidence Markdown summary path (default: ${DEFAULT_SUMMARY_MD})
   --context-pack-sources <glob> Override context-pack source glob (repeatable, comma-separated)
   --help, -h                    Show this help
 `);
@@ -70,6 +87,8 @@ function parseArgs(argv) {
     schemaPath: DEFAULT_SCHEMA_PATH,
     reportJsonPath: DEFAULT_REPORT_JSON,
     reportMarkdownPath: DEFAULT_REPORT_MD,
+    summaryJsonPath: DEFAULT_SUMMARY_JSON,
+    summaryMarkdownPath: DEFAULT_SUMMARY_MD,
     contextPackSourcesOverride: [],
     help: false,
   };
@@ -134,6 +153,30 @@ function parseArgs(argv) {
     }
     if (arg.startsWith('--report-md=')) {
       options.reportMarkdownPath = arg.slice('--report-md='.length);
+      continue;
+    }
+    if (arg === '--summary-json') {
+      if (!next || next.startsWith('-')) {
+        throw new Error('missing value for --summary-json');
+      }
+      options.summaryJsonPath = next;
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--summary-json=')) {
+      options.summaryJsonPath = arg.slice('--summary-json='.length);
+      continue;
+    }
+    if (arg === '--summary-md') {
+      if (!next || next.startsWith('-')) {
+        throw new Error('missing value for --summary-md');
+      }
+      options.summaryMarkdownPath = next;
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--summary-md=')) {
+      options.summaryMarkdownPath = arg.slice('--summary-md='.length);
       continue;
     }
     if (arg === '--context-pack-sources') {
@@ -378,6 +421,8 @@ function validateBoundaryMap(metadata, slices, violations) {
         type: 'boundary-slice-duplicate',
         severity: 'error',
         sliceId,
+        expectedOwner: 'unique slice id',
+        observedDependency: `duplicate slice '${sliceId}'`,
         message: `slice '${sliceId}' is defined more than once`,
       });
       continue;
@@ -398,6 +443,8 @@ function validateBoundaryMap(metadata, slices, violations) {
           kind: ref.kind,
           refId: ref.refId,
           direction: 'produces',
+          expectedOwner: `Context Pack ${ref.kind}:${ref.refId}`,
+          observedDependency: 'missing Context Pack ref',
           message: `slice '${sliceId}' produces ${ref.kind} '${ref.refId}' but the ref does not exist in context-pack sources`,
         });
         continue;
@@ -413,6 +460,8 @@ function validateBoundaryMap(metadata, slices, violations) {
           kind: ref.kind,
           refId: ref.refId,
           rule: existingProducer,
+          expectedOwner: existingProducer,
+          observedDependency: sliceId,
           message: `ref ${ref.kind} '${ref.refId}' is produced by both '${existingProducer}' and '${sliceId}'`,
         });
         continue;
@@ -433,6 +482,8 @@ function validateBoundaryMap(metadata, slices, violations) {
           kind: ref.kind,
           refId: ref.refId,
           direction: 'consumes',
+          expectedOwner: `Context Pack ${ref.kind}:${ref.refId}`,
+          observedDependency: 'missing Context Pack ref',
           message: `slice '${sliceId}' consumes ${ref.kind} '${ref.refId}' but the ref does not exist in context-pack sources`,
         });
         continue;
@@ -452,6 +503,8 @@ function validateBoundaryMap(metadata, slices, violations) {
           kind: ref.kind,
           refId: ref.refId,
           rule: upstreamSliceId,
+          expectedOwner: upstreamSliceId,
+          observedDependency: 'upstream slice not defined',
           message: `slice '${sliceId}' consumes ${ref.kind} '${ref.refId}' from missing upstream slice '${upstreamSliceId}'`,
         });
         continue;
@@ -471,6 +524,8 @@ function validateBoundaryMap(metadata, slices, violations) {
           kind: ref.kind,
           refId: ref.refId,
           rule: upstreamSliceId,
+          expectedOwner: upstreamSliceId,
+          observedDependency: actualProducer ?? 'no slice produces the ref',
           message: `slice '${sliceId}' consumes ${ref.kind} '${ref.refId}' from '${upstreamSliceId}', but ${detail}`,
         });
       }
@@ -485,6 +540,8 @@ function validateBoundaryMap(metadata, slices, violations) {
       severity: 'error',
       sliceId: cycleNodes[0],
       rule: 'slice-dependency-cycle',
+      expectedOwner: 'acyclic slice dependency graph',
+      observedDependency: cycleNodes.join(' -> '),
       message: `slice dependency cycle detected: ${cycleNodes.join(' -> ')}`,
     });
   }
@@ -574,13 +631,155 @@ function buildMarkdownReport(report) {
   return `${lines.join('\n')}\n`;
 }
 
-function writeReport(report, reportJsonPath, reportMarkdownPath) {
+function classifySummaryStatus(report) {
+  if (report.summary.totalViolations === 0) {
+    return report.checkedSlices === 0 ? 'skipped' : 'ok';
+  }
+  if (report.violations.some((violation) => UNRESOLVED_VIOLATION_TYPES.has(violation.type))) {
+    return 'unresolved';
+  }
+  return 'drift';
+}
+
+function statusReasonFor(status) {
+  if (status === 'ok') {
+    return 'Boundary Map references and slice dependencies are consistent with the scanned Context Pack sources.';
+  }
+  if (status === 'drift') {
+    return 'Boundary Map drift was detected and should be treated as a design-boundary evidence gap, not as a proof failure.';
+  }
+  if (status === 'skipped') {
+    return 'Boundary Map verification did not evaluate any slice; downstream consumers should treat the evidence as absent.';
+  }
+  return 'Boundary Map verification could not produce a complete drift judgment because input parsing, source discovery, or schema validation failed.';
+}
+
+function toRefObject(violation) {
+  if (!violation.kind || !violation.refId) {
+    return undefined;
+  }
+  return {
+    kind: violation.kind,
+    refId: violation.refId,
+  };
+}
+
+function buildReviewEvidenceEntries(report) {
+  return report.violations.map((violation) => {
+    const entry = {
+      type: violation.type,
+      severity: violation.severity || 'error',
+      file: violation.source || report.mapPath,
+      slice: violation.sliceId || undefined,
+      ref: toRefObject(violation),
+      expectedOwner: violation.expectedOwner || violation.rule || '-',
+      observedDependency: violation.observedDependency || violation.message || '-',
+      message: violation.message || '',
+    };
+
+    return Object.fromEntries(Object.entries(entry).filter(([, value]) => value !== undefined));
+  });
+}
+
+function buildBoundaryMapSummary(report, reportJsonPath, reportMarkdownPath) {
+  const status = classifySummaryStatus(report);
+  const entries = buildReviewEvidenceEntries(report);
+  return {
+    schemaVersion: 'context-pack-boundary-map-summary/v1',
+    generatedAt: report.generatedAt,
+    status,
+    reviewStatus: SUMMARY_STATUS_LABELS[status],
+    statusReason: statusReasonFor(status),
+    evidenceKind: 'design-boundary',
+    defaultDecision: status === 'ok' ? 'no-drift-evidence' : 'report-only-evidence-gap',
+    interpretation:
+      'Boundary Map drift is design-boundary evidence. It is not proof evidence and is not a proof failure by itself.',
+    policyEscalation: {
+      defaultMode: 'report-only',
+      candidateBlockingConditions: ['risk:high', 'enforce-assurance', 'critical-core boundary policy'],
+      followUpIssue: '#3489',
+    },
+    source: {
+      mapPath: report.mapPath,
+      schemaPath: report.schemaPath,
+      reportJsonPath: toRelativePath(path.resolve(reportJsonPath)),
+      reportMarkdownPath: toRelativePath(path.resolve(reportMarkdownPath)),
+    },
+    counts: {
+      scannedContextPackFiles: report.scannedContextPackFiles,
+      skippedAuxiliaryFiles: report.skippedAuxiliaryFiles,
+      checkedSlices: report.checkedSlices,
+      checkedProduces: report.checkedProduces,
+      checkedConsumes: report.checkedConsumes,
+      totalFindings: report.summary.totalViolations,
+      duplicateSliceIds: report.summary.duplicateSliceIds,
+      missingContextPackRefs: report.summary.missingContextPackRefs,
+      duplicateProducedRefs: report.summary.duplicateProducedRefs,
+      missingUpstreamSlices: report.summary.missingUpstreamSlices,
+      missingUpstreamProducers: report.summary.missingUpstreamProducers,
+      cycleViolations: report.summary.cycleViolations,
+    },
+    reviewEvidence: entries,
+  };
+}
+
+function buildSummaryMarkdown(summary) {
+  const lines = [
+    '# Boundary Map PR Evidence Summary',
+    '',
+    `- GeneratedAt: ${summary.generatedAt}`,
+    `- Status: ${summary.reviewStatus}`,
+    `- Evidence kind: ${summary.evidenceKind}`,
+    `- Default decision: ${summary.defaultDecision}`,
+    `- Interpretation: ${summary.interpretation}`,
+    `- Policy escalation handoff: ${summary.policyEscalation.candidateBlockingConditions.join(', ')} (${summary.policyEscalation.followUpIssue})`,
+    `- Source report: \`${summary.source.reportJsonPath}\` / \`${summary.source.reportMarkdownPath}\``,
+    '',
+    '## Counts',
+    `- scanned context-pack files: ${summary.counts.scannedContextPackFiles}`,
+    `- skipped auxiliary files: ${summary.counts.skippedAuxiliaryFiles}`,
+    `- checked slices: ${summary.counts.checkedSlices}`,
+    `- produced refs: ${summary.counts.checkedProduces}`,
+    `- consumed refs: ${summary.counts.checkedConsumes}`,
+    `- total findings: ${summary.counts.totalFindings}`,
+    '',
+  ];
+
+  if (summary.reviewEvidence.length === 0) {
+    lines.push('## Review surface', '', 'No boundary map drift detected.');
+    return `${lines.join('\n')}\n`;
+  }
+
+  lines.push(
+    '## Review surface',
+    '',
+    '| File | Slice | Ref | Expected owner | Observed dependency | Type | Message |',
+    '| --- | --- | --- | --- | --- | --- | --- |',
+  );
+  for (const entry of summary.reviewEvidence) {
+    const ref = entry.ref ? `${entry.ref.kind}:${entry.ref.refId}` : '-';
+    lines.push(
+      `| ${escapeMarkdownTableCell(entry.file)} | ${escapeMarkdownTableCell(entry.slice || '-')} | ${escapeMarkdownTableCell(ref)} | ${escapeMarkdownTableCell(entry.expectedOwner)} | ${escapeMarkdownTableCell(entry.observedDependency)} | ${escapeMarkdownTableCell(entry.type)} | ${escapeMarkdownTableCell(entry.message)} |`,
+    );
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+function writeReport(report, reportJsonPath, reportMarkdownPath, summaryJsonPath, summaryMarkdownPath) {
   const resolvedJsonPath = path.resolve(reportJsonPath);
   const resolvedMarkdownPath = path.resolve(reportMarkdownPath);
+  const resolvedSummaryJsonPath = path.resolve(summaryJsonPath);
+  const resolvedSummaryMarkdownPath = path.resolve(summaryMarkdownPath);
+  const summary = buildBoundaryMapSummary(report, reportJsonPath, reportMarkdownPath);
   fs.mkdirSync(path.dirname(resolvedJsonPath), { recursive: true });
   fs.mkdirSync(path.dirname(resolvedMarkdownPath), { recursive: true });
+  fs.mkdirSync(path.dirname(resolvedSummaryJsonPath), { recursive: true });
+  fs.mkdirSync(path.dirname(resolvedSummaryMarkdownPath), { recursive: true });
   fs.writeFileSync(resolvedJsonPath, `${JSON.stringify(report, null, 2)}\n`);
   fs.writeFileSync(resolvedMarkdownPath, buildMarkdownReport(report));
+  fs.writeFileSync(resolvedSummaryJsonPath, `${JSON.stringify(summary, null, 2)}\n`);
+  fs.writeFileSync(resolvedSummaryMarkdownPath, buildSummaryMarkdown(summary));
+  return summary;
 }
 
 function validateBoundaryMapCli(options) {
@@ -629,9 +828,18 @@ function validateBoundaryMapCli(options) {
     violations,
   };
 
-  writeReport(report, options.reportJsonPath, options.reportMarkdownPath);
+  const summary = writeReport(
+    report,
+    options.reportJsonPath,
+    options.reportMarkdownPath,
+    options.summaryJsonPath,
+    options.summaryMarkdownPath,
+  );
   process.stdout.write(`[context-pack:boundary-map] report(json): ${toRelativePath(path.resolve(options.reportJsonPath))}\n`);
   process.stdout.write(`[context-pack:boundary-map] report(md): ${toRelativePath(path.resolve(options.reportMarkdownPath))}\n`);
+  process.stdout.write(`[context-pack:boundary-map] summary(json): ${toRelativePath(path.resolve(options.summaryJsonPath))}\n`);
+  process.stdout.write(`[context-pack:boundary-map] summary(md): ${toRelativePath(path.resolve(options.summaryMarkdownPath))}\n`);
+  process.stdout.write(`[context-pack:boundary-map] review status: ${summary.reviewStatus}\n`);
 
   if (report.status === 'fail') {
     process.stderr.write(`[context-pack:boundary-map] validation failed (${violations.length} violation(s))\n`);

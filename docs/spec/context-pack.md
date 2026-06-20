@@ -136,7 +136,9 @@ node scripts/context-pack/verify-boundary-map.mjs \
   --map spec/context-pack/boundary-map.json \
   --schema schema/context-pack-boundary-map.schema.json \
   --report-json artifacts/context-pack/context-pack-boundary-map-report.json \
-  --report-md artifacts/context-pack/context-pack-boundary-map-report.md
+  --report-md artifacts/context-pack/context-pack-boundary-map-report.md \
+  --summary-json artifacts/context-pack/boundary-map-summary.json \
+  --summary-md artifacts/context-pack/boundary-map-summary.md
 
 # Phase5+テンプレを直接検証（マップ・レポート先を上書き）
 node scripts/context-pack/verify-phase5-templates.mjs \
@@ -445,6 +447,11 @@ node scripts/ci/enforce-assurance-summary.mjs \
 - Markdown (Product/Coproduct): `artifacts/context-pack/context-pack-product-coproduct-report.md`
 - JSON (Boundary Map): `artifacts/context-pack/context-pack-boundary-map-report.json`
 - Markdown (Boundary Map): `artifacts/context-pack/context-pack-boundary-map-report.md`
+- JSON (Boundary Map PR evidence summary): `artifacts/context-pack/boundary-map-summary.json`
+- Markdown (Boundary Map PR evidence summary): `artifacts/context-pack/boundary-map-summary.md`
+  - `status` is one of `ok`, `drift`, `skipped`, or `unresolved`.
+  - `drift` is a design-boundary evidence gap, not proof evidence and not a proof failure by itself.
+  - The default decision is report-only. Later policy work can promote drift to blocking only when `risk:high`, `enforce-assurance`, or a critical-core boundary requires it.
 - JSON (Phase5+): `artifacts/context-pack/context-pack-phase5-report.json`
 - Markdown (Phase5+): `artifacts/context-pack/context-pack-phase5-report.md`
 - Verify Lite summary: `artifacts/verify-lite/verify-lite-run-summary.json`
@@ -633,7 +640,7 @@ node scripts/context-pack/verify-natural-transformation.mjs   --map spec/context
 node scripts/context-pack/verify-product-coproduct.mjs   --map spec/context-pack/product-coproduct-map.json   --schema schema/context-pack-product-coproduct.schema.json   --report-json artifacts/context-pack/context-pack-product-coproduct-report.json   --report-md artifacts/context-pack/context-pack-product-coproduct-report.md
 
 # Direct Boundary Map validation with explicit map/schema/report paths
-node scripts/context-pack/verify-boundary-map.mjs   --map spec/context-pack/boundary-map.json   --schema schema/context-pack-boundary-map.schema.json   --report-json artifacts/context-pack/context-pack-boundary-map-report.json   --report-md artifacts/context-pack/context-pack-boundary-map-report.md
+node scripts/context-pack/verify-boundary-map.mjs   --map spec/context-pack/boundary-map.json   --schema schema/context-pack-boundary-map.schema.json   --report-json artifacts/context-pack/context-pack-boundary-map-report.json   --report-md artifacts/context-pack/context-pack-boundary-map-report.md   --summary-json artifacts/context-pack/boundary-map-summary.json   --summary-md artifacts/context-pack/boundary-map-summary.md
 
 # Direct Phase5+ template validation with explicit map/schema/report paths
 node scripts/context-pack/verify-phase5-templates.mjs   --map spec/context-pack/phase5-templates.json   --schema schema/context-pack-phase5-templates.schema.json   --report-json artifacts/context-pack/context-pack-phase5-report.json   --report-md artifacts/context-pack/context-pack-phase5-report.md
@@ -905,6 +912,11 @@ node scripts/ci/enforce-assurance-summary.mjs   artifacts/assurance/assurance-su
 - Markdown (Product/Coproduct): `artifacts/context-pack/context-pack-product-coproduct-report.md`
 - JSON (Boundary Map): `artifacts/context-pack/context-pack-boundary-map-report.json`
 - Markdown (Boundary Map): `artifacts/context-pack/context-pack-boundary-map-report.md`
+- JSON (Boundary Map PR evidence summary): `artifacts/context-pack/boundary-map-summary.json`
+- Markdown (Boundary Map PR evidence summary): `artifacts/context-pack/boundary-map-summary.md`
+  - `status` is one of `ok`, `drift`, `skipped`, or `unresolved`.
+  - `drift` is a design-boundary evidence gap, not proof evidence and not a proof failure by itself.
+  - The default decision is report-only. Later policy work can promote drift to blocking only when `risk:high`, `enforce-assurance`, or a critical-core boundary requires it.
 - JSON (Phase5+): `artifacts/context-pack/context-pack-phase5-report.json`
 - Markdown (Phase5+): `artifacts/context-pack/context-pack-phase5-report.md`
 - Verify Lite summary: `artifacts/verify-lite/verify-lite-run-summary.json`

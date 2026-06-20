@@ -271,6 +271,11 @@ const checks = [
     label: 'Context Pack boundary map schema validation'
   },
   {
+    schema: 'schema/context-pack-boundary-map-summary.schema.json',
+    fixtures: ['fixtures/context-pack/sample.boundary-map-summary.json'],
+    label: 'Context Pack boundary map summary schema validation'
+  },
+  {
     schema: 'schema/context-pack-suggestions.schema.json',
     fixtures: ['fixtures/context-pack/sample.context-pack-suggestions.json'],
     label: 'Context Pack suggestions schema validation'

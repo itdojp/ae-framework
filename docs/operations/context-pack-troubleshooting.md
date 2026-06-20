@@ -129,13 +129,19 @@ pnpm run verify:lite
 ```
 
 #### 6) Boundary Map (`context-pack:verify-boundary-map`)
+- PR evidence summary:
+  - `artifacts/context-pack/boundary-map-summary.json`
+  - `artifacts/context-pack/boundary-map-summary.md`
 - report:
   - `artifacts/context-pack/context-pack-boundary-map-report.json`
   - `artifacts/context-pack/context-pack-boundary-map-report.md`
 - 重点確認:
+  - summary `status` が `ok` / `drift` / `skipped` / `unresolved` のどれか
+  - `drift` は proof failure ではなく design-boundary evidence gap として扱う
   - `slices[].produces` / `slices[].consumes` が Context Pack ref と一致しているか
   - `upstream.type=slice` の producer / target slice が実在するか
   - cycle が発生していないか
+  - `risk:high` / `enforce-assurance` / critical-core boundary では後続 policy で block 昇格し得るため、summary の expected owner / observed dependency を PR note に転記する
 - 再実行:
 ```bash
 pnpm run context-pack:verify-boundary-map
@@ -307,13 +313,19 @@ pnpm run verify:lite
 ```
 
 #### 6) Boundary Map (`context-pack:verify-boundary-map`)
+- PR evidence summary:
+  - `artifacts/context-pack/boundary-map-summary.json`
+  - `artifacts/context-pack/boundary-map-summary.md`
 - Reports:
   - `artifacts/context-pack/context-pack-boundary-map-report.json`
   - `artifacts/context-pack/context-pack-boundary-map-report.md`
 - Focus points:
+  - summary `status` is one of `ok`, `drift`, `skipped`, or `unresolved`
+  - `drift` is a design-boundary evidence gap, not a proof failure
   - `slices[].produces` / `slices[].consumes` match existing Context Pack refs
   - `upstream.type=slice` points to a real producer slice
   - slice graph does not contain cycles
+  - for `risk:high`, `enforce-assurance`, or critical-core boundaries, copy the summary expected owner / observed dependency into the PR note so later policy work can decide whether to block
 - Re-run:
 ```bash
 pnpm run context-pack:verify-boundary-map

@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/context-pack-boundary-map-summary.schema.json",
+  "title": "Context Pack Boundary Map Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "status",
+    "reviewStatus",
+    "statusReason",
+    "evidenceKind",
+    "defaultDecision",
+    "interpretation",
+    "policyEscalation",
+    "source",
+    "counts",
+    "reviewEvidence"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "context-pack-boundary-map-summary/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "drift",
+        "skipped",
+        "unresolved"
+      ]
+    },
+    "reviewStatus": {
+      "type": "string",
+      "enum": [
+        "boundary map ok",
+        "boundary map drift",
+        "boundary map skipped",
+        "boundary map unresolved"
+      ]
+    },
+    "statusReason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidenceKind": {
+      "type": "string",
+      "const": "design-boundary"
+    },
+    "defaultDecision": {
+      "type": "string",
+      "enum": [
+        "no-drift-evidence",
+        "report-only-evidence-gap"
+      ]
+    },
+    "interpretation": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policyEscalation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "defaultMode",
+        "candidateBlockingConditions",
+        "followUpIssue"
+      ],
+      "properties": {
+        "defaultMode": {
+          "type": "string",
+          "const": "report-only"
+        },
+        "candidateBlockingConditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "followUpIssue": {
+          "type": "string",
+          "pattern": "^#[0-9]+$"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mapPath",
+        "schemaPath",
+        "reportJsonPath",
+        "reportMarkdownPath"
+      ],
+      "properties": {
+        "mapPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schemaPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reportJsonPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reportMarkdownPath": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scannedContextPackFiles",
+        "skippedAuxiliaryFiles",
+        "checkedSlices",
+        "checkedProduces",
+        "checkedConsumes",
+        "totalFindings",
+        "duplicateSliceIds",
+        "missingContextPackRefs",
+        "duplicateProducedRefs",
+        "missingUpstreamSlices",
+        "missingUpstreamProducers",
+        "cycleViolations"
+      ],
+      "properties": {
+        "scannedContextPackFiles": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "skippedAuxiliaryFiles": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "checkedSlices": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "checkedProduces": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "checkedConsumes": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "totalFindings": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "duplicateSliceIds": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "missingContextPackRefs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "duplicateProducedRefs": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "missingUpstreamSlices": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "missingUpstreamProducers": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "cycleViolations": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        }
+      }
+    },
+    "reviewEvidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reviewEvidenceEntry"
+      }
+    }
+  },
+  "$defs": {
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "reviewEvidenceEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "severity",
+        "file",
+        "expectedOwner",
+        "observedDependency",
+        "message"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning",
+            "info"
+          ]
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "slice": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "refId"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "object",
+                "morphism",
+                "diagram",
+                "acceptance-test",
+                "forbidden-change"
+              ]
+            },
+            "refId": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "expectedOwner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "observedDependency": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
