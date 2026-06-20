@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, onTestFinished } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -13,7 +13,11 @@ const schemaPath = resolve('schema/producer-normalization-summary.schema.json');
 function createTempDir() {
   const parent = join(repoRoot, '.codex-local', 'tmp');
   mkdirSync(parent, { recursive: true });
-  return mkdtempSync(join(parent, 'normalize-producer-output-'));
+  const dir = mkdtempSync(join(parent, 'normalize-producer-output-'));
+  onTestFinished(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+  return dir;
 }
 
 function runNormalizer(args: string[]) {
@@ -75,8 +79,6 @@ describe('normalize-producer-output', () => {
     expect(markdown).toContain('Report-only');
     expect(markdown).toContain('change-package/v2');
     expect(markdown).toContain('Control-plane decision emitted: `false`');
-
-    rmSync(dir, { recursive: true, force: true });
   });
 
   it('keeps unsupported claims and incomplete waiver metadata as report-only findings', () => {
@@ -105,6 +107,13 @@ describe('normalize-producer-output', () => {
           reason: 'temporary exception',
         },
       },
+      {
+        claimId: 'policy-waiver-missing-metadata',
+        rawAssertion: 'A policy exception exists.',
+        targetArtifact: 'policy-decision/v1',
+        expectedPolicyResult: 'waived',
+        supportingEvidence: ['maintainer note'],
+      },
     ];
     writeFileSync(input, JSON.stringify(fixture, null, 2));
 
@@ -132,10 +141,9 @@ describe('normalize-producer-output', () => {
       expect.arrayContaining([
         expect.objectContaining({ kind: 'claim-evidence', claimId: 'bad-policy-result' }),
         expect.objectContaining({ kind: 'waiver-metadata', claimId: 'waiver-missing-expiry' }),
+        expect.objectContaining({ kind: 'waiver-metadata', claimId: 'policy-waiver-missing-metadata' }),
       ]),
     );
-
-    rmSync(dir, { recursive: true, force: true });
   });
 
 
@@ -155,8 +163,6 @@ describe('normalize-producer-output', () => {
     expect(result.status).toBe(0);
     const summary = JSON.parse(readFileSync(outJson, 'utf8'));
     validateSummary(summary);
-
-    rmSync(dir, { recursive: true, force: true });
   });
 
   it('fails fast when the input fixture is missing', () => {
@@ -169,7 +175,5 @@ describe('normalize-producer-output', () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('producer fixture not found');
-
-    rmSync(dir, { recursive: true, force: true });
   });
 });

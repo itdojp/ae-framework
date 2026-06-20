@@ -319,6 +319,24 @@ function analyzeFixture({ commands, claimsMentioned, knownGaps, rawSignals }) {
           { claimId, targetArtifact, expectedPolicyResult: result },
         ));
       }
+      if (result === 'waived') {
+        const missingFields = missingWaiverMetadata(claim);
+        if (missingFields.length > 0) {
+          const summary = `Policy waiver metadata is incomplete for claim ${claimId}: ${missingFields.join(', ')}`;
+          missingEvidence.push({
+            kind: 'waiver-metadata',
+            summary,
+            claimId,
+            artifact: targetArtifact,
+          });
+          reportOnlyFindings.push(buildFinding(
+            `missing-policy-waiver-metadata:${index + 1}`,
+            'waiver-metadata',
+            summary,
+            { claimId, targetArtifact, missingFields },
+          ));
+        }
+      }
     } else {
       reportOnlyFindings.push(buildFinding(
         `unsupported-target-artifact:${index + 1}`,
@@ -473,7 +491,9 @@ function runCli() {
   console.log(`Producer normalization markdown written: ${options.outMd}`);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+const invokedScriptPath = process.argv[1] ? path.resolve(process.argv[1]) : null;
+
+if (invokedScriptPath === fileURLToPath(import.meta.url)) {
   try {
     runCli();
   } catch (error) {
