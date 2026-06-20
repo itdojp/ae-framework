@@ -635,6 +635,9 @@ function classifySummaryStatus(report) {
   if (report.summary.totalViolations === 0) {
     return report.checkedSlices === 0 ? 'skipped' : 'ok';
   }
+  if (report.scannedContextPackFiles === 0) {
+    return 'unresolved';
+  }
   if (report.violations.some((violation) => UNRESOLVED_VIOLATION_TYPES.has(violation.type))) {
     return 'unresolved';
   }

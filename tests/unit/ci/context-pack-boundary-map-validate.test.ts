@@ -378,6 +378,46 @@ describe('context-pack boundary map validate CLI', () => {
     expect(report.skippedAuxiliaryFiles).toBe(1);
   });
 
+  it('marks the summary unresolved when only auxiliary context-pack sidecars are scanned', async () => {
+    await writeFile(
+      join(contextPackDir, 'functor-map.json'),
+      `${JSON.stringify(
+        {
+          schemaVersion: 'context-pack-functor-map/v1',
+          contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+          objects: [{ id: 'InventoryItem', moduleGlobs: ['src/domain/**/*.ts'] }],
+          morphisms: [{ id: 'ReserveInventory', entrypoints: [{ file: 'src/domain/services.ts' }] }],
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+    await writeMap({
+      schemaVersion: 'context-pack-boundary-map/v1',
+      contextPackSources: ['spec/context-pack/functor-map.json'],
+      slices: [
+        {
+          id: 'inventory-item-model',
+          produces: [{ kind: 'object', refId: 'InventoryItem' }],
+        },
+      ],
+    });
+
+    const result = runVerify();
+    expect(result.status).toBe(2);
+
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.scannedContextPackFiles).toBe(0);
+    expect(report.skippedAuxiliaryFiles).toBe(1);
+    expect(report.summary.missingContextPackRefs).toBe(1);
+
+    const summary = JSON.parse(await readFile(summaryJsonPath(), 'utf8'));
+    expect(summary.status).toBe('unresolved');
+    expect(summary.reviewStatus).toBe('boundary map unresolved');
+    expect(summary.statusReason).toContain('could not produce a complete drift judgment');
+  });
+
   it('escapes backslashes in markdown report cells', async () => {
     await writeContextPack();
     await writeMap({
