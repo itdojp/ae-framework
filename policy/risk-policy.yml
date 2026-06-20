@@ -1,5 +1,5 @@
 version: 1
-updated_at: "2026-02-26"
+updated_at: "2026-06-20"
 owner: "ae-framework"
 
 labels:
@@ -31,6 +31,71 @@ high_risk:
 low_risk:
   allow_auto_merge: true
   require_human_approval: false
+
+assurance_escalation:
+  default_mode: "report-only"
+  waiver_required_fields:
+    - "owner"
+    - "reason"
+    - "expiry"
+    - "affected_claim"
+    - "evidence_link"
+  lanes:
+    ordinary:
+      trigger: "risk:low without enforce-assurance or critical-core boundary policy"
+      decision: "report-only"
+      required_response:
+        - "show missing evidence, unresolved claims, Boundary Map drift, and waiver metadata gaps in summaries"
+        - "do not require heavy lanes or human approval by default"
+    risk_high:
+      trigger_labels:
+        - "risk:high"
+      decision: "manual-approval"
+      required_response:
+        - "require the configured minimum human approvals"
+        - "require policy labels derived from changed files"
+        - "require a valid plan artifact before implementation review"
+        - "surface missing evidence, unresolved claims, Boundary Map drift, and waiver metadata gaps for reviewer disposition"
+    enforce_assurance:
+      trigger_labels:
+        - "enforce-assurance"
+      decision: "block"
+      required_response:
+        - "run strict assurance enforcement after successful verify-lite artifacts are available"
+        - "block missing required lanes, missing evidence, failed evidence, expired or orphan waivers, and unresolved claims"
+    critical_core:
+      trigger: "critical-core boundary policy or explicit assurance profile"
+      decision: "manual-approval-or-block"
+      required_response:
+        - "require the lane set declared by the assurance profile or critical-core boundary"
+        - "promote unresolved required evidence to block when strict assurance is selected"
+        - "otherwise require manual reviewer disposition and keep counts visible"
+  finding_classes:
+    missing_required_lane:
+      ordinary: "report-only"
+      risk_high: "manual-approval"
+      enforce_assurance: "block"
+      critical_core: "manual-approval-or-block"
+    missing_evidence:
+      ordinary: "report-only"
+      risk_high: "manual-approval"
+      enforce_assurance: "block"
+      critical_core: "manual-approval-or-block"
+    boundary_drift:
+      ordinary: "report-only"
+      risk_high: "manual-approval"
+      enforce_assurance: "block-when-required-by-profile"
+      critical_core: "manual-approval-or-block"
+    waiver_metadata_gap:
+      ordinary: "report-only"
+      risk_high: "manual-approval"
+      enforce_assurance: "block"
+      critical_core: "manual-approval-or-block"
+    unresolved_claim:
+      ordinary: "report-only"
+      risk_high: "manual-approval"
+      enforce_assurance: "block"
+      critical_core: "manual-approval-or-block"
 
 classification:
   high_risk_paths:

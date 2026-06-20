@@ -109,6 +109,21 @@ Runtime control compensates for areas that are not closed by proof or model chec
 #### 3.3 Waiver
 A waiver is the record used when an exception is accepted. It should retain owner, expiry, reason, and related claims.
 
+### 3.4 Escalation lanes
+
+Escalation is driven by `policy/risk-policy.yml` rather than by the producer
+agent. The default lane is report-only. `risk:high` changes promote missing
+required lanes, missing evidence, Boundary Map drift, waiver metadata gaps, and
+unresolved claims to manual reviewer disposition through human approvals,
+required policy labels, and the plan artifact. `enforce-assurance` selects
+strict blocking after Verify Lite artifacts are available. Critical-core
+boundaries or explicit assurance profiles may choose manual approval or block
+for their declared required lanes.
+
+Waivers remain exceptions, not evidence upgrades. Missing owner, reason, expiry,
+affected claim, or evidence link is report-only in the default lane and blocking
+in strict assurance mode.
+
 ### 4. Mapping to the current implementation
 
 Implemented on current `main`:
@@ -257,6 +272,20 @@ proof や model-check で閉じない部分を、feature flag / alert / rollout 
 
 #### 3.3 例外記録（waiver）
 例外を許容する場合の記録です。owner / expires / reason / related claims を残します。
+
+### 3.4 escalation lane
+
+Escalation は producer agent ではなく `policy/risk-policy.yml` によって決まります。
+既定 lane は report-only です。`risk:high` 変更では required lane 不足、evidence 不足、
+Boundary Map drift、waiver metadata gap、unresolved claim を、human approval、
+required policy label、plan artifact による reviewer disposition へ昇格します。
+`enforce-assurance` は Verify Lite artifact が揃った後に strict blocking を選択します。
+critical-core boundary または明示的 assurance profile は、宣言された required lane に対して
+manual approval または block を選択できます。
+
+waiver は例外であり、evidence upgrade ではありません。owner、reason、expiry、
+affected claim、evidence link が欠ける場合、既定 lane では report-only、strict assurance mode
+では blocking です。
 
 ### 4. 現行実装との対応
 

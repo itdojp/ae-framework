@@ -63,6 +63,16 @@ Use this document with:
 | Enforcement default | New assurance evaluation should start report-only unless an explicit policy, label, or risk profile selects enforcement. |
 | Policy-gate assurance findings | Producer or assurance-summary findings may be copied into `policy-gate-summary/v1` with count, severity, and source artifact path, but the default handling is report-only and does not block ordinary PRs. |
 
+Escalation is policy-scoped, not producer-scoped. `policy/risk-policy.yml`
+defines `assurance_escalation` so the same finding has a predictable outcome:
+ordinary PRs keep missing evidence and agent findings report-only; `risk:high`
+requires manual approval, policy-label convergence, and a plan artifact;
+`enforce-assurance` blocks strict assurance failures; critical-core boundaries or
+explicit assurance profiles can choose manual approval or blocking for their
+declared required lanes. A waiver must retain owner, reason, expiry, affected
+claim, and evidence link; it does not convert an unsupported claim into
+`proved`, `tested`, or `satisfied`.
+
 ### 4. Canonical terminology
 
 | Term | Meaning | Current references |
@@ -204,6 +214,16 @@ Policy gates may consume these metrics for context, but a metric must not become
 | Contract evolution | contract 変更には compatibility window、dual-write/dual-validate、または migration note を使う。 |
 | Enforcement default | 新しい assurance evaluation は、明示的な policy / label / risk profile が enforcement を選択しない限り report-only から開始する。 |
 | Policy-gate assurance findings | producer または assurance summary 由来の finding は `policy-gate-summary/v1` に count、severity、source artifact path 付きで転記できるが、既定は report-only であり通常PRをblockしない。 |
+
+Escalation は producer ではなく policy で決まります。
+`policy/risk-policy.yml` の `assurance_escalation` は、同じ finding に対して
+予測可能な結果を定義します。通常 PR では evidence 不足や agent finding は
+report-only に留めます。`risk:high` では manual approval、policy label の収束、
+plan artifact を要求します。`enforce-assurance` では strict assurance failure を
+block します。critical-core boundary または明示的 assurance profile は、宣言された
+required lane について manual approval または blocking を選択できます。waiver は
+owner、reason、expiry、affected claim、evidence link を保持する必要があり、
+unsupported claim を `proved`、`tested`、`satisfied` に変換しません。
 
 ### 4. 用語
 

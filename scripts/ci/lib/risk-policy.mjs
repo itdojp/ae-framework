@@ -50,6 +50,26 @@ function getOptionalGateLabels(policy) {
   return normalizeStringArray(policy?.labels?.optional_gates);
 }
 
+function getAssuranceEscalationPolicy(policy) {
+  const value = policy?.assurance_escalation && typeof policy.assurance_escalation === 'object'
+    ? policy.assurance_escalation
+    : {};
+  const lanes = value?.lanes && typeof value.lanes === 'object' && !Array.isArray(value.lanes)
+    ? value.lanes
+    : {};
+  const findingClasses = value?.finding_classes
+    && typeof value.finding_classes === 'object'
+    && !Array.isArray(value.finding_classes)
+    ? value.finding_classes
+    : {};
+  return {
+    defaultMode: String(value?.default_mode || 'report-only').trim() || 'report-only',
+    waiverRequiredFields: normalizeStringArray(value?.waiver_required_fields),
+    lanes,
+    findingClasses,
+  };
+}
+
 function getRequiredChecks(policy) {
   return normalizeStringArray(policy?.required_checks);
 }
@@ -168,6 +188,7 @@ export {
   DEFAULT_POLICY_PATH,
   collectRequiredLabels,
   evaluateLabelRequirements,
+  getAssuranceEscalationPolicy,
   getGateCheckPatternsForLabel,
   getMinHumanApprovals,
   getOptionalGateLabels,

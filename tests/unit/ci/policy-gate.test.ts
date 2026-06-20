@@ -641,6 +641,42 @@ describe('policy-gate', () => {
     ]));
   });
 
+  it('requires manual approval for high-risk PRs with report-only missing evidence findings', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:high' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['.github/workflows/ci.yml'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      planArtifact: planArtifactState(),
+      assurance: assuranceState({
+        claims: [
+          {
+            claimId: 'proof-required',
+            result: 'block',
+            status: 'unresolved',
+            evidenceRefs: [],
+            missingEvidenceRefs: ['missing-proof:proof-required'],
+            waiverRefs: [],
+            waivers: [],
+          },
+        ],
+      }),
+      assuranceMode: 'report-only',
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toContain('human approvals are insufficient: required 1, got 0');
+    expect(result.warnings).toEqual(expect.arrayContaining([
+      expect.stringContaining('assurance claim proof-required is missing required evidence'),
+    ]));
+    expect(result.assurance.mode).toBe('report-only');
+    expect(result.assurance.summary.block).toBe(1);
+  });
+
   it('renders waiver ownership, expiry, and reason in the policy gate summary', () => {
     const result = evaluatePolicyGate({
       policy,
@@ -823,6 +859,49 @@ describe('policy-gate', () => {
     expect(result.errors).toContain('assurance decision is block');
     expect(result.assurance.result).toBe('block');
     expect(result.assurance.summary.expiredWaivers).toBe(1);
+  });
+
+  it('blocks strict assurance mode when waiver metadata is incomplete', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }, { name: 'enforce-assurance' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['scripts/assurance/aggregate-lanes.mjs'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState({
+        claims: [
+          {
+            claimId: 'manual-fraud-review',
+            result: 'waived',
+            status: 'waived',
+            evidenceRefs: [],
+            missingEvidenceRefs: [],
+            waiverRefs: ['waiver-incomplete-001'],
+            waivers: [
+              {
+                id: 'waiver-incomplete-001',
+                status: 'active',
+              },
+            ],
+          },
+        ],
+      }),
+      assuranceMode: 'strict',
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(expect.arrayContaining([
+      'assurance decision is block',
+      expect.stringContaining('assurance waiver waiver-incomplete-001 for manual-fraud-review is missing owner'),
+      expect.stringContaining('assurance waiver waiver-incomplete-001 for manual-fraud-review is missing reason'),
+      expect.stringContaining('assurance waiver waiver-incomplete-001 for manual-fraud-review is missing expiry'),
+      expect.stringContaining('assurance waiver waiver-incomplete-001 for manual-fraud-review is missing source artifact'),
+      expect.stringContaining('assurance waiver waiver-incomplete-001 for manual-fraud-review is missing related evidence link'),
+    ]));
+    expect(result.assurance.result).toBe('block');
   });
 
   it('blocks strict assurance mode when claim evidence failed', () => {
