@@ -93,7 +93,7 @@ Use the fixture for a complete schema-valid sample, including `validationLanes`,
 
 These values are `change-package/v2` package states, not `claim-evidence-manifest/v1` claim statuses or evidence kinds. `failed` means the package records a failed or insufficient claim outcome; it is not an evidence kind. `not-applicable` means the package explicitly records that a claim is out of scope or non-applicable for this package, with reviewable references or rationale. It must not be silently inferred from missing requirement references, empty per-claim `requirementRefs` arrays, or absent artifacts.
 
-`runtime-mitigated` is not proof. `waived` is not satisfied. `change-package/v2` status values must not expand `claim-evidence-manifest/v1` claim-status or evidence-kind vocabularies, or agent PR metric states, without an explicit schema and policy migration.
+`tested` is behavior evidence, not proof. `model-checked` is model evidence, not proof. `runtime-mitigated` is runtime evidence, not proof. `waived` is not satisfied. `change-package/v2` status values must not expand `claim-evidence-manifest/v1` claim-status or evidence-kind vocabularies, or agent PR metric states, without an explicit schema and policy migration.
 
 ### 5. Core sections
 
@@ -186,7 +186,7 @@ The generated Markdown points to the evidence package path, lists claim-state co
 
 これらは `change-package/v2` の package state であり、`claim-evidence-manifest/v1` の claim status や evidence kind ではありません。`failed` は package が failed / insufficient な claim outcome を記録したことを表し、evidence kind ではありません。`not-applicable` は、その package において claim が明示的に scope 外 / 非対象であることを、review 可能な reference または rationale とともに記録する state です。missing requirement references、空の per-claim `requirementRefs` 配列、artifact 欠落から暗黙推論してはいけません。
 
-`runtime-mitigated` は proof ではありません。`waived` は satisfied ではありません。`change-package/v2` の status value は、明示的な schema / policy migration なしに `claim-evidence-manifest/v1` の claim-status / evidence-kind vocabulary や agent PR metric state を拡張しません。
+`tested` は behavior evidence であり proof ではありません。`model-checked` は model evidence であり proof ではありません。`runtime-mitigated` は runtime evidence であり proof ではありません。`waived` は satisfied ではありません。`change-package/v2` の status value は、明示的な schema / policy migration なしに `claim-evidence-manifest/v1` の claim-status / evidence-kind vocabulary や agent PR metric state を拡張しません。
 
 ## 5. 主要セクション
 

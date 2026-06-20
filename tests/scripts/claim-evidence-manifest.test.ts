@@ -80,9 +80,9 @@ describe.sequential('claim evidence manifest generator', () => {
         summary: {
           totalClaims: 4,
           fullySupported: 1,
-          partiallySupported: 3,
+          partiallySupported: 2,
           waived: 0,
-          unresolved: 0,
+          unresolved: 1,
         },
       });
       expect(manifest.sourceArtifacts).toEqual(
@@ -115,12 +115,19 @@ describe.sequential('claim evidence manifest generator', () => {
       expect(balanceClaim.proofObligationRefs).toEqual([
         expect.objectContaining({ id: 'obl-1', status: 'discharged', method: 'tla' }),
       ]);
+      expect(balanceClaim.evidenceRefs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ sourceArtifactId: 'change-package-v2', kind: 'model' }),
+        ]),
+      );
       expect(balanceClaim.missingEvidenceRefs.length).toBeGreaterThan(0);
 
       const markdown = readFileSync(outputMd, 'utf8');
       expect(markdown).toContain('# Claim Evidence Manifest');
+      expect(markdown).toContain('status vocabulary: satisfied, partial, waived, unresolved');
+      expect(markdown).toContain('evidence state guide: behavior=tested, model=model-checked, proof=proved, runtime=runtime-mitigated');
       expect(markdown).toContain('| no-negative-balance | n/a | high | A3 | A2 | partial |');
-      expect(markdown).toContain('| strict-proof-failure | n/a | high | A3 | A2 | partial |');
+      expect(markdown).toContain('| strict-proof-failure | n/a | high | A3 | A2 | unresolved |');
       expect(markdown).toContain('| ui-out-of-scope | n/a | low | A3 | A2 | partial |');
       expect(markdown).toContain('## Missing evidence');
 
@@ -128,7 +135,7 @@ describe.sequential('claim evidence manifest generator', () => {
       expect(strictProofClaim).toMatchObject({
         targetLevel: 'A3',
         achievedLevel: 'A2',
-        status: 'partial',
+        status: 'unresolved',
       });
       expect(strictProofClaim.evidenceRefs).toEqual(
         expect.arrayContaining([
@@ -487,7 +494,7 @@ describe.sequential('claim evidence manifest generator', () => {
     expect(markdown).toContain(
       String.raw`| artifact\\id\|pipe | assurance-summary | true | true | artifacts\\assurance\|summary.json | assurance-summary/v1 |`,
     );
-    expect(markdown).toContain(String.raw`| claim\\id\|pipe | n/a | high | A2 | A2 | satisfied | 0 | 0 | 0 | n/a | n/a |`);
+    expect(markdown).toContain(String.raw`| claim\\id\|pipe | n/a | high | A2 | A2 | satisfied | n/a | 0 | 0 | 0 | n/a | n/a |`);
   });
 
   it('preserves lower explicit change-package achievedLevel when a claim is also present in assurance summary', () => {
@@ -546,6 +553,161 @@ describe.sequential('claim evidence manifest generator', () => {
       );
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps runtime-mitigated change-package claims partial in the manifest status vocabulary', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-claim-evidence-manifest-runtime-status-'));
+    const fixture = JSON.parse(
+      readFileSync(resolve(repoRoot, 'fixtures/change-package/sample.change-package-v2.json'), 'utf8'),
+    );
+    const changePackagePath = join(sandbox, 'change-package-v2.json');
+    const outputJson = join(sandbox, 'claim-evidence-manifest.json');
+    const outputMd = join(sandbox, 'claim-evidence-manifest.md');
+
+    try {
+      fixture.assurance = {
+        targetLevel: 'A3',
+        achievedLevel: 'A3',
+        status: 'satisfied',
+      };
+      fixture.claims = [
+        {
+          ...fixture.claims[0],
+          id: 'no-negative-stock',
+          statement: 'Inventory stock never becomes negative after an accepted reservation.',
+          criticality: 'high',
+          status: 'runtime-mitigated',
+          targetLevel: 'A3',
+          achievedLevel: 'A3',
+          artifactRefs: ['artifacts/runtime/rollout-guard.json'],
+        },
+      ];
+      fixture.proofObligations = [];
+      fixture.counterexamples = [];
+      fixture.waivers = [];
+      writeJson(changePackagePath, fixture);
+
+      const result = runScript([
+        '--assurance-summary',
+        'fixtures/assurance/sample.assurance-summary.json',
+        '--change-package',
+        changePackagePath,
+        '--quality-scorecard',
+        'fixtures/quality/sample.quality-scorecard.json',
+        '--generated-at',
+        '2026-04-28T18:20:00.000Z',
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const manifest = JSON.parse(readFileSync(outputJson, 'utf8'));
+      const stockClaim = manifest.claims.find((claim: { id: string }) => claim.id === 'no-negative-stock');
+
+      expect(stockClaim).toMatchObject({
+        targetLevel: 'A3',
+        achievedLevel: 'A2',
+        status: 'partial',
+      });
+      expect(stockClaim.evidenceRefs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'runtime',
+            sourceArtifactId: 'change-package-v2',
+            description: expect.stringContaining('status=runtime-mitigated'),
+          }),
+        ]),
+      );
+      expect(stockClaim.missingEvidenceRefs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            reason: expect.stringContaining('claim status partial is not satisfied'),
+          }),
+        ]),
+      );
+      expect(manifest.summary).toMatchObject({
+        fullySupported: 0,
+        partiallySupported: 1,
+      });
+
+      const markdown = readFileSync(outputMd, 'utf8');
+      expect(markdown).toContain('runtime=runtime-mitigated');
+      expect(markdown).toContain('| no-negative-stock | n/a | high | A3 | A2 | partial |');
+      expect(markdown).toContain('runtime');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('maps top-level change-package failed and not-applicable assurance status conservatively', () => {
+    const cases = [
+      { assuranceStatus: 'failed', expectedStatus: 'unresolved' },
+      { assuranceStatus: 'not-applicable', expectedStatus: 'partial' },
+    ] as const;
+
+    for (const testCase of cases) {
+      const sandbox = mkdtempSync(join(tmpdir(), `ae-claim-evidence-manifest-top-level-${testCase.assuranceStatus}-`));
+      const fixture = JSON.parse(
+        readFileSync(resolve(repoRoot, 'fixtures/change-package/sample.change-package-v2.json'), 'utf8'),
+      );
+      const changePackagePath = join(sandbox, 'change-package-v2.json');
+      const outputJson = join(sandbox, 'claim-evidence-manifest.json');
+      const outputMd = join(sandbox, 'claim-evidence-manifest.md');
+
+      try {
+        fixture.assurance = {
+          targetLevel: 'A3',
+          achievedLevel: 'A3',
+          status: testCase.assuranceStatus,
+        };
+        fixture.claims = [
+          {
+            ...fixture.claims[0],
+            id: `top-level-${testCase.assuranceStatus}`,
+            statement: `Top-level assurance ${testCase.assuranceStatus} is not manifest satisfied.`,
+            criticality: 'high',
+            status: 'tested',
+            targetLevel: 'A3',
+            achievedLevel: 'A3',
+            artifactRefs: ['tests/unit/top-level-status.test.ts'],
+          },
+        ];
+        fixture.proofObligations = [];
+        fixture.counterexamples = [];
+        fixture.waivers = [];
+        writeJson(changePackagePath, fixture);
+
+        const result = runScript([
+          '--assurance-summary',
+          'fixtures/assurance/sample.assurance-summary.json',
+          '--change-package',
+          changePackagePath,
+          '--generated-at',
+          '2026-04-28T18:20:00.000Z',
+          '--output-json',
+          outputJson,
+          '--output-md',
+          outputMd,
+        ]);
+
+        expect(result.status, result.stderr || result.stdout).toBe(0);
+        const manifest = JSON.parse(readFileSync(outputJson, 'utf8'));
+        const claim = manifest.claims.find((entry: { id: string }) => entry.id === `top-level-${testCase.assuranceStatus}`);
+
+        expect(claim).toMatchObject({
+          targetLevel: 'A3',
+          achievedLevel: 'A2',
+          status: testCase.expectedStatus,
+        });
+
+        const markdown = readFileSync(outputMd, 'utf8');
+        expect(markdown).toContain(`| top-level-${testCase.assuranceStatus} | n/a | high | A3 | A2 | ${testCase.expectedStatus} |`);
+      } finally {
+        rmSync(sandbox, { recursive: true, force: true });
+      }
     }
   });
 

@@ -147,16 +147,33 @@ const claimEvidenceWaiverCount = claimEvidenceClaims.reduce(
   (count, claim) => count + (Array.isArray(claim?.waiverRefs) ? claim.waiverRefs.length : 0),
   0,
 );
+const claimEvidenceKindCounts = claimEvidenceClaims.reduce((counts, claim) => {
+  const seenKinds = new Set(
+    (Array.isArray(claim?.evidenceRefs) ? claim.evidenceRefs : [])
+      .map((entry) => String(entry?.kind || '').trim())
+      .filter(Boolean),
+  );
+  for (const kind of seenKinds) {
+    counts.set(kind, (counts.get(kind) || 0) + 1);
+  }
+  return counts;
+}, new Map());
 const claimEvidenceLine = claimEvidenceSummary
   ? t(
-      `Claim evidence: satisfied=${claimEvidenceSummary.fullySupported ?? 'n/a'}/${claimEvidenceSummary.totalClaims ?? 'n/a'}, partial=${claimEvidenceSummary.partiallySupported ?? 'n/a'}, waived=${claimEvidenceSummary.waived ?? 'n/a'}, unresolved=${claimEvidenceSummary.unresolved ?? 'n/a'}`,
-      `claim evidence: 適合=${claimEvidenceSummary.fullySupported ?? 'n/a'}/${claimEvidenceSummary.totalClaims ?? 'n/a'}, 部分=${claimEvidenceSummary.partiallySupported ?? 'n/a'}, waiver=${claimEvidenceSummary.waived ?? 'n/a'}, 未解決=${claimEvidenceSummary.unresolved ?? 'n/a'}`,
+      `Claim evidence status: satisfied=${claimEvidenceSummary.fullySupported ?? 'n/a'}/${claimEvidenceSummary.totalClaims ?? 'n/a'} (manifest status, not proof), partial=${claimEvidenceSummary.partiallySupported ?? 'n/a'}, waived=${claimEvidenceSummary.waived ?? 'n/a'}, unresolved=${claimEvidenceSummary.unresolved ?? 'n/a'}`,
+      `claim evidence status: satisfied=${claimEvidenceSummary.fullySupported ?? 'n/a'}/${claimEvidenceSummary.totalClaims ?? 'n/a'}（manifest status、proofではない）, partial=${claimEvidenceSummary.partiallySupported ?? 'n/a'}, waiver=${claimEvidenceSummary.waived ?? 'n/a'}, unresolved=${claimEvidenceSummary.unresolved ?? 'n/a'}`,
     )
   : '';
 const claimEvidenceRefsLine = claimEvidenceSummary
   ? t(
       `Claim evidence refs: missing=${claimEvidenceMissingCount}, waivers=${claimEvidenceWaiverCount}`,
       `claim evidence refs: missing=${claimEvidenceMissingCount}, waiver=${claimEvidenceWaiverCount}`,
+    )
+  : '';
+const claimEvidenceKindsLine = claimEvidenceSummary
+  ? t(
+      `Claim evidence review states: behavior/tested=${claimEvidenceKindCounts.get('behavior') || 0}, model/model-checked=${claimEvidenceKindCounts.get('model') || 0}, proof/proved=${claimEvidenceKindCounts.get('proof') || 0}, runtime/runtime-mitigated=${claimEvidenceKindCounts.get('runtime') || 0}`,
+      `claim evidence review states: behavior/tested=${claimEvidenceKindCounts.get('behavior') || 0}, model/model-checked=${claimEvidenceKindCounts.get('model') || 0}, proof/proved=${claimEvidenceKindCounts.get('proof') || 0}, runtime/runtime-mitigated=${claimEvidenceKindCounts.get('runtime') || 0}`,
     )
   : '';
 const claimEvidenceSecurity = claimEvidenceSummary?.security && typeof claimEvidenceSummary.security === 'object'
@@ -169,10 +186,10 @@ const claimEvidenceSecurityLine = claimEvidenceSecurity
     )
   : '';
 const claimEvidenceDigestSegment = claimEvidenceSummary
-  ? `${claimEvidenceLine}${claimEvidenceRefsLine ? ` | ${claimEvidenceRefsLine}` : ''}${claimEvidenceSecurityLine ? ` | ${claimEvidenceSecurityLine}` : ''}`
+  ? `${claimEvidenceLine}${claimEvidenceRefsLine ? ` | ${claimEvidenceRefsLine}` : ''}${claimEvidenceKindsLine ? ` | ${claimEvidenceKindsLine}` : ''}${claimEvidenceSecurityLine ? ` | ${claimEvidenceSecurityLine}` : ''}`
   : '';
 const claimEvidenceDetailBlock = claimEvidenceSummary
-  ? `- ${claimEvidenceLine}\n${claimEvidenceRefsLine ? `- ${claimEvidenceRefsLine}\n` : ''}${claimEvidenceSecurityLine ? `- ${claimEvidenceSecurityLine}\n` : ''}`
+  ? `- ${claimEvidenceLine}\n${claimEvidenceRefsLine ? `- ${claimEvidenceRefsLine}\n` : ''}${claimEvidenceKindsLine ? `- ${claimEvidenceKindsLine}\n` : ''}${claimEvidenceSecurityLine ? `- ${claimEvidenceSecurityLine}\n` : ''}`
   : '';
 const changePackageV2Claims = Array.isArray(changePackageV2?.claims) ? changePackageV2.claims : [];
 const changePackageV2ProofObligations = Array.isArray(changePackageV2?.proofObligations) ? changePackageV2.proofObligations : [];
