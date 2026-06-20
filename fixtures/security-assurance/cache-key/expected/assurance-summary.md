@@ -7,6 +7,26 @@
 - warningCount: 2
 - unlinkedCounterexamples: 0
 
+## Reviewer decision surface
+
+- recommendedReviewerAction: review-unresolved-claims
+- reason: Assurance warning claims=3, unresolved/partial manifest claims=0, claims with missing evidence=0.
+- manifestClaims: satisfied=0, partial=0, waived=0, unresolved=0, failed=0
+- assuranceSummaryClaims: satisfied=0, warning=3
+- missingEvidenceClaims: 0
+- waivedClaims: 0
+- activeWaivers: 0
+- producerSignals: not-provided (reportOnlyFindings=0, missingEvidence=0)
+- boundaryMap: not-provided (findings=0)
+- policyDecision: not-provided (mode=n/a)
+
+Interpretation notes:
+
+- Producer assertions remain producer assertions; control-plane judgment must come from reviewed, schema-backed evidence and policy artifacts.
+- tested and proved are distinct evidence outcomes; runtime-mitigated is not proof.
+- waived is an explicit exception state and must not be counted as satisfied.
+- This review surface helps reviewers identify support and gaps; it is not an automatic merge approval.
+
 ## Claim status
 
 | claim | type | status | required lanes | observed lanes | missing lanes | assumption handling | warnings |

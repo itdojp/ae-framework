@@ -13,6 +13,9 @@ const assuranceSummarySchema = JSON.parse(
 const assuranceSummaryFixture = JSON.parse(
   readFileSync(resolve('fixtures/assurance/sample.assurance-summary.json'), 'utf8'),
 ) as Record<string, unknown>;
+const assuranceReviewSurfaceFixture = JSON.parse(
+  readFileSync(resolve('fixtures/security-assurance/cache-key/expected/assurance-summary.json'), 'utf8'),
+) as Record<string, unknown>;
 
 const buildValidator = () => {
   const ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -26,6 +29,18 @@ describe('assurance summary contract', () => {
     const validate = buildValidator();
 
     expect(validate(assuranceSummaryFixture), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('validates a fixture with the reviewer decision surface', () => {
+    const validate = buildValidator();
+
+    expect(validate(assuranceReviewSurfaceFixture), JSON.stringify(validate.errors)).toBe(true);
+    expect(assuranceReviewSurfaceFixture.reviewSurface).toMatchObject({
+      schemaVersion: 'assurance-review-surface/v1',
+      recommendedReviewerAction: {
+        action: 'review-unresolved-claims',
+      },
+    });
   });
 
   it('rejects claims without minIndependentSources', () => {
