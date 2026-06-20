@@ -44,7 +44,7 @@ The fixtures under `fixtures/agents/evidence-adapters/` are raw-output examples.
 
 | Producer | Fixture | Raw output captured | Primary normalized artifacts | Notes |
 | --- | --- | --- | --- | --- |
-| Codex CLI local task | `fixtures/agents/evidence-adapters/codex-cli-task-output.json` | task summary, validation results, changed-file claims, continuation or blocker notes | `change-package/v2`, `claim-evidence-manifest/v1`, `ae-handoff/v1`, `hook-feedback/v1` | Use `change-package:generate:v2` (or `change-package:generate -- --schema-version v2`) for change scope, `claim-evidence:generate` when claims/evidence are present, and handoff/feedback builders for continuation state. |
+| Codex CLI local task | `fixtures/agents/evidence-adapters/codex-cli-task-output.json` and `examples/assurance-control-plane/codex-change-package-demo/` | task summary, validation results, changed-file claims, continuation or blocker notes | `change-package/v2`, `claim-evidence-manifest/v1`, `ae-handoff/v1`, `hook-feedback/v1`, `producer-normalization-summary/v1`, `assurance-summary/v1`, `policy-gate-summary/v1` | Use `change-package:generate:v2` (or `change-package:generate -- --schema-version v2`) for change scope, `claim-evidence:generate` when claims/evidence are present, and handoff/feedback builders for continuation state. The `codex-change-package-demo` example shows the fixture -> normalizer -> assurance review surface -> policy-gate report-only path without external APIs. |
 | Claude Code task | `fixtures/agents/evidence-adapters/claude-code-task-output.json` | tool-log summaries, changed files, continuation notes, missing-validation signals | `ae-handoff/v1`, `hook-feedback/v1`, `change-package/v2`, optional `claim-evidence-manifest/v1` | Treat Claude Code as a producer; repository validation and review remain the control-plane evidence. |
 | GitHub Copilot PR review/agent | `fixtures/agents/evidence-adapters/copilot-pr-review-output.json` | PR metadata, review body, inline comments, suggestions, thread state, review-completeness signals | `policy-decision/v1`, optional `change-package/v2`, optional `hook-feedback/v1` | Review thread state is source evidence. Unresolved AI review threads are blockers; resolved or non-actionable comments require a recorded disposition. |
 | Human maintainer | `fixtures/agents/evidence-adapters/human-waiver-review-output.json` | approval, waiver rationale, merge decision, reviewed command evidence | `change-package/v2`, `policy-decision/v1`, `claim-evidence-manifest/v1` waiver entries | Human judgment can override policy only when owner, reason, expiry, affected claim, and evidence link are traceable. |
@@ -67,14 +67,16 @@ For this Issue, the recommended implementation is documentation and fixtures onl
 3. Select the existing target artifacts from the table above.
 4. Optionally run the report-only normalizer to summarize the fixture routing without creating a control-plane judgment:
    - `pnpm run producer-output:normalize -- --input fixtures/agents/evidence-adapters/codex-cli-task-output.json`
+   - Demo path: `pnpm run producer-output:normalize -- --input examples/assurance-control-plane/codex-change-package-demo/producer-output/codex-cli-task-output.json`
 5. Run the existing generators where applicable:
    - `pnpm run change-package:generate:v2`
    - `pnpm run claim-evidence:generate`
    - `pnpm run handoff:create`
    - `pnpm run hook-feedback:build`
-6. Validate generated artifacts with the Contract Catalog's listed validators.
-7. Record any missing command, unresolved claim, or waiver reason in the PR body and artifact summary.
-8. If the adapter cannot route a producer output to an existing artifact, record the applicable ACP-GAP ID from `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` instead of creating a new guarantee vocabulary.
+6. For the Codex change-package demo, feed the normalized summary to `pnpm -s run verify:assurance -- --producer-summary <summary.json>` to show producer report-only findings in `assurance-summary/v1`.
+7. Validate generated artifacts with the Contract Catalog's listed validators.
+8. Record any missing command, unresolved claim, or waiver reason in the PR body and artifact summary.
+9. If the adapter cannot route a producer output to an existing artifact, record the applicable ACP-GAP ID from `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` instead of creating a new guarantee vocabulary.
 
 ### ACP gap IDs for adapter work
 
@@ -125,7 +127,7 @@ Evidence adapter は raw producer output を受け取り、既存 ae-framework a
 
 | Producer | Fixture | Captured raw output | 主な normalized artifact | Notes |
 | --- | --- | --- | --- | --- |
-| Codex CLI local task | `fixtures/agents/evidence-adapters/codex-cli-task-output.json` | task summary、validation result、changed-file claim、continuation / blocker note | `change-package/v2`, `claim-evidence-manifest/v1`, `ae-handoff/v1`, `hook-feedback/v1` | change scope は `change-package:generate:v2`（または `change-package:generate -- --schema-version v2`）、claim/evidence がある場合は `claim-evidence:generate`、continuation state は handoff / feedback builder へ接続する。 |
+| Codex CLI local task | `fixtures/agents/evidence-adapters/codex-cli-task-output.json` と `examples/assurance-control-plane/codex-change-package-demo/` | task summary、validation result、changed-file claim、continuation / blocker note | `change-package/v2`, `claim-evidence-manifest/v1`, `ae-handoff/v1`, `hook-feedback/v1`, `producer-normalization-summary/v1`, `assurance-summary/v1`, `policy-gate-summary/v1` | change scope は `change-package:generate:v2`（または `change-package:generate -- --schema-version v2`）、claim/evidence がある場合は `claim-evidence:generate`、continuation state は handoff / feedback builder へ接続する。`codex-change-package-demo` example は外部 API なしで fixture -> normalizer -> assurance review surface -> policy-gate report-only の流れを示す。 |
 | Claude Code task | `fixtures/agents/evidence-adapters/claude-code-task-output.json` | tool-log summary、changed files、continuation note、missing-validation signal | `ae-handoff/v1`, `hook-feedback/v1`, `change-package/v2`, optional `claim-evidence-manifest/v1` | Claude Code は producer。repository validation と review が control-plane evidence に残る。 |
 | GitHub Copilot PR review/agent | `fixtures/agents/evidence-adapters/copilot-pr-review-output.json` | PR metadata、review body、inline comment、suggestion、thread state、review-completeness signal | `policy-decision/v1`, optional `change-package/v2`, optional `hook-feedback/v1` | review thread state は source evidence。unresolved AI review thread は blocker。resolved または non-actionable comment には disposition を記録する。 |
 | Human maintainer | `fixtures/agents/evidence-adapters/human-waiver-review-output.json` | approval、waiver rationale、merge decision、reviewed command evidence | `change-package/v2`, `policy-decision/v1`, `claim-evidence-manifest/v1` waiver entries | human judgment による policy override は owner、reason、expiry、affected claim、evidence link が traceable な場合だけ有効。 |
@@ -148,14 +150,16 @@ Evidence adapter は raw producer output を受け取り、既存 ae-framework a
 3. 上の表から既存 target artifact を選ぶ。
 4. 必要に応じて report-only normalizer を実行し、control-plane judgment を作らず fixture routing を要約する。
    - `pnpm run producer-output:normalize -- --input fixtures/agents/evidence-adapters/codex-cli-task-output.json`
+   - demo path: `pnpm run producer-output:normalize -- --input examples/assurance-control-plane/codex-change-package-demo/producer-output/codex-cli-task-output.json`
 5. 必要に応じて既存 generator を実行する。
    - `pnpm run change-package:generate:v2`
    - `pnpm run claim-evidence:generate`
    - `pnpm run handoff:create`
    - `pnpm run hook-feedback:build`
-6. Contract Catalog に記載された validator で生成 artifact を検証する。
-7. 未実行 command、unresolved claim、waiver reason は PR body と artifact summary に記録する。
-8. producer output を既存 artifact へ routing できない場合、新しい保証語彙を作らず `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` の ACP-GAP ID を記録する。
+6. Codex change-package demo では、normalized summary を `pnpm -s run verify:assurance -- --producer-summary <summary.json>` に渡し、producer report-only finding が `assurance-summary/v1` に出ることを確認する。
+7. Contract Catalog に記載された validator で生成 artifact を検証する。
+8. 未実行 command、unresolved claim、waiver reason は PR body と artifact summary に記録する。
+9. producer output を既存 artifact へ routing できない場合、新しい保証語彙を作らず `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` の ACP-GAP ID を記録する。
 
 ### ACP gap IDs for adapter work
 

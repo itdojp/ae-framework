@@ -198,6 +198,10 @@ describe.sequential('assurance aggregate lanes script', () => {
       outputJson: 'artifacts/assurance/assurance-summary.json',
       outputMd: 'artifacts/assurance/assurance-summary.md',
     });
+    expect(mod.parseArgs(['--', '--assurance-profile', 'fixtures/assurance/sample.assurance-profile.json']))
+      .toMatchObject({
+        assuranceProfile: 'fixtures/assurance/sample.assurance-profile.json',
+      });
     expect(() => mod.parseArgs(['--assurance-profile'])).toThrow('--assurance-profile requires a value');
 
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-aggregate-success-'));

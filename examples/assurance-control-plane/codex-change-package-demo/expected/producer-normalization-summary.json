@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "producer-normalization-summary/v1",
+  "generatedAt": "2026-06-20T00:00:00.000Z",
+  "mode": "report-only",
+  "input": {
+    "path": "examples/assurance-control-plane/codex-change-package-demo/producer-output/codex-cli-task-output.json",
+    "producerOverride": null
+  },
+  "producer": {
+    "id": "codex-cli",
+    "fixtureProducerId": "codex-cli",
+    "displayName": "Codex CLI local task",
+    "category": "local-agent",
+    "trustBoundary": "Codex CLI produced a task summary and command evidence in a local worktree. The control plane trusts only reviewed diffs, schema-backed artifacts, and policy decisions."
+  },
+  "source": {
+    "issue": "samples/codex/issues/agent-generated-change-package-demo.md",
+    "entrypoint": "node scripts/codex/export-issue-task.mjs --repo itdojp/ae-framework --issue 3491 --work <repo> --print-commands",
+    "codexCommand": "codex exec --cd ../ae-framework-demo-work --sandbox workspace-write --ask-for-approval never - < .codex-local/tasks/issue-demo.md",
+    "workspacePolicy": "Use one dedicated worktree for the sample Issue and do not stage .codex-local/tasks/."
+  },
+  "summary": {
+    "rawSignals": 4,
+    "changedFiles": 3,
+    "commands": 3,
+    "claimsMentioned": 3,
+    "expectedArtifacts": 4,
+    "knownGaps": 3,
+    "missingEvidence": 2,
+    "reportOnlyFindings": 5
+  },
+  "producerAssertions": {
+    "rawSignals": [
+      {
+        "kind": "task-summary",
+        "value": "Codex added a reservation-audit trace, focused tests, and a short reviewer note for an inventory example.",
+        "rawAssertionBoundary": "This is a producer-authored summary. Reviewers must inspect the diff and validation artifacts before accepting any claim."
+      },
+      {
+        "kind": "validation-result",
+        "value": "Focused reservation-audit unit test passed in the producer session.",
+        "rawAssertionBoundary": "A focused test can support a claim, but it is not a repository-wide assurance decision."
+      },
+      {
+        "kind": "open-question",
+        "value": "The producer did not run schema validation; downstream control-plane artifacts must keep this as missing evidence.",
+        "rawAssertionBoundary": "Missing validation is report-only context until a reviewer or CI supplies evidence."
+      },
+      {
+        "kind": "risk-note",
+        "value": "The sample is a fast-lane docs/tests demo; payment settlement, authz, or critical-core data migration changes would require risk:high / enforce-assurance escalation.",
+        "rawAssertionBoundary": "Risk escalation is selected by policy and reviewer judgment, not by the producer summary alone."
+      }
+    ],
+    "changedFiles": [
+      {
+        "path": "src/inventory/reservation-audit.ts",
+        "role": "sample source change described by the producer",
+        "expectedArtifact": "change-package/v2"
+      },
+      {
+        "path": "tests/unit/inventory/reservation-audit.test.ts",
+        "role": "focused test evidence described by the producer",
+        "expectedArtifact": "claim-evidence-manifest/v1"
+      },
+      {
+        "path": "docs/inventory/reservation-audit.md",
+        "role": "reviewer-facing explanation described by the producer",
+        "expectedArtifact": "assurance-summary/v1"
+      }
+    ],
+    "commands": [
+      {
+        "command": "pnpm -s exec vitest run tests/unit/inventory/reservation-audit.test.ts --reporter dot",
+        "status": "passed",
+        "evidenceUse": "Focused behavior evidence for the changed reservation-audit trace."
+      },
+      {
+        "command": "pnpm -s run check:doc-consistency",
+        "status": "passed",
+        "evidenceUse": "Documentation consistency evidence for the sample explanation."
+      },
+      {
+        "command": "pnpm -s run check:schemas",
+        "status": "not-run-in-producer-output",
+        "evidenceUse": "Broader schema validation should be supplied by the reviewer or CI before merge."
+      }
+    ],
+    "claimsMentioned": [
+      {
+        "claimId": "reservation-audit-trace-recorded",
+        "rawAssertion": "Every accepted reservation writes an audit trace entry with request id and reservation id.",
+        "targetArtifact": "claim-evidence-manifest/v1",
+        "supportingEvidence": [
+          "focused reservation-audit unit test",
+          "reviewed diff"
+        ],
+        "controlPlaneBoundary": "The focused test supports the claim but does not prove the full product state.",
+        "expectedManifestStatus": "partial",
+        "evidenceKind": "test"
+      },
+      {
+        "claimId": "schema-validation-evidence-present",
+        "rawAssertion": "Schema validation is required before treating generated artifacts as review-ready.",
+        "targetArtifact": "claim-evidence-manifest/v1",
+        "supportingEvidence": [],
+        "controlPlaneBoundary": "The producer did not provide schema-validation evidence; the normalizer must keep this visible.",
+        "expectedManifestStatus": "unresolved",
+        "evidenceKind": "test"
+      },
+      {
+        "claimId": "producer-summary-is-not-approval",
+        "rawAssertion": "Codex completed the task, but that is not a trust judgment or merge approval.",
+        "targetArtifact": "policy-decision/v1",
+        "supportingEvidence": [
+          "producer-normalization-summary/v1"
+        ],
+        "controlPlaneBoundary": "Policy decision remains not-emitted until policy-gate evaluates reviewed artifacts.",
+        "expectedPolicyResult": "report-only"
+      }
+    ]
+  },
+  "controlPlaneRouting": {
+    "expectedArtifacts": [
+      {
+        "artifact": "producer-normalization-summary/v1",
+        "purpose": "Normalize raw Codex CLI output into report-only routing context.",
+        "requiredForThisFixture": true
+      },
+      {
+        "artifact": "change-package/v2",
+        "purpose": "Summarize changed files, commands, requirement/claim scope, and reviewer evidence.",
+        "requiredForThisFixture": true
+      },
+      {
+        "artifact": "assurance-summary/v1",
+        "purpose": "Surface producer report-only findings and residual risks in the reviewer decision surface.",
+        "requiredForThisFixture": true
+      },
+      {
+        "artifact": "policy-gate-summary/v1",
+        "purpose": "Show policy-gate report-only findings without treating producer output as a blocking decision for the fast lane.",
+        "requiredForThisFixture": true
+      }
+    ],
+    "knownGaps": [
+      {
+        "gapId": "ACP-GAP-002",
+        "summary": "Raw producer output is routed by a report-only normalizer; it does not become a new guarantee vocabulary."
+      },
+      {
+        "gapId": "ACP-GAP-003",
+        "summary": "Reviewer surfaces should expose missing evidence and gap IDs without requiring heavy lanes for ordinary fast-lane changes."
+      },
+      {
+        "gapId": "ACP-GAP-004",
+        "summary": "Policy Gate may consume normalized findings as report-only context before enforcement escalation is selected."
+      }
+    ],
+    "missingEvidence": [
+      {
+        "kind": "command",
+        "summary": "Command evidence is not complete: pnpm -s run check:schemas (not-run-in-producer-output)",
+        "command": "pnpm -s run check:schemas"
+      },
+      {
+        "kind": "claim-evidence",
+        "summary": "Claim has no supporting evidence list: schema-validation-evidence-present",
+        "claimId": "schema-validation-evidence-present",
+        "artifact": "claim-evidence-manifest/v1"
+      }
+    ],
+    "unresolvedNotes": [
+      "ACP-GAP-002: Raw producer output is routed by a report-only normalizer; it does not become a new guarantee vocabulary.",
+      "ACP-GAP-003: Reviewer surfaces should expose missing evidence and gap IDs without requiring heavy lanes for ordinary fast-lane changes.",
+      "ACP-GAP-004: Policy Gate may consume normalized findings as report-only context before enforcement escalation is selected.",
+      "The producer did not run schema validation; downstream control-plane artifacts must keep this as missing evidence.",
+      "The sample is a fast-lane docs/tests demo; payment settlement, authz, or critical-core data migration changes would require risk:high / enforce-assurance escalation."
+    ],
+    "reportOnlyFindings": [
+      {
+        "id": "known-gap:ACP-GAP-002",
+        "severity": "report-only",
+        "kind": "known-gap",
+        "summary": "ACP-GAP-002: Raw producer output is routed by a report-only normalizer; it does not become a new guarantee vocabulary.",
+        "details": {
+          "gapId": "ACP-GAP-002"
+        }
+      },
+      {
+        "id": "known-gap:ACP-GAP-003",
+        "severity": "report-only",
+        "kind": "known-gap",
+        "summary": "ACP-GAP-003: Reviewer surfaces should expose missing evidence and gap IDs without requiring heavy lanes for ordinary fast-lane changes.",
+        "details": {
+          "gapId": "ACP-GAP-003"
+        }
+      },
+      {
+        "id": "known-gap:ACP-GAP-004",
+        "severity": "report-only",
+        "kind": "known-gap",
+        "summary": "ACP-GAP-004: Policy Gate may consume normalized findings as report-only context before enforcement escalation is selected.",
+        "details": {
+          "gapId": "ACP-GAP-004"
+        }
+      },
+      {
+        "id": "missing-command:3",
+        "severity": "report-only",
+        "kind": "missing-evidence",
+        "summary": "Command evidence is not complete: pnpm -s run check:schemas (not-run-in-producer-output)",
+        "details": {
+          "command": "pnpm -s run check:schemas",
+          "status": "not-run-in-producer-output"
+        }
+      },
+      {
+        "id": "missing-claim-evidence:2",
+        "severity": "report-only",
+        "kind": "missing-evidence",
+        "summary": "Claim has no supporting evidence list: schema-validation-evidence-present",
+        "details": {
+          "claimId": "schema-validation-evidence-present",
+          "targetArtifact": "claim-evidence-manifest/v1"
+        }
+      }
+    ]
+  },
+  "controlPlaneJudgment": {
+    "emitsDecision": false,
+    "result": "not-emitted",
+    "reason": "Report-only normalization summarizes raw producer output and routing gaps; it does not decide pass, proved, or approved status."
+  }
+}
