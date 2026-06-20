@@ -13,7 +13,7 @@ lastVerified: '2026-03-21'
 
 ## 日本語
 
-新規プロジェクトへ assurance profile / summary / strict assurance enforcement を導入するための最小チェックリストです。
+新規プロジェクトへ assurance profile / summary / strict assurance enforcement を導入するための最小チェックリストです。BYO-agent 環境で「どの producer を使っても judgment-side contract は ae-framework に残す」導入順を決める場合は、先に `docs/guides/byo-agent-assurance-onboarding.md` を読んでください。
 
 ### 前提条件
 - Node.js: `>=20.11 <23`
@@ -87,6 +87,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 - [ ] `enforce-assurance` を付ける場合、PR 本文または Issue に理由を記録した
 
 ### 7. 参照
+- `docs/guides/byo-agent-assurance-onboarding.md`
 - `docs/quality/assurance-operations-runbook.md`
 - `docs/quality/assurance-profile.md`
 - `docs/quality/assurance-lanes.md`
@@ -96,7 +97,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 
 ## English
 
-Minimal onboarding checklist for introducing assurance profile, assurance summary, and strict assurance enforcement into a project.
+Minimal onboarding checklist for introducing assurance profile, assurance summary, and strict assurance enforcement into a project. If you are adopting ae-framework in a BYO-agent environment, read `docs/guides/byo-agent-assurance-onboarding.md` first to choose the Baseline / Structured assurance / High-assurance path while keeping judgment-side contracts in ae-framework.
 
 ### Preconditions
 - Node.js: `>=20.11 <23`
@@ -170,6 +171,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 - [ ] if `enforce-assurance` is used, record the reason in the PR body or linked Issue
 
 ### 7. References
+- `docs/guides/byo-agent-assurance-onboarding.md`
 - `docs/quality/assurance-operations-runbook.md`
 - `docs/quality/assurance-profile.md`
 - `docs/quality/assurance-lanes.md`

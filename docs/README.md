@@ -100,6 +100,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Assurance control plane: `product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance control plane policy: `product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
+- BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - Assurance control plane detailed design: `architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md`
 
 ### Strategy
@@ -143,6 +144,7 @@ Practical operator guides for day-to-day development, troubleshooting, and Conte
 - Claude Code Automation Guide: `guides/CLAUDE-CODE-AUTOMATION-GUIDE.md`
 - Phase 2 Advanced Features (2.1–2.3): `guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md`
 - Advanced Troubleshooting: `guides/ADVANCED-TROUBLESHOOTING-GUIDE.md`
+- BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - Context Pack onboarding checklist: `guides/context-pack-onboarding-checklist.md`
 - Context Pack Phase5+ cookbook: `guides/context-pack-phase5-cookbook.md`
 - Context Pack troubleshooting runbook: `operations/context-pack-troubleshooting.md`
@@ -233,6 +235,7 @@ Current verification baseline, assurance model, artifact contracts, automation p
 - Automation observability: `ci/automation-observability.md`
 - Reason codes registry: `ci/reason-codes.md`
 - UI semantic E2E lane: `quality/ui-e2e-lane.md`
+- BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - Assurance onboarding checklist: `guides/assurance-onboarding-checklist.md`
 - Adoption sample flow: `quality/adoption-sample-flow.md`
 - Runbooks / Traceability / Runtime Contracts: see `./quality` and `./verify`
@@ -420,6 +423,7 @@ Claude CodeやMCPとの統合
 - [assurance-profile.md](./quality/assurance-profile.md) - assurance profile / level の入力契約（claim / level / lanes / evidence kinds）
 - [assurance-operations-runbook.md](./quality/assurance-operations-runbook.md) - assurance summary の生成・strict assurance enforcement・障害切り分け手順
 - [security-assurance-lane.md](./security/security-assurance-lane.md) - Security Assurance Lane のartifact / command map と candidate finding 運用
+- [byo-agent-assurance-onboarding.md](./guides/byo-agent-assurance-onboarding.md) - BYO-agent 環境での Baseline / Structured / High-assurance 導入ガイド
 - [assurance-onboarding-checklist.md](./guides/assurance-onboarding-checklist.md) - 新規プロジェクトへ assurance profile を導入する最小チェックリスト
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [run-manifest-freshness-contract.md](./quality/run-manifest-freshness-contract.md) - run-manifest鮮度判定契約（stale artifact 検出）
