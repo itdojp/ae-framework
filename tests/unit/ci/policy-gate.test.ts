@@ -660,7 +660,7 @@ describe('policy-gate', () => {
     expect(markdown).toContain('waivers: active=1, expiringSoon=0, expired=0, orphan=0');
     expect(markdown).toContain('id=waiver-manual-fraud-review-001');
     expect(markdown).toContain('claim=manual-fraud-review');
-    expect(markdown).toContain('owner=@team-risk');
+    expect(markdown).toContain('owner=@\u200bteam-risk');
     expect(markdown).toContain('expires=2026-06-30');
     expect(markdown).toContain('reason=Runtime manual review control is active during model validation.');
   });
@@ -1583,6 +1583,90 @@ describe('policy-gate', () => {
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
+  });
+
+  it('preserves producer missing-evidence metadata when report-only findings are deduplicated', () => {
+    mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
+    const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-agent-dedupe-'));
+    const producerSummaryPath = join(tempDir, 'producer-normalization-summary.json');
+
+    try {
+      writeFileSync(
+        producerSummaryPath,
+        JSON.stringify({
+          schemaVersion: 'producer-normalization-summary/v1',
+          controlPlaneRouting: {
+            reportOnlyFindings: [
+              {
+                id: 'missing-evidence:claim-cache-key-proof',
+                severity: 'report-only',
+                kind: 'missing-evidence',
+                summary: 'Claim evidence is missing a proof artifact.',
+              },
+            ],
+            missingEvidence: [
+              {
+                kind: 'missing-evidence',
+                summary: 'Claim evidence is missing a proof artifact.',
+                artifact: 'artifacts/assurance/claim-evidence-manifest.json',
+                claimId: 'claim-cache-key-proof',
+              },
+            ],
+          },
+        }),
+      );
+
+      const agentAssuranceFindings = inspectAgentAssuranceFindings({
+        producerSummaryPath,
+        assuranceSummaryPath: join(tempDir, 'missing-assurance-summary.json'),
+      });
+
+      expect(agentAssuranceFindings.count).toBe(1);
+      expect(agentAssuranceFindings.findings[0]).toMatchObject({
+        kind: 'missing-evidence',
+        summary: 'Claim evidence is missing a proof artifact.',
+        relatedArtifactPath: 'artifacts/assurance/claim-evidence-manifest.json',
+        claimId: 'claim-cache-key-proof',
+      });
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('escapes untrusted agent assurance finding text in markdown summaries', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/feature/example.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assurance: assuranceState(),
+      assuranceMode: 'report-only',
+      agentAssuranceFindings: [
+        {
+          id: 'finding:markdown-injection',
+          kind: 'waiver<metadata>&risk',
+          severity: '@ops <sev>&risk',
+          summary: '@ops `check` <script>&risk',
+          sourceArtifactPath: 'artifacts/agents/@producer-summary&risk.json',
+          relatedArtifactPath: 'artifacts/<assurance>/claim`evidence`.json',
+          claimId: '@claim`id`',
+        },
+      ],
+    });
+
+    const markdown = buildMarkdownSummary(3488, result);
+
+    expect(markdown).toContain('(@\u200bops &lt;sev&gt;&amp;risk=1)');
+    expect(markdown).toContain('waiver&lt;metadata&gt;&amp;risk');
+    expect(markdown).toContain('@\u200bops &lt;sev&gt;&amp;risk/waiver&lt;metadata&gt;&amp;risk');
+    expect(markdown).toContain('@\u200bops \\`check\\` &lt;script&gt;&amp;risk');
+    expect(markdown).toContain('source=artifacts/agents/@\u200bproducer-summary&amp;risk.json');
+    expect(markdown).toContain('related=artifacts/&lt;assurance&gt;/claim\\`evidence\\`.json');
+    expect(markdown).toContain('claim=@\u200bclaim\\`id\\`');
   });
 
   it('surfaces assurance summary residual risks with source artifact paths as report-only findings', () => {

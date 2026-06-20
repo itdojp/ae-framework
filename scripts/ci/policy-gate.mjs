@@ -748,6 +748,15 @@ function normalizeFindingKind(value) {
   return String(value ?? 'agent-assurance').trim() || 'agent-assurance';
 }
 
+function resolveFindingRelatedArtifactPath(finding) {
+  return optionalString(finding?.relatedArtifactPath)
+    ?? optionalString(finding?.artifact)
+    ?? optionalString(finding?.targetArtifact)
+    ?? optionalString(finding?.details?.artifact)
+    ?? optionalString(finding?.details?.targetArtifact)
+    ?? null;
+}
+
 function normalizeAgentAssuranceFinding(finding, index = 0, sourceArtifactPath = '') {
   if (!finding || typeof finding !== 'object') return null;
   const kind = normalizeFindingKind(finding.kind);
@@ -766,11 +775,21 @@ function normalizeAgentAssuranceFinding(finding, index = 0, sourceArtifactPath =
     enforcement: 'report-only',
     summary,
     sourceArtifactPath: normalizedSource,
-    relatedArtifactPath: optionalString(finding.relatedArtifactPath)
-      ?? optionalString(finding.artifact)
-      ?? optionalString(finding.details?.artifact)
-      ?? null,
+    relatedArtifactPath: resolveFindingRelatedArtifactPath(finding),
     claimId: optionalString(finding.claimId) ?? null,
+  };
+}
+
+function producerFindingDedupeKey(finding) {
+  return `${finding.kind}:${finding.summary}`;
+}
+
+function mergeAgentAssuranceFindingMetadata(existing, candidate) {
+  if (!existing || !candidate) return existing;
+  return {
+    ...existing,
+    relatedArtifactPath: existing.relatedArtifactPath ?? candidate.relatedArtifactPath ?? null,
+    claimId: existing.claimId ?? candidate.claimId ?? null,
   };
 }
 
@@ -839,28 +858,37 @@ function inspectProducerNormalizationFindings(summaryPath = PRODUCER_NORMALIZATI
       ? payload.controlPlaneRouting
       : {};
     const findings = [];
+    const findingIndexes = new Map();
     for (const [index, finding] of (Array.isArray(routing.reportOnlyFindings) ? routing.reportOnlyFindings : []).entries()) {
-      findings.push(normalizeAgentAssuranceFinding({
+      const normalized = normalizeAgentAssuranceFinding({
         ...finding,
         sourceArtifactPath,
-        relatedArtifactPath: optionalString(finding?.details?.artifact) ?? null,
-      }, index, sourceArtifactPath));
+      }, index, sourceArtifactPath);
+      if (!normalized) continue;
+      findings.push(normalized);
+      findingIndexes.set(producerFindingDedupeKey(normalized), findings.length - 1);
     }
-    const existingKeys = new Set(findings.filter(Boolean).map((finding) => `${finding.kind}:${finding.summary}`));
     for (const [index, missing] of (Array.isArray(routing.missingEvidence) ? routing.missingEvidence : []).entries()) {
       const kind = missing?.kind === 'waiver-metadata' ? 'waiver-metadata' : 'missing-evidence';
       const summary = optionalString(missing?.summary) ?? `Missing evidence item ${index + 1}`;
-      const key = `${kind}:${summary}`;
-      if (existingKeys.has(key)) continue;
-      findings.push(normalizeAgentAssuranceFinding({
+      const candidate = normalizeAgentAssuranceFinding({
         id: `producer-missing-evidence:${index + 1}`,
         kind,
         severity: 'report-only',
         summary,
         sourceArtifactPath,
-        relatedArtifactPath: optionalString(missing?.artifact) ?? null,
+        relatedArtifactPath: resolveFindingRelatedArtifactPath(missing),
         claimId: optionalString(missing?.claimId) ?? null,
-      }, index, sourceArtifactPath));
+      }, index, sourceArtifactPath);
+      if (!candidate) continue;
+      const key = producerFindingDedupeKey(candidate);
+      const existingIndex = findingIndexes.get(key);
+      if (existingIndex !== undefined) {
+        findings[existingIndex] = mergeAgentAssuranceFindingMetadata(findings[existingIndex], candidate);
+        continue;
+      }
+      findings.push(candidate);
+      findingIndexes.set(key, findings.length - 1);
     }
     return findings.filter(Boolean);
   } catch (error) {
@@ -1501,7 +1529,13 @@ function appendStepSummary(markdown) {
 
 function formatMarkdownCell(value) {
   const normalized = String(value ?? '').replace(/\s+/g, ' ').trim();
-  return normalized || '(none)';
+  if (!normalized) return '(none)';
+  return normalized
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/`/g, '\\`')
+    .replace(/@/g, '@\u200b');
 }
 
 function formatAssuranceWaiverLine(waiver) {
@@ -1562,7 +1596,7 @@ function buildMarkdownSummary(prNumber, evaluation) {
       const findingSummary = evaluation.assurance.agentAssuranceFindings;
       const severitySummary = Object.entries(findingSummary.bySeverity || {})
         .sort(([left], [right]) => left.localeCompare(right))
-        .map(([severity, count]) => `${severity}=${count}`)
+        .map(([severity, count]) => `${formatMarkdownCell(severity)}=${count}`)
         .join(', ');
       lines.push(`  - agent assurance findings (report-only): total=${findingSummary.count}${severitySummary ? ` (${severitySummary})` : ''}`);
       for (const finding of findingSummary.findings.slice(0, 10)) {
