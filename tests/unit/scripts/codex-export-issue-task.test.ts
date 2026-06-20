@@ -17,6 +17,27 @@ import {
   run,
 } from '../../../scripts/codex/export-issue-task.mjs';
 
+function writeFakeGh(tempDir: string, payload: { title: string; url: string; body: string }) {
+  if (process.platform === 'win32') {
+    const fixturePath = join(tempDir, 'gh-fixture.mjs');
+    writeFileSync(fixturePath, `console.log(${JSON.stringify(JSON.stringify(payload))});\n`);
+    const ghPath = join(tempDir, 'gh.cmd');
+    writeFileSync(ghPath, `@echo off\r\n"${process.execPath}" "${fixturePath}" %*\r\n`);
+    return ghPath;
+  }
+
+  const ghPath = join(tempDir, 'gh');
+  writeFileSync(
+    ghPath,
+    [
+      '#!/usr/bin/env node',
+      `console.log(${JSON.stringify(JSON.stringify(payload))});`,
+    ].join('\n'),
+    { mode: 0o755 },
+  );
+  return ghPath;
+}
+
 describe('codex issue task exporter', () => {
   it('formats a task file with source URL, metadata, and Context Pack preflight', () => {
     const markdown = formatTaskMarkdown({
@@ -61,20 +82,11 @@ describe('codex issue task exporter', () => {
     const tempRoot = join(process.cwd(), 'tmp');
     mkdirSync(tempRoot, { recursive: true });
     const tempDir = mkdtempSync(join(tempRoot, 'codex-issue-task-'));
-    const ghPath = join(tempDir, 'gh');
-    writeFileSync(
-      ghPath,
-      [
-        '#!/usr/bin/env node',
-        'const payload = {',
-        '  title: "Exported Issue",',
-        '  url: "https://github.com/itdojp/ae-framework/issues/3490",',
-        '  body: "## Body\\\\nTask details"',
-        '};',
-        'console.log(JSON.stringify(payload));',
-      ].join('\n'),
-      { mode: 0o755 },
-    );
+    const ghPath = writeFakeGh(tempDir, {
+      title: 'Exported Issue',
+      url: 'https://github.com/itdojp/ae-framework/issues/3490',
+      body: '## Body\nTask details',
+    });
 
     try {
       const result = run(parseArgs([
@@ -102,22 +114,19 @@ describe('codex issue task exporter', () => {
     const tempDir = mkdtempSync(join(tempRoot, 'codex-issue-task-'));
     const workRoot = join(tempDir, 'work');
     const outsideRoot = join(tempDir, 'outside');
-    const ghPath = join(tempDir, 'gh');
     mkdirSync(workRoot, { recursive: true });
     mkdirSync(outsideRoot, { recursive: true });
-    symlinkSync(outsideRoot, join(workRoot, '.codex-local'), 'dir');
-    writeFileSync(
-      ghPath,
-      [
-        '#!/usr/bin/env node',
-        'console.log(JSON.stringify({',
-        '  title: "Escaping Issue",',
-        '  url: "https://github.com/itdojp/ae-framework/issues/3490",',
-        '  body: "body"',
-        '}));',
-      ].join('\n'),
-      { mode: 0o755 },
-    );
+    const ghPath = writeFakeGh(tempDir, {
+      title: 'Escaping Issue',
+      url: 'https://github.com/itdojp/ae-framework/issues/3490',
+      body: 'body',
+    });
+    try {
+      symlinkSync(outsideRoot, join(workRoot, '.codex-local'), 'dir');
+    } catch {
+      rmSync(tempDir, { recursive: true, force: true });
+      return;
+    }
 
     try {
       expect(() => run(parseArgs([
@@ -126,6 +135,40 @@ describe('codex issue task exporter', () => {
         '--work', workRoot,
         '--gh', ghPath,
       ]))).toThrow(/after resolving symlinks/);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects symlink output files even when the target does not exist', () => {
+    const tempRoot = join(process.cwd(), 'tmp');
+    mkdirSync(tempRoot, { recursive: true });
+    const tempDir = mkdtempSync(join(tempRoot, 'codex-issue-task-'));
+    const workRoot = join(tempDir, 'work');
+    const outsideRoot = join(tempDir, 'outside');
+    const taskDir = join(workRoot, '.codex-local', 'tasks');
+    const outputPath = join(taskDir, 'issue-3490.md');
+    mkdirSync(taskDir, { recursive: true });
+    mkdirSync(outsideRoot, { recursive: true });
+    const ghPath = writeFakeGh(tempDir, {
+      title: 'Broken Symlink Issue',
+      url: 'https://github.com/itdojp/ae-framework/issues/3490',
+      body: 'body',
+    });
+    try {
+      symlinkSync(join(outsideRoot, 'missing-task.md'), outputPath, 'file');
+    } catch {
+      rmSync(tempDir, { recursive: true, force: true });
+      return;
+    }
+
+    try {
+      expect(() => run(parseArgs([
+        '--issue', '3490',
+        '--repo', 'itdojp/ae-framework',
+        '--work', workRoot,
+        '--gh', ghPath,
+      ]))).toThrow(/output file must not be a symbolic link/);
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
@@ -140,6 +183,7 @@ describe('codex issue task exporter', () => {
 
     expect(examples).toContain('git worktree add');
     expect(examples).toContain('ae-framework-3490-work');
+    expect(examples).toContain("--cd '/workspace/ae-framework-3490-work'");
     expect(examples).toContain('Preflight reminder');
     expect(examples).toContain('Context Pack conflict: found');
     expect(examples).toContain('--sandbox workspace-write --ask-for-approval never');
@@ -149,15 +193,20 @@ describe('codex issue task exporter', () => {
     const helper = readFileSync('scripts/codex/Export-CodexIssueTask.ps1', 'utf8');
 
     expect(helper).toContain('gh issue view $Issue --repo $Repo --json title,body,url');
+    expect(helper).toContain('Issue must be a positive integer.');
     expect(helper).toContain('.codex-local/tasks/issue-$Issue.md');
     expect(helper).toContain('Assert-ResolvedUnderRoot');
+    expect(helper).toContain('Assert-OutputFileIsNotLink');
     expect(helper).toContain('ConvertTo-SingleQuotedArgument');
     expect(helper).toContain('Context Pack preflight');
     expect(helper).toContain('Context Pack conflict: found');
     expect(helper).toContain('Do not stage or commit `.codex-local/tasks/`');
     expect(helper).toContain('Use a dedicated worktree for parallel Issue work.');
     expect(helper).toContain('--sandbox workspace-write --ask-for-approval never');
+    expect(helper).toContain('New-Item -ItemType Directory -Force -LiteralPath');
+    expect(helper).toContain('Set-Content -LiteralPath');
     expect(helper).toContain('Get-Content -Raw -LiteralPath');
+    expect(helper).toContain('codex exec --cd $quotedSibling');
     expect(helper).toContain('[switch]$Help');
   });
 });

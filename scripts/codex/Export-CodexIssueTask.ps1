@@ -105,6 +105,14 @@ function Assert-ResolvedUnderRoot {
   }
 }
 
+function Assert-OutputFileIsNotLink {
+  param([Parameter(Mandatory = $true)][string]$Path)
+  $item = Get-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+  if ($item -and (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) {
+    throw "Output file must not be a symbolic link: $Path"
+  }
+}
+
 function ConvertTo-SingleQuotedArgument {
   param([Parameter(Mandatory = $true)][string]$Value)
   return "'" + ($Value -replace "'", "''") + "'"
@@ -123,9 +131,14 @@ function Get-ContextPackPreflight {
 "@
 }
 
-if ($Help -or -not $Issue) {
+if ($Help) {
   Show-Usage
   exit 0
+}
+
+if ($Issue -le 0) {
+  Show-Usage
+  throw "Issue must be a positive integer."
 }
 
 if ($Repo -notmatch '^[^/\s]+/[^/\s]+$') {
@@ -144,6 +157,7 @@ Assert-UnderRoot -Root $workRoot -Path $outputPath
 $existingAncestor = Get-NearestExistingAncestor -Path ([System.IO.Path]::GetDirectoryName($outputPath))
 Assert-ResolvedUnderRoot -Root $workRoot -Path $existingAncestor -Context "Output directory"
 if (Test-Path -LiteralPath $outputPath) {
+  Assert-OutputFileIsNotLink -Path $outputPath
   Assert-ResolvedUnderRoot -Root $workRoot -Path $outputPath -Context "Output file"
 }
 
@@ -167,12 +181,14 @@ if (-not $NoPreflight) {
 $sections.Add("## Issue body`n`n$($issueJson.body)")
 $task = ($sections -join "`n`n") + "`n"
 
-New-Item -ItemType Directory -Force -Path ([System.IO.Path]::GetDirectoryName($outputPath)) | Out-Null
-Assert-ResolvedUnderRoot -Root $workRoot -Path ([System.IO.Path]::GetDirectoryName($outputPath)) -Context "Output directory"
+$outputDirectory = [System.IO.Path]::GetDirectoryName($outputPath)
+New-Item -ItemType Directory -Force -LiteralPath $outputDirectory | Out-Null
+Assert-ResolvedUnderRoot -Root $workRoot -Path $outputDirectory -Context "Output directory"
 if (Test-Path -LiteralPath $outputPath) {
+  Assert-OutputFileIsNotLink -Path $outputPath
   Assert-ResolvedUnderRoot -Root $workRoot -Path $outputPath -Context "Output file"
 }
-Set-Content -Path $outputPath -Value $task -NoNewline -Encoding utf8
+Set-Content -LiteralPath $outputPath -Value $task -NoNewline -Encoding utf8
 
 Write-Output "[codex-issue-task] wrote $outputPath"
 Write-Output "[codex-issue-task] source $($issueJson.url)"
@@ -182,7 +198,6 @@ if ($PrintCommands) {
   $sibling = Join-Path ([System.IO.Directory]::GetParent($workRoot).FullName) "ae-framework-$Issue-work"
   $quotedSibling = ConvertTo-SingleQuotedArgument -Value $sibling
   $quotedBranch = ConvertTo-SingleQuotedArgument -Value "work/issue-$Issue"
-  $quotedWorkRoot = ConvertTo-SingleQuotedArgument -Value $workRoot
   $quotedOutputPath = ConvertTo-SingleQuotedArgument -Value $outputPath
   Write-Output ""
   Write-Output "# Dedicated worktree example"
@@ -194,5 +209,5 @@ if ($PrintCommands) {
   Write-Output "# If constraints conflict, stop and record `"Context Pack conflict: found`"."
   Write-Output ""
   Write-Output "# Non-interactive Codex CLI example"
-  Write-Output "Get-Content -Raw -LiteralPath $quotedOutputPath | codex exec --cd $quotedWorkRoot --sandbox workspace-write --ask-for-approval never -"
+  Write-Output "Get-Content -Raw -LiteralPath $quotedOutputPath | codex exec --cd $quotedSibling --sandbox workspace-write --ask-for-approval never -"
 }

@@ -125,6 +125,17 @@ function realpathIfExists(candidate) {
   }
 }
 
+function lstatIfExists(candidate) {
+  try {
+    return fs.lstatSync(candidate);
+  } catch (error) {
+    if (error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+}
+
 function nearestExistingAncestor(candidate) {
   let current = path.resolve(candidate);
   while (!fs.existsSync(current)) {
@@ -148,6 +159,11 @@ function resolveOutputPath({ work, out, issue }) {
 
 function ensureOutputPathSafeForWrite({ workRoot, outputPath }) {
   const realWorkRoot = fs.realpathSync.native(workRoot);
+  const outputStat = lstatIfExists(outputPath);
+  if (outputStat?.isSymbolicLink()) {
+    throw new Error(`output file must not be a symbolic link: ${outputPath}`);
+  }
+
   const existingOutput = realpathIfExists(outputPath);
   if (existingOutput) {
     assertResolvedPathInside(realWorkRoot, existingOutput, 'output file');
@@ -165,6 +181,10 @@ function ensureOutputPathSafeForWrite({ workRoot, outputPath }) {
   const outputAfterMkdir = realpathIfExists(outputPath);
   if (outputAfterMkdir) {
     assertResolvedPathInside(realWorkRoot, outputAfterMkdir, 'output file');
+  }
+  const outputStatAfterMkdir = lstatIfExists(outputPath);
+  if (outputStatAfterMkdir?.isSymbolicLink()) {
+    throw new Error(`output file must not be a symbolic link: ${outputPath}`);
   }
 }
 
@@ -255,7 +275,7 @@ function commandExamples({ issue, workRoot, outputPath }) {
     '# If constraints conflict, stop and record "Context Pack conflict: found".',
     '',
     '# Non-interactive Codex CLI example',
-    `codex exec --cd ${shellQuote(workRoot)} --sandbox workspace-write --ask-for-approval never - < ${shellQuote(outputPath)}`,
+    `codex exec --cd ${shellQuote(sibling)} --sandbox workspace-write --ask-for-approval never - < ${shellQuote(outputPath)}`,
   ].join('\n');
 }
 
@@ -310,6 +330,7 @@ export {
   ensureOutputPathSafeForWrite,
   fetchIssue,
   formatTaskMarkdown,
+  lstatIfExists,
   parseArgs,
   resolveOutputPath,
   run,

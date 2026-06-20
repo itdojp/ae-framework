@@ -34,8 +34,8 @@ node scripts/codex/export-issue-task.mjs \
 ```
 
 The helper writes `.codex-local/tasks/issue-$ISSUE.md`, preserves the Issue URL,
-adds the Context Pack preflight block, and prints dedicated worktree / `codex
-exec` examples with a preflight reminder. It refuses output paths outside
+adds the Context Pack preflight block, and prints dedicated worktree /
+`codex exec` examples with a preflight reminder. It refuses output paths outside
 `--work`, including existing symlinked output directories that resolve outside
 the worktree.
 
