@@ -4,7 +4,7 @@ canonicalSource:
 - docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
 - docs/product/ASSURANCE-CONTROL-PLANE.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-06-05'
+lastVerified: '2026-06-20'
 ---
 
 # Agent Producer Matrix
@@ -23,6 +23,7 @@ Use this document with:
 - `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md` for the producer/control-plane boundary.
 - `docs/reference/CONTRACT-CATALOG.md` for schema-backed artifact names.
 - `docs/agents/evidence-adapters.md` for raw producer output fixture mapping.
+- `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` for stable ACP gap IDs and producer-to-judgment routing gaps.
 - `docs/integrations/CODEX-ISSUE-RUNBOOK.md` for the Codex CLI issue workflow.
 - `docs/agents/handoff.md` and `docs/agents/hook-feedback.md` for agent continuation artifacts.
 
@@ -59,6 +60,7 @@ Use this document with:
 | Link claims to supporting evidence | `claim-evidence-manifest/v1` | Claim states must match the evidence lane. |
 | Capture policy gate judgment | `policy-decision/v1` | Policy decision is a judgment artifact, not a raw log. |
 | Summarize fast-lane PR health | `verify-lite-run-summary` and `quality-scorecard` | These are review inputs for required checks and PR comments. |
+| Track producer-routing gaps | `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` | Use ACP-GAP IDs when a later issue adds fixtures, a normalizer, PR summary surface, or policy-gate report-only context. |
 
 ---
 
@@ -72,6 +74,7 @@ Use this document with:
 - `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`: producer と control plane の境界。
 - `docs/reference/CONTRACT-CATALOG.md`: schema-backed artifact 名。
 - `docs/agents/evidence-adapters.md`: raw producer output の fixture mapping。
+- `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md`: ACP gap ID と producer-to-judgment routing gap。
 - `docs/integrations/CODEX-ISSUE-RUNBOOK.md`: Codex CLI の Issue 作業導線。
 - `docs/agents/handoff.md` / `docs/agents/hook-feedback.md`: agent 継続用 artifact。
 
@@ -108,3 +111,4 @@ Use this document with:
 | claim と supporting evidence を接続する | `claim-evidence-manifest/v1` | claim state は evidence lane と一致させます。 |
 | policy gate judgment を記録する | `policy-decision/v1` | policy decision は judgment artifact であり raw log ではありません。 |
 | fast-lane PR health を要約する | `verify-lite-run-summary` / `quality-scorecard` | required checks と PR comment の review input です。 |
+| producer-routing gap を追跡する | `docs/reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md` | fixture、normalizer、PR summary surface、policy-gate report-only context を追加する後続Issueでは ACP-GAP ID を使います。 |

@@ -73,6 +73,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Product / contract routing: `product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - Assurance control-plane current-state audit: `reports/ASSURANCE-CONTROL-PLANE-CURRENT-STATE.md`
 - Assurance control-plane E2E validation: `reports/ASSURANCE-CONTROL-PLANE-E2E-VALIDATION.md`
+- Agent-output contract gap audit: `reports/AGENT-OUTPUT-CONTRACT-GAP-AUDIT.md`
 - Assurance canonical routes / legacy compatibility: `reference/ASSURANCE-CANONICAL-ROUTES.md`
 - Codex continuation and handoff: `integrations/CODEX-CONTINUATION-CONTRACT.md`, `agents/handoff.md`
 - Claude / Codex multi-agent setup: `development/agent-collaboration-setup.md`, `agents/multi-agent-safety.md`
