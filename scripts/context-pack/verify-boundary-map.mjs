@@ -746,7 +746,9 @@ function buildSummaryMarkdown(summary) {
   ];
 
   if (summary.reviewEvidence.length === 0) {
-    lines.push('## Review surface', '', 'No boundary map drift detected.');
+    const noFindingMessage =
+      summary.status === 'ok' ? 'No boundary map drift detected.' : `No review-evidence rows emitted. ${summary.statusReason}`;
+    lines.push('## Review surface', '', noFindingMessage);
     return `${lines.join('\n')}\n`;
   }
 
