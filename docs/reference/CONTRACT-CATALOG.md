@@ -58,6 +58,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/conformance-report.schema.json`
 - `schema/conformance-verify-result.schema.json`
 - `schema/hook-feedback.schema.json`
+- `schema/producer-normalization-summary.schema.json`
 - `schema/issue-traceability-matrix.schema.json`
 - `schema/policy-decision-v1.schema.json`
 - `schema/pr-state-v1.schema.json`
@@ -160,6 +161,7 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/change-package/change-package.json` | `schema/change-package.schema.json` | `scripts/change-package/generate.mjs` | `scripts/change-package/validate.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/handoff/ae-handoff.json` | `schema/ae-handoff.schema.json` | `scripts/agents/create-handoff.mjs`, `templates/comments/AE-HANDOFF.md`(manual/export), `docs/agents/handoff.md` | `scripts/agents/validate-handoff.mjs`, future PR/Issue handoff consumers |
 | `artifacts/agents/hook-feedback.json` | `schema/hook-feedback.schema.json` | `scripts/agents/build-hook-feedback.mjs`, `.github/workflows/pr-ci-status-comment.yml` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/agents/create-handoff.mjs`, `docs/agents/hook-feedback.md`, Claude Code / Codex continuation consumers |
+| `artifacts/agents/producer-normalization-summary.json` | `schema/producer-normalization-summary.schema.json` | `scripts/agents/normalize-producer-output.mjs`, `fixtures/agents/evidence-adapters/*.json`; `fixtures/agents/producer-normalization-summary.codex.json` is the schema contract fixture | `scripts/ci/validate-json.mjs`, future PR summary / policy-gate report-only context; records raw producer assertions, missing evidence, known gaps, and expected routing without emitting pass/proved/approved judgment |
 | `artifacts/agents/agent-pr-assurance-metrics.json` | `schema/agentic-metrics.schema.json` (`agentPrAssurance` extension) | Optional agent PR assurance metrics producer / future PR assurance collector; `fixtures/agentic-metrics/agent-pr-assurance-metrics.example.json` is the contract fixture | `scripts/ci/validate-json.mjs` and future quality-scorecard / PR-summary consumers when wired; role=observability/evidence, enforcement=report-only, not mandatory for every PR, and no policy-gate block condition is added |
 | `artifacts/plan/plan-artifact.json` | `schema/plan-artifact.schema.json` | `scripts/plan-artifact/generate.mjs` | `scripts/plan-artifact/validate.mjs`, `scripts/ci/policy-gate.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/policy-gate.yml` |
 | `artifacts/ci/policy-input-v1.json` | `schema/policy-input-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/policy-gate.mjs`, `scripts/ci/policy-shadow-compare.mjs`, `scripts/ci/validate-json.mjs`; optional `assurance` section normalizes `claim-evidence-manifest/v1`, including `summary.security` report-only finding counts, for waiver-aware decisions |
@@ -298,6 +300,7 @@ The produced/consumed table lists implementation entry points. When more than on
 - `schema/conformance-report.schema.json`
 - `schema/conformance-verify-result.schema.json`
 - `schema/hook-feedback.schema.json`
+- `schema/producer-normalization-summary.schema.json`
 - `schema/harness-health.schema.json`
 - `schema/issue-traceability-matrix.schema.json`
 - `schema/policy-decision-v1.schema.json`
@@ -397,6 +400,7 @@ The produced/consumed table lists implementation entry points. When more than on
 | `artifacts/change-package/change-package.json` | `schema/change-package.schema.json` | `scripts/change-package/generate.mjs` | `scripts/change-package/validate.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/handoff/ae-handoff.json` | `schema/ae-handoff.schema.json` | `scripts/agents/create-handoff.mjs`, `templates/comments/AE-HANDOFF.md`（manual/export）, `docs/agents/handoff.md` | `scripts/agents/validate-handoff.mjs`, future PR/Issue handoff consumers |
 | `artifacts/agents/hook-feedback.json` | `schema/hook-feedback.schema.json` | `scripts/agents/build-hook-feedback.mjs`, `.github/workflows/pr-ci-status-comment.yml` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/agents/create-handoff.mjs`, `docs/agents/hook-feedback.md`, Claude Code / Codex continuation consumers |
+| `artifacts/agents/producer-normalization-summary.json` | `schema/producer-normalization-summary.schema.json` | `scripts/agents/normalize-producer-output.mjs`, `fixtures/agents/evidence-adapters/*.json`。`fixtures/agents/producer-normalization-summary.codex.json` は schema contract fixture | `scripts/ci/validate-json.mjs`, 将来の PR summary / policy-gate report-only context。raw producer assertion、missing evidence、known gap、expected routing を記録し、pass/proved/approved judgment は emit しない |
 | `artifacts/agents/agent-pr-assurance-metrics.json` | `schema/agentic-metrics.schema.json`（`agentPrAssurance` extension） | optional な agent PR assurance metrics producer / future PR assurance collector。`fixtures/agentic-metrics/agent-pr-assurance-metrics.example.json` は contract fixture | `scripts/ci/validate-json.mjs` と、接続時の future quality-scorecard / PR-summary consumer。role=observability/evidence、enforcement=report-only、全PR必須ではなく、policy-gate block条件も追加しない |
 | `artifacts/plan/plan-artifact.json` | `schema/plan-artifact.schema.json` | `scripts/plan-artifact/generate.mjs` | `scripts/plan-artifact/validate.mjs`, `scripts/ci/policy-gate.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/policy-gate.yml` |
 | `artifacts/ci/policy-input-v1.json` | `schema/policy-input-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/policy-gate.mjs`, `scripts/ci/policy-shadow-compare.mjs`, `scripts/ci/validate-json.mjs`; optional `assurance` section normalizes `claim-evidence-manifest/v1`, including `summary.security` report-only finding counts, for waiver-aware decisions |
