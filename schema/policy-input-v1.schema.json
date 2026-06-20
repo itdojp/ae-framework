@@ -150,6 +150,9 @@
             "failWhenRequiredGateIsPending"
           ]
         },
+        "assuranceEscalation": {
+          "$ref": "#/$defs/assuranceEscalation"
+        },
         "classification": {
           "type": "object",
           "additionalProperties": false,
@@ -193,9 +196,88 @@
         "labels",
         "requiredChecks",
         "highRisk",
+        "assuranceEscalation",
         "classification",
         "labelRequirements",
         "gateChecks"
+      ]
+    },
+    "assuranceEscalation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "defaultMode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "waiverRequiredFields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "lanes": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/assuranceEscalationLane"
+          }
+        },
+        "findingClasses": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      },
+      "required": [
+        "defaultMode",
+        "waiverRequiredFields",
+        "lanes",
+        "findingClasses"
+      ]
+    },
+    "assuranceEscalationLane": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "trigger": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "triggerLabels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "decision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requiredResponse": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "trigger",
+        "triggerLabels",
+        "decision",
+        "requiredResponse"
       ]
     },
     "labelRequirement": {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   collectRequiredLabels,
+  getAssuranceEscalationPolicy,
   getGateCheckPatternsForLabel,
   isPlanArtifactRequired,
   getRiskLabels,
@@ -72,6 +73,45 @@ describe('risk-policy', () => {
   it('returns verify-lite check pattern for enforce-discovery', () => {
     const patterns = getGateCheckPatternsForLabel(policy, 'enforce-discovery');
     expect(patterns).toContain('verify-lite');
+  });
+
+  it('defines assurance escalation lanes for report-only, manual approval, and blocking modes', () => {
+    const escalation = getAssuranceEscalationPolicy(policy);
+
+    expect(escalation.defaultMode).toBe('report-only');
+    expect(escalation.waiverRequiredFields).toEqual([
+      'owner',
+      'reason',
+      'expires',
+      'relatedClaimIds',
+      'evidenceRefs',
+      'sourceArtifactId',
+    ]);
+    expect(escalation.lanes).toMatchObject({
+      ordinary: { decision: 'report-only' },
+      risk_high: { decision: 'manual-approval' },
+      enforce_assurance: { decision: 'block' },
+      critical_core: { decision: 'manual-approval-or-block' },
+    });
+    expect(escalation.lanes.risk_high.trigger_labels).toContain('risk:high');
+    expect(escalation.lanes.enforce_assurance.trigger_labels).toContain('enforce-assurance');
+    expect(escalation.findingClasses).toMatchObject({
+      missing_required_lane: {
+        ordinary: 'report-only',
+        risk_high: 'manual-approval',
+        enforce_assurance: 'block',
+      },
+      waiver_metadata_gap: {
+        ordinary: 'report-only',
+        risk_high: 'manual-approval',
+        enforce_assurance: 'block',
+      },
+      unresolved_claim: {
+        ordinary: 'report-only',
+        risk_high: 'manual-approval',
+        enforce_assurance: 'block',
+      },
+    });
   });
 
   it('respects high_risk.require_policy_labels toggle', () => {

@@ -146,13 +146,23 @@ jobs:
         with:
           script: |
             const crypto = require('crypto');
+            const fs = require('fs');
+            const path = require('path');
+            const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
+            const yaml = require(path.join(workspace, 'node_modules/yaml'));
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const prNumber = Number(process.env.PR_NUMBER || 0);
             const explicitMode = String(process.env.AE_POLICY_ASSURANCE_MODE_CONFIG || '').trim();
+            const policy = yaml.parse(fs.readFileSync(path.join(workspace, 'policy/risk-policy.yml'), 'utf8')) || {};
+            const assuranceEscalation = policy.assurance_escalation || {};
+            const defaultMode = String(assuranceEscalation.default_mode || 'report-only').trim() || 'report-only';
+            const enforceAssuranceDecision = String(assuranceEscalation.lanes?.enforce_assurance?.decision || 'block').trim();
 
             if (explicitMode) {
               core.exportVariable('AE_POLICY_ASSURANCE_MODE', explicitMode);
+            } else {
+              core.exportVariable('AE_POLICY_ASSURANCE_MODE', defaultMode);
             }
             core.setOutput('verify_lite_run_id', '');
 
@@ -167,7 +177,8 @@ jobs:
             });
             const labels = new Set((pr.labels || []).map((label) => label.name));
             const explicitStrict = ['strict', 'enforcement', 'enforced'].includes(explicitMode.toLowerCase());
-            const labelStrict = labels.has('enforce-assurance');
+            const enforceAssuranceSelected = labels.has('enforce-assurance');
+            const labelStrict = enforceAssuranceSelected && ['block', 'manual-approval-or-block'].includes(enforceAssuranceDecision);
 
             const { data } = await github.rest.actions.listWorkflowRuns({
               owner,
@@ -187,6 +198,8 @@ jobs:
                 core.notice('enforce-assurance label is present, but no successful Verify Lite artifact exists for this head yet; policy-gate remains report-only until workflow_run re-evaluation.');
               } else if (explicitStrict) {
                 core.warning('Strict assurance mode is configured, but no successful Verify Lite artifact exists for this head; policy-gate will fail closed if the assurance artifact is missing.');
+              } else if (enforceAssuranceSelected) {
+                core.notice(`enforce-assurance label is present, but assurance_escalation.lanes.enforce_assurance.decision=${enforceAssuranceDecision}; policy-gate keeps ${defaultMode} mode.`);
               }
               return;
             }

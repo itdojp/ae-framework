@@ -53,6 +53,13 @@ Operational note:
 - PR automation itself is usually enabled through Repository Variables rather than labels.
 - PR-side `run-security` SBOM generation and security-report construction use read-only workflow credentials and checkout with persisted credentials disabled. SBOM publication / Dependency Track upload and CodeQL `security-events: write` execution are isolated to trusted `main` follow-up jobs, with `security-events: write` limited to the CodeQL job. PR security summary comments run in a separate comment-only job that does not check out PR code or execute package scripts.
 
+Assurance escalation note:
+- `policy/risk-policy.yml` is the source of truth for `assurance_escalation`.
+- Without `risk:high`, `enforce-assurance`, or a critical-core boundary/profile, missing evidence and agent assurance findings stay report-only.
+- `risk:high` promotes those findings to manual reviewer disposition through the configured human-approval, required-label, and plan-artifact requirements.
+- `enforce-assurance` is the PR label that makes strict assurance blocking after successful Verify Lite artifacts are available.
+- Waiver exceptions need canonical `owner`, `reason`, `expires`, `relatedClaimIds`, `evidenceRefs`, and `sourceArtifactId` provenance; incomplete metadata is blocking in strict assurance mode.
+
 ### 4. Repository Variables used with opt-in automation
 
 #### 4.1 Core automation variables
@@ -222,6 +229,13 @@ PRやIssueで **必要な検証だけを opt-in で起動** し、CIコストと
 
 補足: PR の自動化（auto-fix / auto-merge）は、ラベルではなく **Repository Variables** でプロジェクト単位に有効化できます。
 `run-security` の PR 側 SBOM 生成と security report 作成は read-only workflow credentials で実行し、checkout の persisted credentials は無効化します。SBOM publication / Dependency Track upload と CodeQL の `security-events: write` 実行は trusted `main` follow-up job に分離し、`security-events: write` は CodeQL job に限定します。PR security summary comment は、PR code の checkout や package script 実行を行わない comment-only job で処理します。
+
+Assurance escalation 補足:
+- `policy/risk-policy.yml` の `assurance_escalation` を一次情報とします。
+- `risk:high`、`enforce-assurance`、critical-core boundary/profile がない場合、evidence 不足や agent assurance finding は report-only のままです。
+- `risk:high` は、設定済み human approval、required label、plan artifact により finding を reviewer disposition へ昇格します。
+- `enforce-assurance` は、成功した Verify Lite artifact が揃った後に strict assurance を blocking にする PR ラベルです。
+- waiver 例外は canonical な `owner`、`reason`、`expires`、`relatedClaimIds`、`evidenceRefs`、`sourceArtifactId` provenance を必要とし、strict assurance mode では metadata 不足を blocking とします。
 
 | 変数 | 役割 | 既定 | 詳細 |
 | --- | --- | --- | --- |

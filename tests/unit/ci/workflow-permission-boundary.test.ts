@@ -513,6 +513,8 @@ describe('workflow permission boundaries', () => {
     expect(workflow).toContain('PR_HEAD_REPOSITORY=');
     expect(workflow).toContain('head_repository=${PR_HEAD_REPOSITORY}');
     expect(workflow).toContain('Resolve assurance policy inputs');
+    expect(workflow).toContain('assurance_escalation');
+    expect(workflow).toContain('enforceAssuranceDecision');
     expect(workflow).toContain("labels.has('enforce-assurance')");
     expect(workflow).toContain("core.exportVariable('AE_POLICY_ASSURANCE_MODE', 'strict')");
     expect(workflow).toContain("core.exportVariable('AE_VERIFY_LITE_RUN_ID', String(run.id));");

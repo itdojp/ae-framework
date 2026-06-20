@@ -87,7 +87,7 @@ PR and release summaries use a richer per-claim review vocabulary. The canonical
 | `model-checked` | Model checking or counterexample exploration has covered the stated model scope. | Record bounded scope, model assumptions, and any counterexample closure. |
 | `tested` | Unit, integration, property, conformance, MBT, or equivalent behavior evidence supports the claim. | Do not describe this as proof. |
 | `runtime-mitigated` | Runtime guard, circuit breaker, feature flag, alert, rollout guard, or monitor reduces operational risk. | Mitigation is not proof or model checking. |
-| `waived` | A time-bounded exception was approved with owner, reason, expiry, affected claim, and evidence link. | Waiver keeps risk visible; it does not satisfy the claim. |
+| `waived` | A time-bounded exception was approved with `owner`, `reason`, `expires`, `relatedClaimIds`, `evidenceRefs`, and `sourceArtifactId` provenance. | Waiver keeps risk visible; it does not satisfy the claim. |
 | `unresolved` | Evidence is missing, stale, failed, insufficient, or not yet judged. | Default PR behavior may be report-only, but summaries must preserve the unresolved count. |
 
 `claim-level-summary/v1` also uses projection states such as `satisfied`, `failed`, and `not-applicable` for PR/release reporting. Those projection states do not replace the manifest claim-status vocabulary.
@@ -107,7 +107,22 @@ An assumption is a prerequisite for the guarantee. Typical examples include DB i
 Runtime control compensates for areas that are not closed by proof or model checking, such as feature flags, alerts, rollout guards, and monitors.
 
 #### 3.3 Waiver
-A waiver is the record used when an exception is accepted. It should retain owner, expiry, reason, and related claims.
+A waiver is the record used when an exception is accepted. It should retain `owner`, `expires`, `reason`, `relatedClaimIds`, `evidenceRefs`, and `sourceArtifactId` provenance.
+
+### 3.4 Escalation lanes
+
+Escalation is driven by `policy/risk-policy.yml` rather than by the producer
+agent. The default lane is report-only. `risk:high` changes promote missing
+required lanes, missing evidence, Boundary Map drift, waiver metadata gaps, and
+unresolved claims to manual reviewer disposition through human approvals,
+required policy labels, and the plan artifact. `enforce-assurance` selects
+strict blocking after Verify Lite artifacts are available. Critical-core
+boundaries or explicit assurance profiles may choose manual approval or block
+for their declared required lanes.
+
+Waivers remain exceptions, not evidence upgrades. Missing `owner`, `reason`,
+`expires`, `relatedClaimIds`, `evidenceRefs`, or `sourceArtifactId` provenance
+is report-only in the default lane and blocking in strict assurance mode.
 
 ### 4. Mapping to the current implementation
 
@@ -236,7 +251,7 @@ PR / release summary は、claim 単位の richer review vocabulary を使いま
 | `model-checked` | model checking または counterexample exploration が明示された model scope を探索済み。 | bounded scope、model assumption、counterexample closure を記録する。 |
 | `tested` | unit / integration / property / conformance / MBT などの behavior evidence が claim を支える。 | proof と表現しない。 |
 | `runtime-mitigated` | runtime guard、circuit breaker、feature flag、alert、rollout guard、monitor などで operational risk を緩和済み。 | mitigation は proof / model checking ではない。 |
-| `waived` | owner、reason、expiry、affected claim、evidence link を持つ期限付き例外として承認済み。 | risk を可視化し続ける。claim を satisfied に変換しない。 |
+| `waived` | `owner`、`reason`、`expires`、`relatedClaimIds`、`evidenceRefs`、`sourceArtifactId` provenance を持つ期限付き例外として承認済み。 | risk を可視化し続ける。claim を satisfied に変換しない。 |
 | `unresolved` | evidence が不足、古い、失敗、不十分、または未判断。 | 通常 PR では report-only の場合があるが、summary には unresolved count を残す。 |
 
 `claim-level-summary/v1` は PR / release projection 用に `satisfied`、`failed`、`not-applicable` なども扱います。これらの projection state は manifest claim-status vocabulary を置き換えるものではありません。
@@ -256,7 +271,21 @@ Manifest と PR summary の表示では、manifest count を proof status では
 proof や model-check で閉じない部分を、feature flag / alert / rollout / monitor で補う制御です。
 
 #### 3.3 例外記録（waiver）
-例外を許容する場合の記録です。owner / expires / reason / related claims を残します。
+例外を許容する場合の記録です。`owner` / `expires` / `reason` / `relatedClaimIds` / `evidenceRefs` / `sourceArtifactId` provenance を残します。
+
+### 3.4 escalation lane
+
+Escalation は producer agent ではなく `policy/risk-policy.yml` によって決まります。
+既定 lane は report-only です。`risk:high` 変更では required lane 不足、evidence 不足、
+Boundary Map drift、waiver metadata gap、unresolved claim を、human approval、
+required policy label、plan artifact による reviewer disposition へ昇格します。
+`enforce-assurance` は Verify Lite artifact が揃った後に strict blocking を選択します。
+critical-core boundary または明示的 assurance profile は、宣言された required lane に対して
+manual approval または block を選択できます。
+
+waiver は例外であり、evidence upgrade ではありません。`owner`、`reason`、`expires`、
+`relatedClaimIds`、`evidenceRefs`、`sourceArtifactId` provenance が欠ける場合、既定 lane では
+report-only、strict assurance mode では blocking です。
 
 ### 4. 現行実装との対応
 

@@ -58,10 +58,20 @@ Use this document with:
 | Claim status escalation | Ordinary unresolved claims may stay report-only, but `risk:high`, `enforce-assurance`, and critical core policy can escalate missing required lanes to block or manual approval. |
 | Summary-first evidence | Summary artifacts are primary judgment inputs; raw logs are supporting evidence. |
 | Distinct state layers | `claim-evidence-manifest/v1.claims[].status` remains `partial`, `satisfied`, `waived`, and `unresolved`, with evidence kind carried separately in `evidenceRefs[].kind`. Preview projection and packaging surfaces may summarize outcomes such as `proved`, `model-checked`, `tested`, `runtime-mitigated`, `failed`, and `not-applicable`, but they must not redefine the manifest claim-status vocabulary without explicit schema and policy migration. |
-| Human override | Human override requires owner, reason, expiry, related claim IDs, and evidence link. |
+| Human override | Human override requires `owner`, `reason`, `expires`, `relatedClaimIds`, `evidenceRefs`, and `sourceArtifactId` provenance. |
 | Contract evolution | Contract changes use compatibility windows, dual-write/dual-validate behavior, or explicit migration notes. |
 | Enforcement default | New assurance evaluation should start report-only unless an explicit policy, label, or risk profile selects enforcement. |
 | Policy-gate assurance findings | Producer or assurance-summary findings may be copied into `policy-gate-summary/v1` with count, severity, and source artifact path, but the default handling is report-only and does not block ordinary PRs. |
+
+Escalation is policy-scoped, not producer-scoped. `policy/risk-policy.yml`
+defines `assurance_escalation` so the same finding has a predictable outcome:
+ordinary PRs keep missing evidence and agent findings report-only; `risk:high`
+requires manual approval, policy-label convergence, and a plan artifact;
+`enforce-assurance` blocks strict assurance failures; critical-core boundaries or
+explicit assurance profiles can choose manual approval or blocking for their
+declared required lanes. A waiver must retain `owner`, `reason`, `expires`,
+`relatedClaimIds`, `evidenceRefs`, and `sourceArtifactId` provenance; it does not convert an unsupported claim into
+`proved`, `tested`, or `satisfied`.
 
 ### 4. Canonical terminology
 
@@ -75,7 +85,7 @@ Use this document with:
 | Assurance level | Weight of evidence per claim, from `A0` through `A4`. | `docs/quality/ASSURANCE-MODEL.md`, `schema/assurance-profile.schema.json` |
 | Validation lane | Independent verification route such as `spec`, `behavior`, `adversarial`, `model`, `proof`, or `runtime`. | `docs/quality/assurance-lanes.md` |
 | Runtime control | Operational mitigation such as alert, feature flag, rollout guard, or runtime conformance monitor. It is not proof. | `docs/quality/ASSURANCE-MODEL.md` |
-| Waiver / override | Time-bounded exception with owner, reason, expiry, claim links, and evidence reference. It does not turn an unsupported claim into a satisfied claim. | `schema/claim-evidence-manifest.schema.json`, `schema/change-package-v2.schema.json`, `schema/policy-decision-v1.schema.json` |
+| Waiver / override | Time-bounded exception with `owner`, `reason`, `expires`, `relatedClaimIds`, `evidenceRefs`, and `sourceArtifactId` provenance. It does not turn an unsupported claim into a satisfied claim. | `schema/claim-evidence-manifest.schema.json`, `schema/change-package-v2.schema.json`, `schema/policy-decision-v1.schema.json` |
 | Unresolved risk | Claim or finding whose evidence is missing, failed, stale, out of scope, or not strong enough for the target assurance level. | `docs/quality/assurance-profile.md`, `docs/security/security-assurance-lane.md` |
 | Proof-carrying change package | Review/release package that links changed claims, evidence, assumptions, waivers, runtime controls, residual risks, and policy decisions. | `docs/reference/change-package-v2.md`, `schema/change-package-v2.schema.json` |
 
@@ -89,7 +99,7 @@ A PR/release review state must not be upgraded beyond the supporting evidence. W
 | `model-checked` | Model checking or counterexample exploration supports the modeled scope. | Proof for code outside the model. |
 | `tested` | Unit, integration, property, MBT, or similar behavior evidence exists. | Formal proof. |
 | `runtime-mitigated` | Runtime control reduces operational risk. | Proof or model checking. |
-| `waived` | An owner accepted a time-bounded exception with evidence link. | Satisfied claim. |
+| `waived` | An owner accepted a time-bounded exception with `evidenceRefs` and `sourceArtifactId` provenance. | Satisfied claim. |
 | `unresolved` | Required evidence is absent, stale, failed, insufficient, or intentionally out of current primary-contract scope. | Passing build. |
 | `not-applicable` | Preview claim-level summary projection or `change-package/v2` package/release outcome for an explicitly out-of-scope/non-applicable claim. | A current `claim-evidence-manifest/v1.claims[].status` value or evidence kind. |
 
@@ -109,7 +119,7 @@ These state vocabularies are intentionally separate:
 | Green CI | `verify-lite`, `policy-gate`, and `gate` passed for this PR. | This PR is high assurance because CI is green. |
 | Claim evidence | Claim `no-negative-balance` is tested by unit and property lanes and remains below target `A3` until model evidence is available. | The balance invariant is proved by tests. |
 | Runtime control | The rollout guard mitigates risk during deployment; the claim remains runtime-mitigated, not proved. | The alert proves the system is safe. |
-| Waiver | Claim `audit-fields` is waived until 2026-06-30 by owner `security`, with evidence link and follow-up issue. | The waived claim passes. |
+| Waiver | Claim `audit-fields` is waived until 2026-06-30 by owner `security`, with `evidenceRefs`, `sourceArtifactId`, and follow-up issue. | The waived claim passes. |
 | Formal scope | TLA evidence model-checks the state transition model under the assumptions listed in the summary. | Formal verification proves the whole product. |
 | Producer boundary | Codex generated a change and ae-framework produced evidence for review. | ae-framework is the coding agent. |
 | Change package | `change-package/v2` is a proof-carrying preview package linked to claim evidence and policy decisions. | v2 is the mandatory production package for every PR. |
@@ -200,10 +210,20 @@ Policy gates may consume these metrics for context, but a metric must not become
 | Claim status escalation | 通常変更の unresolved claim は report-only に留める場合があるが、`risk:high`、`enforce-assurance`、critical core policy では required lane 不足を block または manual approval へ昇格できる。 |
 | Summary-first evidence | summary artifact を主な判断入力とし、raw log は補助証跡とする。 |
 | Distinct state layers | `claim-evidence-manifest/v1.claims[].status` は `partial`、`satisfied`、`waived`、`unresolved` に限定し、evidence kind は `evidenceRefs[].kind` に分離して保持する。preview projection や packaging surface は `proved`、`model-checked`、`tested`、`runtime-mitigated`、`failed`、`not-applicable` などの outcome を要約できるが、明示的な schema / policy migration なしに manifest claim-status vocabulary を再定義しない。 |
-| Human override | human override には owner、reason、expiry、related claim IDs、evidence link を必要とする。 |
+| Human override | human override には `owner`、`reason`、`expires`、`relatedClaimIds`、`evidenceRefs`、`sourceArtifactId` provenance を必要とする。 |
 | Contract evolution | contract 変更には compatibility window、dual-write/dual-validate、または migration note を使う。 |
 | Enforcement default | 新しい assurance evaluation は、明示的な policy / label / risk profile が enforcement を選択しない限り report-only から開始する。 |
 | Policy-gate assurance findings | producer または assurance summary 由来の finding は `policy-gate-summary/v1` に count、severity、source artifact path 付きで転記できるが、既定は report-only であり通常PRをblockしない。 |
+
+Escalation は producer ではなく policy で決まります。
+`policy/risk-policy.yml` の `assurance_escalation` は、同じ finding に対して
+予測可能な結果を定義します。通常 PR では evidence 不足や agent finding は
+report-only に留めます。`risk:high` では manual approval、policy label の収束、
+plan artifact を要求します。`enforce-assurance` では strict assurance failure を
+block します。critical-core boundary または明示的 assurance profile は、宣言された
+required lane について manual approval または blocking を選択できます。waiver は
+`owner`、`reason`、`expires`、`relatedClaimIds`、`evidenceRefs`、`sourceArtifactId` provenance を保持する必要があり、
+unsupported claim を `proved`、`tested`、`satisfied` に変換しません。
 
 ### 4. 用語
 
@@ -215,7 +235,7 @@ Policy gates may consume these metrics for context, but a metric must not become
 - **Assurance level**: claim 単位の証跡の重さ。`A0` から `A4`。
 - **Validation lane**: `spec`、`behavior`、`adversarial`、`model`、`proof`、`runtime` などの独立検証経路。
 - **Runtime control**: alert、feature flag、rollout guard、runtime conformance monitor などの運用時緩和。proof ではない。
-- **Waiver / override**: owner、reason、expiry、claim link、evidence link を持つ期限付き例外。satisfied claim ではない。
+- **Waiver / override**: `owner`、`reason`、`expires`、`relatedClaimIds`、`evidenceRefs`、`sourceArtifactId` provenance を持つ期限付き例外。satisfied claim ではない。
 - **Unresolved risk**: 証跡が不足、失敗、古い、対象外、または target assurance level に足りない claim / finding。
 - **Proof-carrying change package**: changed claim、evidence、assumption、waiver、runtime control、residual risk、policy decision を結び付ける review/release package。
 
@@ -229,7 +249,7 @@ Claim status は claim 単位で評価し、PR / release summary では状態を
 | `model-checked` | model checking が bounded scope / assumption の範囲で探索済み | model scope を超える claim は human review へ昇格 |
 | `tested` | unit / integration / property / conformance などで検証済み | behavior evidence。proof と表現しない |
 | `runtime-mitigated` | runtime guard / feature flag / alert などで緩和済み | warn / report-only が既定。critical core では manual approval または block へ昇格可能 |
-| `waived` | owner / reason / expiry / claim / evidence link 付きで期限付き免除 | metadata 不足・期限切れは block。satisfied claim ではない |
+| `waived` | `owner` / `reason` / `expires` / `relatedClaimIds` / `evidenceRefs` / `sourceArtifactId` 付きで期限付き免除 | metadata 不足・期限切れは block。satisfied claim ではない |
 | `unresolved` | evidence 不足または未判断 | 通常変更では report-only 可。ただし `risk:high` / `enforce-assurance` / critical core では block または manual approval |
 | `not-applicable` | 明示的に scope 外 / 非対象である claim の preview claim-level summary projection、または `change-package/v2` package / release outcome | 現行 `claim-evidence-manifest/v1.claims[].status` value や evidence kind ではない |
 
@@ -249,7 +269,7 @@ Claim status は claim 単位で評価し、PR / release summary では状態を
 | Green CI | `verify-lite`、`policy-gate`、`gate` がこの PR で通過した。 | CI が green なので high assurance である。 |
 | Claim evidence | claim `no-negative-balance` は unit/property lane で tested。model evidence までは target `A3` 未満。 | テストにより balance invariant は proved である。 |
 | Runtime control | rollout guard は deployment risk を緩和するが、claim は runtime-mitigated であり proved ではない。 | alert があるので安全性は証明済み。 |
-| Waiver | claim `audit-fields` は owner、期限、evidence link、follow-up issue 付きで waived。 | waived claim は pass。 |
+| Waiver | claim `audit-fields` は owner、期限、`evidenceRefs`、`sourceArtifactId`、follow-up issue 付きで waived。 | waived claim は pass。 |
 | Formal scope | TLA evidence は summary に記載された assumption の範囲で state transition model を model-check した。 | formal verification により製品全体が証明済み。 |
 | Producer boundary | Codex が変更を生成し、ae-framework が review evidence を生成した。 | ae-framework は coding agent である。 |
 
