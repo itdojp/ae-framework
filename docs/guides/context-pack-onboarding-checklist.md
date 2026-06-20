@@ -29,7 +29,7 @@ Context Pack は code generation の入力ファイルではなく、human / age
 3. `docs/spec/context-pack.md` と `spec/context-pack/boundary-map.json`
 4. 対象sliceに紐づく acceptance tests / 既存テスト
 
-変更が Context Pack の制約と矛盾する場合は、実装差分を作る前に Context Pack 更新または要求修正を判断します。通常変更は最小Context Pack + `pnpm -s run verify:lite` で開始し、traceability が必要な場合に Structured assurance、critical core のみ High-assurance lane へ昇格します。
+変更が Context Pack の制約と矛盾する場合は、実装差分を作る前に Context Pack 更新または要求修正を判断し、PR または Issue comment に `Context Pack conflict: found` と矛盾ID/pathを記録します。矛盾がない場合は `Context Pack conflict: none` を PR body に残します。通常変更は最小Context Pack + `pnpm -s run verify:lite` で開始し、traceability が必要な場合に Structured assurance、critical core のみ High-assurance lane へ昇格します。
 
 ### 0. 最小E2E fixture でツール疎通を確認
 まず framework 側の最小 fixture を実行して、ローカル環境と validator の疎通を確認します。
@@ -128,7 +128,7 @@ Context Pack is the design SSOT shared by humans and agents, not a disposable co
 3. `docs/spec/context-pack.md` and `spec/context-pack/boundary-map.json`.
 4. Acceptance tests and existing tests tied to the affected slice.
 
-If the requested change conflicts with Context Pack constraints, decide whether to update the Context Pack or revise the request before generating implementation changes. Start routine changes with a minimal Context Pack plus `pnpm -s run verify:lite`, add Structured assurance when traceability is needed, and promote only critical core slices to the High-assurance lane.
+If the requested change conflicts with Context Pack constraints, decide whether to update the Context Pack or revise the request before generating implementation changes, and record `Context Pack conflict: found` with the conflicting IDs/paths in the PR or Issue comment. If no conflict is found, record `Context Pack conflict: none` in the PR body. Start routine changes with a minimal Context Pack plus `pnpm -s run verify:lite`, add Structured assurance when traceability is needed, and promote only critical core slices to the High-assurance lane.
 
 ### 0. Confirm tool wiring with the minimal end-to-end fixture
 Start with the framework-owned minimal fixture to verify the local environment and validators before touching project-specific inputs.
