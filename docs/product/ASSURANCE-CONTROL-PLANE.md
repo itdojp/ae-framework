@@ -14,7 +14,7 @@ lastVerified: '2026-06-05'
 
 ## English
 
-Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`. This overview is derived from the policy and current architecture; use the policy for implementation decisions.
+Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`. The 90-day implementation sequence is tracked in `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`. This overview is derived from the policy and current architecture; use the policy for implementation decisions.
 
 ### 1. Definition
 This document defines ae-framework as an agent-neutral assurance control plane that sits on top of BYO agents, human maintainers, CI jobs, and verification tools.
@@ -144,7 +144,7 @@ Conditional or preview elements:
 
 ## 日本語
 
-Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`。この概要は policy と current architecture から派生した文書です。実装判断には policy を優先します。
+Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`。90日実装順序は `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md` で管理します。この概要は policy と current architecture から派生した文書です。実装判断には policy を優先します。
 
 ## 1. 定義
 
