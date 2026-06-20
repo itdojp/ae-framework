@@ -458,7 +458,6 @@ function renderMarkdown(summary) {
   lines.push('## Unresolved notes');
   lines.push('');
   lines.push(formatList(summary.controlPlaneRouting.unresolvedNotes, (note) => `- ${note}`).trimEnd());
-  lines.push('');
   return `${lines.join('\n')}\n`;
 }
 

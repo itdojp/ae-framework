@@ -87,6 +87,9 @@ export const parseArgs = (argv = process.argv.slice(2)) => {
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
+    if (arg === '--') {
+      continue;
+    }
     if (arg === '--help' || arg === '-h') {
       usage();
       process.exit(0);
