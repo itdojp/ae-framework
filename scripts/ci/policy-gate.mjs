@@ -33,6 +33,8 @@ const SUMMARY_SCHEMA_VERSION = 'policy-gate-summary/v1';
 const SUMMARY_CONTRACT_ID = 'policy-gate-summary.v1';
 const POLICY_INPUT_PATH = 'artifacts/ci/policy-input-v1.json';
 const POLICY_DECISION_PATH = 'artifacts/ci/policy-decision-js-v1.json';
+const ASSURANCE_SUMMARY_PATH = 'artifacts/assurance/assurance-summary.json';
+const PRODUCER_NORMALIZATION_SUMMARY_PATH = 'artifacts/agents/producer-normalization-summary.json';
 const CLAIM_EVIDENCE_MANIFEST_PATH = 'artifacts/assurance/claim-evidence-manifest.json';
 const CLAIM_EVIDENCE_PROVENANCE_PATH = 'artifacts/assurance/claim-evidence-provenance.json';
 const CLAIM_LEVEL_SUMMARY_PATH = 'artifacts/assurance/claim-level-summary.json';
@@ -738,6 +740,207 @@ function displayPath(filePath) {
   return filePath;
 }
 
+function normalizeFindingSeverity(value) {
+  return String(value ?? 'report-only').trim() || 'report-only';
+}
+
+function normalizeFindingKind(value) {
+  return String(value ?? 'agent-assurance').trim() || 'agent-assurance';
+}
+
+function normalizeAgentAssuranceFinding(finding, index = 0, sourceArtifactPath = '') {
+  if (!finding || typeof finding !== 'object') return null;
+  const kind = normalizeFindingKind(finding.kind);
+  const normalizedSource = optionalString(finding.sourceArtifactPath)
+    ?? optionalString(finding.sourceArtifact)
+    ?? optionalString(sourceArtifactPath);
+  if (!normalizedSource) return null;
+  const summary = optionalString(finding.summary)
+    ?? optionalString(finding.reason)
+    ?? optionalString(finding.message)
+    ?? `${kind} finding`;
+  return {
+    id: optionalString(finding.id) ?? `${kind}:${index + 1}`,
+    kind,
+    severity: normalizeFindingSeverity(finding.severity),
+    enforcement: 'report-only',
+    summary,
+    sourceArtifactPath: normalizedSource,
+    relatedArtifactPath: optionalString(finding.relatedArtifactPath)
+      ?? optionalString(finding.artifact)
+      ?? optionalString(finding.details?.artifact)
+      ?? null,
+    claimId: optionalString(finding.claimId) ?? null,
+  };
+}
+
+function summarizeAgentAssuranceFindings(findings) {
+  const normalizedCandidates = (Array.isArray(findings) ? findings : [])
+    .map((finding, index) => normalizeAgentAssuranceFinding(finding, index))
+    .filter(Boolean);
+  const seen = new Set();
+  const normalized = [];
+  for (const finding of normalizedCandidates) {
+    const key = [
+      finding.kind,
+      finding.summary,
+      finding.relatedArtifactPath ?? '',
+      finding.claimId ?? '',
+    ].join('\u0000');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push(finding);
+  }
+  if (normalized.length === 0) return null;
+  const bySeverity = {};
+  for (const finding of normalized) {
+    bySeverity[finding.severity] = (bySeverity[finding.severity] ?? 0) + 1;
+  }
+  return {
+    count: normalized.length,
+    bySeverity,
+    sources: normalizeUniqueStringArray(normalized.map((finding) => finding.sourceArtifactPath)),
+    findings: normalized,
+  };
+}
+
+function sourceArtifactPathForReviewSurface(source, reviewSurface) {
+  const normalized = String(source ?? '').trim();
+  if (!normalized) return null;
+  if (normalized === 'assurance-summary') return ASSURANCE_SUMMARY_PATH;
+  if (normalized === 'producer-summary') {
+    return reviewSurface?.producerSignals?.artifactPaths?.[0] ?? PRODUCER_NORMALIZATION_SUMMARY_PATH;
+  }
+  if (normalized === 'boundary-map-summary') {
+    return reviewSurface?.boundaryMap?.artifactPaths?.[0] ?? 'artifacts/context-pack/boundary-map-summary.json';
+  }
+  if (normalized === 'claim-evidence-manifest') {
+    return reviewSurface?.claimEvidence?.artifactPaths?.[0] ?? CLAIM_EVIDENCE_MANIFEST_PATH;
+  }
+  if (normalized === 'policy-decision') {
+    return reviewSurface?.policyDecision?.artifactPath ?? POLICY_DECISION_PATH;
+  }
+  if (normalized === 'claim-evidence-manifest/policy-decision') {
+    return reviewSurface?.claimEvidence?.artifactPaths?.[0]
+      ?? reviewSurface?.policyDecision?.artifactPath
+      ?? CLAIM_EVIDENCE_MANIFEST_PATH;
+  }
+  return normalized.includes('/') ? normalized : null;
+}
+
+function inspectProducerNormalizationFindings(summaryPath = PRODUCER_NORMALIZATION_SUMMARY_PATH) {
+  const absolutePath = path.resolve(summaryPath);
+  const sourceArtifactPath = displayPath(absolutePath);
+  if (!fs.existsSync(absolutePath)) return [];
+
+  try {
+    const payload = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
+    const routing = payload?.controlPlaneRouting && typeof payload.controlPlaneRouting === 'object'
+      ? payload.controlPlaneRouting
+      : {};
+    const findings = [];
+    for (const [index, finding] of (Array.isArray(routing.reportOnlyFindings) ? routing.reportOnlyFindings : []).entries()) {
+      findings.push(normalizeAgentAssuranceFinding({
+        ...finding,
+        sourceArtifactPath,
+        relatedArtifactPath: optionalString(finding?.details?.artifact) ?? null,
+      }, index, sourceArtifactPath));
+    }
+    const existingKeys = new Set(findings.filter(Boolean).map((finding) => `${finding.kind}:${finding.summary}`));
+    for (const [index, missing] of (Array.isArray(routing.missingEvidence) ? routing.missingEvidence : []).entries()) {
+      const kind = missing?.kind === 'waiver-metadata' ? 'waiver-metadata' : 'missing-evidence';
+      const summary = optionalString(missing?.summary) ?? `Missing evidence item ${index + 1}`;
+      const key = `${kind}:${summary}`;
+      if (existingKeys.has(key)) continue;
+      findings.push(normalizeAgentAssuranceFinding({
+        id: `producer-missing-evidence:${index + 1}`,
+        kind,
+        severity: 'report-only',
+        summary,
+        sourceArtifactPath,
+        relatedArtifactPath: optionalString(missing?.artifact) ?? null,
+        claimId: optionalString(missing?.claimId) ?? null,
+      }, index, sourceArtifactPath));
+    }
+    return findings.filter(Boolean);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return [normalizeAgentAssuranceFinding({
+      id: 'producer-normalization-summary:parse-error',
+      kind: 'artifact-parse-error',
+      severity: 'review',
+      summary: `Producer normalization summary could not be parsed: ${message}`,
+      sourceArtifactPath,
+    }, 0, sourceArtifactPath)].filter(Boolean);
+  }
+}
+
+function inspectAssuranceSummaryFindings(summaryPath = ASSURANCE_SUMMARY_PATH) {
+  const absolutePath = path.resolve(summaryPath);
+  const sourceArtifactPath = displayPath(absolutePath);
+  if (!fs.existsSync(absolutePath)) return [];
+
+  try {
+    const payload = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
+    const reviewSurface = payload?.reviewSurface && typeof payload.reviewSurface === 'object'
+      ? payload.reviewSurface
+      : null;
+    if (!reviewSurface) return [];
+
+    const findings = [];
+    const producerFindingRefs = Array.isArray(reviewSurface?.producerSignals?.findingRefs)
+      ? reviewSurface.producerSignals.findingRefs
+      : [];
+    const producerRelatedPath = reviewSurface?.producerSignals?.artifactPaths?.[0] ?? PRODUCER_NORMALIZATION_SUMMARY_PATH;
+    for (const [index, finding] of producerFindingRefs.entries()) {
+      findings.push(normalizeAgentAssuranceFinding({
+        id: `assurance-summary:producer:${finding?.id ?? index + 1}`,
+        kind: finding?.kind ?? 'producer-report-only-finding',
+        severity: 'report-only',
+        summary: finding?.summary,
+        sourceArtifactPath,
+        relatedArtifactPath: producerRelatedPath,
+      }, index, sourceArtifactPath));
+    }
+
+    for (const [index, risk] of (Array.isArray(reviewSurface.residualRisks) ? reviewSurface.residualRisks : []).entries()) {
+      if (risk?.kind === 'producer-report-only-finding' && producerFindingRefs.length > 0) {
+        continue;
+      }
+      findings.push(normalizeAgentAssuranceFinding({
+        id: `assurance-summary:residual:${risk?.kind ?? 'risk'}:${risk?.claimId ?? index + 1}`,
+        kind: risk?.kind ?? 'residual-risk',
+        severity: risk?.severity ?? 'review',
+        summary: risk?.reason,
+        sourceArtifactPath,
+        relatedArtifactPath: sourceArtifactPathForReviewSurface(risk?.source, reviewSurface),
+        claimId: optionalString(risk?.claimId) ?? null,
+      }, index, sourceArtifactPath));
+    }
+    return findings.filter(Boolean);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return [normalizeAgentAssuranceFinding({
+      id: 'assurance-summary:parse-error',
+      kind: 'artifact-parse-error',
+      severity: 'review',
+      summary: `Assurance summary could not be parsed: ${message}`,
+      sourceArtifactPath,
+    }, 0, sourceArtifactPath)].filter(Boolean);
+  }
+}
+
+function inspectAgentAssuranceFindings({
+  assuranceSummaryPath = ASSURANCE_SUMMARY_PATH,
+  producerSummaryPath = PRODUCER_NORMALIZATION_SUMMARY_PATH,
+} = {}) {
+  const findings = [
+    ...inspectProducerNormalizationFindings(producerSummaryPath),
+    ...inspectAssuranceSummaryFindings(assuranceSummaryPath),
+  ];
+  return summarizeAgentAssuranceFindings(findings);
+}
+
 function trustedProvenanceContextFromEnv(env = process.env) {
   return {
     runId: optionalString(env.AE_VERIFY_LITE_RUN_ID),
@@ -1016,6 +1219,9 @@ function flattenAssuranceWaivers(claims) {
 
 function buildAssuranceEvaluation(manifestState, options = {}) {
   const modeState = normalizeAssuranceMode(options.assuranceMode);
+  const agentAssuranceFindings = summarizeAgentAssuranceFindings(
+    options.agentAssuranceFindings?.findings ?? options.agentAssuranceFindings,
+  );
   const warnings = [...(Array.isArray(manifestState?.warnings) ? manifestState.warnings : [])];
   const errors = [...(Array.isArray(manifestState?.errors) ? manifestState.errors : [])];
   if (modeState.warning) warnings.push(modeState.warning);
@@ -1088,6 +1294,7 @@ function buildAssuranceEvaluation(manifestState, options = {}) {
     expiringSoonWaivers: waivers.filter((waiver) => waiver.status === 'expiringSoon').length,
     expiredWaivers: waivers.filter((waiver) => waiver.status === 'expired').length,
     orphanWaivers: waivers.filter((waiver) => waiver.status === 'orphan').length,
+    ...(agentAssuranceFindings ? { agentAssuranceFindings: agentAssuranceFindings.count } : {}),
     ...(securitySummary ? { security: securitySummary } : {}),
   };
 
@@ -1116,6 +1323,7 @@ function buildAssuranceEvaluation(manifestState, options = {}) {
     waivers,
     warnings,
     errors,
+    ...(agentAssuranceFindings ? { agentAssuranceFindings } : {}),
   };
 }
 
@@ -1141,6 +1349,7 @@ function evaluatePolicyGate({
   approvalOverride,
   assuranceMode,
   assurance,
+  agentAssuranceFindings,
   planArtifact,
 }) {
   const errors = [];
@@ -1204,7 +1413,10 @@ function evaluatePolicyGate({
   if (assuranceModeState.warning) warnings.push(`assurance: ${assuranceModeState.warning}`);
   const assuranceEvaluation = buildAssuranceEvaluation(
     assurance || inspectAssuranceEvidence(),
-    { assuranceMode: assuranceModeState.value },
+    {
+      assuranceMode: assuranceModeState.value,
+      agentAssuranceFindings,
+    },
   );
   warnings.push(...assuranceEvaluation.warnings.map((warning) => `assurance: ${warning}`));
   if (assuranceEvaluation.mode === 'strict' && assuranceEvaluation.result === 'block') {
@@ -1344,6 +1556,28 @@ function buildMarkdownSummary(prNumber, evaluation) {
       lines.push(`  - waivers: active=${evaluation.assurance.summary.activeWaivers}, expiringSoon=${evaluation.assurance.summary.expiringSoonWaivers}, expired=${evaluation.assurance.summary.expiredWaivers}, orphan=${evaluation.assurance.summary.orphanWaivers}`);
       for (const waiver of evaluation.assurance.waivers) {
         lines.push(`    - ${formatAssuranceWaiverLine(waiver)}`);
+      }
+    }
+    if (evaluation.assurance.agentAssuranceFindings?.count > 0) {
+      const findingSummary = evaluation.assurance.agentAssuranceFindings;
+      const severitySummary = Object.entries(findingSummary.bySeverity || {})
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([severity, count]) => `${severity}=${count}`)
+        .join(', ');
+      lines.push(`  - agent assurance findings (report-only): total=${findingSummary.count}${severitySummary ? ` (${severitySummary})` : ''}`);
+      for (const finding of findingSummary.findings.slice(0, 10)) {
+        const parts = [
+          `${formatMarkdownCell(finding.severity)}/${formatMarkdownCell(finding.kind)}`,
+          formatMarkdownCell(finding.summary),
+          `source=${formatMarkdownCell(finding.sourceArtifactPath)}`,
+        ];
+        if (finding.relatedArtifactPath) {
+          parts.push(`related=${formatMarkdownCell(finding.relatedArtifactPath)}`);
+        }
+        if (finding.claimId) {
+          parts.push(`claim=${formatMarkdownCell(finding.claimId)}`);
+        }
+        lines.push(`    - ${parts.join('; ')}`);
       }
     }
   }
@@ -1618,6 +1852,7 @@ async function run(options = parseArgs(process.argv)) {
   const planArtifact = inspectPlanArtifact(options.policyPath);
   const now = new Date().toISOString();
   const assurance = inspectAssuranceEvidence(now);
+  const agentAssuranceFindings = inspectAgentAssuranceFindings();
 
   const evaluation = evaluatePolicyGate({
     policy,
@@ -1629,6 +1864,7 @@ async function run(options = parseArgs(process.argv)) {
     approvalOverride: process.env.AE_POLICY_MIN_HUMAN_APPROVALS,
     assuranceMode: process.env.AE_POLICY_ASSURANCE_MODE,
     assurance,
+    agentAssuranceFindings,
     planArtifact,
   });
 
@@ -1704,6 +1940,7 @@ export {
   evaluatePolicyGate,
   buildPolicyGateReport,
   inspectAssuranceEvidence,
+  inspectAgentAssuranceFindings,
   inspectClaimEvidenceManifest,
   inspectClaimEvidenceProvenance,
   inspectClaimLevelSummary,

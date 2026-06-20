@@ -61,6 +61,7 @@ Use this document with:
 | Human override | Human override requires owner, reason, expiry, related claim IDs, and evidence link. |
 | Contract evolution | Contract changes use compatibility windows, dual-write/dual-validate behavior, or explicit migration notes. |
 | Enforcement default | New assurance evaluation should start report-only unless an explicit policy, label, or risk profile selects enforcement. |
+| Policy-gate assurance findings | Producer or assurance-summary findings may be copied into `policy-gate-summary/v1` with count, severity, and source artifact path, but the default handling is report-only and does not block ordinary PRs. |
 
 ### 4. Canonical terminology
 
@@ -202,6 +203,7 @@ Policy gates may consume these metrics for context, but a metric must not become
 | Human override | human override には owner、reason、expiry、related claim IDs、evidence link を必要とする。 |
 | Contract evolution | contract 変更には compatibility window、dual-write/dual-validate、または migration note を使う。 |
 | Enforcement default | 新しい assurance evaluation は、明示的な policy / label / risk profile が enforcement を選択しない限り report-only から開始する。 |
+| Policy-gate assurance findings | producer または assurance summary 由来の finding は `policy-gate-summary/v1` に count、severity、source artifact path 付きで転記できるが、既定は report-only であり通常PRをblockしない。 |
 
 ### 4. 用語
 

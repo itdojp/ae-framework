@@ -468,6 +468,10 @@ jobs:
             artifacts/verify-lite/verify-lite-run-summary.json
             artifacts/verify-lite/verify-lite-retry-eligibility.json
             artifacts/report-envelope.json
+            artifacts/agents/producer-normalization-summary.json
+            artifacts/agents/producer-normalization-summary.md
+            artifacts/context-pack/boundary-map-summary.json
+            artifacts/context-pack/boundary-map-summary.md
             artifacts/assurance/assurance-summary.json
             artifacts/assurance/assurance-summary.md
             artifacts/assurance/claim-evidence-manifest.json

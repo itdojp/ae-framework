@@ -538,6 +538,8 @@ describe('workflow permission boundaries', () => {
     expect(workflow).toContain('Write claim evidence provenance (report-only)');
     expect(workflow).toContain('VERIFY_LITE_PR_HEAD_SHA');
     expect(workflow).toContain('node scripts/ci/write-verify-lite-assurance-provenance.mjs');
+    expect(workflow).toContain('artifacts/agents/producer-normalization-summary.json');
+    expect(workflow).toContain('artifacts/context-pack/boundary-map-summary.json');
     expect(workflow).toContain('artifacts/assurance/claim-evidence-provenance.json');
   });
 
