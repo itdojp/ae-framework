@@ -204,16 +204,16 @@ Before asking Codex to edit code, treat Context Pack as the design SSOT rather t
 1. GitHub Issue body.
 2. `AGENTS.md`.
 3. `docs/spec/context-pack.md` and `spec/context-pack/boundary-map.json`.
-4. Relevant acceptance tests and validation commands.
+4. Relevant acceptance tests, existing tests, and validation commands.
 
-Run the real package scripts after the change: `pnpm -s run context-pack:validate`, `pnpm -s run context-pack:verify-boundary-map`, and `pnpm -s run context-pack:deps` when dependency or slice assumptions changed. Use the heavier Context Pack checks only when the touched fixture/schema or risk profile requires them.
+If the requested change conflicts with Context Pack constraints or the boundary map, stop before implementation and record `Context Pack conflict: found` with the conflicting IDs/paths in the PR or Issue comment. If no conflict is found, record `Context Pack conflict: none` in the PR body. Run the real package scripts after the change: `pnpm -s run context-pack:validate`, `pnpm -s run context-pack:verify-boundary-map`, and `pnpm -s run context-pack:deps` when dependency or slice assumptions changed. Use heavier Context Pack checks only when the Issue, touched fixture/schema, risk label, assurance profile, or critical-core boundary requires them.
 
 ```text
-Before changing code, read the Context Pack and boundary map. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop and report the conflict instead of silently editing code.
+Before changing code, read the Context Pack, boundary map, and acceptance tests relevant to the Issue target files. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop before implementation and report `Context Pack conflict: found`; otherwise record `Context Pack conflict: none` in the PR body. Do not add MBT, property, or formal lanes for routine changes unless the Issue, risk label, assurance profile, or critical-core boundary requires them.
 ```
 
 ```text
-コードを変更する前に、Context Pack と boundary map を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、無言でコードを編集せず、作業を止めて矛盾点を報告してください。
+コードを変更する前に、Issue target files に関係する Context Pack、boundary map、acceptance tests を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、実装前に停止して `Context Pack conflict: found` を報告し、矛盾がない場合は PR body に `Context Pack conflict: none` を記録してください。Issue、risk label、assurance profile、critical-core boundary が要求しない限り、通常変更に MBT / property / formal lane を追加しないでください。
 ```
 
 ## Operational Considerations
@@ -417,16 +417,16 @@ Codexにコード編集を依頼する前に、Context Packをcode generation pr
 1. GitHub Issue本文。
 2. `AGENTS.md`。
 3. `docs/spec/context-pack.md` と `spec/context-pack/boundary-map.json`。
-4. 関連するacceptance testsとvalidation command。
+4. 関連する acceptance tests、既存テスト、validation command。
 
-変更後は実在するpackage scriptである `pnpm -s run context-pack:validate`、`pnpm -s run context-pack:verify-boundary-map`、依存やslice前提を変えた場合は `pnpm -s run context-pack:deps` を実行します。fixture/schemaやrisk profileが要求する場合だけ、より重いContext Pack検証へ昇格します。
+依頼内容が Context Pack constraints または boundary map と矛盾する場合は、実装前に停止し、PR または Issue comment に `Context Pack conflict: found` と矛盾する ID / path を記録します。矛盾がない場合は PR body に `Context Pack conflict: none` を記録します。変更後は実在するpackage scriptである `pnpm -s run context-pack:validate`、`pnpm -s run context-pack:verify-boundary-map`、依存やslice前提を変えた場合は `pnpm -s run context-pack:deps` を実行します。Issue、fixture/schema、risk label、assurance profile、critical-core boundary が要求する場合だけ、より重いContext Pack検証へ昇格します。
 
 ```text
-Before changing code, read the Context Pack and boundary map. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop and report the conflict instead of silently editing code.
+Before changing code, read the Context Pack, boundary map, and acceptance tests relevant to the Issue target files. Treat them as the design SSOT. If the requested change conflicts with Context Pack constraints, stop before implementation and report `Context Pack conflict: found`; otherwise record `Context Pack conflict: none` in the PR body. Do not add MBT, property, or formal lanes for routine changes unless the Issue, risk label, assurance profile, or critical-core boundary requires them.
 ```
 
 ```text
-コードを変更する前に、Context Pack と boundary map を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、無言でコードを編集せず、作業を止めて矛盾点を報告してください。
+コードを変更する前に、Issue target files に関係する Context Pack、boundary map、acceptance tests を読んでください。これらを design SSOT として扱います。依頼内容が Context Pack の制約と矛盾する場合は、実装前に停止して `Context Pack conflict: found` を報告し、矛盾がない場合は PR body に `Context Pack conflict: none` を記録してください。Issue、risk label、assurance profile、critical-core boundary が要求しない限り、通常変更に MBT / property / formal lane を追加しないでください。
 ```
 
 ### 受け入れ基準（漸進）

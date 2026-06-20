@@ -29,7 +29,7 @@ Context Pack は code generation の入力ファイルではなく、human / age
 3. `docs/spec/context-pack.md` と `spec/context-pack/boundary-map.json`
 4. 対象sliceに紐づく acceptance tests / 既存テスト
 
-変更が Context Pack の制約と矛盾する場合は、実装差分を作る前に Context Pack 更新または要求修正を判断し、PR または Issue comment に `Context Pack conflict: found` と矛盾ID/pathを記録します。矛盾がない場合は `Context Pack conflict: none` を PR body に残します。通常変更は最小Context Pack + `pnpm -s run verify:lite` で開始し、traceability が必要な場合に Structured assurance、critical core のみ High-assurance lane へ昇格します。
+変更が Context Pack の制約と矛盾する場合は、実装差分を作る前に Context Pack 更新または要求修正を判断し、PR または Issue comment に `Context Pack conflict: found` と矛盾する ID / pathを記録します。矛盾がない場合は `Context Pack conflict: none` を PR body に残します。通常変更は最小Context Pack + `pnpm -s run verify:lite` で開始し、traceability が必要な場合に Structured assurance、critical core のみ High-assurance lane へ昇格します。
 
 ### 0. 最小E2E fixture でツール疎通を確認
 まず framework 側の最小 fixture を実行して、ローカル環境と validator の疎通を確認します。
