@@ -349,6 +349,292 @@ describe.sequential('assurance aggregate lanes script', () => {
     }
   });
 
+  it('builds a reviewer decision surface from producer, boundary, claim, waiver, and policy summaries', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-review-surface-'));
+    const claimEvidenceManifestPath = join(sandbox, 'claim-evidence-manifest.json');
+    const policyDecisionPath = join(sandbox, 'policy-decision.json');
+    const outputJson = join(sandbox, 'assurance-summary.json');
+    const outputMd = join(sandbox, 'assurance-summary.md');
+
+    try {
+      const claimEvidenceManifest = JSON.parse(
+        readFileSync(resolve(repoRoot, 'fixtures/assurance/sample.claim-evidence-manifest.json'), 'utf8'),
+      );
+      claimEvidenceManifest.claims.push({
+        id: 'unresolved-without-missing',
+        statement: 'Reviewer must still see unresolved claims that do not carry missingEvidenceRefs.',
+        criticality: 'medium',
+        targetLevel: 'A2',
+        achievedLevel: 'A1',
+        status: 'unresolved',
+        evidenceRefs: [],
+        proofObligationRefs: [],
+        missingEvidenceRefs: [],
+        waiverRefs: [],
+        notes: ['Regression fixture for Markdown unresolved claim visibility.'],
+      });
+      writeJson(claimEvidenceManifestPath, claimEvidenceManifest);
+
+      const policyDecision = JSON.parse(
+        readFileSync(resolve(repoRoot, 'fixtures/policy/sample.policy-decision-v1.json'), 'utf8'),
+      );
+      policyDecision.evaluation.assurance.summary.activeWaivers = 1;
+      policyDecision.evaluation.assurance.summary.expiringSoonWaivers = 1;
+      policyDecision.evaluation.assurance.waivers[0].status = 'expiringSoon';
+      writeJson(policyDecisionPath, policyDecision);
+
+      const result = runScript([
+        '--assurance-profile',
+        'fixtures/assurance/sample.assurance-profile.json',
+        '--context-pack',
+        'fixtures/context-pack/sample.context-pack.json',
+        '--producer-summary',
+        'fixtures/agents/producer-normalization-summary.codex.json',
+        '--boundary-map-summary',
+        'fixtures/context-pack/sample.boundary-map-summary.json',
+        '--claim-evidence-manifest',
+        claimEvidenceManifestPath,
+        '--policy-decision',
+        policyDecisionPath,
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const summary = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(summary.inputs).toMatchObject({
+        producerSummaries: [resolve(repoRoot, 'fixtures/agents/producer-normalization-summary.codex.json')],
+        boundaryMapSummaries: [resolve(repoRoot, 'fixtures/context-pack/sample.boundary-map-summary.json')],
+        claimEvidenceManifests: [claimEvidenceManifestPath],
+        policyDecision: policyDecisionPath,
+      });
+      expect(summary.reviewSurface).toMatchObject({
+        schemaVersion: 'assurance-review-surface/v1',
+        recommendedReviewerAction: {
+          action: 'review-boundary-map',
+        },
+        producerSignals: {
+          status: 'report-only-findings',
+          missingEvidence: 1,
+          reportOnlyFindings: 3,
+          controlPlaneJudgment: {
+            emittedDecisionCount: 0,
+            expected: 'producer-output-is-not-control-plane-judgment',
+          },
+        },
+        boundaryMap: {
+          status: 'drift',
+          evidenceKind: 'design-boundary',
+          totalFindings: 1,
+        },
+        claimEvidence: {
+          manifestStatusCounts: {
+            satisfied: 1,
+            partial: 2,
+            waived: 1,
+            unresolved: 1,
+          },
+        },
+        waivers: {
+          active: 1,
+          expiringSoon: 1,
+          claims: ['manual-fraud-review'],
+          waiverRefs: [
+            expect.objectContaining({
+              id: 'waiver-manual-fraud-review-001',
+              status: 'expiringSoon',
+              source: 'claim-evidence-manifest, policy-decision',
+            }),
+          ],
+        },
+        policyDecision: {
+          status: 'present',
+          mode: 'report-only',
+          result: 'waived',
+          enforced: false,
+        },
+      });
+      expect(summary.reviewSurface.claimEvidence.missingEvidenceClaims).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            claimId: 'no-negative-balance',
+            status: 'partial',
+          }),
+          expect.objectContaining({
+            claimId: 'manual-fraud-review',
+            status: 'waived',
+          }),
+        ]),
+      );
+      expect(summary.reviewSurface.interpretationNotes).toEqual(
+        expect.arrayContaining([
+          'Producer assertions remain producer assertions; control-plane judgment must come from reviewed, schema-backed evidence and policy artifacts.',
+          'tested and proved are distinct evidence outcomes; runtime-mitigated is not proof.',
+          'waived is an explicit exception state and must not be counted as satisfied.',
+        ]),
+      );
+      expect(summary.reviewSurface.residualRisks).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ kind: 'producer-report-only-finding' }),
+          expect.objectContaining({ kind: 'boundary-map-evidence-gap' }),
+          expect.objectContaining({ kind: 'missing-evidence', claimId: 'no-negative-balance' }),
+          expect.objectContaining({ kind: 'waiver-review-required' }),
+        ]),
+      );
+
+      const markdown = readFileSync(outputMd, 'utf8');
+      expect(markdown).toContain('## Reviewer decision surface');
+      expect(markdown).toContain('producerSignals: report-only-findings');
+      expect(markdown).toContain('boundaryMap: drift');
+      expect(markdown).toContain('### Unresolved claims');
+      expect(markdown).toContain('unresolved-without-missing');
+      expect(markdown).toContain('tested and proved are distinct evidence outcomes');
+      expect(markdown).toContain('runtime-mitigated is not proof');
+      expect(markdown).toContain('waived is an explicit exception state');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('recommends waiver review when only expiring-soon waiver risk remains', () => {
+    const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-review-expiring-waiver-'));
+    const assuranceProfilePath = join(sandbox, 'assurance-profile.json');
+    const contextPackPath = join(sandbox, 'context-pack.json');
+    const claimEvidenceManifestPath = join(sandbox, 'claim-evidence-manifest.json');
+    const policyDecisionPath = join(sandbox, 'policy-decision.json');
+    const outputJson = join(sandbox, 'assurance-summary.json');
+
+    try {
+      writeJson(assuranceProfilePath, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'expiring-waiver-profile',
+        claims: [
+          {
+            id: 'waiver-sensitive-claim',
+            statement: 'Waiver-sensitive claim remains visible for review.',
+            criticality: 'medium',
+            targetLevel: 'A1',
+            minIndependentSources: 1,
+            requiredLanes: ['spec'],
+            requiredEvidenceKinds: ['schema'],
+          },
+        ],
+      });
+      writeJson(contextPackPath, {
+        schemaVersion: 'context-pack/v1',
+        assurance: {
+          profile: 'expiring-waiver-profile',
+          claim_refs: ['waiver-sensitive-claim'],
+        },
+      });
+      writeJson(claimEvidenceManifestPath, {
+        schemaVersion: 'claim-evidence-manifest/v1',
+        generatedAt: '2026-06-20T00:00:00.000Z',
+        sourceArtifacts: [],
+        claims: [
+          {
+            id: 'waiver-sensitive-claim',
+            statement: 'Waiver-sensitive claim remains visible for review.',
+            criticality: 'medium',
+            targetLevel: 'A1',
+            achievedLevel: 'A1',
+            status: 'waived',
+            evidenceRefs: [],
+            proofObligationRefs: [],
+            missingEvidenceRefs: [],
+            waiverRefs: [
+              {
+                id: 'waiver-expiring-001',
+                status: 'active',
+                owner: '@team-risk',
+                expires: '2026-06-30',
+                reason: 'Temporary exception is active but expiring soon.',
+              },
+            ],
+            notes: [],
+          },
+        ],
+      });
+      writeJson(policyDecisionPath, {
+        schemaVersion: '1.0.0',
+        evaluation: {
+          ok: true,
+          assurance: {
+            mode: 'report-only',
+            result: 'waived',
+            summary: {
+              totalClaims: 1,
+              pass: 0,
+              waived: 1,
+              reportOnly: 0,
+              block: 0,
+              activeWaivers: 0,
+              expiringSoonWaivers: 1,
+              expiredWaivers: 0,
+              orphanWaivers: 0,
+            },
+            claims: [],
+            waivers: [
+              {
+                id: 'waiver-expiring-001',
+                claimId: 'waiver-sensitive-claim',
+                status: 'expiringSoon',
+                owner: '@team-risk',
+                expires: '2026-06-30',
+                reason: 'Temporary exception is active but expiring soon.',
+              },
+            ],
+          },
+        },
+      });
+
+      const result = runScript([
+        '--assurance-profile',
+        assuranceProfilePath,
+        '--context-pack',
+        contextPackPath,
+        '--claim-evidence-manifest',
+        claimEvidenceManifestPath,
+        '--policy-decision',
+        policyDecisionPath,
+        '--output-json',
+        outputJson,
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const summary = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(summary.reviewSurface).toMatchObject({
+        recommendedReviewerAction: {
+          action: 'review-waivers',
+        },
+        waivers: {
+          active: 0,
+          expiringSoon: 1,
+          expired: 0,
+          orphan: 0,
+          waiverRefs: [
+            expect.objectContaining({
+              id: 'waiver-expiring-001',
+              status: 'expiringSoon',
+            }),
+          ],
+        },
+      });
+      expect(summary.reviewSurface.residualRisks).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'waiver-review-required',
+            reason: expect.stringContaining('expiringSoon=1'),
+          }),
+        ]),
+      );
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('treats assumption validation requirements as claim warnings', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-aggregate-assumption-warning-'));
     const assuranceProfilePath = join(sandbox, 'assurance-profile.json');

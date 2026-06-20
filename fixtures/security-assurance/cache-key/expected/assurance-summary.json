@@ -23,6 +23,10 @@
     "conformanceReport": null,
     "counterexamples": [],
     "evidenceManifests": [],
+    "producerSummaries": [],
+    "boundaryMapSummaries": [],
+    "claimEvidenceManifests": [],
+    "policyDecision": null,
     "securityClaims": "artifacts/security-assurance/cache-key/security-claims.json",
     "securityFindings": "artifacts/security-assurance/cache-key/security-findings.json",
     "securityReview": "artifacts/security-assurance/cache-key/security-review.json"
@@ -295,5 +299,130 @@
       "claimId": "SEC-CLAIM-001",
       "artifactPath": null
     }
-  ]
+  ],
+  "reviewSurface": {
+    "schemaVersion": "assurance-review-surface/v1",
+    "summary": {
+      "recommendedReviewerAction": "review-unresolved-claims",
+      "assuranceClaimStatusCounts": {
+        "satisfied": 0,
+        "warning": 3,
+        "other": 0
+      },
+      "manifestClaimStatusCounts": {
+        "satisfied": 0,
+        "partial": 0,
+        "waived": 0,
+        "unresolved": 0,
+        "failed": 0,
+        "other": 0
+      },
+      "unresolvedClaims": 0,
+      "waivedClaims": 0,
+      "missingEvidenceClaims": 0,
+      "activeWaivers": 0,
+      "producerReportOnlyFindings": 0,
+      "boundaryMapStatus": "not-provided",
+      "policyDecisionResult": null
+    },
+    "producerSignals": {
+      "status": "not-provided",
+      "artifactPaths": [],
+      "producers": [],
+      "producerAssertions": 0,
+      "missingEvidence": 0,
+      "reportOnlyFindings": 0,
+      "findingRefs": [],
+      "controlPlaneJudgment": {
+        "emittedDecisionCount": 0,
+        "expected": "producer-output-is-not-control-plane-judgment"
+      }
+    },
+    "contextPack": {
+      "status": "not-provided",
+      "artifactPaths": [],
+      "preflightStatus": "not-recorded-in-artifact",
+      "note": "Context Pack conflict is a PR/reviewer control-plane record; this summary only lists Context Pack inputs."
+    },
+    "boundaryMap": {
+      "status": "not-provided",
+      "artifactPaths": [],
+      "reviewStatuses": [],
+      "evidenceKind": null,
+      "totalFindings": 0,
+      "reviewEvidence": [],
+      "interpretation": "No boundary-map summary was provided."
+    },
+    "claimEvidence": {
+      "status": "not-provided",
+      "artifactPaths": [],
+      "manifestStatusCounts": {
+        "satisfied": 0,
+        "partial": 0,
+        "waived": 0,
+        "unresolved": 0,
+        "failed": 0,
+        "other": 0
+      },
+      "assuranceStatusCounts": {
+        "satisfied": 0,
+        "warning": 3,
+        "other": 0
+      },
+      "missingEvidenceClaims": [],
+      "unresolvedClaims": [],
+      "runtimeMitigatedClaims": []
+    },
+    "waivers": {
+      "active": 0,
+      "expiringSoon": 0,
+      "expired": 0,
+      "orphan": 0,
+      "claims": [],
+      "waiverRefs": [],
+      "interpretation": "Waived claims require explicit review; waived is not satisfied."
+    },
+    "policyDecision": {
+      "status": "not-provided",
+      "artifactPath": null,
+      "mode": null,
+      "result": null,
+      "ok": null,
+      "enforced": false,
+      "summary": null
+    },
+    "residualRisks": [
+      {
+        "kind": "assurance-warning-claim",
+        "claimId": "SEC-CLAIM-001",
+        "severity": "high",
+        "reason": "Assurance summary status is warning; missingLanes=none, missingEvidenceKinds=counterexample-closed, warnings=unresolved-critical-counterexample.",
+        "source": "assurance-summary"
+      },
+      {
+        "kind": "assurance-warning-claim",
+        "claimId": "SEC-CLAIM-002",
+        "severity": "review",
+        "reason": "Assurance summary status is warning; missingLanes=none, missingEvidenceKinds=schema, warnings=none.",
+        "source": "assurance-summary"
+      },
+      {
+        "kind": "assurance-warning-claim",
+        "claimId": "SEC-CLAIM-003",
+        "severity": "review",
+        "reason": "Assurance summary status is warning; missingLanes=none, missingEvidenceKinds=counterexample-closed, warnings=none.",
+        "source": "assurance-summary"
+      }
+    ],
+    "recommendedReviewerAction": {
+      "action": "review-unresolved-claims",
+      "reason": "Assurance warning claims=3, unresolved/partial manifest claims=0, claims with missing evidence=0."
+    },
+    "interpretationNotes": [
+      "Producer assertions remain producer assertions; control-plane judgment must come from reviewed, schema-backed evidence and policy artifacts.",
+      "tested and proved are distinct evidence outcomes; runtime-mitigated is not proof.",
+      "waived is an explicit exception state and must not be counted as satisfied.",
+      "This review surface helps reviewers identify support and gaps; it is not an automatic merge approval."
+    ]
+  }
 }

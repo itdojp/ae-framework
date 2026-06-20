@@ -118,8 +118,11 @@ Implemented on current `main`:
 - report-only `verify:assurance` summary generation
 - strict assurance enforcement when the `enforce-assurance` label is set
 - assurance display in PR / release / post-deploy summaries
+- `assurance-summary/v1.reviewSurface` for reviewer-facing aggregation of producer signals, Context Pack inputs, Boundary Map findings, claim evidence, waivers, policy decisions, residual risks, and recommended reviewer action
 - policy-gate decision artifacts carry a report-only waiver-aware assurance section when `claim-evidence-manifest/v1` is available
 - report-only agent PR assurance metrics are defined for claim coverage, unresolved claims, waiver expiry risk, required lane compliance, evidence completeness, agent regression signal, MTTR, and false block observation
+
+`assurance-summary/v1.reviewSurface` is a review aid, not a merge decision. It keeps producer assertions separate from control-plane judgment and surfaces Boundary Map drift as design-boundary evidence. It preserves the distinction between tested and proved, waived and satisfied, and runtime-mitigated and proof.
 
 Not yet implemented or still being phased in:
 - change-package v2 preview contract (schema / docs only)
@@ -262,8 +265,11 @@ proof や model-check で閉じない部分を、feature flag / alert / rollout 
 - 報告専用（report-only）の `verify:assurance` サマリー生成
 - `enforce-assurance` ラベル時の strict assurance enforcement
 - PR / release / post-deploy summary への assurance 表示
+- producer signal、Context Pack input、Boundary Map finding、claim evidence、waiver、policy decision、residual risk、recommended reviewer action を reviewer 向けに集約する `assurance-summary/v1.reviewSurface`
 - `claim-evidence-manifest/v1` がある場合の、policy-gate decision artifact 内の report-only な waiver-aware assurance section
 - claim coverage、unresolved claim、waiver expiry risk、required lane compliance、evidence completeness、agent regression signal、MTTR、false block observation を対象にした report-only agent PR assurance metrics
+
+`assurance-summary/v1.reviewSurface` は review 補助であり merge decision ではありません。producer assertion を control-plane judgment から分離し、Boundary Map drift を design-boundary evidence として表示します。`tested` と `proved`、`waived` と `satisfied`、`runtime-mitigated` と `proof` の区別を維持します。
 
 未実装または段階導入中:
 - change-package v2 preview 契約（schema / docs のみ）

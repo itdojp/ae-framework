@@ -278,7 +278,7 @@ jobs:
           
           # Check for dependencies that might break hermeticity
           PROBLEMATIC_DEPS=$(grep -E "(fsevents|node-gyp|sharp|canvas)" package.json || true)
-          if [ ! -z "$PROBLEMATIC_DEPS" ]; then
+          if [ -n "$PROBLEMATIC_DEPS" ]; then
             printf "%s\n" "⚠️  Found potentially problematic dependencies:"
             printf "%s\n" "$PROBLEMATIC_DEPS"
           fi
@@ -290,7 +290,7 @@ jobs:
           # Check for post-install scripts that might break hermeticity (using npm list as a generic scanner)
           printf "%s\n" "Checking for post-install scripts..."
           POSTINSTALL_SCRIPTS=$(pnpm ls --depth Infinity --json | jq -r '.[0].packages[].path' | xargs -I {} find {} -name "package.json" -exec grep -l "postinstall" {} \; 2>/dev/null || true)
-          if [ ! -z "$POSTINSTALL_SCRIPTS" ]; then
+          if [ -n "$POSTINSTALL_SCRIPTS" ]; then
             printf "%s\n" "⚠️  Found packages with postinstall scripts:"
             printf "%s\n" "$POSTINSTALL_SCRIPTS"
           fi

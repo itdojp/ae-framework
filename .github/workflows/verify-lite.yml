@@ -251,6 +251,18 @@ jobs:
           if [ -f fixtures/assurance/sample.assurance-evidence-manifest.json ]; then
             args+=(--evidence-manifest fixtures/assurance/sample.assurance-evidence-manifest.json)
           fi
+          if [ -f artifacts/agents/producer-normalization-summary.json ]; then
+            args+=(--producer-summary artifacts/agents/producer-normalization-summary.json)
+          fi
+          if [ -f artifacts/context-pack/boundary-map-summary.json ]; then
+            args+=(--boundary-map-summary artifacts/context-pack/boundary-map-summary.json)
+          fi
+          for policy_decision in artifacts/ci/policy-decision-v1.json artifacts/ci/policy-decision-js-v1.json; do
+            if [ -f "$policy_decision" ]; then
+              args+=(--policy-decision "$policy_decision")
+              break
+            fi
+          done
           pnpm -s run verify:assurance "${args[@]}"
       - name: Validate assurance summary schema (non-blocking)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
@@ -317,6 +329,53 @@ jobs:
             fi
           done
           pnpm -s run claim-evidence:generate "${args[@]}"
+      - name: Refresh assurance review surface (report-only)
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          args=(
+            --assurance-profile fixtures/assurance/sample.assurance-profile.json
+            --verify-lite-summary artifacts/verify-lite/verify-lite-run-summary.json
+            --output-json artifacts/assurance/assurance-summary.json
+            --output-md artifacts/assurance/assurance-summary.md
+          )
+          if [ -f fixtures/context-pack/sample.context-pack.json ]; then
+            args+=(--context-pack fixtures/context-pack/sample.context-pack.json)
+          fi
+          for formal_summary in artifacts/formal/formal-summary-v1.json artifacts/formal/formal-summary-v2.json; do
+            if [ -f "$formal_summary" ]; then
+              args+=(--formal-summary "$formal_summary")
+            fi
+          done
+          if [ -f artifacts/hermetic-reports/conformance/summary.json ]; then
+            args+=(--conformance-report artifacts/hermetic-reports/conformance/summary.json)
+          fi
+          if [ -f fixtures/counterexample/sample.counterexample.json ]; then
+            args+=(--counterexample fixtures/counterexample/sample.counterexample.json)
+          fi
+          if [ -f fixtures/assurance/sample.assurance-evidence-manifest.json ]; then
+            args+=(--evidence-manifest fixtures/assurance/sample.assurance-evidence-manifest.json)
+          fi
+          if [ -f artifacts/agents/producer-normalization-summary.json ]; then
+            args+=(--producer-summary artifacts/agents/producer-normalization-summary.json)
+          fi
+          if [ -f artifacts/context-pack/boundary-map-summary.json ]; then
+            args+=(--boundary-map-summary artifacts/context-pack/boundary-map-summary.json)
+          fi
+          if [ -f artifacts/assurance/claim-evidence-manifest.json ]; then
+            args+=(--claim-evidence-manifest artifacts/assurance/claim-evidence-manifest.json)
+          fi
+          for policy_decision in artifacts/ci/policy-decision-v1.json artifacts/ci/policy-decision-js-v1.json; do
+            if [ -f "$policy_decision" ]; then
+              args+=(--policy-decision "$policy_decision")
+              break
+            fi
+          done
+          pnpm -s run verify:assurance "${args[@]}"
+          node scripts/ci/validate-assurance-summary.mjs \
+            artifacts/assurance/assurance-summary.json \
+            schema/assurance-summary.schema.json
       - name: Write claim evidence provenance (report-only)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         continue-on-error: true
@@ -349,7 +408,9 @@ jobs:
           SUMMARY_LANG: ${{ (github.event.pull_request && contains(github.event.pull_request.labels.*.name, 'lang:ja')) && 'ja' || 'en' }}
         run: |
           if [ -f scripts/summary/render-pr-summary.mjs ]; then node scripts/summary/render-pr-summary.mjs; fi
-          [ -f artifacts/summary/PR_SUMMARY.md ] && cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY" || true
+          if [ -f artifacts/summary/PR_SUMMARY.md ]; then
+            cat artifacts/summary/PR_SUMMARY.md >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Generate run manifest (non-blocking)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
         continue-on-error: true

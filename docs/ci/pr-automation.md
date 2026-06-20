@@ -119,6 +119,9 @@ PR automation treats claim-level assurance as a summary-artifact input, not as r
 - Ordinary changes may carry `unresolved` claims in report-only summaries; the PR summary must keep the unresolved count visible.
 - `risk:high`, `enforce-assurance`, and critical core changes can escalate missing required lanes or missing evidence to a block or manual approval requirement.
 - Waivers must include owner, reason, expiry, affected claim, and evidence link before automation treats them as valid.
+- `assurance-summary/v1.reviewSurface` is the preferred compact PR surface when available. It summarizes `producerSignals`, `contextPack`, `boundaryMap`, `claimEvidence`, `waivers`, `policyDecision`, `residualRisks`, and `recommendedReviewerAction` without treating the summary as merge approval.
+- Producer assertions shown in `producerSignals` remain producer assertions. Control-plane judgment comes from reviewed schema-backed evidence and policy artifacts.
+- Boundary Map drift is design-boundary evidence and remains report-only unless a risk label, `enforce-assurance`, or critical-core policy promotes it.
 - Review comments should prefer this compact shape when claim-level evidence is present:
 
 ```text
@@ -127,6 +130,9 @@ Claim summary:
 - unresolved: N
 - waived: N
 - required lanes missing: N
+- missing evidence claims: N
+- producer report-only findings: N
+- boundary map: ok|drift|skipped|unresolved|not-provided
 - high-risk claims requiring human review: N
 ```
 
@@ -506,6 +512,9 @@ PR automation は claim-level assurance を raw log 解析ではなく summary a
 - 通常変更では `unresolved` claim を report-only summary に残せますが、PR summary では unresolved count を隠しません。
 - `risk:high`、`enforce-assurance`、critical core 変更では required lane / evidence 不足を block または manual approval へ昇格できます。
 - waiver は owner、reason、expiry、affected claim、evidence link を持つ場合だけ automation が valid として扱います。
+- 利用可能な場合、compact PR surface は `assurance-summary/v1.reviewSurface` を優先します。`producerSignals`、`contextPack`、`boundaryMap`、`claimEvidence`、`waivers`、`policyDecision`、`residualRisks`、`recommendedReviewerAction` を集約しますが、summary 自体を merge approval として扱いません。
+- `producerSignals` に表示される producer assertion は producer assertion のままです。control-plane judgment は review 済みの schema-backed evidence と policy artifact から判断します。
+- Boundary Map drift は design-boundary evidence であり、risk label、`enforce-assurance`、critical-core policy が昇格するまでは report-only です。
 - claim-level evidence がある場合、review comment は次の compact shape を優先します。
 
 ```text
@@ -514,6 +523,9 @@ Claim summary:
 - unresolved: N
 - waived: N
 - required lanes missing: N
+- missing evidence claims: N
+- producer report-only findings: N
+- boundary map: ok|drift|skipped|unresolved|not-provided
 - high-risk claims requiring human review: N
 ```
 

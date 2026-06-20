@@ -42,6 +42,11 @@ Options:
   --conformance-report <path>    Conformance report JSON.
   --counterexample <path>        Counterexample JSON. Repeatable.
   --evidence-manifest <path>     Supplemental evidence manifest JSON. Repeatable.
+  --producer-summary <path>      Producer normalization summary JSON. Repeatable.
+  --boundary-map-summary <path>  Context Pack boundary-map summary JSON. Repeatable.
+  --claim-evidence-manifest <path>
+                                Claim evidence manifest JSON. Repeatable.
+  --policy-decision <path>       Policy decision JSON.
   --security-claims <path>       security-claim/v1 JSON input.
   --security-findings <path>     security-finding/v1 JSON input.
   --security-review <path>       security-review/v1 JSON input.
@@ -69,6 +74,10 @@ export const parseArgs = (argv = process.argv.slice(2)) => {
     conformanceReport: null,
     counterexamples: [],
     evidenceManifests: [],
+    producerSummaries: [],
+    boundaryMapSummaries: [],
+    claimEvidenceManifests: [],
+    policyDecision: null,
     securityClaims: null,
     securityFindings: null,
     securityReview: null,
@@ -114,6 +123,26 @@ export const parseArgs = (argv = process.argv.slice(2)) => {
     }
     if (arg === '--evidence-manifest') {
       options.evidenceManifests.push(readRequiredValue(argv, index, '--evidence-manifest'));
+      index += 1;
+      continue;
+    }
+    if (arg === '--producer-summary') {
+      options.producerSummaries.push(readRequiredValue(argv, index, '--producer-summary'));
+      index += 1;
+      continue;
+    }
+    if (arg === '--boundary-map-summary') {
+      options.boundaryMapSummaries.push(readRequiredValue(argv, index, '--boundary-map-summary'));
+      index += 1;
+      continue;
+    }
+    if (arg === '--claim-evidence-manifest') {
+      options.claimEvidenceManifests.push(readRequiredValue(argv, index, '--claim-evidence-manifest'));
+      index += 1;
+      continue;
+    }
+    if (arg === '--policy-decision') {
+      options.policyDecision = readRequiredValue(argv, index, '--policy-decision');
       index += 1;
       continue;
     }
@@ -258,6 +287,485 @@ const renderTable = (headers, rows) => {
   const separator = `| ${headers.map(() => '---').join(' | ')} |`;
   const body = rows.map((row) => `| ${row.map(markdownCell).join(' | ')} |`);
   return [header, separator, ...body].join('\n');
+};
+
+const countBy = (values, knownKeys) => {
+  const counts = Object.fromEntries(knownKeys.map((key) => [key, 0]));
+  for (const value of values) {
+    const key = knownKeys.includes(value) ? value : 'other';
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
+};
+
+const readOptionalJsonInputs = (targetPaths, label) =>
+  targetPaths.map((targetPath) => {
+    const resolvedPath = ensureFile(targetPath, label);
+    return { path: resolvedPath, payload: readJson(resolvedPath) };
+  });
+
+const shortRefValue = (value) => {
+  if (value && typeof value === 'object') {
+    const kind = maybeString(value.kind);
+    const refId = maybeString(value.refId);
+    if (kind || refId) return `${kind}:${refId}`;
+    const id = maybeString(value.id);
+    if (id) return id;
+  }
+  return maybeString(value);
+};
+
+const summarizeProducerSignals = (producerSummaryInputs) => {
+  const artifactPaths = producerSummaryInputs.map((entry) => entry.path).sort();
+  const producers = producerSummaryInputs
+    .map(({ payload }) => ({
+      id: maybeString(payload.producer?.id) || 'unknown',
+      displayName: maybeString(payload.producer?.displayName) || maybeString(payload.producer?.id) || 'unknown',
+      category: maybeString(payload.producer?.category) || 'unknown',
+    }))
+    .sort((left, right) => left.id.localeCompare(right.id));
+  const reportOnlyFindings = producerSummaryInputs.reduce(
+    (total, { payload }) =>
+      total
+      + Number(payload.summary?.reportOnlyFindings ?? payload.controlPlaneRouting?.reportOnlyFindings?.length ?? 0),
+    0,
+  );
+  const missingEvidence = producerSummaryInputs.reduce(
+    (total, { payload }) =>
+      total + Number(payload.summary?.missingEvidence ?? payload.controlPlaneRouting?.missingEvidence?.length ?? 0),
+    0,
+  );
+  const producerAssertions = producerSummaryInputs.reduce(
+    (total, { payload }) =>
+      total
+      + Number(payload.summary?.rawSignals ?? payload.producerAssertions?.rawSignals?.length ?? 0)
+      + Number(payload.summary?.claimsMentioned ?? payload.producerAssertions?.claimsMentioned?.length ?? 0),
+    0,
+  );
+  const findingRefs = producerSummaryInputs
+    .flatMap(({ payload }) => (Array.isArray(payload.controlPlaneRouting?.reportOnlyFindings)
+      ? payload.controlPlaneRouting.reportOnlyFindings
+      : []))
+    .map((finding) => ({
+      id: maybeString(finding.id) || 'unknown',
+      kind: maybeString(finding.kind) || 'unknown',
+      summary: maybeString(finding.summary) || 'No summary provided.',
+    }))
+    .slice(0, 25);
+  const emittedJudgments = producerSummaryInputs.filter(({ payload }) => payload.controlPlaneJudgment?.emitsDecision);
+
+  return {
+    status: artifactPaths.length === 0
+      ? 'not-provided'
+      : reportOnlyFindings > 0 || missingEvidence > 0
+        ? 'report-only-findings'
+        : 'present',
+    artifactPaths,
+    producers,
+    producerAssertions,
+    missingEvidence,
+    reportOnlyFindings,
+    findingRefs,
+    controlPlaneJudgment: {
+      emittedDecisionCount: emittedJudgments.length,
+      expected: 'producer-output-is-not-control-plane-judgment',
+    },
+  };
+};
+
+const summarizeContextPackSurface = (contextPackPaths) => ({
+  status: contextPackPaths.length > 0 ? 'present' : 'not-provided',
+  artifactPaths: uniqueSorted(contextPackPaths.map((targetPath) => path.resolve(targetPath))),
+  preflightStatus: 'not-recorded-in-artifact',
+  note: 'Context Pack conflict is a PR/reviewer control-plane record; this summary only lists Context Pack inputs.',
+});
+
+const boundaryStatusRank = {
+  'not-provided': 0,
+  ok: 1,
+  skipped: 2,
+  unresolved: 3,
+  drift: 4,
+};
+
+const summarizeBoundaryMapSurface = (boundaryMapSummaryInputs) => {
+  const artifactPaths = boundaryMapSummaryInputs.map((entry) => entry.path).sort();
+  const statuses = boundaryMapSummaryInputs.map(({ payload }) => maybeString(payload.status) || 'unresolved');
+  const status = statuses.reduce(
+    (current, candidate) =>
+      (boundaryStatusRank[candidate] ?? boundaryStatusRank.unresolved) > (boundaryStatusRank[current] ?? 0)
+        ? candidate
+        : current,
+    artifactPaths.length > 0 ? 'ok' : 'not-provided',
+  );
+  const totalFindings = boundaryMapSummaryInputs.reduce(
+    (total, { payload }) => total + Number(payload.counts?.totalFindings ?? 0),
+    0,
+  );
+  const reviewEvidence = boundaryMapSummaryInputs
+    .flatMap(({ payload }) => (Array.isArray(payload.reviewEvidence) ? payload.reviewEvidence : []))
+    .map((entry) => ({
+      type: maybeString(entry.type) || 'unknown',
+      severity: maybeString(entry.severity) || 'info',
+      file: maybeString(entry.file) || 'unknown',
+      slice: maybeString(entry.slice) || null,
+      ref: shortRefValue(entry.ref) || null,
+      expectedOwner: maybeString(entry.expectedOwner) || 'n/a',
+      observedDependency: maybeString(entry.observedDependency) || 'n/a',
+      message: maybeString(entry.message) || 'No message provided.',
+    }))
+    .slice(0, 50);
+
+  return {
+    status,
+    artifactPaths,
+    reviewStatuses: uniqueSorted(
+      boundaryMapSummaryInputs.map(({ payload }) => maybeString(payload.reviewStatus)).filter(Boolean),
+    ),
+    evidenceKind: artifactPaths.length > 0 ? 'design-boundary' : null,
+    totalFindings,
+    reviewEvidence,
+    interpretation: artifactPaths.length > 0
+      ? 'Boundary Map drift is a design-boundary evidence gap; it is not proof evidence and not a proof failure by itself.'
+      : 'No boundary-map summary was provided.',
+  };
+};
+
+const normalizeManifestStatus = (value) => {
+  const status = maybeString(value).toLowerCase();
+  if (['satisfied', 'partial', 'waived', 'unresolved', 'failed'].includes(status)) {
+    return status;
+  }
+  return 'other';
+};
+
+const evidenceRefsContainRuntime = (claim) =>
+  (Array.isArray(claim.evidenceRefs) ? claim.evidenceRefs : []).some((entry) => maybeString(entry.kind) === 'runtime');
+
+const summarizeClaimEvidenceSurface = (claimEvidenceManifestInputs, claimSummaries) => {
+  const artifactPaths = claimEvidenceManifestInputs.map((entry) => entry.path).sort();
+  const manifestClaims = claimEvidenceManifestInputs.flatMap(({ payload }) =>
+    Array.isArray(payload.claims) ? payload.claims : [],
+  );
+  const manifestStatusCounts = countBy(
+    manifestClaims.map((claim) => normalizeManifestStatus(claim.status)),
+    ['satisfied', 'partial', 'waived', 'unresolved', 'failed', 'other'],
+  );
+  const assuranceStatusCounts = countBy(
+    claimSummaries.map((claim) => maybeString(claim.status) || 'other'),
+    ['satisfied', 'warning', 'other'],
+  );
+  const missingEvidenceClaims = manifestClaims
+    .filter((claim) => Array.isArray(claim.missingEvidenceRefs) && claim.missingEvidenceRefs.length > 0)
+    .map((claim) => ({
+      claimId: maybeString(claim.id) || 'unknown',
+      status: normalizeManifestStatus(claim.status),
+      missingEvidenceRefs: claim.missingEvidenceRefs.map((entry) => shortRefValue(entry)).filter(Boolean),
+    }))
+    .sort((left, right) => left.claimId.localeCompare(right.claimId));
+  const unresolvedClaims = manifestClaims
+    .filter((claim) => ['partial', 'unresolved', 'failed'].includes(normalizeManifestStatus(claim.status)))
+    .map((claim) => ({
+      claimId: maybeString(claim.id) || 'unknown',
+      status: normalizeManifestStatus(claim.status),
+      reason: Array.isArray(claim.missingEvidenceRefs) && claim.missingEvidenceRefs.length > 0
+        ? 'missing-evidence'
+        : 'status-not-satisfied',
+    }))
+    .sort((left, right) => left.claimId.localeCompare(right.claimId));
+  const runtimeMitigatedClaims = manifestClaims
+    .filter((claim) => evidenceRefsContainRuntime(claim))
+    .map((claim) => ({
+      claimId: maybeString(claim.id) || 'unknown',
+      status: normalizeManifestStatus(claim.status),
+      interpretation: 'runtime-mitigated is operational mitigation, not proof',
+    }))
+    .sort((left, right) => left.claimId.localeCompare(right.claimId));
+
+  return {
+    status: artifactPaths.length > 0 ? 'present' : 'not-provided',
+    artifactPaths,
+    manifestStatusCounts,
+    assuranceStatusCounts,
+    missingEvidenceClaims,
+    unresolvedClaims,
+    runtimeMitigatedClaims,
+  };
+};
+
+const summarizeWaiverSurface = (claimEvidenceManifestInputs, policyDecisionInput) => {
+  const manifestClaims = claimEvidenceManifestInputs.flatMap(({ payload }) =>
+    Array.isArray(payload.claims) ? payload.claims : [],
+  );
+  const manifestWaivers = manifestClaims.flatMap((claim) =>
+    (Array.isArray(claim.waiverRefs) ? claim.waiverRefs : []).map((waiver) => ({
+      id: shortRefValue(waiver) || 'unknown',
+      claimId: maybeString(claim.id) || 'unknown',
+      status: maybeString(waiver.status) || 'unknown',
+      owner: maybeString(waiver.owner) || null,
+      expires: maybeString(waiver.expires) || null,
+      reason: maybeString(waiver.reason) || null,
+      source: 'claim-evidence-manifest',
+    })),
+  );
+  const policyAssurance = policyDecisionInput?.payload?.evaluation?.assurance;
+  const policyWaivers = Array.isArray(policyAssurance?.waivers)
+    ? policyAssurance.waivers.map((waiver) => ({
+        id: maybeString(waiver.id) || 'unknown',
+        claimId: maybeString(waiver.claimId) || 'unknown',
+        status: maybeString(waiver.status) || 'unknown',
+        owner: maybeString(waiver.owner) || null,
+        expires: maybeString(waiver.expires) || null,
+        reason: maybeString(waiver.reason) || null,
+        source: 'policy-decision',
+      }))
+    : [];
+  const waiverStatusRank = {
+    unknown: 0,
+    active: 1,
+    expiringSoon: 2,
+    expired: 3,
+    orphan: 4,
+  };
+  const selectWaiverStatus = (left, right) =>
+    (waiverStatusRank[right] ?? waiverStatusRank.unknown) > (waiverStatusRank[left] ?? waiverStatusRank.unknown)
+      ? right
+      : left;
+  const waiverRefsByKey = new Map();
+  for (const waiver of [...manifestWaivers, ...policyWaivers]) {
+    const key = `${waiver.claimId}:${waiver.id}`;
+    const existing = waiverRefsByKey.get(key);
+    waiverRefsByKey.set(key, existing
+      ? {
+          ...existing,
+          status: selectWaiverStatus(existing.status, waiver.status),
+          owner: existing.owner ?? waiver.owner,
+          expires: existing.expires ?? waiver.expires,
+          reason: existing.reason ?? waiver.reason,
+          source: uniqueSorted([...existing.source.split(', '), waiver.source]).join(', '),
+        }
+      : waiver);
+  }
+  const waiverRefs = Array.from(waiverRefsByKey.values())
+    .sort((left, right) => `${left.claimId}:${left.id}:${left.source}`.localeCompare(`${right.claimId}:${right.id}:${right.source}`));
+
+  return {
+    active: Number(
+      policyAssurance?.summary?.activeWaivers
+        ?? waiverRefs.filter((waiver) => waiver.status === 'active' || waiver.status === 'expiringSoon').length,
+    ),
+    expiringSoon: Number(policyAssurance?.summary?.expiringSoonWaivers ?? 0),
+    expired: Number(policyAssurance?.summary?.expiredWaivers ?? 0),
+    orphan: Number(policyAssurance?.summary?.orphanWaivers ?? 0),
+    claims: uniqueSorted(waiverRefs.map((waiver) => waiver.claimId)),
+    waiverRefs,
+    interpretation: 'Waived claims require explicit review; waived is not satisfied.',
+  };
+};
+
+const summarizePolicyDecisionSurface = (policyDecisionInput) => {
+  if (!policyDecisionInput) {
+    return {
+      status: 'not-provided',
+      artifactPath: null,
+      mode: null,
+      result: null,
+      ok: null,
+      enforced: false,
+      summary: null,
+    };
+  }
+  const assurance = policyDecisionInput.payload?.evaluation?.assurance;
+  const mode = maybeString(assurance?.mode) || null;
+  const result = maybeString(assurance?.result) || null;
+  return {
+    status: 'present',
+    artifactPath: policyDecisionInput.path,
+    mode,
+    result,
+    ok: typeof policyDecisionInput.payload?.evaluation?.ok === 'boolean'
+      ? policyDecisionInput.payload.evaluation.ok
+      : null,
+    enforced: mode !== null && mode !== 'report-only',
+    summary: assurance?.summary && typeof assurance.summary === 'object'
+      ? {
+          totalClaims: Number(assurance.summary.totalClaims ?? 0),
+          pass: Number(assurance.summary.pass ?? 0),
+          waived: Number(assurance.summary.waived ?? 0),
+          reportOnly: Number(assurance.summary.reportOnly ?? 0),
+          block: Number(assurance.summary.block ?? 0),
+          activeWaivers: Number(assurance.summary.activeWaivers ?? 0),
+        }
+      : null,
+  };
+};
+
+const buildResidualRisks = ({ assuranceClaims, producerSignals, boundaryMap, claimEvidence, waivers, policyDecision }) => {
+  const residualRisks = [];
+  for (const claim of assuranceClaims.filter((entry) => entry.status === 'warning')) {
+    residualRisks.push({
+      kind: 'assurance-warning-claim',
+      claimId: claim.claimId,
+      severity: (claim.criticality === 'high' || claim.criticality === 'critical') ? 'high' : 'review',
+      reason: `Assurance summary status is warning; missingLanes=${claim.missingLanes.join(', ') || 'none'}, missingEvidenceKinds=${claim.missingEvidenceKinds.join(', ') || 'none'}, warnings=${claim.independenceWarnings.join(', ') || 'none'}.`,
+      source: 'assurance-summary',
+    });
+  }
+  if (producerSignals.reportOnlyFindings > 0 || producerSignals.missingEvidence > 0) {
+    residualRisks.push({
+      kind: 'producer-report-only-finding',
+      claimId: null,
+      severity: 'review',
+      reason: `Producer summary reports ${producerSignals.reportOnlyFindings} report-only finding(s) and ${producerSignals.missingEvidence} missing evidence item(s).`,
+      source: 'producer-summary',
+    });
+  }
+  if (boundaryMap.status === 'drift' || boundaryMap.status === 'unresolved') {
+    residualRisks.push({
+      kind: 'boundary-map-evidence-gap',
+      claimId: null,
+      severity: 'review',
+      reason: `Boundary Map summary status is ${boundaryMap.status}; inspect design-boundary evidence before treating affected claims as supported.`,
+      source: 'boundary-map-summary',
+    });
+  }
+  for (const claim of claimEvidence.missingEvidenceClaims) {
+    residualRisks.push({
+      kind: 'missing-evidence',
+      claimId: claim.claimId,
+      severity: 'review',
+      reason: `${claim.status} claim has missing evidence refs: ${claim.missingEvidenceRefs.join(', ') || 'n/a'}.`,
+      source: 'claim-evidence-manifest',
+    });
+  }
+  for (const claim of claimEvidence.unresolvedClaims) {
+    residualRisks.push({
+      kind: 'unresolved-claim',
+      claimId: claim.claimId,
+      severity: 'review',
+      reason: `Claim status is ${claim.status}; do not treat it as satisfied.`,
+      source: 'claim-evidence-manifest',
+    });
+  }
+  if (waivers.active > 0 || waivers.expiringSoon > 0 || waivers.expired > 0 || waivers.orphan > 0) {
+    residualRisks.push({
+      kind: 'waiver-review-required',
+      claimId: null,
+      severity: waivers.expired > 0 || waivers.orphan > 0 ? 'high' : 'review',
+      reason: `Waiver summary: active=${waivers.active}, expiringSoon=${waivers.expiringSoon}, expired=${waivers.expired}, orphan=${waivers.orphan}.`,
+      source: 'claim-evidence-manifest/policy-decision',
+    });
+  }
+  if (policyDecision.summary?.block > 0 || policyDecision.result === 'block') {
+    residualRisks.push({
+      kind: 'policy-block',
+      claimId: null,
+      severity: 'high',
+      reason: `Policy decision assurance result is ${policyDecision.result ?? 'unknown'} with block=${policyDecision.summary?.block ?? 0}.`,
+      source: 'policy-decision',
+    });
+  }
+  return residualRisks.sort((left, right) => `${left.severity}:${left.kind}:${left.claimId ?? ''}`.localeCompare(`${right.severity}:${right.kind}:${right.claimId ?? ''}`));
+};
+
+const chooseRecommendedReviewerAction = ({ assuranceClaims, producerSignals, boundaryMap, claimEvidence, waivers, policyDecision, residualRisks }) => {
+  if (policyDecision.summary?.block > 0 || policyDecision.result === 'block') {
+    return {
+      action: 'review-policy-block',
+      reason: 'Policy decision reports a blocking assurance result; inspect policy-decision before any release judgment.',
+    };
+  }
+  if (boundaryMap.status === 'drift' || boundaryMap.status === 'unresolved') {
+    return {
+      action: 'review-boundary-map',
+      reason: `Boundary Map status is ${boundaryMap.status}; treat it as a design-boundary evidence gap, not a proof failure.`,
+    };
+  }
+  const assuranceWarningClaims = assuranceClaims.filter((entry) => entry.status === 'warning').length;
+  if (claimEvidence.unresolvedClaims.length > 0 || claimEvidence.missingEvidenceClaims.length > 0 || assuranceWarningClaims > 0) {
+    return {
+      action: 'review-unresolved-claims',
+      reason: `Assurance warning claims=${assuranceWarningClaims}, unresolved/partial manifest claims=${claimEvidence.unresolvedClaims.length}, claims with missing evidence=${claimEvidence.missingEvidenceClaims.length}.`,
+    };
+  }
+  if (waivers.active > 0 || waivers.expiringSoon > 0 || waivers.expired > 0 || waivers.orphan > 0) {
+    return {
+      action: 'review-waivers',
+      reason: `Waivers require human review: active=${waivers.active}, expiringSoon=${waivers.expiringSoon}, expired=${waivers.expired}, orphan=${waivers.orphan}.`,
+    };
+  }
+  if (producerSignals.reportOnlyFindings > 0 || producerSignals.missingEvidence > 0) {
+    return {
+      action: 'review-producer-findings',
+      reason: `Producer output has report-only findings=${producerSignals.reportOnlyFindings}; these are not control-plane judgments.`,
+    };
+  }
+  if (residualRisks.length > 0) {
+    return {
+      action: 'review-residual-risks',
+      reason: `${residualRisks.length} residual risk item(s) remain in the review surface.`,
+    };
+  }
+  return {
+    action: 'ready-for-human-judgment',
+    reason: 'No unresolved, waived, missing-evidence, producer report-only, or boundary-map findings were surfaced; this is still not an automatic merge approval.',
+  };
+};
+
+const buildReviewSurface = ({ summary, options, producerSummaryInputs, boundaryMapSummaryInputs, claimEvidenceManifestInputs, policyDecisionInput }) => {
+  const producerSignals = summarizeProducerSignals(producerSummaryInputs);
+  const contextPack = summarizeContextPackSurface(options.contextPacks);
+  const boundaryMap = summarizeBoundaryMapSurface(boundaryMapSummaryInputs);
+  const claimEvidence = summarizeClaimEvidenceSurface(claimEvidenceManifestInputs, summary.claims);
+  const waivers = summarizeWaiverSurface(claimEvidenceManifestInputs, policyDecisionInput);
+  const policyDecision = summarizePolicyDecisionSurface(policyDecisionInput);
+  const residualRisks = buildResidualRisks({
+    assuranceClaims: summary.claims,
+    producerSignals,
+    boundaryMap,
+    claimEvidence,
+    waivers,
+    policyDecision,
+  });
+  const recommendedReviewerAction = chooseRecommendedReviewerAction({
+    assuranceClaims: summary.claims,
+    producerSignals,
+    boundaryMap,
+    claimEvidence,
+    waivers,
+    policyDecision,
+    residualRisks,
+  });
+
+  return {
+    schemaVersion: 'assurance-review-surface/v1',
+    summary: {
+      recommendedReviewerAction: recommendedReviewerAction.action,
+      assuranceClaimStatusCounts: claimEvidence.assuranceStatusCounts,
+      manifestClaimStatusCounts: claimEvidence.manifestStatusCounts,
+      unresolvedClaims: claimEvidence.unresolvedClaims.length,
+      waivedClaims: claimEvidence.manifestStatusCounts.waived,
+      missingEvidenceClaims: claimEvidence.missingEvidenceClaims.length,
+      activeWaivers: waivers.active,
+      producerReportOnlyFindings: producerSignals.reportOnlyFindings,
+      boundaryMapStatus: boundaryMap.status,
+      policyDecisionResult: policyDecision.result,
+    },
+    producerSignals,
+    contextPack,
+    boundaryMap,
+    claimEvidence,
+    waivers,
+    policyDecision,
+    residualRisks,
+    recommendedReviewerAction,
+    interpretationNotes: [
+      'Producer assertions remain producer assertions; control-plane judgment must come from reviewed, schema-backed evidence and policy artifacts.',
+      'tested and proved are distinct evidence outcomes; runtime-mitigated is not proof.',
+      'waived is an explicit exception state and must not be counted as satisfied.',
+      'This review surface helps reviewers identify support and gaps; it is not an automatic merge approval.',
+    ],
+  };
 };
 
 const defaultMinIndependentSources = (claim) => {
@@ -945,7 +1453,7 @@ const buildLaneCoverage = (claimSummaries) => {
 };
 
 const buildMarkdown = (summary) => {
-  const lines = [
+  const headerLines = [
     '# Assurance Summary',
     '',
     `- generatedAt: ${summary.generatedAt}`,
@@ -955,6 +1463,101 @@ const buildMarkdown = (summary) => {
     `- warningCount: ${summary.summary.warningCount}`,
     `- unlinkedCounterexamples: ${summary.summary.unlinkedCounterexamples}`,
     '',
+  ];
+
+  const reviewSurfaceLines = [];
+  if (summary.reviewSurface) {
+    const surface = summary.reviewSurface;
+    reviewSurfaceLines.push(
+      '## Reviewer decision surface',
+      '',
+      `- recommendedReviewerAction: ${surface.recommendedReviewerAction.action}`,
+      `- reason: ${surface.recommendedReviewerAction.reason}`,
+      `- manifestClaims: satisfied=${surface.summary.manifestClaimStatusCounts.satisfied}, partial=${surface.summary.manifestClaimStatusCounts.partial}, waived=${surface.summary.manifestClaimStatusCounts.waived}, unresolved=${surface.summary.manifestClaimStatusCounts.unresolved}, failed=${surface.summary.manifestClaimStatusCounts.failed}`,
+      `- assuranceSummaryClaims: satisfied=${surface.summary.assuranceClaimStatusCounts.satisfied}, warning=${surface.summary.assuranceClaimStatusCounts.warning}`,
+      `- missingEvidenceClaims: ${surface.summary.missingEvidenceClaims}`,
+      `- activeWaivers: ${surface.summary.activeWaivers}`,
+      `- producerSignals: ${surface.producerSignals.status} (reportOnlyFindings=${surface.producerSignals.reportOnlyFindings}, missingEvidence=${surface.producerSignals.missingEvidence})`,
+      `- boundaryMap: ${surface.boundaryMap.status} (findings=${surface.boundaryMap.totalFindings})`,
+      `- policyDecision: ${surface.policyDecision.result ?? 'not-provided'} (mode=${surface.policyDecision.mode ?? 'n/a'})`,
+      '',
+      'Interpretation notes:',
+      '',
+      ...surface.interpretationNotes.map((note) => `- ${note}`),
+      '',
+    );
+    if (surface.claimEvidence.missingEvidenceClaims.length > 0) {
+      reviewSurfaceLines.push(
+        '### Missing claim evidence',
+        '',
+        renderTable(
+          ['claim', 'status', 'missing evidence refs'],
+          surface.claimEvidence.missingEvidenceClaims.map((claim) => [
+            claim.claimId,
+            claim.status,
+            claim.missingEvidenceRefs.join(', '),
+          ]),
+        ),
+        '',
+      );
+    }
+    if (surface.claimEvidence.unresolvedClaims.length > 0) {
+      reviewSurfaceLines.push(
+        '### Unresolved claims',
+        '',
+        renderTable(
+          ['claim', 'status', 'reason'],
+          surface.claimEvidence.unresolvedClaims.map((claim) => [
+            claim.claimId,
+            claim.status,
+            claim.reason,
+          ]),
+        ),
+        '',
+      );
+    }
+    if (surface.waivers.waiverRefs.length > 0) {
+      reviewSurfaceLines.push(
+        '### Waivers',
+        '',
+        renderTable(
+          ['claim', 'waiver', 'status', 'owner', 'expires', 'source'],
+          surface.waivers.waiverRefs.map((waiver) => [
+            waiver.claimId,
+            waiver.id,
+            waiver.status,
+            waiver.owner ?? 'n/a',
+            waiver.expires ?? 'n/a',
+            waiver.source,
+          ]),
+        ),
+        '',
+      );
+    }
+    if (surface.boundaryMap.reviewEvidence.length > 0) {
+      reviewSurfaceLines.push(
+        '### Boundary Map evidence',
+        '',
+        renderTable(
+          ['type', 'severity', 'file', 'slice', 'ref', 'expected owner', 'observed dependency'],
+          surface.boundaryMap.reviewEvidence.map((entry) => [
+            entry.type,
+            entry.severity,
+            entry.file,
+            entry.slice ?? 'n/a',
+            entry.ref ?? 'n/a',
+            entry.expectedOwner,
+            entry.observedDependency,
+          ]),
+        ),
+        '',
+      );
+    }
+  }
+
+  const lines = [
+    ...headerLines,
+    ...reviewSurfaceLines,
     '## Claim status',
     '',
     renderTable(
@@ -1001,6 +1604,15 @@ export const run = (argv = process.argv.slice(2)) => {
   const topLevelState = { unlinkedCounterexamples: 0 };
 
   const assuranceProfilePath = ensureFile(options.assuranceProfile, 'Assurance profile');
+  const producerSummaryInputs = readOptionalJsonInputs(options.producerSummaries, 'Producer summary');
+  const boundaryMapSummaryInputs = readOptionalJsonInputs(options.boundaryMapSummaries, 'Boundary Map summary');
+  const claimEvidenceManifestInputs = readOptionalJsonInputs(
+    options.claimEvidenceManifests,
+    'Claim evidence manifest',
+  );
+  const policyDecisionInput = options.policyDecision
+    ? readOptionalJsonInputs([options.policyDecision], 'Policy decision')[0]
+    : null;
   const assuranceProfile = readJson(assuranceProfilePath);
   const claims = ensureArray(assuranceProfile.claims ?? [], 'assurance profile claims');
   const claimIds = claims.map((claim) => maybeString(claim?.id));
@@ -1050,6 +1662,10 @@ export const run = (argv = process.argv.slice(2)) => {
       conformanceReport: options.conformanceReport ? path.resolve(options.conformanceReport) : null,
       counterexamples: uniqueSorted(options.counterexamples.map((targetPath) => path.resolve(targetPath))),
       evidenceManifests: uniqueSorted(options.evidenceManifests.map((targetPath) => path.resolve(targetPath))),
+      producerSummaries: uniqueSorted(options.producerSummaries.map((targetPath) => path.resolve(targetPath))),
+      boundaryMapSummaries: uniqueSorted(options.boundaryMapSummaries.map((targetPath) => path.resolve(targetPath))),
+      claimEvidenceManifests: uniqueSorted(options.claimEvidenceManifests.map((targetPath) => path.resolve(targetPath))),
+      policyDecision: options.policyDecision ? path.resolve(options.policyDecision) : null,
       securityClaims: options.securityClaims ? path.resolve(options.securityClaims) : null,
       securityFindings: options.securityFindings ? path.resolve(options.securityFindings) : null,
       securityReview: options.securityReview ? path.resolve(options.securityReview) : null,
@@ -1068,6 +1684,14 @@ export const run = (argv = process.argv.slice(2)) => {
     claims: claimSummaries,
     warnings,
   };
+  summary.reviewSurface = buildReviewSurface({
+    summary,
+    options,
+    producerSummaryInputs,
+    boundaryMapSummaryInputs,
+    claimEvidenceManifestInputs,
+    policyDecisionInput,
+  });
 
   writeFile(options.outputJson, `${JSON.stringify(summary, null, 2)}\n`);
   writeFile(options.outputMd, buildMarkdown(summary));
