@@ -22,7 +22,7 @@ Comprehensive documentation for the agent-neutral assurance control plane for ag
 See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 
 ### Recommended first reading
-- Assurance control plane positioning: `product/ASSURANCE-CONTROL-PLANE.md`, `product/ASSURANCE-CONTROL-PLANE-POLICY.md`
+- Assurance control plane positioning: `product/ASSURANCE-CONTROL-PLANE.md`, `product/ASSURANCE-CONTROL-PLANE-POLICY.md`, `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - System overview (implementation-aligned): `architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Product summary: `product/OVERVIEW.md`, `product/DETAIL.md`, `product/USER-MANUAL.md`
 - Quick activation path: `getting-started/QUICK-START-GUIDE.md`
@@ -98,6 +98,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Positioning / comparison: `product/POSITIONING.md`
 - Assurance control plane: `product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance control plane policy: `product/ASSURANCE-CONTROL-PLANE-POLICY.md`
+- Agent-neutral assurance roadmap: `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - Assurance control plane detailed design: `architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md`
 
 ### Strategy
@@ -309,6 +310,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [USER-MANUAL.md](./product/USER-MANUAL.md) - 利用マニュアル
 - [POSITIONING.md](./product/POSITIONING.md) - 類似ツールとの棲み分け・導入指針
 - [ASSURANCE-CONTROL-PLANE.md](./product/ASSURANCE-CONTROL-PLANE.md) - assurance control plane としての価値定義
+- [AGENT-NEUTRAL-ASSURANCE-ROADMAP.md](./product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md) - BYO-agent assurance control plane の実行ロードマップ
 - [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性
 
 ### 🧭 [strategy/](./strategy/) - 戦略・責務境界

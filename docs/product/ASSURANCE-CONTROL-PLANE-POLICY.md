@@ -20,6 +20,7 @@ This policy is the canonical product decision record for ae-framework as an agen
 Use this document with:
 
 - `docs/product/ASSURANCE-CONTROL-PLANE.md` for the product overview.
+- `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md` for the 90-day BYO-agent assurance rollout plan.
 - `docs/quality/ASSURANCE-MODEL.md` for claim, assurance level, validation lane, evidence, assumption, waiver, and runtime-control terminology.
 - `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md` for implementation-aligned architecture.
 - `docs/architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md` for detailed claim/evidence/policy/package design.
@@ -148,6 +149,7 @@ Policy gates may consume these metrics for context, but a metric must not become
 ### 11. References
 
 - Product overview: `docs/product/ASSURANCE-CONTROL-PLANE.md`
+- Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - Assurance model: `docs/quality/ASSURANCE-MODEL.md`
 - Current system overview: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Detailed design: `docs/architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md`
