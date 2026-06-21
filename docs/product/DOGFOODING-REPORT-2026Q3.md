@@ -16,6 +16,8 @@ verificationCommand: pnpm -s run check:doc-consistency
 # Dogfooding Report 2026 Q3: Agent-Generated PR Assurance
 
 > Language / 言語: English | 日本語
+>
+> **Cycle label:** `2026 Q3` is the product-cycle label for launch-kit preparation. The observation window in this report is June 20-21, 2026, which is calendar Q2.
 
 ---
 
@@ -175,6 +177,8 @@ quality.
 ## 日本語
 
 ### 1. 要約
+
+`2026 Q3` は launch kit 準備の product-cycle label であり、暦上の観測四半期を示すものではない。この report の観測期間は 2026年6月20日から2026年6月21日である。
 
 2026年6月20日から2026年6月21日にかけて、ae-framework は自分自身の
 agent-assurance control-plane 作業を dogfooding した。確認した中心仮説は、
