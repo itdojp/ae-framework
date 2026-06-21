@@ -70,7 +70,9 @@ pnpm run setup-hooks
 
 # Offline BYO-agent assurance demo (no GitHub token or hosted LLM API)
 pnpm run demo:agent-assurance
-# Re-render reviewer-first Markdown from existing artifacts
+# The demo already writes artifacts/review/agent-assurance-demo/assurance-review.md.
+# This no-arg renderer targets the default CI/local artifact paths; pass explicit
+# --*-summary options from docs/guides/byo-agent-assurance-quickstart.md for demo artifacts.
 pnpm run assurance:review-surface
 
 # Fast feedback
@@ -183,6 +185,9 @@ pnpm install
 pnpm run first-run
 pnpm run setup-hooks
 pnpm run demo:agent-assurance
+# demo は artifacts/review/agent-assurance-demo/assurance-review.md を生成します。
+# 引数なしの renderer は既定の CI/local artifact path 向けです。demo artifact を再生成する場合は
+# docs/guides/byo-agent-assurance-quickstart.md の --*-summary 指定を使ってください。
 pnpm run assurance:review-surface
 
 pnpm run lint

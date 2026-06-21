@@ -113,6 +113,7 @@ describe('BYO-agent assurance demo', () => {
       expect(result.status, result.stderr || result.stdout).toBe(0);
       const review = readFileSync(outputMd, 'utf8');
       expect(review).toContain('| producer-normalization-summary | artifacts/agents/producer-normalization-summary.json | missing |');
+      expect(review).toContain('| policy-gate-summary | artifacts/ci/policy-gate-summary.json | missing |');
       expect(review).toContain('| boundary-map-summary | artifacts/context-pack/boundary-map-summary.json | missing |');
       expect(review).toContain('recommendedReviewerAction: `not provided`');
       expect(review).toContain('Boundary artifact is missing or not provided');

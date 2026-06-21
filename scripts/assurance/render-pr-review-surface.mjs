@@ -5,7 +5,7 @@ import process from 'node:process';
 
 const DEFAULT_PRODUCER_SUMMARY = 'artifacts/agents/producer-normalization-summary.json';
 const DEFAULT_ASSURANCE_SUMMARY = 'artifacts/assurance/assurance-summary.json';
-const DEFAULT_POLICY_GATE_SUMMARY = 'artifacts/policy/policy-gate-summary.json';
+const DEFAULT_POLICY_GATE_SUMMARY = 'artifacts/ci/policy-gate-summary.json';
 const DEFAULT_BOUNDARY_MAP_SUMMARY = 'artifacts/context-pack/boundary-map-summary.json';
 const DEFAULT_CLAIM_EVIDENCE_MANIFEST = 'artifacts/assurance/claim-evidence-manifest.json';
 const DEFAULT_VERIFY_LITE_SUMMARY = 'artifacts/verify-lite/verify-lite-run-summary.json';
