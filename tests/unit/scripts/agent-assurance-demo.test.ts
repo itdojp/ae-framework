@@ -58,6 +58,7 @@ describe('BYO-agent assurance demo', () => {
       expect(assurance.schemaVersion).toBe('assurance-summary/v1');
       expect(assurance.reviewSurface.producerSignals.status).toBe('report-only-findings');
       expect(assurance.generatedAt).toBe(generatedAt);
+      expect(assurance.metadata.generatedAtUtc).toBe(generatedAt);
 
       const policy = readJson(policyPath);
       expect(policy.schemaVersion).toBe('policy-gate-summary/v1');

@@ -1678,7 +1678,7 @@ export const run = (argv = process.argv.slice(2)) => {
   const summary = {
     schemaVersion: 'assurance-summary/v1',
     generatedAt,
-    metadata: buildArtifactMetadata(),
+    metadata: buildArtifactMetadata({ now: generatedAt }),
     inputs: {
       assuranceProfile: assuranceProfilePath,
       contextPacks: uniqueSorted(options.contextPacks.map((targetPath) => path.resolve(targetPath))),
