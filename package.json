@@ -437,7 +437,8 @@
     "pipelines:trace": "node scripts/pipelines/run-trace-conformance.mjs",
     "podman:smoke": "bash scripts/podman/smoke-test.sh",
     "mutation:report": "node scripts/mutation/mutation-report.mjs",
-    "check:assurance-contract-governance": "node scripts/assurance/check-contract-governance.mjs"
+    "check:assurance-contract-governance": "node scripts/assurance/check-contract-governance.mjs",
+    "assurance:review-surface": "node scripts/assurance/render-pr-review-surface.mjs"
   },
   "dependencies": {
     "@ae-framework/agent-builder-adapter": "file:./packages/agent-builder-adapter",

@@ -1,49 +1,49 @@
 ## Plan Artifact
 
-- goal: Add a 15-minute offline BYO-agent assurance quickstart and local demo command for Issue #3509.
-- scope: Add the demo runner, package script, quickstart documentation, example README, and tests needed to generate local reviewer-first assurance artifacts without external agent or GitHub API calls.
+- goal: Render PR assurance review Markdown as the primary reviewer surface for Issue #3510.
+- scope: Add a reusable assurance review-surface renderer, route the offline BYO-agent demo through it, add an expected reviewer Markdown fixture, and document the command in quickstart and operations guidance.
 - risk: risk:high
 - approvals required: 1
-- source: itdojp/ae-framework#3517 (main <- feat/3509-agent-assurance-demo)
+- source: itdojp/ae-framework#3518 (main <- feat/3510-pr-review-surface)
 
 ### Assumptions
 
-- A1: The package.json change is limited to a new demo script entrypoint and does not modify dependency declarations or lockfiles.
-- A2: The demo remains offline after pnpm dependencies are installed and does not require a GitHub token, hosted LLM API, or live PR.
-- A3: Producer output is treated only as evidence input; generated policy output remains report-only for ordinary fast-lane changes.
+- A1: The package.json change is limited to adding an assurance:review-surface script entrypoint and does not modify dependency declarations or lockfiles.
+- A2: The renderer only reads local JSON artifacts and writes Markdown; it does not post GitHub comments, call external APIs, or create merge approvals.
+- A3: Missing optional artifacts must stay visible as missing/not provided so reviewers do not infer boundary or claim-evidence success from absence.
 
 ### Files expected to change
 
 - `package.json`
+- `scripts/assurance/render-pr-review-surface.mjs`
 - `scripts/demo/run-agent-assurance-demo.mjs`
-- `scripts/assurance/aggregate-lanes.mjs`
 - `tests/unit/scripts/agent-assurance-demo.test.ts`
-- `docs/guides/byo-agent-assurance-quickstart.md`
-- `docs/guides/byo-agent-assurance-onboarding.md`
+- `examples/assurance-control-plane/agent-assurance-demo/expected/assurance-review.md`
 - `examples/assurance-control-plane/agent-assurance-demo/README.md`
+- `docs/guides/byo-agent-assurance-quickstart.md`
+- `docs/quality/assurance-operations-runbook.md`
 - `README.md`
-- `docs/README.md`
 - `artifacts/plan/plan-artifact.json`
 - `artifacts/plan/plan-artifact.md`
 
 ### Verification plan
 
-- V1: Offline demo command
+- V1: Offline demo and renderer integration
   - command: `pnpm run demo:agent-assurance`
-  - expected evidence: `artifacts/review/agent-assurance-demo/assurance-review.md`, `artifacts/policy/agent-assurance-demo/policy-gate-summary.json`
-- V2: Demo runner and aggregate-lanes regression tests
+  - expected evidence: `artifacts/review/agent-assurance-demo/assurance-review.md`, `examples/assurance-control-plane/agent-assurance-demo/expected/assurance-review.md`
+- V2: Renderer fixture and demo regression tests
   - command: `pnpm vitest run tests/unit/scripts/agent-assurance-demo.test.ts tests/scripts/assurance-aggregate-lanes.test.ts --reporter dot`
+  - expected evidence: `tests/unit/scripts/agent-assurance-demo.test.ts`, `examples/assurance-control-plane/agent-assurance-demo/expected/assurance-review.md`
+- V3: Full unit regression suite
+  - command: `pnpm vitest run tests/unit --reporter dot`
   - expected evidence: `tests/unit/scripts/agent-assurance-demo.test.ts`
-- V3: Schema and JSON fixture validation
-  - command: `pnpm -s run check:schemas && node scripts/ci/validate-json.mjs`
-  - expected evidence: `schema/producer-normalization-summary.schema.json`, `schema/assurance-summary.schema.json`, `schema/policy-gate-summary-v1.schema.json`
-- V4: Docs and Context Pack validation
-  - command: `pnpm -s run check:doc-consistency && pnpm -s run docs:lint && pnpm -s run context-pack:validate && pnpm -s run context-pack:verify-boundary-map`
-  - expected evidence: `docs/guides/byo-agent-assurance-quickstart.md`, `spec/context-pack/boundary-map.json`
+- V4: Schema, JSON, docs, and Context Pack checks
+  - command: `pnpm -s run check:schemas && node scripts/ci/validate-json.mjs && pnpm -s run check:doc-consistency && pnpm -s run docs:lint && pnpm -s run context-pack:validate && pnpm -s run context-pack:verify-boundary-map && git diff --check`
+  - expected evidence: `docs/guides/byo-agent-assurance-quickstart.md`, `docs/quality/assurance-operations-runbook.md`, `spec/context-pack/boundary-map.json`
 
 ### Rollback plan
 
-Revert the quickstart/demo commit and this plan artifact commit; remove generated demo artifacts from any local artifacts directory if present.
+Revert the renderer/demo/docs/test commit and this plan artifact commit; remove any generated artifacts/review/assurance-review.md files from local artifact directories if present.
 
 ### Required human input
 
@@ -52,5 +52,5 @@ Revert the quickstart/demo commit and this plan artifact commit; remove generate
 ### Notes
 
 - package.json is classified as high-risk by policy because it is a package manifest, but this change only adds a script entrypoint.
-- run-security is requested so the policy label requirement for package manifest changes can be satisfied.
-
+- run-security, enforce-testing, enforce-assurance, and risk:high are requested on PR #3518 to satisfy high-risk policy expectations for package manifest changes.
+- Renderer output is a reviewer surface only and intentionally does not automate GitHub PR comment posting.
