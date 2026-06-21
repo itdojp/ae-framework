@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-06-20'
+lastVerified: '2026-06-21'
 ---
 
 # 📚 ae-framework Documentation / ドキュメント
@@ -29,6 +29,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Daily operator flow: `guides/THREAD-REPO-CI-FLOW.md`
 - Current PR automation / gate baseline: `ci/pr-automation.md`, `ci/OPT-IN-CONTROLS.md`
 - Agent PR trust-calibration metrics: `ci/agent-pr-assurance-metrics.md`
+- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`
 
 ### How to use this index
 - If you need the shortest route to a working repository, start with `getting-started/`.
@@ -100,6 +101,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Assurance control plane: `product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance control plane policy: `product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
+- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`
 - BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - Assurance control plane detailed design: `architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md`
 
@@ -316,6 +318,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [ASSURANCE-CONTROL-PLANE.md](./product/ASSURANCE-CONTROL-PLANE.md) - assurance control plane としての価値定義
 - [ASSURANCE-CONTROL-PLANE-POLICY.md](./product/ASSURANCE-CONTROL-PLANE-POLICY.md) - BYO-agent / producer boundary / judgment contract のcanonical policy
 - [AGENT-NEUTRAL-ASSURANCE-ROADMAP.md](./product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md) - BYO-agent assurance control plane の実行ロードマップ
+- [EFFECTIVENESS-METRICS.md](./product/EFFECTIVENESS-METRICS.md) - agent-generated PR assurance の product effectiveness metric
 - [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性
 
 ### 🧭 [strategy/](./strategy/) - 戦略・責務境界

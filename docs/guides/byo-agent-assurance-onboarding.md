@@ -4,11 +4,12 @@ canonicalSource:
 - docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
 - docs/product/ASSURANCE-CONTROL-PLANE.md
 - docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md
+- docs/product/EFFECTIVENESS-METRICS.md
 - docs/agents/agent-producer-matrix.md
 - docs/agents/evidence-adapters.md
 - docs/guides/assurance-onboarding-checklist.md
 - docs/integrations/CODEX-ISSUE-RUNBOOK.md
-lastVerified: '2026-06-20'
+lastVerified: '2026-06-21'
 ---
 
 # BYO-Agent Assurance Onboarding Guide
@@ -38,6 +39,7 @@ Related starting points:
 
 - Product positioning: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
+- Effectiveness metrics: `docs/product/EFFECTIVENESS-METRICS.md`
 - Product fit and rollout profiles: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - Producer boundaries: `docs/agents/agent-producer-matrix.md`
 - Raw producer routing: `docs/agents/evidence-adapters.md`
@@ -138,6 +140,7 @@ Related starting points:
 
 - Product positioning: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
+- Effectiveness metrics: `docs/product/EFFECTIVENESS-METRICS.md`
 - Product fit / rollout profile: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - Producer boundary: `docs/agents/agent-producer-matrix.md`
 - Raw producer routing: `docs/agents/evidence-adapters.md`

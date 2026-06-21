@@ -4,7 +4,8 @@ canonicalSource:
 - docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
 - docs/product/ASSURANCE-CONTROL-PLANE.md
 - docs/spec/context-pack.md
-lastVerified: '2026-06-20'
+- docs/product/EFFECTIVENESS-METRICS.md
+lastVerified: '2026-06-21'
 ---
 
 # Agent-Neutral Assurance Roadmap
@@ -17,13 +18,25 @@ lastVerified: '2026-06-20'
 
 This roadmap tracks the 90-day implementation plan for making ae-framework a stronger **BYO-agent assurance control plane**. It follows the canonical policy in `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md` and the product overview in `docs/product/ASSURANCE-CONTROL-PLANE.md`.
 
-The roadmap is scoped to GitHub Epic #3479 and child Issues #3480 through #3492. The issue bodies remain the work input for each implementation slice; this document provides the dependency map, rollout model, non-goals, and completion surfaces that keep the slices aligned.
+The first roadmap slice is scoped to GitHub Epic #3479 and child Issues #3480 through #3492. The issue bodies remain the work input for each implementation slice; this document provides the dependency map, rollout model, non-goals, and completion surfaces that keep the slices aligned. The follow-up Product effectiveness / adoption proof series starts with Epic #3507 and uses `docs/product/EFFECTIVENESS-METRICS.md` as the shared metric vocabulary before quickstart, review-surface, demo, dogfooding, fixture, and launch-kit work.
 
 ### Product thesis
 
 Bring your own agent. Keep your assurance plane.
 
 Codex, Claude Code, GitHub Copilot, human maintainers, CI jobs, and formal tools are replaceable **producers**. Their raw output is useful input, but it is not the trust boundary. ae-framework owns the **control plane** that normalizes raw signals into schema-backed **judgment artifacts**, PR/release summaries, and policy-gate findings.
+
+### Effectiveness and adoption proof follow-up
+
+Epic #3507 continues this roadmap after the control-plane foundation by proving product effectiveness and adoption readiness. The dependency sequence is:
+
+1. #3508 defines the shared metric vocabulary in `docs/product/EFFECTIVENESS-METRICS.md`.
+2. #3509 turns the vocabulary into a 15-minute BYO-agent quickstart and deterministic local demo.
+3. #3510 makes PR assurance review Markdown the primary reviewer surface.
+4. #3511 and #3512 add scope-drift and high-risk escalation scenarios.
+5. #3514 expands cross-agent producer fixtures, #3513 aggregates dogfooding evidence, and #3515 packages the public launch kit.
+
+The follow-up remains judgment-side: metrics evaluate review decision time, drift and missing-evidence findings, unresolved claims, policy-gate precision/recall, CI reruns, reviewer comments, and time-to-merge. It does not benchmark raw coding-agent intelligence or create new mandatory heavy lanes.
 
 ### Non-goals
 
@@ -100,13 +113,25 @@ When each child Issue is completed, update the relevant surface rather than intr
 
 このロードマップは、ae-framework を **BYO-agent assurance control plane** として強化するための90日実装計画です。canonical policy は `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`、product overview は `docs/product/ASSURANCE-CONTROL-PLANE.md` です。
 
-対象は GitHub Epic #3479 と子 Issue #3480〜#3492 です。各 Issue 本文を実装スライスの作業入力とし、この文書は依存関係、rollout model、非目標、完了時に更新すべき surface を固定します。
+最初の対象は GitHub Epic #3479 と子 Issue #3480〜#3492 です。各 Issue 本文を実装スライスの作業入力とし、この文書は依存関係、rollout model、非目標、完了時に更新すべき surface を固定します。後続の Product effectiveness / adoption proof series は Epic #3507 から始まり、quickstart、review surface、demo、dogfooding、fixture、launch kit の前に `docs/product/EFFECTIVENESS-METRICS.md` を共通 metric vocabulary として使います。
 
 ### Product thesis
 
 Bring your own agent. Keep your assurance plane.
 
 Codex、Claude Code、GitHub Copilot、人間の maintainer、CI job、formal tool は交換可能な **producer** です。raw output は有用な入力ですが、trust boundary ではありません。ae-framework は raw signal を schema-backed な **judgment artifact**、PR/release summary、policy-gate finding に正規化する **control plane** を担います。
+
+### Effectiveness / adoption proof follow-up
+
+Epic #3507 は control-plane foundation の後続として、product effectiveness と adoption readiness を実証します。依存順は次です。
+
+1. #3508 で `docs/product/EFFECTIVENESS-METRICS.md` に共通 metric vocabulary を定義する。
+2. #3509 で vocabulary を15分 BYO-agent quickstart と deterministic local demo に接続する。
+3. #3510 で PR assurance review Markdown を reviewer が最初に見る surface にする。
+4. #3511 / #3512 で scope drift と high-risk escalation scenario を追加する。
+5. #3514 で cross-agent producer fixture を拡張し、#3513 で dogfooding evidence を集約し、#3515 で public launch kit にまとめる。
+
+後続seriesも judgment-side に限定します。metric は review decision time、drift / missing-evidence finding、unresolved claim、policy-gate precision/recall、CI rerun、reviewer comment、time-to-merge を測り、raw coding-agent intelligence の benchmark や新しい mandatory heavy lane は作りません。
 
 ### 非目標
 
