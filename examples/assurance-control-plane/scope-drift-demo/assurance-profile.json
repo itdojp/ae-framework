@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "assurance-profile/v1",
+  "profileId": "scope-drift-demo-v1",
+  "scope": {
+    "contextPackSources": [
+      "spec/context-pack/**/*.{yml,yaml,json}"
+    ],
+    "componentGlobs": [
+      "docs/inventory/**",
+      "tests/unit/inventory/**",
+      "examples/assurance-control-plane/scope-drift-demo/**"
+    ]
+  },
+  "claims": [
+    {
+      "id": "scope-drift-within-declared-boundary",
+      "statement": "Agent-generated changes stay within the declared Issue scope and Context Pack boundary unless a reviewer explicitly accepts the drift.",
+      "kind": "operability",
+      "criticality": "medium",
+      "targetLevel": "A2",
+      "minIndependentSources": 1,
+      "scopeRefs": {
+        "objectIds": [
+          "InventoryItem"
+        ],
+        "morphismIds": [
+          "ReserveInventory"
+        ],
+        "acceptanceTestIds": [
+          "AT-1"
+        ]
+      },
+      "requiredLanes": [
+        "spec"
+      ],
+      "requiredEvidenceKinds": [
+        "boundary-map"
+      ]
+    }
+  ]
+}

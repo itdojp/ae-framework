@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "plan-artifact/v1",
+  "contractId": "plan-artifact.v1",
+  "generatedAt": "2026-06-21T00:00:00.000Z",
+  "source": {
+    "repository": "itdojp/ae-framework",
+    "prNumber": 3511,
+    "baseRef": "main",
+    "headRef": "feat/3511-scope-drift-demo"
+  },
+  "goal": "Demonstrate how scope drift escalates from report-only evidence to strict policy attention when high-risk assurance is selected.",
+  "scope": "Synthetic scenario fixture only; no production payment, settlement, or schema behavior is changed.",
+  "risk": {
+    "selected": "risk:high",
+    "requiresHumanApproval": true,
+    "minHumanApprovals": 1
+  },
+  "assumptions": [
+    {
+      "id": "A1",
+      "text": "The high-risk lane in this scenario is illustrative and uses fixture-only changed files."
+    },
+    {
+      "id": "A2",
+      "text": "Boundary Map drift remains report-only unless risk:high / enforce-assurance or critical-core policy selects enforcement."
+    }
+  ],
+  "filesExpectedToChange": [
+    "examples/assurance-control-plane/scope-drift-demo/**",
+    "scripts/demo/run-scope-drift-demo.mjs",
+    "tests/unit/scripts/scope-drift-demo.test.ts",
+    "docs/guides/byo-agent-assurance-quickstart.md",
+    "docs/guides/byo-agent-assurance-onboarding.md"
+  ],
+  "verificationPlan": [
+    {
+      "id": "V1",
+      "name": "Scope drift scenario generator",
+      "command": "node scripts/demo/run-scope-drift-demo.mjs",
+      "expectedEvidence": [
+        "artifacts/review/scope-drift-demo/assurance-review.md",
+        "artifacts/policy/scope-drift-demo/policy-gate-summary.high-risk.json"
+      ]
+    },
+    {
+      "id": "V2",
+      "name": "Scope drift scenario regression test",
+      "command": "pnpm vitest run tests/unit/scripts/scope-drift-demo.test.ts --reporter dot",
+      "expectedEvidence": [
+        "examples/assurance-control-plane/scope-drift-demo/expected/assurance-review.md"
+      ]
+    }
+  ],
+  "rollbackPlan": "Revert the fixture, generator, docs, and tests added for the scope drift scenario.",
+  "requiredHumanInput": [
+    "Reviewer disposition for accepting or rejecting the out-of-scope payment settlement helper change.",
+    "Human approval before treating the high-risk strict lane as merge-ready."
+  ],
+  "notes": [
+    "This plan artifact is an expected fixture for the high-risk policy summary, not a live PR plan artifact."
+  ]
+}

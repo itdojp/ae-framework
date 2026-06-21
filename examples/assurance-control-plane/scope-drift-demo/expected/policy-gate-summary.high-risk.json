@@ -1,0 +1,297 @@
+{
+  "schemaVersion": "policy-gate-summary/v1",
+  "contractId": "policy-gate-summary.v1",
+  "generatedAtUtc": "2026-06-21T00:00:00.000Z",
+  "repository": "itdojp/ae-framework",
+  "prNumber": 3511,
+  "changedFiles": [
+    "schema/scope-drift-demo.schema.json",
+    "src/payments/settlement-retry.ts"
+  ],
+  "evaluation": {
+    "ok": false,
+    "errors": [
+      "assurance: assurance claim scope-drift-within-declared-boundary is missing required evidence: boundary-map-drift; next action: add evidence or provide a valid waiver",
+      "assurance decision is block"
+    ],
+    "warnings": [
+      "assurance: Boundary Map drift remains report-only unless policy selects strict assurance."
+    ],
+    "inferredRisk": {
+      "level": "risk:high",
+      "labels": {
+        "low": "risk:low",
+        "high": "risk:high"
+      },
+      "highRiskPathMatches": [
+        "schema/scope-drift-demo.schema.json"
+      ],
+      "forceHighRiskTriggers": [
+        {
+          "condition": "contains_external_interface_change",
+          "ruleId": "external-interface",
+          "matchedFiles": [
+            "schema/scope-drift-demo.schema.json"
+          ]
+        }
+      ]
+    },
+    "selectedRiskLabel": "risk:high",
+    "currentRiskLabels": [
+      "risk:high"
+    ],
+    "reviewTopology": "solo",
+    "approvals": 0,
+    "minApprovals": 0,
+    "policyMinApprovals": 1,
+    "topologyMinApprovals": 0,
+    "effectiveMinApprovals": 0,
+    "minApprovalsSource": "topology",
+    "requiredLabels": [
+      "enforce-artifacts",
+      "run-ci-extended"
+    ],
+    "missingRequiredLabels": [],
+    "requiredCheckResults": [
+      {
+        "checkName": "verify-lite",
+        "result": {
+          "status": "success",
+          "matches": [
+            {
+              "name": "verify-lite",
+              "state": "success",
+              "type": "check-run",
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS",
+              "workflowName": "verify-lite",
+              "startedAt": "2026-06-21T00:00:00.000Z",
+              "completedAt": "2026-06-21T00:00:00.000Z"
+            }
+          ],
+          "reason": "success"
+        }
+      }
+    ],
+    "gateCheckResults": [
+      {
+        "label": "enforce-artifacts",
+        "patterns": [
+          "generate-artifacts",
+          "validate-artifacts / gate",
+          "validate-artifacts / validate"
+        ],
+        "result": {
+          "status": "success",
+          "matches": [
+            {
+              "name": "validate-artifacts / validate",
+              "state": "success",
+              "type": "check-run",
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS",
+              "workflowName": "validate-artifacts / validate",
+              "startedAt": "2026-06-21T00:00:00.000Z",
+              "completedAt": "2026-06-21T00:00:00.000Z"
+            }
+          ],
+          "reason": "success"
+        }
+      },
+      {
+        "label": "run-ci-extended",
+        "patterns": [
+          "CI Extended (entry: pr/push) / extended",
+          "integration / run",
+          "Parallel Tests (entry: pr/push) / Test Suite (integration)"
+        ],
+        "result": {
+          "status": "success",
+          "matches": [
+            {
+              "name": "integration / run",
+              "state": "success",
+              "type": "check-run",
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS",
+              "workflowName": "integration / run",
+              "startedAt": "2026-06-21T00:00:00.000Z",
+              "completedAt": "2026-06-21T00:00:00.000Z"
+            }
+          ],
+          "reason": "success"
+        }
+      }
+    ],
+    "planArtifact": {
+      "path": "artifacts/plan/scope-drift-demo/high-risk-plan-artifact.json",
+      "schemaPath": "schema/plan-artifact.schema.json",
+      "present": true,
+      "result": "pass",
+      "validationErrors": [],
+      "warnings": [],
+      "riskSelected": "risk:high",
+      "source": {
+        "repository": "itdojp/ae-framework",
+        "prNumber": 3511,
+        "baseRef": "main",
+        "headRef": "feat/3511-scope-drift-demo"
+      },
+      "required": true,
+      "errors": []
+    },
+    "assurance": {
+      "mode": "strict",
+      "result": "block",
+      "manifest": {
+        "path": "artifacts/assurance/scope-drift-demo/assurance-summary.json",
+        "present": true,
+        "schemaVersion": "assurance-summary/v1",
+        "generatedAt": "2026-06-21T00:00:00.000Z",
+        "provenance": null
+      },
+      "summary": {
+        "totalClaims": 1,
+        "pass": 0,
+        "waived": 0,
+        "reportOnly": 1,
+        "block": 0,
+        "activeWaivers": 0,
+        "expiringSoonWaivers": 0,
+        "expiredWaivers": 0,
+        "orphanWaivers": 0,
+        "agentAssuranceFindings": 10
+      },
+      "claims": [
+        {
+          "claimId": "scope-drift-within-declared-boundary",
+          "result": "report-only",
+          "status": "unresolved",
+          "missingEvidenceRefs": [
+            "boundary-map-drift"
+          ]
+        }
+      ],
+      "waivers": [],
+      "warnings": [
+        "Boundary Map drift remains report-only unless policy selects strict assurance."
+      ],
+      "errors": [
+        "assurance claim scope-drift-within-declared-boundary is missing required evidence: boundary-map-drift; next action: add evidence or provide a valid waiver"
+      ],
+      "agentAssuranceFindings": {
+        "count": 10,
+        "bySeverity": {
+          "report-only": 8,
+          "review": 2
+        },
+        "sources": [
+          "artifacts/agents/scope-drift-demo/producer-normalization-summary.json",
+          "artifacts/assurance/scope-drift-demo/assurance-summary.json"
+        ],
+        "findings": [
+          {
+            "id": "known-gap:ACP-SCOPE-DRIFT-001",
+            "kind": "known-gap",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "ACP-SCOPE-DRIFT-001: Out-of-scope changed files are reviewer evidence; they are not automatically proof failures or automatic blocks.",
+            "sourceArtifactPath": "artifacts/agents/scope-drift-demo/producer-normalization-summary.json",
+            "relatedArtifactPath": null,
+            "claimId": null
+          },
+          {
+            "id": "known-gap:ACP-SCOPE-DRIFT-002",
+            "kind": "known-gap",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "ACP-SCOPE-DRIFT-002: Boundary Map drift is report-only by default and escalates only when risk/high-assurance policy selects enforcement.",
+            "sourceArtifactPath": "artifacts/agents/scope-drift-demo/producer-normalization-summary.json",
+            "relatedArtifactPath": null,
+            "claimId": null
+          },
+          {
+            "id": "missing-command:3",
+            "kind": "missing-evidence",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Command evidence is not complete: pnpm -s run context-pack:verify-boundary-map (not-run-in-producer-output)",
+            "sourceArtifactPath": "artifacts/agents/scope-drift-demo/producer-normalization-summary.json",
+            "relatedArtifactPath": null,
+            "claimId": null
+          },
+          {
+            "id": "missing-claim-evidence:1",
+            "kind": "missing-evidence",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Claim has no supporting evidence list: scope-drift-within-declared-boundary",
+            "sourceArtifactPath": "artifacts/agents/scope-drift-demo/producer-normalization-summary.json",
+            "relatedArtifactPath": "claim-evidence-manifest/v1",
+            "claimId": "scope-drift-within-declared-boundary"
+          },
+          {
+            "id": "assurance-summary:producer:known-gap:ACP-SCOPE-DRIFT-001",
+            "kind": "known-gap",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "ACP-SCOPE-DRIFT-001: Out-of-scope changed files are reviewer evidence; they are not automatically proof failures or automatic blocks.",
+            "sourceArtifactPath": "artifacts/assurance/scope-drift-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/agents/scope-drift-demo/producer-normalization-summary.json",
+            "claimId": null
+          },
+          {
+            "id": "assurance-summary:producer:known-gap:ACP-SCOPE-DRIFT-002",
+            "kind": "known-gap",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "ACP-SCOPE-DRIFT-002: Boundary Map drift is report-only by default and escalates only when risk/high-assurance policy selects enforcement.",
+            "sourceArtifactPath": "artifacts/assurance/scope-drift-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/agents/scope-drift-demo/producer-normalization-summary.json",
+            "claimId": null
+          },
+          {
+            "id": "assurance-summary:producer:missing-command:3",
+            "kind": "missing-evidence",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Command evidence is not complete: pnpm -s run context-pack:verify-boundary-map (not-run-in-producer-output)",
+            "sourceArtifactPath": "artifacts/assurance/scope-drift-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/agents/scope-drift-demo/producer-normalization-summary.json",
+            "claimId": null
+          },
+          {
+            "id": "assurance-summary:producer:missing-claim-evidence:1",
+            "kind": "missing-evidence",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Claim has no supporting evidence list: scope-drift-within-declared-boundary",
+            "sourceArtifactPath": "artifacts/assurance/scope-drift-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/agents/scope-drift-demo/producer-normalization-summary.json",
+            "claimId": null
+          },
+          {
+            "id": "assurance-summary:residual:assurance-warning-claim:scope-drift-within-declared-boundary",
+            "kind": "assurance-warning-claim",
+            "severity": "review",
+            "enforcement": "report-only",
+            "summary": "Assurance summary status is warning; missingLanes=spec, missingEvidenceKinds=boundary-map, warnings=insufficient-independent-lanes, missing-spec-derived-evidence.",
+            "sourceArtifactPath": "artifacts/assurance/scope-drift-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/assurance/assurance-summary.json",
+            "claimId": "scope-drift-within-declared-boundary"
+          },
+          {
+            "id": "assurance-summary:residual:boundary-map-evidence-gap:2",
+            "kind": "boundary-map-evidence-gap",
+            "severity": "review",
+            "enforcement": "report-only",
+            "summary": "Boundary Map summary status is drift; inspect design-boundary evidence before treating affected claims as supported.",
+            "sourceArtifactPath": "artifacts/assurance/scope-drift-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/context-pack/scope-drift-demo/boundary-map-summary.json",
+            "claimId": null
+          }
+        ]
+      }
+    }
+  }
+}

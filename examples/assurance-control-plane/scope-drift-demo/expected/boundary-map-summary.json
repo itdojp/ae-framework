@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "context-pack-boundary-map-summary/v1",
+  "generatedAt": "2026-06-21T00:00:00.000Z",
+  "status": "drift",
+  "reviewStatus": "boundary map drift",
+  "statusReason": "The sample producer changed a payment settlement file outside the declared Issue scope and outside the reservation-flow example boundary.",
+  "evidenceKind": "design-boundary",
+  "defaultDecision": "report-only-evidence-gap",
+  "interpretation": "Scope drift is design-boundary evidence. It is not proof evidence and is not a proof failure by itself.",
+  "policyEscalation": {
+    "defaultMode": "report-only",
+    "candidateBlockingConditions": [
+      "risk:high",
+      "enforce-assurance",
+      "critical-core boundary policy"
+    ],
+    "followUpIssue": "#3511"
+  },
+  "source": {
+    "mapPath": "spec/context-pack/boundary-map.json",
+    "schemaPath": "schema/context-pack-boundary-map.schema.json",
+    "reportJsonPath": "artifacts/context-pack/scope-drift-demo/context-pack-boundary-map-report.json",
+    "reportMarkdownPath": "artifacts/context-pack/scope-drift-demo/context-pack-boundary-map-report.md"
+  },
+  "counts": {
+    "scannedContextPackFiles": 1,
+    "skippedAuxiliaryFiles": 0,
+    "checkedSlices": 2,
+    "checkedProduces": 1,
+    "checkedConsumes": 1,
+    "totalFindings": 2,
+    "duplicateSliceIds": 0,
+    "missingContextPackRefs": 0,
+    "duplicateProducedRefs": 0,
+    "missingUpstreamSlices": 0,
+    "missingUpstreamProducers": 0,
+    "cycleViolations": 0
+  },
+  "reviewEvidence": [
+    {
+      "type": "issue-scope-outside-target",
+      "severity": "warning",
+      "file": "src/payments/settlement-retry.ts",
+      "slice": "reservation-flow",
+      "ref": {
+        "kind": "forbidden-change",
+        "refId": "Payment settlement helper rewrite is outside the sample reservation audit Issue scope."
+      },
+      "expectedOwner": "sample Issue target files under docs/tests/examples",
+      "observedDependency": "producer changed src/payments/settlement-retry.ts",
+      "message": "The changed file is outside the intended sample Issue scope and needs reviewer disposition before merge."
+    },
+    {
+      "type": "boundary-map-slice-mismatch",
+      "severity": "warning",
+      "file": "spec/context-pack/boundary-map.json",
+      "slice": "reservation-flow",
+      "ref": {
+        "kind": "morphism",
+        "refId": "ReserveInventory"
+      },
+      "expectedOwner": "reservation-flow",
+      "observedDependency": "payment settlement helper is not part of the reservation-flow slice",
+      "message": "The sample demonstrates how a changed-file list can drift away from the Context Pack slice being reviewed."
+    }
+  ]
+}
