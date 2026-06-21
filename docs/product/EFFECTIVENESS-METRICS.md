@@ -28,6 +28,8 @@ performance. They must be reused by the 15-minute quickstart, local demos,
 dogfooding reports, controlled benchmarks, and public launch material so that
 all product claims use the same evidence vocabulary.
 
+Current internal dogfooding report: `docs/product/DOGFOODING-REPORT-2026Q3.md`.
+
 ### 2. Measurement boundary
 
 | Boundary | Rule |
@@ -132,6 +134,8 @@ product effectiveness を示すための共通 metric vocabulary を定義しま
 > unresolved-risk surface に変換し、reviewer が agent-generated PR をより速く、より正しく判断できるようにする。
 
 以下の metric は **review / judgment workflow** を測ります。raw agent performance は主対象ではありません。15分 quickstart、local demo、dogfooding report、controlled benchmark、public launch material は、同じ evidence vocabulary を再利用します。
+
+現在の internal dogfooding report: `docs/product/DOGFOODING-REPORT-2026Q3.md`。
 
 ### 2. 測定境界
 
