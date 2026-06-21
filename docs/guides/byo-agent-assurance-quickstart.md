@@ -6,6 +6,7 @@ canonicalSource:
 - docs/guides/byo-agent-assurance-onboarding.md
 - docs/agents/evidence-adapters.md
 - examples/assurance-control-plane/agent-assurance-demo/README.md
+- examples/assurance-control-plane/scope-drift-demo/README.md
 lastVerified: '2026-06-21'
 ---
 
@@ -115,7 +116,24 @@ metric vocabulary from `docs/product/EFFECTIVENESS-METRICS.md`:
 Do not use this demo to claim real-world faster review, safer code, or agent
 vendor superiority. It is a local evidence-flow demonstration.
 
-### 6. Validation commands
+
+### 6. Optional scope-drift scenario
+
+After the baseline demo, use the scope-drift scenario when you want to see how an
+out-of-scope agent change appears in the reviewer surface:
+
+```bash
+node scripts/demo/run-scope-drift-demo.mjs
+```
+
+Open `artifacts/review/scope-drift-demo/assurance-review.md`. The scenario
+keeps the drift report-only for the normal fast lane and renders a separate
+high-risk strict-lane surface at
+`artifacts/review/scope-drift-demo/assurance-review.high-risk.md`, where
+unresolved `boundary-map-drift` becomes a blocking reviewer action. The fixture
+is documented in `examples/assurance-control-plane/scope-drift-demo/README.md`.
+
+### 7. Validation commands
 
 Use the same commands as the implementation issue when checking this quickstart:
 
@@ -227,7 +245,23 @@ raw log より先に `artifacts/review/agent-assurance-demo/assurance-review.md`
 この demo だけで、実世界の review speed 向上、code safety、agent vendor superiority を主張しないでください。
 これは local evidence-flow demonstration です。
 
-### 6. Validation commands
+
+### 6. Optional scope-drift scenario
+
+baseline demo の後、agent の scope 外変更が reviewer surface にどう出るか確認する場合は、
+scope-drift scenario を使います。
+
+```bash
+node scripts/demo/run-scope-drift-demo.mjs
+```
+
+`artifacts/review/scope-drift-demo/assurance-review.md` を開きます。この scenario は
+通常 fast lane では drift を report-only に留め、
+`artifacts/review/scope-drift-demo/assurance-review.high-risk.md` では high-risk strict lane として
+未解決の `boundary-map-drift` が blocking reviewer action になることを示します。fixture の詳細は
+`examples/assurance-control-plane/scope-drift-demo/README.md` にあります。
+
+### 7. Validation commands
 
 この quickstart を確認する場合は、実装 Issue と同じ command を使います。
 

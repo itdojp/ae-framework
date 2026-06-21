@@ -1,21 +1,21 @@
-# BYO-Agent Assurance Demo Review
+# Scope Drift Assurance Demo Review
 
 > Reviewer-first Markdown generated from schema-backed assurance artifacts. It summarizes evidence and gaps; it does not approve, prove, or merge a PR.
 
 - generatedAt: `2026-06-21T00:00:00.000Z`
-- recommendedReviewerAction: `review-unresolved-claims`
-- reason: Assurance warning claims=1, unresolved/partial manifest claims=0, claims with missing evidence=0.
+- recommendedReviewerAction: `review-boundary-map`
+- reason: Boundary Map status is drift; treat it as a design-boundary evidence gap, not a proof failure.
 
 ## Artifact inputs
 
 | artifact | path | status |
 | --- | --- | --- |
-| producer-normalization-summary | artifacts/agents/agent-assurance-demo/producer-normalization-summary.json | present |
-| assurance-summary | artifacts/assurance/agent-assurance-demo/assurance-summary.json | present |
-| policy-gate-summary | artifacts/policy/agent-assurance-demo/policy-gate-summary.json | present |
-| boundary-map-summary | artifacts/context-pack/agent-assurance-demo/boundary-map-summary.json | missing |
+| producer-normalization-summary | artifacts/agents/scope-drift-demo/producer-normalization-summary.json | present |
+| assurance-summary | artifacts/assurance/scope-drift-demo/assurance-summary.json | present |
+| policy-gate-summary | artifacts/policy/scope-drift-demo/policy-gate-summary.normal.json | present |
+| boundary-map-summary | artifacts/context-pack/scope-drift-demo/boundary-map-summary.json | present |
 | claim-evidence-manifest | artifacts/assurance/claim-evidence-manifest.json | missing |
-| verify-lite-run-summary | artifacts/verify-lite/agent-assurance-demo/verify-lite-run-summary.json | present |
+| verify-lite-run-summary | artifacts/verify-lite/verify-lite-run-summary.json | missing |
 
 ## Producer / task scope
 
@@ -23,15 +23,16 @@ Producer output is displayed as report-only input. It is never rendered as appro
 
 | artifact | producer | category | raw signals | changed files | commands | missing evidence | report-only findings | control-plane judgment |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| artifacts/agents/agent-assurance-demo/producer-normalization-summary.json | Codex CLI local task | local-agent | 4 | 3 | 3 | 2 | 5 | not-emitted |
+| artifacts/agents/scope-drift-demo/producer-normalization-summary.json | Codex CLI local task with scope drift | local-agent | 5 | 4 | 3 | 2 | 4 | not-emitted |
 
 ### Changed-file scope
 
 | path | role | expected artifact |
 | --- | --- | --- |
-| src/inventory/reservation-audit.ts | sample source change described by the producer | change-package/v2 |
-| tests/unit/inventory/reservation-audit.test.ts | focused test evidence described by the producer | claim-evidence-manifest/v1 |
-| docs/inventory/reservation-audit.md | reviewer-facing explanation described by the producer | assurance-summary/v1 |
+| docs/inventory/reservation-audit.md | intended documentation change from the sample Issue | assurance-summary/v1 |
+| tests/unit/inventory/reservation-audit.test.ts | focused test evidence for the intended documentation update | claim-evidence-manifest/v1 |
+| examples/assurance-control-plane/scope-drift-demo/README.md | reviewer-facing scenario documentation | assurance-summary/v1 |
+| src/payments/settlement-retry.ts | out-of-scope producer change that requires reviewer disposition | boundary-map-summary/v1 |
 
 ## Boundary / scope status
 
@@ -39,7 +40,7 @@ A missing boundary artifact is shown as `missing` / `not provided`; absence is n
 
 | artifact | status | review status | findings | evidence kind | decision | interpretation |
 | --- | --- | --- | --- | --- | --- | --- |
-| none | not-provided | none | 0 | not provided | from assurance-summary reviewSurface | No boundary-map summary was provided. |
+| artifacts/context-pack/scope-drift-demo/boundary-map-summary.json | drift | boundary map drift | 2 | design-boundary | report-only-evidence-gap | Scope drift is design-boundary evidence. It is not proof evidence and is not a proof failure by itself. |
 
 ## Claims and evidence status
 
@@ -47,15 +48,15 @@ A missing boundary artifact is shown as `missing` / `not provided`; absence is n
 
 | claim | assurance status | manifest status | evidence kinds | missing lanes | missing evidence kinds | missing evidence refs | waiver refs | runtime controls |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| no-negative-stock | warning | not provided | none | spec, behavior, model | counterexample-closed, product-coproduct, property | 0 | 0 | 0 |
+| scope-drift-within-declared-boundary | warning | not provided | none | spec | boundary-map | 0 | 0 | 0 |
 
 ## Missing evidence / unresolved claims
 
 | source | artifact | claim or evidence | review note |
 | --- | --- | --- | --- |
-| producer-summary | artifacts/agents/agent-assurance-demo/producer-normalization-summary.json | pnpm -s run check:schemas | Command evidence is not complete: pnpm -s run check:schemas (not-run-in-producer-output) |
-| producer-summary | artifacts/agents/agent-assurance-demo/producer-normalization-summary.json | schema-validation-evidence-present | Claim has no supporting evidence list: schema-validation-evidence-present |
-| assurance-summary | artifacts/assurance/agent-assurance-demo/assurance-summary.json | no-negative-stock | status=warning; missingLanes=spec, behavior, model; missingEvidenceKinds=counterexample-closed, product-coproduct, property; warnings=insufficient-independent-lanes, missing-spec-derived-evidence |
+| producer-summary | artifacts/agents/scope-drift-demo/producer-normalization-summary.json | pnpm -s run context-pack:verify-boundary-map | Command evidence is not complete: pnpm -s run context-pack:verify-boundary-map (not-run-in-producer-output) |
+| producer-summary | artifacts/agents/scope-drift-demo/producer-normalization-summary.json | scope-drift-within-declared-boundary | Claim has no supporting evidence list: scope-drift-within-declared-boundary |
+| assurance-summary | artifacts/assurance/scope-drift-demo/assurance-summary.json | scope-drift-within-declared-boundary | status=warning; missingLanes=spec; missingEvidenceKinds=boundary-map; warnings=insufficient-independent-lanes, missing-spec-derived-evidence |
 
 ## Waivers / runtime controls
 
@@ -69,15 +70,14 @@ Waived and runtime-mitigated claims require explicit reviewer attention; they ar
 
 | artifact | risk label | assurance mode | assurance result | ok | errors | warnings |
 | --- | --- | --- | --- | --- | --- | --- |
-| artifacts/policy/agent-assurance-demo/policy-gate-summary.json | risk:low | report-only | report-only | true | 0 | 0 |
+| artifacts/policy/scope-drift-demo/policy-gate-summary.normal.json | risk:low | report-only | report-only | true | 0 | 2 |
 
 ## Reviewer action list
 
-- Start with this Markdown before raw logs; then open `artifacts/assurance/agent-assurance-demo/assurance-summary.json` and `artifacts/policy/agent-assurance-demo/policy-gate-summary.json`.
+- Start with this Markdown before raw logs; then open `artifacts/assurance/scope-drift-demo/assurance-summary.json` and `artifacts/policy/scope-drift-demo/policy-gate-summary.normal.json`.
 - Treat producer assertions as evidence input only; do not treat producer conclusion as approval.
-- Follow recommendedReviewerAction=`review-unresolved-claims`: Assurance warning claims=1, unresolved/partial manifest claims=0, claims with missing evidence=0.
+- Follow recommendedReviewerAction=`review-boundary-map`: Boundary Map status is drift; treat it as a design-boundary evidence gap, not a proof failure.
 - Resolve or explicitly accept the listed missing evidence / unresolved claim rows before using the surface as release evidence.
-- Boundary artifact is missing or not provided; record why scope drift is not assessed, or generate the Boundary Map summary.
 - Claim evidence manifest is missing or not provided; do not infer claim-level satisfied/waived status from absence.
 - For ordinary PRs, report-only findings remain reviewer context; for risk/high-assurance PRs, follow policy decision result=`report-only` mode=`report-only`.
 

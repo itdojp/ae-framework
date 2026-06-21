@@ -98,11 +98,14 @@ describe('BYO-agent assurance demo', () => {
     mkdirSync(resolve(repoRoot, 'artifacts'), { recursive: true });
     const outputRoot = resolve(repoRoot, 'artifacts', `agent-assurance-review-missing-${randomUUID()}`);
     const outputMd = join(outputRoot, 'assurance-review.md');
+    const boundaryPath = join(outputRoot, 'boundary-map-summary.json');
+    const boundaryDisplayPath = toPosixPath(relative(repoRoot, boundaryPath));
 
     try {
       const result = spawnSync('node', [
         rendererPath,
         '--generated-at', generatedAt,
+        '--boundary-map-summary', boundaryPath,
         '--output-md', outputMd,
       ], {
         cwd: repoRoot,
@@ -114,7 +117,7 @@ describe('BYO-agent assurance demo', () => {
       const review = readFileSync(outputMd, 'utf8');
       expect(review).toContain('| producer-normalization-summary | artifacts/agents/producer-normalization-summary.json | missing |');
       expect(review).toContain('| policy-gate-summary | artifacts/ci/policy-gate-summary.json | missing |');
-      expect(review).toContain('| boundary-map-summary | artifacts/context-pack/boundary-map-summary.json | missing |');
+      expect(review).toContain(`| boundary-map-summary | ${boundaryDisplayPath} | missing |`);
       expect(review).toContain('recommendedReviewerAction: `not provided`');
       expect(review).toContain('Boundary artifact is missing or not provided');
       expect(review).toContain('Claim evidence manifest is missing or not provided');

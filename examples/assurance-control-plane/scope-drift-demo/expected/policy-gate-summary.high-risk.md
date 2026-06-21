@@ -1,0 +1,36 @@
+### Policy Gate
+- PR: #3511
+- result: FAIL
+- selected risk label: risk:high
+- inferred risk: risk:high
+- review topology: solo
+- approvals: 0/0 (source: topology, policy: 1)
+- required labels (by diff): enforce-artifacts, run-ci-extended
+- plan artifact: pass (required)
+  - path: artifacts/plan/scope-drift-demo/high-risk-plan-artifact.json
+  - declared risk: risk:high
+  - declared source: itdojp/ae-framework#3511
+- assurance: block (strict)
+  - assurance artifact: present (assurance-summary/v1)
+  - claims: pass=0, waived=0, report-only=1, block=0
+  - agent assurance findings (report-only): total=10 (report-only=8, review=2)
+    - report-only/known-gap; ACP-SCOPE-DRIFT-001: Out-of-scope changed files are reviewer evidence; they are not automatically proof failures or automatic blocks.; source=artifacts/agents/scope-drift-demo/producer-normalization-summary.json
+    - report-only/known-gap; ACP-SCOPE-DRIFT-002: Boundary Map drift is report-only by default and escalates only when risk/high-assurance policy selects enforcement.; source=artifacts/agents/scope-drift-demo/producer-normalization-summary.json
+    - report-only/missing-evidence; Command evidence is not complete: pnpm -s run context-pack:verify-boundary-map (not-run-in-producer-output); source=artifacts/agents/scope-drift-demo/producer-normalization-summary.json
+    - report-only/missing-evidence; Claim has no supporting evidence list: scope-drift-within-declared-boundary; source=artifacts/agents/scope-drift-demo/producer-normalization-summary.json; related=claim-evidence-manifest/v1; claim=scope-drift-within-declared-boundary
+    - report-only/known-gap; ACP-SCOPE-DRIFT-001: Out-of-scope changed files are reviewer evidence; they are not automatically proof failures or automatic blocks.; source=artifacts/assurance/scope-drift-demo/assurance-summary.json; related=artifacts/agents/scope-drift-demo/producer-normalization-summary.json
+    - report-only/known-gap; ACP-SCOPE-DRIFT-002: Boundary Map drift is report-only by default and escalates only when risk/high-assurance policy selects enforcement.; source=artifacts/assurance/scope-drift-demo/assurance-summary.json; related=artifacts/agents/scope-drift-demo/producer-normalization-summary.json
+    - report-only/missing-evidence; Command evidence is not complete: pnpm -s run context-pack:verify-boundary-map (not-run-in-producer-output); source=artifacts/assurance/scope-drift-demo/assurance-summary.json; related=artifacts/agents/scope-drift-demo/producer-normalization-summary.json
+    - report-only/missing-evidence; Claim has no supporting evidence list: scope-drift-within-declared-boundary; source=artifacts/assurance/scope-drift-demo/assurance-summary.json; related=artifacts/agents/scope-drift-demo/producer-normalization-summary.json
+    - review/assurance-warning-claim; Assurance summary status is warning; missingLanes=spec, missingEvidenceKinds=boundary-map, warnings=insufficient-independent-lanes, missing-spec-derived-evidence.; source=artifacts/assurance/scope-drift-demo/assurance-summary.json; related=artifacts/assurance/assurance-summary.json; claim=scope-drift-within-declared-boundary
+    - review/boundary-map-evidence-gap; Boundary Map summary status is drift; inspect design-boundary evidence before treating affected claims as supported.; source=artifacts/assurance/scope-drift-demo/assurance-summary.json; related=artifacts/context-pack/scope-drift-demo/boundary-map-summary.json
+- required checks:
+  - verify-lite: success
+- gate checks (high-risk labels):
+  - enforce-artifacts: success
+  - run-ci-extended: success
+- blocking errors:
+  - assurance: assurance claim scope-drift-within-declared-boundary is missing required evidence: boundary-map-drift; next action: add evidence or provide a valid waiver
+  - assurance decision is block
+- warnings:
+  - assurance: Boundary Map drift remains report-only unless policy selects strict assurance.
