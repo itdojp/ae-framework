@@ -30,6 +30,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Current PR automation / gate baseline: `ci/pr-automation.md`, `ci/OPT-IN-CONTROLS.md`
 - Agent PR trust-calibration metrics: `ci/agent-pr-assurance-metrics.md`
 - Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`
+- 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
 
 ### How to use this index
 - If you need the shortest route to a working repository, start with `getting-started/`.
@@ -103,6 +104,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Agent-neutral assurance roadmap: `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`
 - BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
+- 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
 - Assurance control plane detailed design: `architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md`
 
 ### Strategy
@@ -147,6 +149,7 @@ Practical operator guides for day-to-day development, troubleshooting, and Conte
 - Phase 2 Advanced Features (2.1–2.3): `guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md`
 - Advanced Troubleshooting: `guides/ADVANCED-TROUBLESHOOTING-GUIDE.md`
 - BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
+- 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
 - Context Pack onboarding checklist: `guides/context-pack-onboarding-checklist.md`
 - Context Pack Phase5+ cookbook: `guides/context-pack-phase5-cookbook.md`
 - Context Pack troubleshooting runbook: `operations/context-pack-troubleshooting.md`
@@ -318,7 +321,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [ASSURANCE-CONTROL-PLANE.md](./product/ASSURANCE-CONTROL-PLANE.md) - assurance control plane としての価値定義
 - [ASSURANCE-CONTROL-PLANE-POLICY.md](./product/ASSURANCE-CONTROL-PLANE-POLICY.md) - BYO-agent / producer boundary / judgment contract のcanonical policy
 - [AGENT-NEUTRAL-ASSURANCE-ROADMAP.md](./product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md) - BYO-agent assurance control plane の実行ロードマップ
-- [EFFECTIVENESS-METRICS.md](./product/EFFECTIVENESS-METRICS.md) - agent-generated PR assurance の product effectiveness metric
+- [EFFECTIVENESS-METRICS.md](./product/EFFECTIVENESS-METRICS.md) - agent-generated PR assurance の product effectiveness metric vocabulary
 - [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性
 
 ### 🧭 [strategy/](./strategy/) - 戦略・責務境界
@@ -344,6 +347,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [context-pack-troubleshooting.md](./operations/context-pack-troubleshooting.md) - Context Pack 検証失敗時の復旧ランブック
 - [THREAD-REPO-CI-FLOW.md](./guides/THREAD-REPO-CI-FLOW.md) - Plan を repo SSOT に正規化する標準フロー
 - [USAGE.md](./guides/USAGE.md) - 一般的な使い方ガイド
+- [byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md) - 15分で試せる offline BYO-agent assurance demo
 - [CLI-MIGRATION.md](./guides/CLI-MIGRATION.md) - CLI entry 移行ガイド
 - [test-generation-guide.md](./guides/test-generation-guide.md) - テスト生成ガイド
 - [EXECPLAN-SCHEMA.md](./guides/EXECPLAN-SCHEMA.md) - ExecPlan JSONスキーマ
@@ -427,6 +431,7 @@ Claude CodeやMCPとの統合
 - [assurance-operations-runbook.md](./quality/assurance-operations-runbook.md) - assurance summary の生成・strict assurance enforcement・障害切り分け手順
 - [security-assurance-lane.md](./security/security-assurance-lane.md) - Security Assurance Lane のartifact / command map と candidate finding 運用
 - [byo-agent-assurance-onboarding.md](./guides/byo-agent-assurance-onboarding.md) - BYO-agent 環境での Baseline / Structured / High-assurance 導入ガイド
+- [byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md) - `pnpm run demo:agent-assurance` で reviewer-first artifact flow を再現する quickstart
 - [assurance-onboarding-checklist.md](./guides/assurance-onboarding-checklist.md) - 新規プロジェクトへ assurance profile を導入する最小チェックリスト
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [run-manifest-freshness-contract.md](./quality/run-manifest-freshness-contract.md) - run-manifest鮮度判定契約（stale artifact 検出）

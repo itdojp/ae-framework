@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-06-20'
+lastVerified: '2026-06-21'
 ---
 
 # ae-framework: Agent-Neutral Assurance Control Plane for Agent-Driven SDLC
@@ -68,6 +68,9 @@ pnpm install
 pnpm run first-run
 pnpm run setup-hooks
 
+# Offline BYO-agent assurance demo (no GitHub token or hosted LLM API)
+pnpm run demo:agent-assurance
+
 # Fast feedback
 pnpm run lint
 pnpm run test:fast
@@ -102,6 +105,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
+- 15-minute BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Assurance model (claim / level / lane / evidence): `docs/quality/ASSURANCE-MODEL.md`
 - Assurance operations runbook: `docs/quality/assurance-operations-runbook.md`
 - Assurance onboarding checklist: `docs/guides/assurance-onboarding-checklist.md`
@@ -176,6 +180,7 @@ corepack prepare pnpm@10.0.0 --activate
 pnpm install
 pnpm run first-run
 pnpm run setup-hooks
+pnpm run demo:agent-assurance
 
 pnpm run lint
 pnpm run test:fast
@@ -203,6 +208,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
+- 15分 BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Assurance model（claim / level / lane / evidence）: `docs/quality/ASSURANCE-MODEL.md`
 - PR自動化（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
 - リリース運用（release verify / post-deploy verify）: `docs/operate/release-engineering.md`

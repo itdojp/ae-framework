@@ -50,6 +50,7 @@ Options:
   --security-claims <path>       security-claim/v1 JSON input.
   --security-findings <path>     security-finding/v1 JSON input.
   --security-review <path>       security-review/v1 JSON input.
+  --generated-at <iso>           Override generatedAt for deterministic demos/tests.
   --output-json <path>           Output JSON path (default: ${DEFAULT_OUTPUT_JSON})
   --output-md <path>             Output Markdown path (default: ${DEFAULT_OUTPUT_MD})
   --help                         Show this help.
@@ -81,6 +82,7 @@ export const parseArgs = (argv = process.argv.slice(2)) => {
     securityClaims: null,
     securityFindings: null,
     securityReview: null,
+    generatedAt: null,
     outputJson: DEFAULT_OUTPUT_JSON,
     outputMd: DEFAULT_OUTPUT_MD,
   };
@@ -164,6 +166,11 @@ export const parseArgs = (argv = process.argv.slice(2)) => {
       index += 1;
       continue;
     }
+    if (arg === '--generated-at') {
+      options.generatedAt = readRequiredValue(argv, index, '--generated-at');
+      index += 1;
+      continue;
+    }
     if (arg === '--output-json') {
       options.outputJson = readRequiredValue(argv, index, '--output-json');
       index += 1;
@@ -192,6 +199,15 @@ const ensureFile = (targetPath, label) => {
 };
 
 const readJson = (targetPath) => JSON.parse(fs.readFileSync(targetPath, 'utf8'));
+
+const ensureDateTime = (value) => {
+  const raw = maybeString(value);
+  if (!raw) return null;
+  if (!Number.isFinite(Date.parse(raw))) {
+    throw new Error(`generatedAt must be an ISO date-time: ${raw}`);
+  }
+  return new Date(raw).toISOString();
+};
 
 const readStructured = (targetPath, label) => {
   const raw = fs.readFileSync(targetPath, 'utf8');
@@ -1610,6 +1626,7 @@ export const run = (argv = process.argv.slice(2)) => {
   const options = parseArgs(argv);
   const warnings = [];
   const topLevelState = { unlinkedCounterexamples: 0 };
+  const generatedAt = ensureDateTime(options.generatedAt) ?? new Date().toISOString();
 
   const assuranceProfilePath = ensureFile(options.assuranceProfile, 'Assurance profile');
   const producerSummaryInputs = readOptionalJsonInputs(options.producerSummaries, 'Producer summary');
@@ -1660,7 +1677,7 @@ export const run = (argv = process.argv.slice(2)) => {
 
   const summary = {
     schemaVersion: 'assurance-summary/v1',
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     metadata: buildArtifactMetadata(),
     inputs: {
       assuranceProfile: assuranceProfilePath,
