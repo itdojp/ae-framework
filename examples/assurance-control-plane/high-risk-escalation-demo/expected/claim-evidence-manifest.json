@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "claim-evidence-manifest/v1",
+  "generatedAt": "2026-06-21T00:00:00.000Z",
+  "sourceArtifacts": [
+    {
+      "id": "assurance-profile",
+      "kind": "other",
+      "path": "examples/assurance-control-plane/high-risk-escalation-demo/assurance-profile.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "assurance-profile/v1",
+      "description": "Selected tenant-isolation high-risk assurance profile"
+    },
+    {
+      "id": "producer-summary",
+      "kind": "other",
+      "path": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "producer-normalization-summary/v1",
+      "description": "Normalized producer report-only findings and missing evidence"
+    },
+    {
+      "id": "manual-waiver-record",
+      "kind": "manual",
+      "path": "artifacts/assurance/high-risk-escalation-demo/claim-evidence-manifest.json#/claims/1/waiverRefs/0",
+      "present": true,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Fixture waiver reference intentionally missing owner/reason/expiry so the reviewer surface shows metadata requirements"
+    }
+  ],
+  "claims": [
+    {
+      "id": "tenant-isolation-enforced-before-account-read",
+      "statement": "Every account-read request is denied unless the authenticated tenant id matches the account tenant id before the repository read occurs.",
+      "criticality": "critical",
+      "targetLevel": "A3",
+      "achievedLevel": "A1",
+      "status": "partial",
+      "evidenceRefs": [
+        {
+          "id": "tenant-isolation-profile:critical-claim",
+          "kind": "spec",
+          "artifactPath": "examples/assurance-control-plane/high-risk-escalation-demo/assurance-profile.json#/claims/0",
+          "sourceArtifactId": "assurance-profile",
+          "description": "The selected critical tenant-isolation claim is declared in the assurance profile."
+        },
+        {
+          "id": "producer:focused-tenant-isolation-unit-test",
+          "kind": "behavior",
+          "artifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json#/producerAssertions/commands/0",
+          "sourceArtifactId": "producer-summary",
+          "description": "Producer reported a focused behavior test. This is test evidence, not proof."
+        }
+      ],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-cross-tenant-property-evidence",
+          "expectedKind": "adversarial",
+          "reason": "No property/adversarial evidence is linked for cross-tenant negative cases.",
+          "sourceArtifactId": "producer-summary"
+        },
+        {
+          "id": "missing-runtime-tenant-isolation-control",
+          "expectedKind": "runtime",
+          "reason": "No runtime-control evidence is linked for enforcing tenant isolation during rollout.",
+          "sourceArtifactId": "producer-summary"
+        }
+      ],
+      "waiverRefs": [],
+      "notes": [
+        "Partial status remains distinct from satisfied; a focused unit test is not proof for the selected critical claim."
+      ]
+    },
+    {
+      "id": "tenant-isolation-waiver-has-reviewable-metadata",
+      "statement": "Any temporary exception for tenant-isolation enforcement includes owner, reason, expiry, affected claim id, and a linked evidence record.",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "achievedLevel": "A0",
+      "status": "waived",
+      "evidenceRefs": [],
+      "proofObligationRefs": [],
+      "missingEvidenceRefs": [
+        {
+          "id": "missing-waiver-owner-reason-expiry",
+          "expectedKind": "manual",
+          "reason": "The waiver reference does not include owner, reason, or expiry metadata.",
+          "sourceArtifactId": "manual-waiver-record"
+        }
+      ],
+      "waiverRefs": [
+        {
+          "id": "waiver-tenant-isolation-rollout-window-001",
+          "sourceArtifactId": "manual-waiver-record",
+          "status": "active"
+        }
+      ],
+      "notes": [
+        "The waiver id is linked to the affected claim, but required owner/reason/expiry fields are intentionally omitted for the reviewer-action fixture."
+      ]
+    }
+  ],
+  "summary": {
+    "totalClaims": 2,
+    "fullySupported": 0,
+    "partiallySupported": 1,
+    "waived": 1,
+    "unresolved": 0
+  }
+}

@@ -1,0 +1,329 @@
+{
+  "schemaVersion": "policy-gate-summary/v1",
+  "contractId": "policy-gate-summary.v1",
+  "generatedAtUtc": "2026-06-21T00:00:00.000Z",
+  "repository": "itdojp/ae-framework",
+  "prNumber": 3512,
+  "changedFiles": [
+    "examples/assurance-control-plane/high-risk-escalation-demo/README.md",
+    "examples/assurance-control-plane/high-risk-escalation-demo/producer-output/codex-cli-high-risk-escalation-output.json",
+    "tests/unit/scripts/high-risk-escalation-demo.test.ts"
+  ],
+  "evaluation": {
+    "ok": true,
+    "errors": [],
+    "warnings": [
+      "assurance: Selected tenant-isolation claim gaps remain report-only until risk:high / enforce-assurance selects strict assurance."
+    ],
+    "inferredRisk": {
+      "level": "risk:low",
+      "labels": {
+        "low": "risk:low",
+        "high": "risk:high"
+      },
+      "highRiskPathMatches": [],
+      "forceHighRiskTriggers": []
+    },
+    "selectedRiskLabel": "risk:low",
+    "currentRiskLabels": [
+      "risk:low"
+    ],
+    "reviewTopology": "team",
+    "approvals": 0,
+    "minApprovals": 1,
+    "policyMinApprovals": 1,
+    "topologyMinApprovals": 1,
+    "effectiveMinApprovals": 1,
+    "minApprovalsSource": "policy",
+    "requiredLabels": [
+      "enforce-testing"
+    ],
+    "missingRequiredLabels": [
+      "enforce-testing"
+    ],
+    "requiredCheckResults": [
+      {
+        "checkName": "verify-lite",
+        "result": {
+          "status": "success",
+          "matches": [
+            {
+              "name": "verify-lite",
+              "state": "success",
+              "type": "check-run",
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS",
+              "workflowName": "verify-lite",
+              "startedAt": "2026-06-21T00:00:00.000Z",
+              "completedAt": "2026-06-21T00:00:00.000Z"
+            }
+          ],
+          "reason": "success"
+        }
+      }
+    ],
+    "gateCheckResults": [],
+    "planArtifact": {
+      "path": "artifacts/plan/plan-artifact.json",
+      "schemaPath": "schema/plan-artifact.schema.json",
+      "present": false,
+      "result": "missing",
+      "validationErrors": [],
+      "warnings": [],
+      "riskSelected": null,
+      "source": null,
+      "required": false,
+      "errors": []
+    },
+    "assurance": {
+      "mode": "report-only",
+      "result": "report-only",
+      "manifest": {
+        "path": "artifacts/assurance/high-risk-escalation-demo/claim-evidence-manifest.json",
+        "present": true,
+        "schemaVersion": "claim-evidence-manifest/v1",
+        "generatedAt": "2026-06-21T00:00:00.000Z",
+        "provenance": null
+      },
+      "summary": {
+        "totalClaims": 2,
+        "pass": 0,
+        "waived": 0,
+        "reportOnly": 2,
+        "block": 0,
+        "activeWaivers": 0,
+        "expiringSoonWaivers": 0,
+        "expiredWaivers": 0,
+        "orphanWaivers": 0,
+        "agentAssuranceFindings": 18
+      },
+      "claims": [
+        {
+          "claimId": "tenant-isolation-enforced-before-account-read",
+          "result": "report-only",
+          "status": "partial",
+          "evidenceRefs": [
+            "tenant-isolation-profile:critical-claim",
+            "producer:focused-tenant-isolation-unit-test"
+          ],
+          "missingEvidenceRefs": [
+            "missing-cross-tenant-property-evidence",
+            "missing-runtime-tenant-isolation-control"
+          ],
+          "waiverRefs": []
+        },
+        {
+          "claimId": "tenant-isolation-waiver-has-reviewable-metadata",
+          "result": "report-only",
+          "status": "waived",
+          "evidenceRefs": [],
+          "missingEvidenceRefs": [
+            "missing-waiver-owner-reason-expiry"
+          ],
+          "waiverRefs": [
+            "waiver-tenant-isolation-rollout-window-001"
+          ]
+        }
+      ],
+      "waivers": [],
+      "warnings": [
+        "Selected tenant-isolation claim gaps remain report-only until risk:high / enforce-assurance selects strict assurance."
+      ],
+      "errors": [],
+      "agentAssuranceFindings": {
+        "count": 18,
+        "bySeverity": {
+          "report-only": 12,
+          "high": 2,
+          "review": 4
+        },
+        "sources": [
+          "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+          "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json"
+        ],
+        "findings": [
+          {
+            "id": "known-gap:ACP-HR-ESC-001",
+            "kind": "known-gap",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "ACP-HR-ESC-001: Focused unit evidence does not satisfy adversarial/property and runtime-control requirements for a selected tenant-isolation claim.",
+            "sourceArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "relatedArtifactPath": null,
+            "claimId": null
+          },
+          {
+            "id": "known-gap:ACP-HR-ESC-002",
+            "kind": "known-gap",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "ACP-HR-ESC-002: Waiver metadata gaps stay visible as reviewer actions and are blocking when strict assurance is selected.",
+            "sourceArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "relatedArtifactPath": null,
+            "claimId": null
+          },
+          {
+            "id": "missing-command:3",
+            "kind": "missing-evidence",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Command evidence is not complete: pnpm -s exec vitest run tests/property/auth/tenant-isolation-cross-tenant.test.ts --reporter dot (not-run-in-producer-output)",
+            "sourceArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "relatedArtifactPath": null,
+            "claimId": null
+          },
+          {
+            "id": "missing-command:4",
+            "kind": "missing-evidence",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Command evidence is not complete: node scripts/runtime/validate-tenant-isolation-control.mjs (not-run-in-producer-output)",
+            "sourceArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "relatedArtifactPath": null,
+            "claimId": null
+          },
+          {
+            "id": "missing-claim-evidence:2",
+            "kind": "missing-evidence",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Claim has no supporting evidence list: tenant-isolation-waiver-has-reviewable-metadata",
+            "sourceArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "relatedArtifactPath": "claim-evidence-manifest/v1",
+            "claimId": "tenant-isolation-waiver-has-reviewable-metadata"
+          },
+          {
+            "id": "missing-waiver-metadata:2",
+            "kind": "waiver-metadata",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Waiver metadata is incomplete for claim tenant-isolation-waiver-has-reviewable-metadata: waiver.owner, waiver.reason, waiver.expiresAt",
+            "sourceArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "relatedArtifactPath": "claim-evidence-manifest/v1",
+            "claimId": "tenant-isolation-waiver-has-reviewable-metadata"
+          },
+          {
+            "id": "assurance-summary:producer:known-gap:ACP-HR-ESC-001",
+            "kind": "known-gap",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "ACP-HR-ESC-001: Focused unit evidence does not satisfy adversarial/property and runtime-control requirements for a selected tenant-isolation claim.",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "claimId": null
+          },
+          {
+            "id": "assurance-summary:producer:known-gap:ACP-HR-ESC-002",
+            "kind": "known-gap",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "ACP-HR-ESC-002: Waiver metadata gaps stay visible as reviewer actions and are blocking when strict assurance is selected.",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "claimId": null
+          },
+          {
+            "id": "assurance-summary:producer:missing-command:3",
+            "kind": "missing-evidence",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Command evidence is not complete: pnpm -s exec vitest run tests/property/auth/tenant-isolation-cross-tenant.test.ts --reporter dot (not-run-in-producer-output)",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "claimId": null
+          },
+          {
+            "id": "assurance-summary:producer:missing-command:4",
+            "kind": "missing-evidence",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Command evidence is not complete: node scripts/runtime/validate-tenant-isolation-control.mjs (not-run-in-producer-output)",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "claimId": null
+          },
+          {
+            "id": "assurance-summary:producer:missing-claim-evidence:2",
+            "kind": "missing-evidence",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Claim has no supporting evidence list: tenant-isolation-waiver-has-reviewable-metadata",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "claimId": null
+          },
+          {
+            "id": "assurance-summary:producer:missing-waiver-metadata:2",
+            "kind": "waiver-metadata",
+            "severity": "report-only",
+            "enforcement": "report-only",
+            "summary": "Waiver metadata is incomplete for claim tenant-isolation-waiver-has-reviewable-metadata: waiver.owner, waiver.reason, waiver.expiresAt",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json",
+            "claimId": null
+          },
+          {
+            "id": "assurance-summary:residual:assurance-warning-claim:tenant-isolation-enforced-before-account-read",
+            "kind": "assurance-warning-claim",
+            "severity": "high",
+            "enforcement": "report-only",
+            "summary": "Assurance summary status is warning; missingLanes=spec, behavior, adversarial, runtime, missingEvidenceKinds=property, runtime-control, schema, unit, warnings=insufficient-independent-lanes, missing-spec-derived-evidence.",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/assurance/assurance-summary.json",
+            "claimId": "tenant-isolation-enforced-before-account-read"
+          },
+          {
+            "id": "assurance-summary:residual:assurance-warning-claim:tenant-isolation-waiver-has-reviewable-metadata",
+            "kind": "assurance-warning-claim",
+            "severity": "high",
+            "enforcement": "report-only",
+            "summary": "Assurance summary status is warning; missingLanes=spec, runtime, missingEvidenceKinds=runtime-control, waiver, warnings=insufficient-independent-lanes, missing-spec-derived-evidence.",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/assurance/assurance-summary.json",
+            "claimId": "tenant-isolation-waiver-has-reviewable-metadata"
+          },
+          {
+            "id": "assurance-summary:residual:missing-evidence:tenant-isolation-enforced-before-account-read",
+            "kind": "missing-evidence",
+            "severity": "review",
+            "enforcement": "report-only",
+            "summary": "partial claim has missing evidence refs: missing-cross-tenant-property-evidence, missing-runtime-tenant-isolation-control.",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/assurance/high-risk-escalation-demo/claim-evidence-manifest.json",
+            "claimId": "tenant-isolation-enforced-before-account-read"
+          },
+          {
+            "id": "assurance-summary:residual:missing-evidence:tenant-isolation-waiver-has-reviewable-metadata",
+            "kind": "missing-evidence",
+            "severity": "review",
+            "enforcement": "report-only",
+            "summary": "waived claim has missing evidence refs: missing-waiver-owner-reason-expiry.",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/assurance/high-risk-escalation-demo/claim-evidence-manifest.json",
+            "claimId": "tenant-isolation-waiver-has-reviewable-metadata"
+          },
+          {
+            "id": "assurance-summary:residual:unresolved-claim:tenant-isolation-enforced-before-account-read",
+            "kind": "unresolved-claim",
+            "severity": "review",
+            "enforcement": "report-only",
+            "summary": "Claim status is partial; do not treat it as satisfied.",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/assurance/high-risk-escalation-demo/claim-evidence-manifest.json",
+            "claimId": "tenant-isolation-enforced-before-account-read"
+          },
+          {
+            "id": "assurance-summary:residual:waiver-review-required:7",
+            "kind": "waiver-review-required",
+            "severity": "review",
+            "enforcement": "report-only",
+            "summary": "Waiver summary: active=1, expiringSoon=0, expired=0, orphan=0.",
+            "sourceArtifactPath": "artifacts/assurance/high-risk-escalation-demo/assurance-summary.json",
+            "relatedArtifactPath": "artifacts/assurance/high-risk-escalation-demo/claim-evidence-manifest.json",
+            "claimId": null
+          }
+        ]
+      }
+    }
+  }
+}

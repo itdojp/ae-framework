@@ -42,6 +42,14 @@ A missing boundary artifact is shown as `missing` / `not provided`; absence is n
 | --- | --- | --- | --- | --- | --- | --- |
 | artifacts/context-pack/scope-drift-demo/boundary-map-summary.json | drift | boundary map drift | 2 | design-boundary | report-only-evidence-gap | Scope drift is design-boundary evidence. It is not proof evidence and is not a proof failure by itself. |
 
+## Selected critical claims
+
+Only selected `high` / `critical` claims are promoted to high-assurance review. Required evidence kinds are displayed separately from claim status.
+
+| claim | criticality | target level | required lanes | required evidence kinds | assurance status | manifest status |
+| --- | --- | --- | --- | --- | --- | --- |
+| not provided | not provided | not provided | not provided | not provided | not provided | not provided |
+
 ## Claims and evidence status
 
 `tested`, `model-checked`, `proved`, `waived`, `unresolved`, and `runtime-mitigated` remain separate artifact states. This renderer shows source artifact status and evidence kinds without collapsing them into approval.

@@ -381,6 +381,50 @@ function claimRows(assuranceSummary, manifestArtifacts) {
   return rows;
 }
 
+function selectedCriticalClaimRows(assuranceSummary, manifestArtifacts) {
+  const manifestClaimsById = new Map();
+  for (const artifact of manifestArtifacts) {
+    for (const claim of ensureArray(artifact.payload?.claims)) {
+      const claimId = text(claim.id, '');
+      if (!claimId || manifestClaimsById.has(claimId)) continue;
+      manifestClaimsById.set(claimId, claim);
+    }
+  }
+
+  const rows = [];
+  for (const claim of ensureArray(assuranceSummary?.claims)) {
+    const manifestClaim = manifestClaimsById.get(text(claim.claimId, ''));
+    const criticality = text(claim.criticality ?? manifestClaim?.criticality, '');
+    if (criticality !== 'high' && criticality !== 'critical') continue;
+    rows.push([
+      text(claim.claimId),
+      criticality,
+      text(claim.targetLevel ?? manifestClaim?.targetLevel),
+      listText(claim.requiredLanes),
+      listText(claim.requiredEvidenceKinds),
+      text(claim.status),
+      text(manifestClaim?.status),
+    ]);
+  }
+
+  if (rows.length > 0) return rows;
+
+  for (const [claimId, claim] of manifestClaimsById.entries()) {
+    const criticality = text(claim.criticality, '');
+    if (criticality !== 'high' && criticality !== 'critical') continue;
+    rows.push([
+      claimId,
+      criticality,
+      text(claim.targetLevel),
+      'not provided',
+      listText(ensureArray(claim.evidenceRefs).map((entry) => entry.kind)),
+      'not provided',
+      text(claim.status),
+    ]);
+  }
+  return rows;
+}
+
 function missingEvidenceRows(artifacts) {
   const rows = [];
   for (const artifact of artifacts.producerArtifacts) {
@@ -511,6 +555,7 @@ export function renderPrReviewSurfaceMarkdown({ options, artifacts, generatedAt 
     producers: producerRows(artifacts.producerArtifacts),
     changedFiles: changedFileRows(artifacts.producerArtifacts, artifacts.policyArtifact),
     boundaries: boundaryRows(artifacts.boundaryArtifacts, assuranceSummary),
+    selectedCriticalClaims: selectedCriticalClaimRows(assuranceSummary, artifacts.manifestArtifacts),
     claims: claimRows(assuranceSummary, artifacts.manifestArtifacts),
     missingEvidence: missingEvidenceRows(artifacts),
     waivers: waiverRows(artifacts.manifestArtifacts, assuranceSummary),
@@ -548,6 +593,15 @@ export function renderPrReviewSurfaceMarkdown({ options, artifacts, generatedAt 
     'A missing boundary artifact is shown as `missing` / `not provided`; absence is not rendered as boundary-ok.',
     '',
     renderTable(['artifact', 'status', 'review status', 'findings', 'evidence kind', 'decision', 'interpretation'], rows.boundaries),
+    '',
+    '## Selected critical claims',
+    '',
+    'Only selected `high` / `critical` claims are promoted to high-assurance review. Required evidence kinds are displayed separately from claim status.',
+    '',
+    renderTable(
+      ['claim', 'criticality', 'target level', 'required lanes', 'required evidence kinds', 'assurance status', 'manifest status'],
+      rows.selectedCriticalClaims,
+    ),
     '',
     '## Claims and evidence status',
     '',

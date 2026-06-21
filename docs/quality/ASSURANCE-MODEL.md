@@ -124,6 +124,13 @@ Waivers remain exceptions, not evidence upgrades. Missing `owner`, `reason`,
 `expires`, `relatedClaimIds`, `evidenceRefs`, or `sourceArtifactId` provenance
 is report-only in the default lane and blocking in strict assurance mode.
 
+The fixture-backed high-risk escalation demo at
+`examples/assurance-control-plane/high-risk-escalation-demo/README.md` shows
+this boundary with a selected tenant-isolation claim: the normal lane keeps
+missing adversarial/runtime evidence and waiver metadata gaps report-only,
+while the strict `risk:high` / `enforce-assurance` lane blocks the selected
+critical claim until evidence or a valid waiver is provided.
+
 ### 4. Mapping to the current implementation
 
 Implemented on current `main`:
@@ -286,6 +293,13 @@ manual approval または block を選択できます。
 waiver は例外であり、evidence upgrade ではありません。`owner`、`reason`、`expires`、
 `relatedClaimIds`、`evidenceRefs`、`sourceArtifactId` provenance が欠ける場合、既定 lane では
 report-only、strict assurance mode では blocking です。
+
+`examples/assurance-control-plane/high-risk-escalation-demo/README.md` の
+fixture-based high-risk escalation demo は、この境界を tenant isolation の
+selected claim で示します。通常 lane では adversarial / runtime evidence
+不足と waiver metadata gap を report-only に残し、strict な `risk:high` /
+`enforce-assurance` lane では selected critical claim を、evidence または妥当な
+waiver がそろうまで block します。
 
 ### 4. 現行実装との対応
 
