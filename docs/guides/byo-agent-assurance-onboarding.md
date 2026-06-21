@@ -40,12 +40,14 @@ Related starting points:
 - Product positioning: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Effectiveness metrics: `docs/product/EFFECTIVENESS-METRICS.md`
+- 15-minute quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Product fit and rollout profiles: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - Producer boundaries: `docs/agents/agent-producer-matrix.md`
 - Raw producer routing: `docs/agents/evidence-adapters.md`
 - Assurance profile checklist: `docs/guides/assurance-onboarding-checklist.md`
 - Codex CLI Issue workflow: `docs/integrations/CODEX-ISSUE-RUNBOOK.md`
 - Offline demo: `examples/assurance-control-plane/codex-change-package-demo/README.md`
+- Quickstart demo command: `pnpm run demo:agent-assurance`
 
 ### 1. Adoption profile selection
 
@@ -77,6 +79,7 @@ Related starting points:
 | Which claims are satisfied, waived, unresolved, or high-risk? | `claim-evidence-manifest/v1`, `assurance-summary/v1`, and `policy-decision/v1`. | `pnpm -s run verify:assurance -- --assurance-profile <profile.json>` plus the PR policy-gate summary. |
 | Is high-assurance enforcement justified? | Risk labels, assurance profile, formal summary, and policy-gate decision. | Apply `risk:high` / `enforce-assurance` only when the Issue or reviewer selects critical claims. |
 | Can a Codex CLI Issue workflow be reproduced? | Exported task file and demo fixture. | `node scripts/codex/export-issue-task.mjs --repo <owner/repo> --issue <n> --work <repo>` and `examples/assurance-control-plane/codex-change-package-demo/README.md`. |
+| Can the BYO-agent assurance flow be tried locally in 15 minutes? | Reviewer-first demo Markdown and generated summary artifacts. | `pnpm run demo:agent-assurance` and `docs/guides/byo-agent-assurance-quickstart.md`. |
 
 ### 4. Recommended rollout sequence
 
@@ -141,12 +144,14 @@ Related starting points:
 - Product positioning: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Canonical policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Effectiveness metrics: `docs/product/EFFECTIVENESS-METRICS.md`
+- 15分 quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Product fit / rollout profile: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
 - Producer boundary: `docs/agents/agent-producer-matrix.md`
 - Raw producer routing: `docs/agents/evidence-adapters.md`
 - Assurance profile checklist: `docs/guides/assurance-onboarding-checklist.md`
 - Codex CLI Issue workflow: `docs/integrations/CODEX-ISSUE-RUNBOOK.md`
 - Offline demo: `examples/assurance-control-plane/codex-change-package-demo/README.md`
+- Quickstart demo command: `pnpm run demo:agent-assurance`
 
 ### 1. 導入プロファイルの選択
 
@@ -178,6 +183,7 @@ Related starting points:
 | どのclaimが satisfied / waived / unresolved / high-risk か。 | `claim-evidence-manifest/v1`、`assurance-summary/v1`、`policy-decision/v1`。 | `pnpm -s run verify:assurance -- --assurance-profile <profile.json>` と PR policy-gate summary。 |
 | High-assurance enforcement は必要か。 | risk label、assurance profile、formal summary、policy-gate decision。 | Issue または reviewer が critical claim を選んだ場合だけ `risk:high` / `enforce-assurance` を使う。 |
 | Codex CLI Issue workflow は再現できるか。 | exported task file と demo fixture。 | `node scripts/codex/export-issue-task.mjs --repo <owner/repo> --issue <n> --work <repo>` と `examples/assurance-control-plane/codex-change-package-demo/README.md`。 |
+| BYO-agent assurance flow を15分で試せるか。 | reviewer-first demo Markdown と生成済み summary artifact。 | `pnpm run demo:agent-assurance` と `docs/guides/byo-agent-assurance-quickstart.md`。 |
 
 ### 4. 推奨 rollout sequence
 

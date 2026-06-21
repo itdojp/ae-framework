@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 const repoRoot = resolve('.');
 const scriptPath = resolve(repoRoot, 'scripts/assurance/aggregate-lanes.mjs');
 const moduleUrl = pathToFileURL(scriptPath).href;
+const deterministicGeneratedAt = '2026-06-21T00:00:00.000Z';
 
 const writeJson = (targetPath: string, payload: unknown) => {
   writeFileSync(targetPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
@@ -257,6 +258,8 @@ describe.sequential('assurance aggregate lanes script', () => {
         counterexamplePath,
         '--evidence-manifest',
         evidenceManifestPath,
+        '--generated-at',
+        deterministicGeneratedAt,
         '--output-json',
         outputJson,
         '--output-md',
@@ -267,6 +270,8 @@ describe.sequential('assurance aggregate lanes script', () => {
 
       const summary = JSON.parse(readFileSync(outputJson, 'utf8'));
       expect(summary.schemaVersion).toBe('assurance-summary/v1');
+      expect(summary.generatedAt).toBe(deterministicGeneratedAt);
+      expect(summary.metadata.generatedAtUtc).toBe(deterministicGeneratedAt);
       expect(summary.summary.claimCount).toBe(1);
       expect(summary.summary.warningCount).toBe(0);
       expect(summary.claims[0]).toMatchObject({

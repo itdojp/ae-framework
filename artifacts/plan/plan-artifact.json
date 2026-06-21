@@ -1,15 +1,15 @@
 {
   "schemaVersion": "plan-artifact/v1",
   "contractId": "plan-artifact.v1",
-  "generatedAt": "2026-03-09T11:58:18.450Z",
+  "generatedAt": "2026-06-21T01:59:51.544Z",
   "source": {
     "repository": "itdojp/ae-framework",
-    "prNumber": 2544,
+    "prNumber": 3517,
     "baseRef": "main",
-    "headRef": "feat/2535-plan-artifact"
+    "headRef": "feat/3509-agent-assurance-demo"
   },
-  "goal": "Define plan-artifact/v1 and require it for high-risk PR pre-review.",
-  "scope": "Add schema, generator, validator, policy-gate enforcement, PR summary integration, and operator documentation.",
+  "goal": "Add a 15-minute offline BYO-agent assurance quickstart and local demo command for Issue #3509.",
+  "scope": "Add the demo runner, package script, quickstart documentation, example README, and tests needed to generate local reviewer-first assurance artifacts without external agent or GitHub API calls.",
   "risk": {
     "selected": "risk:high",
     "requiresHumanApproval": true,
@@ -18,48 +18,74 @@
   "assumptions": [
     {
       "id": "A1",
-      "text": "High-risk PRs can commit plan artifacts under artifacts/plan before review."
+      "text": "The package.json change is limited to a new demo script entrypoint and does not modify dependency declarations or lockfiles."
     },
     {
       "id": "A2",
-      "text": "policy-gate checkout contains committed plan artifacts from the PR branch."
+      "text": "The demo remains offline after pnpm dependencies are installed and does not require a GitHub token, hosted LLM API, or live PR."
+    },
+    {
+      "id": "A3",
+      "text": "Producer output is treated only as evidence input; generated policy output remains report-only for ordinary fast-lane changes."
     }
   ],
   "filesExpectedToChange": [
-    "schema/plan-artifact.schema.json",
-    "scripts/plan-artifact/generate.mjs",
-    "scripts/plan-artifact/validate.mjs",
-    "scripts/ci/policy-gate.mjs",
-    ".github/workflows/policy-gate.yml",
-    ".github/workflows/pr-ci-status-comment.yml",
-    "docs/ci/plan-artifact.md"
+    "package.json",
+    "scripts/demo/run-agent-assurance-demo.mjs",
+    "scripts/assurance/aggregate-lanes.mjs",
+    "tests/unit/scripts/agent-assurance-demo.test.ts",
+    "docs/guides/byo-agent-assurance-quickstart.md",
+    "docs/guides/byo-agent-assurance-onboarding.md",
+    "examples/assurance-control-plane/agent-assurance-demo/README.md",
+    "README.md",
+    "docs/README.md",
+    "artifacts/plan/plan-artifact.json",
+    "artifacts/plan/plan-artifact.md"
   ],
   "verificationPlan": [
     {
       "id": "V1",
-      "name": "Contract and unit tests",
-      "command": "pnpm exec vitest run tests/contracts/plan-artifact-contract.test.ts tests/unit/ci/plan-artifact-generate.test.ts tests/unit/ci/plan-artifact-validate.test.ts tests/unit/ci/risk-policy.test.ts tests/unit/ci/policy-gate.test.ts",
+      "name": "Offline demo command",
+      "command": "pnpm run demo:agent-assurance",
       "expectedEvidence": [
-        "tests/contracts/plan-artifact-contract.test.ts",
-        "tests/unit/ci/policy-gate.test.ts"
+        "artifacts/review/agent-assurance-demo/assurance-review.md",
+        "artifacts/policy/agent-assurance-demo/policy-gate-summary.json"
       ]
     },
     {
       "id": "V2",
-      "name": "Schema and docs validation",
-      "command": "node scripts/ci/validate-json.mjs && pnpm -s run check:doc-consistency && pnpm -s run check:ci-doc-index-consistency",
+      "name": "Demo runner and aggregate-lanes regression tests",
+      "command": "pnpm vitest run tests/unit/scripts/agent-assurance-demo.test.ts tests/scripts/assurance-aggregate-lanes.test.ts --reporter dot",
       "expectedEvidence": [
-        "fixtures/plan/sample.plan-artifact.json",
-        "docs/ci/plan-artifact.md"
+        "tests/unit/scripts/agent-assurance-demo.test.ts"
+      ]
+    },
+    {
+      "id": "V3",
+      "name": "Schema and JSON fixture validation",
+      "command": "pnpm -s run check:schemas && node scripts/ci/validate-json.mjs",
+      "expectedEvidence": [
+        "schema/producer-normalization-summary.schema.json",
+        "schema/assurance-summary.schema.json",
+        "schema/policy-gate-summary-v1.schema.json"
+      ]
+    },
+    {
+      "id": "V4",
+      "name": "Docs and Context Pack validation",
+      "command": "pnpm -s run check:doc-consistency && pnpm -s run docs:lint && pnpm -s run context-pack:validate && pnpm -s run context-pack:verify-boundary-map",
+      "expectedEvidence": [
+        "docs/guides/byo-agent-assurance-quickstart.md",
+        "spec/context-pack/boundary-map.json"
       ]
     }
   ],
-  "rollbackPlan": "Revert the plan-artifact schema, scripts, policy-gate integration, and PR summary wiring.",
+  "rollbackPlan": "Revert the quickstart/demo commit and this plan artifact commit; remove generated demo artifacts from any local artifacts directory if present.",
   "requiredHumanInput": [
-    "Confirm the high-risk review scope before implementation proceeds.",
-    "Approve the required verification and rollback plan for the PR."
+    "approval=plan-review"
   ],
   "notes": [
-    "Change Package remains the after-change evidence artifact; this contract only covers before-change review."
+    "package.json is classified as high-risk by policy because it is a package manifest, but this change only adds a script entrypoint.",
+    "run-security is requested so the policy label requirement for package manifest changes can be satisfied."
   ]
 }

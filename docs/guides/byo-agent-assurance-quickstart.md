@@ -1,0 +1,215 @@
+---
+docRole: derived
+canonicalSource:
+- docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
+- docs/product/EFFECTIVENESS-METRICS.md
+- docs/guides/byo-agent-assurance-onboarding.md
+- docs/agents/evidence-adapters.md
+- examples/assurance-control-plane/agent-assurance-demo/README.md
+lastVerified: '2026-06-21'
+---
+
+# 15-Minute BYO-Agent Assurance Quickstart
+
+> Language / 言語: English | 日本語
+
+---
+
+## English
+
+This quickstart runs the offline BYO-agent assurance demo. It shows how a raw
+producer signal becomes normalized evidence, an assurance summary, a policy
+summary, and a reviewer-facing Markdown surface without calling an external LLM
+API, hosted agent service, or GitHub API.
+
+The goal is not to prove that an agent wrote better code. The goal is to show
+how ae-framework keeps the judgment side stable: **producer output is evidence
+input, while summary artifacts and policy interpretation are the review surface**.
+
+### 1. Prerequisites
+
+From a fresh clone, use the repository's normal Node/pnpm setup:
+
+```bash
+corepack enable
+corepack prepare pnpm@10.0.0 --activate
+pnpm install --frozen-lockfile
+```
+
+No GitHub token, external network call, hosted LLM API, or live PR is required
+after dependencies are installed.
+
+### 2. Run the demo
+
+```bash
+pnpm run demo:agent-assurance
+```
+
+The command writes a deterministic fixture-backed artifact set under
+`artifacts/`:
+
+| Surface | Default path | What it demonstrates |
+| --- | --- | --- |
+| Verify Lite fixture summary | `artifacts/verify-lite/agent-assurance-demo/verify-lite-run-summary.json` | Baseline fast-lane check evidence. |
+| Producer normalization summary | `artifacts/agents/agent-assurance-demo/producer-normalization-summary.json` and `.md` | Raw Codex CLI task output routed into report-only findings and missing-evidence notes. |
+| Assurance summary | `artifacts/assurance/agent-assurance-demo/assurance-summary.json` and `.md` | Claim/evidence status and the `Reviewer decision surface`. |
+| Policy summary | `artifacts/policy/agent-assurance-demo/policy-gate-summary.json` and `.md` | Fast-lane, report-only policy interpretation for the fixture. |
+| Reviewer Markdown | `artifacts/review/agent-assurance-demo/assurance-review.md` | The first local surface a reviewer should read. |
+
+Use `--output-root <path>` when you want an isolated output directory under the
+repository root:
+
+```bash
+node scripts/demo/run-agent-assurance-demo.mjs \
+  --output-root artifacts/my-agent-assurance-demo \
+  --generated-at 2026-06-21T00:00:00.000Z
+```
+
+### 3. What reviewers should inspect first
+
+Open `artifacts/review/agent-assurance-demo/assurance-review.md` before raw logs.
+That file points reviewers to the important evidence in this order:
+
+1. **Producer normalization summary** — check `missing_evidence_finding_count`
+   and report-only findings before trusting producer text.
+2. **Assurance summary** — check recommended reviewer action, warning claims,
+   unresolved claims, and missing lanes.
+3. **Policy summary** — confirm the ordinary fast lane is report-only and does
+   not turn producer output into approval.
+4. **Verify Lite fixture summary** — use green baseline evidence as support, not
+   as proof of high assurance.
+
+### 4. How to interpret the demo
+
+| Adoption profile | What this quickstart shows | What it does not require |
+| --- | --- | --- |
+| Baseline | A local fast-lane check summary and policy summary can be reviewed without a live PR. | It does not run GitHub Actions or auto-merge anything. |
+| Structured assurance | Producer output is normalized, then surfaced in `assurance-summary/v1` with report-only missing evidence. | It does not create a new agent-specific guarantee vocabulary. |
+| High-assurance critical core | The review Markdown explains when `risk:high` / `enforce-assurance` would be selected. | It does not force formal/model/proof lanes for routine PRs. |
+
+### 5. Demo-scoped effectiveness metrics
+
+The quickstart intentionally uses a small deterministic subset of the product
+metric vocabulary from `docs/product/EFFECTIVENESS-METRICS.md`:
+
+| Metric | Demo use |
+| --- | --- |
+| `missing_evidence_finding_count` | Shown in the generated reviewer Markdown from the producer normalization summary. |
+| `scope_drift_finding_count` | Set to `0` in this quickstart because scope drift is a later optional scenario, not part of the baseline demo. |
+| `reviewer_comment_count` | Not collected because the demo does not create a GitHub PR or review thread. |
+| `ci_rerun_count` | Not collected because the demo does not invoke GitHub Actions. |
+
+Do not use this demo to claim real-world faster review, safer code, or agent
+vendor superiority. It is a local evidence-flow demonstration.
+
+### 6. Validation commands
+
+Use the same commands as the implementation issue when checking this quickstart:
+
+```bash
+pnpm run demo:agent-assurance
+pnpm -s run check:schemas
+node scripts/ci/validate-json.mjs
+pnpm -s run check:doc-consistency
+pnpm -s run docs:lint
+git diff --check
+```
+
+---
+
+## 日本語
+
+この quickstart は、offline BYO-agent assurance demo を実行します。外部 LLM API、
+hosted agent service、GitHub API を呼び出さずに、raw producer signal が
+normalized evidence、assurance summary、policy summary、reviewer-facing Markdown
+へ変換される流れを確認できます。
+
+目的は「agent がより良い code を書いた」と証明することではありません。
+ae-framework が判断側を安定させ、**producer output を evidence input として扱い、
+summary artifact と policy interpretation を review surface にする**ことを示します。
+
+### 1. 前提
+
+fresh clone 後、通常の Node/pnpm setup を使います。
+
+```bash
+corepack enable
+corepack prepare pnpm@10.0.0 --activate
+pnpm install --frozen-lockfile
+```
+
+依存関係の install 後は、GitHub token、外部 network call、hosted LLM API、live PR は不要です。
+
+### 2. demo を実行する
+
+```bash
+pnpm run demo:agent-assurance
+```
+
+この command は、fixture-backed な deterministic artifact set を `artifacts/` 配下に出力します。
+
+| Surface | Default path | 示すこと |
+| --- | --- | --- |
+| Verify Lite fixture summary | `artifacts/verify-lite/agent-assurance-demo/verify-lite-run-summary.json` | Baseline fast-lane check evidence。 |
+| Producer normalization summary | `artifacts/agents/agent-assurance-demo/producer-normalization-summary.json` と `.md` | Codex CLI raw task output を report-only finding と missing-evidence note に route する。 |
+| Assurance summary | `artifacts/assurance/agent-assurance-demo/assurance-summary.json` と `.md` | claim / evidence status と `Reviewer decision surface`。 |
+| Policy summary | `artifacts/policy/agent-assurance-demo/policy-gate-summary.json` と `.md` | fixture に対する fast-lane / report-only policy interpretation。 |
+| Reviewer Markdown | `artifacts/review/agent-assurance-demo/assurance-review.md` | reviewer が最初に読む local surface。 |
+
+出力先を分離したい場合は、repository root 配下の `--output-root <path>` を指定します。
+
+```bash
+node scripts/demo/run-agent-assurance-demo.mjs \
+  --output-root artifacts/my-agent-assurance-demo \
+  --generated-at 2026-06-21T00:00:00.000Z
+```
+
+### 3. reviewer が最初に見るもの
+
+raw log より先に `artifacts/review/agent-assurance-demo/assurance-review.md` を開きます。
+この file は reviewer に次の順で evidence を確認させます。
+
+1. **Producer normalization summary** — producer text を信頼する前に
+   `missing_evidence_finding_count` と report-only finding を確認する。
+2. **Assurance summary** — recommended reviewer action、warning claim、
+   unresolved claim、missing lane を確認する。
+3. **Policy summary** — 通常 fast lane が report-only であり、producer output を
+   approval に変換していないことを確認する。
+4. **Verify Lite fixture summary** — green baseline evidence は補助証跡であり、
+   high assurance の proof ではないことを確認する。
+
+### 4. demo の解釈
+
+| Adoption profile | この quickstart が示すこと | 必須化しないもの |
+| --- | --- | --- |
+| Baseline | live PR なしで local fast-lane check summary と policy summary を確認できる。 | GitHub Actions 実行や auto-merge は行わない。 |
+| Structured assurance | producer output を正規化し、`assurance-summary/v1` で report-only missing evidence として見せる。 | agent 固有の新しい保証語彙は作らない。 |
+| High-assurance critical core | `risk:high` / `enforce-assurance` を選ぶ条件を reviewer Markdown で説明する。 | routine PR に formal/model/proof lane を強制しない。 |
+
+### 5. demo scope の effectiveness metrics
+
+この quickstart は `docs/product/EFFECTIVENESS-METRICS.md` の product metric vocabulary から、
+小さな deterministic subset だけを使います。
+
+| Metric | demo での使い方 |
+| --- | --- |
+| `missing_evidence_finding_count` | producer normalization summary から生成された reviewer Markdown に表示する。 |
+| `scope_drift_finding_count` | baseline demo ではなく後続 optional scenario の対象なので、この quickstart では `0` とする。 |
+| `reviewer_comment_count` | GitHub PR / review thread を作らないため収集しない。 |
+| `ci_rerun_count` | GitHub Actions を呼び出さないため収集しない。 |
+
+この demo だけで、実世界の review speed 向上、code safety、agent vendor superiority を主張しないでください。
+これは local evidence-flow demonstration です。
+
+### 6. Validation commands
+
+この quickstart を確認する場合は、実装 Issue と同じ command を使います。
+
+```bash
+pnpm run demo:agent-assurance
+pnpm -s run check:schemas
+node scripts/ci/validate-json.mjs
+pnpm -s run check:doc-consistency
+pnpm -s run docs:lint
+git diff --check
+```
