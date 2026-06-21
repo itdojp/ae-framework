@@ -33,7 +33,7 @@ From a fresh clone, use the repository's normal Node/pnpm setup:
 ```bash
 corepack enable
 corepack prepare pnpm@10.0.0 --activate
-pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+pnpm install --frozen-lockfile
 ```
 
 No GitHub token, external network call, hosted LLM API, or live PR is required
@@ -135,7 +135,7 @@ fresh clone 後、通常の Node/pnpm setup を使います。
 ```bash
 corepack enable
 corepack prepare pnpm@10.0.0 --activate
-pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+pnpm install --frozen-lockfile
 ```
 
 依存関係の install 後は、GitHub token、外部 network call、hosted LLM API、live PR は不要です。
