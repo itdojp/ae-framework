@@ -15,7 +15,7 @@ This fixture demonstrates ACP-085: selected critical claims can be escalated wit
 node scripts/demo/run-high-risk-escalation-demo.mjs
 ```
 
-The command writes fixture-backed artifacts under `artifacts/{agents,assurance,policy,review}/high-risk-escalation-demo` by default and does not require network access, a hosted LLM API, or a GitHub token.
+The command writes fixture-backed artifacts under `artifacts/{agents,assurance,policy,review}/high-risk-escalation-demo` by default and does not require network access, a hosted LLM API, or a GitHub token. The assurance output includes both `claim-evidence-manifest.json` and a fixture-backed `claim-evidence-provenance.json` using the same `verify-lite-assurance-provenance/v1` contract shape that Policy Gate expects from Verify Lite.
 
 ## Reviewer path
 
@@ -26,6 +26,7 @@ The command writes fixture-backed artifacts under `artifacts/{agents,assurance,p
    - `unit`/focused behavior evidence is not `proof`.
    - `waived` is an exception state, not a satisfied claim.
    - Missing waiver owner, reason, and expiry remain reviewer actions.
+5. Confirm the strict-lane policy summary references the generated `claim-evidence-provenance.json`; the demo should not mark missing provenance as trusted.
 
 ## Policy interpretation
 

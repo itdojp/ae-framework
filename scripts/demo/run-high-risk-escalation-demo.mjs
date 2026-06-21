@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -22,6 +23,10 @@ const ASSURANCE_PROFILE = `${EXAMPLE_ROOT}/assurance-profile.json`;
 const CLAIM_MANIFEST_FIXTURE = `${EXAMPLE_ROOT}/expected/claim-evidence-manifest.json`;
 const PLAN_ARTIFACT_FIXTURE = `${EXAMPLE_ROOT}/expected/high-risk-plan-artifact.json`;
 const PLAN_ARTIFACT_SCHEMA = 'schema/plan-artifact.schema.json';
+const VERIFY_LITE_PROVENANCE_SCHEMA_VERSION = 'verify-lite-assurance-provenance/v1';
+const CLAIM_EVIDENCE_GENERATOR_PATH = 'scripts/assurance/build-claim-evidence-manifest.mjs';
+const CLAIM_EVIDENCE_CONTRACT_PATH = 'scripts/ci/lib/claim-evidence-manifest-contract.mjs';
+const CLAIM_EVIDENCE_SCHEMA_PATH = 'schema/claim-evidence-manifest.schema.json';
 const NORMAL_CHANGED_FILES = [
   `${EXAMPLE_ROOT}/README.md`,
   `${EXAMPLE_ROOT}/producer-output/codex-cli-high-risk-escalation-output.json`,
@@ -119,6 +124,10 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
+function sha256File(filePath) {
+  return crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+}
+
 function writeJson(filePath, value) {
   ensureParent(filePath);
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
@@ -160,6 +169,7 @@ function demoPaths(outputRoot) {
     producerJson: path.join(root, 'agents', DEMO_NAME, 'producer-normalization-summary.json'),
     producerMd: path.join(root, 'agents', DEMO_NAME, 'producer-normalization-summary.md'),
     claimManifestJson: path.join(root, 'assurance', DEMO_NAME, 'claim-evidence-manifest.json'),
+    claimProvenanceJson: path.join(root, 'assurance', DEMO_NAME, 'claim-evidence-provenance.json'),
     assuranceJson: path.join(root, 'assurance', DEMO_NAME, 'assurance-summary.json'),
     assuranceMd: path.join(root, 'assurance', DEMO_NAME, 'assurance-summary.md'),
     boundaryJson: path.join(root, 'context-pack', DEMO_NAME, 'boundary-map-summary.json'),
@@ -212,6 +222,52 @@ function materializeClaimManifest({ options, paths }) {
   return manifest;
 }
 
+function syntheticHeadSha(prNumber) {
+  return String(prNumber).padStart(40, '0').slice(-40);
+}
+
+function materializeClaimEvidenceProvenance({ options, paths }) {
+  const headSha = syntheticHeadSha(options.prNumber);
+  const provenancePath = toRepoRelativePath(paths.claimProvenanceJson);
+  const provenance = {
+    schemaVersion: VERIFY_LITE_PROVENANCE_SCHEMA_VERSION,
+    generatedAt: options.generatedAt,
+    repository: options.repository,
+    workflow: {
+      name: 'Verify Lite',
+      ref: `${options.repository}/.github/workflows/verify-lite.yml@refs/heads/main`,
+      sha: headSha,
+      runId: `demo-${options.prNumber}`,
+      runAttempt: '1',
+      eventName: 'pull_request',
+      actor: 'high-risk-escalation-demo',
+    },
+    source: {
+      ref: `refs/pull/${options.prNumber}/head`,
+      sha: headSha,
+      baseRef: 'main',
+      headRef: `${DEMO_NAME}-${options.prNumber}`,
+    },
+    artifact: {
+      name: 'verify-lite-report',
+      manifestPath: toRepoRelativePath(paths.claimManifestJson),
+      manifestSha256: sha256File(paths.claimManifestJson),
+      provenancePath,
+    },
+    generator: {
+      command: 'pnpm -s run claim-evidence:generate',
+      path: CLAIM_EVIDENCE_GENERATOR_PATH,
+      sha256: sha256File(CLAIM_EVIDENCE_GENERATOR_PATH),
+      schemaPath: CLAIM_EVIDENCE_SCHEMA_PATH,
+      schemaSha256: sha256File(CLAIM_EVIDENCE_SCHEMA_PATH),
+      contractPath: CLAIM_EVIDENCE_CONTRACT_PATH,
+      contractSha256: sha256File(CLAIM_EVIDENCE_CONTRACT_PATH),
+    },
+  };
+  writeJson(paths.claimProvenanceJson, provenance);
+  return provenance;
+}
+
 function summarizeClaimForPolicy(claim, { strict }) {
   const evidenceRefs = Array.isArray(claim.evidenceRefs)
     ? claim.evidenceRefs.map((entry) => entry.id).filter(Boolean)
@@ -243,23 +299,28 @@ function summarizeClaimForPolicy(claim, { strict }) {
   };
 }
 
-function buildAssuranceStateForPolicy({ manifest, paths, strict }) {
+function summarizeProvenanceForPolicy(provenance, paths) {
+  if (!provenance) return null;
+  return {
+    path: toRepoRelativePath(paths.claimProvenanceJson),
+    present: true,
+    trusted: true,
+    schemaVersion: provenance.schemaVersion,
+    generatedAt: provenance.generatedAt,
+    warnings: [],
+    errors: [],
+  };
+}
+
+function buildAssuranceStateForPolicy({
+  manifest, paths, strict, claimEvidenceProvenance,
+}) {
   return {
     path: toRepoRelativePath(paths.claimManifestJson),
     present: true,
     schemaVersion: 'claim-evidence-manifest/v1',
     generatedAt: manifest.generatedAt,
-    provenance: strict
-      ? {
-          path: 'artifacts/assurance/high-risk-escalation-demo/claim-evidence-provenance.json',
-          present: true,
-          trusted: true,
-          schemaVersion: 'claim-evidence-provenance/v1',
-          generatedAt: manifest.generatedAt,
-          warnings: [],
-          errors: [],
-        }
-      : null,
+    provenance: strict ? summarizeProvenanceForPolicy(claimEvidenceProvenance, paths) : null,
     summary: {
       totalClaims: manifest.summary.totalClaims,
     },
@@ -300,7 +361,9 @@ function prepareHighRiskPlanArtifact({ options, paths }) {
   };
 }
 
-function buildPolicySummary({ options, paths, manifest, mode, highRiskPlanArtifact }) {
+function buildPolicySummary({
+  options, paths, manifest, mode, highRiskPlanArtifact, claimEvidenceProvenance,
+}) {
   const policy = loadRiskPolicy('policy/risk-policy.yml');
   const agentAssuranceFindings = inspectAgentAssuranceFindings({
     assuranceSummaryPath: paths.assuranceJson,
@@ -331,7 +394,12 @@ function buildPolicySummary({ options, paths, manifest, mode, highRiskPlanArtifa
     statusRollup,
     reviewTopology: 'team',
     assuranceMode: isHighRisk ? 'strict' : 'report-only',
-    assurance: buildAssuranceStateForPolicy({ manifest, paths, strict: isHighRisk }),
+    assurance: buildAssuranceStateForPolicy({
+      manifest,
+      paths,
+      strict: isHighRisk,
+      claimEvidenceProvenance,
+    }),
     agentAssuranceFindings,
     planArtifact: isHighRisk ? highRiskPlanArtifact : null,
   });
@@ -355,6 +423,7 @@ function run(options) {
   ]);
 
   const manifest = materializeClaimManifest({ options, paths });
+  const claimEvidenceProvenance = materializeClaimEvidenceProvenance({ options, paths });
 
   runNode([
     'scripts/assurance/aggregate-lanes.mjs',
@@ -370,10 +439,10 @@ function run(options) {
 
   const highRiskPlanArtifact = prepareHighRiskPlanArtifact({ options, paths });
   const normalPolicy = buildPolicySummary({
-    options, paths, manifest, mode: 'normal', highRiskPlanArtifact,
+    options, paths, manifest, mode: 'normal', highRiskPlanArtifact, claimEvidenceProvenance,
   });
   const highRiskPolicy = buildPolicySummary({
-    options, paths, manifest, mode: 'high-risk', highRiskPlanArtifact,
+    options, paths, manifest, mode: 'high-risk', highRiskPlanArtifact, claimEvidenceProvenance,
   });
   writeJson(paths.policyNormalJson, normalPolicy);
   writeText(paths.policyNormalMd, buildMarkdownSummary(options.prNumber, normalPolicy.evaluation));

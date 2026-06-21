@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, relative, resolve, sep } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 const repoRoot = resolve('.');
 const scriptPath = resolve(repoRoot, 'scripts/demo/run-high-risk-escalation-demo.mjs');
+const rendererPath = resolve(repoRoot, 'scripts/assurance/render-pr-review-surface.mjs');
 const expectedRoot = resolve(repoRoot, 'examples/assurance-control-plane/high-risk-escalation-demo/expected');
 const generatedAt = '2026-06-21T00:00:00.000Z';
 
@@ -17,6 +18,8 @@ const runScript = (args: string[]) => spawnSync('node', [scriptPath, ...args], {
 
 const readJson = (filePath: string) => JSON.parse(readFileSync(filePath, 'utf8'));
 const toPosixPath = (filePath: string) => filePath.split(sep).join('/');
+const repoRelative = (filePath: string) => toPosixPath(relative(repoRoot, filePath));
+const sha256 = (filePath: string) => createHash('sha256').update(readFileSync(filePath)).digest('hex');
 const normalizeOutputRoot = (content: string, outputRoot: string) => {
   const relativeOutputRoot = toPosixPath(relative(repoRoot, outputRoot));
   const absoluteOutputRoot = toPosixPath(outputRoot);
@@ -50,6 +53,7 @@ describe('high-risk escalation assurance demo', () => {
 
       const producerPath = join(outputRoot, 'agents/high-risk-escalation-demo/producer-normalization-summary.json');
       const claimManifestPath = join(outputRoot, 'assurance/high-risk-escalation-demo/claim-evidence-manifest.json');
+      const claimProvenancePath = join(outputRoot, 'assurance/high-risk-escalation-demo/claim-evidence-provenance.json');
       const assurancePath = join(outputRoot, 'assurance/high-risk-escalation-demo/assurance-summary.json');
       const planArtifactPath = join(outputRoot, 'plan/high-risk-escalation-demo/high-risk-plan-artifact.json');
       const planValidationPath = join(outputRoot, 'plan/high-risk-escalation-demo/plan-artifact-validation.json');
@@ -61,6 +65,7 @@ describe('high-risk escalation assurance demo', () => {
       for (const filePath of [
         producerPath,
         claimManifestPath,
+        claimProvenancePath,
         assurancePath,
         planArtifactPath,
         planValidationPath,
@@ -111,6 +116,20 @@ describe('high-risk escalation assurance demo', () => {
         readFileSync(join(expectedRoot, 'claim-evidence-manifest.json'), 'utf8'),
       );
 
+      const claimProvenance = readJson(claimProvenancePath);
+      expect(claimProvenance).toMatchObject({
+        schemaVersion: 'verify-lite-assurance-provenance/v1',
+        generatedAt,
+        repository: 'itdojp/ae-framework',
+        artifact: {
+          name: 'verify-lite-report',
+          manifestPath: repoRelative(claimManifestPath),
+          provenancePath: repoRelative(claimProvenancePath),
+        },
+      });
+      expect(claimProvenance.artifact.manifestSha256).toBe(sha256(claimManifestPath));
+      expect(JSON.stringify(claimProvenance)).not.toContain(repoRoot);
+
       const assurance = readJson(assurancePath);
       expect(assurance.schemaVersion).toBe('assurance-summary/v1');
       expect(assurance.claims).toHaveLength(2);
@@ -148,6 +167,13 @@ describe('high-risk escalation assurance demo', () => {
       expect(highRiskPolicy.evaluation.assurance).toMatchObject({
         mode: 'strict',
         result: 'block',
+        manifest: {
+          provenance: {
+            present: true,
+            trusted: true,
+            schemaVersion: 'verify-lite-assurance-provenance/v1',
+          },
+        },
       });
       expect(highRiskPolicy.evaluation.errors).toContain('assurance decision is block');
       expect(highRiskPolicy.evaluation.errors.join('\n')).toContain('missing required evidence');
@@ -182,6 +208,32 @@ describe('high-risk escalation assurance demo', () => {
       expect(highRiskReview).toContain('follow policy decision result=`block` mode=`strict`');
       expect(normalizeOutputRoot(highRiskReview, outputRoot)).toBe(
         readFileSync(join(expectedRoot, 'assurance-review.high-risk.md'), 'utf8'),
+      );
+
+      const manifestOnlyReviewPath = join(outputRoot, 'review/high-risk-escalation-demo/manifest-only-review.md');
+      const manifestOnlyResult = spawnSync('node', [
+        rendererPath,
+        '--title', 'Manifest-only Selected Critical Claims',
+        '--producer-summary', repoRelative(join(outputRoot, 'missing-producer-summary.json')),
+        '--assurance-summary', repoRelative(join(outputRoot, 'missing-assurance-summary.json')),
+        '--policy-gate-summary', repoRelative(join(outputRoot, 'missing-policy-gate-summary.json')),
+        '--boundary-map-summary', repoRelative(join(outputRoot, 'missing-boundary-map-summary.json')),
+        '--claim-evidence-manifest', repoRelative(claimManifestPath),
+        '--verify-lite-summary', repoRelative(join(outputRoot, 'missing-verify-lite-summary.json')),
+        '--output-md', repoRelative(manifestOnlyReviewPath),
+        '--generated-at', generatedAt,
+      ], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 60_000,
+      });
+      expect(manifestOnlyResult.status, manifestOnlyResult.stderr || manifestOnlyResult.stdout).toBe(0);
+      const manifestOnlyReview = readFileSync(manifestOnlyReviewPath, 'utf8');
+      expect(manifestOnlyReview).toContain(
+        '| tenant-isolation-enforced-before-account-read | critical | A3 | not provided | not provided | not provided | partial |',
+      );
+      expect(manifestOnlyReview).not.toContain(
+        '| tenant-isolation-enforced-before-account-read | critical | A3 | not provided | spec, behavior |',
       );
     } finally {
       rmSync(outputRoot, { recursive: true, force: true });

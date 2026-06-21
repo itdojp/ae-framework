@@ -417,7 +417,7 @@ function selectedCriticalClaimRows(assuranceSummary, manifestArtifacts) {
       criticality,
       text(claim.targetLevel),
       'not provided',
-      listText(ensureArray(claim.evidenceRefs).map((entry) => entry.kind)),
+      listText(ensureArray(claim.requiredEvidenceKinds), 'not provided'),
       'not provided',
       text(claim.status),
     ]);

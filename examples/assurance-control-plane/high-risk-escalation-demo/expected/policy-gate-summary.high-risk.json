@@ -119,7 +119,7 @@
           "path": "artifacts/assurance/high-risk-escalation-demo/claim-evidence-provenance.json",
           "present": true,
           "trusted": true,
-          "schemaVersion": "claim-evidence-provenance/v1",
+          "schemaVersion": "verify-lite-assurance-provenance/v1",
           "generatedAt": "2026-06-21T00:00:00.000Z"
         }
       },
