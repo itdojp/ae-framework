@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "assurance-profile/v1",
+  "profileId": "tenant-isolation-high-risk-escalation-v1",
+  "scope": {
+    "contextPackSources": [
+      "spec/context-pack/**/*.{yml,yaml,json}"
+    ],
+    "componentGlobs": [
+      "auth/**",
+      "examples/assurance-control-plane/high-risk-escalation-demo/**",
+      "tests/unit/auth/**"
+    ]
+  },
+  "claims": [
+    {
+      "id": "tenant-isolation-enforced-before-account-read",
+      "statement": "Every account-read request is denied unless the authenticated tenant id matches the account tenant id before the repository read occurs.",
+      "kind": "security",
+      "criticality": "critical",
+      "targetLevel": "A3",
+      "minIndependentSources": 2,
+      "scopeRefs": {
+        "objectIds": [
+          "TenantAccount"
+        ],
+        "morphismIds": [
+          "AuthorizeTenantAccountRead"
+        ],
+        "acceptanceTestIds": [
+          "AT-TENANT-READ-001"
+        ]
+      },
+      "requiredLanes": [
+        "spec",
+        "behavior",
+        "adversarial",
+        "runtime"
+      ],
+      "requiredEvidenceKinds": [
+        "schema",
+        "unit",
+        "property",
+        "runtime-control"
+      ]
+    },
+    {
+      "id": "tenant-isolation-waiver-has-reviewable-metadata",
+      "statement": "Any temporary exception for tenant-isolation enforcement includes owner, reason, expiry, affected claim id, and a linked evidence record.",
+      "kind": "compliance",
+      "criticality": "high",
+      "targetLevel": "A2",
+      "minIndependentSources": 1,
+      "requiredLanes": [
+        "spec",
+        "runtime"
+      ],
+      "requiredEvidenceKinds": [
+        "waiver",
+        "runtime-control"
+      ]
+    }
+  ]
+}

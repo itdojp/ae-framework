@@ -1,0 +1,38 @@
+### Policy Gate
+- PR: #3512
+- result: FAIL
+- selected risk label: risk:high
+- inferred risk: risk:high
+- review topology: team
+- approvals: 1/1 (source: policy, policy: 1)
+- required labels (by diff): enforce-testing
+- plan artifact: pass (required)
+  - path: artifacts/plan/high-risk-escalation-demo/high-risk-plan-artifact.json
+  - declared risk: risk:high
+  - declared source: itdojp/ae-framework#3512
+- assurance: block (strict)
+  - assurance artifact: present (claim-evidence-manifest/v1)
+  - claims: pass=0, waived=1, report-only=1, block=0
+  - waivers: active=1, expiringSoon=0, expired=0, orphan=0
+    - id=waiver-tenant-isolation-rollout-window-001, claim=tenant-isolation-waiver-has-reviewable-metadata, status=active, owner=(none), expires=(none), reason=(none)
+  - agent assurance findings (report-only): total=18 (high=2, report-only=12, review=4)
+    - report-only/known-gap; ACP-HR-ESC-001: Focused unit evidence does not satisfy adversarial/property and runtime-control requirements for a selected tenant-isolation claim.; source=artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json
+    - report-only/known-gap; ACP-HR-ESC-002: Waiver metadata gaps stay visible as reviewer actions and are blocking when strict assurance is selected.; source=artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json
+    - report-only/missing-evidence; Command evidence is not complete: pnpm -s exec vitest run tests/property/auth/tenant-isolation-cross-tenant.test.ts --reporter dot (not-run-in-producer-output); source=artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json
+    - report-only/missing-evidence; Command evidence is not complete: node scripts/runtime/validate-tenant-isolation-control.mjs (not-run-in-producer-output); source=artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json
+    - report-only/missing-evidence; Claim has no supporting evidence list: tenant-isolation-waiver-has-reviewable-metadata; source=artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json; related=claim-evidence-manifest/v1; claim=tenant-isolation-waiver-has-reviewable-metadata
+    - report-only/waiver-metadata; Waiver metadata is incomplete for claim tenant-isolation-waiver-has-reviewable-metadata: waiver.owner, waiver.reason, waiver.expiresAt; source=artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json; related=claim-evidence-manifest/v1; claim=tenant-isolation-waiver-has-reviewable-metadata
+    - report-only/known-gap; ACP-HR-ESC-001: Focused unit evidence does not satisfy adversarial/property and runtime-control requirements for a selected tenant-isolation claim.; source=artifacts/assurance/high-risk-escalation-demo/assurance-summary.json; related=artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json
+    - report-only/known-gap; ACP-HR-ESC-002: Waiver metadata gaps stay visible as reviewer actions and are blocking when strict assurance is selected.; source=artifacts/assurance/high-risk-escalation-demo/assurance-summary.json; related=artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json
+    - report-only/missing-evidence; Command evidence is not complete: pnpm -s exec vitest run tests/property/auth/tenant-isolation-cross-tenant.test.ts --reporter dot (not-run-in-producer-output); source=artifacts/assurance/high-risk-escalation-demo/assurance-summary.json; related=artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json
+    - report-only/missing-evidence; Command evidence is not complete: node scripts/runtime/validate-tenant-isolation-control.mjs (not-run-in-producer-output); source=artifacts/assurance/high-risk-escalation-demo/assurance-summary.json; related=artifacts/agents/high-risk-escalation-demo/producer-normalization-summary.json
+- required checks:
+  - verify-lite: success
+- gate checks (high-risk labels):
+  - enforce-testing: success
+- blocking errors:
+  - assurance: assurance claim tenant-isolation-enforced-before-account-read is missing required evidence: missing-cross-tenant-property-evidence, missing-runtime-tenant-isolation-control; next action: add evidence or provide a valid waiver
+  - assurance: assurance waiver waiver-tenant-isolation-rollout-window-001 for tenant-isolation-waiver-has-reviewable-metadata is missing owner; next action: add waiver owner
+  - assurance: assurance waiver waiver-tenant-isolation-rollout-window-001 for tenant-isolation-waiver-has-reviewable-metadata is missing reason; next action: add waiver rationale
+  - assurance: assurance waiver waiver-tenant-isolation-rollout-window-001 for tenant-isolation-waiver-has-reviewable-metadata is missing expiry; next action: add waiver expiry date
+  - assurance decision is block

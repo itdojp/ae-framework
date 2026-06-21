@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "plan-artifact/v1",
+  "contractId": "plan-artifact.v1",
+  "generatedAt": "2026-06-21T00:00:00.000Z",
+  "source": {
+    "repository": "itdojp/ae-framework",
+    "prNumber": 3512,
+    "baseRef": "main",
+    "headRef": "feat/3512-high-risk-escalation-demo"
+  },
+  "goal": "Demonstrate selected tenant-isolation claim escalation from fast-lane report-only evidence to strict high-risk assurance blocking behavior.",
+  "scope": "Synthetic scenario fixture only; no production tenant-isolation, authorization, database, or runtime-control behavior is changed.",
+  "risk": {
+    "selected": "risk:high",
+    "requiresHumanApproval": true,
+    "minHumanApprovals": 1
+  },
+  "assumptions": [
+    {
+      "id": "A1",
+      "text": "Tenant isolation is the selected high-risk domain for this fixture."
+    },
+    {
+      "id": "A2",
+      "text": "Normal fast-lane PRs keep the same gaps report-only unless risk:high, enforce-assurance, or critical-core policy selects enforcement."
+    }
+  ],
+  "filesExpectedToChange": [
+    "examples/assurance-control-plane/high-risk-escalation-demo/**",
+    "scripts/demo/run-high-risk-escalation-demo.mjs",
+    "scripts/assurance/render-pr-review-surface.mjs",
+    "tests/unit/scripts/high-risk-escalation-demo.test.ts",
+    "docs/product/EFFECTIVENESS-METRICS.md",
+    "docs/guides/byo-agent-assurance-onboarding.md",
+    "docs/quality/ASSURANCE-MODEL.md"
+  ],
+  "verificationPlan": [
+    {
+      "id": "V1",
+      "name": "High-risk escalation scenario generator",
+      "command": "node scripts/demo/run-high-risk-escalation-demo.mjs",
+      "expectedEvidence": [
+        "artifacts/review/high-risk-escalation-demo/assurance-review.md",
+        "artifacts/review/high-risk-escalation-demo/assurance-review.high-risk.md",
+        "artifacts/policy/high-risk-escalation-demo/policy-gate-summary.high-risk.json"
+      ]
+    },
+    {
+      "id": "V2",
+      "name": "High-risk escalation scenario regression test",
+      "command": "pnpm vitest run tests/unit/scripts/high-risk-escalation-demo.test.ts --reporter dot",
+      "expectedEvidence": [
+        "examples/assurance-control-plane/high-risk-escalation-demo/expected/assurance-review.md"
+      ]
+    }
+  ],
+  "rollbackPlan": "Revert the fixture, generator, docs, and tests added for the high-risk escalation scenario.",
+  "requiredHumanInput": [
+    "Reviewer disposition for missing adversarial/property and runtime-control evidence on the selected tenant-isolation claim.",
+    "Reviewer decision to reject or complete the waiver metadata before strict assurance can pass."
+  ],
+  "notes": [
+    "This plan artifact is an expected fixture for the high-risk policy summary, not a live PR plan artifact."
+  ]
+}

@@ -1,0 +1,271 @@
+{
+  "schemaVersion": "producer-normalization-summary/v1",
+  "generatedAt": "2026-06-21T00:00:00.000Z",
+  "mode": "report-only",
+  "input": {
+    "path": "examples/assurance-control-plane/high-risk-escalation-demo/producer-output/codex-cli-high-risk-escalation-output.json",
+    "producerOverride": null
+  },
+  "producer": {
+    "id": "codex-cli-high-risk-escalation",
+    "fixtureProducerId": "codex-cli-high-risk-escalation",
+    "displayName": "Codex CLI local task with tenant-isolation claim gaps",
+    "category": "local-agent",
+    "trustBoundary": "The producer reports a tenant-isolation policy change and partial evidence. Reviewers must inspect normalized evidence, claim-level gaps, waiver metadata, and policy summaries before accepting the change."
+  },
+  "source": {
+    "issue": "examples/assurance-control-plane/high-risk-escalation-demo/issue/high-risk-escalation-task.md",
+    "entrypoint": "node scripts/codex/export-issue-task.mjs --repo itdojp/ae-framework --issue 3512 --work <repo> --print-commands",
+    "codexCommand": "codex exec --cd ../ae-framework-high-risk-escalation-work --sandbox workspace-write --ask-for-approval never - < .codex-local/tasks/issue-3512.md",
+    "workspacePolicy": "Use one dedicated worktree for the sample Issue and do not stage .codex-local/tasks/."
+  },
+  "summary": {
+    "rawSignals": 5,
+    "changedFiles": 3,
+    "commands": 4,
+    "claimsMentioned": 3,
+    "expectedArtifacts": 4,
+    "knownGaps": 2,
+    "missingEvidence": 4,
+    "reportOnlyFindings": 6
+  },
+  "producerAssertions": {
+    "rawSignals": [
+      {
+        "kind": "task-summary",
+        "value": "Codex updated a fixture-only tenant-isolation authorization policy, added one focused unit test, and documented the intended reviewer flow.",
+        "rawAssertionBoundary": "This is producer text. It is evidence input, not approval or a high-assurance result."
+      },
+      {
+        "kind": "risk-note",
+        "value": "Tenant isolation is selected as a high-risk claim; missing adversarial and runtime-control evidence must remain visible when strict assurance is selected.",
+        "rawAssertionBoundary": "Risk escalation is selected by policy labels and assurance profile, not by producer confidence."
+      },
+      {
+        "kind": "validation-result",
+        "value": "Focused tenant-isolation unit test passed in the producer session.",
+        "rawAssertionBoundary": "A focused test is behavior evidence only. It is not proof and does not replace adversarial or runtime-control evidence."
+      },
+      {
+        "kind": "open-question",
+        "value": "The producer did not provide property/adversarial evidence for cross-tenant negative cases.",
+        "rawAssertionBoundary": "The control plane keeps this as missing evidence for reviewer disposition."
+      },
+      {
+        "kind": "open-question",
+        "value": "The waiver record mentions an emergency exception but omits owner, reason, and expiry.",
+        "rawAssertionBoundary": "Incomplete waiver metadata is a report-only finding in the fast lane and a blocking strict-assurance issue when enforcement is selected."
+      }
+    ],
+    "changedFiles": [
+      {
+        "path": "auth/tenant-isolation-policy.ts",
+        "role": "fixture-only high-risk tenant isolation policy change",
+        "expectedArtifact": "claim-evidence-manifest/v1"
+      },
+      {
+        "path": "tests/unit/auth/tenant-isolation-policy.test.ts",
+        "role": "focused behavior evidence supplied by the producer",
+        "expectedArtifact": "assurance-summary/v1"
+      },
+      {
+        "path": "examples/assurance-control-plane/high-risk-escalation-demo/README.md",
+        "role": "reviewer-facing escalation documentation",
+        "expectedArtifact": "assurance-summary/v1"
+      }
+    ],
+    "commands": [
+      {
+        "command": "pnpm -s exec vitest run tests/unit/auth/tenant-isolation-policy.test.ts --reporter dot",
+        "status": "passed",
+        "evidenceUse": "Focused behavior evidence for the selected tenant-isolation claim."
+      },
+      {
+        "command": "pnpm -s run check:schemas",
+        "status": "passed",
+        "evidenceUse": "Schema validation evidence for generated artifacts."
+      },
+      {
+        "command": "pnpm -s exec vitest run tests/property/auth/tenant-isolation-cross-tenant.test.ts --reporter dot",
+        "status": "not-run-in-producer-output",
+        "evidenceUse": "Adversarial/property evidence required before the selected critical claim can be treated as satisfied."
+      },
+      {
+        "command": "node scripts/runtime/validate-tenant-isolation-control.mjs",
+        "status": "not-run-in-producer-output",
+        "evidenceUse": "Runtime-control evidence required for high-assurance tenant-isolation enforcement."
+      }
+    ],
+    "claimsMentioned": [
+      {
+        "claimId": "tenant-isolation-enforced-before-account-read",
+        "rawAssertion": "The account-read path checks tenant id before repository access.",
+        "targetArtifact": "claim-evidence-manifest/v1",
+        "supportingEvidence": [
+          "focused tenant-isolation unit test",
+          "reviewed policy diff"
+        ],
+        "controlPlaneBoundary": "The focused test supports behavior only; adversarial and runtime-control evidence remain required for the selected critical claim.",
+        "expectedManifestStatus": "partial",
+        "evidenceKind": "unit"
+      },
+      {
+        "claimId": "tenant-isolation-waiver-has-reviewable-metadata",
+        "rawAssertion": "An emergency waiver exists for a rollout window, but the producer did not list owner, reason, or expiry.",
+        "targetArtifact": "claim-evidence-manifest/v1",
+        "supportingEvidence": [],
+        "controlPlaneBoundary": "A waiver without complete owner/reason/expiry/affected-claim/evidence-link metadata must remain a reviewer action item.",
+        "expectedManifestStatus": "waived",
+        "evidenceKind": "waiver",
+        "waiver": {
+          "evidence": "examples/assurance-control-plane/high-risk-escalation-demo/expected/claim-evidence-manifest.json#/claims/1/waiverRefs/0"
+        }
+      },
+      {
+        "claimId": "producer-summary-is-not-approval",
+        "rawAssertion": "Codex completed the task, but that is not a control-plane approval or proof result.",
+        "targetArtifact": "policy-decision/v1",
+        "supportingEvidence": [
+          "producer-normalization-summary/v1"
+        ],
+        "controlPlaneBoundary": "Policy decision remains report-only or blocking according to risk labels, assurance mode, and reviewer evidence.",
+        "expectedPolicyResult": "report-only"
+      }
+    ]
+  },
+  "controlPlaneRouting": {
+    "expectedArtifacts": [
+      {
+        "artifact": "producer-normalization-summary/v1",
+        "purpose": "Normalize raw Codex CLI high-risk claim output into report-only routing context.",
+        "requiredForThisFixture": true
+      },
+      {
+        "artifact": "claim-evidence-manifest/v1",
+        "purpose": "Show selected critical claims, missing evidence, unresolved status, and waiver metadata gaps.",
+        "requiredForThisFixture": true
+      },
+      {
+        "artifact": "assurance-summary/v1",
+        "purpose": "Render selected high-risk claim gaps as reviewer-facing assurance evidence without calling focused tests proof.",
+        "requiredForThisFixture": true
+      },
+      {
+        "artifact": "policy-gate-summary/v1",
+        "purpose": "Show fast-lane report-only behavior and strict high-risk blocking behavior for the same claim gaps.",
+        "requiredForThisFixture": true
+      }
+    ],
+    "knownGaps": [
+      {
+        "gapId": "ACP-HR-ESC-001",
+        "summary": "Focused unit evidence does not satisfy adversarial/property and runtime-control requirements for a selected tenant-isolation claim."
+      },
+      {
+        "gapId": "ACP-HR-ESC-002",
+        "summary": "Waiver metadata gaps stay visible as reviewer actions and are blocking when strict assurance is selected."
+      }
+    ],
+    "missingEvidence": [
+      {
+        "kind": "command",
+        "summary": "Command evidence is not complete: pnpm -s exec vitest run tests/property/auth/tenant-isolation-cross-tenant.test.ts --reporter dot (not-run-in-producer-output)",
+        "command": "pnpm -s exec vitest run tests/property/auth/tenant-isolation-cross-tenant.test.ts --reporter dot"
+      },
+      {
+        "kind": "command",
+        "summary": "Command evidence is not complete: node scripts/runtime/validate-tenant-isolation-control.mjs (not-run-in-producer-output)",
+        "command": "node scripts/runtime/validate-tenant-isolation-control.mjs"
+      },
+      {
+        "kind": "claim-evidence",
+        "summary": "Claim has no supporting evidence list: tenant-isolation-waiver-has-reviewable-metadata",
+        "claimId": "tenant-isolation-waiver-has-reviewable-metadata",
+        "artifact": "claim-evidence-manifest/v1"
+      },
+      {
+        "kind": "waiver-metadata",
+        "summary": "Waiver metadata is incomplete for claim tenant-isolation-waiver-has-reviewable-metadata: waiver.owner, waiver.reason, waiver.expiresAt",
+        "claimId": "tenant-isolation-waiver-has-reviewable-metadata",
+        "artifact": "claim-evidence-manifest/v1"
+      }
+    ],
+    "unresolvedNotes": [
+      "ACP-HR-ESC-001: Focused unit evidence does not satisfy adversarial/property and runtime-control requirements for a selected tenant-isolation claim.",
+      "ACP-HR-ESC-002: Waiver metadata gaps stay visible as reviewer actions and are blocking when strict assurance is selected.",
+      "Tenant isolation is selected as a high-risk claim; missing adversarial and runtime-control evidence must remain visible when strict assurance is selected.",
+      "The producer did not provide property/adversarial evidence for cross-tenant negative cases.",
+      "The waiver record mentions an emergency exception but omits owner, reason, and expiry."
+    ],
+    "reportOnlyFindings": [
+      {
+        "id": "known-gap:ACP-HR-ESC-001",
+        "severity": "report-only",
+        "kind": "known-gap",
+        "summary": "ACP-HR-ESC-001: Focused unit evidence does not satisfy adversarial/property and runtime-control requirements for a selected tenant-isolation claim.",
+        "details": {
+          "gapId": "ACP-HR-ESC-001"
+        }
+      },
+      {
+        "id": "known-gap:ACP-HR-ESC-002",
+        "severity": "report-only",
+        "kind": "known-gap",
+        "summary": "ACP-HR-ESC-002: Waiver metadata gaps stay visible as reviewer actions and are blocking when strict assurance is selected.",
+        "details": {
+          "gapId": "ACP-HR-ESC-002"
+        }
+      },
+      {
+        "id": "missing-command:3",
+        "severity": "report-only",
+        "kind": "missing-evidence",
+        "summary": "Command evidence is not complete: pnpm -s exec vitest run tests/property/auth/tenant-isolation-cross-tenant.test.ts --reporter dot (not-run-in-producer-output)",
+        "details": {
+          "command": "pnpm -s exec vitest run tests/property/auth/tenant-isolation-cross-tenant.test.ts --reporter dot",
+          "status": "not-run-in-producer-output"
+        }
+      },
+      {
+        "id": "missing-command:4",
+        "severity": "report-only",
+        "kind": "missing-evidence",
+        "summary": "Command evidence is not complete: node scripts/runtime/validate-tenant-isolation-control.mjs (not-run-in-producer-output)",
+        "details": {
+          "command": "node scripts/runtime/validate-tenant-isolation-control.mjs",
+          "status": "not-run-in-producer-output"
+        }
+      },
+      {
+        "id": "missing-claim-evidence:2",
+        "severity": "report-only",
+        "kind": "missing-evidence",
+        "summary": "Claim has no supporting evidence list: tenant-isolation-waiver-has-reviewable-metadata",
+        "details": {
+          "claimId": "tenant-isolation-waiver-has-reviewable-metadata",
+          "targetArtifact": "claim-evidence-manifest/v1"
+        }
+      },
+      {
+        "id": "missing-waiver-metadata:2",
+        "severity": "report-only",
+        "kind": "waiver-metadata",
+        "summary": "Waiver metadata is incomplete for claim tenant-isolation-waiver-has-reviewable-metadata: waiver.owner, waiver.reason, waiver.expiresAt",
+        "details": {
+          "claimId": "tenant-isolation-waiver-has-reviewable-metadata",
+          "targetArtifact": "claim-evidence-manifest/v1",
+          "missingFields": [
+            "waiver.owner",
+            "waiver.reason",
+            "waiver.expiresAt"
+          ]
+        }
+      }
+    ]
+  },
+  "controlPlaneJudgment": {
+    "emitsDecision": false,
+    "result": "not-emitted",
+    "reason": "Report-only normalization summarizes raw producer output and routing gaps; it does not decide pass, proved, or approved status."
+  }
+}

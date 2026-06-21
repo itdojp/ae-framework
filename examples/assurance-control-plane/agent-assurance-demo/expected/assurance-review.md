@@ -41,6 +41,14 @@ A missing boundary artifact is shown as `missing` / `not provided`; absence is n
 | --- | --- | --- | --- | --- | --- | --- |
 | none | not-provided | none | 0 | not provided | from assurance-summary reviewSurface | No boundary-map summary was provided. |
 
+## Selected critical claims
+
+Only selected `high` / `critical` claims are promoted to high-assurance review. Required evidence kinds are displayed separately from claim status.
+
+| claim | criticality | target level | required lanes | required evidence kinds | assurance status | manifest status |
+| --- | --- | --- | --- | --- | --- | --- |
+| no-negative-stock | high | A3 | behavior, model, spec | counterexample-closed, product-coproduct, property | warning | not provided |
+
 ## Claims and evidence status
 
 `tested`, `model-checked`, `proved`, `waived`, `unresolved`, and `runtime-mitigated` remain separate artifact states. This renderer shows source artifact status and evidence kinds without collapsing them into approval.
