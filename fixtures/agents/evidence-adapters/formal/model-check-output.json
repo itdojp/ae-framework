@@ -1,0 +1,148 @@
+{
+  "fixtureKind": "raw-agent-output-example",
+  "fixturePurpose": "Documentation-only example for ACP-GAP-001; this file is not a production schema and does not bypass artifact validation.",
+  "capturedAt": "2026-06-21T00:00:00Z",
+  "producer": {
+    "id": "formal-runner",
+    "displayName": "Formal / model checker output",
+    "category": "formal-tool",
+    "trustBoundary": "Formal tool output supports only the modeled or proved scope, assumptions, and bounded search recorded in the artifact. It is not whole-product proof."
+  },
+  "source": {
+    "entrypoint": "pnpm run verify:tla and pnpm run verify:alloy in CI or local validation",
+    "formalSurface": "formal-summary/v2 plus assumption, scope, and counterexample metadata",
+    "modelScope": "Inventory reservation invariants and tenant-isolation example state transitions, not production authorization code."
+  },
+  "formalScope": {
+    "modeledClaims": [
+      "reservation-never-drives-stock-negative",
+      "tenant-transition-preserves-isolation-flag"
+    ],
+    "outOfScope": [
+      "database transaction isolation implementation",
+      "network retry behavior",
+      "production authorization middleware"
+    ]
+  },
+  "assumptions": [
+    "The model abstracts storage as a single atomic state transition.",
+    "The bounded Alloy search covers up to three tenants and five accounts.",
+    "Runtime configuration and secret management are outside the formal scope."
+  ],
+  "counterexamples": [
+    {
+      "tool": "TLC",
+      "status": "none-found",
+      "scope": "Inventory reservation invariant within the configured state space."
+    },
+    {
+      "tool": "Alloy",
+      "status": "none-found",
+      "scope": "Tenant transition relation within the bounded search scope."
+    }
+  ],
+  "rawSignals": [
+    {
+      "kind": "model-check-result",
+      "value": "TLC completed with 0 invariant violations for ReservationInvariant.",
+      "rawAssertionBoundary": "The result is evidence for the modeled invariant only; assumptions must remain visible."
+    },
+    {
+      "kind": "bounded-search-result",
+      "value": "Alloy found no counterexample within the bounded tenant/account scope.",
+      "rawAssertionBoundary": "No counterexample within a bound is not a universal proof for production behavior."
+    },
+    {
+      "kind": "assumption-note",
+      "value": "Storage is modeled as atomic and does not include retry or deployment behavior.",
+      "rawAssertionBoundary": "Assumptions are part of the claim evidence and must not be hidden in raw logs."
+    }
+  ],
+  "changedFiles": [
+    {
+      "path": "spec/tla/ReservationInvariant.tla",
+      "role": "formal model input",
+      "expectedArtifact": "formal-summary/v2"
+    },
+    {
+      "path": "spec/alloy/TenantTransition.als",
+      "role": "bounded model input",
+      "expectedArtifact": "formal-summary/v2"
+    }
+  ],
+  "commands": [
+    {
+      "command": "pnpm run verify:tla -- --module spec/tla/ReservationInvariant.tla",
+      "status": "passed",
+      "evidenceUse": "Model-check evidence for the reservation invariant within the stated abstraction."
+    },
+    {
+      "command": "pnpm run verify:alloy -- --model spec/alloy/TenantTransition.als",
+      "status": "passed",
+      "evidenceUse": "Bounded counterexample search evidence for the modeled tenant transition."
+    }
+  ],
+  "claimsMentioned": [
+    {
+      "claimId": "reservation-never-drives-stock-negative",
+      "rawAssertion": "The TLA+ model checked the reservation invariant without counterexamples.",
+      "targetArtifact": "claim-evidence-manifest/v1",
+      "supportingEvidence": [
+        "TLC model-check result",
+        "formal-summary/v2 assumption list"
+      ],
+      "controlPlaneBoundary": "This claim is satisfied only for the model scope and assumptions recorded in the formal summary.",
+      "expectedManifestStatus": "satisfied",
+      "evidenceKind": "model-check"
+    },
+    {
+      "claimId": "production-authorization-middleware-covered-by-model",
+      "rawAssertion": "The formal run does not cover the production authorization middleware.",
+      "targetArtifact": "claim-evidence-manifest/v1",
+      "supportingEvidence": [
+        "formal out-of-scope list",
+        "assumption note"
+      ],
+      "controlPlaneBoundary": "The model explicitly leaves this production claim partial until separate runtime or integration evidence exists.",
+      "expectedManifestStatus": "partial",
+      "evidenceKind": "assumption"
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "artifact": "formal-summary/v2",
+      "purpose": "Record tool result, model/proof scope, assumptions, and counterexample state.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "producer-normalization-summary/v1",
+      "purpose": "Summarize raw formal-tool signals as report-only producer evidence before assurance aggregation.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "claim-evidence-manifest/v1",
+      "purpose": "Attach formal evidence to scoped claims without promoting out-of-scope claims to proved.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "assurance-summary/v1",
+      "purpose": "Surface formal lane evidence and residual assumptions in reviewer-first summaries.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "change-package/v2",
+      "purpose": "Connect formal model changes to the affected claim and evidence scope.",
+      "requiredForThisFixture": false
+    }
+  ],
+  "knownGaps": [
+    {
+      "gapId": "ACP-GAP-001",
+      "summary": "Formal raw output remains a descriptive example until a schema defines raw producer input."
+    },
+    {
+      "gapId": "ACP-GAP-003",
+      "summary": "Reviewer surfaces should expose assumptions and out-of-scope claims alongside formal results."
+    }
+  ]
+}

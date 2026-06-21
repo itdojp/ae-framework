@@ -402,7 +402,11 @@ const checks = [
   },
   {
     schema: 'schema/producer-normalization-summary.schema.json',
-    fixtures: ['fixtures/agents/producer-normalization-summary.codex.json'],
+    fixtures: [
+      'fixtures/agents/producer-normalization-summary.codex.json',
+      'fixtures/agents/producer-normalization-summary.ci.json',
+      'fixtures/agents/producer-normalization-summary.formal.json',
+    ],
     label: 'Producer normalization summary schema validation'
   },
   {

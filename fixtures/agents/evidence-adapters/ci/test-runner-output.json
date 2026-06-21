@@ -1,0 +1,129 @@
+{
+  "fixtureKind": "raw-agent-output-example",
+  "fixturePurpose": "Documentation-only example for ACP-GAP-001; this file is not a production schema and does not bypass artifact validation.",
+  "capturedAt": "2026-06-21T00:00:00Z",
+  "producer": {
+    "id": "ci-test-runner",
+    "displayName": "CI / test runner output",
+    "category": "ci-test-runner",
+    "trustBoundary": "CI and test runner logs are producer output. The control plane trusts schema-backed summaries, required-check status, and reviewer disposition rather than raw log text alone."
+  },
+  "source": {
+    "workflow": "Verify Lite / Quality Gates",
+    "entrypoint": "GitHub Actions pull_request workflow and local pnpm test commands",
+    "evidenceSurface": "check run conclusion, command transcript, coverage summary, and uploaded report envelope"
+  },
+  "rawSignals": [
+    {
+      "kind": "check-run-summary",
+      "value": "verify-lite and unit tests completed successfully for the changed files.",
+      "rawAssertionBoundary": "A green check supports the scoped test claim only after the summary path and head SHA are validated."
+    },
+    {
+      "kind": "coverage-note",
+      "value": "Coverage was collected for changed files, but this fixture does not claim product-wide safety.",
+      "rawAssertionBoundary": "Coverage is supporting evidence, not proof of high-assurance claims."
+    },
+    {
+      "kind": "flake-classification",
+      "value": "No rerun was required for this fixture; stale or cancelled runs would need separate classification.",
+      "rawAssertionBoundary": "Current and stale CI state must remain distinct before policy decisions consume the evidence."
+    }
+  ],
+  "changedFiles": [
+    {
+      "path": "tests/unit/scripts/high-risk-escalation-demo.test.ts",
+      "role": "unit regression coverage for a demo artifact path",
+      "expectedArtifact": "verify-lite-run-summary"
+    },
+    {
+      "path": "artifacts/coverage/coverage-summary.json",
+      "role": "coverage producer output consumed as review evidence",
+      "expectedArtifact": "quality-scorecard"
+    }
+  ],
+  "commands": [
+    {
+      "command": "pnpm vitest run tests/unit/scripts/high-risk-escalation-demo.test.ts --reporter dot",
+      "status": "passed",
+      "evidenceUse": "Focused regression evidence for the changed demo behavior."
+    },
+    {
+      "command": "pnpm vitest run tests/unit --reporter dot",
+      "status": "passed",
+      "evidenceUse": "Broader unit suite evidence for release readiness; still not formal proof."
+    },
+    {
+      "command": "pnpm -s run coverage",
+      "status": "passed",
+      "evidenceUse": "Coverage input for quality-scorecard review; thresholds are policy context, not an agent approval."
+    }
+  ],
+  "claimsMentioned": [
+    {
+      "claimId": "unit-regression-suite-passed-for-demo-change",
+      "rawAssertion": "The focused and full unit suites passed on the PR head.",
+      "targetArtifact": "claim-evidence-manifest/v1",
+      "supportingEvidence": [
+        "focused vitest command",
+        "full unit vitest command"
+      ],
+      "controlPlaneBoundary": "Test evidence supports a tested claim within command scope; it does not become proof or approval.",
+      "expectedManifestStatus": "satisfied",
+      "evidenceKind": "test"
+    },
+    {
+      "claimId": "coverage-thresholds-reviewed-as-policy-context",
+      "rawAssertion": "Coverage artifacts are available to the quality gate and reviewer.",
+      "targetArtifact": "policy-decision/v1",
+      "supportingEvidence": [
+        "coverage command",
+        "quality-scorecard artifact"
+      ],
+      "controlPlaneBoundary": "Policy may use coverage context, but the raw coverage log does not emit a pass decision by itself.",
+      "expectedPolicyResult": "report-only"
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "artifact": "verify-lite-run-summary",
+      "purpose": "Capture required-check status and command evidence for the PR head.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "quality-scorecard",
+      "purpose": "Route coverage and quality gate results into reviewer-visible summary evidence.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "report-envelope",
+      "purpose": "Preserve CI report metadata and provenance for downstream review surfaces.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "producer-normalization-summary/v1",
+      "purpose": "Summarize raw CI/test-runner signals as report-only producer evidence without emitting approval.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "claim-evidence-manifest/v1",
+      "purpose": "Represent test-backed claims using existing claim status vocabulary.",
+      "requiredForThisFixture": false
+    },
+    {
+      "artifact": "hook-feedback/v1",
+      "purpose": "Return failed or missing CI evidence to the producer when checks are not clean.",
+      "requiredForThisFixture": false
+    }
+  ],
+  "knownGaps": [
+    {
+      "gapId": "ACP-GAP-001",
+      "summary": "CI raw logs remain descriptive examples; generated summaries are the contract-backed artifacts."
+    },
+    {
+      "gapId": "ACP-GAP-003",
+      "summary": "Reviewer surfaces should separate green test evidence from proof or approval language."
+    }
+  ]
+}

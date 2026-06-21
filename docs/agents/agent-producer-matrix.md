@@ -59,6 +59,8 @@ Raw producer examples live under `fixtures/agents/evidence-adapters/` and remain
 | Claude Code task | `fixtures/agents/evidence-adapters/claude-code-task-output.json` | `ae-handoff/v1`, `hook-feedback/v1`, `change-package/v2`, optional `claim-evidence-manifest/v1` |
 | GitHub Copilot PR review/agent | `fixtures/agents/evidence-adapters/copilot-pr-review-output.json` | `policy-decision/v1`, optional `change-package/v2`, optional `hook-feedback/v1` |
 | Human maintainer | `fixtures/agents/evidence-adapters/human-waiver-review-output.json` | `change-package/v2`, `policy-decision/v1`, `claim-evidence-manifest/v1` waiver entries |
+| CI / test runner | `fixtures/agents/evidence-adapters/ci/test-runner-output.json` | `producer-normalization-summary/v1`, `verify-lite-run-summary`, `quality-scorecard`, `report-envelope`, optional `claim-evidence-manifest/v1`, `hook-feedback/v1` |
+| Formal runner / model checker / proof tool | `fixtures/agents/evidence-adapters/formal/model-check-output.json` | `producer-normalization-summary/v1`, `formal-summary/v2`, `assurance-summary/v1`, `claim-evidence-manifest/v1`, optional `change-package/v2` |
 
 ### Artifact routing quick reference
 
@@ -121,6 +123,8 @@ Raw producer example は `fixtures/agents/evidence-adapters/` 配下に置き、
 | Claude Code task | `fixtures/agents/evidence-adapters/claude-code-task-output.json` | `ae-handoff/v1`, `hook-feedback/v1`, `change-package/v2`, optional `claim-evidence-manifest/v1` |
 | GitHub Copilot PR review/agent | `fixtures/agents/evidence-adapters/copilot-pr-review-output.json` | `policy-decision/v1`, optional `change-package/v2`, optional `hook-feedback/v1` |
 | Human maintainer | `fixtures/agents/evidence-adapters/human-waiver-review-output.json` | `change-package/v2`, `policy-decision/v1`, `claim-evidence-manifest/v1` waiver entries |
+| CI / test runner | `fixtures/agents/evidence-adapters/ci/test-runner-output.json` | `producer-normalization-summary/v1`, `verify-lite-run-summary`, `quality-scorecard`, `report-envelope`, optional `claim-evidence-manifest/v1`, `hook-feedback/v1` |
+| Formal runner / model checker / proof tool | `fixtures/agents/evidence-adapters/formal/model-check-output.json` | `producer-normalization-summary/v1`, `formal-summary/v2`, `assurance-summary/v1`, `claim-evidence-manifest/v1`, optional `change-package/v2` |
 
 ### Artifact routing quick reference
 

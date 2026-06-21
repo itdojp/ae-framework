@@ -8,6 +8,46 @@ import addFormats from 'ajv-formats';
 const repoRoot = resolve('.');
 const scriptPath = resolve('scripts/agents/normalize-producer-output.mjs');
 const codexFixturePath = resolve('fixtures/agents/evidence-adapters/codex-cli-task-output.json');
+const crossAgentFixtures = [
+  {
+    label: 'Codex CLI',
+    path: 'fixtures/agents/evidence-adapters/codex-cli-task-output.json',
+    producerId: 'codex-cli',
+    expectedArtifacts: ['change-package/v2', 'claim-evidence-manifest/v1', 'ae-handoff/v1', 'hook-feedback/v1'],
+  },
+  {
+    label: 'Claude Code',
+    path: 'fixtures/agents/evidence-adapters/claude-code-task-output.json',
+    producerId: 'claude-code',
+    expectedArtifacts: ['ae-handoff/v1', 'hook-feedback/v1', 'change-package/v2'],
+  },
+  {
+    label: 'GitHub Copilot',
+    path: 'fixtures/agents/evidence-adapters/copilot-pr-review-output.json',
+    producerId: 'github-copilot-pr-reviewer',
+    expectedArtifacts: ['policy-decision/v1', 'change-package/v2', 'hook-feedback/v1'],
+  },
+  {
+    label: 'Human maintainer',
+    path: 'fixtures/agents/evidence-adapters/human-waiver-review-output.json',
+    producerId: 'human-maintainer',
+    expectedArtifacts: ['policy-decision/v1', 'claim-evidence-manifest/v1', 'change-package/v2'],
+  },
+  {
+    label: 'CI test runner',
+    path: 'fixtures/agents/evidence-adapters/ci/test-runner-output.json',
+    producerId: 'ci-test-runner',
+    expectedArtifacts: ['verify-lite-run-summary', 'quality-scorecard', 'report-envelope', 'producer-normalization-summary/v1', 'claim-evidence-manifest/v1'],
+    expectedSummaryPath: 'fixtures/agents/producer-normalization-summary.ci.json',
+  },
+  {
+    label: 'Formal runner',
+    path: 'fixtures/agents/evidence-adapters/formal/model-check-output.json',
+    producerId: 'formal-runner',
+    expectedArtifacts: ['producer-normalization-summary/v1', 'formal-summary/v2', 'claim-evidence-manifest/v1', 'assurance-summary/v1'],
+    expectedSummaryPath: 'fixtures/agents/producer-normalization-summary.formal.json',
+  },
+];
 const schemaPath = resolve('schema/producer-normalization-summary.schema.json');
 
 function createTempDir() {
@@ -79,6 +119,84 @@ describe('normalize-producer-output', () => {
     expect(markdown).toContain('Report-only');
     expect(markdown).toContain('change-package/v2');
     expect(markdown).toContain('Control-plane decision emitted: `false`');
+  });
+
+  it('normalizes the cross-agent fixture set without vendor-specific judgment vocabulary', () => {
+    const dir = createTempDir();
+
+    for (const fixtureCase of crossAgentFixtures) {
+      const outJson = join(dir, `${fixtureCase.producerId}.json`);
+      const outMd = join(dir, `${fixtureCase.producerId}.md`);
+      const result = runNormalizer([
+        '--input', resolve(fixtureCase.path),
+        '--out-json', outJson,
+        '--out-md', outMd,
+        '--generated-at', '2026-06-21T00:00:00.000Z',
+      ]);
+
+      expect(result.status, `${fixtureCase.label}: ${result.stderr || result.stdout}`).toBe(0);
+      const summary = JSON.parse(readFileSync(outJson, 'utf8'));
+      validateSummary(summary);
+      expect(summary.producer.id).toBe(fixtureCase.producerId);
+      expect(summary.controlPlaneJudgment).toMatchObject({
+        emitsDecision: false,
+        result: 'not-emitted',
+      });
+      expect(summary.controlPlaneRouting.expectedArtifacts.map((entry: { artifact: string }) => entry.artifact)).toEqual(
+        expect.arrayContaining(fixtureCase.expectedArtifacts),
+      );
+      expect(summary.controlPlaneRouting.reportOnlyFindings).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ kind: 'unsupported-claim' }),
+        ]),
+      );
+
+      const markdown = readFileSync(outMd, 'utf8');
+      expect(markdown).toContain('Report-only');
+      for (const artifact of fixtureCase.expectedArtifacts) {
+        expect(markdown).toContain(artifact);
+      }
+      if ('expectedSummaryPath' in fixtureCase && fixtureCase.expectedSummaryPath) {
+        expect(`${JSON.stringify(summary, null, 2)}\n`).toBe(
+          readFileSync(resolve(fixtureCase.expectedSummaryPath), 'utf8'),
+        );
+      }
+    }
+  });
+
+  it('keeps human waivers and formal scope metadata reviewable in raw fixtures', () => {
+    const humanFixture = JSON.parse(readFileSync(resolve('fixtures/agents/evidence-adapters/human-waiver-review-output.json'), 'utf8'));
+    const waivedClaim = humanFixture.claimsMentioned.find((claim: { expectedManifestStatus?: string }) =>
+      claim.expectedManifestStatus === 'waived',
+    );
+    expect(waivedClaim).toBeTruthy();
+    expect(waivedClaim).toMatchObject({
+      claimId: expect.any(String),
+      waiver: {
+        owner: expect.any(String),
+        reason: expect.any(String),
+        expiresAt: expect.any(String),
+        evidence: expect.any(String),
+      },
+    });
+
+    const formalFixture = JSON.parse(readFileSync(resolve('fixtures/agents/evidence-adapters/formal/model-check-output.json'), 'utf8'));
+    expect(formalFixture.formalScope.modeledClaims).toEqual(expect.arrayContaining([
+      'reservation-never-drives-stock-negative',
+    ]));
+    expect(formalFixture.formalScope.outOfScope).toEqual(expect.arrayContaining([
+      'production authorization middleware',
+    ]));
+    expect(formalFixture.assumptions.length).toBeGreaterThan(0);
+    expect(formalFixture.counterexamples).toEqual(expect.arrayContaining([
+      expect.objectContaining({ status: 'none-found' }),
+    ]));
+    expect(formalFixture.claimsMentioned).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        claimId: 'production-authorization-middleware-covered-by-model',
+        expectedManifestStatus: 'partial',
+      }),
+    ]));
   });
 
   it('keeps unsupported claims and incomplete waiver metadata as report-only findings', () => {
