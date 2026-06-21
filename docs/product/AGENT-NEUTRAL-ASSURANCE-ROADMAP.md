@@ -34,7 +34,7 @@ Epic #3507 continues this roadmap after the control-plane foundation by proving 
 2. #3509 turns the vocabulary into a 15-minute BYO-agent quickstart and deterministic local demo.
 3. #3510 makes PR assurance review Markdown the primary reviewer surface.
 4. #3511 and #3512 add scope-drift and high-risk escalation scenarios.
-5. #3514 expands cross-agent producer fixtures, #3513 aggregates dogfooding evidence, and #3515 packages the public launch kit.
+5. #3514 expands cross-agent producer fixtures, #3513 aggregates dogfooding evidence in `docs/product/DOGFOODING-REPORT-2026Q3.md`, and #3515 packages the public launch kit.
 
 The follow-up remains judgment-side: metrics evaluate review decision time, drift and missing-evidence findings, unresolved claims, policy-gate precision/recall, CI reruns, reviewer comments, and time-to-merge. It does not benchmark raw coding-agent intelligence or create new mandatory heavy lanes.
 
@@ -129,7 +129,7 @@ Epic #3507 は control-plane foundation の後続として、product effectivene
 2. #3509 で vocabulary を15分 BYO-agent quickstart と deterministic local demo に接続する。
 3. #3510 で PR assurance review Markdown を reviewer が最初に見る surface にする。
 4. #3511 / #3512 で scope drift と high-risk escalation scenario を追加する。
-5. #3514 で cross-agent producer fixture を拡張し、#3513 で dogfooding evidence を集約し、#3515 で public launch kit にまとめる。
+5. #3514 で cross-agent producer fixture を拡張し、#3513 で dogfooding evidence を `docs/product/DOGFOODING-REPORT-2026Q3.md` に集約し、#3515 で public launch kit にまとめる。
 
 後続seriesも judgment-side に限定します。metric は review decision time、drift / missing-evidence finding、unresolved claim、policy-gate precision/recall、CI rerun、reviewer comment、time-to-merge を測り、raw coding-agent intelligence の benchmark や新しい mandatory heavy lane は作りません。
 
