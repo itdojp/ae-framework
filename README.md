@@ -20,6 +20,8 @@ ae-framework is an **agent-neutral assurance control plane for agent-driven SDLC
 
 **Product thesis**: Bring your own agent. Keep your assurance plane. Codex, Claude Code, GitHub Copilot, Gemini-family coding tools, human maintainers, CI jobs, and formal tools are replaceable producers; ae-framework keeps judgment artifacts, policy gates, and release decisions stable across those producer choices.
 
+Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, and `docs/product/DEMO-SCRIPT.md`. Start the offline demo with `pnpm run demo:agent-assurance`.
+
 ### Two-layer model
 
 ```mermaid
@@ -108,6 +110,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Assurance control plane positioning: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
+- Public preview launch kit: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
 - 15-minute BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Assurance model (claim / level / lane / evidence): `docs/quality/ASSURANCE-MODEL.md`
@@ -136,6 +139,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 ae-framework は **エージェント協調型SDLCのための、エージェント非依存の assurance control plane** です。coding agent、人間のmaintainer、CI job、formal tool は変更やraw signalを生成する producer であり、ae-framework はその変更を信頼して merge / release できるかを、仕様・検証・証跡・policy gate・release judgment に基づいて判断可能にします。
 
 **Product thesis**: Bring your own agent. Keep your assurance plane. Codex、Claude Code、GitHub Copilot、Gemini系tool、人間のmaintainer、CI job、formal tool は交換可能な producer であり、ae-framework は producer の選択に依存しない judgment artifact、policy gate、release decision を維持します。
+
+Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`。offline demo は `pnpm run demo:agent-assurance` から開始します。
 
 ### 二層モデル
 
@@ -215,6 +220,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Assurance control plane の位置付け: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
+- Public preview launch kit: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
 - 15分 BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Assurance model（claim / level / lane / evidence）: `docs/quality/ASSURANCE-MODEL.md`

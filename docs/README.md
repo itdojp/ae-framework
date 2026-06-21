@@ -31,6 +31,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Agent PR trust-calibration metrics: `ci/agent-pr-assurance-metrics.md`
 - Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
+- Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
 
 ### How to use this index
@@ -105,6 +106,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Agent-neutral assurance roadmap: `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
+- Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
 - BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
 - Assurance control plane detailed design: `architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md`
@@ -325,6 +327,9 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [AGENT-NEUTRAL-ASSURANCE-ROADMAP.md](./product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md) - BYO-agent assurance control plane の実行ロードマップ
 - [EFFECTIVENESS-METRICS.md](./product/EFFECTIVENESS-METRICS.md) - agent-generated PR assurance の product effectiveness metric vocabulary
 - [DOGFOODING-REPORT-2026Q3.md](./product/DOGFOODING-REPORT-2026Q3.md) - ae-framework 自身での agent-assurance dogfooding 結果
+- [LAUNCH-KIT.md](./product/LAUNCH-KIT.md) - agent-neutral assurance control plane preview の launch kit
+- [ONE-PAGE-PITCH.md](./product/ONE-PAGE-PITCH.md) - 初見向け one-page pitch
+- [DEMO-SCRIPT.md](./product/DEMO-SCRIPT.md) - 5分 demo script と話者メモ
 - [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性
 
 ### 🧭 [strategy/](./strategy/) - 戦略・責務境界
