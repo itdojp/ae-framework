@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 const repoRoot = resolve('.');
 const scriptPath = resolve(repoRoot, 'scripts/demo/run-agent-assurance-demo.mjs');
+const rendererPath = resolve(repoRoot, 'scripts/assurance/render-pr-review-surface.mjs');
+const expectedReviewPath = resolve(
+  repoRoot,
+  'examples/assurance-control-plane/agent-assurance-demo/expected/assurance-review.md',
+);
 const generatedAt = '2026-06-21T00:00:00.000Z';
 
 const runScript = (args: string[]) => spawnSync('node', [scriptPath, ...args], {
@@ -15,6 +20,11 @@ const runScript = (args: string[]) => spawnSync('node', [scriptPath, ...args], {
 });
 
 const readJson = (filePath: string) => JSON.parse(readFileSync(filePath, 'utf8'));
+const toPosixPath = (filePath: string) => filePath.split(sep).join('/');
+const normalizeOutputRoot = (markdown: string, outputRoot: string) => {
+  const relativeOutputRoot = toPosixPath(relative(repoRoot, outputRoot));
+  return markdown.split(relativeOutputRoot).join('artifacts');
+};
 
 describe('BYO-agent assurance demo', () => {
   it('generates the offline reviewer-surface artifact set', () => {
@@ -71,10 +81,42 @@ describe('BYO-agent assurance demo', () => {
       expect(JSON.stringify(policy)).not.toContain(repoRoot);
 
       const review = readFileSync(reviewPath, 'utf8');
-      expect(review).toContain('What reviewers should inspect first');
-      expect(review).toContain('`missing_evidence_finding_count` | 2');
-      expect(review).toContain('Producer output is evidence input, not approval');
+      expect(review).toContain('## Producer / task scope');
+      expect(review).toContain('## Claims and evidence status');
+      expect(review).toContain('## Reviewer action list');
+      expect(review).toContain('Producer output is displayed as report-only input. It is never rendered as approval.');
+      expect(review).toContain('missing |');
+      expect(review).toContain('not provided');
       expect(review).not.toContain(repoRoot);
+      expect(normalizeOutputRoot(review, outputRoot)).toBe(readFileSync(expectedReviewPath, 'utf8'));
+    } finally {
+      rmSync(outputRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('renders missing optional artifacts explicitly instead of implying success', () => {
+    mkdirSync(resolve(repoRoot, 'artifacts'), { recursive: true });
+    const outputRoot = resolve(repoRoot, 'artifacts', `agent-assurance-review-missing-${randomUUID()}`);
+    const outputMd = join(outputRoot, 'assurance-review.md');
+
+    try {
+      const result = spawnSync('node', [
+        rendererPath,
+        '--generated-at', generatedAt,
+        '--output-md', outputMd,
+      ], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 120_000,
+      });
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const review = readFileSync(outputMd, 'utf8');
+      expect(review).toContain('| producer-normalization-summary | artifacts/agents/producer-normalization-summary.json | missing |');
+      expect(review).toContain('| boundary-map-summary | artifacts/context-pack/boundary-map-summary.json | missing |');
+      expect(review).toContain('recommendedReviewerAction: `not provided`');
+      expect(review).toContain('Boundary artifact is missing or not provided');
+      expect(review).toContain('Claim evidence manifest is missing or not provided');
     } finally {
       rmSync(outputRoot, { recursive: true, force: true });
     }

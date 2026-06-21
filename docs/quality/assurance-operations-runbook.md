@@ -52,6 +52,7 @@ Scope:
 | --- | --- |
 | `artifacts/assurance/assurance-summary.json` | machine-readable summary |
 | `artifacts/assurance/assurance-summary.md` | human-readable summary |
+| `artifacts/review/assurance-review.md` | reviewer-first Markdown surface for PR / release review |
 
 ### 4. Local execution (report-only)
 
@@ -108,6 +109,22 @@ node scripts/ci/validate-assurance-summary.mjs \
   schema/assurance-summary.schema.json
 ```
 
+#### Step 4: render the reviewer-first surface
+
+```bash
+pnpm run assurance:review-surface -- \
+  --producer-summary artifacts/agents/producer-normalization-summary.json \
+  --assurance-summary artifacts/assurance/assurance-summary.json \
+  --policy-gate-summary artifacts/ci/policy-gate-summary.json \
+  --boundary-map-summary artifacts/context-pack/boundary-map-summary.json \
+  --claim-evidence-manifest artifacts/assurance/claim-evidence-manifest.json \
+  --output-md artifacts/review/assurance-review.md
+```
+
+The renderer is tolerant of absent optional artifacts and keeps them visible as
+`missing` / `not provided`. Do not interpret absent Boundary Map or claim
+evidence artifacts as success.
+
 ### 5. CI operation
 
 #### 5.1 default behavior
@@ -117,6 +134,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 - `pr-ci-status-comment.yml` assembles the PR summary comment from harness-health, change-package, hook-feedback, and the downloaded `artifacts/quality/quality-scorecard.md`. When a verify-lite artifact for the same head SHA is available, it also passes `--assurance-summary` into hook-feedback generation. Assurance signals therefore appear through hook-feedback and the quality scorecard rather than by appending `artifacts/assurance/assurance-summary.md` or per-claim details directly.
 - `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` consume `--assurance-summary` and reflect assurance warnings in `currentStatus`, `nextActions`, `blockers`, and `artifacts`.
 - release and post-deploy summaries append a short summary when `artifacts/assurance/assurance-summary.md` exists.
+- `pnpm run assurance:review-surface` can render `artifacts/review/assurance-review.md` from producer, assurance, policy, Boundary Map, and claim-evidence artifacts. This is a reviewer surface, not a bot posting mechanism.
 
 #### 5.2 trigger for strict assurance enforcement
 
@@ -188,7 +206,7 @@ Claim summary:
 - high-risk claims requiring human review: N
 ```
 
-Do not append raw logs as the primary review surface. Link normalized summary artifacts first, then raw logs as supporting evidence.
+Do not append raw logs as the primary review surface. Link `artifacts/review/assurance-review.md` and normalized summary artifacts first, then raw logs as supporting evidence.
 
 ### 7. First-pass triage
 
@@ -284,6 +302,7 @@ Use `docs/ci/agent-pr-assurance-metrics.md` when an agent-created PR needs trust
 | --- | --- |
 | `artifacts/assurance/assurance-summary.json` | 機械可読サマリー |
 | `artifacts/assurance/assurance-summary.md` | 人間向けサマリー |
+| `artifacts/review/assurance-review.md` | PR / release review 用の reviewer-first Markdown surface |
 
 ### 4. ローカル実行（report-only）
 
@@ -340,6 +359,22 @@ node scripts/ci/validate-assurance-summary.mjs \
   schema/assurance-summary.schema.json
 ```
 
+#### Step 4: reviewer-first surface を生成する
+
+```bash
+pnpm run assurance:review-surface -- \
+  --producer-summary artifacts/agents/producer-normalization-summary.json \
+  --assurance-summary artifacts/assurance/assurance-summary.json \
+  --policy-gate-summary artifacts/ci/policy-gate-summary.json \
+  --boundary-map-summary artifacts/context-pack/boundary-map-summary.json \
+  --claim-evidence-manifest artifacts/assurance/claim-evidence-manifest.json \
+  --output-md artifacts/review/assurance-review.md
+```
+
+renderer は任意artifactが存在しない場合も失敗にせず、`missing` /
+`not provided` として表示します。Boundary Map や claim evidence artifact の不在を
+success と解釈しないでください。
+
 ### 5. CI 運用
 
 ### 5.1 既定動作
@@ -349,6 +384,7 @@ node scripts/ci/validate-assurance-summary.mjs \
 - `pr-ci-status-comment.yml` は harness-health / change-package / hook-feedback / downloaded `artifacts/quality/quality-scorecard.md` を組み合わせて PR summary comment を構成します。同一 head SHA の verify-lite の成果物を取得できる場合は `hook-feedback` 生成時にも `--assurance-summary` を渡します。assurance の信号は `hook-feedback` と quality scorecard 経由で反映され、`artifacts/assurance/assurance-summary.md` や claim 単位の詳細を直接追記するわけではありません。
 - `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` は `--assurance-summary` を受け取り、assurance warning を `currentStatus` / `nextActions` / `blockers` / `artifacts` へ反映します。
 - release/post-deploy summary は `artifacts/assurance/assurance-summary.md` が存在する場合に要約を追記します。
+- `pnpm run assurance:review-surface` は producer、assurance、policy、Boundary Map、claim-evidence artifact から `artifacts/review/assurance-review.md` を生成できます。これは reviewer surface であり、bot 投稿機構ではありません。
 
 ### 5.2 strict assurance enforcement の発火条件
 
@@ -420,7 +456,7 @@ Claim summary:
 - high-risk claims requiring human review: N
 ```
 
-Raw log を review surface の一次情報にしないでください。normalized summary artifact を先に link し、raw log は supporting evidence として扱います。
+Raw log を review surface の一次情報にしないでください。`artifacts/review/assurance-review.md` と normalized summary artifact を先に link し、raw log は supporting evidence として扱います。
 
 ### 7. 失敗時の一次切り分け
 

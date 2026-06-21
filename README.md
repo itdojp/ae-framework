@@ -70,6 +70,8 @@ pnpm run setup-hooks
 
 # Offline BYO-agent assurance demo (no GitHub token or hosted LLM API)
 pnpm run demo:agent-assurance
+# Re-render reviewer-first Markdown from existing artifacts
+pnpm run assurance:review-surface
 
 # Fast feedback
 pnpm run lint
@@ -181,6 +183,7 @@ pnpm install
 pnpm run first-run
 pnpm run setup-hooks
 pnpm run demo:agent-assurance
+pnpm run assurance:review-surface
 
 pnpm run lint
 pnpm run test:fast

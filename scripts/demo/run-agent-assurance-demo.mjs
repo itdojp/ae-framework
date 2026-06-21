@@ -283,50 +283,6 @@ function buildSyntheticPolicySummary({ options, paths, assuranceSummary }) {
   return { summary: normalizedSummary, producerSummaryPath, assuranceSummaryPath };
 }
 
-function renderReviewMarkdown({ options, paths, producerSummary, assuranceSummary, policySummary }) {
-  const producer = producerSummary.producer?.displayName ?? producerSummary.producer?.id ?? 'producer';
-  const producerFindings = producerSummary.summary?.reportOnlyFindings ?? 0;
-  const missingEvidence = producerSummary.summary?.missingEvidence ?? 0;
-  const assuranceAction = assuranceSummary.reviewSurface?.recommendedReviewerAction?.action ?? 'review-summary';
-  const assuranceReason = assuranceSummary.reviewSurface?.recommendedReviewerAction?.reason ?? 'Review the generated assurance summary.';
-  const policyResult = policySummary.evaluation?.assurance?.result ?? 'report-only';
-  const policyMode = policySummary.evaluation?.assurance?.mode ?? 'report-only';
-
-  return `# BYO-Agent Assurance Demo Review\n\n` +
-    `> Demo-only reviewer surface. This Markdown is generated offline from fixtures and does not approve, prove, or merge a PR.\n\n` +
-    `- Generated at: \`${options.generatedAt}\`\n` +
-    `- Producer fixture: \`${PRODUCER_INPUT}\`\n` +
-    `- Producer: \`${producer}\`\n` +
-    `- Flow: producer output -> normalized evidence -> assurance summary -> policy report -> reviewer surface\n\n` +
-    `## What reviewers should inspect first\n\n` +
-    `1. **Producer normalization summary** — inspect missing evidence before trusting the producer narrative.\n` +
-    `   - Artifact: \`${toRepoRelativePath(paths.producerJson)}\`\n` +
-    `   - \`missing_evidence_finding_count\`: ${missingEvidence}\n` +
-    `   - Report-only findings: ${producerFindings}\n` +
-    `2. **Assurance summary** — inspect the recommended reviewer action and unresolved claim state.\n` +
-    `   - Artifact: \`${toRepoRelativePath(paths.assuranceJson)}\`\n` +
-    `   - Recommended action: \`${assuranceAction}\`\n` +
-    `   - Reason: ${assuranceReason}\n` +
-    `3. **Policy-gate summary** — confirm the fast-lane policy interpretation remains report-only.\n` +
-    `   - Artifact: \`${toRepoRelativePath(paths.policyJson)}\`\n` +
-    `   - Policy assurance result: \`${policyResult}\` (mode: \`${policyMode}\`)\n` +
-    `4. **Verify Lite fixture summary** — use the baseline check summary as supporting evidence, not as proof.\n` +
-    `   - Artifact: \`${toRepoRelativePath(paths.verifyLiteJson)}\`\n\n` +
-    `## Demo-scoped effectiveness metrics\n\n` +
-    `| Metric | Demo value | Interpretation |\n` +
-    `| --- | --- | --- |\n` +
-    `| \`missing_evidence_finding_count\` | ${missingEvidence} | Reviewer should check which producer claims still need schema-backed evidence. |\n` +
-    `| \`scope_drift_finding_count\` | 0 | This quickstart does not model scope drift; scope drift is covered by a later scenario pack. |\n` +
-    `| \`reviewer_comment_count\` | not collected | The quickstart is local and does not create a GitHub PR or review thread. |\n` +
-    `| \`ci_rerun_count\` | not collected | The demo is offline and does not invoke GitHub Actions. |\n\n` +
-    `## Baseline / Structured / High-assurance interpretation\n\n` +
-    `- **Baseline**: verify-lite fixture and policy summary show the routine fast-lane check surface.\n` +
-    `- **Structured assurance**: producer normalization and assurance summary expose claims, report-only findings, and missing evidence.\n` +
-    `- **High-assurance escalation**: not mandatory here. Select \`risk:high\` / \`enforce-assurance\` only for critical claims such as authorization, payment, migrations, or security boundaries.\n\n` +
-    `## Trust boundary\n\n` +
-    `Producer output is evidence input, not approval. Raw logs support the decision only after ae-framework turns them into schema-backed artifacts and policy-oriented summaries.\n`;
-}
-
 export function run(argv = process.argv.slice(2)) {
   const options = parseArgs(argv);
   if (options.help) {
@@ -362,14 +318,16 @@ export function run(argv = process.argv.slice(2)) {
   const policyArtifacts = buildSyntheticPolicySummary({ options, paths, assuranceSummary });
   validateArtifact('policy gate summary', policyArtifacts.summary, 'schema/policy-gate-summary-v1.schema.json');
 
-  const reviewMarkdown = renderReviewMarkdown({
-    options,
-    paths,
-    producerSummary,
-    assuranceSummary,
-    policySummary: policyArtifacts.summary,
-  });
-  writeText(paths.reviewMd, reviewMarkdown);
+  runNode([
+    'scripts/assurance/render-pr-review-surface.mjs',
+    '--producer-summary', toRepoRelativePath(paths.producerJson),
+    '--assurance-summary', toRepoRelativePath(paths.assuranceJson),
+    '--policy-gate-summary', toRepoRelativePath(paths.policyJson),
+    '--verify-lite-summary', toRepoRelativePath(paths.verifyLiteJson),
+    '--generated-at', options.generatedAt,
+    '--title', 'BYO-Agent Assurance Demo Review',
+    '--output-md', toRepoRelativePath(paths.reviewMd),
+  ]);
 
   process.stdout.write('### BYO-Agent Assurance Demo\n');
   process.stdout.write(`- output root: ${toRepoRelativePath(paths.outputRoot)}\n`);

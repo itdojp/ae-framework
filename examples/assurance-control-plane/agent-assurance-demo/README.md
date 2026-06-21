@@ -27,6 +27,17 @@ From the repository root:
 pnpm run demo:agent-assurance
 ```
 
+The final reviewer surface is rendered by the reusable command:
+
+```bash
+pnpm run assurance:review-surface -- \
+  --producer-summary artifacts/agents/agent-assurance-demo/producer-normalization-summary.json \
+  --assurance-summary artifacts/assurance/agent-assurance-demo/assurance-summary.json \
+  --policy-gate-summary artifacts/policy/agent-assurance-demo/policy-gate-summary.json \
+  --verify-lite-summary artifacts/verify-lite/agent-assurance-demo/verify-lite-run-summary.json \
+  --output-md artifacts/review/agent-assurance-demo/assurance-review.md
+```
+
 Default outputs:
 
 | Artifact | Path |
@@ -51,6 +62,8 @@ uses the product effectiveness vocabulary only in demo scope:
   scope drift.
 - `reviewer_comment_count` and `ci_rerun_count` are not collected because the
   demo does not create a live PR or run GitHub Actions.
+- missing Boundary Map or claim-evidence artifacts remain visible as `missing` /
+  `not provided`; absence is not rendered as success.
 
 Producer output is evidence input, not approval. The policy summary is
 report-only for the ordinary fast lane; high-assurance escalation remains a
