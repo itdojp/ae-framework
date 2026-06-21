@@ -1,8 +1,8 @@
 ---
 docRole: derived
 canonicalSource:
-- docs/product/ONE-PAGE-PITCH.md
-- docs/product/DEMO-SCRIPT.md
+- docs/product/ASSURANCE-CONTROL-PLANE.md
+- docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
 - docs/product/DOGFOODING-REPORT-2026Q3.md
 - docs/guides/byo-agent-assurance-quickstart.md
 - docs/product/EFFECTIVENESS-METRICS.md
