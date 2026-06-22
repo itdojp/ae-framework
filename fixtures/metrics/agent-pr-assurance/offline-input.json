@@ -1,0 +1,72 @@
+{
+  "repository": "itdojp/ae-framework",
+  "prNumber": 3526,
+  "pullRequest": {
+    "repository": "itdojp/ae-framework",
+    "number": 3526,
+    "title": "feat(metrics): add agent PR assurance metrics collector",
+    "url": "https://github.com/itdojp/ae-framework/pull/3526",
+    "state": "MERGED",
+    "createdAt": "2026-06-21T01:00:00Z",
+    "mergedAt": "2026-06-21T01:28:00Z",
+    "headRefOid": "fixture-head",
+    "mergeStateStatus": "CLEAN",
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "name": "gate",
+        "workflowName": "Copilot Review Gate",
+        "status": "COMPLETED",
+        "conclusion": "CANCELLED",
+        "startedAt": "2026-06-21T01:05:00Z",
+        "completedAt": "2026-06-21T01:06:00Z",
+        "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/1/job/1"
+      },
+      {
+        "__typename": "CheckRun",
+        "name": "gate",
+        "workflowName": "Copilot Review Gate",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "startedAt": "2026-06-21T01:20:00Z",
+        "completedAt": "2026-06-21T01:21:00Z",
+        "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/2/job/2"
+      },
+      {
+        "__typename": "CheckRun",
+        "name": "policy-gate",
+        "workflowName": "Policy Gate",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "startedAt": "2026-06-21T01:21:00Z",
+        "completedAt": "2026-06-21T01:22:00Z",
+        "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/3/job/3"
+      },
+      {
+        "__typename": "CheckRun",
+        "name": "verify-lite",
+        "workflowName": "Verify Lite",
+        "status": "COMPLETED",
+        "conclusion": "SUCCESS",
+        "startedAt": "2026-06-21T01:22:00Z",
+        "completedAt": "2026-06-21T01:23:00Z",
+        "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/4/job/4"
+      }
+    ]
+  },
+  "artifactPaths": {
+    "reviewCompletenessJson": "fixtures/metrics/agent-pr-assurance/review-completeness.json",
+    "boundaryMapSummaries": [
+      "examples/assurance-control-plane/scope-drift-demo/expected/boundary-map-summary.json"
+    ],
+    "producerSummaries": [
+      "examples/assurance-control-plane/high-risk-escalation-demo/expected/producer-normalization-summary.json"
+    ],
+    "assuranceProfiles": [
+      "examples/assurance-control-plane/high-risk-escalation-demo/assurance-profile.json"
+    ],
+    "policyGateSummaries": [
+      "examples/assurance-control-plane/high-risk-escalation-demo/expected/policy-gate-summary.high-risk.json"
+    ]
+  }
+}

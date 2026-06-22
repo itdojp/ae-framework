@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "2.0.0",
+  "tokens": {
+    "prompt": null,
+    "completion": null,
+    "tool": null,
+    "total": null
+  },
+  "costUsd": null,
+  "memoryHitRatio": null,
+  "turns": {
+    "count": 0,
+    "avgLen": 0
+  },
+  "latencyMs": 0,
+  "agentPrAssurance": {
+    "reportOnly": true,
+    "generatedAt": "2026-06-23T00:00:00.000Z",
+    "source": "offline-fixture",
+    "pullRequest": {
+      "repository": "itdojp/ae-framework",
+      "number": 3526,
+      "title": "feat(metrics): add agent PR assurance metrics collector",
+      "url": "https://github.com/itdojp/ae-framework/pull/3526",
+      "state": "MERGED",
+      "createdAt": "2026-06-21T01:00:00Z",
+      "mergedAt": "2026-06-21T01:28:00Z",
+      "headRefOid": "fixture-head",
+      "mergeStateStatus": "CLEAN"
+    },
+    "collectionSources": {
+      "reviewCompleteness": "fixtures/metrics/agent-pr-assurance/review-completeness.json",
+      "producerSummaries": [
+        "examples/assurance-control-plane/high-risk-escalation-demo/expected/producer-normalization-summary.json"
+      ],
+      "boundaryMapSummaries": [
+        "examples/assurance-control-plane/scope-drift-demo/expected/boundary-map-summary.json"
+      ],
+      "assuranceProfiles": [
+        "examples/assurance-control-plane/high-risk-escalation-demo/assurance-profile.json"
+      ],
+      "claimEvidenceManifests": [],
+      "policyGateSummaries": [
+        "examples/assurance-control-plane/high-risk-escalation-demo/expected/policy-gate-summary.high-risk.json"
+      ]
+    },
+    "metrics": {
+      "claim_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "ratio": 1,
+        "inputArtifacts": []
+      },
+      "unresolved_claim_count": {
+        "count": 4,
+        "inputArtifacts": [
+          "examples/assurance-control-plane/high-risk-escalation-demo/expected/producer-normalization-summary.json",
+          "examples/assurance-control-plane/scope-drift-demo/expected/boundary-map-summary.json",
+          "examples/assurance-control-plane/high-risk-escalation-demo/assurance-profile.json",
+          "examples/assurance-control-plane/high-risk-escalation-demo/expected/policy-gate-summary.high-risk.json"
+        ]
+      },
+      "waiver_count": {
+        "active": 0,
+        "inputArtifacts": []
+      },
+      "waiver_expiry_risk": {
+        "expired": 0,
+        "expiringSoon": 0,
+        "windowDays": 14
+      },
+      "required_lane_compliance": {
+        "satisfied": 0,
+        "required": 0,
+        "ratio": null,
+        "missingLanes": [],
+        "notApplicable": true
+      },
+      "evidence_completeness": {
+        "present": 4,
+        "required": 4,
+        "ratio": 1,
+        "missingArtifacts": []
+      },
+      "agent_regression_signal": {
+        "currentFailures": 0,
+        "staleOrSupersededFailures": 1,
+        "regressed": false
+      },
+      "blocked_to_merge_eligible_mttr": {
+        "minutes": null,
+        "from": "blocked",
+        "to": "merge-eligible"
+      },
+      "false_block_rate": {
+        "annotatedFalseBlocks": null,
+        "totalBlocks": 1,
+        "ratio": null,
+        "annotationRequired": true
+      }
+    },
+    "productMetrics": {
+      "review_threads_total": 4,
+      "review_threads_unresolved_final": 0,
+      "required_checks": {
+        "source": "statusCheckRollup",
+        "required": [
+          {
+            "name": "gate",
+            "collected": true,
+            "latest": {
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS",
+              "workflowName": "Copilot Review Gate",
+              "startedAt": "2026-06-21T01:20:00Z",
+              "completedAt": "2026-06-21T01:21:00Z",
+              "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/2/job/2"
+            },
+            "classification": "success",
+            "attempts": 2,
+            "stale_or_superseded_failure_count": 1
+          },
+          {
+            "name": "policy-gate",
+            "collected": true,
+            "latest": {
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS",
+              "workflowName": "Policy Gate",
+              "startedAt": "2026-06-21T01:21:00Z",
+              "completedAt": "2026-06-21T01:22:00Z",
+              "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/3/job/3"
+            },
+            "classification": "success",
+            "attempts": 1,
+            "stale_or_superseded_failure_count": 0
+          },
+          {
+            "name": "verify-lite",
+            "collected": true,
+            "latest": {
+              "status": "COMPLETED",
+              "conclusion": "SUCCESS",
+              "workflowName": "Verify Lite",
+              "startedAt": "2026-06-21T01:22:00Z",
+              "completedAt": "2026-06-21T01:23:00Z",
+              "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/4/job/4"
+            },
+            "classification": "success",
+            "attempts": 1,
+            "stale_or_superseded_failure_count": 0
+          }
+        ],
+        "summary": {
+          "required_count": 3,
+          "collected_count": 3,
+          "success_count": 3,
+          "pending_count": 0,
+          "current_required_failure_count": 0,
+          "operational_failure_count": 0,
+          "stale_or_superseded_failure_count": 1
+        }
+      },
+      "scope_drift_finding_count": 2,
+      "missing_evidence_finding_count": 4,
+      "selected_high_risk_claim_count": 2,
+      "ci_rerun_count": 1,
+      "time_to_merge_minutes": 28,
+      "policy_gate_false_positive_count": "not_collected",
+      "policy_gate_false_negative_count": "not_collected"
+    },
+    "limitations": [
+      "offline fixture mode: GitHub API was not called.",
+      "policy_gate_false_positive_count and policy_gate_false_negative_count require manual annotation; they are not inferred from reruns."
+    ],
+    "summary": "Report-only agent PR assurance metrics for itdojp/ae-framework#3526: review threads 4, unresolved final 0, required check current failures 0, stale/superseded required-check failures 1."
+  }
+}
