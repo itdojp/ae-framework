@@ -80,7 +80,7 @@
       "additionalProperties": true,
       "required": ["count"],
       "properties": {
-        "count": { "$ref": "#/$defs/nonNegativeInteger" },
+        "count": { "$ref": "#/$defs/collectibleCountMetricValue" },
         "inputArtifacts": { "$ref": "#/$defs/artifactArray" }
       }
     },
@@ -167,6 +167,155 @@
         "annotationRequired": { "type": "boolean" }
       }
     },
+    "collectibleCountMetricValue": {
+      "oneOf": [
+        { "$ref": "#/$defs/nonNegativeInteger" },
+        { "enum": ["unknown", "not_collected"] }
+      ]
+    },
+    "collectibleNumberMetricValue": {
+      "oneOf": [
+        { "$ref": "#/$defs/nonNegativeNumber" },
+        { "enum": ["unknown", "not_collected"] }
+      ]
+    },
+    "requiredCheckLatest": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "status": { "type": ["string", "null"] },
+        "conclusion": { "type": ["string", "null"] },
+        "workflowName": { "type": ["string", "null"] },
+        "startedAt": { "type": ["string", "null"], "format": "date-time" },
+        "completedAt": { "type": ["string", "null"], "format": "date-time" },
+        "detailsUrl": { "type": ["string", "null"] }
+      }
+    },
+    "requiredCheckEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "collected",
+        "latest",
+        "classification",
+        "attempts",
+        "stale_or_superseded_failure_count"
+      ],
+      "properties": {
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "collected": { "type": "boolean" },
+        "latest": {
+          "oneOf": [
+            { "$ref": "#/$defs/requiredCheckLatest" },
+            { "type": "null" }
+          ]
+        },
+        "classification": { "$ref": "#/$defs/nonEmptyString" },
+        "attempts": { "$ref": "#/$defs/nonNegativeInteger" },
+        "stale_or_superseded_failure_count": { "$ref": "#/$defs/nonNegativeInteger" }
+      }
+    },
+    "requiredChecksMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "required", "summary"],
+      "properties": {
+        "source": { "$ref": "#/$defs/nonEmptyString" },
+        "required": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/requiredCheckEntry" }
+        },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required_count",
+            "collected_count",
+            "success_count",
+            "pending_count",
+            "current_required_failure_count",
+            "operational_failure_count",
+            "stale_or_superseded_failure_count"
+          ],
+          "properties": {
+            "required_count": { "$ref": "#/$defs/nonNegativeInteger" },
+            "collected_count": { "$ref": "#/$defs/nonNegativeInteger" },
+            "success_count": { "$ref": "#/$defs/nonNegativeInteger" },
+            "pending_count": { "$ref": "#/$defs/nonNegativeInteger" },
+            "current_required_failure_count": { "$ref": "#/$defs/nonNegativeInteger" },
+            "operational_failure_count": { "$ref": "#/$defs/nonNegativeInteger" },
+            "stale_or_superseded_failure_count": { "$ref": "#/$defs/nonNegativeInteger" }
+          }
+        }
+      }
+    },
+    "agentPrAssuranceProductMetrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_threads_total",
+        "review_threads_unresolved_final",
+        "required_checks",
+        "scope_drift_finding_count",
+        "missing_evidence_finding_count",
+        "selected_high_risk_claim_count",
+        "ci_rerun_count",
+        "time_to_merge_minutes",
+        "policy_gate_false_positive_count",
+        "policy_gate_false_negative_count"
+      ],
+      "properties": {
+        "review_threads_total": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "review_threads_unresolved_final": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "required_checks": { "$ref": "#/$defs/requiredChecksMetric" },
+        "scope_drift_finding_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "missing_evidence_finding_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "selected_high_risk_claim_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "ci_rerun_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "time_to_merge_minutes": { "$ref": "#/$defs/collectibleNumberMetricValue" },
+        "policy_gate_false_positive_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "policy_gate_false_negative_count": { "$ref": "#/$defs/collectibleCountMetricValue" }
+      }
+    },
+    "agentPrAssurancePullRequest": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "repository": {
+          "oneOf": [
+            { "$ref": "#/$defs/nonEmptyString" },
+            { "enum": ["unknown"] }
+          ]
+        },
+        "number": {
+          "oneOf": [
+            { "$ref": "#/$defs/nonNegativeInteger" },
+            { "enum": ["unknown"] }
+          ]
+        },
+        "title": { "type": "string" },
+        "url": { "type": ["string", "null"] },
+        "state": { "type": "string" },
+        "createdAt": { "type": ["string", "null"], "format": "date-time" },
+        "reviewReadyAt": { "type": ["string", "null"], "format": "date-time" },
+        "mergedAt": { "type": ["string", "null"], "format": "date-time" },
+        "headRefOid": { "type": ["string", "null"] },
+        "mergeStateStatus": { "type": ["string", "null"] }
+      }
+    },
+    "collectionSources": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "reviewCompleteness": { "$ref": "#/$defs/nonEmptyString" },
+        "producerSummaries": { "$ref": "#/$defs/artifactArray" },
+        "boundaryMapSummaries": { "$ref": "#/$defs/artifactArray" },
+        "assuranceProfiles": { "$ref": "#/$defs/artifactArray" },
+        "claimEvidenceManifests": { "$ref": "#/$defs/artifactArray" },
+        "policyGateSummaries": { "$ref": "#/$defs/artifactArray" }
+      }
+    },
     "agentPrAssuranceMetrics": {
       "type": "object",
       "additionalProperties": false,
@@ -201,7 +350,11 @@
         "reportOnly": { "const": true },
         "generatedAt": { "type": "string", "format": "date-time" },
         "source": { "$ref": "#/$defs/nonEmptyString" },
+        "pullRequest": { "$ref": "#/$defs/agentPrAssurancePullRequest" },
+        "collectionSources": { "$ref": "#/$defs/collectionSources" },
         "metrics": { "$ref": "#/$defs/agentPrAssuranceMetrics" },
+        "productMetrics": { "$ref": "#/$defs/agentPrAssuranceProductMetrics" },
+        "limitations": { "$ref": "#/$defs/stringArray" },
         "summary": { "$ref": "#/$defs/nonEmptyString" }
       }
     }

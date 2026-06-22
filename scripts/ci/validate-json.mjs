@@ -329,6 +329,7 @@ const checks = [
     fixtures: [
       'fixtures/agentic-metrics/sample.agentic-metrics.json',
       'fixtures/agentic-metrics/agent-pr-assurance-metrics.example.json',
+      'fixtures/metrics/agent-pr-assurance/expected.agent-pr-assurance-metrics.json',
     ],
     label: 'Agentic metrics schema validation',
     semanticValidate: validateAgenticMetricsSemantics
