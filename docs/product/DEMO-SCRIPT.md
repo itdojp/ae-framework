@@ -25,7 +25,8 @@ verificationCommand: pnpm -s run check:doc-consistency
 | 0:30-1:15 | Explain producer boundary: agents, humans, CI, and formal tools produce evidence input, not approvals. | `docs/agents/evidence-adapters.md` and `fixtures/agents/evidence-adapters/` |
 | 1:15-2:15 | Run or open the offline demo output. | `pnpm run demo:agent-assurance` then `artifacts/review/agent-assurance-demo/assurance-review.md` |
 | 2:15-3:00 | Walk the reviewer surface: producer summary, missing evidence, assurance summary, policy interpretation. | `artifacts/review/agent-assurance-demo/assurance-review.md` |
-| 3:00-4:00 | Show optional risk surfaces. | `examples/assurance-control-plane/scope-drift-demo/` and `examples/assurance-control-plane/high-risk-escalation-demo/` |
+| 3:00-3:30 | Preview the PR comment surface without posting. | `pnpm run assurance:post-review-surface -- --repo itdojp/ae-framework --pr 123 --body-file artifacts/review/agent-assurance-demo/assurance-review.md` |
+| 3:30-4:00 | Show optional risk surfaces. | `examples/assurance-control-plane/scope-drift-demo/` and `examples/assurance-control-plane/high-risk-escalation-demo/` |
 | 4:00-5:00 | Close with dogfooding evidence and limitations. | `docs/product/DOGFOODING-REPORT-2026Q3.md` |
 
 ### Commands
@@ -35,6 +36,10 @@ corepack enable
 corepack prepare pnpm@10.0.0 --activate
 pnpm install --frozen-lockfile
 pnpm run demo:agent-assurance
+pnpm run assurance:post-review-surface -- \
+  --repo itdojp/ae-framework \
+  --pr 123 \
+  --body-file artifacts/review/agent-assurance-demo/assurance-review.md
 ```
 
 Optional scenario commands:
@@ -69,6 +74,7 @@ If local setup is unavailable, use checked-in documentation and fixtures only:
 - Do not claim unmeasured review-speed improvement.
 - Do not claim agent-vendor superiority.
 - Do not imply auto-merge or formal proof for every PR.
+- Keep the PR posting helper in dry-run mode unless you are intentionally posting with `gh pr comment`.
 - State that the preview is fixture-backed and offline unless running against a live PR.
 - End with the next step: run the 15-minute quickstart and inspect the review Markdown.
 
@@ -80,8 +86,9 @@ If local setup is unavailable, use checked-in documentation and fixtures only:
 2. agent / human / CI / formal tool は approval ではなく evidence producer であると説明する。
 3. `pnpm run demo:agent-assurance` を実行し、`artifacts/review/agent-assurance-demo/assurance-review.md` を開く。
 4. missing evidence、assurance summary、policy interpretation の順に reviewer surface を見る。
-5. scope drift / high-risk escalation の optional scenario を示す。
-6. dogfooding report の観測値と limitations を示し、benchmark ではないことを明確にする。
+5. `pnpm run assurance:post-review-surface -- --repo itdojp/ae-framework --pr 123 --body-file artifacts/review/agent-assurance-demo/assurance-review.md` を dry-run で実行し、PR comment surface を確認する。
+6. scope drift / high-risk escalation の optional scenario を示す。
+7. dogfooding report の観測値と limitations を示し、benchmark ではないことを明確にする。
 
 ### 予備手順
 
