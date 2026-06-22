@@ -80,7 +80,7 @@
       "additionalProperties": true,
       "required": ["count"],
       "properties": {
-        "count": { "$ref": "#/$defs/nonNegativeInteger" },
+        "count": { "$ref": "#/$defs/collectibleCountMetricValue" },
         "inputArtifacts": { "$ref": "#/$defs/artifactArray" }
       }
     },
@@ -298,6 +298,7 @@
         "url": { "type": ["string", "null"] },
         "state": { "type": "string" },
         "createdAt": { "type": ["string", "null"], "format": "date-time" },
+        "reviewReadyAt": { "type": ["string", "null"], "format": "date-time" },
         "mergedAt": { "type": ["string", "null"], "format": "date-time" },
         "headRefOid": { "type": ["string", "null"] },
         "mergeStateStatus": { "type": ["string", "null"] }

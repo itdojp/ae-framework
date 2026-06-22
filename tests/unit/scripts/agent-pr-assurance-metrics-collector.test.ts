@@ -55,7 +55,7 @@ describe('agent PR assurance metrics collector', () => {
         missing_evidence_finding_count: 4,
         selected_high_risk_claim_count: 2,
         ci_rerun_count: 1,
-        time_to_merge_minutes: 28,
+        time_to_merge_minutes: 24,
       });
       expect(productMetrics.required_checks.summary).toMatchObject({
         success_count: 3,
@@ -90,7 +90,7 @@ describe('agent PR assurance metrics collector', () => {
     const outputJson = join(outputRoot, 'live-agent-pr-assurance-metrics.json');
     const outputMd = join(outputRoot, 'live-agent-pr-assurance-metrics.md');
     mkdirSync(outputRoot, { recursive: true });
-    writeFileSync(fakeGh, `#!/usr/bin/env node\nconsole.log(JSON.stringify({\n  number: 99,\n  title: 'live fixture PR',\n  url: 'https://github.com/example/repo/pull/99',\n  state: 'OPEN',\n  createdAt: '2026-06-23T00:00:00Z',\n  mergedAt: null,\n  isDraft: false,\n  reviewDecision: '',\n  mergeStateStatus: 'CLEAN',\n  headRefOid: 'fake-head',\n  statusCheckRollup: [\n    { __typename: 'CheckRun', name: 'gate', workflowName: 'Copilot Review Gate', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:01:00Z', completedAt: '2026-06-23T00:02:00Z' },\n    { __typename: 'CheckRun', name: 'policy-gate', workflowName: 'Policy Gate', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:02:00Z', completedAt: '2026-06-23T00:03:00Z' },\n    { __typename: 'CheckRun', name: 'verify-lite', workflowName: 'Verify Lite', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:03:00Z', completedAt: '2026-06-23T00:04:00Z' }\n  ]\n}));\n`, 'utf8');
+    writeFileSync(fakeGh, `#!/usr/bin/env node\nconsole.log(JSON.stringify({\n  number: 99,\n  title: 'live fixture PR',\n  url: 'https://github.com/example/repo/pull/99',\n  state: 'OPEN',\n  createdAt: '2026-06-23T00:00:00Z',\n  mergedAt: '2026-06-23T00:10:00Z',\n  isDraft: false,\n  reviewDecision: '',\n  mergeStateStatus: 'CLEAN',\n  headRefOid: 'fake-head',\n  statusCheckRollup: [\n    { __typename: 'CheckRun', name: 'gate', workflowName: 'Copilot Review Gate', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:01:00Z', completedAt: '2026-06-23T00:02:00Z' },\n    { __typename: 'CheckRun', name: 'policy-gate', workflowName: 'Policy Gate', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:02:00Z', completedAt: '2026-06-23T00:03:00Z' },\n    { __typename: 'CheckRun', name: 'verify-lite', workflowName: 'Verify Lite', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:03:00Z', completedAt: '2026-06-23T00:04:00Z' }\n  ]\n}));\n`, 'utf8');
     chmodSync(fakeGh, 0o755);
 
     try {
@@ -110,6 +110,7 @@ describe('agent PR assurance metrics collector', () => {
       expect(productMetrics.required_checks.summary.success_count).toBe(3);
       expect(productMetrics.review_threads_total).toBe('not_collected');
       expect(productMetrics.scope_drift_finding_count).toBe('not_collected');
+      expect(payload.agentPrAssurance.metrics.unresolved_claim_count.count).toBe('not_collected');
       expect(productMetrics.time_to_merge_minutes).toBe('not_collected');
       expect(payload.agentPrAssurance.limitations.join('\n')).toContain('review_threads_total is not_collected');
       expect(payload.agentPrAssurance.limitations.join('\n')).toContain('time_to_merge_minutes is not_collected');

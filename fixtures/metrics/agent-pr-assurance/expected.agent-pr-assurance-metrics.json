@@ -24,6 +24,7 @@
       "url": "https://github.com/itdojp/ae-framework/pull/3526",
       "state": "MERGED",
       "createdAt": "2026-06-21T01:00:00Z",
+      "reviewReadyAt": "2026-06-21T01:04:00Z",
       "mergedAt": "2026-06-21T01:28:00Z",
       "headRefOid": "fixture-head",
       "mergeStateStatus": "CLEAN"
@@ -165,7 +166,7 @@
       "missing_evidence_finding_count": 4,
       "selected_high_risk_claim_count": 2,
       "ci_rerun_count": 1,
-      "time_to_merge_minutes": 28,
+      "time_to_merge_minutes": 24,
       "policy_gate_false_positive_count": "not_collected",
       "policy_gate_false_negative_count": "not_collected"
     },

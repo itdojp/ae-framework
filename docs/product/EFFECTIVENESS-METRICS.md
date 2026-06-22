@@ -76,8 +76,11 @@ lower-level report-only contract for PR assurance metrics. This product document
 uses a broader product-effectiveness vocabulary and may map to those lower-level
 metrics when a machine-readable report is available. The report-only collector
 `pnpm run metrics:agent-pr-assurance` writes `artifacts/metrics/agent-pr-assurance-metrics.{json,md}`
-and stores this vocabulary under `agentPrAssurance.productMetrics`; missing optional
-inputs must remain `not_collected` / `unknown` rather than being reported as zero.
+and stores this vocabulary under `agentPrAssurance.productMetrics`.
+`time_to_merge_minutes` is only collected when a review-ready timestamp is
+explicitly available, because PR creation time is not equivalent to review-ready
+time for draft or delayed-review PRs. Missing optional inputs must remain
+`not_collected` / `unknown` rather than being reported as zero.
 
 ### 5. Collection rules
 
@@ -180,7 +183,7 @@ product effectiveness を示すための共通 metric vocabulary を定義しま
 | `reviewer_comment_count` | review thread state | review completeness report | review Markdown surface iteration、dogfooding report。 |
 | `time_to_merge` | PR timeline | release notes / merge queue state | adoption proof、launch kit claims。 |
 
-`docs/ci/agent-pr-assurance-metrics.md` と `schema/agentic-metrics.schema.json` の optional `agentPrAssurance` extension は、PR assurance metrics の低レベルな report-only contract です。この product 文書はより広い product-effectiveness vocabulary を定義し、machine-readable report がある場合はそれらの低レベルmetricへ対応付けます。report-only collector の `pnpm run metrics:agent-pr-assurance` は `artifacts/metrics/agent-pr-assurance-metrics.{json,md}` を出力し、この vocabulary を `agentPrAssurance.productMetrics` に保存します。任意入力が不足する場合は、0件と見せかけず `not_collected` / `unknown` のまま扱います。
+`docs/ci/agent-pr-assurance-metrics.md` と `schema/agentic-metrics.schema.json` の optional `agentPrAssurance` extension は、PR assurance metrics の低レベルな report-only contract です。この product 文書はより広い product-effectiveness vocabulary を定義し、machine-readable report がある場合はそれらの低レベルmetricへ対応付けます。report-only collector の `pnpm run metrics:agent-pr-assurance` は `artifacts/metrics/agent-pr-assurance-metrics.{json,md}` を出力し、この vocabulary を `agentPrAssurance.productMetrics` に保存します。`time_to_merge_minutes` は review-ready timestamp が明示的に利用できる場合だけ収集します。draft PR や review 開始が遅れた PR では PR 作成時刻と review-ready 時刻が一致しないためです。任意入力が不足する場合は、0件と見せかけず `not_collected` / `unknown` のまま扱います。
 
 ### 5. Collection rules
 

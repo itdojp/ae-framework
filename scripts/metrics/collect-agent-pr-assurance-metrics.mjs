@@ -11,7 +11,7 @@ const NOT_COLLECTED = 'not_collected';
 const UNKNOWN = 'unknown';
 
 function usage() {
-  process.stdout.write(`Usage: node scripts/metrics/collect-agent-pr-assurance-metrics.mjs [options]\n\nOptions:\n  --repo <owner/repo>                 GitHub repository for live mode.\n  --pr <number>                       Pull request number for live mode.\n  --fixture <path>                    Offline fixture containing pullRequest/statusCheckRollup and optional artifact paths.\n  --review-completeness-json <path>   Optional pr-review-completeness JSON.\n  --producer-summary <path>           Optional producer-normalization-summary/v1 input (repeatable).\n  --boundary-map-summary <path>       Optional boundary-map summary/report input (repeatable).\n  --assurance-profile <path>          Optional assurance-profile/v1 input (repeatable).\n  --claim-evidence-manifest <path>    Optional claim-evidence-manifest/v1 input (repeatable).\n  --policy-gate-summary <path>        Optional policy-gate-summary/v1 input (repeatable).\n  --required-check <name>             Required check name to summarize (repeatable; default: ${DEFAULT_REQUIRED_CHECKS.join(', ')}).\n  --gh-bin <path>                     gh executable for live mode (default: gh).\n  --generated-at <iso-date-time>      Deterministic generatedAt timestamp.\n  --output-json <path>                Output JSON path (default: ${DEFAULT_OUTPUT_JSON}).\n  --output-md <path>                  Output Markdown path (default: ${DEFAULT_OUTPUT_MD}).\n  --help                             Show this help.\n\nOffline fixture mode never calls GitHub. Live mode uses read-only \`gh pr view\`; missing optional inputs are emitted as ${NOT_COLLECTED}.\n`);
+  process.stdout.write(`Usage: node scripts/metrics/collect-agent-pr-assurance-metrics.mjs [options]\n\nOptions:\n  --repo <owner/repo>                 GitHub repository for live mode.\n  --pr <number>                       Pull request number for live mode.\n  --fixture <path>                    Offline fixture containing pullRequest/statusCheckRollup and optional artifact paths.\n  --review-completeness-json <path>   Optional pr-review-completeness JSON.\n  --producer-summary <path>           Optional producer-normalization-summary/v1 input (repeatable).\n  --boundary-map-summary <path>       Optional boundary-map summary/report input (repeatable).\n  --assurance-profile <path>          Optional assurance-profile/v1 input (repeatable).\n  --claim-evidence-manifest <path>    Optional claim-evidence-manifest/v1 input (repeatable).\n  --policy-gate-summary <path>        Optional policy-gate-summary/v1 input (repeatable).\n  --required-check <name>             Required check name to summarize (repeatable; default: ${DEFAULT_REQUIRED_CHECKS.join(', ')}).\n  --gh-bin <path>                     gh executable for live mode (default: gh).\n  --review-ready-at <iso-date-time>   Optional review-ready timestamp for time_to_merge_minutes.\n  --generated-at <iso-date-time>      Deterministic generatedAt timestamp.\n  --output-json <path>                Output JSON path (default: ${DEFAULT_OUTPUT_JSON}).\n  --output-md <path>                  Output Markdown path (default: ${DEFAULT_OUTPUT_MD}).\n  --help                             Show this help.\n\nOffline fixture mode never calls GitHub. Live mode uses read-only \`gh pr view\`; missing optional inputs are emitted as ${NOT_COLLECTED}.\n`);
 }
 
 function readRequiredValue(argv, index, flag) {
@@ -43,6 +43,7 @@ function parseArgs(argv = process.argv.slice(2)) {
     policyGateSummaries: [],
     requiredChecks: [],
     ghBin: 'gh',
+    reviewReadyAt: null,
     generatedAt: null,
     outputJson: DEFAULT_OUTPUT_JSON,
     outputMd: DEFAULT_OUTPUT_MD,
@@ -108,6 +109,11 @@ function parseArgs(argv = process.argv.slice(2)) {
     }
     if (arg === '--gh-bin') {
       options.ghBin = readRequiredValue(argv, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === '--review-ready-at') {
+      options.reviewReadyAt = ensureDateTime(readRequiredValue(argv, index, arg), arg);
       index += 1;
       continue;
     }
@@ -508,8 +514,12 @@ function minutesBetween(start, end) {
   return Math.round(((endMs - startMs) / 60000) * 100) / 100;
 }
 
+function reviewReadyAtForMetric(options, pullRequest) {
+  return options.reviewReadyAt ?? pullRequest.reviewReadyAt ?? null;
+}
+
 function buildLowLevelMetrics({ missingEvidenceCount, requiredChecks, selectedHighRiskClaimCount, artifactSources }) {
-  const missingEvidence = Number.isInteger(missingEvidenceCount) ? missingEvidenceCount : 0;
+  const missingEvidence = Number.isInteger(missingEvidenceCount) ? missingEvidenceCount : NOT_COLLECTED;
   const selectedClaims = Number.isInteger(selectedHighRiskClaimCount) ? selectedHighRiskClaimCount : 0;
   const currentFailures = requiredChecks.summary.current_required_failure_count + requiredChecks.summary.operational_failure_count;
   const staleFailures = requiredChecks.summary.stale_or_superseded_failure_count;
@@ -595,9 +605,10 @@ function buildDocument(options, collection) {
   const missingEvidenceCount = countMissingEvidence(producerArtifacts, policyArtifacts, manifestArtifacts);
   const selectedHighRiskClaimCount = countSelectedHighRiskClaims(profileArtifacts, policyArtifacts);
   const ciRerunCount = countCiReruns(requiredChecks);
-  const timeToMerge = minutesBetween(collection.pullRequest.createdAt, collection.pullRequest.mergedAt);
+  const reviewReadyAt = reviewReadyAtForMetric(options, collection.pullRequest);
+  const timeToMerge = minutesBetween(reviewReadyAt, collection.pullRequest.mergedAt);
   if (timeToMerge === null) {
-    limitations.push('time_to_merge_minutes is not_collected because the PR is unmerged or timestamps are unavailable.');
+    limitations.push('time_to_merge_minutes is not_collected because review-ready or merge timestamps are unavailable.');
   }
 
   const productMetrics = {
@@ -649,6 +660,7 @@ function buildDocument(options, collection) {
         url: collection.pullRequest.url ?? null,
         state: collection.pullRequest.state ?? UNKNOWN,
         createdAt: collection.pullRequest.createdAt ?? null,
+        reviewReadyAt,
         mergedAt: collection.pullRequest.mergedAt ?? null,
         headRefOid: collection.pullRequest.headRefOid ?? null,
         mergeStateStatus: collection.pullRequest.mergeStateStatus ?? null,

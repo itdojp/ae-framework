@@ -17,7 +17,7 @@ Report-only metrics for itdojp/ae-framework#3526. Producer output and metrics ar
 | missing_evidence_finding_count | 4 |
 | selected_high_risk_claim_count | 2 |
 | ci_rerun_count | 1 |
-| time_to_merge_minutes | 28 |
+| time_to_merge_minutes | 24 |
 | policy_gate_false_positive_count | not_collected |
 | policy_gate_false_negative_count | not_collected |
 
