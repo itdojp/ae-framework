@@ -34,7 +34,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
 - External pilot onboarding: `guides/external-pilot-onboarding.md`
-- Report-only pilot runbook and evidence template: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`
+- Report-only pilot runbook, evidence template, and ACP-097 report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `product/PILOT-REPORT-2026Q3-01.md`
 
 ### How to use this index
 - If you need the shortest route to a working repository, start with `getting-started/`.
@@ -109,7 +109,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
 - Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
-- Report-only pilot runbook: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`
+- Report-only pilot runbook and report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `product/PILOT-REPORT-2026Q3-01.md`
 - BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
 - External pilot onboarding: `guides/external-pilot-onboarding.md`
@@ -335,6 +335,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [LAUNCH-KIT.md](./product/LAUNCH-KIT.md) - agent-neutral assurance control plane preview の launch kit
 - [PILOT-RUNBOOK-2026Q3.md](./product/PILOT-RUNBOOK-2026Q3.md) - report-only external pilot 実行 runbook
 - [PILOT-EVIDENCE-TEMPLATE.md](./product/PILOT-EVIDENCE-TEMPLATE.md) - external pilot evidence capture template
+- [PILOT-REPORT-2026Q3-01.md](./product/PILOT-REPORT-2026Q3-01.md) - ACP-097 dry-run external pilot report
 - [ONE-PAGE-PITCH.md](./product/ONE-PAGE-PITCH.md) - 初見向け one-page pitch
 - [DEMO-SCRIPT.md](./product/DEMO-SCRIPT.md) - 5分 demo script と話者メモ
 - [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性

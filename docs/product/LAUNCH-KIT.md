@@ -58,6 +58,7 @@ flowchart LR
 | 5 minutes | Launch preview walkthrough | `docs/product/DEMO-SCRIPT.md` | Explain the assurance plane and open a prebuilt review surface. |
 | 15 minutes | Offline BYO-agent assurance demo | `pnpm run demo:agent-assurance` | Generate fixture-backed producer, assurance, policy, and reviewer artifacts. |
 | Pilot setup | External pilot onboarding | `docs/guides/external-pilot-onboarding.md` | Run a one-repository, about-five-PR pilot with report-only metrics, consent, and redaction boundaries. |
+| Pilot report | ACP-097 dry-run status | `docs/product/PILOT-REPORT-2026Q3-01.md` | Explain that the current pilot report is `dry-run only` and does not contain live external PR evidence. |
 | Optional | Scope-drift scenario | `node scripts/demo/run-scope-drift-demo.mjs` | Show report-only drift in a normal lane and blocking drift in a strict lane. |
 | Optional | High-risk escalation sample | `node scripts/demo/run-high-risk-escalation-demo.mjs` | Show selected critical/high claims and strict-lane evidence requirements. |
 | Optional | Cross-agent fixtures | `fixtures/agents/evidence-adapters/` | Show producer-neutral routing for Codex, Claude Code, Copilot, human, CI, and formal output. |
@@ -93,6 +94,8 @@ explicitly **not** a controlled benchmark and does **not** compare agent vendors
 For an external, consent-safe pilot path, use
 `docs/guides/external-pilot-onboarding.md`; it keeps the first pilot
 report-only and defines the redaction/publication boundary for ACP-097.
+The current ACP-097 report is `docs/product/PILOT-REPORT-2026Q3-01.md`;
+it is `dry-run only` and records 0 live external PRs collected.
 
 ### 7. Non-goals for the preview
 
@@ -235,6 +238,7 @@ preview として扱います。
 - `docs/product/DEMO-SCRIPT.md` — 5分 demo と 15分拡張 demo。
 - `docs/guides/byo-agent-assurance-quickstart.md` — offline BYO-agent assurance demo。
 - `docs/guides/external-pilot-onboarding.md` — report-only external pilot、consent、redaction / publication boundary。
+- `docs/product/PILOT-REPORT-2026Q3-01.md` — ACP-097 の `dry-run only` pilot report と limitations。
 - `docs/product/DOGFOODING-REPORT-2026Q3.md` — dogfooding evidence と limitations。
 
 ### 4. 主張しないこと
@@ -249,5 +253,5 @@ preview として扱います。
 
 まず `pnpm run demo:agent-assurance` を実行し、`artifacts/review/agent-assurance-demo/assurance-review.md`
 を開く。次に scope drift / high-risk escalation の optional demo を見せる。外部 repository で試す場合は
-`docs/guides/external-pilot-onboarding.md` に沿って report-only / consent / redaction boundary を先に固定する。最後に dogfooding
+`docs/guides/external-pilot-onboarding.md` に沿って report-only / consent / redaction boundary を先に固定し、`docs/product/PILOT-REPORT-2026Q3-01.md` で現在は `dry-run only` であることを示す。最後に dogfooding
 report の summary を使い、preview の実測範囲と限界を説明する。
