@@ -141,28 +141,59 @@ Do not use this demo to claim real-world faster review, safer code, or agent
 vendor superiority. It is a local evidence-flow demonstration.
 
 
-### 6. Optional scope-drift scenario
+### 6. Optional scenario commands
 
-After the baseline demo, use the scope-drift scenario when you want to see how an
-out-of-scope agent change appears in the reviewer surface:
+After the baseline demo, use the optional scenarios when you want to see how
+out-of-scope agent changes and selected high-risk claim gaps appear in the
+reviewer surface:
 
 ```bash
 node scripts/demo/run-scope-drift-demo.mjs
+node scripts/demo/run-high-risk-escalation-demo.mjs
 ```
 
-Open `artifacts/review/scope-drift-demo/assurance-review.md`. The scenario
-keeps the drift report-only for the normal fast lane and renders a separate
+Open `artifacts/review/scope-drift-demo/assurance-review.md`. The scope-drift
+scenario keeps drift report-only for the normal fast lane and renders a separate
 high-risk strict-lane surface at
 `artifacts/review/scope-drift-demo/assurance-review.high-risk.md`, where
 unresolved `boundary-map-drift` becomes a blocking reviewer action. The fixture
 is documented in `examples/assurance-control-plane/scope-drift-demo/README.md`.
 
-### 7. Validation commands
+Open `artifacts/review/high-risk-escalation-demo/assurance-review.md` for the
+selected critical-claim scenario. It keeps ordinary PRs report-only while
+rendering `artifacts/review/high-risk-escalation-demo/assurance-review.high-risk.md`
+as the strict-lane surface for `risk:high` / `enforce-assurance`.
+
+### 7. CI smoke lane
+
+`.github/workflows/demo-smoke.yml` runs the same representative command sequence
+as `ci/demo-smoke` when demo-related paths change:
+
+```bash
+pnpm run demo:agent-assurance
+node scripts/demo/run-scope-drift-demo.mjs
+node scripts/demo/run-high-risk-escalation-demo.mjs
+pnpm run demo:smoke:check
+```
+
+The PR lane is report-only and should not be added to branch-protection required
+checks until runtime and false-positive rate are reviewed. `push` to `main` and
+manual `workflow_dispatch` runs are enforcing. The workflow path filters are
+limited to demo scripts, assurance producers, schemas, example fixtures, and
+this quickstart / demo script so unrelated docs-only PRs do not pay the demo
+smoke cost. The artifact checker reports failures as `[artifact missing]`,
+`[json invalid]`, `[schema invalid]`, or `[artifact invalid]`; command failures
+remain visible in the preceding command step.
+
+### 8. Validation commands
 
 Use the same commands as the implementation issue when checking this quickstart:
 
 ```bash
 pnpm run demo:agent-assurance
+node scripts/demo/run-scope-drift-demo.mjs
+node scripts/demo/run-high-risk-escalation-demo.mjs
+pnpm run demo:smoke:check
 pnpm -s run check:schemas
 node scripts/ci/validate-json.mjs
 pnpm -s run check:doc-consistency
@@ -293,13 +324,14 @@ raw log より先に `artifacts/review/agent-assurance-demo/assurance-review.md`
 これは local evidence-flow demonstration です。
 
 
-### 6. Optional scope-drift scenario
+### 6. Optional scenario commands
 
-baseline demo の後、agent の scope 外変更が reviewer surface にどう出るか確認する場合は、
-scope-drift scenario を使います。
+baseline demo の後、agent の scope 外変更や selected high-risk claim gap が reviewer surface に
+どう出るか確認する場合は、optional scenario を使います。
 
 ```bash
 node scripts/demo/run-scope-drift-demo.mjs
+node scripts/demo/run-high-risk-escalation-demo.mjs
 ```
 
 `artifacts/review/scope-drift-demo/assurance-review.md` を開きます。この scenario は
@@ -308,12 +340,39 @@ node scripts/demo/run-scope-drift-demo.mjs
 未解決の `boundary-map-drift` が blocking reviewer action になることを示します。fixture の詳細は
 `examples/assurance-control-plane/scope-drift-demo/README.md` にあります。
 
-### 7. Validation commands
+selected critical-claim scenario は
+`artifacts/review/high-risk-escalation-demo/assurance-review.md` を確認します。通常 PR では
+report-only に留め、`risk:high` / `enforce-assurance` 選択時の strict-lane surface は
+`artifacts/review/high-risk-escalation-demo/assurance-review.high-risk.md` に出力されます。
+
+### 7. CI smoke lane
+
+`.github/workflows/demo-smoke.yml` は demo 関連 path が変更された場合に、`ci/demo-smoke` として
+次の代表 command sequence を実行します。
+
+```bash
+pnpm run demo:agent-assurance
+node scripts/demo/run-scope-drift-demo.mjs
+node scripts/demo/run-high-risk-escalation-demo.mjs
+pnpm run demo:smoke:check
+```
+
+PR lane は report-only であり、runtime と false-positive rate を確認するまでは branch protection の
+required check に追加しません。`main` push と manual `workflow_dispatch` では enforcing です。
+workflow の path filter は demo script、assurance producer、schema、example fixture、この quickstart /
+demo script に限定し、無関係な docs-only PR に demo smoke の負荷をかけません。artifact checker は
+`[artifact missing]`、`[json invalid]`、`[schema invalid]`、`[artifact invalid]` として失敗原因を
+出力し、command failure は直前の command step log で確認します。
+
+### 8. Validation commands
 
 この quickstart を確認する場合は、実装 Issue と同じ command を使います。
 
 ```bash
 pnpm run demo:agent-assurance
+node scripts/demo/run-scope-drift-demo.mjs
+node scripts/demo/run-high-risk-escalation-demo.mjs
+pnpm run demo:smoke:check
 pnpm -s run check:schemas
 node scripts/ci/validate-json.mjs
 pnpm -s run check:doc-consistency

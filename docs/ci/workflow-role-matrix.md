@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-06-02'
+lastVerified: '2026-06-23'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -14,7 +14,7 @@ This document classifies `.github/workflows/*.yml` by operational role so requir
 
 ## English
 
-Update summary: 2026-06-02
+Update summary: 2026-06-23
 
 Scope: operational role mapping for `.github/workflows/*.yml` (Issue #2031 / Phase 3).
 
@@ -87,6 +87,7 @@ SBOM operational boundary:
 | `ci-auto-rerun-failed.yml` | automatic rerun of failed jobs | workflow_run |
 | `automation-observability-weekly.yml` | weekly SLO / MTTR observation for automation | schedule / dispatch |
 | `adapter-thresholds.yml` | threshold reporting (report-only) | PR |
+| `demo-smoke.yml` | report-only PR smoke coverage for launch / pilot demo commands; enforcing on trusted main/dispatch runs | PR(path) / push(main,path) / dispatch |
 | `branch-protection-apply.yml` | branch-protection apply operations | dispatch |
 
 ### 4. Operating rules
@@ -106,7 +107,7 @@ SBOM operational boundary:
 
 ## 日本語
 
-最終更新: 2026-03-25
+最終更新: 2026-06-23
 
 対象: `.github/workflows/*.yml` の運用責務整理（Issue #2031 / Phase 3）
 
@@ -178,6 +179,7 @@ SBOM 運用境界:
 | `pr-ci-status-comment.yml` | PR向けCIサマリ/auto-merge制御 | PR / schedule / dispatch |
 | `pr-self-heal.yml` | 失敗時の自動復旧実行 | workflow_run / schedule / dispatch |
 | `ci-auto-rerun-failed.yml` | 失敗jobの自動再実行 | workflow_run |
+| `demo-smoke.yml` | launch / pilot demo command の PR smoke coverage（report-only）。trusted main/dispatch run では enforcing | PR(path) / push(main,path) / dispatch |
 | `automation-observability-weekly.yml` | 週次の自動化SLO/MTTR観測 | schedule / dispatch |
 | `adapter-thresholds.yml` | 閾値レポート（report-only） | PR |
 | `branch-protection-apply.yml` | branch protection 適用運用 | dispatch |

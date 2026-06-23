@@ -103,9 +103,11 @@
           "claimId": "scope-drift-within-declared-boundary",
           "result": "report-only",
           "status": "unresolved",
+          "evidenceRefs": [],
           "missingEvidenceRefs": [
             "boundary-map-drift"
-          ]
+          ],
+          "waiverRefs": []
         }
       ],
       "waivers": [],
