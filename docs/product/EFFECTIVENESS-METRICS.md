@@ -30,6 +30,7 @@ all product claims use the same evidence vocabulary.
 
 Current internal dogfooding report: `docs/product/DOGFOODING-REPORT-2026Q3.md`.
 Current external pilot report: `docs/product/PILOT-REPORT-2026Q3-01.md` (`dry-run only`; no live external PRs collected).
+Controlled comparison protocol: `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` (`protocol-ready, not executed`).
 External pilot onboarding and consent boundary: `docs/guides/external-pilot-onboarding.md`.
 
 ### 2. Measurement boundary
@@ -138,6 +139,7 @@ Public material, demos, and launch notes must follow these rules:
 | Cross-agent fixtures | Keep producer identity separate from reviewer-effectiveness metrics. |
 | Dogfooding report | Aggregate the canonical metrics over ae-framework PRs and record limitations. |
 | External pilot onboarding / ACP-097 report | Start from report-only collection, preserve consent/redaction status per PR, publish only approved aggregate or redacted data, and link `docs/product/PILOT-REPORT-2026Q3-01.md` when the current pilot status is needed. |
+| Controlled comparison protocol | Compare `without ae-framework` and `with ae-framework` review workflows only when the baseline, sample categories, controls, and redaction boundaries in `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` are satisfied. |
 | Public launch kit | Use only measured or explicitly demo-scoped claims from this vocabulary. |
 
 ---
@@ -156,6 +158,7 @@ product effectiveness を示すための共通 metric vocabulary を定義しま
 
 現在の internal dogfooding report: `docs/product/DOGFOODING-REPORT-2026Q3.md`。
 現在の external pilot report: `docs/product/PILOT-REPORT-2026Q3-01.md`（`dry-run only`、live external PR 収集 0件）。
+Controlled comparison protocol: `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`（`protocol-ready, not executed`）。
 External pilot onboarding と consent boundary: `docs/guides/external-pilot-onboarding.md`。
 
 ### 2. 測定境界
@@ -230,4 +233,5 @@ Public material、demo、launch note は次を守ります。
 | Cross-agent fixtures | producer identity と reviewer-effectiveness metric を分離する。 |
 | Dogfooding report | ae-framework PR群で canonical metric を集約し、limitation を記録する。 |
 | External pilot onboarding / ACP-097 report | report-only collection から始め、PR ごとの consent / redaction status を保持し、承認済みの aggregate または redacted data だけを公開する。現在の pilot status が必要な場合は `docs/product/PILOT-REPORT-2026Q3-01.md` を参照する。 |
+| Controlled comparison protocol | `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` の baseline、sample category、control、redaction boundary が満たされた場合だけ、`without ae-framework` と `with ae-framework` の review workflow を比較する。 |
 | Public launch kit | この vocabulary の measured claim または demo-scoped claim だけを使う。 |

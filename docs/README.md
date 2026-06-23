@@ -110,6 +110,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
 - Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
 - Report-only pilot runbook and report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `product/PILOT-REPORT-2026Q3-01.md`
+- Controlled comparison protocol: `product/CONTROLLED-COMPARISON-PROTOCOL.md`
 - BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
 - External pilot onboarding: `guides/external-pilot-onboarding.md`
