@@ -6,6 +6,7 @@ canonicalSource:
 - docs/product/DOGFOODING-REPORT-2026Q3.md
 - docs/guides/byo-agent-assurance-quickstart.md
 - docs/product/EFFECTIVENESS-METRICS.md
+- docs/product/CONTROLLED-COMPARISON-PROTOCOL.md
 lastVerified: '2026-06-23'
 owner: product-assurance
 verificationCommand: pnpm -s run check:doc-consistency
@@ -59,6 +60,7 @@ flowchart LR
 | 15 minutes | Offline BYO-agent assurance demo | `pnpm run demo:agent-assurance` | Generate fixture-backed producer, assurance, policy, and reviewer artifacts. |
 | Pilot setup | External pilot onboarding | `docs/guides/external-pilot-onboarding.md` | Run a one-repository, about-five-PR pilot with report-only metrics, consent, and redaction boundaries. |
 | Pilot report | ACP-097 dry-run status | `docs/product/PILOT-REPORT-2026Q3-01.md` | Explain that the current pilot report is `dry-run only` and does not contain live external PR evidence. |
+| Future benchmark | Controlled comparison protocol | `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` | Explain how future claims must compare review workflows, not agent vendors, after controlled baseline data exists. |
 | Optional | Scope-drift scenario | `node scripts/demo/run-scope-drift-demo.mjs` | Show report-only drift in a normal lane and blocking drift in a strict lane. |
 | Optional | High-risk escalation sample | `node scripts/demo/run-high-risk-escalation-demo.mjs` | Show selected critical/high claims and strict-lane evidence requirements. |
 | Optional | Cross-agent fixtures | `fixtures/agents/evidence-adapters/` | Show producer-neutral routing for Codex, Claude Code, Copilot, human, CI, and formal output. |
@@ -96,12 +98,18 @@ For an external, consent-safe pilot path, use
 report-only and defines the redaction/publication boundary for ACP-097.
 The current ACP-097 report is `docs/product/PILOT-REPORT-2026Q3-01.md`;
 it is `dry-run only` and records 0 live external PRs collected.
+Future benchmark planning must use
+`docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`, which frames the comparison as
+`without ae-framework` versus `with ae-framework` review workflows rather than
+an agent-vendor ranking.
 
 ### 7. Non-goals for the preview
 
 - No hosted agent service or IDE plugin is launched by this preview.
 - No claim that ae-framework generates better code than any coding agent.
 - No claim that review is faster without a controlled baseline.
+- No review-workflow benchmark claim until the controlled-comparison protocol is
+  executed with comparable baseline data.
 - No agent-vendor ranking.
 - No auto-merge guarantee.
 - No formal proof requirement for every PR.
@@ -125,6 +133,7 @@ report for measured review-thread closure and known limitations.
 - Demo script: docs/product/DEMO-SCRIPT.md
 - Quickstart: docs/guides/byo-agent-assurance-quickstart.md
 - Dogfooding report: docs/product/DOGFOODING-REPORT-2026Q3.md
+- Controlled comparison protocol: docs/product/CONTROLLED-COMPARISON-PROTOCOL.md
 
 Non-goals: this is not a hosted agent runtime, vendor benchmark, auto-merge
 guarantee, or universal formal-proof mandate.
@@ -239,12 +248,14 @@ preview として扱います。
 - `docs/guides/byo-agent-assurance-quickstart.md` — offline BYO-agent assurance demo。
 - `docs/guides/external-pilot-onboarding.md` — report-only external pilot、consent、redaction / publication boundary。
 - `docs/product/PILOT-REPORT-2026Q3-01.md` — ACP-097 の `dry-run only` pilot report と limitations。
+- `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` — future benchmark を agent vendor ranking ではなく review workflow comparison として設計する protocol。
 - `docs/product/DOGFOODING-REPORT-2026Q3.md` — dogfooding evidence と limitations。
 
 ### 4. 主張しないこと
 
 - hosted agent service、IDE plugin、auto-merge guarantee は提供しない。
 - agent vendor 比較や未測定の review-speed 改善は主張しない。
+- controlled-comparison protocol を comparable baseline data で実行するまで、review-workflow benchmark claim は主張しない。
 - すべての PR に formal proof を要求しない。
 - human maintainer judgment を置き換えない。
 - maintainer が承認した consent / redaction boundary なしに external-pilot data を公開しない。
@@ -255,3 +266,6 @@ preview として扱います。
 を開く。次に scope drift / high-risk escalation の optional demo を見せる。外部 repository で試す場合は
 `docs/guides/external-pilot-onboarding.md` に沿って report-only / consent / redaction boundary を先に固定し、`docs/product/PILOT-REPORT-2026Q3-01.md` で現在は `dry-run only` であることを示す。最後に dogfooding
 report の summary を使い、preview の実測範囲と限界を説明する。
+Future benchmark の説明が必要な場合は `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
+を使い、比較対象は agent vendor ではなく `without ae-framework` / `with ae-framework`
+の review workflow であると明示する。
