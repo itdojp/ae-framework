@@ -49,6 +49,20 @@ node scripts/demo/run-scope-drift-demo.mjs
 node scripts/demo/run-high-risk-escalation-demo.mjs
 ```
 
+The `ci/demo-smoke` lane in `.github/workflows/demo-smoke.yml` uses this same
+representative command sequence and then runs the artifact/schema checker:
+
+```bash
+pnpm run demo:agent-assurance
+node scripts/demo/run-scope-drift-demo.mjs
+node scripts/demo/run-high-risk-escalation-demo.mjs
+pnpm run demo:smoke:check
+```
+
+For pull requests, treat `ci/demo-smoke` as report-only and non-required until
+runtime and false-positive rate are reviewed. It is enforcing on `main` push and
+manual `workflow_dispatch` runs.
+
 ### Talk track
 
 1. "ae-framework is not trying to be the coding agent. It keeps the assurance
@@ -89,6 +103,21 @@ If local setup is unavailable, use checked-in documentation and fixtures only:
 5. `pnpm run assurance:post-review-surface -- --repo itdojp/ae-framework --pr 123 --body-file artifacts/review/agent-assurance-demo/assurance-review.md` を dry-run で実行し、PR comment surface を確認する。
 6. scope drift / high-risk escalation の optional scenario を示す。
 7. dogfooding report の観測値と limitations を示し、benchmark ではないことを明確にする。
+
+### CI smoke lane
+
+`.github/workflows/demo-smoke.yml` の `ci/demo-smoke` は、上記と同じ代表 command sequence に
+artifact/schema checker を加えて実行します。
+
+```bash
+pnpm run demo:agent-assurance
+node scripts/demo/run-scope-drift-demo.mjs
+node scripts/demo/run-high-risk-escalation-demo.mjs
+pnpm run demo:smoke:check
+```
+
+PR では report-only / non-required として扱い、runtime と false-positive rate を確認するまでは
+required check にしません。`main` push と manual `workflow_dispatch` では enforcing です。
 
 ### 予備手順
 

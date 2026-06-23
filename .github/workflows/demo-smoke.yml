@@ -1,0 +1,147 @@
+name: Demo Smoke
+
+on:
+  pull_request:
+    # Report-only PR lane for launch/pilot demo commands. Path filters keep
+    # unrelated docs-only PRs out of this workflow.
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/actions/setup-node-pnpm/**'
+      - '.github/actions/setup-pnpm/**'
+      - '.github/workflows/demo-smoke.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'scripts/agents/normalize-producer-output.mjs'
+      - 'scripts/assurance/**'
+      - 'scripts/ci/lib/risk-policy.mjs'
+      - 'scripts/ci/policy-gate.mjs'
+      - 'scripts/demo/**'
+      - 'scripts/plan-artifact/**'
+      - 'policy/risk-policy.yml'
+      - 'schema/**'
+      - 'fixtures/assurance/**'
+      - 'fixtures/assurance-e2e/**'
+      - 'examples/assurance-control-plane/**'
+      - 'docs/guides/byo-agent-assurance-quickstart.md'
+      - 'docs/product/DEMO-SCRIPT.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/actions/setup-node-pnpm/**'
+      - '.github/actions/setup-pnpm/**'
+      - '.github/workflows/demo-smoke.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'scripts/agents/normalize-producer-output.mjs'
+      - 'scripts/assurance/**'
+      - 'scripts/ci/lib/risk-policy.mjs'
+      - 'scripts/ci/policy-gate.mjs'
+      - 'scripts/demo/**'
+      - 'scripts/plan-artifact/**'
+      - 'policy/risk-policy.yml'
+      - 'schema/**'
+      - 'fixtures/assurance/**'
+      - 'fixtures/assurance-e2e/**'
+      - 'examples/assurance-control-plane/**'
+      - 'docs/guides/byo-agent-assurance-quickstart.md'
+      - 'docs/product/DEMO-SCRIPT.md'
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  demo-smoke:
+    name: ci/demo-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+
+      - name: Run baseline assurance demo command
+        id: agent_assurance
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: pnpm run demo:agent-assurance
+
+      - name: Run scope-drift demo command
+        id: scope_drift
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: node scripts/demo/run-scope-drift-demo.mjs
+
+      - name: Run high-risk escalation demo command
+        id: high_risk
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: node scripts/demo/run-high-risk-escalation-demo.mjs
+
+      - name: Validate demo smoke artifacts
+        id: artifact_check
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: pnpm run demo:smoke:check
+
+      - name: Summarize demo smoke lane
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            enforcement='report-only for pull requests; do not add ci/demo-smoke to required checks until runtime and false-positive rate are reviewed'
+          else
+            enforcement='enforcing for main/dispatch runs'
+          fi
+          {
+            printf '%s\n' '### Demo Smoke'
+            printf '%s\n' ''
+            printf '%s\n' "- Enforcement: ${enforcement}"
+            printf '%s\n' "- Baseline command outcome: ${{ steps.agent_assurance.outcome }}"
+            printf '%s\n' "- Scope-drift command outcome: ${{ steps.scope_drift.outcome }}"
+            printf '%s\n' "- High-risk command outcome: ${{ steps.high_risk.outcome }}"
+            printf '%s\n' "- Artifact/schema check outcome: ${{ steps.artifact_check.outcome }}"
+            printf '%s\n' ''
+            printf '%s\n' 'Failure categories are visible in the failing step logs as command failure, [artifact missing], [json invalid], [schema invalid], or [artifact invalid].'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce demo smoke on trusted runs
+        if: ${{ always() && github.event_name != 'pull_request' && (steps.agent_assurance.outcome != 'success' || steps.scope_drift.outcome != 'success' || steps.high_risk.outcome != 'success' || steps.artifact_check.outcome != 'success') }}
+        run: |
+          printf '%s\n' '::error::demo smoke failed in enforcing mode; inspect the command and artifact/schema validation steps.'
+          exit 1
+
+      - name: Upload demo smoke artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-smoke-artifacts
+          path: |
+            artifacts/verify-lite/agent-assurance-demo
+            artifacts/agents/agent-assurance-demo
+            artifacts/assurance/agent-assurance-demo
+            artifacts/policy/agent-assurance-demo
+            artifacts/review/agent-assurance-demo
+            artifacts/agents/scope-drift-demo
+            artifacts/context-pack/scope-drift-demo
+            artifacts/assurance/scope-drift-demo
+            artifacts/plan/scope-drift-demo
+            artifacts/policy/scope-drift-demo
+            artifacts/review/scope-drift-demo
+            artifacts/agents/high-risk-escalation-demo
+            artifacts/assurance/high-risk-escalation-demo
+            artifacts/plan/high-risk-escalation-demo
+            artifacts/policy/high-risk-escalation-demo
+            artifacts/review/high-risk-escalation-demo
+          if-no-files-found: warn
+          retention-days: 7
