@@ -125,6 +125,44 @@ The renderer is tolerant of absent optional artifacts and keeps them visible as
 `missing` / `not provided`. Do not interpret absent Boundary Map or claim
 evidence artifacts as success.
 
+#### Step 5: dry-run or post the reviewer-first surface to a PR
+
+The posting helper is intentionally manual / semi-automatic. It defaults to
+dry-run, prepends an HTML marker to the PR comment body, and calls
+`gh pr comment --body-file` only when `--mode comment` is selected. It does not
+approve, review, merge, auto-update an existing comment, or rewrite the generated
+Markdown source file.
+
+```bash
+pnpm run assurance:post-review-surface -- \
+  --repo itdojp/ae-framework \
+  --pr 123 \
+  --body-file artifacts/review/assurance-review.md \
+  --marker '<!-- ae-assurance-review-surface -->'
+```
+
+```bash
+pnpm run assurance:post-review-surface -- \
+  --repo itdojp/ae-framework \
+  --pr 123 \
+  --body-file artifacts/review/assurance-review.md \
+  --mode comment \
+  --marker '<!-- ae-assurance-review-surface -->'
+```
+
+```powershell
+pnpm run assurance:post-review-surface -- `
+  --repo itdojp/ae-framework `
+  --pr 123 `
+  --body-file artifacts/review/assurance-review.md `
+  --mode comment `
+  --marker '<!-- ae-assurance-review-surface -->'
+```
+
+If `gh` is missing or unauthenticated, run `gh auth login` or set a `GH_TOKEN`
+with repository access. Markdown generation remains separate; rerun
+`pnpm run assurance:review-surface` only when the underlying artifacts changed.
+
 ### 5. CI operation
 
 #### 5.1 default behavior
@@ -134,7 +172,8 @@ evidence artifacts as success.
 - `pr-ci-status-comment.yml` assembles the PR summary comment from harness-health, change-package, hook-feedback, and the downloaded `artifacts/quality/quality-scorecard.md`. When a verify-lite artifact for the same head SHA is available, it also passes `--assurance-summary` into hook-feedback generation. Assurance signals therefore appear through hook-feedback and the quality scorecard rather than by appending `artifacts/assurance/assurance-summary.md` or per-claim details directly.
 - `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` consume `--assurance-summary` and reflect assurance warnings in `currentStatus`, `nextActions`, `blockers`, and `artifacts`.
 - release and post-deploy summaries append a short summary when `artifacts/assurance/assurance-summary.md` exists.
-- `pnpm run assurance:review-surface` can render `artifacts/review/assurance-review.md` from producer, assurance, policy, Boundary Map, and claim-evidence artifacts. This is a reviewer surface, not a bot posting mechanism.
+- `pnpm run assurance:review-surface` can render `artifacts/review/assurance-review.md` from producer, assurance, policy, Boundary Map, and claim-evidence artifacts. This is a reviewer surface, not an approval mechanism.
+- `pnpm run assurance:post-review-surface` can dry-run or manually post that Markdown to a PR through `gh pr comment`; it does not auto-approve, auto-merge, or update an existing comment by default.
 
 #### 5.2 trigger for strict assurance enforcement
 
@@ -375,6 +414,43 @@ renderer は任意artifactが存在しない場合も失敗にせず、`missing`
 `not provided` として表示します。Boundary Map や claim evidence artifact の不在を
 success と解釈しないでください。
 
+#### Step 5: reviewer-first surface を dry-run または PR 投稿する
+
+投稿helperは manual / semi-automatic な運用を前提にしています。既定は dry-run
+で、PR comment body に HTML marker を付け、`--mode comment` の時だけ
+`gh pr comment --body-file` を呼びます。approve、review、merge、既存commentの
+自動更新、生成済み Markdown source file の書き換えは行いません。
+
+```bash
+pnpm run assurance:post-review-surface -- \
+  --repo itdojp/ae-framework \
+  --pr 123 \
+  --body-file artifacts/review/assurance-review.md \
+  --marker '<!-- ae-assurance-review-surface -->'
+```
+
+```bash
+pnpm run assurance:post-review-surface -- \
+  --repo itdojp/ae-framework \
+  --pr 123 \
+  --body-file artifacts/review/assurance-review.md \
+  --mode comment \
+  --marker '<!-- ae-assurance-review-surface -->'
+```
+
+```powershell
+pnpm run assurance:post-review-surface -- `
+  --repo itdojp/ae-framework `
+  --pr 123 `
+  --body-file artifacts/review/assurance-review.md `
+  --mode comment `
+  --marker '<!-- ae-assurance-review-surface -->'
+```
+
+`gh` が未導入または未認証の場合は、`gh auth login` を実行するか repository
+access を持つ `GH_TOKEN` を設定してください。Markdown 生成は独立しているため、
+underlying artifact が変わった場合だけ `pnpm run assurance:review-surface` を再実行します。
+
 ### 5. CI 運用
 
 ### 5.1 既定動作
@@ -384,7 +460,8 @@ success と解釈しないでください。
 - `pr-ci-status-comment.yml` は harness-health / change-package / hook-feedback / downloaded `artifacts/quality/quality-scorecard.md` を組み合わせて PR summary comment を構成します。同一 head SHA の verify-lite の成果物を取得できる場合は `hook-feedback` 生成時にも `--assurance-summary` を渡します。assurance の信号は `hook-feedback` と quality scorecard 経由で反映され、`artifacts/assurance/assurance-summary.md` や claim 単位の詳細を直接追記するわけではありません。
 - `pnpm run handoff:create` / `scripts/agents/create-handoff.mjs` は `--assurance-summary` を受け取り、assurance warning を `currentStatus` / `nextActions` / `blockers` / `artifacts` へ反映します。
 - release/post-deploy summary は `artifacts/assurance/assurance-summary.md` が存在する場合に要約を追記します。
-- `pnpm run assurance:review-surface` は producer、assurance、policy、Boundary Map、claim-evidence artifact から `artifacts/review/assurance-review.md` を生成できます。これは reviewer surface であり、bot 投稿機構ではありません。
+- `pnpm run assurance:review-surface` は producer、assurance、policy、Boundary Map、claim-evidence artifact から `artifacts/review/assurance-review.md` を生成できます。これは reviewer surface であり、approval mechanism ではありません。
+- `pnpm run assurance:post-review-surface` は、この Markdown を `gh pr comment` 経由で dry-run または手動投稿できます。auto-approve、auto-merge、既存commentの自動更新は既定では行いません。
 
 ### 5.2 strict assurance enforcement の発火条件
 

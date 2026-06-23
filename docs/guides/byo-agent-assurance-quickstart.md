@@ -68,6 +68,30 @@ pnpm run assurance:review-surface -- \
   --output-md artifacts/review/agent-assurance-demo/assurance-review.md
 ```
 
+To preview the PR comment that a pilot reviewer would see, keep the posting
+helper in dry-run mode:
+
+```bash
+pnpm run assurance:post-review-surface -- \
+  --repo itdojp/ae-framework \
+  --pr 123 \
+  --body-file artifacts/review/agent-assurance-demo/assurance-review.md \
+  --marker '<!-- ae-assurance-review-surface -->'
+```
+
+To post the same surface manually, switch to `--mode comment` after confirming
+`gh auth status`. This uses `gh pr comment`; it does not approve, review, merge,
+or update an existing comment.
+
+```bash
+pnpm run assurance:post-review-surface -- \
+  --repo itdojp/ae-framework \
+  --pr 123 \
+  --body-file artifacts/review/agent-assurance-demo/assurance-review.md \
+  --mode comment \
+  --marker '<!-- ae-assurance-review-surface -->'
+```
+
 Use `--output-root <path>` when you want an isolated output directory under the
 repository root:
 
@@ -196,6 +220,29 @@ pnpm run assurance:review-surface -- \
   --policy-gate-summary artifacts/policy/agent-assurance-demo/policy-gate-summary.json \
   --verify-lite-summary artifacts/verify-lite/agent-assurance-demo/verify-lite-run-summary.json \
   --output-md artifacts/review/agent-assurance-demo/assurance-review.md
+```
+
+pilot reviewer が見る PR comment を事前確認する場合は、投稿helperを dry-run のまま使います。
+
+```bash
+pnpm run assurance:post-review-surface -- \
+  --repo itdojp/ae-framework \
+  --pr 123 \
+  --body-file artifacts/review/agent-assurance-demo/assurance-review.md \
+  --marker '<!-- ae-assurance-review-surface -->'
+```
+
+同じ surface を手動投稿する場合は、`gh auth status` を確認してから `--mode comment`
+に切り替えます。この helper は `gh pr comment` を使いますが、approve、review、merge、
+既存commentの更新は行いません。
+
+```bash
+pnpm run assurance:post-review-surface -- \
+  --repo itdojp/ae-framework \
+  --pr 123 \
+  --body-file artifacts/review/agent-assurance-demo/assurance-review.md \
+  --mode comment \
+  --marker '<!-- ae-assurance-review-surface -->'
 ```
 
 出力先を分離したい場合は、repository root 配下の `--output-root <path>` を指定します。

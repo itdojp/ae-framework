@@ -439,6 +439,7 @@
     "mutation:report": "node scripts/mutation/mutation-report.mjs",
     "check:assurance-contract-governance": "node scripts/assurance/check-contract-governance.mjs",
     "assurance:review-surface": "node scripts/assurance/render-pr-review-surface.mjs",
+    "assurance:post-review-surface": "node scripts/assurance/post-pr-review-surface.mjs",
     "metrics:agent-pr-assurance": "node scripts/metrics/collect-agent-pr-assurance-metrics.mjs"
   },
   "dependencies": {
