@@ -14,6 +14,9 @@ const sampleFixture = JSON.parse(
 const agentPrAssuranceFixture = JSON.parse(
   readFileSync(resolve('fixtures/agentic-metrics/agent-pr-assurance-metrics.example.json'), 'utf8'),
 ) as Record<string, unknown>;
+const collectedAgentPrAssuranceFixture = JSON.parse(
+  readFileSync(resolve('fixtures/metrics/agent-pr-assurance/expected.agent-pr-assurance-metrics.json'), 'utf8'),
+) as Record<string, unknown>;
 
 function compileSchema() {
   const ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -48,6 +51,107 @@ describe('agentic-metrics contract', () => {
     expect(validate(agentPrAssuranceFixture), JSON.stringify(validate.errors)).toBe(true);
     expect(validateAgenticMetricsSemantics(sampleFixture)).toEqual([]);
     expect(validateAgenticMetricsSemantics(agentPrAssuranceFixture)).toEqual([]);
+  });
+
+
+  it('rejects required-check classification summary drift in collected PR assurance metrics', () => {
+    const invalidFixture = structuredClone(collectedAgentPrAssuranceFixture) as {
+      agentPrAssurance: {
+        productMetrics: {
+          required_checks: {
+            summary: { policy_semantic_failure_count: number };
+          };
+        };
+      };
+    };
+
+    invalidFixture.agentPrAssurance.productMetrics.required_checks.summary.policy_semantic_failure_count = 1;
+
+    expectSemanticError(
+      invalidFixture as unknown as Record<string, unknown>,
+      '/agentPrAssurance/productMetrics/required_checks/summary/policy_semantic_failure_count',
+      'required_check_summary_mismatch',
+    );
+  });
+
+  it('accepts not_collected required-check summaries without coercing them to zero', () => {
+    const notCollectedFixture = structuredClone(collectedAgentPrAssuranceFixture) as {
+      agentPrAssurance: {
+        productMetrics: {
+          required_checks: {
+            source: string;
+            required: Array<{ name: string } & Record<string, unknown>>;
+            summary: Record<string, unknown>;
+          };
+          ci_rerun_count: unknown;
+          ci_rerun_classification_counts: unknown;
+        };
+        metrics: {
+          agent_regression_signal: Record<string, unknown>;
+        };
+      };
+    };
+    const requiredNames = notCollectedFixture.agentPrAssurance.productMetrics.required_checks.required
+      .map((entry) => entry.name);
+    const collectibleSummaryFields = [
+      'success_count',
+      'pending_count',
+      'current_required_failure_count',
+      'policy_semantic_failure_count',
+      'operational_failure_count',
+      'manual_rerun_required_count',
+      'stale_or_superseded_failure_count',
+      'stale_cancelled_count',
+      'superseded_count',
+      'same_head_stale_count',
+      'semantic_blocking_failure_count',
+      'operational_note_count',
+    ];
+    notCollectedFixture.agentPrAssurance.productMetrics.required_checks = {
+      source: 'not_collected',
+      required: requiredNames.map((name) => ({
+        name,
+        collected: false,
+        latest: null,
+        classification: 'not_collected',
+        review_disposition: 'not_collected',
+        attempts: 0,
+        stale_or_superseded_failure_count: 0,
+        stale_attempts: [],
+        stale_cancelled_count: 0,
+        superseded_count: 0,
+        same_head_stale_count: 0,
+      })),
+      summary: Object.fromEntries([
+        ['required_count', requiredNames.length],
+        ['collected_count', 0],
+        ...collectibleSummaryFields.map((field) => [field, 'not_collected']),
+      ]),
+    };
+    notCollectedFixture.agentPrAssurance.productMetrics.ci_rerun_count = 'not_collected';
+    notCollectedFixture.agentPrAssurance.productMetrics.ci_rerun_classification_counts = 'not_collected';
+    notCollectedFixture.agentPrAssurance.metrics.agent_regression_signal = {
+      currentFailures: 'not_collected',
+      staleOrSupersededFailures: 'not_collected',
+      operationalNotes: 'not_collected',
+      currentRequiredFailures: 'not_collected',
+      policySemanticFailures: 'not_collected',
+      manualRerunRequired: 'not_collected',
+      classificationSource: 'not_collected',
+      regressed: false,
+    };
+
+    const validate = compileSchema();
+    expect(validate(notCollectedFixture), JSON.stringify(validate.errors)).toBe(true);
+    expect(validateAgenticMetricsSemantics(notCollectedFixture as unknown as Record<string, unknown>)).toEqual([]);
+
+    const invalidFixture = structuredClone(notCollectedFixture);
+    invalidFixture.agentPrAssurance.productMetrics.required_checks.summary.success_count = 0;
+    expectSemanticError(
+      invalidFixture as unknown as Record<string, unknown>,
+      '/agentPrAssurance/productMetrics/required_checks/summary/success_count',
+      'required_check_summary_mismatch',
+    );
   });
 
   it('keeps agentPrAssurance report-only', () => {

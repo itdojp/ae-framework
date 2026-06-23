@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
+import { collectRequiredCheckClassifications } from '../ci/lib/check-classification.mjs';
 
 const DEFAULT_OUTPUT_JSON = 'artifacts/metrics/agent-pr-assurance-metrics.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/metrics/agent-pr-assurance-metrics.md';
@@ -409,101 +410,25 @@ function countSelectedHighRiskClaims(profileArtifacts, policyArtifacts) {
   return null;
 }
 
-function timestampMillis(entry) {
-  const candidates = [entry?.completedAt, entry?.startedAt];
-  for (const value of candidates) {
-    if (!value) continue;
-    const parsed = Date.parse(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return 0;
-}
 
-function normalizeCheck(entry, index) {
-  return {
-    index,
-    type: entry?.__typename ?? entry?.type ?? 'CheckRun',
-    name: String(entry?.name ?? entry?.checkName ?? entry?.workflowName ?? UNKNOWN),
-    workflowName: entry?.workflowName ?? null,
-    status: entry?.status ?? null,
-    conclusion: entry?.conclusion ?? null,
-    startedAt: entry?.startedAt ?? null,
-    completedAt: entry?.completedAt ?? null,
-    detailsUrl: entry?.detailsUrl ?? entry?.url ?? null,
-  };
-}
-
-function compareCheckRecency(a, b) {
-  const delta = timestampMillis(a) - timestampMillis(b);
-  if (delta !== 0) return delta;
-  return a.index - b.index;
-}
-
-function classifyLatestCheck(check) {
-  const status = String(check?.status ?? '').toUpperCase();
-  const conclusion = String(check?.conclusion ?? '').toUpperCase();
-  if (status && status !== 'COMPLETED') return 'pending';
-  if (conclusion === 'SUCCESS') return 'success';
-  if (conclusion === 'SKIPPED') return 'skipped';
-  if (conclusion === 'CANCELLED' || conclusion === 'TIMED_OUT') return 'current_operational_failure';
-  if (conclusion === 'FAILURE' || conclusion === 'ACTION_REQUIRED' || conclusion === 'STARTUP_FAILURE') return 'current_required_failure';
-  if (!conclusion) return UNKNOWN;
-  return conclusion.toLowerCase();
-}
-
-function collectRequiredChecks(statusCheckRollup, requiredNames) {
-  const checks = ensureArray(statusCheckRollup).map(normalizeCheck);
-  const byName = new Map();
-  for (const check of checks) {
-    if (!byName.has(check.name)) byName.set(check.name, []);
-    byName.get(check.name).push(check);
-  }
-
-  const required = requiredNames.map((name) => {
-    const matches = [...(byName.get(name) ?? [])].sort(compareCheckRecency);
-    const latest = matches.at(-1) ?? null;
-    const staleOrCancelled = matches.slice(0, -1).filter((entry) => {
-      const conclusion = String(entry.conclusion ?? '').toUpperCase();
-      return ['CANCELLED', 'TIMED_OUT', 'FAILURE', 'ACTION_REQUIRED', 'STARTUP_FAILURE'].includes(conclusion);
-    }).length;
-    return {
-      name,
-      collected: matches.length > 0,
-      latest: latest ? {
-        status: latest.status,
-        conclusion: latest.conclusion,
-        workflowName: latest.workflowName,
-        startedAt: latest.startedAt,
-        completedAt: latest.completedAt,
-        detailsUrl: latest.detailsUrl,
-      } : null,
-      classification: latest ? classifyLatestCheck(latest) : NOT_COLLECTED,
-      attempts: matches.length,
-      stale_or_superseded_failure_count: staleOrCancelled,
-    };
-  });
-
-  const classifications = required.map((entry) => entry.classification);
-  const summary = {
-    required_count: required.length,
-    collected_count: required.filter((entry) => entry.collected).length,
-    success_count: classifications.filter((entry) => entry === 'success').length,
-    pending_count: classifications.filter((entry) => entry === 'pending').length,
-    current_required_failure_count: classifications.filter((entry) => entry === 'current_required_failure').length,
-    operational_failure_count: classifications.filter((entry) => entry === 'current_operational_failure').length,
-    stale_or_superseded_failure_count: required.reduce((total, entry) => total + entry.stale_or_superseded_failure_count, 0),
-  };
-
-  return {
-    source: checks.length > 0 ? 'statusCheckRollup' : NOT_COLLECTED,
-    required,
-    summary,
-  };
+function collectRequiredChecks(statusCheckRollup, requiredNames, pullRequestHeadSha = null) {
+  return collectRequiredCheckClassifications(statusCheckRollup, requiredNames, { pullRequestHeadSha });
 }
 
 function countCiReruns(requiredChecks) {
   if (requiredChecks.source === NOT_COLLECTED) return null;
   return requiredChecks.required.reduce((total, check) => total + Math.max(0, check.attempts - 1), 0);
+}
+
+function buildCiRerunClassificationCounts(requiredChecks) {
+  if (requiredChecks.source === NOT_COLLECTED) return null;
+  return {
+    total: countCiReruns(requiredChecks) ?? 0,
+    stale_cancelled: requiredChecks.summary.stale_cancelled_count,
+    superseded: requiredChecks.summary.superseded_count,
+    same_head_stale: requiredChecks.summary.same_head_stale_count,
+    manual_rerun_required: requiredChecks.summary.manual_rerun_required_count,
+  };
 }
 
 function minutesBetween(start, end) {
@@ -521,8 +446,10 @@ function reviewReadyAtForMetric(options, pullRequest) {
 function buildLowLevelMetrics({ missingEvidenceCount, requiredChecks, selectedHighRiskClaimCount, artifactSources }) {
   const missingEvidence = Number.isInteger(missingEvidenceCount) ? missingEvidenceCount : NOT_COLLECTED;
   const selectedClaims = Number.isInteger(selectedHighRiskClaimCount) ? selectedHighRiskClaimCount : 0;
-  const currentFailures = requiredChecks.summary.current_required_failure_count + requiredChecks.summary.operational_failure_count;
-  const staleFailures = requiredChecks.summary.stale_or_superseded_failure_count;
+  const countsCollected = requiredChecks.source !== NOT_COLLECTED;
+  const currentFailures = countsCollected ? requiredChecks.summary.semantic_blocking_failure_count : NOT_COLLECTED;
+  const staleFailures = countsCollected ? requiredChecks.summary.stale_or_superseded_failure_count : NOT_COLLECTED;
+  const operationalNotes = countsCollected ? requiredChecks.summary.operational_note_count : NOT_COLLECTED;
   const artifactCount = artifactSources.length;
 
   return {
@@ -561,7 +488,12 @@ function buildLowLevelMetrics({ missingEvidenceCount, requiredChecks, selectedHi
     agent_regression_signal: {
       currentFailures,
       staleOrSupersededFailures: staleFailures,
-      regressed: currentFailures > 0,
+      operationalNotes,
+      currentRequiredFailures: countsCollected ? requiredChecks.summary.current_required_failure_count : NOT_COLLECTED,
+      policySemanticFailures: countsCollected ? requiredChecks.summary.policy_semantic_failure_count : NOT_COLLECTED,
+      manualRerunRequired: countsCollected ? requiredChecks.summary.manual_rerun_required_count : NOT_COLLECTED,
+      classificationSource: requiredChecks.source,
+      regressed: Number.isInteger(currentFailures) ? currentFailures > 0 : false,
     },
     blocked_to_merge_eligible_mttr: {
       minutes: null,
@@ -594,7 +526,11 @@ function buildDocument(options, collection) {
     ...policyArtifacts,
   ].map((artifact) => artifact.path);
 
-  const requiredChecks = collectRequiredChecks(collection.pullRequest.statusCheckRollup, options.requiredChecks);
+  const requiredChecks = collectRequiredChecks(
+    collection.pullRequest.statusCheckRollup,
+    options.requiredChecks,
+    collection.pullRequest.headRefOid ?? null,
+  );
   if (requiredChecks.source === NOT_COLLECTED) {
     limitations.push('required_checks are not_collected because no statusCheckRollup was available.');
   }
@@ -605,6 +541,7 @@ function buildDocument(options, collection) {
   const missingEvidenceCount = countMissingEvidence(producerArtifacts, policyArtifacts, manifestArtifacts);
   const selectedHighRiskClaimCount = countSelectedHighRiskClaims(profileArtifacts, policyArtifacts);
   const ciRerunCount = countCiReruns(requiredChecks);
+  const ciRerunClassificationCounts = buildCiRerunClassificationCounts(requiredChecks);
   const reviewReadyAt = reviewReadyAtForMetric(options, collection.pullRequest);
   const timeToMerge = minutesBetween(reviewReadyAt, collection.pullRequest.mergedAt);
   if (timeToMerge === null) {
@@ -619,6 +556,7 @@ function buildDocument(options, collection) {
     missing_evidence_finding_count: metricValue(missingEvidenceCount, limitations, 'missing_evidence_finding_count'),
     selected_high_risk_claim_count: metricValue(selectedHighRiskClaimCount, limitations, 'selected_high_risk_claim_count'),
     ci_rerun_count: metricValue(ciRerunCount, limitations, 'ci_rerun_count'),
+    ci_rerun_classification_counts: metricValue(ciRerunClassificationCounts, limitations, 'ci_rerun_classification_counts'),
     time_to_merge_minutes: metricValue(timeToMerge, limitations, 'time_to_merge_minutes'),
     policy_gate_false_positive_count: NOT_COLLECTED,
     policy_gate_false_negative_count: NOT_COLLECTED,
@@ -635,7 +573,7 @@ function buildDocument(options, collection) {
 
   const summary = buildSummary(productMetrics, collection.pullRequest);
   return {
-    schemaVersion: '2.0.0',
+    schemaVersion: '2.1.0',
     tokens: {
       prompt: null,
       completion: null,
@@ -682,23 +620,43 @@ function buildDocument(options, collection) {
 }
 
 function renderValue(value) {
-  if (value && typeof value === 'object') return '`object`';
+  if (value && typeof value === 'object') return `\`${JSON.stringify(value)}\``;
   return String(value);
 }
 
 function buildSummary(productMetrics, pullRequest) {
   const repo = pullRequest.repository ?? UNKNOWN;
   const number = pullRequest.number ?? UNKNOWN;
-  return `Report-only agent PR assurance metrics for ${repo}#${number}: review threads ${renderValue(productMetrics.review_threads_total)}, unresolved final ${renderValue(productMetrics.review_threads_unresolved_final)}, required check current failures ${productMetrics.required_checks.summary.current_required_failure_count}, stale/superseded required-check failures ${productMetrics.required_checks.summary.stale_or_superseded_failure_count}.`;
+  return `Report-only agent PR assurance metrics for ${repo}#${number}: review threads ${renderValue(productMetrics.review_threads_total)}, unresolved final ${renderValue(productMetrics.review_threads_unresolved_final)}, required check semantic failures ${productMetrics.required_checks.summary.semantic_blocking_failure_count}, operational notes ${productMetrics.required_checks.summary.operational_note_count}.`;
+}
+
+function requiredCheckRow(entry) {
+  return `| ${escapeMd(entry.name)} | ${escapeMd(entry.classification)} | ${escapeMd(entry.review_disposition)} | ${entry.attempts} | ${entry.stale_cancelled_count} | ${entry.superseded_count} | ${entry.same_head_stale_count} | ${escapeMd(entry.latest?.conclusion ?? NOT_COLLECTED)} |`;
+}
+
+function renderRequiredCheckTable(entries) {
+  const rows = entries.map(requiredCheckRow);
+  return `| Check | Classification | Review disposition | Attempts | Stale cancelled | Superseded | Same-head stale | Latest conclusion |\n| --- | --- | --- | ---: | ---: | ---: | ---: | --- |\n${rows.length > 0 ? rows.join('\n') : '| none | none | none | 0 | 0 | 0 | 0 | none |'}`;
+}
+
+function renderRequiredCheckDispositionSections(requiredChecks) {
+  const groups = [
+    ['Blocking required checks', requiredChecks.filter((entry) => entry.review_disposition === 'blocking')],
+    ['Operational notes', requiredChecks.filter((entry) => entry.review_disposition === 'operational_note')],
+    ['Pending checks', requiredChecks.filter((entry) => entry.review_disposition === 'pending')],
+    ['Not collected checks', requiredChecks.filter((entry) => entry.review_disposition === NOT_COLLECTED)],
+    ['Non-blocking checks', requiredChecks.filter((entry) => entry.review_disposition === 'non_blocking')],
+  ];
+  return groups
+    .filter(([, entries]) => entries.length > 0)
+    .map(([title, entries]) => `### ${title}\n\n${renderRequiredCheckTable(entries)}`)
+    .join('\n\n');
 }
 
 function renderMarkdown(document) {
   const assurance = document.agentPrAssurance;
   const metrics = assurance.productMetrics;
   const pr = assurance.pullRequest;
-  const requiredRows = metrics.required_checks.required.map((entry) => (
-    `| ${escapeMd(entry.name)} | ${escapeMd(entry.classification)} | ${entry.attempts} | ${entry.stale_or_superseded_failure_count} | ${escapeMd(entry.latest?.conclusion ?? NOT_COLLECTED)} |`
-  ));
   return `# Agent PR Assurance Metrics\n\n` +
     `Report-only metrics for ${escapeMd(pr.repository)}#${escapeMd(pr.number)}. Producer output and metrics are review evidence, not approval.\n\n` +
     `- generatedAt: \`${assurance.generatedAt}\`\n` +
@@ -713,12 +671,13 @@ function renderMarkdown(document) {
     `| missing_evidence_finding_count | ${escapeMd(metrics.missing_evidence_finding_count)} |\n` +
     `| selected_high_risk_claim_count | ${escapeMd(metrics.selected_high_risk_claim_count)} |\n` +
     `| ci_rerun_count | ${escapeMd(metrics.ci_rerun_count)} |\n` +
+    `| ci_rerun_classification_counts | ${escapeMd(renderValue(metrics.ci_rerun_classification_counts))} |\n` +
     `| time_to_merge_minutes | ${escapeMd(metrics.time_to_merge_minutes)} |\n` +
     `| policy_gate_false_positive_count | ${escapeMd(metrics.policy_gate_false_positive_count)} |\n` +
     `| policy_gate_false_negative_count | ${escapeMd(metrics.policy_gate_false_negative_count)} |\n\n` +
     `## Required checks\n\n` +
-    `| Check | Classification | Attempts | Stale/superseded failures | Latest conclusion |\n| --- | --- | ---: | ---: | --- |\n` +
-    `${requiredRows.length > 0 ? requiredRows.join('\n') : '| not_collected | not_collected | 0 | 0 | not_collected |'}\n\n` +
+    `Blocking rows are semantic failures. Operational notes are stale, cancelled, superseded, or rerun-needed states and are not policy false-positive annotations.\n\n` +
+    `${renderRequiredCheckDispositionSections(metrics.required_checks.required)}\n\n` +
     `## Limitations\n\n` +
     `${assurance.limitations.map((entry) => `- ${entry}`).join('\n')}\n`;
 }

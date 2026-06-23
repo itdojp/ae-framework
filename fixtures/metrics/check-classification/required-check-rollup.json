@@ -1,0 +1,89 @@
+{
+  "pullRequestHeadSha": "head-current",
+  "requiredChecks": [
+    "gate",
+    "policy-gate",
+    "verify-lite",
+    "lint",
+    "coverage"
+  ],
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "name": "gate",
+      "workflowName": "Copilot Review Gate",
+      "status": "COMPLETED",
+      "conclusion": "CANCELLED",
+      "headSha": "head-current",
+      "startedAt": "2026-06-23T00:01:00Z",
+      "completedAt": "2026-06-23T00:02:00Z",
+      "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/10/job/1"
+    },
+    {
+      "__typename": "CheckRun",
+      "name": "gate",
+      "workflowName": "Copilot Review Gate",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "headSha": "head-current",
+      "startedAt": "2026-06-23T00:10:00Z",
+      "completedAt": "2026-06-23T00:11:00Z",
+      "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/11/job/1"
+    },
+    {
+      "__typename": "CheckRun",
+      "name": "policy-gate",
+      "workflowName": "Policy Gate",
+      "status": "COMPLETED",
+      "conclusion": "FAILURE",
+      "headSha": "head-current",
+      "startedAt": "2026-06-23T00:12:00Z",
+      "completedAt": "2026-06-23T00:13:00Z",
+      "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/12/job/1"
+    },
+    {
+      "__typename": "CheckRun",
+      "name": "verify-lite",
+      "workflowName": "Verify Lite",
+      "status": "COMPLETED",
+      "conclusion": "FAILURE",
+      "headSha": "head-previous",
+      "startedAt": "2026-06-23T00:04:00Z",
+      "completedAt": "2026-06-23T00:05:00Z",
+      "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/13/job/1"
+    },
+    {
+      "__typename": "CheckRun",
+      "name": "verify-lite",
+      "workflowName": "Verify Lite",
+      "status": "COMPLETED",
+      "conclusion": "SUCCESS",
+      "headSha": "head-current",
+      "startedAt": "2026-06-23T00:14:00Z",
+      "completedAt": "2026-06-23T00:15:00Z",
+      "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/14/job/1"
+    },
+    {
+      "__typename": "CheckRun",
+      "name": "lint",
+      "workflowName": "Lint",
+      "status": "COMPLETED",
+      "conclusion": "TIMED_OUT",
+      "headSha": "head-current",
+      "startedAt": "2026-06-23T00:16:00Z",
+      "completedAt": "2026-06-23T00:17:00Z",
+      "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/15/job/1"
+    },
+    {
+      "__typename": "CheckRun",
+      "name": "coverage",
+      "workflowName": "coverage-check",
+      "status": "IN_PROGRESS",
+      "conclusion": null,
+      "headSha": "head-current",
+      "startedAt": "2026-06-23T00:18:00Z",
+      "completedAt": null,
+      "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/16/job/1"
+    }
+  ]
+}

@@ -91,6 +91,13 @@ time for draft or delayed-review PRs. Missing optional inputs must remain
    product failure.
 3. **Separate current from stale CI state.** Stale/cancelled checks from an older
    head must not be counted as current regressions without classification.
+   Use `current_required_failure` / `policy_semantic_failure` for semantic
+   blocking states and `stale_cancelled`, `superseded`, `same_head_stale`, or
+   `manual_rerun_required` for operational CI recovery notes. Later green reruns
+   are not policy-gate false positives unless a maintainer manually annotates
+   the original block as unnecessary. When `ci_rerun_classification_counts` is
+   available, treat it as non-additive classification facets: `same_head_stale`
+   may overlap with `stale_cancelled` or `superseded`.
 4. **Segment time metrics.** Queueing, human review, CI, review-fix, and merge
    waiting time should be separated when data is available.
 5. **Use summary artifacts first.** Prefer `assurance-summary/v1`,
@@ -189,7 +196,7 @@ product effectiveness を示すための共通 metric vocabulary を定義しま
 
 1. **分母を明示する。** ratio の背後にある PR、claim、finding、comment、check run の件数を必ず記録する。
 2. **発見と失敗を分ける。** scope drift / missing evidence finding は、有用な risk 発見を示す場合があり、自動的に product failure ではない。
-3. **current と stale CI state を分ける。** 古い head の stale/cancelled check は、分類なしに current regression と数えない。
+3. **current と stale CI state を分ける。** 古い head の stale/cancelled check は、分類なしに current regression と数えない。semantic blocking state は `current_required_failure` / `policy_semantic_failure` とし、operational CI recovery note は `stale_cancelled`、`superseded`、`same_head_stale`、`manual_rerun_required` に分ける。後続 rerun が green になっただけでは policy-gate false positive とは扱わず、不要な block だったという maintainer の manual annotation が必要。`ci_rerun_classification_counts` がある場合、これは加算可能な内訳ではなく classification facet として扱う。`same_head_stale` は `stale_cancelled` または `superseded` と重複し得る。
 4. **time metric を segment 化する。** queueing、human review、CI、review-fix、merge waiting time を、データがあれば分ける。
 5. **summary artifact を先に使う。** raw log より `assurance-summary/v1`、`policy-gate-summary/v1`、`claim-evidence-manifest/v1`、PR review Markdown を優先する。
 6. **report-only semantics を維持する。** metric は `risk:high` / `enforce-assurance` の判断材料になり得るが、この文書はどの metric も blocking gate へ昇格しない。
