@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-06-21'
+lastVerified: '2026-06-23'
 ---
 
 # 📚 ae-framework Documentation / ドキュメント
@@ -33,6 +33,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
 - Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
+- External pilot onboarding: `guides/external-pilot-onboarding.md`
 
 ### How to use this index
 - If you need the shortest route to a working repository, start with `getting-started/`.
@@ -109,6 +110,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
 - BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
+- External pilot onboarding: `guides/external-pilot-onboarding.md`
 - Assurance control plane detailed design: `architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md`
 
 ### Strategy
@@ -154,6 +156,7 @@ Practical operator guides for day-to-day development, troubleshooting, and Conte
 - Advanced Troubleshooting: `guides/ADVANCED-TROUBLESHOOTING-GUIDE.md`
 - BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
+- External pilot onboarding: `guides/external-pilot-onboarding.md`
 - Context Pack onboarding checklist: `guides/context-pack-onboarding-checklist.md`
 - Context Pack Phase5+ cookbook: `guides/context-pack-phase5-cookbook.md`
 - Context Pack troubleshooting runbook: `operations/context-pack-troubleshooting.md`
@@ -356,6 +359,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [THREAD-REPO-CI-FLOW.md](./guides/THREAD-REPO-CI-FLOW.md) - Plan を repo SSOT に正規化する標準フロー
 - [USAGE.md](./guides/USAGE.md) - 一般的な使い方ガイド
 - [byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md) - 15分で試せる offline BYO-agent assurance demo
+- [external-pilot-onboarding.md](./guides/external-pilot-onboarding.md) - report-only external pilot の consent / redaction / publication boundary
 - [CLI-MIGRATION.md](./guides/CLI-MIGRATION.md) - CLI entry 移行ガイド
 - [test-generation-guide.md](./guides/test-generation-guide.md) - テスト生成ガイド
 - [EXECPLAN-SCHEMA.md](./guides/EXECPLAN-SCHEMA.md) - ExecPlan JSONスキーマ
@@ -440,6 +444,7 @@ Claude CodeやMCPとの統合
 - [security-assurance-lane.md](./security/security-assurance-lane.md) - Security Assurance Lane のartifact / command map と candidate finding 運用
 - [byo-agent-assurance-onboarding.md](./guides/byo-agent-assurance-onboarding.md) - BYO-agent 環境での Baseline / Structured / High-assurance 導入ガイド
 - [byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md) - `pnpm run demo:agent-assurance` で reviewer-first artifact flow を再現する quickstart
+- [external-pilot-onboarding.md](./guides/external-pilot-onboarding.md) - 外部 repository pilot を report-only で始めるための consent-safe operating model
 - [assurance-onboarding-checklist.md](./guides/assurance-onboarding-checklist.md) - 新規プロジェクトへ assurance profile を導入する最小チェックリスト
 - [path-normalization-contract.md](./quality/path-normalization-contract.md) - 成果物パス正規化契約（repo-relative優先）
 - [run-manifest-freshness-contract.md](./quality/run-manifest-freshness-contract.md) - run-manifest鮮度判定契約（stale artifact 検出）

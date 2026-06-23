@@ -7,7 +7,7 @@ canonicalSource:
 - docs/agents/evidence-adapters.md
 - examples/assurance-control-plane/agent-assurance-demo/README.md
 - examples/assurance-control-plane/scope-drift-demo/README.md
-lastVerified: '2026-06-21'
+lastVerified: '2026-06-23'
 ---
 
 # 15-Minute BYO-Agent Assurance Quickstart
@@ -81,7 +81,9 @@ pnpm run assurance:post-review-surface -- \
 
 To post the same surface manually, switch to `--mode comment` after confirming
 `gh auth status`. This uses `gh pr comment`; it does not approve, review, merge,
-or update an existing comment.
+or update an existing comment. For a live external pilot, follow
+`docs/guides/external-pilot-onboarding.md` first so the pilot stays
+report-only and the consent/redaction/publication boundary is recorded.
 
 ```bash
 pnpm run assurance:post-review-surface -- \
@@ -265,7 +267,8 @@ pnpm run assurance:post-review-surface -- \
 
 同じ surface を手動投稿する場合は、`gh auth status` を確認してから `--mode comment`
 に切り替えます。この helper は `gh pr comment` を使いますが、approve、review、merge、
-既存commentの更新は行いません。
+既存commentの更新は行いません。Live external pilot で使う場合は、先に
+`docs/guides/external-pilot-onboarding.md` に従い、report-only と consent / redaction / publication boundary を記録します。
 
 ```bash
 pnpm run assurance:post-review-surface -- \
