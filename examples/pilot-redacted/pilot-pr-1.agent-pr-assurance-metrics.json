@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "2.1.0",
+  "tokens": {
+    "prompt": null,
+    "completion": null,
+    "tool": null,
+    "total": null
+  },
+  "costUsd": null,
+  "memoryHitRatio": null,
+  "turns": {
+    "count": 0,
+    "avgLen": 0
+  },
+  "latencyMs": 0,
+  "agentPrAssurance": {
+    "reportOnly": true,
+    "generatedAt": "2026-06-23T00:00:00.000Z",
+    "source": "synthetic-redacted-placeholder",
+    "pullRequest": {
+      "repository": "repo-redacted",
+      "number": 1,
+      "title": "redacted pilot PR",
+      "url": "private-or-redacted",
+      "state": "OPEN",
+      "createdAt": null,
+      "reviewReadyAt": null,
+      "mergedAt": null,
+      "headRefOid": "redacted-head",
+      "mergeStateStatus": "not_collected"
+    },
+    "collectionSources": {
+      "reviewCompleteness": "not_collected",
+      "producerSummaries": [],
+      "boundaryMapSummaries": [],
+      "assuranceProfiles": [],
+      "claimEvidenceManifests": [],
+      "policyGateSummaries": []
+    },
+    "metrics": {
+      "claim_coverage": {
+        "numerator": 0,
+        "denominator": 0,
+        "ratio": 1,
+        "inputArtifacts": []
+      },
+      "unresolved_claim_count": {
+        "count": "not_collected",
+        "inputArtifacts": []
+      },
+      "waiver_count": {
+        "active": 0,
+        "inputArtifacts": []
+      },
+      "waiver_expiry_risk": {
+        "expired": 0,
+        "expiringSoon": 0,
+        "windowDays": 14
+      },
+      "required_lane_compliance": {
+        "satisfied": 0,
+        "required": 0,
+        "ratio": null,
+        "missingLanes": [],
+        "notApplicable": true
+      },
+      "evidence_completeness": {
+        "present": 0,
+        "required": 0,
+        "ratio": 1,
+        "missingArtifacts": []
+      },
+      "agent_regression_signal": {
+        "currentFailures": 0,
+        "staleOrSupersededFailures": 0,
+        "operationalNotes": 0,
+        "currentRequiredFailures": 0,
+        "policySemanticFailures": 0,
+        "manualRerunRequired": 0,
+        "classificationSource": "not_collected",
+        "regressed": false
+      },
+      "blocked_to_merge_eligible_mttr": {
+        "minutes": null,
+        "from": "blocked",
+        "to": "merge-eligible"
+      },
+      "false_block_rate": {
+        "annotatedFalseBlocks": null,
+        "totalBlocks": 0,
+        "ratio": null,
+        "annotationRequired": true
+      }
+    },
+    "productMetrics": {
+      "review_threads_total": "not_collected",
+      "review_threads_unresolved_final": "not_collected",
+      "required_checks": {
+        "source": "not_collected",
+        "required": [],
+        "summary": {
+          "required_count": 0,
+          "collected_count": 0,
+          "success_count": 0,
+          "pending_count": 0,
+          "current_required_failure_count": 0,
+          "policy_semantic_failure_count": 0,
+          "operational_failure_count": 0,
+          "manual_rerun_required_count": 0,
+          "stale_or_superseded_failure_count": 0,
+          "stale_cancelled_count": 0,
+          "superseded_count": 0,
+          "same_head_stale_count": 0,
+          "semantic_blocking_failure_count": 0,
+          "operational_note_count": 0
+        }
+      },
+      "scope_drift_finding_count": "not_collected",
+      "missing_evidence_finding_count": "not_collected",
+      "selected_high_risk_claim_count": "not_collected",
+      "ci_rerun_count": "not_collected",
+      "ci_rerun_classification_counts": {
+        "total": 0,
+        "stale_cancelled": 0,
+        "superseded": 0,
+        "same_head_stale": 0,
+        "manual_rerun_required": 0
+      },
+      "time_to_merge_minutes": "not_collected",
+      "policy_gate_false_positive_count": "not_collected",
+      "policy_gate_false_negative_count": "not_collected"
+    }
+  }
+}

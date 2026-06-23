@@ -1,0 +1,6 @@
+pilot_pr_id,producer,issue_scope,review_surface_link,metrics_json,reviewer_disposition,limitations,publication_status
+pilot-pr-1,mixed-agent-human,redacted-scope-a,examples/pilot-redacted/review-surface.example.md,examples/pilot-redacted/pilot-pr-1.agent-pr-assurance-metrics.json,not_collected,synthetic placeholder; no live reviewer disposition,not approved for publication
+pilot-pr-2,not_collected,redacted-scope-b,not posted,not_collected,not_collected,placeholder slot only,not approved for publication
+pilot-pr-3,not_collected,redacted-scope-c,not posted,not_collected,not_collected,placeholder slot only,not approved for publication
+pilot-pr-4,not_collected,redacted-scope-d,not posted,not_collected,not_collected,placeholder slot only,not approved for publication
+pilot-pr-5,not_collected,redacted-scope-e,not posted,not_collected,not_collected,placeholder slot only,not approved for publication

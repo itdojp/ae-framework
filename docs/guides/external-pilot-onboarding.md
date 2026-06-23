@@ -27,6 +27,8 @@ keep the release decision.
 This guide is the consent-safe operating model for a minimal pilot: one
 repository, about five pull requests, and a written agreement about what can be
 collected, redacted, and later summarized in the ACP-097 external pilot report.
+Use `docs/product/PILOT-RUNBOOK-2026Q3.md` and
+`docs/product/PILOT-EVIDENCE-TEMPLATE.md` to execute and capture the pilot.
 
 ### 1. Purpose and non-goals
 
@@ -244,7 +246,9 @@ Abort or pause the pilot when:
 ### 9. Connection to ACP-097
 
 The ACP-097 external pilot report should reuse the metric vocabulary from
-`docs/product/EFFECTIVENESS-METRICS.md` and include only approved data:
+`docs/product/EFFECTIVENESS-METRICS.md`, the runbook fields from
+`docs/product/PILOT-RUNBOOK-2026Q3.md`, and the template fields from
+`docs/product/PILOT-EVIDENCE-TEMPLATE.md`. Include only approved data:
 
 - pilot scope: repository type, PR count, and selected PR categories;
 - report-only setup: commands used, posted surfaces, and skipped permissions;
@@ -263,7 +267,7 @@ The ACP-097 external pilot report should reuse the metric vocabulary from
 
 このガイドは、外部 repository が branch protection 変更、auto-merge、有感な PR data の公開を行わずに、ae-framework の agent-assurance workflow を試すための手順です。Pilot は **report-only** で開始します。ae-framework は reviewer 向け evidence と metrics を作成しますが、release decision は maintainer が保持します。
 
-このガイドは、最小 pilot（1 repository / おおよそ 5 PR）の consent-safe operating model です。何を収集し、何を redact し、後続の ACP-097 external pilot report に何を要約できるかを事前に合意します。
+このガイドは、最小 pilot（1 repository / おおよそ 5 PR）の consent-safe operating model です。何を収集し、何を redact し、後続の ACP-097 external pilot report に何を要約できるかを事前に合意します。実行と記録には `docs/product/PILOT-RUNBOOK-2026Q3.md` と `docs/product/PILOT-EVIDENCE-TEMPLATE.md` を使います。
 
 ### 1. 目的と非目的
 
@@ -438,7 +442,7 @@ Pilot は次を満たすと完了です。
 
 ### 9. ACP-097 への接続
 
-ACP-097 external pilot report は `docs/product/EFFECTIVENESS-METRICS.md` の metric vocabulary を再利用し、承認済み data のみを含めます。
+ACP-097 external pilot report は `docs/product/EFFECTIVENESS-METRICS.md` の metric vocabulary、`docs/product/PILOT-RUNBOOK-2026Q3.md` の runbook field、`docs/product/PILOT-EVIDENCE-TEMPLATE.md` の template field を再利用し、承認済み data のみを含めます。
 
 - pilot scope: repository type、PR count、selected PR category。
 - report-only setup: 使用 command、posted surface、skipped permission。
