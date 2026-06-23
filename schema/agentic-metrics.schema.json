@@ -131,8 +131,13 @@
       "additionalProperties": true,
       "required": ["currentFailures", "staleOrSupersededFailures", "regressed"],
       "properties": {
-        "currentFailures": { "$ref": "#/$defs/nonNegativeInteger" },
-        "staleOrSupersededFailures": { "$ref": "#/$defs/nonNegativeInteger" },
+        "currentFailures": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "staleOrSupersededFailures": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "operationalNotes": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "currentRequiredFailures": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "policySemanticFailures": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "manualRerunRequired": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "classificationSource": { "$ref": "#/$defs/nonEmptyString" },
         "regressed": { "type": "boolean" }
       }
     },
@@ -188,8 +193,58 @@
         "workflowName": { "type": ["string", "null"] },
         "startedAt": { "type": ["string", "null"], "format": "date-time" },
         "completedAt": { "type": ["string", "null"], "format": "date-time" },
-        "detailsUrl": { "type": ["string", "null"] }
+        "detailsUrl": { "type": ["string", "null"] },
+        "headSha": { "type": ["string", "null"] }
       }
+    },
+    "requiredCheckStaleAttempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "sameHeadStale",
+        "status",
+        "conclusion",
+        "workflowName",
+        "startedAt",
+        "completedAt",
+        "detailsUrl",
+        "headSha"
+      ],
+      "properties": {
+        "classification": { "$ref": "#/$defs/nonEmptyString" },
+        "sameHeadStale": { "type": "boolean" },
+        "status": { "type": ["string", "null"] },
+        "conclusion": { "type": ["string", "null"] },
+        "workflowName": { "type": ["string", "null"] },
+        "startedAt": { "type": ["string", "null"], "format": "date-time" },
+        "completedAt": { "type": ["string", "null"], "format": "date-time" },
+        "detailsUrl": { "type": ["string", "null"] },
+        "headSha": { "type": ["string", "null"] }
+      }
+    },
+    "ciRerunClassificationCountsMetric": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "total",
+            "stale_cancelled",
+            "superseded",
+            "same_head_stale",
+            "manual_rerun_required"
+          ],
+          "properties": {
+            "total": { "$ref": "#/$defs/nonNegativeInteger" },
+            "stale_cancelled": { "$ref": "#/$defs/nonNegativeInteger" },
+            "superseded": { "$ref": "#/$defs/nonNegativeInteger" },
+            "same_head_stale": { "$ref": "#/$defs/nonNegativeInteger" },
+            "manual_rerun_required": { "$ref": "#/$defs/nonNegativeInteger" }
+          }
+        },
+        { "enum": ["not_collected"] }
+      ]
     },
     "requiredCheckEntry": {
       "type": "object",
@@ -199,8 +254,13 @@
         "collected",
         "latest",
         "classification",
+        "review_disposition",
         "attempts",
-        "stale_or_superseded_failure_count"
+        "stale_or_superseded_failure_count",
+        "stale_attempts",
+        "stale_cancelled_count",
+        "superseded_count",
+        "same_head_stale_count"
       ],
       "properties": {
         "name": { "$ref": "#/$defs/nonEmptyString" },
@@ -212,8 +272,16 @@
           ]
         },
         "classification": { "$ref": "#/$defs/nonEmptyString" },
+        "review_disposition": { "$ref": "#/$defs/nonEmptyString" },
         "attempts": { "$ref": "#/$defs/nonNegativeInteger" },
-        "stale_or_superseded_failure_count": { "$ref": "#/$defs/nonNegativeInteger" }
+        "stale_or_superseded_failure_count": { "$ref": "#/$defs/nonNegativeInteger" },
+        "stale_attempts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/requiredCheckStaleAttempt" }
+        },
+        "stale_cancelled_count": { "$ref": "#/$defs/nonNegativeInteger" },
+        "superseded_count": { "$ref": "#/$defs/nonNegativeInteger" },
+        "same_head_stale_count": { "$ref": "#/$defs/nonNegativeInteger" }
       }
     },
     "requiredChecksMetric": {
@@ -235,17 +303,31 @@
             "success_count",
             "pending_count",
             "current_required_failure_count",
+            "policy_semantic_failure_count",
             "operational_failure_count",
-            "stale_or_superseded_failure_count"
+            "manual_rerun_required_count",
+            "stale_or_superseded_failure_count",
+            "stale_cancelled_count",
+            "superseded_count",
+            "same_head_stale_count",
+            "semantic_blocking_failure_count",
+            "operational_note_count"
           ],
           "properties": {
             "required_count": { "$ref": "#/$defs/nonNegativeInteger" },
             "collected_count": { "$ref": "#/$defs/nonNegativeInteger" },
-            "success_count": { "$ref": "#/$defs/nonNegativeInteger" },
-            "pending_count": { "$ref": "#/$defs/nonNegativeInteger" },
-            "current_required_failure_count": { "$ref": "#/$defs/nonNegativeInteger" },
-            "operational_failure_count": { "$ref": "#/$defs/nonNegativeInteger" },
-            "stale_or_superseded_failure_count": { "$ref": "#/$defs/nonNegativeInteger" }
+            "success_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "pending_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "current_required_failure_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "policy_semantic_failure_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "operational_failure_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "manual_rerun_required_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "stale_or_superseded_failure_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "stale_cancelled_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "superseded_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "same_head_stale_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "semantic_blocking_failure_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+            "operational_note_count": { "$ref": "#/$defs/collectibleCountMetricValue" }
           }
         }
       }
@@ -261,6 +343,7 @@
         "missing_evidence_finding_count",
         "selected_high_risk_claim_count",
         "ci_rerun_count",
+        "ci_rerun_classification_counts",
         "time_to_merge_minutes",
         "policy_gate_false_positive_count",
         "policy_gate_false_negative_count"
@@ -273,6 +356,7 @@
         "missing_evidence_finding_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
         "selected_high_risk_claim_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
         "ci_rerun_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
+        "ci_rerun_classification_counts": { "$ref": "#/$defs/ciRerunClassificationCountsMetric" },
         "time_to_merge_minutes": { "$ref": "#/$defs/collectibleNumberMetricValue" },
         "policy_gate_false_positive_count": { "$ref": "#/$defs/collectibleCountMetricValue" },
         "policy_gate_false_negative_count": { "$ref": "#/$defs/collectibleCountMetricValue" }

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "2.0.0",
+  "schemaVersion": "2.1.0",
   "tokens": {
     "prompt": null,
     "completion": null,
@@ -86,6 +86,11 @@
       "agent_regression_signal": {
         "currentFailures": 0,
         "staleOrSupersededFailures": 1,
+        "operationalNotes": 1,
+        "currentRequiredFailures": 0,
+        "policySemanticFailures": 0,
+        "manualRerunRequired": 0,
+        "classificationSource": "statusCheckRollup",
         "regressed": false
       },
       "blocked_to_merge_eligible_mttr": {
@@ -115,11 +120,29 @@
               "workflowName": "Copilot Review Gate",
               "startedAt": "2026-06-21T01:20:00Z",
               "completedAt": "2026-06-21T01:21:00Z",
-              "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/2/job/2"
+              "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/2/job/2",
+              "headSha": null
             },
             "classification": "success",
+            "review_disposition": "operational_note",
             "attempts": 2,
-            "stale_or_superseded_failure_count": 1
+            "stale_or_superseded_failure_count": 1,
+            "stale_attempts": [
+              {
+                "classification": "stale_cancelled",
+                "sameHeadStale": true,
+                "status": "COMPLETED",
+                "conclusion": "CANCELLED",
+                "workflowName": "Copilot Review Gate",
+                "startedAt": "2026-06-21T01:05:00Z",
+                "completedAt": "2026-06-21T01:06:00Z",
+                "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/1/job/1",
+                "headSha": null
+              }
+            ],
+            "stale_cancelled_count": 1,
+            "superseded_count": 0,
+            "same_head_stale_count": 1
           },
           {
             "name": "policy-gate",
@@ -130,11 +153,17 @@
               "workflowName": "Policy Gate",
               "startedAt": "2026-06-21T01:21:00Z",
               "completedAt": "2026-06-21T01:22:00Z",
-              "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/3/job/3"
+              "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/3/job/3",
+              "headSha": null
             },
             "classification": "success",
+            "review_disposition": "non_blocking",
             "attempts": 1,
-            "stale_or_superseded_failure_count": 0
+            "stale_or_superseded_failure_count": 0,
+            "stale_attempts": [],
+            "stale_cancelled_count": 0,
+            "superseded_count": 0,
+            "same_head_stale_count": 0
           },
           {
             "name": "verify-lite",
@@ -145,11 +174,17 @@
               "workflowName": "Verify Lite",
               "startedAt": "2026-06-21T01:22:00Z",
               "completedAt": "2026-06-21T01:23:00Z",
-              "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/4/job/4"
+              "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/4/job/4",
+              "headSha": null
             },
             "classification": "success",
+            "review_disposition": "non_blocking",
             "attempts": 1,
-            "stale_or_superseded_failure_count": 0
+            "stale_or_superseded_failure_count": 0,
+            "stale_attempts": [],
+            "stale_cancelled_count": 0,
+            "superseded_count": 0,
+            "same_head_stale_count": 0
           }
         ],
         "summary": {
@@ -158,14 +193,28 @@
           "success_count": 3,
           "pending_count": 0,
           "current_required_failure_count": 0,
+          "policy_semantic_failure_count": 0,
           "operational_failure_count": 0,
-          "stale_or_superseded_failure_count": 1
+          "manual_rerun_required_count": 0,
+          "stale_or_superseded_failure_count": 1,
+          "stale_cancelled_count": 1,
+          "superseded_count": 0,
+          "same_head_stale_count": 1,
+          "semantic_blocking_failure_count": 0,
+          "operational_note_count": 1
         }
       },
       "scope_drift_finding_count": 2,
       "missing_evidence_finding_count": 4,
       "selected_high_risk_claim_count": 2,
       "ci_rerun_count": 1,
+      "ci_rerun_classification_counts": {
+        "total": 1,
+        "stale_cancelled": 1,
+        "superseded": 0,
+        "same_head_stale": 1,
+        "manual_rerun_required": 0
+      },
       "time_to_merge_minutes": 24,
       "policy_gate_false_positive_count": "not_collected",
       "policy_gate_false_negative_count": "not_collected"
@@ -174,6 +223,6 @@
       "offline fixture mode: GitHub API was not called.",
       "policy_gate_false_positive_count and policy_gate_false_negative_count require manual annotation; they are not inferred from reruns."
     ],
-    "summary": "Report-only agent PR assurance metrics for itdojp/ae-framework#3526: review threads 4, unresolved final 0, required check current failures 0, stale/superseded required-check failures 1."
+    "summary": "Report-only agent PR assurance metrics for itdojp/ae-framework#3526: review threads 4, unresolved final 0, required check semantic failures 0, operational notes 1."
   }
 }

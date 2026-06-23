@@ -17,17 +17,27 @@ Report-only metrics for itdojp/ae-framework#3526. Producer output and metrics ar
 | missing_evidence_finding_count | 4 |
 | selected_high_risk_claim_count | 2 |
 | ci_rerun_count | 1 |
+| ci_rerun_classification_counts | `{"total":1,"stale_cancelled":1,"superseded":0,"same_head_stale":1,"manual_rerun_required":0}` |
 | time_to_merge_minutes | 24 |
 | policy_gate_false_positive_count | not_collected |
 | policy_gate_false_negative_count | not_collected |
 
 ## Required checks
 
-| Check | Classification | Attempts | Stale/superseded failures | Latest conclusion |
-| --- | --- | ---: | ---: | --- |
-| gate | success | 2 | 1 | SUCCESS |
-| policy-gate | success | 1 | 0 | SUCCESS |
-| verify-lite | success | 1 | 0 | SUCCESS |
+Blocking rows are semantic failures. Operational notes are stale, cancelled, superseded, or rerun-needed states and are not policy false-positive annotations.
+
+### Operational notes
+
+| Check | Classification | Review disposition | Attempts | Stale cancelled | Superseded | Same-head stale | Latest conclusion |
+| --- | --- | --- | ---: | ---: | ---: | ---: | --- |
+| gate | success | operational_note | 2 | 1 | 0 | 1 | SUCCESS |
+
+### Non-blocking checks
+
+| Check | Classification | Review disposition | Attempts | Stale cancelled | Superseded | Same-head stale | Latest conclusion |
+| --- | --- | --- | ---: | ---: | ---: | ---: | --- |
+| policy-gate | success | non_blocking | 1 | 0 | 0 | 0 | SUCCESS |
+| verify-lite | success | non_blocking | 1 | 0 | 0 | 0 | SUCCESS |
 
 ## Limitations
 

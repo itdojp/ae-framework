@@ -77,11 +77,27 @@ The collector adds `agentPrAssurance.productMetrics` for product-effectiveness v
 - `missing_evidence_finding_count`
 - `selected_high_risk_claim_count`
 - `ci_rerun_count`
+- `ci_rerun_classification_counts`
 - `time_to_merge_minutes`
 - `policy_gate_false_positive_count`
 - `policy_gate_false_negative_count`
 
 If live mode cannot collect an optional field, the field is emitted as `not_collected` instead of `0`. This also applies to the lower-level `metrics.unresolved_claim_count.count` when evidence artifacts are absent. If the source is ambiguous, use `unknown`. A later green rerun is not enough to classify a policy false positive; false-positive and false-negative counts require manual annotation. Required checks are collapsed by check name and newest timestamp/order, so an older cancelled run can appear as `stale_or_superseded_failure_count` without becoming a current required failure when the latest required check passed.
+
+Check classification vocabulary:
+
+| Classification | Meaning | Review surface |
+| --- | --- | --- |
+| `success` / `skipped` | Latest required check is completed without a blocking result. | `non_blocking` unless older attempts require an operational note. |
+| `pending` | Latest required check is queued or in progress. | `pending`; do not infer pass/fail. |
+| `current_required_failure` | Latest non-policy required check completed with `FAILURE`, `ERROR`, `ACTION_REQUIRED`, or `STARTUP_FAILURE`. | `blocking`; review as a current required-check failure. |
+| `policy_semantic_failure` | Latest `policy-gate` / Policy Gate check completed with a semantic failure conclusion. | `blocking`; keep separate from stale CI recovery and manual false-positive annotation. |
+| `manual_rerun_required` | Latest check ended in `CANCELLED` or `TIMED_OUT`. | `operational_note`; a maintainer may need to rerun CI, but this is not a policy semantic failure. |
+| `stale_cancelled` | Older duplicate attempt ended in `CANCELLED` or `TIMED_OUT` and a newer same-name attempt exists. | Operational note only; not a current failure. |
+| `superseded` | Older duplicate attempt ended in a failure conclusion and a newer same-name attempt exists. | Operational note unless the latest attempt also fails. |
+| `same_head_stale` | Older duplicate failure/cancellation appears in the current PR head rollup, or the stale and latest attempts share a head SHA. | Operational note; useful for stale same-head gate noise. |
+
+`ci_rerun_count` records total duplicate attempts needed to reach the reported state. `ci_rerun_classification_counts` records classification facet counts for `stale_cancelled`, `superseded`, `same_head_stale`, and `manual_rerun_required` so stale CI recovery is not mixed with code-fix reruns or policy-gate false-positive counts. These facets are not additive: `same_head_stale` can overlap with `stale_cancelled` or `superseded`, while `total` remains the duplicate-attempt count. The collector relies on GitHub's PR check rollup and optional per-check head SHA; when GitHub omits per-check head SHA, same-head stale is an operational inference that may need manual confirmation before publication.
 
 Privacy boundary: PR titles, URLs, review-thread counts, check statuses, and local artifact paths can be sensitive in external pilots. Redact or omit fields before publication, and prefer offline fixture mode when preparing public examples. The collector does not call external LLM APIs, does not rank agent vendors, and does not add policy-gate blocking rules.
 
@@ -96,7 +112,7 @@ Agent PR assurance metrics (report-only):
 - waivers: active=1, expiry risk=0
 - required lane compliance: 3/4 (75%)
 - evidence completeness: 5/6 (83%)
-- agent regression signal: current=0, stale/superseded=1
+- agent regression signal: semantic-current=0, stale/superseded=1, operational-notes=1
 - blocked -> merge eligible MTTR: 18 min
 - false block rate: n/a (manual annotation not available)
 ```
@@ -191,11 +207,27 @@ collector は `docs/product/EFFECTIVENESS-METRICS.md` の product-effectiveness 
 - `missing_evidence_finding_count`
 - `selected_high_risk_claim_count`
 - `ci_rerun_count`
+- `ci_rerun_classification_counts`
 - `time_to_merge_minutes`
 - `policy_gate_false_positive_count`
 - `policy_gate_false_negative_count`
 
 live mode で任意fieldを収集できない場合、`0` と見せかけず `not_collected` として出力します。evidence artifact がない場合、低レベルの `metrics.unresolved_claim_count.count` も同様に `not_collected` とします。source が曖昧な場合は `unknown` を使います。後続rerunで green になっただけでは policy false positive とは分類しません。false positive / false negative count には manual annotation が必要です。Required check は check name と最新timestamp/orderで collapse するため、古い cancelled run は最新 required check が通過している限り current failure ではなく `stale_or_superseded_failure_count` として扱えます。
+
+Check classification vocabulary:
+
+| Classification | 意味 | Review surface |
+| --- | --- | --- |
+| `success` / `skipped` | 最新 required check が blocking result なしで完了した状態。 | 古い attempt の operational note がない限り `non_blocking`。 |
+| `pending` | 最新 required check が queued / in progress の状態。 | `pending`。pass/fail を推定しない。 |
+| `current_required_failure` | policy-gate 以外の最新 required check が `FAILURE`、`ERROR`、`ACTION_REQUIRED`、`STARTUP_FAILURE` で完了した状態。 | `blocking`。current required-check failure として扱う。 |
+| `policy_semantic_failure` | 最新 `policy-gate` / Policy Gate check が semantic failure conclusion で完了した状態。 | `blocking`。stale CI recovery や manual false-positive annotation と分ける。 |
+| `manual_rerun_required` | 最新 check が `CANCELLED` または `TIMED_OUT` で終わった状態。 | `operational_note`。CI rerun は必要になり得るが、policy semantic failure ではない。 |
+| `stale_cancelled` | 古い duplicate attempt が `CANCELLED` または `TIMED_OUT` で終わり、より新しい同名 attempt が存在する状態。 | operational note のみ。current failure ではない。 |
+| `superseded` | 古い duplicate attempt が failure conclusion で終わり、より新しい同名 attempt が存在する状態。 | 最新 attempt も失敗していない限り operational note。 |
+| `same_head_stale` | 古い duplicate failure/cancellation が current PR head rollup に残る、または stale/latest attempt の head SHA が一致する状態。 | stale same-head gate noise を示す operational note。 |
+
+`ci_rerun_count` は、報告された状態に到達するまでの duplicate attempt 合計です。`ci_rerun_classification_counts` は `stale_cancelled`、`superseded`、`same_head_stale`、`manual_rerun_required` の classification facet count を記録し、stale CI recovery を code-fix rerun や `policy_gate_false_positive_count` と混同しないようにします。これらの facet は加算可能な内訳ではありません。`same_head_stale` は `stale_cancelled` または `superseded` と重複し得る一方、`total` は duplicate-attempt count のままです。collector は GitHub の PR check rollup と任意の per-check head SHA に依存します。GitHub が per-check head SHA を返さない場合、same-head stale は operational inference であり、公開前に manual confirmation が必要になることがあります。
 
 Privacy boundary: 外部pilotでは PR title、URL、review-thread count、check status、local artifact path が sensitive になり得ます。公開前に redaction または omit を行い、公開例には offline fixture mode を優先します。collector は外部LLM APIを呼ばず、agent vendor ranking を行わず、policy-gate blocking rule を追加しません。
 
@@ -210,7 +242,7 @@ Agent PR assurance metrics (report-only):
 - waivers: active=1, expiry risk=0
 - required lane compliance: 3/4 (75%)
 - evidence completeness: 5/6 (83%)
-- agent regression signal: current=0, stale/superseded=1
+- agent regression signal: semantic-current=0, stale/superseded=1, operational-notes=1
 - blocked -> merge eligible MTTR: 18 min
 - false block rate: n/a (manual annotation not available)
 ```
