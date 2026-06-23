@@ -1,7 +1,7 @@
 const UNKNOWN = 'unknown';
 const NOT_COLLECTED = 'not_collected';
 
-const FAILURE_CONCLUSIONS = new Set(['FAILURE', 'ACTION_REQUIRED', 'STARTUP_FAILURE']);
+const FAILURE_CONCLUSIONS = new Set(['FAILURE', 'ERROR', 'ACTION_REQUIRED', 'STARTUP_FAILURE']);
 const OPERATIONAL_CONCLUSIONS = new Set(['CANCELLED', 'TIMED_OUT']);
 
 function ensureArray(value) {

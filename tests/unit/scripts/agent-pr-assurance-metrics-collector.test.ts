@@ -177,6 +177,24 @@ describe('agent PR assurance metrics collector', () => {
         detailsUrl: 'https://github.com/example/repo/actions/runs/legacy',
       },
     });
+
+    const erroredStatusContextChecks = collectRequiredCheckClassifications([
+      {
+        __typename: 'StatusContext',
+        context: 'legacy-required',
+        state: 'ERROR',
+        targetUrl: 'https://github.com/example/repo/actions/runs/legacy-error',
+      },
+    ], ['legacy-required']);
+    expect(erroredStatusContextChecks.required[0]).toMatchObject({
+      name: 'legacy-required',
+      classification: 'current_required_failure',
+      review_disposition: 'blocking',
+      latest: {
+        conclusion: 'ERROR',
+        detailsUrl: 'https://github.com/example/repo/actions/runs/legacy-error',
+      },
+    });
   });
 
   it('uses gh in live mode and marks absent optional evidence as not_collected instead of implying success', () => {
@@ -285,6 +303,70 @@ describe('agent PR assurance metrics collector', () => {
       const markdown = readFileSync(outputMd, 'utf8');
       expect(markdown).toContain('### Not collected checks');
       expect(markdown).toContain('| gate | not_collected | not_collected | 0 | 0 | 0 | 0 | not_collected |');
+    } finally {
+      rmSync(outputRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('renders unknown required-check dispositions instead of dropping them from Markdown', () => {
+    const outputRoot = resolve(repoRoot, 'artifacts', `metrics-collector-unknown-check-test-${randomUUID()}`);
+    const fixture = join(outputRoot, 'pr-with-unknown-check.json');
+    const outputJson = join(outputRoot, 'unknown-check-agent-pr-assurance-metrics.json');
+    const outputMd = join(outputRoot, 'unknown-check-agent-pr-assurance-metrics.md');
+    mkdirSync(outputRoot, { recursive: true });
+    writeFileSync(fixture, JSON.stringify({
+      repository: 'itdojp/ae-framework',
+      prNumber: 3529,
+      requiredChecks: ['mystery-check'],
+      pullRequest: {
+        repository: 'itdojp/ae-framework',
+        number: 3529,
+        title: 'classify unknown required check states',
+        url: 'https://github.com/itdojp/ae-framework/pull/3529',
+        state: 'OPEN',
+        createdAt: '2026-06-23T00:00:00Z',
+        reviewReadyAt: '2026-06-23T00:01:00Z',
+        mergedAt: '2026-06-23T00:12:00Z',
+        headRefOid: 'fixture-head-unknown-rollup',
+        mergeStateStatus: 'UNKNOWN',
+        statusCheckRollup: [
+          {
+            __typename: 'CheckRun',
+            name: 'mystery-check',
+            workflowName: 'Mystery Check',
+            status: 'COMPLETED',
+            conclusion: null,
+            startedAt: '2026-06-23T00:04:00Z',
+            completedAt: '2026-06-23T00:05:00Z',
+            detailsUrl: 'https://github.com/itdojp/ae-framework/actions/runs/17/job/1',
+          },
+        ],
+      },
+    }, null, 2), 'utf8');
+
+    try {
+      const result = runScript([
+        '--fixture', fixture,
+        '--generated-at', generatedAt,
+        '--output-json', outputJson,
+        '--output-md', outputMd,
+      ]);
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const payload = readJson(outputJson);
+      expect(payload.agentPrAssurance.productMetrics.required_checks.required[0]).toMatchObject({
+        name: 'mystery-check',
+        classification: 'unknown',
+        review_disposition: 'unknown',
+      });
+
+      const validate = compileSchema();
+      expect(validate(payload), JSON.stringify(validate.errors)).toBe(true);
+      expect(validateAgenticMetricsSemantics(payload)).toEqual([]);
+
+      const markdown = readFileSync(outputMd, 'utf8');
+      expect(markdown).toContain('### Unknown checks');
+      expect(markdown).toContain('| mystery-check | unknown | unknown | 1 | 0 | 0 | 0 | not_collected |');
     } finally {
       rmSync(outputRoot, { recursive: true, force: true });
     }

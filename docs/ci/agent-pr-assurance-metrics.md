@@ -90,7 +90,7 @@ Check classification vocabulary:
 | --- | --- | --- |
 | `success` / `skipped` | Latest required check is completed without a blocking result. | `non_blocking` unless older attempts require an operational note. |
 | `pending` | Latest required check is queued or in progress. | `pending`; do not infer pass/fail. |
-| `current_required_failure` | Latest non-policy required check completed with `FAILURE`, `ACTION_REQUIRED`, or `STARTUP_FAILURE`. | `blocking`; review as a current required-check failure. |
+| `current_required_failure` | Latest non-policy required check completed with `FAILURE`, `ERROR`, `ACTION_REQUIRED`, or `STARTUP_FAILURE`. | `blocking`; review as a current required-check failure. |
 | `policy_semantic_failure` | Latest `policy-gate` / Policy Gate check completed with a semantic failure conclusion. | `blocking`; keep separate from stale CI recovery and manual false-positive annotation. |
 | `manual_rerun_required` | Latest check ended in `CANCELLED` or `TIMED_OUT`. | `operational_note`; a maintainer may need to rerun CI, but this is not a policy semantic failure. |
 | `stale_cancelled` | Older duplicate attempt ended in `CANCELLED` or `TIMED_OUT` and a newer same-name attempt exists. | Operational note only; not a current failure. |
@@ -220,7 +220,7 @@ Check classification vocabulary:
 | --- | --- | --- |
 | `success` / `skipped` | 最新 required check が blocking result なしで完了した状態。 | 古い attempt の operational note がない限り `non_blocking`。 |
 | `pending` | 最新 required check が queued / in progress の状態。 | `pending`。pass/fail を推定しない。 |
-| `current_required_failure` | policy-gate 以外の最新 required check が `FAILURE`、`ACTION_REQUIRED`、`STARTUP_FAILURE` で完了した状態。 | `blocking`。current required-check failure として扱う。 |
+| `current_required_failure` | policy-gate 以外の最新 required check が `FAILURE`、`ERROR`、`ACTION_REQUIRED`、`STARTUP_FAILURE` で完了した状態。 | `blocking`。current required-check failure として扱う。 |
 | `policy_semantic_failure` | 最新 `policy-gate` / Policy Gate check が semantic failure conclusion で完了した状態。 | `blocking`。stale CI recovery や manual false-positive annotation と分ける。 |
 | `manual_rerun_required` | 最新 check が `CANCELLED` または `TIMED_OUT` で終わった状態。 | `operational_note`。CI rerun は必要になり得るが、policy semantic failure ではない。 |
 | `stale_cancelled` | 古い duplicate attempt が `CANCELLED` または `TIMED_OUT` で終わり、より新しい同名 attempt が存在する状態。 | operational note のみ。current failure ではない。 |

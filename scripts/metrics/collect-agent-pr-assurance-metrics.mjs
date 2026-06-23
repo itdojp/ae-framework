@@ -645,6 +645,7 @@ function renderRequiredCheckDispositionSections(requiredChecks) {
     ['Operational notes', requiredChecks.filter((entry) => entry.review_disposition === 'operational_note')],
     ['Pending checks', requiredChecks.filter((entry) => entry.review_disposition === 'pending')],
     ['Not collected checks', requiredChecks.filter((entry) => entry.review_disposition === NOT_COLLECTED)],
+    ['Unknown checks', requiredChecks.filter((entry) => entry.review_disposition === UNKNOWN)],
     ['Non-blocking checks', requiredChecks.filter((entry) => entry.review_disposition === 'non_blocking')],
   ];
   return groups
