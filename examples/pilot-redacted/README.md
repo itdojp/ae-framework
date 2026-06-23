@@ -9,6 +9,7 @@ Related docs:
 
 - `docs/product/PILOT-RUNBOOK-2026Q3.md`
 - `docs/product/PILOT-EVIDENCE-TEMPLATE.md`
+- `docs/product/PILOT-REPORT-2026Q3-01.md`
 - `docs/guides/external-pilot-onboarding.md`
 
 ## Files

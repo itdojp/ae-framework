@@ -93,7 +93,7 @@ function resolveGateResult(pr, actorSet) {
 
 function isTopLevelAiReviewComment(body) {
   const text = String(body || '');
-  return /(?:^|\n)\s{0,3}#{1,6}\s*(?:[^\w\n]+\s*)?(?:codex|copilot)\s+review\b(?!\s+gate\b)/iu.test(text);
+  return /(?:^|\n)\s{0,3}(?:#{1,6}\s*(?:[^\w\n]+\s*)?)?(?:codex|copilot)\s+review\b(?!\s+gate\b)\s*(?::|\n|$)/iu.test(text);
 }
 
 function execJson(args, input) {

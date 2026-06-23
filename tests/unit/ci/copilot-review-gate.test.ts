@@ -135,6 +135,8 @@ describe('copilot-review-gate helpers', () => {
   it('recognizes only review-shaped top-level AI comments', () => {
     expect(isTopLevelAiReviewComment('### 💡 Codex Review\n\nNeeds follow-up.')).toBe(true);
     expect(isTopLevelAiReviewComment('## Copilot Review\n\nLooks good.')).toBe(true);
+    expect(isTopLevelAiReviewComment('Codex Review: Didn\'t find any major issues.')).toBe(true);
+    expect(isTopLevelAiReviewComment('Copilot Review: No issues found.')).toBe(true);
     expect(isTopLevelAiReviewComment('@codex review')).toBe(false);
     expect(isTopLevelAiReviewComment('### Copilot Review Gate\n\nNo AI review found.')).toBe(false);
   });
