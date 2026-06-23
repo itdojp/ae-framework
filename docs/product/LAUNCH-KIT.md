@@ -5,8 +5,13 @@ canonicalSource:
 - docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
 - docs/product/DOGFOODING-REPORT-2026Q3.md
 - docs/guides/byo-agent-assurance-quickstart.md
+- docs/guides/external-pilot-onboarding.md
 - docs/product/EFFECTIVENESS-METRICS.md
+- docs/product/PILOT-RUNBOOK-2026Q3.md
+- docs/product/PILOT-REPORT-2026Q3-01.md
 - docs/product/CONTROLLED-COMPARISON-PROTOCOL.md
+- docs/ci/agent-pr-assurance-metrics.md
+- docs/quality/assurance-operations-runbook.md
 lastVerified: '2026-06-23'
 owner: product-assurance
 verificationCommand: pnpm -s run check:doc-consistency
@@ -58,12 +63,17 @@ flowchart LR
 | --- | --- | --- | --- |
 | 5 minutes | Launch preview walkthrough | `docs/product/DEMO-SCRIPT.md` | Explain the assurance plane and open a prebuilt review surface. |
 | 15 minutes | Offline BYO-agent assurance demo | `pnpm run demo:agent-assurance` | Generate fixture-backed producer, assurance, policy, and reviewer artifacts. |
+| Metrics route | Agent PR assurance metrics collector | `pnpm run metrics:agent-pr-assurance` | Collect report-only trust-calibration metrics without adding a blocking gate. |
+| PR surface | Review-surface posting helper | `pnpm run assurance:post-review-surface -- --repo itdojp/ae-framework --pr 123 --body-file artifacts/review/agent-assurance-demo/assurance-review.md` | Dry-run or manually post reviewer Markdown; the helper does not approve, merge, or update comments by default. |
+| CI smoke | Demo smoke lane | `pnpm run demo:smoke` and `.github/workflows/demo-smoke.yml` | Re-run the representative demo sequence and artifact/schema checker. |
 | Pilot setup | External pilot onboarding | `docs/guides/external-pilot-onboarding.md` | Run a one-repository, about-five-PR pilot with report-only metrics, consent, and redaction boundaries. |
 | Pilot report | ACP-097 dry-run status | `docs/product/PILOT-REPORT-2026Q3-01.md` | Explain that the current pilot report is `dry-run only` and does not contain live external PR evidence. |
 | Future benchmark | Controlled comparison protocol | `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` | Explain how future claims must compare review workflows, not agent vendors, after controlled baseline data exists. |
 | Optional | Scope-drift scenario | `node scripts/demo/run-scope-drift-demo.mjs` | Show report-only drift in a normal lane and blocking drift in a strict lane. |
 | Optional | High-risk escalation sample | `node scripts/demo/run-high-risk-escalation-demo.mjs` | Show selected critical/high claims and strict-lane evidence requirements. |
 | Optional | Cross-agent fixtures | `fixtures/agents/evidence-adapters/` | Show producer-neutral routing for Codex, Claude Code, Copilot, human, CI, and formal output. |
+
+Recommended first-time evidence route: `docs/guides/byo-agent-assurance-quickstart.md` -> `docs/product/PILOT-REPORT-2026Q3-01.md` -> this launch kit's limitations -> `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`. This route separates local fixture evidence, internal dogfooding observations, the current dry-run pilot report, and future controlled-comparison criteria.
 
 ### 5. Before / after PR reviewer story
 
@@ -76,10 +86,10 @@ and missing-evidence findings are surfaced in a reviewer Markdown file, and the
 policy gate states whether the PR can remain on the fast lane or needs stricter
 assurance. The reviewer still decides, but the decision inputs are explicit.
 
-### 6. Dogfooding evidence summary
+### 6. Evidence status after pilot metrics
 
 Internal dogfooding on ae-framework PR #3516 through PR #3521 showed the current
-preview can support review traceability:
+preview can support review traceability, but it is only one evidence source:
 
 - 6 adoption/effectiveness PRs reached merge with 22 review threads resolved and
   0 unresolved review threads at final review-completeness checks.
@@ -91,17 +101,17 @@ preview can support review traceability:
   human maintainer, CI/test runner, and formal/model-checker outputs as evidence
   producers, not approval authorities.
 
-See `docs/product/DOGFOODING-REPORT-2026Q3.md` for limitations. The report is
-explicitly **not** a controlled benchmark and does **not** compare agent vendors.
-For an external, consent-safe pilot path, use
-`docs/guides/external-pilot-onboarding.md`; it keeps the first pilot
-report-only and defines the redaction/publication boundary for ACP-097.
-The current ACP-097 report is `docs/product/PILOT-REPORT-2026Q3-01.md`;
-it is `dry-run only` and records 0 live external PRs collected.
-Future benchmark planning must use
-`docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`, which frames the comparison as
-`without ae-framework` versus `with ae-framework` review workflows rather than
-an agent-vendor ranking.
+| Evidence source | Current status | What can be claimed | What must not be claimed |
+| --- | --- | --- | --- |
+| Offline quickstart / demos | Fixture-backed and locally repeatable. | Evidence routing, reviewer-surface shape, report-only policy interpretation. | Real-world speed, safety, or adoption impact. |
+| Internal dogfooding | ae-framework PR #3516 through PR #3521. | Review traceability and final unresolved-thread closure within this repository. | Controlled benchmark, external pilot outcome, or agent-vendor ranking. |
+| ACP-097 pilot report | `dry-run only`; 0 live external PRs collected. | Pilot readiness, consent/redaction boundary, and report-only metric vocabulary. | Live external effectiveness, safety, or review-speed improvement. |
+| Controlled comparison protocol | Protocol-ready; not executed. | Future measurement design for `without ae-framework` vs `with ae-framework` review workflows. | Any benchmark or review-speed claim before comparable baseline data exists. |
+
+Use `docs/product/DOGFOODING-REPORT-2026Q3.md` for dogfooding limitations,
+`docs/product/PILOT-REPORT-2026Q3-01.md` for the dry-run pilot state,
+`docs/ci/agent-pr-assurance-metrics.md` for collector semantics, and
+`docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` for future benchmark criteria.
 
 ### 7. Non-goals for the preview
 
@@ -125,14 +135,16 @@ Bring your own agent. Keep your assurance plane.
 
 ae-framework now includes a preview launch kit for routing Codex, Claude Code,
 GitHub Copilot, human, CI, and formal-tool output into reviewer-facing assurance
-artifacts. Start with the 15-minute offline demo, then inspect the dogfooding
-report for measured review-thread closure and known limitations.
+artifacts. Start with the 15-minute offline demo, then inspect the dry-run
+pilot report, dogfooding observations, and controlled-comparison limitations.
 
 - Launch kit: docs/product/LAUNCH-KIT.md
 - One-page pitch: docs/product/ONE-PAGE-PITCH.md
 - Demo script: docs/product/DEMO-SCRIPT.md
 - Quickstart: docs/guides/byo-agent-assurance-quickstart.md
 - Dogfooding report: docs/product/DOGFOODING-REPORT-2026Q3.md
+- Pilot report: docs/product/PILOT-REPORT-2026Q3-01.md
+- Metrics collector: docs/ci/agent-pr-assurance-metrics.md
 - Controlled comparison protocol: docs/product/CONTROLLED-COMPARISON-PROTOCOL.md
 
 Non-goals: this is not a hosted agent runtime, vendor benchmark, auto-merge
@@ -163,12 +175,15 @@ Codex, Claude Code, Copilot, humans, CI, and formal tools is routed into
 assurance summaries, claim evidence, policy-gate summaries, and PR review
 Markdown.
 
-Start with the 15-minute offline demo, then read the dogfooding report for what
-we observed on ae-framework PRs and what remains unmeasured.
+Start with the 15-minute offline demo, then read the dry-run pilot report and
+dogfooding report for what is observed, what is only prepared, and what remains
+unmeasured.
 
 - Launch kit: docs/product/LAUNCH-KIT.md
 - Demo script: docs/product/DEMO-SCRIPT.md
 - Dogfooding report: docs/product/DOGFOODING-REPORT-2026Q3.md
+- Pilot report: docs/product/PILOT-REPORT-2026Q3-01.md
+- Controlled comparison protocol: docs/product/CONTROLLED-COMPARISON-PROTOCOL.md
 ```
 
 #### X
@@ -183,6 +198,8 @@ evidence, policy gates, and release judgment.
 Start: docs/product/LAUNCH-KIT.md
 Demo: docs/guides/byo-agent-assurance-quickstart.md
 Evidence: docs/product/DOGFOODING-REPORT-2026Q3.md
+Pilot: docs/product/PILOT-REPORT-2026Q3-01.md
+Limitations: docs/product/CONTROLLED-COMPARISON-PROTOCOL.md
 ```
 
 #### LinkedIn
@@ -199,7 +216,9 @@ Copilot, human maintainers, CI, and formal tools is normalized into evidence
 artifacts, reviewer Markdown, policy-gate summaries, and release judgment.
 
 The kit includes a one-page pitch, a 5-minute demo script, a 15-minute offline
-quickstart, and an internal dogfooding report with limitations.
+quickstart, a dry-run pilot report, an internal dogfooding report, and a
+controlled-comparison protocol that keeps benchmark claims out of scope until
+comparable baseline data exists.
 ```
 
 #### Zenn / Qiita
@@ -216,10 +235,12 @@ formal tool の output を reviewer-facing evidence と policy gate に変換す
 1. `docs/product/ONE-PAGE-PITCH.md`
 2. `docs/product/DEMO-SCRIPT.md`
 3. `docs/guides/byo-agent-assurance-quickstart.md`
-4. `docs/product/DOGFOODING-REPORT-2026Q3.md`
+4. `docs/product/PILOT-REPORT-2026Q3-01.md`
+5. `docs/product/DOGFOODING-REPORT-2026Q3.md`
+6. `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
 
-未測定の性能改善や agent vendor 比較は主張しません。まずは review traceability の
-preview として扱います。
+pilot report は dry-run only です。未測定の性能改善や agent vendor 比較は主張しません。
+まずは review traceability と evidence routing の preview として扱います。
 ```
 
 ---
@@ -250,8 +271,22 @@ preview として扱います。
 - `docs/product/PILOT-REPORT-2026Q3-01.md` — ACP-097 の `dry-run only` pilot report と limitations。
 - `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` — future benchmark を agent vendor ranking ではなく review workflow comparison として設計する protocol。
 - `docs/product/DOGFOODING-REPORT-2026Q3.md` — dogfooding evidence と limitations。
+- `docs/ci/agent-pr-assurance-metrics.md` — report-only metrics collector の語彙と出力。
+- `docs/quality/assurance-operations-runbook.md` — PR review surface の dry-run / manual posting helper。
+- `.github/workflows/demo-smoke.yml` — representative demo smoke lane。
 
-### 4. 主張しないこと
+初見導線は `docs/guides/byo-agent-assurance-quickstart.md` → `docs/product/PILOT-REPORT-2026Q3-01.md` → 本 launch kit の limitations → `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`。この順序で、local fixture、internal dogfooding、dry-run pilot、未実施の controlled comparison を分離して説明する。
+
+### 4. Evidence status
+
+| Evidence source | 現在の状態 | 主張できること | 主張しないこと |
+| --- | --- | --- | --- |
+| Offline quickstart / demos | fixture-backed で local repeatable。 | evidence routing と reviewer surface。 | 実運用の speed / safety / adoption 効果。 |
+| Internal dogfooding | ae-framework PR #3516〜#3521。 | このrepository内での review traceability と unresolved thread closure。 | controlled benchmark、external pilot outcome、agent vendor ranking。 |
+| ACP-097 pilot report | `dry-run only`、live external PR 0件。 | pilot readiness、consent/redaction boundary、report-only metrics vocabulary。 | live external effectiveness、safety、review-speed improvement。 |
+| Controlled comparison protocol | protocol-ready、未実施。 | `without ae-framework` / `with ae-framework` review workflow のfuture measurement design。 | comparable baseline data なしのbenchmark claim。 |
+
+### 5. 主張しないこと
 
 - hosted agent service、IDE plugin、auto-merge guarantee は提供しない。
 - agent vendor 比較や未測定の review-speed 改善は主張しない。
@@ -260,7 +295,7 @@ preview として扱います。
 - human maintainer judgment を置き換えない。
 - maintainer が承認した consent / redaction boundary なしに external-pilot data を公開しない。
 
-### 5. Demo message
+### 6. Demo message
 
 まず `pnpm run demo:agent-assurance` を実行し、`artifacts/review/agent-assurance-demo/assurance-review.md`
 を開く。次に scope drift / high-risk escalation の optional demo を見せる。外部 repository で試す場合は

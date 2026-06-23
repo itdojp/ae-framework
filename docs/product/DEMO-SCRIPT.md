@@ -6,7 +6,12 @@ canonicalSource:
 - examples/assurance-control-plane/agent-assurance-demo/README.md
 - examples/assurance-control-plane/scope-drift-demo/README.md
 - examples/assurance-control-plane/high-risk-escalation-demo/README.md
-lastVerified: '2026-06-21'
+- docs/product/PILOT-REPORT-2026Q3-01.md
+- docs/product/CONTROLLED-COMPARISON-PROTOCOL.md
+- docs/product/EFFECTIVENESS-METRICS.md
+- docs/ci/agent-pr-assurance-metrics.md
+- docs/quality/assurance-operations-runbook.md
+lastVerified: '2026-06-23'
 owner: product-assurance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -27,7 +32,7 @@ verificationCommand: pnpm -s run check:doc-consistency
 | 2:15-3:00 | Walk the reviewer surface: producer summary, missing evidence, assurance summary, policy interpretation. | `artifacts/review/agent-assurance-demo/assurance-review.md` |
 | 3:00-3:30 | Preview the PR comment surface without posting. | `pnpm run assurance:post-review-surface -- --repo itdojp/ae-framework --pr 123 --body-file artifacts/review/agent-assurance-demo/assurance-review.md` |
 | 3:30-4:00 | Show optional risk surfaces. | `examples/assurance-control-plane/scope-drift-demo/` and `examples/assurance-control-plane/high-risk-escalation-demo/` |
-| 4:00-5:00 | Close with dogfooding evidence and limitations. | `docs/product/DOGFOODING-REPORT-2026Q3.md` |
+| 4:00-5:00 | Close with evidence status and limitations: internal dogfooding, dry-run pilot report, and controlled-comparison not executed. | `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` |
 
 ### Commands
 
@@ -40,7 +45,14 @@ pnpm run assurance:post-review-surface -- \
   --repo itdojp/ae-framework \
   --pr 123 \
   --body-file artifacts/review/agent-assurance-demo/assurance-review.md
+pnpm run metrics:agent-pr-assurance -- \
+  --fixture fixtures/metrics/agent-pr-assurance/offline-input.json
 ```
+
+The metrics collector writes report-only trust-calibration output by default to
+`artifacts/metrics/agent-pr-assurance-metrics.json` and
+`artifacts/metrics/agent-pr-assurance-metrics.md`. It is evidence for human
+review and does not add a blocking gate by itself.
 
 Optional scenario commands:
 
@@ -73,6 +85,9 @@ manual `workflow_dispatch` runs.
    on the same evidence when policy selects stronger assurance."
 4. "The dogfooding report shows traceability evidence from ae-framework PRs, but
    it is not a benchmark and not an agent-vendor comparison."
+5. "The pilot report is dry-run only with 0 live external PRs collected, and
+   the controlled comparison has not been executed; review-speed and safety
+   claims remain prohibited."
 
 ### Backup plan
 
@@ -80,17 +95,21 @@ If local setup is unavailable, use checked-in documentation and fixtures only:
 
 1. Open `examples/assurance-control-plane/agent-assurance-demo/README.md`.
 2. Open `docs/guides/byo-agent-assurance-quickstart.md`.
-3. Open `docs/product/DOGFOODING-REPORT-2026Q3.md`.
-4. Explain the architecture from `docs/product/LAUNCH-KIT.md`.
+3. Open `docs/product/PILOT-REPORT-2026Q3-01.md`.
+4. Open `docs/product/DOGFOODING-REPORT-2026Q3.md`.
+5. Open `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`.
+6. Explain the architecture from `docs/product/LAUNCH-KIT.md`.
 
 ### Presenter checklist
 
-- Do not claim unmeasured review-speed improvement.
+- Do not claim unmeasured review-speed improvement, safety improvement, or adoption impact.
 - Do not claim agent-vendor superiority.
 - Do not imply auto-merge or formal proof for every PR.
 - Keep the PR posting helper in dry-run mode unless you are intentionally posting with `gh pr comment`.
 - State that the preview is fixture-backed and offline unless running against a live PR.
-- End with the next step: run the 15-minute quickstart and inspect the review Markdown.
+- State that the current ACP-097 pilot report is `dry-run only` with 0 live external PRs collected.
+- State that the controlled comparison is protocol-ready but not executed.
+- End with the next step: run the 15-minute quickstart, read the pilot report, then inspect limitations.
 
 ## 日本語
 
@@ -102,7 +121,7 @@ If local setup is unavailable, use checked-in documentation and fixtures only:
 4. missing evidence、assurance summary、policy interpretation の順に reviewer surface を見る。
 5. `pnpm run assurance:post-review-surface -- --repo itdojp/ae-framework --pr 123 --body-file artifacts/review/agent-assurance-demo/assurance-review.md` を dry-run で実行し、PR comment surface を確認する。
 6. scope drift / high-risk escalation の optional scenario を示す。
-7. dogfooding report の観測値と limitations を示し、benchmark ではないことを明確にする。
+7. dogfooding report、dry-run pilot report、controlled comparison 未実施のlimitationsを示し、benchmark ではないことを明確にする。
 
 ### CI smoke lane
 
@@ -119,7 +138,16 @@ pnpm run demo:smoke:check
 PR では report-only / non-required として扱い、runtime と false-positive rate を確認するまでは
 required check にしません。`main` push と manual `workflow_dispatch` では enforcing です。
 
+Report-only metrics collector は次で説明できます。既定出力は `artifacts/metrics/agent-pr-assurance-metrics.json` と `artifacts/metrics/agent-pr-assurance-metrics.md` であり、blocking gate ではありません。
+
+```bash
+pnpm run metrics:agent-pr-assurance -- \
+  --fixture fixtures/metrics/agent-pr-assurance/offline-input.json
+```
+
+ACP-097 pilot report は `dry-run only` で live external PR の収集は0件です。controlled comparison は未実施なので、review-speed / safety / adoption impact は主張しません。
+
 ### 予備手順
 
 local setup が使えない場合は、`docs/product/ONE-PAGE-PITCH.md`、`docs/product/LAUNCH-KIT.md`、
-`docs/guides/byo-agent-assurance-quickstart.md`、`docs/product/DOGFOODING-REPORT-2026Q3.md` を順に開いて説明する。
+`docs/guides/byo-agent-assurance-quickstart.md`、`docs/product/PILOT-REPORT-2026Q3-01.md`、`docs/product/DOGFOODING-REPORT-2026Q3.md`、`docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` を順に開いて説明する。

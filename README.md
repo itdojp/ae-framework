@@ -22,6 +22,8 @@ ae-framework is an **agent-neutral assurance control plane for agent-driven SDLC
 
 Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, and `docs/product/DEMO-SCRIPT.md`. Start the offline demo with `pnpm run demo:agent-assurance`.
 
+Current evidence route for first-time product evaluation: run the 15-minute quickstart, read the ACP-097 pilot report, then check launch-kit limitations and the controlled-comparison protocol. Internal dogfooding and pilot evidence are separate: the current external pilot report is `dry-run only` with 0 live external PRs collected, and the controlled comparison has not been executed. Public claims should therefore stay limited to review traceability and evidence routing, not review-speed, safety, adoption-impact, or agent-vendor superiority.
+
 ### Two-layer model
 
 ```mermaid
@@ -111,6 +113,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - Public preview launch kit: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`
+- Product evidence and limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
+- Agent PR assurance metrics collector: `docs/ci/agent-pr-assurance-metrics.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
 - 15-minute BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Assurance model (claim / level / lane / evidence): `docs/quality/ASSURANCE-MODEL.md`
@@ -141,6 +145,8 @@ ae-framework は **エージェント協調型SDLCのための、エージェン
 **Product thesis**: Bring your own agent. Keep your assurance plane. Codex、Claude Code、GitHub Copilot、Gemini系tool、人間のmaintainer、CI job、formal tool は交換可能な producer であり、ae-framework は producer の選択に依存しない judgment artifact、policy gate、release decision を維持します。
 
 Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`。offline demo は `pnpm run demo:agent-assurance` から開始します。
+
+初見の product evidence 導線は、15分 quickstart → ACP-097 pilot report → launch kit の limitations → controlled-comparison protocol の順です。内部 dogfooding と pilot evidence は別扱いです。現在の external pilot report は `dry-run only` で live external PR の収集数は0件、controlled comparison は未実施です。そのため公開claimは review traceability と evidence routing に限定し、未測定の review-speed、安全性、導入効果、agent vendor 優位性は主張しません。
 
 ### 二層モデル
 
@@ -221,6 +227,8 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - Public preview launch kit: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`
+- Product evidence と limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
+- Agent PR assurance metrics collector: `docs/ci/agent-pr-assurance-metrics.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
 - 15分 BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Assurance model（claim / level / lane / evidence）: `docs/quality/ASSURANCE-MODEL.md`
