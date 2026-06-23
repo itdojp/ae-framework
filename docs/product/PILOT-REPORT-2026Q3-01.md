@@ -78,7 +78,7 @@ product-preparation feedback, not external pilot evidence.
 | --- | --- | --- |
 | `helpful` | Schema-valid placeholder metrics and the redacted review surface make the pilot package reviewable before a live repository is selected. | Keep synthetic artifacts contract-valid so operators can rehearse the flow. |
 | `friction` | The initial review surface wording could have directed operators to edit the committed template with live disposition data. | Live pilots need a private copied evidence row or tracker, not public example edits. |
-| `unclear` | A generic `assurance-review.md` token looked like a repository-relative path and failed the intended doc-consistency model. | Reviewer surfaces and runbooks should point to existing paths or use prose that cannot be interpreted as a path. |
+| `unclear` | A generic review-surface filename token looked like a repository-relative path and failed the intended doc-consistency model. | Reviewer surfaces and runbooks should point to existing paths or use prose that cannot be interpreted as a path. |
 | `next improvement` | Required-check names, reviewer disposition, raw comments, and timing remain uncollected. | A live pilot must confirm repository-specific checks, consent, redaction, private evidence storage, and publication approval before collecting data. |
 
 ### 5. Required observations
@@ -191,7 +191,7 @@ review feedback であり、external pilot evidence ではありません。
 | --- | --- | --- |
 | `helpful` | schema-valid placeholder metrics と redacted review surface により、live repo 選定前に pilot package を確認できる。 | synthetic artifact も contract-valid に保ち、operator が手順を rehearsal できるようにする。 |
 | `friction` | 初期 wording は live disposition data を committed template に書かせるように読めた。 | live pilot では公開 example ではなく private copied evidence row / tracker を使う。 |
-| `unclear` | generic `assurance-review.md` token が repository-relative path と解釈され得た。 | review surface / runbook は存在する path を指すか、path と誤解されない prose にする。 |
+| `unclear` | generic review-surface filename token が repository-relative path と解釈され得た。 | review surface / runbook は存在する path を指すか、path と誤解されない prose にする。 |
 | `next improvement` | required-check name、reviewer disposition、raw comment、timing は未収集。 | live pilot では repository-specific check、consent、redaction、private evidence storage、publication approval を先に固定する。 |
 
 ### 5. Required observations
