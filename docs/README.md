@@ -35,6 +35,9 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
 - External pilot onboarding: `guides/external-pilot-onboarding.md`
 - Report-only pilot runbook, evidence template, and ACP-097 report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `product/PILOT-REPORT-2026Q3-01.md`
+- Controlled comparison protocol: `product/CONTROLLED-COMPARISON-PROTOCOL.md`
+
+For product evidence, use the route `guides/byo-agent-assurance-quickstart.md` -> `product/PILOT-REPORT-2026Q3-01.md` -> `product/LAUNCH-KIT.md` limitations -> `product/CONTROLLED-COMPARISON-PROTOCOL.md`. The current pilot report is `dry-run only`, and the controlled comparison has not been executed.
 
 ### How to use this index
 - If you need the shortest route to a working repository, start with `getting-started/`.
@@ -45,9 +48,10 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 ### Recommended routes by use case
 **First-time users**
 - `getting-started/QUICK-START-GUIDE.md`
-- `guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md`
-- `integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md`
-- `guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md`
+- `guides/byo-agent-assurance-quickstart.md`
+- `product/PILOT-REPORT-2026Q3-01.md`
+- `product/LAUNCH-KIT.md`
+- `product/CONTROLLED-COMPARISON-PROTOCOL.md`
 
 **Phase 6 UI / UX work**
 - `getting-started/PHASE-6-GETTING-STARTED.md`
@@ -337,9 +341,12 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [PILOT-RUNBOOK-2026Q3.md](./product/PILOT-RUNBOOK-2026Q3.md) - report-only external pilot 実行 runbook
 - [PILOT-EVIDENCE-TEMPLATE.md](./product/PILOT-EVIDENCE-TEMPLATE.md) - external pilot evidence capture template
 - [PILOT-REPORT-2026Q3-01.md](./product/PILOT-REPORT-2026Q3-01.md) - ACP-097 dry-run external pilot report
+- [CONTROLLED-COMPARISON-PROTOCOL.md](./product/CONTROLLED-COMPARISON-PROTOCOL.md) - 未実施の future benchmark を review workflow comparison として設計する protocol
 - [ONE-PAGE-PITCH.md](./product/ONE-PAGE-PITCH.md) - 初見向け one-page pitch
 - [DEMO-SCRIPT.md](./product/DEMO-SCRIPT.md) - 5分 demo script と話者メモ
 - [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性
+
+初見の product evidence 導線は [byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md) → [PILOT-REPORT-2026Q3-01.md](./product/PILOT-REPORT-2026Q3-01.md) → [LAUNCH-KIT.md](./product/LAUNCH-KIT.md) の limitations → [CONTROLLED-COMPARISON-PROTOCOL.md](./product/CONTROLLED-COMPARISON-PROTOCOL.md) です。現在の pilot report は `dry-run only` で、controlled comparison は未実施です。
 
 ### 🧭 [strategy/](./strategy/) - 戦略・責務境界
 - [CODEX-AE-BOUNDARY-VERIFY-FIRST.md](./strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md) - Codex との責務境界、Verify-first、Thread→Repo→CI の標準化
@@ -509,10 +516,11 @@ Claude CodeやMCPとの統合
 ## 🎯 用途別ドキュメント推奨
 
 ### 🔰 初めて使う方
-1. **[getting-started/QUICK-START-GUIDE.md](./getting-started/QUICK-START-GUIDE.md)** - 15分で体験
-2. **[guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md](./guides/DEVELOPMENT-INSTRUCTIONS-GUIDE.md)** - 実際の指示方法
-3. **[integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md](./integrations/CLAUDE-CODE-TASK-TOOL-INTEGRATION.md)** - Claude Code統合
-4. **🆕 [guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md](./guides/PHASE-2-ADVANCED-FEATURES-GUIDE.md)** - 高度な機能の活用法
+1. **[getting-started/QUICK-START-GUIDE.md](./getting-started/QUICK-START-GUIDE.md)** - baseline 起動
+2. **[guides/byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md)** - offline BYO-agent assurance demo
+3. **[product/PILOT-REPORT-2026Q3-01.md](./product/PILOT-REPORT-2026Q3-01.md)** - dry-run pilot evidence と limitations
+4. **[product/LAUNCH-KIT.md](./product/LAUNCH-KIT.md)** - preview の claim boundary と demo ladder
+5. **[product/CONTROLLED-COMPARISON-PROTOCOL.md](./product/CONTROLLED-COMPARISON-PROTOCOL.md)** - 未実施の future benchmark 条件
 
 ### 🎨 Phase 6 UI/UX開発者
 1. **[getting-started/PHASE-6-GETTING-STARTED.md](./getting-started/PHASE-6-GETTING-STARTED.md)** - Phase 6専用ガイド
