@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-06-21'
+lastVerified: '2026-06-23'
 owner: product-assurance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -29,6 +29,7 @@ dogfooding reports, controlled benchmarks, and public launch material so that
 all product claims use the same evidence vocabulary.
 
 Current internal dogfooding report: `docs/product/DOGFOODING-REPORT-2026Q3.md`.
+External pilot onboarding and consent boundary: `docs/guides/external-pilot-onboarding.md`.
 
 ### 2. Measurement boundary
 
@@ -120,6 +121,9 @@ Public material, demos, and launch notes must follow these rules:
   ae-framework assurance plane around producer output.
 - Do not publish repository-sensitive PR text, reviewer identity, or raw timing
   data without approval.
+- For external pilots, follow `docs/guides/external-pilot-onboarding.md` and
+  record whether each PR is approved for publication, aggregate-only, private, or
+  not approved for publication.
 - State whether a metric is measured, estimated, manually annotated, or not yet
   collected.
 
@@ -132,6 +136,7 @@ Public material, demos, and launch notes must follow these rules:
 | Scope drift / high-risk demos | Report findings with these metric names and clearly distinguish report-only from blocking behavior. |
 | Cross-agent fixtures | Keep producer identity separate from reviewer-effectiveness metrics. |
 | Dogfooding report | Aggregate the canonical metrics over ae-framework PRs and record limitations. |
+| External pilot onboarding / ACP-097 report | Start from report-only collection, preserve consent/redaction status per PR, and publish only approved aggregate or redacted data. |
 | Public launch kit | Use only measured or explicitly demo-scoped claims from this vocabulary. |
 
 ---
@@ -149,6 +154,7 @@ product effectiveness を示すための共通 metric vocabulary を定義しま
 以下の metric は **review / judgment workflow** を測ります。raw agent performance は主対象ではありません。15分 quickstart、local demo、dogfooding report、controlled benchmark、public launch material は、同じ evidence vocabulary を再利用します。
 
 現在の internal dogfooding report: `docs/product/DOGFOODING-REPORT-2026Q3.md`。
+External pilot onboarding と consent boundary: `docs/guides/external-pilot-onboarding.md`。
 
 ### 2. 測定境界
 
@@ -209,6 +215,7 @@ Public material、demo、launch note は次を守ります。
 - comment 減少、unresolved claim 減少、green CI だけで code が safer になったと主張しない。
 - これらの metric から agent vendor superiority を主張しない。測っているのは producer output の周辺にある ae-framework assurance plane である。
 - 承認なしに repository-sensitive な PR text、reviewer identity、raw timing data を公開しない。
+- External pilot では `docs/guides/external-pilot-onboarding.md` に従い、PR ごとの publication status を `approved` / `aggregate only` / `private` / `not approved for publication` として記録する。
 - metric が measured / estimated / manually annotated / not yet collected のどれかを明記する。
 
 ### 7. 後続作業での再利用方法
@@ -220,4 +227,5 @@ Public material、demo、launch note は次を守ります。
 | Scope drift / high-risk demo | この metric 名で finding を表示し、report-only と blocking behavior を明確に分ける。 |
 | Cross-agent fixtures | producer identity と reviewer-effectiveness metric を分離する。 |
 | Dogfooding report | ae-framework PR群で canonical metric を集約し、limitation を記録する。 |
+| External pilot onboarding / ACP-097 report | report-only collection から始め、PR ごとの consent / redaction status を保持し、承認済みの aggregate または redacted data だけを公開する。 |
 | Public launch kit | この vocabulary の measured claim または demo-scoped claim だけを使う。 |

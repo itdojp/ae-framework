@@ -6,7 +6,7 @@ canonicalSource:
 - docs/product/DOGFOODING-REPORT-2026Q3.md
 - docs/guides/byo-agent-assurance-quickstart.md
 - docs/product/EFFECTIVENESS-METRICS.md
-lastVerified: '2026-06-21'
+lastVerified: '2026-06-23'
 owner: product-assurance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -57,6 +57,7 @@ flowchart LR
 | --- | --- | --- | --- |
 | 5 minutes | Launch preview walkthrough | `docs/product/DEMO-SCRIPT.md` | Explain the assurance plane and open a prebuilt review surface. |
 | 15 minutes | Offline BYO-agent assurance demo | `pnpm run demo:agent-assurance` | Generate fixture-backed producer, assurance, policy, and reviewer artifacts. |
+| Pilot setup | External pilot onboarding | `docs/guides/external-pilot-onboarding.md` | Run a one-repository, about-five-PR pilot with report-only metrics, consent, and redaction boundaries. |
 | Optional | Scope-drift scenario | `node scripts/demo/run-scope-drift-demo.mjs` | Show report-only drift in a normal lane and blocking drift in a strict lane. |
 | Optional | High-risk escalation sample | `node scripts/demo/run-high-risk-escalation-demo.mjs` | Show selected critical/high claims and strict-lane evidence requirements. |
 | Optional | Cross-agent fixtures | `fixtures/agents/evidence-adapters/` | Show producer-neutral routing for Codex, Claude Code, Copilot, human, CI, and formal output. |
@@ -89,6 +90,9 @@ preview can support review traceability:
 
 See `docs/product/DOGFOODING-REPORT-2026Q3.md` for limitations. The report is
 explicitly **not** a controlled benchmark and does **not** compare agent vendors.
+For an external, consent-safe pilot path, use
+`docs/guides/external-pilot-onboarding.md`; it keeps the first pilot
+report-only and defines the redaction/publication boundary for ACP-097.
 
 ### 7. Non-goals for the preview
 
@@ -99,6 +103,7 @@ explicitly **not** a controlled benchmark and does **not** compare agent vendors
 - No auto-merge guarantee.
 - No formal proof requirement for every PR.
 - No replacement for human maintainer judgment.
+- No external-pilot publication without maintainer-approved consent and redaction boundaries.
 
 ### 8. Release note template
 
@@ -229,6 +234,7 @@ preview として扱います。
 - `docs/product/ONE-PAGE-PITCH.md` — 初見向け one-page pitch。
 - `docs/product/DEMO-SCRIPT.md` — 5分 demo と 15分拡張 demo。
 - `docs/guides/byo-agent-assurance-quickstart.md` — offline BYO-agent assurance demo。
+- `docs/guides/external-pilot-onboarding.md` — report-only external pilot、consent、redaction / publication boundary。
 - `docs/product/DOGFOODING-REPORT-2026Q3.md` — dogfooding evidence と limitations。
 
 ### 4. 主張しないこと
@@ -237,9 +243,11 @@ preview として扱います。
 - agent vendor 比較や未測定の review-speed 改善は主張しない。
 - すべての PR に formal proof を要求しない。
 - human maintainer judgment を置き換えない。
+- maintainer が承認した consent / redaction boundary なしに external-pilot data を公開しない。
 
 ### 5. Demo message
 
 まず `pnpm run demo:agent-assurance` を実行し、`artifacts/review/agent-assurance-demo/assurance-review.md`
-を開く。次に scope drift / high-risk escalation の optional demo を見せる。最後に dogfooding
+を開く。次に scope drift / high-risk escalation の optional demo を見せる。外部 repository で試す場合は
+`docs/guides/external-pilot-onboarding.md` に沿って report-only / consent / redaction boundary を先に固定する。最後に dogfooding
 report の summary を使い、preview の実測範囲と限界を説明する。
