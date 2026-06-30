@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "judgment-artifact-fixture/v1",
+  "runId": "run-a",
+  "generatedAt": "2026-07-01T00:00:00.000Z",
+  "inputFingerprints": {
+    "contextPack": [
+      {
+        "path": "spec/context-pack/minimal-example.yaml",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "execPlan": [
+      {
+        "path": "artifacts/plan/plan-artifact.json",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ],
+    "templates": [
+      {
+        "path": "templates/comments/AE-HANDOFF.md",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    ],
+    "validationCommands": [
+      {
+        "command": "pnpm -s run check:doc-consistency",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    ],
+    "toolVersions": [
+      {
+        "name": "node",
+        "version": "v22.0.0"
+      },
+      {
+        "name": "pnpm",
+        "version": "10.0.0"
+      }
+    ],
+    "artifactContracts": [
+      {
+        "path": "schema/quality-baseline.schema.json",
+        "contractId": "quality-baseline.v1",
+        "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      }
+    ]
+  },
+  "judgmentArtifacts": [
+    {
+      "path": "artifacts/quality/code-quality-baseline.json",
+      "contractId": "quality-baseline.v1",
+      "schemaVersion": "quality-baseline/v1",
+      "status": "report-only",
+      "generatedAt": "2026-07-01T00:00:00.000Z",
+      "summary": {
+        "exceptionCount": 1,
+        "cleanupCandidates": 3
+      }
+    }
+  ],
+  "validation": {
+    "command": "pnpm run quality:baseline",
+    "status": "pass",
+    "durationMs": 1200
+  }
+}

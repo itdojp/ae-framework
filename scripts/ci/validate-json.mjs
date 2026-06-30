@@ -360,6 +360,11 @@ const checks = [
     label: 'Quality baseline schema validation'
   },
   {
+    schema: 'schema/variance-report.schema.json',
+    fixtures: ['fixtures/variance/expected.drift.variance-report.json'],
+    label: 'Variance report schema validation'
+  },
+  {
     schema: 'schema/conformance-verify-result.schema.json',
     fixtures: ['fixtures/conformance/sample.conformance-verify-result.json'],
     label: 'Conformance verify result schema validation'

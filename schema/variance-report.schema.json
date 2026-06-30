@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/variance-report.schema.json",
+  "title": "Variance Report",
+  "description": "Report-only comparison artifact for normalized judgment artifacts produced by agents, CI jobs, and verification tools.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "generatedAt",
+    "enforcement",
+    "inputs",
+    "normalization",
+    "summary",
+    "inputHashes",
+    "normalizedJudgment",
+    "expectedDifferences",
+    "findings"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "variance-report/v1" },
+    "contractId": { "const": "variance-report.v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "enforcement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "ordinaryPrBlocking", "policy", "promotionRule"],
+      "properties": {
+        "mode": { "const": "report-only" },
+        "ordinaryPrBlocking": { "const": false },
+        "policy": { "type": "string", "minLength": 1 },
+        "promotionRule": { "type": "string", "minLength": 1 }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline", "candidate"],
+      "properties": {
+        "baseline": { "type": "string", "minLength": 1 },
+        "candidate": { "type": "string", "minLength": 1 }
+      }
+    },
+    "normalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowedFieldNames", "arrayOrderPolicy"],
+      "properties": {
+        "allowedFieldNames": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "arrayOrderPolicy": {
+          "type": "string",
+          "enum": ["preserve-order"]
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "findingCount", "reportOnlyFindingCount", "judgmentRelevantFindingCount", "expectedDifferenceCount"],
+      "properties": {
+        "status": { "type": "string", "enum": ["stable", "drift"] },
+        "findingCount": { "type": "integer", "minimum": 0 },
+        "reportOnlyFindingCount": { "type": "integer", "minimum": 0 },
+        "judgmentRelevantFindingCount": { "type": "integer", "minimum": 0 },
+        "expectedDifferenceCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "inputHashes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/inputHash" }
+    },
+    "normalizedJudgment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baselineSha256", "candidateSha256", "match"],
+      "properties": {
+        "baselineSha256": { "$ref": "#/$defs/sha256" },
+        "candidateSha256": { "$ref": "#/$defs/sha256" },
+        "match": { "type": "boolean" }
+      }
+    },
+    "expectedDifferences": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/expectedDifference" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sourceInputKind": {
+      "type": "string",
+      "enum": [
+        "context-pack",
+        "exec-plan",
+        "template",
+        "validation-command",
+        "tool-version",
+        "artifact-contract",
+        "judgment-artifact"
+      ]
+    },
+    "inputHash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceInputKind", "affectedEvidencePath", "baselineSha256", "candidateSha256", "match"],
+      "properties": {
+        "sourceInputKind": { "$ref": "#/$defs/sourceInputKind" },
+        "affectedEvidencePath": { "type": "string", "minLength": 1 },
+        "baselineSha256": { "$ref": "#/$defs/sha256" },
+        "candidateSha256": { "$ref": "#/$defs/sha256" },
+        "match": { "type": "boolean" }
+      }
+    },
+    "expectedDifference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["affectedEvidencePath", "fieldName", "reason", "baselineValue", "candidateValue"],
+      "properties": {
+        "affectedEvidencePath": { "type": "string", "minLength": 1 },
+        "fieldName": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "baselineValue": { "type": "string" },
+        "candidateValue": { "type": "string" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "category",
+        "severity",
+        "reportOnly",
+        "judgmentRelevant",
+        "sourceInputKind",
+        "affectedEvidencePath",
+        "message"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "category": {
+          "type": "string",
+          "enum": [
+            "context-drift",
+            "tool-version-drift",
+            "prompt-template-drift",
+            "check-order-drift",
+            "artifact-shape-drift",
+            "timestamp-noise-drift",
+            "value-drift"
+          ]
+        },
+        "severity": { "type": "string", "enum": ["info", "warn", "error"] },
+        "reportOnly": { "const": true },
+        "judgmentRelevant": { "type": "boolean" },
+        "sourceInputKind": { "$ref": "#/$defs/sourceInputKind" },
+        "affectedEvidencePath": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "baselineValue": { "type": "string" },
+        "candidateValue": { "type": "string" }
+      }
+    }
+  }
+}
