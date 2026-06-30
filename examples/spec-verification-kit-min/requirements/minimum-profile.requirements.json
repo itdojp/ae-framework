@@ -1,0 +1,9 @@
+{
+  "requirements": [
+    {
+      "id": "REQ-SVK-001",
+      "title": "Activation profile preserves a positive reservation quantity",
+      "text": "The minimum Spec & Verification Kit sample keeps reservation quantities positive across BDD and property examples."
+    }
+  ]
+}

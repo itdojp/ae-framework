@@ -15,6 +15,26 @@ Copy this directory into a new repository and populate the spec/test artifacts.
 2. Add or adapt scripts in your `package.json`:
    - `pnpm lint`, `pnpm types:check`, `pnpm run test:fast`
    - `pnpm run test:property`
+   - `pnpm run spec-kit-min:verify`
 3. Add a workflow from `docs/templates/ci/spec-kit-min.workflow.yml`.
+4. Add requirement or trace markers such as `@trace:REQ-001` to BDD/property examples so the activation summary can connect checks to spec fragments.
 
-Note: This is a seed only and does not include runtime configuration files.
+## Local activation command
+
+```bash
+pnpm run spec-kit-min:verify
+```
+
+Use authored BDD/property suites only after their steps and generators are ready:
+
+```bash
+pnpm run spec-kit-min:verify -- --run-custom-suites
+```
+
+The activation runner writes `artifacts/spec-kit-min/activation-summary.json` and
+`artifacts/spec-kit-min/activation-summary.md`. If custom suites are discovered
+without `--run-custom-suites`, the summary explains that the built-in
+`test:property` harness smoke path is distinct from authored property suites.
+
+Note: This is a seed only. Copy the runner or provide an equivalent script in the
+consumer repository before treating this as a standalone generated project.
