@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
@@ -38,6 +38,102 @@ function normalizePathForReport(filePath, rootDir = process.cwd()) {
   const relative = path.relative(path.resolve(rootDir), resolved);
   if (relative === '') return '.';
   return toPosix(relative && !relative.startsWith('..') ? relative : resolved);
+}
+
+function isPathWithin(parentPath, childPath) {
+  const relative = path.relative(path.resolve(parentPath), path.resolve(childPath));
+  return relative === '' || (relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function nearestExistingAncestor(filePath) {
+  let cursor = path.resolve(filePath);
+  while (!lstatIfExists(cursor)) {
+    const parent = path.dirname(cursor);
+    if (parent === cursor) return null;
+    cursor = parent;
+  }
+  return cursor;
+}
+
+function realpathIfExists(filePath) {
+  try {
+    return realpathSync.native(filePath);
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+function lstatIfExists(filePath) {
+  try {
+    return lstatSync(filePath);
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+function assertProjectContainedPath(projectRoot, filePath, label) {
+  const root = path.resolve(projectRoot);
+  const resolved = path.resolve(root, filePath);
+  if (!isPathWithin(root, resolved)) {
+    throw new Error(`${label} must stay within --project-root: ${filePath}`);
+  }
+
+  const existingAncestor = nearestExistingAncestor(resolved);
+  if (!existingAncestor) return resolved;
+
+  const realRoot = existsSync(root) ? realpathSync.native(root) : root;
+  const realAncestor = realpathIfExists(existingAncestor);
+  if (realAncestor && !isPathWithin(realRoot, realAncestor)) {
+    throw new Error(`${label} resolves outside --project-root: ${filePath}`);
+  }
+  return resolved;
+}
+
+function assertResolvedPathWithin(realProjectRoot, candidatePath, label) {
+  if (!isPathWithin(realProjectRoot, candidatePath)) {
+    throw new Error(`${label} resolves outside --project-root: ${candidatePath}`);
+  }
+}
+
+function ensureProjectContainedOutputPath(projectRoot, filePath, label) {
+  const resolved = assertProjectContainedPath(projectRoot, filePath, label);
+  const realProjectRoot = realpathSync.native(path.resolve(projectRoot));
+  const outputStat = lstatIfExists(resolved);
+  if (outputStat?.isSymbolicLink()) {
+    throw new Error(`${label} must not be a symbolic link: ${filePath}`);
+  }
+
+  const resolvedOutput = realpathIfExists(resolved);
+  if (resolvedOutput) {
+    assertResolvedPathWithin(realProjectRoot, resolvedOutput, label);
+  }
+
+  const outputDir = path.dirname(resolved);
+  const existingAncestor = nearestExistingAncestor(outputDir);
+  if (!existingAncestor) {
+    throw new Error(`${label} has no existing ancestor under --project-root: ${filePath}`);
+  }
+  const realAncestor = realpathIfExists(existingAncestor);
+  if (!realAncestor) {
+    throw new Error(`${label} output directory contains a broken symbolic link: ${existingAncestor}`);
+  }
+  assertResolvedPathWithin(realProjectRoot, realAncestor, `${label} output directory`);
+
+  mkdirSync(outputDir, { recursive: true });
+  const realOutputDir = realpathSync.native(outputDir);
+  assertResolvedPathWithin(realProjectRoot, realOutputDir, `${label} output directory`);
+
+  const outputStatAfterMkdir = lstatIfExists(resolved);
+  if (outputStatAfterMkdir?.isSymbolicLink()) {
+    throw new Error(`${label} must not be a symbolic link: ${filePath}`);
+  }
+  const resolvedOutputAfterMkdir = realpathIfExists(resolved);
+  if (resolvedOutputAfterMkdir) {
+    assertResolvedPathWithin(realProjectRoot, resolvedOutputAfterMkdir, label);
+  }
+  return resolved;
 }
 
 function sha256(content) {
@@ -138,12 +234,12 @@ function parseArgs(argv = process.argv) {
     throw new Error(`Unknown argument: ${arg}`);
   }
 
-  return deriveOutputPaths(options);
+  return options.help ? options : deriveOutputPaths(options);
 }
 
 function deriveOutputPaths(options) {
   const outputDir = options.outputDir || DEFAULT_OUTPUT_DIR;
-  return {
+  const derived = {
     ...options,
     outputDir,
     reportJson: options.reportJson || path.join(outputDir, 'spec-kit-bridge-report.json'),
@@ -151,6 +247,14 @@ function deriveOutputPaths(options) {
     contextPackJson: options.contextPackJson || path.join(outputDir, 'context-pack.import.json'),
     execPlanJson: options.execPlanJson || path.join(outputDir, 'exec-plan.v2.json'),
   };
+  const projectRoot = path.resolve(derived.projectRoot || '.');
+  assertProjectContainedPath(projectRoot, derived.featureDir, '--feature-dir');
+  assertProjectContainedPath(projectRoot, derived.outputDir, '--output-dir');
+  assertProjectContainedPath(projectRoot, derived.reportJson, '--report-json');
+  assertProjectContainedPath(projectRoot, derived.reportMd, '--report-md');
+  assertProjectContainedPath(projectRoot, derived.contextPackJson, '--context-pack-json');
+  assertProjectContainedPath(projectRoot, derived.execPlanJson, '--exec-plan-json');
+  return derived;
 }
 
 function renderHelp() {
@@ -177,7 +281,7 @@ function renderHelp() {
 }
 
 function readOptionalFile(filePath, kind, rootDir) {
-  const resolved = path.resolve(filePath);
+  const resolved = assertProjectContainedPath(rootDir, filePath, `${kind} path`);
   if (!existsSync(resolved) || !statSync(resolved).isFile()) {
     return {
       kind,
@@ -199,16 +303,26 @@ function readOptionalFile(filePath, kind, rootDir) {
   };
 }
 
-function listFilesRecursive(dirPath) {
-  const resolved = path.resolve(dirPath);
+function listFilesRecursive(dirPath, rootDir) {
+  const resolved = rootDir ? assertProjectContainedPath(rootDir, dirPath, 'contracts directory') : path.resolve(dirPath);
   if (!existsSync(resolved) || !statSync(resolved).isDirectory()) return [];
   const entries = [];
   for (const name of readdirSync(resolved).sort()) {
     if (name.startsWith('.')) continue;
-    const child = path.join(resolved, name);
-    const stat = statSync(child);
+    const child = rootDir ? assertProjectContainedPath(rootDir, path.join(resolved, name), 'contracts path') : path.join(resolved, name);
+    let stat = lstatSync(child);
+    if (stat.isSymbolicLink()) {
+      const targetPath = realpathIfExists(child);
+      if (!targetPath) continue;
+      if (rootDir) {
+        const realRoot = realpathSync.native(path.resolve(rootDir));
+        assertResolvedPathWithin(realRoot, targetPath, 'contracts path');
+      }
+      stat = statSync(child);
+    }
     if (stat.isDirectory()) {
-      entries.push(...listFilesRecursive(child));
+      if (lstatSync(child).isSymbolicLink()) continue;
+      entries.push(...listFilesRecursive(child, rootDir));
     } else if (stat.isFile()) {
       entries.push(child);
     }
@@ -236,7 +350,7 @@ function findConstitutionPath(featureDir, projectRoot) {
 }
 
 function readContracts(contractsDir, rootDir) {
-  return listFilesRecursive(contractsDir).map((filePath) => {
+  return listFilesRecursive(contractsDir, rootDir).map((filePath) => {
     const input = readOptionalFile(filePath, 'contract', rootDir);
     return {
       ...input,
@@ -415,8 +529,9 @@ function makeSourceRef(kind, id, pathValue, description) {
 }
 
 function buildAnalysis(options) {
+  options = deriveOutputPaths(options);
   const projectRoot = path.resolve(options.projectRoot);
-  const featureDir = path.resolve(projectRoot, options.featureDir);
+  const featureDir = assertProjectContainedPath(projectRoot, options.featureDir, '--feature-dir');
   const featureRelativePath = normalizePathForReport(featureDir, projectRoot);
   const featureId = slugify(path.basename(featureDir));
   const generatedAt = options.generatedAt || new Date().toISOString();
@@ -1169,14 +1284,14 @@ function renderReportMarkdown(report) {
   return `${lines.join('\n')}\n`;
 }
 
-function writeJson(filePath, value) {
-  mkdirSync(path.dirname(filePath), { recursive: true });
-  writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+function writeJson(projectRoot, filePath, value, label) {
+  const resolved = ensureProjectContainedOutputPath(projectRoot, filePath, label);
+  writeFileSync(resolved, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
-function writeText(filePath, value) {
-  mkdirSync(path.dirname(filePath), { recursive: true });
-  writeFileSync(filePath, value, 'utf8');
+function writeText(projectRoot, filePath, value, label) {
+  const resolved = ensureProjectContainedOutputPath(projectRoot, filePath, label);
+  writeFileSync(resolved, value, 'utf8');
 }
 
 function run(options = parseArgs()) {
@@ -1186,10 +1301,10 @@ function run(options = parseArgs()) {
   }
   const result = buildAnalysis(options);
   if (!options.noWrite) {
-    writeJson(path.resolve(result.options.projectRoot, options.reportJson), result.report);
-    writeText(path.resolve(result.options.projectRoot, options.reportMd), result.markdown);
-    if (result.contextPack) writeJson(path.resolve(result.options.projectRoot, options.contextPackJson), result.contextPack);
-    if (result.execPlan) writeJson(path.resolve(result.options.projectRoot, options.execPlanJson), result.execPlan);
+    writeJson(result.options.projectRoot, options.reportJson, result.report, '--report-json');
+    writeText(result.options.projectRoot, options.reportMd, result.markdown, '--report-md');
+    if (result.contextPack) writeJson(result.options.projectRoot, options.contextPackJson, result.contextPack, '--context-pack-json');
+    if (result.execPlan) writeJson(result.options.projectRoot, options.execPlanJson, result.execPlan, '--exec-plan-json');
   }
   const statusLine = `[spec-kit:import-feature] ${result.report.result}: ${result.report.source.featureDir} -> ${options.reportJson}`;
   if (result.report.result === FAIL) {

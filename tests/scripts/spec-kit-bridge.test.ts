@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAnalysis,
   parseArgs,
+  run,
 } from '../../scripts/spec-kit/import-feature.mjs';
 import { validateExecPlanV2Payload } from '../../scripts/exec-plan/validate-v2.mjs';
 
@@ -117,6 +118,109 @@ describe('Spec Kit bridge importer', () => {
     validateWithSchema(reportSchema, analysis.report);
     expect(analysis.contextPack).toBeNull();
     expect(analysis.execPlan).toBeNull();
+  });
+
+  it('rejects feature and output paths that escape the project root', () => {
+    expect(() => parseArgs([
+      'node',
+      'scripts/spec-kit/import-feature.mjs',
+      '--feature-dir',
+      '../outside-feature',
+      '--no-write',
+    ])).toThrow(/--feature-dir must stay within --project-root/);
+
+    expect(() => parseArgs([
+      'node',
+      'scripts/spec-kit/import-feature.mjs',
+      '--output-dir',
+      resolve(repoRoot, '..', 'outside-output'),
+      '--no-write',
+    ])).toThrow(/--output-dir must stay within --project-root/);
+
+    expect(() => parseArgs([
+      'node',
+      'scripts/spec-kit/import-feature.mjs',
+      '--report-json',
+      '../spec-kit-bridge-report.json',
+      '--no-write',
+    ])).toThrow(/--report-json must stay within --project-root/);
+
+    const result = spawnSync('node', [
+      scriptPath,
+      '--feature-dir',
+      '../outside-feature',
+      '--no-write',
+    ], { cwd: repoRoot, encoding: 'utf8', timeout: 120_000 });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--feature-dir must stay within --project-root');
+  });
+
+  it('rejects symlinked feature and output paths that resolve outside the project root', () => {
+    const root = resolve('.codex-local/tmp');
+    mkdirSync(root, { recursive: true });
+    const sandbox = mkdtempSync(join(root, 'spec-kit-bridge-symlink-'));
+    const workRoot = join(sandbox, 'work');
+    const outsideRoot = join(sandbox, 'outside');
+    mkdirSync(workRoot, { recursive: true });
+    mkdirSync(outsideRoot, { recursive: true });
+
+    try {
+      symlinkSync(outsideRoot, join(workRoot, 'feature-link'), 'dir');
+    } catch {
+      rmSync(sandbox, { recursive: true, force: true });
+      return;
+    }
+
+    try {
+      expect(() => parseArgs([
+        'node',
+        'scripts/spec-kit/import-feature.mjs',
+        '--project-root',
+        workRoot,
+        '--feature-dir',
+        'feature-link',
+        '--no-write',
+      ])).toThrow(/--feature-dir resolves outside --project-root/);
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects symbolic-link output files before writing bridge artifacts', () => {
+    const root = resolve('.codex-local/tmp');
+    mkdirSync(root, { recursive: true });
+    const sandbox = mkdtempSync(join(root, 'spec-kit-bridge-output-link-'));
+    const workRoot = join(sandbox, 'work');
+    const outsideRoot = join(sandbox, 'outside');
+    const outputDir = join(workRoot, 'artifacts', 'spec-kit');
+    const reportPath = join(outputDir, 'spec-kit-bridge-report.json');
+    mkdirSync(outputDir, { recursive: true });
+    mkdirSync(outsideRoot, { recursive: true });
+
+    try {
+      symlinkSync(join(outsideRoot, 'missing-report.json'), reportPath, 'file');
+    } catch {
+      rmSync(sandbox, { recursive: true, force: true });
+      return;
+    }
+
+    try {
+      expect(() => run(parseArgs([
+        'node',
+        'scripts/spec-kit/import-feature.mjs',
+        '--project-root',
+        workRoot,
+        '--feature-dir',
+        'missing-feature',
+        '--output-dir',
+        'artifacts/spec-kit',
+        '--generated-at',
+        generatedAt,
+      ]))).toThrow(/--report-json must not be a symbolic link/);
+      expect(existsSync(join(outsideRoot, 'missing-report.json'))).toBe(false);
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
   });
 
   it('writes bridge artifacts through the CLI and supports pnpm argument separators', () => {
