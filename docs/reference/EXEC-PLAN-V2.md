@@ -75,7 +75,7 @@ The invalid fixture is schema-valid but semantically invalid. The validator must
 | `scope` | In-scope / out-of-scope boundaries, target files, and affected contracts. |
 | `context.contextPackRefs` | Context Pack, object, morphism, diagram, acceptance-test, or boundary-slice references. |
 | `context.assuranceRefs` | Existing assurance profile, claim, and assurance-summary references. No new claim-status vocabulary is introduced. |
-| `context.specKitRefs` | Future Spec Kit spec / plan / task references for interoperability work. |
+| `context.specKitRefs` | Optional Spec Kit spec / plan / task / contract references for interoperability bridge work. |
 | `taskGraph.nodes` | Ordered execution tasks with dependencies, commands, evidence requirement refs, and output artifact refs. |
 | `verificationProfile` | Fast-lane, structured-assurance, or high-assurance-selected-claims validation commands and check names. |
 | `evidenceRequirements` | Evidence expected before PR review, merge judgment, release judgment, or manual approval. |
@@ -98,15 +98,18 @@ ExecPlan v2 composes existing control-plane evidence instead of replacing it.
 | Assurance summary | `context.assuranceRefs.summaryArtifacts[]` / `outputArtifacts[]` | Reference `artifacts/assurance/assurance-summary.json` and `schema/assurance-summary.schema.json`. |
 | Policy gate decision | `riskProfile.policyRefs[]` / `outputArtifacts[]` | Reference `policy/risk-policy.yml` and `artifacts/ci/policy-gate-summary.json`. |
 | Variance input surface | `intent.sourceReferences[]` or `scope.affectedContracts[]` | Treat ExecPlan as a stable source input for variance comparison. |
+| Spec Kit source artifact | `intent.sourceReferences[]` and `context.specKitRefs[]` | Use `kind=spec-kit`, `spec-kit-spec`, `spec-kit-plan`, `spec-kit-task`, or `artifact-contract` to keep Spec Kit optional and traceable. |
 
 ## Fixture roles
 
 | Fixture | Role |
 | --- | --- |
 | `baseline.exec-plan.v2.json` | Normal fast-lane work with report-only contract validation and reviewer Markdown. |
-| `structured-assurance.exec-plan.v2.json` | Structured assurance work that references Context Pack objects, morphisms, acceptance tests, assurance-summary, and claim-evidence-manifest. |
+| `structured-assurance.exec-plan.v2.json` | Structured assurance work that references Context Pack objects, morphisms, acceptance tests, assurance-summary, claim-evidence-manifest, and Spec Kit bridge refs. |
 | `high-risk-selected-claims.exec-plan.v2.json` | Risk-escalated selected-claims work with `risk:high`, minimum human approval, policy-gate summary, selected claim evidence, and legacy-compatible `plan-artifact/v1` bridge. |
 | `invalid.missing-evidence-ref.exec-plan.v2.json` | Semantic failure fixture used to verify actionable unresolved-reference messages. |
+| `fixtures/spec-kit/greenfield/expected/exec-plan.v2.json` | Generated Spec Kit bridge import for a complete greenfield feature. |
+| `fixtures/spec-kit/brownfield/expected/exec-plan.v2.json` | Generated Spec Kit bridge import that keeps missing/ambiguous brownfield mappings report-only. |
 
 ## Markdown rendering
 
@@ -115,6 +118,7 @@ ExecPlan v2 composes existing control-plane evidence instead of replacing it.
 - intent and non-goals;
 - target files;
 - Context Pack references;
+- Spec Kit references when present;
 - task graph table;
 - verification commands and required checks;
 - evidence requirements;
@@ -134,10 +138,11 @@ ExecPlan v2 is additive and preview-only in this issue.
 | `execution-plan.v1` from `schema/execution-plan-v1.schema.json` | automation/autopilot operation contract | Kept for PR state/action execution. ExecPlan v2 is a higher-level reviewer and evidence handoff contract. |
 | `plan-artifact/v1` from `schema/plan-artifact.schema.json` | current high-risk policy-gate plan artifact | Kept as the enforced high-risk plan artifact until a later dual-read / dual-validate migration explicitly changes policy-gate. |
 | Context Pack v1 | design SSOT | Referenced by ExecPlan v2; not replaced. |
+| Spec Kit bridge report v1 | optional report-only interoperability artifact | Referenced by ExecPlan v2 when Spec Kit features are imported; does not make Spec Kit mandatory. |
 | Assurance summary v1 and claim-evidence manifest v1 | evidence contracts | Referenced by ExecPlan v2; claim states and assurance result vocabulary remain owned by the existing contracts. |
 
 A future migration from `plan-artifact/v1` to `exec-plan/v2` must follow `docs/reference/SCHEMA-GOVERNANCE.md` dual-write / dual-validate rules and include rollback guidance, consumer-path tests, and policy-gate impact documentation.
 
 ## Japanese summary / 日本語要約
 
-ExecPlan v2 は、Issue の意図、Context Pack 参照、task graph、検証コマンド、evidence requirements、risk policy、stop rules、rollback、output artifacts をひとつの reviewable contract として記録する preview 契約です。agent-neutral assurance control plane の入力面を安定化するためのものであり、orchestrator 実装ではありません。現時点では `plan-artifact/v1`、`execution-plan.v1`、Context Pack、assurance-summary を置き換えず、report-only として schema / fixture / Markdown rendering / validation command を追加します。
+ExecPlan v2 は、Issue の意図、Context Pack 参照、task graph、検証コマンド、evidence requirements、risk policy、stop rules、rollback、output artifacts をひとつの reviewable contract として記録する preview 契約です。agent-neutral assurance control plane の入力面を安定化するためのものであり、orchestrator 実装ではありません。現時点では `plan-artifact/v1`、`execution-plan.v1`、Context Pack、assurance-summary を置き換えず、report-only として schema / fixture / Markdown rendering / validation command を追加します。Spec Kit bridge から生成された ExecPlan v2 は `context.specKitRefs` に spec / plan / task / contract 参照を保持します。

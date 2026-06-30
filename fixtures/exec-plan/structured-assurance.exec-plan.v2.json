@@ -25,6 +25,12 @@
         "id": "variance-report.v1",
         "path": "schema/variance-report.schema.json",
         "description": "Prior variance-reduction contract consumed as an ExecPlan input surface."
+      },
+      {
+        "kind": "spec-kit",
+        "id": "001-reservation-approval",
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval",
+        "description": "Spec Kit greenfield fixture used by the optional bridge importer."
       }
     ],
     "nonGoals": [
@@ -146,7 +152,26 @@
         "artifacts/assurance/claim-evidence-manifest.json"
       ]
     },
-    "specKitRefs": []
+    "specKitRefs": [
+      {
+        "kind": "spec-kit-spec",
+        "refId": "001-reservation-approval.spec",
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+        "description": "Spec Kit feature specification mapped into Context Pack acceptance references."
+      },
+      {
+        "kind": "spec-kit-plan",
+        "refId": "001-reservation-approval.plan",
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/plan.md",
+        "description": "Spec Kit implementation plan mapped into ExecPlan verification and scope references."
+      },
+      {
+        "kind": "spec-kit-task",
+        "refId": "001-reservation-approval.tasks",
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+        "description": "Spec Kit generated tasks mapped into ExecPlan task graph nodes."
+      }
+    ]
   },
   "taskGraph": {
     "nodes": [

@@ -201,6 +201,7 @@ Integration contracts and operating guides for Claude Code, Codex, handoff sidec
 - Codex boundary + vendor-neutral core: `integrations/CODEX-VENDOR-NEUTRAL-BOUNDARY.md`
 - Hook feedback adapter: `agents/hook-feedback.md`
 - AE handoff sidecar: `agents/handoff.md`
+- Spec Kit bridge: `integrations/SPEC-KIT-BRIDGE.md`
 
 ### Reference
 Normative reference material for commands, schema governance, contract inventory, and stable interfaces.
@@ -213,6 +214,7 @@ Normative reference material for commands, schema governance, contract inventory
 - Assurance canonical routes / legacy compatibility: [ASSURANCE-CANONICAL-ROUTES.md](./reference/ASSURANCE-CANONICAL-ROUTES.md)
 - Change Package v2 reference: `reference/change-package-v2.md`
 - ExecPlan v2 reference: [EXEC-PLAN-V2.md](./reference/EXEC-PLAN-V2.md)
+- Spec Kit bridge: [SPEC-KIT-BRIDGE.md](./integrations/SPEC-KIT-BRIDGE.md)
 - Context Pack v1 validation guide: [context-pack.md](./spec/context-pack.md)
 - Spec & Verification Kit (minimal activation guide): `reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Legacy ExecPlan (6-phase, deprecated): `../plans/archive/legacy-6-phase.md`

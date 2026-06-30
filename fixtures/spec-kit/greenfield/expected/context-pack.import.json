@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "name": "spec-kit-001-reservation-approval-context-pack",
+  "problem_statement": {
+    "goals": [
+      "FR-001: The system MUST approve a reservation only when stock is available.",
+      "FR-002: The system MUST persist the approval actor and approval timestamp.",
+      "FR-003: The system MUST reject approval when available stock is lower than the requested quantity."
+    ],
+    "non_goals": [
+      "Do not vendor or fork GitHub Spec Kit.",
+      "Do not require Spec Kit for normal ae-framework usage.",
+      "Do not treat report-only bridge findings as merge approval."
+    ]
+  },
+  "domain_glossary": {
+    "terms": [
+      {
+        "term": "reservation-approval",
+        "ja": "Spec Kit 取込フィーチャ",
+        "note": "Imported from fixtures/spec-kit/greenfield/specs/001-reservation-approval"
+      },
+      {
+        "term": "spec-kit-bridge",
+        "ja": "Spec Kit 連携ブリッジ",
+        "note": "Report-only mapping into Context Pack and ExecPlan v2 references."
+      }
+    ]
+  },
+  "objects": [
+    {
+      "id": "SpecKitFeature.ReservationApproval",
+      "kind": "feature",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+      "fields": [
+        "spec.md",
+        "plan.md",
+        "tasks.md",
+        "contracts/*"
+      ]
+    },
+    {
+      "id": "SpecKitContract.ReservationApiOpenapi",
+      "kind": "openapi",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/contracts/reservation-api.openapi.yaml"
+    }
+  ],
+  "morphisms": [
+    {
+      "id": "ImportReservationApproval",
+      "input": {
+        "spec": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+        "plan": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/plan.md",
+        "tasks": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+        "constitution": "fixtures/spec-kit/greenfield/.specify/memory/constitution.md"
+      },
+      "output": {
+        "contextPack": "fixtures/spec-kit/greenfield/expected/context-pack.import.json",
+        "execPlan": "fixtures/spec-kit/greenfield/expected/exec-plan.v2.json",
+        "bridgeReport": "fixtures/spec-kit/greenfield/expected/spec-kit-bridge-report.json"
+      },
+      "pre": [
+        "Spec Kit feature directory is readable."
+      ],
+      "post": [
+        "Requirement, plan, task, contract, and verification references are preserved as report-only assurance inputs."
+      ],
+      "failures": [
+        "BridgeMappingGap"
+      ],
+      "sourceRefs": [
+        "FR-001",
+        "FR-002",
+        "FR-003"
+      ]
+    },
+    {
+      "id": "ReservationApproval.US1",
+      "input": {
+        "story": "US1",
+        "spec": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md"
+      },
+      "output": {
+        "acceptanceTest": "AT-US1"
+      },
+      "pre": [
+        "Submit a reservation request with sufficient stock and confirm the approval event is recorded."
+      ],
+      "post": [
+        "Given sufficient stock, When an operator approves the reservation, Then the reservation status becomes approved.",
+        "Given an approved reservation, When evidence is rendered, Then the approval actor and timestamp are visible."
+      ],
+      "failures": [
+        "StoryMappingAmbiguous"
+      ],
+      "sourceRefs": [
+        "US1"
+      ]
+    },
+    {
+      "id": "ReservationApproval.US2",
+      "input": {
+        "story": "US2",
+        "spec": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md"
+      },
+      "output": {
+        "acceptanceTest": "AT-US2"
+      },
+      "pre": [
+        "Submit a reservation request with insufficient stock and confirm no approval event is emitted."
+      ],
+      "post": [
+        "Given insufficient stock, When an operator attempts approval, Then the reservation is rejected with an out-of-stock reason."
+      ],
+      "failures": [
+        "StoryMappingAmbiguous"
+      ],
+      "sourceRefs": [
+        "US2"
+      ]
+    }
+  ],
+  "diagrams": [
+    {
+      "id": "D-SPECKIT-BRIDGE-1",
+      "statement": "Spec Kit spec.md, plan.md, tasks.md, and contracts/* are imported into Context Pack and ExecPlan v2 without replacing their source artifacts.",
+      "verification": [
+        "spec-kit-bridge-report",
+        "exec-plan:v2:validate",
+        "context-pack:validate"
+      ]
+    }
+  ],
+  "constraints": {
+    "sourceSystem": "github/spec-kit",
+    "sourceFeatureDir": "fixtures/spec-kit/greenfield/specs/001-reservation-approval",
+    "optionalIntegration": true,
+    "reportOnly": true,
+    "bridgeFindings": [],
+    "taskCount": 8
+  },
+  "acceptance_tests": [
+    {
+      "id": "AT-FR-001",
+      "scenario": "The system MUST approve a reservation only when stock is available.",
+      "expected": [
+        "SC-001: Approval and rejection scenarios are covered by automated tests.",
+        "SC-002: Review artifacts link requirements, tasks, and contracts before merge judgment."
+      ],
+      "sourceRefs": [
+        "FR-001"
+      ]
+    },
+    {
+      "id": "AT-FR-002",
+      "scenario": "The system MUST persist the approval actor and approval timestamp.",
+      "expected": [
+        "SC-001: Approval and rejection scenarios are covered by automated tests.",
+        "SC-002: Review artifacts link requirements, tasks, and contracts before merge judgment."
+      ],
+      "sourceRefs": [
+        "FR-002"
+      ]
+    },
+    {
+      "id": "AT-FR-003",
+      "scenario": "The system MUST reject approval when available stock is lower than the requested quantity.",
+      "expected": [
+        "SC-001: Approval and rejection scenarios are covered by automated tests.",
+        "SC-002: Review artifacts link requirements, tasks, and contracts before merge judgment."
+      ],
+      "sourceRefs": [
+        "FR-003"
+      ]
+    },
+    {
+      "id": "AT-US1",
+      "scenario": "Approve available reservation (P1)",
+      "expected": [
+        "Given sufficient stock, When an operator approves the reservation, Then the reservation status becomes approved.",
+        "Given an approved reservation, When evidence is rendered, Then the approval actor and timestamp are visible."
+      ],
+      "sourceRefs": [
+        "US1"
+      ]
+    },
+    {
+      "id": "AT-US2",
+      "scenario": "Reject unavailable reservation (P2)",
+      "expected": [
+        "Given insufficient stock, When an operator attempts approval, Then the reservation is rejected with an out-of-stock reason."
+      ],
+      "sourceRefs": [
+        "US2"
+      ]
+    }
+  ],
+  "coding_conventions": {
+    "language": "TypeScript 5.x",
+    "testing": "vitest, context-pack validation",
+    "directory": [
+      "library/cli"
+    ],
+    "dependencies": {
+      "runtime": [
+        "zod",
+        "vitest"
+      ]
+    }
+  },
+  "forbidden_changes": [
+    "Do not vendor or fork GitHub Spec Kit inside ae-framework.",
+    "Do not promote bridge findings from report-only to blocking without a separate policy issue.",
+    "Do not drop source Spec Kit artifact paths when rendering assurance evidence."
+  ]
+}

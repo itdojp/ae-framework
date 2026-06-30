@@ -445,7 +445,8 @@
     "assurance:review-surface": "node scripts/assurance/render-pr-review-surface.mjs",
     "assurance:post-review-surface": "node scripts/assurance/post-pr-review-surface.mjs",
     "metrics:agent-pr-assurance": "node scripts/metrics/collect-agent-pr-assurance-metrics.mjs",
-    "exec-plan:v2:validate": "node scripts/exec-plan/validate-v2.mjs"
+    "exec-plan:v2:validate": "node scripts/exec-plan/validate-v2.mjs",
+    "spec-kit:import-feature": "node scripts/spec-kit/import-feature.mjs"
   },
   "dependencies": {
     "@ae-framework/agent-builder-adapter": "file:./packages/agent-builder-adapter",

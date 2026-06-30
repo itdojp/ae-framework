@@ -1,0 +1,294 @@
+{
+  "schemaVersion": "spec-kit-bridge-report/v1",
+  "contractId": "spec-kit-bridge-report",
+  "generatedAt": "2026-06-30T00:00:00.000Z",
+  "result": "pass",
+  "source": {
+    "repository": "itdojp/ae-framework",
+    "featureId": "001-reservation-approval",
+    "featureName": "Reservation Approval",
+    "projectRoot": ".",
+    "featureDir": "fixtures/spec-kit/greenfield/specs/001-reservation-approval",
+    "upstream": {
+      "repository": "https://github.com/github/spec-kit",
+      "reference": "main",
+      "verifiedPaths": [
+        ".specify/memory/constitution.md",
+        "templates/spec-template.md",
+        "templates/plan-template.md",
+        "templates/tasks-template.md",
+        "templates/commands/specify.md",
+        "templates/commands/plan.md",
+        "templates/commands/tasks.md",
+        "templates/commands/taskstoissues.md",
+        "templates/commands/implement.md",
+        "templates/commands/converge.md"
+      ]
+    }
+  },
+  "inputs": [
+    {
+      "kind": "constitution",
+      "path": "fixtures/spec-kit/greenfield/.specify/memory/constitution.md",
+      "present": true,
+      "bytes": 549,
+      "sha256": "e69a09ab6869adbddfc99a3c08e6e245725f2dc8fd89a24fb816a5ed7d9c6ab5"
+    },
+    {
+      "kind": "spec",
+      "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+      "present": true,
+      "bytes": 2140,
+      "sha256": "486d8338e27f5b4a973922954ec32fafc49ff80a91a649624a6ca7dccf06256b"
+    },
+    {
+      "kind": "plan",
+      "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/plan.md",
+      "present": true,
+      "bytes": 1218,
+      "sha256": "1fe3ba0aea5db0cd15e55e83e5c297c287507cce2c3471074c80f4ff3535600a"
+    },
+    {
+      "kind": "tasks",
+      "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+      "present": true,
+      "bytes": 1045,
+      "sha256": "da4b92cfa95ca6d022286464e44c0f4e77ab26dc3b86c953b47bf9e5d2a23c9b"
+    },
+    {
+      "kind": "research",
+      "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/research.md",
+      "present": true,
+      "bytes": 177,
+      "sha256": "cc13a70a275fd621d3c79262a4ede8a42acffa74d48aaa1cfcd2070e62c041fd"
+    },
+    {
+      "kind": "quickstart",
+      "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/quickstart.md",
+      "present": true,
+      "bytes": 212,
+      "sha256": "951b1071b93c0a1bf3ff5a92e2164c53894d4e07cfc24ebd7ff739bbfc0c787b"
+    },
+    {
+      "kind": "contract",
+      "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/contracts/reservation-api.openapi.yaml",
+      "present": true,
+      "bytes": 478,
+      "sha256": "158ac779a4f3d5d8dd60b6d727bcdfee605eff859f1a3d27484e648fcd61d04a",
+      "contractKind": "openapi"
+    }
+  ],
+  "outputs": [
+    {
+      "kind": "bridge-report",
+      "path": "fixtures/spec-kit/greenfield/expected/spec-kit-bridge-report.json",
+      "schemaPath": "schema/spec-kit-bridge-report.schema.json"
+    },
+    {
+      "kind": "context-pack",
+      "path": "fixtures/spec-kit/greenfield/expected/context-pack.import.json",
+      "schemaPath": "schema/context-pack-v1.schema.json"
+    },
+    {
+      "kind": "exec-plan",
+      "path": "fixtures/spec-kit/greenfield/expected/exec-plan.v2.json",
+      "schemaPath": "schema/exec-plan.v2.schema.json"
+    }
+  ],
+  "summary": {
+    "requirements": 3,
+    "userStories": 2,
+    "tasks": 8,
+    "contracts": 1,
+    "findings": 0,
+    "ambiguousMappings": 6,
+    "lossyMappings": 6
+  },
+  "mappings": [
+    {
+      "sourceKind": "spec.requirement",
+      "sourceId": "FR-001",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+      "targetKind": "context-pack.acceptance-test",
+      "targetId": "AT-FR-001",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Functional requirements become acceptance-test anchors for assurance review."
+      ]
+    },
+    {
+      "sourceKind": "spec.requirement",
+      "sourceId": "FR-002",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+      "targetKind": "context-pack.acceptance-test",
+      "targetId": "AT-FR-002",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Functional requirements become acceptance-test anchors for assurance review."
+      ]
+    },
+    {
+      "sourceKind": "spec.requirement",
+      "sourceId": "FR-003",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+      "targetKind": "context-pack.acceptance-test",
+      "targetId": "AT-FR-003",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Functional requirements become acceptance-test anchors for assurance review."
+      ]
+    },
+    {
+      "sourceKind": "spec.user-story",
+      "sourceId": "US1",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+      "targetKind": "context-pack.morphism",
+      "targetId": "ReservationApproval.US1",
+      "confidence": "medium",
+      "lossy": false,
+      "notes": [
+        "Acceptance scenarios are preserved in Context Pack acceptance tests."
+      ]
+    },
+    {
+      "sourceKind": "spec.user-story",
+      "sourceId": "US2",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+      "targetKind": "context-pack.morphism",
+      "targetId": "ReservationApproval.US2",
+      "confidence": "medium",
+      "lossy": false,
+      "notes": [
+        "Acceptance scenarios are preserved in Context Pack acceptance tests."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T001",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t001",
+      "confidence": "medium",
+      "lossy": true,
+      "notes": [
+        "No user-story marker; phase and source line are preserved."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T002",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t002",
+      "confidence": "medium",
+      "lossy": true,
+      "notes": [
+        "No user-story marker; phase and source line are preserved."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T003",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t003",
+      "confidence": "medium",
+      "lossy": true,
+      "notes": [
+        "No user-story marker; phase and source line are preserved."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T004",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t004",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Linked to US1."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T005",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t005",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Linked to US1."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T006",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t006",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Linked to US2."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T007",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t007",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Linked to US2."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T008",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t008",
+      "confidence": "medium",
+      "lossy": true,
+      "notes": [
+        "No user-story marker; phase and source line are preserved."
+      ]
+    },
+    {
+      "sourceKind": "contracts.file",
+      "sourceId": "reservation-api.openapi.yaml",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/contracts/reservation-api.openapi.yaml",
+      "targetKind": "exec-plan.context.specKitRefs",
+      "targetId": "contract.reservation-api-openapi",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Contract kind detected as openapi."
+      ]
+    }
+  ],
+  "unsupportedFields": [
+    {
+      "sourceKind": "spec-kit-command",
+      "field": "agent hooks and invocation side effects",
+      "sourcePath": ".specify/templates/commands/*.md",
+      "reason": "ae-framework bridge records artifact references but does not execute Spec Kit commands, agent hooks, or task-to-issues side effects.",
+      "disposition": "report-only-lossy"
+    },
+    {
+      "sourceKind": "tasks",
+      "field": "free-form task prose ordering",
+      "sourcePath": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+      "reason": "Tasks are mapped to ExecPlan nodes and Context Pack references; nuanced prose ordering remains in the source task line.",
+      "disposition": "preserved-as-source-reference"
+    }
+  ],
+  "findings": []
+}

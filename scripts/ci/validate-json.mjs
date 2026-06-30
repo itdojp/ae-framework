@@ -101,6 +101,8 @@ const checks = [
     fixtures: [
       'fixtures/context-pack/sample.context-pack.json',
       'fixtures/context-pack/sample.context-pack.discovery-upstream.json',
+      'fixtures/spec-kit/greenfield/expected/context-pack.import.json',
+      'fixtures/spec-kit/brownfield/expected/context-pack.import.json',
     ],
     label: 'Context Pack v1 schema validation'
   },
@@ -291,8 +293,18 @@ const checks = [
       'fixtures/exec-plan/baseline.exec-plan.v2.json',
       'fixtures/exec-plan/structured-assurance.exec-plan.v2.json',
       'fixtures/exec-plan/high-risk-selected-claims.exec-plan.v2.json',
+      'fixtures/spec-kit/greenfield/expected/exec-plan.v2.json',
+      'fixtures/spec-kit/brownfield/expected/exec-plan.v2.json',
     ],
     label: 'ExecPlan v2 schema validation'
+  },
+  {
+    schema: 'schema/spec-kit-bridge-report.schema.json',
+    fixtures: [
+      'fixtures/spec-kit/greenfield/expected/spec-kit-bridge-report.json',
+      'fixtures/spec-kit/brownfield/expected/spec-kit-bridge-report.json',
+    ],
+    label: 'Spec Kit bridge report schema validation'
   },
   {
     schema: 'schema/pr-state-v1.schema.json',

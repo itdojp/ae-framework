@@ -16,6 +16,8 @@ const validFixturePaths = [
   'fixtures/exec-plan/baseline.exec-plan.v2.json',
   'fixtures/exec-plan/structured-assurance.exec-plan.v2.json',
   'fixtures/exec-plan/high-risk-selected-claims.exec-plan.v2.json',
+  'fixtures/spec-kit/greenfield/expected/exec-plan.v2.json',
+  'fixtures/spec-kit/brownfield/expected/exec-plan.v2.json',
 ];
 
 function readJson(path: string) {
@@ -59,6 +61,15 @@ describe('exec-plan/v2 contract', () => {
     expect(markdown).toContain('`cmd.policy-gate`');
     expect(markdown).toContain('`artifact.policy-gate-summary`');
     expect(markdown).toContain('manual-approval-or-block');
+  });
+
+  it('renders Spec Kit references when a plan carries bridge context', () => {
+    const fixture = readJson('fixtures/exec-plan/structured-assurance.exec-plan.v2.json');
+    const markdown = renderExecPlanMarkdown(fixture);
+
+    expect(markdown).toContain('### Spec Kit references');
+    expect(markdown).toContain('spec-kit-spec');
+    expect(markdown).toContain('fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md');
   });
 
   it('keeps embedded validation commands pointed at the scenario fixture being reviewed', () => {
