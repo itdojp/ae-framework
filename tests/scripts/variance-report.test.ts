@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -74,5 +74,60 @@ describe('compare-judgment-artifacts', () => {
     const report = JSON.parse(readFileSync(jsonPath, 'utf8'));
     expect(report.contractId).toBe('variance-report.v1');
     expect(readFileSync(markdownPath, 'utf8')).toContain('## Drift findings');
+  });
+
+  it('treats -- as the end-of-options marker', () => {
+    expect(() => parseArgs([
+      '--baseline',
+      'fixtures/variance/run-a.judgment.json',
+      '--candidate',
+      'fixtures/variance/run-b.same-inputs.judgment.json',
+      '--',
+      '--unknown-after-separator',
+    ])).not.toThrow();
+  });
+
+  it('prunes volatile-only containers during normalization', () => {
+    resetOutputDir();
+    const baselinePath = join(outputDir, 'baseline.json');
+    const candidatePath = join(outputDir, 'candidate.json');
+    writeFileSync(baselinePath, JSON.stringify({
+      schemaVersion: 'judgment-artifact-fixture/v1',
+      inputFingerprints: {},
+      judgmentArtifacts: [
+        {
+          path: 'artifacts/quality/variance-report.json',
+          status: 'report-only',
+        },
+      ],
+    }));
+    writeFileSync(candidatePath, JSON.stringify({
+      schemaVersion: 'judgment-artifact-fixture/v1',
+      metadata: {
+        generatedAt: '2026-07-01T00:00:00.000Z',
+      },
+      inputFingerprints: {},
+      judgmentArtifacts: [
+        {
+          path: 'artifacts/quality/variance-report.json',
+          status: 'report-only',
+        },
+      ],
+    }));
+
+    const report = compareJudgmentArtifacts(parseArgs([
+      '--baseline',
+      baselinePath,
+      '--candidate',
+      candidatePath,
+    ]));
+    expect(report.summary.status).toBe('stable');
+    expect(report.findings).toHaveLength(0);
+    expect(report.expectedDifferences).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        affectedEvidencePath: '$.metadata.generatedAt',
+        fieldName: 'generatedAt',
+      }),
+    ]));
   });
 });

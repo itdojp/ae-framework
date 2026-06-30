@@ -52,7 +52,7 @@ export function parseArgs(argv = process.argv.slice(2)) {
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--') {
-      continue;
+      break;
     }
     if (arg === '--baseline') {
       options.baseline = readRequiredValue(argv, index, arg);
@@ -121,7 +121,7 @@ function readJson(filePath) {
 }
 
 function canonicalize(value) {
-  return JSON.stringify(value);
+  return JSON.stringify(value ?? null);
 }
 
 function hashValue(value) {
@@ -130,7 +130,10 @@ function hashValue(value) {
 
 function normalizeValue(value, allowedNames) {
   if (Array.isArray(value)) {
-    return value.map((entry) => normalizeValue(entry, allowedNames));
+    const normalizedItems = value
+      .map((entry) => normalizeValue(entry, allowedNames))
+      .filter((entry) => entry !== undefined);
+    return normalizedItems.length > 0 ? normalizedItems : undefined;
   }
   if (value && typeof value === 'object') {
     const normalized = {};
@@ -138,9 +141,12 @@ function normalizeValue(value, allowedNames) {
       if (allowedNames.has(key)) {
         continue;
       }
-      normalized[key] = normalizeValue(value[key], allowedNames);
+      const normalizedChild = normalizeValue(value[key], allowedNames);
+      if (normalizedChild !== undefined) {
+        normalized[key] = normalizedChild;
+      }
     }
-    return normalized;
+    return Object.keys(normalized).length > 0 ? normalized : undefined;
   }
   return value;
 }
@@ -212,33 +218,42 @@ function diffValues(baseline, candidate, pathParts = []) {
 }
 
 function collectAllowedDifferences(baseline, candidate, allowedNames, pathParts = []) {
-  if (!baseline || typeof baseline !== 'object' || !candidate || typeof candidate !== 'object') {
+  const baselineIsObject = baseline && typeof baseline === 'object';
+  const candidateIsObject = candidate && typeof candidate === 'object';
+  if (!baselineIsObject && !candidateIsObject) {
     return [];
   }
   const differences = [];
-  const keys = new Set([...Object.keys(baseline), ...Object.keys(candidate)]);
+  const keys = new Set([
+    ...(baselineIsObject ? Object.keys(baseline) : []),
+    ...(candidateIsObject ? Object.keys(candidate) : []),
+  ]);
   for (const key of [...keys].sort()) {
     const nextPath = [...pathParts, key];
+    const baselineValue = baselineIsObject ? baseline[key] : undefined;
+    const candidateValue = candidateIsObject ? candidate[key] : undefined;
     if (allowedNames.has(key)) {
-      if (!Object.is(baseline[key], candidate[key])) {
+      if (!Object.is(baselineValue, candidateValue)) {
         differences.push({
           affectedEvidencePath: pathToPointer(nextPath),
           fieldName: key,
           reason: 'volatile field allowed by variance normalization policy',
-          baselineValue: valueToString(baseline[key]),
-          candidateValue: valueToString(candidate[key]),
+          baselineValue: valueToString(baselineValue),
+          candidateValue: valueToString(candidateValue),
         });
       }
       continue;
     }
-    if (Array.isArray(baseline[key]) && Array.isArray(candidate[key])) {
-      const maxLength = Math.max(baseline[key].length, candidate[key].length);
+    if (Array.isArray(baselineValue) || Array.isArray(candidateValue)) {
+      const baselineArray = Array.isArray(baselineValue) ? baselineValue : [];
+      const candidateArray = Array.isArray(candidateValue) ? candidateValue : [];
+      const maxLength = Math.max(baselineArray.length, candidateArray.length);
       for (let index = 0; index < maxLength; index += 1) {
-        differences.push(...collectAllowedDifferences(baseline[key][index], candidate[key][index], allowedNames, [...nextPath, index]));
+        differences.push(...collectAllowedDifferences(baselineArray[index], candidateArray[index], allowedNames, [...nextPath, index]));
       }
       continue;
     }
-    differences.push(...collectAllowedDifferences(baseline[key], candidate[key], allowedNames, nextPath));
+    differences.push(...collectAllowedDifferences(baselineValue, candidateValue, allowedNames, nextPath));
   }
   return differences;
 }
@@ -270,9 +285,9 @@ function buildFindings(diffs) {
     return {
       id: `variance-${String(index + 1).padStart(3, '0')}`,
       category,
-      severity: category === 'timestamp-noise-drift' ? 'info' : 'warn',
+      severity: 'warn',
       reportOnly: true,
-      judgmentRelevant: category !== 'timestamp-noise-drift',
+      judgmentRelevant: true,
       sourceInputKind,
       affectedEvidencePath,
       message: `Normalized judgment artifact differs at ${affectedEvidencePath}.`,
@@ -366,7 +381,7 @@ export function run(argv = process.argv.slice(2)) {
   return 0;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   try {
     process.exitCode = run();
   } catch (error) {
