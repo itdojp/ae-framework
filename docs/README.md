@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-06-23'
+lastVerified: '2026-07-01'
 ---
 
 # 📚 ae-framework Documentation / ドキュメント
@@ -202,6 +202,7 @@ Integration contracts and operating guides for Claude Code, Codex, handoff sidec
 - Hook feedback adapter: `agents/hook-feedback.md`
 - AE handoff sidecar: `agents/handoff.md`
 - Spec Kit bridge: `integrations/SPEC-KIT-BRIDGE.md`
+- Report-only loop engineering: `integrations/LOOP-ENGINEERING.md`
 
 ### Reference
 Normative reference material for commands, schema governance, contract inventory, and stable interfaces.
@@ -215,6 +216,7 @@ Normative reference material for commands, schema governance, contract inventory
 - Change Package v2 reference: `reference/change-package-v2.md`
 - ExecPlan v2 reference: [EXEC-PLAN-V2.md](./reference/EXEC-PLAN-V2.md)
 - Spec Kit bridge: [SPEC-KIT-BRIDGE.md](./integrations/SPEC-KIT-BRIDGE.md)
+- Report-only loop engineering: [LOOP-ENGINEERING.md](./integrations/LOOP-ENGINEERING.md)
 - Context Pack v1 validation guide: [context-pack.md](./spec/context-pack.md)
 - Spec & Verification Kit (minimal activation guide): `reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Legacy ExecPlan (6-phase, deprecated): `../plans/archive/legacy-6-phase.md`

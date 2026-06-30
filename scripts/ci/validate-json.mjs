@@ -307,6 +307,22 @@ const checks = [
     label: 'Spec Kit bridge report schema validation'
   },
   {
+    schema: 'schema/loop-run-input.schema.json',
+    fixtures: [
+      'examples/loop-engineering/success/loop-input.json',
+      'examples/loop-engineering/blocked/loop-input.json',
+    ],
+    label: 'Loop run input schema validation'
+  },
+  {
+    schema: 'schema/loop-run-summary.schema.json',
+    fixtures: [
+      'fixtures/loop/success.loop-run-summary.json',
+      'fixtures/loop/blocked.loop-run-summary.json',
+    ],
+    label: 'Loop run summary schema validation'
+  },
+  {
     schema: 'schema/pr-state-v1.schema.json',
     fixtures: [
       'fixtures/pr-state/sample.pr-state.blocked.json',

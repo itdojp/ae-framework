@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "loop-run-input/v1",
+  "runId": "loop-blocked-demo",
+  "reportOnly": true,
+  "maxIterations": 2,
+  "goal": {
+    "issueRef": "#3552",
+    "summary": "Demonstrate a report-only loop stopping as blocked when fixture verification is red."
+  },
+  "execPlan": {
+    "planId": "baseline-exec-plan-v2",
+    "path": "fixtures/exec-plan/baseline.exec-plan.v2.json"
+  },
+  "contextPackRefs": [
+    "spec/context-pack/boundary-map.json"
+  ],
+  "safety": {
+    "worktreeMode": "fixture",
+    "mutationsAllowed": false,
+    "hostedLlmCallsAllowed": false,
+    "autoMergeAllowed": false,
+    "forbiddenActions": [
+      "merge-pr",
+      "push-commit",
+      "delete-branch",
+      "hosted-llm-call"
+    ]
+  },
+  "iterations": [
+    {
+      "id": "iter-1-plan-observe-verify",
+      "phase": "verify",
+      "plannedAction": "Read fixture evidence and run report-only verification.",
+      "actionHook": {
+        "kind": "fixture-observation",
+        "description": "Collect pre-generated verification summary without mutating the repository.",
+        "mutatesRepository": false
+      },
+      "validation": {
+        "command": "pnpm -s run verify:lite -- --fixture examples/loop-engineering/blocked/verify-lite-summary.json",
+        "expectedStatus": "pass",
+        "actualStatus": "fail",
+        "rawOutputPath": "examples/loop-engineering/blocked/verify-lite-summary.json"
+      },
+      "observedEvidence": [
+        {
+          "id": "ev.verify-lite",
+          "path": "examples/loop-engineering/blocked/verify-lite-summary.json",
+          "status": "fail",
+          "summary": "Fixture verify-lite summary reports a failing traceability check."
+        }
+      ],
+      "findings": [
+        {
+          "severity": "error",
+          "code": "traceability-red",
+          "message": "Traceability fixture is failing and requires human investigation before the loop can continue."
+        }
+      ],
+      "decision": "blocked",
+      "nextRecommendedAction": "Inspect the failing traceability fixture and update the ExecPlan before scheduling another loop run."
+    }
+  ]
+}

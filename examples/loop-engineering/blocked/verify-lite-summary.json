@@ -1,0 +1,16 @@
+{
+  "fixture": "loop-blocked-demo",
+  "status": "fail",
+  "commands": [
+    "pnpm -s run verify:lite"
+  ],
+  "failures": [
+    {
+      "id": "traceability-red",
+      "message": "REQ-LOOP-001 is missing a passing evidence link."
+    }
+  ],
+  "notes": [
+    "Fixture-only evidence; no command execution is implied by this file."
+  ]
+}

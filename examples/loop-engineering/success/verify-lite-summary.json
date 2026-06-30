@@ -1,0 +1,10 @@
+{
+  "fixture": "loop-success-demo",
+  "status": "pass",
+  "commands": [
+    "pnpm -s run verify:lite"
+  ],
+  "notes": [
+    "Fixture-only evidence; no command execution is implied by this file."
+  ]
+}

@@ -6,7 +6,8 @@ canonicalSource:
 - docs/ci-policy.md
 - policy/risk-policy.yml
 - docs/ci/codex-autopilot-lane.md
-lastVerified: '2026-03-31'
+- docs/integrations/LOOP-ENGINEERING.md
+lastVerified: '2026-07-01'
 ---
 
 # Recipe: Continuous Loop Contract (Codex)
@@ -28,6 +29,7 @@ lastVerified: '2026-03-31'
 - `docs/ci-policy.md`
 - `policy/risk-policy.yml`
 - `docs/ci/codex-autopilot-lane.md`
+- `docs/integrations/LOOP-ENGINEERING.md` for the report-only loop engineering MVP and its explicit stop reasons
 
 ### Contract rules (v1)
 - when `shouldBlockProgress=false`, provide at least one `nextActions` entry
@@ -91,6 +93,7 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 - for blocked responses, rewrite `nextActions[0]` into a directly executable command or operator step
 - for `autopilot:on` PRs, prioritize the unblock procedure in `docs/ci/codex-autopilot-lane.md`
 - for high-risk changes, satisfy the required labels/checks in `policy/risk-policy.yml` before retrying the lane
+- for fixture-backed report-only loop runs, use `docs/integrations/LOOP-ENGINEERING.md` and do not treat the loop summary as merge approval
 
 ## 日本語
 
@@ -105,6 +108,7 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 - `docs/ci-policy.md`
 - `policy/risk-policy.yml`
 - `docs/ci/codex-autopilot-lane.md`
+- report-only loop engineering MVP と explicit stop reason は `docs/integrations/LOOP-ENGINEERING.md`
 
 ### Contract rules (v1)
 - `shouldBlockProgress=false` のときは `nextActions` を 1 件以上にする
@@ -168,3 +172,4 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 - blocked 応答時は `nextActions[0]` を、そのまま実行できる command または operator step に書き換える
 - `autopilot:on` PR では `docs/ci/codex-autopilot-lane.md` の blocked 解除手順を優先する
 - 高リスク変更では、`policy/risk-policy.yml` の required labels / checks を先に満たしてから再試行する
+- fixture-backed な report-only loop run は `docs/integrations/LOOP-ENGINEERING.md` に従い、loop summary を merge 承認として扱わない

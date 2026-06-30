@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/loop-run-input.schema.json",
+  "title": "Loop Run Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "reportOnly",
+    "maxIterations",
+    "goal",
+    "execPlan",
+    "contextPackRefs",
+    "safety",
+    "iterations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "loop-run-input/v1" },
+    "runId": { "type": "string", "minLength": 1 },
+    "reportOnly": { "const": true },
+    "maxIterations": { "type": "integer", "minimum": 1 },
+    "goal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issueRef", "summary"],
+      "properties": {
+        "issueRef": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 }
+      }
+    },
+    "execPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planId", "path"],
+      "properties": {
+        "planId": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 }
+      }
+    },
+    "contextPackRefs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["worktreeMode", "mutationsAllowed", "hostedLlmCallsAllowed", "autoMergeAllowed", "forbiddenActions"],
+      "properties": {
+        "worktreeMode": { "type": "string", "enum": ["fixture", "dedicated-worktree", "unknown"] },
+        "mutationsAllowed": { "type": "boolean" },
+        "hostedLlmCallsAllowed": { "type": "boolean" },
+        "autoMergeAllowed": { "type": "boolean" },
+        "forbiddenActions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "iterations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "phase", "plannedAction", "actionHook", "validation", "observedEvidence", "findings", "decision", "nextRecommendedAction"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "phase": { "type": "string", "enum": ["plan", "observe", "verify", "repair", "summarize"] },
+          "plannedAction": { "type": "string", "minLength": 1 },
+          "actionHook": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "description", "mutatesRepository"],
+            "properties": {
+              "kind": { "type": "string", "minLength": 1 },
+              "description": { "type": "string", "minLength": 1 },
+              "mutatesRepository": { "type": "boolean" }
+            }
+          },
+          "validation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["command", "expectedStatus", "actualStatus"],
+            "properties": {
+              "command": { "type": "string", "minLength": 1 },
+              "expectedStatus": { "type": "string", "enum": ["pass", "fail", "warn", "not-run"] },
+              "actualStatus": { "type": "string", "enum": ["pass", "fail", "warn", "not-run"] },
+              "rawOutputPath": { "type": "string", "minLength": 1 }
+            }
+          },
+          "observedEvidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "path", "status", "summary"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "path": { "type": "string", "minLength": 1 },
+                "status": { "type": "string", "enum": ["pass", "fail", "warn", "not_collected"] },
+                "summary": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["severity", "code", "message"],
+              "properties": {
+                "severity": { "type": "string", "enum": ["info", "warning", "error"] },
+                "code": { "type": "string", "minLength": 1 },
+                "message": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "decision": { "type": "string", "enum": ["continue", "success", "blocked", "human-required", "validation-failed", "unsafe-action"] },
+          "nextRecommendedAction": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}
