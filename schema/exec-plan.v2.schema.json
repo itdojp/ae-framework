@@ -1,0 +1,692 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/exec-plan.v2.schema.json",
+  "title": "ExecPlan v2",
+  "description": "Shared execution-plan contract that connects intent, Context Pack references, verification, evidence, risk policy, and reviewer-facing artifacts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "planId",
+    "title",
+    "lifecycle",
+    "intent",
+    "scope",
+    "context",
+    "taskGraph",
+    "verificationProfile",
+    "evidenceRequirements",
+    "riskProfile",
+    "allowedActions",
+    "stopRules",
+    "rollbackPlan",
+    "outputArtifacts",
+    "metadata"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "exec-plan/v2"
+    },
+    "contractId": {
+      "type": "string",
+      "const": "exec-plan.v2"
+    },
+    "planId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "title": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "lifecycle": {
+      "type": "string",
+      "enum": ["preview", "stable", "deprecated", "legacy-compatible"]
+    },
+    "intent": {
+      "$ref": "#/$defs/intent"
+    },
+    "scope": {
+      "$ref": "#/$defs/scope"
+    },
+    "context": {
+      "$ref": "#/$defs/context"
+    },
+    "taskGraph": {
+      "$ref": "#/$defs/taskGraph"
+    },
+    "verificationProfile": {
+      "$ref": "#/$defs/verificationProfile"
+    },
+    "evidenceRequirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/evidenceRequirement"
+      }
+    },
+    "riskProfile": {
+      "$ref": "#/$defs/riskProfile"
+    },
+    "allowedActions": {
+      "$ref": "#/$defs/allowedActions"
+    },
+    "stopRules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/stopRule"
+      }
+    },
+    "rollbackPlan": {
+      "$ref": "#/$defs/rollbackPlan"
+    },
+    "outputArtifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/outputArtifact"
+      }
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pathString": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+"
+    },
+    "idString": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "sourceReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "issue",
+            "pull-request",
+            "context-pack",
+            "spec-kit",
+            "validation-command",
+            "artifact-contract",
+            "assurance-summary",
+            "policy",
+            "document",
+            "other"
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "path": {
+          "$ref": "#/$defs/pathString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "objective", "sourceReferences", "nonGoals"],
+      "properties": {
+        "summary": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "objective": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceReferences": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/sourceReference"
+          }
+        },
+        "nonGoals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inScope", "outOfScope", "targetFiles", "affectedContracts"],
+      "properties": {
+        "inScope": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "outOfScope": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "targetFiles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "changeType", "reason"],
+            "properties": {
+              "path": {
+                "$ref": "#/$defs/pathString"
+              },
+              "changeType": {
+                "type": "string",
+                "enum": ["add", "modify", "remove", "read-only"]
+              },
+              "reason": {
+                "$ref": "#/$defs/nonEmptyString"
+              }
+            }
+          }
+        },
+        "affectedContracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contractId", "lifecycle", "reason"],
+            "properties": {
+              "contractId": {
+                "$ref": "#/$defs/nonEmptyString"
+              },
+              "schemaPath": {
+                "$ref": "#/$defs/pathString"
+              },
+              "lifecycle": {
+                "type": "string",
+                "enum": ["preview", "stable", "deprecated", "legacy-compatible"]
+              },
+              "reason": {
+                "$ref": "#/$defs/nonEmptyString"
+              }
+            }
+          }
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contextPackRefs", "assuranceRefs", "specKitRefs"],
+      "properties": {
+        "contextPackRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/contextRef"
+          }
+        },
+        "assuranceRefs": {
+          "$ref": "#/$defs/assuranceRefs"
+        },
+        "specKitRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/contextRef"
+          }
+        }
+      }
+    },
+    "contextRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "refId"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "context-pack",
+            "object",
+            "morphism",
+            "diagram",
+            "acceptance-test",
+            "boundary-slice",
+            "spec-kit-spec",
+            "spec-kit-plan",
+            "spec-kit-task",
+            "artifact-contract",
+            "validation-command",
+            "assurance-profile",
+            "assurance-claim",
+            "policy-rule",
+            "other"
+          ]
+        },
+        "refId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "path": {
+          "$ref": "#/$defs/pathString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "assuranceRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "profiles", "claimRefs", "summaryArtifacts"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["report-only", "strict", "manual-approval", "manual-approval-or-block", "block"]
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "claimRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "summaryArtifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pathString"
+          }
+        }
+      }
+    },
+    "taskGraph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nodes"],
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/taskNode"
+          }
+        }
+      }
+    },
+    "taskNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "kind", "owner", "status", "dependsOn", "evidenceRequirementRefs"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/idString"
+        },
+        "title": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["analysis", "contract", "implementation", "verification", "documentation", "review", "release"]
+        },
+        "owner": {
+          "type": "string",
+          "enum": ["agent", "human", "ci", "either"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["planned", "running", "completed", "blocked", "skipped"]
+        },
+        "dependsOn": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/idString"
+          },
+          "uniqueItems": true
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/commandSpec"
+          }
+        },
+        "evidenceRequirementRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/idString"
+          },
+          "uniqueItems": true
+        },
+        "outputArtifactRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/idString"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "verificationProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "commands", "requiredChecks", "optionalChecks"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["fast-lane", "structured-assurance", "high-assurance-selected-claims"]
+        },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/commandSpec"
+          }
+        },
+        "requiredChecks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "optionalChecks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "commandSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "command", "purpose", "when", "expectedArtifactRefs"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/idString"
+        },
+        "command": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "purpose": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "when": {
+          "type": "string",
+          "enum": ["local-validation", "pr-ci", "pre-merge", "pre-release", "manual-review"]
+        },
+        "expectedArtifactRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/idString"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "evidenceRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "description", "requiredBefore", "producer", "outputArtifactRefs"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/idString"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "context-pack",
+            "exec-plan",
+            "assurance-summary",
+            "claim-evidence-manifest",
+            "quality-baseline",
+            "variance-report",
+            "policy-gate-summary",
+            "verify-lite-run-summary",
+            "formal-summary",
+            "test-report",
+            "change-package",
+            "security-review",
+            "other"
+          ]
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "requiredBefore": {
+          "type": "string",
+          "enum": ["pr-review", "merge-judgment", "release-judgment", "manual-approval"]
+        },
+        "producer": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceReference"
+          }
+        },
+        "claimRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "uniqueItems": true
+        },
+        "outputArtifactRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/idString"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "riskProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selected", "rationale", "requiresHumanApproval", "minHumanApprovals", "assuranceDecision", "policyRefs"],
+      "properties": {
+        "selected": {
+          "type": "string",
+          "enum": ["risk:low", "risk:high"]
+        },
+        "rationale": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "requiresHumanApproval": {
+          "type": "boolean"
+        },
+        "minHumanApprovals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "assuranceDecision": {
+          "type": "string",
+          "enum": ["report-only", "manual-approval", "manual-approval-or-block", "block"]
+        },
+        "policyRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/contextRef"
+          }
+        }
+      }
+    },
+    "allowedActions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["automation", "humanApprovalRequiredFor", "forbidden"],
+      "properties": {
+        "automation": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/actionName"
+          },
+          "uniqueItems": true
+        },
+        "humanApprovalRequiredFor": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/actionName"
+          },
+          "uniqueItems": true
+        },
+        "forbidden": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/actionName"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "actionName": {
+      "type": "string",
+      "enum": [
+        "read-repository",
+        "edit-files",
+        "run-local-command",
+        "generate-artifact",
+        "push-branch",
+        "open-pr",
+        "request-ai-review",
+        "rerun-ci",
+        "update-issue",
+        "merge-pr",
+        "publish-release"
+      ]
+    },
+    "stopRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "condition", "action", "evidenceRequirementRefs"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/idString"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["warning", "blocker"]
+        },
+        "condition": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "action": {
+          "type": "string",
+          "enum": ["halt-and-ask-human", "halt-and-record-blocker", "rollback", "retry-with-budget"]
+        },
+        "evidenceRequirementRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/idString"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "rollbackPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy", "steps", "validationCommands"],
+      "properties": {
+        "strategy": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "validationCommands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/commandSpec"
+          }
+        }
+      }
+    },
+    "outputArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "contractId", "description", "producer", "requiredBefore"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/idString"
+        },
+        "path": {
+          "$ref": "#/$defs/pathString"
+        },
+        "contractId": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "schemaPath": {
+          "$ref": "#/$defs/pathString"
+        },
+        "description": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "producer": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "requiredBefore": {
+          "type": "string",
+          "enum": ["pr-review", "merge-judgment", "release-judgment", "manual-approval"]
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["createdAt", "generator", "repository", "sourceIssue"],
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "generator": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "repository": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "sourceIssue": {
+          "$ref": "#/$defs/sourceReference"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    }
+  }
+}

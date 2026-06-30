@@ -1,0 +1,565 @@
+{
+  "schemaVersion": "exec-plan/v2",
+  "contractId": "exec-plan.v2",
+  "planId": "reval3-003-high-risk-selected-claims",
+  "title": "High-risk selected-claims ExecPlan v2",
+  "lifecycle": "preview",
+  "intent": {
+    "summary": "Plan a risk-escalated selected-claims change with explicit approval and stop rules.",
+    "objective": "Connect Issue intent, Context Pack references, validation commands, evidence outputs, risk policy, and review stop rules before merge judgment.",
+    "sourceReferences": [
+      {
+        "kind": "issue",
+        "id": "#3549",
+        "url": "https://github.com/itdojp/ae-framework/issues/3549",
+        "description": "Source Issue for ExecPlan v2 contract work."
+      },
+      {
+        "kind": "document",
+        "id": "context-pack-v1",
+        "path": "docs/spec/context-pack.md",
+        "description": "Design SSOT and Context Pack preflight rules."
+      },
+      {
+        "kind": "artifact-contract",
+        "id": "variance-report.v1",
+        "path": "schema/variance-report.schema.json",
+        "description": "Prior variance-reduction contract consumed as an ExecPlan input surface."
+      }
+    ],
+    "nonGoals": [
+      "Do not implement a full orchestrator.",
+      "Do not depend on a specific coding agent, IDE, or hosted runtime.",
+      "Do not replace Context Pack; reference and compose it."
+    ]
+  },
+  "scope": {
+    "inScope": [
+      "Schema, fixtures, local validation/rendering CLI, and reference documentation.",
+      "Compatibility guidance for existing execplan, execution-plan-v1, and plan-artifact routes."
+    ],
+    "outOfScope": [
+      "Workflow enforcement changes.",
+      "Hosted execution service or agent runtime implementation."
+    ],
+    "targetFiles": [
+      {
+        "path": "schema/exec-plan.v2.schema.json",
+        "changeType": "add",
+        "reason": "Define the exec-plan/v2 machine-readable contract."
+      },
+      {
+        "path": "scripts/exec-plan/validate-v2.mjs",
+        "changeType": "add",
+        "reason": "Validate ExecPlan v2 fixtures and render PR/Issue Markdown."
+      },
+      {
+        "path": "docs/reference/EXEC-PLAN-V2.md",
+        "changeType": "add",
+        "reason": "Document fields, migration, validation, and rendering guidance."
+      },
+      {
+        "path": "fixtures/exec-plan/baseline.exec-plan.v2.json",
+        "changeType": "add",
+        "reason": "Baseline fast-lane fixture."
+      },
+      {
+        "path": "fixtures/exec-plan/structured-assurance.exec-plan.v2.json",
+        "changeType": "add",
+        "reason": "Structured assurance fixture."
+      },
+      {
+        "path": "fixtures/exec-plan/high-risk-selected-claims.exec-plan.v2.json",
+        "changeType": "add",
+        "reason": "Risk-escalated selected-claims fixture."
+      },
+      {
+        "path": "policy/risk-policy.yml",
+        "changeType": "read-only",
+        "reason": "Risk escalation vocabulary is consumed from policy, not redefined."
+      },
+      {
+        "path": "artifacts/plan/plan-artifact.json",
+        "changeType": "read-only",
+        "reason": "Existing high-risk policy-gate route still requires plan-artifact/v1 during migration."
+      }
+    ],
+    "affectedContracts": [
+      {
+        "contractId": "exec-plan.v2",
+        "schemaPath": "schema/exec-plan.v2.schema.json",
+        "lifecycle": "preview",
+        "reason": "New preview shared plan contract; no existing contract is removed."
+      },
+      {
+        "contractId": "policy-decision.v1",
+        "schemaPath": "schema/policy-decision-v1.schema.json",
+        "lifecycle": "stable",
+        "reason": "Policy-gate decision remains the merge gate source."
+      },
+      {
+        "contractId": "plan-artifact.v1",
+        "schemaPath": "schema/plan-artifact.schema.json",
+        "lifecycle": "legacy-compatible",
+        "reason": "High-risk PRs still satisfy existing policy-gate plan artifact requirement."
+      }
+    ]
+  },
+  "context": {
+    "contextPackRefs": [
+      {
+        "kind": "context-pack",
+        "refId": "context-pack-v1",
+        "path": "docs/spec/context-pack.md",
+        "description": "Design SSOT referenced by every ExecPlan v2."
+      },
+      {
+        "kind": "boundary-slice",
+        "refId": "inventory-item-model",
+        "path": "spec/context-pack/boundary-map.json",
+        "description": "Existing slice example; not modified by this fixture."
+      },
+      {
+        "kind": "boundary-slice",
+        "refId": "reservation-flow",
+        "path": "spec/context-pack/boundary-map.json",
+        "description": "Existing slice example; not modified by this fixture."
+      }
+    ],
+    "assuranceRefs": {
+      "mode": "manual-approval-or-block",
+      "profiles": [
+        "inventory-critical-core-v1"
+      ],
+      "claimRefs": [
+        "no-negative-stock",
+        "reservation-idempotency"
+      ],
+      "summaryArtifacts": [
+        "artifacts/assurance/assurance-summary.json",
+        "artifacts/assurance/claim-evidence-manifest.json",
+        "artifacts/ci/policy-gate-summary.json"
+      ]
+    },
+    "specKitRefs": []
+  },
+  "taskGraph": {
+    "nodes": [
+      {
+        "id": "task.contract",
+        "title": "Define exec-plan/v2 contract",
+        "kind": "contract",
+        "owner": "agent",
+        "status": "planned",
+        "dependsOn": [],
+        "evidenceRequirementRefs": [
+          "ev.exec-plan-schema"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.exec-plan-json"
+        ]
+      },
+      {
+        "id": "task.validate",
+        "title": "Validate ExecPlan v2 fixtures",
+        "kind": "verification",
+        "owner": "ci",
+        "status": "planned",
+        "dependsOn": [
+          "task.contract"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.exec-plan-validation"
+        ],
+        "commands": [
+          {
+            "id": "cmd.validate-high-risk-selected-claims",
+            "command": "pnpm run exec-plan:v2:validate -- --file fixtures/exec-plan/high-risk-selected-claims.exec-plan.v2.json",
+            "purpose": "Validate the baseline fast-lane fixture and render Markdown for review.",
+            "when": "local-validation",
+            "expectedArtifactRefs": [
+              "artifact.validation-report",
+              "artifact.exec-plan-md"
+            ]
+          }
+        ],
+        "outputArtifactRefs": [
+          "artifact.validation-report"
+        ]
+      },
+      {
+        "id": "task.review-surface",
+        "title": "Render reviewer-facing Markdown",
+        "kind": "review",
+        "owner": "agent",
+        "status": "planned",
+        "dependsOn": [
+          "task.validate"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.exec-plan-markdown"
+        ],
+        "commands": [
+          {
+            "id": "cmd.render-md",
+            "command": "pnpm run exec-plan:v2:validate -- --file fixtures/exec-plan/high-risk-selected-claims.exec-plan.v2.json --output-md artifacts/plan/exec-plan.v2.md",
+            "purpose": "Produce Markdown suitable for GitHub Issue or PR bodies.",
+            "when": "pr-ci",
+            "expectedArtifactRefs": [
+              "artifact.exec-plan-md"
+            ]
+          }
+        ],
+        "outputArtifactRefs": [
+          "artifact.exec-plan-md"
+        ]
+      },
+      {
+        "id": "task.human-disposition",
+        "title": "Human disposition for selected claims",
+        "kind": "review",
+        "owner": "human",
+        "status": "planned",
+        "dependsOn": [
+          "task.validate"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.policy-gate",
+          "ev.plan-artifact-v1",
+          "ev.selected-claim-assurance"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.policy-gate-summary",
+          "artifact.plan-artifact-v1",
+          "artifact.assurance-summary"
+        ]
+      }
+    ]
+  },
+  "verificationProfile": {
+    "mode": "high-assurance-selected-claims",
+    "commands": [
+      {
+        "id": "cmd.schema-fixtures",
+        "command": "node scripts/ci/validate-json.mjs",
+        "purpose": "Validate ExecPlan v2 fixtures through the repository schema validation registry.",
+        "when": "local-validation",
+        "expectedArtifactRefs": [
+          "artifact.validation-report"
+        ]
+      },
+      {
+        "id": "cmd.exec-plan-v2",
+        "command": "pnpm run exec-plan:v2:validate -- --file fixtures/exec-plan/high-risk-selected-claims.exec-plan.v2.json",
+        "purpose": "Run schema plus semantic checks and render the Markdown review surface.",
+        "when": "pre-merge",
+        "expectedArtifactRefs": [
+          "artifact.validation-report",
+          "artifact.exec-plan-md"
+        ]
+      },
+      {
+        "id": "cmd.plan-artifact-v1",
+        "command": "pnpm run plan-artifact:validate",
+        "purpose": "Keep current high-risk policy-gate plan-artifact evidence valid during migration.",
+        "when": "pre-merge",
+        "expectedArtifactRefs": [
+          "artifact.plan-artifact-v1"
+        ]
+      },
+      {
+        "id": "cmd.policy-gate",
+        "command": "pnpm -s run policy:gate -- --local",
+        "purpose": "Evaluate risk labels, approval requirements, and assurance disposition.",
+        "when": "pr-ci",
+        "expectedArtifactRefs": [
+          "artifact.policy-gate-summary"
+        ]
+      }
+    ],
+    "requiredChecks": [
+      "verify-lite",
+      "policy-gate"
+    ],
+    "optionalChecks": [
+      "gate"
+    ]
+  },
+  "evidenceRequirements": [
+    {
+      "id": "ev.exec-plan-schema",
+      "kind": "exec-plan",
+      "description": "ExecPlan v2 JSON validates against schema/exec-plan.v2.schema.json.",
+      "requiredBefore": "pr-review",
+      "producer": "scripts/exec-plan/validate-v2.mjs",
+      "sourceRefs": [
+        {
+          "kind": "artifact-contract",
+          "id": "exec-plan.v2",
+          "path": "schema/exec-plan.v2.schema.json"
+        }
+      ],
+      "claimRefs": [],
+      "outputArtifactRefs": [
+        "artifact.exec-plan-json"
+      ]
+    },
+    {
+      "id": "ev.exec-plan-validation",
+      "kind": "test-report",
+      "description": "Validation command records schema and semantic status before merge judgment.",
+      "requiredBefore": "merge-judgment",
+      "producer": "scripts/exec-plan/validate-v2.mjs",
+      "sourceRefs": [
+        {
+          "kind": "validation-command",
+          "id": "exec-plan:v2:validate",
+          "description": "Package script for local and CI validation."
+        }
+      ],
+      "claimRefs": [],
+      "outputArtifactRefs": [
+        "artifact.validation-report"
+      ]
+    },
+    {
+      "id": "ev.exec-plan-markdown",
+      "kind": "exec-plan",
+      "description": "Markdown rendering is reviewable in GitHub Issue and PR bodies.",
+      "requiredBefore": "pr-review",
+      "producer": "scripts/exec-plan/validate-v2.mjs",
+      "sourceRefs": [
+        {
+          "kind": "document",
+          "id": "EXEC-PLAN-V2.md",
+          "path": "docs/reference/EXEC-PLAN-V2.md"
+        }
+      ],
+      "claimRefs": [],
+      "outputArtifactRefs": [
+        "artifact.exec-plan-md"
+      ]
+    },
+    {
+      "id": "ev.policy-gate",
+      "kind": "policy-gate-summary",
+      "description": "Policy-gate records risk-high labels, required approvals, and assurance disposition.",
+      "requiredBefore": "merge-judgment",
+      "producer": "scripts/ci/policy-gate.mjs",
+      "sourceRefs": [
+        {
+          "kind": "policy",
+          "id": "risk-policy",
+          "path": "policy/risk-policy.yml"
+        }
+      ],
+      "claimRefs": [
+        "no-negative-stock",
+        "reservation-idempotency"
+      ],
+      "outputArtifactRefs": [
+        "artifact.policy-gate-summary"
+      ]
+    },
+    {
+      "id": "ev.plan-artifact-v1",
+      "kind": "exec-plan",
+      "description": "Legacy-compatible plan-artifact/v1 remains available until policy-gate migrates to ExecPlan v2.",
+      "requiredBefore": "manual-approval",
+      "producer": "scripts/plan-artifact/generate.mjs",
+      "sourceRefs": [
+        {
+          "kind": "artifact-contract",
+          "id": "plan-artifact.v1",
+          "path": "schema/plan-artifact.schema.json"
+        }
+      ],
+      "claimRefs": [],
+      "outputArtifactRefs": [
+        "artifact.plan-artifact-v1"
+      ]
+    },
+    {
+      "id": "ev.selected-claim-assurance",
+      "kind": "assurance-summary",
+      "description": "Selected claims keep existing assurance-summary and claim-evidence-manifest vocabulary.",
+      "requiredBefore": "manual-approval",
+      "producer": "scripts/assurance/aggregate-lanes.mjs",
+      "sourceRefs": [
+        {
+          "kind": "artifact-contract",
+          "id": "assurance-summary.v1",
+          "path": "schema/assurance-summary.schema.json"
+        }
+      ],
+      "claimRefs": [
+        "no-negative-stock",
+        "reservation-idempotency"
+      ],
+      "outputArtifactRefs": [
+        "artifact.assurance-summary"
+      ]
+    }
+  ],
+  "riskProfile": {
+    "selected": "risk:high",
+    "rationale": "Selected claims and policy-sensitive files require human reviewer disposition and plan evidence.",
+    "requiresHumanApproval": true,
+    "minHumanApprovals": 1,
+    "assuranceDecision": "manual-approval-or-block",
+    "policyRefs": [
+      {
+        "kind": "policy-rule",
+        "refId": "assurance_escalation.lanes.risk_high",
+        "path": "policy/risk-policy.yml",
+        "description": "Risk-high work requires minimum human approvals and visible evidence gaps."
+      },
+      {
+        "kind": "policy-rule",
+        "refId": "high_risk.require_plan_artifact",
+        "path": "policy/risk-policy.yml",
+        "description": "Existing policy-gate high-risk route still expects plan-artifact/v1."
+      }
+    ]
+  },
+  "allowedActions": {
+    "automation": [
+      "read-repository",
+      "edit-files",
+      "run-local-command",
+      "generate-artifact",
+      "push-branch",
+      "open-pr",
+      "request-ai-review",
+      "rerun-ci",
+      "update-issue"
+    ],
+    "humanApprovalRequiredFor": [
+      "update-issue",
+      "merge-pr",
+      "publish-release"
+    ],
+    "forbidden": [
+      "publish-release"
+    ]
+  },
+  "stopRules": [
+    {
+      "id": "stop.context-conflict",
+      "severity": "blocker",
+      "condition": "Requested changes conflict with Context Pack or boundary-map constraints.",
+      "action": "halt-and-ask-human",
+      "evidenceRequirementRefs": [
+        "ev.exec-plan-schema"
+      ]
+    },
+    {
+      "id": "stop.validation-fail",
+      "severity": "blocker",
+      "condition": "ExecPlan v2 fixture validation fails or semantic references are unresolved.",
+      "action": "halt-and-record-blocker",
+      "evidenceRequirementRefs": [
+        "ev.exec-plan-validation"
+      ]
+    },
+    {
+      "id": "stop.unresolved-selected-claim",
+      "severity": "blocker",
+      "condition": "A selected claim remains unresolved without waiver or human disposition under risk-high policy.",
+      "action": "halt-and-ask-human",
+      "evidenceRequirementRefs": [
+        "ev.selected-claim-assurance",
+        "ev.policy-gate"
+      ]
+    }
+  ],
+  "rollbackPlan": {
+    "strategy": "Remove the preview ExecPlan v2 schema, fixtures, scripts, and docs while leaving existing plan-artifact and execution-plan-v1 routes untouched.",
+    "steps": [
+      "Revert schema/exec-plan.v2.schema.json and fixture additions.",
+      "Revert scripts/exec-plan/validate-v2.mjs and package script entries.",
+      "Revert documentation and contract catalog links."
+    ],
+    "validationCommands": [
+      {
+        "id": "cmd.rollback-docs",
+        "command": "pnpm -s run check:doc-consistency",
+        "purpose": "Confirm documentation references are consistent after rollback.",
+        "when": "local-validation",
+        "expectedArtifactRefs": [
+          "artifact.validation-report"
+        ]
+      }
+    ]
+  },
+  "outputArtifacts": [
+    {
+      "id": "artifact.exec-plan-json",
+      "path": "artifacts/plan/exec-plan.v2.json",
+      "contractId": "exec-plan.v2",
+      "schemaPath": "schema/exec-plan.v2.schema.json",
+      "description": "Machine-readable ExecPlan v2 payload.",
+      "producer": "scripts/exec-plan/validate-v2.mjs",
+      "requiredBefore": "pr-review"
+    },
+    {
+      "id": "artifact.exec-plan-md",
+      "path": "artifacts/plan/exec-plan.v2.md",
+      "contractId": "exec-plan.v2.markdown",
+      "description": "Human-readable ExecPlan v2 rendering for GitHub Issue or PR bodies.",
+      "producer": "scripts/exec-plan/validate-v2.mjs",
+      "requiredBefore": "pr-review"
+    },
+    {
+      "id": "artifact.validation-report",
+      "path": "artifacts/plan/exec-plan-v2-validation.json",
+      "contractId": "exec-plan-v2-validation.report",
+      "description": "Validation report with schema and semantic errors or warnings.",
+      "producer": "scripts/exec-plan/validate-v2.mjs",
+      "requiredBefore": "merge-judgment"
+    },
+    {
+      "id": "artifact.policy-gate-summary",
+      "path": "artifacts/ci/policy-gate-summary.json",
+      "contractId": "policy-gate-summary.v1",
+      "schemaPath": "schema/policy-gate-summary-v1.schema.json",
+      "description": "Policy decision summary including approval and assurance result.",
+      "producer": "scripts/ci/policy-gate.mjs",
+      "requiredBefore": "merge-judgment"
+    },
+    {
+      "id": "artifact.plan-artifact-v1",
+      "path": "artifacts/plan/plan-artifact.json",
+      "contractId": "plan-artifact.v1",
+      "schemaPath": "schema/plan-artifact.schema.json",
+      "description": "Legacy-compatible high-risk plan artifact required by current policy-gate.",
+      "producer": "scripts/plan-artifact/generate.mjs",
+      "requiredBefore": "manual-approval"
+    },
+    {
+      "id": "artifact.assurance-summary",
+      "path": "artifacts/assurance/assurance-summary.json",
+      "contractId": "assurance-summary.v1",
+      "schemaPath": "schema/assurance-summary.schema.json",
+      "description": "Assurance summary for selected claims.",
+      "producer": "scripts/assurance/aggregate-lanes.mjs",
+      "requiredBefore": "manual-approval"
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-07-01T00:00:00.000Z",
+    "generator": "manual-fixture/reval3-003",
+    "repository": "itdojp/ae-framework",
+    "sourceIssue": {
+      "kind": "issue",
+      "id": "#3549",
+      "url": "https://github.com/itdojp/ae-framework/issues/3549",
+      "description": "Source Issue for ExecPlan v2 contract work."
+    },
+    "notes": [
+      "ExecPlan v2 is preview and does not replace plan-artifact/v1 policy-gate enforcement in this issue."
+    ]
+  }
+}
