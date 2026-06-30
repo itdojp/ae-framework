@@ -286,6 +286,15 @@ const checks = [
     label: 'ExecPlan schema validation'
   },
   {
+    schema: 'schema/exec-plan.v2.schema.json',
+    fixtures: [
+      'fixtures/exec-plan/baseline.exec-plan.v2.json',
+      'fixtures/exec-plan/structured-assurance.exec-plan.v2.json',
+      'fixtures/exec-plan/high-risk-selected-claims.exec-plan.v2.json',
+    ],
+    label: 'ExecPlan v2 schema validation'
+  },
+  {
     schema: 'schema/pr-state-v1.schema.json',
     fixtures: [
       'fixtures/pr-state/sample.pr-state.blocked.json',
