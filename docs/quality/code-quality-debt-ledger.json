@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "quality-debt-ledger/v1",
+  "items": [
+    {
+      "id": "quality-scorecard-legacy-route",
+      "owner": "quality-maintainers",
+      "reason": "The legacy quality:scorecard compatibility route remains available while workflow and operator callers finish migrating to the v1 input contract.",
+      "reviewAfter": "2026-09-30",
+      "targetCleanupSurface": "scripts/quality-scorecard-generator.js; package.json quality:scorecard; docs/reference/CONTRACT-CATALOG.md compatibility route",
+      "source": "docs/reference/CONTRACT-CATALOG.md#compatibility-routes",
+      "links": [
+        "scripts/quality-scorecard-generator.js",
+        "scripts/quality/build-quality-scorecard.mjs",
+        "schema/quality-scorecard.schema.json"
+      ]
+    }
+  ]
+}

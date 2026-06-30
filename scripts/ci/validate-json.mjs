@@ -355,6 +355,11 @@ const checks = [
     label: 'Quality scorecard schema validation'
   },
   {
+    schema: 'schema/quality-baseline.schema.json',
+    fixtures: ['fixtures/quality/sample.quality-baseline.json'],
+    label: 'Quality baseline schema validation'
+  },
+  {
     schema: 'schema/conformance-verify-result.schema.json',
     fixtures: ['fixtures/conformance/sample.conformance-verify-result.json'],
     label: 'Conformance verify result schema validation'
