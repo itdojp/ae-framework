@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "variance-report/v1",
+  "contractId": "variance-report.v1",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "enforcement": {
+    "mode": "report-only",
+    "ordinaryPrBlocking": false,
+    "policy": "Variance reports make judgment drift visible without blocking ordinary PRs in this issue slice.",
+    "promotionRule": "Future enforcement requires stable fixtures, known false-positive handling, documented allowed fields, and an explicit policy-gate change."
+  },
+  "inputs": {
+    "baseline": "fixtures/variance/run-a.judgment.json",
+    "candidate": "fixtures/variance/run-c.context-drift.judgment.json"
+  },
+  "normalization": {
+    "allowedFieldNames": [
+      "completedAt",
+      "durationMs",
+      "generatedAt",
+      "generatedAtLocal",
+      "generatedAtUtc",
+      "runAttempt",
+      "runId",
+      "startedAt",
+      "timestamp"
+    ],
+    "arrayOrderPolicy": "preserve-order"
+  },
+  "summary": {
+    "status": "drift",
+    "findingCount": 3,
+    "reportOnlyFindingCount": 3,
+    "judgmentRelevantFindingCount": 3,
+    "expectedDifferenceCount": 4
+  },
+  "inputHashes": [
+    {
+      "sourceInputKind": "context-pack",
+      "affectedEvidencePath": "$.inputFingerprints.contextPack",
+      "baselineSha256": "8ae9a77d42951f3fbe684f4d8c9a90ff08083ff12eb4af45e107ed3e83170ba3",
+      "candidateSha256": "cefc744f95160f32d782a616217907d36ce8b5a39567662305dc9ba49150ca26",
+      "match": false
+    },
+    {
+      "sourceInputKind": "exec-plan",
+      "affectedEvidencePath": "$.inputFingerprints.execPlan",
+      "baselineSha256": "d058fb388f139feaca424ee67752e83aee8cd1eb02379bb3bb1d9bf7713594e5",
+      "candidateSha256": "d058fb388f139feaca424ee67752e83aee8cd1eb02379bb3bb1d9bf7713594e5",
+      "match": true
+    },
+    {
+      "sourceInputKind": "template",
+      "affectedEvidencePath": "$.inputFingerprints.templates",
+      "baselineSha256": "329fa9334a92bf83915c4ee7ab99949e9bb56795772c0bee4bca2b4e1234078e",
+      "candidateSha256": "329fa9334a92bf83915c4ee7ab99949e9bb56795772c0bee4bca2b4e1234078e",
+      "match": true
+    },
+    {
+      "sourceInputKind": "validation-command",
+      "affectedEvidencePath": "$.inputFingerprints.validationCommands",
+      "baselineSha256": "f452f0e727c2f8a7c23274e114e4b145abf0546adbbec82f7a290a5da069b743",
+      "candidateSha256": "f452f0e727c2f8a7c23274e114e4b145abf0546adbbec82f7a290a5da069b743",
+      "match": true
+    },
+    {
+      "sourceInputKind": "tool-version",
+      "affectedEvidencePath": "$.inputFingerprints.toolVersions",
+      "baselineSha256": "0088eef99f8ee59d43a8096f6784cb211372db4125673b918db3c18576601f80",
+      "candidateSha256": "0088eef99f8ee59d43a8096f6784cb211372db4125673b918db3c18576601f80",
+      "match": true
+    },
+    {
+      "sourceInputKind": "artifact-contract",
+      "affectedEvidencePath": "$.inputFingerprints.artifactContracts",
+      "baselineSha256": "6581601d144e94273e5d832e96d714b7bf785501d9fff38709ff2d1b670cd675",
+      "candidateSha256": "6581601d144e94273e5d832e96d714b7bf785501d9fff38709ff2d1b670cd675",
+      "match": true
+    }
+  ],
+  "normalizedJudgment": {
+    "baselineSha256": "23cadf0bc9ea6316295a7a5042c2e002ff56ad1283bb2cd1805c1ef772d46b3f",
+    "candidateSha256": "8b99a6b2c85f3325c70f5c1eb4e9f839d92c5a12ac2d8d6babb61b14c4a1bc67",
+    "match": false
+  },
+  "expectedDifferences": [
+    {
+      "affectedEvidencePath": "$.generatedAt",
+      "fieldName": "generatedAt",
+      "reason": "volatile field allowed by variance normalization policy",
+      "baselineValue": "2026-07-01T00:00:00.000Z",
+      "candidateValue": "2026-07-01T00:10:00.000Z"
+    },
+    {
+      "affectedEvidencePath": "$.judgmentArtifacts[0].generatedAt",
+      "fieldName": "generatedAt",
+      "reason": "volatile field allowed by variance normalization policy",
+      "baselineValue": "2026-07-01T00:00:00.000Z",
+      "candidateValue": "2026-07-01T00:10:00.000Z"
+    },
+    {
+      "affectedEvidencePath": "$.runId",
+      "fieldName": "runId",
+      "reason": "volatile field allowed by variance normalization policy",
+      "baselineValue": "run-a",
+      "candidateValue": "run-c"
+    },
+    {
+      "affectedEvidencePath": "$.validation.durationMs",
+      "fieldName": "durationMs",
+      "reason": "volatile field allowed by variance normalization policy",
+      "baselineValue": "1200",
+      "candidateValue": "1100"
+    }
+  ],
+  "findings": [
+    {
+      "id": "variance-001",
+      "category": "context-drift",
+      "severity": "warn",
+      "reportOnly": true,
+      "judgmentRelevant": true,
+      "sourceInputKind": "context-pack",
+      "affectedEvidencePath": "$.inputFingerprints.contextPack[0].sha256",
+      "message": "Normalized judgment artifact differs at $.inputFingerprints.contextPack[0].sha256.",
+      "baselineValue": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "candidateValue": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "id": "variance-002",
+      "category": "value-drift",
+      "severity": "warn",
+      "reportOnly": true,
+      "judgmentRelevant": true,
+      "sourceInputKind": "judgment-artifact",
+      "affectedEvidencePath": "$.judgmentArtifacts[0].summary.cleanupCandidates",
+      "message": "Normalized judgment artifact differs at $.judgmentArtifacts[0].summary.cleanupCandidates.",
+      "baselineValue": "3",
+      "candidateValue": "4"
+    },
+    {
+      "id": "variance-003",
+      "category": "value-drift",
+      "severity": "warn",
+      "reportOnly": true,
+      "judgmentRelevant": true,
+      "sourceInputKind": "judgment-artifact",
+      "affectedEvidencePath": "$.judgmentArtifacts[0].summary.exceptionCount",
+      "message": "Normalized judgment artifact differs at $.judgmentArtifacts[0].summary.exceptionCount.",
+      "baselineValue": "1",
+      "candidateValue": "2"
+    }
+  ]
+}

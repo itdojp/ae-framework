@@ -277,3 +277,7 @@ Preview から stable への昇格には、同一 PR または linked issue で�
 ### 13. Re-evaluation 3 quality baseline schema
 
 `schema/quality-baseline.schema.json` uses the canonical `$id` form `https://ae-framework/schema/quality-baseline.schema.json`. It is an evidence contract for `artifacts/quality/code-quality-baseline.json` and remains report-only until a later policy change explicitly promotes any metric to enforcement.
+
+### 14. Re-evaluation 3 variance report schema
+
+`schema/variance-report.schema.json` uses the canonical `$id` form `https://ae-framework/schema/variance-report.schema.json`. It is an evidence contract for `artifacts/quality/variance-report.json`; findings remain report-only until a later policy change explicitly promotes a variance category to enforcement.
