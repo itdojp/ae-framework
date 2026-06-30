@@ -267,8 +267,68 @@
         "command": "tsx src/cli/index.ts"
       },
       {
+        "name": "assurance:e2e",
+        "command": "node scripts/assurance/run-e2e-scenario.mjs"
+      },
+      {
+        "name": "assurance:post-review-surface",
+        "command": "node scripts/assurance/post-pr-review-surface.mjs"
+      },
+      {
+        "name": "assurance:review-surface",
+        "command": "node scripts/assurance/render-pr-review-surface.mjs"
+      },
+      {
         "name": "check:doc-consistency",
         "command": "node scripts/docs/check-doc-consistency-all.mjs"
+      },
+      {
+        "name": "context-pack:deps",
+        "command": "node scripts/context-pack/check-deps.mjs"
+      },
+      {
+        "name": "context-pack:e2e-fixture",
+        "command": "node scripts/context-pack/run-e2e-fixture.mjs"
+      },
+      {
+        "name": "context-pack:validate",
+        "command": "node scripts/context-pack/validate.mjs"
+      },
+      {
+        "name": "context-pack:verify-boundary-map",
+        "command": "node scripts/context-pack/verify-boundary-map.mjs"
+      },
+      {
+        "name": "context-pack:verify-functor",
+        "command": "node scripts/context-pack/verify-functor.mjs"
+      },
+      {
+        "name": "context-pack:verify-natural-transformation",
+        "command": "node scripts/context-pack/verify-natural-transformation.mjs"
+      },
+      {
+        "name": "context-pack:verify-phase5",
+        "command": "node scripts/context-pack/verify-phase5-templates.mjs"
+      },
+      {
+        "name": "context-pack:verify-product-coproduct",
+        "command": "node scripts/context-pack/verify-product-coproduct.mjs"
+      },
+      {
+        "name": "demo:ab-poc",
+        "command": "node scripts/agent-builder/flow-runner.mjs --flow fixtures/flow/sample.flow.json --summary packages/envelope/__fixtures__/verify-lite-summary.json --output artifacts/agent-builder/envelope.json"
+      },
+      {
+        "name": "demo:agent-assurance",
+        "command": "node scripts/demo/run-agent-assurance-demo.mjs"
+      },
+      {
+        "name": "demo:smoke",
+        "command": "pnpm run demo:agent-assurance && node scripts/demo/run-scope-drift-demo.mjs && node scripts/demo/run-high-risk-escalation-demo.mjs && pnpm run demo:smoke:check"
+      },
+      {
+        "name": "demo:smoke:check",
+        "command": "node scripts/demo/check-demo-smoke-artifacts.mjs"
       },
       {
         "name": "lint",
@@ -279,12 +339,236 @@
         "command": "madge --circular --extensions ts src"
       },
       {
+        "name": "metrics:agent-pr-assurance",
+        "command": "node scripts/metrics/collect-agent-pr-assurance-metrics.mjs"
+      },
+      {
+        "name": "quality:baseline",
+        "command": "node scripts/quality/collect-code-quality-baseline.mjs"
+      },
+      {
+        "name": "quality:gates",
+        "command": "node scripts/admin/run-script-alias.mjs quality:gates"
+      },
+      {
+        "name": "quality:gates:dev",
+        "command": "pnpm run quality:run:dev"
+      },
+      {
+        "name": "quality:gates:prod",
+        "command": "pnpm run quality:run:prod"
+      },
+      {
+        "name": "quality:init",
+        "command": "tsx src/cli/index.ts quality init"
+      },
+      {
+        "name": "quality:list",
+        "command": "tsx src/cli/index.ts quality list"
+      },
+      {
+        "name": "quality:policy",
+        "command": "tsx src/cli/index.ts quality policy"
+      },
+      {
+        "name": "quality:report",
+        "command": "tsx src/cli/index.ts quality report"
+      },
+      {
+        "name": "quality:run",
+        "command": "tsx src/cli/index.ts quality run"
+      },
+      {
+        "name": "quality:run:accessibility",
+        "command": "tsx src/cli/index.ts quality run --gates=accessibility"
+      },
+      {
+        "name": "quality:run:all",
+        "command": "node scripts/admin/run-script-alias.mjs quality:run:all"
+      },
+      {
+        "name": "quality:run:coverage",
+        "command": "tsx src/cli/index.ts quality run --gates=coverage"
+      },
+      {
+        "name": "quality:run:dev",
+        "command": "tsx src/cli/index.ts quality run --env=development"
+      },
+      {
+        "name": "quality:run:prod",
+        "command": "tsx src/cli/index.ts quality run --env=production"
+      },
+      {
+        "name": "quality:scorecard",
+        "command": "node scripts/quality-scorecard-generator.js"
+      },
+      {
+        "name": "quality:scorecard:v1",
+        "command": "node scripts/quality/build-quality-scorecard.mjs"
+      },
+      {
+        "name": "quality:scorecard:validate",
+        "command": "node scripts/ci/validate-quality-scorecard.mjs"
+      },
+      {
+        "name": "quality:validate",
+        "command": "tsx src/cli/index.ts quality validate"
+      },
+      {
+        "name": "security:analyze",
+        "command": "node scripts/security-analyzer.js"
+      },
+      {
+        "name": "security:audit",
+        "command": "npm audit --audit-level=moderate"
+      },
+      {
+        "name": "security:audit-prompt",
+        "command": "tsx src/cli/index.ts security audit-prompt"
+      },
+      {
+        "name": "security:check-headers",
+        "command": "tsx src/cli/index.ts security check-headers"
+      },
+      {
+        "name": "security:config",
+        "command": "tsx src/cli/index.ts security show-config"
+      },
+      {
+        "name": "security:extract-claims",
+        "command": "tsx src/cli/index.ts security extract-claims"
+      },
+      {
+        "name": "security:full",
+        "command": "pnpm run security:analyze && pnpm run security:secrets && pnpm run security:audit"
+      },
+      {
+        "name": "security:import-speca",
+        "command": "tsx src/cli/index.ts security import-speca"
+      },
+      {
+        "name": "security:integrated",
+        "command": "node scripts/integrated-security-audit.mjs"
+      },
+      {
+        "name": "security:integrated:compliance",
+        "command": "node scripts/integrated-security-audit.mjs --compliance-only"
+      },
+      {
+        "name": "security:integrated:full",
+        "command": "node scripts/integrated-security-audit.mjs --full"
+      },
+      {
+        "name": "security:integrated:quick",
+        "command": "node scripts/admin/run-script-alias.mjs security:integrated:quick"
+      },
+      {
+        "name": "security:map-code",
+        "command": "tsx src/cli/index.ts security map-code"
+      },
+      {
+        "name": "security:proof-audit",
+        "command": "tsx src/cli/index.ts security audit"
+      },
+      {
+        "name": "security:review",
+        "command": "tsx src/cli/index.ts security review"
+      },
+      {
+        "name": "security:scan",
+        "command": "tsx src/cli/index.ts security scan"
+      },
+      {
+        "name": "security:secrets",
+        "command": "npx gitleaks detect --no-git --verbose"
+      },
+      {
+        "name": "security:test-headers",
+        "command": "tsx src/cli/index.ts security test-headers"
+      },
+      {
         "name": "test:fast",
         "command": "vitest run --exclude \"tests/testing/intelligent-test-selection.test.ts\" --exclude \"tests/examples/**\" --exclude \"tests/docker/**\" --exclude \"examples/**\" --exclude \"**/__e2e__/**\" --exclude \"tests/a11y/**\" --exclude \"tests/property/**\" --exclude \"tests/security/**\" --exclude \"tests/integration/**\" --exclude \"tests/resilience/integration.test.ts\" --exclude \"tests/conformance/**\" --exclude \"tests/cegis/**\" --exclude \"tests/cli/**\" --exclude \"tests/commands/**\" --exclude \"tests/api/**\" --exclude \"tests/tdd-setup.test.ts\""
       },
       {
         "name": "types:check",
         "command": "tsc -p configs/tsconfig/tsconfig.verify.json --noEmit"
+      },
+      {
+        "name": "verify:all",
+        "command": "pnpm run verify:tests && pnpm run verify:quality && pnpm run verify:security && pnpm run mutation"
+      },
+      {
+        "name": "verify:alloy",
+        "command": "node scripts/formal/verify-alloy.mjs"
+      },
+      {
+        "name": "verify:assurance",
+        "command": "node scripts/assurance/aggregate-lanes.mjs"
+      },
+      {
+        "name": "verify:conformance",
+        "command": "node scripts/admin/run-script-alias.mjs verify:conformance"
+      },
+      {
+        "name": "verify:csp",
+        "command": "node scripts/formal/verify-csp.mjs"
+      },
+      {
+        "name": "verify:formal",
+        "command": "node scripts/formal/print-context.mjs && node scripts/formal/verify-conformance.mjs && node scripts/formal/trace-validate.mjs samples/conformance/sample-traces.json && node scripts/formal/verify-alloy.mjs && node scripts/formal/verify-tla.mjs --engine=tlc && node scripts/formal/verify-smt.mjs --solver=z3 --file spec/smt/sample.smt2 && node scripts/formal/verify-apalache.mjs --file spec/tla/DomainSpec.tla && node scripts/formal/verify-kani.mjs && node scripts/formal/verify-spin.mjs --file spec/spin/sample.pml --ltl p_done && node scripts/formal/verify-csp.mjs --file spec/csp/cspx-smoke.cspm --mode typecheck && node scripts/formal/verify-lean.mjs && node scripts/formal/aggregate-formal.mjs && node scripts/formal/print-summary.mjs"
+      },
+      {
+        "name": "verify:full",
+        "command": "tsx -e \"import {VerifyAgent} from './src/agents/verify-agent.js'; const agent = new VerifyAgent(); console.log('Verify Agent initialized')\""
+      },
+      {
+        "name": "verify:kani",
+        "command": "node scripts/formal/verify-kani.mjs"
+      },
+      {
+        "name": "verify:lean",
+        "command": "node scripts/formal/verify-lean.mjs"
+      },
+      {
+        "name": "verify:lite",
+        "command": "node scripts/admin/run-script-alias.mjs verify:lite"
+      },
+      {
+        "name": "verify:model",
+        "command": "node scripts/verify/run-model-checks.mjs"
+      },
+      {
+        "name": "verify:profile",
+        "command": "node scripts/verify/run.mjs"
+      },
+      {
+        "name": "verify:quality",
+        "command": "pnpm run lint && pnpm run build"
+      },
+      {
+        "name": "verify:security",
+        "command": "npm audit --audit-level moderate"
+      },
+      {
+        "name": "verify:server",
+        "command": "tsx src/mcp-server/verify-server.ts"
+      },
+      {
+        "name": "verify:smt",
+        "command": "node scripts/formal/verify-smt.mjs"
+      },
+      {
+        "name": "verify:spin",
+        "command": "node scripts/formal/verify-spin.mjs"
+      },
+      {
+        "name": "verify:tests",
+        "command": "pnpm run test && pnpm run pbt && pnpm run bdd"
+      },
+      {
+        "name": "verify:tla",
+        "command": "node scripts/formal/verify-tla.mjs"
       }
     ]
   },

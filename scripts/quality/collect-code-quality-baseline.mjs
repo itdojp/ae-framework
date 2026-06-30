@@ -12,6 +12,23 @@ const DEFAULT_OUTPUT_JSON = 'artifacts/quality/code-quality-baseline.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/quality/code-quality-baseline.md';
 const DEFAULT_DEBT_LEDGER = 'docs/quality/code-quality-debt-ledger.json';
 const INVENTORY_SAMPLE_LIMIT = 20;
+const PUBLIC_SCRIPT_NAMES = new Set([
+  'ae-framework',
+  'check:doc-consistency',
+  'types:check',
+  'test:fast',
+  'lint',
+  'lint:deps',
+]);
+const PUBLIC_SCRIPT_PREFIXES = [
+  'quality:',
+  'verify:',
+  'context-pack:',
+  'assurance:',
+  'metrics:',
+  'security:',
+  'demo:',
+];
 
 function readRequiredValue(argv, index, option) {
   const value = argv[index + 1];
@@ -133,7 +150,7 @@ function normalizeBinEntries(bin) {
 }
 
 function isPublicScript(name) {
-  return /^(ae-framework|quality:|verify|verify:|context-pack:|assurance:|metrics:|security:|demo:|check:doc-consistency|types:check|test:fast|lint|lint:deps)$/.test(name);
+  return PUBLIC_SCRIPT_NAMES.has(name) || PUBLIC_SCRIPT_PREFIXES.some((prefix) => name.startsWith(prefix));
 }
 
 function configuredStatus(scripts, scriptName, options) {

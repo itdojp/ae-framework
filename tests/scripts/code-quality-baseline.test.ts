@@ -41,6 +41,8 @@ describe('collect-code-quality-baseline', () => {
       'validate-json',
     ]);
     expect(report.qualityChecks.every((check) => check.status === 'configured')).toBe(true);
+    expect(report.publicEntrypoints.publicScripts.map((entry) => entry.name)).toContain('quality:baseline');
+    expect(report.publicEntrypoints.publicScripts.map((entry) => entry.name)).toContain('context-pack:validate');
     expect(report.debtLedger.path).toBe('docs/quality/code-quality-debt-ledger.json');
     expect(report.debtLedger.exceptionCount).toBeGreaterThanOrEqual(1);
     expect(report.topCleanupCandidates.some((candidate) => candidate.id === 'quality-scorecard-legacy-route')).toBe(true);
