@@ -103,6 +103,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/apache-license-cutover-readiness-audit.schema.json`
 - `schema/apache-license-cutover-approval-readiness-audit.schema.json`
 - `schema/quality-scorecard.schema.json`
+- `schema/quality-baseline.schema.json`
 - `schema/report-envelope.schema.json`
 - `schema/spec-validation-report.schema.json`
 - `schema/trace-bundle.schema.json`
@@ -173,6 +174,7 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/**/*.provenance.json` | `schema/ci-artifact-provenance-v1.schema.json` | `scripts/ci/write-artifact-provenance.mjs`; CI decision and publisher workflows including Policy Gate, PR Maintenance, Quality Gates, SBOM, and formal aggregate producers | `scripts/ci/validate-artifact-provenance.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, trusted workflow-run publishers; binds subject digests to producer repository, workflow ref, run id, run attempt, PR number, and head SHA |
 | `artifacts/ci/harness-health.json` | `schema/harness-health.schema.json` | `scripts/ci/build-harness-health.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/ci-extended.yml` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/change-package/generate.mjs` |
 | `artifacts/quality/quality-scorecard.json` | `schema/quality-scorecard.schema.json` | `scripts/quality/build-quality-scorecard.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-quality-scorecard.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
+| `artifacts/quality/code-quality-baseline.json` | `schema/quality-baseline.schema.json` | `scripts/quality/collect-code-quality-baseline.mjs`, `pnpm run quality:baseline`; debt ledger source `docs/quality/code-quality-debt-ledger.json` | `scripts/ci/validate-json.mjs`, `docs/quality/CODE-QUALITY-BASELINE.md`; report-only baseline for type/lint/dependency-boundary status, architecture plane ownership, exception counts, and cleanup candidates; no ordinary PR blocking gate is added |
 | `artifacts/reference/legal/license-scope-audit.json` | `schema/license-scope-audit.schema.json` | `scripts/legal/inventory-license-scope.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/LICENSE-MIGRATION-AUDIT.md`, downstream legal audit builders |
 | `artifacts/reference/legal/conditional-asset-audit.json` | `schema/conditional-asset-audit.schema.json` | `scripts/legal/inventory-conditional-assets.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/CONDITIONAL-ASSET-PROVENANCE-AUDIT.md`, downstream legal audit builders |
 | `artifacts/reference/legal/notice-readiness-audit.json` | `schema/notice-readiness-audit.schema.json` | `scripts/legal/build-notice-readiness.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/NOTICE-READINESS-AUDIT.md`, operator/legal review before `NOTICE` cutover |
@@ -347,6 +349,7 @@ The produced/consumed table lists implementation entry points. When more than on
 - `schema/apache-license-cutover-readiness-audit.schema.json`
 - `schema/apache-license-cutover-approval-readiness-audit.schema.json`
 - `schema/quality-scorecard.schema.json`
+- `schema/quality-baseline.schema.json`
 - `schema/report-envelope.schema.json`
 - `schema/spec-validation-report.schema.json`
 - `schema/trace-bundle.schema.json`
@@ -414,6 +417,7 @@ The produced/consumed table lists implementation entry points. When more than on
 | `artifacts/**/*.provenance.json` | `schema/ci-artifact-provenance-v1.schema.json` | `scripts/ci/write-artifact-provenance.mjs`、Policy Gate / PR Maintenance / Quality Gates / SBOM / formal aggregate などの CI decision・publisher workflow | `scripts/ci/validate-artifact-provenance.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, trusted workflow-run publisher。subject digest を producer repository / workflow ref / run id / run attempt / PR number / head SHA に bind する |
 | `artifacts/ci/harness-health.json` | `schema/harness-health.schema.json` | `scripts/ci/build-harness-health.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/ci-extended.yml` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/agents/build-hook-feedback.mjs`, `scripts/change-package/generate.mjs` |
 | `artifacts/quality/quality-scorecard.json` | `schema/quality-scorecard.schema.json` | `scripts/quality/build-quality-scorecard.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-quality-scorecard.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
+| `artifacts/quality/code-quality-baseline.json` | `schema/quality-baseline.schema.json` | `scripts/quality/collect-code-quality-baseline.mjs`, `pnpm run quality:baseline`。debt ledger source は `docs/quality/code-quality-debt-ledger.json` | `scripts/ci/validate-json.mjs`, `docs/quality/CODE-QUALITY-BASELINE.md`。type/lint/dependency-boundary status、architecture plane ownership、exception count、cleanup candidate を report-only で可視化し、通常PRの blocking gate は追加しない |
 | `artifacts/reference/legal/license-scope-audit.json` | `schema/license-scope-audit.schema.json` | `scripts/legal/inventory-license-scope.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/LICENSE-MIGRATION-AUDIT.md`, downstream legal audit builders |
 | `artifacts/reference/legal/conditional-asset-audit.json` | `schema/conditional-asset-audit.schema.json` | `scripts/legal/inventory-conditional-assets.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/CONDITIONAL-ASSET-PROVENANCE-AUDIT.md`, downstream legal audit builders |
 | `artifacts/reference/legal/notice-readiness-audit.json` | `schema/notice-readiness-audit.schema.json` | `scripts/legal/build-notice-readiness.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/NOTICE-READINESS-AUDIT.md`, operator/legal review before `NOTICE` cutover |

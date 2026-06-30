@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/quality-baseline.schema.json",
+  "title": "Code Quality Baseline",
+  "description": "Report-only code quality baseline artifact for architecture guardrails, local/CI command status, and known debt exceptions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "generatedAt",
+    "repo",
+    "enforcement",
+    "qualityChecks",
+    "architecturePlanes",
+    "scriptWorkflowInventory",
+    "publicEntrypoints",
+    "dependencyBoundaries",
+    "debtLedger",
+    "topCleanupCandidates",
+    "findings"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "quality-baseline/v1"
+    },
+    "contractId": {
+      "const": "quality-baseline.v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "root", "packageManager"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "minLength": 1 },
+        "packageManager": { "type": "string", "minLength": 1 }
+      }
+    },
+    "enforcement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "policy", "ordinaryPrBlocking", "promotionRule"],
+      "properties": {
+        "mode": { "const": "report-only" },
+        "policy": { "type": "string", "minLength": 1 },
+        "ordinaryPrBlocking": { "const": false },
+        "promotionRule": { "type": "string", "minLength": 1 }
+      }
+    },
+    "qualityChecks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/qualityCheck" }
+    },
+    "architecturePlanes": {
+      "type": "array",
+      "minItems": 5,
+      "items": { "$ref": "#/$defs/architecturePlane" }
+    },
+    "scriptWorkflowInventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageScripts", "qualityScripts", "ciScripts", "githubWorkflows"],
+      "properties": {
+        "packageScripts": { "$ref": "#/$defs/inventoryBucket" },
+        "qualityScripts": { "$ref": "#/$defs/inventoryBucket" },
+        "ciScripts": { "$ref": "#/$defs/inventoryBucket" },
+        "githubWorkflows": { "$ref": "#/$defs/inventoryBucket" }
+      }
+    },
+    "publicEntrypoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageBins", "publicScripts"],
+      "properties": {
+        "packageBins": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/namePathPair" }
+        },
+        "publicScripts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scriptEntrypoint" }
+        }
+      }
+    },
+    "dependencyBoundaries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/dependencyBoundary" }
+    },
+    "debtLedger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "exceptionCount", "items"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "exceptionCount": { "type": "integer", "minimum": 0 },
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/debtItem" }
+        }
+      }
+    },
+    "topCleanupCandidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/cleanupCandidate" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    }
+  },
+  "$defs": {
+    "qualityCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "category", "command", "status", "reportOnly", "rationale"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "category": {
+          "type": "string",
+          "enum": ["type-safety", "lint", "tests", "docs", "dependency-boundaries", "schemas"]
+        },
+        "command": { "type": "string", "minLength": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["configured", "missing", "not_run", "pass", "fail"]
+        },
+        "reportOnly": { "type": "boolean" },
+        "rationale": { "type": "string", "minLength": 1 },
+        "exitCode": { "type": ["integer", "null"] }
+      }
+    },
+    "architecturePlane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plane", "owner", "primaryPaths", "guardrails"],
+      "properties": {
+        "plane": {
+          "type": "string",
+          "enum": ["Control", "Policy", "Execution", "Evidence", "Observability"]
+        },
+        "owner": { "type": "string", "minLength": 1 },
+        "primaryPaths": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "guardrails": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "inventoryBucket": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "sample"],
+      "properties": {
+        "count": { "type": "integer", "minimum": 0 },
+        "sample": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "namePathPair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "path"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 }
+      }
+    },
+    "scriptEntrypoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "command"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "command": { "type": "string", "minLength": 1 }
+      }
+    },
+    "dependencyBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "command", "status", "reportOnly", "scope", "guardrail"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "command": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["configured", "missing", "not_run", "pass", "fail"] },
+        "reportOnly": { "type": "boolean" },
+        "scope": { "type": "string", "minLength": 1 },
+        "guardrail": { "type": "string", "minLength": 1 },
+        "exitCode": { "type": ["integer", "null"] }
+      }
+    },
+    "debtItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "owner", "reason", "reviewAfter", "targetCleanupSurface", "source"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "owner": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "reviewAfter": { "type": "string", "format": "date" },
+        "targetCleanupSurface": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "links": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "cleanupCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "category", "severity", "target", "reason"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "enum": ["low", "medium", "high"] },
+        "target": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "message", "reportOnly"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "enum": ["info", "warn", "error"] },
+        "message": { "type": "string", "minLength": 1 },
+        "reportOnly": { "type": "boolean" }
+      }
+    }
+  }
+}

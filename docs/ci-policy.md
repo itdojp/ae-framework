@@ -26,6 +26,7 @@ This document defines CI policies to keep PR experience fast and stable while ma
   - Lint baseline enforcement via `node scripts/quality/check-lint-summary.mjs`
   - TDD smoke validation via `node scripts/quality/tdd-smoke-check.mjs`
 - Copilot Review Gate（Copilotレビューの存在と未解決スレッドなし）
+- Code quality baseline (`pnpm run quality:baseline`, `artifacts/quality/code-quality-baseline.json`) is report-only. It records type/lint/dependency-boundary status, debt-ledger counts, and cleanup candidates, but does not add a required check until a later policy PR explicitly promotes a metric.
 - Lockfile reproducibility:
   - `required-lane` workflows and any reusable workflows they invoke fail fast with `pnpm install --frozen-lockfile`
   - exception lane categories (source of truth for `--no-frozen-lockfile`):
@@ -183,6 +184,7 @@ CI Extended restores cached heavy test artifacts (`.cache/test-results`) when re
   - `node scripts/quality/check-lint-summary.mjs` による lint ベースライン差分チェック
   - `node scripts/quality/tdd-smoke-check.mjs` による TDD スモーク検証
 - Copilot Review Gate（Copilotレビューの存在と未解決スレッドなし）
+- Code quality baseline（`pnpm run quality:baseline`, `artifacts/quality/code-quality-baseline.json`）は report-only。type/lint/dependency-boundary status、debt-ledger count、cleanup candidate を記録するが、後続の policy PR で metric 昇格を明示するまで Required check には追加しない。
 - lockfile 再現性:
   - `required-lane` およびその reusable workflow 経路では `pnpm install --frozen-lockfile` で fail-fast させる
   - `--no-frozen-lockfile` の例外カテゴリ定義:

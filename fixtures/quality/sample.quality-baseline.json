@@ -1,0 +1,373 @@
+{
+  "schemaVersion": "quality-baseline/v1",
+  "contractId": "quality-baseline.v1",
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "repo": {
+    "name": "ae-framework",
+    "root": ".",
+    "packageManager": "pnpm@10.0.0"
+  },
+  "enforcement": {
+    "mode": "report-only",
+    "policy": "Issue #3547 establishes visibility first; ordinary PRs must not be blocked by this baseline until a later promotion issue changes policy.",
+    "ordinaryPrBlocking": false,
+    "promotionRule": "Promote an individual metric only after the metric is deterministic, documented, fixture-backed, and explicitly added to the policy gate in a later PR."
+  },
+  "qualityChecks": [
+    {
+      "id": "types-check",
+      "category": "type-safety",
+      "command": "pnpm run types:check",
+      "status": "configured",
+      "reportOnly": true,
+      "rationale": "TypeScript verification covers compile-time type safety for the configured verification tsconfig.",
+      "exitCode": null
+    },
+    {
+      "id": "lint",
+      "category": "lint",
+      "command": "pnpm run lint",
+      "status": "configured",
+      "reportOnly": true,
+      "rationale": "ESLint remains the primary local lint debt signal.",
+      "exitCode": null
+    },
+    {
+      "id": "test-fast",
+      "category": "tests",
+      "command": "pnpm run test:fast",
+      "status": "configured",
+      "reportOnly": true,
+      "rationale": "Fast tests are the ordinary PR regression baseline.",
+      "exitCode": null
+    },
+    {
+      "id": "doc-consistency",
+      "category": "docs",
+      "command": "pnpm -s run check:doc-consistency",
+      "status": "configured",
+      "reportOnly": true,
+      "rationale": "Documentation path, command, and contract consistency stays part of the quality baseline.",
+      "exitCode": null
+    },
+    {
+      "id": "validate-json",
+      "category": "schemas",
+      "command": "node scripts/ci/validate-json.mjs",
+      "status": "configured",
+      "reportOnly": true,
+      "rationale": "Schema/fixture validation is tracked as a quality evidence route even when invoked directly.",
+      "exitCode": null
+    }
+  ],
+  "architecturePlanes": [
+    {
+      "plane": "Control",
+      "owner": "architecture-maintainers",
+      "primaryPaths": [
+        "docs/spec/context-pack.md",
+        "spec/context-pack/boundary-map.json",
+        "docs/reference/CONTRACT-CATALOG.md"
+      ],
+      "guardrails": [
+        "Context Pack and boundary-map changes must be validated before implementation slices claim compatibility.",
+        "New artifact contracts are cataloged before downstream producers consume them."
+      ]
+    },
+    {
+      "plane": "Policy",
+      "owner": "policy-maintainers",
+      "primaryPaths": [
+        "policy/risk-policy.yml",
+        "scripts/ci/policy-gate.mjs",
+        "docs/ci-policy.md"
+      ],
+      "guardrails": [
+        "Risk and enforcement decisions stay in policy-owned files, not ad hoc workflow branches.",
+        "Report-only signals are promoted to blocking only after documented stability evidence."
+      ]
+    },
+    {
+      "plane": "Execution",
+      "owner": "runtime-maintainers",
+      "primaryPaths": [
+        "package.json",
+        "scripts/ci/",
+        "scripts/quality/",
+        ".github/workflows/"
+      ],
+      "guardrails": [
+        "Local commands and CI workflows must share named package scripts where practical.",
+        "Compatibility routes require explicit debt-ledger entries and review dates."
+      ]
+    },
+    {
+      "plane": "Evidence",
+      "owner": "evidence-maintainers",
+      "primaryPaths": [
+        "schema/",
+        "fixtures/",
+        "artifacts/quality/"
+      ],
+      "guardrails": [
+        "Machine-readable artifacts need schema coverage and fixture validation.",
+        "Known exceptions are represented as data rather than hidden comments."
+      ]
+    },
+    {
+      "plane": "Observability",
+      "owner": "observability-maintainers",
+      "primaryPaths": [
+        "docs/product/EFFECTIVENESS-METRICS.md",
+        "scripts/metrics/",
+        "artifacts/metrics/"
+      ],
+      "guardrails": [
+        "Operational quality trends start as report-only metrics.",
+        "Stop rules and escalation decisions reference observable evidence rather than reviewer memory."
+      ]
+    }
+  ],
+  "scriptWorkflowInventory": {
+    "packageScripts": {
+      "count": 425,
+      "sample": [
+        "accessibility:analyze",
+        "accessibility:full",
+        "accessibility:lighthouse",
+        "accessibility:test",
+        "ae-framework",
+        "agent:code",
+        "agent:test",
+        "agents:build",
+        "analyze:demo",
+        "api:check",
+        "api:diff",
+        "api:emit",
+        "api:report",
+        "api:snapshot",
+        "api:sync-targets",
+        "api:update",
+        "artifacts:aggregate",
+        "artifacts:validate",
+        "assurance:e2e",
+        "assurance:post-review-surface"
+      ]
+    },
+    "qualityScripts": {
+      "count": 8,
+      "sample": [
+        "scripts/quality/bench-compare.mjs",
+        "scripts/quality/build-quality-scorecard.mjs",
+        "scripts/quality/check-lint-summary.mjs",
+        "scripts/quality/collect-code-quality-baseline.mjs",
+        "scripts/quality/render-quality-pr-comment.mjs",
+        "scripts/quality/run.mjs",
+        "scripts/quality/tdd-smoke-check.mjs",
+        "scripts/quality/ts-inventory.mjs"
+      ]
+    },
+    "ciScripts": {
+      "count": 61,
+      "sample": [
+        "scripts/ci/assert-workflow-dispatch-actor.mjs",
+        "scripts/ci/auto-merge-eligible.mjs",
+        "scripts/ci/auto-merge-enabler.mjs",
+        "scripts/ci/automation-observability-alert.mjs",
+        "scripts/ci/automation-observability-weekly.mjs",
+        "scripts/ci/bench-runset.mjs",
+        "scripts/ci/build-harness-health.mjs",
+        "scripts/ci/check-bins.mjs",
+        "scripts/ci/check-docs-doctest-policy-sync.mjs",
+        "scripts/ci/check-expect-error.mjs",
+        "scripts/ci/check-generate-artifacts-diff.mjs",
+        "scripts/ci/check-no-root-generated-files.mjs",
+        "scripts/ci/check-package-manager.mjs",
+        "scripts/ci/check-required-artifacts.mjs",
+        "scripts/ci/check-root-layout.mjs",
+        "scripts/ci/check-run-manifest.mjs",
+        "scripts/ci/check-schema-id-policy.mjs",
+        "scripts/ci/check-todo-issue-links.mjs",
+        "scripts/ci/codex-autopilot-lane.mjs",
+        "scripts/ci/compare-bench.mjs"
+      ]
+    },
+    "githubWorkflows": {
+      "count": 61,
+      "sample": [
+        ".github/workflows/adapter-thresholds.yml",
+        ".github/workflows/ae-ci.yml",
+        ".github/workflows/agent-commands.yml",
+        ".github/workflows/automation-observability-weekly.yml",
+        ".github/workflows/branch-protection-apply.yml",
+        ".github/workflows/cedar-quality-gates.yml",
+        ".github/workflows/ci-auto-rerun-failed.yml",
+        ".github/workflows/ci-core.yml",
+        ".github/workflows/ci-extended.yml",
+        ".github/workflows/ci-fast.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/codegen-drift-check.yml",
+        ".github/workflows/codex-autopilot-lane.yml",
+        ".github/workflows/context-pack-quality-gate.yml",
+        ".github/workflows/copilot-auto-fix.yml",
+        ".github/workflows/copilot-review-gate.yml",
+        ".github/workflows/coverage-check.yml",
+        ".github/workflows/demo-smoke.yml",
+        ".github/workflows/docker-tests.yml",
+        ".github/workflows/docs-doctest.yml"
+      ]
+    }
+  },
+  "publicEntrypoints": {
+    "packageBins": [
+      {
+        "name": "ae",
+        "path": "./dist/src/cli/index.js"
+      },
+      {
+        "name": "ae-approve",
+        "path": "./dist/src/cli/approval-cli.js"
+      },
+      {
+        "name": "ae-benchmark",
+        "path": "./dist/src/cli/benchmark-cli.js"
+      },
+      {
+        "name": "ae-framework",
+        "path": "./dist/src/cli/index.js"
+      },
+      {
+        "name": "ae-phase",
+        "path": "./dist/src/cli/phase-cli.js"
+      },
+      {
+        "name": "ae-resilience",
+        "path": "./dist/src/cli/resilience-cli.js"
+      },
+      {
+        "name": "ae-sbom",
+        "path": "./dist/src/cli/sbom-cli.js"
+      },
+      {
+        "name": "ae-server",
+        "path": "./dist/src/cli/server-runner.js"
+      },
+      {
+        "name": "ae-slash",
+        "path": "./dist/src/cli/slash-cli.js"
+      },
+      {
+        "name": "ae-ui",
+        "path": "./dist/src/cli/ae-ui-alias.js"
+      }
+    ],
+    "publicScripts": [
+      {
+        "name": "ae-framework",
+        "command": "tsx src/cli/index.ts"
+      },
+      {
+        "name": "check:doc-consistency",
+        "command": "node scripts/docs/check-doc-consistency-all.mjs"
+      },
+      {
+        "name": "lint",
+        "command": "eslint ."
+      },
+      {
+        "name": "lint:deps",
+        "command": "madge --circular --extensions ts src"
+      },
+      {
+        "name": "test:fast",
+        "command": "vitest run --exclude \"tests/testing/intelligent-test-selection.test.ts\" --exclude \"tests/examples/**\" --exclude \"tests/docker/**\" --exclude \"examples/**\" --exclude \"**/__e2e__/**\" --exclude \"tests/a11y/**\" --exclude \"tests/property/**\" --exclude \"tests/security/**\" --exclude \"tests/integration/**\" --exclude \"tests/resilience/integration.test.ts\" --exclude \"tests/conformance/**\" --exclude \"tests/cegis/**\" --exclude \"tests/cli/**\" --exclude \"tests/commands/**\" --exclude \"tests/api/**\" --exclude \"tests/tdd-setup.test.ts\""
+      },
+      {
+        "name": "types:check",
+        "command": "tsc -p configs/tsconfig/tsconfig.verify.json --noEmit"
+      }
+    ]
+  },
+  "dependencyBoundaries": [
+    {
+      "id": "lint-deps-cycles",
+      "command": "pnpm run lint:deps",
+      "status": "configured",
+      "reportOnly": true,
+      "scope": "src import graph",
+      "guardrail": "Madge circular import checks keep dependency cycles visible.",
+      "exitCode": null
+    },
+    {
+      "id": "context-pack-deps",
+      "command": "pnpm run context-pack:deps",
+      "status": "configured",
+      "reportOnly": true,
+      "scope": "Context Pack implementation slices",
+      "guardrail": "Context Pack dependency checks prevent design boundary drift.",
+      "exitCode": null
+    }
+  ],
+  "debtLedger": {
+    "path": "docs/quality/code-quality-debt-ledger.json",
+    "exceptionCount": 1,
+    "items": [
+      {
+        "id": "quality-scorecard-legacy-route",
+        "owner": "quality-maintainers",
+        "reason": "The legacy quality:scorecard compatibility route remains available while workflow and operator callers finish migrating to the v1 input contract.",
+        "reviewAfter": "2026-09-30",
+        "targetCleanupSurface": "scripts/quality-scorecard-generator.js; package.json quality:scorecard; docs/reference/CONTRACT-CATALOG.md compatibility route",
+        "source": "docs/reference/CONTRACT-CATALOG.md#compatibility-routes",
+        "links": [
+          "scripts/quality-scorecard-generator.js",
+          "scripts/quality/build-quality-scorecard.mjs",
+          "schema/quality-scorecard.schema.json"
+        ]
+      }
+    ]
+  },
+  "topCleanupCandidates": [
+    {
+      "id": "github-workflow-sprawl",
+      "category": "script-workflow-sprawl",
+      "severity": "medium",
+      "target": ".github/workflows",
+      "reason": "Workflow inventory currently has 61 entries; prefer shared scripts and publisher patterns for new workflow behavior."
+    },
+    {
+      "id": "package-script-sprawl",
+      "category": "script-workflow-sprawl",
+      "severity": "medium",
+      "target": "package.json scripts",
+      "reason": "Package script inventory currently has 425 entries; group or alias commands when adding new operational routes."
+    },
+    {
+      "id": "quality-scorecard-legacy-route",
+      "category": "debt-ledger",
+      "severity": "medium",
+      "target": "scripts/quality-scorecard-generator.js; package.json quality:scorecard; docs/reference/CONTRACT-CATALOG.md compatibility route",
+      "reason": "The legacy quality:scorecard compatibility route remains available while workflow and operator callers finish migrating to the v1 input contract."
+    }
+  ],
+  "findings": [
+    {
+      "id": "cleanup-candidate-count",
+      "severity": "warn",
+      "message": "Baseline reports 3 top cleanup candidate(s).",
+      "reportOnly": true
+    },
+    {
+      "id": "debt-ledger-exceptions",
+      "severity": "warn",
+      "message": "Debt ledger contains 1 tracked exception(s).",
+      "reportOnly": true
+    },
+    {
+      "id": "report-only-baseline",
+      "severity": "info",
+      "message": "Code quality baseline is report-only and does not add a blocking PR gate.",
+      "reportOnly": true
+    }
+  ]
+}

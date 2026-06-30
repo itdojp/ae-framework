@@ -111,6 +111,7 @@
     "license:audit:approval": "node scripts/legal/build-apache-license-cutover-approval-readiness.mjs",
     "license:audit:precutover": "node scripts/legal/run-license-cutover-preflight.mjs",
     "quality:scorecard:v1": "node scripts/quality/build-quality-scorecard.mjs",
+    "quality:baseline": "node scripts/quality/collect-code-quality-baseline.mjs",
     "quality:scorecard:validate": "node scripts/ci/validate-quality-scorecard.mjs",
     "discovery-pack:validate": "node scripts/discovery-pack/validate.mjs",
     "discovery-pack:compile": "node scripts/discovery-pack/compile.mjs",

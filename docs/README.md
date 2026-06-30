@@ -251,6 +251,7 @@ Current verification baseline, assurance model, artifact contracts, automation p
 - Testing portfolio and coverage baseline: `testing/README.md`
 - Security Assurance Lane: `security/security-assurance-lane.md`
 - Quality scorecard: `quality/quality-scorecard.md`
+- Code quality baseline: `quality/CODE-QUALITY-BASELINE.md`
 - Automation observability: `ci/automation-observability.md`
 - Reason codes registry: `ci/reason-codes.md`
 - UI semantic E2E lane: `quality/ui-e2e-lane.md`
@@ -436,6 +437,7 @@ Claude CodeやMCPとの統合
 
 - [testing/README.md](./testing/README.md) - テスト体系、実行コマンド、CI label、coverage baseline 運用の入口
 - [ASSURANCE-MODEL.md](./quality/ASSURANCE-MODEL.md) - claim / level / lane / evidence kind の共通モデル
+- [CODE-QUALITY-BASELINE.md](./quality/CODE-QUALITY-BASELINE.md) - コード品質ベースライン（report-only artifact / debt ledger / plane ownership）
 - **[formal-gates.md](./quality/formal-gates.md)** ⭐ フォーマル品質ゲート（v0.2 DoD）
 - **[formal-csp.md](./quality/formal-csp.md)** ⭐ CSP 検証（cspx 連携・summary/result 契約）
 - **[formal-full-run.md](./quality/formal-full-run.md)** ⭐ 全形式ツールのスモークテスト（CSP/Lean 含む）
