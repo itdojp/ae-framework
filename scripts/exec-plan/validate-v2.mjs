@@ -348,6 +348,17 @@ export function renderExecPlanMarkdown(plan) {
       ['Kind', 'Ref', 'Path', 'Description'],
     ),
     '',
+    '### Spec Kit references',
+    '',
+    ...(
+      (plan.context.specKitRefs || []).length > 0
+        ? table(
+            plan.context.specKitRefs.map((item) => ({ Kind: item.kind, Ref: item.refId, Path: item.path ? `\`${item.path}\`` : '', Description: item.description || '' })),
+            ['Kind', 'Ref', 'Path', 'Description'],
+          )
+        : ['- None.']
+    ),
+    '',
     '## Task graph',
     '',
     ...table(

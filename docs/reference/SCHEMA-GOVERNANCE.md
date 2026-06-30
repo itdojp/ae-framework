@@ -281,3 +281,7 @@ Preview から stable への昇格には、同一 PR または linked issue で�
 ### 14. Re-evaluation 3 variance report schema
 
 `schema/variance-report.schema.json` uses the canonical `$id` form `https://ae-framework/schema/variance-report.schema.json`. It is an evidence contract for `artifacts/quality/variance-report.json`; findings remain report-only until a later policy change explicitly promotes a variance category to enforcement.
+
+### 15. Spec Kit bridge report schema
+
+`schema/spec-kit-bridge-report.schema.json` uses the canonical `$id` form `https://ae-framework/schema/spec-kit-bridge-report.schema.json`. It is an evidence contract for `artifacts/spec-kit/spec-kit-bridge-report.json`, produced by `scripts/spec-kit/import-feature.mjs`. Findings remain report-only; `warning` identifies missing or ambiguous Spec Kit mappings without failing ordinary usage.

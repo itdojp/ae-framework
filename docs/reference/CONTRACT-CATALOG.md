@@ -105,6 +105,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/quality-scorecard.schema.json`
 - `schema/quality-baseline.schema.json`
 - `schema/variance-report.schema.json`
+- `schema/spec-kit-bridge-report.schema.json`
 - `schema/report-envelope.schema.json`
 - `schema/spec-validation-report.schema.json`
 - `schema/trace-bundle.schema.json`
@@ -179,6 +180,7 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/quality/quality-scorecard.json` | `schema/quality-scorecard.schema.json` | `scripts/quality/build-quality-scorecard.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-quality-scorecard.mjs`, `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/ci/validate-json.mjs`, `scripts/summary/render-pr-summary.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/quality/code-quality-baseline.json` | `schema/quality-baseline.schema.json` | `scripts/quality/collect-code-quality-baseline.mjs`, `pnpm run quality:baseline`; debt ledger source `docs/quality/code-quality-debt-ledger.json` | `scripts/ci/validate-json.mjs`, `docs/quality/CODE-QUALITY-BASELINE.md`; report-only baseline for type/lint/dependency-boundary status, architecture plane ownership, exception counts, and cleanup candidates; no ordinary PR blocking gate is added |
 | `artifacts/quality/variance-report.json` | `schema/variance-report.schema.json` | `scripts/quality/compare-judgment-artifacts.mjs`, `pnpm run quality:variance`; fixture inputs under `fixtures/variance/` | `scripts/ci/validate-json.mjs`, `docs/quality/VARIANCE-REDUCTION-POLICY.md`; report-only comparison of normalized judgment artifacts, input hashes, expected volatile differences, and drift findings; no ordinary PR blocking gate is added |
+| `artifacts/spec-kit/spec-kit-bridge-report.json` | `schema/spec-kit-bridge-report.schema.json` | `scripts/spec-kit/import-feature.mjs` (`pnpm run spec-kit:import-feature`), fixtures under `fixtures/spec-kit/` | `scripts/ci/validate-json.mjs`, `tests/scripts/spec-kit-bridge.test.ts`, `docs/integrations/SPEC-KIT-BRIDGE.md`; report-only interoperability mapping from GitHub Spec Kit constitution/spec/plan/tasks/contracts into Context Pack and ExecPlan v2 references; `warning` results remain non-blocking unless a later policy issue promotes a finding class |
 | `artifacts/reference/legal/license-scope-audit.json` | `schema/license-scope-audit.schema.json` | `scripts/legal/inventory-license-scope.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/LICENSE-MIGRATION-AUDIT.md`, downstream legal audit builders |
 | `artifacts/reference/legal/conditional-asset-audit.json` | `schema/conditional-asset-audit.schema.json` | `scripts/legal/inventory-conditional-assets.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/CONDITIONAL-ASSET-PROVENANCE-AUDIT.md`, downstream legal audit builders |
 | `artifacts/reference/legal/notice-readiness-audit.json` | `schema/notice-readiness-audit.schema.json` | `scripts/legal/build-notice-readiness.mjs` | `scripts/ci/validate-json.mjs`, `docs/project/NOTICE-READINESS-AUDIT.md`, operator/legal review before `NOTICE` cutover |
@@ -355,6 +357,7 @@ The produced/consumed table lists implementation entry points. When more than on
 - `schema/quality-scorecard.schema.json`
 - `schema/quality-baseline.schema.json`
 - `schema/variance-report.schema.json`
+- `schema/spec-kit-bridge-report.schema.json`
 - `schema/report-envelope.schema.json`
 - `schema/spec-validation-report.schema.json`
 - `schema/trace-bundle.schema.json`

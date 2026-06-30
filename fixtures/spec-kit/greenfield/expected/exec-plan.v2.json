@@ -1,0 +1,520 @@
+{
+  "schemaVersion": "exec-plan/v2",
+  "contractId": "exec-plan.v2",
+  "planId": "spec-kit-001-reservation-approval-bridge",
+  "title": "Spec Kit bridge import for Reservation Approval",
+  "lifecycle": "preview",
+  "intent": {
+    "summary": "Import Spec Kit feature Reservation Approval into ae-framework assurance review inputs.",
+    "objective": "Preserve requirement, plan, task, contract, and verification references in Context Pack and ExecPlan v2 without requiring Spec Kit for normal ae-framework usage.",
+    "sourceReferences": [
+      {
+        "kind": "issue",
+        "id": "#3550",
+        "url": "https://github.com/itdojp/ae-framework/issues/3550",
+        "description": "Source Issue for Spec Kit bridge work."
+      },
+      {
+        "kind": "spec-kit",
+        "id": "001-reservation-approval",
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval",
+        "description": "Spec Kit feature directory."
+      },
+      {
+        "kind": "document",
+        "id": "spec-kit-upstream",
+        "description": "GitHub Spec Kit upstream workflow and templates."
+      }
+    ],
+    "nonGoals": [
+      "Do not vendor or fork GitHub Spec Kit.",
+      "Do not execute Spec Kit agent commands or task-to-issues side effects.",
+      "Do not make bridge findings blocking in this preview issue."
+    ]
+  },
+  "scope": {
+    "inScope": [
+      "Read Spec Kit feature artifacts and emit ae-framework-compatible report-only artifacts.",
+      "Map requirements, plans, tasks, contracts, and verification references into Context Pack and ExecPlan v2 surfaces."
+    ],
+    "outOfScope": [
+      "Hosted orchestrator implementation.",
+      "Spec Kit command execution or GitHub Issue creation.",
+      "Policy-gate enforcement changes."
+    ],
+    "targetFiles": [
+      {
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+        "changeType": "read-only",
+        "reason": "spec source consumed by the bridge importer."
+      },
+      {
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/plan.md",
+        "changeType": "read-only",
+        "reason": "plan source consumed by the bridge importer."
+      },
+      {
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+        "changeType": "read-only",
+        "reason": "tasks source consumed by the bridge importer."
+      },
+      {
+        "path": "fixtures/spec-kit/greenfield/.specify/memory/constitution.md",
+        "changeType": "read-only",
+        "reason": "constitution source consumed by the bridge importer."
+      },
+      {
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/contracts/reservation-api.openapi.yaml",
+        "changeType": "read-only",
+        "reason": "contract source consumed by the bridge importer."
+      }
+    ],
+    "affectedContracts": [
+      {
+        "contractId": "spec-kit-bridge-report",
+        "schemaPath": "schema/spec-kit-bridge-report.schema.json",
+        "lifecycle": "preview",
+        "reason": "New report-only bridge artifact emitted by the importer."
+      },
+      {
+        "contractId": "context-pack-v1",
+        "schemaPath": "schema/context-pack-v1.schema.json",
+        "lifecycle": "stable",
+        "reason": "Bridge emits a fixture-compatible Context Pack import artifact."
+      },
+      {
+        "contractId": "exec-plan.v2",
+        "schemaPath": "schema/exec-plan.v2.schema.json",
+        "lifecycle": "preview",
+        "reason": "Bridge emits a fixture-compatible ExecPlan v2 import artifact."
+      }
+    ]
+  },
+  "context": {
+    "contextPackRefs": [
+      {
+        "kind": "context-pack",
+        "refId": "spec-kit-001-reservation-approval-context-pack",
+        "path": "fixtures/spec-kit/greenfield/expected/context-pack.import.json",
+        "description": "Generated Context Pack import artifact."
+      }
+    ],
+    "assuranceRefs": {
+      "mode": "report-only",
+      "profiles": [],
+      "claimRefs": [
+        "FR-001",
+        "FR-002",
+        "FR-003"
+      ],
+      "summaryArtifacts": [
+        "artifacts/assurance/assurance-summary.json"
+      ]
+    },
+    "specKitRefs": [
+      {
+        "kind": "spec-kit-spec",
+        "refId": "001-reservation-approval.spec",
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/spec.md",
+        "description": "Spec Kit feature specification."
+      },
+      {
+        "kind": "spec-kit-plan",
+        "refId": "001-reservation-approval.plan",
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/plan.md",
+        "description": "Spec Kit implementation plan."
+      },
+      {
+        "kind": "spec-kit-task",
+        "refId": "001-reservation-approval.tasks",
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/tasks.md",
+        "description": "Spec Kit generated task list."
+      },
+      {
+        "kind": "artifact-contract",
+        "refId": "contract.reservation-api-openapi",
+        "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval/contracts/reservation-api.openapi.yaml",
+        "description": "Spec Kit contract artifact (openapi)."
+      }
+    ]
+  },
+  "taskGraph": {
+    "nodes": [
+      {
+        "id": "task.import-spec-kit",
+        "title": "Import Spec Kit feature artifacts",
+        "kind": "analysis",
+        "owner": "agent",
+        "status": "planned",
+        "dependsOn": [],
+        "evidenceRequirementRefs": [
+          "ev.spec-kit-bridge-report"
+        ],
+        "commands": [
+          {
+            "id": "cmd.spec-kit-import",
+            "command": "pnpm run spec-kit:import-feature -- --feature-dir fixtures/spec-kit/greenfield/specs/001-reservation-approval --output-dir artifacts/spec-kit",
+            "purpose": "Generate bridge report, Context Pack import, and ExecPlan v2 import artifacts.",
+            "when": "local-validation",
+            "expectedArtifactRefs": [
+              "artifact.spec-kit-bridge-report",
+              "artifact.context-pack-import",
+              "artifact.exec-plan-v2-import"
+            ]
+          }
+        ],
+        "outputArtifactRefs": [
+          "artifact.spec-kit-bridge-report",
+          "artifact.context-pack-import",
+          "artifact.exec-plan-v2-import"
+        ]
+      },
+      {
+        "id": "task.t001",
+        "title": "Create reservation approval fixture directory and schema references",
+        "kind": "implementation",
+        "owner": "either",
+        "status": "planned",
+        "dependsOn": [
+          "task.import-spec-kit"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.spec-kit-bridge-report",
+          "ev.context-pack-import",
+          "ev.exec-plan-v2-import"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.spec-kit-bridge-report"
+        ]
+      },
+      {
+        "id": "task.t002",
+        "title": "Add bridge report validation command to local verification",
+        "kind": "implementation",
+        "owner": "either",
+        "status": "planned",
+        "dependsOn": [
+          "task.t001"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.spec-kit-bridge-report",
+          "ev.context-pack-import",
+          "ev.exec-plan-v2-import"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.spec-kit-bridge-report"
+        ]
+      },
+      {
+        "id": "task.t003",
+        "title": "Define approval event contract in contracts/reservation-api.openapi.yaml",
+        "kind": "implementation",
+        "owner": "either",
+        "status": "planned",
+        "dependsOn": [
+          "task.t002"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.spec-kit-bridge-report",
+          "ev.context-pack-import",
+          "ev.exec-plan-v2-import"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.spec-kit-bridge-report"
+        ]
+      },
+      {
+        "id": "task.t004",
+        "title": "Implement approval state transition for sufficient stock",
+        "kind": "implementation",
+        "owner": "either",
+        "status": "planned",
+        "dependsOn": [
+          "task.t003"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.spec-kit-bridge-report",
+          "ev.context-pack-import",
+          "ev.exec-plan-v2-import"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.spec-kit-bridge-report"
+        ]
+      },
+      {
+        "id": "task.t005",
+        "title": "Add automated approval scenario test",
+        "kind": "verification",
+        "owner": "either",
+        "status": "planned",
+        "dependsOn": [
+          "task.t004"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.spec-kit-bridge-report",
+          "ev.context-pack-import",
+          "ev.exec-plan-v2-import"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.spec-kit-bridge-report"
+        ]
+      },
+      {
+        "id": "task.t006",
+        "title": "Implement rejection path for insufficient stock",
+        "kind": "implementation",
+        "owner": "either",
+        "status": "planned",
+        "dependsOn": [
+          "task.t005"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.spec-kit-bridge-report",
+          "ev.context-pack-import",
+          "ev.exec-plan-v2-import"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.spec-kit-bridge-report"
+        ]
+      },
+      {
+        "id": "task.t007",
+        "title": "Add automated rejection scenario test",
+        "kind": "verification",
+        "owner": "either",
+        "status": "planned",
+        "dependsOn": [
+          "task.t006"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.spec-kit-bridge-report",
+          "ev.context-pack-import",
+          "ev.exec-plan-v2-import"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.spec-kit-bridge-report"
+        ]
+      },
+      {
+        "id": "task.t008",
+        "title": "Update assurance evidence documentation and rollback notes",
+        "kind": "implementation",
+        "owner": "either",
+        "status": "planned",
+        "dependsOn": [
+          "task.t007"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.spec-kit-bridge-report",
+          "ev.context-pack-import",
+          "ev.exec-plan-v2-import"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.spec-kit-bridge-report"
+        ]
+      }
+    ]
+  },
+  "verificationProfile": {
+    "mode": "fast-lane",
+    "commands": [
+      {
+        "id": "cmd.spec-kit-import",
+        "command": "pnpm run spec-kit:import-feature -- --feature-dir fixtures/spec-kit/greenfield/specs/001-reservation-approval --output-dir artifacts/spec-kit",
+        "purpose": "Regenerate bridge artifacts and report missing or ambiguous mappings.",
+        "when": "local-validation",
+        "expectedArtifactRefs": [
+          "artifact.spec-kit-bridge-report",
+          "artifact.context-pack-import",
+          "artifact.exec-plan-v2-import"
+        ]
+      },
+      {
+        "id": "cmd.exec-plan-v2-validate",
+        "command": "pnpm run exec-plan:v2:validate -- --file fixtures/spec-kit/greenfield/expected/exec-plan.v2.json",
+        "purpose": "Validate generated ExecPlan v2 artifact.",
+        "when": "pre-merge",
+        "expectedArtifactRefs": [
+          "artifact.exec-plan-v2-import"
+        ]
+      },
+      {
+        "id": "cmd.schema-validation",
+        "command": "node scripts/ci/validate-json.mjs",
+        "purpose": "Validate bridge report, Context Pack import, and ExecPlan v2 fixture schemas.",
+        "when": "pre-merge",
+        "expectedArtifactRefs": [
+          "artifact.spec-kit-bridge-report",
+          "artifact.context-pack-import",
+          "artifact.exec-plan-v2-import"
+        ]
+      }
+    ],
+    "requiredChecks": [
+      "verify-lite",
+      "policy-gate"
+    ],
+    "optionalChecks": [
+      "gate"
+    ]
+  },
+  "evidenceRequirements": [
+    {
+      "id": "ev.spec-kit-bridge-report",
+      "kind": "other",
+      "description": "Bridge report records detected mappings, unsupported fields, and missing/ambiguous references.",
+      "requiredBefore": "pr-review",
+      "producer": "scripts/spec-kit/import-feature.mjs",
+      "sourceRefs": [
+        {
+          "kind": "spec-kit",
+          "id": "001-reservation-approval",
+          "path": "fixtures/spec-kit/greenfield/specs/001-reservation-approval",
+          "description": "Spec Kit feature directory."
+        }
+      ],
+      "outputArtifactRefs": [
+        "artifact.spec-kit-bridge-report"
+      ]
+    },
+    {
+      "id": "ev.context-pack-import",
+      "kind": "context-pack",
+      "description": "Generated Context Pack import artifact is schema-compatible and keeps Spec Kit source paths.",
+      "requiredBefore": "pr-review",
+      "producer": "scripts/spec-kit/import-feature.mjs",
+      "outputArtifactRefs": [
+        "artifact.context-pack-import"
+      ]
+    },
+    {
+      "id": "ev.exec-plan-v2-import",
+      "kind": "exec-plan",
+      "description": "Generated ExecPlan v2 artifact is schema-compatible and records validation commands.",
+      "requiredBefore": "merge-judgment",
+      "producer": "scripts/spec-kit/import-feature.mjs",
+      "outputArtifactRefs": [
+        "artifact.exec-plan-v2-import"
+      ]
+    }
+  ],
+  "riskProfile": {
+    "selected": "risk:low",
+    "rationale": "The bridge is optional and report-only; it reads local Spec Kit artifacts and emits review artifacts without changing policy enforcement.",
+    "requiresHumanApproval": false,
+    "minHumanApprovals": 0,
+    "assuranceDecision": "report-only",
+    "policyRefs": [
+      {
+        "kind": "policy-rule",
+        "refId": "risk-policy",
+        "path": "policy/risk-policy.yml",
+        "description": "Repository risk label and policy-gate rules remain authoritative."
+      }
+    ]
+  },
+  "allowedActions": {
+    "automation": [
+      "read-repository",
+      "generate-artifact",
+      "run-local-command"
+    ],
+    "humanApprovalRequiredFor": [
+      "merge-pr",
+      "publish-release"
+    ],
+    "forbidden": []
+  },
+  "stopRules": [
+    {
+      "id": "stop.missing-feature-dir",
+      "severity": "blocker",
+      "condition": "The selected Spec Kit feature directory cannot be read.",
+      "action": "halt-and-record-blocker",
+      "evidenceRequirementRefs": [
+        "ev.spec-kit-bridge-report"
+      ]
+    },
+    {
+      "id": "stop.policy-promotion",
+      "severity": "warning",
+      "condition": "A bridge finding is proposed as a blocking policy condition in this preview issue.",
+      "action": "halt-and-ask-human",
+      "evidenceRequirementRefs": [
+        "ev.spec-kit-bridge-report"
+      ]
+    }
+  ],
+  "rollbackPlan": {
+    "strategy": "Remove generated bridge artifacts and importer wiring; source Spec Kit artifacts remain unchanged.",
+    "steps": [
+      "Delete generated artifacts under artifacts/spec-kit/ if created locally.",
+      "Remove spec-kit bridge report schema registration and docs links in a follow-up revert if needed.",
+      "Keep upstream Spec Kit source directories untouched."
+    ],
+    "validationCommands": [
+      {
+        "id": "cmd.rollback-validate-json",
+        "command": "node scripts/ci/validate-json.mjs",
+        "purpose": "Confirm schema registry remains valid after rollback.",
+        "when": "manual-review",
+        "expectedArtifactRefs": [
+          "artifact.spec-kit-bridge-report"
+        ]
+      }
+    ]
+  },
+  "outputArtifacts": [
+    {
+      "id": "artifact.spec-kit-bridge-report",
+      "path": "fixtures/spec-kit/greenfield/expected/spec-kit-bridge-report.json",
+      "contractId": "spec-kit-bridge-report",
+      "schemaPath": "schema/spec-kit-bridge-report.schema.json",
+      "description": "Report-only mapping from Spec Kit sources to ae-framework contracts.",
+      "producer": "scripts/spec-kit/import-feature.mjs",
+      "requiredBefore": "pr-review"
+    },
+    {
+      "id": "artifact.context-pack-import",
+      "path": "fixtures/spec-kit/greenfield/expected/context-pack.import.json",
+      "contractId": "context-pack-v1",
+      "schemaPath": "schema/context-pack-v1.schema.json",
+      "description": "Generated Context Pack fixture preserving Spec Kit requirement and task references.",
+      "producer": "scripts/spec-kit/import-feature.mjs",
+      "requiredBefore": "pr-review"
+    },
+    {
+      "id": "artifact.exec-plan-v2-import",
+      "path": "fixtures/spec-kit/greenfield/expected/exec-plan.v2.json",
+      "contractId": "exec-plan.v2",
+      "schemaPath": "schema/exec-plan.v2.schema.json",
+      "description": "Generated ExecPlan v2 fixture for the imported Spec Kit feature.",
+      "producer": "scripts/spec-kit/import-feature.mjs",
+      "requiredBefore": "pr-review"
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-06-30T00:00:00.000Z",
+    "generator": "scripts/spec-kit/import-feature.mjs",
+    "repository": "itdojp/ae-framework",
+    "sourceIssue": {
+      "kind": "issue",
+      "id": "#3550",
+      "url": "https://github.com/itdojp/ae-framework/issues/3550",
+      "description": "Source Issue for Spec Kit bridge work."
+    },
+    "notes": [
+      "Feature source: fixtures/spec-kit/greenfield/specs/001-reservation-approval",
+      "Detected 3 requirements, 2 user stories, 8 tasks, and 1 contracts.",
+      "Add an approval use case that reads inventory availability, records an auditable approval event, and renders review evidence."
+    ]
+  }
+}

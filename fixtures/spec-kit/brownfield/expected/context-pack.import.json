@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "name": "spec-kit-042-inventory-modernization-context-pack",
+  "problem_statement": {
+    "goals": [
+      "FR-001: Existing reservation APIs MUST remain backward compatible.",
+      "FR-002: Migration notes MUST identify any manual compatibility checks."
+    ],
+    "non_goals": [
+      "Do not vendor or fork GitHub Spec Kit.",
+      "Do not require Spec Kit for normal ae-framework usage.",
+      "Do not treat report-only bridge findings as merge approval."
+    ]
+  },
+  "domain_glossary": {
+    "terms": [
+      {
+        "term": "inventory-modernization",
+        "ja": "Spec Kit 取込フィーチャ",
+        "note": "Imported from fixtures/spec-kit/brownfield/specs/042-inventory-modernization"
+      },
+      {
+        "term": "spec-kit-bridge",
+        "ja": "Spec Kit 連携ブリッジ",
+        "note": "Report-only mapping into Context Pack and ExecPlan v2 references."
+      }
+    ]
+  },
+  "objects": [
+    {
+      "id": "SpecKitFeature.InventoryModernization",
+      "kind": "feature",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/spec.md",
+      "fields": [
+        "spec.md",
+        "plan.md",
+        "tasks.md",
+        "contracts/*"
+      ]
+    }
+  ],
+  "morphisms": [
+    {
+      "id": "ImportInventoryModernization",
+      "input": {
+        "spec": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/spec.md",
+        "plan": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/plan.md",
+        "tasks": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/tasks.md",
+        "constitution": "fixtures/spec-kit/brownfield/.specify/memory/constitution.md"
+      },
+      "output": {
+        "contextPack": "fixtures/spec-kit/brownfield/expected/context-pack.import.json",
+        "execPlan": "fixtures/spec-kit/brownfield/expected/exec-plan.v2.json",
+        "bridgeReport": "fixtures/spec-kit/brownfield/expected/spec-kit-bridge-report.json"
+      },
+      "pre": [
+        "Spec Kit feature directory is readable."
+      ],
+      "post": [
+        "Requirement, plan, task, contract, and verification references are preserved as report-only assurance inputs."
+      ],
+      "failures": [
+        "missing-contracts",
+        "ambiguous-task-story"
+      ],
+      "sourceRefs": [
+        "FR-001",
+        "FR-002"
+      ]
+    },
+    {
+      "id": "InventoryModernization.US1",
+      "input": {
+        "story": "US1",
+        "spec": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/spec.md"
+      },
+      "output": {
+        "acceptanceTest": "AT-US1"
+      },
+      "pre": [
+        "Existing reservation acceptance tests continue to pass after modernization."
+      ],
+      "post": [
+        "Given an existing reservation workflow, When the internal implementation is modernized, Then external approval behavior remains unchanged."
+      ],
+      "failures": [
+        "StoryMappingAmbiguous"
+      ],
+      "sourceRefs": [
+        "US1"
+      ]
+    }
+  ],
+  "diagrams": [
+    {
+      "id": "D-SPECKIT-BRIDGE-1",
+      "statement": "Spec Kit spec.md, plan.md, tasks.md, and contracts/* are imported into Context Pack and ExecPlan v2 without replacing their source artifacts.",
+      "verification": [
+        "spec-kit-bridge-report",
+        "exec-plan:v2:validate",
+        "context-pack:validate"
+      ]
+    }
+  ],
+  "constraints": {
+    "sourceSystem": "github/spec-kit",
+    "sourceFeatureDir": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization",
+    "optionalIntegration": true,
+    "reportOnly": true,
+    "bridgeFindings": [
+      "missing-contracts",
+      "ambiguous-task-story"
+    ],
+    "taskCount": 4
+  },
+  "acceptance_tests": [
+    {
+      "id": "AT-FR-001",
+      "scenario": "Existing reservation APIs MUST remain backward compatible.",
+      "expected": [
+        "SC-001: Compatibility evidence is attached before merge judgment."
+      ],
+      "sourceRefs": [
+        "FR-001"
+      ]
+    },
+    {
+      "id": "AT-FR-002",
+      "scenario": "Migration notes MUST identify any manual compatibility checks.",
+      "expected": [
+        "SC-001: Compatibility evidence is attached before merge judgment."
+      ],
+      "sourceRefs": [
+        "FR-002"
+      ]
+    },
+    {
+      "id": "AT-US1",
+      "scenario": "Preserve reservation compatibility (P1)",
+      "expected": [
+        "Given an existing reservation workflow, When the internal implementation is modernized, Then external approval behavior remains unchanged."
+      ],
+      "sourceRefs": [
+        "US1"
+      ]
+    }
+  ],
+  "coding_conventions": {
+    "language": "TypeScript 5.x",
+    "testing": "compatibility regression tests",
+    "directory": [
+      "library"
+    ],
+    "dependencies": {
+      "runtime": [
+        "vitest"
+      ]
+    }
+  },
+  "forbidden_changes": [
+    "Do not vendor or fork GitHub Spec Kit inside ae-framework.",
+    "Do not promote bridge findings from report-only to blocking without a separate policy issue.",
+    "Do not drop source Spec Kit artifact paths when rendering assurance evidence."
+  ]
+}

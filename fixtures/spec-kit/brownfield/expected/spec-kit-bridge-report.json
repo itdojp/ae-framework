@@ -1,0 +1,208 @@
+{
+  "schemaVersion": "spec-kit-bridge-report/v1",
+  "contractId": "spec-kit-bridge-report",
+  "generatedAt": "2026-06-30T00:00:00.000Z",
+  "result": "warning",
+  "source": {
+    "repository": "itdojp/ae-framework",
+    "featureId": "042-inventory-modernization",
+    "featureName": "Inventory Modernization",
+    "projectRoot": ".",
+    "featureDir": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization",
+    "upstream": {
+      "repository": "https://github.com/github/spec-kit",
+      "reference": "main",
+      "verifiedPaths": [
+        ".specify/memory/constitution.md",
+        "templates/spec-template.md",
+        "templates/plan-template.md",
+        "templates/tasks-template.md",
+        "templates/commands/specify.md",
+        "templates/commands/plan.md",
+        "templates/commands/tasks.md",
+        "templates/commands/taskstoissues.md",
+        "templates/commands/implement.md",
+        "templates/commands/converge.md"
+      ]
+    }
+  },
+  "inputs": [
+    {
+      "kind": "constitution",
+      "path": "fixtures/spec-kit/brownfield/.specify/memory/constitution.md",
+      "present": true,
+      "bytes": 271,
+      "sha256": "c9ad7db07595b7f181453a576e8e7dcdc119f078b38e8523557ce653b72b86c6"
+    },
+    {
+      "kind": "spec",
+      "path": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/spec.md",
+      "present": true,
+      "bytes": 989,
+      "sha256": "d347fc4afb6ad780f973a32e46416c6813604bc6e1574c96859fd7c4664b3013"
+    },
+    {
+      "kind": "plan",
+      "path": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/plan.md",
+      "present": true,
+      "bytes": 647,
+      "sha256": "86e24b35a729676cf711aa987a70648b1883f1d3faeb5d77e2fa9d72476f7adf"
+    },
+    {
+      "kind": "tasks",
+      "path": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/tasks.md",
+      "present": true,
+      "bytes": 599,
+      "sha256": "57e0eb36145878cbede8748536cac8a3eabfea71676b4e71bc901be40175c20a"
+    },
+    {
+      "kind": "data-model",
+      "path": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/data-model.md",
+      "present": true,
+      "bytes": 193,
+      "sha256": "feead7ea75494c6ae91813750a68f1208cc4a78384872ca8ddd9a944f5db65a8"
+    }
+  ],
+  "outputs": [
+    {
+      "kind": "bridge-report",
+      "path": "fixtures/spec-kit/brownfield/expected/spec-kit-bridge-report.json",
+      "schemaPath": "schema/spec-kit-bridge-report.schema.json"
+    },
+    {
+      "kind": "context-pack",
+      "path": "fixtures/spec-kit/brownfield/expected/context-pack.import.json",
+      "schemaPath": "schema/context-pack-v1.schema.json"
+    },
+    {
+      "kind": "exec-plan",
+      "path": "fixtures/spec-kit/brownfield/expected/exec-plan.v2.json",
+      "schemaPath": "schema/exec-plan.v2.schema.json"
+    }
+  ],
+  "summary": {
+    "requirements": 2,
+    "userStories": 1,
+    "tasks": 4,
+    "contracts": 0,
+    "findings": 2,
+    "ambiguousMappings": 4,
+    "lossyMappings": 5
+  },
+  "mappings": [
+    {
+      "sourceKind": "spec.requirement",
+      "sourceId": "FR-001",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/spec.md",
+      "targetKind": "context-pack.acceptance-test",
+      "targetId": "AT-FR-001",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Functional requirements become acceptance-test anchors for assurance review."
+      ]
+    },
+    {
+      "sourceKind": "spec.requirement",
+      "sourceId": "FR-002",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/spec.md",
+      "targetKind": "context-pack.acceptance-test",
+      "targetId": "AT-FR-002",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Functional requirements become acceptance-test anchors for assurance review."
+      ]
+    },
+    {
+      "sourceKind": "spec.user-story",
+      "sourceId": "US1",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/spec.md",
+      "targetKind": "context-pack.morphism",
+      "targetId": "InventoryModernization.US1",
+      "confidence": "medium",
+      "lossy": false,
+      "notes": [
+        "Acceptance scenarios are preserved in Context Pack acceptance tests."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T001",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t001",
+      "confidence": "medium",
+      "lossy": true,
+      "notes": [
+        "No user-story marker; phase and source line are preserved."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T002",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t002",
+      "confidence": "medium",
+      "lossy": true,
+      "notes": [
+        "No user-story marker; phase and source line are preserved."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T003",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t003",
+      "confidence": "high",
+      "lossy": false,
+      "notes": [
+        "Linked to US1."
+      ]
+    },
+    {
+      "sourceKind": "tasks.task",
+      "sourceId": "T004",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/tasks.md",
+      "targetKind": "exec-plan.taskGraph.node",
+      "targetId": "task.t004",
+      "confidence": "medium",
+      "lossy": true,
+      "notes": [
+        "No user-story marker; phase and source line are preserved."
+      ]
+    }
+  ],
+  "unsupportedFields": [
+    {
+      "sourceKind": "spec-kit-command",
+      "field": "agent hooks and invocation side effects",
+      "sourcePath": ".specify/templates/commands/*.md",
+      "reason": "ae-framework bridge records artifact references but does not execute Spec Kit commands, agent hooks, or task-to-issues side effects.",
+      "disposition": "report-only-lossy"
+    },
+    {
+      "sourceKind": "tasks",
+      "field": "free-form task prose ordering",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/tasks.md",
+      "reason": "Tasks are mapped to ExecPlan nodes and Context Pack references; nuanced prose ordering remains in the source task line.",
+      "disposition": "preserved-as-source-reference"
+    }
+  ],
+  "findings": [
+    {
+      "severity": "warning",
+      "code": "missing-contracts",
+      "message": "No contracts/* files were found; contract mappings are recorded as not_collected.",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/contracts"
+    },
+    {
+      "severity": "warning",
+      "code": "ambiguous-task-story",
+      "message": "T004 has no [US#] marker; it is preserved as an ExecPlan task but cannot be linked to a specific user story.",
+      "sourcePath": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization/tasks.md"
+    }
+  ]
+}

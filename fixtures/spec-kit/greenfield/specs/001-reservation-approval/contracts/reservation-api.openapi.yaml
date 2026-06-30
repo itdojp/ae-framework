@@ -1,0 +1,19 @@
+openapi: 3.0.3
+info:
+  title: Reservation Approval API
+  version: 0.1.0
+paths:
+  /reservations/{reservationId}/approval:
+    post:
+      operationId: approveReservation
+      parameters:
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reservation approved
+        '409':
+          description: Reservation cannot be approved because stock is unavailable

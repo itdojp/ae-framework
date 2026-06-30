@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/spec-kit-bridge-report.schema.json",
+  "title": "Spec Kit Bridge Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "generatedAt",
+    "result",
+    "source",
+    "inputs",
+    "outputs",
+    "summary",
+    "mappings",
+    "unsupportedFields",
+    "findings"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "spec-kit-bridge-report/v1" },
+    "contractId": { "const": "spec-kit-bridge-report" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "result": { "type": "string", "enum": ["pass", "warning", "fail"] },
+    "source": { "$ref": "#/$defs/source" },
+    "inputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/input" }
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/output" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "mappings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mapping" }
+    },
+    "unsupportedFields": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/unsupportedField" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "pathString": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "featureId", "featureName", "projectRoot", "featureDir", "upstream"],
+      "properties": {
+        "repository": { "$ref": "#/$defs/nonEmptyString" },
+        "featureId": { "$ref": "#/$defs/nonEmptyString" },
+        "featureName": { "$ref": "#/$defs/nonEmptyString" },
+        "projectRoot": { "type": "string" },
+        "featureDir": { "$ref": "#/$defs/pathString" },
+        "upstream": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "reference", "verifiedPaths"],
+          "properties": {
+            "repository": { "type": "string", "format": "uri" },
+            "reference": { "$ref": "#/$defs/nonEmptyString" },
+            "verifiedPaths": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/pathString" },
+              "uniqueItems": true
+            }
+          }
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "present", "bytes"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["constitution", "spec", "plan", "tasks", "research", "data-model", "quickstart", "contract"] },
+        "path": { "$ref": "#/$defs/pathString" },
+        "present": { "type": "boolean" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "contractKind": { "type": "string", "enum": ["openapi", "json", "yaml", "markdown", "other"] }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "schemaPath"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["bridge-report", "context-pack", "exec-plan"] },
+        "path": { "$ref": "#/$defs/pathString" },
+        "schemaPath": { "$ref": "#/$defs/pathString" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirements", "userStories", "tasks", "contracts", "findings", "ambiguousMappings", "lossyMappings"],
+      "properties": {
+        "requirements": { "type": "integer", "minimum": 0 },
+        "userStories": { "type": "integer", "minimum": 0 },
+        "tasks": { "type": "integer", "minimum": 0 },
+        "contracts": { "type": "integer", "minimum": 0 },
+        "findings": { "type": "integer", "minimum": 0 },
+        "ambiguousMappings": { "type": "integer", "minimum": 0 },
+        "lossyMappings": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceKind", "sourceId", "sourcePath", "targetKind", "targetId", "confidence", "lossy", "notes"],
+      "properties": {
+        "sourceKind": { "$ref": "#/$defs/nonEmptyString" },
+        "sourceId": { "$ref": "#/$defs/nonEmptyString" },
+        "sourcePath": { "$ref": "#/$defs/pathString" },
+        "targetKind": { "$ref": "#/$defs/nonEmptyString" },
+        "targetId": { "$ref": "#/$defs/nonEmptyString" },
+        "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
+        "lossy": { "type": "boolean" },
+        "notes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      }
+    },
+    "unsupportedField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceKind", "field", "sourcePath", "reason", "disposition"],
+      "properties": {
+        "sourceKind": { "$ref": "#/$defs/nonEmptyString" },
+        "field": { "$ref": "#/$defs/nonEmptyString" },
+        "sourcePath": { "$ref": "#/$defs/pathString" },
+        "reason": { "$ref": "#/$defs/nonEmptyString" },
+        "disposition": { "type": "string", "enum": ["report-only-lossy", "preserved-as-source-reference", "not-supported"] }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "code", "message", "sourcePath"],
+      "properties": {
+        "severity": { "type": "string", "enum": ["info", "warning", "error"] },
+        "code": { "$ref": "#/$defs/nonEmptyString" },
+        "message": { "$ref": "#/$defs/nonEmptyString" },
+        "sourcePath": { "$ref": "#/$defs/pathString" }
+      }
+    }
+  }
+}
