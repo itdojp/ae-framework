@@ -296,6 +296,7 @@ const checks = [
       'fixtures/spec-kit/greenfield/expected/exec-plan.v2.json',
       'fixtures/spec-kit/brownfield/expected/exec-plan.v2.json',
       'fixtures/evidence-sprint/self-dogfood/exec-plan.v2.json',
+      'fixtures/evidence-sprint/web-api-pilot/exec-plan.v2.json',
     ],
     label: 'ExecPlan v2 schema validation'
   },
@@ -392,6 +393,7 @@ const checks = [
     fixtures: [
       'fixtures/metrics/evidence-sprint/pilot-measurement-example.json',
       'fixtures/evidence-sprint/self-dogfood/measurement-report.json',
+      'fixtures/evidence-sprint/web-api-pilot/measurement-report.json',
     ],
     label: 'Evidence Sprint measurement report schema validation'
   },
@@ -410,6 +412,7 @@ const checks = [
     fixtures: [
       'fixtures/domain-presets/web-api-bff/expected/domain-preset-report.json',
       'fixtures/domain-presets/event-driven-domain/expected/domain-preset-report.json',
+      'fixtures/evidence-sprint/web-api-pilot/domain-preset-report.json',
     ],
     label: 'Domain assurance preset report schema validation'
   },
