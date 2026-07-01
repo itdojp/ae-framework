@@ -2,12 +2,14 @@
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { pathToFileURL } from 'node:url';
 
 const DEFAULT_FIXTURE = 'fixtures/metrics/req2run/offline-input.json';
 const DEFAULT_OUTPUT_JSON = 'artifacts/metrics/req2run-metrics.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/metrics/req2run-metrics.md';
 const NOT_COLLECTED = 'not_collected';
 const UNKNOWN = 'unknown';
+const RFC3339_DATE_TIME_PATTERN = /^(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})T(?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2})(?<fraction>\.\d+)?(?<offset>Z|[+-]\d{2}:\d{2})$/u;
 
 const METRIC_DEFINITIONS = {
   time_to_first_runnable_verification_minutes: {
@@ -54,12 +56,50 @@ function requireValue(argv, index, flag) {
   return next;
 }
 
+function isLeapYear(year) {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+}
+
+function daysInMonth(year, month) {
+  return [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1] ?? 0;
+}
+
 function ensureDateTime(value, flag = 'date-time') {
   const raw = String(value ?? '').trim();
-  if (!Number.isFinite(Date.parse(raw))) {
-    throw new Error(`${flag} must be an ISO date-time: ${raw || '(empty)'}`);
+  const match = RFC3339_DATE_TIME_PATTERN.exec(raw);
+  if (!match?.groups) {
+    throw new Error(`${flag} must be a valid RFC3339 date-time: ${raw || '(empty)'}`);
   }
-  return new Date(raw).toISOString();
+  const year = Number.parseInt(match.groups.year, 10);
+  const month = Number.parseInt(match.groups.month, 10);
+  const day = Number.parseInt(match.groups.day, 10);
+  const hour = Number.parseInt(match.groups.hour, 10);
+  const minute = Number.parseInt(match.groups.minute, 10);
+  const second = Number.parseInt(match.groups.second, 10);
+  if (
+    month < 1
+    || month > 12
+    || day < 1
+    || day > daysInMonth(year, month)
+    || hour > 23
+    || minute > 59
+    || second > 59
+  ) {
+    throw new Error(`${flag} must be a valid RFC3339 date-time: ${raw}`);
+  }
+  const offset = match.groups.offset;
+  if (offset !== 'Z') {
+    const offsetHour = Number.parseInt(offset.slice(1, 3), 10);
+    const offsetMinute = Number.parseInt(offset.slice(4, 6), 10);
+    if (offsetHour > 23 || offsetMinute > 59) {
+      throw new Error(`${flag} must be a valid RFC3339 date-time: ${raw}`);
+    }
+  }
+  const timestamp = Date.parse(raw);
+  if (!Number.isFinite(timestamp)) {
+    throw new Error(`${flag} must be a valid RFC3339 date-time: ${raw}`);
+  }
+  return new Date(timestamp).toISOString();
 }
 
 function parseArgs(argv = process.argv.slice(2)) {
@@ -483,11 +523,17 @@ function main() {
     const outputMd = ensureProjectContainedOutputPath(options.projectRoot, options.outputMd, '--output-md');
     writeJson(outputJson, document);
     writeText(outputMd, markdown);
+    process.stdout.write(`Req2run metrics written.\n- json: ${displayPath(options.outputJson, options.projectRoot)}\n- markdown: ${displayPath(options.outputMd, options.projectRoot)}\n- source: ${document.source}\n`);
+    return;
   }
-  process.stdout.write(`Req2run metrics written.\n- json: ${displayPath(options.outputJson, options.projectRoot)}\n- markdown: ${displayPath(options.outputMd, options.projectRoot)}\n- source: ${document.source}\n`);
+  process.stdout.write(`Req2run metrics validated without writing files.\n- json (not written): ${displayPath(options.outputJson, options.projectRoot)}\n- markdown (not written): ${displayPath(options.outputMd, options.projectRoot)}\n- source: ${document.source}\n`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+function isCliEntrypoint() {
+  return Boolean(process.argv[1]) && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+}
+
+if (isCliEntrypoint()) {
   try {
     main();
   } catch (error) {

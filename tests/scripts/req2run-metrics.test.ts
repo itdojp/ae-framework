@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -90,7 +90,90 @@ describe('req2run metrics collector', () => {
       expect(result.status, result.stderr || result.stdout).toBe(0);
       expect(existsSync(outputJson)).toBe(false);
       expect(existsSync(outputMd)).toBe(false);
+      expect(result.stdout).toContain('Req2run metrics validated without writing files.');
+      expect(result.stdout).not.toContain('Req2run metrics written.');
       expect(result.stdout).toContain('source: offline-fixture');
+    } finally {
+      rmSync(outputRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects invalid calendar timestamps instead of normalizing them', () => {
+    const outputRoot = resolve(repoRoot, 'artifacts', `req2run-invalid-date-test-${randomUUID()}`);
+    const invalidGeneratedAt = runScript([
+      '--fixture', fixturePath,
+      '--generated-at', '2026-02-31T00:00:00.000Z',
+      '--no-write',
+    ]);
+
+    expect(invalidGeneratedAt.status).not.toBe(0);
+    expect(invalidGeneratedAt.stderr).toContain('--generated-at must be a valid RFC3339 date-time');
+
+    try {
+      mkdirSync(outputRoot, { recursive: true });
+      const invalidTimelineFixture = join(outputRoot, 'invalid-timeline.json');
+      const invalidTimelinePayload = readJson(fixturePath);
+      invalidTimelinePayload.timeline.requirementAcceptedAt = '2026-02-31T00:00:00.000Z';
+      writeFileSync(invalidTimelineFixture, `${JSON.stringify(invalidTimelinePayload, null, 2)}\n`, 'utf8');
+
+      const invalidTimeline = runScript([
+        '--fixture', invalidTimelineFixture,
+        '--generated-at', generatedAt,
+        '--no-write',
+      ]);
+
+      expect(invalidTimeline.status).not.toBe(0);
+      expect(invalidTimeline.stderr).toContain('timeline.requirementAcceptedAt must be a valid RFC3339 date-time');
+
+      const invalidVerificationFixture = join(outputRoot, 'invalid-verification-event.json');
+      const invalidVerificationPayload = readJson(fixturePath);
+      delete invalidVerificationPayload.timeline.firstRunnableVerificationAt;
+      invalidVerificationPayload.verificationEvents = [{
+        id: 'verify-lite',
+        runnable: true,
+        status: 'pass',
+        completedAt: '2026-02-31T00:00:00.000Z',
+      }];
+      writeFileSync(invalidVerificationFixture, `${JSON.stringify(invalidVerificationPayload, null, 2)}\n`, 'utf8');
+
+      const invalidVerification = runScript([
+        '--fixture', invalidVerificationFixture,
+        '--generated-at', generatedAt,
+        '--no-write',
+      ]);
+
+      expect(invalidVerification.status).not.toBe(0);
+      expect(invalidVerification.stderr).toContain('verificationEvents.verify-lite.completedAt must be a valid RFC3339 date-time');
+    } finally {
+      rmSync(outputRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('runs when the CLI script path contains URL-encoded characters such as spaces', () => {
+    const outputRoot = resolve(repoRoot, 'artifacts', `req2run cli path ${randomUUID()}`);
+    const copiedScript = join(outputRoot, 'collect req2run metrics.mjs');
+    const outputJson = join(outputRoot, 'req2run-metrics.json');
+    const outputMd = join(outputRoot, 'req2run-metrics.md');
+
+    try {
+      mkdirSync(outputRoot, { recursive: true });
+      copyFileSync(scriptPath, copiedScript);
+      const result = spawnSync('node', [
+        copiedScript,
+        '--fixture', fixturePath,
+        '--generated-at', generatedAt,
+        '--output-json', outputJson,
+        '--output-md', outputMd,
+      ], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        timeout: 120_000,
+      });
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      expect(result.stdout).toContain('Req2run metrics written.');
+      expect(existsSync(outputJson)).toBe(true);
+      expect(existsSync(outputMd)).toBe(true);
     } finally {
       rmSync(outputRoot, { recursive: true, force: true });
     }
