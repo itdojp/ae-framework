@@ -128,6 +128,18 @@ describe('completion audit renderer', () => {
       ]);
       expect(malformedChecks.status).not.toBe(0);
       expect(malformedChecks.stderr).toContain('requiredMergeChecks must be an array');
+
+      const staleRequiredCheck = readJson(inputPath);
+      staleRequiredCheck.requiredMergeChecks[0].headSha = '5a1e2219cb39fdd449ac4762db8a77fa7a2ee4f5';
+      writeFileSync(invalidInputPath, `${JSON.stringify(staleRequiredCheck, null, 2)}\n`, 'utf8');
+
+      const staleCheck = runScript([
+        '--input', invalidInputPath,
+        '--generated-at', generatedAt,
+        '--no-write',
+      ]);
+      expect(staleCheck.status).not.toBe(0);
+      expect(staleCheck.stderr).toContain('requiredMergeChecks[0].headSha must match subject.pullRequest.headSha');
     } finally {
       rmSync(outputRoot, { recursive: true, force: true });
     }

@@ -375,6 +375,14 @@ function normalizeAuditNote(note, label) {
   };
 }
 
+function assertRequiredChecksMatchFinalHead(requiredMergeChecks, finalHeadSha) {
+  for (const [index, check] of requiredMergeChecks.entries()) {
+    if (check.headSha !== finalHeadSha) {
+      throw new Error(`requiredMergeChecks[${index}].headSha must match subject.pullRequest.headSha`);
+    }
+  }
+}
+
 function normalizeCollectionBoundaries(boundaries) {
   const input = requireObject(boundaries, 'collectionBoundaries');
   return {
@@ -425,6 +433,7 @@ function buildReport(options, input) {
   }
   const subject = normalizeSubject(input.subject);
   const requiredMergeChecks = requireArray(input.requiredMergeChecks, 'requiredMergeChecks').map((check, index) => normalizeCheck(check, `requiredMergeChecks[${index}]`));
+  assertRequiredChecksMatchFinalHead(requiredMergeChecks, subject.pullRequest.headSha);
   const advisoryWorkflowRuns = optionalArray(input.advisoryWorkflowRuns, 'advisoryWorkflowRuns').map((run, index) => normalizeAdvisoryRun(run, `advisoryWorkflowRuns[${index}]`));
   const skippedWorkflowRuns = optionalArray(input.skippedWorkflowRuns, 'skippedWorkflowRuns').map((run, index) => normalizeSkippedRun(run, `skippedWorkflowRuns[${index}]`));
   const staleWorkflowRuns = optionalArray(input.staleWorkflowRuns, 'staleWorkflowRuns').map((run, index) => normalizeStaleRun(run, `staleWorkflowRuns[${index}]`));
