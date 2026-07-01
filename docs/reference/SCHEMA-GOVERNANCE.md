@@ -290,7 +290,7 @@ Preview から stable への昇格には、同一 PR または linked issue で�
 
 `schema/loop-run-input.schema.json` uses the canonical `$id` form `https://ae-framework/schema/loop-run-input.schema.json`. It is the preview input contract for fixture-backed report-only loop runs and captures Issue intent, ExecPlan v2 references, Context Pack references, safety flags, validation commands, observed evidence links, findings, and per-iteration decisions.
 
-`schema/loop-run-summary.schema.json` uses the canonical `$id` form `https://ae-framework/schema/loop-run-summary.schema.json`. It is a preview/report-only evidence contract for `artifacts/loop/loop-run-summary.json`, produced by `scripts/loop/run-report-only.mjs`. `stopReason` records operator-facing loop termination such as `success`, `blocked`, `max-iterations`, `validation-failed`, `unsafe-action`, or `human-required`; the contract does not grant merge, approval, push, or hosted-LLM authority.
+`schema/loop-run-summary.schema.json` uses the canonical `$id` form `https://ae-framework/schema/loop-run-summary.schema.json`. It is a preview/report-only evidence contract for `artifacts/loop/loop-run-summary.json`, produced by `scripts/loop/run-report-only.mjs`. `stopReason` records operator-facing loop termination such as `success`, `blocked`, `max-iterations`, `validation-failed`, `unsafe-action`, or `human-required`; the contract does not grant merge, approval, push, or hosted-LLM authority. Current runner output includes policy, observability, and replay evidence, while the v1 schema keeps those sections optional so earlier stored v1 summaries can still validate during migration.
 
 ### 17. Loop policy schema
 

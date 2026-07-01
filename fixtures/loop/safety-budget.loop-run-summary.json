@@ -191,7 +191,7 @@
   "replay": {
     "inputHash": "8c6dc75a4e43022b8c2f50b403bdd22d0d979d183f22e14cb381388f2bf8d458",
     "policyHash": "72196498570f6f25573d34d90f017d51bd8c3e8191a7683e26a05f634dc03d1c",
-    "idempotencyKey": "09bd27c13a992005bbc6c408c359b7889633ea32aadb4dd579818a1b4b22d1d0",
+    "idempotencyKey": "e3ee99a809b56c148337a5bcb4835814cb17ad36677c831b1c76d7eeda144cd6",
     "note": "Re-run with the same input, policy, and generatedAt to reproduce deterministic fixture summaries."
   },
   "stopReason": "blocked",

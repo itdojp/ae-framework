@@ -69,7 +69,7 @@ The stop result is still evidence, not approval authority. Human review, branch 
 
 ### Observability metrics
 
-`loop-run-summary/v1` now includes `observability` and `replay` sections:
+New summaries produced by `scripts/loop/run-report-only.mjs` include `observability` and `replay` sections. The `loop-run-summary/v1` schema keeps these sections optional so stored summaries produced before loop-policy support remain valid during migration.
 
 - `verificationSequence`: pass/fail/warn/not-run sequence across executed iterations.
 - `elapsedSecondsObserved`: sum of fixture-observed elapsed seconds.
@@ -166,7 +166,7 @@ stop result は証跡であり、承認権限ではありません。human revie
 
 ### observability metrics
 
-`loop-run-summary/v1` は `observability` と `replay` を含みます。
+`scripts/loop/run-report-only.mjs` が生成する新しい summary は `observability` と `replay` を含みます。`loop-run-summary/v1` schema では、loop-policy support 以前に生成された stored summary との互換性を維持するため、これらの section を optional とします。
 
 - `verificationSequence`: 実行済み iteration の pass/fail/warn/not-run sequence。
 - `elapsedSecondsObserved`: fixture が観測した elapsed seconds の合計。

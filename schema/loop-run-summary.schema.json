@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ae-framework/schema/loop-run-summary.schema.json",
   "title": "Loop Run Summary",
+  "description": "loop-run-summary/v1 report-only evidence. Policy, observability, and replay are emitted by the current runner but remain optional to preserve validation compatibility with earlier v1 summaries produced before loop-policy support.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -11,14 +12,11 @@
     "result",
     "reportOnly",
     "input",
-    "policy",
     "safety",
     "summary",
     "iterations",
     "commands",
     "findings",
-    "observability",
-    "replay",
     "stopReason",
     "nextRecommendedAction",
     "reviewSurface"

@@ -592,13 +592,14 @@ function evaluatePolicyForIteration({ input, iteration, iterations, policy, stat
     if (!observedEvidenceIds.has(evidenceId)) state.missingEvidenceIds.add(evidenceId);
     else state.missingEvidenceIds.delete(evidenceId);
   }
-  if ((policy.evidenceRequirements?.missingEvidenceStops || stopRules.stopOnMissingEvidence) && state.missingEvidenceIds.size > 0) {
+  const missingEvidenceStops = Boolean(policy.evidenceRequirements?.missingEvidenceStops || stopRules.stopOnMissingEvidence);
+  if (missingEvidenceStops && state.missingEvidenceIds.size > 0) {
     findings.push({
       severity: 'warning',
       code: 'loop-policy-missing-evidence',
       message: `Required evidence missing: ${[...state.missingEvidenceIds].sort().join(', ')}`,
     });
-    if (stopRules.stopOnMissingEvidence) return { stopReason: 'blocked', findings };
+    return { stopReason: 'blocked', findings };
   }
 
   const riskLevel = input.goal?.riskLevel || 'low';
@@ -801,7 +802,7 @@ function buildLoopRun(options = parseArgs()) {
     replay: {
       inputHash,
       policyHash,
-      idempotencyKey: sha256(`${input.runId || 'loop-run'}:${inputHash}:${policyHash}`),
+      idempotencyKey: sha256(`${input.runId || 'loop-run'}:${generatedAt}:${inputHash}:${policyHash}`),
       note: 'Re-run with the same input, policy, and generatedAt to reproduce deterministic fixture summaries.',
     },
     stopReason,

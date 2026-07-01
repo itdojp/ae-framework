@@ -83,6 +83,30 @@ describe('report-only loop runner', () => {
     expect(summary.observability.approvalAuthority).toContain('report-only');
   });
 
+  it('keeps loop-run-summary/v1 schema compatible with pre-policy summaries', () => {
+    const legacySummary = readJson('fixtures/loop/success.loop-run-summary.json');
+    delete legacySummary.policy;
+    delete legacySummary.observability;
+    delete legacySummary.replay;
+
+    validateWithSchema(legacySummary);
+  });
+
+  it('includes generatedAt in the replay idempotency key', () => {
+    const baseArgs = [
+      'node',
+      scriptPath,
+      '--input',
+      'examples/loop-engineering/success/loop-input.json',
+      '--no-write',
+    ];
+    const first = buildLoopRun(parseArgs([...baseArgs, '--generated-at', generatedAt]));
+    const second = buildLoopRun(parseArgs([...baseArgs, '--generated-at', '2026-07-01T01:00:00.000Z']));
+
+    expect(first.replay.idempotencyKey).not.toBe(second.replay.idempotencyKey);
+    expect(first.replay.note).toContain('generatedAt');
+  });
+
   it('builds the deterministic blocked summary fixture without failing the report-only CLI', () => {
     const summary = buildLoopRun(parseArgs([
       'node',
@@ -294,6 +318,16 @@ describe('report-only loop runner', () => {
     const missingEvidenceSummary = buildWithTempPolicy(baseInput, missingEvidencePolicy);
     expect(missingEvidenceSummary).toMatchObject({ result: 'blocked', stopReason: 'blocked' });
     expect(missingEvidenceSummary.observability.missingEvidenceIds).toEqual(['ev.release-approval']);
+
+    const evidenceRequirementOnlyPolicy = JSON.parse(JSON.stringify(strictPolicy));
+    evidenceRequirementOnlyPolicy.evidenceRequirements.requiredEvidenceIds = ['ev.release-approval'];
+    evidenceRequirementOnlyPolicy.evidenceRequirements.missingEvidenceStops = true;
+    evidenceRequirementOnlyPolicy.stopRules.stopOnMissingEvidence = false;
+    const evidenceRequirementOnlySummary = buildWithTempPolicy(baseInput, evidenceRequirementOnlyPolicy);
+    expect(evidenceRequirementOnlySummary).toMatchObject({ result: 'blocked', stopReason: 'blocked' });
+    expect(evidenceRequirementOnlySummary.findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'loop-policy-missing-evidence' }),
+    ]));
 
     const highRiskInput = JSON.parse(JSON.stringify(baseInput));
     highRiskInput.goal.riskLevel = 'critical';
