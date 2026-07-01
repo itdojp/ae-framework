@@ -99,11 +99,11 @@ This report measures one scoped ae-framework workflow observation. It evaluates 
 
 ## 日本語
 
-# Evidence Sprint Pilot Report Template
+### 1. 概要
 
 #3570 self-dogfood、#3572 Web API pilot、#3573 event-driven / conformance pilot で使用するテンプレートです。公開承認のない raw PR text、reviewer name、exact timestamp、private comment は記載しません。
 
-## 1. Header
+### 2. Header
 
 | Field | Value |
 | --- | --- |
@@ -115,7 +115,7 @@ This report measures one scoped ae-framework workflow observation. It evaluates 
 | Execution status | `planned` / `in_progress` / `completed` / `not_executed` |
 | Publication status | `synthetic` / `approved` / `aggregate_only` / `private` / `not_approved_for_publication` |
 
-## 2. Metrics
+### 3. Metrics
 
 | Metric | Value | Source artifact refs | Interpretation | Limitation |
 | --- | --- | --- | --- | --- |
@@ -128,6 +128,6 @@ This report measures one scoped ae-framework workflow observation. It evaluates 
 | `manual_intervention_count` | `<count>` | `<ids>` | `<解釈>` | `<制限>` |
 | `audit_discrepancy_count` | `<count>` | `<ids>` | `<解釈>` | `<制限>` |
 
-## 3. Claim boundary
+### 4. Claim boundary
 
 1回の観測で主張できるのは、そのscopeに限定された evidence chain、metric collection readiness、具体的なfollow-upです。速度改善、安全性、品質改善、外部adoption、agent vendor順位、autonomous approval は主張しません。

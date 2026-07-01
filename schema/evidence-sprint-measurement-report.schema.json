@@ -148,6 +148,13 @@
         { "enum": ["not_collected"] }
       ]
     },
+    "collectibleRatio": {
+      "oneOf": [
+        { "type": "number", "minimum": 0, "maximum": 1 },
+        { "type": "null" },
+        { "enum": ["not_collected"] }
+      ]
+    },
     "durationMetric": {
       "allOf": [
         { "$ref": "#/$defs/metricCommon" },
@@ -177,9 +184,9 @@
           "additionalProperties": false,
           "required": ["numerator", "denominator", "ratio", "purpose", "sourceArtifactRefs", "calculationMethod", "interpretation", "limitation"],
           "properties": {
-            "numerator": { "$ref": "#/$defs/nonNegativeInteger" },
-            "denominator": { "$ref": "#/$defs/nonNegativeInteger" },
-            "ratio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "numerator": { "$ref": "#/$defs/collectibleCount" },
+            "denominator": { "$ref": "#/$defs/collectibleCount" },
+            "ratio": { "$ref": "#/$defs/collectibleRatio" },
             "missingIds": {
               "type": "array",
               "items": { "$ref": "#/$defs/nonEmptyString" }
