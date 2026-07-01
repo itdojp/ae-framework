@@ -216,6 +216,18 @@ function writeText(filePath, content) {
   writeFileSync(filePath, content, 'utf8');
 }
 
+function toPosix(value) {
+  return String(value).split(path.sep).join('/');
+}
+
+function displayPath(filePath, rootDir = process.cwd()) {
+  if (!filePath) return null;
+  const root = path.resolve(rootDir);
+  const resolved = path.resolve(root, filePath);
+  const relative = path.relative(root, resolved);
+  return toPosix(relative && !relative.startsWith('..') && !path.isAbsolute(relative) ? relative : resolved);
+}
+
 function optionalArray(value, label) {
   if (value === undefined) return [];
   if (!Array.isArray(value)) {
@@ -411,9 +423,12 @@ function buildConclusion({ subject, requiredMergeChecks, advisoryWorkflowRuns, s
     status = 'required-passed';
   }
 
-  const summary = requiredChecksPassed
-    ? `Required merge checks passed for PR #${subject.pullRequest.number}; advisory workflow findings, skipped runs, and stale runs are recorded separately and do not represent approval authority.`
-    : `PR #${subject.pullRequest.number} is not complete because at least one required merge check is not passing.`;
+  let summary = `PR #${subject.pullRequest.number} is not complete because required merge checks were not recorded.`;
+  if (requiredChecksPassed) {
+    summary = `Required merge checks passed for PR #${subject.pullRequest.number}; advisory workflow findings, skipped runs, and stale runs are recorded separately and do not represent approval authority.`;
+  } else if (requiredMergeChecks.length > 0) {
+    summary = `PR #${subject.pullRequest.number} is not complete because at least one recorded required merge check is not passing.`;
+  }
 
   return {
     status,
@@ -569,10 +584,10 @@ function main() {
     ensureProjectContainedOutputPath(options.projectRoot, options.outputMd, '--output-md');
     writeJson(options.outputJson, report);
     writeText(options.outputMd, markdown);
-    process.stdout.write(`Completion audit report written.\njson: ${options.outputJson}\nmarkdown: ${options.outputMd}\nconclusion: ${report.conclusion.status}\n`);
+    process.stdout.write(`Completion audit report written.\n- json: ${displayPath(options.outputJson, options.projectRoot)}\n- markdown: ${displayPath(options.outputMd, options.projectRoot)}\n- conclusion: ${report.conclusion.status}\n`);
     return;
   }
-  process.stdout.write(`Completion audit report validated without writing files.\nsource: ${report.source}\nconclusion: ${report.conclusion.status}\nrequiredChecksPassed: ${report.conclusion.requiredChecksPassed}\nadvisoryFindings: ${report.summary.advisoryWorkflowFindingCount}\n`);
+  process.stdout.write(`Completion audit report validated without writing files.\n- json (not written): ${displayPath(options.outputJson, options.projectRoot)}\n- markdown (not written): ${displayPath(options.outputMd, options.projectRoot)}\n- source: ${report.source}\n- conclusion: ${report.conclusion.status}\n- requiredChecksPassed: ${report.conclusion.requiredChecksPassed}\n- advisoryFindings: ${report.summary.advisoryWorkflowFindingCount}\n`);
 }
 
 const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : null;
@@ -580,7 +595,7 @@ if (invokedPath === import.meta.url) {
   try {
     main();
   } catch (error) {
-    process.stderr.write(`${messageOf(error)}\n`);
+    process.stderr.write(`completion-audit: ${messageOf(error)}\n`);
     process.exitCode = 1;
   }
 }

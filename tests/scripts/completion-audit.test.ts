@@ -90,10 +90,44 @@ describe('completion audit renderer', () => {
 
       expect(result.status, result.stderr || result.stdout).toBe(0);
       expect(result.stdout).toContain('Completion audit report validated without writing files.');
+      expect(result.stdout).toContain(`- json (not written): artifacts/completion-audit-no-write-`);
       expect(result.stdout).toContain('requiredChecksPassed: true');
       expect(result.stdout).toContain('advisoryFindings: 1');
       expect(existsSync(outputJson)).toBe(false);
       expect(existsSync(outputMd)).toBe(false);
+    } finally {
+      rmSync(outputRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('distinguishes missing required-check records from failing required checks', () => {
+    const outputRoot = resolve(repoRoot, 'artifacts', `completion-audit-empty-required-${randomUUID()}`);
+    const inputWithoutRequiredChecks = join(outputRoot, 'missing-required.input.json');
+    const outputJson = join(outputRoot, 'completion-audit-report.json');
+    const outputMd = join(outputRoot, 'completion-audit-report.md');
+
+    try {
+      mkdirSync(outputRoot, { recursive: true });
+      const input = readJson(inputPath);
+      input.requiredMergeChecks = [];
+      writeFileSync(inputWithoutRequiredChecks, `${JSON.stringify(input, null, 2)}\n`, 'utf8');
+
+      const result = runScript([
+        '--input', inputWithoutRequiredChecks,
+        '--generated-at', generatedAt,
+        '--output-json', outputJson,
+        '--output-md', outputMd,
+      ]);
+
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      expect(result.stdout).toContain(`- json: artifacts/completion-audit-empty-required-`);
+      const payload = readJson(outputJson);
+      expect(payload.conclusion).toMatchObject({
+        status: 'blocked',
+        requiredChecksPassed: false,
+      });
+      expect(payload.conclusion.summary).toContain('required merge checks were not recorded');
+      expect(payload.summary.requiredCheckCount).toBe(0);
     } finally {
       rmSync(outputRoot, { recursive: true, force: true });
     }
