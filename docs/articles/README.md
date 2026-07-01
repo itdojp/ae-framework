@@ -28,6 +28,7 @@ lastVerified: '2026-03-12'
 This directory collects public articles and write‑ups related to ae-framework.
 
 Current entries:
+- Evidence Sprint release/article outline source: `../product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`
 - Zenn (Japanese): `zenn/zenn-article-ae-framework.md`
 - Zenn (English): `zenn/zenn-article-ae-framework-en.md`
 

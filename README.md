@@ -20,7 +20,7 @@ ae-framework is an **agent-neutral assurance control plane for agent-driven SDLC
 
 **Product thesis**: Bring your own agent. Keep your assurance plane. Codex, Claude Code, GitHub Copilot, Gemini-family coding tools, human maintainers, CI jobs, and formal tools are replaceable producers; ae-framework keeps judgment artifacts, policy gates, and release decisions stable across those producer choices.
 
-Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, and `docs/product/DEMO-SCRIPT.md`. Start the first-run demo with `pnpm run demo:agent-assurance`; the dedicated one-command path is `docs/getting-started/FIRST-RUN-DEMO.md`.
+Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`, and `docs/product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`. Start the first-run demo with `pnpm run demo:agent-assurance`; the dedicated one-command path is `docs/getting-started/FIRST-RUN-DEMO.md`.
 
 Current evidence route for first-time product evaluation: run the one-command first-run demo, read the Evidence Sprint dogfood case study, inspect the fixture-backed Web API and event-driven pilots, read the ACP-097 pilot report, then check launch-kit limitations and the controlled-comparison protocol. Internal dogfooding and pilot evidence are separate: the Web API and event-driven pilots are fixture-backed/report-only, the current external pilot report is `dry-run only` with 0 live external PRs collected, and the controlled comparison has not been executed. Public claims should therefore stay limited to review traceability and evidence routing, not review-speed, safety, adoption-impact, live API/event behavior, or agent-vendor superiority.
 
@@ -112,7 +112,7 @@ remain optional and risk/profile-driven.
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - Public preview launch kit: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`
-- Product evidence and limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/REQ2RUN-METRICS.md`, `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, `docs/product/evidence-packs/evidence-003-self-dogfood/README.md`, `docs/product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md`, `docs/product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
+- Product evidence and limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/REQ2RUN-METRICS.md`, `docs/product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`, `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, `docs/product/evidence-packs/evidence-003-self-dogfood/README.md`, `docs/product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md`, `docs/product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
 - Agent PR assurance metrics collector: `docs/ci/agent-pr-assurance-metrics.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
 - First-run one-command demo: `docs/getting-started/FIRST-RUN-DEMO.md`
@@ -144,7 +144,7 @@ ae-framework は **エージェント協調型SDLCのための、エージェン
 
 **Product thesis**: Bring your own agent. Keep your assurance plane. Codex、Claude Code、GitHub Copilot、Gemini系tool、人間のmaintainer、CI job、formal tool は交換可能な producer であり、ae-framework は producer の選択に依存しない judgment artifact、policy gate、release decision を維持します。
 
-Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`。first-run demo は `pnpm run demo:agent-assurance` から開始します。専用の one-command path は `docs/getting-started/FIRST-RUN-DEMO.md` です。
+Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`, `docs/product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`。first-run demo は `pnpm run demo:agent-assurance` から開始します。専用の one-command path は `docs/getting-started/FIRST-RUN-DEMO.md` です。
 
 初見の product evidence 導線は、one-command first-run demo → Evidence Sprint dogfood case study → fixture-backed Web API / event-driven pilots → ACP-097 pilot report → launch kit の limitations → controlled-comparison protocol の順です。内部 dogfooding と pilot evidence は別扱いです。Web API / event-driven pilots は fixture-backed/report-only、現在の external pilot report は `dry-run only` で live external PR の収集数は0件、controlled comparison は未実施です。そのため公開claimは review traceability と evidence routing に限定し、未測定の review-speed、安全性、導入効果、live API/event behavior、agent vendor 優位性は主張しません。
 
@@ -228,7 +228,7 @@ pnpm run demo:agent-assurance
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - Public preview launch kit: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`
-- Product evidence と limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/REQ2RUN-METRICS.md`, `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, `docs/product/evidence-packs/evidence-003-self-dogfood/README.md`, `docs/product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md`, `docs/product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
+- Product evidence と limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/REQ2RUN-METRICS.md`, `docs/product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`, `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, `docs/product/evidence-packs/evidence-003-self-dogfood/README.md`, `docs/product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md`, `docs/product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
 - Agent PR assurance metrics collector: `docs/ci/agent-pr-assurance-metrics.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
 - First-run one-command demo: `docs/getting-started/FIRST-RUN-DEMO.md`
