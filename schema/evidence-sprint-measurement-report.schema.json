@@ -136,6 +136,18 @@
         { "enum": ["not_collected"] }
       ]
     },
+    "collectibleCount": {
+      "oneOf": [
+        { "type": "integer", "minimum": 0 },
+        { "enum": ["not_collected"] }
+      ]
+    },
+    "collectibleBoolean": {
+      "oneOf": [
+        { "type": "boolean" },
+        { "enum": ["not_collected"] }
+      ]
+    },
     "durationMetric": {
       "allOf": [
         { "$ref": "#/$defs/metricCommon" },
@@ -189,7 +201,7 @@
           "additionalProperties": false,
           "required": ["value", "unit", "purpose", "sourceArtifactRefs", "calculationMethod", "interpretation", "limitation"],
           "properties": {
-            "value": { "$ref": "#/$defs/nonNegativeInteger" },
+            "value": { "$ref": "#/$defs/collectibleCount" },
             "unit": { "const": "count" },
             "itemIds": {
               "type": "array",
@@ -212,7 +224,7 @@
           "additionalProperties": false,
           "required": ["passed", "purpose", "sourceArtifactRefs", "calculationMethod", "interpretation", "limitation"],
           "properties": {
-            "passed": { "type": "boolean" },
+            "passed": { "$ref": "#/$defs/collectibleBoolean" },
             "attemptIds": {
               "type": "array",
               "items": { "$ref": "#/$defs/nonEmptyString" }
