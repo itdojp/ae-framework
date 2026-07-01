@@ -117,7 +117,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - Public preview launch kit: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`
-- Product evidence and limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
+- Product evidence and limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/REQ2RUN-METRICS.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
 - Agent PR assurance metrics collector: `docs/ci/agent-pr-assurance-metrics.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
 - 15-minute BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
@@ -234,7 +234,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
 - Public preview launch kit: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`
-- Product evidence と limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
+- Product evidence と limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/REQ2RUN-METRICS.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
 - Agent PR assurance metrics collector: `docs/ci/agent-pr-assurance-metrics.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
 - 15分 BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`

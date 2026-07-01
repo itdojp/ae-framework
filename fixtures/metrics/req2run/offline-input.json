@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "req2run-offline-fixture/v1",
+  "subject": {
+    "id": "reval3-reference-flow-offline-demo",
+    "title": "Reference flow from requirement to runnable evidence",
+    "requirementRef": "#3555",
+    "referenceFlow": "docs/getting-started/REFERENCE-FLOW.md",
+    "repository": "itdojp/ae-framework"
+  },
+  "timeline": {
+    "requirementAcceptedAt": "2026-07-01T00:00:00.000Z",
+    "firstRunnableVerificationAt": "2026-07-01T00:34:00.000Z"
+  },
+  "privacy": {
+    "rawTextIncluded": false,
+    "publicRawLogsAllowed": false,
+    "publicationStatus": "synthetic",
+    "redactionMode": "metadata-only"
+  },
+  "sourceArtifacts": [
+    {
+      "id": "requirement",
+      "kind": "issue-summary",
+      "path": "docs/getting-started/REFERENCE-FLOW.md",
+      "required": true,
+      "schemaVersion": null,
+      "description": "Reference-flow requirement input used as a local, redacted stand-in for a GitHub Issue."
+    },
+    {
+      "id": "exec-plan",
+      "kind": "exec-plan/v2",
+      "path": "fixtures/exec-plan/baseline.exec-plan.v2.json",
+      "required": true,
+      "schemaVersion": "exec-plan/v2",
+      "description": "Baseline plan contract connecting tasks, commands, and evidence requirements."
+    },
+    {
+      "id": "verify-lite",
+      "kind": "verify-lite-run-summary",
+      "path": "examples/loop-engineering/success/verify-lite-summary.json",
+      "required": true,
+      "schemaVersion": "verify-lite-run-summary/v1",
+      "description": "Runnable verification fixture observed by the report-only loop."
+    },
+    {
+      "id": "loop-summary",
+      "kind": "loop-run-summary/v1",
+      "path": "fixtures/loop/success.loop-run-summary.json",
+      "required": true,
+      "schemaVersion": "loop-run-summary/v1",
+      "description": "Deterministic replay and first runnable verification evidence."
+    },
+    {
+      "id": "claim-evidence-manifest",
+      "kind": "claim-evidence-manifest/v1",
+      "path": "fixtures/assurance/sample.claim-evidence-manifest.json",
+      "required": true,
+      "schemaVersion": "claim-evidence-manifest/v1",
+      "description": "Reviewable claim-to-evidence mapping for the fixture."
+    },
+    {
+      "id": "assurance-summary",
+      "kind": "assurance-summary/v1",
+      "path": "fixtures/assurance/sample.assurance-summary.json",
+      "required": false,
+      "schemaVersion": "assurance-summary/v1",
+      "description": "Optional summary evidence that can feed a PR assurance review surface."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task.issue-context",
+      "title": "Capture requirement and Context Pack scope",
+      "required": true,
+      "evidenceRefs": ["requirement", "exec-plan"]
+    },
+    {
+      "id": "task.runnable-verification",
+      "title": "Produce first runnable verification artifact",
+      "required": true,
+      "evidenceRefs": ["verify-lite", "loop-summary"]
+    },
+    {
+      "id": "task.review-surface",
+      "title": "Prepare PR assurance review surface",
+      "required": true,
+      "evidenceRefs": ["claim-evidence-manifest", "assurance-summary"]
+    },
+    {
+      "id": "task.public-claim-review",
+      "title": "Check whether public adoption claims are permitted",
+      "required": true,
+      "evidenceRefs": []
+    }
+  ],
+  "evidenceItems": [
+    {
+      "id": "ev.requirement-scope",
+      "required": true,
+      "present": true,
+      "reviewStatus": "reviewed",
+      "sourceArtifactRefs": ["requirement", "exec-plan"]
+    },
+    {
+      "id": "ev.runnable-verification",
+      "required": true,
+      "present": true,
+      "reviewStatus": "reviewed",
+      "sourceArtifactRefs": ["verify-lite", "loop-summary"]
+    },
+    {
+      "id": "ev.replay",
+      "required": true,
+      "present": true,
+      "reviewStatus": "reviewed",
+      "sourceArtifactRefs": ["loop-summary"]
+    },
+    {
+      "id": "ev.claim-evidence",
+      "required": true,
+      "present": true,
+      "reviewStatus": "reviewed",
+      "sourceArtifactRefs": ["claim-evidence-manifest", "assurance-summary"]
+    },
+    {
+      "id": "ev.public-claim-approval",
+      "required": true,
+      "present": false,
+      "reviewStatus": "not_collected",
+      "sourceArtifactRefs": []
+    }
+  ],
+  "replayRuns": [
+    {
+      "id": "replay.same-input-1",
+      "status": "pass",
+      "sourceArtifactRefs": ["loop-summary"]
+    },
+    {
+      "id": "replay.same-input-2",
+      "status": "pass",
+      "sourceArtifactRefs": ["loop-summary"]
+    }
+  ],
+  "manualInterventions": [
+    {
+      "id": "manual.public-claim-check",
+      "kind": "publication-boundary-review",
+      "reason": "A human maintainer must decide whether any future live timing or reviewer data can be published.",
+      "sourceArtifactRefs": ["requirement"]
+    }
+  ]
+}

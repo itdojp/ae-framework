@@ -32,6 +32,8 @@ The following schemas currently keep GitHub Pages-based `$id` for compatibility:
 - `schema/quality-report.schema.json`
 - `schema/verify-profile-summary.schema.json`
 
+Current preview metric additions use the canonical URI policy. `schema/req2run-metrics.schema.json` identifies the report-only `req2run-metrics/v1` artifact for adoption-readiness evidence and is validated through `scripts/ci/validate-json.mjs`; it does not create a blocking policy-gate condition.
+
 ### 3. Contract lifecycle states
 
 Use the following lifecycle states for assurance-related schema and artifact contracts. These states are documentation and release-governance labels; they do not by themselves change CI enforcement.
@@ -164,6 +166,8 @@ The unacceptable note does not identify the contract family, compatibility impac
 - `schema/codex-task-response.schema.json`
 - `schema/quality-report.schema.json`
 - `schema/verify-profile-summary.schema.json`
+
+現在の preview metric 追加も canonical URI 方針に従います。`schema/req2run-metrics.schema.json` は adoption-readiness evidence 向けの report-only `req2run-metrics/v1` artifact を識別し、`scripts/ci/validate-json.mjs` で検証します。blocking policy-gate 条件は追加しません。
 
 ### 3. 契約ライフサイクル状態
 

@@ -382,6 +382,11 @@ const checks = [
     semanticValidate: validateAgenticMetricsSemantics
   },
   {
+    schema: 'schema/req2run-metrics.schema.json',
+    fixtures: ['fixtures/metrics/req2run/expected.req2run-metrics.json'],
+    label: 'Req2run metrics schema validation'
+  },
+  {
     schema: 'schema/formal-plan.schema.json',
     fixtures: ['fixtures/formal-plan/sample.formal-plan.json'],
     label: 'Formal plan schema validation'

@@ -30,7 +30,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Daily operator flow: `guides/THREAD-REPO-CI-FLOW.md`
 - Current PR automation / gate baseline: `ci/pr-automation.md`, `ci/OPT-IN-CONTROLS.md`
 - Agent PR trust-calibration metrics: `ci/agent-pr-assurance-metrics.md`
-- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`
+- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md` and req2run adoption-readiness metrics: `product/REQ2RUN-METRICS.md`
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
 - Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
@@ -113,7 +113,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Assurance control plane: `product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance control plane policy: `product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
-- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`
+- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md` and req2run adoption-readiness metrics: `product/REQ2RUN-METRICS.md`
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
 - Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
 - Report-only pilot runbook and report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `product/PILOT-REPORT-2026Q3-01.md`
@@ -348,6 +348,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [ASSURANCE-CONTROL-PLANE-POLICY.md](./product/ASSURANCE-CONTROL-PLANE-POLICY.md) - BYO-agent / producer boundary / judgment contract のcanonical policy
 - [AGENT-NEUTRAL-ASSURANCE-ROADMAP.md](./product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md) - BYO-agent assurance control plane の実行ロードマップ
 - [EFFECTIVENESS-METRICS.md](./product/EFFECTIVENESS-METRICS.md) - agent-generated PR assurance の product effectiveness metric vocabulary
+- [REQ2RUN-METRICS.md](./product/REQ2RUN-METRICS.md) - requirement-to-runnable-evidence adoption-readiness metrics
 - [DOGFOODING-REPORT-2026Q3.md](./product/DOGFOODING-REPORT-2026Q3.md) - ae-framework 自身での agent-assurance dogfooding 結果
 - [LAUNCH-KIT.md](./product/LAUNCH-KIT.md) - agent-neutral assurance control plane preview の launch kit
 - [PILOT-RUNBOOK-2026Q3.md](./product/PILOT-RUNBOOK-2026Q3.md) - report-only external pilot 実行 runbook
