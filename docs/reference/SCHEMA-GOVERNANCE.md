@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-05-10'
+lastVerified: '2026-07-01'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -285,3 +285,9 @@ Preview から stable への昇格には、同一 PR または linked issue で�
 ### 15. Spec Kit bridge report schema
 
 `schema/spec-kit-bridge-report.schema.json` uses the canonical `$id` form `https://ae-framework/schema/spec-kit-bridge-report.schema.json`. It is an evidence contract for `artifacts/spec-kit/spec-kit-bridge-report.json`, produced by `scripts/spec-kit/import-feature.mjs`. Findings remain report-only; `warning` identifies missing or ambiguous Spec Kit mappings without failing ordinary usage.
+
+### 16. Loop run input and summary schemas
+
+`schema/loop-run-input.schema.json` uses the canonical `$id` form `https://ae-framework/schema/loop-run-input.schema.json`. It is the preview input contract for fixture-backed report-only loop runs and captures Issue intent, ExecPlan v2 references, Context Pack references, safety flags, validation commands, observed evidence links, findings, and per-iteration decisions.
+
+`schema/loop-run-summary.schema.json` uses the canonical `$id` form `https://ae-framework/schema/loop-run-summary.schema.json`. It is a preview/report-only evidence contract for `artifacts/loop/loop-run-summary.json`, produced by `scripts/loop/run-report-only.mjs`. `stopReason` records operator-facing loop termination such as `success`, `blocked`, `max-iterations`, `validation-failed`, `unsafe-action`, or `human-required`; the contract does not grant merge, approval, push, or hosted-LLM authority.

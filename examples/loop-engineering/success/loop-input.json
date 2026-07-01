@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "loop-run-input/v1",
+  "runId": "loop-success-demo",
+  "reportOnly": true,
+  "maxIterations": 2,
+  "goal": {
+    "issueRef": "#3552",
+    "summary": "Demonstrate a report-only loop reaching success after fixture verification."
+  },
+  "execPlan": {
+    "planId": "baseline-exec-plan-v2",
+    "path": "fixtures/exec-plan/baseline.exec-plan.v2.json"
+  },
+  "contextPackRefs": [
+    "spec/context-pack/boundary-map.json"
+  ],
+  "safety": {
+    "worktreeMode": "fixture",
+    "mutationsAllowed": false,
+    "hostedLlmCallsAllowed": false,
+    "autoMergeAllowed": false,
+    "forbiddenActions": [
+      "merge-pr",
+      "push-commit",
+      "delete-branch",
+      "hosted-llm-call"
+    ]
+  },
+  "iterations": [
+    {
+      "id": "iter-1-plan-observe-verify",
+      "phase": "verify",
+      "plannedAction": "Read fixture evidence and run report-only verification.",
+      "actionHook": {
+        "kind": "fixture-observation",
+        "description": "Collect pre-generated verification summary without mutating the repository.",
+        "mutatesRepository": false
+      },
+      "validation": {
+        "command": "pnpm -s run verify:lite -- --fixture examples/loop-engineering/success/verify-lite-summary.json",
+        "expectedStatus": "pass",
+        "actualStatus": "pass",
+        "rawOutputPath": "examples/loop-engineering/success/verify-lite-summary.json"
+      },
+      "observedEvidence": [
+        {
+          "id": "ev.verify-lite",
+          "path": "examples/loop-engineering/success/verify-lite-summary.json",
+          "status": "pass",
+          "summary": "Fixture verify-lite summary is green."
+        }
+      ],
+      "findings": [
+        {
+          "severity": "info",
+          "code": "verification-green",
+          "message": "All required fixture checks passed."
+        }
+      ],
+      "decision": "success",
+      "nextRecommendedAction": "Post the loop-run summary for human review; no repair action is required."
+    }
+  ]
+}
