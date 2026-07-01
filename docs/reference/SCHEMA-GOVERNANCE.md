@@ -305,3 +305,7 @@ Preview から stable への昇格には、同一 PR または linked issue で�
 `schema/domain-assurance-preset.schema.json` uses the canonical `$id` form `https://ae-framework/schema/domain-assurance-preset.schema.json`. It is the report-only template contract for `templates/domain-presets/*/preset.json`. Presets select product-archetype inputs, starting commands, expected artifacts, evidence surfaces, and escalation rules, but they do not approve PRs, bypass Context Pack / ExecPlan, or add policy-gate enforcement.
 
 `schema/domain-assurance-preset-report.schema.json` uses the canonical `$id` form `https://ae-framework/schema/domain-assurance-preset-report.schema.json`. It validates deterministic rendered examples under `fixtures/domain-presets/*/expected/`, produced by `scripts/domain-presets/render-preset.mjs`, so preset onboarding evidence can be reviewed without live external API calls.
+
+### 19. Completion audit report schema
+
+`schema/completion-audit-report.schema.json` uses the canonical `$id` form `https://ae-framework/schema/completion-audit-report.schema.json`. It is a report-only evidence contract for `artifacts/audit/completion-audit-report.json`, produced by `scripts/audit/render-completion-audit.mjs`. The contract separates required merge checks from advisory workflow findings, skipped workflow runs, stale workflow runs, local verification, and audit notes so PR closeout comments can be precise. It does not approve PRs, merge branches, waive advisory findings, or add a blocking policy-gate rule.

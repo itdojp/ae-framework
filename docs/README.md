@@ -29,6 +29,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Quick activation path: `getting-started/QUICK-START-GUIDE.md`
 - Daily operator flow: `guides/THREAD-REPO-CI-FLOW.md`
 - Current PR automation / gate baseline: `ci/pr-automation.md`, `ci/OPT-IN-CONTROLS.md`
+- Completion audit report: `ci/completion-audit-report.md` records merge-check results separately from advisory workflow findings during PR closeout.
 - Agent PR trust-calibration metrics: `ci/agent-pr-assurance-metrics.md`
 - Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md` and req2run adoption-readiness metrics: `product/REQ2RUN-METRICS.md`
 - Domain assurance presets: `guides/domain-presets.md` for Web API/BFF, event-driven, Spec Kit brownfield, and high-assurance critical-core starter packages.
@@ -80,6 +81,7 @@ For product evidence, use the route `guides/byo-agent-assurance-quickstart.md` -
 - `ci/ci-operations-handbook.md`
 - `ci/ci-troubleshooting-guide.md`
 - `ci/copilot-review-gate.md`
+- `ci/completion-audit-report.md`
 - `ci/codex-autopilot-lane.md`
 
 ### Current-state operator entrypoints

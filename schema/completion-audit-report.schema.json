@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/completion-audit-report.schema.json",
+  "title": "completion-audit-report/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "reportOnly",
+    "generatedAt",
+    "source",
+    "subject",
+    "conclusion",
+    "summary",
+    "requiredMergeChecks",
+    "advisoryWorkflowRuns",
+    "skippedWorkflowRuns",
+    "staleWorkflowRuns",
+    "localVerification",
+    "auditNotes",
+    "collectionBoundaries"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "completion-audit-report/v1" },
+    "reportOnly": { "const": true },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "source": { "type": "string", "enum": ["offline-completion-audit-fixture", "manual-completion-audit-input"] },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "pullRequest", "issueRefs"],
+      "properties": {
+        "repository": { "$ref": "#/$defs/nonEmptyString" },
+        "pullRequest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["number", "url", "title", "state", "headSha", "mergedAt", "mergeCommit"],
+          "properties": {
+            "number": { "type": "integer", "minimum": 1 },
+            "url": { "$ref": "#/$defs/uriString" },
+            "title": { "$ref": "#/$defs/nonEmptyString" },
+            "state": { "type": "string", "enum": ["open", "closed", "merged"] },
+            "headSha": { "$ref": "#/$defs/nonEmptyString" },
+            "mergedAt": { "type": ["string", "null"], "format": "date-time" },
+            "mergeCommit": { "type": ["string", "null"], "minLength": 1 }
+          }
+        },
+        "issueRefs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["number", "url", "role"],
+            "properties": {
+              "number": { "type": "integer", "minimum": 1 },
+              "url": { "$ref": "#/$defs/uriString" },
+              "role": { "$ref": "#/$defs/nonEmptyString" }
+            }
+          }
+        }
+      }
+    },
+    "conclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "summary", "requiredChecksPassed", "advisoryFindingsPresent", "staleRunsPresent", "localVerificationPassed", "mergeApprovedByAudit"],
+      "properties": {
+        "status": { "type": "string", "enum": ["blocked", "required-passed", "merged-with-advisory-findings", "merged-with-stale-runs"] },
+        "summary": { "$ref": "#/$defs/nonEmptyString" },
+        "requiredChecksPassed": { "type": "boolean" },
+        "advisoryFindingsPresent": { "type": "boolean" },
+        "staleRunsPresent": { "type": "boolean" },
+        "localVerificationPassed": { "type": "boolean" },
+        "mergeApprovedByAudit": { "const": false }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredCheckCount", "requiredChecksPassedCount", "advisoryWorkflowFindingCount", "skippedWorkflowRunCount", "staleWorkflowRunCount", "localVerificationCount", "auditNoteCount"],
+      "properties": {
+        "requiredCheckCount": { "type": "integer", "minimum": 0 },
+        "requiredChecksPassedCount": { "type": "integer", "minimum": 0 },
+        "advisoryWorkflowFindingCount": { "type": "integer", "minimum": 0 },
+        "skippedWorkflowRunCount": { "type": "integer", "minimum": 0 },
+        "staleWorkflowRunCount": { "type": "integer", "minimum": 0 },
+        "localVerificationCount": { "type": "integer", "minimum": 0 },
+        "auditNoteCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "requiredMergeChecks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/checkRecord" }
+    },
+    "advisoryWorkflowRuns": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/advisoryRun" }
+    },
+    "skippedWorkflowRuns": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/skippedRun" }
+    },
+    "staleWorkflowRuns": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/staleRun" }
+    },
+    "localVerification": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/localVerification" }
+    },
+    "auditNotes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/auditNote" }
+    },
+    "collectionBoundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["liveGitHubApiCalled", "generatedFromLocalFixture", "approvalAuthority", "requiredCheckSource", "advisoryFindingSource", "reportOnlyReason"],
+      "properties": {
+        "liveGitHubApiCalled": { "const": false },
+        "generatedFromLocalFixture": { "type": "boolean" },
+        "approvalAuthority": { "$ref": "#/$defs/nonEmptyString" },
+        "requiredCheckSource": { "$ref": "#/$defs/nonEmptyString" },
+        "advisoryFindingSource": { "$ref": "#/$defs/nonEmptyString" },
+        "reportOnlyReason": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "uriString": { "type": "string", "format": "uri" },
+    "timestamp": { "type": ["string", "null"], "format": "date-time" },
+    "status": { "type": "string", "enum": ["pass", "fail", "pending", "skipped", "cancelled", "warning"] },
+    "severity": { "type": "string", "enum": ["info", "warning", "action-required"] },
+    "checkRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "workflow", "required", "status", "url", "headSha", "startedAt", "completedAt"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "workflow": { "$ref": "#/$defs/nonEmptyString" },
+        "required": { "const": true },
+        "status": { "$ref": "#/$defs/status" },
+        "url": { "$ref": "#/$defs/uriString" },
+        "headSha": { "$ref": "#/$defs/nonEmptyString" },
+        "startedAt": { "$ref": "#/$defs/timestamp" },
+        "completedAt": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "advisoryRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "workflow", "required", "status", "severity", "url", "headSha", "blocking", "finding"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "workflow": { "$ref": "#/$defs/nonEmptyString" },
+        "required": { "const": false },
+        "status": { "$ref": "#/$defs/status" },
+        "severity": { "$ref": "#/$defs/severity" },
+        "url": { "$ref": "#/$defs/uriString" },
+        "headSha": { "$ref": "#/$defs/nonEmptyString" },
+        "blocking": { "const": false },
+        "finding": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "skippedRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "workflow", "status", "reason", "url"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "workflow": { "$ref": "#/$defs/nonEmptyString" },
+        "status": { "const": "skipped" },
+        "reason": { "$ref": "#/$defs/nonEmptyString" },
+        "url": { "$ref": "#/$defs/uriString" }
+      }
+    },
+    "staleRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "workflow", "status", "headSha", "url", "resolution"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "workflow": { "$ref": "#/$defs/nonEmptyString" },
+        "status": { "type": "string", "enum": ["cancelled", "fail", "stale"] },
+        "headSha": { "$ref": "#/$defs/nonEmptyString" },
+        "url": { "$ref": "#/$defs/uriString" },
+        "resolution": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "localVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "command", "status", "artifactPaths", "note"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "command": { "$ref": "#/$defs/nonEmptyString" },
+        "status": { "type": "string", "enum": ["pass", "fail", "not-run"] },
+        "artifactPaths": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "note": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "auditNote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "category", "message"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "severity": { "$ref": "#/$defs/severity" },
+        "category": { "$ref": "#/$defs/nonEmptyString" },
+        "message": { "$ref": "#/$defs/nonEmptyString" },
+        "relatedUrl": { "type": ["string", "null"], "format": "uri" }
+      }
+    }
+  }
+}

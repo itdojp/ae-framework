@@ -1,0 +1,137 @@
+{
+  "schemaVersion": "completion-audit-input/v1",
+  "source": "offline-completion-audit-fixture",
+  "subject": {
+    "repository": "itdojp/ae-framework",
+    "pullRequest": {
+      "number": 3566,
+      "url": "https://github.com/itdojp/ae-framework/pull/3566",
+      "title": "feat(assurance): add domain preset packages",
+      "state": "merged",
+      "headSha": "50dce20e392083fce044077ca24a9e12b2810ee1",
+      "mergedAt": "2026-07-01T02:52:50.000Z",
+      "mergeCommit": "8f13641d563e923bb5dfd1ac0ed77eeab57a6256"
+    },
+    "issueRefs": [
+      {
+        "number": 3556,
+        "url": "https://github.com/itdojp/ae-framework/issues/3556",
+        "role": "child issue"
+      },
+      {
+        "number": 3546,
+        "url": "https://github.com/itdojp/ae-framework/issues/3546",
+        "role": "parent epic"
+      }
+    ]
+  },
+  "requiredMergeChecks": [
+    {
+      "id": "copilot-review-gate",
+      "name": "gate",
+      "workflow": "Copilot Review Gate",
+      "required": true,
+      "status": "pass",
+      "url": "https://github.com/itdojp/ae-framework/actions/runs/28489969888/job/84444362440",
+      "headSha": "50dce20e392083fce044077ca24a9e12b2810ee1",
+      "startedAt": "2026-07-01T02:44:44.000Z",
+      "completedAt": "2026-07-01T02:44:46.000Z"
+    },
+    {
+      "id": "policy-gate",
+      "name": "policy-gate",
+      "workflow": "Policy Gate",
+      "required": true,
+      "status": "pass",
+      "url": "https://github.com/itdojp/ae-framework/actions/runs/28489969882/job/84444333981",
+      "headSha": "50dce20e392083fce044077ca24a9e12b2810ee1",
+      "startedAt": "2026-07-01T02:44:21.000Z",
+      "completedAt": "2026-07-01T02:44:54.000Z"
+    },
+    {
+      "id": "verify-lite",
+      "name": "verify-lite",
+      "workflow": "Verify Lite",
+      "required": true,
+      "status": "pass",
+      "url": "https://github.com/itdojp/ae-framework/actions/runs/28489969870/job/84444333777",
+      "headSha": "50dce20e392083fce044077ca24a9e12b2810ee1",
+      "startedAt": "2026-07-01T02:44:24.000Z",
+      "completedAt": "2026-07-01T02:46:51.000Z"
+    }
+  ],
+  "advisoryWorkflowRuns": [
+    {
+      "id": "dependency-advisory-visible",
+      "name": "Dependency Audit",
+      "workflow": "Security Analysis",
+      "required": false,
+      "status": "warning",
+      "severity": "warning",
+      "url": "https://github.com/itdojp/ae-framework/security/dependabot",
+      "headSha": "50dce20e392083fce044077ca24a9e12b2810ee1",
+      "blocking": false,
+      "finding": "GitHub reported default-branch vulnerability alerts during push/fetch operations. This is visible at workflow/security-advisory level but was not a required merge check for PR #3566. Track separately from required-check pass/fail wording."
+    }
+  ],
+  "skippedWorkflowRuns": [
+    {
+      "id": "optional-coverage-ui",
+      "name": "coverage",
+      "workflow": "coverage-check",
+      "status": "skipped",
+      "reason": "Optional/advisory coverage surfaces are recorded separately from required merge checks.",
+      "url": "https://github.com/itdojp/ae-framework/pull/3566/checks"
+    }
+  ],
+  "staleWorkflowRuns": [
+    {
+      "id": "stale-copilot-review-gate",
+      "name": "gate",
+      "workflow": "Copilot Review Gate",
+      "status": "cancelled",
+      "headSha": "5a1e2219cb39fdd449ac4762db8a77fa7a2ee4f5",
+      "url": "https://github.com/itdojp/ae-framework/actions/runs/28489852391/job/84443990897",
+      "resolution": "Review threads were resolved, then an unchanged empty amend refreshed the head to 50dce20e392083fce044077ca24a9e12b2810ee1 so required checks could be evaluated on a clean rollup."
+    }
+  ],
+  "localVerification": [
+    {
+      "id": "targeted-vitest",
+      "command": "pnpm -s exec vitest run tests/scripts/domain-presets.test.ts --reporter dot",
+      "status": "pass",
+      "artifactPaths": [],
+      "note": "Domain preset renderer regression tests passed: 1 file / 6 tests."
+    },
+    {
+      "id": "verify-lite",
+      "command": "pnpm -s run verify:lite",
+      "status": "pass",
+      "artifactPaths": ["artifacts/verify-lite/verify-lite-run-summary.json"],
+      "note": "Local verify-lite passed with pre-existing lint findings remaining warn-only under the baseline."
+    }
+  ],
+  "auditNotes": [
+    {
+      "id": "note-required-vs-advisory",
+      "severity": "warning",
+      "category": "wording",
+      "message": "Completion comments must say required checks passed, not that every repository workflow or advisory surface was clean when advisory findings remain visible.",
+      "relatedUrl": "https://github.com/itdojp/ae-framework/pull/3566"
+    },
+    {
+      "id": "note-report-only",
+      "severity": "info",
+      "category": "authority",
+      "message": "Completion audit evidence is report-only. It records closeout state and does not approve, merge, or waive human review."
+    }
+  ],
+  "collectionBoundaries": {
+    "liveGitHubApiCalled": false,
+    "generatedFromLocalFixture": true,
+    "approvalAuthority": "human maintainers and repository branch protection remain the approval authority",
+    "requiredCheckSource": "captured PR #3566 required-check rollup after final head refresh",
+    "advisoryFindingSource": "captured workflow/security advisory observations and stale-run evidence",
+    "reportOnlyReason": "The audit distinguishes closeout evidence classes; it does not add a policy-gate block condition."
+  }
+}
