@@ -36,7 +36,7 @@ without adding a runtime event processor.
 ```bash no-doctest
 node scripts/domain-presets/render-preset.mjs --preset templates/domain-presets/event-driven-domain/preset.json --generated-at 2026-07-01T00:00:00.000Z --output-json fixtures/evidence-sprint/event-driven-pilot/domain-preset-report.json --output-md fixtures/evidence-sprint/event-driven-pilot/domain-preset-report.md
 node scripts/formal/trace-validate.mjs samples/conformance/sample-traces.json
-node scripts/formal/verify-conformance.mjs --in samples/conformance/sample-traces.json --out artifacts/hermetic-reports/conformance/event-driven-pilot-summary.json
+pnpm run conformance:verify:selected-trace
 node scripts/exec-plan/validate-v2.mjs --file fixtures/evidence-sprint/event-driven-pilot/exec-plan.v2.json --no-write
 node scripts/ci/validate-json.mjs
 pnpm -s run check:schemas

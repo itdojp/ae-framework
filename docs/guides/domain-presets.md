@@ -39,7 +39,7 @@ Presets do not replace Context Pack, ExecPlan v2, verification summaries, claim/
 | Preset | Target user | Starting command | Primary artifacts | Escalation rule |
 | --- | --- | --- | --- | --- |
 | `web-api-bff` | API/BFF maintainers with HTTP contract drift or PR-quality variance | `pnpm run verify:lite` | verify-lite summary, Context Pack boundary report, ExecPlan v2, PR assurance review surface | Escalate when auth, authorization, payment, PII, cross-service contract breakage, or `risk:high` is in scope. |
-| `event-driven-domain` | Inventory, ordering, payment, or workflow teams with event ordering and invariant risks | `pnpm run conformance:verify:sample` | conformance result/summary, verify-lite summary, optional assurance summary | Escalate when replay is non-deterministic, invariants fail, ordering assumptions are disputed, or the domain is payment/auth/safety critical. |
+| `event-driven-domain` | Inventory, ordering, payment, or workflow teams with event ordering and invariant risks | `pnpm run conformance:verify:selected-trace` | selected-trace conformance summary, generic conformance sample result, verify-lite summary, optional assurance summary | Escalate when replay is non-deterministic, invariants fail, ordering assumptions are disputed, or the domain is payment/auth/safety critical. |
 | `spec-led-brownfield` | Brownfield maintainers with local Spec Kit-style feature artifacts | `pnpm run spec-kit:import-feature -- --feature-dir fixtures/spec-kit/brownfield/specs/042-inventory-modernization --output-dir artifacts/spec-kit --generated-at 2026-07-01T00:00:00.000Z` | Spec Kit bridge report, imported Context Pack, imported ExecPlan v2 | Escalate when bridge result is `fail`, a warning hides a required contract, or imported boundaries conflict with the current Context Pack. |
 | `high-assurance-critical-core` | Maintainers of selected concurrency, financial, security, or protocol-critical core claims | `pnpm run verify:formal` | formal summary, claim-evidence manifest, verify-lite summary, optional policy-gate summary | Escalate when selected claims remain unresolved, formal tools are unavailable, counterexamples are found, or risk remains high after mitigation. |
 
@@ -85,6 +85,15 @@ Expected deterministic outputs for these two first-slice presets are checked in 
 
 - `fixtures/domain-presets/web-api-bff/expected/`
 - `fixtures/domain-presets/event-driven-domain/expected/`
+
+For event-driven pilots, the first-class selected trace fixture is
+`samples/conformance/sample-traces.json` by default. The preset starting command
+uses `pnpm run conformance:verify:selected-trace`; `pnpm run
+conformance:verify:sample` remains available as an optional generic
+`configs/samples` smoke check and is not a substitute for selected-trace
+evidence. When a pilot uses a different trace, record the path in ExecPlan, run
+`pnpm run trace:validate -- --in <trace>`, and append `-- --in <trace>
+--out <summary>` to the selected-trace conformance command.
 
 Schema validation for all four preset templates is covered by:
 
@@ -159,7 +168,7 @@ Preset は Context Pack、ExecPlan v2、verification summary、claim/evidence ma
 | Preset | 対象 | 開始コマンド | 主な artifact | escalation |
 | --- | --- | --- | --- | --- |
 | `web-api-bff` | HTTP contract drift や PR 品質ばらつきがある API/BFF | `pnpm run verify:lite` | verify-lite summary、Context Pack boundary report、ExecPlan v2、PR assurance review surface | auth / authorization / payment / PII / cross-service contract breakage / `risk:high` の場合に escalation。 |
-| `event-driven-domain` | event ordering や invariant risk を持つ inventory / ordering / payment / workflow | `pnpm run conformance:verify:sample` | conformance result/summary、verify-lite summary、optional assurance summary | replay 非決定性、invariant failure、ordering assumption の争点化、安全重要ドメインで escalation。 |
+| `event-driven-domain` | event ordering や invariant risk を持つ inventory / ordering / payment / workflow | `pnpm run conformance:verify:selected-trace` | selected-trace conformance summary、generic conformance sample result、verify-lite summary、optional assurance summary | replay 非決定性、invariant failure、ordering assumption の争点化、安全重要ドメインで escalation。 |
 | `spec-led-brownfield` | Spec Kit 形式または類似の local feature artifact を持つ brownfield | `pnpm run spec-kit:import-feature -- --feature-dir fixtures/spec-kit/brownfield/specs/042-inventory-modernization --output-dir artifacts/spec-kit --generated-at 2026-07-01T00:00:00.000Z` | Spec Kit bridge report、imported Context Pack、imported ExecPlan v2 | bridge result `fail`、required contract を隠す warning、既存 Context Pack との boundary conflict で escalation。 |
 | `high-assurance-critical-core` | concurrency / financial / security / protocol critical な selected claim | `pnpm run verify:formal` | formal summary、claim-evidence manifest、verify-lite summary、optional policy-gate summary | claim unresolved、formal tool unavailable、counterexample、risk 残存時に escalation。 |
 
@@ -205,6 +214,12 @@ pnpm run domain-presets:render -- \
 
 - `fixtures/domain-presets/web-api-bff/expected/`
 - `fixtures/domain-presets/event-driven-domain/expected/`
+
+Event-driven pilot の first-class selected trace fixture は既定で
+`samples/conformance/sample-traces.json` です。preset の開始コマンドは
+`pnpm run conformance:verify:selected-trace` を使います。`pnpm run
+conformance:verify:sample` は optional な generic `configs/samples` smoke check
+として利用可能ですが、selected-trace evidence の代替ではありません。別 trace を使う pilot は ExecPlan に path を記録し、`pnpm run trace:validate -- --in <trace>` を実行したうえで、selected-trace conformance command に `-- --in <trace> --out <summary>` を追加します。
 
 4 preset すべての schema validation と renderer regression は次で確認します。
 

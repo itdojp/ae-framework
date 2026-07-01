@@ -89,11 +89,11 @@ Rendered preset report:
 
 | Preset field | Recorded value |
 | --- | --- |
-| Preset default starting command | `pnpm run conformance:verify:sample` |
-| Selected trace verification command | `node scripts/formal/verify-conformance.mjs --in samples/conformance/sample-traces.json --out artifacts/hermetic-reports/conformance/event-driven-pilot-summary.json` |
-| Required inputs | sample domain events, conformance rules, Context Pack and Boundary Map, ExecPlan v2 |
-| Expected required artifacts | conformance result and verify-lite summary |
-| Optional evidence surfaces | conformance summary and assurance summary |
+| Preset default starting command | `pnpm run conformance:verify:selected-trace` |
+| Selected trace verification command | `pnpm run conformance:verify:selected-trace` |
+| Required inputs | selected trace fixture, sample domain events, conformance rules, Context Pack and Boundary Map, ExecPlan v2 |
+| Expected required artifacts | selected-trace conformance summary and verify-lite summary |
+| Optional evidence surfaces | generic conformance sample result, conformance summary, and assurance summary |
 | Escalation rule | escalate for nondeterministic replay, invariant failure, disputed ordering, or payment/auth/safety-critical domain |
 | Approval authority | human maintainer, branch protection, and explicit policy; preset output remains guidance |
 
@@ -118,7 +118,7 @@ Rendered preset report:
 | Command | Result | Interpretation | Limitation |
 | --- | --- | --- | --- |
 | `node scripts/formal/trace-validate.mjs samples/conformance/sample-traces.json` | pass; 2 events validated | The selected trace fixture conforms to the trace schema. | This is schema validation, not proof of production ordering correctness. |
-| `node scripts/formal/verify-conformance.mjs --in samples/conformance/sample-traces.json --out artifacts/hermetic-reports/conformance/event-driven-pilot-summary.json` | pass; 2 events, 0 schema errors, 0 invariant violations | The selected trace fixture has a trace-specific conformance summary aligned with the inventory replay assumptions. | This is fixture-level evidence and does not prove production event ordering or broker behavior. |
+| `pnpm run conformance:verify:selected-trace` | pass; 2 events, 0 schema errors, 0 invariant violations | The selected trace fixture has a trace-specific conformance summary aligned with the inventory replay assumptions. | This is fixture-level evidence and does not prove production event ordering or broker behavior. |
 | `pnpm -s run verify:lite` | local pass with warn-only lint baseline | Ordinary repository verification remains available alongside domain evidence. | Local verification does not replace GitHub CI or human review. |
 
 ### 6. Metrics snapshot
@@ -143,7 +143,7 @@ The measurement fixture is
 | --- | --- | --- |
 | No live event-driven implementation target was specified for #3573. | Issue body says to use a real change when available, otherwise fixture-backed. | Use deterministic trace/conformance fixtures and avoid runtime behavior claims. |
 | Ordering assumptions must be explicit before conformance summaries are interpreted. | Event-driven preset fit criteria and invariant fixture. | Add `invariant-assumptions.md` and review checklist. |
-| The preset's generic `conformance:verify:sample` command targets `configs/samples/sample-data.json`, not the selected inventory trace. | Package script definition and review feedback. | Do not use those sample-data findings as #3573 selected-trace evidence; use trace validation and `verify-conformance.mjs --in samples/conformance/sample-traces.json` instead. |
+| The original #3573 pilot had to substitute the generic `conformance:verify:sample` command because it targets `configs/samples/sample-data.json`, not the selected inventory trace. | Package script definition, review feedback, and follow-up #3584. | The event-driven preset now records the selected trace fixture and starts from `pnpm run conformance:verify:selected-trace`; keep `conformance:verify:sample` as optional generic smoke evidence only. |
 | Final closeout cannot be known at report creation time. | review completeness and completion audit pending. | Keep final required-check and advisory-finding language in the post-merge Issue comment. |
 
 ### 8. Claim boundary
@@ -208,7 +208,7 @@ correctness の一般 claim は対象外です。
 - #3573 には具体的な live event-driven change が指定されていないため、Issue の条件に従い fixture-backed pilot としました。
 - Ordering / invariant assumptions を明示しないと、conformance result の意味を review できません。
 - `trace-validate` は sample trace schema validation を pass します。
-- `verify-conformance.mjs --in samples/conformance/sample-traces.json` は selected trace に対して 2 events / 0 schema errors / 0 invariant violations の summary を生成します。
+- `pnpm run conformance:verify:selected-trace` は selected trace に対して 2 events / 0 schema errors / 0 invariant violations の summary を生成します。
 - review completeness と completion audit は PR closeout 後に記録します。
 
 ### 5. Claim boundary
