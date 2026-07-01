@@ -387,6 +387,11 @@ const checks = [
     label: 'Req2run metrics schema validation'
   },
   {
+    schema: 'schema/evidence-sprint-measurement-report.schema.json',
+    fixtures: ['fixtures/metrics/evidence-sprint/pilot-measurement-example.json'],
+    label: 'Evidence Sprint measurement report schema validation'
+  },
+  {
     schema: 'schema/domain-assurance-preset.schema.json',
     fixtures: [
       'templates/domain-presets/web-api-bff/preset.json',
