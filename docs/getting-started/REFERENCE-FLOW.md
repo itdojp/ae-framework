@@ -8,6 +8,8 @@ canonicalSource:
 - docs/reference/SPEC-VERIFICATION-KIT-MIN.md
 - docs/quality/assurance-operations-runbook.md
 - docs/integrations/LOOP-ENGINEERING.md
+- docs/automation/LOOP-ENGINEERING-SAFETY.md
+- docs/quality/VARIANCE-REDUCTION-POLICY.md
 lastVerified: '2026-07-01'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
