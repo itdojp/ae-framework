@@ -387,6 +387,24 @@ const checks = [
     label: 'Req2run metrics schema validation'
   },
   {
+    schema: 'schema/domain-assurance-preset.schema.json',
+    fixtures: [
+      'templates/domain-presets/web-api-bff/preset.json',
+      'templates/domain-presets/event-driven-domain/preset.json',
+      'templates/domain-presets/spec-led-brownfield/preset.json',
+      'templates/domain-presets/high-assurance-critical-core/preset.json',
+    ],
+    label: 'Domain assurance preset schema validation'
+  },
+  {
+    schema: 'schema/domain-assurance-preset-report.schema.json',
+    fixtures: [
+      'fixtures/domain-presets/web-api-bff/expected/domain-preset-report.json',
+      'fixtures/domain-presets/event-driven-domain/expected/domain-preset-report.json',
+    ],
+    label: 'Domain assurance preset report schema validation'
+  },
+  {
     schema: 'schema/formal-plan.schema.json',
     fixtures: ['fixtures/formal-plan/sample.formal-plan.json'],
     label: 'Formal plan schema validation'

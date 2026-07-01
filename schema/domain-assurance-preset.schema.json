@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/domain-assurance-preset.schema.json",
+  "title": "domain-assurance-preset/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "title",
+    "version",
+    "targetUser",
+    "fit",
+    "requiredInputs",
+    "startingCommand",
+    "defaultVerificationCommands",
+    "expectedArtifacts",
+    "evidenceSurfaces",
+    "escalationRule",
+    "referenceFlowLinks",
+    "integration",
+    "reuseContracts",
+    "reportOnly"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "domain-assurance-preset/v1" },
+    "id": { "$ref": "#/$defs/slug" },
+    "title": { "$ref": "#/$defs/nonEmptyString" },
+    "version": { "$ref": "#/$defs/nonEmptyString" },
+    "targetUser": { "$ref": "#/$defs/nonEmptyString" },
+    "fit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "recommendedWhen", "notRecommendedWhen"],
+      "properties": {
+        "classification": { "type": "string", "enum": ["baseline", "structured-assurance", "high-assurance"] },
+        "recommendedWhen": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "notRecommendedWhen": { "$ref": "#/$defs/nonEmptyStringArray" }
+      }
+    },
+    "requiredInputs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/input" }
+    },
+    "startingCommand": { "$ref": "#/$defs/command" },
+    "defaultVerificationCommands": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/command" }
+    },
+    "expectedArtifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "evidenceSurfaces": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/evidenceSurface" }
+    },
+    "escalationRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trigger", "action", "requiredHumanDecision", "optionalCommands"],
+      "properties": {
+        "trigger": { "$ref": "#/$defs/nonEmptyString" },
+        "action": { "$ref": "#/$defs/nonEmptyString" },
+        "requiredHumanDecision": { "type": "boolean" },
+        "optionalCommands": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/command" }
+        }
+      }
+    },
+    "referenceFlowLinks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "path", "required"],
+        "properties": {
+          "label": { "$ref": "#/$defs/nonEmptyString" },
+          "path": { "$ref": "#/$defs/pathString" },
+          "required": { "type": "boolean" }
+        }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contextPackRequired", "execPlanRequired", "specVerificationKit", "specKitBridge"],
+      "properties": {
+        "contextPackRequired": { "const": true },
+        "execPlanRequired": { "const": true },
+        "specVerificationKit": { "$ref": "#/$defs/integrationMode" },
+        "specKitBridge": { "$ref": "#/$defs/integrationMode" }
+      }
+    },
+    "reuseContracts": { "$ref": "#/$defs/nonEmptyStringArray" },
+    "reportOnly": { "const": true }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "pathString": { "type": "string", "minLength": 1 },
+    "nonEmptyStringArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "pathPattern", "description", "contract"],
+      "properties": {
+        "id": { "$ref": "#/$defs/slug" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "pathPattern": { "$ref": "#/$defs/pathString" },
+        "description": { "$ref": "#/$defs/nonEmptyString" },
+        "contract": { "type": ["string", "null"] }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "command", "purpose", "outputArtifacts"],
+      "properties": {
+        "id": { "$ref": "#/$defs/slug" },
+        "command": { "$ref": "#/$defs/nonEmptyString" },
+        "purpose": { "$ref": "#/$defs/nonEmptyString" },
+        "outputArtifacts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pathString" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "kind", "schemaVersion", "required", "reviewPurpose"],
+      "properties": {
+        "id": { "$ref": "#/$defs/slug" },
+        "path": { "$ref": "#/$defs/pathString" },
+        "kind": { "$ref": "#/$defs/nonEmptyString" },
+        "schemaVersion": { "type": ["string", "null"] },
+        "required": { "type": "boolean" },
+        "reviewPurpose": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "evidenceSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "description"],
+      "properties": {
+        "id": { "$ref": "#/$defs/slug" },
+        "path": { "$ref": "#/$defs/pathString" },
+        "description": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "integrationMode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "guidance"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["required", "recommended", "optional", "not-recommended"] },
+        "guidance": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  }
+}

@@ -33,6 +33,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/codex-task-request.schema.json`
 - `schema/context-bundle.schema.json`
 - `schema/discovery-pack-v1.schema.json`
+- `schema/domain-assurance-preset.schema.json`
 - `schema/context-pack-v1.schema.json`
 - `schema/context-pack-boundary-map.schema.json`
 - `schema/context-pack-functor-map.schema.json`
@@ -75,6 +76,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 
 - `schema/agentic-metrics.schema.json`
 - `schema/req2run-metrics.schema.json`
+- `schema/domain-assurance-preset-report.schema.json`
 - `schema/automation-observability-v1.schema.json`
 - `schema/artifact-metadata.schema.json`
 - `schema/ci-artifact-provenance-v1.schema.json`
@@ -431,6 +433,7 @@ The produced/consumed table lists implementation entry points. When more than on
 | `artifacts/agents/producer-normalization-summary.json` | `schema/producer-normalization-summary.schema.json` | `scripts/agents/normalize-producer-output.mjs`, `fixtures/agents/evidence-adapters/**/*.json`。`fixtures/agents/producer-normalization-summary.{codex,ci,formal}.json` は schema validated fixture summary | `scripts/ci/validate-json.mjs`, 将来の PR summary / policy-gate report-only context。raw producer assertion、missing evidence、known gap、expected routing を記録し、pass/proved/approved judgment は emit しない |
 | `artifacts/metrics/agent-pr-assurance-metrics.json`（collector default）; `artifacts/agents/agent-pr-assurance-metrics.json`（producer-emitted variant） | `schema/agentic-metrics.schema.json`（optional `productMetrics` を含む `agentPrAssurance` extension） | optional な report-only agent PR assurance metrics collector / producer。fixture は `fixtures/agentic-metrics/` と `fixtures/metrics/agent-pr-assurance/` に置く | `scripts/ci/validate-json.mjs`、`scripts/metrics/collect-agent-pr-assurance-metrics.mjs`、接続時の future quality-scorecard / PR-summary consumer。role=observability/evidence、enforcement=report-only、全PR必須ではなく、policy-gate block条件も追加しない |
 | `artifacts/metrics/req2run-metrics.json`; `fixtures/metrics/req2run/expected.req2run-metrics.json` | `schema/req2run-metrics.schema.json`（`req2run-metrics/v1`） | `scripts/metrics/collect-req2run-metrics.mjs`（`pnpm run metrics:req2run`）、fixture input は `fixtures/metrics/req2run/` 配下 | `scripts/ci/validate-json.mjs`, `tests/scripts/req2run-metrics.test.ts`, `docs/product/REQ2RUN-METRICS.md`。requirement-to-runnable flow、deterministic replay、task/evidence coverage、manual-intervention count を report-only adoption-readiness evidence として記録する。policy-gate block 条件や agent-vendor ranking は追加しない |
+| `templates/domain-presets/*/preset.json`; `fixtures/domain-presets/*/expected/domain-preset-report.{json,md}` | `schema/domain-assurance-preset.schema.json`（`domain-assurance-preset/v1`）; `schema/domain-assurance-preset-report.schema.json`（`domain-assurance-preset-report/v1`） | manual preset templates under `templates/domain-presets/`; deterministic renderer `scripts/domain-presets/render-preset.mjs`（`pnpm run domain-presets:render`） | `scripts/ci/validate-json.mjs`, `tests/scripts/domain-presets.test.ts`, `docs/guides/domain-presets.md`。Product archetype ごとの required inputs、starting command、expected artifacts、escalation rule を report-only adoption package として選択する。Context Pack / ExecPlan / evidence contracts を bypass せず、policy-gate block 条件も追加しない |
 | `artifacts/plan/plan-artifact.json` | `schema/plan-artifact.schema.json` | `scripts/plan-artifact/generate.mjs` | `scripts/plan-artifact/validate.mjs`, `scripts/ci/policy-gate.mjs`, `.github/workflows/pr-ci-status-comment.yml`, `.github/workflows/policy-gate.yml` |
 | `artifacts/plan/exec-plan.v2.json`; `artifacts/plan/exec-plan.v2.md` | JSON は `schema/exec-plan.v2.schema.json`、Markdown は非 authoritative rendering | `scripts/exec-plan/validate-v2.mjs`（`pnpm run exec-plan:v2:validate`）、`fixtures/exec-plan/` 配下の fixture | `scripts/ci/validate-json.mjs`, `docs/reference/EXEC-PLAN-V2.md`, future PR/Issue review surface。Issue intent、Context Pack refs、validation command、evidence requirements、risk policy、stop rules、rollback、output artifacts を preview/report-only で接続する。現Issueでは `plan-artifact/v1` の policy-gate enforcement を置き換えない |
 | `artifacts/ci/policy-input-v1.json` | `schema/policy-input-v1.schema.json` | `scripts/ci/policy-gate.mjs`, `.github/workflows/policy-gate.yml` | `scripts/ci/policy-gate.mjs`, `scripts/ci/policy-shadow-compare.mjs`, `scripts/ci/validate-json.mjs`; optional `assurance` section normalizes `claim-evidence-manifest/v1`, including `summary.security` report-only finding counts, for waiver-aware decisions |
