@@ -22,7 +22,7 @@ Comprehensive documentation for the agent-neutral assurance control plane for ag
 See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 
 ### Recommended first reading
-- First-run demo: `getting-started/FIRST-RUN-DEMO.md` for the one-command local assurance review surface (`pnpm run demo:agent-assurance`).
+- First-run demo: `getting-started/FIRST-RUN-DEMO.md` for the one-command local assurance review surface (`pnpm run demo:agent-assurance`) and optional artifact check (`pnpm run demo:agent-assurance:check`).
 - Single reference flow: `getting-started/REFERENCE-FLOW.md` for the default Issue -> Context Pack/spec input -> ExecPlan -> verification -> evidence summary -> PR assurance review path.
 - Assurance control plane positioning: start with `product/ASSURANCE-CONTROL-PLANE.md`, then use `product/ASSURANCE-CONTROL-PLANE-POLICY.md` and `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md` to align BYO-agent adoption.
 - System overview (implementation-aligned): `architecture/CURRENT-SYSTEM-OVERVIEW.md`
@@ -342,7 +342,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 ### 🏁 [getting-started/](./getting-started/) - 導入・クイックスタート
 最初に読むべきドキュメント群
 
-- **[FIRST-RUN-DEMO.md](./getting-started/FIRST-RUN-DEMO.md)** ⭐ **最初に実行** - `pnpm run demo:agent-assurance` で local review surface を確認する one-command demo
+- **[FIRST-RUN-DEMO.md](./getting-started/FIRST-RUN-DEMO.md)** ⭐ **最初に実行** - `pnpm run demo:agent-assurance` で local review surface を確認し、`pnpm run demo:agent-assurance:check` で artifact path を任意確認する one-command demo
 - **[QUICK-START-GUIDE.md](./getting-started/QUICK-START-GUIDE.md)** ⭐ **推奨** - baseline → structured assurance → high-assurance PR の最短導線
 - **[PHASE-6-GETTING-STARTED.md](./getting-started/PHASE-6-GETTING-STARTED.md)** ⭐ **最新** - Phase 6 UI/UX専用クイックスタート  
 - [SETUP.md](./getting-started/SETUP.md) - baseline / assurance summary / optional MCP を含む基本セットアップ手順
@@ -394,7 +394,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [context-pack-troubleshooting.md](./operations/context-pack-troubleshooting.md) - Context Pack 検証失敗時の復旧ランブック
 - [THREAD-REPO-CI-FLOW.md](./guides/THREAD-REPO-CI-FLOW.md) - Plan を repo SSOT に正規化する標準フロー
 - [USAGE.md](./guides/USAGE.md) - 一般的な使い方ガイド
-- [FIRST-RUN-DEMO.md](./getting-started/FIRST-RUN-DEMO.md) - `pnpm run demo:agent-assurance` で始める one-command first-run demo
+- [FIRST-RUN-DEMO.md](./getting-started/FIRST-RUN-DEMO.md) - `pnpm run demo:agent-assurance` で始め、`pnpm run demo:agent-assurance:check` で任意確認する one-command first-run demo
 - [byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md) - 15分で試せる offline BYO-agent assurance demo
 - [external-pilot-onboarding.md](./guides/external-pilot-onboarding.md) - report-only external pilot の consent / redaction / publication boundary
 - [CLI-MIGRATION.md](./guides/CLI-MIGRATION.md) - CLI entry 移行ガイド

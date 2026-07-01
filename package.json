@@ -84,6 +84,7 @@
     "verify:assurance": "node scripts/assurance/aggregate-lanes.mjs",
     "assurance:e2e": "node scripts/assurance/run-e2e-scenario.mjs",
     "demo:agent-assurance": "node scripts/demo/run-agent-assurance-demo.mjs",
+    "demo:agent-assurance:check": "node scripts/demo/check-demo-smoke-artifacts.mjs --demo agent-assurance",
     "demo:smoke": "pnpm run demo:agent-assurance && node scripts/demo/run-scope-drift-demo.mjs && node scripts/demo/run-high-risk-escalation-demo.mjs && pnpm run demo:smoke:check",
     "demo:smoke:check": "node scripts/demo/check-demo-smoke-artifacts.mjs",
     "test:security-assurance": "node scripts/security/run-security-assurance-fixture.mjs",
