@@ -29,7 +29,7 @@ The selected pilot id is `evidence-011-web-api-pilot`.
 ```json
 {
   "pilotId": "evidence-011-web-api-pilot",
-  "status": "completed",
+  "status": "in_progress",
   "reportOnly": true,
   "domainPreset": "web-api-bff",
   "artifacts": [
