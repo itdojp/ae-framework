@@ -68,6 +68,7 @@ flowchart LR
 | CI smoke | Demo smoke lane | `pnpm run demo:smoke` and `.github/workflows/demo-smoke.yml` | Re-run the representative demo sequence and artifact/schema checker. |
 | Pilot setup | External pilot onboarding | `docs/guides/external-pilot-onboarding.md` | Run a one-repository, about-five-PR pilot with report-only metrics, consent, and redaction boundaries. |
 | Pilot report | ACP-097 dry-run status | `docs/product/PILOT-REPORT-2026Q3-01.md` | Explain that the current pilot report is `dry-run only` and does not contain live external PR evidence. |
+| Live pilot entry | Live-pilot entry criteria | `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` | Define consent, data handling, retention, required evidence, measurement fields, and claim boundaries before collecting live external data. |
 | Future benchmark | Controlled comparison protocol | `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` | Explain how future claims must compare review workflows, not agent vendors, after controlled baseline data exists. |
 | Optional | Scope-drift scenario | `node scripts/demo/run-scope-drift-demo.mjs` | Show report-only drift in a normal lane and blocking drift in a strict lane. |
 | Optional | High-risk escalation sample | `node scripts/demo/run-high-risk-escalation-demo.mjs` | Show selected critical/high claims and strict-lane evidence requirements. |
@@ -106,6 +107,7 @@ preview can support review traceability, but it is only one evidence source:
 | Offline quickstart / demos | Fixture-backed and locally repeatable. | Evidence routing, reviewer-surface shape, report-only policy interpretation. | Real-world speed, safety, or adoption impact. |
 | Internal dogfooding | ae-framework PR #3516 through PR #3521. | Review traceability and final unresolved-thread closure within this repository. | Controlled benchmark, external pilot outcome, or agent-vendor ranking. |
 | ACP-097 pilot report | `dry-run only`; 0 live external PRs collected. | Pilot readiness, consent/redaction boundary, and report-only metric vocabulary. | Live external effectiveness, safety, or review-speed improvement. |
+| Live-pilot entry criteria | Criteria documented; not yet satisfied by live data. | What must be recorded before live external collection or publication. | Any live outcome claim until criteria reach `claim_ready`. |
 | Controlled comparison protocol | Protocol-ready; not executed. | Future measurement design for `without ae-framework` vs `with ae-framework` review workflows. | Any benchmark or review-speed claim before comparable baseline data exists. |
 
 Use `docs/product/DOGFOODING-REPORT-2026Q3.md` for dogfooding limitations,

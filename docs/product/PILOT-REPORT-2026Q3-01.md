@@ -39,6 +39,8 @@ completed external repository pilot. The available evidence is the runbook,
 evidence template, synthetic redacted example, and the PR review/CI feedback that
 stabilized those artifacts before merge. It must not be used to claim faster
 review, safer code, agent-vendor superiority, or production adoption impact.
+Before live collection or any live external claim, use
+`docs/product/LIVE-PILOT-ENTRY-CRITERIA.md`.
 
 ### 2. Evidence sources
 
@@ -120,7 +122,7 @@ available.
 
 ### 8. Follow-up inputs
 
-- Run the first live external pilot only after a maintainer approves repository
+- Run the first live external pilot only after `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` is satisfied and a maintainer approves repository
   selection, raw-output viewers, redaction rules, and publication status.
 - Store live per-PR rows in a private copied evidence tracker derived from
   `docs/product/PILOT-EVIDENCE-TEMPLATE.md`.

@@ -23,7 +23,9 @@ completion-audit boundaries.
 
 It is intentionally report-only. It does not claim generalized review speed,
 implementation speed, safety, quality, adoption impact, production event
-correctness, or agent/vendor performance.
+correctness, or agent/vendor performance. Any future live event-driven or
+external-pilot claim must satisfy
+`docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` first.
 
 ---
 
@@ -145,6 +147,7 @@ The measurement fixture is
 | Ordering assumptions must be explicit before conformance summaries are interpreted. | Event-driven preset fit criteria and invariant fixture. | Add `invariant-assumptions.md` and review checklist. |
 | The original #3573 pilot had to substitute the generic `conformance:verify:sample` command because it targets `configs/samples/sample-data.json`, not the selected inventory trace. | Package script definition, review feedback, and follow-up #3584. | The event-driven preset now records the selected trace fixture and starts from `pnpm run conformance:verify:selected-trace`; keep `conformance:verify:sample` as optional generic smoke evidence only. |
 | Final closeout cannot be known at report creation time. | review completeness and completion audit pending. | Keep final required-check and advisory-finding language in the post-merge Issue comment. |
+| Live claim promotion requires a separate entry decision. | Fixture-backed trace evidence cannot support production event behavior or external effectiveness claims. | Apply `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` before collecting live data or publishing a live claim. |
 
 ### 8. Claim boundary
 
@@ -179,7 +182,7 @@ Not supported by this observation:
 fixture-backed pilot として記録します。Runtime event processor は追加せず、
 `event-driven-domain` preset、ordering / invariant assumptions、trace
 validation、trace-specific conformance summary、ExecPlan v2、measurement report、PR assurance
-review、completion audit 境界を接続します。
+review、completion audit 境界を接続します。将来 live event-driven / external pilot claim を出す前に、`docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` を満たす必要があります。
 
 ### 2. Scope
 

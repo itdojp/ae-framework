@@ -23,8 +23,10 @@ agent PR assurance workflow. It is **pilot-ready**, not a completed public pilot
 report. As of 2026-06-23, no external repository pilot result is recorded in
 this document.
 
-Use this runbook with `docs/guides/external-pilot-onboarding.md` and copy the
-per-PR evidence fields from `docs/product/PILOT-EVIDENCE-TEMPLATE.md`.
+Use this runbook with `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md`,
+`docs/guides/external-pilot-onboarding.md`, and the per-PR evidence fields from
+`docs/product/PILOT-EVIDENCE-TEMPLATE.md`. The live-pilot entry criteria decide
+whether collection may start and what claim boundaries remain unsupported.
 
 ### 1. Pilot scope and non-goals
 

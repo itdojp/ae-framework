@@ -33,6 +33,10 @@ Use this protocol for:
 - #3571 public case-study and evidence pack when selecting which statements are
   supported by observed repository evidence.
 
+Before any fixture-backed or dry-run observation is converted into a live
+external claim, apply `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` so consent,
+data handling, retention, baselines, and publication boundaries are recorded.
+
 ### 2. Observation boundary
 
 | Boundary | Rule |
@@ -127,6 +131,9 @@ Schema: `schema/evidence-sprint-measurement-report.schema.json`
   review rework plus completion-audit discrepancy tracking for #3570-#3573.
 - `docs/templates/evidence-sprint-pilot-report.md` is the copyable report
   template for the self-dogfood and domain pilots.
+- `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` defines the consent, data
+  handling, retention, measurement-field, artifact, and claim-boundary
+  prerequisites before any live external claim is made.
 
 ---
 
@@ -136,7 +143,7 @@ Schema: `schema/evidence-sprint-measurement-report.schema.json`
 
 この protocol は、Evidence Sprint の self-dogfood / pilot を実施する前に測定語彙を固定します。測定対象は ae-framework の **workflow effectiveness** です。Issue intent、Context Pack または scope memo、ExecPlan v2、domain preset、runnable verification、req2run metrics、PR assurance review、review-thread closure、completion audit を観測します。
 
-raw coding-agent intelligence、agent vendor の優劣、または report-only metric による承認・マージ可否は測りません。承認権限は human maintainer、branch protection、明示された policy に残ります。
+raw coding-agent intelligence、agent vendor の優劣、または report-only metric による承認・マージ可否は測りません。承認権限は human maintainer、branch protection、明示された policy に残ります。Fixture-backed / dry-run observation を live external claim に変える前に、`docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` で consent、data handling、retention、baseline、publication boundary を固定します。
 
 ### 2. 測定境界
 

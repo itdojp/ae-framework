@@ -22,7 +22,8 @@ review, and completion-audit boundaries.
 
 It is intentionally report-only. It does not claim generalized review speed,
 implementation speed, safety, quality, adoption impact, production API behavior,
-or agent/vendor performance.
+or agent/vendor performance. Any future live Web API or external-pilot claim
+must satisfy `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` first.
 
 ---
 
@@ -167,6 +168,7 @@ git diff --check
 | The Web API preset expects an API contract artifact before review. | `requiredInputs` includes `api-contract`. | Add `api-contract.md` and require reviewers to inspect contract invariants. |
 | Escalation is domain-specific. | `web-api-bff` escalation rule. | Future live routes involving auth, payment, PII, cross-service breakage, or `risk:high` must add security/high-assurance lanes. |
 | Final closeout cannot be known at report creation time. | review completeness and completion audit pending. | Keep final required-check and advisory-finding language in the post-merge Issue comment. |
+| Live claim promotion requires a separate entry decision. | Fixture-backed pilot evidence cannot support live API behavior or external effectiveness claims. | Apply `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` before collecting live data or publishing a live claim. |
 
 ### 9. Claim boundary
 
@@ -198,7 +200,7 @@ Not supported by this observation:
 この report は #3572 の Web API pilot を deterministic fixture-backed pilot
 として記録します。実 runtime endpoint は追加せず、Web API/BFF domain preset、
 API contract evidence、ExecPlan v2、measurement report、PR assurance review、
-completion audit 境界を接続します。
+completion audit 境界を接続します。将来 live Web API / external pilot claim を出す前に、`docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` を満たす必要があります。
 
 ### 2. Scope
 

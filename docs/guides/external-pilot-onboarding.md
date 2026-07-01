@@ -27,8 +27,10 @@ keep the release decision.
 This guide is the consent-safe operating model for a minimal pilot: one
 repository, about five pull requests, and a written agreement about what can be
 collected, redacted, and later summarized in the ACP-097 external pilot report.
-Use `docs/product/PILOT-RUNBOOK-2026Q3.md` and
-`docs/product/PILOT-EVIDENCE-TEMPLATE.md` to execute and capture the pilot.
+Use `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md`,
+`docs/product/PILOT-RUNBOOK-2026Q3.md`, and
+`docs/product/PILOT-EVIDENCE-TEMPLATE.md` to decide whether live collection may
+start and to execute/capture the pilot.
 
 ### 1. Purpose and non-goals
 
@@ -267,7 +269,7 @@ The ACP-097 external pilot report should reuse the metric vocabulary from
 
 このガイドは、外部 repository が branch protection 変更、auto-merge、有感な PR data の公開を行わずに、ae-framework の agent-assurance workflow を試すための手順です。Pilot は **report-only** で開始します。ae-framework は reviewer 向け evidence と metrics を作成しますが、release decision は maintainer が保持します。
 
-このガイドは、最小 pilot（1 repository / おおよそ 5 PR）の consent-safe operating model です。何を収集し、何を redact し、後続の ACP-097 external pilot report に何を要約できるかを事前に合意します。実行と記録には `docs/product/PILOT-RUNBOOK-2026Q3.md` と `docs/product/PILOT-EVIDENCE-TEMPLATE.md` を使います。
+このガイドは、最小 pilot（1 repository / おおよそ 5 PR）の consent-safe operating model です。何を収集し、何を redact し、後続の ACP-097 external pilot report に何を要約できるかを事前に合意します。Live collection の開始判断には `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` を使い、実行と記録には `docs/product/PILOT-RUNBOOK-2026Q3.md` と `docs/product/PILOT-EVIDENCE-TEMPLATE.md` を使います。
 
 ### 1. 目的と非目的
 
