@@ -64,7 +64,7 @@
       "present": true,
       "required": true,
       "schemaVersion": null,
-      "description": "Trace validation pass and report-only conformance sample findings."
+      "description": "Trace validation pass and selected-trace conformance summary results."
     },
     {
       "id": "exec-plan-v2",
@@ -136,13 +136,13 @@
       "unit": "minutes",
       "from": "2026-07-01T10:55:00.000Z",
       "to": "2026-07-01T11:04:00.000Z",
-      "purpose": "Measure time from fixture-backed pilot start to first runnable local trace/conformance verification marker in a deterministic report-only fixture.",
+      "purpose": "Measure time from fixture-backed pilot start to first runnable local trace validation and selected-trace conformance verification marker in a deterministic report-only fixture.",
       "sourceArtifactRefs": [
         "issue-3573",
         "domain-preset-report",
         "conformance-evidence"
       ],
-      "calculationMethod": "Synthetic fixture window from pilot start marker to first runnable local trace/conformance validation marker; not derived from live reviewer or CI timing.",
+      "calculationMethod": "Synthetic fixture window from pilot start marker to first runnable local trace validation and selected-trace conformance validation marker; not derived from live reviewer or CI timing.",
       "interpretation": "The schema and report can represent timing evidence for an event-driven pilot.",
       "limitation": "Synthetic fixture timing proves instrumentation readiness only; do not infer review speed, implementation speed, or adoption impact."
     },
@@ -170,7 +170,7 @@
         "completion-audit"
       ],
       "calculationMethod": "Required source artifacts marked present divided by all required source artifacts in this measurement report.",
-      "interpretation": "Pre-closeout evidence is available for Issue, pilot report, invariants, domain preset, conformance evidence, ExecPlan, measurement, trace sample, req2run, and review preview.",
+      "interpretation": "Pre-closeout evidence is available for Issue, pilot report, invariants, domain preset, selected-trace conformance evidence, ExecPlan, measurement, trace sample, req2run, and review preview.",
       "limitation": "Final review completeness and completion audit are intentionally unavailable until PR stabilization and merge."
     },
     "missing_evidence_count": {
@@ -202,7 +202,7 @@
         "exec-plan-v2"
       ],
       "calculationMethod": "Count scoped report claims without evidence, limitation, deferral, or non-applicability disposition.",
-      "interpretation": "The checked-in report scopes its claims to traceability, domain preset application, invariant visibility, conformance evidence routing, and metric readiness only.",
+      "interpretation": "The checked-in report scopes its claims to traceability, domain preset application, invariant visibility, selected-trace conformance evidence routing, and metric readiness only.",
       "limitation": "This does not prove production event behavior, implementation correctness, or absence of untracked claims outside the report."
     },
     "review_rework_count": {
@@ -223,7 +223,7 @@
       "attemptIds": [
         "domain-preset-render",
         "trace-validate",
-        "conformance-sample",
+        "trace-conformance",
         "exec-plan-validate",
         "schema-registry",
         "docs-governance",
@@ -239,7 +239,7 @@
         "measurement-report",
         "pr-assurance-review"
       ],
-      "calculationMethod": "Pass when the documented render, trace validation, conformance sample, ExecPlan validation, schema validation, docs checks, context checks, and verify-lite complete locally with expected report-only outcomes.",
+      "calculationMethod": "Pass when the documented render, trace validation, selected-trace conformance summary, ExecPlan validation, schema validation, docs checks, context checks, and verify-lite complete locally with expected fixture-level outcomes.",
       "interpretation": "The checked-in evidence package can be validated without live external agent APIs.",
       "limitation": "Local replay does not replace GitHub CI, Copilot/Codex review, or final PR completion audit."
     },
@@ -248,7 +248,7 @@
       "unit": "count",
       "itemIds": [
         "fixture-backed-pilot-selection",
-        "report-only-conformance-classification",
+        "selected-trace-conformance-routing",
         "post-merge-completion-audit"
       ],
       "purpose": "Track required human/operator actions and publication-boundary decisions for the pilot.",
@@ -257,8 +257,8 @@
         "conformance-evidence",
         "completion-audit"
       ],
-      "calculationMethod": "Count one operator decision to use a fixture-backed pilot, one report-only classification for existing conformance findings, plus one required post-merge completion-audit action.",
-      "interpretation": "The main interventions are pilot selection, conformance-finding classification, and governance closeout.",
+      "calculationMethod": "Count one operator decision to use a fixture-backed pilot, one selected-trace conformance routing decision, plus one required post-merge completion-audit action.",
+      "interpretation": "The main interventions are pilot selection, selected-trace evidence routing, and governance closeout.",
       "limitation": "Manual intervention here is an intentional control and fixture-boundary decision, not necessarily product friction."
     },
     "audit_discrepancy_count": {
@@ -279,7 +279,7 @@
   "claimBoundaries": {
     "allowedClaims": [
       "Issue #3573 has a checked-in trace from Issue intent to ordering/invariant assumptions, event-driven domain preset report, conformance evidence, ExecPlan v2, measurement fixture, PR assurance review preview, and planned completion audit.",
-      "The event-driven domain preset can be rendered and connected to deterministic trace/conformance fixtures without live external APIs.",
+      "The event-driven domain preset can be rendered and connected to deterministic selected-trace validation/conformance fixtures without live external APIs.",
       "The pilot exposes ordering and invariant assumptions before conformance findings are interpreted."
     ],
     "forbiddenClaims": [
@@ -292,7 +292,7 @@
   "limitations": [
     "The selected event-driven change is a deterministic trace/conformance fixture, not a runtime workflow implementation.",
     "The timing metric uses synthetic fixture timestamps and must not be used as speed or productivity evidence.",
-    "The conformance sample includes existing report-only violations that are evidence for escalation practice, not newly introduced blocking defects.",
+    "The selected trace conformance summary records 2 events, 0 schema errors, and 0 invariant violations; generic configs/samples findings are not selected-trace evidence.",
     "Review rework, final check rollup, and completion audit evidence are unavailable until the actual PR reaches final review and CI state."
   ],
   "summary": "Event-driven pilot measurement for #3573: pre-closeout evidence coverage 10/12, missing closeout evidence count 2, unresolved claim count 0, deterministic replay pass true, manual intervention count 3, audit discrepancy count 1, and synthetic timing 9 minutes limited to instrumentation readiness."

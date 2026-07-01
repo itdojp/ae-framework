@@ -55,7 +55,7 @@
       "Add an event-driven pilot evidence report with explicit fixture-backed scope and observations.",
       "Add ordering and invariant assumptions for the selected event trace fixture.",
       "Render and check in the event-driven domain preset report for the pilot.",
-      "Record trace validation and report-only conformance evidence.",
+      "Record trace validation and selected-trace conformance evidence.",
       "Add schema-validated ExecPlan v2 and Evidence Sprint measurement fixtures for this flow.",
       "Add a PR assurance review preview and docs navigation links."
     ],
@@ -80,7 +80,7 @@
       {
         "path": "fixtures/evidence-sprint/event-driven-pilot/conformance-evidence.md",
         "changeType": "add",
-        "reason": "Trace validation and conformance evidence surface."
+        "reason": "Trace validation and selected-trace conformance evidence surface."
       },
       {
         "path": "fixtures/evidence-sprint/event-driven-pilot/domain-preset-report.json",
@@ -247,9 +247,9 @@
             ]
           },
           {
-            "id": "cmd.conformance-sample",
-            "command": "pnpm -s run conformance:verify:sample",
-            "purpose": "Run the deterministic conformance sample and record report-only findings.",
+            "id": "cmd.trace-conformance",
+            "command": "node scripts/formal/verify-conformance.mjs --in samples/conformance/sample-traces.json --out artifacts/hermetic-reports/conformance/event-driven-pilot-summary.json",
+            "purpose": "Generate selected-trace conformance summary for samples/conformance/sample-traces.json.",
             "when": "local-validation",
             "expectedArtifactRefs": [
               "artifact.conformance-evidence"
@@ -392,9 +392,9 @@
         ]
       },
       {
-        "id": "cmd.conformance-sample",
-        "command": "pnpm -s run conformance:verify:sample",
-        "purpose": "Run report-only conformance sample.",
+        "id": "cmd.trace-conformance",
+        "command": "node scripts/formal/verify-conformance.mjs --in samples/conformance/sample-traces.json --out artifacts/hermetic-reports/conformance/event-driven-pilot-summary.json",
+        "purpose": "Generate selected-trace conformance summary for samples/conformance/sample-traces.json.",
         "when": "local-validation",
         "expectedArtifactRefs": [
           "artifact.conformance-evidence"
@@ -518,9 +518,9 @@
     {
       "id": "ev.conformance-evidence",
       "kind": "test-report",
-      "description": "Trace validation and report-only conformance sample evidence are recorded for review and escalation decisions.",
+      "description": "Trace validation and selected-trace conformance evidence are recorded for review and escalation decisions.",
       "requiredBefore": "pr-review",
-      "producer": "trace-validate and conformance:verify:sample",
+      "producer": "trace-validate and verify-conformance selected-trace run",
       "sourceRefs": [
         {
           "kind": "validation-command",
@@ -529,8 +529,8 @@
         },
         {
           "kind": "validation-command",
-          "id": "conformance:verify:sample",
-          "description": "Runs deterministic sample conformance verification."
+          "id": "verify-conformance:selected-trace",
+          "description": "Generates selected-trace conformance summary for samples/conformance/sample-traces.json."
         }
       ],
       "claimRefs": [
@@ -604,7 +604,7 @@
     {
       "id": "ev.verification",
       "kind": "verify-lite-run-summary",
-      "description": "Local preset rendering, trace, conformance, schema, docs, context, type, and verify-lite checks pass before PR merge.",
+      "description": "Local preset rendering, trace validation, selected-trace conformance, schema, docs, context, type, and verify-lite checks pass before PR merge.",
       "requiredBefore": "merge-judgment",
       "producer": "local verification and GitHub Actions",
       "sourceRefs": [
@@ -624,7 +624,7 @@
     {
       "id": "ev.review-surface",
       "kind": "assurance-summary",
-      "description": "PR assurance review preview records issue-invariants-preset-conformance-plan-verification-evidence traceability before PR review.",
+      "description": "PR assurance review preview records issue-invariants-preset-selected-trace-conformance-plan-verification-evidence traceability before PR review.",
       "requiredBefore": "pr-review",
       "producer": "Codex CLI",
       "sourceRefs": [
@@ -739,7 +739,7 @@
     {
       "id": "stop.validation-failure",
       "severity": "blocker",
-      "condition": "Domain preset rendering, trace validation, conformance sample, ExecPlan, schema, docs, context, type, or verify-lite validation fails unexpectedly for the event-driven pilot evidence package.",
+      "condition": "Domain preset rendering, trace validation, selected-trace conformance summary, ExecPlan, schema, docs, context, type, or verify-lite validation fails unexpectedly for the event-driven pilot evidence package.",
       "action": "halt-and-record-blocker",
       "evidenceRequirementRefs": [
         "ev.domain-preset-report",
@@ -812,8 +812,8 @@
       "id": "artifact.conformance-evidence",
       "path": "fixtures/evidence-sprint/event-driven-pilot/conformance-evidence.md",
       "contractId": "markdown-conformance-evidence",
-      "description": "Trace validation and conformance evidence surface for #3573.",
-      "producer": "Codex CLI and conformance verification",
+      "description": "Trace validation and selected-trace conformance evidence surface for #3573.",
+      "producer": "Codex CLI and selected-trace conformance verification",
       "requiredBefore": "merge-judgment"
     },
     {
