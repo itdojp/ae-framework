@@ -22,6 +22,7 @@ Comprehensive documentation for the agent-neutral assurance control plane for ag
 See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 
 ### Recommended first reading
+- Single reference flow: `getting-started/REFERENCE-FLOW.md` for the default Issue -> Context Pack/spec input -> ExecPlan -> verification -> evidence summary -> PR assurance review path.
 - Assurance control plane positioning: start with `product/ASSURANCE-CONTROL-PLANE.md`, then use `product/ASSURANCE-CONTROL-PLANE-POLICY.md` and `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md` to align BYO-agent adoption.
 - System overview (implementation-aligned): `architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Product summary: `product/OVERVIEW.md`, `product/DETAIL.md`, `product/USER-MANUAL.md`
@@ -47,6 +48,7 @@ For product evidence, use the route `guides/byo-agent-assurance-quickstart.md` -
 
 ### Recommended routes by use case
 **First-time users**
+- `getting-started/REFERENCE-FLOW.md`
 - `getting-started/QUICK-START-GUIDE.md`
 - `guides/byo-agent-assurance-quickstart.md`
 - `product/PILOT-REPORT-2026Q3-01.md`
@@ -96,6 +98,7 @@ See **Docs Language Policy / ドキュメント言語方針** below for the cano
 ### Getting Started
 Entry path for first-time setup, baseline verification, and the shortest route to a usable local environment.
 
+- Reference flow (Issue to PR assurance review): `getting-started/REFERENCE-FLOW.md`
 - Quick Start (15 minutes): `getting-started/QUICK-START-GUIDE.md`
 - Phase 6 Quick Start (UI/UX): `getting-started/PHASE-6-GETTING-STARTED.md`
 - Setup: `getting-started/SETUP.md`

@@ -64,6 +64,9 @@ flowchart TB
 - **High-assurance critical core**: formal/model/proof lanes plus proof-carrying change packages for selected high-risk components.
 
 ### Quick start (local)
+
+For a single Issue-to-PR assurance path, start with `docs/getting-started/REFERENCE-FLOW.md`; the commands below are the local setup baseline used by that flow.
+
 ```bash
 # Prereqs: Node.js 20.11+ (<23), pnpm 10
 corepack enable
@@ -102,6 +105,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 > `pnpm run first-run` runs `doctor:env -> build -> verify:lite` and writes summary JSON/Markdown files under the `artifacts/first-run` directory.
 
 ### Documentation pointers
+- Reference flow (Issue to PR assurance review): `docs/getting-started/REFERENCE-FLOW.md`
 - Overview & nav: `docs/README.md`, `docs/project-organization.md`
 - Maintenance operations: `docs/maintenance/branch-cleanup-runbook.md`
 - Worktree maintenance operations: `docs/maintenance/worktree-cleanup-runbook.md`
@@ -188,6 +192,9 @@ flowchart TB
 - **High-assurance critical core**: 重要コンポーネントに対して formal/model/proof lane と proof-carrying change package を適用。
 
 ### すぐ試す
+
+Issue から PR assurance review までの単一導線は `docs/getting-started/REFERENCE-FLOW.md` を先に参照してください。以下は、その導線で使う local setup baseline です。
+
 ```bash
 # 前提: Node.js 20.11+ (<23), pnpm 10
 corepack enable
