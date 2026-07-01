@@ -309,3 +309,7 @@ Preview から stable への昇格には、同一 PR または linked issue で�
 ### 19. Completion audit report schema
 
 `schema/completion-audit-report.schema.json` uses the canonical `$id` form `https://ae-framework/schema/completion-audit-report.schema.json`. It is a report-only evidence contract for `artifacts/audit/completion-audit-report.json`, produced by `scripts/audit/render-completion-audit.mjs`. The contract separates required merge checks from advisory workflow findings, skipped workflow runs, stale workflow runs, local verification, and audit notes so PR closeout comments can be precise. It does not approve PRs, merge branches, waive advisory findings, or add a blocking policy-gate rule.
+
+### 20. Evidence Sprint measurement report schema
+
+`schema/evidence-sprint-measurement-report.schema.json` uses the canonical `$id` form `https://ae-framework/schema/evidence-sprint-measurement-report.schema.json`. It is a report-only evidence contract for dogfooding and pilot measurement fixtures such as `fixtures/metrics/evidence-sprint/pilot-measurement-example.json`. The contract records workflow-effectiveness metrics, source artifacts, claim boundaries, and limitations before Evidence Sprint pilots run. It does not approve PRs, rank agent vendors, make public speed/safety claims, or add a blocking policy-gate rule.

@@ -1,0 +1,190 @@
+{
+  "schemaVersion": "evidence-sprint-measurement-report/v1",
+  "reportOnly": true,
+  "generatedAt": "2026-07-01T00:00:00.000Z",
+  "source": "offline-fixture",
+  "subject": {
+    "id": "evidence-sprint-self-dogfood-example",
+    "title": "Synthetic self-dogfood measurement example for Evidence Sprint",
+    "issueRef": "#3570",
+    "observationType": "synthetic-fixture",
+    "repository": "itdojp/ae-framework",
+    "executionStatus": "not_executed",
+    "publicationStatus": "synthetic"
+  },
+  "collectionBoundaries": {
+    "workflowEffectivenessOnly": true,
+    "externalAgentApisCalled": false,
+    "liveGitHubApisCalled": false,
+    "agentVendorComparison": false,
+    "approvalAuthority": "human maintainers and repository branch protection remain the approval authority",
+    "reportOnlyReason": "The fixture fixes the measurement vocabulary before dogfooding and pilots run; it does not approve work or create a policy-gate block condition."
+  },
+  "sourceArtifacts": [
+    {
+      "id": "issue-intent",
+      "kind": "issue-summary",
+      "path": "docs/getting-started/REFERENCE-FLOW.md",
+      "present": true,
+      "required": true,
+      "schemaVersion": null,
+      "description": "Synthetic stand-in for the Issue intent used to start a dogfood or pilot observation."
+    },
+    {
+      "id": "exec-plan-v2",
+      "kind": "exec-plan/v2",
+      "path": "fixtures/exec-plan/baseline.exec-plan.v2.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "exec-plan/v2",
+      "description": "Plan artifact that defines task and evidence expectations for the observation."
+    },
+    {
+      "id": "verify-lite-summary",
+      "kind": "verify-lite-run-summary/v1",
+      "path": "examples/loop-engineering/success/verify-lite-summary.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "verify-lite-run-summary/v1",
+      "description": "First runnable verification evidence used for the timing metric."
+    },
+    {
+      "id": "claim-evidence-manifest",
+      "kind": "claim-evidence-manifest/v1",
+      "path": "fixtures/assurance/sample.claim-evidence-manifest.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "claim-evidence-manifest/v1",
+      "description": "Claim-to-evidence mapping used to count evidence coverage, missing evidence, and unresolved claims."
+    },
+    {
+      "id": "review-completeness",
+      "kind": "pr-review-completeness",
+      "path": "fixtures/metrics/agent-pr-assurance/review-completeness.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": null,
+      "description": "Representative review-thread closure signal; live paths remain private and are replaced by fixture or redacted artifact references in public reports."
+    },
+    {
+      "id": "completion-audit",
+      "kind": "completion-audit-report/v1",
+      "path": "fixtures/audit/completion/expected/completion-audit-report.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "completion-audit-report/v1",
+      "description": "Completion audit evidence that distinguishes required checks from advisory, skipped, and stale workflow findings."
+    },
+    {
+      "id": "pilot-template",
+      "kind": "pilot-report-template",
+      "path": "docs/templates/evidence-sprint-pilot-report.md",
+      "present": true,
+      "required": false,
+      "schemaVersion": null,
+      "description": "Human-readable template that future self-dogfood and pilot issues can copy."
+    }
+  ],
+  "metrics": {
+    "time_to_first_runnable_verification_minutes": {
+      "value": 34,
+      "unit": "minutes",
+      "from": "2026-07-01T00:00:00.000Z",
+      "to": "2026-07-01T00:34:00.000Z",
+      "purpose": "Measure onboarding and execution friction from accepted Issue or requirement intent to the first runnable verification artifact.",
+      "sourceArtifactRefs": ["issue-intent", "verify-lite-summary"],
+      "calculationMethod": "Minutes between the observation's accepted requirement timestamp and the first passing runnable verification timestamp.",
+      "interpretation": "Lower values may indicate a smoother reference flow only when task size, queueing, and branch-policy assumptions are comparable.",
+      "limitation": "This fixture uses synthetic timestamps; it supports instrumentation readiness, not an adoption-speed claim."
+    },
+    "evidence_coverage": {
+      "numerator": 5,
+      "denominator": 6,
+      "ratio": 0.8333333333,
+      "missingIds": ["public-claim-approval"],
+      "purpose": "Show how many required evidence items are present and reviewable before public or merge-readiness claims are made.",
+      "sourceArtifactRefs": ["exec-plan-v2", "claim-evidence-manifest", "completion-audit"],
+      "calculationMethod": "Required evidence items marked present divided by all required evidence items in the observation checklist.",
+      "interpretation": "Higher coverage means more of the workflow can be inspected through artifacts rather than prose alone.",
+      "limitation": "Coverage does not prove evidence sufficiency, freshness, or correctness; reviewers still need to inspect the artifacts."
+    },
+    "missing_evidence_count": {
+      "value": 1,
+      "unit": "count",
+      "itemIds": ["public-claim-approval"],
+      "purpose": "Keep unsupported claims visible before they are copied into a case study, release note, or announcement.",
+      "sourceArtifactRefs": ["claim-evidence-manifest", "completion-audit"],
+      "calculationMethod": "Count required evidence items or PR-relevant claims whose source artifact is absent or marked not_collected.",
+      "interpretation": "Non-zero values identify follow-up work or publication limitations; they are not automatically blocking unless policy says so.",
+      "limitation": "A count can change when the claim set changes, so denominators and claim boundaries must be recorded with the observation."
+    },
+    "unresolved_claim_count": {
+      "value": 0,
+      "unit": "count",
+      "itemIds": [],
+      "purpose": "Measure whether PR-relevant claims have a final disposition before completion audit or publication packaging.",
+      "sourceArtifactRefs": ["claim-evidence-manifest", "completion-audit"],
+      "calculationMethod": "Count PR-relevant claims without evidence, waiver, explicit deferral, or non-applicability disposition at the final snapshot.",
+      "interpretation": "Zero unresolved claims supports traceable closeout for the scoped claim set.",
+      "limitation": "Zero does not prove the implementation is correct; it only means the recorded claim set has dispositions."
+    },
+    "review_rework_count": {
+      "value": 2,
+      "unit": "count",
+      "itemIds": ["codex-thread-final-head", "copilot-thread-output-format"],
+      "purpose": "Capture how many review-feedback cycles required code, fixture, or documentation changes after the first PR draft.",
+      "sourceArtifactRefs": ["review-completeness"],
+      "calculationMethod": "Count actionable review-feedback clusters that resulted in follow-up commits, excluding informational comments and already-outdated duplicates.",
+      "interpretation": "Higher counts can indicate useful risk discovery or unclear first-pass evidence; classify the cause before treating it as negative.",
+      "limitation": "Review style varies across reviewers and tools; do not compare teams or vendors from this count alone."
+    },
+    "deterministic_replay_pass": {
+      "passed": true,
+      "attemptIds": ["local-fixture-render", "schema-validation"],
+      "purpose": "Record whether the same local fixture and commands can reproduce the report-only evidence surface.",
+      "sourceArtifactRefs": ["exec-plan-v2", "verify-lite-summary", "completion-audit"],
+      "calculationMethod": "Pass when the documented local fixture/render/validation commands complete without drift or schema failure.",
+      "interpretation": "A passing replay supports reproducibility of the evidence package.",
+      "limitation": "Local fixture replay is not a live hosted-agent or external-repository pilot."
+    },
+    "manual_intervention_count": {
+      "value": 1,
+      "unit": "count",
+      "itemIds": ["publication-boundary-review"],
+      "purpose": "Track human actions needed for approval, redaction, environment repair, or publication-boundary decisions.",
+      "sourceArtifactRefs": ["issue-intent", "pilot-template"],
+      "calculationMethod": "Count intervention records in the observation log using the fixed taxonomy from the protocol.",
+      "interpretation": "Non-zero values identify product friction or governance steps that must remain explicit.",
+      "limitation": "Some interventions are required controls, not defects; classify the reason before comparing observations."
+    },
+    "audit_discrepancy_count": {
+      "value": 1,
+      "unit": "count",
+      "itemIds": ["required-vs-advisory-wording"],
+      "purpose": "Count differences between required-check completion wording and workflow/advisory findings discovered during completion audit.",
+      "sourceArtifactRefs": ["completion-audit"],
+      "calculationMethod": "Count completion-audit notes where required checks, advisory findings, skipped runs, stale runs, or local verification were previously conflated.",
+      "interpretation": "Non-zero values show where completion comments need more precise wording or follow-up tracking.",
+      "limitation": "Discrepancy counts depend on how thoroughly advisory surfaces were inspected."
+    }
+  },
+  "claimBoundaries": {
+    "allowedClaims": [
+      "The repository has a report-only fixture and template for collecting Evidence Sprint metrics without live external APIs.",
+      "The metric vocabulary evaluates ae-framework workflow effectiveness rather than raw agent or vendor quality."
+    ],
+    "forbiddenClaims": [
+      "Do not claim faster review, faster implementation, safer code, or external adoption from this synthetic fixture.",
+      "Do not rank Codex, Copilot, Claude Code, or any other producer from these metrics.",
+      "Do not treat report-only metric values as approval, merge authority, or a new policy-gate block condition."
+    ],
+    "notes": "One dogfood or pilot run can support instrumentation-readiness and traceability statements, but not controlled improvement claims."
+  },
+  "limitations": [
+    "Synthetic fixture only; no live external repository PR was measured.",
+    "No live external agent API or live GitHub API was called to create the fixture.",
+    "Timing values are deterministic example values and must not be reused as public performance claims.",
+    "Publication approval evidence is intentionally missing so the fixture demonstrates the limitation path."
+  ],
+  "summary": "Report-only Evidence Sprint measurement fixture: first runnable verification 34 minutes, evidence coverage 5/6, missing evidence count 1, unresolved claim count 0, review rework count 2, deterministic replay pass true, manual intervention count 1, audit discrepancy count 1."
+}

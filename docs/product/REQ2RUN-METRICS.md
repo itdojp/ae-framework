@@ -19,7 +19,10 @@ Req2run metrics measure whether a requirement can become a runnable,
 reviewable, evidence-backed change through the ae-framework reference flow. They
 extend the product-effectiveness vocabulary in
 `docs/product/EFFECTIVENESS-METRICS.md` with adoption-readiness signals for the
-path documented in `docs/getting-started/REFERENCE-FLOW.md`.
+path documented in `docs/getting-started/REFERENCE-FLOW.md`. The Evidence
+Sprint measurement protocol in
+`docs/product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md` decides when these
+req2run values are used inside dogfooding or pilot reports.
 
 These metrics evaluate the **ae-framework workflow**: Issue/spec input,
 Context Pack and boundary-map preflight, ExecPlan v2, verification artifacts,
@@ -77,7 +80,7 @@ sample demonstrates limitations instead of implying adoption proof.
 
 ### 5. Dogfooding and pilot report template
 
-When adding req2run evidence to dogfooding or pilot reports, use this template:
+When adding req2run evidence to dogfooding or pilot reports, use the canonical Evidence Sprint template at `docs/templates/evidence-sprint-pilot-report.md`. The compact table below is the req2run-specific subset:
 
 | Field | Required value or rule |
 | --- | --- |
@@ -116,7 +119,7 @@ or "external adoption is proven".
 ### 1. 目的
 
 Req2run metrics は、要求が ae-framework の reference flow を通じて runnable、reviewable、
-evidence-backed な変更に到達できるかを測る adoption-readiness signal です。
+evidence-backed な変更に到達できるかを測る adoption-readiness signal です。Evidence Sprint では `docs/product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md` と `docs/templates/evidence-sprint-pilot-report.md` に従って dogfooding / pilot report へ組み込みます。
 `docs/product/EFFECTIVENESS-METRICS.md` の product-effectiveness vocabulary を拡張し、
 `docs/getting-started/REFERENCE-FLOW.md` の Issue/spec input から PR assurance review までの経路を対象にします。
 

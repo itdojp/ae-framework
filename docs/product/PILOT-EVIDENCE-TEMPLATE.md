@@ -5,7 +5,9 @@ canonicalSource:
 - docs/guides/external-pilot-onboarding.md
 - docs/product/EFFECTIVENESS-METRICS.md
 - docs/product/REQ2RUN-METRICS.md
-lastVerified: '2026-06-23'
+- docs/product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md
+- docs/templates/evidence-sprint-pilot-report.md
+lastVerified: '2026-07-01'
 owner: product-assurance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -23,7 +25,7 @@ assurance pilot. It is intentionally redaction-first: live PR identifiers,
 reviewer names, comments, file paths, and exact timestamps stay private unless
 the pilot maintainer approves publication.
 
-Use this template with `docs/product/PILOT-RUNBOOK-2026Q3.md`. If no live pilot
+Use this template with `docs/product/PILOT-RUNBOOK-2026Q3.md`. For Evidence Sprint #3570/#3572/#3573 observations, use `docs/templates/evidence-sprint-pilot-report.md` as the per-observation report and keep this document as the external-pilot rollup template. If no live pilot
 has run, use the synthetic example under `examples/pilot-redacted/` and mark the
 status as `pilot-ready, not executed`.
 

@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-06-23'
+lastVerified: '2026-07-01'
 owner: product-assurance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -33,6 +33,7 @@ Current external pilot report: `docs/product/PILOT-REPORT-2026Q3-01.md` (`dry-ru
 Controlled comparison protocol: `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` (`protocol-ready, not executed`).
 External pilot onboarding and consent boundary: `docs/guides/external-pilot-onboarding.md`.
 Req2run adoption-readiness extension: `docs/product/REQ2RUN-METRICS.md`.
+Evidence Sprint measurement protocol: `docs/product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md` (fixed dogfood/pilot metrics and report template for #3570/#3572/#3573).
 
 ### 2. Measurement boundary
 
@@ -156,6 +157,7 @@ Public material, demos, and launch notes must follow these rules:
 | Later surface | Required use of this metric vocabulary |
 | --- | --- |
 | 15-minute quickstart / local demo | Show a small, deterministic subset of `missing_evidence_finding_count`, `scope_drift_finding_count`, and reviewer-surface artifacts without claiming real-world improvement. |
+| Evidence Sprint self-dogfood / pilots | Use `docs/product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md`, `docs/templates/evidence-sprint-pilot-report.md`, and `fixtures/metrics/evidence-sprint/pilot-measurement-example.json` to collect the eight fixed dogfood/pilot metrics; do not convert a single observation into generalized speed, safety, adoption, or vendor claims. |
 | Req2run local fixture | Use `docs/product/REQ2RUN-METRICS.md` and `pnpm run metrics:req2run` to demonstrate requirement-to-runnable metric collection without live external agent APIs; do not convert fixture timing into an adoption-speed claim. |
 | PR assurance review Markdown | Use the same metric names for counts and unresolved-risk summaries. |
 | Scope drift / high-risk demos | Report findings with these metric names and clearly distinguish report-only from blocking behavior. |

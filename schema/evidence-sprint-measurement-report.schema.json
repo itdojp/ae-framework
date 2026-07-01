@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/evidence-sprint-measurement-report.schema.json",
+  "title": "evidence-sprint-measurement-report/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "reportOnly",
+    "generatedAt",
+    "source",
+    "subject",
+    "collectionBoundaries",
+    "sourceArtifacts",
+    "metrics",
+    "claimBoundaries",
+    "limitations",
+    "summary"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "evidence-sprint-measurement-report/v1" },
+    "reportOnly": { "const": true },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "source": { "type": "string", "enum": ["offline-fixture", "manual-pilot-report"] },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "issueRef", "observationType", "repository", "executionStatus", "publicationStatus"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "title": { "$ref": "#/$defs/nonEmptyString" },
+        "issueRef": { "$ref": "#/$defs/nonEmptyString" },
+        "observationType": {
+          "type": "string",
+          "enum": ["self-dogfood", "web-api-pilot", "event-driven-pilot", "public-evidence-pack", "synthetic-fixture"]
+        },
+        "repository": { "type": ["string", "null"], "minLength": 1 },
+        "executionStatus": { "type": "string", "enum": ["planned", "in_progress", "completed", "not_executed"] },
+        "publicationStatus": { "type": "string", "enum": ["synthetic", "approved", "aggregate_only", "private", "not_approved_for_publication"] }
+      }
+    },
+    "collectionBoundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflowEffectivenessOnly",
+        "externalAgentApisCalled",
+        "liveGitHubApisCalled",
+        "agentVendorComparison",
+        "approvalAuthority",
+        "reportOnlyReason"
+      ],
+      "properties": {
+        "workflowEffectivenessOnly": { "const": true },
+        "externalAgentApisCalled": { "const": false },
+        "liveGitHubApisCalled": { "type": "boolean" },
+        "agentVendorComparison": { "const": false },
+        "approvalAuthority": { "$ref": "#/$defs/nonEmptyString" },
+        "reportOnlyReason": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "sourceArtifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/sourceArtifact" }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "time_to_first_runnable_verification_minutes",
+        "evidence_coverage",
+        "missing_evidence_count",
+        "unresolved_claim_count",
+        "review_rework_count",
+        "deterministic_replay_pass",
+        "manual_intervention_count",
+        "audit_discrepancy_count"
+      ],
+      "properties": {
+        "time_to_first_runnable_verification_minutes": { "$ref": "#/$defs/durationMetric" },
+        "evidence_coverage": { "$ref": "#/$defs/ratioMetric" },
+        "missing_evidence_count": { "$ref": "#/$defs/countMetric" },
+        "unresolved_claim_count": { "$ref": "#/$defs/countMetric" },
+        "review_rework_count": { "$ref": "#/$defs/countMetric" },
+        "deterministic_replay_pass": { "$ref": "#/$defs/booleanMetric" },
+        "manual_intervention_count": { "$ref": "#/$defs/countMetric" },
+        "audit_discrepancy_count": { "$ref": "#/$defs/countMetric" }
+      }
+    },
+    "claimBoundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowedClaims", "forbiddenClaims", "notes"],
+      "properties": {
+        "allowedClaims": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "forbiddenClaims": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "notes": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "summary": { "$ref": "#/$defs/nonEmptyString" }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0 },
+    "sourceArtifactRefs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "metricCommon": {
+      "type": "object",
+      "required": ["purpose", "sourceArtifactRefs", "calculationMethod", "interpretation", "limitation"],
+      "properties": {
+        "purpose": { "$ref": "#/$defs/nonEmptyString" },
+        "sourceArtifactRefs": { "$ref": "#/$defs/sourceArtifactRefs" },
+        "calculationMethod": { "$ref": "#/$defs/nonEmptyString" },
+        "interpretation": { "$ref": "#/$defs/nonEmptyString" },
+        "limitation": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "collectibleNumber": {
+      "oneOf": [
+        { "type": "number", "minimum": 0 },
+        { "enum": ["not_collected"] }
+      ]
+    },
+    "durationMetric": {
+      "allOf": [
+        { "$ref": "#/$defs/metricCommon" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "unit", "from", "to", "purpose", "sourceArtifactRefs", "calculationMethod", "interpretation", "limitation"],
+          "properties": {
+            "value": { "$ref": "#/$defs/collectibleNumber" },
+            "unit": { "const": "minutes" },
+            "from": { "type": ["string", "null"], "format": "date-time" },
+            "to": { "type": ["string", "null"], "format": "date-time" },
+            "purpose": { "$ref": "#/$defs/nonEmptyString" },
+            "sourceArtifactRefs": { "$ref": "#/$defs/sourceArtifactRefs" },
+            "calculationMethod": { "$ref": "#/$defs/nonEmptyString" },
+            "interpretation": { "$ref": "#/$defs/nonEmptyString" },
+            "limitation": { "$ref": "#/$defs/nonEmptyString" }
+          }
+        }
+      ]
+    },
+    "ratioMetric": {
+      "allOf": [
+        { "$ref": "#/$defs/metricCommon" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["numerator", "denominator", "ratio", "purpose", "sourceArtifactRefs", "calculationMethod", "interpretation", "limitation"],
+          "properties": {
+            "numerator": { "$ref": "#/$defs/nonNegativeInteger" },
+            "denominator": { "$ref": "#/$defs/nonNegativeInteger" },
+            "ratio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+            "missingIds": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/nonEmptyString" }
+            },
+            "purpose": { "$ref": "#/$defs/nonEmptyString" },
+            "sourceArtifactRefs": { "$ref": "#/$defs/sourceArtifactRefs" },
+            "calculationMethod": { "$ref": "#/$defs/nonEmptyString" },
+            "interpretation": { "$ref": "#/$defs/nonEmptyString" },
+            "limitation": { "$ref": "#/$defs/nonEmptyString" }
+          }
+        }
+      ]
+    },
+    "countMetric": {
+      "allOf": [
+        { "$ref": "#/$defs/metricCommon" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "unit", "purpose", "sourceArtifactRefs", "calculationMethod", "interpretation", "limitation"],
+          "properties": {
+            "value": { "$ref": "#/$defs/nonNegativeInteger" },
+            "unit": { "const": "count" },
+            "itemIds": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/nonEmptyString" }
+            },
+            "purpose": { "$ref": "#/$defs/nonEmptyString" },
+            "sourceArtifactRefs": { "$ref": "#/$defs/sourceArtifactRefs" },
+            "calculationMethod": { "$ref": "#/$defs/nonEmptyString" },
+            "interpretation": { "$ref": "#/$defs/nonEmptyString" },
+            "limitation": { "$ref": "#/$defs/nonEmptyString" }
+          }
+        }
+      ]
+    },
+    "booleanMetric": {
+      "allOf": [
+        { "$ref": "#/$defs/metricCommon" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "purpose", "sourceArtifactRefs", "calculationMethod", "interpretation", "limitation"],
+          "properties": {
+            "passed": { "type": "boolean" },
+            "attemptIds": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/nonEmptyString" }
+            },
+            "purpose": { "$ref": "#/$defs/nonEmptyString" },
+            "sourceArtifactRefs": { "$ref": "#/$defs/sourceArtifactRefs" },
+            "calculationMethod": { "$ref": "#/$defs/nonEmptyString" },
+            "interpretation": { "$ref": "#/$defs/nonEmptyString" },
+            "limitation": { "$ref": "#/$defs/nonEmptyString" }
+          }
+        }
+      ]
+    },
+    "sourceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "path", "present", "required", "schemaVersion", "description"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "kind": { "$ref": "#/$defs/nonEmptyString" },
+        "path": { "type": ["string", "null"] },
+        "present": { "type": "boolean" },
+        "required": { "type": "boolean" },
+        "schemaVersion": { "type": ["string", "null"] },
+        "description": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  }
+}
