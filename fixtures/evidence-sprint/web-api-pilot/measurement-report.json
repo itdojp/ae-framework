@@ -1,0 +1,272 @@
+{
+  "schemaVersion": "evidence-sprint-measurement-report/v1",
+  "reportOnly": true,
+  "generatedAt": "2026-07-01T00:00:00.000Z",
+  "source": "offline-fixture",
+  "subject": {
+    "id": "evidence-011-web-api-pilot",
+    "title": "Issue #3572 Web API fixture-backed domain preset pilot",
+    "issueRef": "#3572",
+    "observationType": "web-api-pilot",
+    "repository": "itdojp/ae-framework",
+    "executionStatus": "in_progress",
+    "publicationStatus": "approved"
+  },
+  "collectionBoundaries": {
+    "workflowEffectivenessOnly": true,
+    "externalAgentApisCalled": false,
+    "liveGitHubApisCalled": false,
+    "agentVendorComparison": false,
+    "approvalAuthority": "human maintainers, Copilot/Codex review handling, required checks, and repository branch protection remain the approval authority",
+    "reportOnlyReason": "The report measures traceability and instrumentation readiness for one fixture-backed Web API pilot; it does not approve, merge, waive findings, implement a live endpoint, or add a policy-gate rule."
+  },
+  "sourceArtifacts": [
+    {
+      "id": "issue-3572",
+      "kind": "issue-summary",
+      "path": "https://github.com/itdojp/ae-framework/issues/3572",
+      "present": true,
+      "required": true,
+      "schemaVersion": null,
+      "description": "Web API pilot Issue intent."
+    },
+    {
+      "id": "pilot-report",
+      "kind": "scope-memo",
+      "path": "docs/product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md",
+      "present": true,
+      "required": true,
+      "schemaVersion": null,
+      "description": "Checked-in pilot report, scope memo, evidence path, and observations for the fixture-backed Web API pilot."
+    },
+    {
+      "id": "api-contract",
+      "kind": "api-contract",
+      "path": "fixtures/evidence-sprint/web-api-pilot/api-contract.md",
+      "present": true,
+      "required": true,
+      "schemaVersion": null,
+      "description": "API contract fixture with request/response shape, invariants, and escalation rule."
+    },
+    {
+      "id": "domain-preset-report",
+      "kind": "domain-assurance-preset-report/v1",
+      "path": "fixtures/evidence-sprint/web-api-pilot/domain-preset-report.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "domain-assurance-preset-report/v1",
+      "description": "Rendered Web API/BFF domain preset report."
+    },
+    {
+      "id": "exec-plan-v2",
+      "kind": "exec-plan/v2",
+      "path": "fixtures/evidence-sprint/web-api-pilot/exec-plan.v2.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "exec-plan/v2",
+      "description": "ExecPlan v2 artifact connecting Issue intent, API contract evidence, domain preset report, tasks, verification, and stop rules."
+    },
+    {
+      "id": "measurement-report",
+      "kind": "evidence-sprint-measurement-report/v1",
+      "path": "fixtures/evidence-sprint/web-api-pilot/measurement-report.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "evidence-sprint-measurement-report/v1",
+      "description": "Evidence Sprint measurement report for the Web API pilot."
+    },
+    {
+      "id": "req2run-metrics",
+      "kind": "req2run-metrics/v1",
+      "path": "fixtures/metrics/req2run/expected.req2run-metrics.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "req2run-metrics/v1",
+      "description": "Existing report-only req2run fixture used as compatible requirement-to-runnable metric evidence."
+    },
+    {
+      "id": "pr-assurance-review",
+      "kind": "pr-assurance-review",
+      "path": "fixtures/evidence-sprint/web-api-pilot/pr-assurance-review.md",
+      "present": true,
+      "required": true,
+      "schemaVersion": null,
+      "description": "Reviewer-facing traceability preview for the Web API pilot PR."
+    },
+    {
+      "id": "review-completeness",
+      "kind": "pr-review-completeness",
+      "path": null,
+      "present": false,
+      "required": true,
+      "schemaVersion": null,
+      "description": "Final review completeness is recorded after Copilot/Codex review on the actual PR; the PR number is not known at fixture creation time."
+    },
+    {
+      "id": "completion-audit",
+      "kind": "completion-audit-report/v1",
+      "path": "https://github.com/itdojp/ae-framework/issues/3572",
+      "present": false,
+      "required": true,
+      "schemaVersion": "completion-audit-report/v1",
+      "description": "Final completion audit is posted after PR merge because final check rollup and review completeness are not known before closeout."
+    }
+  ],
+  "metrics": {
+    "time_to_first_runnable_verification_minutes": {
+      "value": 8,
+      "unit": "minutes",
+      "from": "2026-07-01T10:25:00.000Z",
+      "to": "2026-07-01T10:33:00.000Z",
+      "purpose": "Measure time from fixture-backed pilot start to first runnable local verification command in a deterministic report-only fixture.",
+      "sourceArtifactRefs": [
+        "issue-3572",
+        "domain-preset-report",
+        "exec-plan-v2"
+      ],
+      "calculationMethod": "Synthetic fixture window from pilot start marker to first runnable local fixture validation marker; not derived from live reviewer or CI timing.",
+      "interpretation": "The schema and report can represent timing evidence for a Web API pilot.",
+      "limitation": "Synthetic fixture timing proves instrumentation readiness only; do not infer review speed, implementation speed, or adoption impact."
+    },
+    "evidence_coverage": {
+      "numerator": 8,
+      "denominator": 10,
+      "ratio": 0.8,
+      "missingIds": [
+        "review-completeness",
+        "completion-audit"
+      ],
+      "purpose": "Track how much of the required Web API pilot evidence chain is available before PR closeout.",
+      "sourceArtifactRefs": [
+        "issue-3572",
+        "pilot-report",
+        "api-contract",
+        "domain-preset-report",
+        "exec-plan-v2",
+        "measurement-report",
+        "req2run-metrics",
+        "pr-assurance-review",
+        "review-completeness",
+        "completion-audit"
+      ],
+      "calculationMethod": "Required source artifacts marked present divided by all required source artifacts in this measurement report.",
+      "interpretation": "Pre-closeout evidence is available for Issue, pilot report, API contract, domain preset, ExecPlan, measurement, req2run, and review preview.",
+      "limitation": "Final review completeness and completion audit are intentionally unavailable until PR stabilization and merge."
+    },
+    "missing_evidence_count": {
+      "value": 2,
+      "unit": "count",
+      "itemIds": [
+        "review-completeness",
+        "completion-audit"
+      ],
+      "purpose": "Keep missing closeout evidence visible before merge rather than implying the flow is complete early.",
+      "sourceArtifactRefs": [
+        "review-completeness",
+        "completion-audit"
+      ],
+      "calculationMethod": "Count required artifacts marked present=false in this measurement fixture.",
+      "interpretation": "Two expected closeout artifacts remain until PR review and post-merge completion audit are recorded.",
+      "limitation": "This is a lifecycle state, not a failure, unless the PR is merged without review-completeness and audit evidence."
+    },
+    "unresolved_claim_count": {
+      "value": 0,
+      "unit": "count",
+      "itemIds": [],
+      "purpose": "Confirm that the scoped Web API pilot claims have explicit dispositions.",
+      "sourceArtifactRefs": [
+        "pilot-report",
+        "api-contract",
+        "domain-preset-report",
+        "exec-plan-v2"
+      ],
+      "calculationMethod": "Count scoped report claims without evidence, limitation, deferral, or non-applicability disposition.",
+      "interpretation": "The checked-in report scopes its claims to traceability, domain preset application, API contract visibility, and metric readiness only.",
+      "limitation": "This does not prove runtime API behavior, implementation correctness, or absence of untracked claims outside the report."
+    },
+    "review_rework_count": {
+      "value": "not_collected",
+      "unit": "count",
+      "itemIds": [],
+      "purpose": "Measure actionable review-feedback clusters that require follow-up commits.",
+      "sourceArtifactRefs": [
+        "pr-assurance-review",
+        "review-completeness"
+      ],
+      "calculationMethod": "Collected after Copilot/Codex and maintainer review threads are handled on the actual PR.",
+      "interpretation": "Not yet collected at initial fixture creation time.",
+      "limitation": "The final completion comment must record review rework based on actual review threads."
+    },
+    "deterministic_replay_pass": {
+      "passed": true,
+      "attemptIds": [
+        "domain-preset-render",
+        "exec-plan-validate",
+        "schema-registry",
+        "docs-governance",
+        "context-boundary",
+        "verify-lite"
+      ],
+      "purpose": "Record whether local fixture rendering and validation can replay the Web API pilot evidence package.",
+      "sourceArtifactRefs": [
+        "api-contract",
+        "domain-preset-report",
+        "exec-plan-v2",
+        "measurement-report",
+        "pr-assurance-review"
+      ],
+      "calculationMethod": "Pass when the documented render, ExecPlan validation, schema validation, docs checks, context checks, and verify-lite complete locally.",
+      "interpretation": "The checked-in evidence package can be validated without live external agent APIs.",
+      "limitation": "Local replay does not replace GitHub CI, Copilot/Codex review, or final PR completion audit."
+    },
+    "manual_intervention_count": {
+      "value": 2,
+      "unit": "count",
+      "itemIds": [
+        "fixture-backed-pilot-selection",
+        "post-merge-completion-audit"
+      ],
+      "purpose": "Track required human/operator actions and publication-boundary decisions for the pilot.",
+      "sourceArtifactRefs": [
+        "issue-3572",
+        "completion-audit"
+      ],
+      "calculationMethod": "Count one operator decision to use a fixture-backed pilot because no live API target was provided, plus one required post-merge completion-audit action.",
+      "interpretation": "The main interventions are pilot selection and governance closeout.",
+      "limitation": "Manual intervention here is an intentional control and fixture-boundary decision, not necessarily product friction."
+    },
+    "audit_discrepancy_count": {
+      "value": 1,
+      "unit": "count",
+      "itemIds": [
+        "pre-merge-audit-not-available"
+      ],
+      "purpose": "Identify where completion-audit evidence cannot be truthfully claimed before final PR closeout.",
+      "sourceArtifactRefs": [
+        "completion-audit"
+      ],
+      "calculationMethod": "Count audit notes where pre-merge artifacts would be misleading if described as final closeout evidence.",
+      "interpretation": "The flow must keep final audit wording in the post-merge Issue comment rather than the initial pilot report.",
+      "limitation": "This count is expected for a live PR closeout flow and should be re-evaluated after merge."
+    }
+  },
+  "claimBoundaries": {
+    "allowedClaims": [
+      "Issue #3572 has a checked-in trace from Issue intent to API contract fixture, Web API/BFF domain preset report, ExecPlan v2, measurement fixture, PR assurance review preview, and planned completion audit.",
+      "The Web API/BFF domain preset can be rendered and connected to a deterministic pilot without live external APIs.",
+      "The pilot exposes API contract evidence for reviewer inspection."
+    ],
+    "forbiddenClaims": [
+      "Do not claim production API behavior, live endpoint correctness, faster review, safer code, external adoption, or agent-vendor superiority from this single fixture-backed pilot.",
+      "Do not claim the PR is complete until Copilot/Codex review, required checks, full check rollup, and completion audit comment are recorded.",
+      "Do not treat report-only metrics as approval, waiver, or policy-gate enforcement."
+    ],
+    "notes": "This report intentionally separates fixture-backed pilot evidence from post-merge PR completion audit evidence."
+  },
+  "limitations": [
+    "The selected API change is a deterministic contract fixture, not a runtime endpoint implementation.",
+    "The timing metric uses synthetic fixture timestamps and must not be used as speed or productivity evidence.",
+    "Review rework, final check rollup, and completion audit evidence are unavailable until the actual PR reaches final review and CI state."
+  ],
+  "summary": "Web API pilot measurement for #3572: pre-closeout evidence coverage 8/10, missing closeout evidence count 2, unresolved claim count 0, deterministic replay pass true, manual intervention count 2, audit discrepancy count 1, and synthetic timing 8 minutes limited to instrumentation readiness."
+}
