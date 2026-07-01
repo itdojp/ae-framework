@@ -3,10 +3,13 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFile
 import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
+import Ajv2020 from 'ajv/dist/2020.js';
+import addFormats from 'ajv-formats';
 
 const DEFAULT_PRESET = 'templates/domain-presets/web-api-bff/preset.json';
 const DEFAULT_OUTPUT_JSON = 'artifacts/domain-presets/domain-preset-report.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/domain-presets/domain-preset-report.md';
+const PRESET_SCHEMA = 'schema/domain-assurance-preset.schema.json';
 const RFC3339_DATE_TIME_PATTERN = /^(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})T(?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2})(?<fraction>\.\d+)?(?<offset>Z|[+-]\d{2}:\d{2})$/u;
 
 function usage() {
@@ -217,6 +220,36 @@ function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, 'utf8'));
 }
 
+function formatJsonPath(instancePath) {
+  if (!instancePath) return 'preset';
+  return `preset${instancePath.split('/').slice(1).map((segment) => {
+    const unescaped = segment.replaceAll('~1', '/').replaceAll('~0', '~');
+    return /^[A-Za-z_$][\w$]*$/u.test(unescaped) ? `.${unescaped}` : `[${JSON.stringify(unescaped)}]`;
+  }).join('')}`;
+}
+
+function formatSchemaError(error) {
+  const location = formatJsonPath(error.instancePath ?? '');
+  if (error.keyword === 'required' && error.params?.missingProperty) {
+    return `${location} must include required property ${JSON.stringify(error.params.missingProperty)}`;
+  }
+  if (error.keyword === 'additionalProperties' && error.params?.additionalProperty) {
+    return `${location} must not include additional property ${JSON.stringify(error.params.additionalProperty)}`;
+  }
+  return `${location} ${error.message ?? 'is invalid'}`;
+}
+
+function validatePresetSchema(preset, projectRoot) {
+  const schemaPath = path.join(projectRoot, PRESET_SCHEMA);
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  addFormats(ajv);
+  const validate = ajv.compile(readJson(schemaPath));
+  if (!validate(preset)) {
+    const details = (validate.errors ?? []).slice(0, 8).map(formatSchemaError).join('; ');
+    throw new Error(`Preset does not match ${PRESET_SCHEMA}: ${details}`);
+  }
+}
+
 function writeJson(filePath, payload) {
   writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
@@ -364,7 +397,8 @@ function validatePresetShape(preset) {
   validateStringArray(preset.reuseContracts, 'preset.reuseContracts');
 }
 
-function compactPreset(preset) {
+function compactPreset(preset, projectRoot) {
+  validatePresetSchema(preset, projectRoot);
   validatePresetShape(preset);
   return {
     id: preset.id,
@@ -373,20 +407,20 @@ function compactPreset(preset) {
     targetUser: preset.targetUser,
     fit: preset.fit,
     startingCommand: preset.startingCommand,
-    requiredInputs: asArray(preset.requiredInputs),
-    defaultVerificationCommands: asArray(preset.defaultVerificationCommands),
-    expectedArtifacts: asArray(preset.expectedArtifacts),
-    evidenceSurfaces: asArray(preset.evidenceSurfaces),
+    requiredInputs: preset.requiredInputs,
+    defaultVerificationCommands: preset.defaultVerificationCommands,
+    expectedArtifacts: preset.expectedArtifacts,
+    evidenceSurfaces: preset.evidenceSurfaces,
     escalationRule: preset.escalationRule,
-    referenceFlowLinks: asArray(preset.referenceFlowLinks),
+    referenceFlowLinks: preset.referenceFlowLinks,
     integration: preset.integration,
-    reuseContracts: asArray(preset.reuseContracts),
+    reuseContracts: preset.reuseContracts,
     reportOnly: true,
   };
 }
 
 function buildReport(options, preset) {
-  const compact = compactPreset(preset);
+  const compact = compactPreset(preset, options.projectRoot);
   const requiredArtifactCount = compact.expectedArtifacts.filter((artifact) => artifact?.required === true).length;
   return {
     schemaVersion: 'domain-assurance-preset-report/v1',

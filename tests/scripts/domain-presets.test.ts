@@ -134,7 +134,7 @@ describe('domain assurance presets', () => {
     expect(result.stderr).toContain('--preset must stay within --project-root');
   });
 
-  it('rejects blank preset paths and invalid template shapes with actionable errors', () => {
+  it('rejects blank preset paths and invalid templates before rendering success', () => {
     const blankPath = runScript(['--preset', '   ', '--no-write']);
 
     expect(blankPath.status).not.toBe(0);
@@ -156,7 +156,31 @@ describe('domain assurance presets', () => {
       ]);
 
       expect(invalidShape.status).not.toBe(0);
-      expect(invalidShape.stderr).toContain('preset.startingCommand must be an object');
+      expect(invalidShape.stderr).toContain('Preset does not match schema/domain-assurance-preset.schema.json');
+      expect(invalidShape.stderr).toContain('preset must include required property "startingCommand"');
+
+      const invalidArrays = readJson('templates/domain-presets/web-api-bff/preset.json');
+      invalidArrays.requiredInputs = {};
+      invalidArrays.defaultVerificationCommands = 'pnpm verify';
+      invalidArrays.expectedArtifacts = null;
+      invalidArrays.evidenceSurfaces = 0;
+      invalidArrays.referenceFlowLinks = false;
+      invalidArrays.reuseContracts = 'context-pack/v1';
+      writeFileSync(invalidPresetPath, `${JSON.stringify(invalidArrays, null, 2)}\n`, 'utf8');
+
+      const malformedArrays = runScript([
+        '--preset', invalidPresetPath,
+        '--generated-at', generatedAt,
+        '--no-write',
+      ]);
+
+      expect(malformedArrays.status).not.toBe(0);
+      expect(malformedArrays.stderr).toContain('preset.requiredInputs must be array');
+      expect(malformedArrays.stderr).toContain('preset.defaultVerificationCommands must be array');
+      expect(malformedArrays.stderr).toContain('preset.expectedArtifacts must be array');
+      expect(malformedArrays.stderr).toContain('preset.evidenceSurfaces must be array');
+      expect(malformedArrays.stderr).toContain('preset.referenceFlowLinks must be array');
+      expect(malformedArrays.stderr).toContain('preset.reuseContracts must be array');
     } finally {
       rmSync(outputRoot, { recursive: true, force: true });
     }
