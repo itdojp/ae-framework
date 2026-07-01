@@ -261,17 +261,11 @@
       }
     ],
     "requiredChecks": [
-      "gate",
-      "policy-gate",
-      "verify-lite"
+      "verify-lite",
+      "policy-gate"
     ],
     "optionalChecks": [
-      "check:schemas",
-      "check:doc-consistency",
-      "docs:lint",
-      "types:check",
-      "context-pack:validate",
-      "context-pack:verify-boundary-map"
+      "gate"
     ]
   },
   "evidenceRequirements": [
@@ -398,14 +392,20 @@
     {
       "id": "ev.completion-audit",
       "kind": "other",
-      "description": "Completion audit comment records final required checks, review completeness, and advisory/stale findings after merge.",
+      "description": "Post-merge Issue #3570 completion audit comment records final required checks, review completeness, and advisory/stale findings.",
       "requiredBefore": "merge-judgment",
       "producer": "Codex CLI / maintainer",
       "sourceRefs": [
         {
           "kind": "document",
-          "id": "completion-audit-report",
+          "id": "completion-audit-report-guidance",
           "path": "docs/ci/completion-audit-report.md"
+        },
+        {
+          "kind": "issue",
+          "id": "#3570-post-merge-audit",
+          "url": "https://github.com/itdojp/ae-framework/issues/3570",
+          "description": "Target Issue for the final post-merge completion-audit comment."
         }
       ],
       "claimRefs": [
@@ -568,9 +568,9 @@
     },
     {
       "id": "artifact.completion-audit-comment",
-      "path": "docs/product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md#completion-audit-closeout-boundary",
-      "contractId": "completion-audit-report/v1 boundary note",
-      "description": "Report section that keeps the final Issue completion-audit comment boundary explicit until post-merge closeout.",
+      "path": "https://github.com/itdojp/ae-framework/issues/3570#post-merge-completion-audit-comment",
+      "contractId": "completion-audit-report/v1",
+      "description": "Issue #3570 post-merge completion-audit comment containing final required checks, review completeness, advisory findings, and stale/skipped workflow findings.",
       "producer": "Codex CLI",
       "requiredBefore": "merge-judgment"
     }

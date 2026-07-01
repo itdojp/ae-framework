@@ -92,7 +92,10 @@
       "from": null,
       "to": null,
       "purpose": "Measure time from Issue acceptance to first runnable verification when live timing is intentionally collected.",
-      "sourceArtifactRefs": ["issue-3570", "verification-output"],
+      "sourceArtifactRefs": [
+        "issue-3570",
+        "verification-output"
+      ],
       "calculationMethod": "Not collected for this PR because Issue creation time predates the active measurement window; future runs should record start/end timestamps at run start.",
       "interpretation": "The missing value is a friction finding: the protocol needs an explicit start timestamp before speed-like metrics can be used.",
       "limitation": "Do not infer speed, review efficiency, or adoption impact from this self-dogfood run."
@@ -101,9 +104,20 @@
       "numerator": 5,
       "denominator": 7,
       "ratio": 0.7142857143,
-      "missingIds": ["verification-output", "completion-audit"],
+      "missingIds": [
+        "verification-output",
+        "completion-audit"
+      ],
       "purpose": "Track how much of the required evidence chain is available before PR closeout.",
-      "sourceArtifactRefs": ["scope-memo", "exec-plan-v2", "req2run-metrics", "pr-assurance-review", "verification-output", "completion-audit"],
+      "sourceArtifactRefs": [
+        "issue-3570",
+        "scope-memo",
+        "exec-plan-v2",
+        "req2run-metrics",
+        "pr-assurance-review",
+        "verification-output",
+        "completion-audit"
+      ],
       "calculationMethod": "Required source artifacts marked present divided by all required source artifacts in this measurement report.",
       "interpretation": "Pre-PR evidence is mostly available; final verification output and completion audit are expected to become present during closeout.",
       "limitation": "Pre-merge coverage is intentionally incomplete because final CI/review/audit evidence is only available after PR stabilization."
@@ -111,9 +125,15 @@
     "missing_evidence_count": {
       "value": 2,
       "unit": "count",
-      "itemIds": ["verification-output", "completion-audit"],
+      "itemIds": [
+        "verification-output",
+        "completion-audit"
+      ],
       "purpose": "Keep missing closeout evidence visible before merge rather than implying the flow is complete early.",
-      "sourceArtifactRefs": ["verification-output", "completion-audit"],
+      "sourceArtifactRefs": [
+        "verification-output",
+        "completion-audit"
+      ],
       "calculationMethod": "Count required artifacts marked present=false in this measurement fixture.",
       "interpretation": "Two expected closeout artifacts remain until local/GitHub verification and post-merge completion audit are recorded.",
       "limitation": "This is a lifecycle state, not a failure, unless the PR is merged without adding the audit comment."
@@ -123,7 +143,10 @@
       "unit": "count",
       "itemIds": [],
       "purpose": "Confirm that the scoped claims in this self-dogfood report have explicit dispositions.",
-      "sourceArtifactRefs": ["scope-memo", "exec-plan-v2"],
+      "sourceArtifactRefs": [
+        "scope-memo",
+        "exec-plan-v2"
+      ],
       "calculationMethod": "Count scoped report claims without evidence, limitation, deferral, or non-applicability disposition.",
       "interpretation": "The checked-in report scopes its claims to traceability and instrumentation readiness only.",
       "limitation": "This does not prove implementation correctness or absence of untracked claims outside the report."
@@ -133,16 +156,25 @@
       "unit": "count",
       "itemIds": [],
       "purpose": "Measure actionable review-feedback clusters that require follow-up commits.",
-      "sourceArtifactRefs": ["pr-assurance-review"],
+      "sourceArtifactRefs": [
+        "pr-assurance-review"
+      ],
       "calculationMethod": "Collected after Copilot/Codex and maintainer review threads are handled.",
       "interpretation": "Not yet collected at initial fixture creation time.",
       "limitation": "The final completion comment must record review rework based on actual review threads."
     },
     "deterministic_replay_pass": {
       "passed": true,
-      "attemptIds": ["schema-registry", "docs-governance"],
+      "attemptIds": [
+        "schema-registry",
+        "docs-governance"
+      ],
       "purpose": "Record whether local schema/docs validation can replay the self-dogfood evidence package.",
-      "sourceArtifactRefs": ["exec-plan-v2", "req2run-metrics", "pr-assurance-review"],
+      "sourceArtifactRefs": [
+        "exec-plan-v2",
+        "req2run-metrics",
+        "pr-assurance-review"
+      ],
       "calculationMethod": "Pass when `node scripts/ci/validate-json.mjs`, docs consistency, and docs lint complete locally.",
       "interpretation": "The checked-in evidence package can be validated without live external agent APIs.",
       "limitation": "Local replay does not replace GitHub CI or final PR review."
@@ -150,9 +182,13 @@
     "manual_intervention_count": {
       "value": 1,
       "unit": "count",
-      "itemIds": ["post-merge-completion-audit"],
+      "itemIds": [
+        "post-merge-completion-audit"
+      ],
       "purpose": "Track required human/operator actions that cannot be automated before final PR state is known.",
-      "sourceArtifactRefs": ["completion-audit"],
+      "sourceArtifactRefs": [
+        "completion-audit"
+      ],
       "calculationMethod": "Count explicit manual/operator actions in the flow. The final completion audit comment is one required closeout action.",
       "interpretation": "The main governance intervention is post-merge audit recording.",
       "limitation": "Manual intervention here is an intentional control, not necessarily product friction."
@@ -160,9 +196,13 @@
     "audit_discrepancy_count": {
       "value": 1,
       "unit": "count",
-      "itemIds": ["pre-merge-audit-not-available"],
+      "itemIds": [
+        "pre-merge-audit-not-available"
+      ],
       "purpose": "Identify where completion-audit evidence cannot be truthfully claimed before final PR closeout.",
-      "sourceArtifactRefs": ["completion-audit"],
+      "sourceArtifactRefs": [
+        "completion-audit"
+      ],
       "calculationMethod": "Count audit notes where pre-merge artifacts would be misleading if described as final closeout evidence.",
       "interpretation": "The flow must keep final audit wording in the post-merge Issue comment rather than the initial PR body.",
       "limitation": "This count is expected for a live PR self-dogfood flow and should be re-evaluated after merge."
