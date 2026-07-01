@@ -1,0 +1,167 @@
+{
+  "schemaVersion": "req2run-metrics/v1",
+  "reportOnly": true,
+  "generatedAt": "2026-07-01T00:00:00.000Z",
+  "source": "offline-fixture",
+  "subject": {
+    "id": "reval3-reference-flow-offline-demo",
+    "title": "Reference flow from requirement to runnable evidence",
+    "requirementRef": "#3555",
+    "referenceFlow": "docs/getting-started/REFERENCE-FLOW.md",
+    "repository": "itdojp/ae-framework"
+  },
+  "privacy": {
+    "rawTextIncluded": false,
+    "publicRawLogsAllowed": false,
+    "publicationStatus": "synthetic",
+    "redactionMode": "metadata-only"
+  },
+  "collectionBoundaries": {
+    "workflowEvaluated": "ae-framework reference flow",
+    "externalAgentApisCalled": false,
+    "agentVendorComparison": false,
+    "approvalAuthority": "human maintainer; metrics are evidence only",
+    "reportOnlyReason": "Req2run metrics are adoption-readiness signals and are not policy-gate block conditions."
+  },
+  "sourceArtifacts": [
+    {
+      "id": "requirement",
+      "kind": "issue-summary",
+      "path": "docs/getting-started/REFERENCE-FLOW.md",
+      "present": true,
+      "required": true,
+      "schemaVersion": null,
+      "description": "Reference-flow requirement input used as a local, redacted stand-in for a GitHub Issue."
+    },
+    {
+      "id": "exec-plan",
+      "kind": "exec-plan/v2",
+      "path": "fixtures/exec-plan/baseline.exec-plan.v2.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "exec-plan/v2",
+      "description": "Baseline plan contract connecting tasks, commands, and evidence requirements."
+    },
+    {
+      "id": "verify-lite",
+      "kind": "verify-lite-run-summary",
+      "path": "examples/loop-engineering/success/verify-lite-summary.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "verify-lite-run-summary/v1",
+      "description": "Runnable verification fixture observed by the report-only loop."
+    },
+    {
+      "id": "loop-summary",
+      "kind": "loop-run-summary/v1",
+      "path": "fixtures/loop/success.loop-run-summary.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "loop-run-summary/v1",
+      "description": "Deterministic replay and first runnable verification evidence."
+    },
+    {
+      "id": "claim-evidence-manifest",
+      "kind": "claim-evidence-manifest/v1",
+      "path": "fixtures/assurance/sample.claim-evidence-manifest.json",
+      "present": true,
+      "required": true,
+      "schemaVersion": "claim-evidence-manifest/v1",
+      "description": "Reviewable claim-to-evidence mapping for the fixture."
+    },
+    {
+      "id": "assurance-summary",
+      "kind": "assurance-summary/v1",
+      "path": "fixtures/assurance/sample.assurance-summary.json",
+      "present": true,
+      "required": false,
+      "schemaVersion": "assurance-summary/v1",
+      "description": "Optional summary evidence that can feed a PR assurance review surface."
+    }
+  ],
+  "metrics": {
+    "time_to_first_runnable_verification_minutes": {
+      "value": 34,
+      "unit": "minutes",
+      "from": "2026-07-01T00:00:00.000Z",
+      "to": "2026-07-01T00:34:00.000Z",
+      "sourceArtifactRefs": [
+        "requirement",
+        "verify-lite",
+        "loop-summary"
+      ],
+      "reviewerQuestion": "How long did it take for a requirement to produce the first runnable verification artifact?",
+      "calculationMethod": "Minutes between requirementAcceptedAt and the first passing runnable verification timestamp.",
+      "interpretation": "Lower values can indicate that the reference flow turns requirements into runnable evidence with less setup friction.",
+      "limitation": "Sensitive to queueing, task size, CI availability, and whether timestamps are synthetic, redacted, or live."
+    },
+    "spec_task_evidence_coverage": {
+      "numerator": 3,
+      "denominator": 4,
+      "ratio": 0.75,
+      "missingTaskIds": [
+        "task.public-claim-review"
+      ],
+      "sourceArtifactRefs": [
+        "exec-plan",
+        "claim-evidence-manifest"
+      ],
+      "reviewerQuestion": "How many spec or plan tasks have at least one linked evidence artifact?",
+      "calculationMethod": "tasks with one or more evidenceRefs divided by all required tasks in the measurement fixture.",
+      "interpretation": "Higher coverage means more of the planned work is reviewable through evidence rather than prose alone.",
+      "limitation": "Coverage says evidence exists; it does not prove the evidence is sufficient, current, or correct."
+    },
+    "deterministic_replay_pass_rate": {
+      "numerator": 2,
+      "denominator": 2,
+      "ratio": 1,
+      "failedAttemptIds": [],
+      "sourceArtifactRefs": [
+        "loop-summary"
+      ],
+      "reviewerQuestion": "Can the same local inputs be replayed deterministically?",
+      "calculationMethod": "passing deterministic replay attempts divided by all replay attempts in the fixture.",
+      "interpretation": "Higher pass rate supports adoption readiness because reviewers can reproduce the reported flow locally.",
+      "limitation": "Fixture replay is not a live external-agent benchmark and does not measure raw coding-agent quality."
+    },
+    "manual_intervention_count": {
+      "count": 1,
+      "sourceArtifactRefs": [
+        "requirement"
+      ],
+      "interventionIds": [
+        "manual.public-claim-check"
+      ],
+      "reviewerQuestion": "How many human interventions were required before runnable evidence existed?",
+      "calculationMethod": "Count of manualInterventions recorded in the measurement fixture.",
+      "interpretation": "Lower counts can indicate a smoother path, while non-zero counts identify where onboarding or docs should improve.",
+      "limitation": "Manual intervention taxonomy must be stable before comparing teams or repositories."
+    },
+    "evidence_review_completeness": {
+      "numerator": 4,
+      "denominator": 5,
+      "ratio": 0.8,
+      "missingEvidenceIds": [
+        "ev.public-claim-approval"
+      ],
+      "sourceArtifactRefs": [
+        "requirement",
+        "exec-plan",
+        "verify-lite",
+        "loop-summary",
+        "claim-evidence-manifest",
+        "assurance-summary"
+      ],
+      "reviewerQuestion": "How complete is the review-ready evidence set for the requirement-to-run path?",
+      "calculationMethod": "required evidence items marked present and reviewed divided by all required evidence items.",
+      "interpretation": "Higher completeness means the PR review surface has fewer missing local artifacts to inspect.",
+      "limitation": "Completeness does not replace human approval and must not be promoted to a blocking gate without policy work."
+    }
+  },
+  "limitations": [
+    "offline fixture mode: no GitHub API or live external agent API was called.",
+    "report-only adoption evidence: this document does not approve, merge, or replace human review.",
+    "agent-vendor comparison is out of scope; metrics evaluate ae-framework workflow effectiveness only."
+  ],
+  "summary": "Report-only req2run metrics for reval3-reference-flow-offline-demo: first runnable verification 34 minutes, task evidence coverage 3/4, replay pass rate 2/2, manual interventions 1, evidence review completeness 4/5."
+}

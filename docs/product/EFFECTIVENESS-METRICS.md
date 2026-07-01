@@ -32,6 +32,7 @@ Current internal dogfooding report: `docs/product/DOGFOODING-REPORT-2026Q3.md`.
 Current external pilot report: `docs/product/PILOT-REPORT-2026Q3-01.md` (`dry-run only`; no live external PRs collected).
 Controlled comparison protocol: `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` (`protocol-ready, not executed`).
 External pilot onboarding and consent boundary: `docs/guides/external-pilot-onboarding.md`.
+Req2run adoption-readiness extension: `docs/product/REQ2RUN-METRICS.md`.
 
 ### 2. Measurement boundary
 
@@ -85,6 +86,23 @@ explicitly available, because PR creation time is not equivalent to review-ready
 time for draft or delayed-review PRs. Missing optional inputs must remain
 `not_collected` / `unknown` rather than being reported as zero.
 
+### 4.1 Req2run adoption-readiness extension
+
+Req2run metrics measure whether a requirement can become runnable, reviewable,
+evidence-backed work through the reference flow. They are defined in
+`docs/product/REQ2RUN-METRICS.md` and produced locally by
+`pnpm run metrics:req2run`. They extend the vocabulary without changing the
+claim boundary: the metrics evaluate ae-framework workflow effectiveness, not
+agent vendor quality.
+
+| Metric | Preferred existing artifact | Collection boundary | Downstream use |
+| --- | --- | --- | --- |
+| `time_to_first_runnable_verification_minutes` | requirement/Issue timing, ExecPlan v2, `verify-lite-run-summary`, loop summary | report-only timing from requirement acceptance to first passing runnable verification | onboarding friction, controlled comparison covariate |
+| `spec_task_evidence_coverage` | ExecPlan v2 task graph, Spec Kit task import, claim-evidence manifest | required tasks with at least one evidence reference / all required tasks | adoption readiness, dogfooding report template |
+| `deterministic_replay_pass_rate` | loop-run summary replay evidence, fixture hashes, validation outputs | passing local replay attempts / all replay attempts | reproducibility and variance-reduction evidence |
+| `manual_intervention_count` | operator note, loop summary stop/next-action, Issue or private tracker annotation | count of human interventions before runnable evidence exists | onboarding friction and docs/automation improvement |
+| `evidence_review_completeness` | claim-evidence manifest, assurance summary, PR assurance review surface | required evidence items present and reviewed / all required evidence items | PR review readiness and launch-material limitations |
+
 ### 5. Collection rules
 
 1. **Keep denominators explicit.** Always record the number of PRs, claims,
@@ -117,6 +135,10 @@ Public material, demos, and launch notes must follow these rules:
 - Do not claim faster review unless `review_decision_time` or `time_to_merge`
   was measured with comparable baselines or the wording is explicitly scoped to
   the demo scenario.
+- Do not claim requirements become runnable faster unless
+  `time_to_first_runnable_verification_minutes` was measured under the req2run
+  protocol with comparable baselines; local fixture output only supports
+  instrumentation readiness.
 - Do not claim safer code solely from fewer comments, fewer unresolved claims, or
   green CI.
 - Do not claim agent vendor superiority from these metrics. They measure the
@@ -134,6 +156,7 @@ Public material, demos, and launch notes must follow these rules:
 | Later surface | Required use of this metric vocabulary |
 | --- | --- |
 | 15-minute quickstart / local demo | Show a small, deterministic subset of `missing_evidence_finding_count`, `scope_drift_finding_count`, and reviewer-surface artifacts without claiming real-world improvement. |
+| Req2run local fixture | Use `docs/product/REQ2RUN-METRICS.md` and `pnpm run metrics:req2run` to demonstrate requirement-to-runnable metric collection without live external agent APIs; do not convert fixture timing into an adoption-speed claim. |
 | PR assurance review Markdown | Use the same metric names for counts and unresolved-risk summaries. |
 | Scope drift / high-risk demos | Report findings with these metric names and clearly distinguish report-only from blocking behavior. |
 | Cross-agent fixtures | Keep producer identity separate from reviewer-effectiveness metrics. |
@@ -160,6 +183,7 @@ product effectiveness を示すための共通 metric vocabulary を定義しま
 現在の external pilot report: `docs/product/PILOT-REPORT-2026Q3-01.md`（`dry-run only`、live external PR 収集 0件）。
 Controlled comparison protocol: `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`（`protocol-ready, not executed`）。
 External pilot onboarding と consent boundary: `docs/guides/external-pilot-onboarding.md`。
+Req2run adoption-readiness extension: `docs/product/REQ2RUN-METRICS.md`。
 
 ### 2. 測定境界
 
@@ -203,6 +227,23 @@ External pilot onboarding と consent boundary: `docs/guides/external-pilot-onbo
 
 `docs/ci/agent-pr-assurance-metrics.md` と `schema/agentic-metrics.schema.json` の optional `agentPrAssurance` extension は、PR assurance metrics の低レベルな report-only contract です。この product 文書はより広い product-effectiveness vocabulary を定義し、machine-readable report がある場合はそれらの低レベルmetricへ対応付けます。report-only collector の `pnpm run metrics:agent-pr-assurance` は `artifacts/metrics/agent-pr-assurance-metrics.{json,md}` を出力し、この vocabulary を `agentPrAssurance.productMetrics` に保存します。`time_to_merge_minutes` は review-ready timestamp が明示的に利用できる場合だけ収集します。draft PR や review 開始が遅れた PR では PR 作成時刻と review-ready 時刻が一致しないためです。任意入力が不足する場合は、0件と見せかけず `not_collected` / `unknown` のまま扱います。
 
+### 4.1 Req2run adoption-readiness extension
+
+Req2run metrics measure whether a requirement can become runnable, reviewable,
+evidence-backed work through the reference flow. They are defined in
+`docs/product/REQ2RUN-METRICS.md` and produced locally by
+`pnpm run metrics:req2run`. They extend the vocabulary without changing the
+claim boundary: the metrics evaluate ae-framework workflow effectiveness, not
+agent vendor quality.
+
+| Metric | Preferred existing artifact | Collection boundary | Downstream use |
+| --- | --- | --- | --- |
+| `time_to_first_runnable_verification_minutes` | requirement/Issue timing, ExecPlan v2, `verify-lite-run-summary`, loop summary | report-only timing from requirement acceptance to first passing runnable verification | onboarding friction, controlled comparison covariate |
+| `spec_task_evidence_coverage` | ExecPlan v2 task graph, Spec Kit task import, claim-evidence manifest | required tasks with at least one evidence reference / all required tasks | adoption readiness, dogfooding report template |
+| `deterministic_replay_pass_rate` | loop-run summary replay evidence, fixture hashes, validation outputs | passing local replay attempts / all replay attempts | reproducibility and variance-reduction evidence |
+| `manual_intervention_count` | operator note, loop summary stop/next-action, Issue or private tracker annotation | count of human interventions before runnable evidence exists | onboarding friction and docs/automation improvement |
+| `evidence_review_completeness` | claim-evidence manifest, assurance summary, PR assurance review surface | required evidence items present and reviewed / all required evidence items | PR review readiness and launch-material limitations |
+
 ### 5. Collection rules
 
 1. **分母を明示する。** ratio の背後にある PR、claim、finding、comment、check run の件数を必ず記録する。
@@ -217,6 +258,7 @@ External pilot onboarding と consent boundary: `docs/guides/external-pilot-onbo
 Public material、demo、launch note は次を守ります。
 
 - comparable baseline で `review_decision_time` または `time_to_merge` を測っていない限り、review が速くなると断定しない。断定する場合も demo scenario に限定する。
+- req2run protocol で comparable baseline を用いて `time_to_first_runnable_verification_minutes` を測っていない限り、要求がより速く runnable になると主張しない。Local fixture output は instrumentation readiness の evidence に限定する。
 - comment 減少、unresolved claim 減少、green CI だけで code が safer になったと主張しない。
 - これらの metric から agent vendor superiority を主張しない。測っているのは producer output の周辺にある ae-framework assurance plane である。
 - 承認なしに repository-sensitive な PR text、reviewer identity、raw timing data を公開しない。
@@ -228,6 +270,7 @@ Public material、demo、launch note は次を守ります。
 | Later surface | Required use of this metric vocabulary |
 | --- | --- |
 | 15-minute quickstart / local demo | `missing_evidence_finding_count`、`scope_drift_finding_count`、reviewer-surface artifact の小さな deterministic subset を示し、実世界の改善とは主張しない。 |
+| Req2run local fixture | `docs/product/REQ2RUN-METRICS.md` と `pnpm run metrics:req2run` で live external agent API なしの requirement-to-runnable metric collection を示す。Fixture timing を adoption-speed claim に変換しない。 |
 | PR assurance review Markdown | count と unresolved-risk summary に同じ metric 名を使う。 |
 | Scope drift / high-risk demo | この metric 名で finding を表示し、report-only と blocking behavior を明確に分ける。 |
 | Cross-agent fixtures | producer identity と reviewer-effectiveness metric を分離する。 |
