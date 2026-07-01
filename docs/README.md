@@ -22,6 +22,7 @@ Comprehensive documentation for the agent-neutral assurance control plane for ag
 See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 
 ### Recommended first reading
+- First-run demo: `getting-started/FIRST-RUN-DEMO.md` for the one-command local assurance review surface (`pnpm run demo:agent-assurance`).
 - Single reference flow: `getting-started/REFERENCE-FLOW.md` for the default Issue -> Context Pack/spec input -> ExecPlan -> verification -> evidence summary -> PR assurance review path.
 - Assurance control plane positioning: start with `product/ASSURANCE-CONTROL-PLANE.md`, then use `product/ASSURANCE-CONTROL-PLANE-POLICY.md` and `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md` to align BYO-agent adoption.
 - System overview (implementation-aligned): `architecture/CURRENT-SYSTEM-OVERVIEW.md`
@@ -40,7 +41,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Report-only pilot runbook, evidence template, and ACP-097 report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `product/PILOT-REPORT-2026Q3-01.md`
 - Controlled comparison protocol: `product/CONTROLLED-COMPARISON-PROTOCOL.md`
 
-For product evidence, use the route `guides/byo-agent-assurance-quickstart.md` -> `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md` -> `product/evidence-packs/evidence-003-self-dogfood/README.md` -> `product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md` -> `product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md` -> `product/PILOT-REPORT-2026Q3-01.md` -> `product/LAUNCH-KIT.md` limitations -> `product/CONTROLLED-COMPARISON-PROTOCOL.md`. The Evidence Sprint dogfood case study is the primary observed-repository evidence reference; the Web API and event-driven pilots are fixture-backed/report-only, the current external pilot report is `dry-run only`, and the controlled comparison has not been executed.
+For product evidence, use the route `getting-started/FIRST-RUN-DEMO.md` -> `guides/byo-agent-assurance-quickstart.md` -> `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md` -> `product/evidence-packs/evidence-003-self-dogfood/README.md` -> `product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md` -> `product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md` -> `product/PILOT-REPORT-2026Q3-01.md` -> `product/LAUNCH-KIT.md` limitations -> `product/CONTROLLED-COMPARISON-PROTOCOL.md`. The Evidence Sprint dogfood case study is the primary observed-repository evidence reference; the Web API and event-driven pilots are fixture-backed/report-only, the current external pilot report is `dry-run only`, and the controlled comparison has not been executed.
 
 ### How to use this index
 - If you need the shortest route to a working repository, start with `getting-started/`.
@@ -50,9 +51,10 @@ For product evidence, use the route `guides/byo-agent-assurance-quickstart.md` -
 
 ### Recommended routes by use case
 **First-time users**
+- `getting-started/FIRST-RUN-DEMO.md` — one-command local review surface
+- `guides/byo-agent-assurance-quickstart.md`
 - `getting-started/REFERENCE-FLOW.md`
 - `getting-started/QUICK-START-GUIDE.md`
-- `guides/byo-agent-assurance-quickstart.md`
 - `product/PILOT-REPORT-2026Q3-01.md`
 - `product/LAUNCH-KIT.md`
 - `product/CONTROLLED-COMPARISON-PROTOCOL.md`
@@ -102,6 +104,7 @@ See **Docs Language Policy / ドキュメント言語方針** below for the cano
 Entry path for first-time setup, baseline verification, and the shortest route to a usable local environment.
 
 - Reference flow (Issue to PR assurance review): `getting-started/REFERENCE-FLOW.md`
+- First-run demo: `getting-started/FIRST-RUN-DEMO.md`
 - Quick Start (15 minutes): `getting-started/QUICK-START-GUIDE.md`
 - Phase 6 Quick Start (UI/UX): `getting-started/PHASE-6-GETTING-STARTED.md`
 - Setup: `getting-started/SETUP.md`
@@ -339,6 +342,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 ### 🏁 [getting-started/](./getting-started/) - 導入・クイックスタート
 最初に読むべきドキュメント群
 
+- **[FIRST-RUN-DEMO.md](./getting-started/FIRST-RUN-DEMO.md)** ⭐ **最初に実行** - `pnpm run demo:agent-assurance` で local review surface を確認する one-command demo
 - **[QUICK-START-GUIDE.md](./getting-started/QUICK-START-GUIDE.md)** ⭐ **推奨** - baseline → structured assurance → high-assurance PR の最短導線
 - **[PHASE-6-GETTING-STARTED.md](./getting-started/PHASE-6-GETTING-STARTED.md)** ⭐ **最新** - Phase 6 UI/UX専用クイックスタート  
 - [SETUP.md](./getting-started/SETUP.md) - baseline / assurance summary / optional MCP を含む基本セットアップ手順
@@ -363,7 +367,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [DEMO-SCRIPT.md](./product/DEMO-SCRIPT.md) - 5分 demo script と話者メモ
 - [PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md](./product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md) - 適用対象 × 入力 × 出力 × ツール適性
 
-初見の product evidence 導線は [byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md) → [Evidence Sprint dogfood case study](./product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md) → [fixture-backed Web API pilot](./product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md) → [fixture-backed event-driven pilot](./product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md) → [PILOT-REPORT-2026Q3-01.md](./product/PILOT-REPORT-2026Q3-01.md) → [LAUNCH-KIT.md](./product/LAUNCH-KIT.md) の limitations → [CONTROLLED-COMPARISON-PROTOCOL.md](./product/CONTROLLED-COMPARISON-PROTOCOL.md) です。Web API / event-driven pilots は fixture-backed/report-only、現在の pilot report は `dry-run only` で、controlled comparison は未実施です。
+初見の product evidence 導線は [FIRST-RUN-DEMO.md](./getting-started/FIRST-RUN-DEMO.md) → [byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md) → [Evidence Sprint dogfood case study](./product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md) → [fixture-backed Web API pilot](./product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md) → [fixture-backed event-driven pilot](./product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md) → [PILOT-REPORT-2026Q3-01.md](./product/PILOT-REPORT-2026Q3-01.md) → [LAUNCH-KIT.md](./product/LAUNCH-KIT.md) の limitations → [CONTROLLED-COMPARISON-PROTOCOL.md](./product/CONTROLLED-COMPARISON-PROTOCOL.md) です。Web API / event-driven pilots は fixture-backed/report-only、現在の pilot report は `dry-run only` で、controlled comparison は未実施です。
 
 ### 🧭 [strategy/](./strategy/) - 戦略・責務境界
 - [CODEX-AE-BOUNDARY-VERIFY-FIRST.md](./strategy/CODEX-AE-BOUNDARY-VERIFY-FIRST.md) - Codex との責務境界、Verify-first、Thread→Repo→CI の標準化
@@ -389,6 +393,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - [context-pack-troubleshooting.md](./operations/context-pack-troubleshooting.md) - Context Pack 検証失敗時の復旧ランブック
 - [THREAD-REPO-CI-FLOW.md](./guides/THREAD-REPO-CI-FLOW.md) - Plan を repo SSOT に正規化する標準フロー
 - [USAGE.md](./guides/USAGE.md) - 一般的な使い方ガイド
+- [FIRST-RUN-DEMO.md](./getting-started/FIRST-RUN-DEMO.md) - `pnpm run demo:agent-assurance` で始める one-command first-run demo
 - [byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md) - 15分で試せる offline BYO-agent assurance demo
 - [external-pilot-onboarding.md](./guides/external-pilot-onboarding.md) - report-only external pilot の consent / redaction / publication boundary
 - [CLI-MIGRATION.md](./guides/CLI-MIGRATION.md) - CLI entry 移行ガイド
@@ -537,11 +542,12 @@ Claude CodeやMCPとの統合
 ## 🎯 用途別ドキュメント推奨
 
 ### 🔰 初めて使う方
-1. **[getting-started/QUICK-START-GUIDE.md](./getting-started/QUICK-START-GUIDE.md)** - baseline 起動
+1. **[getting-started/FIRST-RUN-DEMO.md](./getting-started/FIRST-RUN-DEMO.md)** - one-command first-run demo
 2. **[guides/byo-agent-assurance-quickstart.md](./guides/byo-agent-assurance-quickstart.md)** - offline BYO-agent assurance demo
-3. **[product/PILOT-REPORT-2026Q3-01.md](./product/PILOT-REPORT-2026Q3-01.md)** - dry-run pilot evidence と limitations
-4. **[product/LAUNCH-KIT.md](./product/LAUNCH-KIT.md)** - preview の claim boundary と demo ladder
-5. **[product/CONTROLLED-COMPARISON-PROTOCOL.md](./product/CONTROLLED-COMPARISON-PROTOCOL.md)** - 未実施の future benchmark 条件
+3. **[getting-started/QUICK-START-GUIDE.md](./getting-started/QUICK-START-GUIDE.md)** - baseline 起動
+4. **[product/PILOT-REPORT-2026Q3-01.md](./product/PILOT-REPORT-2026Q3-01.md)** - dry-run pilot evidence と limitations
+5. **[product/LAUNCH-KIT.md](./product/LAUNCH-KIT.md)** - preview の claim boundary と demo ladder
+6. **[product/CONTROLLED-COMPARISON-PROTOCOL.md](./product/CONTROLLED-COMPARISON-PROTOCOL.md)** - 未実施の future benchmark 条件
 
 ### 🎨 Phase 6 UI/UX開発者
 1. **[getting-started/PHASE-6-GETTING-STARTED.md](./getting-started/PHASE-6-GETTING-STARTED.md)** - Phase 6専用ガイド

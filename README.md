@@ -20,9 +20,9 @@ ae-framework is an **agent-neutral assurance control plane for agent-driven SDLC
 
 **Product thesis**: Bring your own agent. Keep your assurance plane. Codex, Claude Code, GitHub Copilot, Gemini-family coding tools, human maintainers, CI jobs, and formal tools are replaceable producers; ae-framework keeps judgment artifacts, policy gates, and release decisions stable across those producer choices.
 
-Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, and `docs/product/DEMO-SCRIPT.md`. Start the offline demo with `pnpm run demo:agent-assurance`.
+Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, and `docs/product/DEMO-SCRIPT.md`. Start the first-run demo with `pnpm run demo:agent-assurance`; the dedicated one-command path is `docs/getting-started/FIRST-RUN-DEMO.md`.
 
-Current evidence route for first-time product evaluation: run the 15-minute quickstart, read the Evidence Sprint dogfood case study, inspect the fixture-backed Web API and event-driven pilots, read the ACP-097 pilot report, then check launch-kit limitations and the controlled-comparison protocol. Internal dogfooding and pilot evidence are separate: the Web API and event-driven pilots are fixture-backed/report-only, the current external pilot report is `dry-run only` with 0 live external PRs collected, and the controlled comparison has not been executed. Public claims should therefore stay limited to review traceability and evidence routing, not review-speed, safety, adoption-impact, live API/event behavior, or agent-vendor superiority.
+Current evidence route for first-time product evaluation: run the one-command first-run demo, read the Evidence Sprint dogfood case study, inspect the fixture-backed Web API and event-driven pilots, read the ACP-097 pilot report, then check launch-kit limitations and the controlled-comparison protocol. Internal dogfooding and pilot evidence are separate: the Web API and event-driven pilots are fixture-backed/report-only, the current external pilot report is `dry-run only` with 0 live external PRs collected, and the controlled comparison has not been executed. Public claims should therefore stay limited to review traceability and evidence routing, not review-speed, safety, adoption-impact, live API/event behavior, or agent-vendor superiority.
 
 ### Two-layer model
 
@@ -65,46 +65,40 @@ flowchart TB
 
 ### Quick start (local)
 
-For a single Issue-to-PR assurance path, start with `docs/getting-started/REFERENCE-FLOW.md`; the commands below are the local setup baseline used by that flow.
+The first product-evidence demo is intentionally one command after dependency installation.
+It uses repository fixtures only: no live PR, GitHub token, hosted LLM API, or
+external agent service is used.
 
 ```bash
 # Prereqs: Node.js 20.11+ (<23), pnpm 10
 corepack enable
 corepack prepare pnpm@10.0.0 --activate
-pnpm install
-pnpm run first-run
-pnpm run setup-hooks
+pnpm install --frozen-lockfile
 
-# Offline BYO-agent assurance demo (no GitHub token or hosted LLM API)
+# Recommended first command: offline BYO-agent assurance demo
 pnpm run demo:agent-assurance
-# The demo already writes artifacts/review/agent-assurance-demo/assurance-review.md.
-# This no-arg renderer targets the default CI/local artifact paths; pass explicit
-# --*-summary options from docs/guides/byo-agent-assurance-quickstart.md for demo artifacts.
-pnpm run assurance:review-surface
-
-# Fast feedback
-pnpm run lint
-pnpm run test:fast
-
-# Mutation quick run (mktemp-based; supports STRYKER_TEMP_DIR)
-STRYKER_TIME_LIMIT=0 pnpm run pipelines:mutation:quick
-# If report generation is intentionally optional, set MUTATION_REPORT_STRICT=0
-
-# Formal smoke (non-blocking summary; cspx backend preferred)
-pnpm run verify:formal
-pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck
-
-# Heavy test cache & trend snapshot
-node scripts/pipelines/sync-test-results.mjs --store
-node scripts/pipelines/sync-test-results.mjs --snapshot
-node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json
 ```
 
+| First-run surface | Path / value |
+| --- | --- |
+| Expected input | Repository fixture data only; no live external service after dependencies are installed. |
+| Command | `pnpm run demo:agent-assurance` |
+| Main output | `artifacts/` |
+| Review surface to open first | `artifacts/review/agent-assurance-demo/assurance-review.md` |
+| Evidence proof point | `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md` and `docs/product/evidence-packs/evidence-003-self-dogfood/README.md` |
+
+For the dedicated first-run walkthrough and troubleshooting, use
+`docs/getting-started/FIRST-RUN-DEMO.md`. For a real Issue-to-PR assurance path,
+continue with `docs/getting-started/REFERENCE-FLOW.md`. Advanced flows such as
+formal lanes, domain presets, PR posting helpers, and heavy-test trend snapshots
+remain optional and risk/profile-driven.
+
 > `npm install` is intentionally blocked by `preinstall` because this repository uses `pnpm` workspace dependencies (`workspace:*`).
+> `pnpm run first-run` remains available for the environment/build/verify baseline (`doctor:env -> build -> verify:lite`) and writes summary JSON/Markdown files under `artifacts/first-run`.
 > `pnpm run doctor:env` writes `artifacts/doctor/env.json` and returns `0` (ok) / `2` (warning) / `1` (error) / `3` (invalid arguments).
-> `pnpm run first-run` runs `doctor:env -> build -> verify:lite` and writes summary JSON/Markdown files under the `artifacts/first-run` directory.
 
 ### Documentation pointers
+- First-run demo (one-command local review surface): `docs/getting-started/FIRST-RUN-DEMO.md`
 - Reference flow (Issue to PR assurance review): `docs/getting-started/REFERENCE-FLOW.md`
 - Overview & nav: `docs/README.md`, `docs/project-organization.md`
 - Maintenance operations: `docs/maintenance/branch-cleanup-runbook.md`
@@ -121,6 +115,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Product evidence and limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/REQ2RUN-METRICS.md`, `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, `docs/product/evidence-packs/evidence-003-self-dogfood/README.md`, `docs/product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md`, `docs/product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
 - Agent PR assurance metrics collector: `docs/ci/agent-pr-assurance-metrics.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
+- First-run one-command demo: `docs/getting-started/FIRST-RUN-DEMO.md`
 - 15-minute BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Assurance model (claim / level / lane / evidence): `docs/quality/ASSURANCE-MODEL.md`
 - Assurance operations runbook: `docs/quality/assurance-operations-runbook.md`
@@ -149,9 +144,9 @@ ae-framework は **エージェント協調型SDLCのための、エージェン
 
 **Product thesis**: Bring your own agent. Keep your assurance plane. Codex、Claude Code、GitHub Copilot、Gemini系tool、人間のmaintainer、CI job、formal tool は交換可能な producer であり、ae-framework は producer の選択に依存しない judgment artifact、policy gate、release decision を維持します。
 
-Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`。offline demo は `pnpm run demo:agent-assurance` から開始します。
+Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`。first-run demo は `pnpm run demo:agent-assurance` から開始します。専用の one-command path は `docs/getting-started/FIRST-RUN-DEMO.md` です。
 
-初見の product evidence 導線は、15分 quickstart → Evidence Sprint dogfood case study → fixture-backed Web API / event-driven pilots → ACP-097 pilot report → launch kit の limitations → controlled-comparison protocol の順です。内部 dogfooding と pilot evidence は別扱いです。Web API / event-driven pilots は fixture-backed/report-only、現在の external pilot report は `dry-run only` で live external PR の収集数は0件、controlled comparison は未実施です。そのため公開claimは review traceability と evidence routing に限定し、未測定の review-speed、安全性、導入効果、live API/event behavior、agent vendor 優位性は主張しません。
+初見の product evidence 導線は、one-command first-run demo → Evidence Sprint dogfood case study → fixture-backed Web API / event-driven pilots → ACP-097 pilot report → launch kit の limitations → controlled-comparison protocol の順です。内部 dogfooding と pilot evidence は別扱いです。Web API / event-driven pilots は fixture-backed/report-only、現在の external pilot report は `dry-run only` で live external PR の収集数は0件、controlled comparison は未実施です。そのため公開claimは review traceability と evidence routing に限定し、未測定の review-speed、安全性、導入効果、live API/event behavior、agent vendor 優位性は主張しません。
 
 ### 二層モデル
 
@@ -194,39 +189,36 @@ flowchart TB
 
 ### すぐ試す
 
-Issue から PR assurance review までの単一導線は `docs/getting-started/REFERENCE-FLOW.md` を先に参照してください。以下は、その導線で使う local setup baseline です。
+最初の product evidence demo は、依存関係 install 後の 1 command に絞っています。
+Repository fixture のみを使い、live PR、GitHub token、hosted LLM API、external
+agent service は不要です。
 
 ```bash
 # 前提: Node.js 20.11+ (<23), pnpm 10
 corepack enable
 corepack prepare pnpm@10.0.0 --activate
-pnpm install
-pnpm run first-run
-pnpm run setup-hooks
+pnpm install --frozen-lockfile
+
+# 推奨される最初の command: offline BYO-agent assurance demo
 pnpm run demo:agent-assurance
-# demo は artifacts/review/agent-assurance-demo/assurance-review.md を生成します。
-# 引数なしの renderer は既定の CI/local artifact path 向けです。demo artifact を再生成する場合は
-# docs/guides/byo-agent-assurance-quickstart.md の --*-summary 指定を使ってください。
-pnpm run assurance:review-surface
-
-pnpm run lint
-pnpm run test:fast
-
-# Mutation quick（mktemp利用、STRYKER_TEMP_DIR対応）
-STRYKER_TIME_LIMIT=0 pnpm run pipelines:mutation:quick
-# レポート生成失敗を許容する場合のみ MUTATION_REPORT_STRICT=0 を付与
-
-# ヘビーテスト結果のキャッシュ運用
-node scripts/pipelines/sync-test-results.mjs --store
-node scripts/pipelines/sync-test-results.mjs --snapshot
-node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json
 ```
 
-> このリポジトリは `workspace:*` を使うため、`npm install` は `preinstall` ガードで意図的に失敗させています。`pnpm install` を使用してください。
-> `pnpm run doctor:env` は `artifacts/doctor/env.json` を出力し、終了コードは `0`（正常）/`2`（警告）/`1`（要修正）/`3`（引数不正）です。
-> `pnpm run first-run` は `doctor:env -> build -> verify:lite` を順に実行し、`artifacts/first-run` ディレクトリに summary の JSON/Markdown を出力します。
+| First-run surface | Path / value |
+| --- | --- |
+| Expected input | Repository fixture data のみ。依存関係 install 後は live external service 不要です。 |
+| Command | `pnpm run demo:agent-assurance` |
+| Main output | `artifacts/` |
+| 最初に開く review surface | `artifacts/review/agent-assurance-demo/assurance-review.md` |
+| 証跡の根拠 | `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md` と `docs/product/evidence-packs/evidence-003-self-dogfood/README.md` |
+
+専用の first-run walkthrough と troubleshooting は `docs/getting-started/FIRST-RUN-DEMO.md` を参照してください。Real Issue-to-PR assurance path に進む場合は `docs/getting-started/REFERENCE-FLOW.md` を使用します。Formal lane、domain preset、PR posting helper、heavy-test trend snapshot は optional であり、risk/profile に応じて選択します。
+
+> このリポジトリは `workspace:*` を使うため、`npm install` は `preinstall` ガードで意図的に失敗させています。`pnpm install --frozen-lockfile` を使用してください。
+> `pnpm run first-run` は environment/build/verify baseline (`doctor:env -> build -> verify:lite`) として引き続き利用でき、`artifacts/first-run` に summary JSON/Markdown を出力します。
+> `pnpm run doctor:env` は `artifacts/doctor/env.json` を書き出し、`0` (ok) / `2` (warning) / `1` (error) / `3` (invalid arguments) を返します。
 
 ### ドキュメントへの入り口
+- First-run demo（one-command local review surface）: `docs/getting-started/FIRST-RUN-DEMO.md`
 - 全体概要: `docs/README.md`, `docs/project-organization.md`
 - 現行アーキテクチャ全体像: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - ゼロベース再設計の理想像: `docs/architecture/ZERO-BASED-IDEAL-DESIGN.md`
@@ -239,6 +231,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Product evidence と limitations: `docs/product/EFFECTIVENESS-METRICS.md`, `docs/product/REQ2RUN-METRICS.md`, `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, `docs/product/evidence-packs/evidence-003-self-dogfood/README.md`, `docs/product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md`, `docs/product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md`, `docs/product/DOGFOODING-REPORT-2026Q3.md`, `docs/product/PILOT-REPORT-2026Q3-01.md`, `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md`
 - Agent PR assurance metrics collector: `docs/ci/agent-pr-assurance-metrics.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
+- First-run one-command demo: `docs/getting-started/FIRST-RUN-DEMO.md`
 - 15分 BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Assurance model（claim / level / lane / evidence）: `docs/quality/ASSURANCE-MODEL.md`
 - PR自動化（Copilot→auto-fix→auto-merge）: `docs/ci/pr-automation.md`
