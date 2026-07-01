@@ -87,6 +87,11 @@ Interpretation:
 | High-reliability or assurance-heavy domains | missing edge cases or overlooked counterexamples | formal specifications | `pnpm run verify:formal` | `artifacts/hermetic-reports/formal/summary.json` and per-tool evidence |
 | Existing-product improvement | slow heavy-test reruns and late regression detection | prior snapshots and execution history | `node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json` | `reports/heavy-test-trends.json` |
 
+For packaged starter routes by archetype, use `docs/guides/domain-presets.md`.
+The presets cover Web API/BFF, event-driven domain, specification-led brownfield,
+and high-assurance critical-core flows while keeping Context Pack, ExecPlan, and
+evidence contracts in the loop.
+
 ## 3. Minimum inputs
 
 ### 3.1 Common mandatory inputs
@@ -257,6 +262,11 @@ flowchart TB
 | 並行・プロトコル系 | deadlock/livelock、到達不能状態 | CSPM/Promela/TLA+ モデル | `pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck` | `artifacts/hermetic-reports/formal/csp-summary.json`, `artifacts/hermetic-reports/formal/cspx-result.json` |
 | 高信頼/検証強化が必要 | 境界条件の抜け、反例の見落とし | 形式仕様（TLA+/Alloy/SMT/Lean） | `pnpm run verify:formal` | `artifacts/hermetic-reports/formal/summary.json` と各種 summary |
 | 既存プロダクト改善 | 重い検証の再実行コスト、退行検知遅延 | 既存テスト結果、比較対象スナップショット | `node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-trends.json` | `reports/heavy-test-trends.json` |
+
+Product archetype 別の packaged starter route は `docs/guides/domain-presets.md`
+を参照してください。Web API/BFF、イベント駆動、仕様主導 brownfield、
+high-assurance critical core の各 flow を、Context Pack、ExecPlan、evidence
+contract を維持したまま選べます。
 
 ## 3. 入力として準備すべきもの（最小セット）
 

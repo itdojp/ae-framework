@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "domain-assurance-preset/v1",
+  "id": "spec-led-brownfield",
+  "title": "Specification-led brownfield change preset",
+  "version": "2026.07",
+  "targetUser": "Maintainers modernizing an existing product where Spec Kit-style feature artifacts or structured specification documents already exist.",
+  "fit": {
+    "classification": "structured-assurance",
+    "recommendedWhen": [
+      "A brownfield change needs traceability from existing requirements and task lists to Context Pack and ExecPlan evidence.",
+      "The team already has Spec Kit or Spec Kit-like feature directories.",
+      "Reviewers need to see lossy mappings, missing contracts, and task coverage before implementation."
+    ],
+    "notRecommendedWhen": [
+      "There is no structured specification, task list, or reviewable requirement source.",
+      "The change is too small to justify specification import and task mapping.",
+      "The team expects Spec Kit commands to be executed automatically; this preset only imports local artifacts."
+    ]
+  },
+  "requiredInputs": [
+    {
+      "id": "feature-dir",
+      "name": "Spec Kit feature directory",
+      "pathPattern": "fixtures/spec-kit/brownfield/specs/042-inventory-modernization or specs/<feature-id>",
+      "description": "Contains specification, plan, tasks, and optional contracts for the brownfield feature.",
+      "contract": "Spec Kit-style local artifact layout"
+    },
+    {
+      "id": "constitution",
+      "name": "Spec Kit constitution or governance memory",
+      "pathPattern": ".specify/memory/constitution.md",
+      "description": "Provides governance context for unsupported or lossy bridge mappings.",
+      "contract": null
+    },
+    {
+      "id": "context-pack-import",
+      "name": "Imported Context Pack",
+      "pathPattern": "artifacts/spec-kit/context-pack.import.json",
+      "description": "Bridge output that becomes the ae-framework design SSOT candidate.",
+      "contract": "context-pack/v1"
+    },
+    {
+      "id": "exec-plan-import",
+      "name": "Imported ExecPlan v2",
+      "pathPattern": "artifacts/spec-kit/exec-plan.v2.json",
+      "description": "Bridge output that connects imported tasks to verification and evidence requirements.",
+      "contract": "exec-plan/v2"
+    }
+  ],
+  "startingCommand": {
+    "id": "spec-kit-import",
+    "command": "pnpm run spec-kit:import-feature -- --feature-dir fixtures/spec-kit/brownfield/specs/042-inventory-modernization --output-dir artifacts/spec-kit --generated-at 2026-07-01T00:00:00.000Z",
+    "purpose": "Import local Spec Kit-style artifacts into ae-framework Context Pack and ExecPlan v2 outputs.",
+    "outputArtifacts": [
+      "artifacts/spec-kit/spec-kit-bridge-report.json",
+      "artifacts/spec-kit/context-pack.import.json",
+      "artifacts/spec-kit/exec-plan.v2.json"
+    ]
+  },
+  "defaultVerificationCommands": [
+    {
+      "id": "spec-kit-import",
+      "command": "pnpm run spec-kit:import-feature -- --feature-dir fixtures/spec-kit/brownfield/specs/042-inventory-modernization --output-dir artifacts/spec-kit --generated-at 2026-07-01T00:00:00.000Z",
+      "purpose": "Build deterministic bridge artifacts for review.",
+      "outputArtifacts": [
+        "artifacts/spec-kit/spec-kit-bridge-report.json",
+        "artifacts/spec-kit/context-pack.import.json",
+        "artifacts/spec-kit/exec-plan.v2.json"
+      ]
+    },
+    {
+      "id": "context-pack-import-validate",
+      "command": "node scripts/context-pack/validate.mjs --sources artifacts/spec-kit/context-pack.import.json",
+      "purpose": "Validate the imported Context Pack candidate before adopting it as SSOT.",
+      "outputArtifacts": [
+        "artifacts/context-pack/context-pack-validate-report.json"
+      ]
+    },
+    {
+      "id": "exec-plan-import-validate",
+      "command": "pnpm run exec-plan:v2:validate -- --file artifacts/spec-kit/exec-plan.v2.json",
+      "purpose": "Validate imported tasks, evidence requirements, and commands.",
+      "outputArtifacts": [
+        "artifacts/plan/exec-plan.v2.md"
+      ]
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "id": "bridge-report",
+      "path": "artifacts/spec-kit/spec-kit-bridge-report.json",
+      "kind": "spec-kit-bridge-report/v1",
+      "schemaVersion": "spec-kit-bridge-report/v1",
+      "required": true,
+      "reviewPurpose": "Shows imported fields, unsupported mappings, warnings, and bridge result."
+    },
+    {
+      "id": "context-pack-import",
+      "path": "artifacts/spec-kit/context-pack.import.json",
+      "kind": "context-pack/v1",
+      "schemaVersion": "context-pack/v1",
+      "required": true,
+      "reviewPurpose": "Candidate design SSOT generated from local Spec Kit artifacts."
+    },
+    {
+      "id": "exec-plan-import",
+      "path": "artifacts/spec-kit/exec-plan.v2.json",
+      "kind": "exec-plan/v2",
+      "schemaVersion": "exec-plan/v2",
+      "required": true,
+      "reviewPurpose": "Task and evidence plan generated from the imported feature."
+    }
+  ],
+  "evidenceSurfaces": [
+    {
+      "id": "bridge-md",
+      "path": "artifacts/spec-kit/spec-kit-bridge-report.md",
+      "description": "Human-readable bridge findings, unsupported fields, and mapping summary."
+    },
+    {
+      "id": "pr-body",
+      "path": "pull-request body",
+      "description": "Record whether imported Context Pack/ExecPlan was adopted, edited, or rejected."
+    }
+  ],
+  "escalationRule": {
+    "trigger": "Escalate when bridge result is `fail`, warnings hide a required contract, or imported boundaries conflict with the current Context Pack.",
+    "action": "Stop automation, resolve the source specification or boundary conflict, and require a human decision before adopting imported artifacts.",
+    "requiredHumanDecision": true,
+    "optionalCommands": [
+      {
+        "id": "context-pack-boundary",
+        "command": "pnpm run context-pack:verify-boundary-map",
+        "purpose": "Check whether imported boundaries create dependency or ownership conflicts.",
+        "outputArtifacts": [
+          "artifacts/context-pack/context-pack-boundary-map-report.json"
+        ]
+      }
+    ]
+  },
+  "referenceFlowLinks": [
+    {
+      "label": "Spec Kit bridge",
+      "path": "docs/integrations/SPEC-KIT-BRIDGE.md",
+      "required": true
+    },
+    {
+      "label": "Issue to PR reference flow",
+      "path": "docs/getting-started/REFERENCE-FLOW.md",
+      "required": true
+    }
+  ],
+  "integration": {
+    "contextPackRequired": true,
+    "execPlanRequired": true,
+    "specVerificationKit": {
+      "mode": "recommended",
+      "guidance": "Use `pnpm run spec-kit-min:verify` after imported requirements have traceable examples or property checks."
+    },
+    "specKitBridge": {
+      "mode": "required",
+      "guidance": "This preset is specifically for local Spec Kit-style feature import; it does not execute Spec Kit commands."
+    }
+  },
+  "reuseContracts": [
+    "spec-kit-bridge-report/v1",
+    "context-pack/v1",
+    "exec-plan/v2",
+    "context-pack-boundary-map/v1",
+    "verify-lite-run-summary/v1"
+  ],
+  "reportOnly": true
+}

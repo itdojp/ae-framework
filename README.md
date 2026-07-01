@@ -113,6 +113,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - Current architecture snapshot: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - Zero-based ideal redesign blueprint: `docs/architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - Product fit (what to input/output, which tools to use): `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- Domain assurance presets (product archetype starter packages): `docs/guides/domain-presets.md`
 - Assurance control plane positioning: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
@@ -230,6 +231,7 @@ node scripts/pipelines/compare-test-trends.mjs --json-output reports/heavy-test-
 - 現行アーキテクチャ全体像: `docs/architecture/CURRENT-SYSTEM-OVERVIEW.md`
 - ゼロベース再設計の理想像: `docs/architecture/ZERO-BASED-IDEAL-DESIGN.md`
 - 適用対象/入力/出力/ツール適性: `docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md`
+- Domain assurance presets（product archetype 別 starter package）: `docs/guides/domain-presets.md`
 - Assurance control plane の位置付け: `docs/product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance control plane policy: `docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `docs/product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`

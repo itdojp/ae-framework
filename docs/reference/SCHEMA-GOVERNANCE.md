@@ -299,3 +299,9 @@ Preview から stable への昇格には、同一 PR または linked issue で�
 ### 17. Loop policy schema
 
 `schema/loop-policy.schema.json` uses the canonical `$id` form `https://ae-framework/schema/loop-policy.schema.json`. It is the preview/report-only policy contract for loop safety budgets and stop rules. The contract captures iteration / wall-clock / modified-file budgets, command and path allow/deny lists, required evidence IDs, high-risk approval thresholds, repeated-failure limits, and redaction posture. Policy findings remain report-only in this slice; no blocking policy-gate rule is added unless a future promotion issue explicitly changes that behavior.
+
+### 18. Domain assurance preset schema
+
+`schema/domain-assurance-preset.schema.json` uses the canonical `$id` form `https://ae-framework/schema/domain-assurance-preset.schema.json`. It is the report-only template contract for `templates/domain-presets/*/preset.json`. Presets select product-archetype inputs, starting commands, expected artifacts, evidence surfaces, and escalation rules, but they do not approve PRs, bypass Context Pack / ExecPlan, or add policy-gate enforcement.
+
+`schema/domain-assurance-preset-report.schema.json` uses the canonical `$id` form `https://ae-framework/schema/domain-assurance-preset-report.schema.json`. It validates deterministic rendered examples under `fixtures/domain-presets/*/expected/`, produced by `scripts/domain-presets/render-preset.mjs`, so preset onboarding evidence can be reviewed without live external API calls.

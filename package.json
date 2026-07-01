@@ -449,7 +449,8 @@
     "spec-kit:import-feature": "node scripts/spec-kit/import-feature.mjs",
     "spec-kit-min:verify": "node scripts/spec-verification/run-min-profile.mjs",
     "loop:run-report-only": "node scripts/loop/run-report-only.mjs",
-    "metrics:req2run": "node scripts/metrics/collect-req2run-metrics.mjs"
+    "metrics:req2run": "node scripts/metrics/collect-req2run-metrics.mjs",
+    "domain-presets:render": "node scripts/domain-presets/render-preset.mjs"
   },
   "dependencies": {
     "@ae-framework/agent-builder-adapter": "file:./packages/agent-builder-adapter",

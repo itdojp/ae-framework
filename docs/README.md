@@ -31,6 +31,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Current PR automation / gate baseline: `ci/pr-automation.md`, `ci/OPT-IN-CONTROLS.md`
 - Agent PR trust-calibration metrics: `ci/agent-pr-assurance-metrics.md`
 - Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md` and req2run adoption-readiness metrics: `product/REQ2RUN-METRICS.md`
+- Domain assurance presets: `guides/domain-presets.md` for Web API/BFF, event-driven, Spec Kit brownfield, and high-assurance critical-core starter packages.
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
 - Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
@@ -120,6 +121,7 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Controlled comparison protocol: `product/CONTROLLED-COMPARISON-PROTOCOL.md`
 - BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
+- Domain assurance presets: `guides/domain-presets.md`
 - External pilot onboarding: `guides/external-pilot-onboarding.md`
 - Assurance control plane detailed design: `architecture/ASSURANCE-CONTROL-PLANE-DETAILED-DESIGN.md`
 
@@ -381,6 +383,7 @@ ae-framework は、エージェント協調型SDLCのためのエージェント
 - **🆕 [ADVANCED-TROUBLESHOOTING-GUIDE.md](./guides/ADVANCED-TROUBLESHOOTING-GUIDE.md)** ⭐ **NEW** - 高度な機能のトラブルシューティング
 - [context-pack-onboarding-checklist.md](./guides/context-pack-onboarding-checklist.md) - Context Pack 導入チェックリスト（入力準備→検証→修正→再検証）
 - [context-pack-phase5-cookbook.md](./guides/context-pack-phase5-cookbook.md) - Context Pack Phase5+ の実践レシピ
+- [domain-presets.md](./guides/domain-presets.md) - Web API/BFF・イベント駆動・Spec Kit brownfield・high-assurance core 向け report-only starter package
 - [context-pack-troubleshooting.md](./operations/context-pack-troubleshooting.md) - Context Pack 検証失敗時の復旧ランブック
 - [THREAD-REPO-CI-FLOW.md](./guides/THREAD-REPO-CI-FLOW.md) - Plan を repo SSOT に正規化する標準フロー
 - [USAGE.md](./guides/USAGE.md) - 一般的な使い方ガイド

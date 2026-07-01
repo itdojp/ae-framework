@@ -1,0 +1,200 @@
+{
+  "schemaVersion": "domain-assurance-preset/v1",
+  "id": "high-assurance-critical-core",
+  "title": "High-assurance critical core preset",
+  "version": "2026.07",
+  "targetUser": "Maintainers of concurrency-heavy, financial, security, or protocol-critical core logic where selected claims need formal, model, or proof evidence.",
+  "fit": {
+    "classification": "high-assurance",
+    "recommendedWhen": [
+      "A small critical core has claims that can be modeled, checked, or proved independently of the full application.",
+      "The risk decision justifies slower verification and explicit human approval.",
+      "Formal/model outputs can be retained as PR or release evidence."
+    ],
+    "notRecommendedWhen": [
+      "The change is routine UI, copy, scaffolding, or a one-off script.",
+      "No selected claim, invariant, or formalizable property has been identified.",
+      "The team would treat formal summaries as automatic approval rather than evidence for human review."
+    ]
+  },
+  "requiredInputs": [
+    {
+      "id": "selected-claims",
+      "name": "Selected assurance claims",
+      "pathPattern": "fixtures/exec-plan/high-risk-selected-claims.exec-plan.v2.json or spec/assurance-profile/*.json",
+      "description": "Identifies which critical properties justify high-assurance evidence.",
+      "contract": "exec-plan/v2 or assurance-profile"
+    },
+    {
+      "id": "formal-model",
+      "name": "Formal or model-checking input",
+      "pathPattern": "spec/tla/**/*.tla, spec/csp/**/*.cspm, spec/smt/**/*.smt2, spec/alloy/**/*.als, spec/lean/**/*",
+      "description": "Provides the model, proof, or constraint system for selected critical claims.",
+      "contract": "formal tool input"
+    },
+    {
+      "id": "context-pack",
+      "name": "Context Pack and Boundary Map",
+      "pathPattern": "spec/context-pack/**/*.{json,yaml,yml}",
+      "description": "Limits high-assurance scope to a reviewable implementation slice and its dependencies.",
+      "contract": "context-pack/v1 + context-pack-boundary-map/v1"
+    },
+    {
+      "id": "exec-plan",
+      "name": "ExecPlan v2 with evidence requirements",
+      "pathPattern": "artifacts/plan/exec-plan.v2.json or fixtures/exec-plan/high-risk-selected-claims.exec-plan.v2.json",
+      "description": "Captures stop rules, evidence requirements, rollback, and human approval threshold.",
+      "contract": "exec-plan/v2"
+    }
+  ],
+  "startingCommand": {
+    "id": "formal",
+    "command": "pnpm run verify:formal",
+    "purpose": "Run the broad formal/model/proof summary lane for selected critical claims.",
+    "outputArtifacts": [
+      "artifacts/hermetic-reports/formal/summary.json"
+    ]
+  },
+  "defaultVerificationCommands": [
+    {
+      "id": "context-pack-boundary",
+      "command": "pnpm run context-pack:verify-boundary-map",
+      "purpose": "Confirm the high-assurance slice does not silently expand beyond approved boundaries.",
+      "outputArtifacts": [
+        "artifacts/context-pack/context-pack-boundary-map-report.json"
+      ]
+    },
+    {
+      "id": "formal",
+      "command": "pnpm run verify:formal",
+      "purpose": "Aggregate available formal/model/proof evidence for selected claims.",
+      "outputArtifacts": [
+        "artifacts/hermetic-reports/formal/summary.json"
+      ]
+    },
+    {
+      "id": "verify-lite",
+      "command": "pnpm run verify:lite",
+      "purpose": "Keep the baseline PR-quality lane alongside formal evidence.",
+      "outputArtifacts": [
+        "artifacts/verify-lite/verify-lite-run-summary.json"
+      ]
+    },
+    {
+      "id": "assurance-review",
+      "command": "pnpm run assurance:review-surface",
+      "purpose": "Render claim/evidence status for human approval; this command does not approve or merge.",
+      "outputArtifacts": [
+        "artifacts/review/assurance-review.md"
+      ]
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "id": "formal-summary",
+      "path": "artifacts/hermetic-reports/formal/summary.json",
+      "kind": "formal-summary/v2",
+      "schemaVersion": "formal-summary/v2",
+      "required": true,
+      "reviewPurpose": "Shows formal/model/proof lane status and unavailable tool gaps."
+    },
+    {
+      "id": "claim-evidence-manifest",
+      "path": "artifacts/assurance/claim-evidence-manifest.json",
+      "kind": "claim-evidence-manifest/v1",
+      "schemaVersion": "claim-evidence-manifest/v1",
+      "required": true,
+      "reviewPurpose": "Connects selected claims to formal, runtime, and human-review evidence."
+    },
+    {
+      "id": "policy-gate-summary",
+      "path": "artifacts/ci/policy-gate-summary.json",
+      "kind": "policy-gate-summary/v1",
+      "schemaVersion": "policy-gate-summary/v1",
+      "required": false,
+      "reviewPurpose": "Shows whether high-risk labels or assurance enforcement changed PR policy outcome."
+    },
+    {
+      "id": "verify-lite-summary",
+      "path": "artifacts/verify-lite/verify-lite-run-summary.json",
+      "kind": "verify-lite-run-summary",
+      "schemaVersion": "verify-lite-run-summary/v1",
+      "required": true,
+      "reviewPurpose": "Keeps ordinary PR checks visible even when formal evidence is emphasized."
+    }
+  ],
+  "evidenceSurfaces": [
+    {
+      "id": "formal-summary",
+      "path": "artifacts/hermetic-reports/formal/summary.json",
+      "description": "Machine-readable status for formal/model/proof lanes."
+    },
+    {
+      "id": "human-approval",
+      "path": "PR review and policy-gate summary",
+      "description": "Human maintainer approval remains required for high-risk claims; evidence does not self-approve."
+    }
+  ],
+  "escalationRule": {
+    "trigger": "Escalate when selected critical claims are unresolved, formal tools are unavailable, counterexamples are found, or risk remains high after mitigation.",
+    "action": "Keep the claim unresolved or waived with explicit evidence; do not promote to merge/release approval without a human policy decision.",
+    "requiredHumanDecision": true,
+    "optionalCommands": [
+      {
+        "id": "csp",
+        "command": "pnpm run verify:csp -- --file spec/csp/cspx-smoke.cspm --mode typecheck",
+        "purpose": "Run a focused CSP lane for protocol/deadlock-style risks when applicable.",
+        "outputArtifacts": [
+          "artifacts/hermetic-reports/formal/csp-summary.json"
+        ]
+      },
+      {
+        "id": "tla",
+        "command": "pnpm run verify:tla -- --engine=tlc",
+        "purpose": "Run a focused TLA+ lane when a bounded state model is available.",
+        "outputArtifacts": [
+          "artifacts/hermetic-reports/formal/tla-summary.json"
+        ]
+      }
+    ]
+  },
+  "referenceFlowLinks": [
+    {
+      "label": "Issue to PR reference flow",
+      "path": "docs/getting-started/REFERENCE-FLOW.md",
+      "required": true
+    },
+    {
+      "label": "Spec & Verification Kit minimum profile",
+      "path": "docs/reference/SPEC-VERIFICATION-KIT-MIN.md",
+      "required": true
+    },
+    {
+      "label": "Product fit map",
+      "path": "docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md",
+      "required": true
+    }
+  ],
+  "integration": {
+    "contextPackRequired": true,
+    "execPlanRequired": true,
+    "specVerificationKit": {
+      "mode": "recommended",
+      "guidance": "Use the minimum profile to keep traceable tests alongside selected formal/model/proof lanes."
+    },
+    "specKitBridge": {
+      "mode": "optional",
+      "guidance": "Import Spec Kit artifacts only when they define the selected critical claims or task plan."
+    }
+  },
+  "reuseContracts": [
+    "context-pack/v1",
+    "context-pack-boundary-map/v1",
+    "exec-plan/v2",
+    "claim-evidence-manifest/v1",
+    "assurance-summary/v1",
+    "formal-summary/v2",
+    "policy-gate-summary/v1"
+  ],
+  "reportOnly": true
+}

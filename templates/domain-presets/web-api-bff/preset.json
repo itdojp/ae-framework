@@ -1,0 +1,186 @@
+{
+  "schemaVersion": "domain-assurance-preset/v1",
+  "id": "web-api-bff",
+  "title": "Web API / BFF structured assurance preset",
+  "version": "2026.07",
+  "targetUser": "API or BFF maintainers who need stable PR quality, request/response contract traceability, and a low-friction path from Issue to assurance review.",
+  "fit": {
+    "classification": "structured-assurance",
+    "recommendedWhen": [
+      "The change modifies externally visible HTTP or BFF contracts.",
+      "Reviewers need to connect requirements, OpenAPI or route contracts, tests, and PR evidence.",
+      "The team can retain CI artifacts and run the reference flow locally."
+    ],
+    "notRecommendedWhen": [
+      "The change is a short-lived one-off script with no retained API contract.",
+      "There is no CI or artifact retention path for verification evidence.",
+      "The route only needs high-level prose review and no executable check."
+    ]
+  },
+  "requiredInputs": [
+    {
+      "id": "requirement",
+      "name": "Requirement or Issue summary",
+      "pathPattern": "docs/getting-started/REFERENCE-FLOW.md or spec/requirements/*.md",
+      "description": "Captures the user-visible change, non-goals, and reviewer questions before implementation.",
+      "contract": null
+    },
+    {
+      "id": "api-contract",
+      "name": "HTTP contract or route specification",
+      "pathPattern": "spec/openapi/**/*.yaml or docs/api/**/*.md",
+      "description": "Defines the request/response contract that the PR must preserve or intentionally change.",
+      "contract": "OpenAPI or project-local API contract"
+    },
+    {
+      "id": "context-pack",
+      "name": "Context Pack and Boundary Map",
+      "pathPattern": "spec/context-pack/**/*.{json,yaml,yml}",
+      "description": "Fixes the design SSOT, implementation slice, and dependency boundary before code changes.",
+      "contract": "context-pack/v1 + context-pack-boundary-map/v1"
+    },
+    {
+      "id": "exec-plan",
+      "name": "ExecPlan v2",
+      "pathPattern": "artifacts/plan/exec-plan.v2.json or fixtures/exec-plan/*.json",
+      "description": "Connects tasks, validation commands, output artifacts, rollback, and evidence requirements.",
+      "contract": "exec-plan/v2"
+    }
+  ],
+  "startingCommand": {
+    "id": "verify-lite",
+    "command": "pnpm run verify:lite",
+    "purpose": "Run the default PR-quality baseline and produce a verify-lite summary for review.",
+    "outputArtifacts": [
+      "artifacts/verify-lite/verify-lite-run-summary.json"
+    ]
+  },
+  "defaultVerificationCommands": [
+    {
+      "id": "context-pack-validate",
+      "command": "pnpm run context-pack:validate",
+      "purpose": "Validate the design SSOT before executing API/BFF implementation work.",
+      "outputArtifacts": [
+        "artifacts/context-pack/context-pack-validate-report.json"
+      ]
+    },
+    {
+      "id": "boundary-map",
+      "command": "pnpm run context-pack:verify-boundary-map",
+      "purpose": "Confirm route/controller/data-access ownership boundaries and dependency edges.",
+      "outputArtifacts": [
+        "artifacts/context-pack/context-pack-boundary-map-report.json"
+      ]
+    },
+    {
+      "id": "exec-plan-validate",
+      "command": "pnpm run exec-plan:v2:validate -- --file artifacts/plan/exec-plan.v2.json",
+      "purpose": "Check that tasks, commands, evidence requirements, and rollback are reviewable.",
+      "outputArtifacts": [
+        "artifacts/plan/exec-plan.v2.md"
+      ]
+    },
+    {
+      "id": "review-surface",
+      "command": "pnpm run assurance:review-surface",
+      "purpose": "Render a PR-facing assurance review surface after evidence artifacts exist.",
+      "outputArtifacts": [
+        "artifacts/review/assurance-review.md"
+      ]
+    }
+  ],
+  "expectedArtifacts": [
+    {
+      "id": "verify-lite-summary",
+      "path": "artifacts/verify-lite/verify-lite-run-summary.json",
+      "kind": "verify-lite-run-summary",
+      "schemaVersion": "verify-lite-run-summary/v1",
+      "required": true,
+      "reviewPurpose": "Shows whether the default local verification lane passed."
+    },
+    {
+      "id": "boundary-map-report",
+      "path": "artifacts/context-pack/context-pack-boundary-map-report.json",
+      "kind": "context-pack-boundary-map-report",
+      "schemaVersion": "context-pack-boundary-map-summary/v1",
+      "required": true,
+      "reviewPurpose": "Shows whether API/BFF ownership and dependency boundaries match the Context Pack."
+    },
+    {
+      "id": "exec-plan-v2",
+      "path": "artifacts/plan/exec-plan.v2.json",
+      "kind": "exec-plan/v2",
+      "schemaVersion": "exec-plan/v2",
+      "required": true,
+      "reviewPurpose": "Links implementation tasks, validation commands, output artifacts, and rollback."
+    },
+    {
+      "id": "assurance-review",
+      "path": "artifacts/review/assurance-review.md",
+      "kind": "assurance-review-surface",
+      "schemaVersion": null,
+      "required": false,
+      "reviewPurpose": "Human-readable PR surface for claim/evidence inspection."
+    }
+  ],
+  "evidenceSurfaces": [
+    {
+      "id": "pr-body",
+      "path": "pull-request body",
+      "description": "Record Context Pack conflict status, validation evidence, and rollback summary."
+    },
+    {
+      "id": "review-surface",
+      "path": "artifacts/review/assurance-review.md",
+      "description": "Summarizes claim/evidence status without granting approval authority."
+    }
+  ],
+  "escalationRule": {
+    "trigger": "Escalate when the route handles authentication, authorization, payment, PII, cross-service contract breakage, or a policy `risk:high` label.",
+    "action": "Add security or high-assurance lanes, require human maintainer approval, and keep policy-gate enforcement changes in a separate policy issue.",
+    "requiredHumanDecision": true,
+    "optionalCommands": [
+      {
+        "id": "security-assurance",
+        "command": "pnpm run test:security-assurance",
+        "purpose": "Exercise the fixture-backed security assurance lane when security claims are in scope.",
+        "outputArtifacts": [
+          "artifacts/security/security-summary.md"
+        ]
+      }
+    ]
+  },
+  "referenceFlowLinks": [
+    {
+      "label": "Issue to PR reference flow",
+      "path": "docs/getting-started/REFERENCE-FLOW.md",
+      "required": true
+    },
+    {
+      "label": "Web API + DB reference flow",
+      "path": "docs/reference/REFERENCE-FLOW-WEB-API-DB.md",
+      "required": false
+    }
+  ],
+  "integration": {
+    "contextPackRequired": true,
+    "execPlanRequired": true,
+    "specVerificationKit": {
+      "mode": "recommended",
+      "guidance": "Use `pnpm run spec-kit-min:verify` when route behavior can be expressed as traceable BDD or property checks."
+    },
+    "specKitBridge": {
+      "mode": "optional",
+      "guidance": "Use `pnpm run spec-kit:import-feature` only when the team already has Spec Kit feature artifacts."
+    }
+  },
+  "reuseContracts": [
+    "context-pack/v1",
+    "context-pack-boundary-map/v1",
+    "exec-plan/v2",
+    "verify-lite-run-summary/v1",
+    "claim-evidence-manifest/v1",
+    "assurance-summary/v1"
+  ],
+  "reportOnly": true
+}

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/domain-assurance-preset-report.schema.json",
+  "title": "domain-assurance-preset-report/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "source",
+    "preset",
+    "summary",
+    "collectionBoundaries"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "domain-assurance-preset-report/v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "source": { "const": "offline-domain-preset-template" },
+    "preset": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "title",
+        "version",
+        "targetUser",
+        "fit",
+        "startingCommand",
+        "requiredInputs",
+        "defaultVerificationCommands",
+        "expectedArtifacts",
+        "evidenceSurfaces",
+        "escalationRule",
+        "referenceFlowLinks",
+        "integration",
+        "reuseContracts",
+        "reportOnly"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "title": { "$ref": "#/$defs/nonEmptyString" },
+        "version": { "$ref": "#/$defs/nonEmptyString" },
+        "targetUser": { "$ref": "#/$defs/nonEmptyString" },
+        "fit": { "type": "object" },
+        "startingCommand": { "type": "object" },
+        "requiredInputs": { "type": "array", "minItems": 1 },
+        "defaultVerificationCommands": { "type": "array", "minItems": 1 },
+        "expectedArtifacts": { "type": "array", "minItems": 1 },
+        "evidenceSurfaces": { "type": "array", "minItems": 1 },
+        "escalationRule": { "type": "object" },
+        "referenceFlowLinks": { "type": "array", "minItems": 1 },
+        "integration": { "type": "object" },
+        "reuseContracts": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "reportOnly": { "const": true }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "startingCommand",
+        "requiredInputCount",
+        "verificationCommandCount",
+        "expectedArtifactCount",
+        "requiredArtifactCount",
+        "evidenceSurfaceCount",
+        "escalationRequiresHumanDecision",
+        "contextPackRequired",
+        "execPlanRequired"
+      ],
+      "properties": {
+        "startingCommand": { "$ref": "#/$defs/nonEmptyString" },
+        "requiredInputCount": { "type": "integer", "minimum": 1 },
+        "verificationCommandCount": { "type": "integer", "minimum": 1 },
+        "expectedArtifactCount": { "type": "integer", "minimum": 1 },
+        "requiredArtifactCount": { "type": "integer", "minimum": 0 },
+        "evidenceSurfaceCount": { "type": "integer", "minimum": 1 },
+        "escalationRequiresHumanDecision": { "type": "boolean" },
+        "contextPackRequired": { "const": true },
+        "execPlanRequired": { "const": true }
+      }
+    },
+    "collectionBoundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["externalApisCalled", "generatedFromLocalTemplate", "approvalAuthority", "reportOnlyReason"],
+      "properties": {
+        "externalApisCalled": { "const": false },
+        "generatedFromLocalTemplate": { "const": true },
+        "approvalAuthority": { "$ref": "#/$defs/nonEmptyString" },
+        "reportOnlyReason": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 }
+  }
+}
