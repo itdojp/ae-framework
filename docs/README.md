@@ -31,7 +31,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Current PR automation / gate baseline: `ci/pr-automation.md`, `ci/OPT-IN-CONTROLS.md`
 - Completion audit report: `ci/completion-audit-report.md` records merge-check results separately from advisory workflow findings during PR closeout.
 - Agent PR trust-calibration metrics: `ci/agent-pr-assurance-metrics.md`
-- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`, Evidence Sprint measurement protocol: `product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md`, Evidence Sprint self-dogfood report: `product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md`, and req2run adoption-readiness metrics: `product/REQ2RUN-METRICS.md`
+- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`, Evidence Sprint measurement protocol: `product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md`, Evidence Sprint dogfood case study: `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, evidence pack: `product/evidence-packs/evidence-003-self-dogfood/README.md`, self-dogfood report: `product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md`, and req2run adoption-readiness metrics: `product/REQ2RUN-METRICS.md`
 - Domain assurance presets: `guides/domain-presets.md` for Web API/BFF, event-driven, Spec Kit brownfield, and high-assurance critical-core starter packages.
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
 - Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
@@ -40,7 +40,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Report-only pilot runbook, evidence template, and ACP-097 report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `product/PILOT-REPORT-2026Q3-01.md`
 - Controlled comparison protocol: `product/CONTROLLED-COMPARISON-PROTOCOL.md`
 
-For product evidence, use the route `guides/byo-agent-assurance-quickstart.md` -> `product/PILOT-REPORT-2026Q3-01.md` -> `product/LAUNCH-KIT.md` limitations -> `product/CONTROLLED-COMPARISON-PROTOCOL.md`. The current pilot report is `dry-run only`, and the controlled comparison has not been executed.
+For product evidence, use the route `guides/byo-agent-assurance-quickstart.md` -> `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md` -> `product/evidence-packs/evidence-003-self-dogfood/README.md` -> `product/PILOT-REPORT-2026Q3-01.md` -> `product/LAUNCH-KIT.md` limitations -> `product/CONTROLLED-COMPARISON-PROTOCOL.md`. The Evidence Sprint dogfood case study is the primary observed-repository evidence reference; the current external pilot report is `dry-run only`, and the controlled comparison has not been executed.
 
 ### How to use this index
 - If you need the shortest route to a working repository, start with `getting-started/`.
@@ -116,10 +116,10 @@ Use this section when you need positioning, scope, value proposition, and operat
 - Assurance control plane: `product/ASSURANCE-CONTROL-PLANE.md`
 - Assurance control plane policy: `product/ASSURANCE-CONTROL-PLANE-POLICY.md`
 - Agent-neutral assurance roadmap: `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md`
-- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`, Evidence Sprint measurement protocol: `product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md`, Evidence Sprint self-dogfood report: `product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md`, and req2run adoption-readiness metrics: `product/REQ2RUN-METRICS.md`
+- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`, Evidence Sprint measurement protocol: `product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md`, Evidence Sprint dogfood case study: `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, evidence pack: `product/evidence-packs/evidence-003-self-dogfood/README.md`, self-dogfood report: `product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md`, and req2run adoption-readiness metrics: `product/REQ2RUN-METRICS.md`
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
 - Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`
-- Report-only pilot runbook, Evidence Sprint pilot template, self-dogfood report, and Q3 pilot report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `templates/evidence-sprint-pilot-report.md`, `product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md`, `product/PILOT-REPORT-2026Q3-01.md`
+- Report-only pilot runbook, Evidence Sprint pilot template, dogfood case study, evidence pack, self-dogfood report, and Q3 pilot report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `templates/evidence-sprint-pilot-report.md`, `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, `product/evidence-packs/evidence-003-self-dogfood/README.md`, `product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md`, `product/PILOT-REPORT-2026Q3-01.md`
 - Controlled comparison protocol: `product/CONTROLLED-COMPARISON-PROTOCOL.md`
 - BYO-agent assurance onboarding: `guides/byo-agent-assurance-onboarding.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
