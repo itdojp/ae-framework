@@ -29,8 +29,8 @@ Current status as of 2026-07-01:
 - The controlled-comparison protocol is ready as a design, but it has not been
   executed.
 
-This criteria document does not authorize data collection by itself. A live
-pilot still requires maintainer consent, a private evidence tracker, redaction
+These criteria do not authorize data collection by themselves. A live pilot
+still requires maintainer consent, a private evidence tracker, redaction
 approval, and the repository-specific operating decisions below.
 
 ### 2. Scope and non-goals
@@ -130,8 +130,8 @@ approved.
 | Review-speed or productivity | `claim_ready` plus baseline. | Controlled comparison, comparable PR categories, review-ready/disposition timing, queueing notes, sample denominator, and missing-value handling. | `docs/product/CONTROLLED-COMPARISON-PROTOCOL.md` is executed with comparable baseline data. |
 | Safety or code-quality outcome | `claim_ready` plus baseline. | Defect/finding taxonomy, severity, denominator, independent review or delayed finding window, and baseline/control evidence. | Outcome endpoint and baseline/control data are defined and collected. |
 | Adoption impact | `claim_ready` plus observation window. | Adoption metric, repository/team denominator, consent, redaction, confounder notes, and baseline or pre/post protocol. | Maintainer-approved live data covers the adoption metric and window. |
-| Agent/vendor superiority | Not supported by this criteria. | A separate approved study comparing workflows without ranking vendors is required before any public comparative wording. | The project has an explicit controlled protocol and maintainer-approved analysis plan. |
-| Enforcement or merge-readiness guarantee | Not supported by this criteria. | Policy changes require separate design, branch-protection approval, and CI governance. | A separate enforcement PR changes policy and branch protection intentionally. |
+| Agent/vendor superiority | Not supported by these criteria. | A separate approved study comparing workflows without ranking vendors is required before any public comparative wording. | The project has an explicit controlled protocol and maintainer-approved analysis plan. |
+| Enforcement or merge-readiness guarantee | Not supported by these criteria. | Policy changes require separate design, branch-protection approval, and CI governance. | A separate enforcement PR changes policy and branch protection intentionally. |
 
 ### 8. Fixture-backed pilot status
 

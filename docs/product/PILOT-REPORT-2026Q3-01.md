@@ -122,8 +122,10 @@ available.
 
 ### 8. Follow-up inputs
 
-- Run the first live external pilot only after `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` is satisfied and a maintainer approves repository
-  selection, raw-output viewers, redaction rules, and publication status.
+- Run the first live external pilot only after the entry criteria in
+  `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` are satisfied and a maintainer
+  approves repository selection, raw-output viewers, redaction rules, and
+  publication status.
 - Store live per-PR rows in a private copied evidence tracker derived from
   `docs/product/PILOT-EVIDENCE-TEMPLATE.md`.
 - Collect repository-specific required-check names before running the metrics
