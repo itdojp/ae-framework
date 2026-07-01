@@ -48,6 +48,7 @@ domain pilot reports.
 | Measurement protocol | `docs/product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md` | Defines report-only metrics such as evidence coverage, missing evidence, unresolved claims, review rework, deterministic replay, manual intervention, and audit discrepancy counts. |
 | Fixture-backed Web API pilot | `docs/product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md` | Demonstrates API-contract evidence and domain preset routing on repository fixtures; no live API behavior claim. |
 | Fixture-backed event-driven pilot | `docs/product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md` | Demonstrates selected-trace invariant/conformance evidence and domain preset routing on repository fixtures; no production event-ordering claim. |
+| Live-pilot entry criteria | `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` | Defines consent, data handling, retention, evidence, measurement, baseline, and claim-boundary prerequisites before fixture-backed material can support a live external claim. |
 
 #### Suggested changelog paragraph
 Evidence Sprint adds a public, reproducible evidence route for ae-framework:
@@ -206,8 +207,9 @@ follow-ups observed during the Evidence Sprint:
    documentation.
 2. Add an optional artifact checker focused on the first-run demo review surface
    so users can verify expected paths after local cleanup.
-3. Decide live-pilot entry criteria before turning fixture-backed evidence into
-   external pilot claims.
+3. Apply the live-pilot entry criteria in
+   `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` before turning fixture-backed
+   evidence into external pilot claims.
 
 ---
 
