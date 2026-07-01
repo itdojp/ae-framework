@@ -40,7 +40,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Report-only pilot runbook, evidence template, and ACP-097 report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `product/PILOT-REPORT-2026Q3-01.md`
 - Controlled comparison protocol: `product/CONTROLLED-COMPARISON-PROTOCOL.md`
 
-For product evidence, use the route `guides/byo-agent-assurance-quickstart.md` -> `product/PILOT-REPORT-2026Q3-01.md` -> `product/LAUNCH-KIT.md` limitations -> `product/CONTROLLED-COMPARISON-PROTOCOL.md`. The current pilot report is `dry-run only`, and the controlled comparison has not been executed.
+For product evidence, use the route `guides/byo-agent-assurance-quickstart.md` -> `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md` -> `product/evidence-packs/evidence-003-self-dogfood/README.md` -> `product/PILOT-REPORT-2026Q3-01.md` -> `product/LAUNCH-KIT.md` limitations -> `product/CONTROLLED-COMPARISON-PROTOCOL.md`. The Evidence Sprint dogfood case study is the primary observed-repository evidence reference; the current external pilot report is `dry-run only`, and the controlled comparison has not been executed.
 
 ### How to use this index
 - If you need the shortest route to a working repository, start with `getting-started/`.
