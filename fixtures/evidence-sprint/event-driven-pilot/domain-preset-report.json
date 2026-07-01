@@ -1,0 +1,199 @@
+{
+  "schemaVersion": "domain-assurance-preset-report/v1",
+  "generatedAt": "2026-07-01T00:00:00.000Z",
+  "source": "offline-domain-preset-template",
+  "preset": {
+    "id": "event-driven-domain",
+    "title": "Event-driven domain assurance preset",
+    "version": "2026.07",
+    "targetUser": "Teams maintaining inventory, ordering, payment, or workflow domains where replayable events and invariants are more important than a single HTTP request path.",
+    "fit": {
+      "classification": "structured-assurance",
+      "recommendedWhen": [
+        "Domain correctness depends on event ordering, replay, idempotency, or aggregate invariants.",
+        "Reviewers can inspect sample event traces and rule definitions locally.",
+        "The team wants conformance evidence before considering heavier formal lanes."
+      ],
+      "notRecommendedWhen": [
+        "The product has no retained event trace or deterministic replay fixture.",
+        "The change is a UI-only copy update or a one-off migration with no domain invariant.",
+        "The team cannot define expected event outcomes or conformance rules."
+      ]
+    },
+    "startingCommand": {
+      "id": "conformance-sample",
+      "command": "pnpm run conformance:verify:sample",
+      "purpose": "Run deterministic conformance verification against sample events and rules.",
+      "outputArtifacts": [
+        "artifacts/hermetic-reports/conformance/sample-results.json"
+      ]
+    },
+    "requiredInputs": [
+      {
+        "id": "event-samples",
+        "name": "Sample domain events",
+        "pathPattern": "configs/samples/sample-data.json or examples/inventory/artifacts/domain/*.json",
+        "description": "Provides deterministic replay inputs for the domain behavior under review.",
+        "contract": "project-local event fixture"
+      },
+      {
+        "id": "conformance-rules",
+        "name": "Conformance rules",
+        "pathPattern": "configs/samples/sample-rules.json",
+        "description": "Defines invariant or rule checks over the sample event stream.",
+        "contract": "conformance rule set"
+      },
+      {
+        "id": "context-pack",
+        "name": "Context Pack and Boundary Map",
+        "pathPattern": "spec/context-pack/**/*.{json,yaml,yml}",
+        "description": "Documents domain boundaries, upstream/downstream contexts, and accepted slice ownership.",
+        "contract": "context-pack/v1 + context-pack-boundary-map/v1"
+      },
+      {
+        "id": "exec-plan",
+        "name": "ExecPlan v2",
+        "pathPattern": "artifacts/plan/exec-plan.v2.json or fixtures/exec-plan/*.json",
+        "description": "Connects domain tasks, replay commands, output artifacts, and rollback.",
+        "contract": "exec-plan/v2"
+      }
+    ],
+    "defaultVerificationCommands": [
+      {
+        "id": "context-pack-validate",
+        "command": "pnpm run context-pack:validate",
+        "purpose": "Validate the domain boundary and acceptance input before replay work.",
+        "outputArtifacts": [
+          "artifacts/context-pack/context-pack-validate-report.json"
+        ]
+      },
+      {
+        "id": "conformance-sample",
+        "command": "pnpm run conformance:verify:sample",
+        "purpose": "Exercise the deterministic event/rule fixture.",
+        "outputArtifacts": [
+          "artifacts/hermetic-reports/conformance/sample-results.json"
+        ]
+      },
+      {
+        "id": "verify-lite",
+        "command": "pnpm run verify:lite",
+        "purpose": "Keep the default PR-quality baseline alongside domain replay evidence.",
+        "outputArtifacts": [
+          "artifacts/verify-lite/verify-lite-run-summary.json"
+        ]
+      }
+    ],
+    "expectedArtifacts": [
+      {
+        "id": "conformance-result",
+        "path": "artifacts/hermetic-reports/conformance/sample-results.json",
+        "kind": "conformance-verify-result",
+        "schemaVersion": "conformance-verify-result/v1",
+        "required": true,
+        "reviewPurpose": "Shows invariant or rule failures over deterministic event samples."
+      },
+      {
+        "id": "conformance-summary",
+        "path": "artifacts/hermetic-reports/conformance/summary.json",
+        "kind": "conformance-report",
+        "schemaVersion": "conformance-report/v1",
+        "required": false,
+        "reviewPurpose": "Aggregates conformance findings for PR or release review."
+      },
+      {
+        "id": "verify-lite-summary",
+        "path": "artifacts/verify-lite/verify-lite-run-summary.json",
+        "kind": "verify-lite-run-summary",
+        "schemaVersion": "verify-lite-run-summary/v1",
+        "required": true,
+        "reviewPurpose": "Shows whether the ordinary local verification lane passed."
+      },
+      {
+        "id": "assurance-summary",
+        "path": "artifacts/assurance/assurance-summary.json",
+        "kind": "assurance-summary/v1",
+        "schemaVersion": "assurance-summary/v1",
+        "required": false,
+        "reviewPurpose": "Connects conformance evidence to claim/evidence status when an assurance profile is present."
+      }
+    ],
+    "evidenceSurfaces": [
+      {
+        "id": "event-replay-report",
+        "path": "artifacts/hermetic-reports/conformance/sample-results.json",
+        "description": "Machine-readable event/rule replay evidence."
+      },
+      {
+        "id": "pr-body",
+        "path": "pull-request body",
+        "description": "Record replay fixture, invariant scope, and unresolved domain-risk findings."
+      }
+    ],
+    "escalationRule": {
+      "trigger": "Escalate when replay is non-deterministic, an invariant fails, ordering assumptions are disputed, or the domain is payment/auth/safety critical.",
+      "action": "Add property/model/formal lanes and require a human decision on whether the invariant is blocking or report-only.",
+      "requiredHumanDecision": true,
+      "optionalCommands": [
+        {
+          "id": "formal",
+          "command": "pnpm run verify:formal",
+          "purpose": "Explore counterexamples or proof obligations when replay fixtures are insufficient.",
+          "outputArtifacts": [
+            "artifacts/hermetic-reports/formal/summary.json"
+          ]
+        }
+      ]
+    },
+    "referenceFlowLinks": [
+      {
+        "label": "Issue to PR reference flow",
+        "path": "docs/getting-started/REFERENCE-FLOW.md",
+        "required": true
+      },
+      {
+        "label": "Product fit map",
+        "path": "docs/product/PRODUCT-FIT-INPUT-OUTPUT-TOOL-MAP.md",
+        "required": true
+      }
+    ],
+    "integration": {
+      "contextPackRequired": true,
+      "execPlanRequired": true,
+      "specVerificationKit": {
+        "mode": "recommended",
+        "guidance": "Use the minimum profile when domain behavior can be expressed as traceable properties or BDD examples."
+      },
+      "specKitBridge": {
+        "mode": "optional",
+        "guidance": "Import Spec Kit artifacts only when domain stories/tasks are already maintained in Spec Kit format."
+      }
+    },
+    "reuseContracts": [
+      "context-pack/v1",
+      "context-pack-boundary-map/v1",
+      "exec-plan/v2",
+      "conformance-verify-result/v1",
+      "conformance-report/v1",
+      "assurance-summary/v1"
+    ],
+    "reportOnly": true
+  },
+  "summary": {
+    "startingCommand": "pnpm run conformance:verify:sample",
+    "requiredInputCount": 4,
+    "verificationCommandCount": 3,
+    "expectedArtifactCount": 4,
+    "requiredArtifactCount": 2,
+    "evidenceSurfaceCount": 2,
+    "escalationRequiresHumanDecision": true,
+    "contextPackRequired": true,
+    "execPlanRequired": true
+  },
+  "collectionBoundaries": {
+    "externalApisCalled": false,
+    "generatedFromLocalTemplate": true,
+    "approvalAuthority": "human maintainer; preset output is guidance and evidence routing only",
+    "reportOnlyReason": "Domain presets select inputs, commands, and evidence surfaces; they do not approve, merge, or change policy-gate enforcement."
+  }
+}
