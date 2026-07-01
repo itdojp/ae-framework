@@ -15,7 +15,7 @@ const BOUNDARY_SUMMARY_SCHEMA = 'schema/context-pack-boundary-map-summary.schema
 const CLAIM_MANIFEST_SCHEMA = 'schema/claim-evidence-manifest.schema.json';
 const PLAN_ARTIFACT_SCHEMA = 'schema/plan-artifact.schema.json';
 
-export const DEMO_SMOKE_ARTIFACTS = [
+export const AGENT_ASSURANCE_DEMO_ARTIFACTS = [
   jsonArtifact('agent-assurance', 'verify-lite/agent-assurance-demo/verify-lite-run-summary.json', VERIFY_LITE_SCHEMA),
   jsonArtifact('agent-assurance', 'agents/agent-assurance-demo/producer-normalization-summary.json', PRODUCER_SCHEMA),
   textArtifact('agent-assurance', 'agents/agent-assurance-demo/producer-normalization-summary.md'),
@@ -24,7 +24,10 @@ export const DEMO_SMOKE_ARTIFACTS = [
   jsonArtifact('agent-assurance', 'policy/agent-assurance-demo/policy-gate-summary.json', POLICY_SCHEMA),
   textArtifact('agent-assurance', 'policy/agent-assurance-demo/policy-gate-summary.md'),
   textArtifact('agent-assurance', 'review/agent-assurance-demo/assurance-review.md'),
+];
 
+export const DEMO_SMOKE_ARTIFACTS = [
+  ...AGENT_ASSURANCE_DEMO_ARTIFACTS,
   jsonArtifact('scope-drift', 'agents/scope-drift-demo/producer-normalization-summary.json', PRODUCER_SCHEMA),
   textArtifact('scope-drift', 'agents/scope-drift-demo/producer-normalization-summary.md'),
   jsonArtifact('scope-drift', 'context-pack/scope-drift-demo/context-pack-boundary-map-report.json', null, validateBoundaryReport),
@@ -60,7 +63,8 @@ export const DEMO_SMOKE_ARTIFACTS = [
 ];
 
 function usage() {
-  process.stdout.write(`Usage: node scripts/demo/check-demo-smoke-artifacts.mjs [options]\n\nOptions:\n  --output-root <path>  Demo output root under the repository (default: ${DEFAULT_OUTPUT_ROOT})\n  --help               Show this help.\n`);
+  const demos = knownDemoNames().join(', ');
+  process.stdout.write(`Usage: node scripts/demo/check-demo-smoke-artifacts.mjs [options]\n\nOptions:\n  --output-root <path>  Demo output root under the repository (default: ${DEFAULT_OUTPUT_ROOT})\n  --demo <name>        Check one demo only (currently: ${demos}).\n  --help               Show this help.\n`);
 }
 
 function jsonArtifact(demo, relativePath, schemaPath, customValidate = null) {
@@ -79,9 +83,18 @@ function readRequiredValue(argv, index, flag) {
   return next;
 }
 
+function requireDemoValue(value, flag = '--demo') {
+  const demo = String(value ?? '').trim();
+  if (!demo) {
+    throw new Error(`${flag} requires a non-empty demo name`);
+  }
+  return demo;
+}
+
 export function parseArgs(argv = process.argv.slice(2)) {
   const options = {
     outputRoot: DEFAULT_OUTPUT_ROOT,
+    demo: null,
     help: false,
   };
 
@@ -97,10 +110,33 @@ export function parseArgs(argv = process.argv.slice(2)) {
       index += 1;
       continue;
     }
+    if (arg === '--demo') {
+      options.demo = requireDemoValue(readRequiredValue(argv, index, arg), arg);
+      index += 1;
+      continue;
+    }
+    if (arg.startsWith('--demo=')) {
+      options.demo = requireDemoValue(arg.slice('--demo='.length), '--demo');
+      continue;
+    }
     throw new Error(`Unknown argument: ${arg}`);
   }
 
   return options;
+}
+
+export function knownDemoNames(artifacts = DEMO_SMOKE_ARTIFACTS) {
+  return [...new Set(artifacts.map((artifact) => artifact.demo))].sort();
+}
+
+export function artifactsForDemo(demoName, artifacts = DEMO_SMOKE_ARTIFACTS) {
+  if (!demoName) return artifacts;
+  const selected = artifacts.filter((artifact) => artifact.demo === demoName);
+  if (selected.length === 0) {
+    const known = knownDemoNames(artifacts).join(', ');
+    throw new Error(`unknown demo: ${demoName}; expected one of: ${known}`);
+  }
+  return selected;
 }
 
 function toPosixPath(filePath) {
@@ -291,7 +327,10 @@ export function run(argv = process.argv.slice(2)) {
     usage();
     return 0;
   }
-  const report = checkDemoSmokeArtifacts({ outputRoot: options.outputRoot });
+  const report = checkDemoSmokeArtifacts({
+    outputRoot: options.outputRoot,
+    artifacts: artifactsForDemo(options.demo),
+  });
   process.stdout.write(formatReport(report));
   if (!report.ok) {
     for (const failure of report.failures) {

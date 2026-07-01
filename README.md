@@ -83,9 +83,14 @@ pnpm run demo:agent-assurance
 | --- | --- |
 | Expected input | Repository fixture data only; no live external service after dependencies are installed. |
 | Command | `pnpm run demo:agent-assurance` |
+| Optional artifact check | `pnpm run demo:agent-assurance:check` |
 | Main output | `artifacts/` |
 | Review surface to open first | `artifacts/review/agent-assurance-demo/assurance-review.md` |
 | Evidence proof point | `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md` and `docs/product/evidence-packs/evidence-003-self-dogfood/README.md` |
+
+After the demo has completed, `pnpm run demo:agent-assurance:check` can verify
+the expected first-run artifact paths without changing the one-command demo
+entry point.
 
 For the dedicated first-run walkthrough and troubleshooting, use
 `docs/getting-started/FIRST-RUN-DEMO.md`. For a real Issue-to-PR assurance path,
@@ -207,9 +212,13 @@ pnpm run demo:agent-assurance
 | --- | --- |
 | Expected input | Repository fixture data のみ。依存関係 install 後は live external service 不要です。 |
 | Command | `pnpm run demo:agent-assurance` |
+| 任意の artifact check | `pnpm run demo:agent-assurance:check` |
 | Main output | `artifacts/` |
 | 最初に開く review surface | `artifacts/review/agent-assurance-demo/assurance-review.md` |
 | 証跡の根拠 | `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md` と `docs/product/evidence-packs/evidence-003-self-dogfood/README.md` |
+
+Demo 完了後に `pnpm run demo:agent-assurance:check` を実行すると、one-command
+demo entry point は維持したまま、期待される first-run artifact path を確認できます。
 
 専用の first-run walkthrough と troubleshooting は `docs/getting-started/FIRST-RUN-DEMO.md` を参照してください。Real Issue-to-PR assurance path に進む場合は `docs/getting-started/REFERENCE-FLOW.md` を使用します。Formal lane、domain preset、PR posting helper、heavy-test trend snapshot は optional であり、risk/profile に応じて選択します。
 

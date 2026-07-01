@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { checkDemoSmokeArtifacts, parseArgs } from '../../../scripts/demo/check-demo-smoke-artifacts.mjs';
+import {
+  AGENT_ASSURANCE_DEMO_ARTIFACTS,
+  artifactsForDemo,
+  checkDemoSmokeArtifacts,
+  knownDemoNames,
+  parseArgs,
+} from '../../../scripts/demo/check-demo-smoke-artifacts.mjs';
 
 const repoRoot = resolve('.');
 
@@ -98,8 +104,33 @@ describe('demo smoke artifact checker', () => {
   it('parses an optional output root for CI and local runs', () => {
     expect(parseArgs(['--output-root', 'artifacts/demo-smoke'])).toMatchObject({
       outputRoot: 'artifacts/demo-smoke',
+      demo: null,
       help: false,
     });
+    expect(parseArgs(['--demo', 'agent-assurance'])).toMatchObject({
+      outputRoot: 'artifacts',
+      demo: 'agent-assurance',
+      help: false,
+    });
+    expect(() => parseArgs(['--demo='])).toThrow('--demo requires a non-empty demo name');
     expect(parseArgs(['--help'])).toMatchObject({ help: true });
+  });
+
+  it('can narrow checks to the first-run agent-assurance artifact set', () => {
+    const selected = artifactsForDemo('agent-assurance');
+
+    expect(knownDemoNames()).toEqual(['agent-assurance', 'high-risk-escalation', 'scope-drift']);
+    expect(selected).toEqual(AGENT_ASSURANCE_DEMO_ARTIFACTS);
+    expect(selected).toHaveLength(8);
+    expect(selected.map((artifact) => artifact.demo)).toEqual(Array(8).fill('agent-assurance'));
+    expect(selected.map((artifact) => artifact.relativePath)).toContain(
+      'review/agent-assurance-demo/assurance-review.md',
+    );
+  });
+
+  it('rejects unknown demo names before checking the filesystem', () => {
+    expect(() => artifactsForDemo('unknown-demo')).toThrow(
+      'unknown demo: unknown-demo; expected one of: agent-assurance, high-risk-escalation, scope-drift',
+    );
   });
 });
