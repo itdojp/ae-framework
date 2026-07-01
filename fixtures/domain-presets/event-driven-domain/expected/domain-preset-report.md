@@ -4,7 +4,7 @@
 - generatedAt: `2026-07-01T00:00:00.000Z`
 - classification: `structured-assurance`
 - reportOnly: `true`
-- startingCommand: `pnpm run conformance:verify:sample`
+- startingCommand: `pnpm run conformance:verify:selected-trace`
 
 ## Target user
 
@@ -26,6 +26,7 @@ Teams maintaining inventory, ordering, payment, or workflow domains where replay
 
 | ID | Input | Path pattern | Contract |
 | --- | --- | --- | --- |
+| selected-trace-fixture | Selected event trace fixture | samples/conformance/sample-traces.json or project-local trace fixture path | trace event fixture validated by observability/trace-schema.yaml |
 | event-samples | Sample domain events | configs/samples/sample-data.json or examples/inventory/artifacts/domain/*.json | project-local event fixture |
 | conformance-rules | Conformance rules | configs/samples/sample-rules.json | conformance rule set |
 | context-pack | Context Pack and Boundary Map | spec/context-pack/**/*.{json,yaml,yml} | context-pack/v1 + context-pack-boundary-map/v1 |
@@ -36,14 +37,16 @@ Teams maintaining inventory, ordering, payment, or workflow domains where replay
 | ID | Command | Purpose |
 | --- | --- | --- |
 | context-pack-validate | `pnpm run context-pack:validate` | Validate the domain boundary and acceptance input before replay work. |
-| conformance-sample | `pnpm run conformance:verify:sample` | Exercise the deterministic event/rule fixture. |
+| selected-trace-validate | `pnpm run trace:validate` | Validate the selected event trace fixture against the trace schema. |
+| selected-trace-conformance | `pnpm run conformance:verify:selected-trace` | Generate deterministic conformance summary for the selected event trace fixture. |
 | verify-lite | `pnpm run verify:lite` | Keep the default PR-quality baseline alongside domain replay evidence. |
 
 ## Expected artifacts
 
 | ID | Path | Required | Review purpose |
 | --- | --- | --- | --- |
-| conformance-result | artifacts/hermetic-reports/conformance/sample-results.json | yes | Shows invariant or rule failures over deterministic event samples. |
+| conformance-result | artifacts/hermetic-reports/conformance/selected-trace-summary.json | yes | Shows schema and invariant results for the selected event trace fixture. |
+| generic-conformance-sample-result | artifacts/hermetic-reports/conformance/sample-results.json | no | Optional smoke evidence from the generic configs/samples data and rules, not a substitute for selected-trace evidence. |
 | conformance-summary | artifacts/hermetic-reports/conformance/summary.json | no | Aggregates conformance findings for PR or release review. |
 | verify-lite-summary | artifacts/verify-lite/verify-lite-run-summary.json | yes | Shows whether the ordinary local verification lane passed. |
 | assurance-summary | artifacts/assurance/assurance-summary.json | no | Connects conformance evidence to claim/evidence status when an assurance profile is present. |

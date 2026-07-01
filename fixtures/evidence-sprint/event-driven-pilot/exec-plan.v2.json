@@ -248,7 +248,7 @@
           },
           {
             "id": "cmd.trace-conformance",
-            "command": "node scripts/formal/verify-conformance.mjs --in samples/conformance/sample-traces.json --out artifacts/hermetic-reports/conformance/event-driven-pilot-summary.json",
+            "command": "pnpm run conformance:verify:selected-trace",
             "purpose": "Generate selected-trace conformance summary for samples/conformance/sample-traces.json.",
             "when": "local-validation",
             "expectedArtifactRefs": [
@@ -393,7 +393,7 @@
       },
       {
         "id": "cmd.trace-conformance",
-        "command": "node scripts/formal/verify-conformance.mjs --in samples/conformance/sample-traces.json --out artifacts/hermetic-reports/conformance/event-driven-pilot-summary.json",
+        "command": "pnpm run conformance:verify:selected-trace",
         "purpose": "Generate selected-trace conformance summary for samples/conformance/sample-traces.json.",
         "when": "local-validation",
         "expectedArtifactRefs": [
@@ -520,7 +520,7 @@
       "kind": "test-report",
       "description": "Trace validation and selected-trace conformance evidence are recorded for review and escalation decisions.",
       "requiredBefore": "pr-review",
-      "producer": "trace-validate and verify-conformance selected-trace run",
+      "producer": "trace-validate and conformance:verify:selected-trace run",
       "sourceRefs": [
         {
           "kind": "validation-command",

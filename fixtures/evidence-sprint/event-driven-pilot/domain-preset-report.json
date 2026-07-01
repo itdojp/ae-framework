@@ -21,14 +21,21 @@
       ]
     },
     "startingCommand": {
-      "id": "conformance-sample",
-      "command": "pnpm run conformance:verify:sample",
-      "purpose": "Run deterministic conformance verification against sample events and rules.",
+      "id": "selected-trace-conformance",
+      "command": "pnpm run conformance:verify:selected-trace",
+      "purpose": "Generate conformance evidence for the selected event trace fixture.",
       "outputArtifacts": [
-        "artifacts/hermetic-reports/conformance/sample-results.json"
+        "artifacts/hermetic-reports/conformance/selected-trace-summary.json"
       ]
     },
     "requiredInputs": [
+      {
+        "id": "selected-trace-fixture",
+        "name": "Selected event trace fixture",
+        "pathPattern": "samples/conformance/sample-traces.json or project-local trace fixture path",
+        "description": "Provides the replayable event trace selected as the primary conformance evidence for the preset run.",
+        "contract": "trace event fixture validated by observability/trace-schema.yaml"
+      },
       {
         "id": "event-samples",
         "name": "Sample domain events",
@@ -68,11 +75,17 @@
         ]
       },
       {
-        "id": "conformance-sample",
-        "command": "pnpm run conformance:verify:sample",
-        "purpose": "Exercise the deterministic event/rule fixture.",
+        "id": "selected-trace-validate",
+        "command": "pnpm run trace:validate",
+        "purpose": "Validate the selected event trace fixture against the trace schema.",
+        "outputArtifacts": []
+      },
+      {
+        "id": "selected-trace-conformance",
+        "command": "pnpm run conformance:verify:selected-trace",
+        "purpose": "Generate deterministic conformance summary for the selected event trace fixture.",
         "outputArtifacts": [
-          "artifacts/hermetic-reports/conformance/sample-results.json"
+          "artifacts/hermetic-reports/conformance/selected-trace-summary.json"
         ]
       },
       {
@@ -87,11 +100,19 @@
     "expectedArtifacts": [
       {
         "id": "conformance-result",
+        "path": "artifacts/hermetic-reports/conformance/selected-trace-summary.json",
+        "kind": "selected-trace-conformance-summary",
+        "schemaVersion": null,
+        "required": true,
+        "reviewPurpose": "Shows schema and invariant results for the selected event trace fixture."
+      },
+      {
+        "id": "generic-conformance-sample-result",
         "path": "artifacts/hermetic-reports/conformance/sample-results.json",
         "kind": "conformance-verify-result",
         "schemaVersion": "conformance-verify-result/v1",
-        "required": true,
-        "reviewPurpose": "Shows invariant or rule failures over deterministic event samples."
+        "required": false,
+        "reviewPurpose": "Optional smoke evidence from the generic configs/samples data and rules, not a substitute for selected-trace evidence."
       },
       {
         "id": "conformance-summary",
@@ -121,13 +142,18 @@
     "evidenceSurfaces": [
       {
         "id": "event-replay-report",
-        "path": "artifacts/hermetic-reports/conformance/sample-results.json",
-        "description": "Machine-readable event/rule replay evidence."
+        "path": "artifacts/hermetic-reports/conformance/selected-trace-summary.json",
+        "description": "Machine-readable selected-trace schema and invariant evidence."
       },
       {
         "id": "pr-body",
         "path": "pull-request body",
         "description": "Record replay fixture, invariant scope, and unresolved domain-risk findings."
+      },
+      {
+        "id": "generic-conformance-sample",
+        "path": "artifacts/hermetic-reports/conformance/sample-results.json",
+        "description": "Optional generic configs/samples conformance smoke output; not selected-trace evidence."
       }
     ],
     "escalationRule": {
@@ -180,12 +206,12 @@
     "reportOnly": true
   },
   "summary": {
-    "startingCommand": "pnpm run conformance:verify:sample",
-    "requiredInputCount": 4,
-    "verificationCommandCount": 3,
-    "expectedArtifactCount": 4,
+    "startingCommand": "pnpm run conformance:verify:selected-trace",
+    "requiredInputCount": 5,
+    "verificationCommandCount": 4,
+    "expectedArtifactCount": 5,
     "requiredArtifactCount": 2,
-    "evidenceSurfaceCount": 2,
+    "evidenceSurfaceCount": 3,
     "escalationRequiresHumanDecision": true,
     "contextPackRequired": true,
     "execPlanRequired": true

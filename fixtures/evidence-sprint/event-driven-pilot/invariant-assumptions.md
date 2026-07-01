@@ -33,7 +33,7 @@ Source trace fixture: `samples/conformance/sample-traces.json`.
 | Allocation bounded by stock | `state.allocated <= state.onHand` after every event. |
 | Successful outcome retained | Each sample event has `outcome = success`; failure events require separate compensating-event assumptions. |
 | Append-only trace | The replay sequence is inspected as append-only evidence; the pilot does not mutate the source trace. |
-| Selected-trace conformance | The selected conformance evidence is `node scripts/formal/verify-conformance.mjs --in samples/conformance/sample-traces.json`, so generic `configs/samples` rule findings are not used as evidence for this pilot trace. |
+| Selected-trace conformance | The selected conformance evidence is `pnpm run conformance:verify:selected-trace`, so generic `configs/samples` rule findings remain optional smoke evidence rather than evidence for this pilot trace. |
 
 ## Escalation rule
 

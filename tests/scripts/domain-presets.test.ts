@@ -65,6 +65,37 @@ describe('domain assurance presets', () => {
     }
   });
 
+  it('keeps the event-driven preset selected-trace command first-class', () => {
+    const preset = readJson('templates/domain-presets/event-driven-domain/preset.json');
+    const packageJson = readJson('package.json');
+    const requiredInputIds = preset.requiredInputs.map((input: { id: string }) => input.id);
+    const verificationCommandIds = preset.defaultVerificationCommands.map((command: { id: string }) => command.id);
+    const conformanceResult = preset.expectedArtifacts.find((artifact: { id: string }) => artifact.id === 'conformance-result');
+    const genericSampleResult = preset.expectedArtifacts.find((artifact: { id: string }) => artifact.id === 'generic-conformance-sample-result');
+
+    expect(packageJson.scripts['trace:validate']).toBe('node scripts/formal/trace-validate.mjs');
+    expect(packageJson.scripts['conformance:verify:selected-trace']).toContain('samples/conformance/sample-traces.json');
+    expect(packageJson.scripts['conformance:verify:selected-trace']).toContain('selected-trace-summary.json');
+    expect(requiredInputIds).toContain('selected-trace-fixture');
+    expect(preset.startingCommand).toMatchObject({
+      id: 'selected-trace-conformance',
+      command: 'pnpm run conformance:verify:selected-trace',
+      outputArtifacts: ['artifacts/hermetic-reports/conformance/selected-trace-summary.json'],
+    });
+    expect(verificationCommandIds).toEqual(expect.arrayContaining([
+      'selected-trace-validate',
+      'selected-trace-conformance',
+    ]));
+    expect(conformanceResult).toMatchObject({
+      path: 'artifacts/hermetic-reports/conformance/selected-trace-summary.json',
+      required: true,
+    });
+    expect(genericSampleResult).toMatchObject({
+      path: 'artifacts/hermetic-reports/conformance/sample-results.json',
+      required: false,
+    });
+  });
+
   for (const fixture of deterministicCases) {
     it(`renders deterministic offline evidence for ${fixture.id}`, () => {
       const outputRoot = resolve(repoRoot, 'artifacts', `domain-preset-${fixture.id}-${randomUUID()}`);
