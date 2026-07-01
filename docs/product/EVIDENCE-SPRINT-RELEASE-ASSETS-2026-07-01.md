@@ -188,7 +188,7 @@ If you want to evaluate the idea, start with
 | The demo produces a reviewer-facing assurance surface. | Supported | First-run doc and demo output path `artifacts/review/agent-assurance-demo/assurance-review.md`. |
 | Evidence Sprint includes an observed self-dogfood case study. | Supported | `docs/product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`. |
 | The self-dogfood run has a stable evidence pack. | Supported | `docs/product/evidence-packs/evidence-003-self-dogfood/README.md`. |
-| Completion audit separates required checks from advisory workflow-run findings. | Supported | `docs/ci/completion-audit-report.md` and Evidence Sprint PR completion comments. |
+| Completion audit separates required checks from advisory workflow-run findings. | Supported | `docs/ci/completion-audit-report.md` and the checked-in self-dogfood evidence pack `docs/product/evidence-packs/evidence-003-self-dogfood/README.md`. |
 | Web API and event-driven domain pilot materials exist. | Supported | `docs/product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md` and `docs/product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md`. |
 | The pilots prove live API or production event correctness. | Unsupported | Both pilot reports are fixture-backed/report-only. |
 | ae-framework makes reviews faster. | Unsupported | The controlled comparison protocol has not been executed. |
