@@ -295,6 +295,7 @@ const checks = [
       'fixtures/exec-plan/high-risk-selected-claims.exec-plan.v2.json',
       'fixtures/spec-kit/greenfield/expected/exec-plan.v2.json',
       'fixtures/spec-kit/brownfield/expected/exec-plan.v2.json',
+      'fixtures/evidence-sprint/self-dogfood/exec-plan.v2.json',
     ],
     label: 'ExecPlan v2 schema validation'
   },
@@ -388,7 +389,10 @@ const checks = [
   },
   {
     schema: 'schema/evidence-sprint-measurement-report.schema.json',
-    fixtures: ['fixtures/metrics/evidence-sprint/pilot-measurement-example.json'],
+    fixtures: [
+      'fixtures/metrics/evidence-sprint/pilot-measurement-example.json',
+      'fixtures/evidence-sprint/self-dogfood/measurement-report.json',
+    ],
     label: 'Evidence Sprint measurement report schema validation'
   },
   {

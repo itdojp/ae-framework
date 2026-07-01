@@ -1,0 +1,593 @@
+{
+  "schemaVersion": "exec-plan/v2",
+  "contractId": "exec-plan.v2",
+  "planId": "evidence-003-self-dogfood-docs-flow",
+  "title": "Evidence Sprint self-dogfood Issue-to-PR flow",
+  "lifecycle": "preview",
+  "intent": {
+    "summary": "Run a small ae-framework self-dogfood flow and record traceability from Issue intent to PR evidence and completion audit.",
+    "objective": "Add a checked-in self-dogfood evidence report, ExecPlan v2 fixture, measurement fixture, and PR assurance review preview for Issue #3570.",
+    "sourceReferences": [
+      {
+        "kind": "issue",
+        "id": "#3570",
+        "url": "https://github.com/itdojp/ae-framework/issues/3570",
+        "description": "Evidence Sprint self-dogfood Issue."
+      },
+      {
+        "kind": "document",
+        "id": "measurement-protocol",
+        "path": "docs/product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md",
+        "description": "EVIDENCE-002 measurement protocol."
+      },
+      {
+        "kind": "document",
+        "id": "completion-audit-report",
+        "path": "docs/ci/completion-audit-report.md",
+        "description": "EVIDENCE-001 completion audit report guidance."
+      }
+    ],
+    "nonGoals": [
+      "Do not implement a large refactor.",
+      "Do not make generalized speed, safety, quality, adoption, or agent-vendor claims from one run.",
+      "Do not treat report-only evidence as approval or policy-gate enforcement."
+    ]
+  },
+  "scope": {
+    "inScope": [
+      "Add a self-dogfood evidence report with explicit scope memo and observations.",
+      "Add schema-validated ExecPlan v2 and Evidence Sprint measurement fixtures for this flow.",
+      "Add a PR assurance review preview and docs navigation links."
+    ],
+    "outOfScope": [
+      "Runtime behavior changes.",
+      "Domain preset contract changes.",
+      "Policy-gate enforcement changes.",
+      "External repository pilot execution."
+    ],
+    "targetFiles": [
+      {
+        "path": "docs/product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md",
+        "changeType": "add",
+        "reason": "Checked-in self-dogfood evidence report and scope memo."
+      },
+      {
+        "path": "fixtures/evidence-sprint/self-dogfood/exec-plan.v2.json",
+        "changeType": "add",
+        "reason": "ExecPlan v2 artifact for Issue #3570."
+      },
+      {
+        "path": "fixtures/evidence-sprint/self-dogfood/measurement-report.json",
+        "changeType": "add",
+        "reason": "Evidence Sprint measurement report fixture for the self-dogfood flow."
+      },
+      {
+        "path": "fixtures/evidence-sprint/self-dogfood/pr-assurance-review.md",
+        "changeType": "add",
+        "reason": "PR assurance review preview for the self-dogfood PR."
+      },
+      {
+        "path": "scripts/ci/validate-json.mjs",
+        "changeType": "modify",
+        "reason": "Register new schema-backed self-dogfood fixtures."
+      },
+      {
+        "path": "docs/README.md",
+        "changeType": "modify",
+        "reason": "Link the self-dogfood evidence report from the docs index."
+      }
+    ],
+    "affectedContracts": [
+      {
+        "contractId": "exec-plan.v2",
+        "schemaPath": "schema/exec-plan.v2.schema.json",
+        "lifecycle": "preview",
+        "reason": "Adds a new fixture instance only; the schema is unchanged."
+      },
+      {
+        "contractId": "evidence-sprint-measurement-report/v1",
+        "schemaPath": "schema/evidence-sprint-measurement-report.schema.json",
+        "lifecycle": "preview",
+        "reason": "Adds a new fixture instance only; the schema is unchanged."
+      }
+    ]
+  },
+  "context": {
+    "contextPackRefs": [
+      {
+        "kind": "other",
+        "refId": "scope-memo",
+        "path": "docs/product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md",
+        "description": "Explicit scope memo used in place of a new Context Pack slice for this docs/fixtures self-dogfood flow."
+      },
+      {
+        "kind": "boundary-slice",
+        "refId": "docs-product-evidence",
+        "path": "spec/context-pack/boundary-map.json",
+        "description": "Existing boundary map is read-only for this docs/fixtures slice."
+      }
+    ],
+    "assuranceRefs": {
+      "mode": "report-only",
+      "profiles": [
+        "evidence-sprint-self-dogfood"
+      ],
+      "claimRefs": [
+        "claim.workflow-traceability",
+        "claim.report-only-boundary"
+      ],
+      "summaryArtifacts": [
+        "fixtures/evidence-sprint/self-dogfood/pr-assurance-review.md"
+      ]
+    },
+    "specKitRefs": []
+  },
+  "taskGraph": {
+    "nodes": [
+      {
+        "id": "task.scope-plan",
+        "title": "Record scope memo and ExecPlan v2",
+        "kind": "documentation",
+        "owner": "agent",
+        "status": "planned",
+        "dependsOn": [],
+        "evidenceRequirementRefs": [
+          "ev.scope-memo",
+          "ev.exec-plan"
+        ],
+        "commands": [
+          {
+            "id": "cmd.validate-json",
+            "command": "node scripts/ci/validate-json.mjs",
+            "purpose": "Validate schema-backed self-dogfood fixtures.",
+            "when": "local-validation",
+            "expectedArtifactRefs": [
+              "artifact.measurement-report",
+              "artifact.exec-plan-json"
+            ]
+          }
+        ],
+        "outputArtifactRefs": [
+          "artifact.self-dogfood-report",
+          "artifact.exec-plan-json"
+        ]
+      },
+      {
+        "id": "task.measurement",
+        "title": "Collect Evidence Sprint measurement fixture",
+        "kind": "analysis",
+        "owner": "agent",
+        "status": "planned",
+        "dependsOn": [
+          "task.scope-plan"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.measurement-report",
+          "ev.req2run-metrics"
+        ],
+        "commands": [
+          {
+            "id": "cmd.schema-registry",
+            "command": "node scripts/ci/validate-json.mjs",
+            "purpose": "Validate the Evidence Sprint measurement report fixture through the registry.",
+            "when": "pre-merge",
+            "expectedArtifactRefs": [
+              "artifact.measurement-report"
+            ]
+          }
+        ],
+        "outputArtifactRefs": [
+          "artifact.measurement-report"
+        ]
+      },
+      {
+        "id": "task.verify-review",
+        "title": "Verify docs and review surface",
+        "kind": "verification",
+        "owner": "ci",
+        "status": "planned",
+        "dependsOn": [
+          "task.measurement"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.verification",
+          "ev.review-surface"
+        ],
+        "commands": [
+          {
+            "id": "cmd.docs",
+            "command": "pnpm -s run check:doc-consistency && pnpm -s run docs:lint",
+            "purpose": "Validate docs links and governance.",
+            "when": "local-validation",
+            "expectedArtifactRefs": [
+              "artifact.verification-output"
+            ]
+          }
+        ],
+        "outputArtifactRefs": [
+          "artifact.verification-output",
+          "artifact.pr-assurance-review"
+        ]
+      },
+      {
+        "id": "task.completion-audit",
+        "title": "Post completion audit after merge",
+        "kind": "review",
+        "owner": "human",
+        "status": "planned",
+        "dependsOn": [
+          "task.verify-review"
+        ],
+        "evidenceRequirementRefs": [
+          "ev.completion-audit"
+        ],
+        "commands": [],
+        "outputArtifactRefs": [
+          "artifact.completion-audit-comment"
+        ]
+      }
+    ]
+  },
+  "verificationProfile": {
+    "mode": "fast-lane",
+    "commands": [
+      {
+        "id": "cmd.validate-json",
+        "command": "node scripts/ci/validate-json.mjs",
+        "purpose": "Validate ExecPlan v2 and Evidence Sprint measurement fixtures.",
+        "when": "local-validation",
+        "expectedArtifactRefs": [
+          "artifact.exec-plan-json",
+          "artifact.measurement-report"
+        ]
+      },
+      {
+        "id": "cmd.docs",
+        "command": "pnpm -s run check:doc-consistency && pnpm -s run docs:lint",
+        "purpose": "Validate documentation and navigation updates.",
+        "when": "local-validation",
+        "expectedArtifactRefs": [
+          "artifact.verification-output"
+        ]
+      },
+      {
+        "id": "cmd.verify-lite",
+        "command": "pnpm -s run verify:lite",
+        "purpose": "Run the repository lite verification baseline before merge.",
+        "when": "pre-merge",
+        "expectedArtifactRefs": [
+          "artifact.verification-output"
+        ]
+      }
+    ],
+    "requiredChecks": [
+      "gate",
+      "policy-gate",
+      "verify-lite"
+    ],
+    "optionalChecks": [
+      "check:schemas",
+      "check:doc-consistency",
+      "docs:lint",
+      "types:check",
+      "context-pack:validate",
+      "context-pack:verify-boundary-map"
+    ]
+  },
+  "evidenceRequirements": [
+    {
+      "id": "ev.scope-memo",
+      "kind": "other",
+      "description": "Self-dogfood report contains explicit scope memo and non-goals.",
+      "requiredBefore": "pr-review",
+      "producer": "Codex CLI",
+      "sourceRefs": [
+        {
+          "kind": "document",
+          "id": "self-dogfood-report",
+          "path": "docs/product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md"
+        }
+      ],
+      "claimRefs": [
+        "claim.workflow-traceability"
+      ],
+      "outputArtifactRefs": [
+        "artifact.self-dogfood-report"
+      ]
+    },
+    {
+      "id": "ev.exec-plan",
+      "kind": "exec-plan",
+      "description": "ExecPlan v2 fixture validates against schema/exec-plan.v2.schema.json.",
+      "requiredBefore": "pr-review",
+      "producer": "Codex CLI",
+      "sourceRefs": [
+        {
+          "kind": "artifact-contract",
+          "id": "exec-plan.v2",
+          "path": "schema/exec-plan.v2.schema.json"
+        }
+      ],
+      "claimRefs": [
+        "claim.workflow-traceability"
+      ],
+      "outputArtifactRefs": [
+        "artifact.exec-plan-json"
+      ]
+    },
+    {
+      "id": "ev.measurement-report",
+      "kind": "other",
+      "description": "Evidence Sprint measurement report validates against evidence-sprint-measurement-report/v1.",
+      "requiredBefore": "pr-review",
+      "producer": "Codex CLI",
+      "sourceRefs": [
+        {
+          "kind": "artifact-contract",
+          "id": "evidence-sprint-measurement-report/v1",
+          "path": "schema/evidence-sprint-measurement-report.schema.json"
+        }
+      ],
+      "claimRefs": [
+        "claim.report-only-boundary"
+      ],
+      "outputArtifactRefs": [
+        "artifact.measurement-report"
+      ]
+    },
+    {
+      "id": "ev.req2run-metrics",
+      "kind": "other",
+      "description": "Req2run metrics are referenced as report-only adoption-readiness evidence.",
+      "requiredBefore": "pr-review",
+      "producer": "scripts/metrics/collect-req2run-metrics.mjs",
+      "sourceRefs": [
+        {
+          "kind": "document",
+          "id": "req2run-metrics",
+          "path": "docs/product/REQ2RUN-METRICS.md"
+        }
+      ],
+      "claimRefs": [
+        "claim.report-only-boundary"
+      ],
+      "outputArtifactRefs": [
+        "artifact.req2run-metrics"
+      ]
+    },
+    {
+      "id": "ev.verification",
+      "kind": "verify-lite-run-summary",
+      "description": "Local docs/schema/type/context/verify-lite checks pass before PR merge.",
+      "requiredBefore": "merge-judgment",
+      "producer": "local verification and GitHub Actions",
+      "sourceRefs": [
+        {
+          "kind": "validation-command",
+          "id": "verify-lite",
+          "description": "Lite verification command."
+        }
+      ],
+      "claimRefs": [
+        "claim.workflow-traceability"
+      ],
+      "outputArtifactRefs": [
+        "artifact.verification-output"
+      ]
+    },
+    {
+      "id": "ev.review-surface",
+      "kind": "assurance-summary",
+      "description": "PR assurance review preview records issue-plan-verification-evidence traceability before PR review.",
+      "requiredBefore": "pr-review",
+      "producer": "Codex CLI",
+      "sourceRefs": [
+        {
+          "kind": "document",
+          "id": "pr-assurance-review",
+          "path": "fixtures/evidence-sprint/self-dogfood/pr-assurance-review.md"
+        }
+      ],
+      "claimRefs": [
+        "claim.workflow-traceability"
+      ],
+      "outputArtifactRefs": [
+        "artifact.pr-assurance-review"
+      ]
+    },
+    {
+      "id": "ev.completion-audit",
+      "kind": "other",
+      "description": "Completion audit comment records final required checks, review completeness, and advisory/stale findings after merge.",
+      "requiredBefore": "merge-judgment",
+      "producer": "Codex CLI / maintainer",
+      "sourceRefs": [
+        {
+          "kind": "document",
+          "id": "completion-audit-report",
+          "path": "docs/ci/completion-audit-report.md"
+        }
+      ],
+      "claimRefs": [
+        "claim.report-only-boundary"
+      ],
+      "outputArtifactRefs": [
+        "artifact.completion-audit-comment"
+      ]
+    }
+  ],
+  "riskProfile": {
+    "selected": "risk:low",
+    "rationale": "Docs and fixtures only; no runtime behavior, policy enforcement, or public claim promotion changes.",
+    "requiresHumanApproval": false,
+    "minHumanApprovals": 0,
+    "assuranceDecision": "report-only",
+    "policyRefs": [
+      {
+        "kind": "policy-rule",
+        "refId": "assurance_escalation.lanes.ordinary",
+        "path": "policy/risk-policy.yml",
+        "description": "Ordinary docs/fixtures work keeps Evidence Sprint evidence report-only and does not add a blocking policy rule."
+      }
+    ]
+  },
+  "allowedActions": {
+    "automation": [
+      "read-repository",
+      "edit-files",
+      "run-local-command",
+      "generate-artifact",
+      "push-branch",
+      "open-pr",
+      "request-ai-review",
+      "rerun-ci",
+      "update-issue"
+    ],
+    "humanApprovalRequiredFor": [
+      "merge-pr",
+      "publish-release"
+    ],
+    "forbidden": [
+      "publish-release"
+    ]
+  },
+  "stopRules": [
+    {
+      "id": "stop.unsupported-claim",
+      "severity": "blocker",
+      "condition": "A public or generalized speed, safety, quality, adoption, or agent-vendor claim is not supported by checked-in evidence.",
+      "action": "halt-and-ask-human",
+      "evidenceRequirementRefs": [
+        "ev.scope-memo",
+        "ev.measurement-report"
+      ]
+    },
+    {
+      "id": "stop.validation-failure",
+      "severity": "blocker",
+      "condition": "Schema, docs, context, type, or verify-lite validation fails for the self-dogfood evidence package.",
+      "action": "halt-and-record-blocker",
+      "evidenceRequirementRefs": [
+        "ev.exec-plan",
+        "ev.measurement-report",
+        "ev.verification"
+      ]
+    },
+    {
+      "id": "stop.review-or-ci-open",
+      "severity": "blocker",
+      "condition": "Copilot/Codex review threads, required checks, or completion audit evidence remain unresolved at merge judgment.",
+      "action": "halt-and-record-blocker",
+      "evidenceRequirementRefs": [
+        "ev.review-surface",
+        "ev.completion-audit"
+      ]
+    }
+  ],
+  "rollbackPlan": {
+    "strategy": "Revert the docs and fixtures added for #3570; no runtime state, migration, or policy enforcement rollback is required.",
+    "steps": [
+      "Revert docs/product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md and docs index links.",
+      "Revert fixtures/evidence-sprint/self-dogfood/ and the validate-json fixture registrations.",
+      "Rerun schema, docs, context, type, and verify-lite checks to confirm the repository returns to the previous state."
+    ],
+    "validationCommands": [
+      {
+        "id": "cmd.rollback-validate-json",
+        "command": "node scripts/ci/validate-json.mjs",
+        "purpose": "Confirm schema fixture registration remains consistent after rollback.",
+        "when": "local-validation",
+        "expectedArtifactRefs": [
+          "artifact.exec-plan-json",
+          "artifact.measurement-report"
+        ]
+      },
+      {
+        "id": "cmd.rollback-docs",
+        "command": "pnpm -s run check:doc-consistency",
+        "purpose": "Confirm documentation links and front matter remain consistent after rollback.",
+        "when": "local-validation",
+        "expectedArtifactRefs": [
+          "artifact.verification-output"
+        ]
+      }
+    ]
+  },
+  "outputArtifacts": [
+    {
+      "id": "artifact.self-dogfood-report",
+      "path": "docs/product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md",
+      "contractId": "markdown-report",
+      "description": "Self-dogfood evidence report and scope memo.",
+      "producer": "Codex CLI",
+      "requiredBefore": "pr-review"
+    },
+    {
+      "id": "artifact.exec-plan-json",
+      "path": "fixtures/evidence-sprint/self-dogfood/exec-plan.v2.json",
+      "contractId": "exec-plan/v2",
+      "schemaPath": "schema/exec-plan.v2.schema.json",
+      "description": "ExecPlan v2 fixture for #3570.",
+      "producer": "Codex CLI",
+      "requiredBefore": "pr-review"
+    },
+    {
+      "id": "artifact.measurement-report",
+      "path": "fixtures/evidence-sprint/self-dogfood/measurement-report.json",
+      "contractId": "evidence-sprint-measurement-report/v1",
+      "schemaPath": "schema/evidence-sprint-measurement-report.schema.json",
+      "description": "Evidence Sprint measurement fixture for #3570.",
+      "producer": "Codex CLI",
+      "requiredBefore": "pr-review"
+    },
+    {
+      "id": "artifact.req2run-metrics",
+      "path": "fixtures/metrics/req2run/expected.req2run-metrics.json",
+      "contractId": "req2run-metrics/v1",
+      "schemaPath": "schema/req2run-metrics.schema.json",
+      "description": "Existing req2run report-only metrics fixture referenced by the self-dogfood flow.",
+      "producer": "scripts/metrics/collect-req2run-metrics.mjs",
+      "requiredBefore": "pr-review"
+    },
+    {
+      "id": "artifact.pr-assurance-review",
+      "path": "fixtures/evidence-sprint/self-dogfood/pr-assurance-review.md",
+      "contractId": "markdown-review-surface",
+      "description": "PR assurance review preview for the self-dogfood flow.",
+      "producer": "Codex CLI",
+      "requiredBefore": "pr-review"
+    },
+    {
+      "id": "artifact.verification-output",
+      "path": "artifacts/verify-lite/verify-lite-run-summary.json",
+      "contractId": "verify-lite-run-summary/v1",
+      "schemaPath": "schema/verify-lite-run-summary.schema.json",
+      "description": "Local/GitHub verify-lite output.",
+      "producer": "verify-lite",
+      "requiredBefore": "merge-judgment"
+    },
+    {
+      "id": "artifact.completion-audit-comment",
+      "path": "docs/product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md#completion-audit-closeout-boundary",
+      "contractId": "completion-audit-report/v1 boundary note",
+      "description": "Report section that keeps the final Issue completion-audit comment boundary explicit until post-merge closeout.",
+      "producer": "Codex CLI",
+      "requiredBefore": "merge-judgment"
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-07-01T00:00:00.000Z",
+    "generator": "Codex CLI",
+    "repository": "itdojp/ae-framework",
+    "sourceIssue": {
+      "kind": "issue",
+      "id": "#3570",
+      "url": "https://github.com/itdojp/ae-framework/issues/3570",
+      "description": "Self-dogfood issue."
+    },
+    "notes": [
+      "Context Pack conflict: none; this is a docs/fixtures slice.",
+      "Final completion audit is posted after PR merge because final check rollup is not known before merge."
+    ]
+  }
+}
