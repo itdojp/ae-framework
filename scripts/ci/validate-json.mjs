@@ -405,6 +405,11 @@ const checks = [
     label: 'Domain assurance preset report schema validation'
   },
   {
+    schema: 'schema/completion-audit-report.schema.json',
+    fixtures: ['fixtures/audit/completion/expected/completion-audit-report.json'],
+    label: 'Completion audit report schema validation'
+  },
+  {
     schema: 'schema/formal-plan.schema.json',
     fixtures: ['fixtures/formal-plan/sample.formal-plan.json'],
     label: 'Formal plan schema validation'
