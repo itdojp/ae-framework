@@ -156,7 +156,9 @@ function nearestExistingAncestor(filePath) {
 function assertProjectContainedPath(projectRoot, filePath, label) {
   const root = path.resolve(projectRoot);
   const rawPath = String(filePath ?? '').trim();
-  if (!rawPath) return null;
+  if (!rawPath) {
+    throw new Error(`${label} requires a non-empty path`);
+  }
   const resolved = path.resolve(root, rawPath);
   if (!isPathWithin(root, resolved)) {
     throw new Error(`${label} must stay within --project-root: ${filePath}`);
@@ -227,13 +229,143 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function requireObject(value, label) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+  return value;
+}
+
+function requireString(value, label) {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`${label} must be a non-empty string`);
+  }
+  return value;
+}
+
+function requireBoolean(value, label) {
+  if (typeof value !== 'boolean') {
+    throw new Error(`${label} must be a boolean`);
+  }
+  return value;
+}
+
+function requireArray(value, label) {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error(`${label} must be a non-empty array`);
+  }
+  return value;
+}
+
+function validateStringArray(value, label) {
+  requireArray(value, label).forEach((entry, index) => requireString(entry, `${label}[${index}]`));
+}
+
+function validateCommand(command, label) {
+  requireObject(command, label);
+  requireString(command.id, `${label}.id`);
+  requireString(command.command, `${label}.command`);
+  requireString(command.purpose, `${label}.purpose`);
+  const outputs = command.outputArtifacts;
+  if (!Array.isArray(outputs)) {
+    throw new Error(`${label}.outputArtifacts must be an array`);
+  }
+  outputs.forEach((artifactPath, index) => requireString(artifactPath, `${label}.outputArtifacts[${index}]`));
+}
+
+function validatePresetShape(preset) {
+  requireObject(preset, 'preset');
+  if (preset.schemaVersion !== 'domain-assurance-preset/v1') {
+    throw new Error(`preset.schemaVersion must be domain-assurance-preset/v1: ${preset.schemaVersion ?? '(missing)'}`);
+  }
+  if (preset.reportOnly !== true) {
+    throw new Error('preset.reportOnly must be true');
+  }
+  requireString(preset.id, 'preset.id');
+  requireString(preset.title, 'preset.title');
+  requireString(preset.version, 'preset.version');
+  requireString(preset.targetUser, 'preset.targetUser');
+
+  const fit = requireObject(preset.fit, 'preset.fit');
+  requireString(fit.classification, 'preset.fit.classification');
+  validateStringArray(fit.recommendedWhen, 'preset.fit.recommendedWhen');
+  validateStringArray(fit.notRecommendedWhen, 'preset.fit.notRecommendedWhen');
+
+  requireArray(preset.requiredInputs, 'preset.requiredInputs').forEach((input, index) => {
+    const label = `preset.requiredInputs[${index}]`;
+    requireObject(input, label);
+    requireString(input.id, `${label}.id`);
+    requireString(input.name, `${label}.name`);
+    requireString(input.pathPattern, `${label}.pathPattern`);
+    requireString(input.description, `${label}.description`);
+    if (input.contract !== null && input.contract !== undefined) {
+      requireString(input.contract, `${label}.contract`);
+    }
+  });
+
+  validateCommand(preset.startingCommand, 'preset.startingCommand');
+  requireArray(preset.defaultVerificationCommands, 'preset.defaultVerificationCommands').forEach((command, index) => {
+    validateCommand(command, `preset.defaultVerificationCommands[${index}]`);
+  });
+
+  requireArray(preset.expectedArtifacts, 'preset.expectedArtifacts').forEach((artifact, index) => {
+    const label = `preset.expectedArtifacts[${index}]`;
+    requireObject(artifact, label);
+    requireString(artifact.id, `${label}.id`);
+    requireString(artifact.path, `${label}.path`);
+    requireString(artifact.kind, `${label}.kind`);
+    if (artifact.schemaVersion !== null && artifact.schemaVersion !== undefined) {
+      requireString(artifact.schemaVersion, `${label}.schemaVersion`);
+    }
+    requireBoolean(artifact.required, `${label}.required`);
+    requireString(artifact.reviewPurpose, `${label}.reviewPurpose`);
+  });
+
+  requireArray(preset.evidenceSurfaces, 'preset.evidenceSurfaces').forEach((surface, index) => {
+    const label = `preset.evidenceSurfaces[${index}]`;
+    requireObject(surface, label);
+    requireString(surface.id, `${label}.id`);
+    requireString(surface.path, `${label}.path`);
+    requireString(surface.description, `${label}.description`);
+  });
+
+  const escalationRule = requireObject(preset.escalationRule, 'preset.escalationRule');
+  requireString(escalationRule.trigger, 'preset.escalationRule.trigger');
+  requireString(escalationRule.action, 'preset.escalationRule.action');
+  requireBoolean(escalationRule.requiredHumanDecision, 'preset.escalationRule.requiredHumanDecision');
+  if (!Array.isArray(escalationRule.optionalCommands)) {
+    throw new Error('preset.escalationRule.optionalCommands must be an array');
+  }
+  escalationRule.optionalCommands.forEach((command, index) => {
+    validateCommand(command, `preset.escalationRule.optionalCommands[${index}]`);
+  });
+
+  requireArray(preset.referenceFlowLinks, 'preset.referenceFlowLinks').forEach((link, index) => {
+    const label = `preset.referenceFlowLinks[${index}]`;
+    requireObject(link, label);
+    requireString(link.label, `${label}.label`);
+    requireString(link.path, `${label}.path`);
+    requireBoolean(link.required, `${label}.required`);
+  });
+
+  const integration = requireObject(preset.integration, 'preset.integration');
+  if (integration.contextPackRequired !== true) {
+    throw new Error('preset.integration.contextPackRequired must be true');
+  }
+  if (integration.execPlanRequired !== true) {
+    throw new Error('preset.integration.execPlanRequired must be true');
+  }
+  for (const key of ['specVerificationKit', 'specKitBridge']) {
+    const mode = requireObject(integration[key], `preset.integration.${key}`);
+    requireString(mode.mode, `preset.integration.${key}.mode`);
+    requireString(mode.guidance, `preset.integration.${key}.guidance`);
+  }
+
+  validateStringArray(preset.reuseContracts, 'preset.reuseContracts');
+}
+
 function compactPreset(preset) {
-  if (preset?.schemaVersion !== 'domain-assurance-preset/v1') {
-    throw new Error(`preset schemaVersion must be domain-assurance-preset/v1: ${preset?.schemaVersion ?? '(missing)'}`);
-  }
-  if (preset?.reportOnly !== true) {
-    throw new Error('preset reportOnly must be true');
-  }
+  validatePresetShape(preset);
   return {
     id: preset.id,
     title: preset.title,

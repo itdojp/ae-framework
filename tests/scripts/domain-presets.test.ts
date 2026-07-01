@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -132,5 +132,33 @@ describe('domain assurance presets', () => {
 
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('--preset must stay within --project-root');
+  });
+
+  it('rejects blank preset paths and invalid template shapes with actionable errors', () => {
+    const blankPath = runScript(['--preset', '   ', '--no-write']);
+
+    expect(blankPath.status).not.toBe(0);
+    expect(blankPath.stderr).toContain('--preset requires a non-empty path');
+
+    const outputRoot = resolve(repoRoot, 'artifacts', `domain-preset-invalid-${randomUUID()}`);
+    const invalidPresetPath = join(outputRoot, 'invalid-preset.json');
+
+    try {
+      mkdirSync(outputRoot, { recursive: true });
+      const invalidPreset = readJson('templates/domain-presets/web-api-bff/preset.json');
+      delete invalidPreset.startingCommand;
+      writeFileSync(invalidPresetPath, `${JSON.stringify(invalidPreset, null, 2)}\n`, 'utf8');
+
+      const invalidShape = runScript([
+        '--preset', invalidPresetPath,
+        '--generated-at', generatedAt,
+        '--no-write',
+      ]);
+
+      expect(invalidShape.status).not.toBe(0);
+      expect(invalidShape.stderr).toContain('preset.startingCommand must be an object');
+    } finally {
+      rmSync(outputRoot, { recursive: true, force: true });
+    }
   });
 });
