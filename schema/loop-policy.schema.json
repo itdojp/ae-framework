@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/loop-policy.schema.json",
+  "title": "Loop Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "policyId",
+    "reportOnly",
+    "budgets",
+    "commandPolicy",
+    "pathPolicy",
+    "evidenceRequirements",
+    "humanApproval",
+    "stopRules",
+    "privacy"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "loop-policy/v1" },
+    "policyId": { "type": "string", "minLength": 1 },
+    "reportOnly": { "const": true },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxIterations", "wallClockBudgetSeconds", "modifiedFileLimit"],
+      "properties": {
+        "maxIterations": { "type": "integer", "minimum": 1 },
+        "wallClockBudgetSeconds": { "type": "integer", "minimum": 1 },
+        "modifiedFileLimit": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "commandPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowList", "denyList"],
+      "properties": {
+        "allowList": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "denyList": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "pathPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowedPrefixes", "deniedPrefixes"],
+      "properties": {
+        "allowedPrefixes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "deniedPrefixes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "evidenceRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredEvidenceIds", "missingEvidenceStops"],
+      "properties": {
+        "requiredEvidenceIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "missingEvidenceStops": { "type": "boolean" }
+      }
+    },
+    "humanApproval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredRiskLevels", "approvalEvidenceIds"],
+      "properties": {
+        "requiredRiskLevels": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+          "uniqueItems": true
+        },
+        "approvalEvidenceIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "stopRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stopOnDeniedCommand",
+        "stopOnDeniedPath",
+        "stopOnMissingEvidence",
+        "stopOnHighRiskEscalation",
+        "repeatedFailureThreshold"
+      ],
+      "properties": {
+        "stopOnDeniedCommand": { "type": "boolean" },
+        "stopOnDeniedPath": { "type": "boolean" },
+        "stopOnMissingEvidence": { "type": "boolean" },
+        "stopOnHighRiskEscalation": { "type": "boolean" },
+        "repeatedFailureThreshold": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["redactionMode", "publicRawLogsAllowed", "disallowedRawLogClasses"],
+      "properties": {
+        "redactionMode": { "type": "string", "enum": ["metadata-only", "redacted-excerpts", "internal-only"] },
+        "publicRawLogsAllowed": { "type": "boolean" },
+        "disallowedRawLogClasses": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

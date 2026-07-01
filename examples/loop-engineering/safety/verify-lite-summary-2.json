@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "verify-lite-run-summary/v1",
+  "result": "fail",
+  "checks": [
+    {
+      "name": "verify-lite",
+      "status": "fail",
+      "summary": "Fixture failure signature loop.verify-lite.same-error repeated without new evidence."
+    }
+  ]
+}

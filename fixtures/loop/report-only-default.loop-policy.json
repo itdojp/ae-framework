@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "loop-policy/v1",
+  "policyId": "loop-report-only-default",
+  "reportOnly": true,
+  "budgets": {
+    "maxIterations": 10,
+    "wallClockBudgetSeconds": 1800,
+    "modifiedFileLimit": 0
+  },
+  "commandPolicy": {
+    "allowList": [],
+    "denyList": [
+      "gh pr merge",
+      "git push",
+      "rm -rf",
+      "curl "
+    ]
+  },
+  "pathPolicy": {
+    "allowedPrefixes": [
+      "."
+    ],
+    "deniedPrefixes": [
+      ".git",
+      ".env",
+      "node_modules"
+    ]
+  },
+  "evidenceRequirements": {
+    "requiredEvidenceIds": [],
+    "missingEvidenceStops": true
+  },
+  "humanApproval": {
+    "requiredRiskLevels": [
+      "high",
+      "critical"
+    ],
+    "approvalEvidenceIds": [
+      "ev.human-approval"
+    ]
+  },
+  "stopRules": {
+    "stopOnDeniedCommand": true,
+    "stopOnDeniedPath": true,
+    "stopOnMissingEvidence": true,
+    "stopOnHighRiskEscalation": true,
+    "repeatedFailureThreshold": 2
+  },
+  "privacy": {
+    "redactionMode": "metadata-only",
+    "publicRawLogsAllowed": false,
+    "disallowedRawLogClasses": [
+      "prompt",
+      "secret",
+      "token",
+      "raw-llm-output"
+    ]
+  }
+}

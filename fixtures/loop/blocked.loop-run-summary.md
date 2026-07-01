@@ -7,7 +7,17 @@
 - Source: `examples/loop-engineering/blocked/loop-input.json`
 - Issue: #3552
 - ExecPlan: `baseline-exec-plan-v2` (fixtures/exec-plan/baseline.exec-plan.v2.json)
+- Risk level: `low`
 - Next recommended action: Inspect the failing traceability fixture and update the ExecPlan before scheduling another loop run.
+
+## Policy
+
+- Policy: `loop-report-only-default` (built-in)
+- Effective max iterations: 2 (requested 2)
+- Wall-clock budget: 1800s
+- Modified file limit: 0
+- Redaction mode: `metadata-only`
+- Public raw logs allowed: false
 
 ## Safety
 
@@ -16,6 +26,19 @@
 - Hosted LLM calls allowed: false
 - Auto-merge allowed: false
 - Forbidden actions detected: none
+
+## Observability
+
+- Verification sequence: fail
+- Elapsed seconds observed: 0
+- Blocked-to-actionable: not_collected
+- Unsafe-action stops: 0
+- Missing evidence IDs: none
+- Denied commands: none
+- Denied paths: none
+- Modified file count: 0
+- High-risk escalations: 0
+- Approval authority: none; loop summaries are report-only and do not replace human approval or required checks
 
 ## Iterations
 
@@ -33,12 +56,24 @@
 
 - `pnpm -s run verify:lite -- --fixture examples/loop-engineering/blocked/verify-lite-summary.json`
 
+## Repeated failure signatures
+
+- none
+
+## Replay
+
+- Input hash: `d1f8753ac844f602bde1bd0b36c1a352dd8f6c79d3ade9eb88658e1cfb9560af`
+- Policy hash: `b4f6c936d2ffa574909e266bdcf297a249f8b94d04e037e84b73f026146d0772`
+- Idempotency key: `f5a97ed8c3cedcf90970b3a7765173564489e73b683462e05aba82d71c473f22`
+
 ## Review surface
 
 ```text
 Result: blocked
 Stop reason: blocked
 Iterations: 1
+Policy: loop-report-only-default (built-in)
+Authority: report-only evidence; human review and required checks remain authoritative.
 Next action: Inspect the failing traceability fixture and update the ExecPlan before scheduling another loop run.
 Findings:
 - [error] traceability-red: Traceability fixture is failing and requires human investigation before the loop can continue.

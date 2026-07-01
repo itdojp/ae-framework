@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "loop-run-input/v1",
+  "runId": "loop-safety-budget-demo",
+  "reportOnly": true,
+  "maxIterations": 4,
+  "goal": {
+    "issueRef": "#3553",
+    "summary": "Demonstrate report-only loop observability and stop rules for repeated verification failures.",
+    "riskLevel": "low"
+  },
+  "policyRef": "fixtures/loop/strict-safety.loop-policy.json",
+  "execPlan": {
+    "planId": "baseline-exec-plan-v2",
+    "path": "fixtures/exec-plan/baseline.exec-plan.v2.json"
+  },
+  "contextPackRefs": [
+    "spec/context-pack/boundary-map.json"
+  ],
+  "safety": {
+    "worktreeMode": "fixture",
+    "mutationsAllowed": false,
+    "hostedLlmCallsAllowed": false,
+    "autoMergeAllowed": false,
+    "forbiddenActions": [
+      "merge-pr",
+      "push-commit",
+      "delete-branch",
+      "hosted-llm-call"
+    ]
+  },
+  "iterations": [
+    {
+      "id": "iter-1-observe-failure",
+      "phase": "verify",
+      "plannedAction": "Observe the first failing fixture and record the failure signature.",
+      "actionHook": {
+        "kind": "fixture-observation",
+        "description": "Collect fixture verification evidence without mutating the repository.",
+        "mutatesRepository": false
+      },
+      "validation": {
+        "command": "pnpm -s run verify:lite -- --fixture examples/loop-engineering/safety/verify-lite-summary-1.json",
+        "expectedStatus": "fail",
+        "actualStatus": "fail",
+        "rawOutputPath": "examples/loop-engineering/safety/verify-lite-summary-1.json",
+        "failureSignature": "loop.verify-lite.same-error"
+      },
+      "observedEvidence": [
+        {
+          "id": "ev.verify-lite",
+          "path": "examples/loop-engineering/safety/verify-lite-summary-1.json",
+          "status": "fail",
+          "summary": "First fixture failure captured for repeated-failure tracking."
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "verification-red",
+          "message": "The first fixture verification failed, but the policy allows one repair loop before stopping."
+        }
+      ],
+      "observability": {
+        "elapsedSeconds": 45,
+        "blockedToActionableSeconds": 90
+      },
+      "decision": "continue",
+      "nextRecommendedAction": "Attempt one report-only repair recommendation and re-check the signature."
+    },
+    {
+      "id": "iter-2-repeat-failure",
+      "phase": "verify",
+      "plannedAction": "Observe the repeated failing fixture after the repair recommendation.",
+      "actionHook": {
+        "kind": "fixture-observation",
+        "description": "Collect the second fixture verification result without mutating the repository.",
+        "mutatesRepository": false
+      },
+      "validation": {
+        "command": "pnpm -s run verify:lite -- --fixture examples/loop-engineering/safety/verify-lite-summary-2.json",
+        "expectedStatus": "fail",
+        "actualStatus": "fail",
+        "rawOutputPath": "examples/loop-engineering/safety/verify-lite-summary-2.json",
+        "failureSignature": "loop.verify-lite.same-error"
+      },
+      "observedEvidence": [
+        {
+          "id": "ev.verify-lite",
+          "path": "examples/loop-engineering/safety/verify-lite-summary-2.json",
+          "status": "fail",
+          "summary": "The same fixture failure signature repeated."
+        }
+      ],
+      "findings": [
+        {
+          "severity": "warning",
+          "code": "verification-red-repeat",
+          "message": "The repeated failure signature indicates possible thrashing or an ineffective repair."
+        }
+      ],
+      "observability": {
+        "elapsedSeconds": 50,
+        "blockedToActionableSeconds": 120
+      },
+      "decision": "continue",
+      "nextRecommendedAction": "Stop and ask a human to revise the plan before another loop iteration."
+    }
+  ]
+}
