@@ -16,6 +16,7 @@ const repoRoot = resolve('.');
 const scriptPath = resolve(repoRoot, 'scripts/loop/run-report-only.mjs');
 const generatedAt = '2026-07-01T00:00:00.000Z';
 const schema = JSON.parse(readFileSync(resolve('schema/loop-run-summary.schema.json'), 'utf8'));
+const strictPolicy = readJson('fixtures/loop/strict-safety.loop-policy.json');
 
 function readJson(filePath: string) {
   return JSON.parse(readFileSync(resolve(filePath), 'utf8'));
@@ -32,6 +33,29 @@ function tempDir(prefix: string) {
   const root = resolve('.codex-local/tmp');
   mkdirSync(root, { recursive: true });
   return mkdtempSync(join(root, prefix));
+}
+
+function buildWithTempPolicy(input: Record<string, any>, policy: Record<string, any>) {
+  const outputDir = tempDir('loop-runner-policy-');
+  const inputPath = join(outputDir, 'loop-input.json');
+  const policyPath = join(outputDir, 'loop-policy.json');
+  writeFileSync(inputPath, `${JSON.stringify(input, null, 2)}\n`);
+  writeFileSync(policyPath, `${JSON.stringify(policy, null, 2)}\n`);
+  try {
+    return buildLoopRun(parseArgs([
+      'node',
+      scriptPath,
+      '--input',
+      inputPath,
+      '--policy',
+      policyPath,
+      '--generated-at',
+      generatedAt,
+      '--no-write',
+    ]));
+  } finally {
+    rmSync(outputDir, { recursive: true, force: true });
+  }
 }
 
 describe('report-only loop runner', () => {
@@ -55,6 +79,8 @@ describe('report-only loop runner', () => {
     expect(summary.commands).toEqual([
       'pnpm -s run verify:lite -- --fixture examples/loop-engineering/success/verify-lite-summary.json',
     ]);
+    expect(summary.policy.policyId).toBe('loop-report-only-default');
+    expect(summary.observability.approvalAuthority).toContain('report-only');
   });
 
   it('builds the deterministic blocked summary fixture without failing the report-only CLI', () => {
@@ -121,6 +147,7 @@ describe('report-only loop runner', () => {
     const summary = JSON.parse(readFileSync(jsonPath, 'utf8'));
     expect(summary).toMatchObject({ result: 'unsafe-action', stopReason: 'unsafe-action' });
     expect(summary.safety.forbiddenActionsDetected).toEqual(['merge-pr']);
+    expect(summary.observability.unsafeActionStops).toBe(1);
     validateWithSchema(summary);
     rmSync(outputDir, { recursive: true, force: true });
   });
@@ -201,6 +228,80 @@ describe('report-only loop runner', () => {
       expect.objectContaining({ code: 'fixture-exhausted', severity: 'warning' }),
     ]));
     rmSync(outputDir, { recursive: true, force: true });
+  });
+
+  it('builds the deterministic safety-budget summary fixture with repeated-failure observability', () => {
+    const summary = buildLoopRun(parseArgs([
+      'node',
+      scriptPath,
+      '--input',
+      'examples/loop-engineering/safety/loop-input.json',
+      '--generated-at',
+      generatedAt,
+      '--no-write',
+    ]));
+
+    expect(summary).toEqual(readJson('fixtures/loop/safety-budget.loop-run-summary.json'));
+    expect(renderMarkdown(summary)).toBe(readFileSync(resolve('fixtures/loop/safety-budget.loop-run-summary.md'), 'utf8'));
+    validateWithSchema(summary);
+    expect(summary).toMatchObject({ result: 'blocked', stopReason: 'blocked' });
+    expect(summary.observability.repeatedFailureSignatures).toEqual([
+      expect.objectContaining({ signature: 'loop.verify-lite.same-error', count: 2 }),
+    ]);
+    expect(summary.reviewSurface.body).toContain('Authority: report-only evidence');
+  });
+
+  it('applies report-only loop policy stops for budgets, commands, paths, evidence, and risk', () => {
+    const baseInput = readJson('examples/loop-engineering/success/loop-input.json');
+
+    const maxIterationsInput = JSON.parse(JSON.stringify(baseInput));
+    maxIterationsInput.runId = 'loop-policy-max-iterations-demo';
+    maxIterationsInput.maxIterations = 3;
+    maxIterationsInput.iterations[0].decision = 'continue';
+    const maxIterationsPolicy = JSON.parse(JSON.stringify(strictPolicy));
+    maxIterationsPolicy.budgets.maxIterations = 1;
+    expect(buildWithTempPolicy(maxIterationsInput, maxIterationsPolicy)).toMatchObject({
+      result: 'max-iterations',
+      stopReason: 'max-iterations',
+    });
+
+    const deniedCommandPolicy = JSON.parse(JSON.stringify(strictPolicy));
+    deniedCommandPolicy.commandPolicy.denyList.push('pnpm -s run verify:lite');
+    const deniedCommandSummary = buildWithTempPolicy(baseInput, deniedCommandPolicy);
+    expect(deniedCommandSummary).toMatchObject({ result: 'unsafe-action', stopReason: 'unsafe-action' });
+    expect(deniedCommandSummary.findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'loop-policy-denied-command' }),
+    ]));
+
+    const deniedPathPolicy = JSON.parse(JSON.stringify(strictPolicy));
+    deniedPathPolicy.pathPolicy.deniedPrefixes.push('examples/loop-engineering/success');
+    const deniedPathSummary = buildWithTempPolicy(baseInput, deniedPathPolicy);
+    expect(deniedPathSummary).toMatchObject({ result: 'unsafe-action', stopReason: 'unsafe-action' });
+    expect(deniedPathSummary.findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'loop-policy-denied-path' }),
+    ]));
+
+    const modifiedFileInput = JSON.parse(JSON.stringify(baseInput));
+    modifiedFileInput.iterations[0].actionHook.modifiedFiles = ['docs/README.md'];
+    const modifiedFileSummary = buildWithTempPolicy(modifiedFileInput, strictPolicy);
+    expect(modifiedFileSummary).toMatchObject({ result: 'unsafe-action', stopReason: 'unsafe-action' });
+    expect(modifiedFileSummary.findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'loop-policy-modified-file-limit' }),
+    ]));
+
+    const missingEvidencePolicy = JSON.parse(JSON.stringify(strictPolicy));
+    missingEvidencePolicy.evidenceRequirements.requiredEvidenceIds = ['ev.release-approval'];
+    const missingEvidenceSummary = buildWithTempPolicy(baseInput, missingEvidencePolicy);
+    expect(missingEvidenceSummary).toMatchObject({ result: 'blocked', stopReason: 'blocked' });
+    expect(missingEvidenceSummary.observability.missingEvidenceIds).toEqual(['ev.release-approval']);
+
+    const highRiskInput = JSON.parse(JSON.stringify(baseInput));
+    highRiskInput.goal.riskLevel = 'critical';
+    const highRiskSummary = buildWithTempPolicy(highRiskInput, strictPolicy);
+    expect(highRiskSummary).toMatchObject({ result: 'human-required', stopReason: 'human-required' });
+    expect(highRiskSummary.findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'loop-policy-human-approval-required' }),
+    ]));
   });
 
   it('rejects input and output paths outside the working directory', () => {

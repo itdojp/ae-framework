@@ -11,11 +11,14 @@
     "result",
     "reportOnly",
     "input",
+    "policy",
     "safety",
     "summary",
     "iterations",
     "commands",
     "findings",
+    "observability",
+    "replay",
     "stopReason",
     "nextRecommendedAction",
     "reviewSurface"
@@ -42,7 +45,8 @@
           "required": ["issueRef", "summary"],
           "properties": {
             "issueRef": { "type": "string", "minLength": 1 },
-            "summary": { "type": "string", "minLength": 1 }
+            "summary": { "type": "string", "minLength": 1 },
+            "riskLevel": { "type": "string", "enum": ["low", "medium", "high", "critical"] }
           }
         },
         "execPlan": {
@@ -58,7 +62,51 @@
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
         },
-        "maxIterations": { "type": "integer", "minimum": 1 }
+        "maxIterations": { "type": "integer", "minimum": 1 },
+        "policyRef": { "type": "string", "minLength": 1 }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "policyId", "sourcePath", "reportOnly", "budgets", "stopRules", "privacy"],
+      "properties": {
+        "schemaVersion": { "const": "loop-policy/v1" },
+        "policyId": { "type": "string", "minLength": 1 },
+        "sourcePath": { "type": "string", "minLength": 1 },
+        "reportOnly": { "const": true },
+        "budgets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requestedMaxIterations", "effectiveMaxIterations", "wallClockBudgetSeconds", "modifiedFileLimit"],
+          "properties": {
+            "requestedMaxIterations": { "type": "integer", "minimum": 1 },
+            "effectiveMaxIterations": { "type": "integer", "minimum": 1 },
+            "wallClockBudgetSeconds": { "type": "integer", "minimum": 1 },
+            "modifiedFileLimit": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "stopRules": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["stopOnDeniedCommand", "stopOnDeniedPath", "stopOnMissingEvidence", "stopOnHighRiskEscalation", "repeatedFailureThreshold"],
+          "properties": {
+            "stopOnDeniedCommand": { "type": "boolean" },
+            "stopOnDeniedPath": { "type": "boolean" },
+            "stopOnMissingEvidence": { "type": "boolean" },
+            "stopOnHighRiskEscalation": { "type": "boolean" },
+            "repeatedFailureThreshold": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "privacy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["redactionMode", "publicRawLogsAllowed"],
+          "properties": {
+            "redactionMode": { "type": "string", "enum": ["metadata-only", "redacted-excerpts", "internal-only"] },
+            "publicRawLogsAllowed": { "type": "boolean" }
+          }
+        }
       }
     },
     "safety": {
@@ -79,11 +127,13 @@
     "summary": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["iterationCount", "commandCount", "findingCount"],
+      "required": ["iterationCount", "commandCount", "findingCount", "unsafeActionStopCount", "repeatedFailureSignatureCount"],
       "properties": {
         "iterationCount": { "type": "integer", "minimum": 0 },
         "commandCount": { "type": "integer", "minimum": 0 },
-        "findingCount": { "type": "integer", "minimum": 0 }
+        "findingCount": { "type": "integer", "minimum": 0 },
+        "unsafeActionStopCount": { "type": "integer", "minimum": 0 },
+        "repeatedFailureSignatureCount": { "type": "integer", "minimum": 0 }
       }
     },
     "iterations": {
@@ -91,7 +141,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["index", "id", "phase", "plannedAction", "actionHook", "validation", "observedEvidence", "findings", "decision", "nextRecommendedAction"],
+        "required": ["index", "id", "phase", "plannedAction", "actionHook", "validation", "observedEvidence", "findings", "observability", "decision", "nextRecommendedAction"],
         "properties": {
           "index": { "type": "integer", "minimum": 1 },
           "id": { "type": "string", "minLength": 1 },
@@ -104,7 +154,11 @@
             "properties": {
               "kind": { "type": "string", "minLength": 1 },
               "description": { "type": "string", "minLength": 1 },
-              "mutatesRepository": { "type": "boolean" }
+              "mutatesRepository": { "type": "boolean" },
+              "modifiedFiles": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
             }
           },
           "validation": {
@@ -115,7 +169,8 @@
               "command": { "type": "string", "minLength": 1 },
               "expectedStatus": { "type": "string", "enum": ["pass", "fail", "warn", "not-run"] },
               "actualStatus": { "type": "string", "enum": ["pass", "fail", "warn", "not-run"] },
-              "rawOutputPath": { "type": "string", "minLength": 1 }
+              "rawOutputPath": { "type": "string", "minLength": 1 },
+              "failureSignature": { "type": "string", "minLength": 1 }
             }
           },
           "observedEvidence": {
@@ -146,6 +201,15 @@
               }
             }
           },
+          "observability": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["elapsedSeconds", "blockedToActionableSeconds"],
+            "properties": {
+              "elapsedSeconds": { "type": "number", "minimum": 0 },
+              "blockedToActionableSeconds": { "type": ["number", "null"], "minimum": 0 }
+            }
+          },
           "decision": { "type": "string", "enum": ["continue", "success", "blocked", "human-required", "validation-failed", "unsafe-action"] },
           "nextRecommendedAction": { "type": "string", "minLength": 1 }
         }
@@ -166,6 +230,80 @@
           "code": { "type": "string", "minLength": 1 },
           "message": { "type": "string", "minLength": 1 }
         }
+      }
+    },
+    "observability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verificationSequence",
+        "elapsedSecondsObserved",
+        "blockedToActionable",
+        "repeatedFailureSignatures",
+        "unsafeActionStops",
+        "missingEvidenceIds",
+        "deniedCommands",
+        "deniedPaths",
+        "modifiedFileCount",
+        "highRiskEscalations",
+        "approvalAuthority"
+      ],
+      "properties": {
+        "verificationSequence": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["pass", "fail", "warn", "not-run"] }
+        },
+        "elapsedSecondsObserved": { "type": "number", "minimum": 0 },
+        "blockedToActionable": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "seconds"],
+          "properties": {
+            "status": { "type": "string", "enum": ["collected", "not_collected"] },
+            "seconds": { "type": ["number", "null"], "minimum": 0 }
+          }
+        },
+        "repeatedFailureSignatures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["signature", "count", "firstIteration", "lastIteration"],
+            "properties": {
+              "signature": { "type": "string", "minLength": 1 },
+              "count": { "type": "integer", "minimum": 2 },
+              "firstIteration": { "type": "string", "minLength": 1 },
+              "lastIteration": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "unsafeActionStops": { "type": "integer", "minimum": 0 },
+        "missingEvidenceIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "deniedCommands": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "deniedPaths": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "modifiedFileCount": { "type": "integer", "minimum": 0 },
+        "highRiskEscalations": { "type": "integer", "minimum": 0 },
+        "approvalAuthority": { "type": "string", "minLength": 1 }
+      }
+    },
+    "replay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputHash", "policyHash", "idempotencyKey", "note"],
+      "properties": {
+        "inputHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "policyHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "idempotencyKey": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "note": { "type": "string", "minLength": 1 }
       }
     },
     "stopReason": { "type": "string", "enum": ["success", "blocked", "max-iterations", "validation-failed", "unsafe-action", "human-required"] },

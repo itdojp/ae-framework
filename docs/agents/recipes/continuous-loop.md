@@ -7,6 +7,7 @@ canonicalSource:
 - policy/risk-policy.yml
 - docs/ci/codex-autopilot-lane.md
 - docs/integrations/LOOP-ENGINEERING.md
+- docs/automation/LOOP-ENGINEERING-SAFETY.md
 lastVerified: '2026-07-01'
 ---
 
@@ -30,6 +31,7 @@ lastVerified: '2026-07-01'
 - `policy/risk-policy.yml`
 - `docs/ci/codex-autopilot-lane.md`
 - `docs/integrations/LOOP-ENGINEERING.md` for the report-only loop engineering MVP and its explicit stop reasons
+- `docs/automation/LOOP-ENGINEERING-SAFETY.md` for loop budgets, stop rules, observability metrics, replay hashes, and redaction guidance
 
 ### Contract rules (v1)
 - when `shouldBlockProgress=false`, provide at least one `nextActions` entry
@@ -94,6 +96,7 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 - for `autopilot:on` PRs, prioritize the unblock procedure in `docs/ci/codex-autopilot-lane.md`
 - for high-risk changes, satisfy the required labels/checks in `policy/risk-policy.yml` before retrying the lane
 - for fixture-backed report-only loop runs, use `docs/integrations/LOOP-ENGINEERING.md` and do not treat the loop summary as merge approval
+- when a loop policy is present, inspect denied commands/paths, missing evidence, repeated failure signatures, and high-risk escalation before attempting another iteration
 
 ## 日本語
 
@@ -109,6 +112,7 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 - `policy/risk-policy.yml`
 - `docs/ci/codex-autopilot-lane.md`
 - report-only loop engineering MVP と explicit stop reason は `docs/integrations/LOOP-ENGINEERING.md`
+- loop budget、stop rule、observability metrics、replay hash、redaction guidance は `docs/automation/LOOP-ENGINEERING-SAFETY.md`
 
 ### Contract rules (v1)
 - `shouldBlockProgress=false` のときは `nextActions` を 1 件以上にする
@@ -173,3 +177,4 @@ echo '{"description":"validate API","subagent_type":"validation","context":{}}' 
 - `autopilot:on` PR では `docs/ci/codex-autopilot-lane.md` の blocked 解除手順を優先する
 - 高リスク変更では、`policy/risk-policy.yml` の required labels / checks を先に満たしてから再試行する
 - fixture-backed な report-only loop run は `docs/integrations/LOOP-ENGINEERING.md` に従い、loop summary を merge 承認として扱わない
+- loop policy がある場合は、次の iteration の前に denied command/path、missing evidence、repeated failure signature、high-risk escalation を確認する

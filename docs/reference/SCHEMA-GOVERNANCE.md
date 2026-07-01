@@ -291,3 +291,7 @@ Preview から stable への昇格には、同一 PR または linked issue で�
 `schema/loop-run-input.schema.json` uses the canonical `$id` form `https://ae-framework/schema/loop-run-input.schema.json`. It is the preview input contract for fixture-backed report-only loop runs and captures Issue intent, ExecPlan v2 references, Context Pack references, safety flags, validation commands, observed evidence links, findings, and per-iteration decisions.
 
 `schema/loop-run-summary.schema.json` uses the canonical `$id` form `https://ae-framework/schema/loop-run-summary.schema.json`. It is a preview/report-only evidence contract for `artifacts/loop/loop-run-summary.json`, produced by `scripts/loop/run-report-only.mjs`. `stopReason` records operator-facing loop termination such as `success`, `blocked`, `max-iterations`, `validation-failed`, `unsafe-action`, or `human-required`; the contract does not grant merge, approval, push, or hosted-LLM authority.
+
+### 17. Loop policy schema
+
+`schema/loop-policy.schema.json` uses the canonical `$id` form `https://ae-framework/schema/loop-policy.schema.json`. It is the preview/report-only policy contract for loop safety budgets and stop rules. The contract captures iteration / wall-clock / modified-file budgets, command and path allow/deny lists, required evidence IDs, high-risk approval thresholds, repeated-failure limits, and redaction posture. Policy findings remain report-only in this slice; no blocking policy-gate rule is added unless a future promotion issue explicitly changes that behavior.

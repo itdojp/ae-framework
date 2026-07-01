@@ -203,6 +203,7 @@ Integration contracts and operating guides for Claude Code, Codex, handoff sidec
 - AE handoff sidecar: `agents/handoff.md`
 - Spec Kit bridge: `integrations/SPEC-KIT-BRIDGE.md`
 - Report-only loop engineering: `integrations/LOOP-ENGINEERING.md`
+- Loop engineering safety and observability: `automation/LOOP-ENGINEERING-SAFETY.md`
 
 ### Reference
 Normative reference material for commands, schema governance, contract inventory, and stable interfaces.
@@ -217,6 +218,7 @@ Normative reference material for commands, schema governance, contract inventory
 - ExecPlan v2 reference: [EXEC-PLAN-V2.md](./reference/EXEC-PLAN-V2.md)
 - Spec Kit bridge: [SPEC-KIT-BRIDGE.md](./integrations/SPEC-KIT-BRIDGE.md)
 - Report-only loop engineering: [LOOP-ENGINEERING.md](./integrations/LOOP-ENGINEERING.md)
+- Loop engineering safety and observability: [LOOP-ENGINEERING-SAFETY.md](./automation/LOOP-ENGINEERING-SAFETY.md)
 - Context Pack v1 validation guide: [context-pack.md](./spec/context-pack.md)
 - Spec & Verification Kit (minimal activation guide): `reference/SPEC-VERIFICATION-KIT-MIN.md`
 - Legacy ExecPlan (6-phase, deprecated): `../plans/archive/legacy-6-phase.md`

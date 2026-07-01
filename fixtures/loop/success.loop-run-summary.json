@@ -9,7 +9,8 @@
     "sourcePath": "examples/loop-engineering/success/loop-input.json",
     "goal": {
       "issueRef": "#3552",
-      "summary": "Demonstrate a report-only loop reaching success after fixture verification."
+      "summary": "Demonstrate a report-only loop reaching success after fixture verification.",
+      "riskLevel": "low"
     },
     "execPlan": {
       "planId": "baseline-exec-plan-v2",
@@ -19,6 +20,29 @@
       "spec/context-pack/boundary-map.json"
     ],
     "maxIterations": 2
+  },
+  "policy": {
+    "schemaVersion": "loop-policy/v1",
+    "policyId": "loop-report-only-default",
+    "sourcePath": "built-in",
+    "reportOnly": true,
+    "budgets": {
+      "requestedMaxIterations": 2,
+      "effectiveMaxIterations": 2,
+      "wallClockBudgetSeconds": 1800,
+      "modifiedFileLimit": 0
+    },
+    "stopRules": {
+      "stopOnDeniedCommand": true,
+      "stopOnDeniedPath": true,
+      "stopOnMissingEvidence": true,
+      "stopOnHighRiskEscalation": true,
+      "repeatedFailureThreshold": 2
+    },
+    "privacy": {
+      "redactionMode": "metadata-only",
+      "publicRawLogsAllowed": false
+    }
   },
   "safety": {
     "worktreeMode": "fixture",
@@ -30,7 +54,9 @@
   "summary": {
     "iterationCount": 1,
     "commandCount": 1,
-    "findingCount": 1
+    "findingCount": 1,
+    "unsafeActionStopCount": 0,
+    "repeatedFailureSignatureCount": 0
   },
   "iterations": [
     {
@@ -41,7 +67,8 @@
       "actionHook": {
         "kind": "fixture-observation",
         "description": "Collect pre-generated verification summary without mutating the repository.",
-        "mutatesRepository": false
+        "mutatesRepository": false,
+        "modifiedFiles": []
       },
       "validation": {
         "command": "pnpm -s run verify:lite -- --fixture examples/loop-engineering/success/verify-lite-summary.json",
@@ -64,6 +91,10 @@
           "message": "All required fixture checks passed."
         }
       ],
+      "observability": {
+        "elapsedSeconds": 0,
+        "blockedToActionableSeconds": null
+      },
       "decision": "success",
       "nextRecommendedAction": "Post the loop-run summary for human review; no repair action is required."
     }
@@ -78,10 +109,34 @@
       "message": "All required fixture checks passed."
     }
   ],
+  "observability": {
+    "verificationSequence": [
+      "pass"
+    ],
+    "elapsedSecondsObserved": 0,
+    "blockedToActionable": {
+      "status": "not_collected",
+      "seconds": null
+    },
+    "repeatedFailureSignatures": [],
+    "unsafeActionStops": 0,
+    "missingEvidenceIds": [],
+    "deniedCommands": [],
+    "deniedPaths": [],
+    "modifiedFileCount": 0,
+    "highRiskEscalations": 0,
+    "approvalAuthority": "none; loop summaries are report-only and do not replace human approval or required checks"
+  },
+  "replay": {
+    "inputHash": "6bd475587d78e042400e5823dc2d2670050a1ddb5a9d954ecbbb032727e5711e",
+    "policyHash": "b4f6c936d2ffa574909e266bdcf297a249f8b94d04e037e84b73f026146d0772",
+    "idempotencyKey": "6b04c2ba247020b6b1b23f3da403a80d24f95405da8a32d553e5ad927389d9fa",
+    "note": "Re-run with the same input, policy, and generatedAt to reproduce deterministic fixture summaries."
+  },
   "stopReason": "success",
   "nextRecommendedAction": "Post the loop-run summary for human review; no repair action is required.",
   "reviewSurface": {
     "title": "Loop run loop-success-demo: success",
-    "body": "Result: success\nStop reason: success\nIterations: 1\nNext action: Post the loop-run summary for human review; no repair action is required.\nFindings:\n- [info] verification-green: All required fixture checks passed."
+    "body": "Result: success\nStop reason: success\nIterations: 1\nPolicy: loop-report-only-default (built-in)\nAuthority: report-only evidence; human review and required checks remain authoritative.\nNext action: Post the loop-run summary for human review; no repair action is required.\nFindings:\n- [info] verification-green: All required fixture checks passed."
   }
 }

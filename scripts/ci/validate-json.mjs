@@ -311,14 +311,24 @@ const checks = [
     fixtures: [
       'examples/loop-engineering/success/loop-input.json',
       'examples/loop-engineering/blocked/loop-input.json',
+      'examples/loop-engineering/safety/loop-input.json',
     ],
     label: 'Loop run input schema validation'
+  },
+  {
+    schema: 'schema/loop-policy.schema.json',
+    fixtures: [
+      'fixtures/loop/report-only-default.loop-policy.json',
+      'fixtures/loop/strict-safety.loop-policy.json',
+    ],
+    label: 'Loop policy schema validation'
   },
   {
     schema: 'schema/loop-run-summary.schema.json',
     fixtures: [
       'fixtures/loop/success.loop-run-summary.json',
       'fixtures/loop/blocked.loop-run-summary.json',
+      'fixtures/loop/safety-budget.loop-run-summary.json',
     ],
     label: 'Loop run summary schema validation'
   },

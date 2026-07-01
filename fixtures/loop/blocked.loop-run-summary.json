@@ -9,7 +9,8 @@
     "sourcePath": "examples/loop-engineering/blocked/loop-input.json",
     "goal": {
       "issueRef": "#3552",
-      "summary": "Demonstrate a report-only loop stopping as blocked when fixture verification is red."
+      "summary": "Demonstrate a report-only loop stopping as blocked when fixture verification is red.",
+      "riskLevel": "low"
     },
     "execPlan": {
       "planId": "baseline-exec-plan-v2",
@@ -19,6 +20,29 @@
       "spec/context-pack/boundary-map.json"
     ],
     "maxIterations": 2
+  },
+  "policy": {
+    "schemaVersion": "loop-policy/v1",
+    "policyId": "loop-report-only-default",
+    "sourcePath": "built-in",
+    "reportOnly": true,
+    "budgets": {
+      "requestedMaxIterations": 2,
+      "effectiveMaxIterations": 2,
+      "wallClockBudgetSeconds": 1800,
+      "modifiedFileLimit": 0
+    },
+    "stopRules": {
+      "stopOnDeniedCommand": true,
+      "stopOnDeniedPath": true,
+      "stopOnMissingEvidence": true,
+      "stopOnHighRiskEscalation": true,
+      "repeatedFailureThreshold": 2
+    },
+    "privacy": {
+      "redactionMode": "metadata-only",
+      "publicRawLogsAllowed": false
+    }
   },
   "safety": {
     "worktreeMode": "fixture",
@@ -30,7 +54,9 @@
   "summary": {
     "iterationCount": 1,
     "commandCount": 1,
-    "findingCount": 1
+    "findingCount": 1,
+    "unsafeActionStopCount": 0,
+    "repeatedFailureSignatureCount": 0
   },
   "iterations": [
     {
@@ -41,7 +67,8 @@
       "actionHook": {
         "kind": "fixture-observation",
         "description": "Collect pre-generated verification summary without mutating the repository.",
-        "mutatesRepository": false
+        "mutatesRepository": false,
+        "modifiedFiles": []
       },
       "validation": {
         "command": "pnpm -s run verify:lite -- --fixture examples/loop-engineering/blocked/verify-lite-summary.json",
@@ -64,6 +91,10 @@
           "message": "Traceability fixture is failing and requires human investigation before the loop can continue."
         }
       ],
+      "observability": {
+        "elapsedSeconds": 0,
+        "blockedToActionableSeconds": null
+      },
       "decision": "blocked",
       "nextRecommendedAction": "Inspect the failing traceability fixture and update the ExecPlan before scheduling another loop run."
     }
@@ -78,10 +109,34 @@
       "message": "Traceability fixture is failing and requires human investigation before the loop can continue."
     }
   ],
+  "observability": {
+    "verificationSequence": [
+      "fail"
+    ],
+    "elapsedSecondsObserved": 0,
+    "blockedToActionable": {
+      "status": "not_collected",
+      "seconds": null
+    },
+    "repeatedFailureSignatures": [],
+    "unsafeActionStops": 0,
+    "missingEvidenceIds": [],
+    "deniedCommands": [],
+    "deniedPaths": [],
+    "modifiedFileCount": 0,
+    "highRiskEscalations": 0,
+    "approvalAuthority": "none; loop summaries are report-only and do not replace human approval or required checks"
+  },
+  "replay": {
+    "inputHash": "d1f8753ac844f602bde1bd0b36c1a352dd8f6c79d3ade9eb88658e1cfb9560af",
+    "policyHash": "b4f6c936d2ffa574909e266bdcf297a249f8b94d04e037e84b73f026146d0772",
+    "idempotencyKey": "5dd6b603f603d87b6f5cf66172bd3e22edd931f4b38094ab0392480f7fa38b64",
+    "note": "Re-run with the same input, policy, and generatedAt to reproduce deterministic fixture summaries."
+  },
   "stopReason": "blocked",
   "nextRecommendedAction": "Inspect the failing traceability fixture and update the ExecPlan before scheduling another loop run.",
   "reviewSurface": {
     "title": "Loop run loop-blocked-demo: blocked",
-    "body": "Result: blocked\nStop reason: blocked\nIterations: 1\nNext action: Inspect the failing traceability fixture and update the ExecPlan before scheduling another loop run.\nFindings:\n- [error] traceability-red: Traceability fixture is failing and requires human investigation before the loop can continue."
+    "body": "Result: blocked\nStop reason: blocked\nIterations: 1\nPolicy: loop-report-only-default (built-in)\nAuthority: report-only evidence; human review and required checks remain authoritative.\nNext action: Inspect the failing traceability fixture and update the ExecPlan before scheduling another loop run.\nFindings:\n- [error] traceability-red: Traceability fixture is failing and requires human investigation before the loop can continue."
   }
 }

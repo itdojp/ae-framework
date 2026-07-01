@@ -7,7 +7,17 @@
 - Source: `examples/loop-engineering/success/loop-input.json`
 - Issue: #3552
 - ExecPlan: `baseline-exec-plan-v2` (fixtures/exec-plan/baseline.exec-plan.v2.json)
+- Risk level: `low`
 - Next recommended action: Post the loop-run summary for human review; no repair action is required.
+
+## Policy
+
+- Policy: `loop-report-only-default` (built-in)
+- Effective max iterations: 2 (requested 2)
+- Wall-clock budget: 1800s
+- Modified file limit: 0
+- Redaction mode: `metadata-only`
+- Public raw logs allowed: false
 
 ## Safety
 
@@ -16,6 +26,19 @@
 - Hosted LLM calls allowed: false
 - Auto-merge allowed: false
 - Forbidden actions detected: none
+
+## Observability
+
+- Verification sequence: pass
+- Elapsed seconds observed: 0
+- Blocked-to-actionable: not_collected
+- Unsafe-action stops: 0
+- Missing evidence IDs: none
+- Denied commands: none
+- Denied paths: none
+- Modified file count: 0
+- High-risk escalations: 0
+- Approval authority: none; loop summaries are report-only and do not replace human approval or required checks
 
 ## Iterations
 
@@ -33,12 +56,24 @@
 
 - `pnpm -s run verify:lite -- --fixture examples/loop-engineering/success/verify-lite-summary.json`
 
+## Repeated failure signatures
+
+- none
+
+## Replay
+
+- Input hash: `6bd475587d78e042400e5823dc2d2670050a1ddb5a9d954ecbbb032727e5711e`
+- Policy hash: `b4f6c936d2ffa574909e266bdcf297a249f8b94d04e037e84b73f026146d0772`
+- Idempotency key: `6b04c2ba247020b6b1b23f3da403a80d24f95405da8a32d553e5ad927389d9fa`
+
 ## Review surface
 
 ```text
 Result: success
 Stop reason: success
 Iterations: 1
+Policy: loop-report-only-default (built-in)
+Authority: report-only evidence; human review and required checks remain authoritative.
 Next action: Post the loop-run summary for human review; no repair action is required.
 Findings:
 - [info] verification-green: All required fixture checks passed.
