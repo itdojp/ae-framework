@@ -12,6 +12,7 @@ ARG SKIP_NPM_UPGRADE
 COPY package*.json pnpm-lock.yaml* ./
 COPY pnpm-workspace.yaml ./
 COPY tsconfig*.json ./
+COPY configs/tsconfig ./configs/tsconfig
 COPY packages ./packages
 # package.json の preinstall で参照されるため、依存解決前に配置する
 COPY scripts/ci/check-package-manager.mjs ./scripts/ci/check-package-manager.mjs
