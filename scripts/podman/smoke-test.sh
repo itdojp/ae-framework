@@ -115,6 +115,13 @@ compose_run() {
 
 compose_config() {
   local file="$1"
+  if [[ "$file" == "podman/compose.dev.yaml" ]]; then
+    AE_DEV_POSTGRES_USER="${AE_DEV_POSTGRES_USER:-ae_framework_smoke}" \
+    AE_DEV_POSTGRES_PASSWORD="${AE_DEV_POSTGRES_PASSWORD:-ae_framework_smoke_password}" \
+    AE_DEV_POSTGRES_DB="${AE_DEV_POSTGRES_DB:-ae_framework_smoke}" \
+      compose_run -f "$file" config
+    return
+  fi
   if [[ "$file" == "podman/compose.prod.yaml" ]]; then
     POSTGRES_USER="${POSTGRES_USER:-ae_framework_smoke}" \
     POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-ae_framework_smoke_password}" \

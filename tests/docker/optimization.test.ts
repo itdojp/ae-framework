@@ -9,6 +9,8 @@ import { readFileSync, existsSync } from 'fs';
 
 describe('Docker Production Optimization - Phase 1.4', () => {
   const dockerfile = 'podman/Dockerfile';
+  const testDockerfile = 'podman/Dockerfile.test';
+  const podmanSmokeScript = 'scripts/podman/smoke-test.sh';
   const dockerignore = '.dockerignore';
   const dockerCompose = 'podman/compose.dev.yaml';
   const dockerComposeProd = 'podman/compose.prod.yaml';
@@ -78,6 +80,52 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       
       expect(content, 'Should use Alpine images').toMatch(/^ARG\s+NODE_IMAGE=docker\.io\/node:[^\s]+-alpine$/m);
     });
+  });
+
+  describe('Podman test image dependency bootstrap', () => {
+    it(
+      formatGWT(
+        'Podman test image',
+        'run pnpm install with workspace package prepublish scripts',
+        'root tsconfig inputs are available before install',
+      ),
+      () => {
+        const content = readFileSync(testDockerfile, 'utf8');
+        const installIndex = content.search(/\bpnpm\s+install\b[\s\S]*?--include-workspace-root/);
+        const rootTsconfigIndex = content.search(/^COPY\s+tsconfig\.json\s+\.\/tsconfig\.json\s*$/m);
+        const sharedTsconfigIndex = content.search(/^COPY\s+configs\/tsconfig\s+\.\/configs\/tsconfig\s*$/m);
+
+        expect(installIndex, 'test Dockerfile should run pnpm install').toBeGreaterThanOrEqual(0);
+        expect(rootTsconfigIndex, 'root tsconfig must be copied before install').toBeGreaterThanOrEqual(0);
+        expect(sharedTsconfigIndex, 'shared tsconfig presets must be copied before install').toBeGreaterThanOrEqual(0);
+        expect(rootTsconfigIndex, 'root tsconfig must precede pnpm install').toBeLessThan(installIndex);
+        expect(sharedTsconfigIndex, 'shared tsconfig presets must precede pnpm install').toBeLessThan(installIndex);
+      },
+    );
+  });
+
+  describe('Podman smoke compose validation', () => {
+    it(
+      formatGWT(
+        'Podman smoke helper',
+        'validate dev compose without operator-provided secrets',
+        'smoke-only development database defaults are supplied',
+      ),
+      () => {
+        const content = readFileSync(podmanSmokeScript, 'utf8');
+
+        expect(content, 'dev compose branch should be present').toMatch(/podman\/compose\.dev\.yaml/);
+        expect(content, 'dev smoke user default should be supplied').toMatch(
+          /AE_DEV_POSTGRES_USER="\$\{AE_DEV_POSTGRES_USER:-ae_framework_smoke\}"/,
+        );
+        expect(content, 'dev smoke password default should be supplied').toMatch(
+          /AE_DEV_POSTGRES_PASSWORD="\$\{AE_DEV_POSTGRES_PASSWORD:-ae_framework_smoke_password\}"/,
+        );
+        expect(content, 'dev smoke database default should be supplied').toMatch(
+          /AE_DEV_POSTGRES_DB="\$\{AE_DEV_POSTGRES_DB:-ae_framework_smoke\}"/,
+        );
+      },
+    );
   });
 
   describe('Docker Ignore Configuration', () => {
