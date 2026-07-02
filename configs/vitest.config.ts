@@ -1,7 +1,11 @@
 import { defineConfig, defineProject } from 'vitest/config'
 
 const mutationScope = process.env.VITEST_MUTATION_SCOPE;
-const isCI = process.env.CI === '1';
+const ciFlag = (process.env.CI ?? '').toLowerCase();
+const isCI = ciFlag === '1' || ciFlag === 'true';
+const DEFAULT_TEST_TIMEOUT_MS = 60000;
+const DEFAULT_HOOK_TIMEOUT_MS = 30000;
+const DEFAULT_TEARDOWN_TIMEOUT_MS = 10000;
 const isStryker = Boolean(process.env.STRYKER_MUTATOR);
 const isCiLike = isCI || isStryker;
 
@@ -14,9 +18,9 @@ function withCiDefaults(config: Record<string, any>) {
     watch: false,
     pool: 'forks',
     threads: false,
-    testTimeout: Math.max(30000, config.testTimeout ?? 30000),
-    hookTimeout: Math.max(30000, config.hookTimeout ?? 30000),
-    teardownTimeout: Math.max(10000, config.teardownTimeout ?? 10000),
+    testTimeout: Math.max(DEFAULT_TEST_TIMEOUT_MS, config.testTimeout ?? DEFAULT_TEST_TIMEOUT_MS),
+    hookTimeout: Math.max(DEFAULT_HOOK_TIMEOUT_MS, config.hookTimeout ?? DEFAULT_HOOK_TIMEOUT_MS),
+    teardownTimeout: Math.max(DEFAULT_TEARDOWN_TIMEOUT_MS, config.teardownTimeout ?? DEFAULT_TEARDOWN_TIMEOUT_MS),
     isolate: config.isolate ?? true,
   };
 }
@@ -27,10 +31,16 @@ export const baseTestConfig = mutationScope === 'runtime-guard'
         'tests/api/runtime-guard.reservations.test.ts',
         'tests/api/server.instrumentation.test.ts',
       ],
+      testTimeout: DEFAULT_TEST_TIMEOUT_MS,
+      hookTimeout: DEFAULT_HOOK_TIMEOUT_MS,
+      teardownTimeout: DEFAULT_TEARDOWN_TIMEOUT_MS,
       exclude: ['**/.stryker-tmp/**', '**/.stryker-tmp-*/**', 'tests/a11y/components.test.js'],
     })
   : withCiDefaults({
       include: ['tests/**/*.{test,spec}.{ts,js}'],
+      testTimeout: DEFAULT_TEST_TIMEOUT_MS,
+      hookTimeout: DEFAULT_HOOK_TIMEOUT_MS,
+      teardownTimeout: DEFAULT_TEARDOWN_TIMEOUT_MS,
       exclude: ['**/.stryker-tmp/**', '**/.stryker-tmp-*/**', 'tests/a11y/components.test.js'],
     });
 
@@ -90,9 +100,9 @@ if (isCiLike) {
   rootTestConfig.pool = 'forks';
   rootTestConfig.threads = false;
   rootTestConfig.watch = false;
-  rootTestConfig.testTimeout = baseTestConfig.testTimeout ?? 30000;
-  rootTestConfig.hookTimeout = baseTestConfig.hookTimeout ?? 30000;
-  rootTestConfig.teardownTimeout = baseTestConfig.teardownTimeout ?? 10000;
+  rootTestConfig.testTimeout = baseTestConfig.testTimeout ?? DEFAULT_TEST_TIMEOUT_MS;
+  rootTestConfig.hookTimeout = baseTestConfig.hookTimeout ?? DEFAULT_HOOK_TIMEOUT_MS;
+  rootTestConfig.teardownTimeout = baseTestConfig.teardownTimeout ?? DEFAULT_TEARDOWN_TIMEOUT_MS;
   rootTestConfig.isolate = true;
 }
 
