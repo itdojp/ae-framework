@@ -41,7 +41,7 @@ on:
 
 concurrency:
   group: >-
-    ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'auto' }}-${{ github.event_name == 'workflow_dispatch' && inputs.suites || 'default' }}-${{ github.event_name == 'workflow_dispatch' && inputs.exclude_suites || 'default' }}
+    parallel-test-execution-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'auto' }}-${{ github.event_name == 'workflow_dispatch' && inputs.suites || 'default' }}-${{ github.event_name == 'workflow_dispatch' && inputs.exclude_suites || 'default' }}
   cancel-in-progress: true
 
 env:

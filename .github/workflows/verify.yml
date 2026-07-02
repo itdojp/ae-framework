@@ -47,7 +47,7 @@ on:
         default: ''
         type: string
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: verify-traceability-${{ github.ref }}-${{ inputs.trigger || github.event_name }}-${{ inputs.pr_number || 'no-pr' }}
   cancel-in-progress: true
 
 permissions:

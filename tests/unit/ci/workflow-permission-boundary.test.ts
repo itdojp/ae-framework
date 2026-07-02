@@ -17,6 +17,10 @@ type WorkflowDocument = {
       workflows?: string[];
     };
   };
+  concurrency?: {
+    group?: string;
+    'cancel-in-progress'?: boolean | string;
+  };
   permissions?: Record<string, string> | 'read-all' | 'write-all';
   jobs?: Record<string, any>;
 };
@@ -947,6 +951,48 @@ const expectReadOnlyJobPermissions = (workflow: WorkflowDocument, jobName: strin
 };
 
 describe('CI workflow read-only PR validation boundaries', () => {
+  it('Full CI reusable workflow calls use caller-safe concurrency namespaces', () => {
+    const ci = parseWorkflow('ci.yml');
+    const reusableCalls = {
+      'ci-extended-entry': {
+        workflow: 'ci-extended.yml',
+        groupPrefix: 'ci-extended-',
+      },
+      'ci-hermetic-entry': {
+        workflow: 'hermetic-ci.yml',
+        groupPrefix: 'hermetic-ci-',
+      },
+      'parallel-test-entry': {
+        workflow: 'parallel-test-execution.yml',
+        groupPrefix: 'parallel-test-execution-',
+      },
+      'podman-smoke-entry': {
+        workflow: 'podman-smoke.yml',
+        groupPrefix: 'podman-smoke-',
+      },
+      'verify-entry': {
+        workflow: 'verify.yml',
+        groupPrefix: 'verify-traceability-',
+      },
+      'qa-entry': {
+        workflow: 'ae-ci.yml',
+        groupPrefix: 'ae-ci-',
+      },
+    } as const;
+
+    for (const [jobName, expectation] of Object.entries(reusableCalls)) {
+      const callerJob = ci.jobs?.[jobName];
+      expect(callerJob?.uses).toBe(`./.github/workflows/${expectation.workflow}`);
+
+      const calledWorkflow = parseWorkflow(expectation.workflow);
+      const group = calledWorkflow.concurrency?.group;
+
+      expect(group).toContain(expectation.groupPrefix);
+      expect(group).not.toContain('${{ github.workflow }}');
+      expect(calledWorkflow.concurrency?.['cancel-in-progress']).toBe(true);
+    }
+  });
+
   it('Verify Traceability uses argv-safe Alloy arguments and read-only validation jobs', () => {
     const ci = parseWorkflow('ci.yml');
     expect(ci.jobs?.['verify-entry']?.permissions).toEqual({
