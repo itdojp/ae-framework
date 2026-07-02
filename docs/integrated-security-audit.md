@@ -42,6 +42,24 @@ Analyzes packages for:
 
 **Tools Used**: pnpm audit, pnpm outdated, custom license analyzer
 
+When `pnpm audit` finds an existing advisory set that requires staged
+remediation, generate a report-only classification before changing CI
+thresholds or adding waivers:
+
+```bash
+mkdir -p artifacts/security
+pnpm audit --audit-level=moderate --json > artifacts/security/pnpm-audit.json || true
+pnpm run security:audit:classify -- \
+  --input artifacts/security/pnpm-audit.json \
+  --output-json artifacts/security/pnpm-audit-classification.json \
+  --output-md artifacts/security/pnpm-audit-classification.md
+```
+
+The classification groups advisories by direct/transitive dependency,
+production/development/test exposure, and `pnpm audit` action. It is
+**report-only** evidence for remediation planning; it does not approve
+baselines, waivers, or weaker security gates.
+
 ### 2. Secrets Scanning
 
 Detects:
@@ -89,6 +107,24 @@ pnpm run security:integrated:compliance
 - シークレット検出: gitleaks + 独自パターン
 - コンプライアンス: ポリシー/OWASP/NIST 等の準拠確認
 - コード解析: セキュリティ観点の静的解析
+
+`pnpm audit` に既存 advisory set があり、段階的な remediation が必要な
+場合は、CI threshold や waiver を変更する前に report-only の分類証跡を
+生成します。
+
+```bash
+mkdir -p artifacts/security
+pnpm audit --audit-level=moderate --json > artifacts/security/pnpm-audit.json || true
+pnpm run security:audit:classify -- \
+  --input artifacts/security/pnpm-audit.json \
+  --output-json artifacts/security/pnpm-audit-classification.json \
+  --output-md artifacts/security/pnpm-audit-classification.md
+```
+
+この分類は direct/transitive dependency、production/development/test
+exposure、`pnpm audit` action ごとに advisory を整理します。これは
+remediation planning 用の report-only evidence であり、baseline、
+waiver、security gate 弱体化の承認にはなりません。
 
 ### 出力の読み方
 - 重要度（critical/high/medium/low）と影響範囲を確認
@@ -227,28 +263,28 @@ fi
       "status": "passed",
       "vulnerabilities": 0,
       "outdatedPackages": 2,
-      "details": [...]
+      "details": []
     },
     "secrets": {
       "status": "failed",
       "exposedSecrets": 1,
-      "details": [...]
+      "details": []
     },
     "compliance": {
       "status": "passed",
       "policies": 15,
       "violations": 0,
-      "details": [...]
+      "details": []
     },
     "vulnerabilities": {
       "status": "passed",
       "codeIssues": 0,
-      "details": [...]
+      "details": []
     },
     "codeAnalysis": {
       "status": "passed",
       "securityIssues": 0,
-      "details": [...]
+      "details": []
     }
   }
 }
