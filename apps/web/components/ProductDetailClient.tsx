@@ -7,13 +7,15 @@ import { Button } from '@ae-framework/ui';
 import { ProductForm } from './ProductForm';
 import Link from 'next/link';
 
+type ProductCategory = 'electronics';
+
 interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
   stock: number;
-  category: string;
+  category: ProductCategory;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -33,12 +35,12 @@ export function ProductDetailClient({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
 
-  const { data: product, isLoading, error } = useQuery({
+  const { data: product, isLoading, error } = useQuery<Product, Error>({
     queryKey: ['product', id],
-    queryFn: async () => {
+    queryFn: async (): Promise<Product> => {
       const response = await fetch(`/api/products/${id}`);
       if (!response.ok) throw new Error('Failed to fetch product');
-      return response.json();
+      return (await response.json()) as Product;
     }
   });
 
