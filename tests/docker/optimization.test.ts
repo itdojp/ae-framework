@@ -152,9 +152,19 @@ describe('Docker Production Optimization - Phase 1.4', () => {
 
         expectCopiedAfterInstall(content, /^COPY\s+\.github\/\s+\.\/\.github\/\s*$/m, '.github metadata must be copied');
         expectCopiedAfterInstall(content, /^COPY\s+policy\/\s+\.\/policy\/\s*$/m, 'policy metadata must be copied');
+        expectCopiedAfterInstall(
+          content,
+          /^COPY\s+spec\/0_first_valid_spec\.md\s+\.\/spec\/0_first_valid_spec\.md\s*$/m,
+          'required spec fixture must be copied',
+        );
         expectCopiedAfterInstall(content, /^COPY\s+docker\/\s+\.\/docker\/\s*$/m, 'Docker metadata must be copied');
         expectCopiedAfterInstall(content, /^COPY\s+podman\/\s+\.\/podman\/\s*$/m, 'Podman metadata must be copied');
         expectCopiedAfterInstall(content, /^COPY\s+infra\/\s+\.\/infra\/\s*$/m, 'infra metadata must be copied');
+        expectCopiedAfterInstall(
+          content,
+          /^COPY\s+examples\/temporal-workflow-adapter\/\s+\.\/examples\/temporal-workflow-adapter\/\s*$/m,
+          'Temporal Workflow adapter example must be copied',
+        );
         expectCopiedAfterInstall(
           content,
           /^COPY\s+examples\/assurance-control-plane\/\s+\.\/examples\/assurance-control-plane\/\s*$/m,
@@ -175,13 +185,22 @@ describe('Docker Production Optimization - Phase 1.4', () => {
         for (const requiredPattern of [
           '!.github/**',
           '!policy/**',
+          '!spec/0_first_valid_spec.md',
           '!docker/**',
           '!podman/**',
           '!infra/**',
+          '!examples/temporal-workflow-adapter/src/**',
           '!examples/assurance-control-plane/**',
         ]) {
           expect(content, `${requiredPattern} must be allowed for Docker test image`).toContain(requiredPattern);
         }
+        expect(content, 'Temporal Workflow adapter context should default-deny future generated files').toContain(
+          'examples/temporal-workflow-adapter/**',
+        );
+        expect(content, 'Temporal Workflow adapter dependencies must stay out of the build context').toContain(
+          'examples/temporal-workflow-adapter/node_modules/',
+        );
+        expect(content, 'Spec context should default-deny unrelated specs').toContain('spec/**');
       },
     );
   });
@@ -245,7 +264,7 @@ describe('Docker Production Optimization - Phase 1.4', () => {
       const lines = content.split('\n').filter(line => line.trim() && !line.trim().startsWith('#'));
       
       expect(lines.length, 'Should have comprehensive ignore list').toBeGreaterThan(20);
-      expect(lines.length, 'Should not be excessively long').toBeLessThan(100);
+      expect(lines.length, 'Should not be excessively long').toBeLessThan(120);
     });
   });
 
