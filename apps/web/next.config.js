@@ -1,7 +1,7 @@
 const createNextIntlPlugin = require('next-intl/plugin');
 const path = require('path');
 
-const withNextIntl = createNextIntlPlugin();
+const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
