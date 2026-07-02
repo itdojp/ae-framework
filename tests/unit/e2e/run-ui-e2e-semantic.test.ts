@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildUiE2ESummary,
+  getLocalServerPrerequisiteCommands,
   parseArgs,
   renderMarkdown,
   toAdapterSummary,
@@ -27,6 +28,34 @@ describe('run-ui-e2e-semantic helpers', () => {
 
     expect(options.baseUrl).toBe('http://localhost:3000');
     expect(options.skipServer).toBe(true);
+  });
+
+  it('builds design tokens before starting the local Next dev server', () => {
+    const commands = getLocalServerPrerequisiteCommands(
+      parseArgs(['node', 'scripts/e2e/run-ui-e2e-semantic.mjs']),
+    );
+
+    expect(commands).toEqual([
+      {
+        id: 'design-tokens',
+        command: 'pnpm',
+        args: ['run', 'build:tokens'],
+      },
+    ]);
+  });
+
+  it('does not build local server prerequisites when using an existing server', () => {
+    const commands = getLocalServerPrerequisiteCommands(
+      parseArgs([
+        'node',
+        'scripts/e2e/run-ui-e2e-semantic.mjs',
+        '--base-url',
+        'http://localhost:3000',
+        '--skip-server',
+      ]),
+    );
+
+    expect(commands).toEqual([]);
   });
 
   it('builds an ok summary for fully passing scenarios', () => {
