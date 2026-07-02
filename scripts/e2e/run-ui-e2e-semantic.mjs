@@ -14,6 +14,13 @@ const DEFAULT_OUTPUT_JSON = 'artifacts/e2e/ui-e2e-summary.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/e2e/ui-e2e-summary.md';
 const DEFAULT_ADAPTER_SUMMARY = 'artifacts/e2e/summary.json';
 const DEFAULT_ARIA_DIR = 'artifacts/e2e/ui-aria-snapshots';
+const LOCAL_SERVER_PREREQUISITE_COMMANDS = [
+  {
+    id: 'design-tokens',
+    command: 'pnpm',
+    args: ['run', 'build:tokens'],
+  },
+];
 
 function ensureParentDir(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -170,6 +177,36 @@ function printHelp() {
       + '  --skip-server                Do not start the local web server\n'
       + '  --help, -h                   Show help\n',
   );
+}
+
+export function getLocalServerPrerequisiteCommands(options) {
+  if (options.skipServer || options.baseUrl) {
+    return [];
+  }
+  return LOCAL_SERVER_PREREQUISITE_COMMANDS.map(({ id, command, args }) => ({
+    id,
+    command,
+    args: [...args],
+  }));
+}
+
+async function runCommand({ id, command, args }) {
+  process.stdout.write(`[ui-e2e] preparing ${id}: ${command} ${args.join(' ')}\n`);
+  await new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: 'inherit',
+    });
+    child.on('error', reject);
+    child.on('exit', (code, signal) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      reject(new Error(`${command} ${args.join(' ')} failed with ${signal ? `signal ${signal}` : `exit code ${code}`}`));
+    });
+  });
 }
 
 async function captureAriaSnapshot(page, ariaDir, scenarioId, suffix) {
@@ -358,6 +395,10 @@ async function startServerIfNeeded(options, onSpawn = () => {}) {
       baseUrl: options.baseUrl || `http://${options.host}:${options.port}`,
       serverProcess: null,
     };
+  }
+
+  for (const command of getLocalServerPrerequisiteCommands(options)) {
+    await runCommand(command);
   }
 
   const serverProcess = spawn(
