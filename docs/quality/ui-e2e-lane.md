@@ -32,10 +32,10 @@ This is the minimum UI semantic E2E lane. It records role/name assertions and AR
 pnpm run ui-e2e:semantic
 ```
 
-By default, this starts the `@ae-framework/web` Next dev server on `127.0.0.1:3100`. If an existing server is already running, use the following form.
+By default, this starts the `@ae-framework/web` Next dev server on `localhost:3100`. The localized Next.js pages use middleware during development, so the default host intentionally matches Next dev's internal localhost proxy target. If an existing server is already running, use the following form.
 
 ```bash
-pnpm run ui-e2e:semantic -- --base-url http://127.0.0.1:3000 --skip-server
+pnpm run ui-e2e:semantic -- --base-url http://localhost:3000 --skip-server
 ```
 
 ### CI behavior
@@ -73,10 +73,10 @@ pnpm run ui-e2e:semantic -- --base-url http://127.0.0.1:3000 --skip-server
 pnpm run ui-e2e:semantic
 ```
 
-既定では `@ae-framework/web` の Next dev server を `127.0.0.1:3100` で起動します。既存サーバを使う場合は次を使います。
+既定では `@ae-framework/web` の Next dev server を `localhost:3100` で起動します。開発時の localized Next.js pages は middleware を使うため、既定ホストは Next dev の内部 localhost proxy target と一致させています。既存サーバを使う場合は次を使います。
 
 ```bash
-pnpm run ui-e2e:semantic -- --base-url http://127.0.0.1:3000 --skip-server
+pnpm run ui-e2e:semantic -- --base-url http://localhost:3000 --skip-server
 ```
 
 ### CI 挙動

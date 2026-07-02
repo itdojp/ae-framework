@@ -2,11 +2,33 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildUiE2ESummary,
+  parseArgs,
   renderMarkdown,
   toAdapterSummary,
 } from '../../../scripts/e2e/run-ui-e2e-semantic.mjs';
 
 describe('run-ui-e2e-semantic helpers', () => {
+  it('defaults to localhost so Next dev middleware proxying reaches the same listener', () => {
+    const options = parseArgs(['node', 'scripts/e2e/run-ui-e2e-semantic.mjs']);
+
+    expect(options.host).toBe('localhost');
+    expect(options.port).toBe(3100);
+  });
+
+  it('accepts the pnpm argument separator before runner options', () => {
+    const options = parseArgs([
+      'node',
+      'scripts/e2e/run-ui-e2e-semantic.mjs',
+      '--',
+      '--base-url',
+      'http://localhost:3000',
+      '--skip-server',
+    ]);
+
+    expect(options.baseUrl).toBe('http://localhost:3000');
+    expect(options.skipServer).toBe(true);
+  });
+
   it('builds an ok summary for fully passing scenarios', () => {
     const summary = buildUiE2ESummary({
       baseUrl: 'http://127.0.0.1:3100',
