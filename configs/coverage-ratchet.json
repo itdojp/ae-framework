@@ -1,0 +1,10 @@
+{
+  "targetThreshold": 80,
+  "mainThreshold": 36.18,
+  "minimumStep": 1,
+  "source": {
+    "observedRun": "https://github.com/itdojp/ae-framework/actions/runs/28600653332",
+    "observedCoverage": 36.18,
+    "observedAt": "2026-07-02"
+  }
+}

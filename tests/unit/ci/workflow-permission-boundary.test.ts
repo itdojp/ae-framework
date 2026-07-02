@@ -1023,6 +1023,49 @@ describe('CI workflow read-only PR validation boundaries', () => {
     expectCheckoutCredentialsDisabled(jobSteps(specCheck, 'tla'));
   });
 
+  it('coverage-check enforces main through a staged ratchet threshold', () => {
+    const workflow = parseWorkflow('coverage-check.yml');
+    const rawWorkflow = readWorkflow('coverage-check.yml');
+    const gate = workflow.jobs?.gate;
+    const gateSteps = jobSteps(workflow, 'gate');
+    const checkoutIndex = gateSteps.findIndex((step: any) => step?.uses === 'actions/checkout@v4');
+    const thresholdIndex = gateSteps.findIndex((step: any) => step?.id === 'th');
+    const thresholdScript = gateSteps[thresholdIndex]?.with?.script;
+    const ratchetConfig = JSON.parse(fs.readFileSync(
+      path.resolve(process.cwd(), 'configs/coverage-ratchet.json'),
+      'utf8',
+    ));
+
+    expect(gate?.outputs).toMatchObject({
+      threshold_source: '${{ steps.th.outputs.threshold_source }}',
+      ratchet_threshold: '${{ steps.th.outputs.ratchet_threshold }}',
+      target_threshold: '${{ steps.th.outputs.target_threshold }}',
+    });
+    expect(checkoutIndex).toBeGreaterThanOrEqual(0);
+    expect(thresholdIndex).toBeGreaterThan(checkoutIndex);
+    expect(gateSteps[checkoutIndex]?.with).toMatchObject({ 'persist-credentials': false });
+
+    expect(thresholdScript).toContain('configs/coverage-ratchet.json');
+    expect(thresholdScript).toContain("String(value).trim() === ''");
+    expect(thresholdScript).toContain('hasDefaultThreshold');
+    expect(thresholdScript).toContain('COVERAGE_RATCHET_THRESHOLD');
+    expect(thresholdScript).toContain('COVERAGE_TARGET_THRESHOLD');
+    expect(thresholdScript).toContain("context.ref === 'refs/heads/main'");
+    expect(thresholdScript).toContain('Math.min(target, ratchetThreshold)');
+    expect(rawWorkflow).toContain('- Derived: label > main ratchet > repo var > default');
+    expect(rawWorkflow).toContain('- Threshold source: ${{ needs.gate.outputs.threshold_source }}');
+    expect(rawWorkflow).toContain('- Ratchet threshold: ${{ needs.gate.outputs.ratchet_threshold || \'n/a\' }}%');
+    expect(rawWorkflow).toContain('- Target threshold: ${{ needs.gate.outputs.target_threshold }}%');
+
+    expect(ratchetConfig).toMatchObject({
+      targetThreshold: 80,
+      mainThreshold: 36.18,
+      minimumStep: 1,
+    });
+    expect(ratchetConfig.source?.observedRun).toBe('https://github.com/itdojp/ae-framework/actions/runs/28600653332');
+    expect(ratchetConfig.source?.observedCoverage).toBe(36.18);
+  });
+
   it('Parallel E2E lane remains a no-op success on default PR runs', () => {
     const workflow = parseWorkflow('parallel-test-execution.yml');
     const testE2e = workflow.jobs?.['test-e2e'];
