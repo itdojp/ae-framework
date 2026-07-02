@@ -13,7 +13,7 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "vitest": "^2.0.5"
+    "vitest": "^3.2.6"
   },
   "exports": {
     ".": "./src/index.js"

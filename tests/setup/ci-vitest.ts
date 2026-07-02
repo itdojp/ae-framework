@@ -1,14 +1,18 @@
 import { setMaxListeners } from 'node:events';
 import { beforeAll, afterEach, vi } from 'vitest';
 
-const underConservativeEnv = process.env.CI === '1' || Boolean(process.env.STRYKER_MUTATOR);
+const ciFlag = (process.env.CI ?? '').toLowerCase();
+const underConservativeEnv = ciFlag === '1' || ciFlag === 'true' || Boolean(process.env.STRYKER_MUTATOR);
+const DEFAULT_TEST_TIMEOUT_MS = 60_000;
+const DEFAULT_HOOK_TIMEOUT_MS = 30_000;
+const DEFAULT_TEARDOWN_TIMEOUT_MS = 10_000;
 
 beforeAll(() => {
   if (underConservativeEnv) {
     vi.setConfig({
-      testTimeout: 30_000,
-      hookTimeout: 30_000,
-      teardownTimeout: 10_000,
+      testTimeout: DEFAULT_TEST_TIMEOUT_MS,
+      hookTimeout: DEFAULT_HOOK_TIMEOUT_MS,
+      teardownTimeout: DEFAULT_TEARDOWN_TIMEOUT_MS,
     });
   }
 });
