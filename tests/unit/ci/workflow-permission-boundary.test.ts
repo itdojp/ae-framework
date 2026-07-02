@@ -1047,15 +1047,22 @@ describe('CI workflow read-only PR validation boundaries', () => {
 
     expect(thresholdScript).toContain('configs/coverage-ratchet.json');
     expect(thresholdScript).toContain("String(value).trim() === ''");
+    expect(thresholdScript).toContain('parsedDefaultThreshold');
     expect(thresholdScript).toContain('hasDefaultThreshold');
+    expect(thresholdScript).toContain('thresholdSource = `label:coverage:${labelThreshold}`');
+    expect(thresholdScript).toContain('Ignoring non-numeric coverage label threshold');
+    expect(thresholdScript).not.toContain('thresholdSource = `label:${cov}`');
     expect(thresholdScript).toContain('COVERAGE_RATCHET_THRESHOLD');
     expect(thresholdScript).toContain('COVERAGE_TARGET_THRESHOLD');
     expect(thresholdScript).toContain("context.ref === 'refs/heads/main'");
     expect(thresholdScript).toContain('Math.min(target, ratchetThreshold)');
     expect(rawWorkflow).toContain('- Derived: label > main ratchet > repo var > default');
-    expect(rawWorkflow).toContain('- Threshold source: ${{ needs.gate.outputs.threshold_source }}');
-    expect(rawWorkflow).toContain('- Ratchet threshold: ${{ needs.gate.outputs.ratchet_threshold || \'n/a\' }}%');
-    expect(rawWorkflow).toContain('- Target threshold: ${{ needs.gate.outputs.target_threshold }}%');
+    expect(rawWorkflow).toContain('- Threshold source: ${THRESHOLD_SOURCE:-n/a}');
+    expect(rawWorkflow).toContain('- Ratchet threshold: ${RATCHET_THRESHOLD:-n/a}%');
+    expect(rawWorkflow).toContain('- Target threshold: ${TARGET_THRESHOLD:-n/a}%');
+    expect(rawWorkflow).toContain('THRESHOLD_SOURCE: ${{ needs.gate.outputs.threshold_source }}');
+    expect(rawWorkflow).toContain('RATCHET_THRESHOLD: ${{ needs.gate.outputs.ratchet_threshold }}');
+    expect(rawWorkflow).toContain('TARGET_THRESHOLD: ${{ needs.gate.outputs.target_threshold }}');
 
     expect(ratchetConfig).toMatchObject({
       targetThreshold: 80,

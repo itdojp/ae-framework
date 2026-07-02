@@ -86,20 +86,25 @@ jobs:
             };
 
             const ratchet = loadRatchet();
-            const def = finite(process.env.COVERAGE_DEFAULT_THRESHOLD, 80);
+            const parsedDefaultThreshold = finite(process.env.COVERAGE_DEFAULT_THRESHOLD, NaN);
+            const hasDefaultThreshold = Number.isFinite(parsedDefaultThreshold);
+            const def = hasDefaultThreshold ? parsedDefaultThreshold : 80;
             const target = finite(process.env.COVERAGE_TARGET_THRESHOLD, Number.isFinite(ratchet.targetThreshold) ? ratchet.targetThreshold : def);
             const repoRatchet = finite(process.env.COVERAGE_RATCHET_THRESHOLD, NaN);
             const ratchetThreshold = Number.isFinite(repoRatchet) ? repoRatchet : ratchet.mainThreshold;
             const onMainPush = context.eventName === 'push' && context.ref === 'refs/heads/main';
             const enforceMain = (process.env.COVERAGE_ENFORCE_MAIN || '0') === '1';
-            const hasDefaultThreshold = String(process.env.COVERAGE_DEFAULT_THRESHOLD || '').trim() !== '';
 
             let threshold = def;
             let thresholdSource = hasDefaultThreshold ? 'vars.COVERAGE_DEFAULT_THRESHOLD' : 'default';
             if (cov) {
               const labelThreshold = Number(cov.split(':')[1]);
-              threshold = Number.isFinite(labelThreshold) ? labelThreshold : def;
-              thresholdSource = `label:${cov}`;
+              if (Number.isFinite(labelThreshold)) {
+                threshold = labelThreshold;
+                thresholdSource = `label:coverage:${labelThreshold}`;
+              } else {
+                core.warning('Ignoring non-numeric coverage label threshold; falling back to the default threshold');
+              }
             } else if (onMainPush && enforceMain && Number.isFinite(ratchetThreshold)) {
               threshold = Math.min(target, ratchetThreshold);
               thresholdSource = Number.isFinite(repoRatchet) ? 'vars.COVERAGE_RATCHET_THRESHOLD' : ratchet.source;
@@ -124,11 +129,11 @@ jobs:
           && printf "%s\n" "- Enforce on main: ${COVERAGE_ENFORCE_MAIN:-0}" \
           && printf "%s\n" "- Default threshold: ${COVERAGE_DEFAULT_THRESHOLD:-80} (override via coverage:<pct>)" \
           && printf "%s\n" "- Derived: label > main ratchet > repo var > default" \
-          && printf "%s\n" "- Effective threshold: ${{ needs.gate.outputs.threshold }}%" \
-          && printf "%s\n" "- Threshold source: ${{ needs.gate.outputs.threshold_source }}" \
-          && printf "%s\n" "- Ratchet threshold: ${{ needs.gate.outputs.ratchet_threshold || 'n/a' }}%" \
-          && printf "%s\n" "- Target threshold: ${{ needs.gate.outputs.target_threshold }}%" \
-          && printf "%s\n" "- Policy: ${{ needs.gate.outputs.strict == 'true' && 'enforced' || 'report-only' }}" \
+          && printf "%s\n" "- Effective threshold: ${EFFECTIVE_THRESHOLD:-n/a}%" \
+          && printf "%s\n" "- Threshold source: ${THRESHOLD_SOURCE:-n/a}" \
+          && printf "%s\n" "- Ratchet threshold: ${RATCHET_THRESHOLD:-n/a}%" \
+          && printf "%s\n" "- Target threshold: ${TARGET_THRESHOLD:-n/a}%" \
+          && printf "%s\n" "- Policy: ${COVERAGE_POLICY:-report-only}" \
           && printf "%s\n" "Dev toggles (optional):" \
           && printf "%s\n" "- AE_COVERAGE_DRY_RUN=${AE_COVERAGE_DRY_RUN:-0}" \
           && printf "%s\n" "- AE_COVERAGE_SKIP_COMMENT=${AE_COVERAGE_SKIP_COMMENT:-0}" \
@@ -136,6 +141,11 @@ jobs:
         env:
           COVERAGE_ENFORCE_MAIN: ${{ vars.COVERAGE_ENFORCE_MAIN }}
           COVERAGE_DEFAULT_THRESHOLD: ${{ vars.COVERAGE_DEFAULT_THRESHOLD }}
+          EFFECTIVE_THRESHOLD: ${{ needs.gate.outputs.threshold }}
+          THRESHOLD_SOURCE: ${{ needs.gate.outputs.threshold_source }}
+          RATCHET_THRESHOLD: ${{ needs.gate.outputs.ratchet_threshold }}
+          TARGET_THRESHOLD: ${{ needs.gate.outputs.target_threshold }}
+          COVERAGE_POLICY: ${{ needs.gate.outputs.strict == 'true' && 'enforced' || 'report-only' }}
           AE_COVERAGE_DRY_RUN: ${{ env.AE_COVERAGE_DRY_RUN }}
           AE_COVERAGE_SKIP_COMMENT: ${{ env.AE_COVERAGE_SKIP_COMMENT }}
           AE_COVERAGE_SUMMARY_PATH: ${{ env.AE_COVERAGE_SUMMARY_PATH }}
