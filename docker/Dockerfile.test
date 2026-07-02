@@ -80,6 +80,7 @@ COPY config/ ./config/
 COPY scripts/ ./scripts/
 COPY .github/ ./.github/
 COPY policy/ ./policy/
+COPY spec/0_first_valid_spec.md ./spec/0_first_valid_spec.md
 COPY docker/ ./docker/
 COPY podman/ ./podman/
 COPY infra/ ./infra/
@@ -91,6 +92,7 @@ RUN chmod +x scripts/*.sh scripts/*.mjs scripts/*.js
 COPY src/ ./src/
 COPY templates/ ./templates/
 COPY examples/inventory/ ./examples/inventory/
+COPY examples/temporal-workflow-adapter/ ./examples/temporal-workflow-adapter/
 COPY examples/assurance-control-plane/ ./examples/assurance-control-plane/
 COPY fixtures/ ./fixtures/
 COPY samples/ ./samples/

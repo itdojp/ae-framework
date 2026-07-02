@@ -59,6 +59,8 @@ LICENSE
 docs/
 examples/*
 !examples/inventory/
+!examples/temporal-workflow-adapter/
+examples/temporal-workflow-adapter/**
 
 # Configuration files (development)
 .env.local
@@ -107,9 +109,18 @@ rush.json
 !eslint.config.js
 !tests/**
 !examples/inventory/**
+!examples/temporal-workflow-adapter/package.json
+!examples/temporal-workflow-adapter/tsconfig.json
+!examples/temporal-workflow-adapter/README.md
+!examples/temporal-workflow-adapter/src/
+!examples/temporal-workflow-adapter/src/**
+examples/temporal-workflow-adapter/node_modules/
 !.github/
 !.github/**
 !policy/**
+!spec/
+spec/**
+!spec/0_first_valid_spec.md
 !docker/**
 !podman/**
 !infra/**
