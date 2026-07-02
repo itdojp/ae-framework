@@ -460,6 +460,18 @@ describe('workflow permission boundaries', () => {
     expect(autoRerunJob).toContain('workflowHeadRepo && workflowHeadRepo !== expectedRepo');
   });
 
+  it('flake retry queries workflow runs with GET when passing gh api fields', () => {
+    const workflow = readWorkflow('flake-detect.yml');
+    const flakeRetryJob = extractJobBlock(workflow, 'flake-retry');
+
+    expect(flakeRetryJob).toMatch(
+      /gh api (?:--method GET|-X GET) "repos\/\$\{REPO\}\/actions\/workflows\/\$\{wf_id\}\/runs" -f per_page=10 -f status=completed/,
+    );
+    expect(flakeRetryJob).not.toContain(
+      'gh api "repos/${REPO}/actions/workflows/${wf_id}/runs" -f per_page=10 -f status=completed',
+    );
+  });
+
   it('keeps pull-request DoD report-only while preserving push/main enforcement', () => {
     const workflow = readWorkflow('quality-gates-centralized.yml');
     const dod = extractJobBlock(workflow, 'dod');
