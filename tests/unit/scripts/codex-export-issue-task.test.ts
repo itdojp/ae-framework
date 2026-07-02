@@ -2,11 +2,13 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -36,6 +38,12 @@ function writeFakeGh(tempDir: string, payload: { title: string; url: string; bod
     { mode: 0o755 },
   );
   return ghPath;
+}
+
+function makeTempDir() {
+  const tempRoot = join(realpathSync(tmpdir()), 'ae-framework-codex-issue-task-tests');
+  mkdirSync(tempRoot, { recursive: true });
+  return mkdtempSync(join(tempRoot, 'codex-issue-task-'));
 }
 
 describe('codex issue task exporter', () => {
@@ -79,9 +87,7 @@ describe('codex issue task exporter', () => {
   });
 
   it('runs gh issue view and writes the local task file', () => {
-    const tempRoot = join(process.cwd(), 'tmp');
-    mkdirSync(tempRoot, { recursive: true });
-    const tempDir = mkdtempSync(join(tempRoot, 'codex-issue-task-'));
+    const tempDir = makeTempDir();
     const ghPath = writeFakeGh(tempDir, {
       title: 'Exported Issue',
       url: 'https://github.com/itdojp/ae-framework/issues/3490',
@@ -109,9 +115,7 @@ describe('codex issue task exporter', () => {
   });
 
   it('rejects symlinked output directories that resolve outside the work root', () => {
-    const tempRoot = join(process.cwd(), 'tmp');
-    mkdirSync(tempRoot, { recursive: true });
-    const tempDir = mkdtempSync(join(tempRoot, 'codex-issue-task-'));
+    const tempDir = makeTempDir();
     const workRoot = join(tempDir, 'work');
     const outsideRoot = join(tempDir, 'outside');
     mkdirSync(workRoot, { recursive: true });
@@ -141,9 +145,7 @@ describe('codex issue task exporter', () => {
   });
 
   it('rejects symlink output files even when the target does not exist', () => {
-    const tempRoot = join(process.cwd(), 'tmp');
-    mkdirSync(tempRoot, { recursive: true });
-    const tempDir = mkdtempSync(join(tempRoot, 'codex-issue-task-'));
+    const tempDir = makeTempDir();
     const workRoot = join(tempDir, 'work');
     const outsideRoot = join(tempDir, 'outside');
     const taskDir = join(workRoot, '.codex-local', 'tasks');
