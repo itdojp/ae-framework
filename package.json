@@ -615,7 +615,8 @@
       "@microsoft/api-extractor>minimatch": "10.2.3",
       "@ts-morph/common>minimatch": "10.2.3",
       "@types/minimatch>minimatch": "10.2.3",
-      "type-coverage-core>minimatch": "9.0.9"
+      "type-coverage-core>minimatch": "9.0.9",
+      "giget>tar": "7.5.19"
     }
   }
 }
