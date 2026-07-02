@@ -75,7 +75,7 @@ jobs:
         run: |
           set -euo pipefail
           wf_id=$(gh api "repos/${REPO}/actions/workflows/${WORKFLOW_FILE}" --jq '.id')
-          runs=$(gh api "repos/${REPO}/actions/workflows/${wf_id}/runs" -f per_page=10 -f status=completed)
+          runs=$(gh api --method GET "repos/${REPO}/actions/workflows/${wf_id}/runs" -f per_page=10 -f status=completed)
           run_id=$(echo "$runs" | jq -r '.workflow_runs[]
             | select((.run_attempt // 1) == 1)
             | select(.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out" or .conclusion == "action_required")
