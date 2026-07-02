@@ -969,6 +969,7 @@ describe('CI workflow read-only PR validation boundaries', () => {
       'podman-smoke-entry': {
         workflow: 'podman-smoke.yml',
         groupPrefix: 'podman-smoke-',
+        expectedTokens: ['${{ github.event_name }}'],
       },
       'verify-entry': {
         workflow: 'verify.yml',
@@ -988,7 +989,10 @@ describe('CI workflow read-only PR validation boundaries', () => {
       const group = calledWorkflow.concurrency?.group;
 
       expect(group).toContain(expectation.groupPrefix);
-      expect(group).not.toContain('${{ github.workflow }}');
+      expect(group).not.toContain('github.workflow');
+      for (const token of 'expectedTokens' in expectation ? expectation.expectedTokens : []) {
+        expect(group).toContain(token);
+      }
       expect(calledWorkflow.concurrency?.['cancel-in-progress']).toBe(true);
     }
   });
