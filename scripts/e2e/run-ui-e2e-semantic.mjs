@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 
 const DEFAULT_PORT = 3100;
-const DEFAULT_HOST = '127.0.0.1';
+const DEFAULT_HOST = 'localhost';
 const DEFAULT_OUTPUT_JSON = 'artifacts/e2e/ui-e2e-summary.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/e2e/ui-e2e-summary.md';
 const DEFAULT_ADAPTER_SUMMARY = 'artifacts/e2e/summary.json';
@@ -47,7 +47,7 @@ async function waitForServer(url, timeoutMs = 120000) {
   throw new Error(`Timed out waiting for ${url}: ${lastError}`);
 }
 
-function parseArgs(argv = process.argv) {
+export function parseArgs(argv = process.argv) {
   const options = {
     host: DEFAULT_HOST,
     port: DEFAULT_PORT,
@@ -70,6 +70,9 @@ function parseArgs(argv = process.argv) {
   for (let index = 2; index < argv.length; index += 1) {
     const arg = argv[index];
     const next = argv[index + 1];
+    if (arg === '--') {
+      continue;
+    }
     if (arg === '--help' || arg === '-h') {
       options.help = true;
       continue;
