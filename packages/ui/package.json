@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "UI components for ae-framework",
   "main": "dist/index.js",
-  "module": "dist/index.esm.js", 
+  "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -12,7 +12,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts --external react,react-dom",
     "dev": "tsup src/index.ts --format cjs,esm --dts --external react,react-dom --watch",
     "clean": "rm -rf dist",
-    "lint": "eslint src --ext .ts,.tsx",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src --ext .ts,.tsx",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -29,6 +29,8 @@
   "devDependencies": {
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
+    "@typescript-eslint/eslint-plugin": "^8.40.0",
+    "@typescript-eslint/parser": "^8.40.0",
     "eslint": "^8.56.0",
     "eslint-plugin-jsx-a11y": "^6.8.0",
     "eslint-plugin-react": "^7.33.2",
