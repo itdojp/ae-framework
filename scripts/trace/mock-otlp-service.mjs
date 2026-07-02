@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import fastify from "fastify";
 import { BasicTracerProvider, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-base";
-import { Resource } from "@opentelemetry/resources";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-import { diag, DiagConsoleLogger, DiagLogLevel, trace } from "@opentelemetry/api";
+import { diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -72,16 +72,14 @@ function spanToOtlp(span) {
 export async function produceMockOtlp(outputPath = defaultOutputFile) {
   const resolvedOutputPath = path.resolve(outputPath);
   const outputDir = path.dirname(resolvedOutputPath);
+  const exporter = new CollectingExporter();
   const provider = new BasicTracerProvider({
-    resource: new Resource({
+    resource: resourceFromAttributes({
       [SemanticResourceAttributes.SERVICE_NAME]: "kvonce-mock-service",
     }),
+    spanProcessors: [new SimpleSpanProcessor(exporter)],
   });
-  const exporter = new CollectingExporter();
-  provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
-  provider.register();
-
-  const tracer = trace.getTracer("kvonce-mock-tracer");
+  const tracer = provider.getTracer("kvonce-mock-tracer");
 
   const app = fastify();
 

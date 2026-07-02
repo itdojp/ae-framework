@@ -4,7 +4,8 @@
  */
 
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import type { Resource } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
@@ -206,7 +207,7 @@ export class EnhancedTelemetry {
   }
 
   private createResource(): Resource {
-    return new Resource({
+    return resourceFromAttributes({
       [SemanticResourceAttributes.SERVICE_NAME]: this.config.serviceName,
       [SemanticResourceAttributes.SERVICE_VERSION]: this.config.serviceVersion,
       [SemanticResourceAttributes.SERVICE_NAMESPACE]: this.config.serviceNamespace,

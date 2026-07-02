@@ -1,5 +1,5 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { toMessage } from '../utils/error-utils.js';
@@ -9,7 +9,7 @@ const isProduction = process.env['NODE_ENV'] === 'production';
 const enableOTLP = process.env['OTEL_EXPORTER_OTLP_ENDPOINT'] !== undefined;
 
 // Configure resource
-const resource = new Resource({
+const resource = resourceFromAttributes({
   [SemanticResourceAttributes.SERVICE_NAME]: 'ae-framework',
   [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
   [SemanticResourceAttributes.SERVICE_NAMESPACE]: 'phase6',
