@@ -295,7 +295,7 @@ jobs:
           name: verify-pr-summary
           path: pr-summary.md
   post-summary:
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' || inputs.trigger == 'pull_request' }}
     runs-on: ubuntu-latest
     needs: [build-summary]
     permissions:
