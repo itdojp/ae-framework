@@ -606,7 +606,16 @@
       "fdir>picomatch": "4.0.4",
       "@rollup/pluginutils>picomatch": "4.0.4",
       "tsup>rollup": "4.62.2",
-      "fix-dts-default-cjs-exports>rollup": "4.62.2"
+      "fix-dts-default-cjs-exports>rollup": "4.62.2",
+      "@next/eslint-plugin-next>glob": "10.5.0",
+      "@storybook/builder-vite>rollup": "3.30.0",
+      "picomatch@2.3.1": "2.3.2",
+      "minimatch@3.1.2": "3.1.4",
+      "minimatch@5.1.6": "5.1.8",
+      "@microsoft/api-extractor>minimatch": "10.2.3",
+      "@ts-morph/common>minimatch": "10.2.3",
+      "@types/minimatch>minimatch": "10.2.3",
+      "type-coverage-core>minimatch": "9.0.9"
     }
   }
 }
