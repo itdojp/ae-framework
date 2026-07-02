@@ -59,8 +59,11 @@ WORKDIR /app
 
 # Copy package files first for better layer caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY tsconfig.json ./tsconfig.json
+COPY configs/tsconfig ./configs/tsconfig
 # Copy workspace packages so pnpm can validate the lockfile against workspace manifests.
 COPY packages/ ./packages/
+COPY scripts/ci/check-package-manager.mjs ./scripts/ci/check-package-manager.mjs
 
 # Enable pnpm and install all dependencies (including dev dependencies for testing)
 RUN corepack enable pnpm && \
@@ -68,7 +71,7 @@ RUN corepack enable pnpm && \
     pnpm install --frozen-lockfile --include-workspace-root
 
 # Copy configuration files used by CI/test scripts.
-COPY vitest.config.ts tsconfig.json eslint.config.js ./
+COPY vitest.config.ts eslint.config.js ./
 COPY configs/ ./configs/
 
 # Copy test setup and utilities

@@ -9,7 +9,8 @@ import { readFileSync, existsSync } from 'fs';
 
 describe('Docker Production Optimization - Phase 1.4', () => {
   const dockerfile = 'podman/Dockerfile';
-  const testDockerfile = 'podman/Dockerfile.test';
+  const podmanTestDockerfile = 'podman/Dockerfile.test';
+  const dockerTestDockerfile = 'docker/Dockerfile.test';
   const podmanSmokeScript = 'scripts/podman/smoke-test.sh';
   const dockerignore = '.dockerignore';
   const dockerCompose = 'podman/compose.dev.yaml';
@@ -82,7 +83,31 @@ describe('Docker Production Optimization - Phase 1.4', () => {
     });
   });
 
-  describe('Podman test image dependency bootstrap', () => {
+  describe('Container test image dependency bootstrap', () => {
+    const expectBootstrapInputsCopiedBeforeInstall = (file: string) => {
+      const content = readFileSync(file, 'utf8');
+      const installIndex = content.search(/\bpnpm\s+install\b[\s\S]*?--include-workspace-root/);
+      const rootTsconfigIndex = content.search(/^COPY\s+tsconfig\.json\s+\.\/tsconfig\.json\s*$/m);
+      const sharedTsconfigIndex = content.search(/^COPY\s+configs\/tsconfig\s+\.\/configs\/tsconfig\s*$/m);
+      const packageManagerCheckIndex = content.search(
+        /^COPY\s+scripts\/ci\/check-package-manager\.mjs\s+\.\/scripts\/ci\/check-package-manager\.mjs\s*$/m,
+      );
+
+      expect(installIndex, `${file} should run pnpm install`).toBeGreaterThanOrEqual(0);
+      expect(rootTsconfigIndex, `${file} must copy root tsconfig before install`).toBeGreaterThanOrEqual(0);
+      expect(sharedTsconfigIndex, `${file} must copy shared tsconfig presets before install`).toBeGreaterThanOrEqual(0);
+      expect(
+        packageManagerCheckIndex,
+        `${file} must copy package-manager check script before install`,
+      ).toBeGreaterThanOrEqual(0);
+      expect(rootTsconfigIndex, `${file} root tsconfig must precede pnpm install`).toBeLessThan(installIndex);
+      expect(sharedTsconfigIndex, `${file} shared tsconfig presets must precede pnpm install`).toBeLessThan(installIndex);
+      expect(
+        packageManagerCheckIndex,
+        `${file} package-manager check script must precede pnpm install`,
+      ).toBeLessThan(installIndex);
+    };
+
     it(
       formatGWT(
         'Podman test image',
@@ -90,16 +115,18 @@ describe('Docker Production Optimization - Phase 1.4', () => {
         'root tsconfig inputs are available before install',
       ),
       () => {
-        const content = readFileSync(testDockerfile, 'utf8');
-        const installIndex = content.search(/\bpnpm\s+install\b[\s\S]*?--include-workspace-root/);
-        const rootTsconfigIndex = content.search(/^COPY\s+tsconfig\.json\s+\.\/tsconfig\.json\s*$/m);
-        const sharedTsconfigIndex = content.search(/^COPY\s+configs\/tsconfig\s+\.\/configs\/tsconfig\s*$/m);
+        expectBootstrapInputsCopiedBeforeInstall(podmanTestDockerfile);
+      },
+    );
 
-        expect(installIndex, 'test Dockerfile should run pnpm install').toBeGreaterThanOrEqual(0);
-        expect(rootTsconfigIndex, 'root tsconfig must be copied before install').toBeGreaterThanOrEqual(0);
-        expect(sharedTsconfigIndex, 'shared tsconfig presets must be copied before install').toBeGreaterThanOrEqual(0);
-        expect(rootTsconfigIndex, 'root tsconfig must precede pnpm install').toBeLessThan(installIndex);
-        expect(sharedTsconfigIndex, 'shared tsconfig presets must precede pnpm install').toBeLessThan(installIndex);
+    it(
+      formatGWT(
+        'Docker test image',
+        'run pnpm install with workspace package prepublish scripts',
+        'root tsconfig inputs are available before install',
+      ),
+      () => {
+        expectBootstrapInputsCopiedBeforeInstall(dockerTestDockerfile);
       },
     );
   });
