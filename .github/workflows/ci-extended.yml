@@ -30,7 +30,7 @@ on:
         type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-extended-${{ github.ref }}-${{ inputs.trigger || github.event_name }}
   cancel-in-progress: true
 
 jobs:

@@ -17,7 +17,7 @@ on:
 
 # Ensure hermetic execution
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: hermetic-ci-${{ github.ref }}-${{ inputs.trigger || github.event_name }}
   cancel-in-progress: true
 
 env:
