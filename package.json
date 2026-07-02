@@ -212,6 +212,7 @@
     "security:analyze": "node scripts/security-analyzer.js",
     "security:secrets": "npx gitleaks detect --no-git --verbose",
     "security:audit": "npm audit --audit-level=moderate",
+    "security:audit:classify": "node scripts/security/summarize-pnpm-audit.mjs",
     "security:integrated": "node scripts/integrated-security-audit.mjs",
     "security:integrated:quick": "node scripts/admin/run-script-alias.mjs security:integrated:quick",
     "security:integrated:full": "node scripts/integrated-security-audit.mjs --full",
