@@ -131,6 +131,61 @@ describe('Docker Production Optimization - Phase 1.4', () => {
     );
   });
 
+  describe('Docker test image repository metadata', () => {
+    const expectCopiedAfterInstall = (content: string, pattern: RegExp, message: string) => {
+      const installIndex = content.search(/\bpnpm\s+install\b[\s\S]*?--include-workspace-root/);
+      const copyIndex = content.search(pattern);
+
+      expect(installIndex, 'Docker test image should run pnpm install').toBeGreaterThanOrEqual(0);
+      expect(copyIndex, message).toBeGreaterThanOrEqual(0);
+      expect(copyIndex, `${message} after dependency install to preserve layer cache`).toBeGreaterThan(installIndex);
+    };
+
+    it(
+      formatGWT(
+        'Docker test image',
+        'run repository-aware unit tests',
+        'CI policy, workflow, compose, and assurance example metadata are present',
+      ),
+      () => {
+        const content = readFileSync(dockerTestDockerfile, 'utf8');
+
+        expectCopiedAfterInstall(content, /^COPY\s+\.github\/\s+\.\/\.github\/\s*$/m, '.github metadata must be copied');
+        expectCopiedAfterInstall(content, /^COPY\s+policy\/\s+\.\/policy\/\s*$/m, 'policy metadata must be copied');
+        expectCopiedAfterInstall(content, /^COPY\s+docker\/\s+\.\/docker\/\s*$/m, 'Docker metadata must be copied');
+        expectCopiedAfterInstall(content, /^COPY\s+podman\/\s+\.\/podman\/\s*$/m, 'Podman metadata must be copied');
+        expectCopiedAfterInstall(content, /^COPY\s+infra\/\s+\.\/infra\/\s*$/m, 'infra metadata must be copied');
+        expectCopiedAfterInstall(
+          content,
+          /^COPY\s+examples\/assurance-control-plane\/\s+\.\/examples\/assurance-control-plane\/\s*$/m,
+          'assurance-control-plane examples must be copied',
+        );
+      },
+    );
+
+    it(
+      formatGWT(
+        'Docker build context',
+        'use a production-oriented .dockerignore',
+        'test-image-only repository metadata is explicitly allowed',
+      ),
+      () => {
+        const content = readFileSync(dockerignore, 'utf8');
+
+        for (const requiredPattern of [
+          '!.github/**',
+          '!policy/**',
+          '!docker/**',
+          '!podman/**',
+          '!infra/**',
+          '!examples/assurance-control-plane/**',
+        ]) {
+          expect(content, `${requiredPattern} must be allowed for Docker test image`).toContain(requiredPattern);
+        }
+      },
+    );
+  });
+
   describe('Podman smoke compose validation', () => {
     it(
       formatGWT(

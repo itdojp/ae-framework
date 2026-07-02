@@ -78,6 +78,11 @@ COPY configs/ ./configs/
 COPY tests/_setup/ ./tests/_setup/
 COPY config/ ./config/
 COPY scripts/ ./scripts/
+COPY .github/ ./.github/
+COPY policy/ ./policy/
+COPY docker/ ./docker/
+COPY podman/ ./podman/
+COPY infra/ ./infra/
 
 # Set permissions for scripts
 RUN chmod +x scripts/*.sh scripts/*.mjs scripts/*.js
@@ -86,6 +91,7 @@ RUN chmod +x scripts/*.sh scripts/*.mjs scripts/*.js
 COPY src/ ./src/
 COPY templates/ ./templates/
 COPY examples/inventory/ ./examples/inventory/
+COPY examples/assurance-control-plane/ ./examples/assurance-control-plane/
 COPY fixtures/ ./fixtures/
 COPY samples/ ./samples/
 COPY schema/ ./schema/

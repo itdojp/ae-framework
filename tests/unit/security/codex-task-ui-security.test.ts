@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { existsSync, mkdirSync, rmSync, symlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { createCodexTaskAdapter } from '../../../src/agents/codex-task-adapter.js';
 import type { TaskRequest } from '../../../src/agents/task-types.js';
@@ -115,7 +116,10 @@ describe('CodeX Task UI scaffold security boundary', () => {
 
   it('blocks UI output roots whose existing ancestor resolves outside the repository', async () => {
     mkdirSync(artifactRoot, { recursive: true });
-    const outside = join(process.cwd(), '..', `codex-ui-outside-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    const outside = join(
+      tmpdir(),
+      `codex-ui-outside-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    );
     const symlinkPath = join(artifactRoot, `codex-ui-link-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     mkdirSync(outside, { recursive: true });
     try {

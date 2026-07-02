@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { DockerEngine } from '../../../src/services/container/docker-engine.js';
@@ -75,7 +76,7 @@ describe('container engine security boundaries', () => {
   }
 
   it('TGT-004-F003: honors configured workspaceRoot when approving container bind mounts', () => {
-    const sandboxParent = path.resolve(process.cwd(), '..', '.codex-local/tmp');
+    const sandboxParent = path.join(fs.realpathSync(tmpdir()), 'ae-framework-container-engine-tests');
     fs.mkdirSync(sandboxParent, { recursive: true });
     const sandboxRoot = fs.mkdtempSync(path.join(sandboxParent, 'container-engine-volume-root-'));
 

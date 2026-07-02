@@ -107,6 +107,14 @@ rush.json
 !eslint.config.js
 !tests/**
 !examples/inventory/**
+!.github/
+!.github/**
+!policy/**
+!docker/**
+!podman/**
+!infra/**
+!examples/assurance-control-plane/
+!examples/assurance-control-plane/**
 
 # Quality assurance files
 .stryker-tmp/
