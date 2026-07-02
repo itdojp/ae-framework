@@ -949,16 +949,13 @@ const expectReadOnlyJobPermissions = (workflow: WorkflowDocument, jobName: strin
 describe('CI workflow read-only PR validation boundaries', () => {
   it('Verify Traceability uses argv-safe Alloy arguments and read-only validation jobs', () => {
     const ci = parseWorkflow('ci.yml');
-    expect(ci.jobs?.['verify-entry']?.permissions).toEqual({ contents: 'read' });
-
-    const verifyPublisher = ci.jobs?.['verify-summary-publisher'];
-    expect(verifyPublisher?.needs).toEqual(['verify-entry']);
-    expect(verifyPublisher?.permissions).toMatchObject({
+    expect(ci.jobs?.['verify-entry']?.permissions).toEqual({
+      contents: 'read',
       actions: 'read',
       issues: 'write',
       'pull-requests': 'write',
     });
-    expect(jobSteps(ci, 'verify-summary-publisher').some((step) => step?.uses === 'actions/checkout@v4')).toBe(false);
+    expect(ci.jobs).not.toHaveProperty('verify-summary-publisher');
 
     const workflow = parseWorkflow('verify.yml');
     const raw = readWorkflow('verify.yml');
@@ -976,6 +973,7 @@ describe('CI workflow read-only PR validation boundaries', () => {
     expect(jobSteps(workflow, 'build-summary').some((step) => step?.uses === 'actions/github-script@v7')).toBe(false);
 
     const postSummary = workflow.jobs?.['post-summary'];
+    expect(postSummary?.if).toContain("inputs.trigger == 'pull_request'");
     expect(postSummary?.needs).toEqual(['build-summary']);
     expect(postSummary?.permissions).toMatchObject({
       actions: 'read',
@@ -986,6 +984,17 @@ describe('CI workflow read-only PR validation boundaries', () => {
   });
 
   it('Spec Validation keeps PR validation read-only and publishes comments from a separate job', () => {
+    const ci = parseWorkflow('ci.yml');
+    expect(ci.jobs?.['spec-validation']?.permissions).toMatchObject({
+      contents: 'read',
+      actions: 'read',
+      issues: 'write',
+      'pull-requests': 'write',
+    });
+    expect(ci.jobs?.['build-test']).not.toHaveProperty('needs');
+    expect(ci.jobs?.['build-test']?.if).toContain("inputs.mode == 'full'");
+    expect(ci.jobs?.['build-test']?.if).not.toContain('needs.spec-validation');
+
     const workflow = parseWorkflow('spec-validation.yml');
     expect(workflow.permissions).toMatchObject({ contents: 'read', actions: 'read' });
     expect(workflow.permissions).not.toHaveProperty('pull-requests');
@@ -1012,6 +1021,21 @@ describe('CI workflow read-only PR validation boundaries', () => {
     expect(specCheck.permissions).toMatchObject({ contents: 'read', actions: 'read' });
     expectReadOnlyJobPermissions(specCheck, 'tla');
     expectCheckoutCredentialsDisabled(jobSteps(specCheck, 'tla'));
+  });
+
+  it('Parallel E2E lane remains a no-op success on default PR runs', () => {
+    const workflow = parseWorkflow('parallel-test-execution.yml');
+    const testE2e = workflow.jobs?.['test-e2e'];
+    expect(testE2e?.if).toContain("inputs.mode != 'coordinator'");
+    expect(testE2e?.if).not.toContain('run-e2e');
+
+    const steps = jobSteps(workflow, 'test-e2e');
+    expect(steps[0]?.id).toBe('e2e');
+    expect(steps[0]?.env?.SHOULD_RUN_E2E).toContain('run-e2e');
+    expect(steps.some((step) => step?.name === 'Skip E2E tests' && String(step?.if).includes("should_run != 'true'"))).toBe(true);
+    expect(steps.some((step) => step?.name === 'Run E2E tests' && String(step?.if).includes("should_run == 'true'"))).toBe(true);
+
+    expect(workflow.jobs?.['test-consolidation']?.needs).toEqual(['test-matrix', 'test-e2e']);
   });
 
   it('Spec Generate and Model PR validation jobs are read-only and publication jobs do not checkout PR content', () => {

@@ -166,35 +166,54 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     continue-on-error: ${{ (inputs.trigger || github.event_name) == 'pull_request' && contains(format(',{0},', inputs.pr_labels || ''), ',ci-non-blocking,') }}
-    # Only run on PR when explicitly requested via label; always on push
-    if: ${{ ((inputs.trigger || github.event_name) != 'pull_request' || contains(format(',{0},', inputs.pr_labels || ''), ',run-e2e,')) && (github.event_name != 'workflow_dispatch' || inputs.mode != 'coordinator') }}
+    # Keep the job successful but no-op on default PRs so downstream
+    # consolidation does not depend on a skipped job. Heavy E2E steps still run
+    # only for push/main or PRs explicitly labeled run-e2e.
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode != 'coordinator' }}
     timeout-minutes: 45
     
     steps:
+      - name: Determine E2E execution
+        id: e2e
+        env:
+          SHOULD_RUN_E2E: ${{ ((inputs.trigger || github.event_name) != 'pull_request' || contains(format(',{0},', inputs.pr_labels || ''), ',run-e2e,')) && 'true' || 'false' }}
+        run: |
+          printf 'should_run=%s\n' "$SHOULD_RUN_E2E" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "E2E heavy steps enabled: $SHOULD_RUN_E2E"
+      - name: Skip E2E tests
+        if: ${{ steps.e2e.outputs.should_run != 'true' }}
+        run: |
+          printf '%s\n' "Skipping E2E tests; add the run-e2e label to enable this lane on PRs."
       - name: Checkout code
+        if: ${{ steps.e2e.outputs.should_run == 'true' }}
         uses: actions/checkout@v4
 
       - name: Setup Node + pnpm
+        if: ${{ steps.e2e.outputs.should_run == 'true' }}
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
       
       - name: Install deps
+        if: ${{ steps.e2e.outputs.should_run == 'true' }}
         run: |
           # CI reusable lane policy: fail fast when the lockfile is stale.
           pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
 
       - name: Install Playwright Chromium
+        if: ${{ steps.e2e.outputs.should_run == 'true' }}
         run: |
           pnpm exec playwright install --with-deps chromium
 
       - name: Create reports directory
+        if: ${{ steps.e2e.outputs.should_run == 'true' }}
         run: |
           mkdir -p reports
           mkdir -p logs
           mkdir -p artifacts/e2e
 
       - name: Run E2E tests
+        if: ${{ steps.e2e.outputs.should_run == 'true' }}
         run: |
           printf "%s\n" "🎭 Starting E2E test suite..."
           pnpm run ui-e2e:semantic
@@ -202,7 +221,7 @@ jobs:
 
       - name: Upload E2E test results
         uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ always() && steps.e2e.outputs.should_run == 'true' }}
         with:
           name: test-results-e2e
           path: |
