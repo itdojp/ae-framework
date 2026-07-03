@@ -247,6 +247,10 @@ jobs:
 
       - name: Run mutation auto diff (extended)
         if: ${{ steps.flags.outputs.run_mutation == 'true' }}
+        # Mutation auto-diff is an expensive advisory signal on PR/push entry
+        # runs. Keep scheduled CI Extended strict, but do not fail main pushes
+        # when Stryker's initial dry-run times out before producing a report.
+        continue-on-error: ${{ github.event_name != 'schedule' && inputs.trigger != 'schedule' }}
         id: mutation
         uses: ./.github/actions/mutation-auto-diff
         env:
