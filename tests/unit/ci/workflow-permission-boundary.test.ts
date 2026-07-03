@@ -997,6 +997,33 @@ describe('CI workflow read-only PR validation boundaries', () => {
     }
   });
 
+  it('CI Extended keeps mutation auto-diff advisory for PR/push entry runs and strict for schedules', () => {
+    const workflow = parseWorkflow('ci-extended.yml');
+    const steps = jobSteps(workflow, 'extended');
+    const mutationStep = steps.find((step) => step?.name === 'Run mutation auto diff (extended)');
+
+    expect(mutationStep?.if).toBe("${{ steps.flags.outputs.run_mutation == 'true' }}");
+    expect(mutationStep?.['continue-on-error']).toBe("${{ github.event_name != 'schedule' && inputs.trigger != 'schedule' }}");
+    expect(mutationStep?.env).toMatchObject({
+      STRYKER_TIME_LIMIT: '900',
+    });
+  });
+
+  it('Full CI passes CI Extended trigger context for schedule and PR/push callers', () => {
+    const ci = parseWorkflow('ci.yml');
+    const scheduled = ci.jobs?.['ci-extended-schedule'];
+    const entry = ci.jobs?.['ci-extended-entry'];
+
+    expect(scheduled?.uses).toBe('./.github/workflows/ci-extended.yml');
+    expect(scheduled?.if).toContain("github.event_name == 'schedule'");
+    expect(scheduled?.if).toContain("inputs.mode == 'extended'");
+    expect(scheduled?.with?.trigger).toBe("${{ github.event_name == 'schedule' && 'schedule' || inputs.trigger }}");
+
+    expect(entry?.uses).toBe('./.github/workflows/ci-extended.yml');
+    expect(entry?.if).toBe("${{ github.event_name == 'push' || github.event_name == 'pull_request' }}");
+    expect(entry?.with?.trigger).toBe('${{ github.event_name }}');
+  });
+
   it('Verify Traceability uses argv-safe Alloy arguments and read-only validation jobs', () => {
     const ci = parseWorkflow('ci.yml');
     expect(ci.jobs?.['verify-entry']?.permissions).toEqual({
