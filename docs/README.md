@@ -272,6 +272,7 @@ Current verification baseline, assurance model, artifact contracts, automation p
 - Quality scorecard: `quality/quality-scorecard.md`
 - Code quality baseline: `quality/CODE-QUALITY-BASELINE.md`
 - Variance reduction policy: `quality/VARIANCE-REDUCTION-POLICY.md`
+- Deploy-time profile dogfood: `quality/DEPLOY-TIME-PROFILE-DOGFOOD.md`
 - Automation observability: `ci/automation-observability.md`
 - Reason codes registry: `ci/reason-codes.md`
 - UI semantic E2E lane: `quality/ui-e2e-lane.md`
@@ -466,6 +467,7 @@ Claude CodeやMCPとの統合
 - [ASSURANCE-MODEL.md](./quality/ASSURANCE-MODEL.md) - claim / level / lane / evidence kind の共通モデル
 - [CODE-QUALITY-BASELINE.md](./quality/CODE-QUALITY-BASELINE.md) - コード品質ベースライン（report-only artifact / debt ledger / plane ownership）
 - [VARIANCE-REDUCTION-POLICY.md](./quality/VARIANCE-REDUCTION-POLICY.md) - agent/CI judgment artifact の variance reduction policy（report-only comparison / input hashes）
+- [DEPLOY-TIME-PROFILE-DOGFOOD.md](./quality/DEPLOY-TIME-PROFILE-DOGFOOD.md) - deploy-time profile と既存 CI の dogfood/replay 方針（minimal / standard / full）
 - **[formal-gates.md](./quality/formal-gates.md)** ⭐ フォーマル品質ゲート（v0.2 DoD）
 - **[formal-csp.md](./quality/formal-csp.md)** ⭐ CSP 検証（cspx 連携・summary/result 契約）
 - **[formal-full-run.md](./quality/formal-full-run.md)** ⭐ 全形式ツールのスモークテスト（CSP/Lean 含む）

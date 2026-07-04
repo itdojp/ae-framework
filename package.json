@@ -455,7 +455,8 @@
     "metrics:req2run": "node scripts/metrics/collect-req2run-metrics.mjs",
     "domain-presets:render": "node scripts/domain-presets/render-preset.mjs",
     "audit:completion": "node scripts/audit/render-completion-audit.mjs",
-    "profiles:validate": "node scripts/profiles/validate-profiles.mjs"
+    "profiles:validate": "node scripts/profiles/validate-profiles.mjs",
+    "profiles:dogfood": "pnpm --filter @ae-framework/core -s run build && node scripts/profiles/dogfood-ci-profiles.mjs"
   },
   "dependencies": {
     "@ae-framework/agent-builder-adapter": "file:./packages/agent-builder-adapter",
