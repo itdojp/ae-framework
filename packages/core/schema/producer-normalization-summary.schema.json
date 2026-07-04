@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/producer-normalization-summary.schema.json",
+  "title": "Producer Normalization Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "mode",
+    "input",
+    "producer",
+    "source",
+    "summary",
+    "producerAssertions",
+    "controlPlaneRouting",
+    "controlPlaneJudgment"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "producer-normalization-summary/v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "mode": { "type": "string", "const": "report-only" },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "producerOverride"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "producerOverride": { "type": ["string", "null"], "minLength": 1 }
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "fixtureProducerId", "displayName", "category", "trustBoundary"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "fixtureProducerId": { "type": "string", "minLength": 1 },
+        "displayName": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "minLength": 1 },
+        "trustBoundary": { "type": "string", "minLength": 1 }
+      }
+    },
+    "source": { "type": "object" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rawSignals",
+        "changedFiles",
+        "commands",
+        "claimsMentioned",
+        "expectedArtifacts",
+        "knownGaps",
+        "missingEvidence",
+        "reportOnlyFindings"
+      ],
+      "properties": {
+        "rawSignals": { "type": "integer", "minimum": 0 },
+        "changedFiles": { "type": "integer", "minimum": 0 },
+        "commands": { "type": "integer", "minimum": 0 },
+        "claimsMentioned": { "type": "integer", "minimum": 0 },
+        "expectedArtifacts": { "type": "integer", "minimum": 0 },
+        "knownGaps": { "type": "integer", "minimum": 0 },
+        "missingEvidence": { "type": "integer", "minimum": 0 },
+        "reportOnlyFindings": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "producerAssertions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rawSignals", "changedFiles", "commands", "claimsMentioned"],
+      "properties": {
+        "rawSignals": { "type": "array", "items": { "type": "object" } },
+        "changedFiles": { "type": "array", "items": { "type": "object" } },
+        "commands": { "type": "array", "items": { "type": "object" } },
+        "claimsMentioned": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "controlPlaneRouting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expectedArtifacts", "knownGaps", "missingEvidence", "unresolvedNotes", "reportOnlyFindings"],
+      "properties": {
+        "expectedArtifacts": { "type": "array", "items": { "$ref": "#/$defs/expectedArtifact" } },
+        "knownGaps": { "type": "array", "items": { "$ref": "#/$defs/knownGap" } },
+        "missingEvidence": { "type": "array", "items": { "$ref": "#/$defs/missingEvidence" } },
+        "unresolvedNotes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "reportOnlyFindings": { "type": "array", "items": { "$ref": "#/$defs/reportOnlyFinding" } }
+      }
+    },
+    "controlPlaneJudgment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["emitsDecision", "result", "reason"],
+      "properties": {
+        "emitsDecision": { "type": "boolean", "const": false },
+        "result": { "type": "string", "const": "not-emitted" },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "expectedArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "purpose", "requiredForThisFixture"],
+      "properties": {
+        "artifact": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 },
+        "requiredForThisFixture": { "type": "boolean" }
+      }
+    },
+    "knownGap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gapId", "summary"],
+      "properties": {
+        "gapId": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 }
+      }
+    },
+    "missingEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "summary"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["command", "claim-evidence", "waiver-metadata"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "command": { "type": "string", "minLength": 1 },
+        "claimId": { "type": "string", "minLength": 1 },
+        "artifact": { "type": "string", "minLength": 1 }
+      }
+    },
+    "reportOnlyFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "severity", "kind", "summary", "details"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "const": "report-only" },
+        "kind": {
+          "type": "string",
+          "enum": ["known-gap", "missing-evidence", "unsupported-claim", "waiver-metadata"]
+        },
+        "summary": { "type": "string", "minLength": 1 },
+        "details": { "type": "object" }
+      }
+    }
+  }
+}

@@ -1,0 +1,761 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/policy-gate-summary-v1.schema.json",
+  "title": "Policy Gate Summary v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "generatedAtUtc",
+    "repository",
+    "prNumber",
+    "changedFiles",
+    "evaluation"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "policy-gate-summary/v1"
+    },
+    "contractId": {
+      "const": "policy-gate-summary.v1"
+    },
+    "generatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[^/\\s]+/[^/\\s]+$"
+    },
+    "prNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "changedFiles": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "required": [
+        "ok",
+        "errors",
+        "warnings",
+        "inferredRisk",
+        "selectedRiskLabel",
+        "currentRiskLabels",
+        "reviewTopology",
+        "approvals",
+        "minApprovals",
+        "policyMinApprovals",
+        "topologyMinApprovals",
+        "effectiveMinApprovals",
+        "minApprovalsSource",
+        "requiredLabels",
+        "missingRequiredLabels",
+        "requiredCheckResults",
+        "gateCheckResults"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "inferredRisk": {
+          "type": "object",
+          "required": [
+            "level"
+          ],
+          "properties": {
+            "level": {
+              "type": "string",
+              "minLength": 1
+            },
+            "labels": {
+              "type": "object",
+              "required": [
+                "low",
+                "high"
+              ],
+              "properties": {
+                "low": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "high": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "additionalProperties": true
+            },
+            "highRiskPathMatches": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "forceHighRiskTriggers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "condition",
+                  "ruleId",
+                  "matchedFiles"
+                ],
+                "properties": {
+                  "condition": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "ruleId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "matchedFiles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "selectedRiskLabel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "currentRiskLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reviewTopology": {
+          "type": "string",
+          "enum": [
+            "team",
+            "solo"
+          ]
+        },
+        "approvals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minApprovals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "policyMinApprovals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "topologyMinApprovals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "effectiveMinApprovals": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minApprovalsSource": {
+          "type": "string",
+          "enum": [
+            "policy",
+            "topology",
+            "override"
+          ]
+        },
+        "requiredLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missingRequiredLabels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "requiredCheckResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "checkName",
+              "result"
+            ],
+            "properties": {
+              "checkName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "result": {
+                "type": "object",
+                "required": [
+                  "status",
+                  "matches",
+                  "reason"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "success",
+                      "pending",
+                      "failure",
+                      "missing"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "matches": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "gateCheckResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "label",
+              "patterns",
+              "result"
+            ],
+            "properties": {
+              "label": {
+                "type": "string",
+                "minLength": 1
+              },
+              "patterns": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "result": {
+                "type": "object",
+                "required": [
+                  "status",
+                  "matches",
+                  "reason"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "success",
+                      "pending",
+                      "failure",
+                      "missing"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "matches": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "assurance": {
+          "$ref": "#/$defs/assuranceEvaluation"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "assuranceEvaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "result",
+        "manifest",
+        "summary",
+        "claims",
+        "waivers",
+        "warnings",
+        "errors"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "report-only",
+            "strict"
+          ]
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "waived",
+            "report-only",
+            "block"
+          ]
+        },
+        "manifest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "present",
+            "schemaVersion",
+            "generatedAt"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "present": {
+              "type": "boolean"
+            },
+            "schemaVersion": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "generatedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "provenance": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": true,
+              "required": [
+                "path",
+                "present",
+                "trusted",
+                "schemaVersion",
+                "generatedAt"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "present": {
+                  "type": "boolean"
+                },
+                "trusted": {
+                  "type": "boolean"
+                },
+                "schemaVersion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "generatedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                }
+              }
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "totalClaims",
+            "pass",
+            "waived",
+            "reportOnly",
+            "block",
+            "activeWaivers",
+            "expiringSoonWaivers",
+            "expiredWaivers",
+            "orphanWaivers"
+          ],
+          "properties": {
+            "totalClaims": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "pass": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "waived": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reportOnly": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "block": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "activeWaivers": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "expiringSoonWaivers": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "expiredWaivers": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "orphanWaivers": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "agentAssuranceFindings": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "security": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "claims",
+                "findings",
+                "reviews",
+                "candidate",
+                "needsHumanReview",
+                "confirmed",
+                "rejected",
+                "waived",
+                "outOfScope",
+                "highOrCriticalOpen"
+              ],
+              "properties": {
+                "claims": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "findings": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "reviews": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "candidate": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "needsHumanReview": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "confirmed": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "rejected": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "waived": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "outOfScope": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "highOrCriticalOpen": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "assumptionValidationRequired": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "assumptionResidualRisk": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "claimId",
+              "result",
+              "status",
+              "evidenceRefs",
+              "missingEvidenceRefs",
+              "waiverRefs"
+            ],
+            "properties": {
+              "claimId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "result": {
+                "type": "string",
+                "enum": [
+                  "pass",
+                  "waived",
+                  "report-only",
+                  "block"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidenceRefs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "missingEvidenceRefs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "waiverRefs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        "waivers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "status",
+              "claimId"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "claimId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceArtifactId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "expiringSoon",
+                  "expired",
+                  "orphan",
+                  "unknown"
+                ]
+              },
+              "owner": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "expires": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date"
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "agentAssuranceFindings": {
+          "$ref": "#/$defs/agentAssuranceFindings"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "agentAssuranceFindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "bySeverity",
+        "sources",
+        "findings"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "bySeverity": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/agentAssuranceFinding"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "agentAssuranceFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "severity",
+        "enforcement",
+        "summary",
+        "sourceArtifactPath",
+        "relatedArtifactPath",
+        "claimId"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "enforcement": {
+          "type": "string",
+          "const": "report-only"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceArtifactPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relatedArtifactPath": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "claimId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
