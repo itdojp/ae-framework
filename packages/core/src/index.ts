@@ -197,6 +197,7 @@ export interface PolicyEvaluationOptions {
   repository?: string;
   prNumber?: number;
   inputPath?: string;
+  environment?: string;
   mode?: 'strict' | 'report-only';
 }
 
@@ -211,6 +212,7 @@ export interface CorePolicyDecision {
   repository: string | null;
   prNumber: number | null;
   inputPath: string | null;
+  environment: string | null;
 }
 
 export interface ReviewSurfaceOptions {
@@ -231,7 +233,11 @@ function toIssue(error: ErrorObject): ValidationIssue {
   };
 }
 
-function createAjv(): Ajv2020 {
+let cachedAjv: Ajv2020 | null = null;
+
+function getAjv(): Ajv2020 {
+  if (cachedAjv) return cachedAjv;
+
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   addFormats(ajv);
   for (const schemaFile of CURATED_SCHEMA_FILES) {
@@ -240,6 +246,7 @@ function createAjv(): Ajv2020 {
       ajv.addSchema(schema);
     }
   }
+  cachedAjv = ajv;
   return ajv;
 }
 
@@ -272,7 +279,7 @@ export function listCuratedSchemas(): CuratedSchemaRef[] {
 }
 
 export function validateWithSchema(schemaName: string, data: unknown): ValidationResult {
-  const ajv = createAjv();
+  const ajv = getAjv();
   const schemaFile = schemaNameToFile(schemaName);
   const schema = readJsonFile(path.join(schemaRoot, schemaFile));
   const schemaId = typeof schema.$id === 'string' ? schema.$id : null;
@@ -286,7 +293,11 @@ export function parseYamlOrJson(input: string): unknown {
     throw new Error('Cannot parse an empty document');
   }
   if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-    return JSON.parse(trimmed);
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return yaml.parse(trimmed);
+    }
   }
   return yaml.parse(trimmed);
 }
@@ -363,6 +374,16 @@ function defaultMinIndependentSources(claim: AssuranceProfileClaim): number {
   return claim.criticality === 'high' || claim.criticality === 'critical' ? 2 : 1;
 }
 
+function warningMessage(code: string, claimId: string, observedIndependentSources: number, minIndependentSources: number): string {
+  const messages: Record<string, string> = {
+    'all-evidence-derived-from-source': `Claim ${claimId} has all observed evidence source-derived.`,
+    'missing-spec-derived-evidence': `Claim ${claimId} has no spec-derived evidence.`,
+    'insufficient-independent-lanes': `Claim ${claimId} observed independent source kinds (${observedIndependentSources}) below minimum (${minIndependentSources}).`,
+    'same-generator-lineage': `Claim ${claimId} observed evidence appears to share a single generator lineage.`,
+  };
+  return messages[code] ?? `Claim ${claimId} emitted warning ${code}.`;
+}
+
 function buildLaneCoverage(claims: AssuranceSummaryClaim[]): AssuranceSummary['laneCoverage'] {
   const coverage = Object.fromEntries(
     LANE_ORDER.map((lane) => [lane, { requiredClaims: 0, observedClaims: 0 }]),
@@ -380,19 +401,33 @@ export function aggregateLanes(options: AggregateLanesOptions): AssuranceSummary
   const evidence = options.evidence ?? [];
   const claims = profile.claims.map((claim) => {
     const matchingEvidence = claimEvidence(evidence, claim.id);
-    const observedLanes = uniqueSorted(matchingEvidence.map((item) => item.lane));
-    const observedEvidenceKinds = uniqueSorted(matchingEvidence.map((item) => item.kind));
+    const observedEvidence = matchingEvidence.filter((item) => (item.status ?? 'observed') === 'observed');
+    const observedLanes = uniqueSorted(observedEvidence.map((item) => item.lane));
+    const observedEvidenceKinds = uniqueSorted(observedEvidence.map((item) => item.kind));
     const requiredLanes = uniqueSorted(claim.requiredLanes);
     const requiredEvidenceKinds = uniqueSorted(claim.requiredEvidenceKinds);
     const missingLanes = requiredLanes.filter((lane) => !observedLanes.includes(lane));
     const missingEvidenceKinds = requiredEvidenceKinds.filter((kind) => !observedEvidenceKinds.includes(kind));
-    const observedIndependentSources = new Set(
-      matchingEvidence.map((item) => `${item.sourceKind ?? 'unknown'}:${item.generatorLineage ?? item.origin ?? 'unknown'}`),
-    ).size;
+    const observedSourceKinds = uniqueSorted(observedEvidence.map((item) => item.sourceKind ?? 'unknown'));
+    const observedIndependentSources = observedSourceKinds.length;
     const minIndependentSources = defaultMinIndependentSources(claim);
-    const independenceWarnings = observedIndependentSources < minIndependentSources
-      ? ['insufficient-independent-lanes']
-      : [];
+    const independenceWarnings = [
+      ...(observedEvidence.length > 0 && observedEvidence.every((item) => item.sourceKind === 'source-derived')
+        ? ['all-evidence-derived-from-source']
+        : []),
+      ...(!observedEvidence.some((item) => item.sourceKind === 'spec-derived')
+        ? ['missing-spec-derived-evidence']
+        : []),
+      ...(observedIndependentSources < minIndependentSources
+        ? ['insufficient-independent-lanes']
+        : []),
+      ...(observedEvidence.length > 1
+        && uniqueSorted(observedEvidence
+          .map((item) => item.generatorLineage)
+          .filter((value): value is string => typeof value === 'string' && value.length > 0)).length === 1
+        ? ['same-generator-lineage']
+        : []),
+    ];
     const status: ClaimStatus = missingLanes.length > 0
       || missingEvidenceKinds.length > 0
       || independenceWarnings.length > 0
@@ -414,7 +449,7 @@ export function aggregateLanes(options: AggregateLanesOptions): AssuranceSummary
       counterexamples: { open: 0, resolved: 0, acceptedRisk: 0, total: 0 },
       independenceWarnings,
       status,
-      evidence: matchingEvidence.map((item) => ({
+      evidence: observedEvidence.map((item) => ({
         lane: item.lane,
         kind: item.kind,
         sourceKind: item.sourceKind ?? 'unknown',
@@ -442,7 +477,7 @@ export function aggregateLanes(options: AggregateLanesOptions): AssuranceSummary
     })),
     ...claim.independenceWarnings.map((code) => ({
       code,
-      message: `Claim ${claim.claimId} has insufficient independent evidence sources.`,
+      message: warningMessage(code, claim.claimId, claim.observedIndependentSources, claim.minIndependentSources),
       claimId: claim.claimId,
       artifactPath: null,
     })),
@@ -476,13 +511,29 @@ export function aggregateLanes(options: AggregateLanesOptions): AssuranceSummary
   };
 }
 
+function evidenceList(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((entry) => String(entry)) : [];
+}
+
+function policyEnvironment(policy: Record<string, unknown>, environment: string | undefined): Record<string, unknown> | null {
+  if (!environment) return null;
+  const environments = policy.environments;
+  if (!environments || typeof environments !== 'object' || Array.isArray(environments)) return null;
+  const candidate = (environments as Record<string, unknown>)[environment];
+  return candidate && typeof candidate === 'object' && !Array.isArray(candidate)
+    ? candidate as Record<string, unknown>
+    : null;
+}
+
 export function evaluatePolicyGate(options: PolicyEvaluationOptions): CorePolicyDecision {
   const policy = typeof options.policy === 'string'
     ? parseYamlOrJson(options.policy) as Record<string, unknown>
     : options.policy;
-  const requiredEvidence = Array.isArray(policy.requiredEvidence)
-    ? policy.requiredEvidence.map((value) => String(value))
-    : [];
+  const environmentPolicy = policyEnvironment(policy, options.environment);
+  const requiredEvidence = uniqueSorted([
+    ...evidenceList(policy.requiredEvidence),
+    ...evidenceList(environmentPolicy?.requiredEvidence),
+  ]);
   const observedEvidence = uniqueSorted(options.evidenceIds);
   const missingEvidence = requiredEvidence.filter((evidenceId) => !observedEvidence.includes(evidenceId));
   const mode = options.mode ?? 'strict';
@@ -498,6 +549,7 @@ export function evaluatePolicyGate(options: PolicyEvaluationOptions): CorePolicy
     repository: options.repository ?? null,
     prNumber: options.prNumber ?? null,
     inputPath: options.inputPath ?? null,
+    environment: options.environment ?? null,
   };
 }
 

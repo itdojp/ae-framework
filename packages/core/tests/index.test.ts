@@ -12,7 +12,7 @@ import {
   renderReviewSurface,
   validateProfile,
   validateWithSchema,
-} from '../src/index.js';
+} from '../src/index';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(testDir, '../../..');
@@ -106,12 +106,122 @@ describe('@ae-framework/core', () => {
     });
     expect(blocked).toMatchObject({ result: 'block', missingEvidence: ['qualityGates'] });
 
+    const productionBlocked = evaluatePolicyGate({
+      policy: releasePolicyText,
+      evidenceIds: ['postDeployVerify', 'qualityGates'],
+      generatedAt: '2026-07-04T00:00:00.000Z',
+      environment: 'production',
+    });
+    expect(productionBlocked).toMatchObject({
+      result: 'block',
+      environment: 'production',
+      missingEvidence: ['conformanceSummary'],
+    });
+
     const passed = evaluatePolicyGate({
       policy: releasePolicyText,
       evidenceIds: ['postDeployVerify', 'qualityGates'],
       generatedAt: '2026-07-04T00:00:00.000Z',
     });
     expect(passed).toMatchObject({ result: 'pass', missingEvidence: [] });
+  });
+
+  it('falls back from invalid JSON to flow-style YAML parsing', () => {
+    const validation = validateProfile(
+      '{schemaVersion: assurance-profile/v1, profileId: flow-yaml, scope: {contextPackSources: [spec/context-pack/**/*.json], componentGlobs: [src/**]}, claims: [{id: flow-claim, statement: Flow YAML remains valid YAML, kind: compliance, criticality: low, targetLevel: A1, requiredLanes: [spec], requiredEvidenceKinds: [schema]}]}',
+    );
+
+    expect(validation, JSON.stringify(validation.errors)).toMatchObject({ ok: true, errors: [] });
+  });
+
+  it('does not count warning-only evidence as observed coverage', () => {
+    const summary = aggregateLanes({
+      profile: {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'warning-evidence-profile',
+        scope: { contextPackSources: [], componentGlobs: [] },
+        claims: [{
+          id: 'warning-evidence-claim',
+          statement: 'Warning evidence must not satisfy required coverage.',
+          kind: 'compliance',
+          criticality: 'low',
+          targetLevel: 'A1',
+          minIndependentSources: 1,
+          requiredLanes: ['spec'],
+          requiredEvidenceKinds: ['schema'],
+        }],
+      },
+      generatedAt: '2026-07-04T00:00:00.000Z',
+      evidence: [{
+        claimId: 'warning-evidence-claim',
+        lane: 'spec',
+        kind: 'schema',
+        sourceKind: 'spec-derived',
+        status: 'warning',
+      }],
+    });
+
+    expect(summary.claims[0]).toMatchObject({
+      status: 'warning',
+      observedLanes: [],
+      missingLanes: ['spec'],
+      observedEvidenceKinds: [],
+      missingEvidenceKinds: ['schema'],
+      observedIndependentSources: 0,
+      evidence: [],
+    });
+    expect(validateWithSchema('assurance-summary', summary)).toMatchObject({ ok: true, errors: [] });
+  });
+
+  it('counts independent sources by source kind rather than origin', () => {
+    const summary = aggregateLanes({
+      profile: {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'source-kind-profile',
+        scope: { contextPackSources: [], componentGlobs: [] },
+        claims: [{
+          id: 'source-kind-claim',
+          statement: 'Two source-derived origins are still one independent source kind.',
+          kind: 'compliance',
+          criticality: 'high',
+          targetLevel: 'A2',
+          minIndependentSources: 2,
+          requiredLanes: ['behavior'],
+          requiredEvidenceKinds: ['integration'],
+        }],
+      },
+      generatedAt: '2026-07-04T00:00:00.000Z',
+      evidence: [
+        {
+          claimId: 'source-kind-claim',
+          lane: 'behavior',
+          kind: 'integration',
+          sourceKind: 'source-derived',
+          origin: 'unit-test-a',
+          generatorLineage: 'vitest',
+        },
+        {
+          claimId: 'source-kind-claim',
+          lane: 'behavior',
+          kind: 'integration',
+          sourceKind: 'source-derived',
+          origin: 'unit-test-b',
+          generatorLineage: 'vitest',
+        },
+      ],
+    });
+
+    expect(summary.claims[0]).toMatchObject({
+      status: 'warning',
+      observedIndependentSources: 1,
+    });
+    expect(summary.claims[0]?.independenceWarnings).toEqual(expect.arrayContaining([
+      'all-evidence-derived-from-source',
+      'missing-spec-derived-evidence',
+      'insufficient-independent-lanes',
+      'same-generator-lineage',
+    ]));
+    expect(validateWithSchema('assurance-summary', summary)).toMatchObject({ ok: true, errors: [] });
   });
 
   it('renders a review surface from aggregate and policy results', () => {
@@ -139,7 +249,7 @@ describe('@ae-framework/core', () => {
       dependencies?: Record<string, string>;
     };
     const dependencyNames = Object.keys(packageJson.dependencies ?? {});
-    expect(dependencyNames).toEqual(['ajv', 'ajv-formats', 'yaml']);
+    expect([...dependencyNames].sort()).toEqual(['ajv', 'ajv-formats', 'yaml']);
     expect(dependencyNames.length).toBeLessThanOrEqual(5);
 
     const output = execFileSync('node', ['packages/core/scripts/check-no-src-imports.mjs'], {
