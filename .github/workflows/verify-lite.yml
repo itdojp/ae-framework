@@ -479,6 +479,8 @@ jobs:
             artifacts/assurance/claim-evidence-provenance.json
             artifacts/quality/quality-scorecard.json
             artifacts/quality/quality-scorecard.md
+            artifacts/profiles/profile-dogfood-report.json
+            artifacts/profiles/profile-dogfood-report.md
             artifacts/discovery-pack/discovery-pack-validate-report.json
             artifacts/discovery-pack/discovery-pack-validate-report.md
             artifacts/discovery-pack/discovery-pack-compile-report.json
@@ -512,6 +514,15 @@ jobs:
             cat artifacts/assurance/assurance-summary.md >> "$GITHUB_STEP_SUMMARY"
           else
             echo 'Assurance summary not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Append deploy-time profile dogfood report
+        if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}
+        run: |
+          if [ -f artifacts/profiles/profile-dogfood-report.md ]; then
+            echo '## Deploy-time Profile Dogfood' >> "$GITHUB_STEP_SUMMARY"
+            cat artifacts/profiles/profile-dogfood-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Deploy-time profile dogfood report not generated.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Append claim evidence manifest
         if: ${{ steps.docs-only.outputs.docs_only != 'true' && always() }}

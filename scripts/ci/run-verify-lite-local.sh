@@ -248,6 +248,17 @@ else
   exit 1
 fi
 
+echo "[verify-lite] deploy-time profile dogfood (${VERIFY_LITE_PROFILE_DOGFOOD_PROFILE:-minimal})"
+if [[ "${VERIFY_LITE_SKIP_PROFILE_DOGFOOD:-0}" == "1" ]]; then
+  echo "[verify-lite] skipping deploy-time profile dogfood (VERIFY_LITE_SKIP_PROFILE_DOGFOOD=1)"
+else
+  pnpm -s run profiles:dogfood \
+    -- \
+    --profile "${VERIFY_LITE_PROFILE_DOGFOOD_PROFILE:-minimal}" \
+    --out "${VERIFY_LITE_PROFILE_DOGFOOD_REPORT:-artifacts/profiles/profile-dogfood-report.json}" \
+    --out-md "${VERIFY_LITE_PROFILE_DOGFOOD_REPORT_MD:-artifacts/profiles/profile-dogfood-report.md}"
+fi
+
 echo "[verify-lite] state machine validation"
 if node dist/src/cli/index.js sm validate spec/state-machines --format json; then
   STATE_MACHINE_STATUS="success"
