@@ -1,0 +1,99 @@
+schemaVersion: assurance-profile/v1
+profileId: standard
+description: Deploy-time Structured assurance profile that extends minimal with Context Pack, traceability, property, MBT, and conformance lanes.
+deployment:
+  tier: standard
+  mapsToReadmeProfile: Structured assurance
+  extendsProfile: minimal
+  artifactSchemas:
+    - path: schema/artifact-metadata.schema.json
+      purpose: Common artifact metadata envelope for externally supplied evidence.
+      required: true
+    - path: schema/envelope.schema.json
+      purpose: Standard artifact wrapper accepted by the structured gate.
+      required: true
+    - path: schema/context-pack-v1.schema.json
+      purpose: Context Pack contract for spec-to-evidence traceability.
+      required: true
+    - path: schema/context-pack-boundary-map-summary.schema.json
+      purpose: Boundary-map summary for interface and context ownership review.
+      required: true
+    - path: schema/producer-normalization-summary.schema.json
+      purpose: Normalized producer-output summary for review traceability.
+      required: true
+    - path: schema/assurance-summary.schema.json
+      purpose: Aggregated assurance result shown to reviewers.
+      required: true
+    - path: schema/claim-evidence-manifest.schema.json
+      purpose: Claim-to-evidence manifest used by the review surface.
+      required: true
+    - path: schema/change-package-v2.schema.json
+      purpose: Change package evidence consumed by the gate when present.
+      required: true
+    - path: schema/conformance-report.schema.json
+      purpose: Conformance report for structured behavioral compatibility evidence.
+      required: true
+    - path: schema/conformance-metrics.schema.json
+      purpose: Conformance metrics summarized in review and trend outputs.
+      required: true
+    - path: schema/trace-map.schema.json
+      purpose: Traceability map linking specs, changes, and verification artifacts.
+      required: true
+    - path: schema/trace-validation.schema.json
+      purpose: Trace-validation result proving trace links are internally consistent.
+      required: true
+    - path: schema/policy-decision-v1.schema.json
+      purpose: Declarative policy decision emitted by the gate.
+      required: true
+    - path: schema/policy-gate-summary-v1.schema.json
+      purpose: PR policy-gate summary included in the review surface.
+      required: true
+    - path: schema/verify-lite-run-summary.schema.json
+      purpose: Verify Lite run summary used as a base CI signal.
+      required: true
+  activeLanes:
+    - artifact-schema-validation
+    - assurance-summary-aggregation
+    - declarative-policy-gate
+    - pr-review-surface
+    - context-pack-validation
+    - property
+    - mbt
+    - conformance
+    - traceability
+  gatePolicy:
+    evaluator: yaml
+    source: policy/release-policy.yml
+    reasonCodes: policy/reason-codes.yml
+  requiredChecks:
+    - verify-lite
+    - policy-gate
+    - gate
+  optionalChecks:
+    - context-pack-e2e
+    - property
+    - mbt
+    - conformance
+scope:
+  contextPackSources:
+    - spec/context-pack/**/*.{yml,yaml,json}
+  componentGlobs:
+    - src/**
+    - packages/**
+claims:
+  - id: structured-assurance-traceable
+    statement: Structured adoption connects Context Pack scope, producer evidence, traceability, and conformance artifacts into the reviewable assurance summary.
+    kind: compliance
+    criticality: high
+    targetLevel: A2
+    minIndependentSources: 2
+    requiredLanes:
+      - spec
+      - behavior
+      - model
+    requiredEvidenceKinds:
+      - schema
+      - property
+      - conformance
+      - boundary-map
+      - natural-transformation
