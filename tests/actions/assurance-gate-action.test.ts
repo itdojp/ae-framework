@@ -89,6 +89,59 @@ describe('assurance-gate action runner', () => {
     expect(rerunGateResult.artifactValidation.warningCount).toBe(1);
   });
 
+  it('records a blocking minimal gate decision for missing policy evidence', () => {
+    const workspace = resetWorkspace('minimal-block');
+    writeFileSync(path.join(workspace, 'artifacts', 'evidence.json'), `${JSON.stringify({
+      evidence: [
+        {
+          claimId: 'minimal-assurance-gate-reviewable',
+          lane: 'spec',
+          kind: 'schema',
+          sourceKind: 'spec-derived',
+          origin: 'fixture-schema',
+        },
+      ],
+      policyEvidence: ['postDeployVerify'],
+    }, null, 2)}\n`);
+
+    const baseCommand = [
+      'scripts/actions/assurance-gate.mjs',
+      '--workspace', workspace,
+      '--action-repo', repoRoot,
+      '--profile', 'minimal',
+      '--artifacts-dir', 'artifacts',
+      '--output-dir', 'artifacts/assurance-gate',
+    ];
+    const reportOnlyResult = spawnSync('node', [...baseCommand, '--fail-on-block', 'false'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      timeout: 30_000,
+    });
+
+    expect(reportOnlyResult.stderr).toBe('');
+    expect(reportOnlyResult.status).toBe(0);
+    expect(reportOnlyResult.stdout).toContain('ae-framework assurance gate: block');
+
+    const gateResult = JSON.parse(readFileSync(path.join(workspace, 'artifacts', 'assurance-gate', 'gate-result.json'), 'utf8'));
+    expect(gateResult).toMatchObject({
+      profile: 'minimal',
+      policyResult: 'block',
+      policyEvidence: ['postDeployVerify'],
+    });
+    const policyDecision = JSON.parse(readFileSync(path.join(workspace, 'artifacts', 'assurance-gate', 'policy-decision.json'), 'utf8'));
+    expect(policyDecision.missingEvidence).toEqual(['qualityGates']);
+    const reviewSurface = readFileSync(path.join(workspace, 'artifacts', 'assurance-gate', 'review-surface.md'), 'utf8');
+    expect(reviewSurface).toContain('Policy decision: block');
+
+    const enforcedResult = spawnSync('node', [...baseCommand, '--fail-on-block', 'true'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      timeout: 30_000,
+    });
+    expect(enforcedResult.status).toBe(1);
+    expect(enforcedResult.stderr).toContain('policy blocked: missing evidence qualityGates');
+  });
+
   it('rejects malformed custom release policies before evaluation', () => {
     const workspace = resetWorkspace('invalid-policy');
     mkdirSync(path.join(workspace, '.ae'), { recursive: true });

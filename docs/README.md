@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-07-01'
+lastVerified: '2026-07-04'
 ---
 
 # 📚 ae-framework Documentation / ドキュメント
@@ -23,6 +23,7 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 
 ### Recommended first reading
 - First-run demo: `getting-started/FIRST-RUN-DEMO.md` for the one-command local assurance review surface (`pnpm run demo:agent-assurance`) and optional artifact check (`pnpm run demo:agent-assurance:check`).
+- External repository quickstart: `getting-started/QUICKSTART-15MIN.md` for the one-workflow-file minimal assurance gate path.
 - Single reference flow: `getting-started/REFERENCE-FLOW.md` for the default Issue -> Context Pack/spec input -> ExecPlan -> verification -> evidence summary -> PR assurance review path.
 - Assurance control plane positioning: start with `product/ASSURANCE-CONTROL-PLANE.md`, then use `product/ASSURANCE-CONTROL-PLANE-POLICY.md` and `product/AGENT-NEUTRAL-ASSURANCE-ROADMAP.md` to align BYO-agent adoption.
 - System overview (implementation-aligned): `architecture/CURRENT-SYSTEM-OVERVIEW.md`
@@ -32,17 +33,18 @@ See `reference/DOC-GOVERNANCE.md` for the front matter fields and lint rules.
 - Current PR automation / gate baseline: `ci/pr-automation.md`, `ci/OPT-IN-CONTROLS.md`
 - Completion audit report: `ci/completion-audit-report.md` records merge-check results separately from advisory workflow findings during PR closeout.
 - Agent PR trust-calibration metrics: `ci/agent-pr-assurance-metrics.md`
-- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`, Evidence Sprint release assets: `product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`, Evidence Sprint measurement protocol: `product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md`, Evidence Sprint dogfood case study: `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, evidence pack: `product/evidence-packs/evidence-003-self-dogfood/README.md`, self-dogfood report: `product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md`, fixture-backed Web API pilot: `product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md`, fixture-backed event-driven pilot: `product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md`, live-pilot entry criteria: `product/LIVE-PILOT-ENTRY-CRITERIA.md`, and req2run adoption-readiness metrics: `product/REQ2RUN-METRICS.md`
+- Product effectiveness metrics: `product/EFFECTIVENESS-METRICS.md`, Evidence Sprint release assets: `product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`, deploy-time profile publish assets: `product/DEPLOY-TIME-PROFILE-PUBLISH-ASSETS-2026-07-04.md`, Evidence Sprint measurement protocol: `product/DOGFOODING-PILOT-MEASUREMENT-PROTOCOL.md`, Evidence Sprint dogfood case study: `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md`, evidence pack: `product/evidence-packs/evidence-003-self-dogfood/README.md`, self-dogfood report: `product/EVIDENCE-SPRINT-SELF-DOGFOOD-2026-07-01.md`, fixture-backed Web API pilot: `product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md`, fixture-backed event-driven pilot: `product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md`, live-pilot entry criteria: `product/LIVE-PILOT-ENTRY-CRITERIA.md`, and req2run adoption-readiness metrics: `product/REQ2RUN-METRICS.md`
 - Domain assurance presets: `guides/domain-presets.md` for Web API/BFF, event-driven, Spec Kit brownfield, and high-assurance critical-core starter packages.
 - Agent-assurance dogfooding report: `product/DOGFOODING-REPORT-2026Q3.md`
-- Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`, `product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`
+- Public preview launch kit: `product/LAUNCH-KIT.md`, `product/ONE-PAGE-PITCH.md`, `product/DEMO-SCRIPT.md`, `product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`, `product/DEPLOY-TIME-PROFILE-PUBLISH-ASSETS-2026-07-04.md`
+- 15-minute external repository assurance gate quickstart: `getting-started/QUICKSTART-15MIN.md`
 - 15-minute BYO-agent assurance quickstart: `guides/byo-agent-assurance-quickstart.md`
 - External pilot onboarding: `guides/external-pilot-onboarding.md`
 - Report-only pilot runbook, evidence template, and ACP-097 report: `product/PILOT-RUNBOOK-2026Q3.md`, `product/PILOT-EVIDENCE-TEMPLATE.md`, `product/PILOT-REPORT-2026Q3-01.md`
 - Live-pilot entry criteria: `product/LIVE-PILOT-ENTRY-CRITERIA.md`
 - Controlled comparison protocol: `product/CONTROLLED-COMPARISON-PROTOCOL.md`
 
-For product evidence, use the route `getting-started/FIRST-RUN-DEMO.md` -> `guides/byo-agent-assurance-quickstart.md` -> `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md` -> `product/evidence-packs/evidence-003-self-dogfood/README.md` -> `product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md` -> `product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md` -> `product/PILOT-REPORT-2026Q3-01.md` -> `product/LAUNCH-KIT.md` limitations -> `product/LIVE-PILOT-ENTRY-CRITERIA.md` -> `product/CONTROLLED-COMPARISON-PROTOCOL.md`. The Evidence Sprint dogfood case study is the primary observed-repository evidence reference; the Web API and event-driven pilots are fixture-backed/report-only, the current external pilot report is `dry-run only`, live external claims require the entry criteria, and the controlled comparison has not been executed.
+For product evidence, use the route `getting-started/FIRST-RUN-DEMO.md` -> `getting-started/QUICKSTART-15MIN.md` -> `guides/byo-agent-assurance-quickstart.md` -> `product/EVIDENCE-SPRINT-DOGFOOD-CASE-STUDY-2026-07-01.md` -> `product/evidence-packs/evidence-003-self-dogfood/README.md` -> `product/EVIDENCE-SPRINT-WEB-API-PILOT-2026-07-01.md` -> `product/EVIDENCE-SPRINT-EVENT-DRIVEN-PILOT-2026-07-01.md` -> `product/PILOT-REPORT-2026Q3-01.md` -> `product/LAUNCH-KIT.md` limitations -> `product/LIVE-PILOT-ENTRY-CRITERIA.md` -> `product/CONTROLLED-COMPARISON-PROTOCOL.md`. The Evidence Sprint dogfood case study is the primary observed-repository evidence reference; the Web API and event-driven pilots are fixture-backed/report-only, the current external pilot report is `dry-run only`, live external claims require the entry criteria, and the controlled comparison has not been executed.
 
 ### How to use this index
 - If you need the shortest route to a working repository, start with `getting-started/`.
@@ -53,6 +55,7 @@ For product evidence, use the route `getting-started/FIRST-RUN-DEMO.md` -> `guid
 ### Recommended routes by use case
 **First-time users**
 - `getting-started/FIRST-RUN-DEMO.md` — one-command local review surface
+- `getting-started/QUICKSTART-15MIN.md` — one-workflow-file external repository assurance gate
 - `guides/byo-agent-assurance-quickstart.md`
 - `getting-started/REFERENCE-FLOW.md`
 - `getting-started/QUICK-START-GUIDE.md`
@@ -107,6 +110,7 @@ Entry path for first-time setup, baseline verification, and the shortest route t
 - Reference flow (Issue to PR assurance review): `getting-started/REFERENCE-FLOW.md`
 - First-run demo: `getting-started/FIRST-RUN-DEMO.md`
 - Quick Start (15 minutes): `getting-started/QUICK-START-GUIDE.md`
+- External repository assurance gate quickstart (15 minutes): `getting-started/QUICKSTART-15MIN.md`
 - Phase 6 Quick Start (UI/UX): `getting-started/PHASE-6-GETTING-STARTED.md`
 - Setup: `getting-started/SETUP.md`
 

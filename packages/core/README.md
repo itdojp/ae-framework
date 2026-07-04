@@ -30,3 +30,30 @@ pnpm --filter @ae-framework/core run build
 pnpm --filter @ae-framework/core run test
 pnpm --filter @ae-framework/core run check:no-src-imports
 ```
+
+## Publication metadata
+
+The package metadata is prepared for public npm publication as
+`@ae-framework/core@0.1.0` under Apache-2.0. The package is not considered
+published until the release owner executes and verifies the npm publish step.
+
+Publication-facing metadata is recorded in `package.json`:
+
+- `license`: Apache-2.0
+- `publishConfig.access`: public
+- repository directory: `packages/core`
+- runtime files: `dist`, `schema`, `README.md`, and `PUBLISHING.md`
+- Node engine: `>=20.11 <23`
+
+Use `PUBLISHING.md` for the pre-publish checklist.
+
+## Compatibility with the action and profiles
+
+The composite assurance-gate action builds this package from the same repository
+ref that supplies the action metadata, built-in profiles, release policy, and
+curated schema bundle. Keep those surfaces aligned by pinning the action to a
+release tag or commit SHA when evaluating external repositories.
+
+See `../../docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md` for the
+version-skew boundary and the transition from preview refs (`main` or a commit
+SHA) to the planned `v1` action ref.
