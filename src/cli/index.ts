@@ -31,6 +31,7 @@ import { createSecurityCommand } from './security-cli.js';
 import { createEntryRunnerCommand } from './entry-runner-cli.js';
 import { createHelpCommand } from './help-cli.js';
 import { createSetupCommand } from './setup-cli.js';
+import { createInitCommand } from './init-cli.js';
 import { createReleaseCommand } from './release-cli.js';
 import { safeExit } from '../utils/safe-exit.js';
 import {
@@ -811,6 +812,9 @@ program.addCommand(createHelpCommand());
 
 // Setup wizard command
 program.addCommand(createSetupCommand());
+
+// Deploy-time profile init scaffold
+program.addCommand(createInitCommand());
 
 // Quality gates commands
 import { createQualityCommand } from './quality-cli.js';
