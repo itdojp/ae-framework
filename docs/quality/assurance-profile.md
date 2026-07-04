@@ -3,7 +3,7 @@ docRole: derived
 canonicalSource:
 - schema/assurance-profile.schema.json
 - docs/quality/ASSURANCE-MODEL.md
-lastVerified: '2026-04-08'
+lastVerified: '2026-07-04'
 ---
 # Assurance Profile v1
 
@@ -30,6 +30,8 @@ Current implementation covers schema validation, documentation, `verify:assuranc
 - Schema: `schema/assurance-profile.schema.json`
 - Sample fixture: `fixtures/assurance/sample.assurance-profile.json`
 - Context Pack reference point: optional `assurance` section in `schema/context-pack-v1.schema.json`
+- Deploy-time profile contracts: `profiles/minimal.yaml`, `profiles/standard.yaml`, and
+  `profiles/full.yaml`
 
 Minimal shape:
 
@@ -55,6 +57,42 @@ Minimal shape:
   ]
 }
 ```
+
+### 2.1 Deploy-time adoption profile metadata
+
+Issue #3598 introduces deploy-time adoption profiles without changing current CI
+behavior. The existing `assurance-profile/v1` contract now accepts an optional
+`deployment` object so repository-level profiles can be used as a single source
+of truth by later CLI and GitHub Action work.
+
+The checked-in profile contracts are:
+
+| File | README profile | Intent |
+| --- | --- | --- |
+| `profiles/minimal.yaml` | Baseline | Artifact schema validation, assurance summary aggregation, declarative YAML policy gate, and PR review surface. |
+| `profiles/standard.yaml` | Structured assurance | `minimal` plus Context Pack, property/MBT/conformance, and traceability lanes. |
+| `profiles/full.yaml` | High-assurance critical core | `standard` plus formal/model/proof lanes, mutation, and heavy-test trend signals. |
+
+Each deploy-time profile declares:
+
+- `deployment.artifactSchemas`: required artifact schemas for the profile.
+- `deployment.activeLanes`: active validation or review lanes.
+- `deployment.gatePolicy`: policy evaluator and source policy file.
+- `deployment.requiredChecks`: CI check contexts expected for that profile. Phase 0
+  validates these against the current branch-protection baseline: `verify-lite`,
+  `policy-gate`, and `gate`.
+
+Custom profiles use the same schema with `deployment.tier: custom`.
+
+Validate the contracts with:
+
+```bash
+pnpm run profiles:validate
+```
+
+Phase 0 is contract-only. It does not switch existing workflows to profile-driven
+execution; later phases consume these files from `@ae-framework/core`, the
+composite action, and internal dogfooding paths.
 
 ### 3. Provisional assurance level semantics
 
@@ -146,6 +184,7 @@ Notes:
 - スキーマ: `schema/assurance-profile.schema.json`
 - サンプル fixture: `fixtures/assurance/sample.assurance-profile.json`
 - Context Pack 側の参照先: `schema/context-pack-v1.schema.json` の optional `assurance`
+- deploy-time profile contract: `profiles/minimal.yaml`、`profiles/standard.yaml`、`profiles/full.yaml`
 
 最小構造:
 
@@ -171,6 +210,39 @@ Notes:
   ]
 }
 ```
+
+### 2.1 deploy-time adoption profile metadata
+
+Issue #3598 では、現在の CI 挙動を変更せずに deploy-time adoption profile を導入します。
+既存の `assurance-profile/v1` 契約に optional `deployment` object を追加し、
+後続の CLI / GitHub Action が参照する単一の情報源として利用できるようにします。
+
+チェックイン済みの profile contract は次の通りです。
+
+| File | README profile | 目的 |
+| --- | --- | --- |
+| `profiles/minimal.yaml` | Baseline | artifact schema validation、assurance summary aggregation、declarative YAML policy gate、PR review surface。 |
+| `profiles/standard.yaml` | Structured assurance | `minimal` に Context Pack、property/MBT/conformance、traceability lane を追加。 |
+| `profiles/full.yaml` | High-assurance critical core | `standard` に formal/model/proof lane、mutation、heavy-test trend signal を追加。 |
+
+各 deploy-time profile は次を宣言します。
+
+- `deployment.artifactSchemas`: profile が要求する artifact schema。
+- `deployment.activeLanes`: 有効化する validation / review lane。
+- `deployment.gatePolicy`: policy evaluator と policy source。
+- `deployment.requiredChecks`: profile が期待する CI check context。Phase 0 では現行の
+  branch-protection baseline である `verify-lite`、`policy-gate`、`gate` と一致することを検証します。
+
+Custom profile も同じ schema を使い、`deployment.tier: custom` として表現します。
+
+Contract は次の command で検証します。
+
+```bash
+pnpm run profiles:validate
+```
+
+Phase 0 は contract-only です。既存 workflow を profile-driven 実行へ切り替えるものではありません。
+後続 phase で `@ae-framework/core`、composite action、内部 dogfooding path がこれらの file を参照します。
 
 ### 3. assurance level の暫定的な意味
 

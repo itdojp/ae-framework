@@ -1,0 +1,69 @@
+schemaVersion: assurance-profile/v1
+profileId: minimal
+description: Deploy-time Baseline profile for external repositories that need a one-workflow-file assurance gate.
+deployment:
+  tier: minimal
+  mapsToReadmeProfile: Baseline
+  artifactSchemas:
+    - path: schema/artifact-metadata.schema.json
+      purpose: Common artifact metadata envelope for externally supplied evidence.
+      required: true
+    - path: schema/envelope.schema.json
+      purpose: Standard artifact wrapper accepted by the minimal gate.
+      required: true
+    - path: schema/producer-normalization-summary.schema.json
+      purpose: Normalized producer-output summary for review traceability.
+      required: true
+    - path: schema/assurance-summary.schema.json
+      purpose: Aggregated assurance result shown to reviewers.
+      required: true
+    - path: schema/claim-evidence-manifest.schema.json
+      purpose: Claim-to-evidence manifest used by the review surface.
+      required: true
+    - path: schema/change-package-v2.schema.json
+      purpose: Change package evidence consumed by the gate when present.
+      required: true
+    - path: schema/ae-handoff.schema.json
+      purpose: Handoff artifact for agent or maintainer producers.
+      required: true
+    - path: schema/policy-decision-v1.schema.json
+      purpose: Declarative policy decision emitted by the gate.
+      required: true
+    - path: schema/policy-gate-summary-v1.schema.json
+      purpose: PR policy-gate summary included in the review surface.
+      required: true
+    - path: schema/verify-lite-run-summary.schema.json
+      purpose: Verify Lite run summary used as a minimal CI signal.
+      required: true
+  activeLanes:
+    - artifact-schema-validation
+    - assurance-summary-aggregation
+    - declarative-policy-gate
+    - pr-review-surface
+  gatePolicy:
+    evaluator: yaml
+    source: policy/release-policy.yml
+    reasonCodes: policy/reason-codes.yml
+  requiredChecks:
+    - verify-lite
+    - policy-gate
+    - gate
+scope:
+  contextPackSources:
+    - spec/context-pack/**/*.{yml,yaml,json}
+  componentGlobs:
+    - src/**
+    - packages/**
+claims:
+  - id: minimal-assurance-gate-reviewable
+    statement: Minimal adoption validates submitted assurance artifacts, aggregates a summary, evaluates the declarative gate policy, and renders a PR review surface.
+    kind: compliance
+    criticality: medium
+    targetLevel: A1
+    minIndependentSources: 1
+    requiredLanes:
+      - spec
+      - behavior
+    requiredEvidenceKinds:
+      - schema
+      - integration

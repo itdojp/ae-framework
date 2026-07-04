@@ -112,6 +112,9 @@ const checks = [
       'fixtures/assurance/sample.assurance-profile.json',
       'fixtures/security-assurance/cache-key/inputs/assurance-profile.json',
       'spec/assurance-profile/upstream-context-promotion-v1.json',
+      'profiles/minimal.yaml',
+      'profiles/standard.yaml',
+      'profiles/full.yaml',
     ],
     label: 'Assurance profile schema validation'
   },

@@ -19,6 +19,13 @@
       "type": "string",
       "minLength": 1
     },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deployment": {
+      "$ref": "#/$defs/deployment"
+    },
     "scope": {
       "$ref": "#/$defs/scope"
     },
@@ -31,6 +38,138 @@
     }
   },
   "$defs": {
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "mapsToReadmeProfile",
+        "artifactSchemas",
+        "activeLanes",
+        "gatePolicy",
+        "requiredChecks"
+      ],
+      "properties": {
+        "tier": {
+          "type": "string",
+          "enum": [
+            "minimal",
+            "standard",
+            "full",
+            "custom"
+          ]
+        },
+        "mapsToReadmeProfile": {
+          "type": "string",
+          "enum": [
+            "Baseline",
+            "Structured assurance",
+            "High-assurance critical core",
+            "Custom"
+          ]
+        },
+        "extendsProfile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactSchemas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifactSchemaRef"
+          },
+          "minItems": 1
+        },
+        "activeLanes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/deploymentLane"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "gatePolicy": {
+          "$ref": "#/$defs/gatePolicy"
+        },
+        "requiredChecks": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "optionalChecks": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "artifactSchemaRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "purpose"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^schema/.+\\.schema\\.json$"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "deploymentLane": {
+      "type": "string",
+      "enum": [
+        "artifact-schema-validation",
+        "assurance-summary-aggregation",
+        "declarative-policy-gate",
+        "pr-review-surface",
+        "context-pack-validation",
+        "property",
+        "mbt",
+        "conformance",
+        "traceability",
+        "formal-alloy",
+        "formal-tla",
+        "formal-smt",
+        "formal-apalache",
+        "formal-kani",
+        "formal-spin",
+        "formal-csp",
+        "formal-lean4",
+        "mutation",
+        "heavy-test-trends"
+      ]
+    },
+    "gatePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluator",
+        "source"
+      ],
+      "properties": {
+        "evaluator": {
+          "type": "string",
+          "enum": [
+            "yaml",
+            "opa",
+            "cedar",
+            "custom"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reasonCodes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "scope": {
       "type": "object",
       "additionalProperties": false,
@@ -186,6 +325,15 @@
       }
     },
     "idArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "stringArray": {
       "type": "array",
       "items": {
         "type": "string",

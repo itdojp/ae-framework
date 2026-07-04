@@ -1,0 +1,128 @@
+schemaVersion: assurance-profile/v1
+profileId: full
+description: Deploy-time High-assurance critical core profile that preserves the current full pipeline as the opt-in heavy lane.
+deployment:
+  tier: full
+  mapsToReadmeProfile: High-assurance critical core
+  extendsProfile: standard
+  artifactSchemas:
+    - path: schema/artifact-metadata.schema.json
+      purpose: Common artifact metadata envelope for externally supplied evidence.
+      required: true
+    - path: schema/envelope.schema.json
+      purpose: Standard artifact wrapper accepted by the full gate.
+      required: true
+    - path: schema/context-pack-v1.schema.json
+      purpose: Context Pack contract for spec-to-evidence traceability.
+      required: true
+    - path: schema/context-pack-boundary-map-summary.schema.json
+      purpose: Boundary-map summary for interface and context ownership review.
+      required: true
+    - path: schema/producer-normalization-summary.schema.json
+      purpose: Normalized producer-output summary for review traceability.
+      required: true
+    - path: schema/assurance-summary.schema.json
+      purpose: Aggregated assurance result shown to reviewers.
+      required: true
+    - path: schema/claim-evidence-manifest.schema.json
+      purpose: Claim-to-evidence manifest used by the review surface.
+      required: true
+    - path: schema/change-package-v2.schema.json
+      purpose: Change package evidence consumed by the gate when present.
+      required: true
+    - path: schema/conformance-report.schema.json
+      purpose: Conformance report for structured behavioral compatibility evidence.
+      required: true
+    - path: schema/conformance-metrics.schema.json
+      purpose: Conformance metrics summarized in review and trend outputs.
+      required: true
+    - path: schema/formal-summary-v1.schema.json
+      purpose: Legacy formal summary compatibility for existing full-lane artifacts.
+      required: true
+    - path: schema/formal-summary-v2.schema.json
+      purpose: Current formal summary consumed by high-assurance review surfaces.
+      required: true
+    - path: schema/counterexample.schema.json
+      purpose: Counterexample evidence for model/proof lane closure.
+      required: true
+    - path: schema/temporary-override-v1.schema.json
+      purpose: Explicit waiver/override metadata for controlled residual risk.
+      required: true
+    - path: schema/trace-map.schema.json
+      purpose: Traceability map linking specs, changes, and verification artifacts.
+      required: true
+    - path: schema/trace-validation.schema.json
+      purpose: Trace-validation result proving trace links are internally consistent.
+      required: true
+    - path: schema/policy-decision-v1.schema.json
+      purpose: Declarative policy decision emitted by the gate.
+      required: true
+    - path: schema/policy-gate-summary-v1.schema.json
+      purpose: PR policy-gate summary included in the review surface.
+      required: true
+    - path: schema/verify-lite-run-summary.schema.json
+      purpose: Verify Lite run summary used as a base CI signal.
+      required: true
+  activeLanes:
+    - artifact-schema-validation
+    - assurance-summary-aggregation
+    - declarative-policy-gate
+    - pr-review-surface
+    - context-pack-validation
+    - property
+    - mbt
+    - conformance
+    - traceability
+    - formal-alloy
+    - formal-tla
+    - formal-smt
+    - formal-apalache
+    - formal-kani
+    - formal-spin
+    - formal-csp
+    - formal-lean4
+    - mutation
+    - heavy-test-trends
+  gatePolicy:
+    evaluator: yaml
+    source: policy/release-policy.yml
+    reasonCodes: policy/reason-codes.yml
+  requiredChecks:
+    - verify-lite
+    - policy-gate
+    - gate
+  optionalChecks:
+    - "CI Extended (entry: pr/push) / extended"
+    - Formal Reports Aggregate
+    - mutation-quick
+    - heavy-test-trends
+    - security-analysis
+scope:
+  contextPackSources:
+    - spec/context-pack/**/*.{yml,yaml,json}
+    - proofs/**
+    - spec/**
+  componentGlobs:
+    - src/**
+    - packages/**
+    - policy/**
+    - proofs/**
+claims:
+  - id: full-critical-core-decision-parity
+    statement: Full adoption activates the structured and formal/model/proof lanes needed for high-assurance critical-core changes while preserving current full-pipeline gate decisions.
+    kind: safety
+    criticality: critical
+    targetLevel: A4
+    minIndependentSources: 2
+    requiredLanes:
+      - spec
+      - behavior
+      - model
+      - proof
+    requiredEvidenceKinds:
+      - schema
+      - conformance
+      - mutation
+      - counterexample-closed
+      - model-check
+      - proof
