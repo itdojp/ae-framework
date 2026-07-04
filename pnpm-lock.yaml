@@ -434,6 +434,28 @@ importers:
 
   packages/agent-builder-adapter: {}
 
+  packages/core:
+    dependencies:
+      ajv:
+        specifier: ^8.20.0
+        version: 8.20.0
+      ajv-formats:
+        specifier: ^2.1.1
+        version: 2.1.1(ajv@8.20.0)
+      yaml:
+        specifier: ^2.8.1
+        version: 2.8.1
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.17.2
+      typescript:
+        specifier: ^5.5.4
+        version: 5.9.2
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.6(@types/node@22.17.2)(jiti@2.7.0)(jsdom@22.1.0)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1)
+
   packages/design-tokens:
     devDependencies:
       tsup:

@@ -1,0 +1,41 @@
+{
+  "name": "@ae-framework/core",
+  "version": "0.1.0",
+  "description": "Standalone minimal assurance core for ae-framework deploy-time profiles.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "schema",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts",
+    "check:no-src-imports": "node scripts/check-no-src-imports.mjs",
+    "prepack": "pnpm run build && pnpm run check:no-src-imports"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "ajv-formats": "^2.1.1",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.4",
+    "vitest": "^3.2.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20.11 <23"
+  }
+}

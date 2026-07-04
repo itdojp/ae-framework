@@ -1,0 +1,346 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/assurance-profile.schema.json",
+  "title": "Assurance Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "profileId",
+    "scope",
+    "claims"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "assurance-profile/v1"
+    },
+    "profileId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deployment": {
+      "$ref": "#/$defs/deployment"
+    },
+    "scope": {
+      "$ref": "#/$defs/scope"
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claim"
+      },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "mapsToReadmeProfile",
+        "artifactSchemas",
+        "activeLanes",
+        "gatePolicy",
+        "requiredChecks"
+      ],
+      "properties": {
+        "tier": {
+          "type": "string",
+          "enum": [
+            "minimal",
+            "standard",
+            "full",
+            "custom"
+          ]
+        },
+        "mapsToReadmeProfile": {
+          "type": "string",
+          "enum": [
+            "Baseline",
+            "Structured assurance",
+            "High-assurance critical core",
+            "Custom"
+          ]
+        },
+        "extendsProfile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactSchemas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifactSchemaRef"
+          },
+          "minItems": 1
+        },
+        "activeLanes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/deploymentLane"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "gatePolicy": {
+          "$ref": "#/$defs/gatePolicy"
+        },
+        "requiredChecks": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "optionalChecks": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "artifactSchemaRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "purpose"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^schema/.+\\.schema\\.json$"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "deploymentLane": {
+      "type": "string",
+      "enum": [
+        "artifact-schema-validation",
+        "assurance-summary-aggregation",
+        "declarative-policy-gate",
+        "pr-review-surface",
+        "context-pack-validation",
+        "property",
+        "mbt",
+        "conformance",
+        "traceability",
+        "formal-alloy",
+        "formal-tla",
+        "formal-smt",
+        "formal-apalache",
+        "formal-kani",
+        "formal-spin",
+        "formal-csp",
+        "formal-lean4",
+        "mutation",
+        "heavy-test-trends"
+      ]
+    },
+    "gatePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluator",
+        "source"
+      ],
+      "properties": {
+        "evaluator": {
+          "type": "string",
+          "enum": [
+            "yaml",
+            "opa",
+            "cedar",
+            "custom"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reasonCodes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contextPackSources",
+        "componentGlobs"
+      ],
+      "properties": {
+        "contextPackSources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "componentGlobs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "statement",
+        "kind",
+        "criticality",
+        "targetLevel",
+        "requiredLanes",
+        "requiredEvidenceKinds"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "safety",
+            "liveness",
+            "security",
+            "compliance",
+            "performance",
+            "operability",
+            "data-integrity",
+            "availability",
+            "custom"
+          ]
+        },
+        "criticality": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "targetLevel": {
+          "type": "string",
+          "enum": [
+            "A0",
+            "A1",
+            "A2",
+            "A3",
+            "A4"
+          ]
+        },
+        "minIndependentSources": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "scopeRefs": {
+          "$ref": "#/$defs/scopeRefs"
+        },
+        "requiredLanes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "spec",
+              "behavior",
+              "adversarial",
+              "model",
+              "proof",
+              "runtime"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "requiredEvidenceKinds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "schema",
+              "unit",
+              "integration",
+              "property",
+              "conformance",
+              "mutation",
+              "fuzz",
+              "differential",
+              "counterexample-closed",
+              "product-coproduct",
+              "natural-transformation",
+              "boundary-map",
+              "model-check",
+              "proof",
+              "runtime-control",
+              "runtime-monitor",
+              "runtime-alert",
+              "runtime-rollout-guard",
+              "waiver"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "scopeRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "objectIds": {
+          "$ref": "#/$defs/idArray"
+        },
+        "morphismIds": {
+          "$ref": "#/$defs/idArray"
+        },
+        "diagramIds": {
+          "$ref": "#/$defs/idArray"
+        },
+        "acceptanceTestIds": {
+          "$ref": "#/$defs/idArray"
+        }
+      }
+    },
+    "idArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

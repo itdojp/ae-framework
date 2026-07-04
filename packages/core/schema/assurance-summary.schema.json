@@ -1,0 +1,1361 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/assurance-summary.schema.json",
+  "title": "Assurance Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "metadata",
+    "inputs",
+    "summary",
+    "laneCoverage",
+    "claims",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "assurance-summary/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "$ref": "https://ae-framework/schema/artifact-metadata.schema.json"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assuranceProfile",
+        "contextPacks",
+        "verifyLiteSummary",
+        "formalSummaries",
+        "conformanceReport",
+        "counterexamples",
+        "evidenceManifests"
+      ],
+      "properties": {
+        "assuranceProfile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contextPacks": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "verifyLiteSummary": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "formalSummaries": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "conformanceReport": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "counterexamples": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "evidenceManifests": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "producerSummaries": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "boundaryMapSummaries": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "claimEvidenceManifests": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "policyDecision": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "securityClaims": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "securityFindings": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "securityReview": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimCount",
+        "satisfiedClaims",
+        "warningClaims",
+        "claimsMissingRequiredLanes",
+        "claimsMissingRequiredEvidenceKinds",
+        "unlinkedCounterexamples",
+        "warningCount"
+      ],
+      "properties": {
+        "claimCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "satisfiedClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warningClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "claimsMissingRequiredLanes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "claimsMissingRequiredEvidenceKinds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unlinkedCounterexamples": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warningCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "laneCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spec",
+        "behavior",
+        "adversarial",
+        "model",
+        "proof",
+        "runtime"
+      ],
+      "properties": {
+        "spec": {
+          "$ref": "#/$defs/laneCoverage"
+        },
+        "behavior": {
+          "$ref": "#/$defs/laneCoverage"
+        },
+        "adversarial": {
+          "$ref": "#/$defs/laneCoverage"
+        },
+        "model": {
+          "$ref": "#/$defs/laneCoverage"
+        },
+        "proof": {
+          "$ref": "#/$defs/laneCoverage"
+        },
+        "runtime": {
+          "$ref": "#/$defs/laneCoverage"
+        }
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claimSummary"
+      },
+      "minItems": 1
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/warning"
+      }
+    },
+    "reviewSurface": {
+      "$ref": "#/$defs/reviewSurface"
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "lane": {
+      "type": "string",
+      "enum": [
+        "spec",
+        "behavior",
+        "adversarial",
+        "model",
+        "proof",
+        "runtime"
+      ]
+    },
+    "sourceKind": {
+      "type": "string",
+      "enum": [
+        "spec-derived",
+        "source-derived",
+        "model-derived",
+        "runtime-derived",
+        "manual",
+        "unknown"
+      ]
+    },
+    "warningCode": {
+      "type": "string",
+      "enum": [
+        "all-evidence-derived-from-source",
+        "same-generator-lineage",
+        "missing-spec-derived-evidence",
+        "unresolved-critical-counterexample",
+        "insufficient-independent-lanes",
+        "context-pack-profile-mismatch",
+        "unknown-claim-ref",
+        "unlinked-counterexample",
+        "unrecognized-evidence-claim",
+        "assumption-validation-required"
+      ]
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/warningCode"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimId": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artifactPath": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "laneCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredClaims",
+        "observedClaims"
+      ],
+      "properties": {
+        "requiredClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observedClaims": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "counterexampleCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "open",
+        "resolved",
+        "acceptedRisk",
+        "total"
+      ],
+      "properties": {
+        "open": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "resolved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "acceptedRisk": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lane",
+        "kind",
+        "sourceKind",
+        "origin",
+        "status"
+      ],
+      "properties": {
+        "lane": {
+          "$ref": "#/$defs/lane"
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceKind": {
+          "$ref": "#/$defs/sourceKind"
+        },
+        "origin": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "observed",
+            "warning"
+          ]
+        },
+        "artifactPath": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "detail": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "claimRefs": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "generatorLineage": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "claimSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "statement",
+        "criticality",
+        "targetLevel",
+        "minIndependentSources",
+        "observedIndependentSources",
+        "requiredLanes",
+        "observedLanes",
+        "missingLanes",
+        "requiredEvidenceKinds",
+        "observedEvidenceKinds",
+        "missingEvidenceKinds",
+        "counterexamples",
+        "independenceWarnings",
+        "status",
+        "evidence"
+      ],
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "criticality": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ]
+        },
+        "targetLevel": {
+          "type": "string",
+          "enum": [
+            "A0",
+            "A1",
+            "A2",
+            "A3",
+            "A4"
+          ]
+        },
+        "securityClaimType": {
+          "$ref": "#/$defs/securityClaimType"
+        },
+        "minIndependentSources": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "observedIndependentSources": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "requiredLanes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lane"
+          },
+          "uniqueItems": true
+        },
+        "observedLanes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lane"
+          },
+          "uniqueItems": true
+        },
+        "missingLanes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lane"
+          },
+          "uniqueItems": true
+        },
+        "requiredEvidenceKinds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "observedEvidenceKinds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "missingEvidenceKinds": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "counterexamples": {
+          "$ref": "#/$defs/counterexampleCounts"
+        },
+        "assumptionHandling": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/assumptionHandling"
+          }
+        },
+        "independenceWarnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/warningCode"
+          },
+          "uniqueItems": true
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "satisfied",
+            "warning"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceItem"
+          }
+        }
+      }
+    },
+    "securityClaimType": {
+      "type": "string",
+      "enum": [
+        "invariant",
+        "precondition",
+        "postcondition",
+        "assumption"
+      ]
+    },
+    "assumptionHandlingMode": {
+      "type": "string",
+      "enum": [
+        "assumption-validation-required",
+        "residual-risk"
+      ]
+    },
+    "assumptionHandling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "findingId",
+        "reviewResult",
+        "rationale",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/assumptionHandlingMode"
+        },
+        "findingId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewResult": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceRefs": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "nullableString": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "manifestClaimStatusCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "satisfied",
+        "partial",
+        "waived",
+        "unresolved",
+        "failed",
+        "other"
+      ],
+      "properties": {
+        "satisfied": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "partial": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "waived": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "other": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "assuranceClaimStatusCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "satisfied",
+        "warning",
+        "other"
+      ],
+      "properties": {
+        "satisfied": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warning": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "other": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "reviewSurfaceSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recommendedReviewerAction",
+        "assuranceClaimStatusCounts",
+        "manifestClaimStatusCounts",
+        "unresolvedClaims",
+        "waivedClaims",
+        "missingEvidenceClaims",
+        "activeWaivers",
+        "producerReportOnlyFindings",
+        "boundaryMapStatus",
+        "policyDecisionResult"
+      ],
+      "properties": {
+        "recommendedReviewerAction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assuranceClaimStatusCounts": {
+          "$ref": "#/$defs/assuranceClaimStatusCounts"
+        },
+        "manifestClaimStatusCounts": {
+          "$ref": "#/$defs/manifestClaimStatusCounts"
+        },
+        "unresolvedClaims": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "waivedClaims": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "missingEvidenceClaims": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "activeWaivers": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "producerReportOnlyFindings": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "boundaryMapStatus": {
+          "type": "string",
+          "enum": [
+            "not-provided",
+            "ok",
+            "drift",
+            "skipped",
+            "unresolved"
+          ]
+        },
+        "policyDecisionResult": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "producerReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "displayName",
+        "category"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "reportOnlyFindingRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "summary"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "producerControlPlaneJudgmentSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "emittedDecisionCount",
+        "expected"
+      ],
+      "properties": {
+        "emittedDecisionCount": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "expected": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "producerSignalsReviewSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "artifactPaths",
+        "producers",
+        "producerAssertions",
+        "missingEvidence",
+        "reportOnlyFindings",
+        "findingRefs",
+        "controlPlaneJudgment"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not-provided",
+            "present",
+            "report-only-findings"
+          ]
+        },
+        "artifactPaths": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "producers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/producerReference"
+          }
+        },
+        "producerAssertions": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "missingEvidence": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "reportOnlyFindings": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "findingRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reportOnlyFindingRef"
+          }
+        },
+        "controlPlaneJudgment": {
+          "$ref": "#/$defs/producerControlPlaneJudgmentSummary"
+        }
+      }
+    },
+    "contextPackReviewSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "artifactPaths",
+        "preflightStatus",
+        "note"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not-provided",
+            "present"
+          ]
+        },
+        "artifactPaths": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "preflightStatus": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "boundaryReviewEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "severity",
+        "file",
+        "slice",
+        "ref",
+        "expectedOwner",
+        "observedDependency",
+        "message"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "slice": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "ref": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "expectedOwner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "observedDependency": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "boundaryMapReviewSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "artifactPaths",
+        "reviewStatuses",
+        "evidenceKind",
+        "totalFindings",
+        "reviewEvidence",
+        "interpretation"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not-provided",
+            "ok",
+            "drift",
+            "skipped",
+            "unresolved"
+          ]
+        },
+        "artifactPaths": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "reviewStatuses": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "evidenceKind": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "totalFindings": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "reviewEvidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/boundaryReviewEvidence"
+          }
+        },
+        "interpretation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "missingEvidenceClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "status",
+        "missingEvidenceRefs"
+      ],
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "missingEvidenceRefs": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    },
+    "unresolvedClaimRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "runtimeMitigatedClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "status",
+        "interpretation"
+      ],
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interpretation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "claimEvidenceReviewSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "artifactPaths",
+        "manifestStatusCounts",
+        "assuranceStatusCounts",
+        "missingEvidenceClaims",
+        "unresolvedClaims",
+        "runtimeMitigatedClaims"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not-provided",
+            "present"
+          ]
+        },
+        "artifactPaths": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "manifestStatusCounts": {
+          "$ref": "#/$defs/manifestClaimStatusCounts"
+        },
+        "assuranceStatusCounts": {
+          "$ref": "#/$defs/assuranceClaimStatusCounts"
+        },
+        "missingEvidenceClaims": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/missingEvidenceClaim"
+          }
+        },
+        "unresolvedClaims": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/unresolvedClaimRef"
+          }
+        },
+        "runtimeMitigatedClaims": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/runtimeMitigatedClaim"
+          }
+        }
+      }
+    },
+    "waiverReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "claimId",
+        "status",
+        "owner",
+        "expires",
+        "reason",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "expires": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "reason": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "waiversReviewSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "active",
+        "expiringSoon",
+        "expired",
+        "orphan",
+        "claims",
+        "waiverRefs",
+        "interpretation"
+      ],
+      "properties": {
+        "active": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "expiringSoon": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "expired": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "orphan": {
+          "$ref": "#/$defs/nonNegativeInteger"
+        },
+        "claims": {
+          "$ref": "#/$defs/stringArray"
+        },
+        "waiverRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/waiverReference"
+          }
+        },
+        "interpretation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "policyDecisionAssuranceSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "totalClaims",
+        "pass",
+        "waived",
+        "reportOnly",
+        "block",
+        "activeWaivers"
+      ],
+      "properties": {
+        "totalClaims": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pass": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "waived": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reportOnly": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "block": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "activeWaivers": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "policyDecisionReviewSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "artifactPath",
+        "mode",
+        "result",
+        "ok",
+        "enforced",
+        "summary"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not-provided",
+            "present"
+          ]
+        },
+        "artifactPath": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "mode": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "result": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "ok": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "enforced": {
+          "type": "boolean"
+        },
+        "summary": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/policyDecisionAssuranceSummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "residualRisk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "claimId",
+        "severity",
+        "reason",
+        "source"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimId": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "severity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "recommendedReviewerAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "reason"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "reviewSurface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "summary",
+        "producerSignals",
+        "contextPack",
+        "boundaryMap",
+        "claimEvidence",
+        "waivers",
+        "policyDecision",
+        "residualRisks",
+        "recommendedReviewerAction",
+        "interpretationNotes"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "const": "assurance-review-surface/v1"
+        },
+        "summary": {
+          "$ref": "#/$defs/reviewSurfaceSummary"
+        },
+        "producerSignals": {
+          "$ref": "#/$defs/producerSignalsReviewSurface"
+        },
+        "contextPack": {
+          "$ref": "#/$defs/contextPackReviewSurface"
+        },
+        "boundaryMap": {
+          "$ref": "#/$defs/boundaryMapReviewSurface"
+        },
+        "claimEvidence": {
+          "$ref": "#/$defs/claimEvidenceReviewSurface"
+        },
+        "waivers": {
+          "$ref": "#/$defs/waiversReviewSurface"
+        },
+        "policyDecision": {
+          "$ref": "#/$defs/policyDecisionReviewSurface"
+        },
+        "residualRisks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/residualRisk"
+          }
+        },
+        "recommendedReviewerAction": {
+          "$ref": "#/$defs/recommendedReviewerAction"
+        },
+        "interpretationNotes": {
+          "$ref": "#/$defs/stringArray"
+        }
+      }
+    }
+  }
+}
