@@ -1,6 +1,6 @@
 ---
 docRole: narrative
-lastVerified: '2026-07-01'
+lastVerified: '2026-07-04'
 ---
 
 # ae-framework: Agent-Neutral Assurance Control Plane for Agent-Driven SDLC
@@ -20,7 +20,7 @@ ae-framework is an **agent-neutral assurance control plane for agent-driven SDLC
 
 **Product thesis**: Bring your own agent. Keep your assurance plane. Codex, Claude Code, GitHub Copilot, Gemini-family coding tools, human maintainers, CI jobs, and formal tools are replaceable producers; ae-framework keeps judgment artifacts, policy gates, and release decisions stable across those producer choices.
 
-Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`, and `docs/product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`. Start the first-run demo with `pnpm run demo:agent-assurance`; the dedicated one-command path is `docs/getting-started/FIRST-RUN-DEMO.md`.
+Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`, `docs/product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`, and `docs/product/DEPLOY-TIME-PROFILE-PUBLISH-ASSETS-2026-07-04.md`. Start the first-run demo with `pnpm run demo:agent-assurance`; the dedicated one-command local path is `docs/getting-started/FIRST-RUN-DEMO.md`, and the external one-workflow-file assurance gate path is `docs/getting-started/QUICKSTART-15MIN.md`.
 
 Current evidence route for first-time product evaluation: run the one-command first-run demo, read the Evidence Sprint dogfood case study, inspect the fixture-backed Web API and event-driven pilots, read the ACP-097 pilot report, then check launch-kit limitations, live-pilot entry criteria, and the controlled-comparison protocol. Internal dogfooding and pilot evidence are separate: the Web API and event-driven pilots are fixture-backed/report-only, the current external pilot report is `dry-run only` with 0 live external PRs collected, and the controlled comparison has not been executed. Public claims should therefore stay limited to review traceability and evidence routing, not review-speed, safety, adoption-impact, live API/event behavior, or agent-vendor superiority. `docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` records the boundary for future live external claims.
 
@@ -93,8 +93,10 @@ the expected first-run artifact paths without changing the one-command demo
 entry point.
 
 For the dedicated first-run walkthrough and troubleshooting, use
-`docs/getting-started/FIRST-RUN-DEMO.md`. For a real Issue-to-PR assurance path,
-continue with `docs/getting-started/REFERENCE-FLOW.md`. Advanced flows such as
+`docs/getting-started/FIRST-RUN-DEMO.md`. For a fresh external repository, use
+`docs/getting-started/QUICKSTART-15MIN.md` to add the minimal assurance gate with
+one workflow file. For a real Issue-to-PR assurance path, continue with
+`docs/getting-started/REFERENCE-FLOW.md`. Advanced flows such as
 formal lanes, domain presets, PR posting helpers, and heavy-test trend snapshots
 remain optional and risk/profile-driven.
 
@@ -104,6 +106,7 @@ remain optional and risk/profile-driven.
 
 ### Documentation pointers
 - First-run demo (one-command local review surface): `docs/getting-started/FIRST-RUN-DEMO.md`
+- 15-minute external repository assurance gate quickstart: `docs/getting-started/QUICKSTART-15MIN.md`
 - Reference flow (Issue to PR assurance review): `docs/getting-started/REFERENCE-FLOW.md`
 - Overview & nav: `docs/README.md`, `docs/project-organization.md`
 - Maintenance operations: `docs/maintenance/branch-cleanup-runbook.md`
@@ -121,6 +124,7 @@ remain optional and risk/profile-driven.
 - Agent PR assurance metrics collector: `docs/ci/agent-pr-assurance-metrics.md`
 - BYO-agent assurance onboarding: `docs/guides/byo-agent-assurance-onboarding.md`
 - First-run one-command demo: `docs/getting-started/FIRST-RUN-DEMO.md`
+- 15-minute external repository assurance gate quickstart: `docs/getting-started/QUICKSTART-15MIN.md`
 - 15-minute BYO-agent assurance quickstart: `docs/guides/byo-agent-assurance-quickstart.md`
 - Assurance model (claim / level / lane / evidence): `docs/quality/ASSURANCE-MODEL.md`
 - Assurance operations runbook: `docs/quality/assurance-operations-runbook.md`
@@ -149,7 +153,7 @@ ae-framework は **エージェント協調型SDLCのための、エージェン
 
 **Product thesis**: Bring your own agent. Keep your assurance plane. Codex、Claude Code、GitHub Copilot、Gemini系tool、人間のmaintainer、CI job、formal tool は交換可能な producer であり、ae-framework は producer の選択に依存しない judgment artifact、policy gate、release decision を維持します。
 
-Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`, `docs/product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`。first-run demo は `pnpm run demo:agent-assurance` から開始します。専用の one-command path は `docs/getting-started/FIRST-RUN-DEMO.md` です。
+Preview launch material: `docs/product/LAUNCH-KIT.md`, `docs/product/ONE-PAGE-PITCH.md`, `docs/product/DEMO-SCRIPT.md`, `docs/product/EVIDENCE-SPRINT-RELEASE-ASSETS-2026-07-01.md`, `docs/product/DEPLOY-TIME-PROFILE-PUBLISH-ASSETS-2026-07-04.md`。first-run demo は `pnpm run demo:agent-assurance` から開始します。専用の local one-command path は `docs/getting-started/FIRST-RUN-DEMO.md`、外部 repository に workflow file 1つで導入する path は `docs/getting-started/QUICKSTART-15MIN.md` です。
 
 初見の product evidence 導線は、one-command first-run demo → Evidence Sprint dogfood case study → fixture-backed Web API / event-driven pilots → ACP-097 pilot report → launch kit の limitations → live-pilot entry criteria → controlled-comparison protocol の順です。内部 dogfooding と pilot evidence は別扱いです。Web API / event-driven pilots は fixture-backed/report-only、現在の external pilot report は `dry-run only` で live external PR の収集数は0件、controlled comparison は未実施です。そのため公開claimは review traceability と evidence routing に限定し、未測定の review-speed、安全性、導入効果、live API/event behavior、agent vendor 優位性は主張しません。`docs/product/LIVE-PILOT-ENTRY-CRITERIA.md` は、将来の live external claim の boundary を記録します。
 

@@ -2,6 +2,26 @@
   "name": "@ae-framework/core",
   "version": "0.1.0",
   "description": "Standalone minimal assurance core for ae-framework deploy-time profiles.",
+  "license": "Apache-2.0",
+  "keywords": [
+    "assurance",
+    "policy-gate",
+    "github-actions",
+    "software-supply-chain",
+    "agentic-sdlc",
+    "ai-code-review",
+    "formal-methods",
+    "json-schema"
+  ],
+  "homepage": "https://github.com/itdojp/ae-framework#readme",
+  "bugs": {
+    "url": "https://github.com/itdojp/ae-framework/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itdojp/ae-framework.git",
+    "directory": "packages/core"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,7 +34,10 @@
   "files": [
     "dist",
     "schema",
-    "README.md"
+    "README.md",
+    "PUBLISHING.md",
+    "LICENSE",
+    "NOTICE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

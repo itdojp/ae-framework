@@ -1,5 +1,8 @@
 name: ae-framework Assurance Gate
 description: Validate assurance artifacts, evaluate a deploy-time profile policy, and render a PR review surface.
+branding:
+  icon: shield
+  color: blue
 inputs:
   profile:
     description: "minimal, standard, full, or a custom profile YAML path in the consumer repository"
