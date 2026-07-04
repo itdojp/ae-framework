@@ -41,6 +41,7 @@ npm availability, review speed, safety improvement, or agent/vendor superiority.
 
 - A GitHub repository where you can add one workflow file.
 - GitHub Actions enabled.
+- The workflow grants `contents: read` and `actions: read`; the latter keeps artifact upload compatible with repositories that restrict default token permissions.
 - No ae-framework checkout, pnpm workspace, GitHub token, hosted LLM API, or
   external agent service is required in the consumer repository.
 - The action runtime uses Node/Corepack inside the downloaded ae-framework action
@@ -73,6 +74,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   assurance:
@@ -220,8 +222,9 @@ schema-validated artifacts. Keep these rules:
   quickstart does not require consumers to install it directly.
 - The composite action builds the core package from the same action repository
   ref, which keeps action/profile/schema/core versions aligned.
-- Marketplace listing metadata is prepared in `.github/actions/assurance-gate/`,
-  but Marketplace publication is separate from this checked-in preview path.
+- Marketplace listing draft metadata is prepared in `.github/actions/assurance-gate/`,
+  but Marketplace publication is separate from this checked-in preview path and
+  still requires a root action/shim or dedicated action repository.
 - See `docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md` for the version-skew
   boundary and the `@main`/commit-SHA/`@v1` transition.
 

@@ -59,9 +59,10 @@ an explicit commit SHA for preview validation. After the release tag exists, use
 | Quickstart | `docs/getting-started/QUICKSTART-15MIN.md` |
 | Compatibility | `docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md` |
 
-Publication boundary: this repository contains Marketplace-ready metadata, but
-Marketplace publication is not complete until the action listing is published by
-the release owner.
+Publication boundary: this repository contains Marketplace listing draft metadata
+for the subdirectory action. Marketplace publication is not complete, and is not
+ready, until the release owner adds a root `action.yml` shim or moves the action
+to a dedicated action repository and publishes the listing.
 
 ## Version compatibility
 

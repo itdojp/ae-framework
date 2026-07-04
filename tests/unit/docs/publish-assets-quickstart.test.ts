@@ -26,6 +26,8 @@ describe('deploy-time profile publish assets', () => {
       'schema',
       'README.md',
       'PUBLISHING.md',
+      'LICENSE',
+      'NOTICE',
     ]));
     expect(Object.keys(packageJson.dependencies).sort()).toEqual(['ajv', 'ajv-formats', 'yaml']);
     expect(packageJson.keywords).toEqual(expect.arrayContaining([
@@ -38,6 +40,7 @@ describe('deploy-time profile publish assets', () => {
     const publishing = readRepoFile('packages/core/PUBLISHING.md');
     expect(publishing).toContain('Package metadata is prepared for `@ae-framework/core@0.1.0`');
     expect(publishing).toContain('Publication is not implied by this repository file');
+    expect(publishing).toContain('package-local `LICENSE` and `NOTICE` files');
   });
 
   it('prepares Marketplace metadata and compatibility links for the composite action', () => {
@@ -52,6 +55,7 @@ describe('deploy-time profile publish assets', () => {
     expect(actionReadme).toContain('docs/getting-started/QUICKSTART-15MIN.md');
     expect(actionReadme).toContain('docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md');
     expect(actionReadme).toContain('Marketplace publication is not complete');
+    expect(actionReadme).toContain('root `action.yml` shim');
   });
 
   it('documents the one-workflow-file quickstart and supported publication boundary', () => {
@@ -60,6 +64,7 @@ describe('deploy-time profile publish assets', () => {
 
     const quickstart = readRepoFile('docs/getting-started/QUICKSTART-15MIN.md');
     expect(quickstart).toContain('one workflow file');
+    expect(quickstart).toContain('actions: read');
     expect(quickstart).toContain('uses: itdojp/ae-framework/.github/actions/assurance-gate@main');
     expect(quickstart).toContain('replace it with `@v1`');
     expect(quickstart).toContain('`mode`: `pass`');
@@ -90,6 +95,7 @@ describe('deploy-time profile publish assets', () => {
 
     expect(releaseAssets).toContain('npm publication is not claimed');
     expect(releaseAssets).toContain('Marketplace publication is not claimed');
+    expect(releaseAssets).toContain('root action/shim or dedicated action repository');
     expect(releaseAssets).toContain('Unsupported until release execution');
     expect(releaseAssets).toContain('external adoption surface');
     expect(releaseAssets).toContain('review-speed improvement');

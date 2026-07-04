@@ -42,7 +42,7 @@ Publication-facing metadata is recorded in `package.json`:
 - `license`: Apache-2.0
 - `publishConfig.access`: public
 - repository directory: `packages/core`
-- runtime files: `dist`, `schema`, `README.md`, and `PUBLISHING.md`
+- runtime files: `dist`, `schema`, `README.md`, `PUBLISHING.md`, `LICENSE`, and `NOTICE`
 - Node engine: `>=20.11 <23`
 
 Use `PUBLISHING.md` for the pre-publish checklist.

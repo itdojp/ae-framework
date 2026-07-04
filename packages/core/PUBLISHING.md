@@ -8,7 +8,8 @@ the compatibility boundary used by the composite assurance-gate action.
 
 - Package metadata is prepared for `@ae-framework/core@0.1.0`.
 - The package is intended for public npm publication under the Apache-2.0
-  license.
+  license, with package-local `LICENSE` and `NOTICE` files included in the
+  published artifact.
 - Publication is not implied by this repository file. Announce npm availability
   only after `npm publish` succeeds and package provenance is verified.
 
@@ -25,11 +26,12 @@ the compatibility boundary used by the composite assurance-gate action.
    (cd packages/core && npm pack --dry-run)
    ```
 
-4. Confirm runtime dependencies remain limited to the documented set:
+4. Confirm `npm pack --dry-run` includes `LICENSE` and `NOTICE`.
+5. Confirm runtime dependencies remain limited to the documented set:
    `ajv`, `ajv-formats`, and `yaml`.
-5. Confirm `docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md` matches the
+6. Confirm `docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md` matches the
    release tag, profile schema, and action metadata.
-6. Publish only from the release commit or tag used to document compatibility.
+7. Publish only from the release commit or tag used to document compatibility.
 
 ## Compatibility rule
 
