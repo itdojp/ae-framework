@@ -41,6 +41,22 @@ describe('deploy-time profile dogfood replay', () => {
     expect(full?.summary).toMatchObject({ caseCount: 20, driftCount: 0 });
   });
 
+  it('compares all deploy-time profiles against recorded merged PR check evidence without drift', async () => {
+    const report = await buildDogfoodReport({
+      fixture: 'fixtures/profiles/dogfood/recorded-pr-gate-decisions.json',
+      generatedAt: '2026-07-06T07:25:00.000+09:00',
+    });
+
+    expect(report.status).toBe('pass');
+    expect(report.fixture.caseCount).toBe(20);
+    expect(report.fixture.mode).toBe('recorded-pr');
+    expect(report.summary).toMatchObject({ profileCount: 3, replayCoverageCount: 20, driftCount: 0 });
+    expect(report.profiles.every((profile) => profile.summary.driftCount === 0)).toBe(true);
+    const sourcePrs = new Set(report.profiles[0]?.cases.map((caseEntry) => caseEntry.sourcePr));
+    expect(sourcePrs.size).toBe(20);
+    expect(sourcePrs).toContain(3629);
+  });
+
   it('keeps pnpm-style argument separators from becoming positionals', () => {
     expect(parseCli(['--', '--profile', 'minimal', '--no-write']).profile).toBe('minimal');
   });

@@ -456,7 +456,8 @@
     "domain-presets:render": "node scripts/domain-presets/render-preset.mjs",
     "audit:completion": "node scripts/audit/render-completion-audit.mjs",
     "profiles:validate": "node scripts/profiles/validate-profiles.mjs",
-    "profiles:dogfood": "pnpm --filter @ae-framework/core -s run build && node scripts/profiles/dogfood-ci-profiles.mjs"
+    "profiles:dogfood": "pnpm --filter @ae-framework/core -s run build && node scripts/profiles/dogfood-ci-profiles.mjs",
+    "profiles:dogfood:recorded": "pnpm --filter @ae-framework/core -s run build && node scripts/profiles/dogfood-ci-profiles.mjs --fixture fixtures/profiles/dogfood/recorded-pr-gate-decisions.json"
   },
   "dependencies": {
     "@ae-framework/agent-builder-adapter": "file:./packages/agent-builder-adapter",

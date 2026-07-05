@@ -1,0 +1,59 @@
+name: Deploy-Time Profiles Recorded Replay
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '27 18 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  recorded-replay:
+    name: deploy-time-profiles-recorded-replay
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+
+      - name: Validate deploy-time profile contracts
+        run: pnpm -s run profiles:validate
+
+      - name: Run recorded-PR deploy-time profile replay
+        run: |
+          pnpm -s run profiles:dogfood:recorded -- \
+            --profile all \
+            --out artifacts/profiles/deploy-time-profiles-recorded-report.json \
+            --out-md artifacts/profiles/deploy-time-profiles-recorded-report.md
+
+      - name: Append recorded replay report
+        if: ${{ always() }}
+        run: |
+          if [ -f artifacts/profiles/deploy-time-profiles-recorded-report.md ]; then
+            cat artifacts/profiles/deploy-time-profiles-recorded-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload recorded replay report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-time-profiles-recorded-report
+          path: |
+            artifacts/profiles/deploy-time-profiles-recorded-report.json
+            artifacts/profiles/deploy-time-profiles-recorded-report.md
