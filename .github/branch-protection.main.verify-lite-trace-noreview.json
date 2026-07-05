@@ -5,7 +5,8 @@
       "verify-lite",
       "policy-gate",
       "gate",
-      "KvOnce Trace Validation"
+      "KvOnce Trace Validation",
+      "deploy-time-profiles"
     ]
   },
   "enforce_admins": false,

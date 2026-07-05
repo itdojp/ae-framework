@@ -6,7 +6,8 @@ canonicalSource:
 - profiles/full.yaml
 - scripts/profiles/dogfood-ci-profiles.mjs
 - scripts/ci/run-verify-lite-local.sh
-lastVerified: '2026-07-04'
+- .github/workflows/deploy-time-profiles.yml
+lastVerified: '2026-07-06'
 owner: quality-maintainers
 verificationCommand: pnpm -s run profiles:dogfood -- --profile all --no-write
 ---
@@ -34,6 +35,30 @@ pnpm -s run profiles:dogfood -- --profile all --fixture fixtures/profiles/dogfoo
 The replay uses `@ae-framework/core` to validate `profiles/{minimal,standard,full}.yaml`, aggregate
 profile evidence, and evaluate required-check decisions from the deterministic fixture. The fixture
 contains 20 documented PR-equivalent cases and covers both pass and blocking outcomes.
+
+## Required all-profile path check
+
+The `Deploy-Time Profiles / deploy-time-profiles` check is intentionally emitted for every PR so it
+can be named in branch protection without leaving non-profile PRs waiting for a skipped workflow.
+Inside the job, `.github/workflows/deploy-time-profiles.yml` performs the path filter and runs the
+all-profile replay only when a PR or `main` push touches one of these release-critical surfaces:
+
+- `packages/core/**`
+- `profiles/**`
+- `schema/assurance-profile.schema.json`
+- `fixtures/profiles/dogfood/**`
+- `.github/actions/assurance-gate/**`
+- root `action.yml`
+- `scripts/actions/assurance-gate.mjs`
+- `scripts/profiles/**`
+- `.github/workflows/deploy-time-profiles.yml`
+- `.github/branch-protection.main.verify-lite-trace-noreview.json`
+
+For PR events, the workflow compares `merge-base(base, head)..head` so changes that landed only on
+`main` after the PR branch was created do not make unrelated PRs run the expensive replay. When the
+path filter matches, the job runs `pnpm -s run profiles:validate` and
+`pnpm -s run profiles:dogfood -- --profile all`, then asserts that all three built-in profiles
+(`minimal`, `standard`, `full`) executed and the replay status is `pass`.
 
 ## Drift handling
 
