@@ -4,7 +4,7 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import { safeExit } from '../utils/safe-exit.js';
 
-const DEFAULT_ACTION = 'itdojp/ae-framework/.github/actions/assurance-gate';
+const DEFAULT_ACTION = 'itdojp/ae-framework';
 const BUILTIN_PROFILES = new Set(['minimal', 'standard', 'full']);
 
 export interface InitProfileOptions {
@@ -54,6 +54,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   assurance:

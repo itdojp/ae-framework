@@ -1,0 +1,83 @@
+name: ae-framework Assurance Gate
+description: Validate assurance artifacts, evaluate a deploy-time profile policy, and render a PR review surface.
+branding:
+  icon: shield
+  color: blue
+inputs:
+  profile:
+    description: "minimal, standard, full, or a custom profile YAML path in the consumer repository"
+    required: false
+    default: minimal
+  artifacts-dir:
+    description: "Directory in the consumer repository containing assurance artifacts and optional evidence.json"
+    required: false
+    default: artifacts
+  policy:
+    description: "Optional policy YAML path in the consumer repository. Built-in profiles default to policy/release-policy.yml from ae-framework."
+    required: false
+    default: ""
+  output-dir:
+    description: "Directory in the consumer repository where gate artifacts are written"
+    required: false
+    default: artifacts/assurance-gate
+  environment:
+    description: "Optional release-policy environment key, such as staging or production"
+    required: false
+    default: ""
+  fail-on-block:
+    description: "Fail the action when the policy result is block"
+    required: false
+    default: "true"
+outputs:
+  gate-result:
+    description: "Policy result: pass, block, or report-only"
+    value: ${{ steps.run.outputs.gate-result }}
+  gate-result-path:
+    description: "Path to gate-result.json"
+    value: ${{ steps.run.outputs.gate-result-path }}
+  assurance-summary-path:
+    description: "Path to assurance-summary.json"
+    value: ${{ steps.run.outputs.assurance-summary-path }}
+  policy-decision-path:
+    description: "Path to policy-decision.json"
+    value: ${{ steps.run.outputs.policy-decision-path }}
+  review-surface-path:
+    description: "Path to review-surface.md"
+    value: ${{ steps.run.outputs.review-surface-path }}
+runs:
+  using: composite
+  steps:
+    - name: Build ae-framework core package
+      shell: bash
+      run: |
+        set -euo pipefail
+        action_repo="$(cd "${GITHUB_ACTION_PATH}" && pwd)"
+        cd "$action_repo"
+        corepack enable
+        pnpm install --frozen-lockfile --filter @ae-framework/core...
+        pnpm --filter @ae-framework/core run build
+    - name: Run assurance gate
+      id: run
+      shell: bash
+      env:
+        AE_PROFILE: ${{ inputs.profile }}
+        AE_ARTIFACTS_DIR: ${{ inputs.artifacts-dir }}
+        AE_OUTPUT_DIR: ${{ inputs.output-dir }}
+        AE_POLICY: ${{ inputs.policy }}
+        AE_ENVIRONMENT: ${{ inputs.environment }}
+        AE_FAIL_ON_BLOCK: ${{ inputs.fail-on-block }}
+      run: |
+        set -euo pipefail
+        args=(
+          --profile "$AE_PROFILE"
+          --artifacts-dir "$AE_ARTIFACTS_DIR"
+          --output-dir "$AE_OUTPUT_DIR"
+          --fail-on-block "$AE_FAIL_ON_BLOCK"
+        )
+        if [ -n "$AE_POLICY" ]; then
+          args+=(--policy "$AE_POLICY")
+        fi
+        if [ -n "$AE_ENVIRONMENT" ]; then
+          args+=(--environment "$AE_ENVIRONMENT")
+        fi
+        node "${GITHUB_ACTION_PATH}/scripts/actions/assurance-gate.mjs" "${args[@]}"

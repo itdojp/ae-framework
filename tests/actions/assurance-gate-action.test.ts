@@ -22,6 +22,84 @@ beforeAll(() => {
 });
 
 describe('assurance-gate action runner', () => {
+  it('resolves the action repository from a root action path', () => {
+    const workspace = resetWorkspace('root-action-path');
+    writeFileSync(path.join(workspace, 'artifacts', 'evidence.json'), `${JSON.stringify({
+      evidence: [
+        {
+          claimId: 'minimal-assurance-gate-reviewable',
+          lane: 'spec',
+          kind: 'schema',
+          sourceKind: 'spec-derived',
+          origin: 'fixture-schema',
+        },
+        {
+          claimId: 'minimal-assurance-gate-reviewable',
+          lane: 'behavior',
+          kind: 'integration',
+          sourceKind: 'runtime-derived',
+          origin: 'fixture-integration',
+        },
+      ],
+      policyEvidence: ['postDeployVerify', 'qualityGates'],
+    }, null, 2)}\n`);
+
+    const result = spawnSync('node', [
+      'scripts/actions/assurance-gate.mjs',
+      '--workspace', workspace,
+      '--profile', 'minimal',
+      '--artifacts-dir', 'artifacts',
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      timeout: 30_000,
+      env: { ...process.env, GITHUB_ACTION_PATH: repoRoot },
+    });
+
+    expect(result.stderr).toBe('');
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('ae-framework assurance gate: pass');
+  });
+
+  it('resolves the action repository from the compatibility subdirectory action path', () => {
+    const workspace = resetWorkspace('subdirectory-action-path');
+    writeFileSync(path.join(workspace, 'artifacts', 'evidence.json'), `${JSON.stringify({
+      evidence: [
+        {
+          claimId: 'minimal-assurance-gate-reviewable',
+          lane: 'spec',
+          kind: 'schema',
+          sourceKind: 'spec-derived',
+          origin: 'fixture-schema',
+        },
+        {
+          claimId: 'minimal-assurance-gate-reviewable',
+          lane: 'behavior',
+          kind: 'integration',
+          sourceKind: 'runtime-derived',
+          origin: 'fixture-integration',
+        },
+      ],
+      policyEvidence: ['postDeployVerify', 'qualityGates'],
+    }, null, 2)}\n`);
+
+    const result = spawnSync('node', [
+      'scripts/actions/assurance-gate.mjs',
+      '--workspace', workspace,
+      '--profile', 'minimal',
+      '--artifacts-dir', 'artifacts',
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      timeout: 30_000,
+      env: { ...process.env, GITHUB_ACTION_PATH: path.join(repoRoot, '.github/actions/assurance-gate') },
+    });
+
+    expect(result.stderr).toBe('');
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('ae-framework assurance gate: pass');
+  });
+
   it('runs the minimal profile against a bare non-workspace fixture', () => {
     const workspace = resetWorkspace('minimal-pass');
     writeFileSync(path.join(workspace, 'artifacts', 'evidence.json'), `${JSON.stringify({
