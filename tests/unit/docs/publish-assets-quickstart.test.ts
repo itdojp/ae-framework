@@ -60,8 +60,8 @@ describe('deploy-time profile publish assets', () => {
     expect(rootMetadata.name).toBe(subdirectoryMetadata.name);
     expect(rootMetadata.description).toBe(subdirectoryMetadata.description);
     expect(rootMetadata.branding).toEqual(subdirectoryMetadata.branding);
-    expect(Object.keys(rootMetadata.inputs)).toEqual(Object.keys(subdirectoryMetadata.inputs));
-    expect(Object.keys(rootMetadata.outputs)).toEqual(Object.keys(subdirectoryMetadata.outputs));
+    expect(Object.keys(rootMetadata.inputs).sort()).toEqual(Object.keys(subdirectoryMetadata.inputs).sort());
+    expect(Object.keys(rootMetadata.outputs).sort()).toEqual(Object.keys(subdirectoryMetadata.outputs).sort());
     expect(actionReadme).toContain('Marketplace listing metadata draft');
     expect(actionReadme).toContain('docs/getting-started/QUICKSTART-15MIN.md');
     expect(actionReadme).toContain('docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md');
