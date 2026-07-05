@@ -1,6 +1,7 @@
 ---
 docRole: derived
 canonicalSource:
+- action.yml
 - .github/actions/assurance-gate/action.yml
 - .github/actions/assurance-gate/README.md
 - packages/core/README.md
@@ -19,11 +20,10 @@ ae-framework pnpm workspace. It uses one workflow file to exercise the
 `minimal` deploy-time profile, produce assurance gate artifacts, and render a
 review surface in the workflow summary.
 
-Publication boundary: this is the preview evidence path. Until the `v1` action
-tag, Marketplace listing, and npm publication are completed, pin the action to
-`main` or to an explicit ae-framework commit SHA for reproducible evaluation.
-Do not describe the npm package or Marketplace listing as live unless the
-release note for that publication exists.
+Publication boundary: use the root action ref `itdojp/ae-framework@v1` for the
+normal adoption path after the `v1` tag exists. Pin an exact tag or commit SHA
+for reproducible evaluation. Do not describe the npm package or Marketplace
+listing as live unless the release note for that publication exists.
 
 ## What this proves
 
@@ -128,7 +128,7 @@ jobs:
 
       - name: Run ae-framework assurance gate
         id: assurance
-        uses: itdojp/ae-framework/.github/actions/assurance-gate@main
+        uses: itdojp/ae-framework@v1
         with:
           profile: minimal
           artifacts-dir: artifacts
@@ -159,9 +159,8 @@ jobs:
           path: artifacts/assurance-gate
 ```
 
-For a reproducible preview, replace `@main` with a specific commit SHA from
-`itdojp/ae-framework`. After the `v1` action tag is cut and the Marketplace
-listing is published, replace it with `@v1`.
+For a reproducible evaluation, replace `@v1` with `@v1.0.1` or a specific
+commit SHA from `itdojp/ae-framework`.
 
 ## Step 2: Run pass mode
 
@@ -220,13 +219,13 @@ schema-validated artifacts. Keep these rules:
 
 - `@ae-framework/core` is prepared with npm metadata for `0.1.0`, but this
   quickstart does not require consumers to install it directly.
-- The composite action builds the core package from the same action repository
-  ref, which keeps action/profile/schema/core versions aligned.
-- Marketplace listing draft metadata is prepared in `.github/actions/assurance-gate/`,
-  but Marketplace publication is separate from this checked-in preview path and
-  still requires a root action/shim or dedicated action repository.
+- The root composite action builds the core package from the same action
+  repository ref, which keeps action/profile/schema/core versions aligned.
+- Marketplace-compatible root action metadata is present in `action.yml`, but
+  Marketplace publication is separate from this checked-in path and still
+  requires the release owner to publish the listing.
 - See `docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md` for the version-skew
-  boundary and the `@main`/commit-SHA/`@v1` transition.
+  boundary and the `@v1` / exact-tag / commit-SHA transition.
 
 ## Troubleshooting
 
@@ -234,5 +233,5 @@ schema-validated artifacts. Keep these rules:
 | --- | --- | --- |
 | `policyResult` is `block` in pass mode | The inline evidence step was edited or `qualityGates` / behavior evidence is missing. | Compare the workflow with the pass-mode JSON above. |
 | The job fails in block mode | `enforce` is `true`, so a block decision is intentionally enforced. | Re-run with `enforce: false` to inspect artifacts without failing the job. |
-| The action ref cannot be resolved | `@v1` was used before the release tag exists, or a commit SHA was typed incorrectly. | Use `@main` for preview validation or pin a known ae-framework commit SHA. |
+| The action ref cannot be resolved | `@v1` was used before the release tag exists, or a commit SHA was typed incorrectly. | Use `@v1.0.1` after the release exists or pin a known ae-framework commit SHA. |
 | The review surface is missing from the summary | The action failed before writing outputs. | Download logs and check the build/corepack step first, then inspect uploaded artifacts if present. |

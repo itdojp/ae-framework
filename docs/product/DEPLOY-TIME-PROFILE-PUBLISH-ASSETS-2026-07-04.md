@@ -24,7 +24,7 @@ Marketplace publication steps.
 | Surface | Status as of 2026-07-04 | Public wording boundary |
 | --- | --- | --- |
 | `@ae-framework/core` package metadata | Prepared in `packages/core/package.json` with Apache-2.0 license, repository metadata, keywords, public publish config, Node engine, and three runtime dependencies. | Say the package metadata is ready for publication review. Do not say the package is available on npm until the npm publish step is executed and verified. |
-| Composite action metadata | Draft listing metadata is prepared in `.github/actions/assurance-gate/action.yml` with name, description, inputs, outputs, and branding. | Say the action is available from this repository path for preview refs. Do not say Marketplace publication is ready or complete until a root `action.yml` shim or dedicated action repository exists and the listing is published. |
+| Composite action metadata | Marketplace-compatible root `action.yml` and subdirectory compatibility metadata are prepared with name, description, inputs, outputs, and branding. | Say the action release surface is prepared for `itdojp/ae-framework@v1`. Do not say Marketplace publication is complete until the listing is published and its URL is recorded. |
 | 15-minute external quickstart | Prepared in `docs/getting-started/QUICKSTART-15MIN.md`. | Say a one-workflow-file preview path is documented and covered by repository tests. Do not claim external live adoption or production outcomes. |
 | Compatibility reference | Prepared in `docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md`. | Say action/profile/schema/core version-skew boundaries are documented. |
 | Dogfood evidence | Prepared in `docs/quality/DEPLOY-TIME-PROFILE-DOGFOOD.md` and fixture replay tests. | Say the repository dogfoods profile replay against fixtures. Do not claim all external repositories will match this repo's full profile decisions. |
@@ -125,7 +125,7 @@ pass and block gate decisions with review-surface artifacts.
 
 - npm publication is not claimed until `@ae-framework/core` is actually published
   and verified.
-- Marketplace publication is not claimed until a root action/shim or dedicated action repository exists and the action listing is published.
+- Marketplace publication is not claimed until the action listing is published and the listing URL is recorded.
 - External live adoption, production effectiveness, review-speed improvement,
   safety improvement, and agent/vendor superiority are not claimed by these
   assets.
@@ -163,7 +163,7 @@ not need the ae-framework pnpm workspace.
 The checked-in assets now cover:
 
 - @ae-framework/core package metadata for the standalone minimal assurance runtime;
-- Marketplace-oriented metadata for the composite assurance-gate action;
+- Marketplace-compatible metadata for the root assurance-gate action;
 - a compatibility reference explaining how action refs, profiles, schemas, and
   core versions must stay aligned;
 - release copy that separates implemented behavior from planned npm and
@@ -183,7 +183,7 @@ Compatibility: docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md
 | Claim | Status | Evidence or disposition |
 | --- | --- | --- |
 | The repository contains npm-ready metadata for `@ae-framework/core`. | Supported | `packages/core/package.json` and `packages/core/README.md`. |
-| The repository contains Marketplace listing draft metadata. | Supported | `.github/actions/assurance-gate/action.yml` and action README; Marketplace publication still needs a root `action.yml` shim or dedicated action repository. |
+| The repository contains Marketplace-compatible action metadata. | Supported | Root `action.yml`, `.github/actions/assurance-gate/action.yml`, and action README; Marketplace publication still needs listing evidence. |
 | A one-workflow-file preview quickstart exists for external repositories. | Supported | `docs/getting-started/QUICKSTART-15MIN.md`. |
 | Pass and block gate decisions are covered by repository tests. | Supported | `tests/actions/assurance-gate-action.test.ts`. |
 | The package is published on npm. | Unsupported until release execution | Requires npm publish evidence. |

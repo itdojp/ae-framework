@@ -30,12 +30,14 @@ describe('ae init --profile scaffold', () => {
     const workflow = readFileSync(path.join(root, '.github/workflows/assurance.yml'), 'utf8');
     expect(workflow).toContain('uses: actions/setup-node@v4');
     expect(workflow).toContain('node-version: "20"');
-    expect(workflow).toContain('uses: itdojp/ae-framework/.github/actions/assurance-gate@v1');
+    expect(workflow).toContain('actions: read');
+    expect(workflow).toContain('uses: itdojp/ae-framework@v1');
     expect(workflow).toContain('profile: "minimal"');
     expect(workflow).toContain('artifacts-dir: "artifacts"');
     const config = readFileSync(path.join(root, '.ae/assurance.yml'), 'utf8');
     expect(config).toContain('schemaVersion: ae-assurance-init/v1');
     expect(config).toContain('profileKind: "builtin"');
+    expect(config).toContain('action: "itdojp/ae-framework@v1"');
   });
 
   it('supports dry-run without writing files', () => {

@@ -17,7 +17,7 @@ bundle used by the action.
 | Surface | Current repository value | Compatibility rule |
 | --- | --- | --- |
 | Core package | `@ae-framework/core` `0.1.0` | `0.1.x` is the initial pre-publication compatibility line for the curated schema bundle and pure-JS policy evaluator. |
-| Action | `.github/actions/assurance-gate/action.yml` | Pin the action to the same repository ref that supplies `profiles/`, `policy/`, and `packages/core`. Use a commit SHA or `main` for preview validation; use `v1` only after the release tag is cut. |
+| Action | root `action.yml` plus compatibility surface `.github/actions/assurance-gate/action.yml` | Pin the action to the same repository ref that supplies `profiles/`, `policy/`, and `packages/core`. Use `v1` for normal adoption after the release tag exists; use `v1.0.1` or a commit SHA for reproducibility. |
 | Built-in profiles | `profiles/minimal.yaml`, `profiles/standard.yaml`, `profiles/full.yaml` | Profiles use `schemaVersion: assurance-profile/v1` and are validated before policy evaluation. |
 | Release policy | `policy/release-policy.yml` | Built-in profiles default to `schemaVersion: ae-release-policy/v1`; custom policies must validate against the same schema. |
 | Curated schema bundle | `packages/core/schema/*.json` | The package ships the schema copies that the standalone core validates; action, profiles, and schemas should be released from the same repository ref. |
@@ -32,19 +32,11 @@ core package install for the one-workflow-file path. It also means the action
 ref is the compatibility anchor: action metadata, built-in profiles, policy,
 curated schemas, and core implementation should come from the same ref.
 
-For preview evidence before Marketplace or npm publication, prefer one of these
-forms:
+For external adoption after the root action release, prefer one of these forms:
 
 ```yaml
-uses: itdojp/ae-framework/.github/actions/assurance-gate@main
-# or, for a reproducible evaluation, pin a specific commit SHA from this repo.
-```
-
-For a release artifact after the `v1` action tag and npm package publication are
-completed, use:
-
-```yaml
-uses: itdojp/ae-framework/.github/actions/assurance-gate@v1
+uses: itdojp/ae-framework@v1
+# or, for a reproducible evaluation, use @v1.0.1 or pin a specific commit SHA from this repo.
 ```
 
 The npm package is prepared as `@ae-framework/core@0.1.0`, but external

@@ -47,11 +47,22 @@ function parseCli(argv) {
   return parsed.values;
 }
 
+function hasActionRepoMarkers(candidate) {
+  return existsSync(path.join(candidate, 'packages', 'core', 'package.json'))
+    && existsSync(path.join(candidate, 'profiles', 'minimal.yaml'))
+    && existsSync(path.join(candidate, 'policy', 'release-policy.yml'));
+}
+
 function repoRootFromActionPath() {
-  if (process.env.GITHUB_ACTION_PATH) {
-    return path.resolve(process.env.GITHUB_ACTION_PATH, '..', '..', '..');
+  if (!process.env.GITHUB_ACTION_PATH) return process.cwd();
+  let candidate = path.resolve(process.env.GITHUB_ACTION_PATH);
+  for (let depth = 0; depth < 6; depth += 1) {
+    if (hasActionRepoMarkers(candidate)) return candidate;
+    const parent = path.dirname(candidate);
+    if (parent === candidate) break;
+    candidate = parent;
   }
-  return process.cwd();
+  return path.resolve(process.env.GITHUB_ACTION_PATH, '..', '..', '..');
 }
 
 function assertContained(root, candidate, label) {

@@ -43,9 +43,9 @@ Use `docs/getting-started/QUICKSTART-15MIN.md` for the one-workflow-file
 external repository preview path. The quickstart shows both pass and block gate
 decisions and writes the review surface to the GitHub Actions job summary.
 
-Before the `v1` action tag and Marketplace listing are published, use `@main` or
-an explicit commit SHA for preview validation. After the release tag exists, use
-`itdojp/ae-framework/.github/actions/assurance-gate@v1`.
+For normal external adoption after the release tag exists, use the root action
+`itdojp/ae-framework@v1`. Use `@v1.0.1` or a commit SHA when reproducibility
+matters. This subdirectory action remains as a compatibility surface.
 
 ## Marketplace listing metadata draft
 
@@ -59,10 +59,9 @@ an explicit commit SHA for preview validation. After the release tag exists, use
 | Quickstart | `docs/getting-started/QUICKSTART-15MIN.md` |
 | Compatibility | `docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md` |
 
-Publication boundary: this repository contains Marketplace listing draft metadata
-for the subdirectory action. Marketplace publication is not complete, and is not
-ready, until the release owner adds a root `action.yml` shim or moves the action
-to a dedicated action repository and publishes the listing.
+Publication boundary: this repository now contains Marketplace-compatible root
+action metadata in `action.yml`. Marketplace publication is still not complete
+until the release owner publishes the listing and records the listing URL.
 
 ## Version compatibility
 
@@ -70,4 +69,4 @@ The action builds `@ae-framework/core` from the same action repository ref that
 supplies `profiles/`, `policy/`, and the curated schema bundle. Keep the action
 ref, profiles, schemas, and core package release line aligned. See
 `docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md` for the compatibility
-matrix and the `@main`/commit-SHA/`@v1` transition.
+matrix and the `@v1` / exact-tag / commit-SHA transition.

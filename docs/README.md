@@ -111,6 +111,7 @@ Entry path for first-time setup, baseline verification, and the shortest route t
 - First-run demo: `getting-started/FIRST-RUN-DEMO.md`
 - Quick Start (15 minutes): `getting-started/QUICK-START-GUIDE.md`
 - External repository assurance gate quickstart (15 minutes): `getting-started/QUICKSTART-15MIN.md`
+- Assurance Gate action release policy: `operate/ASSURANCE-GATE-ACTION-RELEASE.md`
 - Phase 6 Quick Start (UI/UX): `getting-started/PHASE-6-GETTING-STARTED.md`
 - Setup: `getting-started/SETUP.md`
 
