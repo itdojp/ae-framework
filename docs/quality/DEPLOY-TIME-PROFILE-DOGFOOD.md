@@ -43,7 +43,7 @@ pnpm -s run profiles:dogfood -- --profile all --fixture fixtures/profiles/dogfoo
 Run the recorded-PR replay:
 
 ```bash
-pnpm -s run profiles:dogfood:recorded -- --profile all --fixture fixtures/profiles/dogfood/recorded-pr-gate-decisions.json
+pnpm -s run profiles:dogfood:recorded -- --profile all
 ```
 
 Both replays use `@ae-framework/core` to validate `profiles/{minimal,standard,full}.yaml`, aggregate
