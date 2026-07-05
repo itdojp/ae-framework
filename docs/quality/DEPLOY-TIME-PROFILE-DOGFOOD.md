@@ -45,6 +45,8 @@ all-profile replay only when a PR or `main` push touches one of these release-cr
 
 - `packages/core/**`
 - `profiles/**`
+- `schema/assurance-profile.schema.json`
+- `fixtures/profiles/dogfood/**`
 - `.github/actions/assurance-gate/**`
 - root `action.yml`
 - `scripts/actions/assurance-gate.mjs`

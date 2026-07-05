@@ -19,10 +19,12 @@ describe('deploy-time profiles required check workflow', () => {
     expect(raw).toContain('local profile_prefixes=(');
     expect(raw).toContain('"packages/core/"');
     expect(raw).toContain('"profiles/"');
+    expect(raw).toContain('"fixtures/profiles/dogfood/"');
     expect(raw).toContain('".github/actions/assurance-gate/"');
     expect(raw).toContain('"scripts/profiles/"');
     expect(raw).toContain('[[ "$changed_file" == "$profile_prefix"* ]]');
-    expect(raw).toContain('action.yml|scripts/actions/assurance-gate.mjs');
+    expect(raw).toContain('action.yml|schema/assurance-profile.schema.json');
+    expect(raw).toContain('scripts/actions/assurance-gate.mjs');
     expect(raw).toContain('.github/workflows/deploy-time-profiles.yml');
     expect(raw).toContain('.github/branch-protection.main.verify-lite-trace-noreview.json)');
     expect(raw).not.toContain('packages/core/*) return 0');
