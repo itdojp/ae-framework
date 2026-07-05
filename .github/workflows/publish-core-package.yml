@@ -1,0 +1,325 @@
+name: Publish @ae-framework/core
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_version:
+        description: Expected version from packages/core/package.json
+        required: true
+        default: '0.1.0'
+      publish_mode:
+        description: Select preflight, first-publish bootstrap with a protected token, or trusted-publisher publish.
+        required: true
+        type: choice
+        default: preflight
+        options:
+          - preflight
+          - bootstrap-token
+          - trusted-publisher
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.package_version }}-${{ inputs.publish_mode }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: core-package-preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '22.14.0'
+
+      - name: Install dependencies
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+
+      - name: Validate requested package version
+        env:
+          EXPECTED_VERSION: ${{ inputs.package_version }}
+        run: |
+          set -euo pipefail
+          actual_version="$(node -p "JSON.parse(require('node:fs').readFileSync('packages/core/package.json', 'utf8')).version")"
+          if [ "$actual_version" != "$EXPECTED_VERSION" ]; then
+            echo "packages/core/package.json version ($actual_version) does not match workflow input ($EXPECTED_VERSION)" >&2
+            exit 1
+          fi
+
+      - name: Run package checks
+        run: |
+          set -euo pipefail
+          pnpm --filter @ae-framework/core run build
+          pnpm --filter @ae-framework/core run test
+          pnpm --filter @ae-framework/core run check:no-src-imports
+
+      - name: Build npm pack dry-run evidence
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/npm
+          (
+            cd packages/core
+            npm pack --dry-run --json --foreground-scripts=false > ../../artifacts/npm/core-pack-dry-run.json
+          )
+
+      - name: Validate dry-run package contents
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+          const report = JSON.parse(fs.readFileSync('artifacts/npm/core-pack-dry-run.json', 'utf8'));
+          const first = Array.isArray(report) ? report[0] : undefined;
+          if (!first || !Array.isArray(first.files)) {
+            throw new Error('npm pack dry-run output did not contain a files array');
+          }
+          const files = new Set(first.files.map((entry) => entry.path));
+          for (const required of ['package.json', 'README.md', 'PUBLISHING.md', 'LICENSE', 'NOTICE']) {
+            if (!files.has(required)) {
+              throw new Error(`npm pack dry-run is missing ${required}`);
+            }
+          }
+          if (!Array.from(files).some((file) => file.startsWith('dist/'))) {
+            throw new Error('npm pack dry-run is missing dist/ output');
+          }
+          if (!Array.from(files).some((file) => file.startsWith('schema/'))) {
+            throw new Error('npm pack dry-run is missing schema/ assets');
+          }
+          const sourceFiles = Array.from(files).filter((file) => file.startsWith('src/'));
+          if (sourceFiles.length > 0) {
+            throw new Error(`npm pack dry-run unexpectedly includes src/ files: ${sourceFiles.join(', ')}`);
+          }
+          NODE
+
+      - name: Upload npm pack dry-run evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-pack-dry-run-${{ inputs.package_version }}
+          path: artifacts/npm/core-pack-dry-run.json
+          if-no-files-found: error
+
+  bootstrap-publish:
+    name: core-package-bootstrap-publish
+    if: ${{ inputs.publish_mode == 'bootstrap-token' }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment:
+      name: npm-publish-bootstrap
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '22.14.0'
+
+      - name: Ensure npm CLI supports provenance
+        run: |
+          set -euo pipefail
+          npm install -g 'npm@^11.5.1'
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+
+          const parseVersion = (value) => value.trim().split('.').map((part) => Number(part));
+          const atLeast = (actual, expected) => {
+            for (let index = 0; index < expected.length; index += 1) {
+              if ((actual[index] ?? 0) > expected[index]) return true;
+              if ((actual[index] ?? 0) < expected[index]) return false;
+            }
+            return true;
+          };
+
+          const nodeVersion = parseVersion(process.versions.node);
+          const npmVersion = parseVersion(execFileSync('npm', ['--version'], { encoding: 'utf8' }));
+
+          if (!atLeast(nodeVersion, [22, 14, 0])) {
+            throw new Error(`npm provenance publishing requires Node >=22.14.0; got ${process.versions.node}`);
+          }
+          if (!atLeast(npmVersion, [11, 5, 1])) {
+            throw new Error(`npm provenance publishing requires npm >=11.5.1; got ${npmVersion.join('.')}`);
+          }
+          NODE
+
+      - name: Install dependencies
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+
+      - name: Validate bootstrap release tag and package version
+        env:
+          EXPECTED_VERSION: ${{ inputs.package_version }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF_TYPE: ${{ github.ref_type }}
+        run: |
+          set -euo pipefail
+          actual_version="$(node -p "JSON.parse(require('node:fs').readFileSync('packages/core/package.json', 'utf8')).version")"
+          expected_tag="core-v${EXPECTED_VERSION}"
+          if [ "$actual_version" != "$EXPECTED_VERSION" ]; then
+            echo "packages/core/package.json version ($actual_version) does not match workflow input ($EXPECTED_VERSION)" >&2
+            exit 1
+          fi
+          if [ "$GITHUB_REF_TYPE" != "tag" ] || [ "$GITHUB_REF_NAME" != "$expected_tag" ]; then
+            echo "Bootstrap publishing requires dispatching this workflow on tag ${expected_tag}; got ${GITHUB_REF_TYPE}:${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+
+      - name: Run package checks
+        run: |
+          set -euo pipefail
+          pnpm --filter @ae-framework/core run build
+          pnpm --filter @ae-framework/core run test
+          pnpm --filter @ae-framework/core run check:no-src-imports
+
+      - name: Refuse to overwrite an existing npm version
+        env:
+          EXPECTED_VERSION: ${{ inputs.package_version }}
+        run: |
+          set -euo pipefail
+          if npm view "@ae-framework/core@${EXPECTED_VERSION}" version --json >/tmp/ae-framework-core-existing-version.json 2>/dev/null; then
+            echo "@ae-framework/core@${EXPECTED_VERSION} already exists on npm; refusing to publish over an existing version." >&2
+            cat /tmp/ae-framework-core-existing-version.json >&2
+            exit 1
+          fi
+
+      - name: Publish initial @ae-framework/core with bootstrap token and provenance
+        working-directory: packages/core
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
+        run: npm publish --provenance --access public
+
+      - name: Verify published package
+        env:
+          EXPECTED_VERSION: ${{ inputs.package_version }}
+        run: |
+          set -euo pipefail
+          published_version="$(npm view @ae-framework/core version --json | tr -d '\"')"
+          if [ "$published_version" != "$EXPECTED_VERSION" ]; then
+            echo "Published version mismatch: expected $EXPECTED_VERSION, got $published_version" >&2
+            exit 1
+          fi
+
+  trusted-publish:
+    name: core-package-trusted-publish
+    if: ${{ inputs.publish_mode == 'trusted-publisher' }}
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment:
+      name: npm-publish
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '22.14.0'
+
+      - name: Ensure npm CLI supports trusted publishing
+        run: |
+          set -euo pipefail
+          npm install -g 'npm@^11.5.1'
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+
+          const parseVersion = (value) => value.trim().split('.').map((part) => Number(part));
+          const atLeast = (actual, expected) => {
+            for (let index = 0; index < expected.length; index += 1) {
+              if ((actual[index] ?? 0) > expected[index]) return true;
+              if ((actual[index] ?? 0) < expected[index]) return false;
+            }
+            return true;
+          };
+
+          const nodeVersion = parseVersion(process.versions.node);
+          const npmVersion = parseVersion(execFileSync('npm', ['--version'], { encoding: 'utf8' }));
+
+          if (!atLeast(nodeVersion, [22, 14, 0])) {
+            throw new Error(`npm trusted publishing requires Node >=22.14.0; got ${process.versions.node}`);
+          }
+          if (!atLeast(npmVersion, [11, 5, 1])) {
+            throw new Error(`npm trusted publishing requires npm >=11.5.1; got ${npmVersion.join('.')}`);
+          }
+          NODE
+
+      - name: Install dependencies
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+
+      - name: Validate trusted-publisher release tag and package version
+        env:
+          EXPECTED_VERSION: ${{ inputs.package_version }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF_TYPE: ${{ github.ref_type }}
+        run: |
+          set -euo pipefail
+          actual_version="$(node -p "JSON.parse(require('node:fs').readFileSync('packages/core/package.json', 'utf8')).version")"
+          expected_tag="core-v${EXPECTED_VERSION}"
+          if [ "$actual_version" != "$EXPECTED_VERSION" ]; then
+            echo "packages/core/package.json version ($actual_version) does not match workflow input ($EXPECTED_VERSION)" >&2
+            exit 1
+          fi
+          if [ "$GITHUB_REF_TYPE" != "tag" ] || [ "$GITHUB_REF_NAME" != "$expected_tag" ]; then
+            echo "Trusted publishing requires dispatching this workflow on tag ${expected_tag}; got ${GITHUB_REF_TYPE}:${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+
+      - name: Verify package exists for trusted publishing
+        run: |
+          set -euo pipefail
+          if ! npm view @ae-framework/core name --json >/tmp/ae-framework-core-name.json 2>/dev/null; then
+            echo "@ae-framework/core does not exist on npm yet. Use publish_mode=bootstrap-token for the initial publish, then configure npm trusted publishing and rerun with publish_mode=trusted-publisher for subsequent versions." >&2
+            exit 1
+          fi
+
+      - name: Run package checks
+        run: |
+          set -euo pipefail
+          pnpm --filter @ae-framework/core run build
+          pnpm --filter @ae-framework/core run test
+          pnpm --filter @ae-framework/core run check:no-src-imports
+
+      - name: Refuse to overwrite an existing npm version
+        env:
+          EXPECTED_VERSION: ${{ inputs.package_version }}
+        run: |
+          set -euo pipefail
+          if npm view "@ae-framework/core@${EXPECTED_VERSION}" version --json >/tmp/ae-framework-core-existing-version.json 2>/dev/null; then
+            echo "@ae-framework/core@${EXPECTED_VERSION} already exists on npm; refusing to publish over an existing version." >&2
+            cat /tmp/ae-framework-core-existing-version.json >&2
+            exit 1
+          fi
+
+      - name: Publish @ae-framework/core with trusted publishing provenance
+        working-directory: packages/core
+        run: npm publish --provenance --access public
+
+      - name: Verify published package
+        env:
+          EXPECTED_VERSION: ${{ inputs.package_version }}
+        run: |
+          set -euo pipefail
+          published_version="$(npm view @ae-framework/core version --json | tr -d '\"')"
+          if [ "$published_version" != "$EXPECTED_VERSION" ]; then
+            echo "Published version mismatch: expected $EXPECTED_VERSION, got $published_version" >&2
+            exit 1
+          fi
