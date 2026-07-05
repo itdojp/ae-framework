@@ -30,6 +30,8 @@ describe('deploy-time profiles required check workflow', () => {
     expect(raw).toContain('action.yml|schema/assurance-profile.schema.json');
     expect(raw).toContain('scripts/actions/assurance-gate.mjs');
     expect(raw).toContain('.github/workflows/deploy-time-profiles.yml');
+    expect(raw).toContain('.github/branch-protection.main.require-verify-lite-gate.json');
+    expect(raw).toContain('.github/branch-protection.main.verify-lite-noreview.json');
     expect(raw).toContain('.github/branch-protection.main.verify-lite-trace-noreview.json)');
     expect(raw).not.toContain('packages/core/*) return 0');
     expect(raw).toContain('git merge-base "$base_sha" "$head_sha"');

@@ -36,7 +36,7 @@ jobs:
           matches_profile_trigger_path() {
             local changed_file="$1"
             case "$changed_file" in
-              action.yml|schema/assurance-profile.schema.json|scripts/actions/assurance-gate.mjs|.github/workflows/deploy-time-profiles.yml|.github/branch-protection.main.verify-lite-trace-noreview.json)
+              action.yml|schema/assurance-profile.schema.json|scripts/actions/assurance-gate.mjs|.github/workflows/deploy-time-profiles.yml|.github/branch-protection.main.require-verify-lite-gate.json|.github/branch-protection.main.verify-lite-noreview.json|.github/branch-protection.main.verify-lite-trace-noreview.json)
                 return 0
                 ;;
             esac
@@ -95,7 +95,7 @@ jobs:
           {
             printf '%s\n' '### Deploy-time profile path filter'
             printf '%s\n' "- should_run: ${should_run}"
-            printf '%s\n' "- trigger paths: packages/core/**, profiles/**, .github/actions/assurance-gate/**, root action.yml, assurance profile schema, dogfood fixtures, profile/action runner scripts, this workflow, and branch-protection preset"
+            printf '%s\n' "- trigger paths: packages/core/**, profiles/**, .github/actions/assurance-gate/**, root action.yml, assurance profile schema, dogfood fixtures, profile/action runner scripts, this workflow, and branch-protection presets"
             printf '%s\n' '- changed files:'
             if [ -s "$changed_file_list" ]; then
               sed 's/^/  - /' "$changed_file_list"
