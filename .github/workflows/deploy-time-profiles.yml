@@ -34,17 +34,27 @@ jobs:
           : > "$changed_file_list"
 
           matches_profile_trigger_path() {
-            case "$1" in
-              packages/core/*) return 0 ;;
-              profiles/*) return 0 ;;
-              .github/actions/assurance-gate/*) return 0 ;;
-              action.yml) return 0 ;;
-              scripts/actions/assurance-gate.mjs) return 0 ;;
-              scripts/profiles/*) return 0 ;;
-              .github/workflows/deploy-time-profiles.yml) return 0 ;;
-              .github/branch-protection.main.verify-lite-trace-noreview.json) return 0 ;;
-              *) return 1 ;;
+            local changed_file="$1"
+            case "$changed_file" in
+              action.yml|scripts/actions/assurance-gate.mjs|.github/workflows/deploy-time-profiles.yml|.github/branch-protection.main.verify-lite-trace-noreview.json)
+                return 0
+                ;;
             esac
+
+            local profile_prefixes=(
+              "packages/core/"
+              "profiles/"
+              ".github/actions/assurance-gate/"
+              "scripts/profiles/"
+            )
+            local profile_prefix
+            for profile_prefix in "${profile_prefixes[@]}"; do
+              if [[ "$changed_file" == "$profile_prefix"* ]]; then
+                return 0
+              fi
+            done
+
+            return 1
           }
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
