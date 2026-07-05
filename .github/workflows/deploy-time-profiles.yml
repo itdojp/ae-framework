@@ -60,11 +60,16 @@ jobs:
               base_sha="${{ github.event.before }}"
             fi
 
-            if [ -z "$base_sha" ] || [[ "$base_sha" =~ ^0+$ ]]; then
-              base_sha="$(git rev-list --max-parents=0 "$head_sha" | tail -n 1)"
+            diff_base_sha="$base_sha"
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              diff_base_sha="$(git merge-base "$base_sha" "$head_sha")"
             fi
 
-            git diff --name-only -z "$base_sha" "$head_sha" > "${changed_file_list}.z"
+            if [ -z "$diff_base_sha" ] || [[ "$diff_base_sha" =~ ^0+$ ]]; then
+              diff_base_sha="$(git rev-list --max-parents=0 "$head_sha" | tail -n 1)"
+            fi
+
+            git diff --name-only -z "$diff_base_sha" "$head_sha" > "${changed_file_list}.z"
             while IFS= read -r -d '' changed_file; do
               printf '%s\n' "$changed_file" >> "$changed_file_list"
               if matches_profile_trigger_path "$changed_file"; then
@@ -79,7 +84,7 @@ jobs:
           {
             printf '%s\n' '### Deploy-time profile path filter'
             printf '%s\n' "- should_run: ${should_run}"
-            printf '%s\n' "- trigger paths: packages/core/**, profiles/**, .github/actions/assurance-gate/**, root action.yml, and profile/action runner scripts"
+            printf '%s\n' "- trigger paths: packages/core/**, profiles/**, .github/actions/assurance-gate/**, root action.yml, profile/action runner scripts, this workflow, and branch-protection preset"
             printf '%s\n' '- changed files:'
             if [ -s "$changed_file_list" ]; then
               sed 's/^/  - /' "$changed_file_list"

@@ -22,6 +22,10 @@ describe('deploy-time profiles required check workflow', () => {
     expect(raw).toContain('action.yml) return 0');
     expect(raw).toContain('scripts/actions/assurance-gate.mjs) return 0');
     expect(raw).toContain('scripts/profiles/*) return 0');
+    expect(raw).toContain('.github/workflows/deploy-time-profiles.yml) return 0');
+    expect(raw).toContain('.github/branch-protection.main.verify-lite-trace-noreview.json) return 0');
+    expect(raw).toContain('git merge-base "$base_sha" "$head_sha"');
+    expect(raw).toContain('git diff --name-only -z "$diff_base_sha" "$head_sha"');
     expect(raw).toContain('pnpm -s run profiles:dogfood -- \\');
     expect(raw).toContain('--profile all');
     expect(raw).toContain('report.summary?.profileCount !== 3');

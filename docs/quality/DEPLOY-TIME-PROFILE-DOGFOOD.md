@@ -49,8 +49,12 @@ all-profile replay only when a PR or `main` push touches one of these release-cr
 - root `action.yml`
 - `scripts/actions/assurance-gate.mjs`
 - `scripts/profiles/**`
+- `.github/workflows/deploy-time-profiles.yml`
+- `.github/branch-protection.main.verify-lite-trace-noreview.json`
 
-When the path filter matches, the job runs `pnpm -s run profiles:validate` and
+For PR events, the workflow compares `merge-base(base, head)..head` so changes that landed only on
+`main` after the PR branch was created do not make unrelated PRs run the expensive replay. When the
+path filter matches, the job runs `pnpm -s run profiles:validate` and
 `pnpm -s run profiles:dogfood -- --profile all`, then asserts that all three built-in profiles
 (`minimal`, `standard`, `full`) executed and the replay status is `pass`.
 
