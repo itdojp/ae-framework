@@ -5,7 +5,11 @@ import yaml from 'js-yaml';
 
 const repoRoot = process.cwd();
 const workflowPath = path.join(repoRoot, '.github/workflows/deploy-time-profiles.yml');
-const branchProtectionPath = path.join(repoRoot, '.github/branch-protection.main.verify-lite-trace-noreview.json');
+const branchProtectionPresetPaths = [
+  '.github/branch-protection.main.require-verify-lite-gate.json',
+  '.github/branch-protection.main.verify-lite-noreview.json',
+  '.github/branch-protection.main.verify-lite-trace-noreview.json',
+].map((presetPath) => path.join(repoRoot, presetPath));
 
 describe('deploy-time profiles required check workflow', () => {
   it('emits a stable required check while path-filtering all-profile replay inside the job', () => {
@@ -26,6 +30,8 @@ describe('deploy-time profiles required check workflow', () => {
     expect(raw).toContain('action.yml|schema/assurance-profile.schema.json');
     expect(raw).toContain('scripts/actions/assurance-gate.mjs');
     expect(raw).toContain('.github/workflows/deploy-time-profiles.yml');
+    expect(raw).toContain('.github/branch-protection.main.require-verify-lite-gate.json');
+    expect(raw).toContain('.github/branch-protection.main.verify-lite-noreview.json');
     expect(raw).toContain('.github/branch-protection.main.verify-lite-trace-noreview.json)');
     expect(raw).not.toContain('packages/core/*) return 0');
     expect(raw).toContain('git merge-base "$base_sha" "$head_sha"');
@@ -41,8 +47,10 @@ describe('deploy-time profiles required check workflow', () => {
     expect(raw).not.toContain('      - packages/core/**');
   });
 
-  it('names the deploy-time profile check in the branch-protection preset', () => {
-    const protection = JSON.parse(fs.readFileSync(branchProtectionPath, 'utf8'));
-    expect(protection.required_status_checks.contexts).toContain('deploy-time-profiles');
+  it('names the deploy-time profile check in branch-protection presets that keep gate required', () => {
+    for (const presetPath of branchProtectionPresetPaths) {
+      const protection = JSON.parse(fs.readFileSync(presetPath, 'utf8'));
+      expect(protection.required_status_checks.contexts).toContain('deploy-time-profiles');
+    }
   });
 });
