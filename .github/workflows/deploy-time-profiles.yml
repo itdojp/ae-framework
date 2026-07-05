@@ -1,0 +1,150 @@
+name: Deploy-Time Profiles
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-time-profiles:
+    name: deploy-time-profiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect deploy-time profile trigger paths
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          should_run=false
+          changed_file_list="${RUNNER_TEMP}/deploy-time-profile-changed-files.txt"
+          : > "$changed_file_list"
+
+          matches_profile_trigger_path() {
+            case "$1" in
+              packages/core/*) return 0 ;;
+              profiles/*) return 0 ;;
+              .github/actions/assurance-gate/*) return 0 ;;
+              action.yml) return 0 ;;
+              scripts/actions/assurance-gate.mjs) return 0 ;;
+              scripts/profiles/*) return 0 ;;
+              .github/workflows/deploy-time-profiles.yml) return 0 ;;
+              .github/branch-protection.main.verify-lite-trace-noreview.json) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            should_run=true
+            printf '%s\n' '<workflow_dispatch>' > "$changed_file_list"
+          else
+            base_sha=""
+            head_sha="${{ github.sha }}"
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              base_sha="${{ github.event.pull_request.base.sha }}"
+              head_sha="${{ github.event.pull_request.head.sha }}"
+            elif [ "${{ github.event_name }}" = "push" ]; then
+              base_sha="${{ github.event.before }}"
+            fi
+
+            if [ -z "$base_sha" ] || [[ "$base_sha" =~ ^0+$ ]]; then
+              base_sha="$(git rev-list --max-parents=0 "$head_sha" | tail -n 1)"
+            fi
+
+            git diff --name-only -z "$base_sha" "$head_sha" > "${changed_file_list}.z"
+            while IFS= read -r -d '' changed_file; do
+              printf '%s\n' "$changed_file" >> "$changed_file_list"
+              if matches_profile_trigger_path "$changed_file"; then
+                should_run=true
+              fi
+            done < "${changed_file_list}.z"
+          fi
+
+          printf 'should_run=%s\n' "$should_run" >> "$GITHUB_OUTPUT"
+          printf 'changed_file_list=%s\n' "$changed_file_list" >> "$GITHUB_OUTPUT"
+
+          {
+            printf '%s\n' '### Deploy-time profile path filter'
+            printf '%s\n' "- should_run: ${should_run}"
+            printf '%s\n' "- trigger paths: packages/core/**, profiles/**, .github/actions/assurance-gate/**, root action.yml, and profile/action runner scripts"
+            printf '%s\n' '- changed files:'
+            if [ -s "$changed_file_list" ]; then
+              sed 's/^/  - /' "$changed_file_list"
+            else
+              printf '%s\n' '  - none'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Node + pnpm
+        if: ${{ steps.changes.outputs.should_run == 'true' }}
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        if: ${{ steps.changes.outputs.should_run == 'true' }}
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+
+      - name: Validate deploy-time profile contracts
+        if: ${{ steps.changes.outputs.should_run == 'true' }}
+        run: pnpm -s run profiles:validate
+
+      - name: Run all deploy-time profile dogfood replay
+        if: ${{ steps.changes.outputs.should_run == 'true' }}
+        run: |
+          pnpm -s run profiles:dogfood -- \
+            --profile all \
+            --out artifacts/profiles/deploy-time-profiles-all-report.json \
+            --out-md artifacts/profiles/deploy-time-profiles-all-report.md
+
+      - name: Assert all deploy-time profiles executed
+        if: ${{ steps.changes.outputs.should_run == 'true' }}
+        run: |
+          # shellcheck disable=SC2016
+          node - <<'NODE'
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('artifacts/profiles/deploy-time-profiles-all-report.json', 'utf8'));
+          if (report.status !== 'pass') {
+            throw new Error(`deploy-time profile replay did not pass: ${report.status}`);
+          }
+          if (report.summary?.profileCount !== 3) {
+            throw new Error(`expected all 3 deploy-time profiles, got ${report.summary?.profileCount}`);
+          }
+          const profileIds = (report.profiles || []).map((profile) => profile.profileId).sort();
+          const expected = ['full', 'minimal', 'standard'];
+          if (JSON.stringify(profileIds) !== JSON.stringify(expected)) {
+            throw new Error(`unexpected profile set: ${profileIds.join(', ')}`);
+          }
+          NODE
+
+      - name: Append all-profile replay report
+        if: ${{ always() && steps.changes.outputs.should_run == 'true' }}
+        run: |
+          if [ -f artifacts/profiles/deploy-time-profiles-all-report.md ]; then
+            cat artifacts/profiles/deploy-time-profiles-all-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload all-profile replay report
+        if: ${{ always() && steps.changes.outputs.should_run == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-time-profiles-all-report
+          path: |
+            artifacts/profiles/deploy-time-profiles-all-report.json
+            artifacts/profiles/deploy-time-profiles-all-report.md

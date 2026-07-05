@@ -57,9 +57,9 @@ Purpose: manage `main` branch protection through reusable JSON presets without b
   - uses check contexts (`verify-lite`, `policy-gate`, `gate`), not workflow display names
   - treated as emergency / break-glass by the workflow because it removes native review protection
 - `branch-protection.main.verify-lite-trace-noreview.json`
-  - trace-required variant for the `#2394` rollout line
-  - adds `KvOnce Trace Validation` on top of `verify-lite`, `policy-gate`, and `gate`
-  - apply only after the Go / No-Go criteria in `docs/ci/trace-required-criteria.md` are satisfied
+  - trace-required variant for the `#2394` rollout line and deploy-time profile release-critical surfaces
+  - adds `KvOnce Trace Validation` and `deploy-time-profiles` on top of `verify-lite`, `policy-gate`, and `gate`
+  - apply only after the Go / No-Go criteria in `docs/ci/trace-required-criteria.md` are satisfied and `.github/workflows/deploy-time-profiles.yml` is present on `main`
   - treated as emergency / break-glass by the workflow because it removes native review protection
 
 ### 4. Recorded baseline (`main`, 2026-03-24)
@@ -234,9 +234,9 @@ If GitHub keeps showing `Expected — Waiting for status to be reported`:
   - branch protection に登録するのは workflow 表示名ではなく check context（`verify-lite`, `policy-gate`, `gate`）
   - native review protection を外すため workflow では emergency / break-glass として扱う
 - `branch-protection.main.verify-lite-trace-noreview.json`
-  - `#2394` 系の trace required 化 preset
-  - `verify-lite` / `policy-gate` / `gate` に加えて `KvOnce Trace Validation` を Required にする
-  - 適用前に `docs/ci/trace-required-criteria.md` の Go / No-Go 基準を満たすこと
+  - `#2394` 系の trace required 化と deploy-time profile の release-critical surface 向け preset
+  - `verify-lite` / `policy-gate` / `gate` に加えて `KvOnce Trace Validation` と `deploy-time-profiles` を Required にする
+  - 適用前に `docs/ci/trace-required-criteria.md` の Go / No-Go 基準を満たし、`.github/workflows/deploy-time-profiles.yml` が `main` に存在すること
   - native review protection を外すため workflow では emergency / break-glass として扱う
 
 ### 4. 記録済みベースライン（`main`, 2026-03-24 時点）
