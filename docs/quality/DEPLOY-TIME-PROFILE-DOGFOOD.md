@@ -7,9 +7,10 @@ canonicalSource:
 - scripts/profiles/dogfood-ci-profiles.mjs
 - scripts/ci/run-verify-lite-local.sh
 - .github/workflows/deploy-time-profiles.yml
+- .github/workflows/deploy-time-profiles-recorded-replay.yml
 lastVerified: '2026-07-06'
 owner: quality-maintainers
-verificationCommand: pnpm -s run profiles:dogfood -- --profile all --no-write
+verificationCommand: pnpm -s run profiles:dogfood -- --profile all --no-write && pnpm -s run profiles:dogfood:recorded -- --profile all --no-write
 ---
 
 # Deploy-time profile dogfood policy
@@ -26,15 +27,29 @@ This document records the Phase 3 dogfood boundary for deploy-time profiles.
 
 ## Replay evidence
 
-Run:
+There are two replay modes:
+
+| Mode | Fixture | CI path | Claim boundary |
+| --- | --- | --- | --- |
+| `documented-fixture-equivalent` | `fixtures/profiles/dogfood/recent-pr-gate-decisions.json` | Fast PR / Verify Lite / deploy-time profile path gate | Deterministic PR-equivalent coverage for pass and blocking outcomes without live GitHub history. |
+| `recorded-pr` | `fixtures/profiles/dogfood/recorded-pr-gate-decisions.json` | Scheduled/manual `Deploy-Time Profiles Recorded Replay` workflow | 20 real merged PR check-rollup cases from this repository, used as repository-local decision-parity evidence. |
+
+Run the fast fixture-equivalent replay:
 
 ```bash
 pnpm -s run profiles:dogfood -- --profile all --fixture fixtures/profiles/dogfood/recent-pr-gate-decisions.json
 ```
 
-The replay uses `@ae-framework/core` to validate `profiles/{minimal,standard,full}.yaml`, aggregate
-profile evidence, and evaluate required-check decisions from the deterministic fixture. The fixture
-contains 20 documented PR-equivalent cases and covers both pass and blocking outcomes.
+Run the recorded-PR replay:
+
+```bash
+pnpm -s run profiles:dogfood:recorded -- --profile all --fixture fixtures/profiles/dogfood/recorded-pr-gate-decisions.json
+```
+
+Both replays use `@ae-framework/core` to validate `profiles/{minimal,standard,full}.yaml`, aggregate
+profile evidence, and evaluate required-check decisions from checked-in fixtures. The recorded-PR
+fixture intentionally records merged PRs, so its current decision set is expected to be pass-only;
+blocking behavior remains covered by the fast fixture-equivalent replay.
 
 ## Required all-profile path check
 
@@ -52,6 +67,8 @@ all-profile replay only when a PR or `main` push touches one of these release-cr
 - `scripts/actions/assurance-gate.mjs`
 - `scripts/profiles/**`
 - `.github/workflows/deploy-time-profiles.yml`
+- `.github/branch-protection.main.require-verify-lite-gate.json`
+- `.github/branch-protection.main.verify-lite-noreview.json`
 - `.github/branch-protection.main.verify-lite-trace-noreview.json`
 
 For PR events, the workflow compares `merge-base(base, head)..head` so changes that landed only on
@@ -67,4 +84,4 @@ current CI decision. The dogfood report exits non-zero when drift is present. Dr
 in the profile mapping or documented in a follow-up issue before merge.
 
 The report is intentionally a repository dogfood signal, not a new external adoption claim. It does
-not publish Marketplace or npm assets; that remains Phase 4.
+not publish Marketplace or npm assets; that remains Phase 4. The scheduled recorded replay also does not create an external adoption claim; it records repository-local parity evidence only.

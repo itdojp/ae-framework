@@ -1,0 +1,653 @@
+{
+  "schemaVersion": "profile-dogfood-replay/v1",
+  "coverage": {
+    "mode": "recorded-pr",
+    "targetRecentPrCount": 20,
+    "recordedAt": "2026-07-06T07:25:00.000+09:00",
+    "sourceRepository": "itdojp/ae-framework",
+    "selection": "20 most recent merged PRs with successful verify-lite, policy-gate, and gate check evidence available through GitHub statusCheckRollup.",
+    "documentedReason": "Recorded merged PR check-rollup cases back the deploy-time profile decision parity claim separately from the fast documented-fixture-equivalent PR CI replay."
+  },
+  "cases": [
+    {
+      "id": "recorded-pr-3629",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3629,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3629",
+      "title": "ci(profiles): add deploy-time check to baseline protection presets",
+      "mergedAt": "2026-07-05T22:21:42Z",
+      "headSha": "b7924c67d729c3cb960e86051b6fdc4214f82dba",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28756555679/job/85264545000",
+          "completedAt": "2026-07-05T22:12:24Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28756555661/job/85264545099",
+          "completedAt": "2026-07-05T22:10:19Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28756555702/job/85264545215",
+          "completedAt": "2026-07-05T22:09:38Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3628",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3628,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3628",
+      "title": "ci(profiles): add deploy-time all-profile path gate",
+      "mergedAt": "2026-07-05T21:52:05Z",
+      "headSha": "f5688178ddee474055586733976027b83aa7ae82",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28755802359/job/85262626136",
+          "completedAt": "2026-07-05T21:43:08Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28755802379/job/85262626154",
+          "completedAt": "2026-07-05T21:41:16Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28755802396/job/85262626244",
+          "completedAt": "2026-07-05T21:40:48Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3627",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3627,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3627",
+      "title": "feat(actions): add root assurance gate release surface",
+      "mergedAt": "2026-07-05T21:03:16Z",
+      "headSha": "a7eda22bedcbaf0d4595791cfcb962d76a3afaed",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28754520644/job/85259206392",
+          "completedAt": "2026-07-05T20:54:56Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28754520624/job/85259206419",
+          "completedAt": "2026-07-05T20:52:47Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28754520645/job/85259206381",
+          "completedAt": "2026-07-05T20:52:15Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3625",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3625,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3625",
+      "title": "docs(profiles): prepare publish quickstart assets",
+      "mergedAt": "2026-07-04T09:55:53Z",
+      "headSha": "39b5d800d87d857c1183cd8969091a556893eb4f",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28702276485/job/85122146596",
+          "completedAt": "2026-07-04T09:45:03Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28702276476/job/85122146579",
+          "completedAt": "2026-07-04T09:43:05Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28702276482/job/85122147755",
+          "completedAt": "2026-07-04T09:42:33Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3624",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3624,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3624",
+      "title": "feat(profiles): dogfood deploy-time profiles in CI",
+      "mergedAt": "2026-07-04T09:14:53Z",
+      "headSha": "484bc108fd68ff2c8006e2d2ed189afe0691894e",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28701365900/job/85119841422",
+          "completedAt": "2026-07-04T09:06:29Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28701365912/job/85119841418",
+          "completedAt": "2026-07-04T09:04:28Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28701365917/job/85119841466",
+          "completedAt": "2026-07-04T09:03:55Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3623",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3623,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3623",
+      "title": "feat(actions): add deploy-time assurance gate scaffold",
+      "mergedAt": "2026-07-04T08:32:58Z",
+      "headSha": "e32c1c6f600f99a2cd48afc6b0367f77ecda313c",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28700397617/job/85117334135",
+          "completedAt": "2026-07-04T08:24:57Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28700397595/job/85117333776",
+          "completedAt": "2026-07-04T08:23:14Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28700397593/job/85117333751",
+          "completedAt": "2026-07-04T08:22:37Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3622",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3622,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3622",
+      "title": "feat(core): add standalone assurance core package",
+      "mergedAt": "2026-07-04T07:47:41Z",
+      "headSha": "5a655af3c71061242a5faed4faf76fcd92f36711",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28699311384/job/85114545809",
+          "completedAt": "2026-07-04T07:38:10Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28699311374/job/85114545771",
+          "completedAt": "2026-07-04T07:36:28Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28699311371/job/85114545897",
+          "completedAt": "2026-07-04T07:35:49Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3621",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3621,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3621",
+      "title": "feat(profiles): add deploy-time profile contracts",
+      "mergedAt": "2026-07-04T07:02:31Z",
+      "headSha": "c3558366e60d838bd7f5159d70646e172f2e4f5f",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28698275102/job/85111706514",
+          "completedAt": "2026-07-04T06:54:26Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28698275130/job/85111706631",
+          "completedAt": "2026-07-04T06:52:39Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28698275138/job/85111706540",
+          "completedAt": "2026-07-04T06:52:05Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3615",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3615,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3615",
+      "title": "fix(ci): keep mutation quick advisory on push",
+      "mergedAt": "2026-07-03T00:39:19Z",
+      "headSha": "7e34aa3d16997b0c23d8c5148f71c55c1fc79e0e",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28630271381/job/84905467261",
+          "completedAt": "2026-07-03T00:30:48Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28630271333/job/84905467183",
+          "completedAt": "2026-07-03T00:28:45Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28630271378/job/84905467572",
+          "completedAt": "2026-07-03T00:28:16Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3614",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3614,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3614",
+      "title": "fix(ci): namespace reusable workflow concurrency",
+      "mergedAt": "2026-07-02T23:58:10Z",
+      "headSha": "6bede5e288099b49ddc7e4241a946d135f0e5cf7",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28628746758/job/84900908190",
+          "completedAt": "2026-07-02T23:49:07Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28628746814/job/84900908343",
+          "completedAt": "2026-07-02T23:47:14Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28628746764/job/84900908066",
+          "completedAt": "2026-07-02T23:46:34Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3613",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3613,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3613",
+      "title": "fix(deps): upgrade Next.js audit surface",
+      "mergedAt": "2026-07-02T23:06:09Z",
+      "headSha": "dae444ac90b8d5667bbd858f1fc07fe7cfac82ed",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28626618458/job/84894439886",
+          "completedAt": "2026-07-02T22:55:20Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28626618465/job/84894439837",
+          "completedAt": "2026-07-02T22:53:30Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28626618445/job/84894439792",
+          "completedAt": "2026-07-02T22:52:53Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3612",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3612,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3612",
+      "title": "test: include quality fixtures in Docker test image",
+      "mergedAt": "2026-07-02T21:25:52Z",
+      "headSha": "ada71446e5dd607bcb600ec17e90d5c90941fef5",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28622037203/job/84879843054",
+          "completedAt": "2026-07-02T21:17:36Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28622037096/job/84879843351",
+          "completedAt": "2026-07-02T21:15:50Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28622037135/job/84879842926",
+          "completedAt": "2026-07-02T21:15:11Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3611",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3611,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3611",
+      "title": "test: keep codex issue task temp executables out of app tmp",
+      "mergedAt": "2026-07-02T20:33:26Z",
+      "headSha": "14b4cbfde55e6d581c9fe9b5e550b230e8422c5f",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28619183869/job/84870383681",
+          "completedAt": "2026-07-02T20:25:32Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28619183886/job/84870383612",
+          "completedAt": "2026-07-02T20:23:39Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28619183957/job/84870383766",
+          "completedAt": "2026-07-02T20:22:57Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3610",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3610,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3610",
+      "title": "fix(ci): include docker test metadata",
+      "mergedAt": "2026-07-02T19:50:07Z",
+      "headSha": "395f3a9ab9883dcdfc94d5b9365ca6df8cb93445",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28616702656/job/84862221039",
+          "completedAt": "2026-07-02T19:40:14Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28616731982/job/84862347945",
+          "completedAt": "2026-07-02T19:39:12Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28616702616/job/84862220845",
+          "completedAt": "2026-07-02T19:37:48Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3609",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3609,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3609",
+      "title": "fix(ci): include docker test bootstrap inputs",
+      "mergedAt": "2026-07-02T19:01:44Z",
+      "headSha": "3f98766d83e959916861a520261f8256f9d65471",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28613855356/job/84852673632",
+          "completedAt": "2026-07-02T18:50:08Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28613855203/job/84854034514",
+          "completedAt": "2026-07-02T18:54:58Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28613854509/job/84852669453",
+          "completedAt": "2026-07-02T18:47:23Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3608",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3608,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3608",
+      "title": "fix(deps): patch vite audit surface",
+      "mergedAt": "2026-07-02T18:26:22Z",
+      "headSha": "c551753752c2e2c1b50438c79adb994cc54f6abc",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28611981107/job/84846432034",
+          "completedAt": "2026-07-02T18:18:10Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28611981080/job/84846431642",
+          "completedAt": "2026-07-02T18:16:20Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28611981075/job/84846431273",
+          "completedAt": "2026-07-02T18:15:39Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3607",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3607,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3607",
+      "title": "fix(e2e): build token preset before semantic run",
+      "mergedAt": "2026-07-02T17:22:02Z",
+      "headSha": "125f261442e12a1a2994d20f546fd10c402d6538",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28608198484/job/84833758650",
+          "completedAt": "2026-07-02T17:14:00Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28608198667/job/84833758911",
+          "completedAt": "2026-07-02T17:11:52Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28608198432/job/84833758634",
+          "completedAt": "2026-07-02T17:11:21Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3606",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3606,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3606",
+      "title": "fix(e2e): align semantic runner host with next proxy",
+      "mergedAt": "2026-07-02T16:52:11Z",
+      "headSha": "b7c777ea225cb7e8244c246bb93dbf8b346c8c2e",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28606377660/job/84827578032",
+          "completedAt": "2026-07-02T16:43:22Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28606377630/job/84827578159",
+          "completedAt": "2026-07-02T16:41:25Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28606376445/job/84827573694",
+          "completedAt": "2026-07-02T16:40:51Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3605",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3605,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3605",
+      "title": "fix(ci): ratchet main coverage threshold",
+      "mergedAt": "2026-07-02T15:59:35Z",
+      "headSha": "87617326557e77ec157f9fb6435a8ce977637d35",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28603151768/job/84816370958",
+          "completedAt": "2026-07-02T15:51:24Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28603151821/job/84816370786",
+          "completedAt": "2026-07-02T15:49:29Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28603151714/job/84816375388",
+          "completedAt": "2026-07-02T15:48:45Z"
+        }
+      }
+    },
+    {
+      "id": "recorded-pr-3604",
+      "source": "github-merged-pr-check-rollup",
+      "sourcePr": 3604,
+      "sourceUrl": "https://github.com/itdojp/ae-framework/pull/3604",
+      "title": "fix(ci): align full ci reusable permissions",
+      "mergedAt": "2026-07-02T15:10:12Z",
+      "headSha": "0f716dcba7c240b6ad68fcbb3ed1a9ace7903398",
+      "currentCiDecision": "pass",
+      "checks": {
+        "verify-lite": "success",
+        "policy-gate": "success",
+        "gate": "success"
+      },
+      "checkEvidence": {
+        "verify-lite": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28600080692/job/84805681012",
+          "completedAt": "2026-07-02T15:04:15Z"
+        },
+        "policy-gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28600080581/job/84805680343",
+          "completedAt": "2026-07-02T15:02:20Z"
+        },
+        "gate": {
+          "conclusion": "success",
+          "detailsUrl": "https://github.com/itdojp/ae-framework/actions/runs/28600080554/job/84805680726",
+          "completedAt": "2026-07-02T15:01:42Z"
+        }
+      }
+    }
+  ]
+}

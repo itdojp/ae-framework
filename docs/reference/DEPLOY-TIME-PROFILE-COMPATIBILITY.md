@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-07-04'
+lastVerified: '2026-07-06'
 owner: product-assurance
 verificationCommand: pnpm -s exec vitest run tests/unit/docs/publish-assets-quickstart.test.ts --reporter dot
 ---
@@ -78,12 +78,24 @@ are not in the minimal package bundle. Those profiles are available for this
 repository's dogfood path and should be released with the same action ref when
 external support is promoted beyond `minimal`.
 
+## Replay evidence boundary
+
+Deploy-time profile compatibility claims are backed by two repository-local replay modes:
+
+| Mode | Backing fixture | What it supports | What it does not support |
+| --- | --- | --- | --- |
+| `documented-fixture-equivalent` | `fixtures/profiles/dogfood/recent-pr-gate-decisions.json` | Fast CI dogfood coverage for pass and blocking required-check outcomes. | A claim that the cases are raw captures from merged PRs. |
+| `recorded-pr` | `fixtures/profiles/dogfood/recorded-pr-gate-decisions.json` | Decision-parity replay against 20 real merged PR check-rollups from this repository. | External repository adoption outcomes or blocking-case coverage; merged PRs are expected to be pass-only. |
+
+The `Deploy-Time Profiles Recorded Replay` workflow runs the recorded fixture on a schedule and via
+manual dispatch. Keep the fast fixture-equivalent replay as the PR path so branch-protection checks
+remain bounded.
+
 ## Evidence links
 
 - `tests/actions/assurance-gate-action.test.ts` exercises the action runner
   against a bare non-workspace fixture and records both pass and block behavior.
 - `tests/cli/init-cli.test.ts` verifies `ae init --profile` workflow scaffolding.
-- `tests/scripts/profile-dogfood.test.ts` verifies the deploy-time profile replay
-  mapping used by `verify-lite` dogfooding.
+- `tests/scripts/profile-dogfood.test.ts` verifies both the fast fixture-equivalent replay and the recorded-PR replay mapping used by deploy-time profile dogfooding.
 - `docs/quality/DEPLOY-TIME-PROFILE-DOGFOOD.md` records the internal profile
-  dogfood boundary.
+  dogfood boundary, including the scheduled recorded-PR replay path.
