@@ -46,19 +46,19 @@ Purpose: manage `main` branch protection through reusable JSON presets without b
   - emergency / break-glass preset; select `emergency_approval=approved-break-glass` in the workflow only after protected-environment approval
 - `branch-protection.main.require-verify-lite-gate.json`
   - non-relaxing workflow default
-  - requires `verify-lite`, `policy-gate`, and `gate`, while still keeping one approving review
+  - requires `verify-lite`, `policy-gate`, `gate`, and `deploy-time-profiles`, while still keeping one approving review after `.github/workflows/deploy-time-profiles.yml` exists on `main`
 - `branch-protection.main.require-verify-lite.json`
   - older two-check preset requiring `verify-lite` and `policy-gate`, while still keeping one approving review
   - treated as emergency / break-glass by the workflow because it omits the current `gate` check
 - `branch-protection.main.verify-lite-noreview.json`
   - preset for intentionally disabling GitHub-native PR review protection
-  - requires `verify-lite`, `policy-gate`, and `gate`
+  - requires `verify-lite`, `policy-gate`, `gate`, and `deploy-time-profiles`
   - sets `required_pull_request_reviews` to `null`, disabling GitHub-native review protection and letting `policy-gate` enforce risk, approval, and label-gate conditions
-  - uses check contexts (`verify-lite`, `policy-gate`, `gate`), not workflow display names
+  - uses check contexts (`verify-lite`, `policy-gate`, `gate`, `deploy-time-profiles`), not workflow display names
   - treated as emergency / break-glass by the workflow because it removes native review protection
 - `branch-protection.main.verify-lite-trace-noreview.json`
   - trace-required variant for the `#2394` rollout line and deploy-time profile release-critical surfaces
-  - adds `KvOnce Trace Validation` and `deploy-time-profiles` on top of `verify-lite`, `policy-gate`, and `gate`
+  - adds `KvOnce Trace Validation` on top of `verify-lite`, `policy-gate`, `gate`, and `deploy-time-profiles`
   - apply only after the Go / No-Go criteria in `docs/ci/trace-required-criteria.md` are satisfied and `.github/workflows/deploy-time-profiles.yml` is present on `main`
   - treated as emergency / break-glass by the workflow because it removes native review protection
 
@@ -223,19 +223,19 @@ If GitHub keeps showing `Expected — Waiting for status to be reported`:
   - emergency / break-glass preset。protected environment 承認後に workflow で `emergency_approval=approved-break-glass` を選択する
 - `branch-protection.main.require-verify-lite-gate.json`
   - relaxing ではない workflow 既定 preset
-  - `verify-lite` / `policy-gate` / `gate` を Required にしつつ、review 1 件を維持する
+  - `.github/workflows/deploy-time-profiles.yml` が `main` に存在した後、`verify-lite` / `policy-gate` / `gate` / `deploy-time-profiles` を Required にしつつ、review 1 件を維持する
 - `branch-protection.main.require-verify-lite.json`
   - `verify-lite` と `policy-gate` を Required にしつつ、review 1 件を維持する旧 two-check preset
   - 現行の `gate` check を含まないため workflow では emergency / break-glass として扱う
 - `branch-protection.main.verify-lite-noreview.json`
   - GitHub native の PR review protection を意図的に外す preset
-  - `verify-lite` / `policy-gate` / `gate` を Required にする
+  - `verify-lite` / `policy-gate` / `gate` / `deploy-time-profiles` を Required にする
   - `required_pull_request_reviews` を `null` にし、risk / approval / label-gate は `policy-gate` 側で強制する
-  - branch protection に登録するのは workflow 表示名ではなく check context（`verify-lite`, `policy-gate`, `gate`）
+  - branch protection に登録するのは workflow 表示名ではなく check context（`verify-lite`, `policy-gate`, `gate`, `deploy-time-profiles`）
   - native review protection を外すため workflow では emergency / break-glass として扱う
 - `branch-protection.main.verify-lite-trace-noreview.json`
   - `#2394` 系の trace required 化と deploy-time profile の release-critical surface 向け preset
-  - `verify-lite` / `policy-gate` / `gate` に加えて `KvOnce Trace Validation` と `deploy-time-profiles` を Required にする
+  - `verify-lite` / `policy-gate` / `gate` / `deploy-time-profiles` に加えて `KvOnce Trace Validation` を Required にする
   - 適用前に `docs/ci/trace-required-criteria.md` の Go / No-Go 基準を満たし、`.github/workflows/deploy-time-profiles.yml` が `main` に存在すること
   - native review protection を外すため workflow では emergency / break-glass として扱う
 
