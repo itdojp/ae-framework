@@ -54,7 +54,7 @@ runs:
         action_repo="$(cd "${GITHUB_ACTION_PATH}" && pwd)"
         cd "$action_repo"
         corepack enable
-        pnpm install --frozen-lockfile --filter @ae-framework/core...
+        pnpm install --frozen-lockfile --filter @ae-framework/core... --config.use-lockfile=true --config.package-lock=true
         pnpm --filter @ae-framework/core run build
     - name: Run assurance gate
       id: run

@@ -292,6 +292,7 @@ describe('assurance gate startup benchmark contract', () => {
     expect(workflow).toContain('timeout-minutes: 90');
     expect(workflow).toContain('uses: actions/setup-node@v4');
     expect(workflow).not.toContain('uses: ./.github/actions/setup-node-pnpm');
+    expect(workflow).toContain('pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true');
   });
 
   it('provides a no-side-effect help path', () => {
