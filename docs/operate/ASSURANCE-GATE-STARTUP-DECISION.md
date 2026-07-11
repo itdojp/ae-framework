@@ -94,3 +94,19 @@ The implementation surface is `.github/workflows/assurance-gate-cache-comparison
 plus the `dependency-cache` input shared by both composite action entry points.
 The final decision remains pending the merged-main workflow run; implementation
 availability alone is not treated as measured improvement.
+
+### First comparison run diagnostic
+
+Run [29172437742](https://github.com/itdojp/ae-framework/actions/runs/29172437742)
+completed 5 cache-disabled samples and 5 exact cache-hit samples on ref
+`f14b5425c94c9f79539630caec8c4608618617ac`. All ten action results passed and
+all five enabled samples restored the exact key. The observed medians were
+11,495 ms without the action cache and 10,657 ms with an exact hit (7.29%),
+which is below the 20% target.
+
+That run is diagnostic rather than the final comparison because its sample
+writer queried pnpm after the composite action had removed its action-local
+Corepack scratch state. The report therefore recorded `pnpmVersion` as
+`unavailable` and correctly refused to claim functional parity. The action now
+exports the pnpm version captured during package-manager preparation; a fresh
+merged-main run is required before the keep/rollback decision is finalized.

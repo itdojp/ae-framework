@@ -130,6 +130,7 @@ jobs:
           GATE_RESULT: ${{ steps.assurance.outputs.gate-result }}
           CACHE_HIT: ${{ steps.assurance.outputs.dependency-cache-hit }}
           CACHE_KEY: ${{ steps.assurance.outputs.dependency-cache-key }}
+          PNPM_VERSION: ${{ steps.assurance.outputs.pnpm-version }}
         run: |
           mkdir -p sample
           node <<'NODE'
@@ -160,7 +161,7 @@ jobs:
               runnerImage: `${process.env.ImageOS || 'ubuntu'}-${process.env.ImageVersion || 'unknown'}`,
               nodeVersion: process.version,
               npmVersion: version('npm'),
-              pnpmVersion: version('pnpm'),
+              pnpmVersion: process.env.PNPM_VERSION || 'unavailable',
             },
           };
           fs.writeFileSync('sample/sample.json', `${JSON.stringify(report, null, 2)}\n`);
@@ -239,6 +240,7 @@ jobs:
           GATE_RESULT: ${{ steps.assurance.outputs.gate-result }}
           CACHE_HIT: ${{ steps.assurance.outputs.dependency-cache-hit }}
           CACHE_KEY: ${{ steps.assurance.outputs.dependency-cache-key }}
+          PNPM_VERSION: ${{ steps.assurance.outputs.pnpm-version }}
         run: |
           mkdir -p sample
           node <<'NODE'
@@ -269,7 +271,7 @@ jobs:
               runnerImage: `${process.env.ImageOS || 'ubuntu'}-${process.env.ImageVersion || 'unknown'}`,
               nodeVersion: process.version,
               npmVersion: version('npm'),
-              pnpmVersion: version('pnpm'),
+              pnpmVersion: process.env.PNPM_VERSION || 'unavailable',
             },
           };
           fs.writeFileSync('sample/sample.json', `${JSON.stringify(report, null, 2)}\n`);
