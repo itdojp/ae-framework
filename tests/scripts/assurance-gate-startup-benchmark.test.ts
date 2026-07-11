@@ -81,6 +81,29 @@ function fixtureReport() {
 }
 
 describe('assurance gate startup benchmark contract', () => {
+  it('validates the tracked GitHub-hosted baseline and decision boundary', () => {
+    const reportPath = resolve(
+      'artifacts/reference/benchmarks/assurance-gate-startup-2026-07-11.json',
+    );
+    const result = validateBenchmarkFiles({
+      reportPath,
+      schemaPath: resolve('schema/assurance-gate-startup-benchmark.schema.json'),
+    });
+    expect(result.valid, JSON.stringify(result.errors)).toBe(true);
+    expect(result.report.exactRef).toBe('e53b8a1761c733d9f6a60080297889a805bc8c63');
+    expect(result.report.summary.cold.sampleCount).toBe(5);
+    expect(result.report.summary.warm.sampleCount).toBe(5);
+    expect(result.report.optimizationAssessment.triggers.setupInstallBuildOver70Percent)
+      .toBe(true);
+
+    const decision = readFileSync(
+      resolve('docs/operate/ASSURANCE-GATE-STARTUP-DECISION.md'),
+      'utf8',
+    );
+    expect(decision).toContain('evaluate-one-low-risk-optimization');
+    expect(decision).toContain('not a completed performance claim');
+  });
+
   it('normalizes exact commit SHAs and rejects ambiguous refs', () => {
     expect(normalizeExactRef('A'.repeat(40))).toBe('a'.repeat(40));
     expect(() => normalizeExactRef('main')).toThrow('exact 40-character hexadecimal commit SHA');

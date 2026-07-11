@@ -1,0 +1,289 @@
+{
+  "schemaVersion": "assurance-gate-startup-benchmark/v1",
+  "generatedAt": "2026-07-11T22:31:20.743Z",
+  "exactRef": "e53b8a1761c733d9f6a60080297889a805bc8c63",
+  "fixture": {
+    "id": "external-minimal-pass",
+    "expectedResult": "pass",
+    "profile": "minimal"
+  },
+  "environment": {
+    "runnerOs": "linux",
+    "architecture": "x64",
+    "runnerImage": "ubuntu24-20260705.232.1",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "totalMemoryBytes": 16766418944,
+    "nodeVersion": "v20.20.2",
+    "npmVersion": "10.8.2",
+    "pnpmVersion": "10.0.0",
+    "pnpmVersionSource": "measured"
+  },
+  "method": {
+    "runCountPerCacheState": 5,
+    "checkoutInitializationMs": 1543,
+    "pilotFriction": "not-observed",
+    "coldDefinition": "Remove node_modules/core dist and use unique empty pnpm store and Corepack cache directories before every measured sample.",
+    "warmDefinition": "Precondition one pnpm store, Corepack cache, linked node_modules, and core build, then execute the unchanged action setup/install/build/gate path for every measured sample.",
+    "reviewSurfaceTimingBoundary": "reviewSurfaceRendering is an internal subphase of gateExecution and is not added again to total."
+  },
+  "collectionErrors": [],
+  "samples": [
+    {
+      "cacheState": "cold",
+      "index": 1,
+      "result": "pass",
+      "phaseTimingsMs": {
+        "actionInitialization": 0.3745660000000015,
+        "corepackPnpmSetup": 1353.3421569999998,
+        "dependencyInstall": 7606.5680059999995,
+        "coreBuild": 1584.365670000001,
+        "gateExecution": 209.80446099999972,
+        "reviewSurfaceRendering": 0.08877200000000585,
+        "total": 10755.98304
+      }
+    },
+    {
+      "cacheState": "cold",
+      "index": 2,
+      "result": "pass",
+      "phaseTimingsMs": {
+        "actionInitialization": 0.2534380000015517,
+        "corepackPnpmSetup": 1278.4553340000002,
+        "dependencyInstall": 8402.216843999999,
+        "coreBuild": 1533.0840229999994,
+        "gateExecution": 191.2163330000003,
+        "reviewSurfaceRendering": 0.09547200000000089,
+        "total": 11405.671476
+      }
+    },
+    {
+      "cacheState": "cold",
+      "index": 3,
+      "result": "pass",
+      "phaseTimingsMs": {
+        "actionInitialization": 0.15008300000044983,
+        "corepackPnpmSetup": 1359.2135119999984,
+        "dependencyInstall": 7188.567183999996,
+        "coreBuild": 1473.2960629999943,
+        "gateExecution": 191.5506000000023,
+        "reviewSurfaceRendering": 0.07293799999999351,
+        "total": 10213.216530999998
+      }
+    },
+    {
+      "cacheState": "cold",
+      "index": 4,
+      "result": "pass",
+      "phaseTimingsMs": {
+        "actionInitialization": 0.1478270000006887,
+        "corepackPnpmSetup": 1352.294743999999,
+        "dependencyInstall": 7721.486361999996,
+        "coreBuild": 1566.526509999996,
+        "gateExecution": 196.14840099999856,
+        "reviewSurfaceRendering": 0.10411400000000981,
+        "total": 10837.083351000001
+      }
+    },
+    {
+      "cacheState": "cold",
+      "index": 5,
+      "result": "pass",
+      "phaseTimingsMs": {
+        "actionInitialization": 0.141247999999905,
+        "corepackPnpmSetup": 1280.4958740000002,
+        "dependencyInstall": 8774.283866000005,
+        "coreBuild": 1490.8658619999987,
+        "gateExecution": 189.9207480000041,
+        "reviewSurfaceRendering": 0.09440899999998464,
+        "total": 11736.21714
+      }
+    },
+    {
+      "cacheState": "warm",
+      "index": 1,
+      "result": "pass",
+      "phaseTimingsMs": {
+        "actionInitialization": 0.24049399999785237,
+        "corepackPnpmSetup": 417.9962680000026,
+        "dependencyInstall": 1304.2960690000036,
+        "coreBuild": 1479.3976589999947,
+        "gateExecution": 181.53628500000923,
+        "reviewSurfaceRendering": 0.06581700000000978,
+        "total": 3383.950177000006
+      }
+    },
+    {
+      "cacheState": "warm",
+      "index": 2,
+      "result": "pass",
+      "phaseTimingsMs": {
+        "actionInitialization": 0.2924910000001546,
+        "corepackPnpmSetup": 417.1230199999991,
+        "dependencyInstall": 1129.5374370000063,
+        "coreBuild": 1567.4453419999918,
+        "gateExecution": 191.9927800000005,
+        "reviewSurfaceRendering": 0.09575100000000702,
+        "total": 3307.307562000002
+      }
+    },
+    {
+      "cacheState": "warm",
+      "index": 3,
+      "result": "pass",
+      "phaseTimingsMs": {
+        "actionInitialization": 0.2035899999900721,
+        "corepackPnpmSetup": 428.2656430000061,
+        "dependencyInstall": 1353.6969090000057,
+        "coreBuild": 1510.4782050000067,
+        "gateExecution": 196.0628820000129,
+        "reviewSurfaceRendering": 0.10158000000001266,
+        "total": 3489.329264999993
+      }
+    },
+    {
+      "cacheState": "warm",
+      "index": 4,
+      "result": "pass",
+      "phaseTimingsMs": {
+        "actionInitialization": 0.22907800000393763,
+        "corepackPnpmSetup": 421.4046449999878,
+        "dependencyInstall": 1905.6333879999875,
+        "coreBuild": 1481.5411290000047,
+        "gateExecution": 189.0604569999996,
+        "reviewSurfaceRendering": 0.07225600000001009,
+        "total": 3998.4190880000097
+      }
+    },
+    {
+      "cacheState": "warm",
+      "index": 5,
+      "result": "pass",
+      "phaseTimingsMs": {
+        "actionInitialization": 0.22679499999503605,
+        "corepackPnpmSetup": 418.7147260000056,
+        "dependencyInstall": 1198.2610870000062,
+        "coreBuild": 1502.9015269999945,
+        "gateExecution": 187.95248199999332,
+        "reviewSurfaceRendering": 0.09856599999997684,
+        "total": 3308.589613999997
+      }
+    }
+  ],
+  "summary": {
+    "cold": {
+      "sampleCount": 5,
+      "results": {
+        "pass": 5,
+        "block": 0,
+        "error": 0
+      },
+      "phaseTimingsMs": {
+        "actionInitialization": {
+          "minimum": 0.141247999999905,
+          "median": 0.15008300000044983,
+          "maximum": 0.3745660000000015,
+          "p90": 0.3745660000000015
+        },
+        "corepackPnpmSetup": {
+          "minimum": 1278.4553340000002,
+          "median": 1352.294743999999,
+          "maximum": 1359.2135119999984,
+          "p90": 1359.2135119999984
+        },
+        "dependencyInstall": {
+          "minimum": 7188.567183999996,
+          "median": 7721.486361999996,
+          "maximum": 8774.283866000005,
+          "p90": 8774.283866000005
+        },
+        "coreBuild": {
+          "minimum": 1473.2960629999943,
+          "median": 1533.0840229999994,
+          "maximum": 1584.365670000001,
+          "p90": 1584.365670000001
+        },
+        "gateExecution": {
+          "minimum": 189.9207480000041,
+          "median": 191.5506000000023,
+          "maximum": 209.80446099999972,
+          "p90": 209.80446099999972
+        },
+        "reviewSurfaceRendering": {
+          "minimum": 0.07293799999999351,
+          "median": 0.09440899999998464,
+          "maximum": 0.10411400000000981,
+          "p90": 0.10411400000000981
+        },
+        "total": {
+          "minimum": 10213.216530999998,
+          "median": 10837.083351000001,
+          "maximum": 11736.21714,
+          "p90": 11736.21714
+        }
+      }
+    },
+    "warm": {
+      "sampleCount": 5,
+      "results": {
+        "pass": 5,
+        "block": 0,
+        "error": 0
+      },
+      "phaseTimingsMs": {
+        "actionInitialization": {
+          "minimum": 0.2035899999900721,
+          "median": 0.22907800000393763,
+          "maximum": 0.2924910000001546,
+          "p90": 0.2924910000001546
+        },
+        "corepackPnpmSetup": {
+          "minimum": 417.1230199999991,
+          "median": 418.7147260000056,
+          "maximum": 428.2656430000061,
+          "p90": 428.2656430000061
+        },
+        "dependencyInstall": {
+          "minimum": 1129.5374370000063,
+          "median": 1304.2960690000036,
+          "maximum": 1905.6333879999875,
+          "p90": 1905.6333879999875
+        },
+        "coreBuild": {
+          "minimum": 1479.3976589999947,
+          "median": 1502.9015269999945,
+          "maximum": 1567.4453419999918,
+          "p90": 1567.4453419999918
+        },
+        "gateExecution": {
+          "minimum": 181.53628500000923,
+          "median": 189.0604569999996,
+          "maximum": 196.0628820000129,
+          "p90": 196.0628820000129
+        },
+        "reviewSurfaceRendering": {
+          "minimum": 0.06581700000000978,
+          "median": 0.09575100000000702,
+          "maximum": 0.10158000000001266,
+          "p90": 0.10158000000001266
+        },
+        "total": {
+          "minimum": 3307.307562000002,
+          "median": 3383.950177000006,
+          "maximum": 3998.4190880000097,
+          "p90": 3998.4190880000097
+        }
+      }
+    }
+  },
+  "optimizationAssessment": {
+    "status": "baseline-assessment",
+    "triggers": {
+      "coldMedianOver60Seconds": false,
+      "setupInstallBuildOver70Percent": true,
+      "livePilotFrictionObserved": false
+    },
+    "setupInstallBuildShare": 0.9787564407743746,
+    "recommendedOutcome": "evaluate-one-low-risk-optimization",
+    "finalDecision": "pending-reviewed-baseline"
+  }
+}

@@ -117,6 +117,19 @@ Any before/after comparison must use the same ref class, runner, versions,
 fixture, cache definitions, and run count. Functional pass/block behavior takes
 priority over elapsed time.
 
+## Current hosted baseline
+
+The first successful GitHub-hosted baseline is preserved at:
+
+- `artifacts/reference/benchmarks/assurance-gate-startup-2026-07-11.json`;
+- `artifacts/reference/benchmarks/assurance-gate-startup-2026-07-11.md`.
+
+Workflow run `29170591202` measured five cold and five warm passing samples on
+exact ref `e53b8a1761c733d9f6a60080297889a805bc8c63`. The cold total median was
+10,837.08 ms and setup + install + build represented 97.88%, so the 70% trigger
+applied. `docs/operate/ASSURANCE-GATE-STARTUP-DECISION.md` records the bounded
+optimization selection and keeps the final decision pending comparison.
+
 ## External pilot recording
 
 Operators for #3640 should record the same startup fields when friction occurs:
