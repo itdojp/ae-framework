@@ -89,6 +89,7 @@
     "demo:smoke:check": "node scripts/demo/check-demo-smoke-artifacts.mjs",
     "test:security-assurance": "node scripts/security/run-security-assurance-fixture.mjs",
     "claim-evidence:generate": "node scripts/assurance/build-claim-evidence-manifest.mjs",
+    "publication:evidence:validate": "node scripts/release/validate-publication-evidence.mjs",
     "claim-level-summary:generate": "node scripts/assurance/aggregate-claim-levels.mjs",
     "change-package:generate": "node scripts/change-package/generate.mjs",
     "change-package:generate:v2": "node scripts/change-package/generate.mjs --schema-version v2",

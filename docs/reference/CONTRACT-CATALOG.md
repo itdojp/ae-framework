@@ -130,6 +130,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 - `schema/execplan.schema.json`
 - `schema/execution-plan-v1.schema.json`
 - `schema/plan-artifact.schema.json`
+- `schema/publication-evidence-v1.schema.json`
 - `schema/run-manifest.schema.json`
 
 ### 4. Produced/consumed mapping for major artifacts
@@ -138,6 +139,7 @@ The table below keeps the current producer/consumer baseline for representative 
 
 | artifact (path/pattern) | schema | producer (primary) | consumer (primary) |
 | --- | --- | --- | --- |
+| `docs/operate/publication-evidence.json` | `schema/publication-evidence-v1.schema.json` (`publication-evidence/v1`) | release owner or repository admin updates verified public evidence in a reviewed PR; workflow-generated candidates are non-authoritative | `scripts/release/validate-publication-evidence.mjs`, `pnpm run publication:evidence:validate`, `scripts/ci/run-verify-lite-local.sh`, release/QUICKSTART claim boundaries; default validation is deterministic and offline |
 | `artifacts/verify-lite/verify-lite-run-summary.json` | `schema/verify-lite-run-summary.schema.json` | `scripts/ci/write-verify-lite-summary.mjs`, `.github/workflows/verify-lite.yml` | `scripts/ci/validate-verify-lite-summary.mjs`, `scripts/ci/validate-artifacts-ajv.mjs` |
 | `spec/discovery-pack/**/*.{yml,yaml,json}` | `schema/discovery-pack-v1.schema.json` | manual authoring in `spec/discovery-pack/` | `scripts/discovery-pack/validate.mjs`, `scripts/discovery-pack/compile.mjs`, `src/cli/discovery-cli.ts` |
 | `artifacts/discovery-pack/discovery-pack-validate-report.json` | dedicated schema not yet defined (`contractId=discovery-pack-validation-report.v1`) | `scripts/discovery-pack/validate.mjs`, `.github/workflows/verify-lite.yml` | `docs/spec/discovery-pack.md`, `scripts/summary/render-pr-summary.mjs`, CI Step Summary / PR comment operators |

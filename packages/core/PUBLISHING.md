@@ -12,6 +12,9 @@ the compatibility boundary used by the composite assurance-gate action.
   published artifact.
 - Publication is not implied by this repository file. Announce npm availability
   only after `npm publish` succeeds and package provenance is verified.
+- The canonical machine-checkable state is
+  `docs/operate/publication-evidence.json`. Until its `coreNpmPackage.state` is
+  `live`, treat the package as unavailable even if a preflight workflow passed.
 
 ## Pre-publish checklist
 
@@ -133,6 +136,15 @@ node -e "import('@ae-framework/core').then(() => console.log('ok'))"
 
 Record the workflow run URL, registry URL, package provenance evidence, and
 smoke-test evidence on the release issue before updating QUICKSTART wording.
+Then update `docs/operate/publication-evidence.json` in a reviewed PR:
+
+1. set `coreNpmPackage.state` to `live` and clear its blockers;
+2. record the exact registry version, successful publish workflow run,
+   provenance, non-workspace install/import evidence, verification timestamp,
+   and public verifier identifier;
+3. run `pnpm -s run publication:evidence:validate` without network access;
+4. do not commit tokens, private evidence locations, or a generated candidate
+   as owner verification.
 
 ## Compatibility rule
 
