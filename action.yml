@@ -50,7 +50,7 @@ outputs:
     value: ${{ steps.run.outputs.review-surface-path }}
   dependency-cache-hit:
     description: "true when the exact action-owned pnpm store cache key was restored"
-    value: ${{ steps.dependency-cache.outputs.cache-hit }}
+    value: ${{ steps.dependency-cache.outputs.cache-hit == 'true' }}
   dependency-cache-key:
     description: "Exact action-owned pnpm store cache key"
     value: ${{ steps.package-manager.outputs.cache-key }}

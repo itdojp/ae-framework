@@ -108,6 +108,9 @@ jobs:
       - name: Run action with dependency cache disabled
         id: assurance
         continue-on-error: true
+        # pnpm 10 maps NPM_CONFIG_STORE_DIR to the store-dir setting. The
+        # repository's PNPM_STORE_PATH convention is a shell variable and does
+        # not change pnpm's store unless a caller also passes --store-dir.
         env:
           NPM_CONFIG_STORE_DIR: ${{ runner.temp }}/assurance-gate-cache-miss-${{ matrix.index }}
         uses: ./.benchmark-action

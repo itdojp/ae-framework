@@ -128,6 +128,7 @@ describe('assurance gate cache comparison', () => {
       expect(action).toContain('rm -rf -- "$AE_ACTION_STORE_PATH"');
       expect(action).toContain('dependency-cache-hit:');
       expect(action).toContain('dependency-cache-key:');
+      expect(action).toContain("steps.dependency-cache.outputs.cache-hit == 'true'");
       expect(action).toMatch(/dependency-cache:\n(?:.*\n){1,3}\s+default: "false"/u);
     }
   });
@@ -142,5 +143,6 @@ describe('assurance gate cache comparison', () => {
     expect(workflow).toContain('cache-miss-sample');
     expect(workflow).toContain('cache-hit-sample');
     expect(workflow).toContain('SAMPLE_COUNT_PER_MODE: 5');
+    expect(workflow).toContain('NPM_CONFIG_STORE_DIR: ${{ runner.temp }}/assurance-gate-cache-miss-${{ matrix.index }}');
   });
 });
