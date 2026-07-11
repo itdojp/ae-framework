@@ -62,7 +62,8 @@ is the largest cold component.
 ## Selected bounded optimization
 
 Evaluate an action-owned pnpm content-addressable-store cache keyed by runner
-OS/architecture and the action ref's `pnpm-lock.yaml` digest. The optimization
+OS/architecture, declared pnpm version, and the action ref's `pnpm-lock.yaml`
+digest. The optimization
 must not cache consumer artifacts, `node_modules`, core build output, policy
 results, or review surfaces. It must preserve the current action-ref alignment,
 frozen lockfile enforcement, pass/block semantics, and both composite-action
@@ -88,3 +89,8 @@ The implementation/comparison PR must:
 This is a selected implementation decision, not a completed performance claim.
 Issue #3641 remains open until the cache experiment has a reviewed before/after
 artifact and the final keep/rollback/follow-up outcome is recorded.
+
+The implementation surface is `.github/workflows/assurance-gate-cache-comparison.yml`
+plus the `dependency-cache` input shared by both composite action entry points.
+The final decision remains pending the merged-main workflow run; implementation
+availability alone is not treated as measured improvement.

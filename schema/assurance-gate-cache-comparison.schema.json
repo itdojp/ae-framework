@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/assurance-gate-cache-comparison.schema.json",
+  "title": "Assurance Gate dependency-cache comparison",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "exactRef",
+    "workflowRunId",
+    "fixture",
+    "method",
+    "samples",
+    "summary",
+    "decision"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "assurance-gate-cache-comparison/v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "exactRef": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "workflowRunId": { "type": "integer", "minimum": 1 },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "expectedResult", "profile"],
+      "properties": {
+        "id": { "const": "external-minimal-pass" },
+        "expectedResult": { "const": "pass" },
+        "profile": { "const": "minimal" }
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sampleCountPerMode",
+        "targetImprovementRatio",
+        "totalBoundary",
+        "cacheBoundary"
+      ],
+      "properties": {
+        "sampleCountPerMode": { "const": 5 },
+        "targetImprovementRatio": { "const": 0.2 },
+        "totalBoundary": { "type": "string", "minLength": 1 },
+        "cacheBoundary": { "type": "string", "minLength": 1 }
+      }
+    },
+    "samples": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "items": { "$ref": "#/$defs/sample" }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cacheMiss", "cacheHit"],
+      "properties": {
+        "cacheMiss": { "$ref": "#/$defs/modeSummary" },
+        "cacheHit": { "$ref": "#/$defs/modeSummary" }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "functionalParity",
+        "exactCacheHits",
+        "improvementRatio",
+        "targetMet",
+        "recommendedOutcome"
+      ],
+      "properties": {
+        "functionalParity": { "type": "boolean" },
+        "exactCacheHits": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "improvementRatio": { "type": "number" },
+        "targetMet": { "type": "boolean" },
+        "recommendedOutcome": {
+          "enum": ["keep-pnpm-store-cache", "rollback-pnpm-store-cache"]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonNegativeNumber": { "type": "number", "minimum": 0 },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runnerOs",
+        "architecture",
+        "runnerImage",
+        "nodeVersion",
+        "npmVersion",
+        "pnpmVersion"
+      ],
+      "properties": {
+        "runnerOs": { "type": "string", "minLength": 1 },
+        "architecture": { "type": "string", "minLength": 1 },
+        "runnerImage": { "type": "string", "minLength": 1 },
+        "nodeVersion": { "type": "string", "minLength": 1 },
+        "npmVersion": { "type": "string", "minLength": 1 },
+        "pnpmVersion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "index",
+        "exactRef",
+        "durationMs",
+        "result",
+        "stepOutcome",
+        "cacheEnabled",
+        "cacheHit",
+        "cacheKey",
+        "environment"
+      ],
+      "properties": {
+        "mode": { "enum": ["cache-miss", "cache-hit"] },
+        "index": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "exactRef": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "durationMs": { "$ref": "#/$defs/nonNegativeNumber" },
+        "result": { "enum": ["pass", "block", "error"] },
+        "stepOutcome": { "enum": ["success", "failure", "cancelled", "skipped"] },
+        "cacheEnabled": { "type": "boolean" },
+        "cacheHit": { "type": "boolean" },
+        "cacheKey": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^ae-framework-core-pnpm-v1-[A-Za-z0-9._-]+-[A-Za-z0-9._-]+-[0-9]+\\.[0-9]+\\.[0-9]+-[0-9a-f]{64}$"
+            },
+            { "const": "unavailable" }
+          ]
+        },
+        "environment": { "$ref": "#/$defs/environment" }
+      }
+    },
+    "statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "median", "maximum", "p90"],
+      "properties": {
+        "minimum": { "$ref": "#/$defs/nonNegativeNumber" },
+        "median": { "$ref": "#/$defs/nonNegativeNumber" },
+        "maximum": { "$ref": "#/$defs/nonNegativeNumber" },
+        "p90": { "$ref": "#/$defs/nonNegativeNumber" }
+      }
+    },
+    "modeSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sampleCount", "results", "durationMs"],
+      "properties": {
+        "sampleCount": { "const": 5 },
+        "results": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pass", "block", "error"],
+          "properties": {
+            "pass": { "type": "integer", "minimum": 0, "maximum": 5 },
+            "block": { "type": "integer", "minimum": 0, "maximum": 5 },
+            "error": { "type": "integer", "minimum": 0, "maximum": 5 }
+          }
+        },
+        "durationMs": { "$ref": "#/$defs/statistics" }
+      }
+    }
+  }
+}

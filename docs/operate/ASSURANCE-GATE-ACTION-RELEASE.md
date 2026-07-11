@@ -83,6 +83,15 @@ behavior, or build-dominated startup. Do not switch the action to an unpublished
 npm package or prebuilt/bundled surface without a separate compatibility and
 rollback decision.
 
+The opt-in action-owned dependency cache stores only pnpm's content-addressable store
+under the downloaded action checkout and an exact
+OS/architecture/pnpm-version/lockfile-digest key. It does not use pnpm's shared global store
+and does not cache
+`node_modules`, compiled core output, consumer evidence, or decisions. Set the
+action input `dependency-cache: "false"` for immediate operational rollback.
+It remains the default until the #3641 comparison is reviewed; install remains
+frozen-lockfile enforced in either mode.
+
 ## Consumer guidance
 
 Use the moving major tag for normal adoption:
