@@ -198,6 +198,9 @@ else
   exit 1
 fi
 
+echo "[verify-lite] publication evidence validation"
+pnpm -s run publication:evidence:validate
+
 echo "[verify-lite] reason-code registry validation"
 if node scripts/ci/validate-reason-codes.mjs; then
   REASON_CODES_STATUS="success"

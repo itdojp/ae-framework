@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-24'
+lastVerified: '2026-07-11'
 owner: release-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -20,6 +20,8 @@ This document defines the operating procedure that standardizes release decision
 ### Source of truth
 - Policy: `policy/release-policy.yml`
 - Schema: `schema/release-policy.schema.json`
+- Publication state manifest: `docs/operate/publication-evidence.json`
+- Publication state schema: `schema/publication-evidence-v1.schema.json`
 - Schema fixture: `fixtures/release/sample.release-policy.json`
 - Local-only sample verify inputs (not accepted by `workflow_dispatch`):
   - `fixtures/release/sample.metrics-snapshot.json`
@@ -71,6 +73,35 @@ Recommended flow:
 2. evaluate it with `ae release verify --trace-bundle <bundle>`
 3. preserve `artifacts/release/post-deploy-verify.json` as the release-decision evidence
 
+### Publication evidence boundary
+
+The checked-in `docs/operate/publication-evidence.json` is the canonical,
+machine-checkable state for the core npm package, Assurance Gate Marketplace
+listing, and live `main` branch protection. It records public evidence URLs and
+operator verification; it does not perform network verification in default CI.
+
+After an owner operation, update only the affected surface in a reviewed PR.
+Use `state=live` only after all surface-specific evidence is public and verified,
+clear its blockers, update `verifiedAt` or `observedAt`, `verifier`, and
+`verifierRole`, then run:
+
+```bash
+pnpm -s run publication:evidence:validate
+```
+
+The semantic validator requires registry, successful publish workflow,
+provenance, and clean install/import evidence for live npm; listing and release
+note evidence plus successful external action-path resolution for live
+Marketplace; and successful apply/fetch evidence with every desired context for
+live branch protection. Workflow-generated candidates are not owner approval,
+and secrets or private evidence URLs must not be committed. The schema binds
+evidence URLs to this repository, npm/Sigstore, and Marketplace public surfaces;
+it also binds verifier identifiers and roles to the current repository owner.
+Changing ownership requires a reviewed schema update rather than a free-form
+manifest edit. Offline validation does not authenticate the named account or
+replay GitHub/npm authorization; protected-environment operation evidence and
+the reviewed manifest PR remain the human authorization boundary.
+
 ### Related docs
 - `docs/ci/pr-automation.md`
 - `docs/ci/review-topology-matrix.md`
@@ -86,10 +117,29 @@ Recommended flow:
 
 - Policy: `policy/release-policy.yml`
 - Schema: `schema/release-policy.schema.json`
+- 公開状態manifest: `docs/operate/publication-evidence.json`
+- 公開状態schema: `schema/publication-evidence-v1.schema.json`
 - Schema fixture: `fixtures/release/sample.release-policy.json`
 - Sample verify inputs（ローカル検証用。workflow_dispatch では利用不可）:
   - `fixtures/release/sample.metrics-snapshot.json`
   - `fixtures/release/sample.synthetic-checks.json`
+
+### 2.1 Publication evidence boundary
+
+`docs/operate/publication-evidence.json` は、core npm package、Assurance Gate
+Marketplace listing、live `main` branch protection の公開・運用状態を表す
+machine-checkableな一次情報です。default CIは外部networkを参照せず、checked-in
+manifestのschemaとcross-field条件のみを検証します。
+
+Owner操作後は対象surfaceだけをreviewed PRで更新し、必要なpublic evidence URL、
+verification timestamp、public verifier identifierを記録します。全証跡が揃う前に
+`live`へ変更せず、producer生成candidateをowner verificationとして扱いません。
+更新後は `pnpm -s run publication:evidence:validate` を実行してください。secret、
+token、private evidence URLはmanifestへ記録しません。schemaはevidence URLを
+repository、npm/Sigstore、Marketplaceのpublic surfaceへ制限し、verifierとroleを
+現repository ownerへ固定します。owner変更時はschema自体をreviewed PRで更新します。
+offline validatorはnamed accountの認証やGitHub/npm authorizationの再実行を行わないため、
+protected environmentの操作証跡とmanifest更新PRのreviewがhuman authorization boundaryです。
 
 ## 3. Policy構造（`ae-release-policy/v1`）
 

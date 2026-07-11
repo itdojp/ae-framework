@@ -6,9 +6,10 @@ canonicalSource:
 - .github/actions/assurance-gate/README.md
 - packages/core/README.md
 - docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md
+- docs/operate/publication-evidence.json
 - tests/actions/assurance-gate-action.test.ts
 - tests/cli/init-cli.test.ts
-lastVerified: '2026-07-04'
+lastVerified: '2026-07-11'
 owner: product-assurance
 verificationCommand: pnpm -s exec vitest run tests/actions/assurance-gate-action.test.ts tests/unit/docs/publish-assets-quickstart.test.ts --reporter dot
 ---
@@ -24,6 +25,9 @@ Publication boundary: use the root action ref `itdojp/ae-framework@v1` for the
 normal adoption path after the `v1` tag exists. Pin an exact tag or commit SHA
 for reproducible evaluation. Do not describe the npm package or Marketplace
 listing as live unless the release note for that publication exists.
+The machine-checkable current state is
+`docs/operate/publication-evidence.json`; a prepared workflow, action tag, or
+metadata file does not by itself change a surface to `live`.
 
 ## What this proves
 

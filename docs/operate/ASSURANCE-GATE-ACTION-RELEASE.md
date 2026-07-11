@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-07-06'
+lastVerified: '2026-07-11'
 owner: product-assurance
 verificationCommand: pnpm -s exec vitest run tests/actions/assurance-gate-action.test.ts tests/cli/init-cli.test.ts tests/unit/docs/publish-assets-quickstart.test.ts --reporter dot
 ---
@@ -60,6 +60,14 @@ The repository can prepare Marketplace-compatible metadata in code, but the
 listing is not considered live until the release owner publishes it in GitHub
 Marketplace and records the listing URL in the release note and #3626. Do not
 claim Marketplace availability from the presence of `action.yml` or tags alone.
+The canonical state is `assuranceGateMarketplace` in
+`docs/operate/publication-evidence.json`. After owner-operated publication,
+update that surface in a reviewed PR with the live listing URL, release note,
+external action-path resolution evidence, verification timestamp, and public
+verifier identifier with the `release-owner` role. Use only the repository and
+Marketplace public URL forms allowed by the schema. Clear blockers only when
+those public evidence fields are present, then run
+`pnpm -s run publication:evidence:validate`.
 
 ## Consumer guidance
 
