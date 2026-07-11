@@ -69,6 +69,20 @@ Marketplace public URL forms allowed by the schema. Clear blockers only when
 those public evidence fields are present, then run
 `pnpm -s run publication:evidence:validate`.
 
+## Startup/runtime measurement boundary
+
+The current composite action intentionally prepares Corepack/pnpm, installs the
+core dependency graph, and builds `@ae-framework/core` from the selected action
+ref before running the gate. Cold and warm overhead for those phases is measured
+by the report-only harness in
+`docs/operate/ASSURANCE-GATE-STARTUP-BENCHMARK.md`. The benchmark is not a
+productivity or review-speed claim and is not a normal-PR required check.
+
+Use its exact-ref JSON/Markdown report when diagnosing registry latency, cache
+behavior, or build-dominated startup. Do not switch the action to an unpublished
+npm package or prebuilt/bundled surface without a separate compatibility and
+rollback decision.
+
 ## Consumer guidance
 
 Use the moving major tag for normal adoption:

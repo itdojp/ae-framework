@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/assurance-gate-startup-benchmark.schema.json",
+  "title": "Assurance Gate startup benchmark report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "exactRef",
+    "fixture",
+    "environment",
+    "method",
+    "collectionErrors",
+    "samples",
+    "summary",
+    "optimizationAssessment"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "assurance-gate-startup-benchmark/v1" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "exactRef": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "expectedResult", "profile"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "expectedResult": { "enum": ["pass", "block"] },
+        "profile": { "const": "minimal" }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runnerOs",
+        "architecture",
+        "runnerImage",
+        "cpu",
+        "totalMemoryBytes",
+        "nodeVersion",
+        "npmVersion",
+        "pnpmVersion",
+        "pnpmVersionSource"
+      ],
+      "properties": {
+        "runnerOs": { "type": "string", "minLength": 1 },
+        "architecture": { "type": "string", "minLength": 1 },
+        "runnerImage": { "type": "string", "minLength": 1 },
+        "cpu": { "type": "string", "minLength": 1 },
+        "totalMemoryBytes": { "type": "integer", "minimum": 1 },
+        "nodeVersion": { "type": "string", "minLength": 1 },
+        "npmVersion": { "type": "string", "minLength": 1 },
+        "pnpmVersion": { "type": "string", "minLength": 1 },
+        "pnpmVersionSource": { "enum": ["measured", "configured-fallback"] }
+      }
+    },
+    "method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runCountPerCacheState",
+        "checkoutInitializationMs",
+        "pilotFriction",
+        "coldDefinition",
+        "warmDefinition",
+        "reviewSurfaceTimingBoundary"
+      ],
+      "properties": {
+        "runCountPerCacheState": { "type": "integer", "minimum": 5 },
+        "checkoutInitializationMs": { "$ref": "#/$defs/nonNegativeNumber" },
+        "pilotFriction": { "enum": ["not-observed", "observed"] },
+        "coldDefinition": { "type": "string", "minLength": 1 },
+        "warmDefinition": { "type": "string", "minLength": 1 },
+        "reviewSurfaceTimingBoundary": { "type": "string", "minLength": 1 }
+      }
+    },
+    "collectionErrors": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cacheState", "stage", "phase", "missingSampleCount"],
+        "properties": {
+          "cacheState": { "const": "warm" },
+          "stage": { "const": "warmPreconditioning" },
+          "phase": {
+            "enum": ["corepackPnpmSetup", "dependencyInstall", "coreBuild"]
+          },
+          "missingSampleCount": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "samples": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cacheState", "index", "result", "phaseTimingsMs"],
+        "properties": {
+          "cacheState": { "enum": ["cold", "warm"] },
+          "index": { "type": "integer", "minimum": 1 },
+          "result": { "enum": ["pass", "block", "error"] },
+          "errorPhase": {
+            "enum": [
+              "actionInitialization",
+              "corepackPnpmSetup",
+              "dependencyInstall",
+              "coreBuild",
+              "gateExecution"
+            ]
+          },
+          "phaseTimingsMs": { "$ref": "#/$defs/phaseTimings" }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "result": { "const": "error" } }, "required": ["result"] },
+            "then": { "required": ["errorPhase"] },
+            "else": { "not": { "required": ["errorPhase"] } }
+          }
+        ]
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cold", "warm"],
+      "properties": {
+        "cold": { "$ref": "#/$defs/cacheSummary" },
+        "warm": { "$ref": "#/$defs/cacheSummary" }
+      }
+    },
+    "optimizationAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "triggers",
+        "setupInstallBuildShare",
+        "recommendedOutcome",
+        "finalDecision"
+      ],
+      "properties": {
+        "status": { "const": "baseline-assessment" },
+        "triggers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "coldMedianOver60Seconds",
+            "setupInstallBuildOver70Percent",
+            "livePilotFrictionObserved"
+          ],
+          "properties": {
+            "coldMedianOver60Seconds": { "type": "boolean" },
+            "setupInstallBuildOver70Percent": { "type": "boolean" },
+            "livePilotFrictionObserved": { "type": "boolean" }
+          }
+        },
+        "setupInstallBuildShare": { "type": "number", "minimum": 0 },
+        "recommendedOutcome": {
+          "enum": ["maintain-current-runtime", "evaluate-one-low-risk-optimization"]
+        },
+        "finalDecision": { "const": "pending-reviewed-baseline" }
+      }
+    }
+  },
+  "$defs": {
+    "nonNegativeNumber": { "type": "number", "minimum": 0 },
+    "statistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "median", "maximum", "p90"],
+      "properties": {
+        "minimum": { "$ref": "#/$defs/nonNegativeNumber" },
+        "median": { "$ref": "#/$defs/nonNegativeNumber" },
+        "maximum": { "$ref": "#/$defs/nonNegativeNumber" },
+        "p90": { "$ref": "#/$defs/nonNegativeNumber" }
+      }
+    },
+    "phaseTimings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actionInitialization",
+        "corepackPnpmSetup",
+        "dependencyInstall",
+        "coreBuild",
+        "gateExecution",
+        "reviewSurfaceRendering",
+        "total"
+      ],
+      "properties": {
+        "actionInitialization": { "$ref": "#/$defs/nonNegativeNumber" },
+        "corepackPnpmSetup": { "$ref": "#/$defs/nonNegativeNumber" },
+        "dependencyInstall": { "$ref": "#/$defs/nonNegativeNumber" },
+        "coreBuild": { "$ref": "#/$defs/nonNegativeNumber" },
+        "gateExecution": { "$ref": "#/$defs/nonNegativeNumber" },
+        "reviewSurfaceRendering": { "$ref": "#/$defs/nonNegativeNumber" },
+        "total": { "$ref": "#/$defs/nonNegativeNumber" }
+      }
+    },
+    "phaseStatistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actionInitialization",
+        "corepackPnpmSetup",
+        "dependencyInstall",
+        "coreBuild",
+        "gateExecution",
+        "reviewSurfaceRendering",
+        "total"
+      ],
+      "properties": {
+        "actionInitialization": { "$ref": "#/$defs/statistics" },
+        "corepackPnpmSetup": { "$ref": "#/$defs/statistics" },
+        "dependencyInstall": { "$ref": "#/$defs/statistics" },
+        "coreBuild": { "$ref": "#/$defs/statistics" },
+        "gateExecution": { "$ref": "#/$defs/statistics" },
+        "reviewSurfaceRendering": { "$ref": "#/$defs/statistics" },
+        "total": { "$ref": "#/$defs/statistics" }
+      }
+    },
+    "cacheSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sampleCount", "results", "phaseTimingsMs"],
+      "properties": {
+        "sampleCount": { "type": "integer", "minimum": 0 },
+        "results": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pass", "block", "error"],
+          "properties": {
+            "pass": { "type": "integer", "minimum": 0 },
+            "block": { "type": "integer", "minimum": 0 },
+            "error": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "phaseTimingsMs": {
+          "oneOf": [
+            { "$ref": "#/$defs/phaseStatistics" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}
