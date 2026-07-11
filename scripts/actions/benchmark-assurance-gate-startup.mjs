@@ -261,6 +261,8 @@ function measureSample({ actionRepo, workRoot, cacheState, index, fixture, store
       '@ae-framework/core...',
       '--store-dir',
       storeDir,
+      '--config.use-lockfile=true',
+      '--config.package-lock=true',
     ], { cwd: actionRepo, env: packageManagerEnv }).durationMs;
     currentPhase = 'coreBuild';
     phaseTimingsMs.coreBuild = runCommand(
@@ -481,6 +483,8 @@ function warmInstallState(actionRepo, storeDir, corepackHome) {
       '@ae-framework/core...',
       '--store-dir',
       storeDir,
+      '--config.use-lockfile=true',
+      '--config.package-lock=true',
     ], { cwd: actionRepo, env: packageManagerEnv });
     phase = 'coreBuild';
     runCommand('pnpm', ['--filter', '@ae-framework/core', 'run', 'build'], {
@@ -582,6 +586,7 @@ export function runBenchmark(options) {
     summary,
     optimizationAssessment: assessOptimization(summary, options.pilotFriction),
   };
+  rmSync(workRoot, { recursive: true, force: true });
   mkdirSync(path.dirname(outputPath), { recursive: true });
   mkdirSync(path.dirname(outputMdPath), { recursive: true });
   writeFileSync(outputPath, `${JSON.stringify(report, null, 2)}\n`);

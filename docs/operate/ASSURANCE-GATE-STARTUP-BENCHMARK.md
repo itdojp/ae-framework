@@ -33,6 +33,13 @@ Corepack, filtered install, core build, and gate commands as both composite
 action entry points. Existing action tests remain the authority for root and
 compatibility-subdirectory output/pass/block parity.
 
+The install command explicitly sets both `use-lockfile=true` and
+`package-lock=true`. In this repository's pnpm 10 configuration,
+`.npmrc` also contains `package-lock=false`; without the command-level override,
+pnpm disables its lockfile and rejects `--frozen-lockfile`. The option name is
+inherited npm configuration terminology: pnpm remains the installer and the
+workflow verifies that no `package-lock.json` is created.
+
 The harness uses the same setup/install/build/gate commands as the composite
 action and an external-style non-workspace minimal-profile fixture. It records
 at least five measured samples for each cache state:
@@ -84,6 +91,10 @@ pnpm -s run benchmark:assurance-gate-startup:validate
 The harness intentionally removes and recreates installation state in its
 checkout. Run it only in a dedicated worktree or ephemeral CI checkout, not in
 a shared development workspace with uncommitted dependency state.
+After collecting the in-memory report, it removes the scratch consumer, pnpm
+store, and Corepack cache before writing the selected JSON/Markdown outputs so
+later repository lint and verification do not scan downloaded package-manager
+implementation files.
 
 ## Optimization decision rule
 
