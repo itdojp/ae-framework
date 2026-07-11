@@ -54,6 +54,9 @@ outputs:
   dependency-cache-key:
     description: "Exact action-owned pnpm store cache key"
     value: ${{ steps.package-manager.outputs.cache-key }}
+  pnpm-version:
+    description: "pnpm version used to install the action dependencies"
+    value: ${{ steps.package-manager.outputs.pnpm-version }}
 runs:
   using: composite
   steps:
@@ -73,6 +76,7 @@ runs:
         printf '%s\n' "store-path=${store_path}" >> "$GITHUB_OUTPUT"
         printf '%s\n' "lock-hash=${lock_hash}" >> "$GITHUB_OUTPUT"
         printf '%s\n' "cache-key=${cache_key}" >> "$GITHUB_OUTPUT"
+        printf '%s\n' "pnpm-version=${pnpm_version}" >> "$GITHUB_OUTPUT"
     - name: Restore ae-framework pnpm store
       id: dependency-cache
       if: ${{ inputs.dependency-cache == 'true' }}
