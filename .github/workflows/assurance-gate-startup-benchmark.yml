@@ -1,0 +1,110 @@
+name: Assurance Gate Startup Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: "Measured samples per cold/warm cache state (minimum 5)"
+        required: false
+        default: "5"
+        type: string
+      fixture:
+        description: "External-style fixture result"
+        required: false
+        default: pass
+        type: choice
+        options:
+          - pass
+          - block
+      pilot_friction:
+        description: "Whether #3640 recorded startup/runtime friction"
+        required: false
+        default: not-observed
+        type: choice
+        options:
+          - not-observed
+          - observed
+  schedule:
+    - cron: "13 3 1 * *"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: assurance-gate-startup-report-only
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Mark checkout start
+        id: checkout-start
+        shell: bash
+        run: printf '%s\n' "started_ms=$(date +%s%3N)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Measure checkout initialization
+        id: checkout
+        shell: bash
+        env:
+          CHECKOUT_STARTED_MS: ${{ steps.checkout-start.outputs.started_ms }}
+        run: |
+          completed_ms="$(date +%s%3N)"
+          duration_ms="$((completed_ms - CHECKOUT_STARTED_MS))"
+          printf '%s\n' "duration_ms=${duration_ms}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node + pnpm
+        uses: ./.github/actions/setup-node-pnpm
+        with:
+          node-version: "20"
+
+      - name: Run cold/warm startup benchmark
+        env:
+          BENCHMARK_RUNS: ${{ inputs.runs || '5' }}
+          BENCHMARK_FIXTURE: ${{ inputs.fixture || 'pass' }}
+          PILOT_FRICTION: ${{ inputs.pilot_friction || 'not-observed' }}
+          CHECKOUT_INITIALIZATION_MS: ${{ steps.checkout.outputs.duration_ms }}
+        run: |
+          node scripts/actions/benchmark-assurance-gate-startup.mjs \
+            --runs="${BENCHMARK_RUNS}" \
+            --fixture="${BENCHMARK_FIXTURE}" \
+            --exact-ref="${GITHUB_SHA}" \
+            --runner-image="${ImageOS:-ubuntu}-${ImageVersion:-unknown}" \
+            --checkout-initialization-ms="${CHECKOUT_INITIALIZATION_MS}" \
+            --pilot-friction="${PILOT_FRICTION}"
+
+      - name: Install validation dependencies
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
+
+      - name: Validate benchmark contract
+        run: |
+          pnpm -s run benchmark:assurance-gate-startup:validate
+          pnpm -s exec vitest run tests/scripts/assurance-gate-startup-benchmark.test.ts --reporter dot
+
+      - name: Append benchmark summary
+        if: ${{ always() }}
+        run: |
+          if [ -f artifacts/benchmarks/assurance-gate-startup.md ]; then
+            cat artifacts/benchmarks/assurance-gate-startup.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '%s\n' 'Benchmark report was not generated.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload benchmark report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: assurance-gate-startup-benchmark-${{ github.run_id }}
+          if-no-files-found: warn
+          path: |
+            artifacts/benchmarks/assurance-gate-startup.json
+            artifacts/benchmarks/assurance-gate-startup.md

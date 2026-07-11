@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-07-06'
+lastVerified: '2026-07-11'
 owner: product-assurance
 verificationCommand: pnpm -s exec vitest run tests/unit/docs/publish-assets-quickstart.test.ts --reporter dot
 ---
@@ -31,6 +31,11 @@ That means a consumer repository does not need a pnpm workspace or a separate
 core package install for the one-workflow-file path. It also means the action
 ref is the compatibility anchor: action metadata, built-in profiles, policy,
 curated schemas, and core implementation should come from the same ref.
+
+This alignment currently includes a per-run Corepack/pnpm setup, filtered
+dependency install, and core build. Startup measurements and cache definitions
+are governed by `docs/operate/ASSURANCE-GATE-STARTUP-BENCHMARK.md`; benchmark
+results do not change compatibility or publication state by themselves.
 
 For external adoption after the root action release, prefer one of these forms:
 

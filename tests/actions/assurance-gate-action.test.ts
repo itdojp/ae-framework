@@ -125,6 +125,7 @@ describe('assurance-gate action runner', () => {
     }, null, 2)}\n`);
 
     const githubOutput = path.join(workspace, 'github-output.txt');
+    const timingOutput = 'artifacts/assurance-gate/internal-timing.json';
     const command = [
       'scripts/actions/assurance-gate.mjs',
       '--workspace', workspace,
@@ -132,6 +133,7 @@ describe('assurance-gate action runner', () => {
       '--profile', 'minimal',
       '--artifacts-dir', 'artifacts',
       '--output-dir', 'artifacts/assurance-gate',
+      '--timing-output', timingOutput,
     ];
     const result = spawnSync('node', command, {
       cwd: repoRoot,
@@ -156,6 +158,12 @@ describe('assurance-gate action runner', () => {
     expect(summary.summary).toMatchObject({ claimCount: 1, satisfiedClaims: 1, warningCount: 0 });
     const reviewSurface = readFileSync(path.join(workspace, 'artifacts', 'assurance-gate', 'review-surface.md'), 'utf8');
     expect(reviewSurface).toContain('Policy decision: pass');
+    const timing = JSON.parse(readFileSync(path.join(workspace, timingOutput), 'utf8'));
+    expect(timing).toMatchObject({
+      schemaVersion: 'assurance-gate-internal-timing/v1',
+      reviewSurfaceRenderingMs: expect.any(Number),
+      gateProcessElapsedMs: expect.any(Number),
+    });
 
     const rerun = spawnSync('node', command, {
       cwd: repoRoot,
@@ -218,6 +226,25 @@ describe('assurance-gate action runner', () => {
     });
     expect(enforcedResult.status).toBe(1);
     expect(enforcedResult.stderr).toContain('policy blocked: missing evidence qualityGates');
+  });
+
+  it('rejects timing output paths that escape the consumer workspace', () => {
+    const workspace = resetWorkspace('escaping-timing-output');
+    const result = spawnSync('node', [
+      'scripts/actions/assurance-gate.mjs',
+      '--workspace', workspace,
+      '--action-repo', repoRoot,
+      '--profile', 'minimal',
+      '--artifacts-dir', 'artifacts',
+      '--timing-output', '../outside-timing.json',
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      timeout: 30_000,
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('timing output must be inside');
   });
 
   it('rejects malformed custom release policies before evaluation', () => {

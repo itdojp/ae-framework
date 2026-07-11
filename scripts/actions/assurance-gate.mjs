@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { performance } from 'node:perf_hooks';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
 
@@ -40,6 +41,7 @@ function parseCli(argv) {
       'action-repo': { type: 'string' },
       environment: { type: 'string' },
       'fail-on-block': { type: 'string', default: 'true' },
+      'timing-output': { type: 'string' },
     },
     strict: true,
     allowPositionals: false,
@@ -218,12 +220,16 @@ function writeGithubOutput(values) {
 }
 
 async function main() {
+  const gateStartedAt = performance.now();
   const options = parseCli(process.argv.slice(2));
   const workspace = path.resolve(options.workspace ?? process.env.GITHUB_WORKSPACE ?? process.cwd());
   const actionRepo = path.resolve(options['action-repo'] ?? repoRootFromActionPath());
   const outputDir = resolveWorkspacePath(workspace, options['output-dir'], 'output directory');
   const artifactsDir = resolveWorkspacePath(workspace, options['artifacts-dir'], 'artifacts directory');
   const failOnBlock = parseBoolean(options['fail-on-block'], true);
+  const timingOutputPath = options['timing-output']
+    ? resolveWorkspacePath(workspace, options['timing-output'], 'timing output')
+    : null;
   const coreModulePath = path.join(actionRepo, 'packages', 'core', 'dist', 'index.js');
 
   if (!existsSync(coreModulePath)) {
@@ -281,7 +287,9 @@ async function main() {
     inputPath: builtin ? path.relative(actionRepo, policyPath) : path.relative(workspace, policyPath),
     environment: options.environment,
   });
+  const reviewSurfaceStartedAt = performance.now();
   const reviewSurface = core.renderReviewSurface(summary, { policyDecision });
+  const reviewSurfaceRenderingMs = performance.now() - reviewSurfaceStartedAt;
 
   mkdirSync(outputDir, { recursive: true });
   const summaryPath = path.join(outputDir, 'assurance-summary.json');
@@ -315,6 +323,15 @@ async function main() {
   writeFileSync(policyDecisionPath, `${JSON.stringify(policyDecision, null, 2)}\n`);
   writeFileSync(reviewPath, reviewSurface);
   writeFileSync(gateResultPath, `${JSON.stringify(gateResult, null, 2)}\n`);
+  if (timingOutputPath) {
+    mkdirSync(path.dirname(timingOutputPath), { recursive: true });
+    writeFileSync(timingOutputPath, `${JSON.stringify({
+      schemaVersion: 'assurance-gate-internal-timing/v1',
+      generatedAt,
+      reviewSurfaceRenderingMs,
+      gateProcessElapsedMs: performance.now() - gateStartedAt,
+    }, null, 2)}\n`);
+  }
   writeGithubOutput({
     'gate-result': policyDecision.result,
     'gate-result-path': path.relative(workspace, gateResultPath),
