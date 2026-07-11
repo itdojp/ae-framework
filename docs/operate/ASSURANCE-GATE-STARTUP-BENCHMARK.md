@@ -37,9 +37,9 @@ The harness uses the same setup/install/build/gate commands as the composite
 action and an external-style non-workspace minimal-profile fixture. It records
 at least five measured samples for each cache state:
 
-- `cold`: remove linked `node_modules` and core build output, then use a unique
-  empty pnpm store before every measured sample;
-- `warm`: precondition one pnpm store, linked dependencies, and core build, then
+- `cold`: remove linked `node_modules` and core build output, then use unique
+  empty pnpm store and Corepack cache directories before every measured sample;
+- `warm`: precondition one pnpm store and Corepack cache, linked dependencies, and core build, then
   invoke the unchanged setup/install/build/gate path for every measured sample.
 
 Each sample records:
@@ -56,12 +56,19 @@ The report also records the exact commit SHA, workflow checkout/init duration,
 architecture and image, CPU/memory, Node/npm/pnpm versions, fixture ID, sample
 count, the `pilotFriction` input, and minimum/median/maximum/p90 statistics. Review-surface rendering is
 nested in `gateExecution`; it is not added a second time to `total`.
+If pnpm setup fails before its version can be measured, the diagnostic report
+uses the root `packageManager` version and marks `pnpmVersionSource` as
+`configured-fallback`; a successful baseline requires `measured`.
 Workflow checkout/init is recorded once as method metadata and is outside each
 per-sample total; `actionInitialization` measures consumer-fixture preparation
 inside each sample.
 If a measured phase fails, the harness preserves an `error` sample with its
 `errorPhase`, writes both reports, and exits non-zero so report-only evidence
 does not conceal functional failure.
+If warm-state preconditioning itself fails, the report records a
+`collectionErrors` entry and an explicit missing-sample count instead of
+fabricating warm timings. The workflow still uploads the diagnostic report and
+fails; such a run is not a usable baseline.
 
 ## Run and validate
 

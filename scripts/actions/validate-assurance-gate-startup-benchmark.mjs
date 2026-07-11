@@ -51,6 +51,16 @@ function validateSummary(actual, expected, cacheState) {
       errors.push(semanticError(`${base}/results/${result}`, 'must equal the measured result count'));
     }
   }
+  if (expected.phaseTimingsMs === null) {
+    if (actual.phaseTimingsMs !== null) {
+      errors.push(semanticError(`${base}/phaseTimingsMs`, 'must be null when no samples were collected'));
+    }
+    return errors;
+  }
+  if (actual.phaseTimingsMs === null) {
+    errors.push(semanticError(`${base}/phaseTimingsMs`, 'must summarize collected samples'));
+    return errors;
+  }
   for (const phase of PHASES) {
     for (const statistic of ['minimum', 'median', 'maximum', 'p90']) {
       if (!sameNumber(
@@ -72,14 +82,28 @@ export function validateBenchmarkSemantics(report) {
   const expectedPerState = report.method.runCountPerCacheState;
   for (const cacheState of ['cold', 'warm']) {
     const samples = report.samples.filter((sample) => sample.cacheState === cacheState);
-    if (samples.length !== expectedPerState) {
+    const collectionError = report.collectionErrors.find((entry) => entry.cacheState === cacheState);
+    if (samples.length > expectedPerState) {
       errors.push(semanticError(
         '/samples',
-        `must contain exactly ${expectedPerState} ${cacheState} samples`,
+        `must not contain more than ${expectedPerState} ${cacheState} samples`,
+      ));
+    }
+    const missingSampleCount = expectedPerState - samples.length;
+    if (missingSampleCount > 0 && collectionError?.missingSampleCount !== missingSampleCount) {
+      errors.push(semanticError(
+        '/collectionErrors',
+        `must account for ${missingSampleCount} missing ${cacheState} samples`,
+      ));
+    }
+    if (missingSampleCount === 0 && collectionError) {
+      errors.push(semanticError(
+        '/collectionErrors',
+        `must not report a ${cacheState} collection error when all samples exist`,
       ));
     }
     const indices = samples.map((sample) => sample.index).sort((left, right) => left - right);
-    const expectedIndices = Array.from({ length: expectedPerState }, (_, index) => index + 1);
+    const expectedIndices = Array.from({ length: samples.length }, (_, index) => index + 1);
     if (JSON.stringify(indices) !== JSON.stringify(expectedIndices)) {
       errors.push(semanticError(
         '/samples',
@@ -105,15 +129,20 @@ export function validateBenchmarkSemantics(report) {
         ));
       }
     }
-    if (samples.length > 0) {
-      errors.push(...validateSummary(
-        report.summary[cacheState],
-        summarizeSamples(samples),
-        cacheState,
-      ));
-    }
+    errors.push(...validateSummary(
+      report.summary[cacheState],
+      summarizeSamples(samples),
+      cacheState,
+    ));
   }
 
+  if (report.summary.cold.phaseTimingsMs === null) {
+    errors.push(semanticError(
+      '/summary/cold/phaseTimingsMs',
+      'cold samples are required to evaluate the optimization decision',
+    ));
+    return errors;
+  }
   const expectedAssessment = assessOptimization(report.summary, report.method.pilotFriction);
   for (const trigger of Object.keys(expectedAssessment.triggers)) {
     if (report.optimizationAssessment.triggers[trigger] !== expectedAssessment.triggers[trigger]) {

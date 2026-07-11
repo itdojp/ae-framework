@@ -172,8 +172,8 @@ function runCommand(command, args, { cwd, env = process.env, timeoutMs = 600_000
   return { durationMs, stdout: result.stdout?.trim() ?? '' };
 }
 
-function commandOutput(command, args, cwd) {
-  return runCommand(command, args, { cwd, capture: true }).stdout;
+function commandOutput(command, args, cwd, env = process.env) {
+  return runCommand(command, args, { cwd, env, capture: true }).stdout;
 }
 
 function resetInstallState(actionRepo) {
@@ -228,7 +228,7 @@ function initializeConsumerFixture(workRoot, cacheState, index, fixture) {
   return workspace;
 }
 
-function measureSample({ actionRepo, workRoot, cacheState, index, fixture, storeDir }) {
+function measureSample({ actionRepo, workRoot, cacheState, index, fixture, storeDir, corepackHome }) {
   if (cacheState === 'cold') {
     resetInstallState(actionRepo);
     rmSync(storeDir, { recursive: true, force: true });
@@ -240,6 +240,7 @@ function measureSample({ actionRepo, workRoot, cacheState, index, fixture, store
   let currentPhase = 'actionInitialization';
   let result = 'error';
   let errorPhase;
+  const packageManagerEnv = { ...process.env, COREPACK_HOME: corepackHome };
   try {
     const initStartedAt = performance.now();
     const workspace = initializeConsumerFixture(workRoot, cacheState, index, fixture);
@@ -250,7 +251,7 @@ function measureSample({ actionRepo, workRoot, cacheState, index, fixture, store
     phaseTimingsMs.corepackPnpmSetup = runCommand(
       'bash',
       ['-lc', 'corepack enable && pnpm --version'],
-      { cwd: actionRepo, capture: true },
+      { cwd: actionRepo, env: packageManagerEnv, capture: true },
     ).durationMs;
     currentPhase = 'dependencyInstall';
     phaseTimingsMs.dependencyInstall = runCommand('pnpm', [
@@ -260,12 +261,12 @@ function measureSample({ actionRepo, workRoot, cacheState, index, fixture, store
       '@ae-framework/core...',
       '--store-dir',
       storeDir,
-    ], { cwd: actionRepo }).durationMs;
+    ], { cwd: actionRepo, env: packageManagerEnv }).durationMs;
     currentPhase = 'coreBuild';
     phaseTimingsMs.coreBuild = runCommand(
       'pnpm',
       ['--filter', '@ae-framework/core', 'run', 'build'],
-      { cwd: actionRepo },
+      { cwd: actionRepo, env: packageManagerEnv },
     ).durationMs;
     currentPhase = 'gateExecution';
     phaseTimingsMs.gateExecution = runCommand('node', [
@@ -331,8 +332,9 @@ export function summarizeSamples(samples) {
       block: samples.filter((sample) => sample.result === 'block').length,
       error: samples.filter((sample) => sample.result === 'error').length,
     },
-    phaseTimingsMs: {},
+    phaseTimingsMs: samples.length > 0 ? {} : null,
   };
+  if (samples.length === 0) return result;
   for (const phase of PHASES) {
     result.phaseTimingsMs[phase] = summarizeValues(
       samples.map((sample) => sample.phaseTimingsMs[phase]),
@@ -371,7 +373,7 @@ export function renderMarkdown(report) {
     `- Exact ref: \`${report.exactRef}\``,
     `- Fixture: \`${report.fixture.id}\` (${report.fixture.expectedResult})`,
     `- Runner: ${report.environment.runnerOs}/${report.environment.architecture} (${report.environment.runnerImage})`,
-    `- Node/npm/pnpm: ${report.environment.nodeVersion} / ${report.environment.npmVersion} / ${report.environment.pnpmVersion}`,
+    `- Node/npm/pnpm: ${report.environment.nodeVersion} / ${report.environment.npmVersion} / ${report.environment.pnpmVersion} (${report.environment.pnpmVersionSource})`,
     `- Samples: cold=${report.summary.cold.sampleCount}, warm=${report.summary.warm.sampleCount}`,
     `- Cold results: pass=${report.summary.cold.results.pass}, block=${report.summary.cold.results.block}, error=${report.summary.cold.results.error}`,
     `- Warm results: pass=${report.summary.warm.results.pass}, block=${report.summary.warm.results.block}, error=${report.summary.warm.results.error}`,
@@ -381,6 +383,7 @@ export function renderMarkdown(report) {
     '| --- | --- | ---: | ---: | ---: | ---: |',
   ];
   for (const cacheState of ['cold', 'warm']) {
+    if (!report.summary[cacheState].phaseTimingsMs) continue;
     for (const phase of PHASES) {
       const stats = report.summary[cacheState].phaseTimingsMs[phase];
       lines.push(`| ${cacheState} | ${phase} | ${stats.minimum.toFixed(2)} | ${stats.median.toFixed(2)} | ${stats.maximum.toFixed(2)} | ${stats.p90.toFixed(2)} |`);
@@ -393,6 +396,15 @@ export function renderMarkdown(report) {
       '## Measurement errors',
       '',
       ...errorSamples.map((sample) => `- ${sample.cacheState} #${sample.index}: ${sample.errorPhase}`),
+    );
+  }
+  if (report.collectionErrors.length > 0) {
+    lines.push(
+      '',
+      '## Collection errors',
+      '',
+      ...report.collectionErrors.map((entry) =>
+        `- ${entry.cacheState}/${entry.stage}/${entry.phase}: ${entry.missingSampleCount} requested sample(s) missing`),
     );
   }
   lines.push(
@@ -416,7 +428,27 @@ function resolveExactRef(actionRepo, requestedRef) {
   return normalizeExactRef(requestedRef || commandOutput('git', ['rev-parse', 'HEAD'], actionRepo));
 }
 
-function buildEnvironment(actionRepo, options) {
+function resolvePnpmVersion(actionRepo, packageManagerEnv) {
+  try {
+    return {
+      pnpmVersion: commandOutput('pnpm', ['--version'], actionRepo, packageManagerEnv),
+      pnpmVersionSource: 'measured',
+    };
+  } catch {
+    const packageManager = JSON.parse(readFileSync(path.join(actionRepo, 'package.json'), 'utf8'))
+      .packageManager;
+    const configuredVersion = typeof packageManager === 'string'
+      ? packageManager.match(/^pnpm@([^+]+)(?:\+.*)?$/u)?.[1]
+      : null;
+    return {
+      pnpmVersion: configuredVersion ?? 'unavailable',
+      pnpmVersionSource: 'configured-fallback',
+    };
+  }
+}
+
+function buildEnvironment(actionRepo, options, packageManagerEnv) {
+  const pnpm = resolvePnpmVersion(actionRepo, packageManagerEnv);
   return {
     runnerOs: platform(),
     architecture: arch(),
@@ -424,25 +456,41 @@ function buildEnvironment(actionRepo, options) {
     cpu: cpus()[0]?.model ?? 'unknown',
     totalMemoryBytes: totalmem(),
     nodeVersion: process.version,
-    npmVersion: commandOutput('npm', ['--version'], actionRepo),
-    pnpmVersion: commandOutput('pnpm', ['--version'], actionRepo),
+    npmVersion: commandOutput('npm', ['--version'], actionRepo, packageManagerEnv),
+    ...pnpm,
   };
 }
 
-function warmInstallState(actionRepo, storeDir) {
+function warmInstallState(actionRepo, storeDir, corepackHome) {
   resetInstallState(actionRepo);
   rmSync(storeDir, { recursive: true, force: true });
   mkdirSync(storeDir, { recursive: true });
-  runCommand('bash', ['-lc', 'corepack enable && pnpm --version'], { cwd: actionRepo, capture: true });
-  runCommand('pnpm', [
-    'install',
-    '--frozen-lockfile',
-    '--filter',
-    '@ae-framework/core...',
-    '--store-dir',
-    storeDir,
-  ], { cwd: actionRepo });
-  runCommand('pnpm', ['--filter', '@ae-framework/core', 'run', 'build'], { cwd: actionRepo });
+  let phase = 'corepackPnpmSetup';
+  const packageManagerEnv = { ...process.env, COREPACK_HOME: corepackHome };
+  try {
+    runCommand('bash', ['-lc', 'corepack enable && pnpm --version'], {
+      cwd: actionRepo,
+      env: packageManagerEnv,
+      capture: true,
+    });
+    phase = 'dependencyInstall';
+    runCommand('pnpm', [
+      'install',
+      '--frozen-lockfile',
+      '--filter',
+      '@ae-framework/core...',
+      '--store-dir',
+      storeDir,
+    ], { cwd: actionRepo, env: packageManagerEnv });
+    phase = 'coreBuild';
+    runCommand('pnpm', ['--filter', '@ae-framework/core', 'run', 'build'], {
+      cwd: actionRepo,
+      env: packageManagerEnv,
+    });
+  } catch (error) {
+    if (error && typeof error === 'object') error.benchmarkPhase = phase;
+    throw error;
+  }
 }
 
 export function runBenchmark(options) {
@@ -465,6 +513,7 @@ export function runBenchmark(options) {
   mkdirSync(workRoot, { recursive: true });
 
   const samples = [];
+  const collectionErrors = [];
   for (let index = 1; index <= options.runs; index += 1) {
     samples.push(measureSample({
       actionRepo,
@@ -473,20 +522,34 @@ export function runBenchmark(options) {
       index,
       fixture: options.fixture,
       storeDir: path.join(workRoot, 'stores', `cold-${index}`),
+      corepackHome: path.join(workRoot, 'corepack', `cold-${index}`),
     }));
   }
 
   const warmStore = path.join(workRoot, 'stores', 'warm');
-  warmInstallState(actionRepo, warmStore);
-  for (let index = 1; index <= options.runs; index += 1) {
-    samples.push(measureSample({
-      actionRepo,
-      workRoot,
+  const warmCorepackHome = path.join(workRoot, 'corepack', 'warm');
+  try {
+    warmInstallState(actionRepo, warmStore, warmCorepackHome);
+    for (let index = 1; index <= options.runs; index += 1) {
+      samples.push(measureSample({
+        actionRepo,
+        workRoot,
+        cacheState: 'warm',
+        index,
+        fixture: options.fixture,
+        storeDir: warmStore,
+        corepackHome: warmCorepackHome,
+      }));
+    }
+  } catch (error) {
+    collectionErrors.push({
       cacheState: 'warm',
-      index,
-      fixture: options.fixture,
-      storeDir: warmStore,
-    }));
+      stage: 'warmPreconditioning',
+      phase: error && typeof error === 'object' && typeof error.benchmarkPhase === 'string'
+        ? error.benchmarkPhase
+        : 'corepackPnpmSetup',
+      missingSampleCount: options.runs,
+    });
   }
 
   const summary = {
@@ -502,15 +565,19 @@ export function runBenchmark(options) {
       expectedResult: options.fixture,
       profile: 'minimal',
     },
-    environment: buildEnvironment(actionRepo, options),
+    environment: buildEnvironment(actionRepo, options, {
+      ...process.env,
+      COREPACK_HOME: warmCorepackHome,
+    }),
     method: {
       runCountPerCacheState: options.runs,
       checkoutInitializationMs: options.checkoutInitializationMs,
       pilotFriction: options.pilotFriction,
-      coldDefinition: 'Remove node_modules/core dist and use a unique empty pnpm store before every measured sample.',
-      warmDefinition: 'Precondition one pnpm store and linked node_modules/core build, then execute the unchanged action setup/install/build/gate path for every measured sample.',
+      coldDefinition: 'Remove node_modules/core dist and use unique empty pnpm store and Corepack cache directories before every measured sample.',
+      warmDefinition: 'Precondition one pnpm store, Corepack cache, linked node_modules, and core build, then execute the unchanged action setup/install/build/gate path for every measured sample.',
       reviewSurfaceTimingBoundary: 'reviewSurfaceRendering is an internal subphase of gateExecution and is not added again to total.',
     },
+    collectionErrors,
     samples,
     summary,
     optimizationAssessment: assessOptimization(summary, options.pilotFriction),
@@ -537,8 +604,11 @@ if (isExecutedAsMain(import.meta.url)) {
       process.stdout.write(`- JSON: ${path.relative(process.cwd(), result.outputPath)}\n`);
       process.stdout.write(`- Markdown: ${path.relative(process.cwd(), result.outputMdPath)}\n`);
       const errorCount = result.report.samples.filter((sample) => sample.result === 'error').length;
-      if (errorCount > 0) {
-        throw new Error(`${errorCount} measured sample(s) ended in error; reports were preserved`);
+      const collectionErrorCount = result.report.collectionErrors.length;
+      if (errorCount > 0 || collectionErrorCount > 0) {
+        throw new Error(
+          `${errorCount} measured sample(s) and ${collectionErrorCount} collection stage(s) ended in error; reports were preserved`,
+        );
       }
       process.stdout.write(`Assurance Gate startup benchmark: OK\n`);
     }

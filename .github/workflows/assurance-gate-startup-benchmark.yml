@@ -59,8 +59,8 @@ jobs:
           duration_ms="$((completed_ms - CHECKOUT_STARTED_MS))"
           printf '%s\n' "duration_ms=${duration_ms}" >> "$GITHUB_OUTPUT"
 
-      - name: Setup Node + pnpm
-        uses: ./.github/actions/setup-node-pnpm
+      - name: Setup Node without priming Corepack or pnpm
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
 

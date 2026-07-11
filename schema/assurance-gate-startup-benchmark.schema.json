@@ -11,6 +11,7 @@
     "fixture",
     "environment",
     "method",
+    "collectionErrors",
     "samples",
     "summary",
     "optimizationAssessment"
@@ -40,7 +41,8 @@
         "totalMemoryBytes",
         "nodeVersion",
         "npmVersion",
-        "pnpmVersion"
+        "pnpmVersion",
+        "pnpmVersionSource"
       ],
       "properties": {
         "runnerOs": { "type": "string", "minLength": 1 },
@@ -50,7 +52,8 @@
         "totalMemoryBytes": { "type": "integer", "minimum": 1 },
         "nodeVersion": { "type": "string", "minLength": 1 },
         "npmVersion": { "type": "string", "minLength": 1 },
-        "pnpmVersion": { "type": "string", "minLength": 1 }
+        "pnpmVersion": { "type": "string", "minLength": 1 },
+        "pnpmVersionSource": { "enum": ["measured", "configured-fallback"] }
       }
     },
     "method": {
@@ -73,9 +76,26 @@
         "reviewSurfaceTimingBoundary": { "type": "string", "minLength": 1 }
       }
     },
+    "collectionErrors": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cacheState", "stage", "phase", "missingSampleCount"],
+        "properties": {
+          "cacheState": { "const": "warm" },
+          "stage": { "const": "warmPreconditioning" },
+          "phase": {
+            "enum": ["corepackPnpmSetup", "dependencyInstall", "coreBuild"]
+          },
+          "missingSampleCount": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
     "samples": {
       "type": "array",
-      "minItems": 10,
+      "minItems": 5,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -209,7 +229,7 @@
       "additionalProperties": false,
       "required": ["sampleCount", "results", "phaseTimingsMs"],
       "properties": {
-        "sampleCount": { "type": "integer", "minimum": 5 },
+        "sampleCount": { "type": "integer", "minimum": 0 },
         "results": {
           "type": "object",
           "additionalProperties": false,
@@ -220,7 +240,12 @@
             "error": { "type": "integer", "minimum": 0 }
           }
         },
-        "phaseTimingsMs": { "$ref": "#/$defs/phaseStatistics" }
+        "phaseTimingsMs": {
+          "oneOf": [
+            { "$ref": "#/$defs/phaseStatistics" },
+            { "type": "null" }
+          ]
+        }
       }
     }
   }

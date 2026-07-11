@@ -63,6 +63,7 @@ function fixtureReport() {
       nodeVersion: 'v20.19.0',
       npmVersion: '10.8.2',
       pnpmVersion: '10.0.0',
+      pnpmVersionSource: 'measured',
     },
     method: {
       runCountPerCacheState: 5,
@@ -72,6 +73,7 @@ function fixtureReport() {
       warmDefinition: 'preconditioned store and install state',
       reviewSurfaceTimingBoundary: 'review rendering is nested in gate execution',
     },
+    collectionErrors: [],
     samples: [...coldSamples, ...warmSamples],
     summary,
     optimizationAssessment: assessOptimization(summary, 'not-observed'),
@@ -158,7 +160,51 @@ describe('assurance gate startup benchmark contract', () => {
     });
     expect(result.valid).toBe(false);
     expect(result.errors).toContainEqual(expect.objectContaining({
-      message: 'must contain exactly 5 warm samples',
+      message: 'must not contain more than 5 warm samples',
+    }));
+  });
+
+  it('preserves a valid diagnostic report when warm preconditioning prevents samples', () => {
+    const report = fixtureReport();
+    report.samples = report.samples.filter((entry) => entry.cacheState === 'cold');
+    report.summary.warm = summarizeSamples([]);
+    report.collectionErrors = [{
+      cacheState: 'warm',
+      stage: 'warmPreconditioning',
+      phase: 'dependencyInstall',
+      missingSampleCount: 5,
+    }];
+    const tmpRoot = resolve('.codex-local/tmp/assurance-gate-startup-collection-error-test');
+    rmSync(tmpRoot, { recursive: true, force: true });
+    mkdirSync(tmpRoot, { recursive: true });
+    const reportPath = resolve(tmpRoot, 'report.json');
+    writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+
+    const result = validateBenchmarkFiles({
+      reportPath,
+      schemaPath: resolve('schema/assurance-gate-startup-benchmark.schema.json'),
+    });
+    expect(result.valid, JSON.stringify(result.errors)).toBe(true);
+    expect(renderMarkdown(report)).toContain('warm/warmPreconditioning/dependencyInstall');
+  });
+
+  it('rejects missing cold samples without crashing semantic validation', () => {
+    const report = fixtureReport();
+    report.samples = report.samples.filter((entry) => entry.cacheState === 'warm');
+    report.summary.cold = summarizeSamples([]);
+    const tmpRoot = resolve('.codex-local/tmp/assurance-gate-startup-missing-cold-test');
+    rmSync(tmpRoot, { recursive: true, force: true });
+    mkdirSync(tmpRoot, { recursive: true });
+    const reportPath = resolve(tmpRoot, 'report.json');
+    writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+
+    const result = validateBenchmarkFiles({
+      reportPath,
+      schemaPath: resolve('schema/assurance-gate-startup-benchmark.schema.json'),
+    });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual(expect.objectContaining({
+      message: 'cold samples are required to evaluate the optimization decision',
     }));
   });
 
@@ -244,6 +290,8 @@ describe('assurance gate startup benchmark contract', () => {
     expect(workflow).not.toContain('pull_request:');
     expect(workflow).toContain('assurance-gate-startup-report-only');
     expect(workflow).toContain('timeout-minutes: 90');
+    expect(workflow).toContain('uses: actions/setup-node@v4');
+    expect(workflow).not.toContain('uses: ./.github/actions/setup-node-pnpm');
   });
 
   it('provides a no-side-effect help path', () => {
