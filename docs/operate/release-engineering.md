@@ -82,8 +82,8 @@ operator verification; it does not perform network verification in default CI.
 
 After an owner operation, update only the affected surface in a reviewed PR.
 Use `state=live` only after all surface-specific evidence is public and verified,
-clear its blockers, update `asOf`, `verifiedAt` or `observedAt`, and `verifier`,
-then run:
+clear its blockers, update `verifiedAt` or `observedAt`, `verifier`, and
+`verifierRole`, then run:
 
 ```bash
 pnpm -s run publication:evidence:validate
@@ -94,7 +94,13 @@ provenance, and clean install/import evidence for live npm; listing and release
 note evidence plus successful external action-path resolution for live
 Marketplace; and successful apply/fetch evidence with every desired context for
 live branch protection. Workflow-generated candidates are not owner approval,
-and secrets or private evidence URLs must not be committed.
+and secrets or private evidence URLs must not be committed. The schema binds
+evidence URLs to this repository, npm/Sigstore, and Marketplace public surfaces;
+it also binds verifier identifiers and roles to the current repository owner.
+Changing ownership requires a reviewed schema update rather than a free-form
+manifest edit. Offline validation does not authenticate the named account or
+replay GitHub/npm authorization; protected-environment operation evidence and
+the reviewed manifest PR remain the human authorization boundary.
 
 ### Related docs
 - `docs/ci/pr-automation.md`
@@ -129,7 +135,11 @@ Owner操作後は対象surfaceだけをreviewed PRで更新し、必要なpublic
 verification timestamp、public verifier identifierを記録します。全証跡が揃う前に
 `live`へ変更せず、producer生成candidateをowner verificationとして扱いません。
 更新後は `pnpm -s run publication:evidence:validate` を実行してください。secret、
-token、private evidence URLはmanifestへ記録しません。
+token、private evidence URLはmanifestへ記録しません。schemaはevidence URLを
+repository、npm/Sigstore、Marketplaceのpublic surfaceへ制限し、verifierとroleを
+現repository ownerへ固定します。owner変更時はschema自体をreviewed PRで更新します。
+offline validatorはnamed accountの認証やGitHub/npm authorizationの再実行を行わないため、
+protected environmentの操作証跡とmanifest更新PRのreviewがhuman authorization boundaryです。
 
 ## 3. Policy構造（`ae-release-policy/v1`）
 

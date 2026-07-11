@@ -65,6 +65,10 @@ jobs:
             exit 0
           fi
           while IFS= read -r -d '' file; do
+            if [[ "$file" == "docs/operate/publication-evidence.json" ]]; then
+              docs_only=false
+              break
+            fi
             if [[ "$file" =~ ^docs/ || ( "$file" == *.md && "$file" != */* ) ]]; then
               continue
             fi
@@ -95,7 +99,7 @@ jobs:
 
       - name: Run CLI/Artifacts contract conformance tests (required)
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}
-        run: pnpm -s vitest run tests/contracts/cli-artifacts-contracts.test.ts
+        run: pnpm -s vitest run tests/contracts/cli-artifacts-contracts.test.ts tests/contracts/publication-evidence-contract.test.ts
 
       - name: Collect TypeScript inventory
         if: ${{ steps.docs-only.outputs.docs_only != 'true' }}

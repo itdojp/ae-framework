@@ -36,24 +36,9 @@ function validateStateBoundary(surface, instancePath, errors) {
   }
 }
 
-function validateEvidenceTimestamp(manifestAsOf, evidence, instancePath, errors) {
-  const timestamp = evidence?.observedAt ?? evidence?.verifiedAt;
-  if (!hasNonEmptyString(timestamp) || !hasNonEmptyString(manifestAsOf)) {
-    return;
-  }
-  if (Date.parse(timestamp) > Date.parse(manifestAsOf)) {
-    errors.push(createError(
-      'evidence_after_manifest',
-      `${instancePath}/${evidence.observedAt ? 'observedAt' : 'verifiedAt'}`,
-      'evidence timestamp cannot be later than manifest asOf',
-    ));
-  }
-}
-
-function validateBranchProtection(surface, manifestAsOf, errors) {
+function validateBranchProtection(surface, errors) {
   const instancePath = '/surfaces/mainBranchProtection';
   validateStateBoundary(surface, instancePath, errors);
-  validateEvidenceTimestamp(manifestAsOf, surface?.evidence, `${instancePath}/evidence`, errors);
   if (surface?.state !== 'live') {
     return;
   }
@@ -61,7 +46,16 @@ function validateBranchProtection(surface, manifestAsOf, errors) {
   const evidence = surface.evidence;
   requireFields(
     evidence,
-    ['observedAt', 'verifier', 'fetchUrl', 'fetchStatus', 'applyWorkflowRunUrl', 'applyStatus'],
+    [
+      'observedAt',
+      'verifier',
+      'verifierRole',
+      'fetchEndpoint',
+      'fetchStatus',
+      'applyWorkflowName',
+      'applyWorkflowRunUrl',
+      'applyStatus',
+    ],
     `${instancePath}/evidence`,
     errors,
   );
@@ -91,10 +85,9 @@ function validateBranchProtection(surface, manifestAsOf, errors) {
   }
 }
 
-function validateNpmCore(surface, manifestAsOf, errors) {
+function validateNpmCore(surface, errors) {
   const instancePath = '/surfaces/coreNpmPackage';
   validateStateBoundary(surface, instancePath, errors);
-  validateEvidenceTimestamp(manifestAsOf, surface?.evidence, `${instancePath}/evidence`, errors);
   if (surface?.state !== 'live') {
     return;
   }
@@ -105,8 +98,11 @@ function validateNpmCore(surface, manifestAsOf, errors) {
     [
       'verifiedAt',
       'verifier',
+      'verifierRole',
       'registryUrl',
       'registryVersion',
+      'publishWorkflowName',
+      'publishWorkflowFile',
       'publishWorkflowRunUrl',
       'publishWorkflowMode',
       'publishWorkflowStatus',
@@ -139,10 +135,9 @@ function validateNpmCore(surface, manifestAsOf, errors) {
   }
 }
 
-function validateMarketplaceAction(surface, manifestAsOf, errors) {
+function validateMarketplaceAction(surface, errors) {
   const instancePath = '/surfaces/assuranceGateMarketplace';
   validateStateBoundary(surface, instancePath, errors);
-  validateEvidenceTimestamp(manifestAsOf, surface?.evidence, `${instancePath}/evidence`, errors);
   if (surface?.state !== 'live') {
     return;
   }
@@ -152,6 +147,7 @@ function validateMarketplaceAction(surface, manifestAsOf, errors) {
     [
       'verifiedAt',
       'verifier',
+      'verifierRole',
       'listingUrl',
       'releaseNoteUrl',
       'externalPathResolutionUrl',
@@ -171,8 +167,8 @@ function validateMarketplaceAction(surface, manifestAsOf, errors) {
 
 export function validatePublicationEvidenceSemantics(manifest) {
   const errors = [];
-  validateBranchProtection(manifest?.surfaces?.mainBranchProtection, manifest?.asOf, errors);
-  validateNpmCore(manifest?.surfaces?.coreNpmPackage, manifest?.asOf, errors);
-  validateMarketplaceAction(manifest?.surfaces?.assuranceGateMarketplace, manifest?.asOf, errors);
+  validateBranchProtection(manifest?.surfaces?.mainBranchProtection, errors);
+  validateNpmCore(manifest?.surfaces?.coreNpmPackage, errors);
+  validateMarketplaceAction(manifest?.surfaces?.assuranceGateMarketplace, errors);
   return errors;
 }

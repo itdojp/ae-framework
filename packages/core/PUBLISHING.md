@@ -141,7 +141,8 @@ Then update `docs/operate/publication-evidence.json` in a reviewed PR:
 1. set `coreNpmPackage.state` to `live` and clear its blockers;
 2. record the exact registry version, successful publish workflow run,
    provenance, non-workspace install/import evidence, verification timestamp,
-   and public verifier identifier;
+   public verifier identifier, and `release-owner` verifier role; use only the
+   repository/npm/Sigstore public URL forms allowed by the schema;
 3. run `pnpm -s run publication:evidence:validate` without network access;
 4. do not commit tokens, private evidence locations, or a generated candidate
    as owner verification.

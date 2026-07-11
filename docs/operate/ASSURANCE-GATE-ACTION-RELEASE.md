@@ -64,8 +64,10 @@ The canonical state is `assuranceGateMarketplace` in
 `docs/operate/publication-evidence.json`. After owner-operated publication,
 update that surface in a reviewed PR with the live listing URL, release note,
 external action-path resolution evidence, verification timestamp, and public
-verifier identifier. Clear blockers only when those public evidence fields are
-present, then run `pnpm -s run publication:evidence:validate`.
+verifier identifier with the `release-owner` role. Use only the repository and
+Marketplace public URL forms allowed by the schema. Clear blockers only when
+those public evidence fields are present, then run
+`pnpm -s run publication:evidence:validate`.
 
 ## Consumer guidance
 

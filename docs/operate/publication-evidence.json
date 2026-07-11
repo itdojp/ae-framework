@@ -1,10 +1,9 @@
 {
   "schemaVersion": "publication-evidence/v1",
   "repository": "itdojp/ae-framework",
-  "asOf": "2026-07-11T20:30:00Z",
   "surfaces": {
     "mainBranchProtection": {
-      "state": "blocked",
+      "state": "live",
       "branch": "main",
       "desiredContexts": [
         "verify-lite",
@@ -13,29 +12,33 @@
         "deploy-time-profiles"
       ],
       "evidence": {
-        "observedAt": "2026-07-05T17:05:00Z",
+        "observedAt": "2026-07-11T20:51:07Z",
         "verifier": "ootakazuhiko",
+        "verifierRole": "repository-admin",
         "observedContexts": [
           "verify-lite",
           "gate",
-          "policy-gate"
+          "policy-gate",
+          "deploy-time-profiles"
         ],
-        "fetchUrl": "https://api.github.com/repos/itdojp/ae-framework/branches/main/protection",
+        "fetchEndpoint": "repos/itdojp/ae-framework/branches/main/protection",
         "fetchStatus": "success",
-        "applyWorkflowRunUrl": "https://github.com/itdojp/ae-framework/actions/runs/28758749619",
-        "applyStatus": "failure"
+        "applyWorkflowName": "Admin — Apply Branch Protection Preset",
+        "applyWorkflowRunUrl": "https://github.com/itdojp/ae-framework/actions/runs/28815374171",
+        "applyStatus": "success"
       },
-      "blockers": [
-        "Repository owner must configure the protected branch-protection admin credential and complete a successful apply run."
-      ]
+      "blockers": []
     },
     "coreNpmPackage": {
       "state": "blocked",
       "package": "@ae-framework/core",
       "expectedVersion": "0.1.0",
       "evidence": {
-        "verifiedAt": "2026-07-05T17:05:00Z",
+        "verifiedAt": "2026-07-11T20:51:07Z",
         "verifier": "ootakazuhiko",
+        "verifierRole": "release-owner",
+        "publishWorkflowName": "Publish @ae-framework/core",
+        "publishWorkflowFile": ".github/workflows/publish-core-package.yml",
         "publishWorkflowRunUrl": "https://github.com/itdojp/ae-framework/actions/runs/28758749542",
         "publishWorkflowMode": "preflight",
         "publishWorkflowStatus": "success"
@@ -50,9 +53,10 @@
       "immutableTag": "v1.0.1",
       "movingMajorTag": "v1",
       "evidence": {
-        "verifiedAt": "2026-07-05T17:05:00Z",
+        "verifiedAt": "2026-07-11T20:51:07Z",
         "verifier": "ootakazuhiko",
-        "externalPathResolutionUrl": "https://api.github.com/repos/itdojp/ae-framework/contents/action.yml?ref=v1",
+        "verifierRole": "release-owner",
+        "externalPathResolutionUrl": "https://github.com/itdojp/ae-framework/blob/v1.0.1/action.yml",
         "externalPathResolutionStatus": "success"
       },
       "blockers": [

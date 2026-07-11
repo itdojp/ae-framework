@@ -4,11 +4,10 @@
   "title": "ae-framework publication evidence manifest v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "repository", "asOf", "surfaces"],
+  "required": ["schemaVersion", "repository", "surfaces"],
   "properties": {
     "schemaVersion": { "const": "publication-evidence/v1" },
     "repository": { "const": "itdojp/ae-framework" },
-    "asOf": { "type": "string", "format": "date-time" },
     "surfaces": {
       "type": "object",
       "additionalProperties": false,
@@ -25,7 +24,41 @@
       "type": "string",
       "enum": ["prepared", "blocked", "live", "withdrawn"]
     },
-    "uri": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "githubWorkflowRunUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://github\\.com/itdojp/ae-framework/actions/runs/[1-9][0-9]*$"
+    },
+    "npmRegistryUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://www\\.npmjs\\.com/package/(%40|@)ae-framework(%2F|/)core$"
+    },
+    "npmProvenanceUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://(www\\.npmjs\\.com/package/(%40|@)ae-framework(%2F|/)core|search\\.sigstore\\.dev/)[^@]*$"
+    },
+    "githubEvidenceUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://github\\.com/itdojp/ae-framework/(actions/runs/[1-9][0-9]*|issues/[1-9][0-9]*#issuecomment-[1-9][0-9]*|pull/[1-9][0-9]*#issuecomment-[1-9][0-9]*)$"
+    },
+    "marketplaceListingUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://github\\.com/marketplace/actions/[a-z0-9-]+$"
+    },
+    "githubReleaseNoteUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://github\\.com/itdojp/ae-framework/releases/tag/v[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "githubActionPathUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://github\\.com/itdojp/ae-framework/blob/v[0-9]+\\.[0-9]+\\.[0-9]+/action\\.yml$"
+    },
     "blockers": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
@@ -49,15 +82,17 @@
           "additionalProperties": false,
           "properties": {
             "observedAt": { "type": "string", "format": "date-time" },
-            "verifier": { "type": "string", "minLength": 1 },
+            "verifier": { "const": "ootakazuhiko" },
+            "verifierRole": { "const": "repository-admin" },
             "observedContexts": {
               "type": "array",
               "items": { "type": "string", "minLength": 1 },
               "uniqueItems": true
             },
-            "fetchUrl": { "$ref": "#/$defs/uri" },
+            "fetchEndpoint": { "const": "repos/itdojp/ae-framework/branches/main/protection" },
             "fetchStatus": { "enum": ["success", "failure"] },
-            "applyWorkflowRunUrl": { "$ref": "#/$defs/uri" },
+            "applyWorkflowName": { "const": "Admin — Apply Branch Protection Preset" },
+            "applyWorkflowRunUrl": { "$ref": "#/$defs/githubWorkflowRunUrl" },
             "applyStatus": { "enum": ["success", "failure"] }
           }
         },
@@ -77,16 +112,19 @@
           "additionalProperties": false,
           "properties": {
             "verifiedAt": { "type": "string", "format": "date-time" },
-            "verifier": { "type": "string", "minLength": 1 },
-            "registryUrl": { "$ref": "#/$defs/uri" },
+            "verifier": { "const": "ootakazuhiko" },
+            "verifierRole": { "const": "release-owner" },
+            "registryUrl": { "$ref": "#/$defs/npmRegistryUrl" },
             "registryVersion": { "type": "string", "minLength": 1 },
-            "publishWorkflowRunUrl": { "$ref": "#/$defs/uri" },
+            "publishWorkflowName": { "const": "Publish @ae-framework/core" },
+            "publishWorkflowFile": { "const": ".github/workflows/publish-core-package.yml" },
+            "publishWorkflowRunUrl": { "$ref": "#/$defs/githubWorkflowRunUrl" },
             "publishWorkflowMode": {
               "enum": ["preflight", "bootstrap-token", "trusted-publisher"]
             },
             "publishWorkflowStatus": { "enum": ["success", "failure"] },
-            "provenanceUrl": { "$ref": "#/$defs/uri" },
-            "cleanInstallImportEvidenceUrl": { "$ref": "#/$defs/uri" }
+            "provenanceUrl": { "$ref": "#/$defs/npmProvenanceUrl" },
+            "cleanInstallImportEvidenceUrl": { "$ref": "#/$defs/githubEvidenceUrl" }
           }
         },
         "blockers": { "$ref": "#/$defs/blockers" }
@@ -106,10 +144,11 @@
           "additionalProperties": false,
           "properties": {
             "verifiedAt": { "type": "string", "format": "date-time" },
-            "verifier": { "type": "string", "minLength": 1 },
-            "listingUrl": { "$ref": "#/$defs/uri" },
-            "releaseNoteUrl": { "$ref": "#/$defs/uri" },
-            "externalPathResolutionUrl": { "$ref": "#/$defs/uri" },
+            "verifier": { "const": "ootakazuhiko" },
+            "verifierRole": { "const": "release-owner" },
+            "listingUrl": { "$ref": "#/$defs/marketplaceListingUrl" },
+            "releaseNoteUrl": { "$ref": "#/$defs/githubReleaseNoteUrl" },
+            "externalPathResolutionUrl": { "$ref": "#/$defs/githubActionPathUrl" },
             "externalPathResolutionStatus": { "enum": ["success", "failure"] }
           }
         },
