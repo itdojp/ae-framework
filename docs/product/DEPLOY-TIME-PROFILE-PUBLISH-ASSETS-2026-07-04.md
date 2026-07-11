@@ -63,8 +63,8 @@ provenance settings, and the release tag/commit used for action compatibility.
 | Icon / color | `shield` / `blue` |
 | Primary category | Code quality |
 | Secondary category | Security |
-| Inputs | `profile`, `artifacts-dir`, `policy`, `output-dir`, `environment`, `fail-on-block` |
-| Outputs | `gate-result`, `gate-result-path`, `assurance-summary-path`, `policy-decision-path`, `review-surface-path` |
+| Inputs | `profile`, `artifacts-dir`, `policy`, `output-dir`, `environment`, `fail-on-block`, `dependency-cache` |
+| Outputs | `gate-result`, `gate-result-path`, `assurance-summary-path`, `policy-decision-path`, `review-surface-path`, `dependency-cache-hit`, `dependency-cache-key` |
 | First-run doc | `docs/getting-started/QUICKSTART-15MIN.md` |
 | Compatibility doc | `docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md` |
 

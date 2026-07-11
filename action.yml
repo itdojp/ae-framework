@@ -28,6 +28,10 @@ inputs:
     description: "Fail the action when the policy result is block"
     required: false
     default: "true"
+  dependency-cache:
+    description: "Restore/save the action-owned pnpm content-addressable store with an exact lockfile key"
+    required: false
+    default: "false"
 outputs:
   gate-result:
     description: "Policy result: pass, block, or report-only"
@@ -44,18 +48,63 @@ outputs:
   review-surface-path:
     description: "Path to review-surface.md"
     value: ${{ steps.run.outputs.review-surface-path }}
+  dependency-cache-hit:
+    description: "true when the exact action-owned pnpm store cache key was restored"
+    value: ${{ steps.dependency-cache.outputs.cache-hit }}
+  dependency-cache-key:
+    description: "Exact action-owned pnpm store cache key"
+    value: ${{ steps.package-manager.outputs.cache-key }}
 runs:
   using: composite
   steps:
-    - name: Build ae-framework core package
+    - name: Prepare ae-framework package manager
+      id: package-manager
       shell: bash
       run: |
         set -euo pipefail
         action_repo="$(cd "${GITHUB_ACTION_PATH}" && pwd)"
         cd "$action_repo"
         corepack enable
-        pnpm install --frozen-lockfile --filter @ae-framework/core... --config.use-lockfile=true --config.package-lock=true
+        store_path="${action_repo}/.cache/assurance-gate-pnpm-store"
+        mkdir -p "$store_path"
+        lock_hash="$(node -e "const c=require('node:crypto');const f=require('node:fs');process.stdout.write(c.createHash('sha256').update(f.readFileSync('pnpm-lock.yaml')).digest('hex'))")"
+        pnpm_version="$(node -e "const p=require('./package.json').packageManager;process.stdout.write(p.replace(/^pnpm@/u, '').split('+')[0])")"
+        cache_key="ae-framework-core-pnpm-v1-${RUNNER_OS}-${RUNNER_ARCH}-${pnpm_version}-${lock_hash}"
+        printf '%s\n' "store-path=${store_path}" >> "$GITHUB_OUTPUT"
+        printf '%s\n' "lock-hash=${lock_hash}" >> "$GITHUB_OUTPUT"
+        printf '%s\n' "cache-key=${cache_key}" >> "$GITHUB_OUTPUT"
+    - name: Restore ae-framework pnpm store
+      id: dependency-cache
+      if: ${{ inputs.dependency-cache == 'true' }}
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ steps.package-manager.outputs.store-path }}
+        key: ${{ steps.package-manager.outputs.cache-key }}
+    - name: Build ae-framework core package
+      shell: bash
+      env:
+        AE_DEPENDENCY_CACHE: ${{ inputs.dependency-cache }}
+      run: |
+        set -euo pipefail
+        action_repo="$(cd "${GITHUB_ACTION_PATH}" && pwd)"
+        cd "$action_repo"
+        install_args=(install --frozen-lockfile --filter @ae-framework/core... --config.use-lockfile=true --config.package-lock=true)
+        if [ "$AE_DEPENDENCY_CACHE" = "true" ]; then
+          install_args+=(--store-dir .cache/assurance-gate-pnpm-store)
+        fi
+        pnpm "${install_args[@]}"
         pnpm --filter @ae-framework/core run build
+    - name: Save ae-framework pnpm store
+      if: ${{ inputs.dependency-cache == 'true' && steps.dependency-cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ steps.package-manager.outputs.store-path }}
+        key: ${{ steps.package-manager.outputs.cache-key }}
+    - name: Remove action-local pnpm store
+      shell: bash
+      env:
+        AE_ACTION_STORE_PATH: ${{ steps.package-manager.outputs.store-path }}
+      run: rm -rf -- "$AE_ACTION_STORE_PATH"
     - name: Run assurance gate
       id: run
       shell: bash

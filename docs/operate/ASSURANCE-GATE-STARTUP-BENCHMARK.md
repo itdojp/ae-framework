@@ -14,6 +14,7 @@ review speed, time-to-merge, productivity, quality, approval, or safety impact.
 ## Execution surface
 
 - Workflow: `.github/workflows/assurance-gate-startup-benchmark.yml`
+- Cache comparison workflow: `.github/workflows/assurance-gate-cache-comparison.yml`
 - Command: `pnpm -s run benchmark:assurance-gate-startup`
 - JSON contract: `schema/assurance-gate-startup-benchmark.schema.json`
 - Generated reports:
@@ -129,6 +130,34 @@ exact ref `e53b8a1761c733d9f6a60080297889a805bc8c63`. The cold total median was
 10,837.08 ms and setup + install + build represented 97.88%, so the 70% trigger
 applied. `docs/operate/ASSURANCE-GATE-STARTUP-DECISION.md` records the bounded
 optimization selection and keeps the final decision pending comparison.
+
+## Bounded pnpm-store cache experiment
+
+Both composite action entry points can opt in to restoring/saving only pnpm's
+content-addressable store under the downloaded action checkout at
+`.cache/assurance-gate-pnpm-store`. It never caches pnpm's shared global store,
+which could contain unrelated consumer or private dependencies from earlier job
+steps. The key is exact and includes runner OS, architecture, the action ref's
+declared pnpm version, and the SHA-256 digest of its `pnpm-lock.yaml`.
+There are no restore-key prefixes. The cache excludes consumer artifacts,
+`node_modules`, core build output, policy decisions, and review surfaces;
+frozen-lockfile integrity remains enforced after restore.
+
+`Assurance Gate Cache Comparison` seeds that exact key, then measures five
+cache-disabled and five exact-cache-hit action invocations on GitHub-hosted
+runners. Cache-disabled samples use unique empty runner-temp pnpm stores; hit
+samples use only the exact action-owned store. Each total begins immediately before the local composite action step
+and ends immediately after it, so setup, cache restore, install, build, gate,
+and review rendering are included. The report uses
+`schema/assurance-gate-cache-comparison.schema.json` and keeps the workflow
+manual/report-only. The implementation is retained only if all ten functional
+results pass, all five enabled samples report an exact hit, and cache-hit median
+total improves by at least 20%.
+
+The input remains default-off while the comparison is pending. The final
+decision PR may make it default-on only when the reviewed report meets all keep
+conditions. Setting `dependency-cache: "false"` remains the rollback path and
+does not change gate semantics.
 
 ## External pilot recording
 

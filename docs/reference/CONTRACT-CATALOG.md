@@ -76,6 +76,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 
 - `schema/agentic-metrics.schema.json`
 - `schema/assurance-gate-startup-benchmark.schema.json`
+- `schema/assurance-gate-cache-comparison.schema.json`
 - `schema/req2run-metrics.schema.json`
 - `schema/evidence-sprint-measurement-report.schema.json`
 - `schema/domain-assurance-preset-report.schema.json`
@@ -140,6 +141,7 @@ The table below keeps the current producer/consumer baseline for representative 
 
 | artifact (path/pattern) | schema | producer (primary) | consumer (primary) |
 | --- | --- | --- | --- |
+| `artifacts/benchmarks/assurance-gate-cache-comparison.json` | `schema/assurance-gate-cache-comparison.schema.json` (`assurance-gate-cache-comparison/v1`) | `.github/workflows/assurance-gate-cache-comparison.yml`, `scripts/actions/summarize-assurance-gate-cache-comparison.mjs` | Issue #3641 final keep/rollback decision and reviewed reference snapshot; manual report-only evidence, not a productivity claim |
 | `artifacts/reference/benchmarks/assurance-gate-startup-*.json` | `schema/assurance-gate-startup-benchmark.schema.json` (`assurance-gate-startup-benchmark/v1`) | reviewed copies of successful `.github/workflows/assurance-gate-startup-benchmark.yml` artifacts | `scripts/actions/validate-assurance-gate-startup-benchmark.mjs`, `docs/operate/ASSURANCE-GATE-STARTUP-DECISION.md`; tracked baseline evidence, never a general productivity claim |
 | `artifacts/benchmarks/assurance-gate-startup.json` | `schema/assurance-gate-startup-benchmark.schema.json` (`assurance-gate-startup-benchmark/v1`) | `scripts/actions/benchmark-assurance-gate-startup.mjs`, `.github/workflows/assurance-gate-startup-benchmark.yml` | `scripts/actions/validate-assurance-gate-startup-benchmark.mjs`, Issue #3641 baseline/optimization decision, external-pilot startup-friction recording; manual/monthly report-only evidence, not a normal-PR gate or productivity claim |
 | `docs/operate/publication-evidence.json` | `schema/publication-evidence-v1.schema.json` (`publication-evidence/v1`) | release owner or repository admin updates verified public evidence in a reviewed PR; workflow-generated candidates are non-authoritative | `scripts/release/validate-publication-evidence.mjs`, `pnpm run publication:evidence:validate`, `scripts/ci/run-verify-lite-local.sh`, release/QUICKSTART claim boundaries; default validation is deterministic and offline |
