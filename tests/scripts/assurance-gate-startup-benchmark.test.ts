@@ -8,6 +8,7 @@ import {
   assessOptimization,
   assertReportPath,
   assertScratchDirectory,
+  normalizeExactRef,
   renderMarkdown,
   summarizeSamples,
   summarizeValues,
@@ -78,6 +79,11 @@ function fixtureReport() {
 }
 
 describe('assurance gate startup benchmark contract', () => {
+  it('normalizes exact commit SHAs and rejects ambiguous refs', () => {
+    expect(normalizeExactRef('A'.repeat(40))).toBe('a'.repeat(40));
+    expect(() => normalizeExactRef('main')).toThrow('exact 40-character hexadecimal commit SHA');
+  });
+
   it('limits destructive benchmark work to a named child of .codex-local/tmp', () => {
     expect(() => assertScratchDirectory(repoRoot, repoRoot)).toThrow('must stay inside');
     expect(() => assertScratchDirectory(

@@ -29,6 +29,13 @@ const PHASES = [
   'total',
 ];
 
+export function normalizeExactRef(value) {
+  if (!/^[0-9a-f]{40}$/iu.test(value)) {
+    throw new Error('--exact-ref must be an exact 40-character hexadecimal commit SHA');
+  }
+  return value.toLowerCase();
+}
+
 function parseArgs(argv) {
   const options = {
     runs: 5,
@@ -78,6 +85,7 @@ function parseArgs(argv) {
   if (!Number.isFinite(options.checkoutInitializationMs) || options.checkoutInitializationMs < 0) {
     throw new Error('--checkout-initialization-ms must be a non-negative number');
   }
+  if (options.exactRef) options.exactRef = normalizeExactRef(options.exactRef);
   return options;
 }
 
@@ -405,8 +413,7 @@ export function renderMarkdown(report) {
 }
 
 function resolveExactRef(actionRepo, requestedRef) {
-  if (requestedRef) return requestedRef;
-  return commandOutput('git', ['rev-parse', 'HEAD'], actionRepo);
+  return normalizeExactRef(requestedRef || commandOutput('git', ['rev-parse', 'HEAD'], actionRepo));
 }
 
 function buildEnvironment(actionRepo, options) {
