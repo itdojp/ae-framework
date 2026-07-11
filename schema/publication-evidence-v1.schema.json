@@ -106,7 +106,10 @@
       "properties": {
         "state": { "$ref": "#/$defs/state" },
         "package": { "const": "@ae-framework/core" },
-        "expectedVersion": { "type": "string", "pattern": "^0\\.1\\.[0-9]+$" },
+        "expectedVersion": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+        },
         "evidence": {
           "type": "object",
           "additionalProperties": false,

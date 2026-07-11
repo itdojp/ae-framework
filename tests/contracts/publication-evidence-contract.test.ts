@@ -112,6 +112,14 @@ describe('publication evidence contract', () => {
     expect(validatePublicationEvidenceSemantics(candidate)).toEqual([]);
   });
 
+  it('accepts future SemVer release lines without hard-coding 0.1.x', () => {
+    const validateSchema = buildSchemaValidator();
+    const candidate = structuredClone(manifest);
+    candidate.surfaces.coreNpmPackage.expectedVersion = '1.2.3-rc.1+build.7';
+
+    expect(validateSchema(candidate), JSON.stringify(validateSchema.errors)).toBe(true);
+  });
+
   it('does not accept a successful preflight as live npm publication evidence', () => {
     const candidate = structuredClone(manifest);
     candidate.surfaces.coreNpmPackage.state = 'live';
