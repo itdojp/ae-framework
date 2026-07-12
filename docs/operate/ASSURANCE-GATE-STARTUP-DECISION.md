@@ -2,7 +2,7 @@
 docRole: ssot
 lastVerified: '2026-07-11'
 owner: product-assurance
-verificationCommand: node scripts/actions/validate-assurance-gate-startup-benchmark.mjs artifacts/reference/benchmarks/assurance-gate-startup-2026-07-11.json
+verificationCommand: pnpm -s exec vitest run tests/scripts/assurance-gate-startup-benchmark.test.ts tests/scripts/assurance-gate-cache-comparison.test.ts --reporter dot
 ---
 
 # Assurance Gate startup optimization decision
@@ -82,31 +82,64 @@ The implementation/comparison PR must:
 6. retain the cache only if measured benefit and operational risk justify it;
    otherwise revert it and create a prebuilt/bundled release-surface follow-up.
 
-## Current decision
+## Final comparison evidence
 
-`evaluate-one-low-risk-optimization`.
+- Successful workflow run:
+  `https://github.com/itdojp/ae-framework/actions/runs/29172844714`
+- Exact ref: `7f2bed283cd5bd5550d91fec6e6d607d8d50f60a`
+- Raw JSON:
+  `artifacts/reference/benchmarks/assurance-gate-cache-comparison-2026-07-11.json`
+- Raw Markdown:
+  `artifacts/reference/benchmarks/assurance-gate-cache-comparison-2026-07-11.md`
+- JSON SHA-256:
+  `38f61562c78d193eaf1dbc420b86817e711c5c634dd6ea22ca42ceb137c33045`
+- Markdown SHA-256:
+  `06eff1af7cc6698b1c07368f7f0dc940e5012c46be80d348382619176021dc37`
+- Environment: `ubuntu24-20260705.232.1`, Linux x64, Node `v20.20.2`,
+  npm `10.8.2`, pnpm `10.0.0`.
+- Fixture: `external-minimal-pass`; five cache-disabled samples and five exact
+  cache-hit samples; all ten policy results were `pass`; every enabled sample
+  restored the same exact key.
 
-This is a selected implementation decision, not a completed performance claim.
-Issue #3641 remains open until the cache experiment has a reviewed before/after
-artifact and the final keep/rollback/follow-up outcome is recorded.
+The tracked JSON and Markdown are byte-for-byte copies of the successful run's
+uploaded comparison artifact. The workflow validated the JSON against
+`schema/assurance-gate-cache-comparison.schema.json` before upload.
 
-The implementation surface is `.github/workflows/assurance-gate-cache-comparison.yml`
-plus the `dependency-cache` input shared by both composite action entry points.
-The final decision remains pending the merged-main workflow run; implementation
-availability alone is not treated as measured improvement.
+## Comparison result
 
-### First comparison run diagnostic
+| Mode | Minimum | Median | Maximum | p90 |
+| --- | ---: | ---: | ---: | ---: |
+| cache disabled / unique empty store | 10,968 ms | 11,876 ms | 12,443 ms | 12,443 ms |
+| exact action-owned pnpm-store hit | 10,223 ms | 12,571 ms | 13,704 ms | 13,704 ms |
 
-Run [29172437742](https://github.com/itdojp/ae-framework/actions/runs/29172437742)
-completed 5 cache-disabled samples and 5 exact cache-hit samples on ref
-`f14b5425c94c9f79539630caec8c4608618617ac`. All ten action results passed and
-all five enabled samples restored the exact key. The observed medians were
-11,495 ms without the action cache and 10,657 ms with an exact hit (7.29%),
-which is below the 20% target.
+The exact-hit median was 695 ms slower, so the measured improvement ratio was
+-5.85% (a 5.85% regression). Functional parity and 5/5 exact hits were proven,
+but the 20% retention target was not met.
 
-That run is diagnostic rather than the final comparison because its sample
-writer queried pnpm after the composite action had removed its action-local
-Corepack scratch state. The report therefore recorded `pnpmVersion` as
-`unavailable` and correctly refused to claim functional parity. The action now
-exports the pnpm version captured during package-manager preparation; a fresh
-merged-main run is required before the keep/rollback decision is finalized.
+An earlier diagnostic run
+[29172437742](https://github.com/itdojp/ae-framework/actions/runs/29172437742)
+also remained below target (7.29%) but recorded pnpm as unavailable after
+action-local Corepack cleanup. It is retained only as diagnostic history; the
+final decision uses run 29172844714, which captured pnpm `10.0.0` inside the
+composite action and passed the complete comparison contract.
+
+## Final decision
+
+`rollback-pnpm-store-cache`.
+
+The cache adds restore/save/key/cleanup complexity without a repeatable measured
+benefit under the selected external-style fixture. The final implementation
+therefore removes the experimental action input, outputs, restore/save steps,
+version instrumentation, and one-off comparison workflow from both action entry
+points. Existing install/build/gate behavior and frozen-lockfile enforcement are
+restored unchanged. The monthly/manual startup benchmark remains available for
+remeasurement.
+
+The current hosted cold median is well below 60 seconds and #3640 has not
+recorded live-pilot startup friction, so a larger prebuilt/bundled architecture
+is not justified now. Follow-up #3648 preserves explicit entry criteria,
+provenance/compatibility requirements, and rollback expectations if later
+adoption evidence crosses that boundary.
+
+This decision is limited to action startup/runtime overhead. It does not claim
+review-speed, productivity, quality, approval, or safety improvement.

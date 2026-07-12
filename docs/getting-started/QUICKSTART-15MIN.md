@@ -53,10 +53,8 @@ npm availability, review speed, safety improvement, or agent/vendor superiority.
 - The action currently performs Corepack/pnpm setup, a filtered core dependency
   install, and a core build before gate execution. See
   `docs/operate/ASSURANCE-GATE-STARTUP-BENCHMARK.md` for the report-only cold/warm
-  measurement method. The exact lockfile-keyed pnpm store cache remains an
-  opt-in `dependency-cache: "true"` experiment until #3641 records a reviewed
-  final decision. Registry/cache delay is startup friction, not a gate decision
-  or approval signal.
+  measurement method. Registry/cache delay is startup friction, not a gate
+  decision or approval signal.
 
 ## Step 1: Add one workflow file
 

@@ -46,7 +46,6 @@
     "benchmark:init": "tsx src/cli/benchmark-cli.ts init",
     "benchmark:assurance-gate-startup": "node scripts/actions/benchmark-assurance-gate-startup.mjs",
     "benchmark:assurance-gate-startup:validate": "node scripts/actions/validate-assurance-gate-startup-benchmark.mjs",
-    "benchmark:assurance-gate-cache:compare": "node scripts/actions/summarize-assurance-gate-cache-comparison.mjs",
     "lint": "eslint .",
     "check:root-layout": "node scripts/ci/check-root-layout.mjs --allow-entry=node_modules",
     "check:root-layout:warn": "node scripts/ci/check-root-layout.mjs --mode=warn --allow-entry=node_modules",

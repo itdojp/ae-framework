@@ -25,9 +25,7 @@ describe('assurance-gate action runner', () => {
   it('keeps root and compatibility action installs frozen under repository npm config', () => {
     for (const actionPath of ['action.yml', '.github/actions/assurance-gate/action.yml']) {
       const action = readFileSync(path.join(repoRoot, actionPath), 'utf8');
-      expect(action).toContain('install_args=(install --frozen-lockfile --filter @ae-framework/core... --config.use-lockfile=true --config.package-lock=true)');
-      expect(action).toContain('install_args+=(--store-dir .cache/assurance-gate-pnpm-store)');
-      expect(action).toContain('pnpm "${install_args[@]}"');
+      expect(action).toContain('pnpm install --frozen-lockfile --filter @ae-framework/core... --config.use-lockfile=true --config.package-lock=true');
     }
   });
 
