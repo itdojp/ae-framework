@@ -1,0 +1,246 @@
+{
+  "schemaVersion": "assurance-gate-cache-comparison/v1",
+  "generatedAt": "2026-07-11T23:55:30.877Z",
+  "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+  "workflowRunId": 29172844714,
+  "fixture": {
+    "id": "external-minimal-pass",
+    "expectedResult": "pass",
+    "profile": "minimal"
+  },
+  "method": {
+    "sampleCountPerMode": 5,
+    "targetImprovementRatio": 0.2,
+    "totalBoundary": "Elapsed time from immediately before the local composite action step until immediately after it, including package-manager setup, exact cache restore when enabled, install, build, gate execution, and review rendering.",
+    "cacheBoundary": "Cache-disabled samples use a unique empty runner-temp pnpm store. Enabled samples restore only the action-owned pnpm content-addressable store with one exact OS/architecture/pnpm-version/lockfile-digest key; no restore prefixes, node_modules, build output, consumer artifacts, or gate results are cached."
+  },
+  "samples": [
+    {
+      "mode": "cache-hit",
+      "index": 1,
+      "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+      "durationMs": 13445,
+      "result": "pass",
+      "stepOutcome": "success",
+      "cacheEnabled": true,
+      "cacheHit": true,
+      "cacheKey": "ae-framework-core-pnpm-v1-Linux-X64-10.0.0-f22402face5447ed999dd1cd9efac0588f400a2291f435ff331f9f0957699d07",
+      "environment": {
+        "runnerOs": "Linux",
+        "architecture": "X64",
+        "runnerImage": "ubuntu24-20260705.232.1",
+        "nodeVersion": "v20.20.2",
+        "npmVersion": "10.8.2",
+        "pnpmVersion": "10.0.0"
+      }
+    },
+    {
+      "mode": "cache-hit",
+      "index": 2,
+      "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+      "durationMs": 12571,
+      "result": "pass",
+      "stepOutcome": "success",
+      "cacheEnabled": true,
+      "cacheHit": true,
+      "cacheKey": "ae-framework-core-pnpm-v1-Linux-X64-10.0.0-f22402face5447ed999dd1cd9efac0588f400a2291f435ff331f9f0957699d07",
+      "environment": {
+        "runnerOs": "Linux",
+        "architecture": "X64",
+        "runnerImage": "ubuntu24-20260705.232.1",
+        "nodeVersion": "v20.20.2",
+        "npmVersion": "10.8.2",
+        "pnpmVersion": "10.0.0"
+      }
+    },
+    {
+      "mode": "cache-hit",
+      "index": 3,
+      "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+      "durationMs": 13704,
+      "result": "pass",
+      "stepOutcome": "success",
+      "cacheEnabled": true,
+      "cacheHit": true,
+      "cacheKey": "ae-framework-core-pnpm-v1-Linux-X64-10.0.0-f22402face5447ed999dd1cd9efac0588f400a2291f435ff331f9f0957699d07",
+      "environment": {
+        "runnerOs": "Linux",
+        "architecture": "X64",
+        "runnerImage": "ubuntu24-20260705.232.1",
+        "nodeVersion": "v20.20.2",
+        "npmVersion": "10.8.2",
+        "pnpmVersion": "10.0.0"
+      }
+    },
+    {
+      "mode": "cache-hit",
+      "index": 4,
+      "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+      "durationMs": 10223,
+      "result": "pass",
+      "stepOutcome": "success",
+      "cacheEnabled": true,
+      "cacheHit": true,
+      "cacheKey": "ae-framework-core-pnpm-v1-Linux-X64-10.0.0-f22402face5447ed999dd1cd9efac0588f400a2291f435ff331f9f0957699d07",
+      "environment": {
+        "runnerOs": "Linux",
+        "architecture": "X64",
+        "runnerImage": "ubuntu24-20260705.232.1",
+        "nodeVersion": "v20.20.2",
+        "npmVersion": "10.8.2",
+        "pnpmVersion": "10.0.0"
+      }
+    },
+    {
+      "mode": "cache-hit",
+      "index": 5,
+      "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+      "durationMs": 11184,
+      "result": "pass",
+      "stepOutcome": "success",
+      "cacheEnabled": true,
+      "cacheHit": true,
+      "cacheKey": "ae-framework-core-pnpm-v1-Linux-X64-10.0.0-f22402face5447ed999dd1cd9efac0588f400a2291f435ff331f9f0957699d07",
+      "environment": {
+        "runnerOs": "Linux",
+        "architecture": "X64",
+        "runnerImage": "ubuntu24-20260705.232.1",
+        "nodeVersion": "v20.20.2",
+        "npmVersion": "10.8.2",
+        "pnpmVersion": "10.0.0"
+      }
+    },
+    {
+      "mode": "cache-miss",
+      "index": 1,
+      "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+      "durationMs": 12443,
+      "result": "pass",
+      "stepOutcome": "success",
+      "cacheEnabled": false,
+      "cacheHit": false,
+      "cacheKey": "ae-framework-core-pnpm-v1-Linux-X64-10.0.0-f22402face5447ed999dd1cd9efac0588f400a2291f435ff331f9f0957699d07",
+      "environment": {
+        "runnerOs": "Linux",
+        "architecture": "X64",
+        "runnerImage": "ubuntu24-20260705.232.1",
+        "nodeVersion": "v20.20.2",
+        "npmVersion": "10.8.2",
+        "pnpmVersion": "10.0.0"
+      }
+    },
+    {
+      "mode": "cache-miss",
+      "index": 2,
+      "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+      "durationMs": 12033,
+      "result": "pass",
+      "stepOutcome": "success",
+      "cacheEnabled": false,
+      "cacheHit": false,
+      "cacheKey": "ae-framework-core-pnpm-v1-Linux-X64-10.0.0-f22402face5447ed999dd1cd9efac0588f400a2291f435ff331f9f0957699d07",
+      "environment": {
+        "runnerOs": "Linux",
+        "architecture": "X64",
+        "runnerImage": "ubuntu24-20260705.232.1",
+        "nodeVersion": "v20.20.2",
+        "npmVersion": "10.8.2",
+        "pnpmVersion": "10.0.0"
+      }
+    },
+    {
+      "mode": "cache-miss",
+      "index": 3,
+      "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+      "durationMs": 11876,
+      "result": "pass",
+      "stepOutcome": "success",
+      "cacheEnabled": false,
+      "cacheHit": false,
+      "cacheKey": "ae-framework-core-pnpm-v1-Linux-X64-10.0.0-f22402face5447ed999dd1cd9efac0588f400a2291f435ff331f9f0957699d07",
+      "environment": {
+        "runnerOs": "Linux",
+        "architecture": "X64",
+        "runnerImage": "ubuntu24-20260705.232.1",
+        "nodeVersion": "v20.20.2",
+        "npmVersion": "10.8.2",
+        "pnpmVersion": "10.0.0"
+      }
+    },
+    {
+      "mode": "cache-miss",
+      "index": 4,
+      "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+      "durationMs": 11216,
+      "result": "pass",
+      "stepOutcome": "success",
+      "cacheEnabled": false,
+      "cacheHit": false,
+      "cacheKey": "ae-framework-core-pnpm-v1-Linux-X64-10.0.0-f22402face5447ed999dd1cd9efac0588f400a2291f435ff331f9f0957699d07",
+      "environment": {
+        "runnerOs": "Linux",
+        "architecture": "X64",
+        "runnerImage": "ubuntu24-20260705.232.1",
+        "nodeVersion": "v20.20.2",
+        "npmVersion": "10.8.2",
+        "pnpmVersion": "10.0.0"
+      }
+    },
+    {
+      "mode": "cache-miss",
+      "index": 5,
+      "exactRef": "7f2bed283cd5bd5550d91fec6e6d607d8d50f60a",
+      "durationMs": 10968,
+      "result": "pass",
+      "stepOutcome": "success",
+      "cacheEnabled": false,
+      "cacheHit": false,
+      "cacheKey": "ae-framework-core-pnpm-v1-Linux-X64-10.0.0-f22402face5447ed999dd1cd9efac0588f400a2291f435ff331f9f0957699d07",
+      "environment": {
+        "runnerOs": "Linux",
+        "architecture": "X64",
+        "runnerImage": "ubuntu24-20260705.232.1",
+        "nodeVersion": "v20.20.2",
+        "npmVersion": "10.8.2",
+        "pnpmVersion": "10.0.0"
+      }
+    }
+  ],
+  "summary": {
+    "cacheMiss": {
+      "sampleCount": 5,
+      "results": {
+        "pass": 5,
+        "block": 0,
+        "error": 0
+      },
+      "durationMs": {
+        "minimum": 10968,
+        "median": 11876,
+        "maximum": 12443,
+        "p90": 12443
+      }
+    },
+    "cacheHit": {
+      "sampleCount": 5,
+      "results": {
+        "pass": 5,
+        "block": 0,
+        "error": 0
+      },
+      "durationMs": {
+        "minimum": 10223,
+        "median": 12571,
+        "maximum": 13704,
+        "p90": 13704
+      }
+    }
+  },
+  "decision": {
+    "functionalParity": true,
+    "exactCacheHits": 5,
+    "improvementRatio": -0.05852138767261704,
+    "targetMet": false,
+    "recommendedOutcome": "rollback-pnpm-store-cache"
+  }
+}

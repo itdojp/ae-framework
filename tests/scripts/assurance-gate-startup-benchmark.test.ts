@@ -81,7 +81,7 @@ function fixtureReport() {
 }
 
 describe('assurance gate startup benchmark contract', () => {
-  it('validates the tracked GitHub-hosted baseline and decision boundary', () => {
+  it('validates the tracked GitHub-hosted baseline and final decision boundary', () => {
     const reportPath = resolve(
       'artifacts/reference/benchmarks/assurance-gate-startup-2026-07-11.json',
     );
@@ -100,8 +100,9 @@ describe('assurance gate startup benchmark contract', () => {
       resolve('docs/operate/ASSURANCE-GATE-STARTUP-DECISION.md'),
       'utf8',
     );
-    expect(decision).toContain('evaluate-one-low-risk-optimization');
-    expect(decision).toContain('not a completed performance claim');
+    expect(decision).toContain('rollback-pnpm-store-cache');
+    expect(decision).toContain('actions/runs/29172844714');
+    expect(decision).toContain('does not claim');
   });
 
   it('normalizes exact commit SHAs and rejects ambiguous refs', () => {

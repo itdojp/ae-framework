@@ -10,14 +10,6 @@ Composite action for deploy-time profile selection. It validates a profile, read
 - `output-dir` (default: `artifacts/assurance-gate`): directory where gate artifacts are written.
 - `environment` (default: empty): optional release-policy environment key such as `staging` or `production`.
 - `fail-on-block` (default: `true`): fail the action when policy evaluation returns `block`.
-- `dependency-cache` (default: `false` while the #3641 experiment is pending): restore/save only the action-owned pnpm content-addressable store using an exact OS/architecture/pnpm-version/lockfile-digest key. A reviewed final decision must precede any default-on change.
-
-The action also exposes `dependency-cache-hit`, `dependency-cache-key`, and
-`pnpm-version` for operational evidence. `pnpm-version` is captured while pnpm
-is available inside the composite action, so callers do not need to reprovision
-Corepack after the action-local cleanup. The cached store is isolated under the
-downloaded action checkout rather than pnpm's shared global store. None of these
-outputs changes the gate decision.
 
 ## Minimal evidence bundle
 

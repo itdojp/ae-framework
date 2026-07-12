@@ -2,7 +2,7 @@
 docRole: ssot
 lastVerified: '2026-07-11'
 owner: product-assurance
-verificationCommand: pnpm -s exec vitest run tests/scripts/assurance-gate-startup-benchmark.test.ts tests/actions/assurance-gate-action.test.ts --reporter dot
+verificationCommand: pnpm -s exec vitest run tests/scripts/assurance-gate-startup-benchmark.test.ts tests/scripts/assurance-gate-cache-comparison.test.ts tests/actions/assurance-gate-action.test.ts --reporter dot
 ---
 
 # Assurance Gate startup benchmark
@@ -14,7 +14,6 @@ review speed, time-to-merge, productivity, quality, approval, or safety impact.
 ## Execution surface
 
 - Workflow: `.github/workflows/assurance-gate-startup-benchmark.yml`
-- Cache comparison workflow: `.github/workflows/assurance-gate-cache-comparison.yml`
 - Command: `pnpm -s run benchmark:assurance-gate-startup`
 - JSON contract: `schema/assurance-gate-startup-benchmark.schema.json`
 - Generated reports:
@@ -129,35 +128,30 @@ Workflow run `29170591202` measured five cold and five warm passing samples on
 exact ref `e53b8a1761c733d9f6a60080297889a805bc8c63`. The cold total median was
 10,837.08 ms and setup + install + build represented 97.88%, so the 70% trigger
 applied. `docs/operate/ASSURANCE-GATE-STARTUP-DECISION.md` records the bounded
-optimization selection and keeps the final decision pending comparison.
+optimization comparison and final rollback decision.
 
-## Bounded pnpm-store cache experiment
+## Completed pnpm-store cache experiment
 
-Both composite action entry points can opt in to restoring/saving only pnpm's
-content-addressable store under the downloaded action checkout at
-`.cache/assurance-gate-pnpm-store`. It never caches pnpm's shared global store,
-which could contain unrelated consumer or private dependencies from earlier job
-steps. The key is exact and includes runner OS, architecture, the action ref's
-declared pnpm version, and the SHA-256 digest of its `pnpm-lock.yaml`.
-There are no restore-key prefixes. The cache excludes consumer artifacts,
-`node_modules`, core build output, policy decisions, and review surfaces;
-frozen-lockfile integrity remains enforced after restore.
+The bounded experiment measured five cache-disabled and five exact-cache-hit
+action invocations on the same GitHub-hosted runner/tool class. The reviewed
+reference reports are preserved at:
 
-`Assurance Gate Cache Comparison` seeds that exact key, then measures five
-cache-disabled and five exact-cache-hit action invocations on GitHub-hosted
-runners. Cache-disabled samples use unique empty runner-temp pnpm stores; hit
-samples use only the exact action-owned store. Each total begins immediately before the local composite action step
-and ends immediately after it, so setup, cache restore, install, build, gate,
-and review rendering are included. The report uses
-`schema/assurance-gate-cache-comparison.schema.json` and keeps the workflow
-manual/report-only. The implementation is retained only if all ten functional
-results pass, all five enabled samples report an exact hit, and cache-hit median
-total improves by at least 20%.
+- `artifacts/reference/benchmarks/assurance-gate-cache-comparison-2026-07-11.json`;
+- `artifacts/reference/benchmarks/assurance-gate-cache-comparison-2026-07-11.md`.
 
-The input remains default-off while the comparison is pending. The final
-decision PR may make it default-on only when the reviewed report meets all keep
-conditions. Setting `dependency-cache: "false"` remains the rollback path and
-does not change gate semantics.
+Run [29172844714](https://github.com/itdojp/ae-framework/actions/runs/29172844714)
+used exact ref `7f2bed283cd5bd5550d91fec6e6d607d8d50f60a`, runner image
+`ubuntu24-20260705.232.1`, Node `v20.20.2`, npm `10.8.2`, and pnpm `10.0.0`.
+All ten functional results passed and all five enabled samples restored the same
+exact cache key. Cache-disabled median total was 11,876 ms; exact-hit median
+total was 12,571 ms, a -5.85% improvement (5.85% regression).
+
+The experiment therefore missed the 20% retention target and was rolled back.
+The public action inputs/outputs and runtime no longer include the experimental
+dependency cache, and the one-off comparison workflow was removed. The
+report-only cold/warm startup workflow remains the supported remeasurement
+lane. This outcome does not establish a general performance or productivity
+claim.
 
 ## External pilot recording
 

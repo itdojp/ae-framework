@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
@@ -115,38 +115,47 @@ describe('assurance gate cache comparison', () => {
     expect(readFileSync(outputMd, 'utf8')).toContain('keep-pnpm-store-cache');
   });
 
-  it('keeps both composite actions on exact-key store-only caching', () => {
-    for (const actionPath of ['action.yml', '.github/actions/assurance-gate/action.yml']) {
-      const action = readFileSync(resolve(actionPath), 'utf8');
-      expect(action).toContain('uses: actions/cache/restore@v4');
-      expect(action).toContain('uses: actions/cache/save@v4');
-      expect(action).toContain('key: ${{ steps.package-manager.outputs.cache-key }}');
-      expect(action).not.toContain('restore-keys:');
-      expect(action).not.toMatch(/path:.*node_modules/u);
-      expect(action).toContain('.cache/assurance-gate-pnpm-store');
-      expect(action).not.toContain('pnpm store path');
-      expect(action).toContain('rm -rf -- "$AE_ACTION_STORE_PATH"');
-      expect(action).toContain('dependency-cache-hit:');
-      expect(action).toContain('dependency-cache-key:');
-      expect(action).toContain('pnpm-version:');
-      expect(action).toContain('pnpm-version=${pnpm_version}');
-      expect(action).toContain("steps.dependency-cache.outputs.cache-hit == 'true'");
-      expect(action).toMatch(/dependency-cache:\n(?:.*\n){1,3}\s+default: "false"/u);
-    }
+  it('preserves the hosted rollback report as schema-valid reference evidence', () => {
+    const report = JSON.parse(readFileSync(
+      resolve('artifacts/reference/benchmarks/assurance-gate-cache-comparison-2026-07-11.json'),
+      'utf8',
+    ));
+    const schema = JSON.parse(readFileSync(
+      resolve('schema/assurance-gate-cache-comparison.schema.json'),
+      'utf8',
+    ));
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    addFormats(ajv);
+    const validate = ajv.compile(schema);
+
+    expect(validate(report), JSON.stringify(validate.errors)).toBe(true);
+    expect(report).toMatchObject({
+      exactRef: '7f2bed283cd5bd5550d91fec6e6d607d8d50f60a',
+      workflowRunId: 29172844714,
+      decision: {
+        functionalParity: true,
+        exactCacheHits: 5,
+        targetMet: false,
+        recommendedOutcome: 'rollback-pnpm-store-cache',
+      },
+    });
+    expect(report.samples).toHaveLength(10);
+    const pnpmVersions = report.samples.map(
+      (sample: { environment: { pnpmVersion: string } }) => sample.environment.pnpmVersion,
+    );
+    expect(new Set(pnpmVersions)).toEqual(new Set(['10.0.0']));
   });
 
-  it('keeps the comparison workflow manual and outside normal PR gates', () => {
-    const workflow = readFileSync(
-      resolve('.github/workflows/assurance-gate-cache-comparison.yml'),
-      'utf8',
-    );
-    expect(workflow).toContain('workflow_dispatch:');
-    expect(workflow).not.toContain('pull_request:');
-    expect(workflow).toContain('cache-miss-sample');
-    expect(workflow).toContain('cache-hit-sample');
-    expect(workflow).toContain('SAMPLE_COUNT_PER_MODE: 5');
-    expect(workflow).toContain('NPM_CONFIG_STORE_DIR: ${{ runner.temp }}/assurance-gate-cache-miss-${{ matrix.index }}');
-    expect(workflow.match(/PNPM_VERSION: \$\{\{ steps\.assurance\.outputs\.pnpm-version \}\}/gu)).toHaveLength(2);
-    expect(workflow).not.toContain("pnpmVersion: version('pnpm')");
+  it('keeps the measured cache experiment rolled back from both action entry points', () => {
+    for (const actionPath of ['action.yml', '.github/actions/assurance-gate/action.yml']) {
+      const action = readFileSync(resolve(actionPath), 'utf8');
+      expect(action).not.toContain('dependency-cache:');
+      expect(action).not.toContain('dependency-cache-hit:');
+      expect(action).not.toContain('dependency-cache-key:');
+      expect(action).not.toContain('uses: actions/cache/restore@v4');
+      expect(action).not.toContain('uses: actions/cache/save@v4');
+      expect(action).not.toContain('.cache/assurance-gate-pnpm-store');
+    }
+    expect(existsSync(resolve('.github/workflows/assurance-gate-cache-comparison.yml'))).toBe(false);
   });
 });
