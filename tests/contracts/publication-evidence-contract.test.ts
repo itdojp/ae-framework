@@ -35,6 +35,8 @@ const requiredRuntimeArtifacts = [
 ];
 
 function buildRuntimeSmoke() {
+  const immutableTag = manifest.surfaces.assuranceGateMarketplace.immutableTag as string;
+  const movingMajorTag = manifest.surfaces.assuranceGateMarketplace.movingMajorTag as string;
   function buildRef(actionRef: string, jobPrefix: string) {
     return {
       actionRef,
@@ -63,8 +65,8 @@ function buildRuntimeSmoke() {
   }
   return {
     consumerRepository: 'itdojp/ae-framework-impl-test-hub',
-    immutableRelease: buildRef('itdojp/ae-framework@v1.0.1', 'immutable-v1.0.1'),
-    movingMajor: buildRef('itdojp/ae-framework@v1', 'moving-v1'),
+    immutableRelease: buildRef(`itdojp/ae-framework@${immutableTag}`, `immutable-${immutableTag}`),
+    movingMajor: buildRef(`itdojp/ae-framework@${movingMajorTag}`, `moving-${movingMajorTag}`),
   };
 }
 
@@ -75,7 +77,7 @@ function buildLiveMarketplaceCandidate() {
   candidate.surfaces.assuranceGateMarketplace.evidence = {
     ...candidate.surfaces.assuranceGateMarketplace.evidence,
     listingUrl: 'https://github.com/marketplace/actions/ae-framework-assurance-gate',
-    releaseNoteUrl: 'https://github.com/itdojp/ae-framework/releases/tag/v1.0.1',
+    releaseNoteUrl: `https://github.com/itdojp/ae-framework/releases/tag/${candidate.surfaces.assuranceGateMarketplace.immutableTag}`,
     runtimeSmoke: buildRuntimeSmoke(),
   };
   return candidate;
