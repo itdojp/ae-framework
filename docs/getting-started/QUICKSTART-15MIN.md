@@ -9,7 +9,7 @@ canonicalSource:
 - docs/operate/publication-evidence.json
 - tests/actions/assurance-gate-action.test.ts
 - tests/cli/init-cli.test.ts
-lastVerified: '2026-07-11'
+lastVerified: '2026-07-12'
 owner: product-assurance
 verificationCommand: pnpm -s exec vitest run tests/actions/assurance-gate-action.test.ts tests/unit/docs/publish-assets-quickstart.test.ts --reporter dot
 ---
@@ -28,6 +28,10 @@ listing as live unless the release note for that publication exists.
 The machine-checkable current state is
 `docs/operate/publication-evidence.json`; a prepared workflow, action tag, or
 metadata file does not by itself change a surface to `live`.
+Likewise, resolving `action.yml` at a tag proves only path availability. The
+Marketplace surface requires public external-consumer pass and block runtime
+evidence for both the immutable release tag and moving `@v1` before it can be
+recorded as `live`; see `docs/operate/ASSURANCE-GATE-ACTION-RELEASE.md`.
 
 ## What this proves
 
@@ -232,7 +236,9 @@ schema-validated artifacts. Keep these rules:
   repository ref, which keeps action/profile/schema/core versions aligned.
 - Marketplace-compatible root action metadata is present in `action.yml`, but
   Marketplace publication is separate from this checked-in path and still
-  requires the release owner to publish the listing.
+  requires the release owner to publish the listing and record immutable and
+  moving-tag external runtime smoke. A successful path-resolution check is not
+  runtime evidence.
 - See `docs/reference/DEPLOY-TIME-PROFILE-COMPATIBILITY.md` for the version-skew
   boundary and the `@v1` / exact-tag / commit-SHA transition.
 

@@ -59,6 +59,102 @@
       "format": "uri",
       "pattern": "^https://github\\.com/itdojp/ae-framework/blob/v[0-9]+\\.[0-9]+\\.[0-9]+/action\\.yml$"
     },
+    "externalConsumerWorkflowRunUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://github\\.com/itdojp/ae-framework-impl-test-hub/actions/runs/[1-9][0-9]*$"
+    },
+    "runtimeSmokeArtifacts": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "gate-result.json",
+          "assurance-summary.json",
+          "policy-decision.json",
+          "review-surface.md"
+        ]
+      }
+    },
+    "runtimeSmokePassCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jobName", "jobStatus", "gateResult", "artifacts"],
+      "properties": {
+        "jobName": { "$ref": "#/$defs/runtimeSmokeJobName" },
+        "jobStatus": { "const": "success" },
+        "gateResult": { "const": "pass" },
+        "artifacts": { "$ref": "#/$defs/runtimeSmokeArtifacts" }
+      }
+    },
+    "runtimeSmokeBlockCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "jobName",
+        "jobStatus",
+        "failOnBlock",
+        "gateResult",
+        "missingEvidenceRecorded",
+        "artifacts"
+      ],
+      "properties": {
+        "jobName": { "$ref": "#/$defs/runtimeSmokeJobName" },
+        "jobStatus": { "const": "success" },
+        "failOnBlock": { "const": false },
+        "gateResult": { "const": "block" },
+        "missingEvidenceRecorded": { "const": true },
+        "artifacts": { "$ref": "#/$defs/runtimeSmokeArtifacts" }
+      }
+    },
+    "runtimeSmokeJobName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9 ._:/()@-]*$"
+    },
+    "runtimeSmokeRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actionRef",
+        "resolvedCommit",
+        "workflowRunUrl",
+        "verifiedAt",
+        "verifier",
+        "verifierRole",
+        "cases"
+      ],
+      "properties": {
+        "actionRef": { "type": "string", "pattern": "^itdojp/ae-framework@(?:v[0-9]+(?:\\.[0-9]+\\.[0-9]+)?)$" },
+        "resolvedCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "workflowRunUrl": { "$ref": "#/$defs/externalConsumerWorkflowRunUrl" },
+        "verifiedAt": { "type": "string", "format": "date-time" },
+        "verifier": { "const": "ootakazuhiko" },
+        "verifierRole": { "const": "release-owner" },
+        "cases": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pass", "block"],
+          "properties": {
+            "pass": { "$ref": "#/$defs/runtimeSmokePassCase" },
+            "block": { "$ref": "#/$defs/runtimeSmokeBlockCase" }
+          }
+        }
+      }
+    },
+    "marketplaceRuntimeSmoke": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumerRepository", "immutableRelease", "movingMajor"],
+      "properties": {
+        "consumerRepository": { "const": "itdojp/ae-framework-impl-test-hub" },
+        "immutableRelease": { "$ref": "#/$defs/runtimeSmokeRef" },
+        "movingMajor": { "$ref": "#/$defs/runtimeSmokeRef" }
+      }
+    },
     "blockers": {
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
@@ -152,7 +248,8 @@
             "listingUrl": { "$ref": "#/$defs/marketplaceListingUrl" },
             "releaseNoteUrl": { "$ref": "#/$defs/githubReleaseNoteUrl" },
             "externalPathResolutionUrl": { "$ref": "#/$defs/githubActionPathUrl" },
-            "externalPathResolutionStatus": { "enum": ["success", "failure"] }
+            "externalPathResolutionStatus": { "enum": ["success", "failure"] },
+            "runtimeSmoke": { "$ref": "#/$defs/marketplaceRuntimeSmoke" }
           }
         },
         "blockers": { "$ref": "#/$defs/blockers" }
