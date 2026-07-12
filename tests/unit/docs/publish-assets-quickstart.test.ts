@@ -77,7 +77,7 @@ describe('deploy-time profile publish assets', () => {
     expect(quickstart).toContain('one workflow file');
     expect(quickstart).toContain('actions: read');
     expect(quickstart).toContain('uses: itdojp/ae-framework@v1');
-    expect(quickstart).toContain('replace `@v1` with `@v1.0.1`');
+    expect(quickstart).toContain('replace `@v1` with `@v1.0.2`');
     expect(quickstart).toContain('`mode`: `pass`');
     expect(quickstart).toContain('`mode`: `block`');
     expect(quickstart).toContain('"policyResult": "pass"');
@@ -99,7 +99,9 @@ describe('deploy-time profile publish assets', () => {
     expect(compatibility).toContain('ref is the compatibility anchor');
     expect(compatibility).toContain('schemaVersion: assurance-profile/v1');
     expect(compatibility).toContain('schemaVersion: ae-release-policy/v1');
-    expect(compatibility).toContain('Use `v1` for normal adoption after the release tag exists; use `v1.0.1` or a commit SHA for reproducibility.');
+    expect(compatibility).toContain('Use `v1` for normal adoption after the release tag exists; use `v1.0.2` or a commit SHA for reproducibility.');
+    expect(compatibility).toContain('--config.use-lockfile=true --config.package-lock=true');
+    expect(compatibility).toContain('historical `v1.0.1` tag remains immutable');
     expect(compatibility).toContain('tests/actions/assurance-gate-action.test.ts');
   });
 
@@ -119,13 +121,29 @@ describe('deploy-time profile publish assets', () => {
 
     expect(releasePolicy).toContain('`action.yml` at repository root');
     expect(releasePolicy).toContain('`v1.0.1`');
+    expect(releasePolicy).toContain('`v1.0.2`');
     expect(releasePolicy).toContain('historical bootstrap tag');
     expect(releasePolicy).toContain('`v1`');
-    expect(releasePolicy).toContain('git tag -a v1.0.1');
-    expect(releasePolicy).toContain('git push origin v1 --force');
+    expect(releasePolicy).toContain('git tag -a v1.0.2');
+    expect(releasePolicy).toContain('export CANDIDATE_SHA as the reviewed-and-smoked 40-character merge commit');
+    expect(releasePolicy).toContain('test "$RELEASE_SHA" = "$CANDIDATE_SHA"');
+    expect(releasePolicy).toContain('gh release create v1.0.2');
+    expect(releasePolicy).toContain('--notes-file docs/operate/ASSURANCE-GATE-V1.0.2-RELEASE-NOTES.md');
+    expect(releasePolicy).not.toContain('git push origin refs/tags/v1 --force');
+    expect(releasePolicy).toContain('--force-with-lease="refs/tags/v1:${PREVIOUS_V1_OBJECT}"');
+    expect(releasePolicy).toContain('git ls-remote --refs --tags origin refs/tags/v1');
+    expect(releasePolicy).toContain('PREVIOUS_V1_COMMIT');
+    expect(releasePolicy).toContain('FAILED_V1_OBJECT');
     expect(releasePolicy).toContain('External runtime smoke sequence');
     expect(releasePolicy).toContain('itdojp/ae-framework-impl-test-hub');
     expect(releasePolicy).toContain('fail-on-block=false');
     expect(releasePolicy).toContain('resolved-commit parity');
+
+    const releaseNotes = readRepoFile('docs/operate/ASSURANCE-GATE-V1.0.2-RELEASE-NOTES.md');
+    expect(releaseNotes).toContain('ERR_PNPM_LOCKFILE_CONFIG_MISMATCH');
+    expect(releaseNotes).toContain('Before creating the immutable tag');
+    expect(releaseNotes).toContain('After the GitHub Release exists');
+    expect(releaseNotes).toContain('does not by itself publish');
+    expect(releaseNotes).toContain('Do not rewrite or delete `v1.0.2`');
   });
 });

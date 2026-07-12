@@ -172,8 +172,9 @@ jobs:
           path: artifacts/assurance-gate
 ```
 
-For a reproducible evaluation, replace `@v1` with `@v1.0.1` or a specific
-commit SHA from `itdojp/ae-framework`.
+For a reproducible evaluation, replace `@v1` with `@v1.0.2` after that release
+exists, or use a specific commit SHA from `itdojp/ae-framework`. During release
+preparation, pin the reviewed candidate SHA until the immutable tag is created.
 
 ## Step 2: Run pass mode
 
@@ -248,5 +249,5 @@ schema-validated artifacts. Keep these rules:
 | --- | --- | --- |
 | `policyResult` is `block` in pass mode | The inline evidence step was edited or `qualityGates` / behavior evidence is missing. | Compare the workflow with the pass-mode JSON above. |
 | The job fails in block mode | `enforce` is `true`, so a block decision is intentionally enforced. | Re-run with `enforce: false` to inspect artifacts without failing the job. |
-| The action ref cannot be resolved | `@v1` was used before the release tag exists, or a commit SHA was typed incorrectly. | Use `@v1.0.1` after the release exists or pin a known ae-framework commit SHA. |
+| The action ref cannot be resolved | `@v1.0.2` was used before the immutable tag was created, or a commit SHA was typed incorrectly. | Use `@v1.0.2` only after the release exists, or pin the reviewed ae-framework release commit SHA. |
 | The review surface is missing from the summary | The action failed before writing outputs. | Download logs and check the build/corepack step first, then inspect uploaded artifacts if present. |

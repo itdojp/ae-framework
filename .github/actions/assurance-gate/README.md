@@ -44,8 +44,10 @@ external repository preview path. The quickstart shows both pass and block gate
 decisions and writes the review surface to the GitHub Actions job summary.
 
 For normal external adoption after the release tag exists, use the root action
-`itdojp/ae-framework@v1`. Use `@v1.0.1` or a commit SHA when reproducibility
-matters. This subdirectory action remains as a compatibility surface.
+`itdojp/ae-framework@v1`. Use `@v1.0.2` after that release exists, or use the
+reviewed release commit SHA when reproducibility matters. This subdirectory
+action remains as a compatibility surface. Historical `v1.0.1` is immutable
+and predates the external hosted-runner frozen-install fix.
 
 ## Marketplace listing metadata draft
 

@@ -27,8 +27,14 @@ Use two tags for the action release line:
 
 | Tag | Mutability | Purpose |
 | --- | --- | --- |
-| `v1.0.1` | Immutable after publication. | Exact release tag for the first root action publication in this repository; `v1.0.0` already exists as a historical bootstrap tag and must not be rewritten. |
+| `v1.0.2` | Immutable after publication. | Next patch release. It carries the explicit frozen pnpm install configuration required by external hosted runners. Create it only after candidate-SHA smoke succeeds. |
 | `v1` | Moving major tag. | Consumer-friendly stable major line for quickstarts and `ae init`. |
+
+Historical immutable tags `v1.0.0` and `v1.0.1` must not be rewritten or
+deleted. `v1.0.0` remains the historical bootstrap tag. `v1.0.1` predates the
+explicit `use-lockfile` / `package-lock`
+configuration added after hosted-runner reproduction of
+`ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`.
 
 After the PR that changes the action release surface is merged to `main`, create
 or update the tags from the verified merge commit:
@@ -37,12 +43,52 @@ or update the tags from the verified merge commit:
 git fetch origin main --tags
 git checkout main
 git pull --ff-only origin main
-MERGE_SHA=$(git rev-parse HEAD)
-git tag -a v1.0.1 "$MERGE_SHA" -m "Release ae-framework Assurance Gate v1.0.1"
-git tag -f -a v1 "$MERGE_SHA" -m "Move ae-framework Assurance Gate v1 to v1.0.1"
-git push origin v1.0.1
-git push origin v1 --force
+
+# Set this to the reviewed release-preparation PR merge commit that already
+# passed candidate-SHA external pass/block smoke. Do not derive it from a later
+# main HEAD.
+: "${CANDIDATE_SHA:?export CANDIDATE_SHA as the reviewed-and-smoked 40-character merge commit}"
+RELEASE_SHA=$(git rev-parse "${CANDIDATE_SHA}^{commit}")
+test "$RELEASE_SHA" = "$CANDIDATE_SHA"
+
+# Capture the current moving tag before mutation for lease protection and an
+# explicit rollback decision if post-move smoke fails.
+PREVIOUS_V1_OBJECT=$(git rev-parse refs/tags/v1)
+PREVIOUS_V1_COMMIT=$(git rev-parse 'refs/tags/v1^{}')
+REMOTE_V1_OBJECT=$(git ls-remote --refs --tags origin refs/tags/v1 | awk '{print $1}')
+test "$REMOTE_V1_OBJECT" = "$PREVIOUS_V1_OBJECT"
+
+# Only after candidate-SHA external pass/block smoke succeeds:
+git tag -a v1.0.2 "$RELEASE_SHA" -m "Release ae-framework Assurance Gate v1.0.2"
+git push origin v1.0.2
+gh release create v1.0.2 --repo itdojp/ae-framework \
+  --title "ae-framework Assurance Gate v1.0.2" \
+  --notes-file docs/operate/ASSURANCE-GATE-V1.0.2-RELEASE-NOTES.md
+
+# Only after external pass/block smoke against @v1.0.2 succeeds and resolves
+# to RELEASE_SHA:
+git tag -f -a v1 "$RELEASE_SHA" -m "Move ae-framework Assurance Gate v1 to v1.0.2"
+git push origin \
+  --force-with-lease="refs/tags/v1:${PREVIOUS_V1_OBJECT}" \
+  refs/tags/v1
 ```
+
+If post-move `@v1` smoke fails, stop adoption and preserve the failed run. A
+release owner may return the moving tag to the recorded commit without changing
+the immutable release:
+
+```bash
+FAILED_V1_OBJECT=$(git ls-remote --refs --tags origin refs/tags/v1 | awk '{print $1}')
+git tag -f -a v1 "$PREVIOUS_V1_COMMIT" \
+  -m "Rollback ae-framework Assurance Gate v1 after v1.0.2 smoke failure"
+git push origin \
+  --force-with-lease="refs/tags/v1:${FAILED_V1_OBJECT}" \
+  refs/tags/v1
+```
+
+Record the failed run URL, rollback reason, previous/current tag objects, and
+peeled commits in Issue #3651. Never rewrite or delete `v1.0.2` to represent a
+rollback as a successful immutable release.
 
 Only move `v1` to a later `v1.x.y` release after:
 
@@ -133,6 +179,6 @@ uses: itdojp/ae-framework@v1
 Use a full tag or commit SHA when reproducibility matters:
 
 ```yaml
-uses: itdojp/ae-framework@v1.0.1
+uses: itdojp/ae-framework@v1.0.2
 # or: uses: itdojp/ae-framework@<commit-sha>
 ```
