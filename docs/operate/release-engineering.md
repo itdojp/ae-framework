@@ -98,8 +98,8 @@ context for live branch protection. The Marketplace runtime contract also
 requires both refs to resolve to the same commit, binds release/path URLs to the
 documented immutable tag, verifies the four expected action artifacts, and uses
 each run URL plus job name as a unique case locator. Workflow-generated
-candidates are not owner approval,
-and secrets or private evidence URLs must not be committed. The schema binds
+candidates are not owner-approval artifacts, and secrets or private evidence
+URLs must not be committed. The schema binds
 evidence URLs to this repository, npm/Sigstore, and Marketplace public surfaces;
 it also binds verifier identifiers and roles to the current repository owner.
 Changing ownership requires a reviewed schema update rather than a free-form
