@@ -128,7 +128,7 @@
         "cases"
       ],
       "properties": {
-        "actionRef": { "type": "string", "pattern": "^itdojp/ae-framework@(?:v[0-9]+(?:\\.[0-9]+\\.[0-9]+)?)$" },
+        "actionRef": { "type": "string", "pattern": "^itdojp/ae-framework@v[0-9]+(?:\\.[0-9]+\\.[0-9]+)?$" },
         "resolvedCommit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
         "workflowRunUrl": { "$ref": "#/$defs/externalConsumerWorkflowRunUrl" },
         "verifiedAt": { "type": "string", "format": "date-time" },
