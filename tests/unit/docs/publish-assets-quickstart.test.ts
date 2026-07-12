@@ -84,6 +84,7 @@ describe('deploy-time profile publish assets', () => {
     expect(quickstart).toContain('"policyResult": "block"');
     expect(quickstart).toContain('Do not describe the npm package or Marketplace');
     expect(quickstart).toContain('listing as live unless the release note for that publication exists');
+    expect(quickstart).toContain('successful path-resolution check is not');
 
     const readme = readRepoFile('README.md');
     const docsReadme = readRepoFile('docs/README.md');
@@ -122,5 +123,9 @@ describe('deploy-time profile publish assets', () => {
     expect(releasePolicy).toContain('`v1`');
     expect(releasePolicy).toContain('git tag -a v1.0.1');
     expect(releasePolicy).toContain('git push origin v1 --force');
+    expect(releasePolicy).toContain('External runtime smoke sequence');
+    expect(releasePolicy).toContain('itdojp/ae-framework-impl-test-hub');
+    expect(releasePolicy).toContain('fail-on-block=false');
+    expect(releasePolicy).toContain('resolved-commit parity');
   });
 });
