@@ -50,18 +50,89 @@
     "assuranceGateMarketplace": {
       "state": "blocked",
       "actionRef": "itdojp/ae-framework@v1",
-      "immutableTag": "v1.0.1",
+      "immutableTag": "v1.0.2",
       "movingMajorTag": "v1",
       "evidence": {
-        "verifiedAt": "2026-07-11T20:51:07Z",
+        "verifiedAt": "2026-07-12T08:22:42Z",
         "verifier": "ootakazuhiko",
         "verifierRole": "release-owner",
-        "externalPathResolutionUrl": "https://github.com/itdojp/ae-framework/blob/v1.0.1/action.yml",
-        "externalPathResolutionStatus": "success"
+        "releaseNoteUrl": "https://github.com/itdojp/ae-framework/releases/tag/v1.0.2",
+        "externalPathResolutionUrl": "https://github.com/itdojp/ae-framework/blob/v1.0.2/action.yml",
+        "externalPathResolutionStatus": "success",
+        "runtimeSmoke": {
+          "consumerRepository": "itdojp/ae-framework-impl-test-hub",
+          "immutableRelease": {
+            "actionRef": "itdojp/ae-framework@v1.0.2",
+            "resolvedCommit": "c00541d75fc1a13720bfd95d6e3b888d0852090e",
+            "workflowRunUrl": "https://github.com/itdojp/ae-framework-impl-test-hub/actions/runs/29185693898",
+            "verifiedAt": "2026-07-12T08:21:07Z",
+            "verifier": "ootakazuhiko",
+            "verifierRole": "release-owner",
+            "cases": {
+              "pass": {
+                "jobName": "immutable / pass",
+                "jobStatus": "success",
+                "gateResult": "pass",
+                "artifacts": [
+                  "gate-result.json",
+                  "assurance-summary.json",
+                  "policy-decision.json",
+                  "review-surface.md"
+                ]
+              },
+              "block": {
+                "jobName": "immutable / block",
+                "jobStatus": "success",
+                "failOnBlock": false,
+                "gateResult": "block",
+                "missingEvidenceRecorded": true,
+                "artifacts": [
+                  "gate-result.json",
+                  "assurance-summary.json",
+                  "policy-decision.json",
+                  "review-surface.md"
+                ]
+              }
+            }
+          },
+          "movingMajor": {
+            "actionRef": "itdojp/ae-framework@v1",
+            "resolvedCommit": "c00541d75fc1a13720bfd95d6e3b888d0852090e",
+            "workflowRunUrl": "https://github.com/itdojp/ae-framework-impl-test-hub/actions/runs/29185737973",
+            "verifiedAt": "2026-07-12T08:22:42Z",
+            "verifier": "ootakazuhiko",
+            "verifierRole": "release-owner",
+            "cases": {
+              "pass": {
+                "jobName": "moving / pass",
+                "jobStatus": "success",
+                "gateResult": "pass",
+                "artifacts": [
+                  "gate-result.json",
+                  "assurance-summary.json",
+                  "policy-decision.json",
+                  "review-surface.md"
+                ]
+              },
+              "block": {
+                "jobName": "moving / block",
+                "jobStatus": "success",
+                "failOnBlock": false,
+                "gateResult": "block",
+                "missingEvidenceRecorded": true,
+                "artifacts": [
+                  "gate-result.json",
+                  "assurance-summary.json",
+                  "policy-decision.json",
+                  "review-surface.md"
+                ]
+              }
+            }
+          }
+        }
       },
       "blockers": [
-        "External pass and block runtime smoke evidence has not yet been recorded for both the immutable release tag and moving v1 tag.",
-        "Repository owner must publish the Marketplace listing and record the listing URL and release note."
+        "Repository owner must publish the Marketplace listing and record the listing URL."
       ]
     }
   }
