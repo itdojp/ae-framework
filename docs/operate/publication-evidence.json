@@ -60,7 +60,7 @@
         "externalPathResolutionStatus": "success"
       },
       "blockers": [
-        "External pass and block runtime smoke evidence is not yet recorded for both the immutable release tag and moving v1 tag.",
+        "External pass and block runtime smoke evidence has not yet been recorded for both the immutable release tag and moving v1 tag.",
         "Repository owner must publish the Marketplace listing and record the listing URL and release note."
       ]
     }
