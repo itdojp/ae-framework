@@ -146,6 +146,10 @@ export class FormalAgent {
     options: { includeDiagrams?: boolean; generateProperties?: boolean } = {}
   ): Promise<FormalSpecification> {
     const id = this.generateId(requirements, type);
+    const existing = this.specifications.get(id);
+    if (existing) {
+      return existing;
+    }
     const timestamp = new Date();
 
     let content = "";
