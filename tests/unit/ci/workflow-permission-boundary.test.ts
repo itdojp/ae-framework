@@ -863,6 +863,9 @@ describe('workflow permission boundaries', () => {
     // `pull_request`), so gating this job on `event_name == workflow_call`
     // would silently skip aggregation for the label-gated Formal Verify path.
     expect(aggregate.jobs?.['aggregate']?.if).toBeUndefined();
+    expect(aggregateSteps.find((step) => step?.name === 'Install dependencies')?.run).toContain(
+      'pnpm install --frozen-lockfile',
+    );
     expect(verifyAggregate).toContain('uses: ./.github/workflows/formal-aggregate.yml');
     expect(verifyAggregate).not.toContain('issues: write');
 

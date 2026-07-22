@@ -48,6 +48,10 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Install dependencies
+        # Summary generation and provenance validation import AJV. Keep this
+        # label-gated evidence path deterministic and fail on lockfile drift.
+        run: pnpm install --frozen-lockfile --config.use-lockfile=true --config.package-lock=true
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
