@@ -527,9 +527,15 @@ async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskRes
   // Write additional UI summary artifact (machine-readable)
   try {
     const outDir = getArtifactsDir();
-    fs.mkdirSync(outDir, { recursive: true });
-    const uiSummaryPath = path.join(outDir, 'ui-summary.json');
-    fs.writeFileSync(uiSummaryPath, JSON.stringify({ totalEntities: total, okEntities: ok, files, dryRun, artifactDir: outDir }, null, 2), 'utf8');
+    const publicDir = publicArtifactPath(outDir);
+    if (!publicDir) throw new Error('UI artifact directory must remain inside the repository');
+    writeRepositoryLocalCodexArtifact(outDir, 'ui-summary.json', JSON.stringify({
+      totalEntities: total,
+      okEntities: ok,
+      files,
+      dryRun,
+      artifactDir: publicDir,
+    }, null, 2));
   } catch {}
 
   const resp: TaskResponse = {
@@ -655,9 +661,11 @@ function writeAndReturn(phase: Phase, request: TaskRequest, response: TaskRespon
   const finalResponse = finalizeTaskResponse(phase, request, response);
   try {
     const outDir = getArtifactsDir();
-    fs.mkdirSync(outDir, { recursive: true });
-    const file = path.join(outDir, `result-${phase}.json`);
-    fs.writeFileSync(file, JSON.stringify({ phase, response: finalResponse, ts: new Date().toISOString() }, null, 2), 'utf8');
+    writeRepositoryLocalCodexArtifact(
+      outDir,
+      `result-${phase}.json`,
+      JSON.stringify({ phase, response: finalResponse, ts: new Date().toISOString() }, null, 2),
+    );
   } catch {
     // best-effort only
   }
@@ -699,6 +707,30 @@ function isRepositoryLocalArtifactDirectory(candidatePath: string): boolean {
   const realAncestor = fs.realpathSync(existingAncestor);
   const realRelative = path.relative(realRepoRoot, realAncestor);
   return realRelative === '' || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative));
+}
+
+function writeRepositoryLocalCodexArtifact(outDir: string, fileName: string, content: string): void {
+  if (!isRepositoryLocalArtifactDirectory(outDir)) {
+    throw new Error('Codex artifact directory must remain inside the repository');
+  }
+  if (!/^[a-z0-9][a-z0-9-]*\.json$/u.test(fileName)) {
+    throw new Error('Codex artifact filename is invalid');
+  }
+  fs.mkdirSync(outDir, { recursive: true });
+  const target = path.join(outDir, fileName);
+  if (!publicArtifactPath(target)) {
+    throw new Error('Codex artifact path must remain inside the repository');
+  }
+  const flags = fs.constants.O_WRONLY
+    | fs.constants.O_CREAT
+    | fs.constants.O_TRUNC
+    | (fs.constants.O_NOFOLLOW ?? 0);
+  const fd = fs.openSync(target, flags, 0o600);
+  try {
+    fs.writeFileSync(fd, content, 'utf8');
+  } finally {
+    fs.closeSync(fd);
+  }
 }
 
 function getArtifactsDir() {

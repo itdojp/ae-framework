@@ -161,6 +161,7 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
   - `nextActions`/`warnings` item strings must be non-empty
   - Formal artifact entries declare `required=true` for TLA+ and `required=false` for OpenAPI
   - Failed artifacts omit `path`; scaffold `artifactPath` and model-checker runner commands are present only when TLA+ was written
+  - `result-<phase>.json` and `ui-summary.json` persistence is restricted to a real repository-local artifact directory, uses no-follow file opens, and never serializes a private absolute artifact directory
 - Migration recommendation:
   - Move blocked responses to explicit `blockingReason` / `requiredHumanInput` fields where possible.
   - Existing blocked responses without those fields are accepted for compatibility.

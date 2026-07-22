@@ -366,4 +366,59 @@ describe.sequential('finalizeTaskResponse', () => {
       rmSync(artifactDir, { recursive: true, force: true });
     }
   });
+
+  it('does not persist Codex responses outside the repository artifact boundary', async () => {
+    const outsideDir = resolve('..', `.codex-forbidden-output-${process.pid}`);
+    expect(existsSync(outsideDir)).toBe(false);
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = outsideDir;
+    try {
+      const response = await createCodexTaskAdapter().handleTask({
+        description: 'Capture intent without external persistence.',
+        prompt: 'Inventory remains non-negative.',
+        subagent_type: 'intent',
+        context: {},
+      });
+      expect(response.summary).toBeTruthy();
+      expect(existsSync(outsideDir)).toBe(false);
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+    }
+  });
+
+  it('does not follow symlinks when persisting response or UI summary artifacts', async () => {
+    if (process.platform === 'win32') return;
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-response-symlink-'));
+    const responseVictim = join(artifactDir, 'response-victim.txt');
+    const uiVictim = join(artifactDir, 'ui-victim.txt');
+    writeFileSync(responseVictim, 'response unchanged\n', 'utf8');
+    writeFileSync(uiVictim, 'ui unchanged\n', 'utf8');
+    symlinkSync(responseVictim, join(artifactDir, 'result-intent.json'));
+    symlinkSync(uiVictim, join(artifactDir, 'ui-summary.json'));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      await createCodexTaskAdapter().handleTask({
+        description: 'Capture intent safely.',
+        prompt: 'Inventory remains non-negative.',
+        subagent_type: 'intent',
+        context: {},
+      });
+      await createCodexTaskAdapter().handleTask({
+        description: 'Generate UI summary safely.',
+        prompt: 'Generate an inventory view.',
+        subagent_type: 'ui',
+        context: {},
+      });
+      expect(readFileSync(responseVictim, 'utf8')).toBe('response unchanged\n');
+      expect(readFileSync(uiVictim, 'utf8')).toBe('ui unchanged\n');
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
+  });
 });
