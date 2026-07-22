@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import Ajv2020 from 'ajv/dist/2020.js';
+import addFormats from 'ajv-formats';
 import yaml from 'yaml';
 import { buildArtifactMetadata } from '../ci/lib/artifact-metadata.mjs';
+import { getFormalRunnerProducer, hasEligibleToolVersion } from '../formal/execution-evidence.mjs';
 
 const DEFAULT_OUTPUT_JSON = 'artifacts/assurance/assurance-summary.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/assurance/assurance-summary.md';
@@ -34,8 +38,32 @@ const FORMAL_SUMMARY_CONTRACTS = new Map([
   ['formal-summary/v1', null],
   ['formal-summary/v2', 'formal-summary.v2'],
 ]);
-const NON_EXECUTED_ARTIFACT_STATUSES = new Set(['draft', 'synthetic', 'unverified', 'test-only']);
-
+const FORMAL_SUMMARY_ADAPTER = Object.freeze({
+  id: 'ae.formal.summary-generator',
+  version: '1.0.0',
+  contract: 'formal-summary-adapter/v1',
+  artifactRef: 'scripts/formal/generate-formal-summary-v1.mjs',
+});
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const repositoryRoot = path.resolve(scriptDir, '..', '..');
+const readRepositorySchema = (name) => JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'schema', name), 'utf8'));
+const formalAjv = new Ajv2020({ allErrors: true, strict: false });
+addFormats(formalAjv);
+for (const schemaName of [
+  'artifact-metadata.schema.json',
+  'formal-execution-evidence-v1.schema.json',
+  'formal-summary-v1.schema.json',
+  'formal-summary-v2.schema.json',
+]) {
+  formalAjv.addSchema(readRepositorySchema(schemaName));
+}
+const validateFormalExecutionEvidence = formalAjv.getSchema(
+  'https://ae-framework/schema/formal-execution-evidence-v1.schema.json',
+);
+const formalSummaryValidators = new Map([
+  ['formal-summary/v1', formalAjv.getSchema('https://ae-framework/schema/formal-summary-v1.schema.json')],
+  ['formal-summary/v2', formalAjv.getSchema('https://ae-framework/schema/formal-summary-v2.schema.json')],
+]);
 const SECURITY_CLAIM_TYPES = new Set(['invariant', 'precondition', 'postcondition', 'assumption']);
 const ASSUMPTION_HANDLING_MODES = new Set(['assumption-validation-required', 'residual-risk']);
 
@@ -898,20 +926,43 @@ const formalLaneMapping = (name) => {
   }
 };
 
-const hasExecutionEvidence = (result) => {
+const hasExactProducerBinding = (actual, expected) => Boolean(
+  actual
+  && typeof actual === 'object'
+  && !Array.isArray(actual)
+  && actual.id === expected.id
+  && actual.version === expected.version
+  && actual.contract === expected.contract
+  && actual.artifactRef === expected.artifactRef,
+);
+
+const allowedFormalProducers = (name) => {
+  if (name === 'conformance') {
+    return [getFormalRunnerProducer('conformance'), getFormalRunnerProducer('conformanceDriver')];
+  }
+  try {
+    return [getFormalRunnerProducer(name)];
+  } catch {
+    return [];
+  }
+};
+
+const hasExecutionEvidence = (result, name) => {
   const evidence = result?.executionEvidence;
   return Boolean(
     evidence
     && typeof evidence === 'object'
-    && maybeString(evidence.provenance) === 'runner-reported'
-    && maybeString(evidence.tool?.name)
-    && maybeString(evidence.tool?.version)
-    && Array.isArray(evidence.input)
-    && evidence.input.some((value) => maybeString(value))
-    && maybeString(evidence.result?.status) === 'ok'
-    && maybeString(evidence.scope)
-    && Array.isArray(evidence.assumptions)
-    && evidence.assumptions.some((value) => maybeString(value)),
+    && validateFormalExecutionEvidence(evidence)
+    && result?.artifactStatus === 'execution-report'
+    && evidence.artifactStatus === 'execution-report'
+    && evidence.executionOccurred === true
+    && allowedFormalProducers(name).some((producer) => hasExactProducerBinding(evidence.producer, producer))
+    && evidence.provenance === 'adapter-verified'
+    && hasExactProducerBinding(evidence.adapter, FORMAL_SUMMARY_ADAPTER)
+    && evidence.result?.status === 'ok'
+    && evidence.result?.code === 0
+    && maybeString(evidence.result?.logPath)
+    && hasEligibleToolVersion(evidence.tool),
   );
 };
 
@@ -1089,14 +1140,18 @@ const ingestFormalSummary = (summaryPath, claimStateMap, contextPackRefs, warnin
   const summary = readJson(resolvedPath);
   const schemaVersion = maybeString(summary.schemaVersion);
   const expectedContractId = FORMAL_SUMMARY_CONTRACTS.get(schemaVersion);
-  const artifactStatus = maybeString(summary.artifactStatus).toLowerCase();
+  const validateSummary = formalSummaryValidators.get(schemaVersion);
+  const schemaValid = typeof validateSummary === 'function' && validateSummary(summary);
   if (!FORMAL_SUMMARY_CONTRACTS.has(schemaVersion)
     || (expectedContractId && maybeString(summary.contractId) !== expectedContractId)
-    || NON_EXECUTED_ARTIFACT_STATUSES.has(artifactStatus)) {
+    || !schemaValid) {
+    const validationDetail = Array.isArray(validateSummary?.errors)
+      ? validateSummary.errors.slice(0, 3).map((error) => `${error.instancePath || '/'} ${error.message}`).join('; ')
+      : 'unsupported schema';
     pushWarning(
       warnings,
       'untrusted-formal-summary',
-      `Formal artifact is not eligible for model/proof evidence: schemaVersion=${schemaVersion || 'missing'}, artifactStatus=${artifactStatus || 'unspecified'}.`,
+      `Formal artifact failed the closed Formal Summary contract: schemaVersion=${schemaVersion || 'missing'}; ${validationDetail}.`,
       { artifactPath: resolvedPath },
     );
     return;
@@ -1109,23 +1164,13 @@ const ingestFormalSummary = (summaryPath, claimStateMap, contextPackRefs, warnin
   for (const result of candidates) {
     const name = maybeString(result.name || tool);
     const status = maybeString(result.status || summary.status);
-    const resultArtifactStatus = maybeString(result.artifactStatus).toLowerCase();
-    if (NON_EXECUTED_ARTIFACT_STATUSES.has(resultArtifactStatus)) {
-      pushWarning(
-        warnings,
-        'untrusted-formal-summary',
-        `Formal result "${name || 'unknown'}" is ${resultArtifactStatus} and is not execution evidence.`,
-        { artifactPath: resolvedPath },
-      );
-      continue;
-    }
     const mapping = formalLaneMapping(name);
     if (!mapping || status !== 'ok') continue;
-    if (!hasExecutionEvidence(result)) {
+    if (!hasExecutionEvidence(result, name)) {
       pushWarning(
         warnings,
         'untrusted-formal-summary',
-        `Formal result "${name || 'unknown'}" is ok but lacks complete tool/version/input/result/scope/assumption execution evidence.`,
+        `Formal result "${name || 'unknown'}" is ok but lacks eligible schema-valid execution evidence, reviewed producer binding, or verified tool-version provenance.`,
         { artifactPath: resolvedPath },
       );
       continue;
@@ -1143,24 +1188,19 @@ const ingestFormalSummary = (summaryPath, claimStateMap, contextPackRefs, warnin
   }
 };
 
-const ingestConformanceReport = (summaryPath, claimStateMap, contextPackRefs, warnings) => {
+const ingestConformanceReport = (summaryPath, _claimStateMap, _contextPackRefs, warnings) => {
   if (!summaryPath) return;
   const resolvedPath = ensureFile(summaryPath, 'Conformance report');
   const summary = readJson(resolvedPath);
-  const targetClaims = claimIdsForGlobalEvidence(claimStateMap, contextPackRefs);
   const runsAnalyzed = Number(summary.runsAnalyzed ?? 0);
   const status = maybeString(summary.status).toLowerCase();
   if (!Number.isFinite(runsAnalyzed) || runsAnalyzed <= 0 || status !== 'success') return;
-  const evidence = normalizeEvidenceEntry({
-    lane: 'model',
-    kind: 'conformance',
-    sourceKind: 'model-derived',
-    origin: 'conformance-report',
-    artifactPath: resolvedPath,
-    detail: `conformance report analyzed ${runsAnalyzed} run(s)`,
-    generatorLineage: 'conformance-report',
-  });
-  addEvidenceForClaims(claimStateMap, targetClaims, evidence, warnings, resolvedPath);
+  pushWarning(
+    warnings,
+    'untrusted-formal-summary',
+    'Direct conformance reports are report-only; route actual runner output through the closed Formal Summary adapter before using it as model evidence.',
+    { artifactPath: resolvedPath },
+  );
 };
 
 const ingestCounterexample = (counterexamplePath, claimStateMap, warnings, summaryState) => {

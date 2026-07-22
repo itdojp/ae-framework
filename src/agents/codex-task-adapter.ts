@@ -53,48 +53,96 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           case 'formal': {
             const reqText = request.prompt || request.description || '';
             const spec = await formal.generateFormalSpecification(reqText, 'tla+');
-            // Derive OpenAPI as a convenience artifact
-            let openapiPath = '';
-            let tlaPath = '';
+            let openapiContent: string | null = null;
+            let openapiGenerationFailure: string | null = null;
             try {
-              // write TLA+ spec content
-              const outDir = getArtifactsDir();
-              fs.mkdirSync(outDir, { recursive: true });
-              tlaPath = path.join(outDir, 'formal.tla');
-              fs.writeFileSync(tlaPath, spec.content, 'utf8');
-
               const openapi = await formal.createAPISpecification(reqText, 'openapi', { includeExamples: true, generateContracts: true });
-              openapiPath = path.join(outDir, 'openapi.yaml');
-              fs.writeFileSync(openapiPath, openapi.content, 'utf8');
+              openapiContent = openapi.content;
+            } catch (error) {
+              openapiGenerationFailure = boundedMaterializationMessage('OpenAPI scaffold generation', error);
+            }
 
-            } catch {}
+            const outDir = getArtifactsDir();
+            const materializedArtifacts: NonNullable<TaskResponse['formal']>['scaffold']['artifacts'] = [];
+            let directoryFailure: string | null = null;
+            try {
+              fs.mkdirSync(outDir, { recursive: true });
+            } catch (error) {
+              directoryFailure = boundedMaterializationMessage('Formal artifact directory creation', error);
+            }
+
+            const materialize = (kind: 'tla' | 'openapi', fileName: string, content: string | null, generationFailure?: string | null) => {
+              if (directoryFailure || generationFailure || content === null) {
+                materializedArtifacts.push({
+                  kind,
+                  status: 'failed',
+                  message: directoryFailure || generationFailure || `${kind} scaffold content unavailable`,
+                });
+                return;
+              }
+              const candidatePath = path.join(outDir, fileName);
+              const publicPath = publicArtifactPath(candidatePath);
+              if (!publicPath) {
+                materializedArtifacts.push({
+                  kind,
+                  status: 'failed',
+                  message: `${kind.toUpperCase()} artifact path must remain inside the repository`,
+                });
+                return;
+              }
+              try {
+                fs.writeFileSync(candidatePath, content, 'utf8');
+                materializedArtifacts.push({ kind, status: 'written', path: publicPath });
+              } catch (error) {
+                materializedArtifacts.push({
+                  kind,
+                  status: 'failed',
+                  message: boundedMaterializationMessage(`${kind.toUpperCase()} artifact write`, error),
+                });
+              }
+            };
+
+            materialize('tla', 'formal.tla', spec.content);
+            materialize('openapi', 'openapi.yaml', openapiContent, openapiGenerationFailure);
+            const writtenCount = materializedArtifacts.filter((artifact) => artifact.status === 'written').length;
+            const materializationStatus = writtenCount === materializedArtifacts.length
+              ? 'written'
+              : writtenCount > 0 ? 'partial' : 'failed';
+            const tlaArtifact = materializedArtifacts.find((artifact) => artifact.kind === 'tla' && artifact.status === 'written');
+            const openapiArtifact = materializedArtifacts.find((artifact) => artifact.kind === 'openapi' && artifact.status === 'written');
+            const materializationWarnings = materializedArtifacts
+              .filter((artifact) => artifact.status === 'failed')
+              .map((artifact) => artifact.message ?? `${artifact.kind} artifact materialization failed`);
             const isInvalid = spec.validation.status === 'invalid';
+            const materializationBlocked = materializationStatus === 'failed';
             const runnerCommands = [
               'pnpm run verify:tla -- --engine=tlc',
               'pnpm run verify:alloy',
               'pnpm run verify:formal',
             ];
             const resp: TaskResponse = {
-              summary: `Formal scaffold generated: ${spec.type.toUpperCase()} (${spec.validation.status}, ${spec.artifactStatus})`,
+              summary: `Formal scaffold generated in memory: ${spec.type.toUpperCase()} (${spec.validation.status}, ${spec.artifactStatus}, materialization=${materializationStatus})`,
               analysis: spec.content.slice(0, 1200),
               recommendations: [
                 'Review the generated scaffold before selecting a formal runner',
-                tlaPath ? `Review TLA+: ${path.relative(process.cwd(), tlaPath)}` : 'TLA+ content available in response',
-                openapiPath ? `Review OpenAPI: ${path.relative(process.cwd(), openapiPath)}` : 'Consider API spec generation if needed',
+                tlaArtifact ? `Review TLA+: ${tlaArtifact.path}` : 'TLA+ content is available in the response but was not materialized',
+                openapiArtifact ? `Review OpenAPI: ${openapiArtifact.path}` : 'OpenAPI content was not materialized',
                 `Model checker not executed; run one of: ${runnerCommands.join(' | ')}`,
               ],
               nextActions: [
                 'pnpm -s run verify:lite',
                 'pnpm run codex:generate:tests -- --use-operation-id'
               ],
-              warnings: spec.validation.warnings?.map(w => w.message) || [],
-              shouldBlockProgress: isInvalid,
+              warnings: [...(spec.validation.warnings?.map(w => w.message) || []), ...materializationWarnings],
+              shouldBlockProgress: isInvalid || materializationBlocked,
               formal: {
                 scaffold: {
                   status: 'generated',
                   artifactStatus: spec.artifactStatus,
                   validationStatus: spec.validation.status,
-                  ...(tlaPath ? { artifactPath: path.relative(process.cwd(), tlaPath) } : {}),
+                  materializationStatus,
+                  artifacts: materializedArtifacts,
+                  ...(tlaArtifact ? { artifactPath: tlaArtifact.path } : {}),
                 },
                 modelChecking: {
                   status: 'not-run',
@@ -102,10 +150,12 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
                   runnerCommands,
                 },
               },
-              ...(isInvalid
+              ...(isInvalid || materializationBlocked
                 ? {
-                    blockingReason: 'formal-validation-invalid',
-                    requiredHumanInput: 'resolve formal specification warnings and rerun formal phase',
+                    blockingReason: isInvalid ? 'formal-validation-invalid' : 'formal-artifact-materialization-failed',
+                    requiredHumanInput: isInvalid
+                      ? 'resolve formal specification warnings and rerun formal phase'
+                      : 'provide a writable repository-local artifact directory and rerun formal phase',
                   }
                 : {}),
             };
@@ -589,6 +639,20 @@ function createNeutralResponse(phase: Phase, request: TaskRequest): TaskResponse
     warnings: [`Phase '${phase}' not fully supported in current implementation`],
     shouldBlockProgress: false
   };
+}
+
+function boundedMaterializationMessage(operation: string, error: unknown): string {
+  const rawCode = typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as NodeJS.ErrnoException).code ?? '')
+    : '';
+  const code = /^[A-Z0-9_-]{1,32}$/u.test(rawCode) ? rawCode : 'OPERATION_FAILED';
+  return `${operation} failed (${code})`.slice(0, 160);
+}
+
+function publicArtifactPath(candidatePath: string): string | null {
+  const relative = path.relative(process.cwd(), path.resolve(candidatePath));
+  if (!relative || path.isAbsolute(relative) || relative.split(path.sep).includes('..')) return null;
+  return relative.split(path.sep).join('/');
 }
 
 function getArtifactsDir() {

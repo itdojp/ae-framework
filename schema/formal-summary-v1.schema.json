@@ -7,6 +7,8 @@
   "required": [
     "schemaVersion",
     "tool",
+    "artifactStatus",
+    "producer",
     "status",
     "ok",
     "generatedAtUtc",
@@ -44,7 +46,9 @@
         "failed",
         "skipped",
         "missing",
-        "unknown"
+        "unknown",
+        "timeout",
+        "tool-error"
       ]
     },
     "ok": {
@@ -65,6 +69,12 @@
       "items": {
         "$ref": "#/$defs/resultItem"
       }
+    },
+    "artifactStatus": {
+      "const": "execution-report"
+    },
+    "producer": {
+      "$ref": "#/$defs/summaryProducer"
     }
   },
   "$defs": {
@@ -74,6 +84,7 @@
       "required": [
         "name",
         "status",
+        "artifactStatus",
         "code",
         "durationMs",
         "logPath",
@@ -91,75 +102,342 @@
             "failed",
             "skipped",
             "missing",
-            "unknown"
+            "unknown",
+            "timeout",
+            "tool-error"
           ]
         },
         "code": {
           "oneOf": [
-            { "type": "integer" },
-            { "type": "null" }
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "durationMs": {
           "oneOf": [
-            { "type": "number" },
-            { "type": "null" }
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "logPath": {
           "oneOf": [
-            { "type": "string", "minLength": 1 },
-            { "type": "null" }
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "reason": {
           "oneOf": [
-            { "type": "string", "minLength": 1 },
-            { "type": "null" }
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "executionEvidence": {
-          "$ref": "#/$defs/executionEvidence"
+          "$ref": "https://ae-framework/schema/formal-execution-evidence-v1.schema.json"
+        },
+        "artifactStatus": {
+          "enum": [
+            "execution-report",
+            "not-executed"
+          ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "executionEvidence"
+            ]
+          },
+          "then": {
+            "properties": {
+              "executionEvidence": {
+                "properties": {
+                  "provenance": {
+                    "const": "adapter-verified"
+                  }
+                },
+                "required": [
+                  "provenance",
+                  "adapter"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "artifactStatus": {
+                "const": "execution-report"
+              }
+            },
+            "required": [
+              "artifactStatus"
+            ]
+          },
+          "then": {
+            "required": [
+              "executionEvidence"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ok"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "artifactStatus": {
+                "const": "execution-report"
+              },
+              "executionEvidence": {
+                "properties": {
+                  "executionOccurred": {
+                    "const": true
+                  },
+                  "artifactStatus": {
+                    "const": "execution-report"
+                  },
+                  "result": {
+                    "properties": {
+                      "status": {
+                        "const": "ok"
+                      },
+                      "code": {
+                        "const": 0
+                      }
+                    },
+                    "required": [
+                      "status"
+                    ]
+                  },
+                  "tool": {
+                    "properties": {
+                      "versionStatus": {
+                        "const": "verified"
+                      },
+                      "version": {
+                        "not": {
+                          "enum": [
+                            "",
+                            "unknown",
+                            "unspecified",
+                            "n/a",
+                            "na",
+                            "none",
+                            "null"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "version",
+                      "versionStatus"
+                    ]
+                  }
+                },
+                "required": [
+                  "executionOccurred",
+                  "artifactStatus",
+                  "result",
+                  "tool"
+                ]
+              }
+            },
+            "required": [
+              "executionEvidence"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "failed"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "artifactStatus": {
+                "const": "execution-report"
+              },
+              "executionEvidence": {
+                "properties": {
+                  "executionOccurred": {
+                    "const": true
+                  },
+                  "artifactStatus": {
+                    "const": "execution-report"
+                  },
+                  "result": {
+                    "properties": {
+                      "status": {
+                        "const": "failed"
+                      }
+                    },
+                    "required": [
+                      "status"
+                    ]
+                  }
+                },
+                "required": [
+                  "executionOccurred",
+                  "artifactStatus",
+                  "result"
+                ]
+              }
+            },
+            "required": [
+              "executionEvidence"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "timeout"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "artifactStatus": {
+                "const": "execution-report"
+              },
+              "executionEvidence": {
+                "properties": {
+                  "executionOccurred": {
+                    "const": true
+                  },
+                  "artifactStatus": {
+                    "const": "execution-report"
+                  },
+                  "result": {
+                    "properties": {
+                      "status": {
+                        "const": "timeout"
+                      }
+                    },
+                    "required": [
+                      "status"
+                    ]
+                  }
+                },
+                "required": [
+                  "executionOccurred",
+                  "artifactStatus",
+                  "result"
+                ]
+              }
+            },
+            "required": [
+              "executionEvidence"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "tool-error"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "artifactStatus": {
+                "const": "execution-report"
+              },
+              "executionEvidence": {
+                "properties": {
+                  "executionOccurred": {
+                    "const": true
+                  },
+                  "artifactStatus": {
+                    "const": "execution-report"
+                  },
+                  "result": {
+                    "properties": {
+                      "status": {
+                        "const": "tool-error"
+                      }
+                    },
+                    "required": [
+                      "status"
+                    ]
+                  }
+                },
+                "required": [
+                  "executionOccurred",
+                  "artifactStatus",
+                  "result"
+                ]
+              }
+            },
+            "required": [
+              "executionEvidence"
+            ]
+          }
+        }
+      ]
     },
-    "executionEvidence": {
+    "summaryProducer": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["provenance", "tool", "input", "result", "scope", "assumptions"],
+      "required": [
+        "id",
+        "version",
+        "contract",
+        "artifactRef"
+      ],
       "properties": {
-        "provenance": { "const": "runner-reported" },
-        "tool": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["name", "version"],
-          "properties": {
-            "name": { "type": "string", "minLength": 1 },
-            "version": { "type": "string", "minLength": 1 }
-          }
+        "id": {
+          "const": "ae.formal.summary-generator"
         },
-        "input": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+        "version": {
+          "const": "1.0.0"
         },
-        "result": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["status", "code", "logPath"],
-          "properties": {
-            "status": { "type": "string", "enum": ["ok", "failed", "skipped", "missing", "unknown"] },
-            "code": { "oneOf": [{ "type": "integer" }, { "type": "null" }] },
-            "logPath": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
-          }
+        "contract": {
+          "const": "formal-summary-adapter/v1"
         },
-        "scope": { "type": "string", "minLength": 1 },
-        "assumptions": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+        "artifactRef": {
+          "const": "scripts/formal/generate-formal-summary-v1.mjs"
         }
       }
     }

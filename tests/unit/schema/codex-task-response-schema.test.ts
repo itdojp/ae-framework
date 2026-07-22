@@ -73,4 +73,35 @@ describe('codex-task-response schema contract', () => {
     expect(validate(continuePayloadWithEmptyWarning)).toBe(false);
     expect(validate.errors?.some((error) => error.keyword === 'minLength')).toBe(true);
   });
+
+  it('validates truthful formal artifact materialization parity', () => {
+    const base = loadJson(validContinuePath) as Record<string, unknown>;
+    const formal = {
+      scaffold: {
+        status: 'generated',
+        artifactStatus: 'draft',
+        validationStatus: 'valid',
+        materializationStatus: 'partial',
+        artifactPath: 'artifacts/codex/formal.tla',
+        artifacts: [
+          { kind: 'tla', status: 'written', path: 'artifacts/codex/formal.tla' },
+          { kind: 'openapi', status: 'failed', message: 'OPENAPI artifact write failed (EISDIR)' },
+        ],
+      },
+      modelChecking: {
+        status: 'not-run',
+        evidenceArtifact: null,
+        runnerCommands: ['pnpm run verify:tla -- --engine=tlc'],
+      },
+    };
+    expect(validate({ ...base, formal })).toBe(true);
+
+    const nonexistentPathClaim = structuredClone(formal);
+    (nonexistentPathClaim.scaffold.artifacts[1] as any).path = 'artifacts/codex/openapi.yaml';
+    expect(validate({ ...base, formal: nonexistentPathClaim })).toBe(false);
+
+    const missingWrittenPath = structuredClone(formal);
+    delete (missingWrittenPath.scaffold.artifacts[0] as any).path;
+    expect(validate({ ...base, formal: missingWrittenPath })).toBe(false);
+  });
 });

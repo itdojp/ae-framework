@@ -85,10 +85,12 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
   - `status=not-run`, `ok=null` means no checker input executed and is not success evidence
   - top-level `status=tool-error`, `ok=null` means no checker completed because its tool could not start or be prepared
   - top-level `status=failed`, `ok=false` covers a completed checker failure, timeout, or mixed execution/tool failure
+  - `detectedInputs`, `executedInputs`, and `skippedInputs` record input coverage; `approvedSkipRefs` is empty while reviewed skip exceptions are unsupported
   - tlc.results: execution attempts with `{ module, ok, code, log, executionStatus, evidence }`; `executionStatus=executed` means the checker process completed, while `timeout` and `tool-error` remain non-evidence outcomes
   - tlc.skipped/errors: reasons for skip/errors
-  - alloy.results: execution attempts with the same status boundary; a completed checker counterexample/non-zero result is `executionStatus=executed` plus `outcome=fail`, not `tool-error`; skipped inputs remain under `alloy.skipped`
-  - every result `evidence` records tool/version, input, result, scope, and assumptions
+  - alloy.results: execution attempts with the same status boundary; a completed checker counterexample/non-zero result is `executionStatus=executed` plus `evidence.result.status=failed`, not `tool-error`; skipped inputs remain under `alloy.skipped`
+  - every result uses the closed `formal-runner-result/v1` contract with a reviewed producer binding, explicit artifact status, tool/version provenance, input, result, scope, and assumptions
+  - `unknown`, `unspecified`, `n/a`, version/artifact-pin mismatch, and contradictory `versionStatus=verified` / `versionSource=unavailable` records preserve the attempt but are ineligible for `enforce-formal`
 - `artifacts/codex/*.tlc.log.txt`: Raw TLC logs per module
 - `artifacts/codex/*.alloy.log.txt`: Raw Alloy logs per spec (when executed)
 
@@ -110,7 +112,7 @@ Note: Apalache-specific configs (`*_apalache.cfg`) are used by Apalache runs, no
   - Traceability totals and linked examples
   - Model Check (TLC): ok/total and top non‑OK modules
   - Alloy: ok/total (when executed) and top non‑OK specs, or “detected N specs (execution skipped)” when jar not provided
-  - Optional enforcement: add PR label `enforce-formal` to fail the PR when TLC/Alloy has failures (default is report-only)
+  - Optional enforcement: add PR label `enforce-formal` to require a valid report, at least one actual execution, all detected inputs executed and passing, zero tool errors/timeouts/unapproved skips, and verified tool versions (default is report-only)
 
 ### Headless Alloy examples
 
@@ -248,9 +250,11 @@ ALLOY_JAR=$HOME/tools/alloy.jar \
 ### 成果物と読み方
 
 - `artifacts/codex/model-check.json`
-  - `tlc.results`: `{ module, ok, code, log }` の配列
-  - `tlc.skipped/errors`: スキップ/エラーの理由
-  - `alloy.results/skipped/errors`: 検出・準備状況
+  - `detectedInputs` / `executedInputs` / `skippedInputs` で input coverage を記録し、review 済み skip exception 未対応の間は `approvedSkipRefs=[]` とする
+  - `tlc.results`: `{ module, ok, code, log, executionStatus, evidence }` の配列
+  - `tlc.skipped/errors`: スキップ/エラーの理由。timeout/tool-error と skip は別 outcome として保持する
+  - `alloy.results/skipped/errors`: 同じ execution boundary と検出・準備状況
+  - `evidence` は closed `formal-runner-result/v1`、review 済み producer binding、明示 artifact status、tool/version/input/result/scope/assumptions を要求する。version の unknown/mismatch と矛盾する `versionStatus=verified` / `versionSource=unavailable` は attempt を残すが enforcement evidence にはしない
 - `artifacts/codex/*.tlc.log.txt`: TLC の生ログ（モジュールごと）
 - `artifacts/codex/*.alloy.log.txt`: Alloy の生ログ（実行した場合）
 
@@ -272,7 +276,7 @@ PR に検証サマリを投稿します:
 - トレーサビリティ合計とリンク例
 - モデル検査 (TLC): ok/total と非 OK モジュール上位
 - Alloy: ok/total（実行時）と非 OK スペック上位、または jar 未指定時の検出数
-- 任意の強制: ラベル `enforce-formal` を付けると TLC/Alloy 失敗で PR を失敗（既定はレポートのみ）
+- 任意の強制: ラベル `enforce-formal` を付けると、valid report、1件以上の actual execution、検出 input 全件の実行・成功、tool error/timeout/未承認 skip が0件、verified tool version を要求する（既定はレポートのみ）
 
 ### ヘッドレス Alloy 実行例
 

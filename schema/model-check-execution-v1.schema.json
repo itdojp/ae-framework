@@ -4,23 +4,103 @@
   "title": "Model Check Execution Report v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "artifactStatus", "status", "ok", "generatedAtUtc", "producer", "tlc", "alloy"],
+  "required": [
+    "schemaVersion",
+    "artifactStatus",
+    "status",
+    "ok",
+    "generatedAtUtc",
+    "producer",
+    "detectedInputs",
+    "executedInputs",
+    "skippedInputs",
+    "approvedSkipRefs",
+    "tlc",
+    "alloy"
+  ],
   "properties": {
-    "schemaVersion": { "const": "model-check-report/v1" },
-    "artifactStatus": { "const": "execution-report" },
-    "status": { "enum": ["executed", "failed", "tool-error", "not-run"] },
-    "ok": { "type": ["boolean", "null"] },
-    "generatedAtUtc": { "type": "string", "format": "date-time" },
-    "producer": { "const": "scripts/verify/run-model-checks.mjs" },
-    "tlc": { "$ref": "#/$defs/tlcBackend" },
-    "alloy": { "$ref": "#/$defs/alloyBackend" }
+    "schemaVersion": {
+      "const": "model-check-report/v1"
+    },
+    "artifactStatus": {
+      "const": "execution-report"
+    },
+    "status": {
+      "enum": [
+        "executed",
+        "failed",
+        "tool-error",
+        "not-run"
+      ]
+    },
+    "ok": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "generatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "producer": {
+      "$ref": "#/$defs/reportProducer"
+    },
+    "detectedInputs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "executedInputs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "skippedInputs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "approvedSkipRefs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "tlc": {
+      "$ref": "#/$defs/tlcBackend"
+    },
+    "alloy": {
+      "$ref": "#/$defs/alloyBackend"
+    }
   },
   "allOf": [
     {
-      "if": { "properties": { "status": { "const": "executed" } }, "required": ["status"] },
+      "if": {
+        "properties": {
+          "status": {
+            "const": "executed"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "then": {
         "allOf": [
-          { "properties": { "ok": { "const": true } } },
+          {
+            "properties": {
+              "ok": {
+                "const": true
+              }
+            }
+          },
+          {
+            "properties": {
+              "executedInputs": {
+                "minimum": 1
+              }
+            }
+          },
           {
             "properties": {
               "tlc": {
@@ -28,13 +108,29 @@
                   "results": {
                     "items": {
                       "properties": {
-                        "ok": { "const": true },
-                        "executionStatus": { "const": "executed" },
-                        "evidence": { "properties": { "result": { "properties": { "outcome": { "const": "pass" } } } } }
+                        "ok": {
+                          "const": true
+                        },
+                        "executionStatus": {
+                          "const": "executed"
+                        },
+                        "evidence": {
+                          "properties": {
+                            "result": {
+                              "properties": {
+                                "status": {
+                                  "const": "ok"
+                                }
+                              }
+                            }
+                          }
+                        }
                       }
                     }
                   },
-                  "errors": { "maxItems": 0 }
+                  "errors": {
+                    "maxItems": 0
+                  }
                 }
               },
               "alloy": {
@@ -42,51 +138,217 @@
                   "results": {
                     "items": {
                       "properties": {
-                        "ok": { "const": true },
-                        "executionStatus": { "const": "executed" },
-                        "evidence": { "properties": { "result": { "properties": { "outcome": { "const": "pass" } } } } }
+                        "ok": {
+                          "const": true
+                        },
+                        "executionStatus": {
+                          "const": "executed"
+                        },
+                        "evidence": {
+                          "properties": {
+                            "result": {
+                              "properties": {
+                                "status": {
+                                  "const": "ok"
+                                }
+                              }
+                            }
+                          }
+                        }
                       }
                     }
                   },
-                  "errors": { "maxItems": 0 }
+                  "errors": {
+                    "maxItems": 0
+                  }
                 }
               }
             }
           },
           {
             "anyOf": [
-              { "properties": { "tlc": { "properties": { "results": { "minItems": 1 } } } } },
-              { "properties": { "alloy": { "properties": { "results": { "minItems": 1 } } } } }
+              {
+                "properties": {
+                  "tlc": {
+                    "properties": {
+                      "results": {
+                        "minItems": 1
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "alloy": {
+                    "properties": {
+                      "results": {
+                        "minItems": 1
+                      }
+                    }
+                  }
+                }
+              }
             ]
           }
         ]
       }
     },
     {
-      "if": { "properties": { "status": { "const": "failed" } }, "required": ["status"] },
-      "then": { "properties": { "ok": { "const": false } } }
-    },
-    {
-      "if": { "properties": { "status": { "enum": ["tool-error", "not-run"] } }, "required": ["status"] },
-      "then": { "properties": { "ok": { "type": "null" } } }
-    },
-    {
-      "if": { "properties": { "status": { "const": "not-run" } }, "required": ["status"] },
+      "if": {
+        "properties": {
+          "status": {
+            "const": "failed"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "then": {
         "properties": {
-          "tlc": { "properties": { "results": { "maxItems": 0 }, "errors": { "maxItems": 0 } } },
-          "alloy": { "properties": { "results": { "maxItems": 0 }, "errors": { "maxItems": 0 } } }
+          "ok": {
+            "const": false
+          }
         }
       }
     },
     {
-      "if": { "properties": { "status": { "const": "tool-error" } }, "required": ["status"] },
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "tool-error",
+              "not-run"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "ok": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "not-run"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "tlc": {
+            "properties": {
+              "results": {
+                "maxItems": 0
+              },
+              "errors": {
+                "maxItems": 0
+              }
+            }
+          },
+          "alloy": {
+            "properties": {
+              "results": {
+                "maxItems": 0
+              },
+              "errors": {
+                "maxItems": 0
+              }
+            }
+          },
+          "executedInputs": {
+            "const": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "tool-error"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "then": {
         "anyOf": [
-          { "properties": { "tlc": { "properties": { "errors": { "minItems": 1 } } } } },
-          { "properties": { "alloy": { "properties": { "errors": { "minItems": 1 } } } } },
-          { "properties": { "tlc": { "properties": { "results": { "contains": { "properties": { "executionStatus": { "const": "tool-error" } }, "required": ["executionStatus"] } } } } } },
-          { "properties": { "alloy": { "properties": { "results": { "contains": { "properties": { "executionStatus": { "const": "tool-error" } }, "required": ["executionStatus"] } } } } } }
+          {
+            "properties": {
+              "tlc": {
+                "properties": {
+                  "errors": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "alloy": {
+                "properties": {
+                  "errors": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "tlc": {
+                "properties": {
+                  "results": {
+                    "contains": {
+                      "properties": {
+                        "executionStatus": {
+                          "const": "tool-error"
+                        }
+                      },
+                      "required": [
+                        "executionStatus"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "alloy": {
+                "properties": {
+                  "results": {
+                    "contains": {
+                      "properties": {
+                        "executionStatus": {
+                          "const": "tool-error"
+                        }
+                      },
+                      "required": [
+                        "executionStatus"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
         ]
       }
     }
@@ -95,19 +357,40 @@
     "backendBase": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["results", "skipped", "errors"],
+      "required": [
+        "results",
+        "skipped",
+        "errors"
+      ],
       "properties": {
-        "results": { "type": "array" },
-        "skipped": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "results": {
+          "type": "array"
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
         "errors": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["file", "error"],
+            "required": [
+              "file",
+              "error"
+            ],
             "properties": {
-              "file": { "type": "string", "minLength": 1 },
-              "error": { "type": "string", "minLength": 1 }
+              "file": {
+                "type": "string",
+                "minLength": 1
+              },
+              "error": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         }
@@ -115,96 +398,203 @@
     },
     "tlcBackend": {
       "allOf": [
-        { "$ref": "#/$defs/backendBase" },
-        { "properties": { "results": { "type": "array", "items": { "$ref": "#/$defs/tlcResult" } } } }
+        {
+          "$ref": "#/$defs/backendBase"
+        },
+        {
+          "properties": {
+            "results": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/tlcResult"
+              }
+            }
+          }
+        }
       ]
     },
     "alloyBackend": {
       "allOf": [
-        { "$ref": "#/$defs/backendBase" },
-        { "properties": { "results": { "type": "array", "items": { "$ref": "#/$defs/alloyResult" } } } }
+        {
+          "$ref": "#/$defs/backendBase"
+        },
+        {
+          "properties": {
+            "results": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/alloyResult"
+              }
+            }
+          }
+        }
       ]
     },
     "tlcResult": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["module", "ok", "code", "log", "config", "executionStatus", "evidence"],
+      "required": [
+        "module",
+        "ok",
+        "code",
+        "log",
+        "config",
+        "executionStatus",
+        "evidence"
+      ],
       "properties": {
-        "module": { "type": "string", "minLength": 1 },
-        "ok": { "type": "boolean" },
-        "code": { "type": ["integer", "null"] },
-        "log": { "type": "string", "minLength": 1 },
-        "config": { "type": "string", "minLength": 1 },
-        "executionStatus": { "enum": ["executed", "tool-error", "timeout"] },
-        "evidence": { "$ref": "#/$defs/executionEvidence" }
+        "module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "code": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "log": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executionStatus": {
+          "enum": [
+            "executed",
+            "tool-error",
+            "timeout"
+          ]
+        },
+        "evidence": {
+          "allOf": [
+            {
+              "$ref": "https://ae-framework/schema/formal-execution-evidence-v1.schema.json"
+            },
+            {
+              "properties": {
+                "provenance": {
+                  "const": "runner-reported"
+                }
+              },
+              "required": [
+                "provenance"
+              ],
+              "not": {
+                "required": [
+                  "adapter"
+                ]
+              }
+            }
+          ]
+        },
+        "error": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "alloyResult": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["file", "ok", "code", "signal", "timeout", "log", "executionStatus", "evidence"],
+      "required": [
+        "file",
+        "ok",
+        "code",
+        "signal",
+        "timeout",
+        "log",
+        "executionStatus",
+        "evidence"
+      ],
       "properties": {
-        "file": { "type": "string", "minLength": 1 },
-        "ok": { "type": "boolean" },
-        "code": { "type": ["integer", "null"] },
-        "signal": { "type": ["string", "null"] },
-        "timeout": { "type": "boolean" },
-        "log": { "type": "string", "minLength": 1 },
-        "executionStatus": { "enum": ["executed", "tool-error", "timeout"] },
-        "evidence": { "$ref": "#/$defs/executionEvidence" }
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "code": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "signal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timeout": {
+          "type": "boolean"
+        },
+        "log": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executionStatus": {
+          "enum": [
+            "executed",
+            "tool-error",
+            "timeout"
+          ]
+        },
+        "evidence": {
+          "allOf": [
+            {
+              "$ref": "https://ae-framework/schema/formal-execution-evidence-v1.schema.json"
+            },
+            {
+              "properties": {
+                "provenance": {
+                  "const": "runner-reported"
+                }
+              },
+              "required": [
+                "provenance"
+              ],
+              "not": {
+                "required": [
+                  "adapter"
+                ]
+              }
+            }
+          ]
+        },
+        "error": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
-    "executionEvidence": {
+    "reportProducer": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["tool", "input", "result", "scope", "assumptions"],
+      "required": [
+        "id",
+        "version",
+        "contract",
+        "artifactRef"
+      ],
       "properties": {
-        "tool": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["name", "version", "artifactPath", "artifactSha256"],
-          "properties": {
-            "name": { "type": "string", "minLength": 1 },
-            "version": { "type": "string", "minLength": 1 },
-            "artifactPath": { "type": "string", "minLength": 1 },
-            "artifactSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
-          }
+        "id": {
+          "const": "ae.formal.run-model-checks"
         },
-        "input": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["specification", "configuration"],
-          "properties": {
-            "specification": { "type": "string", "minLength": 1 },
-            "configuration": { "type": ["string", "null"] }
-          }
+        "version": {
+          "const": "1.0.0"
         },
-        "result": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["outcome", "exitCode", "log"],
-          "properties": {
-            "outcome": { "enum": ["pass", "fail", "timeout", "tool-error"] },
-            "exitCode": { "type": ["integer", "null"] },
-            "signal": { "type": ["string", "null"] },
-            "error": { "type": "string", "minLength": 1 },
-            "log": { "type": "string", "minLength": 1 }
-          }
+        "contract": {
+          "const": "formal-runner-result/v1"
         },
-        "scope": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["kind", "identifier", "properties"],
-          "properties": {
-            "kind": { "enum": ["tla-module", "alloy-model"] },
-            "identifier": { "type": "string", "minLength": 1 },
-            "properties": { "type": "string", "minLength": 1 }
-          }
-        },
-        "assumptions": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "type": "string", "minLength": 1 }
+        "artifactRef": {
+          "const": "scripts/verify/run-model-checks.mjs"
         }
       }
     }

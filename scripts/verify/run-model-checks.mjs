@@ -3,6 +3,12 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import { createHash } from 'crypto';
+import {
+  buildFormalExecutionEvidence,
+  extractToolVersion,
+  getFormalRunnerProducer,
+  normalizeToolVersion,
+} from '../formal/execution-evidence.mjs';
 
 const repoRoot = process.cwd();
 const outDir = path.join(repoRoot, 'artifacts', 'codex');
@@ -29,17 +35,55 @@ async function sha256File(filePath) {
   return createHash('sha256').update(content).digest('hex');
 }
 
-function inferVersionFromUrl(url) {
-  const match = String(url || '').match(/\/v([^/]+)\//u);
-  return match?.[1] || null;
+async function captureCommand(command, args, timeoutMs = 15_000) {
+  return await new Promise((resolve) => {
+    const proc = spawn(command, args, { cwd: repoRoot });
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const settle = (result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(result);
+    };
+    const timer = setTimeout(() => {
+      proc.kill('SIGKILL');
+      settle({ code: null, output: `${stdout}${stderr}`, error: 'version command timed out' });
+    }, timeoutMs);
+    proc.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
+    proc.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+    proc.on('error', (error) => settle({ code: null, output: `${stdout}${stderr}`, error: error.message }));
+    proc.on('exit', (code) => settle({ code, output: `${stdout}${stderr}`, error: null }));
+  });
 }
 
-async function buildToolDescriptor({ name, artifactPath, version }) {
+async function buildToolDescriptor({
+  name,
+  artifactPath,
+  versionCommand,
+  reviewedVersion,
+  expectedArtifactSha256,
+}) {
+  const artifactSha256 = await sha256File(artifactPath);
+  const versionResult = versionCommand
+    ? await captureCommand(versionCommand.command, versionCommand.args)
+    : { code: null, output: '', error: 'no version command' };
+  // TLC prints its authoritative version banner before returning a non-zero code
+  // for the otherwise unsupported `-version` option. A spawn/timeout error is
+  // still rejected, but a parseable tool-owned banner is retained.
+  const cliVersion = versionResult.error ? '' : extractToolVersion(versionResult.output);
+  const version = normalizeToolVersion({
+    version: cliVersion || reviewedVersion,
+    source: cliVersion ? 'cli' : (reviewedVersion ? 'reviewed-pin' : 'unavailable'),
+    artifactSha256,
+    expectedArtifactSha256,
+  });
   return {
     name,
-    version: String(version || '').trim() || 'unknown',
+    ...version,
     artifactPath: path.relative(repoRoot, artifactPath),
-    artifactSha256: await sha256File(artifactPath),
+    artifactSha256,
   };
 }
 
@@ -205,7 +249,11 @@ async function main() {
     status: 'not-run',
     ok: null,
     generatedAtUtc: new Date().toISOString(),
-    producer: 'scripts/verify/run-model-checks.mjs',
+    producer: getFormalRunnerProducer('model'),
+    detectedInputs: 0,
+    executedInputs: 0,
+    skippedInputs: 0,
+    approvedSkipRefs: [],
     tlc: { results: [], skipped: [], errors: [] },
     alloy: { results: [], skipped: [], errors: [] },
   };
@@ -218,9 +266,9 @@ async function main() {
     'docs/formal',
   ]);
   const tlaFiles = uniqueAbs(tlaCandidates.filter((f) => f.endsWith('.tla')));
+  summary.detectedInputs += tlaFiles.length;
   if (tlaFiles.length === 0) {
-    console.log('No TLA+ modules found. Skipping TLC.');
-    summary.tlc.skipped.push('No .tla found');
+    console.log('No TLA+ modules found.');
   } else {
     // Ensure TLC jar
     let tlaToolsUrl = null;
@@ -236,7 +284,9 @@ async function main() {
       tlaTool = await buildToolDescriptor({
         name: 'TLC',
         artifactPath: tlaJar,
-        version: process.env.TLA_TOOLS_VERSION || inferVersionFromUrl(tlaToolsUrl),
+        versionCommand: { command: 'java', args: ['-cp', tlaJar, 'tlc2.TLC', '-version'] },
+        reviewedVersion: process.env.TLA_TOOLS_VERSION,
+        expectedArtifactSha256: process.env.TLA_TOOLS_SHA256,
       });
     } catch (error) {
       summary.tlc.errors.push({
@@ -251,6 +301,7 @@ async function main() {
           const configPath = await resolveTlaConfig(f);
           if (!configPath) {
             summary.tlc.skipped.push(`${moduleName} (${path.relative(repoRoot, f)}): no .cfg found`);
+            summary.skippedInputs += 1;
             continue;
           }
           const res = await runTLC(f, configPath);
@@ -262,29 +313,25 @@ async function main() {
             log: res.log,
             config: path.relative(repoRoot, configPath),
             executionStatus,
-            evidence: {
-              tool: tlaTool,
-              input: {
-                specification: path.relative(repoRoot, f),
-                configuration: path.relative(repoRoot, configPath),
-              },
-              result: {
-                outcome: res.timeout ? 'timeout' : res.toolError ? 'tool-error' : res.ok ? 'pass' : 'fail',
-                exitCode: res.code,
-                signal: res.signal,
-                ...(res.toolError ? { error: res.toolError } : {}),
-                log: res.log,
-              },
-              scope: {
-                kind: 'tla-module',
-                identifier: res.module,
-                properties: 'declared by the TLA+ module and TLC configuration',
-              },
+            ...(res.toolError ? { error: res.toolError } : {}),
+            evidence: buildFormalExecutionEvidence({
+              runner: 'model',
+              toolName: tlaTool.name,
+              toolVersion: tlaTool.version,
+              versionSource: tlaTool.versionSource,
+              artifactSha256: tlaTool.artifactSha256,
+              expectedArtifactSha256: tlaTool.expectedArtifactSha256,
+              inputPaths: [path.relative(repoRoot, f), path.relative(repoRoot, configPath)],
+              resultStatus: res.timeout ? 'timeout' : res.toolError ? 'tool-error' : res.ok ? 'ok' : 'failed',
+              exitCode: res.code,
+              logPath: res.log,
+              scope: `TLC module ${res.module} with configuration ${path.relative(repoRoot, configPath)}`,
               assumptions: [
                 'The result applies only to the supplied TLA+ module and TLC configuration.',
                 'The result does not establish correctness of implementation code outside the model.',
               ],
-            },
+              executionOccurred: true,
+            }),
           });
         } catch (e) {
           summary.tlc.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
@@ -295,8 +342,9 @@ async function main() {
   // Alloy (optional, scaffold)
   const alloyCandidates = await findFiles(['artifacts', 'spec/formal', 'spec', 'specs', 'docs/formal']);
   const alsFiles = uniqueAbs(alloyCandidates.filter((f) => f.endsWith('.als')));
+  summary.detectedInputs += alsFiles.length;
   if (alsFiles.length === 0) {
-    summary.alloy.skipped.push('No .als found');
+    console.log('No Alloy models found.');
   } else {
     if (process.env.ALLOY_RUN_CMD) {
       console.warn('[run-model-checks] Warning: ALLOY_RUN_CMD shell templates are ignored. Use ALLOY_CMD_JSON/ALLOY_CMD_ARGS for argv-safe Alloy arguments.');
@@ -309,7 +357,9 @@ async function main() {
         alloyTool = await buildToolDescriptor({
           name: 'Alloy',
           artifactPath: alloyJar,
-          version: process.env.ALLOY_VERSION,
+          versionCommand: { command: 'java', args: ['-jar', alloyJar, 'version'] },
+          reviewedVersion: process.env.ALLOY_VERSION,
+          expectedArtifactSha256: process.env.ALLOY_ARTIFACT_SHA256,
         });
       } catch (error) {
         summary.alloy.errors.push({
@@ -375,36 +425,39 @@ async function main() {
             timeout: res.timeout,
             log: res.log,
             executionStatus,
-            evidence: {
-              tool: alloyTool,
-              input: { specification: inputFile, configuration: null },
-              result: {
-                outcome: res.timeout ? 'timeout' : res.toolError ? 'tool-error' : res.ok ? 'pass' : 'fail',
-                exitCode: res.code,
-                signal: res.signal,
-                ...(res.toolError ? { error: res.toolError } : {}),
-                log: res.log,
-              },
-              scope: {
-                kind: 'alloy-model',
-                identifier: path.basename(f, '.als'),
-                properties: 'commands and assertions declared by the supplied Alloy model',
-              },
+            ...(res.toolError ? { error: res.toolError } : {}),
+            evidence: buildFormalExecutionEvidence({
+              runner: 'model',
+              toolName: alloyTool.name,
+              toolVersion: alloyTool.version,
+              versionSource: alloyTool.versionSource,
+              artifactSha256: alloyTool.artifactSha256,
+              expectedArtifactSha256: alloyTool.expectedArtifactSha256,
+              inputPaths: [inputFile],
+              resultStatus: res.timeout ? 'timeout' : res.toolError ? 'tool-error' : res.ok ? 'ok' : 'failed',
+              exitCode: res.code,
+              logPath: res.log,
+              scope: `Alloy model ${path.basename(f, '.als')} commands and assertions`,
               assumptions: [
                 'The result applies only to the bounds and commands declared by the supplied Alloy model.',
                 'The result does not establish correctness of implementation code outside the model.',
               ],
-            },
+              executionOccurred: true,
+            }),
           });
         } catch (e) {
           summary.alloy.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
         }
       }
     } else {
-      summary.alloy.skipped.push('No Alloy jar available; detection only.');
+      for (const file of alsFiles) {
+        summary.alloy.skipped.push(`${path.relative(repoRoot, file)}: no Alloy jar available`);
+        summary.skippedInputs += 1;
+      }
     }
   }
   const executedResults = [...summary.tlc.results, ...summary.alloy.results];
+  summary.executedInputs = executedResults.filter((result) => result.executionStatus === 'executed').length;
   const errorCount = summary.tlc.errors.length + summary.alloy.errors.length;
   if (executedResults.length > 0) {
     const actualExecutions = executedResults.filter((result) => result.executionStatus === 'executed');

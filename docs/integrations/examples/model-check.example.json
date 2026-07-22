@@ -4,15 +4,24 @@
   "status": "not-run",
   "ok": null,
   "generatedAtUtc": "2026-07-22T00:00:00.000Z",
-  "producer": "scripts/verify/run-model-checks.mjs",
+  "producer": {
+    "id": "ae.formal.run-model-checks",
+    "version": "1.0.0",
+    "contract": "formal-runner-result/v1",
+    "artifactRef": "scripts/verify/run-model-checks.mjs"
+  },
+  "detectedInputs": 0,
+  "executedInputs": 0,
+  "skippedInputs": 0,
+  "approvedSkipRefs": [],
   "tlc": {
     "results": [],
-    "skipped": ["No .tla found"],
+    "skipped": [],
     "errors": []
   },
   "alloy": {
     "results": [],
-    "skipped": ["No .als found"],
+    "skipped": [],
     "errors": []
   }
 }

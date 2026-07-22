@@ -136,6 +136,7 @@ jobs:
           node --version
           java -version
           npm run verify:model || true
+          node scripts/verify/enforce-model-check-report.mjs --contract-only artifacts/codex/model-check.json
       - name: Upload model-check artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -417,6 +418,9 @@ jobs:
       actions: read
     needs: [model-check]
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Determine enforcement from labels
         if: >-
           ${{
@@ -434,23 +438,7 @@ jobs:
         run: |
           FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' | head -1)
           if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then printf "%s\n" "No model-check.json found"; exit 1; fi
-          if ! jq -e '
-            ((.tlc.results // []) + (.alloy.results // [])) as $results
-            | .schemaVersion == "model-check-report/v1"
-              and .status == "executed"
-              and .ok == true
-              and ($results | length) > 0
-              and all($results[]; .executionStatus == "executed" and .ok == true and .evidence.result.outcome == "pass")
-          ' "$FILE" >/dev/null; then
-            printf "%s\n" "Formal enforcement requires at least one successful actual checker execution"
-            exit 1
-          fi
-          tlc_fail=$(jq -r '[.tlc.results[] | select(.ok!=true)] | length' "$FILE")
-          alloy_fail=$(jq -r '[.alloy.results[] | select(.ok!=true)] | length' "$FILE")
-          if [ "$tlc_fail" != "0" ] || [ "$alloy_fail" != "0" ]; then
-            printf "%s\n" "Formal enforcement failed: tlc_fail=$tlc_fail alloy_fail=$alloy_fail"
-            exit 1
-          fi
+          node scripts/verify/enforce-model-check-report.mjs "$FILE"
 
   formal-conformance-optin:
     if: ${{ github.event_name == 'pull_request' || inputs.trigger == 'pull_request' }}

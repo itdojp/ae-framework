@@ -63,6 +63,7 @@ function validateSchema(schemaPath, fixturePaths, semanticValidate = null) {
 function preloadSharedSchemas() {
   const sharedSchemas = [
     'schema/artifact-metadata.schema.json',
+    'schema/formal-execution-evidence-v1.schema.json',
   ];
   for (const schemaPath of sharedSchemas) {
     const schema = loadJson(schemaPath);
@@ -541,6 +542,11 @@ const checks = [
     schema: 'schema/automation-observability-v1.schema.json',
     fixtures: ['fixtures/automation/sample.automation-observability-v1.json'],
     label: 'Automation report v1 schema validation'
+  },
+  {
+    schema: 'schema/formal-runner-output-v1.schema.json',
+    fixtures: ['fixtures/formal/sample.formal-runner-output-v1.json'],
+    label: 'Formal runner output v1 schema validation'
   },
   {
     schema: 'schema/formal-summary-v2.schema.json',

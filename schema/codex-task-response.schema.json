@@ -57,12 +57,45 @@
         "scaffold": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["status", "artifactStatus", "validationStatus"],
+          "required": ["status", "artifactStatus", "validationStatus", "materializationStatus", "artifacts"],
           "properties": {
             "status": { "const": "generated" },
             "artifactStatus": { "const": "draft" },
             "validationStatus": {
               "enum": ["valid", "invalid", "pending"]
+            },
+            "materializationStatus": {
+              "enum": ["written", "partial", "failed"]
+            },
+            "artifacts": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "allOf": [
+                { "contains": { "properties": { "kind": { "const": "tla" } }, "required": ["kind"] }, "minContains": 1, "maxContains": 1 },
+                { "contains": { "properties": { "kind": { "const": "openapi" } }, "required": ["kind"] }, "minContains": 1, "maxContains": 1 }
+              ],
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "status"],
+                "properties": {
+                  "kind": { "enum": ["tla", "openapi"] },
+                  "status": { "enum": ["written", "failed"] },
+                  "path": { "type": "string", "minLength": 1 },
+                  "message": { "type": "string", "minLength": 1, "maxLength": 160 }
+                },
+                "allOf": [
+                  {
+                    "if": { "properties": { "status": { "const": "written" } }, "required": ["status"] },
+                    "then": { "required": ["path"], "not": { "required": ["message"] } }
+                  },
+                  {
+                    "if": { "properties": { "status": { "const": "failed" } }, "required": ["status"] },
+                    "then": { "required": ["message"], "not": { "required": ["path"] } }
+                  }
+                ]
+              }
             },
             "artifactPath": {
               "type": "string",

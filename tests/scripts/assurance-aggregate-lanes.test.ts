@@ -68,9 +68,52 @@ const createVerifyLiteSummary = (overrides = {}) => ({
   ...overrides,
 });
 
+const createExecutionEvidence = ({
+  runner,
+  tool,
+  version,
+  input,
+  logPath,
+}: {
+  runner: 'conformance' | 'lean' | 'tla';
+  tool: string;
+  version: string;
+  input: string[];
+  logPath: string;
+}) => ({
+  schemaVersion: 'formal-runner-result/v1',
+  artifactStatus: 'execution-report',
+  producer: {
+    id: `ae.formal.verify-${runner}`,
+    version: '1.0.0',
+    contract: 'formal-runner-result/v1',
+    artifactRef: `scripts/formal/verify-${runner}.mjs`,
+  },
+  provenance: 'adapter-verified',
+  adapter: {
+    id: 'ae.formal.summary-generator',
+    version: '1.0.0',
+    contract: 'formal-summary-adapter/v1',
+    artifactRef: 'scripts/formal/generate-formal-summary-v1.mjs',
+  },
+  executionOccurred: true,
+  tool: { name: tool, version, versionStatus: 'verified', versionSource: 'cli' },
+  input,
+  result: { status: 'ok', code: 0, logPath },
+  scope: `Reviewed verification scope for ${input.join(', ')}`,
+  assumptions: ['Only the supplied inputs and declared runner scope are covered.'],
+});
+
 const createFormalSummary = () => ({
   schemaVersion: 'formal-summary/v2',
   contractId: 'formal-summary.v2',
+  artifactStatus: 'execution-report',
+  producer: {
+    id: 'ae.formal.summary-generator',
+    version: '1.0.0',
+    contract: 'formal-summary-adapter/v1',
+    artifactRef: 'scripts/formal/generate-formal-summary-v1.mjs',
+  },
   tool: 'aggregate',
   status: 'ok',
   ok: true,
@@ -99,14 +142,14 @@ const createFormalSummary = () => ({
       durationMs: 15,
       logPath: 'artifacts/hermetic-reports/conformance/summary.json',
       reason: null,
-      executionEvidence: {
-        provenance: 'runner-reported',
-        tool: { name: 'conformance', version: '1.0.0' },
+      artifactStatus: 'execution-report',
+      executionEvidence: createExecutionEvidence({
+        runner: 'conformance',
+        tool: 'ae-framework conformance validator',
+        version: '1.0.0',
         input: ['observability/trace-schema.yaml'],
-        result: { status: 'ok', code: 0, logPath: 'artifacts/hermetic-reports/conformance/summary.json' },
-        scope: 'Recorded conformance trace scope',
-        assumptions: ['Only the recorded trace and declared conformance rules are covered.'],
-      },
+        logPath: 'artifacts/hermetic-reports/conformance/summary.json',
+      }),
     },
     {
       name: 'lean',
@@ -115,50 +158,16 @@ const createFormalSummary = () => ({
       durationMs: 7,
       logPath: 'artifacts/formal/lean-output.txt',
       reason: null,
-      executionEvidence: {
-        provenance: 'runner-reported',
-        tool: { name: 'lean', version: '4.19.0' },
+      artifactStatus: 'execution-report',
+      executionEvidence: createExecutionEvidence({
+        runner: 'lean',
+        tool: 'Lean 4 / Lake',
+        version: '4.19.0',
         input: ['spec/lean'],
-        result: { status: 'ok', code: 0, logPath: 'artifacts/formal/lean-output.txt' },
-        scope: 'Lean project build scope',
-        assumptions: ['Only declarations in the recorded Lean project are covered.'],
-      },
+        logPath: 'artifacts/formal/lean-output.txt',
+      }),
     },
   ],
-});
-
-const createConformanceReport = () => ({
-  schemaVersion: '1.0.0',
-  generatedAt: '2026-03-08T09:06:00.000Z',
-  status: 'success',
-  runsAnalyzed: 2,
-  statusBreakdown: { pass: 2, fail: 0, skip: 0, error: 0, timeout: 0 },
-  totals: {
-    rulesExecuted: 4,
-    rulesPassed: 4,
-    rulesFailed: 0,
-    rulesErrored: 0,
-    rulesSkipped: 0,
-    totalViolations: 0,
-    uniqueRules: 4,
-    uniqueViolationRules: 0,
-  },
-  severityTotals: { critical: 0, major: 0, minor: 0, info: 0, warning: 0 },
-  categoryTotals: {
-    data_validation: 0,
-    api_contract: 0,
-    business_logic: 0,
-    security_policy: 0,
-    performance_constraint: 0,
-    resource_usage: 0,
-    state_invariant: 0,
-    behavioral_constraint: 0,
-    integration_requirement: 0,
-    compliance_rule: 0,
-  },
-  severityTrends: [],
-  topViolations: [],
-  inputs: [],
 });
 
 const createCounterexample = (overrides = {}) => ({
@@ -225,7 +234,6 @@ describe.sequential('assurance aggregate lanes script', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-aggregate-success-'));
     const verifyLitePath = join(sandbox, 'verify-lite-run-summary.json');
     const formalSummaryPath = join(sandbox, 'formal-summary-v2.json');
-    const conformanceReportPath = join(sandbox, 'conformance-report.json');
     const counterexamplePath = join(sandbox, 'counterexample.json');
     const evidenceManifestPath = join(sandbox, 'evidence-manifest.json');
     const outputJson = join(sandbox, 'assurance-summary.json');
@@ -234,7 +242,6 @@ describe.sequential('assurance aggregate lanes script', () => {
     try {
       writeJson(verifyLitePath, createVerifyLiteSummary());
       writeJson(formalSummaryPath, createFormalSummary());
-      writeJson(conformanceReportPath, createConformanceReport());
       writeJson(counterexamplePath, createCounterexample());
       writeJson(
         evidenceManifestPath,
@@ -269,8 +276,6 @@ describe.sequential('assurance aggregate lanes script', () => {
         verifyLitePath,
         '--formal-summary',
         formalSummaryPath,
-        '--conformance-report',
-        conformanceReportPath,
         '--counterexample',
         counterexamplePath,
         '--evidence-manifest',
@@ -397,6 +402,148 @@ describe.sequential('assurance aggregate lanes script', () => {
           expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: incompleteFormalSummaryPath }),
         ]),
       );
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps a complete-looking direct conformance report report-only', () => {
+    mkdirSync(localTmpRoot, { recursive: true });
+    const sandbox = mkdtempSync(join(localTmpRoot, 'ae-assurance-direct-conformance-'));
+    try {
+      const profile = join(sandbox, 'profile.json');
+      const report = join(sandbox, 'conformance-report.json');
+      const outputJson = join(sandbox, 'assurance-summary.json');
+      writeJson(profile, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'direct-conformance-report-only',
+        claims: [{
+          id: 'conformance-executed',
+          statement: 'Conformance execution is independently verified.',
+          criticality: 'high',
+          targetLevel: 'A2',
+          minIndependentSources: 1,
+          requiredLanes: ['model'],
+          requiredEvidenceKinds: ['conformance'],
+        }],
+      });
+      writeJson(report, {
+        schemaVersion: '1.0.0',
+        status: 'success',
+        runsAnalyzed: 1,
+        executionEvidence: {
+          schemaVersion: 'formal-runner-result/v1',
+          artifactStatus: 'execution-report',
+          producer: {
+            id: 'ae.formal.verify-conformance',
+            version: '1.0.0',
+            contract: 'formal-runner-result/v1',
+            artifactRef: 'scripts/formal/verify-conformance.mjs',
+          },
+          provenance: 'runner-reported',
+          executionOccurred: true,
+          tool: { name: 'conformance', version: '1.0.0', versionStatus: 'verified', versionSource: 'package-manifest' },
+          input: ['samples/conformance/sample-traces.json'],
+          result: { status: 'ok', code: 0, logPath: 'artifacts/hermetic-reports/conformance/summary.json' },
+          scope: 'Complete-looking hand-authored report',
+          assumptions: ['The supplied report is not adapter-verified.'],
+        },
+      });
+      const result = runScript([
+        '--assurance-profile', profile,
+        '--conformance-report', report,
+        '--generated-at', deterministicGeneratedAt,
+        '--output-json', outputJson,
+        '--output-md', join(sandbox, 'assurance-summary.md'),
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const assurance = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(assurance.claims[0].observedLanes).toEqual([]);
+      expect(assurance.warnings).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: report }),
+      ]));
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ['runner-reported provenance without adapter verification', (summary: any) => {
+      summary.results[0].executionEvidence.provenance = 'runner-reported';
+      delete summary.results[0].executionEvidence.adapter;
+    }],
+    ['verified version with unavailable source', (summary: any) => {
+      summary.results[0].executionEvidence.tool.version = '6.2.0';
+      summary.results[0].executionEvidence.tool.versionStatus = 'verified';
+      summary.results[0].executionEvidence.tool.versionSource = 'unavailable';
+    }],
+    ['unknown tool version', (summary: any) => {
+      summary.results[0].executionEvidence.tool.version = 'unknown';
+      summary.results[0].executionEvidence.tool.versionStatus = 'unknown';
+      summary.results[0].executionEvidence.tool.versionSource = 'unavailable';
+    }],
+    ['version pin mismatch', (summary: any) => {
+      summary.results[0].executionEvidence.tool.versionStatus = 'mismatch';
+      summary.results[0].executionEvidence.tool.versionSource = 'reviewed-pin';
+      summary.results[0].executionEvidence.tool.artifactSha256 = 'a'.repeat(64);
+      summary.results[0].executionEvidence.tool.expectedArtifactSha256 = 'b'.repeat(64);
+    }],
+    ['unknown runner producer', (summary: any) => {
+      summary.results[0].executionEvidence.producer = {
+        id: 'ae.formal.fake-runner',
+        version: '1.0.0',
+        contract: 'formal-runner-result/v1',
+        artifactRef: 'scripts/formal/fake-runner.mjs',
+      };
+    }],
+    ['schema-invalid execution evidence', (summary: any) => {
+      summary.results[0].executionEvidence.result.code = '0';
+    }],
+    ['missing result code and log', (summary: any) => {
+      delete summary.results[0].executionEvidence.result.code;
+      delete summary.results[0].executionEvidence.result.logPath;
+    }],
+    ['omitted result artifactStatus', (summary: any) => {
+      delete summary.results[0].artifactStatus;
+    }],
+  ])('keeps %s as an evidence gap rather than a model claim', (_name, mutate) => {
+    mkdirSync(localTmpRoot, { recursive: true });
+    const sandbox = mkdtempSync(join(localTmpRoot, 'ae-assurance-formal-closed-contract-'));
+    try {
+      const profile = join(sandbox, 'profile.json');
+      const formalSummary = join(sandbox, 'formal-summary.json');
+      const outputJson = join(sandbox, 'assurance-summary.json');
+      writeJson(profile, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'closed-formal-contract',
+        claims: [{
+          id: 'closed-formal-evidence',
+          statement: 'A reviewed formal runner produced eligible evidence.',
+          criticality: 'high',
+          targetLevel: 'A2',
+          minIndependentSources: 1,
+          requiredLanes: ['model'],
+          requiredEvidenceKinds: ['conformance'],
+        }],
+      });
+      const summary = createFormalSummary();
+      summary.results = [summary.results[0]];
+      mutate(summary);
+      writeJson(formalSummary, summary);
+      const result = runScript([
+        '--assurance-profile', profile,
+        '--formal-summary', formalSummary,
+        '--generated-at', deterministicGeneratedAt,
+        '--output-json', outputJson,
+        '--output-md', join(sandbox, 'assurance-summary.md'),
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const assurance = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(assurance.claims[0].observedLanes).toEqual([]);
+      expect(assurance.laneCoverage.model.observedClaims).toBe(0);
+      expect(assurance.warnings).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: formalSummary }),
+      ]));
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

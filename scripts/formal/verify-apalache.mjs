@@ -9,6 +9,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { computeOkFromOutput } from './heuristics.mjs';
 import { resolveRepoRelativeFileInput } from './input-policy.mjs';
+import { buildFormalRunnerOutput, buildLegacyFormalExecutionEvidence, extractToolVersion } from './execution-evidence.mjs';
 
 function parseArgs(argv){
   const args = { _: [] };
@@ -238,12 +239,32 @@ export function main(argv = process.argv){
     }
     // Try to get version string
     const versionRes = runCommand(apalacheCmd, ['version']);
-    version = versionRes.output.trim().split(/\r?\n/)[0] || '';
+    version = extractToolVersion(versionRes.output);
     toolPath = resolveCommandPath(apalacheCmd);
   }
 
   // Persist raw output for artifact consumers
   try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
+
+  const summaryOk = ran ? computeOkFromOutput(output) : null;
+  const relativeInput = path.relative(repoRoot, absFile);
+  const relativeLog = path.relative(repoRoot, outLog);
+  const executionEvidence = buildLegacyFormalExecutionEvidence({
+    runner: 'apalache',
+    toolName: 'Apalache',
+    toolVersion: version,
+    versionSource: version ? 'cli' : 'unavailable',
+    inputPaths: [relativeInput, ...(hasCfg ? [path.relative(repoRoot, absCfg)] : [])],
+    status,
+    ok: summaryOk,
+    ran,
+    exitCode,
+    logPath: relativeLog,
+    scope: `Apalache state exploration of ${relativeInput}`,
+    assumptions: [
+      'The result applies only to the supplied TLA+ module, configuration, and Apalache bounds.',
+    ],
+  });
 
   const summary = {
     tool: 'apalache',
@@ -253,7 +274,7 @@ export function main(argv = process.argv){
     ran,
     status,
     version: version || null,
-    ok: ran ? (computeOkFromOutput(output)) : null,
+    ok: summaryOk,
     exitCode,
     hints: ran ? ( /success|ok|no\s+(?:errors|counterexamples?)/i.test(output) ? 'success-indicators-found' : null ) : null,
     timeMs: timeMs || null,
@@ -267,7 +288,8 @@ export function main(argv = process.argv){
     errorSnippet: ran ? extractErrorSnippet(output) : null,
     // capped raw output preview (full log saved to outputFile)
     output: output ? String(output).slice(0, OUTPUT_CLAMP) : '',
-    outputFile: path.relative(repoRoot, outLog)
+    outputFile: relativeLog,
+    runnerResult: buildFormalRunnerOutput({ runner: 'apalache', executionEvidence }),
   };
 
   fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));

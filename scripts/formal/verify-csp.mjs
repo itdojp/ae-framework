@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
+import { buildFormalRunnerOutput, buildLegacyFormalExecutionEvidence, extractToolVersion } from './execution-evidence.mjs';
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -127,6 +128,8 @@ let backend = null;
 let detailsFile = null;
 let resultStatus = null;
 let forceWriteSummary = true;
+let toolVersion = '';
+let versionSource = 'unavailable';
 
 if (!fs.existsSync(absFile)) {
   status = 'file_not_found';
@@ -146,6 +149,8 @@ if (!fs.existsSync(absFile)) {
     output = clamp(outputFull);
     backend = 'CSP_RUN_CMD';
   } else if (commandExists('cspx')) {
+    toolVersion = extractToolVersion(runCommand('cspx', ['--version']).output);
+    versionSource = toolVersion ? 'cli' : 'unavailable';
     // cspx (OSS): CI-first CSPM checker with JSON output.
     const rawMode = args.mode || 'typecheck';
     let mode = rawMode.toLowerCase();
@@ -223,6 +228,8 @@ if (!fs.existsSync(absFile)) {
       }
     }
   } else if (commandExists('refines')) {
+    toolVersion = extractToolVersion(runCommand('refines', ['--version']).output);
+    versionSource = toolVersion ? 'cli' : 'unavailable';
     // FDR (commercial): allow local runs when installed.
     const rawMode = args.mode || 'typecheck';
     let mode = rawMode.toLowerCase();
@@ -247,6 +254,8 @@ if (!fs.existsSync(absFile)) {
     output = clamp(outputFull);
     backend = `refines:${mode}`;
   } else if (commandExists('cspmchecker')) {
+    toolVersion = extractToolVersion(runCommand('cspmchecker', ['--version']).output);
+    versionSource = toolVersion ? 'cli' : 'unavailable';
     // libcspm/cspmchecker (OSS): typecheck-only (no refinement).
     const t0 = Date.now();
     const res = runCommand('cspmchecker', [absFile]);
@@ -312,6 +321,24 @@ if (forceWriteSummary) {
   fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 }
 const finalSummary = readJsonSafe(outFile) || {};
+const executionEvidence = buildLegacyFormalExecutionEvidence({
+  runner: 'csp',
+  toolName: finalSummary.backend || backend || 'CSP',
+  toolVersion,
+  versionSource,
+  inputPaths: [normalizeArtifactPath(absFile, { repoRoot }) ?? path.relative(repoRoot, absFile)],
+  status: finalSummary.status || status,
+  ok: typeof finalSummary.ok === 'boolean' ? finalSummary.ok : ok,
+  ran: finalSummary.ran === true || ran,
+  exitCode: Number.isInteger(finalSummary.exitCode) ? finalSummary.exitCode : exitCode,
+  logPath: normalizeArtifactPath(outLog, { repoRoot }),
+  scope: `CSP verification of ${normalizeArtifactPath(absFile, { repoRoot }) ?? path.relative(repoRoot, absFile)}`,
+  assumptions: [
+    'The result applies only to the supplied CSP model, selected backend, and requested mode.',
+  ],
+});
+finalSummary.runnerResult = buildFormalRunnerOutput({ runner: 'csp', executionEvidence });
+fs.writeFileSync(outFile, JSON.stringify(finalSummary, null, 2));
 console.log(`CSP summary written: ${path.relative(repoRoot, outFile)}`);
 console.log(`- file=${finalSummary.file || path.relative(repoRoot, absFile)} status=${finalSummary.status || status}${(finalSummary.backend || backend) ? ` backend=${finalSummary.backend || backend}` : ''}`);
 process.exit(0);

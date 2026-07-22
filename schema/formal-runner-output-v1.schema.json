@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/formal-runner-output-v1.schema.json",
+  "title": "Formal Runner Output Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "artifactStatus",
+    "producer",
+    "executionEvidence"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "formal-runner-output/v1"
+    },
+    "contractId": {
+      "const": "formal-runner-output.v1"
+    },
+    "artifactStatus": {
+      "enum": [
+        "execution-report",
+        "not-executed"
+      ]
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "contract",
+        "artifactRef"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^ae\\.formal\\.[a-z0-9-]+$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "contract": {
+          "const": "formal-runner-result/v1"
+        },
+        "artifactRef": {
+          "type": "string",
+          "pattern": "^scripts/(formal|verify)/[a-z0-9-]+\\.mjs$"
+        }
+      }
+    },
+    "executionEvidence": {
+      "allOf": [
+        {
+          "$ref": "https://ae-framework/schema/formal-execution-evidence-v1.schema.json"
+        },
+        {
+          "properties": {
+            "provenance": {
+              "const": "runner-reported"
+            }
+          },
+          "required": [
+            "provenance"
+          ],
+          "not": {
+            "required": [
+              "adapter"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

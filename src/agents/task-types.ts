@@ -60,6 +60,13 @@ export interface TaskResponse {
       status: 'generated';
       artifactStatus: 'draft';
       validationStatus: 'valid' | 'invalid' | 'pending';
+      materializationStatus: 'written' | 'partial' | 'failed';
+      artifacts: Array<{
+        kind: 'tla' | 'openapi';
+        status: 'written' | 'failed';
+        path?: string;
+        message?: string;
+      }>;
       artifactPath?: string;
     };
     modelChecking: {

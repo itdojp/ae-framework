@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "formal-runner-output/v1",
+  "contractId": "formal-runner-output.v1",
+  "artifactStatus": "execution-report",
+  "producer": {
+    "id": "ae.formal.verify-tla",
+    "version": "1.0.0",
+    "contract": "formal-runner-result/v1",
+    "artifactRef": "scripts/formal/verify-tla.mjs"
+  },
+  "executionEvidence": {
+    "schemaVersion": "formal-runner-result/v1",
+    "artifactStatus": "execution-report",
+    "producer": {
+      "id": "ae.formal.verify-tla",
+      "version": "1.0.0",
+      "contract": "formal-runner-result/v1",
+      "artifactRef": "scripts/formal/verify-tla.mjs"
+    },
+    "provenance": "runner-reported",
+    "executionOccurred": true,
+    "tool": {
+      "name": "TLC",
+      "version": "2.20.0",
+      "versionStatus": "verified",
+      "versionSource": "cli"
+    },
+    "input": ["spec/tla/DomainSpec.tla"],
+    "result": {
+      "status": "ok",
+      "code": 0,
+      "logPath": "artifacts/hermetic-reports/formal/tla-output.txt"
+    },
+    "scope": "TLC verification of the supplied TLA+ module.",
+    "assumptions": ["The result covers only the supplied module and runner configuration."]
+  }
+}

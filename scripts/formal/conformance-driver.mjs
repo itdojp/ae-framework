@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildFormalRunnerOutput, buildLegacyFormalExecutionEvidence, readPackageVersion } from './execution-evidence.mjs';
 
 function readJson(p){ try { return JSON.parse(fs.readFileSync(p,'utf-8')); } catch { return undefined; } }
 function writeJson(p,obj){ fs.mkdirSync(path.dirname(p),{recursive:true}); fs.writeFileSync(p, JSON.stringify(obj,null,2)); }
@@ -10,13 +11,16 @@ const specSummary = process.env.CONFORMANCE_SPEC || 'artifacts/hermetic-reports/
 const runtimeHooksPath = process.env.RUNTIME_HOOKS || process.env.CONFORMANCE_RUNTIME_HOOKS || 'artifacts/hermetic-reports/runtime/hooks.json';
 const out = process.env.CONFORMANCE_OUTPUT || 'artifacts/hermetic-reports/formal/conformance-summary.json';
 
+const tracePresent = fs.existsSync(tracePath);
+const specPresent = fs.existsSync(specSummary);
 const trace = readJson(tracePath) || {};
 const spec = readJson(specSummary) || {};
 const hooks = readJson(runtimeHooksPath) || undefined;
 
 const t0 = Date.now();
 const violated = Array.isArray(trace.violatedInvariants) ? trace.violatedInvariants : [];
-const ok = violated.length === 0;
+const ran = tracePresent && specPresent;
+const ok = ran ? violated.length === 0 : null;
 // Compare runtime hooks with replay summary if both present (best-effort)
 let hooksInfo = null;
 let hooksCompare = null;
@@ -59,8 +63,10 @@ try {
 } catch {}
 const summary = {
   tool: 'conformance-driver',
-  ran: true,
+  ran,
+  status: ran ? (ok ? 'ran' : 'failed') : 'skipped',
   ok,
+  exitCode: ran ? (ok ? 0 : 1) : null,
   timeMs: Date.now() - t0,
   errors: violated.map(v => (typeof v === 'string' ? v : JSON.stringify(v))).slice(0, 20),
   traceId: trace.traceId || null,
@@ -73,6 +79,24 @@ const summary = {
   hookReplayMatchRate: hooksCompare?.matchRate ?? null,
   hookStats
 };
+
+const executionEvidence = buildLegacyFormalExecutionEvidence({
+  runner: 'conformanceDriver',
+  toolName: 'ae-framework conformance driver',
+  toolVersion: readPackageVersion(process.cwd()),
+  versionSource: 'package-manifest',
+  inputPaths: [tracePath, specSummary, ...(hooks ? [runtimeHooksPath] : [])],
+  status: summary.status,
+  ok: summary.ok,
+  ran: summary.ran,
+  exitCode: summary.exitCode,
+  logPath: out,
+  scope: `Conformance comparison of ${tracePath} against ${specSummary}`,
+  assumptions: [
+    'The result covers only the supplied replay trace, formal summary, and optional runtime hooks.',
+  ],
+});
+summary.runnerResult = buildFormalRunnerOutput({ runner: 'conformanceDriver', executionEvidence });
 
 writeJson(out, summary);
 console.log(`conformance summary written: ${out} ok=${summary.ok}`);

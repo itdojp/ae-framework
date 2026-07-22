@@ -3,6 +3,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildFormalRunnerOutput, buildLegacyFormalExecutionEvidence, extractToolVersion } from './execution-evidence.mjs';
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -77,6 +78,8 @@ let ran = false;
 let exitCode = null;
 let ok = null;
 let timeMs = null;
+let toolVersion = '';
+let versionSource = 'unavailable';
 
 if (!file) {
   status = 'no_file';
@@ -84,6 +87,8 @@ if (!file) {
   status = 'file_not_found';
   output = `SMT-LIB file not found: ${file}`;
 } else if (solver === 'z3' && commandExists('z3')) {
+  toolVersion = extractToolVersion(runCommand('z3', ['--version']).output);
+  versionSource = toolVersion ? 'cli' : 'unavailable';
   const baseCmd = { cmd: 'z3', args: ['-smt2', file] };
   const runSpec = (timeoutSec && haveTimeout)
     ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
@@ -111,6 +116,8 @@ if (!file) {
     }
   }
 } else if (solver === 'cvc5' && commandExists('cvc5')) {
+  toolVersion = extractToolVersion(runCommand('cvc5', ['--version']).output);
+  versionSource = toolVersion ? 'cli' : 'unavailable';
   const baseCmd = { cmd: 'cvc5', args: ['--lang=smt2', file] };
   const runSpec = (timeoutSec && haveTimeout)
     ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
@@ -144,6 +151,25 @@ if (!file) {
 
 try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
 
+const relativeInput = file ? path.relative(repoRoot, path.resolve(repoRoot, file)) : 'SMT input not supplied';
+const relativeLog = path.relative(repoRoot, outLog);
+const executionEvidence = buildLegacyFormalExecutionEvidence({
+  runner: 'smt',
+  toolName: solver,
+  toolVersion,
+  versionSource,
+  inputPaths: [relativeInput],
+  status,
+  ok,
+  ran,
+  exitCode,
+  logPath: relativeLog,
+  scope: `SMT solver evaluation of ${relativeInput}`,
+  assumptions: [
+    'The solver result applies only to the supplied SMT-LIB input and selected solver.',
+  ],
+});
+
 const summary = {
   solver,
   file: file || null,
@@ -154,7 +180,8 @@ const summary = {
   timeMs,
   timestamp: new Date().toISOString(),
   output: output.slice(0, 4000),
-  outputFile: path.relative(repoRoot, outLog),
+  outputFile: relativeLog,
+  runnerResult: buildFormalRunnerOutput({ runner: 'smt', executionEvidence }),
 };
 
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));

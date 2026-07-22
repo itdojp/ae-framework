@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { createCodexTaskAdapter, finalizeTaskResponse, type Phase } from '../../../src/agents/codex-task-adapter';
@@ -183,7 +183,12 @@ describe.sequential('finalizeTaskResponse', () => {
         scaffold: {
           status: 'generated',
           artifactStatus: 'draft',
+          materializationStatus: 'written',
           artifactPath: expect.any(String),
+          artifacts: [
+            { kind: 'tla', status: 'written', path: expect.any(String) },
+            { kind: 'openapi', status: 'written', path: expect.any(String) },
+          ],
         },
         modelChecking: {
           status: 'not-run',
@@ -194,6 +199,10 @@ describe.sequential('finalizeTaskResponse', () => {
       expect(existsSync(join(artifactDir, 'formal.tla'))).toBe(true);
       expect(existsSync(join(artifactDir, 'openapi.yaml'))).toBe(true);
       expect(existsSync(join(artifactDir, 'model-check.json'))).toBe(false);
+      for (const artifact of response.formal?.scaffold.artifacts ?? []) {
+        expect(artifact.status).toBe('written');
+        expect(artifact.path && existsSync(resolve(artifact.path))).toBe(true);
+      }
 
       const persisted = JSON.parse(readFileSync(join(artifactDir, 'result-formal.json'), 'utf8'));
       expect(persisted.response.formal.modelChecking).toMatchObject({
@@ -206,6 +215,74 @@ describe.sequential('finalizeTaskResponse', () => {
       } else {
         process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
       }
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
+  });
+
+  it('reports directory creation failure without nonexistent paths or private absolute paths', async () => {
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const parent = mkdtempSync(join(tmpRoot, 'codex-formal-dir-failure-'));
+    const blocker = join(parent, 'not-a-directory');
+    writeFileSync(blocker, 'block', 'utf8');
+    const artifactDir = join(blocker, 'child');
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      const response = await createCodexTaskAdapter().handleTask({
+        description: 'Generate formal scaffold.',
+        prompt: 'Inventory never becomes negative.',
+        subagent_type: 'formal',
+        context: {},
+      });
+      expect(response.shouldBlockProgress).toBe(true);
+      expect(response.blockingReason).toBe('formal-artifact-materialization-failed');
+      expect(response.formal?.scaffold.materializationStatus).toBe('failed');
+      expect(response.formal?.scaffold).not.toHaveProperty('artifactPath');
+      expect(response.formal?.scaffold.artifacts).toEqual([
+        { kind: 'tla', status: 'failed', message: expect.stringContaining('failed') },
+        { kind: 'openapi', status: 'failed', message: expect.stringContaining('failed') },
+      ]);
+      expect(JSON.stringify(response)).not.toContain(artifactDir);
+      expect(existsSync(join(artifactDir, 'formal.tla'))).toBe(false);
+      expect(existsSync(join(artifactDir, 'openapi.yaml'))).toBe(false);
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ['tla', 'formal.tla', 'openapi.yaml'],
+    ['openapi', 'openapi.yaml', 'formal.tla'],
+  ] as const)('reports a partial write when the %s artifact cannot be written', async (failedKind, blockedName, writtenName) => {
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, `codex-formal-${failedKind}-failure-`));
+    mkdirSync(join(artifactDir, blockedName));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      const response = await createCodexTaskAdapter().handleTask({
+        description: 'Generate formal scaffold.',
+        prompt: 'Inventory never becomes negative.',
+        subagent_type: 'formal',
+        context: {},
+      });
+      expect(response.shouldBlockProgress).toBe(false);
+      expect(response.formal?.scaffold.materializationStatus).toBe('partial');
+      const failed = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === failedKind);
+      const written = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind !== failedKind);
+      expect(failed).toMatchObject({ kind: failedKind, status: 'failed', message: expect.stringContaining('failed') });
+      expect(failed).not.toHaveProperty('path');
+      expect(written).toMatchObject({ status: 'written', path: expect.any(String) });
+      expect(written?.path && existsSync(resolve(written.path))).toBe(true);
+      expect(existsSync(join(artifactDir, writtenName))).toBe(true);
+      expect(JSON.stringify(response)).not.toContain(artifactDir);
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
       rmSync(artifactDir, { recursive: true, force: true });
     }
   });

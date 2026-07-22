@@ -70,7 +70,17 @@ Error response format (machine-readable):
     "warnings": ["string"],
     "shouldBlockProgress": true,
     "formal": {
-      "scaffold": { "status": "generated", "artifactStatus": "draft", "validationStatus": "valid", "artifactPath": "artifacts/codex/formal.tla" },
+      "scaffold": {
+        "status": "generated",
+        "artifactStatus": "draft",
+        "validationStatus": "valid",
+        "materializationStatus": "written",
+        "artifactPath": "artifacts/codex/formal.tla",
+        "artifacts": [
+          { "kind": "tla", "status": "written", "path": "artifacts/codex/formal.tla" },
+          { "kind": "openapi", "status": "written", "path": "artifacts/codex/openapi.yaml" }
+        ]
+      },
       "modelChecking": { "status": "not-run", "evidenceArtifact": null, "runnerCommands": ["pnpm run verify:tla -- --engine=tlc"] }
     }
   },
@@ -101,27 +111,38 @@ Notes:
 - TLA+ (if generated): `artifacts/codex/formal.tla`
 - OpenAPI (if derived): `artifacts/codex/openapi.yaml`
 - `FormalAgent` and the Codex formal phase produce `artifactStatus=draft`. They perform structural generation/validation only and never create successful model-check evidence.
+- Scaffold generation in memory is separate from filesystem materialization. `materializationStatus=written|partial|failed` and per-artifact `status` report only completed writes. Failed entries contain a bounded error code, omit `path`, and never expose a private absolute path. A total materialization failure blocks the formal task; a partial write remains a warning.
 - `response.formal.modelChecking.status=not-run` and `evidenceArtifact=null` are required until an actual checker runner executes.
 - Actual model-check report (only after explicit `pnpm run model-check` or `pnpm run verify:model`):
   - Path: `artifacts/codex/model-check.json`
   - Producer: `scripts/verify/run-model-checks.mjs`
   - `status=not-run` and `ok=null` when no checker input executes; this is not success evidence.
-  - Per-attempt `executionStatus` distinguishes a completed checker process (`executed`) from `timeout` and startup/runtime `tool-error`. A completed checker that returns a counterexample or non-zero verification result remains `executionStatus=executed` with `outcome=fail`; it is not mislabelled as a tool error.
-  - Each result records tool identity/version (or explicit `unknown` plus artifact SHA-256), input, result, bounded scope, and assumptions. Only `executionStatus=executed` can count as completed checker evidence:
+  - `detectedInputs`, `executedInputs`, and `skippedInputs` expose input coverage. `approvedSkipRefs` is currently empty because reviewed skip exceptions are not supported by this contract.
+  - Per-attempt `executionStatus` distinguishes a completed checker process (`executed`) from `timeout` and startup/runtime `tool-error`. A completed checker that returns a counterexample or non-zero verification result remains `executionStatus=executed` with `result.status=failed`; it is not mislabelled as a tool error.
+  - Each result uses `formal-runner-result/v1` and records a reviewed producer binding, explicit artifact status, tool/version provenance, input paths, result, bounded scope, and assumptions. `unknown`, `unspecified`, `n/a`, and pin mismatches preserve the attempt but are ineligible for enforcement evidence:
   ```json
   {
     "schemaVersion": "model-check-report/v1",
     "artifactStatus": "execution-report",
     "status": "executed|failed|tool-error|not-run",
     "ok": true,
+    "detectedInputs": 1,
+    "executedInputs": 1,
+    "skippedInputs": 0,
+    "approvedSkipRefs": [],
     "alloy": {
       "results": [{
         "executionStatus": "executed",
         "evidence": {
-          "tool": { "name": "Alloy", "version": "unknown", "artifactSha256": "<sha256>" },
-          "input": { "specification": "spec/formal/model.als", "configuration": null },
-          "result": { "outcome": "pass", "exitCode": 0, "log": "artifacts/codex/model.alloy.log.txt" },
-          "scope": { "kind": "alloy-model", "identifier": "model" },
+          "schemaVersion": "formal-runner-result/v1",
+          "artifactStatus": "execution-report",
+          "producer": { "id": "ae.formal.run-model-checks", "version": "1.0.0", "contract": "formal-runner-result/v1", "artifactRef": "scripts/verify/run-model-checks.mjs" },
+          "provenance": "runner-reported",
+          "executionOccurred": true,
+          "tool": { "name": "Alloy", "version": "6.2.0", "versionStatus": "verified", "versionSource": "cli", "artifactSha256": "<sha256>" },
+          "input": ["spec/formal/model.als"],
+          "result": { "status": "ok", "code": 0, "logPath": "artifacts/codex/model.alloy.log.txt" },
+          "scope": "Commands and assertions in model.als within the declared bounds",
           "assumptions": ["The result applies only to the bounds and commands declared by the supplied Alloy model."]
         }
       }]
