@@ -54,6 +54,20 @@ export interface TaskResponse {
   blockingReason?: string;
   // Minimal input required to resume execution (tool-neutral string format).
   requiredHumanInput?: string;
+  // Formal phase separates generated scaffolds from real checker execution.
+  formal?: {
+    scaffold: {
+      status: 'generated';
+      artifactStatus: 'draft';
+      validationStatus: 'valid' | 'invalid' | 'pending';
+      artifactPath?: string;
+    };
+    modelChecking: {
+      status: 'not-run';
+      evidenceArtifact: null;
+      runnerCommands: string[];
+    };
+  };
 }
 
 export interface TaskHandler {

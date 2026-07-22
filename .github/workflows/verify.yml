@@ -129,6 +129,7 @@ jobs:
       - name: Run model checks (TLA+)
         env:
           ALLOY_JAR: ${{ github.workspace }}/.cache/tools/alloy.jar
+          ALLOY_VERSION: '6.2.0'
           ALLOY_CMD_JSON: '["exec","-q","-o","-","-f","{file}"]'
           JAVA_TOOL_OPTIONS: -Djava.awt.headless=true
         run: |
@@ -246,28 +247,38 @@ jobs:
               printf "- Traceability: (no matrix artifact)\n"
             fi
             if [ -f "$MODEL_FILE" ]; then
-              ok=$(jq '[.tlc.results[] | select(.ok==true)] | length' "$MODEL_FILE" 2>/dev/null || printf "0\n")
-              total=$(jq '(.tlc.results | length) + 0' "$MODEL_FILE" 2>/dev/null || printf "0\n")
-              if [ "$total" -gt 0 ]; then pct=$(awk "BEGIN {printf \"%.0f\", ($ok*100)/$total}"); else pct=0; fi
-              printf "- Model Check (TLC): %s/%s (%s%%) modules ok\n" "$ok" "$total" "$pct"
-              printf "\n<details><summary>Non-OK modules (top 5)</summary>\n"
-              jq -r '.tlc.results[] | select(.ok!=true) | "- " + .module + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" 2>/dev/null | head -5 || true
-              printf "</details>\n"
-              # Alloy summary (if present)
-              a_ok=$(jq '[.alloy.results[] | select(.ok==true)] | length' "$MODEL_FILE" 2>/dev/null || printf "0\n")
-              a_total=$(jq '(.alloy.results | map(select(.ok!=null)) | length) + 0' "$MODEL_FILE" 2>/dev/null || printf "0\n")
-              if [ "$a_total" -gt 0 ]; then a_pct=$(awk "BEGIN {printf \"%.0f\", ($a_ok*100)/$a_total}"); else a_pct=0; fi
-              if [ "$a_total" -gt 0 ]; then
-                printf "- Alloy: %s/%s (%s%%) specs ok\n" "$a_ok" "$a_total" "$a_pct"
-                printf "\n<details><summary>Alloy non-OK (top 5)</summary>\n"
-                jq -r '.alloy.results[] | select(.ok==false) | "- " + .file + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" 2>/dev/null | head -5 || true
-                printf "</details>\n"
-              else
-                # If Alloy not executed but detected
-                a_detect=$(jq '(.alloy.results | length) + 0' "$MODEL_FILE" 2>/dev/null || printf "0\n")
-                if [ "$a_detect" -gt 0 ]; then
-                  printf "- Alloy: detected %s specs (execution skipped)\n" "$a_detect"
+              if jq -e '.schemaVersion == "model-check-report/v1" and (.status | IN("executed", "failed", "tool-error", "not-run"))' "$MODEL_FILE" >/dev/null 2>&1; then
+                report_status=$(jq -r '.status' "$MODEL_FILE")
+                report_ok=$(jq -r 'if .ok == null then "null" else (.ok | tostring) end' "$MODEL_FILE")
+                printf "- Model Check execution report: contract=model-check-report/v1 status=%s ok=%s\n" "$report_status" "$report_ok"
+                if [ "$report_status" = "executed" ] || [ "$report_status" = "failed" ]; then
+                  ok=$(jq '[.tlc.results[] | select(.executionStatus=="executed" and .ok==true)] | length' "$MODEL_FILE")
+                  total=$(jq '[.tlc.results[] | select(.executionStatus=="executed")] | length' "$MODEL_FILE")
+                  if [ "$total" -gt 0 ]; then
+                    pct=$(awk "BEGIN {printf \"%.0f\", ($ok*100)/$total}")
+                    printf "- Model Check (TLC): %s/%s (%s%%) completed modules ok\n" "$ok" "$total" "$pct"
+                    printf "\n<details><summary>Non-OK completed modules (top 5)</summary>\n"
+                    jq -r '.tlc.results[] | select(.executionStatus=="executed" and .ok!=true) | "- " + .module + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" | head -5 || true
+                    printf "</details>\n"
+                  fi
+                  # Alloy summary (actual completed executions only)
+                  a_ok=$(jq '[.alloy.results[] | select(.executionStatus=="executed" and .ok==true)] | length' "$MODEL_FILE")
+                  a_total=$(jq '[.alloy.results[] | select(.executionStatus=="executed")] | length' "$MODEL_FILE")
+                  if [ "$a_total" -gt 0 ]; then
+                    a_pct=$(awk "BEGIN {printf \"%.0f\", ($a_ok*100)/$a_total}")
+                    printf "- Alloy: %s/%s (%s%%) completed specs ok\n" "$a_ok" "$a_total" "$a_pct"
+                    printf "\n<details><summary>Alloy non-OK completed executions (top 5)</summary>\n"
+                    jq -r '.alloy.results[] | select(.executionStatus=="executed" and .ok!=true) | "- " + .file + ( .log? // "" | " (log: " + . + ")" )' "$MODEL_FILE" | head -5 || true
+                    printf "</details>\n"
+                  fi
+                  if [ "$total" -eq 0 ] && [ "$a_total" -eq 0 ]; then
+                    printf "- Model Check: no completed checker execution counted; inspect timeout/tool-error details\n"
+                  fi
+                else
+                  printf "- Model Check: no completed checker execution counted for status=%s\n" "$report_status"
                 fi
+              else
+                printf "- Model Check: unrecognized or invalid artifact; not counted as execution evidence\n"
               fi
             else
               printf "- Model Check: (no summary artifact)\n"
@@ -423,8 +434,19 @@ jobs:
         run: |
           FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' | head -1)
           if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then printf "%s\n" "No model-check.json found"; exit 1; fi
+          if ! jq -e '
+            ((.tlc.results // []) + (.alloy.results // [])) as $results
+            | .schemaVersion == "model-check-report/v1"
+              and .status == "executed"
+              and .ok == true
+              and ($results | length) > 0
+              and all($results[]; .executionStatus == "executed" and .ok == true and .evidence.result.outcome == "pass")
+          ' "$FILE" >/dev/null; then
+            printf "%s\n" "Formal enforcement requires at least one successful actual checker execution"
+            exit 1
+          fi
           tlc_fail=$(jq -r '[.tlc.results[] | select(.ok!=true)] | length' "$FILE")
-          alloy_fail=$(jq -r '[.alloy.results[] | select(.ok==false)] | length' "$FILE")
+          alloy_fail=$(jq -r '[.alloy.results[] | select(.ok!=true)] | length' "$FILE")
           if [ "$tlc_fail" != "0" ] || [ "$alloy_fail" != "0" ]; then
             printf "%s\n" "Formal enforcement failed: tlc_fail=$tlc_fail alloy_fail=$alloy_fail"
             exit 1

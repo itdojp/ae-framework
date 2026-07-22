@@ -51,6 +51,18 @@ describe('validate-formal-summary-v2 CLI', () => {
           durationMs: 12,
           logPath: 'artifacts/hermetic-reports/conformance/summary.json',
           reason: null,
+          executionEvidence: {
+            provenance: 'runner-reported',
+            tool: { name: 'conformance', version: '1.0.0' },
+            input: ['observability/trace-schema.yaml'],
+            result: {
+              status: 'ok',
+              code: 0,
+              logPath: 'artifacts/hermetic-reports/conformance/summary.json',
+            },
+            scope: 'Recorded conformance trace scope',
+            assumptions: ['Only the recorded trace and declared conformance rules are covered.'],
+          },
         },
       ],
     };
@@ -89,6 +101,50 @@ describe('validate-formal-summary-v2 CLI', () => {
         },
       },
       results: [],
+    };
+    await writeFile(summaryPath, JSON.stringify(summary));
+
+    const result = spawnSync(process.execPath, [validateScript, summaryPath, schemaPath], {
+      cwd: workdir,
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr.toString()).toContain('schema validation failed');
+  });
+
+  it('fails when present execution evidence omits scope or assumptions', async () => {
+    const summaryPath = join(workdir, 'formal-summary-v2.json');
+    const summary = {
+      schemaVersion: 'formal-summary/v2',
+      contractId: 'formal-summary.v2',
+      tool: 'tla',
+      status: 'ok',
+      ok: true,
+      generatedAtUtc: '2026-07-22T00:00:00.000Z',
+      metadata: {
+        generatedAtUtc: '2026-07-22T00:00:00.000Z',
+        generatedAtLocal: '2026-07-22T09:00:00.000+09:00',
+        timezoneOffset: '+09:00',
+        gitCommit: '0123456789abcdef0123456789abcdef01234567',
+        branch: 'main',
+        runner: { name: 'local', os: 'linux', arch: 'x64', ci: false },
+        toolVersions: { node: 'v22.0.0' },
+      },
+      results: [
+        {
+          name: 'tla',
+          status: 'ok',
+          code: 0,
+          durationMs: 12,
+          logPath: 'artifacts/hermetic-reports/formal/tla-output.txt',
+          reason: null,
+          executionEvidence: {
+            provenance: 'runner-reported',
+            tool: { name: 'TLC', version: '1.8.0' },
+            input: ['spec/tla/DomainSpec.tla'],
+            result: { status: 'ok', code: 0, logPath: 'artifacts/hermetic-reports/formal/tla-output.txt' },
+          },
+        },
+      ],
     };
     await writeFile(summaryPath, JSON.stringify(summary));
 

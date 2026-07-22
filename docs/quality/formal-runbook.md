@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-04-14'
+lastVerified: '2026-07-22'
 owner: formal-methods
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -19,6 +19,13 @@ verificationCommand: pnpm -s run check:doc-consistency
 
 ### Purpose
 This runbook describes the lowest-friction way to operate formal verification in this repository. It focuses on label-gated CI (`run-formal`), manual `workflow_dispatch`, local non-blocking runners, artifact locations, and the current roadmap fit. For full smoke-test coverage across all supported tools, see `docs/quality/formal-full-run.md`.
+
+### Generation and execution boundary
+- `FormalAgent`, its MCP server, the Codex formal adapter, and `codex:quickstart` generate reviewable `draft` scaffolds and perform structural validation only. They do not execute a model checker.
+- Only an actual TLA+/Alloy/SMT/Apalache/Kani/SPIN/CSP/Lean runner result may support `model-checked` or `proved`. Tool absence, timeout, tool error, and unexecuted work remain explicit non-success outcomes.
+- Formal Summary results are eligible for Assurance model/proof lanes only when they use `formal-summary/v1` or `formal-summary/v2`, are not labelled `draft`/`synthetic`/`unverified`/`test-only`, and preserve runner-supplied `executionEvidence` with `provenance=runner-reported`, tool, version, input, result, scope, and assumptions. The summary generator does not backfill missing execution evidence. A version of `unknown` is an explicit runner-reported evidence gap, not an inferred version.
+- `pnpm run model-check` and `pnpm run verify:model` invoke `scripts/verify/run-model-checks.mjs`. Its `artifacts/codex/model-check.json` is an execution report: when no checker input executes it records `status=not-run` and `ok=null`, never success.
+- Historical Issue #348 recorded that formal execution was not yet a first-class FormalAgent capability and moved remaining work to the roadmap. The current boundary closes the later pseudo-execution gap; it does not reinterpret #348 as evidence that FormalAgent had executed model checking.
 
 ### Usage (CI / Labels)
 - Label-gated CI: add PR label `run-formal` to trigger the formal lane. The lane starts as report-only.
@@ -244,6 +251,13 @@ jobs:
   - `pnpm run verify:alloy -- --file spec/alloy/Domain.als`
 
 ## 日本語（詳細）
+
+### Generation と execution の境界
+- `FormalAgent`、Formal MCP server、Codex formal adapter、`codex:quickstart` は review 用の `draft` scaffold と構造 validation だけを生成し、model checker は実行しない。
+- `model-checked` / `proved` を支えられるのは、実 TLA+/Alloy/SMT/Apalache/Kani/SPIN/CSP/Lean runner の結果だけである。tool 不在、timeout、tool error、未実行は success に変換しない。
+- Assurance の model/proof lane に投入できる Formal Summary result は、`formal-summary/v1` または `formal-summary/v2` であり、`draft` / `synthetic` / `unverified` / `test-only` ではなく、runner が供給した `provenance=runner-reported`、tool、version、input、result、scope、assumptions を含む `executionEvidence` を保持する必要がある。summary generator は欠落した execution evidence を補完しない。version の `unknown` は runner が明示した Evidence gap であり、推定値として扱わない。
+- `pnpm run model-check` / `pnpm run verify:model` は `scripts/verify/run-model-checks.mjs` を実行する。`artifacts/codex/model-check.json` は execution report であり、checker input が実行されなければ `status=not-run` / `ok=null` を記録し、success にはしない。
+- Historical Issue #348 は FormalAgent の formal execution が first-class capability ではないことを記録し、残作業を roadmap へ移した履歴である。今回の境界修正は後発の疑似実行 gap を閉じるものであり、#348 を「FormalAgent が model checking を実行済み」という Evidence に再解釈しない。
 
 ### 運用の基本
 1) PR でフォーマル検査を走らせたい場合は、ラベル `run-formal` を付与（初期はスタブ）。

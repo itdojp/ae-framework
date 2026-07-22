@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 
 // Configuration types
@@ -5,7 +6,6 @@ export const FormalAgentConfig = z.object({
   outputFormat: z.enum(["tla+", "alloy", "z-notation", "openapi", "asyncapi", "graphql"]).default("tla+"),
   validationLevel: z.enum(["basic", "comprehensive", "formal-verification"]).default("comprehensive"),
   generateDiagrams: z.boolean().default(true),
-  enableModelChecking: z.boolean().default(true),
 });
 
 export type FormalAgentConfig = z.infer<typeof FormalAgentConfig>;
@@ -14,6 +14,11 @@ export type FormalAgentConfig = z.infer<typeof FormalAgentConfig>;
 export interface FormalSpecification {
   id: string;
   type: "tla+" | "alloy" | "z-notation" | "state-machine" | "contracts" | "api-spec";
+  /**
+   * FormalAgent produces a scaffold only. This status prevents generated text
+   * from being interpreted as evidence that a model checker executed.
+   */
+  artifactStatus: "draft";
   title: string;
   content: string;
   metadata: {
@@ -118,38 +123,11 @@ export interface Transition {
   action?: string;
 }
 
-export interface ModelCheckingResult {
-  specification: string;
-  properties: PropertyResult[];
-  counterExamples: CounterExample[];
-  statistics: {
-    statesExplored: number;
-    timeElapsed: number;
-    memoryUsed: number;
-  };
-}
-
-export interface PropertyResult {
-  name: string;
-  satisfied: boolean;
-  description: string;
-  counterExample?: CounterExample;
-}
-
-export interface CounterExample {
-  trace: TraceStep[];
-  description: string;
-}
-
-export interface TraceStep {
-  state: Record<string, any>;
-  action: string;
-  timestamp: number;
-}
-
 /**
  * Formal Agent - Phase 2 of ae-framework
- * Bridges Intent (Phase 1) and Tests (Phase 3) by generating formal, verifiable specifications
+ * Bridges Intent (Phase 1) and Tests (Phase 3) by generating draft formal
+ * specification scaffolds. Model-check execution belongs to the dedicated
+ * TLA+/Alloy/SMT/CSP/SPIN/Lean/Kani runners.
  */
 export class FormalAgent {
   private config: FormalAgentConfig;
@@ -167,7 +145,7 @@ export class FormalAgent {
     type: "tla+" | "alloy" | "z-notation" = "tla+",
     options: { includeDiagrams?: boolean; generateProperties?: boolean } = {}
   ): Promise<FormalSpecification> {
-    const id = this.generateId();
+    const id = this.generateId(requirements, type);
     const timestamp = new Date();
 
     let content = "";
@@ -191,6 +169,7 @@ export class FormalAgent {
     const specification: FormalSpecification = {
       id,
       type,
+      artifactStatus: "draft",
       title: this.extractTitle(requirements),
       content,
       metadata: {
@@ -363,51 +342,6 @@ export class FormalAgent {
   }
 
   /**
-   * Run formal model checking on specifications
-   */
-  async runModelChecking(
-    specification: FormalSpecification,
-    properties: string[] = [],
-    options: { timeout?: number; maxStates?: number } = {}
-  ): Promise<ModelCheckingResult> {
-    if (!this.config.enableModelChecking) {
-      throw new Error("Model checking is disabled in configuration");
-    }
-
-    const propertiesToCheck = properties.length > 0 ? properties : specification.metadata.properties;
-    const results: PropertyResult[] = [];
-    const counterExamples: CounterExample[] = [];
-
-    for (const property of propertiesToCheck) {
-      try {
-        const result = await this.checkProperty(specification, property, options);
-        results.push(result);
-        
-        if (!result.satisfied && result.counterExample) {
-          counterExamples.push(result.counterExample);
-        }
-      } catch (error) {
-        results.push({
-          name: property,
-          satisfied: false,
-          description: `Error checking property: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
-      }
-    }
-
-    return {
-      specification: specification.id,
-      properties: results,
-      counterExamples,
-      statistics: {
-        statesExplored: this.estimateStatesExplored(specification),
-        timeElapsed: Date.now(), // Placeholder
-        memoryUsed: 0, // Placeholder
-      },
-    };
-  }
-
-  /**
    * Generate UML and sequence diagrams
    */
   async generateDiagrams(
@@ -449,8 +383,14 @@ export class FormalAgent {
   }
 
   // Private helper methods
-  private generateId(): string {
-    return `spec_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  private generateId(requirements: string, type: FormalSpecification["type"]): string {
+    const digest = createHash("sha256")
+      .update(type)
+      .update("\0")
+      .update(requirements)
+      .digest("hex")
+      .slice(0, 20);
+    return `spec_${digest}`;
   }
 
   private generateTLASpec(requirements: string): string {
@@ -831,25 +771,6 @@ type Mutation {
         severity: "error",
       });
     }
-  }
-
-  // Model checking methods
-  private async checkProperty(
-    specification: FormalSpecification,
-    property: string,
-    options: { timeout?: number; maxStates?: number }
-  ): Promise<PropertyResult> {
-    // Simplified property checking
-    return {
-      name: property,
-      satisfied: Math.random() > 0.3, // Simulation
-      description: `Property check for: ${property}`,
-    };
-  }
-
-  private estimateStatesExplored(specification: FormalSpecification): number {
-    // Estimate based on specification complexity
-    return specification.content.length * 10;
   }
 
   // Diagram generation methods

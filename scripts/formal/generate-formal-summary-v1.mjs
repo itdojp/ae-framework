@@ -186,10 +186,52 @@ function resolveLogPath({ repoRoot, baseDir, name, raw, summaryPath, summaryRel 
   return null;
 }
 
+function uniqueNonEmptyStrings(values) {
+  return Array.from(new Set(values
+    .flatMap((value) => Array.isArray(value) ? value : [value])
+    .map((value) => typeof value === 'string' ? value.trim() : '')
+    .filter(Boolean)));
+}
+
+function normalizeRunnerReportedExecutionEvidence(raw, expectedStatus) {
+  const evidence = raw?.executionEvidence;
+  if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) return null;
+  if (evidence.provenance !== 'runner-reported') return null;
+
+  const toolName = typeof evidence.tool?.name === 'string' ? evidence.tool.name.trim() : '';
+  const toolVersion = typeof evidence.tool?.version === 'string' ? evidence.tool.version.trim() : '';
+  const inputs = uniqueNonEmptyStrings(evidence.input ?? []);
+  const resultStatus = typeof evidence.result?.status === 'string' ? evidence.result.status.trim() : '';
+  const resultCode = Number.isInteger(evidence.result?.code) ? evidence.result.code : null;
+  const resultLogPath = typeof evidence.result?.logPath === 'string' && evidence.result.logPath.trim()
+    ? evidence.result.logPath.trim()
+    : null;
+  const scope = typeof evidence.scope === 'string' ? evidence.scope.trim() : '';
+  const assumptions = uniqueNonEmptyStrings(evidence.assumptions ?? []);
+
+  if (!toolName || !toolVersion || inputs.length === 0 || resultStatus !== expectedStatus || !scope || assumptions.length === 0) {
+    return null;
+  }
+
+  return {
+    provenance: 'runner-reported',
+    tool: { name: toolName, version: toolVersion },
+    input: inputs,
+    result: {
+      status: resultStatus,
+      code: resultCode,
+      logPath: resultLogPath,
+    },
+    scope,
+    assumptions,
+  };
+}
+
 function buildResultItem({ name, raw, present, logPath }) {
   const mapped = mapStatus({ raw, present });
   const code = typeof raw?.exitCode === 'number' ? raw.exitCode : (typeof raw?.code === 'number' ? raw.code : null);
   const durationMs = typeof raw?.timeMs === 'number' ? raw.timeMs : (typeof raw?.durationMs === 'number' ? raw.durationMs : null);
+  const executionEvidence = normalizeRunnerReportedExecutionEvidence(raw, mapped.status);
   return {
     name,
     status: mapped.status,
@@ -197,6 +239,7 @@ function buildResultItem({ name, raw, present, logPath }) {
     durationMs,
     logPath,
     reason: mapped.reason,
+    ...(executionEvidence ? { executionEvidence } : {}),
   };
 }
 

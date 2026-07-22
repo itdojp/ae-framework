@@ -27,7 +27,19 @@ describe('formal-summary/v1 generator', () => {
 
       writeJson(join(dir, 'input', 'formal', 'tla-summary.json'), { ran: true, status: 'ran' });
       writeFileSync(join(dir, 'input', 'formal', 'tla-output.txt'), 'tla output\n', 'utf8');
-      writeJson(join(dir, 'input', 'formal', 'alloy-summary.json'), { ok: true, exitCode: 0, timeMs: 10 });
+      writeJson(join(dir, 'input', 'formal', 'alloy-summary.json'), {
+        ok: true,
+        exitCode: 0,
+        timeMs: 10,
+        executionEvidence: {
+          provenance: 'runner-reported',
+          tool: { name: 'alloy', version: '6.2.0' },
+          input: ['spec/formal/model.als'],
+          result: { status: 'ok', code: 0, logPath: 'artifacts/formal/alloy-output.txt' },
+          scope: 'Commands and assertions in model.als within its declared bounds.',
+          assumptions: ['The declared Alloy bounds match the reviewed verification scope.'],
+        },
+      });
       writeFileSync(join(dir, 'input', 'formal', 'alloy-output.txt'), 'alloy output\n', 'utf8');
       writeJson(join(dir, 'input', 'conformance', 'summary.json'), { ok: true, exitCode: 0, timeMs: 5 });
 
@@ -53,10 +65,19 @@ describe('formal-summary/v1 generator', () => {
       expect(byName.alloy.status).toBe('ok');
       expect(byName.alloy.code).toBe(0);
       expect(byName.alloy.durationMs).toBe(10);
+      expect(byName.alloy.executionEvidence).toMatchObject({
+        provenance: 'runner-reported',
+        tool: { name: 'alloy', version: '6.2.0' },
+        input: ['spec/formal/model.als'],
+        result: { status: 'ok', code: 0, logPath: 'artifacts/formal/alloy-output.txt' },
+        scope: expect.stringContaining('model.als'),
+        assumptions: ['The declared Alloy bounds match the reviewed verification scope.'],
+      });
 
       expect(byName.conformance.status).toBe('ok');
       expect(byName.conformance.code).toBe(0);
       expect(byName.conformance.durationMs).toBe(5);
+      expect(byName.conformance).not.toHaveProperty('executionEvidence');
 
       // ran without ok flag is normalized to unknown (fact-only)
       expect(byName.tla.status).toBe('unknown');
@@ -99,6 +120,7 @@ describe('formal-summary/v1 generator', () => {
       const byName = Object.fromEntries(payload.results.map((r: any) => [r.name, r]));
       expect(byName.apalache.status).toBe('ok');
       expect(byName.apalache.logPath).toBe('input/formal-reports-apalache/apalache-output.txt');
+      expect(byName.apalache).not.toHaveProperty('executionEvidence');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

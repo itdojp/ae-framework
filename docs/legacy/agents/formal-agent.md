@@ -1,11 +1,13 @@
 ---
 docRole: narrative
-lastVerified: '2026-03-12'
+lastVerified: '2026-07-22'
 ---
 
 # Formal Agent - Phase 2 of ae-framework
 
 > **🌍 Language / 言語**: [English](#english) | [日本語](#japanese)
+
+> **Historical document / 履歴文書:** This page preserves the retired PoC interface, including `enableModelChecking` and `model_check`, for historical context only. Those paths did not constitute actual checker execution and are not current Assurance evidence. Use `docs/quality/formal-runbook.md` for the current scaffold/execution boundary. / このページは廃止済み PoC interface を履歴として保存しています。`enableModelChecking` と `model_check` は実 checker execution または現在の Assurance Evidence ではありません。現行境界は `docs/quality/formal-runbook.md` を参照してください。
 
 ---
 

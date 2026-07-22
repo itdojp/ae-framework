@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -9,6 +9,7 @@ const repoRoot = resolve('.');
 const scriptPath = resolve(repoRoot, 'scripts/assurance/aggregate-lanes.mjs');
 const moduleUrl = pathToFileURL(scriptPath).href;
 const deterministicGeneratedAt = '2026-06-21T00:00:00.000Z';
+const localTmpRoot = resolve(repoRoot, '.codex-local/tmp');
 
 const writeJson = (targetPath: string, payload: unknown) => {
   writeFileSync(targetPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
@@ -98,6 +99,14 @@ const createFormalSummary = () => ({
       durationMs: 15,
       logPath: 'artifacts/hermetic-reports/conformance/summary.json',
       reason: null,
+      executionEvidence: {
+        provenance: 'runner-reported',
+        tool: { name: 'conformance', version: '1.0.0' },
+        input: ['observability/trace-schema.yaml'],
+        result: { status: 'ok', code: 0, logPath: 'artifacts/hermetic-reports/conformance/summary.json' },
+        scope: 'Recorded conformance trace scope',
+        assumptions: ['Only the recorded trace and declared conformance rules are covered.'],
+      },
     },
     {
       name: 'lean',
@@ -106,6 +115,14 @@ const createFormalSummary = () => ({
       durationMs: 7,
       logPath: 'artifacts/formal/lean-output.txt',
       reason: null,
+      executionEvidence: {
+        provenance: 'runner-reported',
+        tool: { name: 'lean', version: '4.19.0' },
+        input: ['spec/lean'],
+        result: { status: 'ok', code: 0, logPath: 'artifacts/formal/lean-output.txt' },
+        scope: 'Lean project build scope',
+        assumptions: ['Only declarations in the recorded Lean project are covered.'],
+      },
     },
   ],
 });
@@ -289,6 +306,97 @@ describe.sequential('assurance aggregate lanes script', () => {
       });
       expect(summary.laneCoverage.proof.observedClaims).toBe(1);
       expect(readFileSync(outputMd, 'utf8')).toContain('## Claim status');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('does not promote pseudo or draft formal artifacts to model evidence', () => {
+    mkdirSync(localTmpRoot, { recursive: true });
+    const sandbox = mkdtempSync(join(localTmpRoot, 'ae-assurance-formal-isolation-'));
+    const assuranceProfilePath = join(sandbox, 'assurance-profile.json');
+    const pseudoModelCheckPath = join(sandbox, 'model-check.json');
+    const draftFormalSummaryPath = join(sandbox, 'draft-formal-summary.json');
+    const incompleteFormalSummaryPath = join(sandbox, 'incomplete-formal-summary.json');
+    const outputJson = join(sandbox, 'assurance-summary.json');
+    const outputMd = join(sandbox, 'assurance-summary.md');
+
+    try {
+      writeJson(assuranceProfilePath, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'formal-isolation-profile',
+        claims: [
+          {
+            id: 'model-executed',
+            statement: 'A real model checker executed for the declared scope.',
+            criticality: 'high',
+            targetLevel: 'A2',
+            minIndependentSources: 1,
+            requiredLanes: ['model'],
+            requiredEvidenceKinds: ['model-check'],
+          },
+        ],
+      });
+      writeJson(pseudoModelCheckPath, {
+        specificationId: 'spec_synthetic',
+        satisfied: true,
+        properties: [{ property: 'Safety', satisfied: true }],
+        statistics: { statesExplored: 1234 },
+      });
+      writeJson(draftFormalSummaryPath, {
+        ...createFormalSummary(),
+        artifactStatus: 'draft',
+        results: [{ name: 'tla', status: 'ok' }],
+      });
+      writeJson(incompleteFormalSummaryPath, {
+        ...createFormalSummary(),
+        results: [{
+          name: 'tla',
+          status: 'ok',
+          executionEvidence: {
+            tool: { name: 'tla', version: 'unknown' },
+            input: ['formal/tla-summary.json'],
+            result: { status: 'ok', code: 0, logPath: null },
+            scope: 'Backfilled generic scope',
+            assumptions: ['Backfilled generic assumption'],
+          },
+        }],
+      });
+
+      const result = runScript([
+        '--assurance-profile',
+        assuranceProfilePath,
+        '--formal-summary',
+        pseudoModelCheckPath,
+        '--formal-summary',
+        draftFormalSummaryPath,
+        '--formal-summary',
+        incompleteFormalSummaryPath,
+        '--generated-at',
+        deterministicGeneratedAt,
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const summary = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(summary.claims[0]).toMatchObject({
+        claimId: 'model-executed',
+        observedLanes: [],
+        missingLanes: ['model'],
+        observedEvidenceKinds: [],
+        missingEvidenceKinds: ['model-check'],
+      });
+      expect(summary.laneCoverage.model.observedClaims).toBe(0);
+      expect(summary.warnings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: pseudoModelCheckPath }),
+          expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: draftFormalSummaryPath }),
+          expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: incompleteFormalSummaryPath }),
+        ]),
+      );
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

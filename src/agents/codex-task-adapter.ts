@@ -25,7 +25,11 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
   const stories = new UserStoriesTaskAdapter();
   const validation = new ValidationTaskAdapter();
   const modeling = new DomainModelingTaskAdapter();
-  const formal = new FormalAgent({ outputFormat: 'tla+', validationLevel: 'comprehensive', generateDiagrams: false, enableModelChecking: true });
+  const formal = new FormalAgent({
+    outputFormat: 'tla+',
+    validationLevel: 'comprehensive',
+    generateDiagrams: false,
+  });
 
   const handler: TaskHandler = {
     async handleTask(request: TaskRequest): Promise<TaskResponse> {
@@ -52,7 +56,6 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
             // Derive OpenAPI as a convenience artifact
             let openapiPath = '';
             let tlaPath = '';
-            let mcPath = '';
             try {
               // write TLA+ spec content
               const outDir = getArtifactsDir();
@@ -64,22 +67,21 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
               openapiPath = path.join(outDir, 'openapi.yaml');
               fs.writeFileSync(openapiPath, openapi.content, 'utf8');
 
-              // Model checking (best-effort)
-              try {
-                const mc = await formal.runModelChecking(spec, []);
-                mcPath = path.join(outDir, 'model-check.json');
-                fs.writeFileSync(mcPath, JSON.stringify(mc, null, 2), 'utf8');
-              } catch {}
             } catch {}
             const isInvalid = spec.validation.status === 'invalid';
+            const runnerCommands = [
+              'pnpm run verify:tla -- --engine=tlc',
+              'pnpm run verify:alloy',
+              'pnpm run verify:formal',
+            ];
             const resp: TaskResponse = {
-              summary: `Formal spec generated: ${spec.type.toUpperCase()} (${spec.validation.status})`,
+              summary: `Formal scaffold generated: ${spec.type.toUpperCase()} (${spec.validation.status}, ${spec.artifactStatus})`,
               analysis: spec.content.slice(0, 1200),
               recommendations: [
-                'Validate properties',
+                'Review the generated scaffold before selecting a formal runner',
                 tlaPath ? `Review TLA+: ${path.relative(process.cwd(), tlaPath)}` : 'TLA+ content available in response',
                 openapiPath ? `Review OpenAPI: ${path.relative(process.cwd(), openapiPath)}` : 'Consider API spec generation if needed',
-                mcPath ? `Check model checking: ${path.relative(process.cwd(), mcPath)}` : 'Model checking unavailable'
+                `Model checker not executed; run one of: ${runnerCommands.join(' | ')}`,
               ],
               nextActions: [
                 'pnpm -s run verify:lite',
@@ -87,6 +89,19 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
               ],
               warnings: spec.validation.warnings?.map(w => w.message) || [],
               shouldBlockProgress: isInvalid,
+              formal: {
+                scaffold: {
+                  status: 'generated',
+                  artifactStatus: spec.artifactStatus,
+                  validationStatus: spec.validation.status,
+                  ...(tlaPath ? { artifactPath: path.relative(process.cwd(), tlaPath) } : {}),
+                },
+                modelChecking: {
+                  status: 'not-run',
+                  evidenceArtifact: null,
+                  runnerCommands,
+                },
+              },
               ...(isInvalid
                 ? {
                     blockingReason: 'formal-validation-invalid',

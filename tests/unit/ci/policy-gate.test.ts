@@ -1581,6 +1581,49 @@ describe('policy-gate', () => {
     ]));
   });
 
+  it('does not pass a model claim when pseudo formal output was rejected upstream', () => {
+    const result = evaluatePolicyGate({
+      policy,
+      pullRequest: {
+        labels: [{ name: 'risk:low' }],
+        body: '## Rollback\nnone\n\n## Acceptance\nok',
+      },
+      changedFiles: ['src/agents/formal-agent.ts'],
+      reviews: [],
+      statusRollup: [checkRun('verify-lite')],
+      assuranceMode: 'strict',
+      assurance: assuranceState({
+        summary: {
+          totalClaims: 1,
+          fullySupported: 0,
+          partiallySupported: 0,
+          waived: 0,
+          unresolved: 1,
+        },
+        claims: [
+          {
+            claimId: 'model-executed',
+            result: 'block',
+            status: 'unresolved',
+            evidenceRefs: [],
+            missingEvidenceRefs: ['assurance-summary:model-executed:missing-lane:model'],
+            waiverRefs: [],
+            waivers: [],
+          },
+        ],
+      }),
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.assurance.summary).toMatchObject({ pass: 0, block: 1 });
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('model-executed is missing required evidence'),
+        'assurance decision is block',
+      ]),
+    );
+  });
+
   it('consumes claim-level summary artifacts for assurance enforcement', () => {
     mkdirSync(join(process.cwd(), 'artifacts'), { recursive: true });
     const tempDir = mkdtempSync(join(process.cwd(), 'artifacts', 'policy-gate-claim-level-summary-'));

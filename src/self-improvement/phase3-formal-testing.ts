@@ -40,8 +40,7 @@ export class Phase3FormalTesting {
     const formalConfig: FormalAgentConfig = {
       outputFormat: 'openapi',
       validationLevel: 'comprehensive',
-      generateDiagrams: true,
-      enableModelChecking: true
+      generateDiagrams: true
     };
 
     this.formalAgent = new FormalAgent(formalConfig);

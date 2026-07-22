@@ -147,7 +147,7 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 ### Implementation notes
 - File: `src/agents/codex-task-adapter.ts` (core), `scripts/codex/adapter-stdio.mjs` (bridge)
 - UI: uses `UIScaffoldGenerator` when `context.phaseState.entities` is provided; otherwise dry-run
-- Formal: `FormalAgent` generates TLA+ and OpenAPI (best-effort model checking)
+- Formal: `FormalAgent` generates `draft` TLA+ and OpenAPI scaffolds. The adapter reports model checking as `not-run`; actual execution is delegated to repository formal runners.
 - Validation: runtime schema validation (Zod) for `context.phaseState` blocks on invalid inputs with actionable messages.
  - Contract/E2E templates: when OpenAPI is available in quickstart, `scripts/codex/generate-contract-tests.mjs` scaffolds tests under `tests/api/generated/` and writes `artifacts/codex/openapi-contract-tests.json`.
 - Continuation contract (No Human Bottleneck): `docs/integrations/CODEX-CONTINUATION-CONTRACT.md`
@@ -371,7 +371,7 @@ set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
 ### 1) CLI ブリッジ（PoC）
 - `pnpm run codex:quickstart` で verify/（任意で ui-scaffold/formal）を実行し、`artifacts/` 配下に成果物を保存
 - 前提: Node 20.11+ / pnpm 10（Corepack 推奨）、`pnpm run build` 済（`dist/` を参照）
-- 代表的な成果物: `artifacts/codex/result-*.json`, `openapi.yaml`, `formal.tla`, `model-check.json`
+- 代表的な成果物: `artifacts/codex/result-*.json`, `openapi.yaml`, `formal.tla`。`model-check.json` は実 runner を明示実行した場合のみ
 
 ### 2) MCP 統合（推奨）
 - Intent/Test/Verify/Code/Spec の MCP サーバを同梱
@@ -381,7 +381,7 @@ set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
 ### 3) Codex タスクアダプター（stdio ブリッジ）
 - TODO/Plan/Tool ↔ ae-framework の各フェーズをマッピング
 - UI: `context.phaseState.entities` があれば `UIScaffoldGenerator` を実行
-- Formal: OpenAPI/TLA+ を生成し、可能ならモデル検査まで
+- Formal: `draft` OpenAPI/TLA+ scaffold を生成し、model checking は `not-run` として分離する。実検査は formal runner へ委譲
 - 検証: 入力を Zod でバリデーションし、無効時は行動可能なエラー
 
 ### 4) MCP なしの stdio ツール（Spec）
@@ -441,7 +441,7 @@ Before changing code, read the Context Pack, boundary map, and acceptance tests 
 4. preview: `node dist/src/cli/index.js ui-scaffold --components --dry-run`; materialize: `node dist/src/cli/index.js ui-scaffold --components --apply --approval-scope high-impact:codegen-materialize`
 
 ### 機械可読アーティファクト
-- `artifacts/codex/result-*.json`, `openapi.yaml`, `model-check.json`（有無に応じて）
+- `artifacts/codex/result-*.json`, `openapi.yaml`, `formal.tla`（有無に応じて）。`model-check.json` は actual runner output のみ
 - CI では `codex-json-artifacts`, `codex-openapi` などとしてアップロード
 
 ### Windows/WSL

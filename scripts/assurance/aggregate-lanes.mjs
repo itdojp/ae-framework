@@ -27,7 +27,14 @@ const WARNING_CODES = new Set([
   'unlinked-counterexample',
   'unrecognized-evidence-claim',
   'assumption-validation-required',
+  'untrusted-formal-summary',
 ]);
+
+const FORMAL_SUMMARY_CONTRACTS = new Map([
+  ['formal-summary/v1', null],
+  ['formal-summary/v2', 'formal-summary.v2'],
+]);
+const NON_EXECUTED_ARTIFACT_STATUSES = new Set(['draft', 'synthetic', 'unverified', 'test-only']);
 
 const SECURITY_CLAIM_TYPES = new Set(['invariant', 'precondition', 'postcondition', 'assumption']);
 const ASSUMPTION_HANDLING_MODES = new Set(['assumption-validation-required', 'residual-risk']);
@@ -891,6 +898,23 @@ const formalLaneMapping = (name) => {
   }
 };
 
+const hasExecutionEvidence = (result) => {
+  const evidence = result?.executionEvidence;
+  return Boolean(
+    evidence
+    && typeof evidence === 'object'
+    && maybeString(evidence.provenance) === 'runner-reported'
+    && maybeString(evidence.tool?.name)
+    && maybeString(evidence.tool?.version)
+    && Array.isArray(evidence.input)
+    && evidence.input.some((value) => maybeString(value))
+    && maybeString(evidence.result?.status) === 'ok'
+    && maybeString(evidence.scope)
+    && Array.isArray(evidence.assumptions)
+    && evidence.assumptions.some((value) => maybeString(value)),
+  );
+};
+
 const normalizeEvidenceEntry = (entry, defaults = {}) => {
   const normalized = {
     lane: maybeString(entry.lane),
@@ -1063,6 +1087,20 @@ const ingestVerifyLiteSummary = (summaryPath, claimStateMap, contextPackRefs, wa
 const ingestFormalSummary = (summaryPath, claimStateMap, contextPackRefs, warnings) => {
   const resolvedPath = ensureFile(summaryPath, 'Formal summary');
   const summary = readJson(resolvedPath);
+  const schemaVersion = maybeString(summary.schemaVersion);
+  const expectedContractId = FORMAL_SUMMARY_CONTRACTS.get(schemaVersion);
+  const artifactStatus = maybeString(summary.artifactStatus).toLowerCase();
+  if (!FORMAL_SUMMARY_CONTRACTS.has(schemaVersion)
+    || (expectedContractId && maybeString(summary.contractId) !== expectedContractId)
+    || NON_EXECUTED_ARTIFACT_STATUSES.has(artifactStatus)) {
+    pushWarning(
+      warnings,
+      'untrusted-formal-summary',
+      `Formal artifact is not eligible for model/proof evidence: schemaVersion=${schemaVersion || 'missing'}, artifactStatus=${artifactStatus || 'unspecified'}.`,
+      { artifactPath: resolvedPath },
+    );
+    return;
+  }
   const targetClaims = claimIdsForGlobalEvidence(claimStateMap, contextPackRefs);
   const tool = maybeString(summary.tool);
   const results = Array.isArray(summary.results) ? summary.results : [];
@@ -1071,8 +1109,27 @@ const ingestFormalSummary = (summaryPath, claimStateMap, contextPackRefs, warnin
   for (const result of candidates) {
     const name = maybeString(result.name || tool);
     const status = maybeString(result.status || summary.status);
+    const resultArtifactStatus = maybeString(result.artifactStatus).toLowerCase();
+    if (NON_EXECUTED_ARTIFACT_STATUSES.has(resultArtifactStatus)) {
+      pushWarning(
+        warnings,
+        'untrusted-formal-summary',
+        `Formal result "${name || 'unknown'}" is ${resultArtifactStatus} and is not execution evidence.`,
+        { artifactPath: resolvedPath },
+      );
+      continue;
+    }
     const mapping = formalLaneMapping(name);
     if (!mapping || status !== 'ok') continue;
+    if (!hasExecutionEvidence(result)) {
+      pushWarning(
+        warnings,
+        'untrusted-formal-summary',
+        `Formal result "${name || 'unknown'}" is ok but lacks complete tool/version/input/result/scope/assumption execution evidence.`,
+        { artifactPath: resolvedPath },
+      );
+      continue;
+    }
     const evidence = normalizeEvidenceEntry({
       lane: mapping.lane,
       kind: mapping.kind,

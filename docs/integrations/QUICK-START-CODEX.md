@@ -20,7 +20,7 @@ lastVerified: '2026-03-10'
 - 1) ワンコマンド PoC（Verify + Formal）: `CODEX_RUN_FORMAL=1 pnpm run codex:quickstart`
 - 2) UI スキャフォールド（Phase 6）: `CODEX_RUN_UI=1 CODEX_PHASE_STATE_FILE=... pnpm run codex:quickstart`
 - 3) MCP サーバ起動: `pnpm run codex:mcp:intent & pnpm run codex:mcp:verify &`
-- 成果物: `artifacts/codex/` 配下（OpenAPI, TLA+, model-check, UI サマリ 等）
+- 成果物: `artifacts/codex/` 配下（draft OpenAPI/TLA+ scaffold、UI サマリ等）。model checker は別途実行
 - 継続実行 Contract の運用レシピ: `docs/agents/recipes/continuous-loop.md`
 
 詳細は以下の英語セクションに記載のとおりです。
@@ -40,11 +40,20 @@ pnpm run doctor:env
 CODEX_RUN_FORMAL=1 pnpm run codex:quickstart
 ```
 Outputs under `artifacts/`:
-- `artifacts/codex/formal.tla` (TLA+)
-- `artifacts/codex/openapi.yaml` (OpenAPI)
-- `artifacts/codex/model-check.json` (model checking)
-- `artifacts/codex/result-formal.json` (per-phase JSON)
+- `artifacts/codex/quickstart-formal.tla` (draft TLA+ scaffold)
+- `artifacts/codex/quickstart-openapi.yaml` (draft OpenAPI scaffold)
+- `artifacts/codex/quickstart-summary.md` (records `Formal model checker: not run`)
 - If OpenAPI is present, contract/E2E templates are scaffolded under `tests/api/generated/` and summarized in `artifacts/codex/openapi-contract-tests.json`.
+
+The quickstart does not run a model checker and does not create
+`quickstart-model-check.json`. After reviewing the scaffold, run an actual tool:
+
+```bash
+pnpm run verify:tla -- --engine=tlc
+pnpm run verify:alloy
+# or the full chained lane
+pnpm run verify:formal
+```
 
 Optional flags for smoother local runs:
 ```bash
@@ -122,11 +131,12 @@ pnpm run doctor:env
 CODEX_RUN_FORMAL=1 pnpm run codex:quickstart
 ```
 主な出力:
-- `artifacts/codex/formal.tla`（TLA+）
-- `artifacts/codex/openapi.yaml`（OpenAPI）
-- `artifacts/codex/model-check.json`（モデル検査）
-- `artifacts/codex/result-formal.json`（各フェーズ要約）
+- `artifacts/codex/quickstart-formal.tla`（draft TLA+ scaffold）
+- `artifacts/codex/quickstart-openapi.yaml`（draft OpenAPI scaffold）
+- `artifacts/codex/quickstart-summary.md`（`Formal model checker: not run` を記録）
 - OpenAPI があれば `tests/api/generated/` にテンプレ生成＋`artifacts/codex/openapi-contract-tests.json`
+
+Quickstart は model checker を実行せず、`quickstart-model-check.json` も生成しません。Scaffold をレビューした後、`pnpm run verify:tla -- --engine=tlc`、`pnpm run verify:alloy`、または `pnpm run verify:formal` で実 runner を実行してください。
 
 便利オプション:
 ```bash
