@@ -19,6 +19,7 @@
     },
     "provenance": "runner-reported",
     "executionOccurred": true,
+    "verificationKind": "model-check",
     "tool": {
       "name": "TLC",
       "version": "2.20.0",

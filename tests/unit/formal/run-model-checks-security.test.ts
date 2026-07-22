@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import Ajv2020 from 'ajv/dist/2020.js';
@@ -83,6 +83,9 @@ describe('run-model-checks Alloy execution security', () => {
 
       const summary = JSON.parse(readFileSync(join(dir, 'artifacts', 'codex', 'model-check.json'), 'utf8'));
       expectValidReport(summary);
+      expect(validateModelCheckReportContract(summary, {
+        artifactRoot: join(dir, 'artifacts', 'codex'),
+      })).toEqual([]);
       expect(summary).toMatchObject({
         schemaVersion: 'model-check-report/v1',
         artifactStatus: 'execution-report',
@@ -100,6 +103,7 @@ describe('run-model-checks Alloy execution security', () => {
           artifactStatus: 'execution-report',
           producer: { id: 'ae.formal.run-model-checks' },
           executionOccurred: true,
+          verificationKind: 'model-check',
           tool: {
             name: 'Alloy',
             version: '6.2.0',
@@ -115,6 +119,8 @@ describe('run-model-checks Alloy execution security', () => {
           ]),
         },
       });
+      expect(existsSync(join(dir, 'artifacts', 'codex', 'safe;name.alloy.log.txt'))).toBe(true);
+      expect(readdirSync(join(dir, 'artifacts', 'codex')).some((name) => name.endsWith('.tmp'))).toBe(false);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -36,6 +36,7 @@ function evidence({
     producer,
     provenance: 'runner-reported',
     executionOccurred: true,
+    verificationKind: 'model-check',
     tool: {
       name: specification.endsWith('.als') ? 'Alloy' : 'TLC',
       version,

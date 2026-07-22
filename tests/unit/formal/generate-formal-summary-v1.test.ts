@@ -9,6 +9,7 @@ const producerRefs: Record<string, string> = {
   alloy: 'scripts/formal/verify-alloy.mjs',
   apalache: 'scripts/formal/verify-apalache.mjs',
   conformance: 'scripts/formal/verify-conformance.mjs',
+  csp: 'scripts/formal/verify-csp.mjs',
 };
 
 function executionEvidence(runner: string, input: string, logPath: string, toolName = runner) {
@@ -23,6 +24,7 @@ function executionEvidence(runner: string, input: string, logPath: string, toolN
     },
     provenance: 'runner-reported',
     executionOccurred: true,
+    verificationKind: runner === 'conformance' ? 'conformance' : runner === 'csp' ? 'typecheck' : 'model-check',
     tool: { name: toolName, version: '6.2.0', versionStatus: 'verified', versionSource: 'cli' },
     input: [input],
     result: { status: 'ok', code: 0, logPath },
@@ -123,7 +125,7 @@ describe('formal-summary/v1 generator', () => {
         producer: { id: 'ae.formal.verify-alloy' },
         tool: { name: 'Alloy', version: '6.2.0', versionStatus: 'verified' },
         input: ['spec/formal/model.als'],
-        result: { status: 'ok', code: 0, logPath: 'artifacts/formal/alloy-output.txt' },
+        result: { status: 'ok', code: 0, logPath: 'input/formal/alloy-output.txt' },
         scope: expect.stringContaining('model.als'),
         assumptions: ['The declared verification bounds match the reviewed scope.'],
       });
@@ -212,6 +214,18 @@ describe('formal-summary/v1 generator', () => {
       ...executionEvidence('alloy', 'spec/formal/model.als', 'artifacts/formal/alloy-output.txt', 'Alloy'),
       artifactStatus: 'synthetic',
     }],
+    ['traversing log path with a valid basename', {
+      ...executionEvidence('alloy', 'spec/formal/model.als', 'artifacts/formal/alloy-output.txt', 'Alloy'),
+      result: { status: 'ok', code: 0, logPath: '../../private/alloy-output.txt' },
+    }],
+    ['absolute log path with a valid basename', {
+      ...executionEvidence('alloy', 'spec/formal/model.als', 'artifacts/formal/alloy-output.txt', 'Alloy'),
+      result: { status: 'ok', code: 0, logPath: '/private/alloy-output.txt' },
+    }],
+    ['unsafe input path', {
+      ...executionEvidence('alloy', 'spec/formal/model.als', 'artifacts/formal/alloy-output.txt', 'Alloy'),
+      input: ['../private/model.als'],
+    }],
   ])('does not promote %s', (_name, untrustedEvidence) => {
     const dir = mkdtempSync(join(tmpdir(), 'formal-summary-v1-untrusted-'));
     try {
@@ -265,6 +279,43 @@ describe('formal-summary/v1 generator', () => {
         reason: 'runner_output_contract_missing',
       });
       expect(alloy).not.toHaveProperty('executionEvidence');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not let the CSP typecheck producer self-promote to model-check', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'formal-summary-v1-csp-kind-'));
+    try {
+      const evidence = executionEvidence(
+        'csp',
+        'spec/csp/cspx-smoke.cspm',
+        'artifacts/hermetic-reports/formal/csp-output.txt',
+        'cspx',
+      );
+      evidence.verificationKind = 'model-check';
+      writeJson(join(dir, 'input', 'formal', 'csp-summary.json'), {
+        ran: true,
+        status: 'ran',
+        ok: true,
+        exitCode: 0,
+        backend: 'cspx:typecheck',
+        runnerResult: runnerResult('csp', evidence),
+      });
+      writeFileSync(join(dir, 'input', 'formal', 'csp-output.txt'), 'typecheck only\n', 'utf8');
+      const out = join(dir, 'out', 'formal-summary-v1.json');
+      const result = runNode(dir, ['--layout', 'hermetic', '--in', 'input', '--out', out], {
+        GIT_COMMIT: '0123456789abcdef0123456789abcdef01234567',
+      });
+      expect(result.status).toBe(0);
+      const payload = JSON.parse(readFileSync(out, 'utf8'));
+      const csp = payload.results.find((entry: any) => entry.name === 'csp');
+      expect(csp).toMatchObject({
+        status: 'unknown',
+        artifactStatus: 'not-executed',
+        reason: 'invalid_runner_output_contract',
+      });
+      expect(csp).not.toHaveProperty('executionEvidence');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

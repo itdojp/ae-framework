@@ -480,10 +480,14 @@
               "properties": {
                 "provenance": {
                   "const": "runner-reported"
+                },
+                "verificationKind": {
+                  "const": "model-check"
                 }
               },
               "required": [
-                "provenance"
+                "provenance",
+                "verificationKind"
               ],
               "not": {
                 "required": [
@@ -555,10 +559,14 @@
               "properties": {
                 "provenance": {
                   "const": "runner-reported"
+                },
+                "verificationKind": {
+                  "const": "model-check"
                 }
               },
               "required": [
-                "provenance"
+                "provenance",
+                "verificationKind"
               ],
               "not": {
                 "required": [

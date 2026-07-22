@@ -6,7 +6,13 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import yaml from 'yaml';
 import { buildArtifactMetadata } from '../ci/lib/artifact-metadata.mjs';
-import { getFormalRunnerProducer, hasEligibleToolVersion } from '../formal/execution-evidence.mjs';
+import {
+  claimEligibilityForVerificationKind,
+  getFormalRunnerProducer,
+  hasEligibleFormalSemanticResult,
+  hasEligibleToolVersion,
+  hasReviewedFormalVerificationKind,
+} from '../formal/execution-evidence.mjs';
 
 const DEFAULT_OUTPUT_JSON = 'artifacts/assurance/assurance-summary.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/assurance/assurance-summary.md';
@@ -907,23 +913,12 @@ const sourceKindFromLane = (lane) => {
   return 'unknown';
 };
 
-const formalLaneMapping = (name) => {
-  switch (name) {
-    case 'conformance':
-    case 'tla':
-    case 'apalache':
-    case 'alloy':
-    case 'smt':
-    case 'csp':
-    case 'spin':
-    case 'model':
-      return { lane: 'model', kind: name === 'conformance' ? 'conformance' : 'model-check' };
-    case 'lean':
-    case 'kani':
-      return { lane: 'proof', kind: 'proof' };
-    default:
-      return null;
-  }
+const formalLaneMapping = (verificationKind) => {
+  const eligibility = claimEligibilityForVerificationKind(verificationKind);
+  if (eligibility === 'conformance') return { lane: 'model', kind: 'conformance' };
+  if (eligibility === 'model') return { lane: 'model', kind: 'model-check' };
+  if (eligibility === 'proof') return { lane: 'proof', kind: 'proof' };
+  return null;
 };
 
 const hasExactProducerBinding = (actual, expected) => Boolean(
@@ -940,6 +935,9 @@ const allowedFormalProducers = (name) => {
   if (name === 'conformance') {
     return [getFormalRunnerProducer('conformance'), getFormalRunnerProducer('conformanceDriver')];
   }
+  if (name === 'csp') {
+    return [getFormalRunnerProducer('csp'), getFormalRunnerProducer('cspModelCheck')];
+  }
   try {
     return [getFormalRunnerProducer(name)];
   } catch {
@@ -949,6 +947,13 @@ const allowedFormalProducers = (name) => {
 
 const hasExecutionEvidence = (result, name) => {
   const evidence = result?.executionEvidence;
+  const reviewedRunner = name === 'conformance'
+    && evidence?.producer?.id === getFormalRunnerProducer('conformanceDriver').id
+    ? 'conformanceDriver'
+    : name === 'csp'
+      && evidence?.producer?.id === getFormalRunnerProducer('cspModelCheck').id
+      ? 'cspModelCheck'
+      : name;
   return Boolean(
     evidence
     && typeof evidence === 'object'
@@ -957,6 +962,8 @@ const hasExecutionEvidence = (result, name) => {
     && evidence.artifactStatus === 'execution-report'
     && evidence.executionOccurred === true
     && allowedFormalProducers(name).some((producer) => hasExactProducerBinding(evidence.producer, producer))
+    && hasReviewedFormalVerificationKind(reviewedRunner, evidence.verificationKind)
+    && hasEligibleFormalSemanticResult(reviewedRunner, evidence.semanticResult)
     && evidence.provenance === 'adapter-verified'
     && hasExactProducerBinding(evidence.adapter, FORMAL_SUMMARY_ADAPTER)
     && evidence.result?.status === 'ok'
@@ -1164,8 +1171,7 @@ const ingestFormalSummary = (summaryPath, claimStateMap, contextPackRefs, warnin
   for (const result of candidates) {
     const name = maybeString(result.name || tool);
     const status = maybeString(result.status || summary.status);
-    const mapping = formalLaneMapping(name);
-    if (!mapping || status !== 'ok') continue;
+    if (status !== 'ok') continue;
     if (!hasExecutionEvidence(result, name)) {
       pushWarning(
         warnings,
@@ -1175,6 +1181,8 @@ const ingestFormalSummary = (summaryPath, claimStateMap, contextPackRefs, warnin
       );
       continue;
     }
+    const mapping = formalLaneMapping(result.executionEvidence.verificationKind);
+    if (!mapping) continue;
     const evidence = normalizeEvidenceEntry({
       lane: mapping.lane,
       kind: mapping.kind,

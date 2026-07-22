@@ -65,16 +65,23 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
             const outDir = getArtifactsDir();
             const materializedArtifacts: NonNullable<TaskResponse['formal']>['scaffold']['artifacts'] = [];
             let directoryFailure: string | null = null;
-            try {
-              fs.mkdirSync(outDir, { recursive: true });
-            } catch (error) {
-              directoryFailure = boundedMaterializationMessage('Formal artifact directory creation', error);
+            if (!isRepositoryLocalArtifactDirectory(outDir)) {
+              directoryFailure = 'Formal artifact directory must remain inside the repository';
+            } else {
+              try {
+                fs.mkdirSync(outDir, { recursive: true });
+              } catch (error) {
+                directoryFailure = boundedMaterializationMessage('Formal artifact directory creation', error);
+              }
             }
 
             const materialize = (kind: 'tla' | 'openapi', fileName: string, content: string | null, generationFailure?: string | null) => {
+              const requirement = kind === 'tla'
+                ? { kind: 'tla', required: true } as const
+                : { kind: 'openapi', required: false } as const;
               if (directoryFailure || generationFailure || content === null) {
                 materializedArtifacts.push({
-                  kind,
+                  ...requirement,
                   status: 'failed',
                   message: directoryFailure || generationFailure || `${kind} scaffold content unavailable`,
                 });
@@ -84,18 +91,27 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
               const publicPath = publicArtifactPath(candidatePath);
               if (!publicPath) {
                 materializedArtifacts.push({
-                  kind,
+                  ...requirement,
                   status: 'failed',
                   message: `${kind.toUpperCase()} artifact path must remain inside the repository`,
                 });
                 return;
               }
               try {
-                fs.writeFileSync(candidatePath, content, 'utf8');
-                materializedArtifacts.push({ kind, status: 'written', path: publicPath });
+                const flags = fs.constants.O_WRONLY
+                  | fs.constants.O_CREAT
+                  | fs.constants.O_TRUNC
+                  | (fs.constants.O_NOFOLLOW ?? 0);
+                const fd = fs.openSync(candidatePath, flags, 0o600);
+                try {
+                  fs.writeFileSync(fd, content, 'utf8');
+                } finally {
+                  fs.closeSync(fd);
+                }
+                materializedArtifacts.push({ ...requirement, status: 'written', path: publicPath });
               } catch (error) {
                 materializedArtifacts.push({
-                  kind,
+                  ...requirement,
                   status: 'failed',
                   message: boundedMaterializationMessage(`${kind.toUpperCase()} artifact write`, error),
                 });
@@ -114,27 +130,43 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
               .filter((artifact) => artifact.status === 'failed')
               .map((artifact) => artifact.message ?? `${artifact.kind} artifact materialization failed`);
             const isInvalid = spec.validation.status === 'invalid';
-            const materializationBlocked = materializationStatus === 'failed';
-            const runnerCommands = [
-              'pnpm run verify:tla -- --engine=tlc',
-              'pnpm run verify:alloy',
-              'pnpm run verify:formal',
-            ];
+            const primaryMaterializationFailed = materializedArtifacts.some(
+              (artifact) => artifact.required && artifact.status === 'failed',
+            );
+            const runnerCommands = tlaArtifact
+              ? [
+                  'pnpm run verify:tla -- --engine=tlc',
+                  'pnpm run verify:alloy',
+                  'pnpm run verify:formal',
+                ]
+              : [];
+            const recommendations = tlaArtifact
+              ? [
+                  'Review the generated scaffold before selecting a formal runner',
+                  `Review TLA+: ${tlaArtifact.path}`,
+                  openapiArtifact ? `Review OpenAPI: ${openapiArtifact.path}` : 'Optional OpenAPI content was not materialized',
+                  `Model checker not executed; run one of: ${runnerCommands.join(' | ')}`,
+                ]
+              : [
+                  'Restore repository-local materialization for the required TLA+ artifact before continuing',
+                  openapiArtifact ? `Review optional OpenAPI: ${openapiArtifact.path}` : 'Optional OpenAPI content was not materialized',
+                ];
+            const nextActions = !tlaArtifact
+              ? ['Rerun required TLA artifact materialization after restoring a writable repository-local output']
+              : isInvalid
+                ? ['Resolve formal specification warnings and rerun formal phase']
+                : [
+                    'pnpm run verify:tla -- --engine=tlc',
+                    'pnpm -s run verify:lite',
+                    ...(openapiArtifact ? ['pnpm run codex:generate:tests -- --use-operation-id'] : []),
+                  ];
             const resp: TaskResponse = {
               summary: `Formal scaffold generated in memory: ${spec.type.toUpperCase()} (${spec.validation.status}, ${spec.artifactStatus}, materialization=${materializationStatus})`,
               analysis: spec.content.slice(0, 1200),
-              recommendations: [
-                'Review the generated scaffold before selecting a formal runner',
-                tlaArtifact ? `Review TLA+: ${tlaArtifact.path}` : 'TLA+ content is available in the response but was not materialized',
-                openapiArtifact ? `Review OpenAPI: ${openapiArtifact.path}` : 'OpenAPI content was not materialized',
-                `Model checker not executed; run one of: ${runnerCommands.join(' | ')}`,
-              ],
-              nextActions: [
-                'pnpm -s run verify:lite',
-                'pnpm run codex:generate:tests -- --use-operation-id'
-              ],
+              recommendations,
+              nextActions,
               warnings: [...(spec.validation.warnings?.map(w => w.message) || []), ...materializationWarnings],
-              shouldBlockProgress: isInvalid || materializationBlocked,
+              shouldBlockProgress: isInvalid || primaryMaterializationFailed,
               formal: {
                 scaffold: {
                   status: 'generated',
@@ -150,12 +182,14 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
                   runnerCommands,
                 },
               },
-              ...(isInvalid || materializationBlocked
+              ...(isInvalid || primaryMaterializationFailed
                 ? {
-                    blockingReason: isInvalid ? 'formal-validation-invalid' : 'formal-artifact-materialization-failed',
-                    requiredHumanInput: isInvalid
-                      ? 'resolve formal specification warnings and rerun formal phase'
-                      : 'provide a writable repository-local artifact directory and rerun formal phase',
+                    blockingReason: primaryMaterializationFailed
+                      ? 'formal-primary-artifact-materialization-failed'
+                      : 'formal-validation-invalid',
+                    requiredHumanInput: primaryMaterializationFailed
+                      ? 'writable repository-local output for required TLA artifact materialization'
+                      : 'resolve formal specification warnings and rerun formal phase',
                   }
                 : {}),
             };
@@ -653,6 +687,18 @@ function publicArtifactPath(candidatePath: string): string | null {
   const relative = path.relative(process.cwd(), path.resolve(candidatePath));
   if (!relative || path.isAbsolute(relative) || relative.split(path.sep).includes('..')) return null;
   return relative.split(path.sep).join('/');
+}
+
+function isRepositoryLocalArtifactDirectory(candidatePath: string): boolean {
+  const repoRoot = path.resolve(process.cwd());
+  const resolvedCandidate = path.resolve(candidatePath);
+  const lexicalRelative = path.relative(repoRoot, resolvedCandidate);
+  if (!lexicalRelative || lexicalRelative.startsWith('..') || path.isAbsolute(lexicalRelative)) return false;
+  const realRepoRoot = fs.realpathSync(repoRoot);
+  const existingAncestor = findExistingAncestor(resolvedCandidate);
+  const realAncestor = fs.realpathSync(existingAncestor);
+  const realRelative = path.relative(realRepoRoot, realAncestor);
+  return realRelative === '' || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative));
 }
 
 function getArtifactsDir() {

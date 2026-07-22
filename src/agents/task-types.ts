@@ -38,6 +38,15 @@ export interface TaskRequest {
   context?: TaskRequestContext;
 }
 
+type FormalArtifactRequirement =
+  | { kind: 'tla'; required: true }
+  | { kind: 'openapi'; required: false };
+
+export type FormalArtifactMaterialization = FormalArtifactRequirement & (
+  | { status: 'written'; path: string; message?: never }
+  | { status: 'failed'; path?: never; message: string }
+);
+
 export interface TaskResponse {
   // Short status line. Blocked responses should start with "Blocked:".
   summary: string;
@@ -61,12 +70,7 @@ export interface TaskResponse {
       artifactStatus: 'draft';
       validationStatus: 'valid' | 'invalid' | 'pending';
       materializationStatus: 'written' | 'partial' | 'failed';
-      artifacts: Array<{
-        kind: 'tla' | 'openapi';
-        status: 'written' | 'failed';
-        path?: string;
-        message?: string;
-      }>;
+      artifacts: FormalArtifactMaterialization[];
       artifactPath?: string;
     };
     modelChecking: {

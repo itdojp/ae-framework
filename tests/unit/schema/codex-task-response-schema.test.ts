@@ -84,8 +84,8 @@ describe('codex-task-response schema contract', () => {
         materializationStatus: 'partial',
         artifactPath: 'artifacts/codex/formal.tla',
         artifacts: [
-          { kind: 'tla', status: 'written', path: 'artifacts/codex/formal.tla' },
-          { kind: 'openapi', status: 'failed', message: 'OPENAPI artifact write failed (EISDIR)' },
+          { kind: 'tla', required: true, status: 'written', path: 'artifacts/codex/formal.tla' },
+          { kind: 'openapi', required: false, status: 'failed', message: 'OPENAPI artifact write failed (EISDIR)' },
         ],
       },
       modelChecking: {
@@ -103,5 +103,85 @@ describe('codex-task-response schema contract', () => {
     const missingWrittenPath = structuredClone(formal);
     delete (missingWrittenPath.scaffold.artifacts[0] as any).path;
     expect(validate({ ...base, formal: missingWrittenPath })).toBe(false);
+
+    const missingScaffoldPath = structuredClone(formal);
+    delete (missingScaffoldPath.scaffold as any).artifactPath;
+    expect(validate({ ...base, formal: missingScaffoldPath })).toBe(false);
+
+    const incorrectMaterializationStatus = structuredClone(formal);
+    incorrectMaterializationStatus.scaffold.materializationStatus = 'written';
+    expect(validate({ ...base, formal: incorrectMaterializationStatus })).toBe(false);
+  });
+
+  it('rejects mutations of per-artifact required flags', () => {
+    const base = loadJson(validContinuePath) as Record<string, unknown>;
+    const formal = {
+      scaffold: {
+        status: 'generated',
+        artifactStatus: 'draft',
+        validationStatus: 'valid',
+        materializationStatus: 'written',
+        artifactPath: 'artifacts/codex/formal.tla',
+        artifacts: [
+          { kind: 'tla', required: true, status: 'written', path: 'artifacts/codex/formal.tla' },
+          { kind: 'openapi', required: false, status: 'written', path: 'artifacts/codex/openapi.yaml' },
+        ],
+      },
+      modelChecking: {
+        status: 'not-run',
+        evidenceArtifact: null,
+        runnerCommands: ['pnpm run verify:tla -- --engine=tlc'],
+      },
+    };
+    expect(validate({ ...base, formal })).toBe(true);
+
+    for (const [artifactIndex, mutatedRequired] of [[0, false], [1, true]] as const) {
+      const mutation = structuredClone(formal);
+      mutation.scaffold.artifacts[artifactIndex].required = mutatedRequired;
+      expect(validate({ ...base, formal: mutation })).toBe(false);
+      expect(validate.errors?.some((error) => error.keyword === 'const')).toBe(true);
+    }
+
+    const missingRequired = structuredClone(formal);
+    delete (missingRequired.scaffold.artifacts[0] as any).required;
+    expect(validate({ ...base, formal: missingRequired })).toBe(false);
+    expect(validate.errors?.some((error) => error.keyword === 'required')).toBe(true);
+  });
+
+  it('allows no path or runner command when required TLA materialization fails', () => {
+    const base = {
+      ...(loadJson(validBlockedPath) as Record<string, unknown>),
+      blockingReason: 'formal-primary-artifact-materialization-failed',
+      requiredHumanInput: 'writable repository-local output for required TLA artifact materialization',
+    };
+    const formal = {
+      scaffold: {
+        status: 'generated',
+        artifactStatus: 'draft',
+        validationStatus: 'valid',
+        materializationStatus: 'partial',
+        artifacts: [
+          { kind: 'tla', required: true, status: 'failed', message: 'TLA artifact write failed (EISDIR)' },
+          { kind: 'openapi', required: false, status: 'written', path: 'artifacts/codex/openapi.yaml' },
+        ],
+      },
+      modelChecking: {
+        status: 'not-run',
+        evidenceArtifact: null,
+        runnerCommands: [] as string[],
+      },
+    };
+    expect(validate({ ...base, formal })).toBe(true);
+
+    const nonexistentScaffoldPath = structuredClone(formal);
+    (nonexistentScaffoldPath.scaffold as any).artifactPath = 'artifacts/codex/formal.tla';
+    expect(validate({ ...base, formal: nonexistentScaffoldPath })).toBe(false);
+
+    const commandWithoutTla = structuredClone(formal);
+    commandWithoutTla.modelChecking.runnerCommands.push('pnpm run verify:tla -- --engine=tlc');
+    expect(validate({ ...base, formal: commandWithoutTla })).toBe(false);
+
+    expect(validate({ ...base, shouldBlockProgress: false, formal })).toBe(false);
+    expect(validate({ ...base, blockingReason: 'formal-artifact-materialization-failed', formal })).toBe(false);
   });
 });

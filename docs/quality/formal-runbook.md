@@ -22,10 +22,12 @@ This runbook describes the lowest-friction way to operate formal verification in
 
 ### Generation and execution boundary
 - `FormalAgent`, its MCP server, the Codex formal adapter, and `codex:quickstart` generate reviewable `draft` scaffolds and perform structural validation only. They do not execute a model checker.
-- Only an actual TLA+/Alloy/SMT/Apalache/Kani/SPIN/CSP/Lean runner result may support `model-checked` or `proved`. Tool absence, timeout, tool error, and unexecuted work remain explicit non-success outcomes.
+- Runner identity alone never determines claim eligibility. The closed runner contract fixes a `verificationKind` for each reviewed producer and Assurance derives eligibility only from that value: `presence`, `build`, and `typecheck` remain execution records; `conformance` can support only conformance evidence; `model-check` can support the model lane; and `proof-check` can support the proof lane. Tool absence, timeout, tool error, and unexecuted work remain explicit non-success outcomes.
+- The current Kani runner is `presence`, Lean `lake build` is `build`, and CSP type checking is `typecheck`; none of these can satisfy a model/proof claim. A reviewed CSP assertion/refinement execution is `model-check`; typecheck and model-check use distinct reviewed producer identities so the typecheck producer cannot self-promote. Lean proof promotion remains disabled until a separate contract closes the `sorry`/`admit`, proof-scope, untrusted-axiom, and proof-checker policies.
+- SMT is `model-check` only when the runner strictly parses one `sat`/`unsat` result and it equals the reviewed expected result; `unknown`, malformed/multiple results, and a missing expectation are non-success or claim-ineligible. SPIN is `model-check` only when the `pan` output is parsed, the search completed, `errors == 0`, no trail/counterexample exists, and the requested property and bounds match the executed options. Exit code zero by itself is insufficient for either runner.
 - Formal Summary results are eligible for Assurance model/proof lanes only after the whole `formal-summary/v1|v2` document validates, top-level `artifactStatus=execution-report` and the reviewed summary producer binding match, and the result carries `provenance=adapter-verified` evidence produced by the reviewed summary adapter from a schema-valid `formal-runner-output/v1` envelope. Raw `provenance=runner-reported` is never authoritative. The generator cross-binds the envelope producer, execution result, exit code, and materialized log and does not backfill missing fields.
 - Eligible execution evidence requires `executionOccurred=true`, result `status=ok` / `code=0` / a materialized log, and verified tool-version provenance from CLI output, a jar/package manifest, or a reviewed artifact pin. `unknown`, `unspecified`, `n/a`, artifact-pin mismatch, and contradictory `versionStatus=verified` / `versionSource=unavailable` records remain visible evidence gaps but cannot satisfy a claim.
-- `pnpm run model-check` and `pnpm run verify:model` invoke `scripts/verify/run-model-checks.mjs`. Its `artifacts/codex/model-check.json` records `detectedInputs`, `executedInputs`, `skippedInputs`, and `approvedSkipRefs`. Under `enforce-formal`, every detected input must execute and pass; timeout, tool error, unknown version, unapproved skip, or invalid report contract fails closed. Without the label, the lane remains report-only.
+- `pnpm run model-check` and `pnpm run verify:model` invoke `scripts/verify/run-model-checks.mjs`. Its `artifacts/codex/model-check.json` records `detectedInputs`, `executedInputs`, `skippedInputs`, and `approvedSkipRefs`. TLC and Alloy raw logs are materialized under `artifacts/codex/*.tlc.log.txt` and `artifacts/codex/*.alloy.log.txt`; every referenced log must resolve to a repository-relative, regular, non-symlink file inside that artifact root before report upload or after download. Under `enforce-formal`, every detected input must execute and pass; timeout, tool error, unknown version, unapproved skip, missing log, or invalid report contract fails closed. Without the label, the lane remains report-only.
 - Historical Issue #348 recorded that formal execution was not yet a first-class FormalAgent capability and moved remaining work to the roadmap. The current boundary closes the later pseudo-execution gap; it does not reinterpret #348 as evidence that FormalAgent had executed model checking.
 
 ### Usage (CI / Labels)
@@ -41,7 +43,7 @@ This runbook describes the lowest-friction way to operate formal verification in
 - `pnpm run verify:conformance` - conformance summary runner. Use together with `ae conformance verify` when you need a narrower replay/conformance check.
 - `pnpm run verify:alloy` - Alloy runner. Resolves the `alloy` CLI or runs `java` with argv-safe arguments when `ALLOY_JAR` is set. Shell command templates such as `ALLOY_RUN_CMD` are not executed by this runner.
 - `pnpm run verify:tla -- --engine=apalache|tlc` - TLA runner. Resolves `TLA_TOOLS_JAR` or `apalache-mc`.
-- `pnpm run verify:smt -- --solver=z3|cvc5` - SMT runner.
+- `pnpm run verify:smt -- --solver=z3|cvc5 --expected-result=sat|unsat` - SMT runner; the reviewed expectation is required for claim eligibility.
 - `pnpm run verify:kani` - Kani presence summary runner.
 - `pnpm run verify:spin` - Promela/SPIN runner.
 - `pnpm run verify:csp` - CSP runner using `CSP_RUN_CMD`, `cspx`, `refines`, or `cspmchecker`.
@@ -70,7 +72,7 @@ This runbook describes the lowest-friction way to operate formal verification in
 - Tool availability: `pnpm run tools:formal:check`.
 - Apalache (`apalache-mc` when installed): `pnpm run verify:tla -- --engine=apalache`.
 - TLC (when `TLA_TOOLS_JAR` is set): `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`.
-- SMT (when `z3` or `cvc5` is available): `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`.
+- SMT (when `z3` or `cvc5` is available): `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2 --expected-result=sat`.
 
 ### Apalache quickstart
 - Presence/version check: `node scripts/formal/check-apalache.mjs`.
@@ -212,7 +214,7 @@ jobs:
 - CI split / operating patterns: `docs/quality/formal-ops-guidelines.md`
 - Lightweight trace validation: `pnpm run trace:validate`
 - SMT sample: `spec/smt/sample.smt2`
-- Example SMT run: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
+- Example SMT run: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2 --expected-result=sat`
 - Alloy / TLA jar configuration:
   - `workflow_dispatch` accepts only approved repository-relative `tlaFile` values under `spec/tla`; jar path overrides are intentionally not accepted.
   - The `Formal Verify` workflow downloads/caches `tla2tools.jar` from its pinned `TLA_TOOLS_VERSION` and sets `TLA_TOOLS_JAR` internally for TLC.
@@ -247,7 +249,7 @@ jobs:
   - `apalache-mc check --inv=Invariant spec/tla/DomainSpec.tla`
 - SMT (standalone availability check)
   - `z3 --version` / `cvc5 --version`
-  - In normal operation, prefer `pnpm run verify:smt -- --solver=z3|cvc5`.
+  - In normal operation, prefer `pnpm run verify:smt -- --solver=z3|cvc5 --expected-result=sat|unsat`.
 - Alloy CLI (when available)
   - `pnpm run verify:alloy -- --file spec/alloy/Domain.als`
 
@@ -255,10 +257,12 @@ jobs:
 
 ### Generation と execution の境界
 - `FormalAgent`、Formal MCP server、Codex formal adapter、`codex:quickstart` は review 用の `draft` scaffold と構造 validation だけを生成し、model checker は実行しない。
-- `model-checked` / `proved` を支えられるのは、実 TLA+/Alloy/SMT/Apalache/Kani/SPIN/CSP/Lean runner の結果だけである。tool 不在、timeout、tool error、未実行は success に変換しない。
+- runner 名だけで claim eligibility を決定しない。closed runner contract で review 済み producer ごとの `verificationKind` を固定し、Assurance はその値だけから eligibility を導出する。`presence` / `build` / `typecheck` は execution record に留め、`conformance` は conformance Evidence のみ、`model-check` は model lane、`proof-check` は proof lane を満たし得る。tool 不在、timeout、tool error、未実行は success に変換しない。
+- 現在の Kani runner は `presence`、Lean `lake build` は `build`、CSP typecheck は `typecheck` であり、model/proof claim を満たさない。review 済み CSP assertion/refinement 実行だけを `model-check` とし、typecheck producer の自己昇格を防ぐため両 capability は別の review 済み producer identity を使用する。Lean の proof 昇格は `sorry` / `admit`、proof scope、untrusted axiom、proof checker の各 policy を別 contract で閉じるまで無効である。
+- SMT は `sat` / `unsat` を厳密に1件だけ parse し、review 済み expected result と一致した場合に限り `model-check` とする。`unknown`、malformed/multiple result、期待値欠落は non-success または claim-ineligible とする。SPIN は `pan` output を parse し、search 完了、`errors == 0`、trail/counterexample なし、requested property/bounds と実行 option の一致を確認した場合に限り `model-check` とする。いずれも exit code 0 だけでは成功にならない。
 - Assurance の model/proof lane に投入できる Formal Summary result は、文書全体が `formal-summary/v1|v2` Schema に適合し、top-level の `artifactStatus=execution-report` と review 済み summary producer binding が一致し、対象 tool の review 済み runner が生成した Schema-valid な `formal-runner-output/v1` envelope を summary adapter が検証し、`provenance=adapter-verified` を付与した場合に限る。raw の `provenance=runner-reported` は authority とせず、summary generator は producer、execution result、exit code、materialized log を cross-bind し、欠落 field を補完しない。
 - eligible execution evidence は `executionOccurred=true`、result の `status=ok` / `code=0` / materialized log、および CLI output、jar/package manifest、または review 済み artifact pin から得た verified tool version を要求する。`unknown` / `unspecified` / `n/a` / artifact pin mismatch、および矛盾する `versionStatus=verified` / `versionSource=unavailable` は execution attempt として保持するが claim を満たさない。
-- `pnpm run model-check` / `pnpm run verify:model` が生成する `artifacts/codex/model-check.json` は `detectedInputs` / `executedInputs` / `skippedInputs` / `approvedSkipRefs` を記録する。`enforce-formal` では検出 input の全件実行・成功を要求し、timeout、tool error、unknown version、未承認 skip、report contract 不正を fail closed にする。ラベルがなければ report-only を維持する。
+- `pnpm run model-check` / `pnpm run verify:model` が生成する `artifacts/codex/model-check.json` は `detectedInputs` / `executedInputs` / `skippedInputs` / `approvedSkipRefs` を記録する。TLC / Alloy raw log は `artifacts/codex/*.tlc.log.txt` / `artifacts/codex/*.alloy.log.txt` に materialize し、各参照 log が repository-relative、regular file、non-symlink、artifact root 内であることを upload 前および download 後に検証する。`enforce-formal` では検出 input の全件実行・成功を要求し、timeout、tool error、unknown version、未承認 skip、参照 log 欠落、report contract 不正を fail closed にする。ラベルがなければ report-only を維持する。
 - Historical Issue #348 は FormalAgent の formal execution が first-class capability ではないことを記録し、残作業を roadmap へ移した履歴である。今回の境界修正は後発の疑似実行 gap を閉じるものであり、#348 を「FormalAgent が model checking を実行済み」という Evidence に再解釈しない。
 
 ### 運用の基本
@@ -269,7 +273,7 @@ jobs:
 - `pnpm run verify:conformance` - conformance サマリーランナー。必要に応じて `ae conformance verify` と併用する。
 - `pnpm run verify:alloy` - Alloy ランナー。`alloy` CLI、または `ALLOY_JAR` を使った argv-safe な `java` 実行を使う。`ALLOY_RUN_CMD` のような shell command template は実行しない。
 - `pnpm run verify:tla -- --engine=apalache|tlc` - TLA ランナー。`TLA_TOOLS_JAR` または `apalache-mc` を解決する。
-- `pnpm run verify:smt -- --solver=z3|cvc5` - SMT ランナー。
+- `pnpm run verify:smt -- --solver=z3|cvc5 --expected-result=sat|unsat` - SMT ランナー。review 済み expected result が claim eligibility に必要である。
 - `pnpm run verify:kani` - Kani の presence サマリーランナー。
 - `pnpm run verify:spin` - Promela / SPIN ランナー。
 - `pnpm run verify:csp` - `CSP_RUN_CMD`、`cspx`、`refines`、`cspmchecker` を順に使う CSP ランナー。
@@ -299,7 +303,7 @@ jobs:
 - Apalache（`apalache-mc` 導入済みの場合）: `pnpm run verify:tla -- --engine=apalache`
 - TLC（`TLA_TOOLS_JAR` 設定時）: `TLA_TOOLS_JAR=/path/to/tla2tools.jar pnpm run verify:tla -- --engine=tlc`
 - CI の `Formal Verify` workflow は固定された `TLA_TOOLS_VERSION` から `tla2tools.jar` を取得・キャッシュし、TLC 用の `TLA_TOOLS_JAR` を内部設定します。`workflow_dispatch` から jar パスは指定しません。
-- SMT（`z3` または `cvc5` がある場合）: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2`
+- SMT（`z3` または `cvc5` がある場合）: `pnpm run verify:smt -- --solver=z3 --file spec/smt/sample.smt2 --expected-result=sat`
 
 ### Apalache クイックスタート
 - presence / version 確認: `node scripts/formal/check-apalache.mjs`

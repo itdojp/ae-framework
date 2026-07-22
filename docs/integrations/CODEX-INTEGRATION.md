@@ -147,7 +147,7 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
 ### Implementation notes
 - File: `src/agents/codex-task-adapter.ts` (core), `scripts/codex/adapter-stdio.mjs` (bridge)
 - UI: uses `UIScaffoldGenerator` when `context.phaseState.entities` is provided; otherwise dry-run
-- Formal: `FormalAgent` generates `draft` TLA+ and OpenAPI scaffolds. The adapter reports model checking as `not-run`; actual execution is delegated to repository formal runners.
+- Formal: `FormalAgent` generates `draft` TLA+ and OpenAPI scaffolds. Materialization results declare TLA+ as required and OpenAPI as optional. A TLA+ write failure blocks and requires materialization to be rerun; an OpenAPI-only failure is a non-blocking partial warning. The adapter reports model checking as `not-run`; actual execution is delegated to repository formal runners only after TLA+ was written.
 - Validation: runtime schema validation (Zod) for `context.phaseState` blocks on invalid inputs with actionable messages.
  - Contract/E2E templates: when OpenAPI is available in quickstart, `scripts/codex/generate-contract-tests.mjs` scaffolds tests under `tests/api/generated/` and writes `artifacts/codex/openapi-contract-tests.json`.
 - Continuation contract (No Human Bottleneck): `docs/integrations/CODEX-CONTINUATION-CONTRACT.md`
@@ -159,6 +159,8 @@ echo '{"description":"Generate UI","subagent_type":"ui","context":{"phaseState":
   - `shouldBlockProgress=false` => `nextActions` must be non-empty
   - `shouldBlockProgress=true` => `nextActions` and `warnings` must be non-empty
   - `nextActions`/`warnings` item strings must be non-empty
+  - Formal artifact entries declare `required=true` for TLA+ and `required=false` for OpenAPI
+  - Failed artifacts omit `path`; scaffold `artifactPath` and model-checker runner commands are present only when TLA+ was written
 - Migration recommendation:
   - Move blocked responses to explicit `blockingReason` / `requiredHumanInput` fields where possible.
   - Existing blocked responses without those fields are accepted for compatibility.
@@ -322,6 +324,8 @@ Additionally, when running the formal phase, the adapter derives an OpenAPI spec
 
 This file is also uploaded in CI as `codex-openapi` if present.
 
+The formal response treats `formal.tla` as the required primary artifact and `openapi.yaml` as optional. If TLA+ materialization fails, the task blocks with `formal-primary-artifact-materialization-failed`, exposes no nonexistent TLA+ path or checker command, and requests another materialization attempt. An OpenAPI-only write failure remains a non-blocking warning. Scaffold status remains `draft`, and model checking remains `not-run` until a separate runner executes.
+
 On Windows/WSL
 - Prefer running MCP servers from WSL for consistent `cwd` and path behavior
 - If using Windows paths, ensure `cwd` is an absolute path without spaces and that execution policy permits scripts
@@ -381,7 +385,7 @@ set CODEX_RUN_FORMAL=1 && pnpm run build && pnpm run codex:quickstart
 ### 3) Codex タスクアダプター（stdio ブリッジ）
 - TODO/Plan/Tool ↔ ae-framework の各フェーズをマッピング
 - UI: `context.phaseState.entities` があれば `UIScaffoldGenerator` を実行
-- Formal: `draft` OpenAPI/TLA+ scaffold を生成し、model checking は `not-run` として分離する。実検査は formal runner へ委譲
+- Formal: `draft` OpenAPI/TLA+ scaffold を生成し、TLA+ を必須、OpenAPI を任意の materialization 成果物として扱う。TLA+ 書き込み失敗は再 materialization が必要なブロック、OpenAPI 単独失敗は非ブロッキング警告とする。model checking は `not-run` として分離し、TLA+ 書き込み成功後の実検査を formal runner へ委譲
 - 検証: 入力を Zod でバリデーションし、無効時は行動可能なエラー
 
 ### 4) MCP なしの stdio ツール（Spec）

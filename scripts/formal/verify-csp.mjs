@@ -130,6 +130,7 @@ let resultStatus = null;
 let forceWriteSummary = true;
 let toolVersion = '';
 let versionSource = 'unavailable';
+let verificationKind = 'typecheck';
 
 if (!fs.existsSync(absFile)) {
   status = 'file_not_found';
@@ -160,6 +161,7 @@ if (!fs.existsSync(absFile)) {
       );
       mode = 'typecheck';
     }
+    verificationKind = mode === 'assertions' ? 'model-check' : 'typecheck';
 
     // Keep the v0.1 integration intentionally narrow and reproducible.
     // - typecheck: cspx typecheck
@@ -239,6 +241,7 @@ if (!fs.existsSync(absFile)) {
       );
       mode = 'typecheck';
     }
+    verificationKind = mode === 'assertions' ? 'model-check' : 'typecheck';
     const refinesArgs = (mode === 'assertions')
       // Run all assertions in the file (best-effort). Keep output small.
       ? ['--brief', '--quiet', '--format', 'plain', absFile]
@@ -321,8 +324,10 @@ if (forceWriteSummary) {
   fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 }
 const finalSummary = readJsonSafe(outFile) || {};
+const evidenceRunner = verificationKind === 'model-check' ? 'cspModelCheck' : 'csp';
 const executionEvidence = buildLegacyFormalExecutionEvidence({
-  runner: 'csp',
+  runner: evidenceRunner,
+  verificationKind,
   toolName: finalSummary.backend || backend || 'CSP',
   toolVersion,
   versionSource,
@@ -337,7 +342,7 @@ const executionEvidence = buildLegacyFormalExecutionEvidence({
     'The result applies only to the supplied CSP model, selected backend, and requested mode.',
   ],
 });
-finalSummary.runnerResult = buildFormalRunnerOutput({ runner: 'csp', executionEvidence });
+finalSummary.runnerResult = buildFormalRunnerOutput({ runner: evidenceRunner, executionEvidence });
 fs.writeFileSync(outFile, JSON.stringify(finalSummary, null, 2));
 console.log(`CSP summary written: ${path.relative(repoRoot, outFile)}`);
 console.log(`- file=${finalSummary.file || path.relative(repoRoot, absFile)} status=${finalSummary.status || status}${(finalSummary.backend || backend) ? ` backend=${finalSummary.backend || backend}` : ''}`);

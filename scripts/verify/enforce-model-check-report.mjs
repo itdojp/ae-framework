@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getFormalRunnerProducer, hasEligibleToolVersion } from '../formal/execution-evidence.mjs';
+import { validateModelCheckReferencedLogs } from './model-check-artifacts.mjs';
 
 const REPORT_PRODUCER = getFormalRunnerProducer('model');
 const TOP_LEVEL_KEYS = new Set([
@@ -16,7 +17,7 @@ const RESULT_KEYS = {
 };
 const EVIDENCE_KEYS = new Set([
   'schemaVersion', 'artifactStatus', 'producer', 'provenance', 'executionOccurred',
-  'tool', 'input', 'result', 'scope', 'assumptions',
+  'verificationKind', 'tool', 'input', 'result', 'scope', 'assumptions',
 ]);
 const TOOL_KEYS = new Set([
   'name', 'version', 'versionStatus', 'versionSource', 'artifactSha256', 'expectedArtifactSha256',
@@ -51,6 +52,7 @@ function validateExecutionEvidence(evidence, result, location, errors) {
   if (!exactBinding(evidence.producer, REPORT_PRODUCER)) errors.push(`${location}.evidence.producer is not the reviewed model runner`);
   if (evidence.provenance !== 'runner-reported') errors.push(`${location}.evidence.provenance is invalid`);
   if (evidence.executionOccurred !== true) errors.push(`${location}.evidence.executionOccurred must be true`);
+  if (evidence.verificationKind !== 'model-check') errors.push(`${location}.evidence.verificationKind must be model-check`);
 
   if (!isObject(evidence.tool)) {
     errors.push(`${location}.evidence.tool must be an object`);
@@ -105,7 +107,7 @@ function validateExecutionEvidence(evidence, result, location, errors) {
   }
 }
 
-export function validateModelCheckReportContract(report) {
+export function validateModelCheckReportContract(report, { artifactRoot } = {}) {
   const errors = [];
   if (!isObject(report)) return ['report must be an object'];
   const extraTopLevelKeys = unexpectedKeys(report, TOP_LEVEL_KEYS);
@@ -200,11 +202,14 @@ export function validateModelCheckReportContract(report) {
     && !allResults.some((result) => result?.executionStatus === 'tool-error')) {
     errors.push('tool-error status requires a backend error or tool-error result');
   }
+  if (artifactRoot) {
+    errors.push(...validateModelCheckReferencedLogs(report, { artifactRoot }));
+  }
   return errors;
 }
 
-export function evaluateModelCheckEnforcement(report) {
-  const errors = validateModelCheckReportContract(report);
+export function evaluateModelCheckEnforcement(report, { artifactRoot } = {}) {
+  const errors = validateModelCheckReportContract(report, { artifactRoot });
   if (errors.length > 0) return errors;
   const results = [...report.tlc.results, ...report.alloy.results];
   const backendErrors = report.tlc.errors.length + report.alloy.errors.length;
@@ -227,11 +232,22 @@ export function evaluateModelCheckEnforcement(report) {
   return errors;
 }
 
+function parseArgs(argv) {
+  const parsed = { contractOnly: false, artifactRoot: null, file: null };
+  for (let index = 0; index < argv.length; index += 1) {
+    const value = argv[index];
+    if (value === '--contract-only') parsed.contractOnly = true;
+    else if (value === '--artifact-root' && argv[index + 1]) parsed.artifactRoot = argv[++index];
+    else if (value.startsWith('--artifact-root=')) parsed.artifactRoot = value.slice('--artifact-root='.length);
+    else if (!parsed.file) parsed.file = value;
+  }
+  return parsed;
+}
+
 function main(argv = process.argv.slice(2)) {
-  const contractOnly = argv.includes('--contract-only');
-  const file = argv.find((value) => value !== '--contract-only');
+  const { contractOnly, artifactRoot, file } = parseArgs(argv);
   if (!file) {
-    console.error('Usage: node scripts/verify/enforce-model-check-report.mjs [--contract-only] <model-check.json>');
+    console.error('Usage: node scripts/verify/enforce-model-check-report.mjs [--contract-only] [--artifact-root <dir>] <model-check.json>');
     return 2;
   }
   let report;
@@ -242,8 +258,8 @@ function main(argv = process.argv.slice(2)) {
     return 1;
   }
   const errors = contractOnly
-    ? validateModelCheckReportContract(report)
-    : evaluateModelCheckEnforcement(report);
+    ? validateModelCheckReportContract(report, { artifactRoot })
+    : evaluateModelCheckEnforcement(report, { artifactRoot });
   if (errors.length > 0) {
     console.error(`${contractOnly ? 'Model-check report contract' : 'Formal enforcement'} failed:`);
     for (const error of errors) console.error(`- ${error}`);

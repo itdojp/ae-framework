@@ -23,7 +23,8 @@ const file = [...args].reverse().find((a) => String(a).endsWith('.cspm')) || 'UN
 const outIdx = args.indexOf('--output');
 const outPath = outIdx >= 0 ? args[outIdx + 1] : null;
 
-const status = cmd === 'typecheck' ? 'pass' : (cmd === 'check' ? 'fail' : 'error');
+const configuredStatus = process.env.CSPX_FIXTURE_STATUS;
+const status = configuredStatus || (cmd === 'typecheck' ? 'pass' : (cmd === 'check' ? 'fail' : 'error'));
 const exit_code = status === 'pass' ? 0 : (status === 'fail' ? 1 : 2);
 
 const payload = {
@@ -125,6 +126,8 @@ describe('verify-csp (cspx backend)', () => {
     expect(sum.status).toBe('ran');
     expect(sum.resultStatus).toBe('pass');
     expect(sum.exitCode).toBe(0);
+    expect(sum.runnerResult.executionEvidence.verificationKind).toBe('typecheck');
+    expect(sum.runnerResult.producer.id).toBe('ae.formal.verify-csp');
 
     const detailsPath = join(dir, 'artifacts', 'hermetic-reports', 'formal', 'cspx-result.json');
     const details = JSON.parse(readFileSync(detailsPath, 'utf8'));
@@ -157,6 +160,47 @@ describe('verify-csp (cspx backend)', () => {
     expect(sum.status).toBe('failed');
     expect(sum.resultStatus).toBe('fail');
     expect(sum.exitCode).toBe(1);
+    expect(sum.runnerResult.executionEvidence.verificationKind).toBe('model-check');
+    expect(sum.runnerResult.producer.id).toBe('ae.formal.verify-csp-model-check');
+
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('binds a successful reviewed assertion execution to model-check', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'verify-csp-cspx-assertion-pass-'));
+    const specDir = join(dir, 'spec', 'csp');
+    mkdirSync(specDir, { recursive: true });
+    writeFileSync(join(specDir, 'ok.cspm'), 'SYSTEM = STOP\n', 'utf8');
+
+    const binDir = join(dir, 'bin');
+    mkdirSync(binDir, { recursive: true });
+    writeFakeCspx(binDir);
+
+    const result = runVerifyCsp(
+      dir,
+      ['--file', 'spec/csp/ok.cspm', '--mode', 'assertions'],
+      {
+        PATH: `${binDir}${delimiter}${process.env.PATH || ''}`,
+        CSPX_FIXTURE_STATUS: 'pass',
+      },
+    );
+    expect(result.status).toBe(0);
+
+    const sumPath = join(dir, 'artifacts', 'hermetic-reports', 'formal', 'csp-summary.json');
+    const sum = JSON.parse(readFileSync(sumPath, 'utf8'));
+    expect(sum).toMatchObject({
+      backend: 'cspx:assertions',
+      status: 'ran',
+      resultStatus: 'pass',
+      exitCode: 0,
+      runnerResult: {
+        executionEvidence: {
+          verificationKind: 'model-check',
+          producer: { id: 'ae.formal.verify-csp-model-check' },
+          result: { status: 'ok', code: 0 },
+        },
+      },
+    });
 
     rmSync(dir, { recursive: true, force: true });
   });

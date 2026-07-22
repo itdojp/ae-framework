@@ -136,7 +136,7 @@ jobs:
           node --version
           java -version
           npm run verify:model || true
-          node scripts/verify/enforce-model-check-report.mjs --contract-only artifacts/codex/model-check.json
+          node scripts/verify/enforce-model-check-report.mjs --contract-only --artifact-root artifacts/codex artifacts/codex/model-check.json
       - name: Upload model-check artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -144,6 +144,7 @@ jobs:
           path: |
             artifacts/codex/model-check.json
             artifacts/codex/*.tlc.log.txt
+            artifacts/codex/*.alloy.log.txt
   build-summary:
     if: ${{ github.event_name == 'pull_request' || inputs.trigger == 'pull_request' }}
     runs-on: ubuntu-latest
@@ -157,10 +158,18 @@ jobs:
         || (inputs.trigger == 'pull_request' && contains(inputs.pr_labels, 'ci-non-blocking'))
       }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts_dl
+      - name: Validate downloaded model-check log references
+        run: |
+          FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' | head -1)
+          if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then printf "%s\n" "No model-check.json found"; exit 1; fi
+          node scripts/verify/enforce-model-check-report.mjs --contract-only --artifact-root "$(dirname "$FILE")" "$FILE"
       - name: Build PR comment summary
         id: build
         env:
@@ -438,7 +447,7 @@ jobs:
         run: |
           FILE=$(find artifacts_dl/model-check-results -name 'model-check.json' | head -1)
           if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then printf "%s\n" "No model-check.json found"; exit 1; fi
-          node scripts/verify/enforce-model-check-report.mjs "$FILE"
+          node scripts/verify/enforce-model-check-report.mjs --artifact-root "$(dirname "$FILE")" "$FILE"
 
   formal-conformance-optin:
     if: ${{ github.event_name == 'pull_request' || inputs.trigger == 'pull_request' }}

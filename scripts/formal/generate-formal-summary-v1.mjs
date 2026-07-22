@@ -13,7 +13,12 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { buildArtifactMetadata } from '../ci/lib/artifact-metadata.mjs';
 import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
-import { getFormalRunnerProducer, hasEligibleToolVersion } from './execution-evidence.mjs';
+import {
+  getFormalRunnerProducer,
+  hasEligibleToolVersion,
+  hasEligibleFormalSemanticResult,
+  hasReviewedFormalVerificationKind,
+} from './execution-evidence.mjs';
 
 const DEFAULT_IN = 'artifacts_dl';
 const DEFAULT_OUT = path.join('artifacts', 'formal', 'formal-summary-v1.json');
@@ -231,6 +236,14 @@ function hasExactProducerBinding(actual, expected) {
     && actual.artifactRef === expected.artifactRef;
 }
 
+function isSafeRepositoryRelativePath(value) {
+  if (typeof value !== 'string' || !value.trim()) return false;
+  const candidate = value.trim();
+  if (path.isAbsolute(candidate) || path.win32.isAbsolute(candidate) || candidate.startsWith('\\\\')) return false;
+  const segments = candidate.replaceAll('\\', '/').split('/');
+  return segments.every((segment) => segment !== '' && segment !== '.' && segment !== '..');
+}
+
 function normalizeRunnerReportedExecutionEvidence(raw, expectedStatus, runnerName, resolvedLogPath) {
   const runnerResult = raw?.runnerResult;
   if (!runnerResult || typeof runnerResult !== 'object' || Array.isArray(runnerResult)) return null;
@@ -239,21 +252,42 @@ function normalizeRunnerReportedExecutionEvidence(raw, expectedStatus, runnerNam
   if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) return null;
   const expectedProducers = runnerName === 'conformance'
     ? [getFormalRunnerProducer('conformance'), getFormalRunnerProducer('conformanceDriver')]
+    : runnerName === 'csp'
+      ? [getFormalRunnerProducer('csp'), getFormalRunnerProducer('cspModelCheck')]
     : [getFormalRunnerProducer(runnerName)];
   if (!validateExecutionEvidence(evidence)) return null;
+  if (!Array.isArray(evidence.input) || !evidence.input.every(isSafeRepositoryRelativePath)) return null;
+  if (evidence.executionOccurred === true && !isSafeRepositoryRelativePath(evidence.result?.logPath)) return null;
   if (evidence.provenance !== 'runner-reported' || evidence.adapter !== undefined) return null;
   if (!expectedProducers.some((producer) => hasExactProducerBinding(runnerResult.producer, producer))) return null;
   if (!expectedProducers.some((producer) => hasExactProducerBinding(evidence.producer, producer))) return null;
   if (!hasExactProducerBinding(evidence.producer, runnerResult.producer)) return null;
+  const reviewedRunner = runnerName === 'conformance'
+    && evidence.producer.id === getFormalRunnerProducer('conformanceDriver').id
+    ? 'conformanceDriver'
+    : runnerName === 'csp'
+      && evidence.producer.id === getFormalRunnerProducer('cspModelCheck').id
+      ? 'cspModelCheck'
+      : runnerName;
+  if (!hasReviewedFormalVerificationKind(reviewedRunner, evidence.verificationKind)) return null;
+  if (evidence.result.status === 'ok'
+    && !hasEligibleFormalSemanticResult(reviewedRunner, evidence.semanticResult)) return null;
   if (runnerResult.artifactStatus !== evidence.artifactStatus) return null;
   if (evidence.result.status !== expectedStatus) return null;
   const rawCode = typeof raw?.exitCode === 'number' ? raw.exitCode : (typeof raw?.code === 'number' ? raw.code : null);
   if (evidence.result.code !== rawCode) return null;
   if (evidence.executionOccurred === true && !resolvedLogPath) return null;
+  if (evidence.executionOccurred === true && !isSafeRepositoryRelativePath(resolvedLogPath)) return null;
   if (evidence.executionOccurred === true
-    && path.basename(evidence.result.logPath) !== path.basename(resolvedLogPath)) return null;
+    && path.posix.basename(evidence.result.logPath.replaceAll('\\', '/')) !== path.posix.basename(resolvedLogPath)) return null;
+  if ((runnerName === 'smt' || runnerName === 'spin')
+    && JSON.stringify(evidence.semanticResult) !== JSON.stringify(raw?.semanticResult)) return null;
   return {
     ...JSON.parse(JSON.stringify(evidence)),
+    result: {
+      ...JSON.parse(JSON.stringify(evidence.result)),
+      logPath: evidence.executionOccurred === true ? resolvedLogPath : evidence.result.logPath,
+    },
     provenance: 'adapter-verified',
     adapter: SUMMARY_PRODUCER,
   };

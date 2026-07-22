@@ -77,8 +77,8 @@ Error response format (machine-readable):
         "materializationStatus": "written",
         "artifactPath": "artifacts/codex/formal.tla",
         "artifacts": [
-          { "kind": "tla", "status": "written", "path": "artifacts/codex/formal.tla" },
-          { "kind": "openapi", "status": "written", "path": "artifacts/codex/openapi.yaml" }
+          { "kind": "tla", "required": true, "status": "written", "path": "artifacts/codex/formal.tla" },
+          { "kind": "openapi", "required": false, "status": "written", "path": "artifacts/codex/openapi.yaml" }
         ]
       },
       "modelChecking": { "status": "not-run", "evidenceArtifact": null, "runnerCommands": ["pnpm run verify:tla -- --engine=tlc"] }
@@ -111,8 +111,12 @@ Notes:
 - TLA+ (if generated): `artifacts/codex/formal.tla`
 - OpenAPI (if derived): `artifacts/codex/openapi.yaml`
 - `FormalAgent` and the Codex formal phase produce `artifactStatus=draft`. They perform structural generation/validation only and never create successful model-check evidence.
-- Scaffold generation in memory is separate from filesystem materialization. `materializationStatus=written|partial|failed` and per-artifact `status` report only completed writes. Failed entries contain a bounded error code, omit `path`, and never expose a private absolute path. A total materialization failure blocks the formal task; a partial write remains a warning.
+- Scaffold generation in memory is separate from filesystem materialization. Each result declares its policy: TLA+ is the primary artifact (`required=true`), while OpenAPI is optional (`required=false`). `materializationStatus=written|partial|failed` reports aggregate write completion; blocking is determined by the per-artifact requirement rather than the aggregate alone.
+- A failed TLA+ write blocks with `blockingReason=formal-primary-artifact-materialization-failed`, even when OpenAPI was written and the aggregate status is `partial`. The response omits both the failed entry's `path` and scaffold `artifactPath`, provides no model-checker command or checker next action, and requires TLA+ materialization to be rerun.
+- An OpenAPI-only failure reports `materializationStatus=partial` and a warning but does not block. If both writes fail, the required TLA+ failure blocks; if both succeed, the formal phase continues.
+- Failed entries contain a bounded error code, omit `path`, and never expose a private absolute path. `artifactPath` is present only when the TLA+ entry is `written` and mirrors that entry's repository-relative path.
 - `response.formal.modelChecking.status=not-run` and `evidenceArtifact=null` are required until an actual checker runner executes.
+- `response.formal.modelChecking.runnerCommands`, the model-checker recommendation, and the model-checker next action are populated only after TLA+ is written. A missing required TLA+ artifact therefore cannot produce a command that would target a nonexistent input.
 - Actual model-check report (only after explicit `pnpm run model-check` or `pnpm run verify:model`):
   - Path: `artifacts/codex/model-check.json`
   - Producer: `scripts/verify/run-model-checks.mjs`

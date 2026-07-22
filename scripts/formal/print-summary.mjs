@@ -50,8 +50,11 @@ if (f.conformance) {
 }
 if (f.smt) {
   const st = f.smt.status;
-  const tag = (st === 'ran') ? c.green('[OK]') : (st === 'solver_not_available' ? c.gray('[INFO]') : c.yellow('[WARN]'));
-  const smtLine = `${tag} SMT: ${st}`;
+  const semantic = f.smt.semanticResult || {};
+  const tag = (st === 'ran' && f.smt.ok === true)
+    ? c.green('[OK]')
+    : (st === 'solver_not_available' ? c.gray('[INFO]') : c.yellow('[WARN]'));
+  const smtLine = `${tag} SMT: ${st} ok=${f.smt.ok === true ? 'yes' : 'no'} expected=${semantic.expectedResult ?? 'missing'} actual=${semantic.actualResult ?? 'unparsed'}`;
   lines.push(smtLine);
 }
 if (f.alloy) {
@@ -94,8 +97,11 @@ if (f.kani) {
 
 if (f.spin) {
   const st = f.spin.status;
-  const tag = (st === 'ran') ? c.green('[OK]') : ((st === 'tool_not_available' || st === 'compile_not_available') ? c.gray('[INFO]') : c.yellow('[WARN]'));
-  const spinLine = `${tag} SPIN: ${st}${f.spin.ltl ? ` (ltl=${f.spin.ltl})` : ''}`;
+  const semantic = f.spin.semanticResult || {};
+  const tag = (st === 'ran' && f.spin.ok === true)
+    ? c.green('[OK]')
+    : ((st === 'tool_not_available' || st === 'compile_not_available') ? c.gray('[INFO]') : c.yellow('[WARN]'));
+  const spinLine = `${tag} SPIN: ${st} ok=${f.spin.ok === true ? 'yes' : 'no'} errors=${semantic.errors ?? 'unparsed'}${f.spin.ltl ? ` (ltl=${f.spin.ltl})` : ''}`;
   lines.push(spinLine);
 }
 

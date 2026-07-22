@@ -10,6 +10,7 @@
     "producer",
     "provenance",
     "executionOccurred",
+    "verificationKind",
     "tool",
     "input",
     "result",
@@ -23,12 +24,15 @@
     "provenance": { "enum": ["runner-reported", "adapter-verified"] },
     "adapter": { "$ref": "#/$defs/adapter" },
     "executionOccurred": { "type": "boolean" },
+    "verificationKind": {
+      "enum": ["presence", "build", "typecheck", "conformance", "model-check", "proof-check"]
+    },
     "tool": { "$ref": "#/$defs/tool" },
     "input": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 1 }
+      "items": { "$ref": "#/$defs/repositoryRelativePath" }
     },
     "result": { "$ref": "#/$defs/result" },
     "scope": { "type": "string", "minLength": 1 },
@@ -37,7 +41,8 @@
       "minItems": 1,
       "uniqueItems": true,
       "items": { "type": "string", "minLength": 1 }
-    }
+    },
+    "semanticResult": { "$ref": "#/$defs/semanticResult" }
   },
   "allOf": [
     {
@@ -113,6 +118,105 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-smt" } },
+            "required": ["id"]
+          }
+        },
+        "required": ["producer"]
+      },
+      "then": {
+        "required": ["semanticResult"],
+        "properties": {
+          "semanticResult": {
+            "properties": { "domain": { "const": "smt" } },
+            "required": ["domain"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-spin" } },
+            "required": ["id"]
+          }
+        },
+        "required": ["producer"]
+      },
+      "then": {
+        "required": ["semanticResult"],
+        "properties": {
+          "semanticResult": {
+            "properties": { "domain": { "const": "spin" } },
+            "required": ["domain"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-smt" } },
+            "required": ["id"]
+          },
+          "result": {
+            "properties": { "status": { "const": "ok" } },
+            "required": ["status"]
+          }
+        },
+        "required": ["producer", "result"]
+      },
+      "then": {
+        "properties": {
+          "semanticResult": {
+            "properties": {
+              "parsed": { "const": true },
+              "expectedResult": { "enum": ["sat", "unsat"] },
+              "actualResult": { "enum": ["sat", "unsat"] },
+              "matchesExpected": { "const": true },
+              "timeout": { "const": false }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-spin" } },
+            "required": ["id"]
+          },
+          "result": {
+            "properties": { "status": { "const": "ok" } },
+            "required": ["status"]
+          }
+        },
+        "required": ["producer", "result"]
+      },
+      "then": {
+        "properties": {
+          "semanticResult": {
+            "properties": {
+              "parsed": { "const": true },
+              "errors": { "const": 0 },
+              "trailPresent": { "const": false },
+              "counterexamplePresent": { "const": false },
+              "searchCompleted": { "const": true },
+              "propertyMatched": { "const": true },
+              "boundsMatched": { "const": true },
+              "timeout": { "const": false }
+            }
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -158,8 +262,75 @@
       "properties": {
         "status": { "enum": ["ok", "failed", "timeout", "tool-error", "skipped", "missing", "unknown"] },
         "code": { "type": ["integer", "null"] },
-        "logPath": { "type": ["string", "null"], "minLength": 1 }
+        "logPath": {
+          "oneOf": [
+            { "$ref": "#/$defs/repositoryRelativePath" },
+            { "type": "null" }
+          ]
+        }
       }
+    },
+    "repositoryRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!\\\\\\\\)(?!.*(?:^|[\\\\/])\\.\\.?[\\\\/])(?!.*[\\\\/]\\.\\.?$).+$"
+    },
+    "semanticResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domain", "parsed", "expectedResult", "actualResult", "matchesExpected", "timeout"],
+          "properties": {
+            "domain": { "const": "smt" },
+            "parsed": { "type": "boolean" },
+            "expectedResult": { "type": ["string", "null"], "enum": ["sat", "unsat", null] },
+            "actualResult": { "type": ["string", "null"], "enum": ["sat", "unsat", "unknown", "malformed", null] },
+            "matchesExpected": { "type": ["boolean", "null"] },
+            "timeout": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "domain",
+            "parsed",
+            "errors",
+            "trailPresent",
+            "counterexamplePresent",
+            "searchCompleted",
+            "requestedProperty",
+            "selectedProperty",
+            "requestedMaxDepth",
+            "depthReached",
+            "options",
+            "propertyMatched",
+            "boundsMatched",
+            "timeout"
+          ],
+          "properties": {
+            "domain": { "const": "spin" },
+            "parsed": { "type": "boolean" },
+            "errors": { "type": ["integer", "null"], "minimum": 0 },
+            "trailPresent": { "type": "boolean" },
+            "counterexamplePresent": { "type": "boolean" },
+            "searchCompleted": { "type": "boolean" },
+            "requestedProperty": { "type": ["string", "null"], "minLength": 1 },
+            "selectedProperty": { "type": ["string", "null"], "minLength": 1 },
+            "requestedMaxDepth": { "type": "integer", "minimum": 1 },
+            "depthReached": { "type": ["integer", "null"], "minimum": 0 },
+            "options": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "propertyMatched": { "type": "boolean" },
+            "boundsMatched": { "type": "boolean" },
+            "timeout": { "type": "boolean" }
+          }
+        }
+      ]
     }
   }
 }

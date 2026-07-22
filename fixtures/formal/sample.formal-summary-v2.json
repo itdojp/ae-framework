@@ -48,6 +48,7 @@
         },
         "provenance": "adapter-verified",
         "executionOccurred": true,
+        "verificationKind": "conformance",
         "tool": {
           "name": "ae-framework conformance validator",
           "version": "1.0.0",

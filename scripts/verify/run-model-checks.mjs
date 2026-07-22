@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { promises as fs } from 'fs';
+import { constants as fsConstants, promises as fs } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import { createHash } from 'crypto';
@@ -9,6 +9,10 @@ import {
   getFormalRunnerProducer,
   normalizeToolVersion,
 } from '../formal/execution-evidence.mjs';
+import {
+  assertSafeModelCheckArtifactTarget,
+  validateModelCheckReferencedLogs,
+} from './model-check-artifacts.mjs';
 
 const repoRoot = process.cwd();
 const outDir = path.join(repoRoot, 'artifacts', 'codex');
@@ -16,9 +20,51 @@ const toolsDir = path.join(repoRoot, '.cache', 'tools');
 const tlaJar = path.join(toolsDir, 'tla2tools.jar');
 const alloyJar = process.env.ALLOY_JAR || path.join(toolsDir, 'alloy.jar');
 const defaultTlaToolsUrl = 'https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar';
+let artifactTempCounter = 0;
 
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
+}
+
+async function writeModelCheckArtifact(targetPath, content) {
+  await ensureDir(outDir);
+  const safeTarget = assertSafeModelCheckArtifactTarget(targetPath, outDir, { containmentRoot: repoRoot });
+  const tempPath = path.join(
+    outDir,
+    `.${path.basename(safeTarget)}.${process.pid}.${artifactTempCounter += 1}.tmp`,
+  );
+  const safeTemp = assertSafeModelCheckArtifactTarget(tempPath, outDir, { containmentRoot: repoRoot });
+  const flags = fsConstants.O_WRONLY
+    | fsConstants.O_CREAT
+    | fsConstants.O_EXCL
+    | (fsConstants.O_NOFOLLOW ?? 0);
+  let handle;
+  let prepareError;
+  try {
+    handle = await fs.open(safeTemp, flags, 0o600);
+    await handle.writeFile(content, 'utf8');
+    await handle.sync();
+    const tempStat = await handle.stat();
+    if (!tempStat.isFile()) throw new Error('model-check temporary artifact must be a regular file');
+  } catch (error) {
+    prepareError = error;
+  } finally {
+    await handle?.close();
+  }
+  if (prepareError) {
+    await fs.unlink(safeTemp).catch(() => {});
+    throw prepareError;
+  }
+  try {
+    await fs.rename(safeTemp, safeTarget);
+  } catch (error) {
+    await fs.unlink(safeTemp).catch(() => {});
+    throw error;
+  }
+  const written = await fs.lstat(safeTarget);
+  if (written.isSymbolicLink() || !written.isFile()) {
+    throw new Error('model-check artifact write did not produce a regular non-symlink file');
+  }
 }
 
 async function statFile(p) {
@@ -36,7 +82,7 @@ async function sha256File(filePath) {
 }
 
 async function captureCommand(command, args, timeoutMs = 15_000) {
-  return await new Promise((resolve) => {
+  return await new Promise((resolve, reject) => {
     const proc = spawn(command, args, { cwd: repoRoot });
     let stdout = '';
     let stderr = '';
@@ -205,8 +251,12 @@ async function runTLC(modulePath, configPath) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
-      resolve(result);
+      try {
+        await writeModelCheckArtifact(logPath, out + (err ? `\n[stderr]\n${err}` : ''));
+        resolve(result);
+      } catch (error) {
+        reject(error);
+      }
     };
     const timer = setTimeout(() => {
       timedOut = true;
@@ -373,7 +423,7 @@ async function main() {
         const logPath = path.join(outDir, `${name}.alloy.log.txt`);
         try {
           await ensureDir(outDir);
-          const res = await new Promise((resolve) => {
+          const res = await new Promise((resolve, reject) => {
             const args = buildAlloyJavaArgs(f);
             const sh = spawn('java', args, { cwd: repoRoot });
             let out = ''; let err = '';
@@ -385,8 +435,12 @@ async function main() {
               settled = true;
               terminated = true;
               clearTimeout(timer);
-              await fs.writeFile(logPath, out + (err ? `\n[stderr]\n${err}` : ''), 'utf8');
-              resolve(result);
+              try {
+                await writeModelCheckArtifact(logPath, out + (err ? `\n[stderr]\n${err}` : ''));
+                resolve(result);
+              } catch (error) {
+                reject(error);
+              }
             };
             const timer = setTimeout(() => {
               if (!terminated && sh.exitCode === null) {
@@ -474,8 +528,12 @@ async function main() {
     summary.status = 'tool-error';
   }
   await ensureDir(outDir);
+  const referencedLogErrors = validateModelCheckReferencedLogs(summary, { artifactRoot: outDir });
+  if (referencedLogErrors.length > 0) {
+    throw new Error(`model-check referenced log validation failed: ${referencedLogErrors.join('; ')}`);
+  }
   const out = path.join(outDir, 'model-check.json');
-  await fs.writeFile(out, JSON.stringify(summary, null, 2), 'utf8');
+  await writeModelCheckArtifact(out, JSON.stringify(summary, null, 2));
   console.log('Model check summary written to', path.relative(repoRoot, out));
 }
 

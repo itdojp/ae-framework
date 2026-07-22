@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { createCodexTaskAdapter, finalizeTaskResponse, type Phase } from '../../../src/agents/codex-task-adapter';
@@ -22,6 +22,15 @@ function createBaseResponse(overrides: Partial<TaskResponse> = {}): TaskResponse
     shouldBlockProgress: false,
     ...overrides,
   };
+}
+
+async function runFormalTask(): Promise<TaskResponse> {
+  return createCodexTaskAdapter().handleTask({
+    description: 'Generate formal scaffold.',
+    prompt: 'Inventory never becomes negative.',
+    subagent_type: 'formal',
+    context: {},
+  });
 }
 
 describe.sequential('finalizeTaskResponse', () => {
@@ -186,8 +195,8 @@ describe.sequential('finalizeTaskResponse', () => {
           materializationStatus: 'written',
           artifactPath: expect.any(String),
           artifacts: [
-            { kind: 'tla', status: 'written', path: expect.any(String) },
-            { kind: 'openapi', status: 'written', path: expect.any(String) },
+            { kind: 'tla', required: true, status: 'written', path: expect.any(String) },
+            { kind: 'openapi', required: false, status: 'written', path: expect.any(String) },
           ],
         },
         modelChecking: {
@@ -199,6 +208,10 @@ describe.sequential('finalizeTaskResponse', () => {
       expect(existsSync(join(artifactDir, 'formal.tla'))).toBe(true);
       expect(existsSync(join(artifactDir, 'openapi.yaml'))).toBe(true);
       expect(existsSync(join(artifactDir, 'model-check.json'))).toBe(false);
+      const tlaArtifact = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'tla');
+      expect(response.formal?.scaffold.artifactPath).toBe(tlaArtifact?.path);
+      expect(response.nextActions).toContain('pnpm run verify:tla -- --engine=tlc');
+      expect(response.recommendations.join('\n')).toContain('Model checker not executed');
       for (const artifact of response.formal?.scaffold.artifacts ?? []) {
         expect(artifact.status).toBe('written');
         expect(artifact.path && existsSync(resolve(artifact.path))).toBe(true);
@@ -229,20 +242,24 @@ describe.sequential('finalizeTaskResponse', () => {
     const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
     process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
     try {
-      const response = await createCodexTaskAdapter().handleTask({
-        description: 'Generate formal scaffold.',
-        prompt: 'Inventory never becomes negative.',
-        subagent_type: 'formal',
-        context: {},
-      });
+      const response = await runFormalTask();
       expect(response.shouldBlockProgress).toBe(true);
-      expect(response.blockingReason).toBe('formal-artifact-materialization-failed');
+      expect(response.blockingReason).toBe('formal-primary-artifact-materialization-failed');
+      expect(response.requiredHumanInput).toContain('required TLA artifact materialization');
       expect(response.formal?.scaffold.materializationStatus).toBe('failed');
       expect(response.formal?.scaffold).not.toHaveProperty('artifactPath');
       expect(response.formal?.scaffold.artifacts).toEqual([
-        { kind: 'tla', status: 'failed', message: expect.stringContaining('failed') },
-        { kind: 'openapi', status: 'failed', message: expect.stringContaining('failed') },
+        { kind: 'tla', required: true, status: 'failed', message: expect.stringContaining('failed') },
+        { kind: 'openapi', required: false, status: 'failed', message: expect.stringContaining('failed') },
       ]);
+      expect(response.formal?.modelChecking).toEqual({
+        status: 'not-run',
+        evidenceArtifact: null,
+        runnerCommands: [],
+      });
+      expect(response.recommendations.join('\n')).not.toMatch(/model checker|verify:tla|verify:alloy|verify:formal/i);
+      expect(response.nextActions.join('\n')).toMatch(/TLA artifact materialization/i);
+      expect(response.nextActions.join('\n')).not.toMatch(/verify:tla|verify:alloy|verify:formal/i);
       expect(JSON.stringify(response)).not.toContain(artifactDir);
       expect(existsSync(join(artifactDir, 'formal.tla'))).toBe(false);
       expect(existsSync(join(artifactDir, 'openapi.yaml'))).toBe(false);
@@ -253,32 +270,95 @@ describe.sequential('finalizeTaskResponse', () => {
     }
   });
 
-  it.each([
-    ['tla', 'formal.tla', 'openapi.yaml'],
-    ['openapi', 'openapi.yaml', 'formal.tla'],
-  ] as const)('reports a partial write when the %s artifact cannot be written', async (failedKind, blockedName, writtenName) => {
+  it('blocks a partial materialization when required TLA fails and optional OpenAPI succeeds', async () => {
     const tmpRoot = resolve('.codex-local/tmp');
     mkdirSync(tmpRoot, { recursive: true });
-    const artifactDir = mkdtempSync(join(tmpRoot, `codex-formal-${failedKind}-failure-`));
-    mkdirSync(join(artifactDir, blockedName));
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-formal-tla-failure-'));
+    mkdirSync(join(artifactDir, 'formal.tla'));
     const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
     process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
     try {
-      const response = await createCodexTaskAdapter().handleTask({
-        description: 'Generate formal scaffold.',
-        prompt: 'Inventory never becomes negative.',
-        subagent_type: 'formal',
-        context: {},
-      });
-      expect(response.shouldBlockProgress).toBe(false);
+      const response = await runFormalTask();
+      expect(response.shouldBlockProgress).toBe(true);
+      expect(response.blockingReason).toBe('formal-primary-artifact-materialization-failed');
       expect(response.formal?.scaffold.materializationStatus).toBe('partial');
-      const failed = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === failedKind);
-      const written = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind !== failedKind);
-      expect(failed).toMatchObject({ kind: failedKind, status: 'failed', message: expect.stringContaining('failed') });
-      expect(failed).not.toHaveProperty('path');
-      expect(written).toMatchObject({ status: 'written', path: expect.any(String) });
-      expect(written?.path && existsSync(resolve(written.path))).toBe(true);
-      expect(existsSync(join(artifactDir, writtenName))).toBe(true);
+      expect(response.formal?.scaffold).not.toHaveProperty('artifactPath');
+      const tla = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'tla');
+      const openapi = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'openapi');
+      expect(tla).toMatchObject({ kind: 'tla', required: true, status: 'failed', message: expect.stringContaining('failed') });
+      expect(tla).not.toHaveProperty('path');
+      expect(openapi).toMatchObject({ kind: 'openapi', required: false, status: 'written', path: expect.any(String) });
+      expect(openapi?.path && existsSync(resolve(openapi.path))).toBe(true);
+      expect(existsSync(join(artifactDir, 'openapi.yaml'))).toBe(true);
+      expect(response.formal?.modelChecking.runnerCommands).toEqual([]);
+      expect(response.recommendations.join('\n')).not.toMatch(/model checker|verify:tla|verify:alloy|verify:formal/i);
+      expect(response.nextActions.join('\n')).toMatch(/TLA artifact materialization/i);
+      expect(response.nextActions.join('\n')).not.toMatch(/verify:tla|verify:alloy|verify:formal/i);
+      expect(JSON.stringify(response)).not.toContain(artifactDir);
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not follow a pre-existing symlink for the required TLA artifact', async () => {
+    if (process.platform === 'win32') return;
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-formal-tla-symlink-'));
+    const victim = join(artifactDir, 'victim.txt');
+    writeFileSync(victim, 'unchanged\n', 'utf8');
+    symlinkSync(victim, join(artifactDir, 'formal.tla'));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      const response = await runFormalTask();
+      expect(response).toMatchObject({
+        shouldBlockProgress: true,
+        blockingReason: 'formal-primary-artifact-materialization-failed',
+      });
+      expect(response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'tla')).toMatchObject({
+        required: true,
+        status: 'failed',
+      });
+      expect(response.formal?.modelChecking.runnerCommands).toEqual([]);
+      expect(readFileSync(victim, 'utf8')).toBe('unchanged\n');
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps an optional OpenAPI-only failure as a non-blocking partial warning', async () => {
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-formal-openapi-failure-'));
+    mkdirSync(join(artifactDir, 'openapi.yaml'));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      const response = await runFormalTask();
+      expect(response.shouldBlockProgress).toBe(false);
+      expect(response).not.toHaveProperty('blockingReason');
+      expect(response.formal?.scaffold.materializationStatus).toBe('partial');
+      const tla = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'tla');
+      const openapi = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'openapi');
+      expect(tla).toMatchObject({ kind: 'tla', required: true, status: 'written', path: expect.any(String) });
+      expect(response.formal?.scaffold.artifactPath).toBe(tla?.path);
+      expect(tla?.path && existsSync(resolve(tla.path))).toBe(true);
+      expect(openapi).toMatchObject({ kind: 'openapi', required: false, status: 'failed', message: expect.stringContaining('failed') });
+      expect(openapi).not.toHaveProperty('path');
+      expect(response.warnings).toEqual(expect.arrayContaining([expect.stringContaining('OPENAPI artifact write failed')]));
+      expect(response.formal?.modelChecking).toMatchObject({
+        status: 'not-run',
+        evidenceArtifact: null,
+        runnerCommands: expect.arrayContaining(['pnpm run verify:tla -- --engine=tlc']),
+      });
+      expect(response.recommendations.join('\n')).toContain('Model checker not executed');
+      expect(response.nextActions).toContain('pnpm run verify:tla -- --engine=tlc');
+      expect(response.nextActions.join('\n')).not.toContain('codex:generate:tests');
       expect(JSON.stringify(response)).not.toContain(artifactDir);
     } finally {
       if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];

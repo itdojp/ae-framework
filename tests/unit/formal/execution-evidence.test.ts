@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   buildFormalExecutionEvidence,
   buildFormalRunnerOutput,
+  claimEligibilityForVerificationKind,
   extractToolVersion,
+  getFormalRunnerVerificationKinds,
+  hasEligibleFormalSemanticResult,
   hasEligibleToolVersion,
   normalizeToolVersion,
 } from '../../../scripts/formal/execution-evidence.mjs';
@@ -34,6 +37,7 @@ describe('formal execution evidence', () => {
     expect(evidence).toMatchObject({
       artifactStatus: 'execution-report',
       executionOccurred: true,
+      verificationKind: 'model-check',
       tool: { version: 'unknown', versionStatus: 'unknown', versionSource: 'unavailable' },
       result: { status: 'ok', code: 0 },
     });
@@ -100,6 +104,84 @@ describe('formal execution evidence', () => {
       version: '6.2.0',
       versionStatus: 'verified',
       versionSource: 'cli',
+    })).toBe(true);
+  });
+
+  it('binds reviewed producers to verification capability kinds', () => {
+    expect(getFormalRunnerVerificationKinds('kani')).toEqual(['presence']);
+    expect(getFormalRunnerVerificationKinds('lean')).toEqual(['build']);
+    expect(getFormalRunnerVerificationKinds('csp')).toEqual(['typecheck']);
+    expect(getFormalRunnerVerificationKinds('cspModelCheck')).toEqual(['model-check']);
+    expect(claimEligibilityForVerificationKind('presence')).toBe('none');
+    expect(claimEligibilityForVerificationKind('build')).toBe('none');
+    expect(claimEligibilityForVerificationKind('typecheck')).toBe('none');
+    expect(claimEligibilityForVerificationKind('conformance')).toBe('conformance');
+    expect(claimEligibilityForVerificationKind('model-check')).toBe('model');
+    expect(claimEligibilityForVerificationKind('proof-check')).toBe('proof');
+  });
+
+  it('rejects a producer-kind pair outside the reviewed policy', () => {
+    expect(() => buildFormalExecutionEvidence({
+      runner: 'lean',
+      verificationKind: 'proof-check',
+      toolName: 'Lean 4 / Lake',
+      toolVersion: '4.19.0',
+      versionSource: 'cli',
+      inputPaths: ['spec/lean'],
+      resultStatus: 'ok',
+      exitCode: 0,
+      logPath: 'artifacts/formal/lean-output.txt',
+      scope: 'Lean build only',
+      assumptions: ['No proof-check policy is asserted.'],
+      executionOccurred: true,
+    })).toThrow('is not allowed for reviewed runner lean');
+  });
+
+  it('requires eligible semantic evidence before SMT/SPIN success can enter a runner envelope', () => {
+    const validSmt = {
+      domain: 'smt',
+      parsed: true,
+      expectedResult: 'unsat',
+      actualResult: 'unsat',
+      matchesExpected: true,
+      timeout: false,
+    };
+    expect(hasEligibleFormalSemanticResult('smt', validSmt)).toBe(true);
+    expect(hasEligibleFormalSemanticResult('smt', { ...validSmt, actualResult: 'sat' })).toBe(false);
+
+    const evidence = buildFormalExecutionEvidence({
+      runner: 'smt',
+      toolName: 'z3',
+      toolVersion: '4.12.2',
+      versionSource: 'cli',
+      inputPaths: ['spec/smt/sample.smt2'],
+      resultStatus: 'ok',
+      exitCode: 0,
+      logPath: 'artifacts/formal/smt-output.txt',
+      scope: 'SMT fixture scope',
+      assumptions: ['The expected result is reviewed.'],
+      executionOccurred: true,
+      semanticResult: { ...validSmt, actualResult: 'sat' },
+    });
+    expect(() => buildFormalRunnerOutput({ runner: 'smt', executionEvidence: evidence })).toThrow(
+      'requires eligible semantic result evidence',
+    );
+
+    expect(hasEligibleFormalSemanticResult('spin', {
+      domain: 'spin',
+      parsed: true,
+      errors: 0,
+      trailPresent: false,
+      counterexamplePresent: false,
+      searchCompleted: true,
+      requestedProperty: 'p_done',
+      selectedProperty: 'p_done',
+      requestedMaxDepth: 10000,
+      depthReached: 17,
+      options: ['-a', '-m10000', '-N', 'p_done'],
+      propertyMatched: true,
+      boundsMatched: true,
+      timeout: false,
     })).toBe(true);
   });
 });

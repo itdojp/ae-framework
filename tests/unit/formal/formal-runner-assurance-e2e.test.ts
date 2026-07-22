@@ -64,12 +64,13 @@ exit 0
         contractId: 'formal-runner-output.v1',
         producer: { id: 'ae.formal.verify-tla' },
         executionEvidence: {
-        artifactStatus: 'execution-report',
-        producer: { id: 'ae.formal.verify-tla' },
-        provenance: 'runner-reported',
-        executionOccurred: true,
-        tool: { version: '2.20.0', versionStatus: 'verified', versionSource: 'cli' },
-        result: { status: 'ok', code: 0 },
+          artifactStatus: 'execution-report',
+          producer: { id: 'ae.formal.verify-tla' },
+          provenance: 'runner-reported',
+          executionOccurred: true,
+          verificationKind: 'model-check',
+          tool: { version: '2.20.0', versionStatus: 'verified', versionSource: 'cli' },
+          result: { status: 'ok', code: 0 },
         },
       });
       expect(alloyRaw.runnerResult).toMatchObject({
@@ -77,12 +78,13 @@ exit 0
         contractId: 'formal-runner-output.v1',
         producer: { id: 'ae.formal.verify-alloy' },
         executionEvidence: {
-        artifactStatus: 'execution-report',
-        producer: { id: 'ae.formal.verify-alloy' },
-        provenance: 'runner-reported',
-        executionOccurred: true,
-        tool: { version: '6.2.0', versionStatus: 'verified', versionSource: 'cli' },
-        result: { status: 'ok', code: 0 },
+          artifactStatus: 'execution-report',
+          producer: { id: 'ae.formal.verify-alloy' },
+          provenance: 'runner-reported',
+          executionOccurred: true,
+          verificationKind: 'model-check',
+          tool: { version: '6.2.0', versionStatus: 'verified', versionSource: 'cli' },
+          result: { status: 'ok', code: 0 },
         },
       });
 
