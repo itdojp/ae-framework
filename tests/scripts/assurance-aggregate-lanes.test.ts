@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -9,6 +9,7 @@ const repoRoot = resolve('.');
 const scriptPath = resolve(repoRoot, 'scripts/assurance/aggregate-lanes.mjs');
 const moduleUrl = pathToFileURL(scriptPath).href;
 const deterministicGeneratedAt = '2026-06-21T00:00:00.000Z';
+const localTmpRoot = resolve(repoRoot, '.codex-local/tmp');
 
 const writeJson = (targetPath: string, payload: unknown) => {
   writeFileSync(targetPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
@@ -67,9 +68,65 @@ const createVerifyLiteSummary = (overrides = {}) => ({
   ...overrides,
 });
 
+const createExecutionEvidence = ({
+  runner,
+  tool,
+  version,
+  input,
+  logPath,
+  verificationKind,
+  semanticResult,
+  producerRunner,
+}: {
+  runner: 'alloy' | 'conformance' | 'csp' | 'kani' | 'lean' | 'smt' | 'spin' | 'tla';
+  tool: string;
+  version: string;
+  input: string[];
+  logPath: string;
+  verificationKind?: 'presence' | 'build' | 'typecheck' | 'conformance' | 'model-check' | 'proof-check';
+  semanticResult?: Record<string, unknown>;
+  producerRunner?: 'cspModelCheck';
+}) => ({
+  schemaVersion: 'formal-runner-result/v1',
+  artifactStatus: 'execution-report',
+  producer: {
+    id: producerRunner === 'cspModelCheck' ? 'ae.formal.verify-csp-model-check' : `ae.formal.verify-${runner}`,
+    version: '1.0.0',
+    contract: 'formal-runner-result/v1',
+    artifactRef: `scripts/formal/verify-${runner}.mjs`,
+  },
+  provenance: 'adapter-verified',
+  adapter: {
+    id: 'ae.formal.summary-generator',
+    version: '1.0.0',
+    contract: 'formal-summary-adapter/v1',
+    artifactRef: 'scripts/formal/generate-formal-summary-v1.mjs',
+  },
+  executionOccurred: true,
+  verificationKind: verificationKind
+    ?? (runner === 'conformance' ? 'conformance'
+      : runner === 'lean' ? 'build'
+        : runner === 'kani' ? 'presence'
+          : runner === 'csp' ? 'typecheck'
+            : 'model-check'),
+  tool: { name: tool, version, versionStatus: 'verified', versionSource: 'cli' },
+  input,
+  result: { status: 'ok', code: 0, logPath },
+  scope: `Reviewed verification scope for ${input.join(', ')}`,
+  assumptions: ['Only the supplied inputs and declared runner scope are covered.'],
+  ...(semanticResult ? { semanticResult } : {}),
+});
+
 const createFormalSummary = () => ({
   schemaVersion: 'formal-summary/v2',
   contractId: 'formal-summary.v2',
+  artifactStatus: 'execution-report',
+  producer: {
+    id: 'ae.formal.summary-generator',
+    version: '1.0.0',
+    contract: 'formal-summary-adapter/v1',
+    artifactRef: 'scripts/formal/generate-formal-summary-v1.mjs',
+  },
   tool: 'aggregate',
   status: 'ok',
   ok: true,
@@ -98,6 +155,14 @@ const createFormalSummary = () => ({
       durationMs: 15,
       logPath: 'artifacts/hermetic-reports/conformance/summary.json',
       reason: null,
+      artifactStatus: 'execution-report',
+      executionEvidence: createExecutionEvidence({
+        runner: 'conformance',
+        tool: 'ae-framework conformance validator',
+        version: '1.0.0',
+        input: ['observability/trace-schema.yaml'],
+        logPath: 'artifacts/hermetic-reports/conformance/summary.json',
+      }),
     },
     {
       name: 'lean',
@@ -106,42 +171,16 @@ const createFormalSummary = () => ({
       durationMs: 7,
       logPath: 'artifacts/formal/lean-output.txt',
       reason: null,
+      artifactStatus: 'execution-report',
+      executionEvidence: createExecutionEvidence({
+        runner: 'lean',
+        tool: 'Lean 4 / Lake',
+        version: '4.19.0',
+        input: ['spec/lean'],
+        logPath: 'artifacts/formal/lean-output.txt',
+      }),
     },
   ],
-});
-
-const createConformanceReport = () => ({
-  schemaVersion: '1.0.0',
-  generatedAt: '2026-03-08T09:06:00.000Z',
-  status: 'success',
-  runsAnalyzed: 2,
-  statusBreakdown: { pass: 2, fail: 0, skip: 0, error: 0, timeout: 0 },
-  totals: {
-    rulesExecuted: 4,
-    rulesPassed: 4,
-    rulesFailed: 0,
-    rulesErrored: 0,
-    rulesSkipped: 0,
-    totalViolations: 0,
-    uniqueRules: 4,
-    uniqueViolationRules: 0,
-  },
-  severityTotals: { critical: 0, major: 0, minor: 0, info: 0, warning: 0 },
-  categoryTotals: {
-    data_validation: 0,
-    api_contract: 0,
-    business_logic: 0,
-    security_policy: 0,
-    performance_constraint: 0,
-    resource_usage: 0,
-    state_invariant: 0,
-    behavioral_constraint: 0,
-    integration_requirement: 0,
-    compliance_rule: 0,
-  },
-  severityTrends: [],
-  topViolations: [],
-  inputs: [],
 });
 
 const createCounterexample = (overrides = {}) => ({
@@ -208,7 +247,6 @@ describe.sequential('assurance aggregate lanes script', () => {
     const sandbox = mkdtempSync(join(tmpdir(), 'ae-assurance-aggregate-success-'));
     const verifyLitePath = join(sandbox, 'verify-lite-run-summary.json');
     const formalSummaryPath = join(sandbox, 'formal-summary-v2.json');
-    const conformanceReportPath = join(sandbox, 'conformance-report.json');
     const counterexamplePath = join(sandbox, 'counterexample.json');
     const evidenceManifestPath = join(sandbox, 'evidence-manifest.json');
     const outputJson = join(sandbox, 'assurance-summary.json');
@@ -217,7 +255,6 @@ describe.sequential('assurance aggregate lanes script', () => {
     try {
       writeJson(verifyLitePath, createVerifyLiteSummary());
       writeJson(formalSummaryPath, createFormalSummary());
-      writeJson(conformanceReportPath, createConformanceReport());
       writeJson(counterexamplePath, createCounterexample());
       writeJson(
         evidenceManifestPath,
@@ -252,8 +289,6 @@ describe.sequential('assurance aggregate lanes script', () => {
         verifyLitePath,
         '--formal-summary',
         formalSummaryPath,
-        '--conformance-report',
-        conformanceReportPath,
         '--counterexample',
         counterexamplePath,
         '--evidence-manifest',
@@ -277,7 +312,7 @@ describe.sequential('assurance aggregate lanes script', () => {
       expect(summary.claims[0]).toMatchObject({
         claimId: 'no-negative-stock',
         status: 'satisfied',
-        observedLanes: ['spec', 'behavior', 'adversarial', 'model', 'proof', 'runtime'],
+        observedLanes: ['spec', 'behavior', 'adversarial', 'model', 'runtime'],
         missingLanes: [],
         observedEvidenceKinds: expect.arrayContaining(['property', 'product-coproduct', 'counterexample-closed']),
       });
@@ -287,8 +322,398 @@ describe.sequential('assurance aggregate lanes script', () => {
         acceptedRisk: 0,
         total: 1,
       });
-      expect(summary.laneCoverage.proof.observedClaims).toBe(1);
+      expect(summary.laneCoverage.proof.observedClaims).toBe(0);
       expect(readFileSync(outputMd, 'utf8')).toContain('## Claim status');
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('does not promote pseudo or draft formal artifacts to model evidence', () => {
+    mkdirSync(localTmpRoot, { recursive: true });
+    const sandbox = mkdtempSync(join(localTmpRoot, 'ae-assurance-formal-isolation-'));
+    const assuranceProfilePath = join(sandbox, 'assurance-profile.json');
+    const pseudoModelCheckPath = join(sandbox, 'model-check.json');
+    const draftFormalSummaryPath = join(sandbox, 'draft-formal-summary.json');
+    const incompleteFormalSummaryPath = join(sandbox, 'incomplete-formal-summary.json');
+    const outputJson = join(sandbox, 'assurance-summary.json');
+    const outputMd = join(sandbox, 'assurance-summary.md');
+
+    try {
+      writeJson(assuranceProfilePath, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'formal-isolation-profile',
+        claims: [
+          {
+            id: 'model-executed',
+            statement: 'A real model checker executed for the declared scope.',
+            criticality: 'high',
+            targetLevel: 'A2',
+            minIndependentSources: 1,
+            requiredLanes: ['model'],
+            requiredEvidenceKinds: ['model-check'],
+          },
+        ],
+      });
+      writeJson(pseudoModelCheckPath, {
+        specificationId: 'spec_synthetic',
+        satisfied: true,
+        properties: [{ property: 'Safety', satisfied: true }],
+        statistics: { statesExplored: 1234 },
+      });
+      writeJson(draftFormalSummaryPath, {
+        ...createFormalSummary(),
+        artifactStatus: 'draft',
+        results: [{ name: 'tla', status: 'ok' }],
+      });
+      writeJson(incompleteFormalSummaryPath, {
+        ...createFormalSummary(),
+        results: [{
+          name: 'tla',
+          status: 'ok',
+          executionEvidence: {
+            tool: { name: 'tla', version: 'unknown' },
+            input: ['formal/tla-summary.json'],
+            result: { status: 'ok', code: 0, logPath: null },
+            scope: 'Backfilled generic scope',
+            assumptions: ['Backfilled generic assumption'],
+          },
+        }],
+      });
+
+      const result = runScript([
+        '--assurance-profile',
+        assuranceProfilePath,
+        '--formal-summary',
+        pseudoModelCheckPath,
+        '--formal-summary',
+        draftFormalSummaryPath,
+        '--formal-summary',
+        incompleteFormalSummaryPath,
+        '--generated-at',
+        deterministicGeneratedAt,
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const summary = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(summary.claims[0]).toMatchObject({
+        claimId: 'model-executed',
+        observedLanes: [],
+        missingLanes: ['model'],
+        observedEvidenceKinds: [],
+        missingEvidenceKinds: ['model-check'],
+      });
+      expect(summary.laneCoverage.model.observedClaims).toBe(0);
+      expect(summary.warnings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: pseudoModelCheckPath }),
+          expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: draftFormalSummaryPath }),
+          expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: incompleteFormalSummaryPath }),
+        ]),
+      );
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps a complete-looking direct conformance report report-only', () => {
+    mkdirSync(localTmpRoot, { recursive: true });
+    const sandbox = mkdtempSync(join(localTmpRoot, 'ae-assurance-direct-conformance-'));
+    try {
+      const profile = join(sandbox, 'profile.json');
+      const report = join(sandbox, 'conformance-report.json');
+      const outputJson = join(sandbox, 'assurance-summary.json');
+      writeJson(profile, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'direct-conformance-report-only',
+        claims: [{
+          id: 'conformance-executed',
+          statement: 'Conformance execution is independently verified.',
+          criticality: 'high',
+          targetLevel: 'A2',
+          minIndependentSources: 1,
+          requiredLanes: ['model'],
+          requiredEvidenceKinds: ['conformance'],
+        }],
+      });
+      writeJson(report, {
+        schemaVersion: '1.0.0',
+        status: 'success',
+        runsAnalyzed: 1,
+        executionEvidence: {
+          schemaVersion: 'formal-runner-result/v1',
+          artifactStatus: 'execution-report',
+          producer: {
+            id: 'ae.formal.verify-conformance',
+            version: '1.0.0',
+            contract: 'formal-runner-result/v1',
+            artifactRef: 'scripts/formal/verify-conformance.mjs',
+          },
+          provenance: 'runner-reported',
+          executionOccurred: true,
+          verificationKind: 'conformance',
+          tool: { name: 'conformance', version: '1.0.0', versionStatus: 'verified', versionSource: 'package-manifest' },
+          input: ['samples/conformance/sample-traces.json'],
+          result: { status: 'ok', code: 0, logPath: 'artifacts/hermetic-reports/conformance/summary.json' },
+          scope: 'Complete-looking hand-authored report',
+          assumptions: ['The supplied report is not adapter-verified.'],
+        },
+      });
+      const result = runScript([
+        '--assurance-profile', profile,
+        '--conformance-report', report,
+        '--generated-at', deterministicGeneratedAt,
+        '--output-json', outputJson,
+        '--output-md', join(sandbox, 'assurance-summary.md'),
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const assurance = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(assurance.claims[0].observedLanes).toEqual([]);
+      expect(assurance.warnings).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: report }),
+      ]));
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('derives claim eligibility from reviewed verificationKind instead of runner names', () => {
+    mkdirSync(localTmpRoot, { recursive: true });
+    const sandbox = mkdtempSync(join(localTmpRoot, 'ae-assurance-verification-kind-'));
+    try {
+      const profile = join(sandbox, 'profile.json');
+      const formalSummary = join(sandbox, 'formal-summary.json');
+      const outputJson = join(sandbox, 'assurance-summary.json');
+      writeJson(profile, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'verification-kind-eligibility',
+        claims: [
+          {
+            id: 'model-capability',
+            statement: 'A reviewed semantic model check completed.',
+            criticality: 'high',
+            targetLevel: 'A2',
+            minIndependentSources: 1,
+            requiredLanes: ['model'],
+            requiredEvidenceKinds: ['model-check'],
+          },
+          {
+            id: 'proof-capability',
+            statement: 'A reviewed proof check completed.',
+            criticality: 'high',
+            targetLevel: 'A2',
+            minIndependentSources: 1,
+            requiredLanes: ['proof'],
+            requiredEvidenceKinds: ['proof'],
+          },
+        ],
+      });
+      const summary = createFormalSummary();
+      const result = (
+        name: 'csp' | 'lean' | 'kani',
+        verificationKind: 'typecheck' | 'model-check' | 'build' | 'presence',
+      ) => ({
+        name,
+        status: 'ok',
+        code: 0,
+        durationMs: 1,
+        logPath: `artifacts/formal/${name}-${verificationKind}.txt`,
+        reason: null,
+        artifactStatus: 'execution-report',
+        executionEvidence: createExecutionEvidence({
+          runner: name,
+          tool: name === 'lean' ? 'Lean 4 / Lake' : name === 'kani' ? 'Kani' : 'cspx',
+          version: '1.0.0',
+          input: [`spec/${name}`],
+          logPath: `artifacts/formal/${name}-${verificationKind}.txt`,
+          verificationKind,
+          ...(name === 'csp' && verificationKind === 'model-check' ? { producerRunner: 'cspModelCheck' as const } : {}),
+        }),
+      });
+      summary.results = [
+        result('csp', 'typecheck'),
+        result('lean', 'build'),
+        result('kani', 'presence'),
+        result('csp', 'model-check'),
+      ];
+      writeJson(formalSummary, summary);
+      const run = runScript([
+        '--assurance-profile', profile,
+        '--formal-summary', formalSummary,
+        '--generated-at', deterministicGeneratedAt,
+        '--output-json', outputJson,
+        '--output-md', join(sandbox, 'assurance-summary.md'),
+      ]);
+      expect(run.status, run.stderr || run.stdout).toBe(0);
+      const assurance = JSON.parse(readFileSync(outputJson, 'utf8'));
+      const byId = Object.fromEntries(assurance.claims.map((claim: any) => [claim.claimId, claim]));
+      expect(byId['model-capability']).toMatchObject({
+        observedLanes: ['model'],
+        observedEvidenceKinds: ['model-check'],
+      });
+      expect(byId['model-capability'].evidence).toHaveLength(1);
+      expect(byId['proof-capability']).toMatchObject({
+        observedLanes: ['model'],
+        missingLanes: ['proof'],
+        observedEvidenceKinds: ['model-check'],
+        missingEvidenceKinds: ['proof'],
+      });
+      expect(assurance.laneCoverage.proof.observedClaims).toBe(0);
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects semantically inconsistent SMT success even when the Formal Summary otherwise looks complete', () => {
+    mkdirSync(localTmpRoot, { recursive: true });
+    const sandbox = mkdtempSync(join(localTmpRoot, 'ae-assurance-smt-semantics-'));
+    try {
+      const profile = join(sandbox, 'profile.json');
+      const formalSummary = join(sandbox, 'formal-summary.json');
+      const outputJson = join(sandbox, 'assurance-summary.json');
+      writeJson(profile, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'smt-semantic-eligibility',
+        claims: [{
+          id: 'smt-model-capability',
+          statement: 'A reviewed SMT result matches its expected semantic result.',
+          criticality: 'high',
+          targetLevel: 'A2',
+          minIndependentSources: 1,
+          requiredLanes: ['model'],
+          requiredEvidenceKinds: ['model-check'],
+        }],
+      });
+      const summary = createFormalSummary();
+      const semanticResult = {
+        domain: 'smt',
+        parsed: true,
+        expectedResult: 'unsat',
+        actualResult: 'sat',
+        matchesExpected: true,
+        timeout: false,
+      };
+      summary.results = [{
+        name: 'smt',
+        status: 'ok',
+        code: 0,
+        durationMs: 1,
+        logPath: 'artifacts/formal/smt-output.txt',
+        reason: null,
+        artifactStatus: 'execution-report',
+        executionEvidence: createExecutionEvidence({
+          runner: 'smt',
+          tool: 'z3',
+          version: '4.12.2',
+          input: ['spec/smt/sample.smt2'],
+          logPath: 'artifacts/formal/smt-output.txt',
+          semanticResult,
+        }),
+      }];
+      writeJson(formalSummary, summary);
+      const result = runScript([
+        '--assurance-profile', profile,
+        '--formal-summary', formalSummary,
+        '--generated-at', deterministicGeneratedAt,
+        '--output-json', outputJson,
+        '--output-md', join(sandbox, 'assurance-summary.md'),
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const assurance = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(assurance.claims[0].observedLanes).toEqual([]);
+      expect(assurance.laneCoverage.model.observedClaims).toBe(0);
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ['runner-reported provenance without adapter verification', (summary: any) => {
+      summary.results[0].executionEvidence.provenance = 'runner-reported';
+      delete summary.results[0].executionEvidence.adapter;
+    }],
+    ['verified version with unavailable source', (summary: any) => {
+      summary.results[0].executionEvidence.tool.version = '6.2.0';
+      summary.results[0].executionEvidence.tool.versionStatus = 'verified';
+      summary.results[0].executionEvidence.tool.versionSource = 'unavailable';
+    }],
+    ['unknown tool version', (summary: any) => {
+      summary.results[0].executionEvidence.tool.version = 'unknown';
+      summary.results[0].executionEvidence.tool.versionStatus = 'unknown';
+      summary.results[0].executionEvidence.tool.versionSource = 'unavailable';
+    }],
+    ['version pin mismatch', (summary: any) => {
+      summary.results[0].executionEvidence.tool.versionStatus = 'mismatch';
+      summary.results[0].executionEvidence.tool.versionSource = 'reviewed-pin';
+      summary.results[0].executionEvidence.tool.artifactSha256 = 'a'.repeat(64);
+      summary.results[0].executionEvidence.tool.expectedArtifactSha256 = 'b'.repeat(64);
+    }],
+    ['unknown runner producer', (summary: any) => {
+      summary.results[0].executionEvidence.producer = {
+        id: 'ae.formal.fake-runner',
+        version: '1.0.0',
+        contract: 'formal-runner-result/v1',
+        artifactRef: 'scripts/formal/fake-runner.mjs',
+      };
+    }],
+    ['schema-invalid execution evidence', (summary: any) => {
+      summary.results[0].executionEvidence.result.code = '0';
+    }],
+    ['missing result code and log', (summary: any) => {
+      delete summary.results[0].executionEvidence.result.code;
+      delete summary.results[0].executionEvidence.result.logPath;
+    }],
+    ['omitted result artifactStatus', (summary: any) => {
+      delete summary.results[0].artifactStatus;
+    }],
+    ['omitted verification kind', (summary: any) => {
+      delete summary.results[0].executionEvidence.verificationKind;
+    }],
+    ['synthetic producer-kind mutation', (summary: any) => {
+      summary.results[0].executionEvidence.verificationKind = 'model-check';
+    }],
+  ])('keeps %s as an evidence gap rather than a model claim', (_name, mutate) => {
+    mkdirSync(localTmpRoot, { recursive: true });
+    const sandbox = mkdtempSync(join(localTmpRoot, 'ae-assurance-formal-closed-contract-'));
+    try {
+      const profile = join(sandbox, 'profile.json');
+      const formalSummary = join(sandbox, 'formal-summary.json');
+      const outputJson = join(sandbox, 'assurance-summary.json');
+      writeJson(profile, {
+        schemaVersion: 'assurance-profile/v1',
+        profileId: 'closed-formal-contract',
+        claims: [{
+          id: 'closed-formal-evidence',
+          statement: 'A reviewed formal runner produced eligible evidence.',
+          criticality: 'high',
+          targetLevel: 'A2',
+          minIndependentSources: 1,
+          requiredLanes: ['model'],
+          requiredEvidenceKinds: ['conformance'],
+        }],
+      });
+      const summary = createFormalSummary();
+      summary.results = [summary.results[0]];
+      mutate(summary);
+      writeJson(formalSummary, summary);
+      const result = runScript([
+        '--assurance-profile', profile,
+        '--formal-summary', formalSummary,
+        '--generated-at', deterministicGeneratedAt,
+        '--output-json', outputJson,
+        '--output-md', join(sandbox, 'assurance-summary.md'),
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+      const assurance = JSON.parse(readFileSync(outputJson, 'utf8'));
+      expect(assurance.claims[0].observedLanes).toEqual([]);
+      expect(assurance.laneCoverage.model.observedClaims).toBe(0);
+      expect(assurance.warnings).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'untrusted-formal-summary', artifactPath: formalSummary }),
+      ]));
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }

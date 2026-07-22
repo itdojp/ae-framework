@@ -4,6 +4,12 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveRepoRelativeFileInput, validateChoice, TLA_ENGINES } from './input-policy.mjs';
+import {
+  buildFormalRunnerOutput,
+  buildLegacyFormalExecutionEvidence,
+  extractToolVersion,
+  sha256FileSync,
+} from './execution-evidence.mjs';
 
 function parseArgs(argv){
   const args = { _: [] };
@@ -79,6 +85,10 @@ let timeMs = null;
 let engine = 'tlc';
 let file = path.join('spec','tla','DomainSpec.tla');
 let absFile = path.resolve(repoRoot, file);
+let toolVersion = '';
+let versionSource = 'unavailable';
+let artifactSha256 = null;
+let expectedArtifactSha256 = null;
 
 try {
   engine = validateChoice((args.engine || 'tlc').toLowerCase(), {
@@ -110,6 +120,9 @@ if (status === 'invalid_input') {
     status = 'tool_not_available';
     output = 'Apalache not found. See docs/quality/formal-tools-setup.md';
   } else {
+    const versionResult = runCommand('apalache-mc', ['version']);
+    toolVersion = extractToolVersion(versionResult.output);
+    versionSource = toolVersion ? 'cli' : 'unavailable';
     const baseCmd = { cmd: 'apalache-mc', args: ['check', '--inv=Invariant', absFile] };
     const runSpec = (timeoutSec && haveTimeout)
       ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
@@ -141,6 +154,13 @@ if (status === 'invalid_input') {
       status = 'jar_not_found';
       output = `TLA tools jar not found: ${jarPath}`;
     } else {
+      artifactSha256 = sha256FileSync(jarPath);
+      expectedArtifactSha256 = process.env.TLA_TOOLS_SHA256 || null;
+      const versionResult = runCommand('java', ['-cp', jarPath, 'tlc2.TLC', '-version']);
+      toolVersion = extractToolVersion(versionResult.output) || process.env.TLA_TOOLS_VERSION || '';
+      versionSource = extractToolVersion(versionResult.output)
+        ? 'cli'
+        : (process.env.TLA_TOOLS_VERSION ? 'reviewed-pin' : 'unavailable');
       if (!commandExists('java')) {
         status = 'tool_not_available';
         output = 'TLC not available (java not found). See docs/quality/formal-tools-setup.md';
@@ -177,6 +197,28 @@ if (status === 'invalid_input') {
 
 try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
 
+const relativeInput = path.relative(repoRoot, absFile);
+const relativeLog = path.relative(repoRoot, outLog);
+const executionEvidence = buildLegacyFormalExecutionEvidence({
+  runner: 'tla',
+  toolName: engine === 'apalache' ? 'Apalache' : 'TLC',
+  toolVersion,
+  versionSource,
+  artifactSha256,
+  expectedArtifactSha256,
+  inputPaths: [relativeInput],
+  status,
+  ok,
+  ran,
+  exitCode,
+  logPath: relativeLog,
+  scope: `${engine === 'apalache' ? 'Apalache' : 'TLC'} verification of ${relativeInput}`,
+  assumptions: [
+    'The result applies only to the supplied TLA+ module and runner configuration.',
+    'The result does not establish correctness of implementation code outside the model.',
+  ],
+});
+
 const summary = {
   engine,
   file: path.relative(repoRoot, absFile),
@@ -187,7 +229,8 @@ const summary = {
   timeMs,
   timestamp: new Date().toISOString(),
   output: output.slice(0, 4000),
-  outputFile: path.relative(repoRoot, outLog),
+  outputFile: relativeLog,
+  runnerResult: buildFormalRunnerOutput({ runner: 'tla', executionEvidence }),
 };
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 console.log(`TLA summary written: ${path.relative(repoRoot, outFile)}`);

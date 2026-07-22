@@ -38,6 +38,15 @@ export interface TaskRequest {
   context?: TaskRequestContext;
 }
 
+type FormalArtifactRequirement =
+  | { kind: 'tla'; required: true }
+  | { kind: 'openapi'; required: false };
+
+export type FormalArtifactMaterialization = FormalArtifactRequirement & (
+  | { status: 'written'; path: string; message?: never }
+  | { status: 'failed'; path?: never; message: string }
+);
+
 export interface TaskResponse {
   // Short status line. Blocked responses should start with "Blocked:".
   summary: string;
@@ -54,6 +63,22 @@ export interface TaskResponse {
   blockingReason?: string;
   // Minimal input required to resume execution (tool-neutral string format).
   requiredHumanInput?: string;
+  // Formal phase separates generated scaffolds from real checker execution.
+  formal?: {
+    scaffold: {
+      status: 'generated';
+      artifactStatus: 'draft';
+      validationStatus: 'valid' | 'invalid' | 'pending';
+      materializationStatus: 'written' | 'partial' | 'failed';
+      artifacts: FormalArtifactMaterialization[];
+      artifactPath?: string;
+    };
+    modelChecking: {
+      status: 'not-run';
+      evidenceArtifact: null;
+      runnerCommands: string[];
+    };
+  };
 }
 
 export interface TaskHandler {

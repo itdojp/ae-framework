@@ -43,7 +43,6 @@ export class UIUXTaskAdapter {
       outputFormat: 'openapi',
       validationLevel: 'comprehensive',
       generateDiagrams: true,
-      enableModelChecking: false,
     };
     this.agent = new FormalAgent(config);
   }

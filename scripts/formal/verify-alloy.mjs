@@ -5,6 +5,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { resolveRepoRelativeFileInput } from './input-policy.mjs';
+import {
+  buildFormalRunnerOutput,
+  buildLegacyFormalExecutionEvidence,
+  extractToolVersion,
+  sha256FileSync,
+} from './execution-evidence.mjs';
 
 function parseArgs(argv){
   const args = { _: [] };
@@ -63,6 +69,10 @@ let ok = null;
 let timeMs = null;
 let file = path.join('spec','alloy','Domain.als');
 let absFile = path.resolve(repoRoot, file);
+let toolVersion = '';
+let versionSource = 'unavailable';
+let artifactSha256 = null;
+let expectedArtifactSha256 = null;
 
 try {
   const resolvedFile = resolveRepoRelativeFileInput(args.file, {
@@ -94,6 +104,9 @@ if (status === 'invalid_input') {
     const t0 = Date.now();
     const alloyResult = runCommand('alloy', [absFile]);
     if (alloyResult.available) {
+      const versionResult = runCommand('alloy', ['--version']);
+      toolVersion = extractToolVersion(versionResult.output);
+      versionSource = toolVersion ? 'cli' : 'unavailable';
       timeMs = Date.now() - t0;
       output = alloyResult.output;
       ran = true;
@@ -107,6 +120,14 @@ if (status === 'invalid_input') {
         status = 'jar_not_found';
         output = `Alloy jar not found: ${jarPath}. Set ALLOY_JAR to a valid path, use --jar /path/to/alloy.jar, or check that the file exists.`;
       } else {
+        artifactSha256 = sha256FileSync(jarPath);
+        expectedArtifactSha256 = process.env.ALLOY_ARTIFACT_SHA256 || null;
+        const versionResult = runCommand('java', ['-jar', jarPath, 'version']);
+        const cliVersion = extractToolVersion(versionResult.output);
+        toolVersion = cliVersion || process.env.ALLOY_VERSION || '';
+        versionSource = cliVersion
+          ? 'cli'
+          : (process.env.ALLOY_VERSION ? 'reviewed-pin' : 'unavailable');
         const t1 = Date.now();
         const javaResult = runCommand('java', ['-jar', jarPath, 'exec', '-q', '-o', '-', '-f', absFile]);
         if (!javaResult.available) {
@@ -152,8 +173,30 @@ try {
 
 try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
 
+const relativeInput = path.relative(repoRoot, absFile);
+const relativeLog = path.relative(repoRoot, outLog);
+const executionEvidence = buildLegacyFormalExecutionEvidence({
+  runner: 'alloy',
+  toolName: 'Alloy',
+  toolVersion,
+  versionSource,
+  artifactSha256,
+  expectedArtifactSha256,
+  inputPaths: [relativeInput],
+  status,
+  ok,
+  ran,
+  exitCode,
+  logPath: relativeLog,
+  scope: `Alloy commands and assertions declared by ${relativeInput}`,
+  assumptions: [
+    'The result applies only to the bounds and commands declared by the supplied Alloy model.',
+    'The result does not establish correctness of implementation code outside the model.',
+  ],
+});
+
 const summary = {
-  file: path.relative(repoRoot, absFile),
+  file: relativeInput,
   ran,
   status,
   ok,
@@ -161,8 +204,9 @@ const summary = {
   timeMs,
   timestamp: new Date().toISOString(),
   output: output.slice(0, 4000),
-  outputFile: path.relative(repoRoot, outLog),
-  temporal
+  outputFile: relativeLog,
+  temporal,
+  runnerResult: buildFormalRunnerOutput({ runner: 'alloy', executionEvidence }),
 };
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 console.log(`Alloy summary written: ${path.relative(repoRoot, outFile)}`);

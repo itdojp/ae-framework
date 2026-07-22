@@ -1,6 +1,13 @@
 {
   "schemaVersion": "formal-summary/v2",
   "contractId": "formal-summary.v2",
+  "artifactStatus": "execution-report",
+  "producer": {
+    "id": "ae.formal.summary-generator",
+    "version": "1.0.0",
+    "contract": "formal-summary-adapter/v1",
+    "artifactRef": "scripts/formal/generate-formal-summary-v1.mjs"
+  },
   "tool": "aggregate",
   "status": "ok",
   "ok": true,
@@ -28,7 +35,46 @@
       "code": 0,
       "durationMs": 12,
       "logPath": "artifacts/hermetic-reports/conformance/summary.json",
-      "reason": null
+      "reason": null,
+      "artifactStatus": "execution-report",
+      "executionEvidence": {
+        "schemaVersion": "formal-runner-result/v1",
+        "artifactStatus": "execution-report",
+        "producer": {
+          "id": "ae.formal.verify-conformance",
+          "version": "1.0.0",
+          "contract": "formal-runner-result/v1",
+          "artifactRef": "scripts/formal/verify-conformance.mjs"
+        },
+        "provenance": "adapter-verified",
+        "executionOccurred": true,
+        "verificationKind": "conformance",
+        "tool": {
+          "name": "ae-framework conformance validator",
+          "version": "1.0.0",
+          "versionStatus": "verified",
+          "versionSource": "package-manifest"
+        },
+        "input": [
+          "observability/trace-schema.yaml",
+          "samples/conformance/sample-traces.json"
+        ],
+        "result": {
+          "status": "ok",
+          "code": 0,
+          "logPath": "artifacts/hermetic-reports/conformance/summary.json"
+        },
+        "scope": "Recorded conformance trace scope",
+        "assumptions": [
+          "Only the recorded trace and declared conformance rules are covered."
+        ],
+        "adapter": {
+          "id": "ae.formal.summary-generator",
+          "version": "1.0.0",
+          "contract": "formal-summary-adapter/v1",
+          "artifactRef": "scripts/formal/generate-formal-summary-v1.mjs"
+        }
+      }
     }
   ]
 }

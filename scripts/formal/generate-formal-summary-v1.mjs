@@ -8,13 +8,43 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import Ajv2020 from 'ajv/dist/2020.js';
+import addFormats from 'ajv-formats';
 import { buildArtifactMetadata } from '../ci/lib/artifact-metadata.mjs';
 import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
+import {
+  getFormalRunnerProducer,
+  hasEligibleToolVersion,
+  hasEligibleFormalSemanticResult,
+  hasReviewedFormalVerificationKind,
+} from './execution-evidence.mjs';
 
 const DEFAULT_IN = 'artifacts_dl';
 const DEFAULT_OUT = path.join('artifacts', 'formal', 'formal-summary-v1.json');
 const DEFAULT_OUT_V2 = null;
 const DEFAULT_LAYOUT = 'downloaded';
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const repositoryRoot = path.resolve(scriptDir, '..', '..');
+const executionEvidenceSchema = JSON.parse(fs.readFileSync(
+  path.join(repositoryRoot, 'schema', 'formal-execution-evidence-v1.schema.json'),
+  'utf8',
+));
+const runnerOutputSchema = JSON.parse(fs.readFileSync(
+  path.join(repositoryRoot, 'schema', 'formal-runner-output-v1.schema.json'),
+  'utf8',
+));
+const executionEvidenceAjv = new Ajv2020({ allErrors: true, strict: false });
+addFormats(executionEvidenceAjv);
+const validateExecutionEvidence = executionEvidenceAjv.compile(executionEvidenceSchema);
+const validateRunnerOutput = executionEvidenceAjv.compile(runnerOutputSchema);
+const SUMMARY_PRODUCER = Object.freeze({
+  id: 'ae.formal.summary-generator',
+  version: '1.0.0',
+  contract: 'formal-summary-adapter/v1',
+  artifactRef: 'scripts/formal/generate-formal-summary-v1.mjs',
+});
+const INELIGIBLE_TOOL_VERSIONS = new Set(['', 'unknown', 'unspecified', 'n/a', 'na', 'none', 'null']);
 
 function parseArgs(argv) {
   const args = {
@@ -130,9 +160,8 @@ function mapStatus({ raw, present }) {
     return { status: 'failed', reason: status };
   }
 
-  if (status === 'timeout') {
-    return { status: 'unknown', reason: status };
-  }
+  if (status === 'timeout') return { status: 'timeout', reason: status };
+  if (status === 'tool-error' || status === 'error') return { status: 'tool-error', reason: status };
 
   if (exitCode !== null && exitCode !== 0) return { status: 'failed', reason: status || `exitCode=${exitCode}` };
   if (status === 'failed') return { status: 'failed', reason: status };
@@ -158,6 +187,10 @@ function resolveLogPath({ repoRoot, baseDir, name, raw, summaryPath, summaryRel 
   const rawPaths = [];
   if (typeof raw?.logPath === 'string' && raw.logPath.trim()) rawPaths.push(raw.logPath.trim());
   if (typeof raw?.outputFile === 'string' && raw.outputFile.trim()) rawPaths.push(raw.outputFile.trim());
+  if (typeof raw?.runnerResult?.executionEvidence?.result?.logPath === 'string'
+    && raw.runnerResult.executionEvidence.result.logPath.trim()) {
+    rawPaths.push(raw.runnerResult.executionEvidence.result.logPath.trim());
+  }
 
   for (const rp of rawPaths) {
     if (path.isAbsolute(rp)) {
@@ -168,6 +201,13 @@ function resolveLogPath({ repoRoot, baseDir, name, raw, summaryPath, summaryRel 
     if (summaryPath) push(path.resolve(path.dirname(summaryPath), rp));
     push(path.resolve(baseDir, rp));
     push(path.resolve(repoRoot, rp));
+  }
+
+  const evidenceLogPath = typeof raw?.runnerResult?.executionEvidence?.result?.logPath === 'string'
+    ? raw.runnerResult.executionEvidence.result.logPath.trim()
+    : '';
+  if (summaryPath && evidenceLogPath && path.basename(evidenceLogPath) === path.basename(summaryPath)) {
+    push(path.resolve(summaryPath));
   }
 
   // Conventional log filename: <tool>-output.txt next to the summary file.
@@ -186,17 +226,101 @@ function resolveLogPath({ repoRoot, baseDir, name, raw, summaryPath, summaryRel 
   return null;
 }
 
+function hasExactProducerBinding(actual, expected) {
+  return actual
+    && typeof actual === 'object'
+    && !Array.isArray(actual)
+    && actual.id === expected.id
+    && actual.version === expected.version
+    && actual.contract === expected.contract
+    && actual.artifactRef === expected.artifactRef;
+}
+
+function isSafeRepositoryRelativePath(value) {
+  if (typeof value !== 'string' || !value.trim()) return false;
+  const candidate = value.trim();
+  if (path.isAbsolute(candidate) || path.win32.isAbsolute(candidate) || candidate.startsWith('\\\\')) return false;
+  const segments = candidate.replaceAll('\\', '/').split('/');
+  return segments.every((segment) => segment !== '' && segment !== '.' && segment !== '..');
+}
+
+function normalizeRunnerReportedExecutionEvidence(raw, expectedStatus, runnerName, resolvedLogPath) {
+  const runnerResult = raw?.runnerResult;
+  if (!runnerResult || typeof runnerResult !== 'object' || Array.isArray(runnerResult)) return null;
+  if (!validateRunnerOutput(runnerResult)) return null;
+  const evidence = runnerResult.executionEvidence;
+  if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence)) return null;
+  const expectedProducers = runnerName === 'conformance'
+    ? [getFormalRunnerProducer('conformance'), getFormalRunnerProducer('conformanceDriver')]
+    : runnerName === 'csp'
+      ? [getFormalRunnerProducer('csp'), getFormalRunnerProducer('cspModelCheck')]
+    : [getFormalRunnerProducer(runnerName)];
+  if (!validateExecutionEvidence(evidence)) return null;
+  if (!Array.isArray(evidence.input) || !evidence.input.every(isSafeRepositoryRelativePath)) return null;
+  if (evidence.executionOccurred === true && !isSafeRepositoryRelativePath(evidence.result?.logPath)) return null;
+  if (evidence.provenance !== 'runner-reported' || evidence.adapter !== undefined) return null;
+  if (!expectedProducers.some((producer) => hasExactProducerBinding(runnerResult.producer, producer))) return null;
+  if (!expectedProducers.some((producer) => hasExactProducerBinding(evidence.producer, producer))) return null;
+  if (!hasExactProducerBinding(evidence.producer, runnerResult.producer)) return null;
+  const reviewedRunner = runnerName === 'conformance'
+    && evidence.producer.id === getFormalRunnerProducer('conformanceDriver').id
+    ? 'conformanceDriver'
+    : runnerName === 'csp'
+      && evidence.producer.id === getFormalRunnerProducer('cspModelCheck').id
+      ? 'cspModelCheck'
+      : runnerName;
+  if (!hasReviewedFormalVerificationKind(reviewedRunner, evidence.verificationKind)) return null;
+  if (evidence.result.status === 'ok'
+    && !hasEligibleFormalSemanticResult(reviewedRunner, evidence.semanticResult)) return null;
+  if (runnerResult.artifactStatus !== evidence.artifactStatus) return null;
+  if (evidence.result.status !== expectedStatus) return null;
+  const rawCode = typeof raw?.exitCode === 'number' ? raw.exitCode : (typeof raw?.code === 'number' ? raw.code : null);
+  if (evidence.result.code !== rawCode) return null;
+  if (evidence.executionOccurred === true && !resolvedLogPath) return null;
+  if (evidence.executionOccurred === true && !isSafeRepositoryRelativePath(resolvedLogPath)) return null;
+  if (evidence.executionOccurred === true
+    && path.posix.basename(evidence.result.logPath.replaceAll('\\', '/')) !== path.posix.basename(resolvedLogPath)) return null;
+  if ((runnerName === 'smt' || runnerName === 'spin')
+    && JSON.stringify(evidence.semanticResult) !== JSON.stringify(raw?.semanticResult)) return null;
+  return {
+    ...JSON.parse(JSON.stringify(evidence)),
+    result: {
+      ...JSON.parse(JSON.stringify(evidence.result)),
+      logPath: evidence.executionOccurred === true ? resolvedLogPath : evidence.result.logPath,
+    },
+    provenance: 'adapter-verified',
+    adapter: SUMMARY_PRODUCER,
+  };
+}
+
 function buildResultItem({ name, raw, present, logPath }) {
   const mapped = mapStatus({ raw, present });
   const code = typeof raw?.exitCode === 'number' ? raw.exitCode : (typeof raw?.code === 'number' ? raw.code : null);
   const durationMs = typeof raw?.timeMs === 'number' ? raw.timeMs : (typeof raw?.durationMs === 'number' ? raw.durationMs : null);
+  const executionEvidence = normalizeRunnerReportedExecutionEvidence(raw, mapped.status, name, logPath);
+  const evidenceWasPresent = raw?.runnerResult && typeof raw.runnerResult === 'object';
+  const versionEvidenceGap = executionEvidence
+    && (!hasEligibleToolVersion(executionEvidence.tool)
+      || INELIGIBLE_TOOL_VERSIONS.has(String(executionEvidence.tool.version).trim().toLowerCase()));
+  const requiresExecutionEvidence = ['ok', 'failed', 'timeout', 'tool-error'].includes(mapped.status);
+  const missingRequiredEvidence = requiresExecutionEvidence && !executionEvidence;
+  const status = missingRequiredEvidence || (mapped.status === 'ok' && versionEvidenceGap)
+    ? 'unknown'
+    : mapped.status;
+  const reason = missingRequiredEvidence
+    ? (evidenceWasPresent ? 'invalid_runner_output_contract' : 'runner_output_contract_missing')
+    : mapped.status === 'ok' && versionEvidenceGap
+      ? 'tool_version_evidence_gap'
+      : mapped.reason;
   return {
     name,
-    status: mapped.status,
+    status,
+    artifactStatus: executionEvidence?.artifactStatus ?? 'not-executed',
     code,
     durationMs,
     logPath,
-    reason: mapped.reason,
+    reason,
+    ...(executionEvidence ? { executionEvidence } : {}),
   };
 }
 
@@ -205,6 +329,8 @@ function computeAggregateStatus(results) {
   const ok = statuses.length > 0 && statuses.every((s) => s === 'ok');
   if (ok) return { ok: true, status: 'ok' };
   if (statuses.some((s) => s === 'failed')) return { ok: false, status: 'failed' };
+  if (statuses.some((s) => s === 'tool-error')) return { ok: false, status: 'tool-error' };
+  if (statuses.some((s) => s === 'timeout')) return { ok: false, status: 'timeout' };
   if (statuses.length > 0 && statuses.every((s) => s === 'missing')) return { ok: false, status: 'missing' };
   if (statuses.length > 0 && statuses.every((s) => s === 'skipped')) return { ok: false, status: 'skipped' };
   return { ok: false, status: 'unknown' };
@@ -281,6 +407,8 @@ function main() {
   const summary = {
     schemaVersion: 'formal-summary/v1',
     tool: 'aggregate',
+    artifactStatus: 'execution-report',
+    producer: SUMMARY_PRODUCER,
     status: computed.status,
     ok: computed.ok,
     generatedAtUtc: metadata.generatedAtUtc,

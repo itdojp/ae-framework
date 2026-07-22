@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -11,12 +11,75 @@ import { validateClaimEvidenceManifestSemantics } from '../../scripts/ci/lib/cla
 const repoRoot = resolve('.');
 const scriptPath = resolve(repoRoot, 'scripts/assurance/build-claim-evidence-manifest.mjs');
 const moduleUrl = pathToFileURL(scriptPath).href;
+const localTmpRoot = resolve(repoRoot, '.codex-local/tmp');
 
 const runScript = (args: string[]) =>
   spawnSync('node', [scriptPath, ...args], {
     cwd: repoRoot,
     encoding: 'utf8',
     timeout: 120_000,
+  });
+
+  it('keeps rejected formal artifacts out of model evidence and preserves the missing-evidence gap', () => {
+    mkdirSync(localTmpRoot, { recursive: true });
+    const sandbox = mkdtempSync(join(localTmpRoot, 'ae-claim-formal-isolation-'));
+    const assuranceSummaryPath = join(sandbox, 'assurance-summary.json');
+    const outputJson = join(sandbox, 'claim-evidence-manifest.json');
+    const outputMd = join(sandbox, 'claim-evidence-manifest.md');
+
+    try {
+      writeJson(assuranceSummaryPath, {
+        schemaVersion: 'assurance-summary/v1',
+        generatedAt: '2026-07-22T00:00:00.000Z',
+        summary: { claimCount: 1, warningCount: 1 },
+        claims: [
+          {
+            claimId: 'model-executed',
+            statement: 'A real model checker executed for the declared scope.',
+            criticality: 'high',
+            targetLevel: 'A2',
+            status: 'warning',
+            observedLanes: [],
+            missingLanes: ['model'],
+            observedEvidenceKinds: [],
+            missingEvidenceKinds: ['model-check'],
+            evidence: [],
+          },
+        ],
+        warnings: [
+          {
+            code: 'untrusted-formal-summary',
+            claimId: null,
+            artifactPath: 'artifacts/codex/model-check.json',
+            message: 'Pseudo model-check artifact is not eligible for model evidence.',
+          },
+        ],
+      });
+
+      const result = runScript([
+        '--assurance-summary',
+        assuranceSummaryPath,
+        '--generated-at',
+        '2026-07-22T00:01:00.000Z',
+        '--output-json',
+        outputJson,
+        '--output-md',
+        outputMd,
+      ]);
+      expect(result.status, result.stderr || result.stdout).toBe(0);
+
+      const manifest = JSON.parse(readFileSync(outputJson, 'utf8'));
+      const claim = manifest.claims.find((entry: { id: string }) => entry.id === 'model-executed');
+      expect(claim.status).not.toBe('satisfied');
+      expect(claim.evidenceRefs.filter((entry: { kind: string }) => entry.kind === 'model')).toEqual([]);
+      expect(claim.missingEvidenceRefs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ expectedKind: 'model' }),
+        ]),
+      );
+    } finally {
+      rmSync(sandbox, { recursive: true, force: true });
+    }
   });
 
 const writeJson = (targetPath: string, payload: unknown) => {

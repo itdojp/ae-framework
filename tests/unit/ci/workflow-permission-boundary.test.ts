@@ -859,6 +859,13 @@ describe('workflow permission boundaries', () => {
     expect(aggregateRaw).not.toContain('github.rest.issues');
     expect(aggregateRaw).not.toContain('issues.createComment');
     expect(aggregateRaw).not.toContain('issues.updateComment');
+    // A reusable workflow keeps the caller event name (for example
+    // `pull_request`), so gating this job on `event_name == workflow_call`
+    // would silently skip aggregation for the label-gated Formal Verify path.
+    expect(aggregate.jobs?.['aggregate']?.if).toBeUndefined();
+    expect(aggregateSteps.find((step) => step?.name === 'Install dependencies')?.run).toContain(
+      'pnpm install --frozen-lockfile',
+    );
     expect(verifyAggregate).toContain('uses: ./.github/workflows/formal-aggregate.yml');
     expect(verifyAggregate).not.toContain('issues: write');
 
@@ -1046,7 +1053,7 @@ describe('CI workflow read-only PR validation boundaries', () => {
     }
 
     expectReadOnlyJobPermissions(workflow, 'build-summary');
-    expect(jobSteps(workflow, 'build-summary').some((step) => step?.uses === 'actions/checkout@v4')).toBe(false);
+    expectCheckoutCredentialsDisabled(jobSteps(workflow, 'build-summary'));
     expect(jobSteps(workflow, 'build-summary').some((step) => step?.uses === 'actions/github-script@v7')).toBe(false);
 
     const postSummary = workflow.jobs?.['post-summary'];

@@ -1,25 +1,39 @@
 /**
  * Common types for Claude Code Task Tool integration
  */
+export interface TaskRequestContext {
+    validationTaskType?: string;
+    strict?: boolean;
+    sources?: string | string[];
+    /**
+     * Phase-specific state. UI generation currently accepts `entities`.
+     */
+    phaseState?: unknown;
+    /**
+     * UI scaffold output root. The CodeX adapter accepts only repository-relative,
+     * non-traversing paths before any filesystem writes are allowed.
+     */
+    outputDir?: string;
+    /**
+     * Explicit operator approval for trusted write-capable phases.
+     */
+    approval?: {
+        approved?: boolean;
+        scope?: string;
+        actor?: string;
+        reason?: string;
+    };
+    /**
+     * When true, phases that support it must avoid writing generated files.
+     */
+    dryRun?: boolean;
+    [key: string]: unknown;
+}
 export interface TaskRequest {
     description: string;
     prompt: string;
     subagent_type: string;
-    context?: {
-        validationTaskType?: string;
-        strict?: boolean;
-        sources?: string | string[];
-        phaseState?: unknown;
-        outputDir?: string;
-        approval?: {
-            approved?: boolean;
-            scope?: string;
-            actor?: string;
-            reason?: string;
-        };
-        dryRun?: boolean;
-        [key: string]: unknown;
-    };
+    context?: TaskRequestContext;
 }
 export interface TaskResponse {
     summary: string;
@@ -30,6 +44,26 @@ export interface TaskResponse {
     shouldBlockProgress: boolean;
     blockingReason?: string;
     requiredHumanInput?: string;
+    formal?: {
+        scaffold: {
+            status: 'generated';
+            artifactStatus: 'draft';
+            validationStatus: 'valid' | 'invalid' | 'pending';
+            materializationStatus: 'written' | 'partial' | 'failed';
+            artifacts: Array<{
+                kind: 'tla' | 'openapi';
+                status: 'written' | 'failed';
+                path?: string;
+                message?: string;
+            }>;
+            artifactPath?: string;
+        };
+        modelChecking: {
+            status: 'not-run';
+            evidenceArtifact: null;
+            runnerCommands: string[];
+        };
+    };
 }
 export interface TaskHandler {
     handleTask: (request: TaskRequest) => Promise<TaskResponse>;

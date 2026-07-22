@@ -9,6 +9,7 @@ import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { appendSection } from '../ci/step-summary.mjs';
 import { collectTraceIdsFromNdjson, buildTempoLinks } from '../trace/tempo-link-utils.mjs';
+import { buildFormalRunnerOutput, buildLegacyFormalExecutionEvidence, readPackageVersion } from './execution-evidence.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..', '..');
@@ -545,6 +546,37 @@ async function main() {
     }
   }
 
+  const conformanceRan = !envelopePath && fs.existsSync(schemaPath) && fs.existsSync(dataPath);
+  const conformanceOk = conformanceRan
+    ? Number(summary.schemaErrors ?? 0) === 0 && Number(summary.invariantViolations ?? 0) === 0
+    : null;
+  summary.ran = conformanceRan;
+  summary.status = conformanceRan ? (conformanceOk ? 'ran' : 'failed') : 'skipped';
+  summary.ok = conformanceOk;
+  summary.exitCode = conformanceRan ? (conformanceOk ? 0 : 1) : null;
+  summary.timeMs = typeof summary.timeMs === 'number' ? summary.timeMs : null;
+  const executionEvidence = buildLegacyFormalExecutionEvidence({
+    runner: 'conformance',
+    toolName: 'ae-framework conformance validator',
+    toolVersion: readPackageVersion(repoRoot),
+    versionSource: 'package-manifest',
+    inputPaths: [
+      path.relative(repoRoot, schemaPath),
+      envelopePath ? path.relative(repoRoot, envelopePath) : path.relative(repoRoot, dataPath),
+    ],
+    status: summary.status,
+    ok: summary.ok,
+    ran: summary.ran,
+    exitCode: summary.exitCode,
+    logPath: path.relative(repoRoot, outFile),
+    scope: envelopePath
+      ? 'Envelope replay only; no conformance execution occurred.'
+      : `Conformance validation of ${path.relative(repoRoot, dataPath)}`,
+    assumptions: [
+      'The result covers only the supplied trace data, schema, and enabled invariants.',
+    ],
+  });
+  summary.runnerResult = buildFormalRunnerOutput({ runner: 'conformance', executionEvidence });
   writeJson(outFile, summary);
   console.log(`Conformance summary written: ${path.relative(repoRoot, outFile)}`);
   if (envelopePath) {
