@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 
 import { createCodexTaskAdapter, finalizeTaskResponse, type Phase } from '../../../src/agents/codex-task-adapter';
 import type { TaskRequest, TaskResponse } from '../../../src/agents/task-types';
@@ -360,6 +360,42 @@ describe.sequential('finalizeTaskResponse', () => {
       expect(response.nextActions).toContain('pnpm run verify:tla -- --engine=tlc');
       expect(response.nextActions.join('\n')).not.toContain('codex:generate:tests');
       expect(JSON.stringify(response)).not.toContain(artifactDir);
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
+  });
+
+  it('persists a repository-relative artifact directory in the UI summary', async () => {
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-ui-summary-'));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      await createCodexTaskAdapter().handleTask({
+        description: 'Generate a repository-local UI summary.',
+        prompt: 'Generate an inventory view.',
+        subagent_type: 'ui',
+        context: {
+          dryRun: true,
+          phaseState: {
+            entities: {
+              inventory: {
+                attributes: {
+                  id: { type: 'uuid', required: true },
+                },
+              },
+            },
+          },
+        },
+      });
+      const summary = JSON.parse(readFileSync(join(artifactDir, 'ui-summary.json'), 'utf8')) as {
+        artifactDir: string;
+      };
+      expect(isAbsolute(summary.artifactDir)).toBe(false);
+      expect(resolve(summary.artifactDir)).toBe(artifactDir);
     } finally {
       if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
       else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;

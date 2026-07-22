@@ -33,7 +33,8 @@ permissions:
 
 jobs:
   aggregate:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
+    # Reusable workflows retain the caller event name, so a pull_request caller
+    # must not be gated on `github.event_name == 'workflow_call'` here.
     runs-on: ubuntu-latest
     permissions:
       contents: read

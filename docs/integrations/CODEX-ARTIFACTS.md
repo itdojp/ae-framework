@@ -102,7 +102,7 @@ Notes:
   "okEntities": 1,
   "files": ["apps/web/app/products/page.tsx", "apps/web/components/ProductForm.tsx"],
   "dryRun": true,
-  "artifactDir": "/abs/path/to/artifacts/codex"
+  "artifactDir": "artifacts/codex"
 }
 ```
 
