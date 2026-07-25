@@ -48,6 +48,201 @@
     "requiredHumanInput": {
       "type": "string",
       "minLength": 1
+    },
+    "formal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scaffold", "modelChecking"],
+      "properties": {
+        "scaffold": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "artifactStatus", "validationStatus", "materializationStatus", "artifacts"],
+          "properties": {
+            "status": { "const": "generated" },
+            "artifactStatus": { "const": "draft" },
+            "validationStatus": {
+              "enum": ["valid", "invalid", "pending"]
+            },
+            "materializationStatus": {
+              "enum": ["written", "partial", "failed"]
+            },
+            "artifacts": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "allOf": [
+                { "contains": { "properties": { "kind": { "const": "tla" } }, "required": ["kind"] }, "minContains": 1, "maxContains": 1 },
+                { "contains": { "properties": { "kind": { "const": "openapi" } }, "required": ["kind"] }, "minContains": 1, "maxContains": 1 }
+              ],
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "required", "status"],
+                "properties": {
+                  "kind": { "enum": ["tla", "openapi"] },
+                  "required": { "type": "boolean" },
+                  "status": { "enum": ["written", "failed"] },
+                  "path": { "type": "string", "minLength": 1 },
+                  "message": { "type": "string", "minLength": 1, "maxLength": 160 }
+                },
+                "allOf": [
+                  {
+                    "if": { "properties": { "kind": { "const": "tla" } }, "required": ["kind"] },
+                    "then": { "properties": { "required": { "const": true } } }
+                  },
+                  {
+                    "if": { "properties": { "kind": { "const": "openapi" } }, "required": ["kind"] },
+                    "then": { "properties": { "required": { "const": false } } }
+                  },
+                  {
+                    "if": { "properties": { "status": { "const": "written" } }, "required": ["status"] },
+                    "then": { "required": ["path"], "not": { "required": ["message"] } }
+                  },
+                  {
+                    "if": { "properties": { "status": { "const": "failed" } }, "required": ["status"] },
+                    "then": { "required": ["message"], "not": { "required": ["path"] } }
+                  }
+                ]
+              }
+            },
+            "artifactPath": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "artifacts": {
+                    "contains": {
+                      "properties": {
+                        "kind": { "const": "tla" },
+                        "status": { "const": "written" }
+                      },
+                      "required": ["kind", "status"]
+                    }
+                  }
+                },
+                "required": ["artifacts"]
+              },
+              "then": { "required": ["artifactPath"] },
+              "else": { "not": { "required": ["artifactPath"] } }
+            },
+            {
+              "if": {
+                "properties": {
+                  "artifacts": {
+                    "not": {
+                      "contains": {
+                        "properties": { "status": { "const": "failed" } },
+                        "required": ["status"]
+                      }
+                    }
+                  }
+                },
+                "required": ["artifacts"]
+              },
+              "then": { "properties": { "materializationStatus": { "const": "written" } } }
+            },
+            {
+              "if": {
+                "properties": {
+                  "artifacts": {
+                    "allOf": [
+                      {
+                        "contains": {
+                          "properties": { "status": { "const": "written" } },
+                          "required": ["status"]
+                        }
+                      },
+                      {
+                        "contains": {
+                          "properties": { "status": { "const": "failed" } },
+                          "required": ["status"]
+                        }
+                      }
+                    ]
+                  }
+                },
+                "required": ["artifacts"]
+              },
+              "then": { "properties": { "materializationStatus": { "const": "partial" } } }
+            },
+            {
+              "if": {
+                "properties": {
+                  "artifacts": {
+                    "not": {
+                      "contains": {
+                        "properties": { "status": { "const": "written" } },
+                        "required": ["status"]
+                      }
+                    }
+                  }
+                },
+                "required": ["artifacts"]
+              },
+              "then": { "properties": { "materializationStatus": { "const": "failed" } } }
+            }
+          ]
+        },
+        "modelChecking": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "evidenceArtifact", "runnerCommands"],
+          "properties": {
+            "status": { "const": "not-run" },
+            "evidenceArtifact": { "type": "null" },
+            "runnerCommands": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "scaffold": {
+                "properties": {
+                  "artifacts": {
+                    "contains": {
+                      "properties": {
+                        "kind": { "const": "tla" },
+                        "status": { "const": "written" }
+                      },
+                      "required": ["kind", "status"]
+                    }
+                  }
+                },
+                "required": ["artifacts"]
+              }
+            },
+            "required": ["scaffold"]
+          },
+          "then": {
+            "properties": {
+              "modelChecking": {
+                "properties": { "runnerCommands": { "minItems": 1 } }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "modelChecking": {
+                "properties": { "runnerCommands": { "maxItems": 0 } }
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "allOf": [
@@ -83,6 +278,40 @@
           "warnings": {
             "minItems": 1
           }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "formal": {
+            "properties": {
+              "scaffold": {
+                "properties": {
+                  "artifacts": {
+                    "contains": {
+                      "properties": {
+                        "kind": { "const": "tla" },
+                        "required": { "const": true },
+                        "status": { "const": "failed" }
+                      },
+                      "required": ["kind", "required", "status"]
+                    }
+                  }
+                },
+                "required": ["artifacts"]
+              }
+            },
+            "required": ["scaffold"]
+          }
+        },
+        "required": ["formal"]
+      },
+      "then": {
+        "required": ["blockingReason", "requiredHumanInput"],
+        "properties": {
+          "shouldBlockProgress": { "const": true },
+          "blockingReason": { "const": "formal-primary-artifact-materialization-failed" }
         }
       }
     }

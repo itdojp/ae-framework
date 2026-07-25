@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/formal-runner-output-v1.schema.json",
+  "title": "Formal Runner Output Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "artifactStatus",
+    "producer",
+    "executionEvidence"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "formal-runner-output/v1"
+    },
+    "contractId": {
+      "const": "formal-runner-output.v1"
+    },
+    "artifactStatus": {
+      "enum": [
+        "execution-report",
+        "not-executed"
+      ]
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "contract",
+        "artifactRef"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^ae\\.formal\\.[a-z0-9-]+$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "contract": {
+          "const": "formal-runner-result/v1"
+        },
+        "artifactRef": {
+          "type": "string",
+          "pattern": "^scripts/(formal|verify)/[a-z0-9-]+\\.mjs$"
+        }
+      }
+    },
+    "executionEvidence": {
+      "allOf": [
+        {
+          "$ref": "https://ae-framework/schema/formal-execution-evidence-v1.schema.json"
+        },
+        {
+          "properties": {
+            "provenance": {
+              "const": "runner-reported"
+            }
+          },
+          "required": [
+            "provenance"
+          ],
+          "not": {
+            "required": [
+              "adapter"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": {
+              "id": {
+                "enum": [
+                  "ae.formal.verify-tla",
+                  "ae.formal.verify-alloy",
+                  "ae.formal.verify-apalache",
+                  "ae.formal.verify-smt",
+                  "ae.formal.verify-spin",
+                  "ae.formal.run-model-checks"
+                ]
+              }
+            },
+            "required": ["id"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "executionEvidence": {
+            "properties": { "verificationKind": { "const": "model-check" } },
+            "required": ["verificationKind"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": {
+              "id": { "enum": ["ae.formal.verify-conformance", "ae.formal.conformance-driver"] }
+            },
+            "required": ["id"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "executionEvidence": {
+            "properties": { "verificationKind": { "const": "conformance" } },
+            "required": ["verificationKind"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-kani" } },
+            "required": ["id"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "executionEvidence": {
+            "properties": { "verificationKind": { "const": "presence" } },
+            "required": ["verificationKind"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-lean" } },
+            "required": ["id"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "executionEvidence": {
+            "properties": { "verificationKind": { "const": "build" } },
+            "required": ["verificationKind"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-csp" } },
+            "required": ["id"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "executionEvidence": {
+            "properties": { "verificationKind": { "const": "typecheck" } },
+            "required": ["verificationKind"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-csp-model-check" } },
+            "required": ["id"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "executionEvidence": {
+            "properties": { "verificationKind": { "const": "model-check" } },
+            "required": ["verificationKind"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-smt" } },
+            "required": ["id"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "executionEvidence": {
+            "properties": {
+              "semanticResult": {
+                "properties": { "domain": { "const": "smt" } },
+                "required": ["domain"]
+              }
+            },
+            "required": ["semanticResult"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-spin" } },
+            "required": ["id"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "executionEvidence": {
+            "properties": {
+              "semanticResult": {
+                "properties": { "domain": { "const": "spin" } },
+                "required": ["domain"]
+              }
+            },
+            "required": ["semanticResult"]
+          }
+        }
+      }
+    }
+  ]
+}

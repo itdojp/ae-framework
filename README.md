@@ -100,6 +100,12 @@ one workflow file. For a real Issue-to-PR assurance path, continue with
 formal lanes, domain presets, PR posting helpers, and heavy-test trend snapshots
 remain optional and risk/profile-driven.
 
+Formal generation and formal execution are separate surfaces. `FormalAgent`, the
+Codex formal phase, and the Codex quickstart generate reviewable `draft`
+scaffolds; they do not execute a model checker and are therefore not evidence
+for `model-checked` or `proved`. Use the TLA+/Alloy/SMT/CSP/SPIN/Lean/Kani runners in
+`docs/quality/formal-runbook.md` for execution evidence.
+
 > `npm install` is intentionally blocked by `preinstall` because this repository uses `pnpm` workspace dependencies (`workspace:*`).
 > `pnpm run first-run` remains available for the environment/build/verify baseline (`doctor:env -> build -> verify:lite`) and writes summary JSON/Markdown files under `artifacts/first-run`.
 > `pnpm run doctor:env` writes `artifacts/doctor/env.json` and returns `0` (ok) / `2` (warning) / `1` (error) / `3` (invalid arguments).
@@ -225,6 +231,13 @@ Demo 完了後に `pnpm run demo:agent-assurance:check` を実行すると、one
 demo entry point は維持したまま、期待される first-run artifact path を確認できます。
 
 専用の first-run walkthrough と troubleshooting は `docs/getting-started/FIRST-RUN-DEMO.md` を参照してください。Real Issue-to-PR assurance path に進む場合は `docs/getting-started/REFERENCE-FLOW.md` を使用します。Formal lane、domain preset、PR posting helper、heavy-test trend snapshot は optional であり、risk/profile に応じて選択します。
+
+Formal generation と formal execution は別 surface です。`FormalAgent`、Codex
+formal phase、Codex quickstart が生成するのは review 用の `draft` scaffold
+であり、model checker は実行しません。これらを `model-checked` / `proved`
+の根拠にしてはいけません。実行 Evidence は
+`docs/quality/formal-runbook.md` に記載した TLA+/Alloy/SMT/CSP/SPIN/Lean/Kani
+runner から取得します。
 
 > このリポジトリは `workspace:*` を使うため、`npm install` は `preinstall` ガードで意図的に失敗させています。`pnpm install --frozen-lockfile` を使用してください。
 > `pnpm run first-run` は environment/build/verify baseline (`doctor:env -> build -> verify:lite`) として引き続き利用でき、`artifacts/first-run` に summary JSON/Markdown を出力します。

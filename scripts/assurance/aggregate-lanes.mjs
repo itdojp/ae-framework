@@ -1,8 +1,18 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import Ajv2020 from 'ajv/dist/2020.js';
+import addFormats from 'ajv-formats';
 import yaml from 'yaml';
 import { buildArtifactMetadata } from '../ci/lib/artifact-metadata.mjs';
+import {
+  claimEligibilityForVerificationKind,
+  getFormalRunnerProducer,
+  hasEligibleFormalSemanticResult,
+  hasEligibleToolVersion,
+  hasReviewedFormalVerificationKind,
+} from '../formal/execution-evidence.mjs';
 
 const DEFAULT_OUTPUT_JSON = 'artifacts/assurance/assurance-summary.json';
 const DEFAULT_OUTPUT_MD = 'artifacts/assurance/assurance-summary.md';
@@ -27,8 +37,39 @@ const WARNING_CODES = new Set([
   'unlinked-counterexample',
   'unrecognized-evidence-claim',
   'assumption-validation-required',
+  'untrusted-formal-summary',
 ]);
 
+const FORMAL_SUMMARY_CONTRACTS = new Map([
+  ['formal-summary/v1', null],
+  ['formal-summary/v2', 'formal-summary.v2'],
+]);
+const FORMAL_SUMMARY_ADAPTER = Object.freeze({
+  id: 'ae.formal.summary-generator',
+  version: '1.0.0',
+  contract: 'formal-summary-adapter/v1',
+  artifactRef: 'scripts/formal/generate-formal-summary-v1.mjs',
+});
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const repositoryRoot = path.resolve(scriptDir, '..', '..');
+const readRepositorySchema = (name) => JSON.parse(fs.readFileSync(path.join(repositoryRoot, 'schema', name), 'utf8'));
+const formalAjv = new Ajv2020({ allErrors: true, strict: false });
+addFormats(formalAjv);
+for (const schemaName of [
+  'artifact-metadata.schema.json',
+  'formal-execution-evidence-v1.schema.json',
+  'formal-summary-v1.schema.json',
+  'formal-summary-v2.schema.json',
+]) {
+  formalAjv.addSchema(readRepositorySchema(schemaName));
+}
+const validateFormalExecutionEvidence = formalAjv.getSchema(
+  'https://ae-framework/schema/formal-execution-evidence-v1.schema.json',
+);
+const formalSummaryValidators = new Map([
+  ['formal-summary/v1', formalAjv.getSchema('https://ae-framework/schema/formal-summary-v1.schema.json')],
+  ['formal-summary/v2', formalAjv.getSchema('https://ae-framework/schema/formal-summary-v2.schema.json')],
+]);
 const SECURITY_CLAIM_TYPES = new Set(['invariant', 'precondition', 'postcondition', 'assumption']);
 const ASSUMPTION_HANDLING_MODES = new Set(['assumption-validation-required', 'residual-risk']);
 
@@ -872,23 +913,64 @@ const sourceKindFromLane = (lane) => {
   return 'unknown';
 };
 
-const formalLaneMapping = (name) => {
-  switch (name) {
-    case 'conformance':
-    case 'tla':
-    case 'apalache':
-    case 'alloy':
-    case 'smt':
-    case 'csp':
-    case 'spin':
-    case 'model':
-      return { lane: 'model', kind: name === 'conformance' ? 'conformance' : 'model-check' };
-    case 'lean':
-    case 'kani':
-      return { lane: 'proof', kind: 'proof' };
-    default:
-      return null;
+const formalLaneMapping = (verificationKind) => {
+  const eligibility = claimEligibilityForVerificationKind(verificationKind);
+  if (eligibility === 'conformance') return { lane: 'model', kind: 'conformance' };
+  if (eligibility === 'model') return { lane: 'model', kind: 'model-check' };
+  if (eligibility === 'proof') return { lane: 'proof', kind: 'proof' };
+  return null;
+};
+
+const hasExactProducerBinding = (actual, expected) => Boolean(
+  actual
+  && typeof actual === 'object'
+  && !Array.isArray(actual)
+  && actual.id === expected.id
+  && actual.version === expected.version
+  && actual.contract === expected.contract
+  && actual.artifactRef === expected.artifactRef,
+);
+
+const allowedFormalProducers = (name) => {
+  if (name === 'conformance') {
+    return [getFormalRunnerProducer('conformance'), getFormalRunnerProducer('conformanceDriver')];
   }
+  if (name === 'csp') {
+    return [getFormalRunnerProducer('csp'), getFormalRunnerProducer('cspModelCheck')];
+  }
+  try {
+    return [getFormalRunnerProducer(name)];
+  } catch {
+    return [];
+  }
+};
+
+const hasExecutionEvidence = (result, name) => {
+  const evidence = result?.executionEvidence;
+  const reviewedRunner = name === 'conformance'
+    && evidence?.producer?.id === getFormalRunnerProducer('conformanceDriver').id
+    ? 'conformanceDriver'
+    : name === 'csp'
+      && evidence?.producer?.id === getFormalRunnerProducer('cspModelCheck').id
+      ? 'cspModelCheck'
+      : name;
+  return Boolean(
+    evidence
+    && typeof evidence === 'object'
+    && validateFormalExecutionEvidence(evidence)
+    && result?.artifactStatus === 'execution-report'
+    && evidence.artifactStatus === 'execution-report'
+    && evidence.executionOccurred === true
+    && allowedFormalProducers(name).some((producer) => hasExactProducerBinding(evidence.producer, producer))
+    && hasReviewedFormalVerificationKind(reviewedRunner, evidence.verificationKind)
+    && hasEligibleFormalSemanticResult(reviewedRunner, evidence.semanticResult)
+    && evidence.provenance === 'adapter-verified'
+    && hasExactProducerBinding(evidence.adapter, FORMAL_SUMMARY_ADAPTER)
+    && evidence.result?.status === 'ok'
+    && evidence.result?.code === 0
+    && maybeString(evidence.result?.logPath)
+    && hasEligibleToolVersion(evidence.tool),
+  );
 };
 
 const normalizeEvidenceEntry = (entry, defaults = {}) => {
@@ -1063,6 +1145,24 @@ const ingestVerifyLiteSummary = (summaryPath, claimStateMap, contextPackRefs, wa
 const ingestFormalSummary = (summaryPath, claimStateMap, contextPackRefs, warnings) => {
   const resolvedPath = ensureFile(summaryPath, 'Formal summary');
   const summary = readJson(resolvedPath);
+  const schemaVersion = maybeString(summary.schemaVersion);
+  const expectedContractId = FORMAL_SUMMARY_CONTRACTS.get(schemaVersion);
+  const validateSummary = formalSummaryValidators.get(schemaVersion);
+  const schemaValid = typeof validateSummary === 'function' && validateSummary(summary);
+  if (!FORMAL_SUMMARY_CONTRACTS.has(schemaVersion)
+    || (expectedContractId && maybeString(summary.contractId) !== expectedContractId)
+    || !schemaValid) {
+    const validationDetail = Array.isArray(validateSummary?.errors)
+      ? validateSummary.errors.slice(0, 3).map((error) => `${error.instancePath || '/'} ${error.message}`).join('; ')
+      : 'unsupported schema';
+    pushWarning(
+      warnings,
+      'untrusted-formal-summary',
+      `Formal artifact failed the closed Formal Summary contract: schemaVersion=${schemaVersion || 'missing'}; ${validationDetail}.`,
+      { artifactPath: resolvedPath },
+    );
+    return;
+  }
   const targetClaims = claimIdsForGlobalEvidence(claimStateMap, contextPackRefs);
   const tool = maybeString(summary.tool);
   const results = Array.isArray(summary.results) ? summary.results : [];
@@ -1071,8 +1171,18 @@ const ingestFormalSummary = (summaryPath, claimStateMap, contextPackRefs, warnin
   for (const result of candidates) {
     const name = maybeString(result.name || tool);
     const status = maybeString(result.status || summary.status);
-    const mapping = formalLaneMapping(name);
-    if (!mapping || status !== 'ok') continue;
+    if (status !== 'ok') continue;
+    if (!hasExecutionEvidence(result, name)) {
+      pushWarning(
+        warnings,
+        'untrusted-formal-summary',
+        `Formal result "${name || 'unknown'}" is ok but lacks eligible schema-valid execution evidence, reviewed producer binding, or verified tool-version provenance.`,
+        { artifactPath: resolvedPath },
+      );
+      continue;
+    }
+    const mapping = formalLaneMapping(result.executionEvidence.verificationKind);
+    if (!mapping) continue;
     const evidence = normalizeEvidenceEntry({
       lane: mapping.lane,
       kind: mapping.kind,
@@ -1086,24 +1196,19 @@ const ingestFormalSummary = (summaryPath, claimStateMap, contextPackRefs, warnin
   }
 };
 
-const ingestConformanceReport = (summaryPath, claimStateMap, contextPackRefs, warnings) => {
+const ingestConformanceReport = (summaryPath, _claimStateMap, _contextPackRefs, warnings) => {
   if (!summaryPath) return;
   const resolvedPath = ensureFile(summaryPath, 'Conformance report');
   const summary = readJson(resolvedPath);
-  const targetClaims = claimIdsForGlobalEvidence(claimStateMap, contextPackRefs);
   const runsAnalyzed = Number(summary.runsAnalyzed ?? 0);
   const status = maybeString(summary.status).toLowerCase();
   if (!Number.isFinite(runsAnalyzed) || runsAnalyzed <= 0 || status !== 'success') return;
-  const evidence = normalizeEvidenceEntry({
-    lane: 'model',
-    kind: 'conformance',
-    sourceKind: 'model-derived',
-    origin: 'conformance-report',
-    artifactPath: resolvedPath,
-    detail: `conformance report analyzed ${runsAnalyzed} run(s)`,
-    generatorLineage: 'conformance-report',
-  });
-  addEvidenceForClaims(claimStateMap, targetClaims, evidence, warnings, resolvedPath);
+  pushWarning(
+    warnings,
+    'untrusted-formal-summary',
+    'Direct conformance reports are report-only; route actual runner output through the closed Formal Summary adapter before using it as model evidence.',
+    { artifactPath: resolvedPath },
+  );
 };
 
 const ingestCounterexample = (counterexamplePath, claimStateMap, warnings, summaryState) => {

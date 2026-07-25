@@ -25,7 +25,11 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
   const stories = new UserStoriesTaskAdapter();
   const validation = new ValidationTaskAdapter();
   const modeling = new DomainModelingTaskAdapter();
-  const formal = new FormalAgent({ outputFormat: 'tla+', validationLevel: 'comprehensive', generateDiagrams: false, enableModelChecking: true });
+  const formal = new FormalAgent({
+    outputFormat: 'tla+',
+    validationLevel: 'comprehensive',
+    generateDiagrams: false,
+  });
 
   const handler: TaskHandler = {
     async handleTask(request: TaskRequest): Promise<TaskResponse> {
@@ -49,48 +53,143 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           case 'formal': {
             const reqText = request.prompt || request.description || '';
             const spec = await formal.generateFormalSpecification(reqText, 'tla+');
-            // Derive OpenAPI as a convenience artifact
-            let openapiPath = '';
-            let tlaPath = '';
-            let mcPath = '';
+            let openapiContent: string | null = null;
+            let openapiGenerationFailure: string | null = null;
             try {
-              // write TLA+ spec content
-              const outDir = getArtifactsDir();
-              fs.mkdirSync(outDir, { recursive: true });
-              tlaPath = path.join(outDir, 'formal.tla');
-              fs.writeFileSync(tlaPath, spec.content, 'utf8');
-
               const openapi = await formal.createAPISpecification(reqText, 'openapi', { includeExamples: true, generateContracts: true });
-              openapiPath = path.join(outDir, 'openapi.yaml');
-              fs.writeFileSync(openapiPath, openapi.content, 'utf8');
+              openapiContent = openapi.content;
+            } catch (error) {
+              openapiGenerationFailure = boundedMaterializationMessage('OpenAPI scaffold generation', error);
+            }
 
-              // Model checking (best-effort)
+            const outDir = getArtifactsDir();
+            const materializedArtifacts: NonNullable<TaskResponse['formal']>['scaffold']['artifacts'] = [];
+            let directoryFailure: string | null = null;
+            if (!isRepositoryLocalArtifactDirectory(outDir)) {
+              directoryFailure = 'Formal artifact directory must remain inside the repository';
+            } else {
               try {
-                const mc = await formal.runModelChecking(spec, []);
-                mcPath = path.join(outDir, 'model-check.json');
-                fs.writeFileSync(mcPath, JSON.stringify(mc, null, 2), 'utf8');
-              } catch {}
-            } catch {}
+                fs.mkdirSync(outDir, { recursive: true });
+              } catch (error) {
+                directoryFailure = boundedMaterializationMessage('Formal artifact directory creation', error);
+              }
+            }
+
+            const materialize = (kind: 'tla' | 'openapi', fileName: string, content: string | null, generationFailure?: string | null) => {
+              const requirement = kind === 'tla'
+                ? { kind: 'tla', required: true } as const
+                : { kind: 'openapi', required: false } as const;
+              if (directoryFailure || generationFailure || content === null) {
+                materializedArtifacts.push({
+                  ...requirement,
+                  status: 'failed',
+                  message: directoryFailure || generationFailure || `${kind} scaffold content unavailable`,
+                });
+                return;
+              }
+              const candidatePath = path.join(outDir, fileName);
+              const publicPath = publicArtifactPath(candidatePath);
+              if (!publicPath) {
+                materializedArtifacts.push({
+                  ...requirement,
+                  status: 'failed',
+                  message: `${kind.toUpperCase()} artifact path must remain inside the repository`,
+                });
+                return;
+              }
+              try {
+                const flags = fs.constants.O_WRONLY
+                  | fs.constants.O_CREAT
+                  | fs.constants.O_TRUNC
+                  | (fs.constants.O_NOFOLLOW ?? 0);
+                const fd = fs.openSync(candidatePath, flags, 0o600);
+                try {
+                  fs.writeFileSync(fd, content, 'utf8');
+                } finally {
+                  fs.closeSync(fd);
+                }
+                materializedArtifacts.push({ ...requirement, status: 'written', path: publicPath });
+              } catch (error) {
+                materializedArtifacts.push({
+                  ...requirement,
+                  status: 'failed',
+                  message: boundedMaterializationMessage(`${kind.toUpperCase()} artifact write`, error),
+                });
+              }
+            };
+
+            materialize('tla', 'formal.tla', spec.content);
+            materialize('openapi', 'openapi.yaml', openapiContent, openapiGenerationFailure);
+            const writtenCount = materializedArtifacts.filter((artifact) => artifact.status === 'written').length;
+            const materializationStatus = writtenCount === materializedArtifacts.length
+              ? 'written'
+              : writtenCount > 0 ? 'partial' : 'failed';
+            const tlaArtifact = materializedArtifacts.find((artifact) => artifact.kind === 'tla' && artifact.status === 'written');
+            const openapiArtifact = materializedArtifacts.find((artifact) => artifact.kind === 'openapi' && artifact.status === 'written');
+            const materializationWarnings = materializedArtifacts
+              .filter((artifact) => artifact.status === 'failed')
+              .map((artifact) => artifact.message ?? `${artifact.kind} artifact materialization failed`);
             const isInvalid = spec.validation.status === 'invalid';
+            const primaryMaterializationFailed = materializedArtifacts.some(
+              (artifact) => artifact.required && artifact.status === 'failed',
+            );
+            const runnerCommands = tlaArtifact
+              ? [
+                  'pnpm run verify:tla -- --engine=tlc',
+                  'pnpm run verify:alloy',
+                  'pnpm run verify:formal',
+                ]
+              : [];
+            const recommendations = tlaArtifact
+              ? [
+                  'Review the generated scaffold before selecting a formal runner',
+                  `Review TLA+: ${tlaArtifact.path}`,
+                  openapiArtifact ? `Review OpenAPI: ${openapiArtifact.path}` : 'Optional OpenAPI content was not materialized',
+                  `Model checker not executed; run one of: ${runnerCommands.join(' | ')}`,
+                ]
+              : [
+                  'Restore repository-local materialization for the required TLA+ artifact before continuing',
+                  openapiArtifact ? `Review optional OpenAPI: ${openapiArtifact.path}` : 'Optional OpenAPI content was not materialized',
+                ];
+            const nextActions = !tlaArtifact
+              ? ['Rerun required TLA artifact materialization after restoring a writable repository-local output']
+              : isInvalid
+                ? ['Resolve formal specification warnings and rerun formal phase']
+                : [
+                    'pnpm run verify:tla -- --engine=tlc',
+                    'pnpm -s run verify:lite',
+                    ...(openapiArtifact ? ['pnpm run codex:generate:tests -- --use-operation-id'] : []),
+                  ];
             const resp: TaskResponse = {
-              summary: `Formal spec generated: ${spec.type.toUpperCase()} (${spec.validation.status})`,
+              summary: `Formal scaffold generated in memory: ${spec.type.toUpperCase()} (${spec.validation.status}, ${spec.artifactStatus}, materialization=${materializationStatus})`,
               analysis: spec.content.slice(0, 1200),
-              recommendations: [
-                'Validate properties',
-                tlaPath ? `Review TLA+: ${path.relative(process.cwd(), tlaPath)}` : 'TLA+ content available in response',
-                openapiPath ? `Review OpenAPI: ${path.relative(process.cwd(), openapiPath)}` : 'Consider API spec generation if needed',
-                mcPath ? `Check model checking: ${path.relative(process.cwd(), mcPath)}` : 'Model checking unavailable'
-              ],
-              nextActions: [
-                'pnpm -s run verify:lite',
-                'pnpm run codex:generate:tests -- --use-operation-id'
-              ],
-              warnings: spec.validation.warnings?.map(w => w.message) || [],
-              shouldBlockProgress: isInvalid,
-              ...(isInvalid
+              recommendations,
+              nextActions,
+              warnings: [...(spec.validation.warnings?.map(w => w.message) || []), ...materializationWarnings],
+              shouldBlockProgress: isInvalid || primaryMaterializationFailed,
+              formal: {
+                scaffold: {
+                  status: 'generated',
+                  artifactStatus: spec.artifactStatus,
+                  validationStatus: spec.validation.status,
+                  materializationStatus,
+                  artifacts: materializedArtifacts,
+                  ...(tlaArtifact ? { artifactPath: tlaArtifact.path } : {}),
+                },
+                modelChecking: {
+                  status: 'not-run',
+                  evidenceArtifact: null,
+                  runnerCommands,
+                },
+              },
+              ...(isInvalid || primaryMaterializationFailed
                 ? {
-                    blockingReason: 'formal-validation-invalid',
-                    requiredHumanInput: 'resolve formal specification warnings and rerun formal phase',
+                    blockingReason: primaryMaterializationFailed
+                      ? 'formal-primary-artifact-materialization-failed'
+                      : 'formal-validation-invalid',
+                    requiredHumanInput: primaryMaterializationFailed
+                      ? 'writable repository-local output for required TLA artifact materialization'
+                      : 'resolve formal specification warnings and rerun formal phase',
                   }
                 : {}),
             };
@@ -428,9 +527,15 @@ async function handleUI(request: TaskRequest, parentSpan?: any): Promise<TaskRes
   // Write additional UI summary artifact (machine-readable)
   try {
     const outDir = getArtifactsDir();
-    fs.mkdirSync(outDir, { recursive: true });
-    const uiSummaryPath = path.join(outDir, 'ui-summary.json');
-    fs.writeFileSync(uiSummaryPath, JSON.stringify({ totalEntities: total, okEntities: ok, files, dryRun, artifactDir: outDir }, null, 2), 'utf8');
+    const publicDir = publicArtifactPath(outDir);
+    if (!publicDir) throw new Error('UI artifact directory must remain inside the repository');
+    writeRepositoryLocalCodexArtifact(outDir, 'ui-summary.json', JSON.stringify({
+      totalEntities: total,
+      okEntities: ok,
+      files,
+      dryRun,
+      artifactDir: publicDir,
+    }, null, 2));
   } catch {}
 
   const resp: TaskResponse = {
@@ -556,9 +661,11 @@ function writeAndReturn(phase: Phase, request: TaskRequest, response: TaskRespon
   const finalResponse = finalizeTaskResponse(phase, request, response);
   try {
     const outDir = getArtifactsDir();
-    fs.mkdirSync(outDir, { recursive: true });
-    const file = path.join(outDir, `result-${phase}.json`);
-    fs.writeFileSync(file, JSON.stringify({ phase, response: finalResponse, ts: new Date().toISOString() }, null, 2), 'utf8');
+    writeRepositoryLocalCodexArtifact(
+      outDir,
+      `result-${phase}.json`,
+      JSON.stringify({ phase, response: finalResponse, ts: new Date().toISOString() }, null, 2),
+    );
   } catch {
     // best-effort only
   }
@@ -574,6 +681,56 @@ function createNeutralResponse(phase: Phase, request: TaskRequest): TaskResponse
     warnings: [`Phase '${phase}' not fully supported in current implementation`],
     shouldBlockProgress: false
   };
+}
+
+function boundedMaterializationMessage(operation: string, error: unknown): string {
+  const rawCode = typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as NodeJS.ErrnoException).code ?? '')
+    : '';
+  const code = /^[A-Z0-9_-]{1,32}$/u.test(rawCode) ? rawCode : 'OPERATION_FAILED';
+  return `${operation} failed (${code})`.slice(0, 160);
+}
+
+function publicArtifactPath(candidatePath: string): string | null {
+  const relative = path.relative(process.cwd(), path.resolve(candidatePath));
+  if (!relative || path.isAbsolute(relative) || relative.split(path.sep).includes('..')) return null;
+  return relative.split(path.sep).join('/');
+}
+
+function isRepositoryLocalArtifactDirectory(candidatePath: string): boolean {
+  const repoRoot = path.resolve(process.cwd());
+  const resolvedCandidate = path.resolve(candidatePath);
+  const lexicalRelative = path.relative(repoRoot, resolvedCandidate);
+  if (!lexicalRelative || lexicalRelative.startsWith('..') || path.isAbsolute(lexicalRelative)) return false;
+  const realRepoRoot = fs.realpathSync(repoRoot);
+  const existingAncestor = findExistingAncestor(resolvedCandidate);
+  const realAncestor = fs.realpathSync(existingAncestor);
+  const realRelative = path.relative(realRepoRoot, realAncestor);
+  return realRelative === '' || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative));
+}
+
+function writeRepositoryLocalCodexArtifact(outDir: string, fileName: string, content: string): void {
+  if (!isRepositoryLocalArtifactDirectory(outDir)) {
+    throw new Error('Codex artifact directory must remain inside the repository');
+  }
+  if (!/^[a-z0-9][a-z0-9-]*\.json$/u.test(fileName)) {
+    throw new Error('Codex artifact filename is invalid');
+  }
+  fs.mkdirSync(outDir, { recursive: true });
+  const target = path.join(outDir, fileName);
+  if (!publicArtifactPath(target)) {
+    throw new Error('Codex artifact path must remain inside the repository');
+  }
+  const flags = fs.constants.O_WRONLY
+    | fs.constants.O_CREAT
+    | fs.constants.O_TRUNC
+    | (fs.constants.O_NOFOLLOW ?? 0);
+  const fd = fs.openSync(target, flags, 0o600);
+  try {
+    fs.writeFileSync(fd, content, 'utf8');
+  } finally {
+    fs.closeSync(fd);
+  }
 }
 
 function getArtifactsDir() {

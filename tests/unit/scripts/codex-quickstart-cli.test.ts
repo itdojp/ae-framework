@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   CLI_CANDIDATES,
   ensureCLI,
@@ -113,5 +115,13 @@ describe('codex quickstart cli resolution', () => {
     const metaUrl = 'file:///tmp/with%20space/quickstart.mjs';
     const argvPath = '/tmp/with space/quickstart.mjs';
     expect(isExecutedAsMain(metaUrl, argvPath)).toBe(true);
+  });
+
+  it('keeps formal quickstart scaffold-only and does not write pseudo model-check evidence', () => {
+    const source = readFileSync(resolve('scripts/codex/quickstart.mjs'), 'utf8');
+    expect(source).toContain('Formal model checker: not run');
+    expect(source).not.toContain('runModelChecking(');
+    expect(source).not.toContain('quickstart-model-check.json');
+    expect(source).not.toContain('enableModelChecking');
   });
 });

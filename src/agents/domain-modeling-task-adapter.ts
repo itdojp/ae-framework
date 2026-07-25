@@ -35,7 +35,6 @@ export class DomainModelingTaskAdapter {
       outputFormat: 'openapi',
       validationLevel: 'comprehensive',
       generateDiagrams: true,
-      enableModelChecking: true,
     };
 
     this.agent = new FormalAgent(config);

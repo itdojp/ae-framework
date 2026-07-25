@@ -267,7 +267,8 @@
         "unknown-claim-ref",
         "unlinked-counterexample",
         "unrecognized-evidence-claim",
-        "assumption-validation-required"
+        "assumption-validation-required",
+        "untrusted-formal-summary"
       ]
     },
     "warning": {

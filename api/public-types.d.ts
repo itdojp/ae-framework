@@ -1,4 +1,4 @@
-// snapshot sha1=881ed213121fbf098d5e3f39d29c21a8e208c94f
+// snapshot sha1=ffe580007088f1ab69f5eb42a07c740c78f6b61e
 // ---- agents/domain-types.d.ts ----
 /**
  * @fileoverview Domain Types for Unified Agent System
@@ -4361,22 +4361,24 @@ export declare const FormalAgentConfig: z.ZodObject<{
     outputFormat: z.ZodDefault<z.ZodEnum<["tla+", "alloy", "z-notation", "openapi", "asyncapi", "graphql"]>>;
     validationLevel: z.ZodDefault<z.ZodEnum<["basic", "comprehensive", "formal-verification"]>>;
     generateDiagrams: z.ZodDefault<z.ZodBoolean>;
-    enableModelChecking: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
     outputFormat?: "tla+" | "alloy" | "z-notation" | "openapi" | "asyncapi" | "graphql";
     validationLevel?: "basic" | "comprehensive" | "formal-verification";
     generateDiagrams?: boolean;
-    enableModelChecking?: boolean;
 }, {
     outputFormat?: "tla+" | "alloy" | "z-notation" | "openapi" | "asyncapi" | "graphql";
     validationLevel?: "basic" | "comprehensive" | "formal-verification";
     generateDiagrams?: boolean;
-    enableModelChecking?: boolean;
 }>;
 export type FormalAgentConfig = z.infer<typeof FormalAgentConfig>;
 export interface FormalSpecification {
     id: string;
     type: "tla+" | "alloy" | "z-notation" | "state-machine" | "contracts" | "api-spec";
+    /**
+     * FormalAgent produces a scaffold only. This status prevents generated text
+     * from being interpreted as evidence that a model checker executed.
+     */
+    artifactStatus: "draft";
     title: string;
     content: string;
     metadata: {
@@ -4471,34 +4473,11 @@ export interface Transition {
     guard?: string;
     action?: string;
 }
-export interface ModelCheckingResult {
-    specification: string;
-    properties: PropertyResult[];
-    counterExamples: CounterExample[];
-    statistics: {
-        statesExplored: number;
-        timeElapsed: number;
-        memoryUsed: number;
-    };
-}
-export interface PropertyResult {
-    name: string;
-    satisfied: boolean;
-    description: string;
-    counterExample?: CounterExample;
-}
-export interface CounterExample {
-    trace: TraceStep[];
-    description: string;
-}
-export interface TraceStep {
-    state: Record<string, any>;
-    action: string;
-    timestamp: number;
-}
 /**
  * Formal Agent - Phase 2 of ae-framework
- * Bridges Intent (Phase 1) and Tests (Phase 3) by generating formal, verifiable specifications
+ * Bridges Intent (Phase 1) and Tests (Phase 3) by generating draft formal
+ * specification scaffolds. Model-check execution belongs to the dedicated
+ * TLA+/Alloy/SMT/CSP/SPIN/Lean/Kani runners.
  */
 export declare class FormalAgent {
     private config;
@@ -4540,13 +4519,6 @@ export declare class FormalAgent {
         warnings: ValidationWarning[];
     }>;
     /**
-     * Run formal model checking on specifications
-     */
-    runModelChecking(specification: FormalSpecification, properties?: string[], options?: {
-        timeout?: number;
-        maxStates?: number;
-    }): Promise<ModelCheckingResult>;
-    /**
      * Generate UML and sequence diagrams
      */
     generateDiagrams(specification: FormalSpecification, types?: ("sequence" | "state" | "class" | "component")[]): Promise<{
@@ -4578,8 +4550,6 @@ export declare class FormalAgent {
     private validateStateMachine;
     private validateContracts;
     private validateAPISpec;
-    private checkProperty;
-    private estimateStatesExplored;
     private generateSequenceDiagram;
     private generateStateDiagram;
     private generateClassDiagram;
@@ -6715,11 +6685,39 @@ export declare class RustVerificationAgent {
 /**
  * Common types for Claude Code Task Tool integration
  */
+export interface TaskRequestContext {
+    validationTaskType?: string;
+    strict?: boolean;
+    sources?: string | string[];
+    /**
+     * Phase-specific state. UI generation currently accepts `entities`.
+     */
+    phaseState?: unknown;
+    /**
+     * UI scaffold output root. The CodeX adapter accepts only repository-relative,
+     * non-traversing paths before any filesystem writes are allowed.
+     */
+    outputDir?: string;
+    /**
+     * Explicit operator approval for trusted write-capable phases.
+     */
+    approval?: {
+        approved?: boolean;
+        scope?: string;
+        actor?: string;
+        reason?: string;
+    };
+    /**
+     * When true, phases that support it must avoid writing generated files.
+     */
+    dryRun?: boolean;
+    [key: string]: unknown;
+}
 export interface TaskRequest {
     description: string;
     prompt: string;
     subagent_type: string;
-    context?: any;
+    context?: TaskRequestContext;
 }
 export interface TaskResponse {
     summary: string;
@@ -6728,6 +6726,28 @@ export interface TaskResponse {
     nextActions: string[];
     warnings: string[];
     shouldBlockProgress: boolean;
+    blockingReason?: string;
+    requiredHumanInput?: string;
+    formal?: {
+        scaffold: {
+            status: 'generated';
+            artifactStatus: 'draft';
+            validationStatus: 'valid' | 'invalid' | 'pending';
+            materializationStatus: 'written' | 'partial' | 'failed';
+            artifacts: Array<{
+                kind: 'tla' | 'openapi';
+                status: 'written' | 'failed';
+                path?: string;
+                message?: string;
+            }>;
+            artifactPath?: string;
+        };
+        modelChecking: {
+            status: 'not-run';
+            evidenceArtifact: null;
+            runnerCommands: string[];
+        };
+    };
 }
 export interface TaskHandler {
     handleTask: (request: TaskRequest) => Promise<TaskResponse>;

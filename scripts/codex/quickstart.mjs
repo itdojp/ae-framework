@@ -138,7 +138,7 @@ async function main() {
   // 3) Optional formal generation + OpenAPI
   let formalCode = 0;
   let formalOut = '';
-  let formalMC = '';
+  let formalArtifactStatus = '';
   let openapiPath = '';
   let contractsSummaryPath = '';
   let contractsCount = 0;
@@ -146,9 +146,10 @@ async function main() {
     try {
       console.log('[codex] Generating formal spec + OpenAPI ...');
       const { FormalAgent } = await import(path.resolve('dist/src/agents/formal-agent.js'));
-      const agent = new FormalAgent({ outputFormat: 'tla+', validationLevel: 'comprehensive', generateDiagrams: false, enableModelChecking: true });
+      const agent = new FormalAgent({ outputFormat: 'tla+', validationLevel: 'comprehensive', generateDiagrams: false });
       const reqText = process.env.CODEX_FORMAL_REQ || 'Users can register, login, and view their dashboard.';
       const spec = await agent.generateFormalSpecification(reqText, 'tla+');
+      formalArtifactStatus = spec.artifactStatus;
       const tlaPath = path.join(codexDir, 'quickstart-formal.tla');
       fs.writeFileSync(tlaPath, spec.content, 'utf8');
       try {
@@ -192,11 +193,6 @@ async function main() {
           console.warn('[codex] Failed to enrich OpenAPI:', e?.message || e);
         }
       } catch {}
-      try {
-        const mc = await agent.runModelChecking(spec, []);
-        fs.writeFileSync(path.join(codexDir, 'quickstart-model-check.json'), JSON.stringify(mc, null, 2), 'utf8');
-        formalMC = 'ok';
-      } catch { formalMC = 'failed'; }
       formalOut = tlaPath;
       formalCode = 0;
 
@@ -235,7 +231,8 @@ async function main() {
     '',
     process.env.CODEX_SKIP_QUALITY === '1' ? '- Quality gates: skipped' : `- Quality gates exit code: ${verifyCode}`,
     process.env.CODEX_RUN_UI === '1' ? `- UI scaffold exit code: ${uiCode}${process.env.CODEX_PHASE_STATE_FILE ? ' (state file provided)' : ''}` : '- UI scaffold: skipped',
-    process.env.CODEX_RUN_FORMAL === '1' ? `- Formal generation: ${formalCode === 0 ? 'ok' : 'failed'}${formalOut ? ` (${path.relative(root, formalOut)})` : ''}${formalMC ? `, model-check: ${formalMC}` : ''}` : '- Formal generation: skipped',
+    process.env.CODEX_RUN_FORMAL === '1' ? `- Formal scaffold generation: ${formalCode === 0 ? 'ok' : 'failed'}${formalOut ? ` (${path.relative(root, formalOut)})` : ''}${formalArtifactStatus ? `, artifact status: ${formalArtifactStatus}` : ''}` : '- Formal scaffold generation: skipped',
+    process.env.CODEX_RUN_FORMAL === '1' ? '- Formal model checker: not run (use `pnpm run verify:tla -- --engine=tlc`, `pnpm run verify:alloy`, or `pnpm run verify:formal`)' : '',
     process.env.CODEX_RUN_FORMAL === '1' && openapiPath ? `- OpenAPI: ${path.relative(root, openapiPath)}${contractsSummaryPath ? ` → Generated contract/E2E templates: ${contractsCount}` : ''}` : '',
     '',
   ];

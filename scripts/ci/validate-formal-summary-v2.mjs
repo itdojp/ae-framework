@@ -64,6 +64,19 @@ try {
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormats(ajv);
 
+const executionEvidenceSchemaPath = path.resolve(path.dirname(resolvedSchema), 'formal-execution-evidence-v1.schema.json');
+if (fs.existsSync(executionEvidenceSchemaPath)) {
+  try {
+    ajv.addSchema(JSON.parse(fs.readFileSync(executionEvidenceSchemaPath, 'utf8')));
+  } catch (error) {
+    console.error(`[formal-summary/v2] failed to read execution evidence schema ${executionEvidenceSchemaPath}:`, error);
+    process.exit(1);
+  }
+} else if (JSON.stringify(schema).includes('formal-execution-evidence-v1.schema.json')) {
+  console.error(`[formal-summary/v2] execution evidence schema not found at ${executionEvidenceSchemaPath}`);
+  process.exit(1);
+}
+
 const metadataSchemaPath = path.resolve(path.dirname(resolvedSchema), 'artifact-metadata.schema.json');
 if (fs.existsSync(metadataSchemaPath)) {
   try {

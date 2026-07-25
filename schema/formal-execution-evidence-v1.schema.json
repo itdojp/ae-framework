@@ -1,0 +1,336 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/formal-execution-evidence-v1.schema.json",
+  "title": "Formal Runner Execution Evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "artifactStatus",
+    "producer",
+    "provenance",
+    "executionOccurred",
+    "verificationKind",
+    "tool",
+    "input",
+    "result",
+    "scope",
+    "assumptions"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "formal-runner-result/v1" },
+    "artifactStatus": { "enum": ["execution-report", "not-executed"] },
+    "producer": { "$ref": "#/$defs/producer" },
+    "provenance": { "enum": ["runner-reported", "adapter-verified"] },
+    "adapter": { "$ref": "#/$defs/adapter" },
+    "executionOccurred": { "type": "boolean" },
+    "verificationKind": {
+      "enum": ["presence", "build", "typecheck", "conformance", "model-check", "proof-check"]
+    },
+    "tool": { "$ref": "#/$defs/tool" },
+    "input": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/repositoryRelativePath" }
+    },
+    "result": { "$ref": "#/$defs/result" },
+    "scope": { "type": "string", "minLength": 1 },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "semanticResult": { "$ref": "#/$defs/semanticResult" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "executionOccurred": { "const": true } }, "required": ["executionOccurred"] },
+      "then": {
+        "properties": {
+          "artifactStatus": { "const": "execution-report" },
+          "result": {
+            "properties": {
+              "status": { "enum": ["ok", "failed", "timeout", "tool-error"] },
+              "logPath": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "artifactStatus": { "const": "not-executed" },
+          "result": {
+            "properties": {
+              "status": { "enum": ["skipped", "missing", "unknown"] },
+              "code": { "type": "null" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "result": { "properties": { "status": { "const": "ok" } }, "required": ["status"] } },
+        "required": ["result"]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "properties": {
+              "code": { "const": 0 },
+              "logPath": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "provenance": { "const": "adapter-verified" } },
+        "required": ["provenance"]
+      },
+      "then": { "required": ["adapter"] },
+      "else": { "not": { "required": ["adapter"] } }
+    },
+    {
+      "if": {
+        "properties": {
+          "tool": {
+            "properties": { "versionStatus": { "const": "verified" } },
+            "required": ["versionStatus"]
+          }
+        },
+        "required": ["tool"]
+      },
+      "then": {
+        "properties": {
+          "tool": {
+            "properties": {
+              "version": {
+                "not": { "enum": ["", "unknown", "unspecified", "n/a", "na", "none", "null"] }
+              },
+              "versionSource": {
+                "enum": ["cli", "jar-manifest", "package-manifest", "reviewed-pin"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-smt" } },
+            "required": ["id"]
+          }
+        },
+        "required": ["producer"]
+      },
+      "then": {
+        "required": ["semanticResult"],
+        "properties": {
+          "semanticResult": {
+            "properties": { "domain": { "const": "smt" } },
+            "required": ["domain"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-spin" } },
+            "required": ["id"]
+          }
+        },
+        "required": ["producer"]
+      },
+      "then": {
+        "required": ["semanticResult"],
+        "properties": {
+          "semanticResult": {
+            "properties": { "domain": { "const": "spin" } },
+            "required": ["domain"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-smt" } },
+            "required": ["id"]
+          },
+          "result": {
+            "properties": { "status": { "const": "ok" } },
+            "required": ["status"]
+          }
+        },
+        "required": ["producer", "result"]
+      },
+      "then": {
+        "properties": {
+          "semanticResult": {
+            "properties": {
+              "parsed": { "const": true },
+              "expectedResult": { "enum": ["sat", "unsat"] },
+              "actualResult": { "enum": ["sat", "unsat"] },
+              "matchesExpected": { "const": true },
+              "timeout": { "const": false }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "producer": {
+            "properties": { "id": { "const": "ae.formal.verify-spin" } },
+            "required": ["id"]
+          },
+          "result": {
+            "properties": { "status": { "const": "ok" } },
+            "required": ["status"]
+          }
+        },
+        "required": ["producer", "result"]
+      },
+      "then": {
+        "properties": {
+          "semanticResult": {
+            "properties": {
+              "parsed": { "const": true },
+              "errors": { "const": 0 },
+              "trailPresent": { "const": false },
+              "counterexamplePresent": { "const": false },
+              "searchCompleted": { "const": true },
+              "propertyMatched": { "const": true },
+              "boundsMatched": { "const": true },
+              "timeout": { "const": false }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "contract", "artifactRef"],
+      "properties": {
+        "id": { "const": "ae.formal.summary-generator" },
+        "version": { "const": "1.0.0" },
+        "contract": { "const": "formal-summary-adapter/v1" },
+        "artifactRef": { "const": "scripts/formal/generate-formal-summary-v1.mjs" }
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "contract", "artifactRef"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^ae\\.formal\\.[a-z0-9-]+$" },
+        "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "contract": { "const": "formal-runner-result/v1" },
+        "artifactRef": { "type": "string", "pattern": "^scripts/(formal|verify)/[a-z0-9-]+\\.mjs$" }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "versionStatus", "versionSource"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "versionStatus": { "enum": ["verified", "unknown", "mismatch"] },
+        "versionSource": { "enum": ["cli", "jar-manifest", "package-manifest", "reviewed-pin", "unavailable"] },
+        "artifactSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "expectedArtifactSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "code", "logPath"],
+      "properties": {
+        "status": { "enum": ["ok", "failed", "timeout", "tool-error", "skipped", "missing", "unknown"] },
+        "code": { "type": ["integer", "null"] },
+        "logPath": {
+          "oneOf": [
+            { "$ref": "#/$defs/repositoryRelativePath" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "repositoryRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])(?!\\\\\\\\)(?!.*(?:^|[\\\\/])\\.\\.?[\\\\/])(?!.*[\\\\/]\\.\\.?$).+$"
+    },
+    "semanticResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["domain", "parsed", "expectedResult", "actualResult", "matchesExpected", "timeout"],
+          "properties": {
+            "domain": { "const": "smt" },
+            "parsed": { "type": "boolean" },
+            "expectedResult": { "type": ["string", "null"], "enum": ["sat", "unsat", null] },
+            "actualResult": { "type": ["string", "null"], "enum": ["sat", "unsat", "unknown", "malformed", null] },
+            "matchesExpected": { "type": ["boolean", "null"] },
+            "timeout": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "domain",
+            "parsed",
+            "errors",
+            "trailPresent",
+            "counterexamplePresent",
+            "searchCompleted",
+            "requestedProperty",
+            "selectedProperty",
+            "requestedMaxDepth",
+            "depthReached",
+            "options",
+            "propertyMatched",
+            "boundsMatched",
+            "timeout"
+          ],
+          "properties": {
+            "domain": { "const": "spin" },
+            "parsed": { "type": "boolean" },
+            "errors": { "type": ["integer", "null"], "minimum": 0 },
+            "trailPresent": { "type": "boolean" },
+            "counterexamplePresent": { "type": "boolean" },
+            "searchCompleted": { "type": "boolean" },
+            "requestedProperty": { "type": ["string", "null"], "minLength": 1 },
+            "selectedProperty": { "type": ["string", "null"], "minLength": 1 },
+            "requestedMaxDepth": { "type": "integer", "minimum": 1 },
+            "depthReached": { "type": ["integer", "null"], "minimum": 0 },
+            "options": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "propertyMatched": { "type": "boolean" },
+            "boundsMatched": { "type": "boolean" },
+            "timeout": { "type": "boolean" }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -18,11 +18,19 @@ const push = (line) => {
 
 const modelCheck = readJson('artifacts/codex/model-check.json');
 if (modelCheck) {
-  const props = Array.isArray(modelCheck.properties) ? modelCheck.properties.length : 0;
-  const unsat = Array.isArray(modelCheck.properties)
-    ? modelCheck.properties.filter((p) => p && p.satisfied === false).length
-    : 0;
-  push(`• Model Checking: ${props} properties, Unsatisfied: ${unsat}`);
+  if (modelCheck.schemaVersion === 'model-check-report/v1') {
+    const results = [
+      ...(Array.isArray(modelCheck.tlc?.results) ? modelCheck.tlc.results : []),
+      ...(Array.isArray(modelCheck.alloy?.results) ? modelCheck.alloy.results : []),
+    ];
+    const completed = results.filter((result) => result?.executionStatus === 'executed');
+    const failed = completed.filter((result) => result?.ok !== true).length;
+    const toolErrors = results.filter((result) => result?.executionStatus === 'tool-error').length;
+    const timeouts = results.filter((result) => result?.executionStatus === 'timeout').length;
+    push(`• Model-check execution report: status=${modelCheck.status ?? 'unknown'}, executed=${completed.length}, failed=${failed}, toolErrors=${toolErrors}, timeouts=${timeouts}, ok=${modelCheck.ok ?? 'n/a'}`);
+  } else {
+    push('• Model-check artifact: unrecognized contract (not counted as execution evidence)');
+  }
 }
 
 const uiSummary = readJson('artifacts/codex/ui-summary.json');

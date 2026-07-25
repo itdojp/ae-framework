@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { isAbsolute, join, resolve } from 'node:path';
 
-import { finalizeTaskResponse, type Phase } from '../../../src/agents/codex-task-adapter';
+import { createCodexTaskAdapter, finalizeTaskResponse, type Phase } from '../../../src/agents/codex-task-adapter';
 import type { TaskRequest, TaskResponse } from '../../../src/agents/task-types';
 
 const request: TaskRequest = {
@@ -22,7 +24,16 @@ function createBaseResponse(overrides: Partial<TaskResponse> = {}): TaskResponse
   };
 }
 
-describe('finalizeTaskResponse', () => {
+async function runFormalTask(): Promise<TaskResponse> {
+  return createCodexTaskAdapter().handleTask({
+    description: 'Generate formal scaffold.',
+    prompt: 'Inventory never becomes negative.',
+    subagent_type: 'formal',
+    context: {},
+  });
+}
+
+describe.sequential('finalizeTaskResponse', () => {
   it('fills default nextActions for unblocked responses in all phases', () => {
     const phases: Phase[] = ['intent', 'formal', 'stories', 'validation', 'modeling', 'ui'];
     for (const phase of phases) {
@@ -157,5 +168,293 @@ describe('finalizeTaskResponse', () => {
     );
 
     expect(response.summary).toBe('Blocked: ui task requires human input');
+  });
+
+  it('reports scaffold generation separately and does not create model-check success evidence', async () => {
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-formal-scaffold-'));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+
+    try {
+      const adapter = createCodexTaskAdapter();
+      const response = await adapter.handleTask({
+        description: 'Generate a formal scaffold for inventory reservation safety.',
+        prompt: 'Inventory reservation must never make onHand negative.',
+        subagent_type: 'formal',
+        context: {},
+      });
+
+      expect(response.summary).toContain('Formal scaffold generated');
+      expect(response.summary).not.toMatch(/model.check.*(?:ok|pass|success)/i);
+      expect(response.formal).toMatchObject({
+        scaffold: {
+          status: 'generated',
+          artifactStatus: 'draft',
+          materializationStatus: 'written',
+          artifactPath: expect.any(String),
+          artifacts: [
+            { kind: 'tla', required: true, status: 'written', path: expect.any(String) },
+            { kind: 'openapi', required: false, status: 'written', path: expect.any(String) },
+          ],
+        },
+        modelChecking: {
+          status: 'not-run',
+          evidenceArtifact: null,
+          runnerCommands: expect.arrayContaining(['pnpm run verify:tla -- --engine=tlc']),
+        },
+      });
+      expect(existsSync(join(artifactDir, 'formal.tla'))).toBe(true);
+      expect(existsSync(join(artifactDir, 'openapi.yaml'))).toBe(true);
+      expect(existsSync(join(artifactDir, 'model-check.json'))).toBe(false);
+      const tlaArtifact = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'tla');
+      expect(response.formal?.scaffold.artifactPath).toBe(tlaArtifact?.path);
+      expect(response.nextActions).toContain('pnpm run verify:tla -- --engine=tlc');
+      expect(response.recommendations.join('\n')).toContain('Model checker not executed');
+      for (const artifact of response.formal?.scaffold.artifacts ?? []) {
+        expect(artifact.status).toBe('written');
+        expect(artifact.path && existsSync(resolve(artifact.path))).toBe(true);
+      }
+
+      const persisted = JSON.parse(readFileSync(join(artifactDir, 'result-formal.json'), 'utf8'));
+      expect(persisted.response.formal.modelChecking).toMatchObject({
+        status: 'not-run',
+        evidenceArtifact: null,
+      });
+    } finally {
+      if (previousArtifactDir === undefined) {
+        delete process.env['CODEX_ARTIFACTS_DIR'];
+      } else {
+        process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      }
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
+  });
+
+  it('reports directory creation failure without nonexistent paths or private absolute paths', async () => {
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const parent = mkdtempSync(join(tmpRoot, 'codex-formal-dir-failure-'));
+    const blocker = join(parent, 'not-a-directory');
+    writeFileSync(blocker, 'block', 'utf8');
+    const artifactDir = join(blocker, 'child');
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      const response = await runFormalTask();
+      expect(response.shouldBlockProgress).toBe(true);
+      expect(response.blockingReason).toBe('formal-primary-artifact-materialization-failed');
+      expect(response.requiredHumanInput).toContain('required TLA artifact materialization');
+      expect(response.formal?.scaffold.materializationStatus).toBe('failed');
+      expect(response.formal?.scaffold).not.toHaveProperty('artifactPath');
+      expect(response.formal?.scaffold.artifacts).toEqual([
+        { kind: 'tla', required: true, status: 'failed', message: expect.stringContaining('failed') },
+        { kind: 'openapi', required: false, status: 'failed', message: expect.stringContaining('failed') },
+      ]);
+      expect(response.formal?.modelChecking).toEqual({
+        status: 'not-run',
+        evidenceArtifact: null,
+        runnerCommands: [],
+      });
+      expect(response.recommendations.join('\n')).not.toMatch(/model checker|verify:tla|verify:alloy|verify:formal/i);
+      expect(response.nextActions.join('\n')).toMatch(/TLA artifact materialization/i);
+      expect(response.nextActions.join('\n')).not.toMatch(/verify:tla|verify:alloy|verify:formal/i);
+      expect(JSON.stringify(response)).not.toContain(artifactDir);
+      expect(existsSync(join(artifactDir, 'formal.tla'))).toBe(false);
+      expect(existsSync(join(artifactDir, 'openapi.yaml'))).toBe(false);
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it('blocks a partial materialization when required TLA fails and optional OpenAPI succeeds', async () => {
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-formal-tla-failure-'));
+    mkdirSync(join(artifactDir, 'formal.tla'));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      const response = await runFormalTask();
+      expect(response.shouldBlockProgress).toBe(true);
+      expect(response.blockingReason).toBe('formal-primary-artifact-materialization-failed');
+      expect(response.formal?.scaffold.materializationStatus).toBe('partial');
+      expect(response.formal?.scaffold).not.toHaveProperty('artifactPath');
+      const tla = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'tla');
+      const openapi = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'openapi');
+      expect(tla).toMatchObject({ kind: 'tla', required: true, status: 'failed', message: expect.stringContaining('failed') });
+      expect(tla).not.toHaveProperty('path');
+      expect(openapi).toMatchObject({ kind: 'openapi', required: false, status: 'written', path: expect.any(String) });
+      expect(openapi?.path && existsSync(resolve(openapi.path))).toBe(true);
+      expect(existsSync(join(artifactDir, 'openapi.yaml'))).toBe(true);
+      expect(response.formal?.modelChecking.runnerCommands).toEqual([]);
+      expect(response.recommendations.join('\n')).not.toMatch(/model checker|verify:tla|verify:alloy|verify:formal/i);
+      expect(response.nextActions.join('\n')).toMatch(/TLA artifact materialization/i);
+      expect(response.nextActions.join('\n')).not.toMatch(/verify:tla|verify:alloy|verify:formal/i);
+      expect(JSON.stringify(response)).not.toContain(artifactDir);
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not follow a pre-existing symlink for the required TLA artifact', async () => {
+    if (process.platform === 'win32') return;
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-formal-tla-symlink-'));
+    const victim = join(artifactDir, 'victim.txt');
+    writeFileSync(victim, 'unchanged\n', 'utf8');
+    symlinkSync(victim, join(artifactDir, 'formal.tla'));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      const response = await runFormalTask();
+      expect(response).toMatchObject({
+        shouldBlockProgress: true,
+        blockingReason: 'formal-primary-artifact-materialization-failed',
+      });
+      expect(response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'tla')).toMatchObject({
+        required: true,
+        status: 'failed',
+      });
+      expect(response.formal?.modelChecking.runnerCommands).toEqual([]);
+      expect(readFileSync(victim, 'utf8')).toBe('unchanged\n');
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps an optional OpenAPI-only failure as a non-blocking partial warning', async () => {
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-formal-openapi-failure-'));
+    mkdirSync(join(artifactDir, 'openapi.yaml'));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      const response = await runFormalTask();
+      expect(response.shouldBlockProgress).toBe(false);
+      expect(response).not.toHaveProperty('blockingReason');
+      expect(response.formal?.scaffold.materializationStatus).toBe('partial');
+      const tla = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'tla');
+      const openapi = response.formal?.scaffold.artifacts.find((artifact) => artifact.kind === 'openapi');
+      expect(tla).toMatchObject({ kind: 'tla', required: true, status: 'written', path: expect.any(String) });
+      expect(response.formal?.scaffold.artifactPath).toBe(tla?.path);
+      expect(tla?.path && existsSync(resolve(tla.path))).toBe(true);
+      expect(openapi).toMatchObject({ kind: 'openapi', required: false, status: 'failed', message: expect.stringContaining('failed') });
+      expect(openapi).not.toHaveProperty('path');
+      expect(response.warnings).toEqual(expect.arrayContaining([expect.stringContaining('OPENAPI artifact write failed')]));
+      expect(response.formal?.modelChecking).toMatchObject({
+        status: 'not-run',
+        evidenceArtifact: null,
+        runnerCommands: expect.arrayContaining(['pnpm run verify:tla -- --engine=tlc']),
+      });
+      expect(response.recommendations.join('\n')).toContain('Model checker not executed');
+      expect(response.nextActions).toContain('pnpm run verify:tla -- --engine=tlc');
+      expect(response.nextActions.join('\n')).not.toContain('codex:generate:tests');
+      expect(JSON.stringify(response)).not.toContain(artifactDir);
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
+  });
+
+  it('persists a repository-relative artifact directory in the UI summary', async () => {
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-ui-summary-'));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      await createCodexTaskAdapter().handleTask({
+        description: 'Generate a repository-local UI summary.',
+        prompt: 'Generate an inventory view.',
+        subagent_type: 'ui',
+        context: {
+          dryRun: true,
+          phaseState: {
+            entities: {
+              inventory: {
+                attributes: {
+                  id: { type: 'uuid', required: true },
+                },
+              },
+            },
+          },
+        },
+      });
+      const summary = JSON.parse(readFileSync(join(artifactDir, 'ui-summary.json'), 'utf8')) as {
+        artifactDir: string;
+      };
+      expect(isAbsolute(summary.artifactDir)).toBe(false);
+      expect(resolve(summary.artifactDir)).toBe(artifactDir);
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not persist Codex responses outside the repository artifact boundary', async () => {
+    const outsideDir = resolve('..', `.codex-forbidden-output-${process.pid}`);
+    expect(existsSync(outsideDir)).toBe(false);
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = outsideDir;
+    try {
+      const response = await createCodexTaskAdapter().handleTask({
+        description: 'Capture intent without external persistence.',
+        prompt: 'Inventory remains non-negative.',
+        subagent_type: 'intent',
+        context: {},
+      });
+      expect(response.summary).toBeTruthy();
+      expect(existsSync(outsideDir)).toBe(false);
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+    }
+  });
+
+  it('does not follow symlinks when persisting response or UI summary artifacts', async () => {
+    if (process.platform === 'win32') return;
+    const tmpRoot = resolve('.codex-local/tmp');
+    mkdirSync(tmpRoot, { recursive: true });
+    const artifactDir = mkdtempSync(join(tmpRoot, 'codex-response-symlink-'));
+    const responseVictim = join(artifactDir, 'response-victim.txt');
+    const uiVictim = join(artifactDir, 'ui-victim.txt');
+    writeFileSync(responseVictim, 'response unchanged\n', 'utf8');
+    writeFileSync(uiVictim, 'ui unchanged\n', 'utf8');
+    symlinkSync(responseVictim, join(artifactDir, 'result-intent.json'));
+    symlinkSync(uiVictim, join(artifactDir, 'ui-summary.json'));
+    const previousArtifactDir = process.env['CODEX_ARTIFACTS_DIR'];
+    process.env['CODEX_ARTIFACTS_DIR'] = artifactDir;
+    try {
+      await createCodexTaskAdapter().handleTask({
+        description: 'Capture intent safely.',
+        prompt: 'Inventory remains non-negative.',
+        subagent_type: 'intent',
+        context: {},
+      });
+      await createCodexTaskAdapter().handleTask({
+        description: 'Generate UI summary safely.',
+        prompt: 'Generate an inventory view.',
+        subagent_type: 'ui',
+        context: {},
+      });
+      expect(readFileSync(responseVictim, 'utf8')).toBe('response unchanged\n');
+      expect(readFileSync(uiVictim, 'utf8')).toBe('ui unchanged\n');
+    } finally {
+      if (previousArtifactDir === undefined) delete process.env['CODEX_ARTIFACTS_DIR'];
+      else process.env['CODEX_ARTIFACTS_DIR'] = previousArtifactDir;
+      rmSync(artifactDir, { recursive: true, force: true });
+    }
   });
 });

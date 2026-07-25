@@ -48,7 +48,6 @@ describe('Agent / MCP boundary smoke', () => {
 
     const formalAgent = new FormalAgent({
       generateDiagrams: false,
-      enableModelChecking: false,
     });
 
     const formalSpec = await formalAgent.generateFormalSpecification(
@@ -61,6 +60,7 @@ describe('Agent / MCP boundary smoke', () => {
       expect.objectContaining({
         id: expect.stringMatching(/^spec_/),
         type: 'tla+',
+        artifactStatus: 'draft',
         title: expect.any(String),
         validation: expect.objectContaining({ status: 'valid' }),
       }),
@@ -192,6 +192,52 @@ describe('Agent / MCP boundary smoke', () => {
             }),
           ]),
         );
+      } finally {
+        await client.close().catch(() => undefined);
+        await transport.close().catch(() => undefined);
+      }
+    },
+    20_000,
+  );
+
+  test(
+    'formal MCP exposes draft scaffold generation but no pseudo model-check tool',
+    async () => {
+      const transport = new StdioClientTransport({
+        command: pnpmCommand,
+        args: ['exec', 'tsx', 'src/mcp-server/formal-server.ts'],
+        cwd: repoRoot,
+        env: withoutProviderKeys(),
+        stderr: 'pipe',
+      });
+      const client = new Client(
+        { name: 'formal-agent-mcp-smoke-client', version: '1.0.0' },
+        { capabilities: {} },
+      );
+
+      try {
+        await client.connect(transport);
+        const tools = await client.listTools();
+        expect(tools.tools.map((tool) => tool.name)).toContain('generate_formal_spec');
+        expect(tools.tools.map((tool) => tool.name)).not.toContain('model_check');
+
+        const result = await client.callTool({
+          name: 'generate_formal_spec',
+          arguments: {
+            requirements: 'Inventory reservation must never make onHand negative.',
+            type: 'tla+',
+          },
+        });
+        const firstContent = result.content[0];
+        expect(firstContent?.type).toBe('text');
+        const payload = JSON.parse(firstContent?.type === 'text' ? firstContent.text : '{}');
+        expect(payload).toMatchObject({
+          success: true,
+          specification: {
+            type: 'tla+',
+            artifactStatus: 'draft',
+          },
+        });
       } finally {
         await client.close().catch(() => undefined);
         await transport.close().catch(() => undefined);

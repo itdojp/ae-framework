@@ -591,7 +591,6 @@ export class Phase6UITaskAdapter implements Phase6TaskAdapter {
       outputFormat: 'react-component',
       validationLevel: 'comprehensive',
       generateDiagrams: true,
-      enableModelChecking: true,
     };
     this.agent = new FormalAgent(config);
   }

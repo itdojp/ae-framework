@@ -200,7 +200,6 @@ export class UserStoriesTaskAdapter {
       outputFormat: 'openapi',
       validationLevel: 'comprehensive',
       generateDiagrams: true,
-      enableModelChecking: true,
     };
 
     this.agent = new FormalAgent(config);

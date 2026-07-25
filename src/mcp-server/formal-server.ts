@@ -9,6 +9,8 @@ import {
   McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { FormalAgent } from "../agents/formal-agent.js";
 
 // Input schemas for MCP tools
@@ -51,15 +53,6 @@ const ValidateSpecSchema = z.object({
   validationLevel: z.enum(["basic", "comprehensive", "formal-verification"]).optional().describe("Level of validation to perform"),
 });
 
-const ModelCheckSchema = z.object({
-  specificationId: z.string().describe("The ID of the specification to model check"),
-  properties: z.array(z.string()).optional().describe("Specific properties to check"),
-  options: z.object({
-    timeout: z.number().optional().describe("Timeout in milliseconds"),
-    maxStates: z.number().optional().describe("Maximum number of states to explore"),
-  }).optional(),
-});
-
 const GenerateDiagramsSchema = z.object({
   specificationId: z.string().describe("The ID of the specification to generate diagrams for"),
   types: z.array(z.enum(["sequence", "state", "class", "component"])).optional().describe("Types of diagrams to generate"),
@@ -78,13 +71,81 @@ const UpdateConfigSchema = z.object({
     outputFormat: z.enum(["tla+", "alloy", "z-notation", "openapi", "asyncapi", "graphql"]).optional(),
     validationLevel: z.enum(["basic", "comprehensive", "formal-verification"]).optional(),
     generateDiagrams: z.boolean().optional(),
-    enableModelChecking: z.boolean().optional(),
   }).describe("Configuration updates for the Formal Agent"),
 });
 
+const objectInputSchema = (
+  properties: Record<string, unknown>,
+  required: string[] = [],
+) => ({
+  type: "object" as const,
+  properties,
+  required,
+  additionalProperties: false,
+});
+
+// The low-level MCP Server API requires JSON Schema here; Zod schemas remain
+// authoritative for runtime parsing in the handlers below.
+const GenerateFormalSpecInputSchema = objectInputSchema({
+  requirements: { type: "string", description: "The requirements to convert into formal specifications" },
+  type: { type: "string", enum: ["tla+", "alloy", "z-notation"], default: "tla+" },
+  options: objectInputSchema({
+    includeDiagrams: { type: "boolean" },
+    generateProperties: { type: "boolean" },
+  }),
+}, ["requirements"]);
+const CreateAPISpecInputSchema = objectInputSchema({
+  requirements: { type: "string", description: "The requirements to convert into API specifications" },
+  format: { type: "string", enum: ["openapi", "asyncapi", "graphql"], default: "openapi" },
+  options: objectInputSchema({
+    includeExamples: { type: "boolean" },
+    generateContracts: { type: "boolean" },
+  }),
+}, ["requirements"]);
+const GenerateStateMachineInputSchema = objectInputSchema({
+  requirements: { type: "string", description: "The requirements to convert into state machine" },
+  options: objectInputSchema({
+    generateInvariants: { type: "boolean" },
+    includeDiagrams: { type: "boolean" },
+  }),
+}, ["requirements"]);
+const CreateContractsInputSchema = objectInputSchema({
+  functionSignature: { type: "string" },
+  requirements: { type: "string" },
+  options: objectInputSchema({ includeInvariants: { type: "boolean" } }),
+}, ["functionSignature", "requirements"]);
+const ValidateSpecInputSchema = objectInputSchema({
+  specificationId: { type: "string" },
+  validationLevel: { type: "string", enum: ["basic", "comprehensive", "formal-verification"] },
+}, ["specificationId"]);
+const GenerateDiagramsInputSchema = objectInputSchema({
+  specificationId: { type: "string" },
+  types: {
+    type: "array",
+    items: { type: "string", enum: ["sequence", "state", "class", "component"] },
+  },
+}, ["specificationId"]);
+const ListSpecificationsInputSchema = objectInputSchema({
+  type: {
+    type: "string",
+    enum: ["tla+", "alloy", "z-notation", "state-machine", "contracts", "api-spec"],
+  },
+});
+const GetSpecificationInputSchema = objectInputSchema({
+  specificationId: { type: "string" },
+}, ["specificationId"]);
+const UpdateConfigInputSchema = objectInputSchema({
+  config: objectInputSchema({
+    outputFormat: { type: "string", enum: ["tla+", "alloy", "z-notation", "openapi", "asyncapi", "graphql"] },
+    validationLevel: { type: "string", enum: ["basic", "comprehensive", "formal-verification"] },
+    generateDiagrams: { type: "boolean" },
+  }),
+}, ["config"]);
+
 /**
  * MCP Server for Formal Agent
- * Provides tools for formal specification generation, validation, and model checking
+ * Provides tools for draft formal specification generation and structural
+ * validation. Real model checking is delegated to the repository runners.
  */
 class FormalMCPServer {
   private server: Server;
@@ -115,52 +176,47 @@ class FormalMCPServer {
           {
             name: "generate_formal_spec",
             description: "Generate formal specifications (TLA+, Alloy, Z notation) from requirements",
-            inputSchema: GenerateFormalSpecSchema,
+            inputSchema: GenerateFormalSpecInputSchema,
           },
           {
             name: "create_api_spec",
             description: "Create API specifications (OpenAPI, AsyncAPI, GraphQL schemas) from requirements",
-            inputSchema: CreateAPISpecSchema,
+            inputSchema: CreateAPISpecInputSchema,
           },
           {
             name: "generate_state_machine",
             description: "Generate state machine definitions from requirements",
-            inputSchema: GenerateStateMachineSchema,
+            inputSchema: GenerateStateMachineInputSchema,
           },
           {
             name: "create_contracts",
             description: "Generate Design by Contract specifications for functions",
-            inputSchema: CreateContractsSchema,
+            inputSchema: CreateContractsInputSchema,
           },
           {
             name: "validate_spec",
             description: "Validate specification consistency and correctness",
-            inputSchema: ValidateSpecSchema,
-          },
-          {
-            name: "model_check",
-            description: "Run formal model checking on specifications",
-            inputSchema: ModelCheckSchema,
+            inputSchema: ValidateSpecInputSchema,
           },
           {
             name: "generate_diagrams",
             description: "Generate UML/sequence diagrams from specifications",
-            inputSchema: GenerateDiagramsSchema,
+            inputSchema: GenerateDiagramsInputSchema,
           },
           {
             name: "list_specifications",
             description: "List all generated specifications with optional filtering",
-            inputSchema: ListSpecificationsSchema,
+            inputSchema: ListSpecificationsInputSchema,
           },
           {
             name: "get_specification",
             description: "Retrieve a specific specification by ID",
-            inputSchema: GetSpecificationSchema,
+            inputSchema: GetSpecificationInputSchema,
           },
           {
             name: "update_config",
             description: "Update Formal Agent configuration",
-            inputSchema: UpdateConfigSchema,
+            inputSchema: UpdateConfigInputSchema,
           },
         ],
       };
@@ -181,8 +237,6 @@ class FormalMCPServer {
             return await this.handleCreateContracts(args);
           case "validate_spec":
             return await this.handleValidateSpec(args);
-          case "model_check":
-            return await this.handleModelCheck(args);
           case "generate_diagrams":
             return await this.handleGenerateDiagrams(args);
           case "list_specifications":
@@ -231,6 +285,7 @@ class FormalMCPServer {
             specification: {
               id: specification.id,
               type: specification.type,
+              artifactStatus: specification.artifactStatus,
               title: specification.title,
               content: specification.content,
               metadata: specification.metadata,
@@ -350,41 +405,6 @@ class FormalMCPServer {
     };
   }
 
-  private async handleModelCheck(args: unknown) {
-    const parsed = ModelCheckSchema.parse(args);
-    const specification = this.formalAgent.getSpecification(parsed.specificationId);
-    
-    if (!specification) {
-      throw new McpError(
-        ErrorCode.InvalidRequest,
-        `Specification with ID ${parsed.specificationId} not found`
-      );
-    }
-
-    const mo = parsed.options;
-    const mcOptions = mo ? {
-      ...(mo.timeout !== undefined ? { timeout: mo.timeout } : {}),
-      ...(mo.maxStates !== undefined ? { maxStates: mo.maxStates } : {}),
-    } : {};
-    const modelCheckResult = await this.formalAgent.runModelChecking(
-      specification,
-      parsed.properties,
-      mcOptions
-    );
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            success: true,
-            modelCheckingResult: modelCheckResult,
-          }, null, 2),
-        },
-      ],
-    };
-  }
-
   private async handleGenerateDiagrams(args: unknown) {
     const parsed = GenerateDiagramsSchema.parse(args);
     const specification = this.formalAgent.getSpecification(parsed.specificationId);
@@ -476,7 +496,6 @@ class FormalMCPServer {
       ...(c.outputFormat !== undefined ? { outputFormat: c.outputFormat } : {}),
       ...(c.validationLevel !== undefined ? { validationLevel: c.validationLevel } : {}),
       ...(c.generateDiagrams !== undefined ? { generateDiagrams: c.generateDiagrams } : {}),
-      ...(c.enableModelChecking !== undefined ? { enableModelChecking: c.enableModelChecking } : {}),
     };
     this.formalAgent.updateConfig(cfg);
     const newConfig = this.formalAgent.getConfig();
@@ -519,7 +538,7 @@ export async function createFormalServer(): Promise<FormalMCPServer> {
 }
 
 // CLI entry point
-if (typeof require !== 'undefined' && require.main === module) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const server = new FormalMCPServer();
   server.run().catch(console.error);
 }

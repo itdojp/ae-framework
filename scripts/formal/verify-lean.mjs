@@ -3,6 +3,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildFormalRunnerOutput, buildLegacyFormalExecutionEvidence, extractToolVersion } from './execution-evidence.mjs';
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -66,6 +67,8 @@ let outputFull = '';
 let exitCode = null;
 let ok = null;
 let timeMs = null;
+let toolVersion = '';
+let versionSource = 'unavailable';
 
 if (!fs.existsSync(projectDir)) {
   status = 'project_not_found';
@@ -76,6 +79,8 @@ if (!fs.existsSync(projectDir)) {
   outputFull = 'lake not found. Install Lean4 via elan and ensure $HOME/.elan/bin is on PATH.';
   output = outputFull;
 } else {
+  toolVersion = extractToolVersion(runCommand('lake', ['--version'], { cwd: projectDir }).output);
+  versionSource = toolVersion ? 'cli' : 'unavailable';
   const baseCmd = { cmd: 'lake', args: ['build'] };
   const runSpec = (timeoutSec > 0 && haveTimeout)
     ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
@@ -102,9 +107,28 @@ if (ran) {
 
 try { fs.writeFileSync(outLog, outputFull || output, 'utf-8'); } catch {}
 
+const relativeProject = path.relative(repoRoot, projectDir);
+const relativeLog = path.relative(repoRoot, outLog);
+const executionEvidence = buildLegacyFormalExecutionEvidence({
+  runner: 'lean',
+  toolName: 'Lean 4 / Lake',
+  toolVersion,
+  versionSource,
+  inputPaths: [relativeProject],
+  status,
+  ok,
+  ran,
+  exitCode,
+  logPath: relativeLog,
+  scope: `Lean project build for ${relativeProject}`,
+  assumptions: [
+    'A successful lake build covers only declarations compiled in the supplied Lean project.',
+  ],
+});
+
 const summary = {
   tool: 'lean4',
-  project: path.relative(repoRoot, projectDir),
+  project: relativeProject,
   ran,
   status,
   ok,
@@ -112,7 +136,8 @@ const summary = {
   timeMs,
   timestamp: new Date().toISOString(),
   output,
-  outputFile: path.relative(repoRoot, outLog),
+  outputFile: relativeLog,
+  runnerResult: buildFormalRunnerOutput({ runner: 'lean', executionEvidence }),
 };
 
 fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
