@@ -348,14 +348,20 @@ function hasUnsafePathSegment(value: string): boolean {
 
 function findExistingAncestor(absolutePath: string): string {
   let current = absolutePath;
-  while (!fs.existsSync(current)) {
+  while (true) {
+    try {
+      fs.lstatSync(current);
+      return current;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== 'ENOENT' && code !== 'ENOTDIR') throw error;
+    }
     const parent = path.dirname(current);
     if (parent === current) {
       return current;
     }
     current = parent;
   }
-  return current;
 }
 
 function toComparableFilesystemPath(value: string): string {
@@ -388,7 +394,12 @@ function hasEscapingSymbolicLink(rootPath: string, candidatePath: string): boole
     if (!fs.lstatSync(current).isSymbolicLink()) continue;
     const declaredTarget = path.resolve(path.dirname(current), fs.readlinkSync(current));
     if (!isFilesystemPathWithin(absoluteRoot, declaredTarget)) return true;
-    const realTarget = fs.realpathSync.native(current);
+    let realTarget: string;
+    try {
+      realTarget = fs.realpathSync.native(current);
+    } catch {
+      return true;
+    }
     if (!isFilesystemPathWithin(realRoot, realTarget)) return true;
   }
   return false;
@@ -417,14 +428,19 @@ function resolveUIOutputDir(outputDir: unknown): { ok: true; absolutePath: strin
     errors.push('context.outputDir must stay inside the repository workspace');
   }
   const existingAncestor = findExistingAncestor(absolutePath);
-  if (hasEscapingSymbolicLink(repoRoot, existingAncestor)) {
+  const escapingSymlink = hasEscapingSymbolicLink(repoRoot, existingAncestor);
+  if (escapingSymlink) {
     errors.push('context.outputDir must not resolve through a symlink outside the repository workspace');
   }
-  const realExistingAncestor = fs.existsSync(existingAncestor)
-    ? fs.realpathSync.native(existingAncestor)
-    : existingAncestor;
-  if (!isFilesystemPathWithin(realRepoRoot, realExistingAncestor)) {
-    errors.push('context.outputDir must not resolve through a symlink outside the repository workspace');
+  if (!escapingSymlink) {
+    try {
+      const realExistingAncestor = fs.realpathSync.native(existingAncestor);
+      if (!isFilesystemPathWithin(realRepoRoot, realExistingAncestor)) {
+        errors.push('context.outputDir must not resolve through a symlink outside the repository workspace');
+      }
+    } catch {
+      errors.push('context.outputDir must not resolve through an unresolved filesystem entry');
+    }
   }
 
   if (errors.length > 0) {
