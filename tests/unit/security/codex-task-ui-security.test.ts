@@ -132,16 +132,7 @@ describe('CodeX Task UI scaffold security boundary', () => {
       rmSync(symlinkPath, { recursive: true, force: true });
       rmSync(outside, { recursive: true, force: true });
     };
-    const adapter = createCodexTaskAdapter();
-
-    const response = await adapter.handleTask(makeRequest({
-      phaseState: makePhaseState(),
-      outputDir: relative(process.cwd(), symlinkPath),
-      dryRun: false,
-      approval: { approved: true, scope: 'ui-scaffold' },
-    }));
-
-    expect(response.shouldBlockProgress, JSON.stringify({
+    const linkDiagnostics = {
       repoRoot: process.cwd(),
       artifactRoot,
       outside,
@@ -152,8 +143,17 @@ describe('CodeX Task UI scaffold security boundary', () => {
       declaredTarget: readlinkSync(symlinkPath),
       realRepoRoot: realpathSync.native(process.cwd()),
       realLinkTarget: realpathSync.native(symlinkPath),
-      response,
-    }, null, 2)).toBe(true);
+    };
+    const adapter = createCodexTaskAdapter();
+
+    const response = await adapter.handleTask(makeRequest({
+      phaseState: makePhaseState(),
+      outputDir: relative(process.cwd(), symlinkPath),
+      dryRun: false,
+      approval: { approved: true, scope: 'ui-scaffold' },
+    }));
+
+    expect(response.shouldBlockProgress, JSON.stringify({ ...linkDiagnostics, response }, null, 2)).toBe(true);
     expect(response.blockingReason).toBe('unsafe-ui-output-dir');
     expect(response.warnings).toEqual(expect.arrayContaining([
       expect.stringContaining('symlink outside the repository workspace'),
