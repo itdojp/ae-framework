@@ -100,7 +100,7 @@ function runFakeSpin({
   output = completedPanOutput,
   exitCode = 0,
   trail = false,
-  timeout = false,
+  timeoutMs,
   ltl = 'p_done',
   maxDepth = 10000,
   hang = false,
@@ -108,7 +108,7 @@ function runFakeSpin({
   output?: string;
   exitCode?: number;
   trail?: boolean;
-  timeout?: boolean;
+  timeoutMs?: number;
   ltl?: string | null;
   maxDepth?: number;
   hang?: boolean;
@@ -118,7 +118,7 @@ function runFakeSpin({
   const panTrace = join(sandbox, 'pan-args.txt');
   const cliArgs = [scriptPath, '--file', 'model.pml', '--max-depth', String(maxDepth)];
   if (ltl) cliArgs.push('--ltl', ltl);
-  if (timeout) cliArgs.push('--timeout', '50');
+  if (timeoutMs) cliArgs.push('--timeout', String(timeoutMs));
   const result = spawnSync(process.execPath, cliArgs, {
     cwd: sandbox,
     encoding: 'utf8',
@@ -307,7 +307,7 @@ describe('verify-spin semantic evidence', () => {
   });
 
   it('distinguishes Pan timeout evidence from generic failure', () => {
-    const { result, summary } = runFakeSpin({ output: '', timeout: true, hang: true });
+    const { result, summary } = runFakeSpin({ output: '', timeoutMs: 250, hang: true });
     expect(result.status).toBe(0);
     expect(summary).toMatchObject({ ran: true, status: 'timeout', ok: null, exitCode: null });
     expect(summary.semanticResult).toMatchObject({ parsed: false, timeout: true, searchCompleted: false });
@@ -315,7 +315,7 @@ describe('verify-spin semantic evidence', () => {
   });
 
   it('does not infer timeout from a Pan-owned exit code 124', () => {
-    const { summary } = runFakeSpin({ output: '', exitCode: 124, timeout: true });
+    const { summary } = runFakeSpin({ output: '', exitCode: 124, timeoutMs: 5_000 });
     expect(summary).toMatchObject({ ran: true, status: 'failed', ok: false, exitCode: 124 });
     expect(summary.semanticResult).toMatchObject({ timeout: false });
   });

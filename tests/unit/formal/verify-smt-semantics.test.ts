@@ -67,20 +67,20 @@ function runFakeSmt({
   stdout = 'sat\n',
   stderr = '',
   exitCode = 0,
-  timeout = false,
+  timeoutMs,
   hang = false,
 }: {
   expectedResult?: 'sat' | 'unsat';
   stdout?: string;
   stderr?: string;
   exitCode?: number;
-  timeout?: boolean;
+  timeoutMs?: number;
   hang?: boolean;
 }) {
   const { sandbox, binDir, fakeZ3 } = createSandbox();
   const cliArgs = [scriptPath, '--solver=z3', '--file', 'input.smt2'];
   if (expectedResult) cliArgs.push('--expected-result', expectedResult);
-  if (timeout) cliArgs.push('--timeout', '50');
+  if (timeoutMs) cliArgs.push('--timeout', String(timeoutMs));
   const result = spawnSync(process.execPath, cliArgs, {
     cwd: sandbox,
     encoding: 'utf8',
@@ -233,7 +233,7 @@ describe('verify-smt semantic evidence', () => {
   });
 
   it('distinguishes a timeout from a generic nonzero solver exit', () => {
-    const { result, summary } = runFakeSmt({ expectedResult: 'sat', stdout: '', timeout: true, hang: true });
+    const { result, summary } = runFakeSmt({ expectedResult: 'sat', stdout: '', timeoutMs: 250, hang: true });
     expect(result.status).toBe(0);
     expect(summary).toMatchObject({ ran: true, status: 'timeout', ok: null, exitCode: null });
     expect(summary.semanticResult).toMatchObject({ actualResult: null, matchesExpected: false, timeout: true });
@@ -241,7 +241,7 @@ describe('verify-smt semantic evidence', () => {
   });
 
   it('does not infer timeout from a solver-owned exit code 124', () => {
-    const { summary } = runFakeSmt({ expectedResult: 'sat', stdout: '', exitCode: 124, timeout: true });
+    const { summary } = runFakeSmt({ expectedResult: 'sat', stdout: '', exitCode: 124, timeoutMs: 5_000 });
     expect(summary).toMatchObject({ ran: true, status: 'failed', ok: false, exitCode: 124 });
     expect(summary.semanticResult).toMatchObject({ timeout: false });
   });
