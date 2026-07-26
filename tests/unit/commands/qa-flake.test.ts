@@ -41,4 +41,36 @@ describe('qaFlake Vitest selection', () => {
     expect(args).not.toContain('--dir');
     expect(args.slice(-2)).toEqual(['--maxWorkers', '1']);
   });
+
+  it('fails closed instead of forwarding an unmatched glob to Vitest', async () => {
+    const result = await qaFlake({
+      times: 1,
+      pattern: 'tests/unit/missing/**/*.test.ts',
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: 'E_CONFIG',
+        key: 'pattern',
+        detail: 'glob pattern matched no test files: tests/unit/missing/**/*.test.ts',
+      },
+    });
+    expect(runMock).not.toHaveBeenCalled();
+  });
+
+  it('normalizes a concrete fallback filter before forwarding it to Vitest', async () => {
+    const result = await qaFlake({
+      times: 1,
+      pattern: 'tests\\unit\\missing.test.ts',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(runMock).toHaveBeenCalledWith(
+      'flake-run-1',
+      'pnpm',
+      ['test', 'tests/unit/missing.test.ts'],
+      expect.objectContaining({ timeout: 300000, killSignal: 'SIGTERM' }),
+    );
+  });
 });

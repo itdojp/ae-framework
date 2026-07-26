@@ -1,5 +1,5 @@
 import * as os from 'node:os';
-import { glob } from 'glob';
+import { glob, hasMagic } from 'glob';
 import { run } from '../../core/exec.js';
 import { err, ok, isErr, type Result } from '../../core/result.js';
 import type { AppError } from '../../core/errors.js';
@@ -72,11 +72,12 @@ async function detectTestRunner(): Promise<'jest' | 'vitest'> {
 
 async function detectTestFiles(pattern?: string): Promise<{ pattern: string; files: string[] }> {
   if (pattern) {
+    const portablePattern = toPortableTestPath(pattern);
     try {
-      const files = (await glob(pattern, { nodir: true })).map(toPortableTestPath);
-      return { pattern, files: files.sort((left, right) => left.localeCompare(right)) };
+      const files = (await glob(portablePattern, { nodir: true })).map(toPortableTestPath);
+      return { pattern: portablePattern, files: files.sort((left, right) => left.localeCompare(right)) };
     } catch {
-      return { pattern, files: [] };
+      return { pattern: portablePattern, files: [] };
     }
   }
 
@@ -115,6 +116,7 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
   const finalPattern = testDetection.pattern;
   const testFiles = testDetection.files;
   const fileCount = testFiles.length;
+  const concreteFallback = finalPattern && !hasMagic(finalPattern) ? toPortableTestPath(finalPattern) : null;
   
   let fails = 0; 
   const seeds: number[] = [];
@@ -129,6 +131,13 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
   
   if (fileCount === 0) {
     console.log(`[ae][flake] ⚠️  Warning: No test files found with pattern '${finalPattern}'`);
+    if (hasMagic(finalPattern)) {
+      return err({
+        code: 'E_CONFIG',
+        key: 'pattern',
+        detail: `glob pattern matched no test files: ${finalPattern}`,
+      });
+    }
   }
   
   for (let i = 0; i < times; i++) {
@@ -156,10 +165,10 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
       // Pass the reviewed, concrete glob matches as positional file filters.
       if (testFiles.length > 0) {
         args.push(...testFiles);
-      } else if (finalPattern) {
+      } else if (concreteFallback) {
         // Preserve a concrete non-glob filter for repositories where discovery
         // cannot enumerate files, while keeping the empty-match warning above.
-        args.push(finalPattern);
+        args.push(concreteFallback);
       }
       if (workers) {
         const parsedWorkers = parseWorkers(workers);
@@ -215,8 +224,8 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
         const reproArgs = ['vitest', 'run'];
         if (testFiles.length > 0) {
           reproArgs.push(...testFiles);
-        } else if (finalPattern) {
-          reproArgs.push(finalPattern);
+        } else if (concreteFallback) {
+          reproArgs.push(concreteFallback);
         }
         if (workers) {
           const parsedWorkers = parseWorkers(workers);
