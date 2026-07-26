@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const DEFAULT_PORT = 3100;
 const DEFAULT_HOST = 'localhost';
@@ -21,6 +22,10 @@ const LOCAL_SERVER_PREREQUISITE_COMMANDS = [
     args: ['run', 'build:tokens'],
   },
 ];
+
+function toArtifactPath(filePath) {
+  return normalizeArtifactPath(filePath, { repoRoot: process.cwd() }) || String(filePath);
+}
 
 function ensureParentDir(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -216,7 +221,7 @@ async function captureAriaSnapshot(page, ariaDir, scenarioId, suffix) {
   const locator = await page.getByRole('main').count() > 0 ? page.getByRole('main') : page.locator('body');
   const snapshot = await locator.ariaSnapshot();
   fs.writeFileSync(filePath, `${snapshot}\n`);
-  return path.relative(process.cwd(), filePath) || filePath;
+  return toArtifactPath(filePath);
 }
 
 async function runScenario(page, scenario, baseUrl, ariaDir) {
@@ -297,7 +302,7 @@ export function buildUiE2ESummary({
     scenarios,
     artifacts: {
       ariaSnapshotsDir: ariaDir,
-      adapterSummaryPath: path.relative(process.cwd(), path.resolve(adapterSummaryPath)) || adapterSummaryPath,
+      adapterSummaryPath: toArtifactPath(path.resolve(adapterSummaryPath)),
     },
   };
 }
@@ -344,7 +349,7 @@ export function toAdapterSummary(summary, adapterSummaryPath) {
       ariaSnapshotPath: scenario.ariaSnapshotPath,
       diagnostics: scenario.diagnostics.map((entry) => entry.message),
     })),
-    sourceArtifact: path.relative(process.cwd(), path.resolve(adapterSummaryPath)) || adapterSummaryPath,
+    sourceArtifact: toArtifactPath(path.resolve(adapterSummaryPath)),
   };
 }
 
@@ -457,7 +462,7 @@ async function runMain(argv = process.argv) {
     const summary = buildUiE2ESummary({
       baseUrl,
       scenarios,
-      ariaDir: path.relative(process.cwd(), ariaDir) || ariaDir,
+      ariaDir: toArtifactPath(ariaDir),
       adapterSummaryPath,
     });
     const adapterSummary = toAdapterSummary(summary, adapterSummaryPath);

@@ -31,18 +31,13 @@ const makeFakeJava = (dir: string, exitCode = 0) => {
   const bin = join(dir, 'bin');
   mkdirSync(bin, { recursive: true });
   const log = join(dir, 'java-argv.json');
-  const java = join(bin, 'java');
   const javaHelper = join(bin, 'java-helper.cjs');
   writeFileSync(
     javaHelper,
     `const fs = require('node:fs');\nconst args=process.argv.slice(2);\nfs.writeFileSync(${JSON.stringify(log)}, JSON.stringify(args));\nconsole.log(args.at(-1)==='version' ? 'Alloy 6.2.0' : 'fake alloy result');\nprocess.exit(${exitCode});\n`,
     { mode: 0o755 },
   );
-  writeFileSync(java, `#!/bin/sh\nexec "${process.execPath}" "${javaHelper}" "$@"\n`, { mode: 0o755 });
-  writeFileSync(join(bin, 'java.cmd'), `@echo off\r\n"${process.execPath}" "${javaHelper}" %*\r\n`, {
-    mode: 0o755,
-  });
-  return { bin, log };
+  return { bin, log, command: javaHelper };
 };
 
 describe('run-model-checks Alloy execution security', () => {
@@ -69,6 +64,7 @@ describe('run-model-checks Alloy execution security', () => {
           ALLOY_JAR: alloyJar,
           ALLOY_RUN_CMD: `node -e "require('fs').writeFileSync('${marker}', 'executed')"`,
           ALLOY_CMD_JSON: '["exec","-q","-o","-","-f","{file}"]',
+          AE_FORMAL_JAVA_COMMAND: fakeJava.command,
           PATH: [fakeJava.bin, process.env.PATH ?? ''].filter(Boolean).join(delimiter),
         },
       });
@@ -172,6 +168,7 @@ describe('run-model-checks Alloy execution security', () => {
           ...process.env,
           ALLOY_JAR: alloyJar,
           ALLOY_CMD_JSON: '["exec","-f","{file}"]',
+          AE_FORMAL_JAVA_COMMAND: fakeJava.command,
           PATH: [fakeJava.bin, process.env.PATH ?? ''].filter(Boolean).join(delimiter),
         },
       });
@@ -245,7 +242,12 @@ describe('run-model-checks Alloy execution security', () => {
         cwd: dir,
         encoding: 'utf8',
         timeout: 30_000,
-        env: { ...process.env, PATH: emptyBin, TLA_TOOLS_URL: 'https://invalid.example/tla2tools.jar' },
+        env: {
+          ...process.env,
+          PATH: emptyBin,
+          TLA_TOOLS_URL: 'https://invalid.example/tla2tools.jar',
+          AE_FORMAL_CURL_COMMAND: join(emptyBin, 'missing-curl'),
+        },
       });
 
       expect(result.status).toBe(0);
@@ -255,7 +257,7 @@ describe('run-model-checks Alloy execution security', () => {
       expect(summary.tlc.results).toEqual([]);
       expect(summary.tlc.errors[0]).toMatchObject({
         file: '.cache/tools/tla2tools.jar',
-        error: expect.stringContaining('spawn curl'),
+        error: expect.stringContaining('spawn'),
       });
     } finally {
       rmSync(dir, { recursive: true, force: true });

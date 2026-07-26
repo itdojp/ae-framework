@@ -13,6 +13,7 @@ import {
   assertSafeModelCheckArtifactTarget,
   validateModelCheckReferencedLogs,
 } from './model-check-artifacts.mjs';
+import { resolveToolInvocation } from '../formal/tool-invocation.mjs';
 
 const repoRoot = process.cwd();
 const outDir = path.join(repoRoot, 'artifacts', 'codex');
@@ -20,6 +21,8 @@ const toolsDir = path.join(repoRoot, '.cache', 'tools');
 const tlaJar = path.join(toolsDir, 'tla2tools.jar');
 const alloyJar = process.env.ALLOY_JAR || path.join(toolsDir, 'alloy.jar');
 const defaultTlaToolsUrl = 'https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar';
+const javaCommand = String(process.env.AE_FORMAL_JAVA_COMMAND || 'java').trim() || 'java';
+const curlCommand = String(process.env.AE_FORMAL_CURL_COMMAND || 'curl').trim() || 'curl';
 let artifactTempCounter = 0;
 
 async function ensureDir(dir) {
@@ -83,7 +86,8 @@ async function sha256File(filePath) {
 
 async function captureCommand(command, args, timeoutMs = 15_000) {
   return await new Promise((resolve, reject) => {
-    const proc = spawn(command, args, { cwd: repoRoot });
+    const invocation = resolveToolInvocation(command, args);
+    const proc = spawn(invocation.command, invocation.args, { cwd: repoRoot });
     let stdout = '';
     let stderr = '';
     let settled = false;
@@ -170,7 +174,8 @@ async function findFiles(globs) {
 async function download(url, dest) {
   await ensureDir(path.dirname(dest));
   await new Promise((resolve, reject) => {
-    const curl = spawn('curl', ['-L', '-sS', url, '-o', dest], { stdio: 'inherit' });
+    const invocation = resolveToolInvocation(curlCommand, ['-L', '-sS', url, '-o', dest]);
+    const curl = spawn(invocation.command, invocation.args, { stdio: 'inherit' });
     let settled = false;
     const settle = (error) => {
       if (settled) return;
@@ -241,8 +246,9 @@ async function runTLC(modulePath, configPath) {
     args.push('-config', configPath);
   }
   args.push(moduleName);
-  return await new Promise((resolve) => {
-    const proc = spawn('java', args, { cwd: moduleDir });
+  return await new Promise((resolve, reject) => {
+    const invocation = resolveToolInvocation(javaCommand, args);
+    const proc = spawn(invocation.command, invocation.args, { cwd: moduleDir });
     let out = '';
     let err = '';
     let settled = false;
@@ -334,7 +340,7 @@ async function main() {
       tlaTool = await buildToolDescriptor({
         name: 'TLC',
         artifactPath: tlaJar,
-        versionCommand: { command: 'java', args: ['-cp', tlaJar, 'tlc2.TLC', '-version'] },
+        versionCommand: { command: javaCommand, args: ['-cp', tlaJar, 'tlc2.TLC', '-version'] },
         reviewedVersion: process.env.TLA_TOOLS_VERSION,
         expectedArtifactSha256: process.env.TLA_TOOLS_SHA256,
       });
@@ -407,7 +413,7 @@ async function main() {
         alloyTool = await buildToolDescriptor({
           name: 'Alloy',
           artifactPath: alloyJar,
-          versionCommand: { command: 'java', args: ['-jar', alloyJar, 'version'] },
+          versionCommand: { command: javaCommand, args: ['-jar', alloyJar, 'version'] },
           reviewedVersion: process.env.ALLOY_VERSION,
           expectedArtifactSha256: process.env.ALLOY_ARTIFACT_SHA256,
         });
@@ -425,7 +431,8 @@ async function main() {
           await ensureDir(outDir);
           const res = await new Promise((resolve, reject) => {
             const args = buildAlloyJavaArgs(f);
-            const sh = spawn('java', args, { cwd: repoRoot });
+            const invocation = resolveToolInvocation(javaCommand, args);
+            const sh = spawn(invocation.command, invocation.args, { cwd: repoRoot });
             let out = ''; let err = '';
             let terminated = false;
             let settled = false;

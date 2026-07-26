@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import {
   batchFilesForDoctest,
@@ -61,11 +64,7 @@ describe('run-changed-doctest', () => {
   });
 
   it('matches main module path with URL-escaped argv path', () => {
-    expect(
-      isExecutedAsMain(
-        'file:///tmp/with%20space/run-changed-doctest.mjs',
-        '/tmp/with space/run-changed-doctest.mjs',
-      ),
-    ).toBe(true);
+    const argvPath = path.resolve(tmpdir(), 'with space', 'run-changed-doctest.mjs');
+    expect(isExecutedAsMain(pathToFileURL(argvPath).href, argvPath)).toBe(true);
   });
 });

@@ -1,4 +1,4 @@
-import { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path, { delimiter, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -7,9 +7,8 @@ import { describe, expect, it } from 'vitest';
 const scriptPath = resolve('scripts/ci/codex-autopilot-lane.mjs');
 
 function writeFakeGh(binDir: string, stateFile: string): string {
-  const ghPath = path.join(binDir, 'gh');
-  const script = `#!/usr/bin/env node
-const fs = require('node:fs');
+  const ghPath = path.join(binDir, 'gh.cjs');
+  const script = `const fs = require('node:fs');
 
 function readState() {
   try {
@@ -155,8 +154,6 @@ process.exit(2);
 `;
 
   writeFileSync(ghPath, script, 'utf8');
-  chmodSync(ghPath, 0o755);
-  writeFileSync(path.join(binDir, 'gh.cmd'), '@echo off\\r\\nnode "%~dp0gh" %*\\r\\n', 'utf8');
   writeFileSync(stateFile, JSON.stringify({ stateQueryCount: 0 }), 'utf8');
   return ghPath;
 }

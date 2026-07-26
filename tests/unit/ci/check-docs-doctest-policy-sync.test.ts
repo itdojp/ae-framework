@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -341,8 +342,8 @@ describe('check-docs-doctest-policy-sync', () => {
   });
 
   it('treats URL-escaped module path and argv path as the same file', () => {
-    const metaUrl = 'file:///tmp/with%20space/check-docs-doctest-policy-sync.mjs';
-    const argvPath = '/tmp/with space/check-docs-doctest-policy-sync.mjs';
+    const argvPath = path.resolve(tmpdir(), 'with space', 'check-docs-doctest-policy-sync.mjs');
+    const metaUrl = pathToFileURL(argvPath).href;
     expect(isExecutedAsMain(metaUrl, argvPath)).toBe(true);
   });
 });

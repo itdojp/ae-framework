@@ -358,6 +358,24 @@ function findExistingAncestor(absolutePath: string): string {
   return current;
 }
 
+function hasEscapingSymbolicLink(rootPath: string, candidatePath: string): boolean {
+  const absoluteRoot = path.resolve(rootPath);
+  const relative = path.relative(absoluteRoot, candidatePath);
+  if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {
+    return false;
+  }
+  const realRoot = fs.realpathSync.native(absoluteRoot);
+  let current = absoluteRoot;
+  for (const segment of relative.split(path.sep)) {
+    current = path.join(current, segment);
+    if (!fs.lstatSync(current).isSymbolicLink()) continue;
+    const realTarget = fs.realpathSync.native(current);
+    const targetRelative = path.relative(realRoot, realTarget);
+    if (targetRelative && (targetRelative.startsWith('..') || path.isAbsolute(targetRelative))) return true;
+  }
+  return false;
+}
+
 function resolveUIOutputDir(outputDir: unknown): { ok: true; absolutePath: string; relativePath: string } | { ok: false; errors: string[] } {
   const rawOutputDir = typeof outputDir === 'string' && outputDir.trim().length > 0
     ? outputDir.trim()
@@ -381,6 +399,9 @@ function resolveUIOutputDir(outputDir: unknown): { ok: true; absolutePath: strin
     errors.push('context.outputDir must stay inside the repository workspace');
   }
   const existingAncestor = findExistingAncestor(absolutePath);
+  if (hasEscapingSymbolicLink(repoRoot, existingAncestor)) {
+    errors.push('context.outputDir must not resolve through a symlink outside the repository workspace');
+  }
   const realExistingAncestor = fs.existsSync(existingAncestor)
     ? fs.realpathSync.native(existingAncestor)
     : existingAncestor;
@@ -706,6 +727,7 @@ function isRepositoryLocalArtifactDirectory(candidatePath: string): boolean {
   if (!lexicalRelative || lexicalRelative.startsWith('..') || path.isAbsolute(lexicalRelative)) return false;
   const realRepoRoot = fs.realpathSync.native(repoRoot);
   const existingAncestor = findExistingAncestor(resolvedCandidate);
+  if (hasEscapingSymbolicLink(repoRoot, existingAncestor)) return false;
   const realAncestor = fs.realpathSync.native(existingAncestor);
   const realRelative = path.relative(realRepoRoot, realAncestor);
   return realRelative === '' || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative));

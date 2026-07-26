@@ -189,7 +189,7 @@ function ensureOutputPathSafeForWrite({ workRoot, outputPath }) {
 }
 
 function fetchIssue({ gh, repo, issue }) {
-  const result = spawnSync(gh, [
+  const ghArgs = [
     'issue',
     'view',
     String(issue),
@@ -197,7 +197,11 @@ function fetchIssue({ gh, repo, issue }) {
     repo,
     '--json',
     'title,body,url',
-  ], {
+  ];
+  const invocation = /\.[cm]?js$/iu.test(gh)
+    ? { command: process.execPath, args: [gh, ...ghArgs] }
+    : { command: gh, args: ghArgs };
+  const result = spawnSync(invocation.command, invocation.args, {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -285,6 +289,7 @@ function run(options = parseArgs()) {
     return null;
   }
   const { workRoot, outputPath } = resolveOutputPath(options);
+  ensureOutputPathSafeForWrite({ workRoot, outputPath });
   const issue = fetchIssue(options);
   if (!issue.title || !issue.url) {
     throw new Error('gh issue view did not return title and url');
@@ -298,7 +303,6 @@ function run(options = parseArgs()) {
     generatedAt: options.generatedAt,
     includePreflight: options.includePreflight,
   });
-  ensureOutputPathSafeForWrite({ workRoot, outputPath });
   fs.writeFileSync(outputPath, task, 'utf8');
   process.stdout.write(`[codex-issue-task] wrote ${outputPath}\n`);
   process.stdout.write(`[codex-issue-task] source ${issue.url}\n`);

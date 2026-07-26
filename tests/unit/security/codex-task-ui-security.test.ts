@@ -148,6 +148,35 @@ describe('CodeX Task UI scaffold security boundary', () => {
     ]));
   });
 
+  it('allows UI output roots through a symlink alias that remains inside the repository', async () => {
+    mkdirSync(artifactRoot, { recursive: true });
+    const suffix = `${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const target = join(artifactRoot, `codex-ui-target-${suffix}`);
+    const symlinkPath = join(artifactRoot, `codex-ui-alias-${suffix}`);
+    mkdirSync(target, { recursive: true });
+    try {
+      symlinkSync(target, symlinkPath, 'dir');
+    } catch {
+      rmSync(target, { recursive: true, force: true });
+      return;
+    }
+    cleanup = () => {
+      rmSync(symlinkPath, { recursive: true, force: true });
+      rmSync(target, { recursive: true, force: true });
+    };
+    const adapter = createCodexTaskAdapter();
+
+    const response = await adapter.handleTask(makeRequest({
+      phaseState: makePhaseState(),
+      outputDir: relative(process.cwd(), symlinkPath),
+      dryRun: false,
+      approval: { approved: true, scope: 'ui-scaffold', actor: 'operator' },
+    }));
+
+    expect(response.shouldBlockProgress).toBe(false);
+    expect(existsSync(join(target, 'apps', 'web', 'app', 'admin-panel', 'page.tsx'))).toBe(true);
+  });
+
   it('writes only under the approved output root and sanitizes entity path segments for trusted requests', async () => {
     const output = makeOutputDir();
     cleanup = output.cleanup;

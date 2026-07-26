@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Lightweight SMT runner: executes a solver when available and records semantic result evidence. Non-blocking.
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildFormalRunnerOutput, buildLegacyFormalExecutionEvidence, extractToolVersion } from './execution-evidence.mjs';
+import { spawnToolSync } from './tool-invocation.mjs';
 
 const SMT_RESULTS = new Set(['sat', 'unsat', 'unknown']);
 const SMT_EXPECTED_RESULTS = new Set(['sat', 'unsat']);
@@ -78,7 +78,7 @@ function parseArgs(argv) {
 }
 
 function commandExists(cmd) {
-  const result = spawnSync(cmd, [], { stdio: 'ignore' });
+  const result = spawnToolSync(cmd, [], { stdio: 'ignore' });
   if (result.error && result.error.code === 'ENOENT') {
     return false;
   }
@@ -86,7 +86,7 @@ function commandExists(cmd) {
 }
 
 function runCommand(cmd, cmdArgs, { timeoutMs = 0 } = {}) {
-  const result = spawnSync(cmd, cmdArgs, {
+  const result = spawnToolSync(cmd, cmdArgs, {
     encoding: 'utf8',
     ...(timeoutMs > 0 ? { timeout: timeoutMs, killSignal: 'SIGTERM' } : {}),
   });
@@ -138,9 +138,9 @@ export function runSmtVerification(argv = process.argv) {
   const file = args.file;
   const expectedResult = normalizeExpectedResult(args.expectedResult);
   const solverSpec = solver === 'z3'
-    ? { cmd: 'z3', args: ['-smt2'] }
+    ? { cmd: String(process.env.AE_FORMAL_SMT_COMMAND || 'z3').trim() || 'z3', args: ['-smt2'] }
     : solver === 'cvc5'
-      ? { cmd: 'cvc5', args: ['--lang=smt2'] }
+      ? { cmd: String(process.env.AE_FORMAL_SMT_COMMAND || 'cvc5').trim() || 'cvc5', args: ['--lang=smt2'] }
       : null;
 
   const repoRoot = path.resolve(process.cwd());

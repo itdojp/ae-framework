@@ -38,14 +38,17 @@ describe('Nightly Matrix dependency reproducibility', () => {
     }
   });
 
-  it('uses the legacy compatibility CLI that owns qa:flake', () => {
+  it('uses the legacy compatibility CLI that owns qa:flake and bench', () => {
     const workflow = YAML.parse(readText('.github/workflows/nightly.yml'));
     const monitorSteps = workflow.jobs.monitor.steps as Array<Record<string, unknown>>;
     const flake = monitorSteps.find((step) => step.name === 'Flake (30x)');
+    const bench = monitorSteps.find((step) => step.name === 'Bench (run set)');
 
     expect(flake?.run).toContain('node dist/src/cli.js qa:flake');
     expect(flake?.run).toContain('--pattern "tests/unit/**/*.test.ts"');
     expect(flake?.run).not.toContain('dist/src/cli/index.js qa:flake');
     expect(flake?.run).not.toContain('--pattern "tests/**"');
+    expect(bench?.run).toContain('node dist/src/cli.js bench');
+    expect(bench?.run).not.toContain('dist/src/cli/index.js bench');
   });
 });

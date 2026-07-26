@@ -1,6 +1,5 @@
 import { spawnSync } from 'node:child_process';
 import {
-  chmodSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -44,24 +43,23 @@ function createSandbox() {
   mkdirSync(binDir, { recursive: true });
   writeFileSync(join(sandbox, 'input.smt2'), '(check-sat)\n', 'utf8');
 
-  const fakeZ3 = join(binDir, 'z3');
-  writeFileSync(fakeZ3, `#!/bin/sh
-if [ "\${1:-}" = "--version" ]; then
-  printf '%s\\n' 'Z3 version 4.12.2'
-  exit 0
-fi
-if [ "$#" -eq 0 ]; then
-  exit 0
-fi
-if [ "\${FAKE_SMT_HANG:-0}" = "1" ]; then
-  while :; do sleep 1; done
-fi
-printf '%b' "\${FAKE_SMT_STDOUT-sat\\n}"
-printf '%b' "\${FAKE_SMT_STDERR:-}" >&2
-exit "\${FAKE_SMT_EXIT_CODE:-0}"
+  const fakeZ3 = join(binDir, 'z3.cjs');
+  writeFileSync(fakeZ3, `
+const args = process.argv.slice(2);
+if (args[0] === '--version') {
+  process.stdout.write('Z3 version 4.12.2\\n');
+  process.exit(0);
+}
+if (args.length === 0) process.exit(0);
+if (process.env.FAKE_SMT_HANG === '1') {
+  setInterval(() => {}, 1000);
+} else {
+  process.stdout.write(process.env.FAKE_SMT_STDOUT ?? 'sat\\n');
+  process.stderr.write(process.env.FAKE_SMT_STDERR ?? '');
+  process.exit(Number(process.env.FAKE_SMT_EXIT_CODE ?? '0'));
+}
 `, 'utf8');
-  chmodSync(fakeZ3, 0o755);
-  return { sandbox, binDir };
+  return { sandbox, binDir, fakeZ3 };
 }
 
 function runFakeSmt({
@@ -79,7 +77,7 @@ function runFakeSmt({
   timeout?: boolean;
   hang?: boolean;
 }) {
-  const { sandbox, binDir } = createSandbox();
+  const { sandbox, binDir, fakeZ3 } = createSandbox();
   const cliArgs = [scriptPath, '--solver=z3', '--file', 'input.smt2'];
   if (expectedResult) cliArgs.push('--expected-result', expectedResult);
   if (timeout) cliArgs.push('--timeout', '50');
@@ -89,6 +87,7 @@ function runFakeSmt({
     env: {
       ...process.env,
       PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`,
+      AE_FORMAL_SMT_COMMAND: fakeZ3,
       FAKE_SMT_STDOUT: stdout,
       FAKE_SMT_STDERR: stderr,
       FAKE_SMT_EXIT_CODE: String(exitCode),
