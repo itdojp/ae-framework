@@ -7,7 +7,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -88,7 +88,7 @@ cat > pan <<'PAN'
 #!/bin/sh
 printf '%s\\n' "$*" > "\${FAKE_PAN_TRACE_FILE}"
 if [ "\${FAKE_PAN_HANG:-0}" = "1" ]; then
-  while :; do :; done
+  while :; do sleep 1; done
 fi
 printf '%b' "\${FAKE_PAN_OUTPUT-}"
 if [ "\${FAKE_PAN_TRAIL:-0}" = "1" ]; then
@@ -131,7 +131,7 @@ function runFakeSpin({
     encoding: 'utf8',
     env: {
       ...process.env,
-      PATH: `${binDir}:${process.env.PATH ?? ''}`,
+      PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`,
       FAKE_SPIN_TRACE_FILE: spinTrace,
       FAKE_PAN_TRACE_FILE: panTrace,
       FAKE_PAN_OUTPUT: output,

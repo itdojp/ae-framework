@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { chmod, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { delimiter, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
 
@@ -106,7 +106,7 @@ python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
       await execFileAsync('bash', [scriptPath, '--input', 'samples/trace/kvonce-sample.ndjson', '--format', 'ndjson', '--output-dir', outputDir], {
         env: {
           ...process.env,
-          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`,
           KVONCE_REALPATH_CMD: 'realpath',
         },
       });

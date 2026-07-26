@@ -7,7 +7,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -54,7 +54,7 @@ if [ "$#" -eq 0 ]; then
   exit 0
 fi
 if [ "\${FAKE_SMT_HANG:-0}" = "1" ]; then
-  while :; do :; done
+  while :; do sleep 1; done
 fi
 printf '%b' "\${FAKE_SMT_STDOUT-sat\\n}"
 printf '%b' "\${FAKE_SMT_STDERR:-}" >&2
@@ -88,7 +88,7 @@ function runFakeSmt({
     encoding: 'utf8',
     env: {
       ...process.env,
-      PATH: `${binDir}:${process.env.PATH ?? ''}`,
+      PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`,
       FAKE_SMT_STDOUT: stdout,
       FAKE_SMT_STDERR: stderr,
       FAKE_SMT_EXIT_CODE: String(exitCode),
