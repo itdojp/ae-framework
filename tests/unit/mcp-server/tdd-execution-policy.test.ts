@@ -125,10 +125,18 @@ describe('TDD MCP execution policy', () => {
       ['#!/bin/sh', 'printf "%s" "$PWD" > "$CWD_CAPTURE"', 'exit 0', ''].join('\n'),
       'utf8'
     );
+    await writeFile(
+      path.join(binDir, 'npm.cmd'),
+      ['@echo off', '<nul set /p "=%CD%" > "%CWD_CAPTURE%"', 'exit /b 0', ''].join('\r\n'),
+      'utf8'
+    );
     await chmod(path.join(binDir, 'npm'), 0o755);
     process.env['AE_MCP_WORKSPACE_ROOT'] = workspaceRoot;
     process.env['CWD_CAPTURE'] = capturedCwd;
-    process.env['PATH'] = `${binDir}${path.delimiter}${originalEnv.PATH ?? ''}`;
+    // Keep the integration fixture hermetic. In particular, a missing
+    // npm.cmd on Windows must fail instead of falling through to the hosted
+    // runner's ambient npm and recursively starting the repository test suite.
+    process.env['PATH'] = binDir;
 
     const server = new TDDGuardServer();
     const result = await (server as any).checkRedGreenCycle({
