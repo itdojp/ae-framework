@@ -37,4 +37,15 @@ describe('Nightly Matrix dependency reproducibility', () => {
       expect(install?.run).toBe('pnpm install --frozen-lockfile');
     }
   });
+
+  it('uses the legacy compatibility CLI that owns qa:flake', () => {
+    const workflow = YAML.parse(readText('.github/workflows/nightly.yml'));
+    const monitorSteps = workflow.jobs.monitor.steps as Array<Record<string, unknown>>;
+    const flake = monitorSteps.find((step) => step.name === 'Flake (30x)');
+
+    expect(flake?.run).toContain('node dist/src/cli.js qa:flake');
+    expect(flake?.run).toContain('--pattern "tests/unit/**/*.test.ts"');
+    expect(flake?.run).not.toContain('dist/src/cli/index.js qa:flake');
+    expect(flake?.run).not.toContain('--pattern "tests/**"');
+  });
 });

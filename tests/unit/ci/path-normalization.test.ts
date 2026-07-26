@@ -62,6 +62,41 @@ describe('normalizeArtifactPath contract', () => {
     }
   });
 
+  it('resolves an aliased existing repository root for a missing descendant', async () => {
+    const normalizeNode = await loadNodeNormalizer();
+    const parent = mkdtempSync(path.join(tmpdir(), 'path-normalization-missing-alias-'));
+    const repoRoot = path.join(parent, 'repo');
+    const aliasRoot = path.join(parent, 'repo-alias');
+    try {
+      mkdirSync(repoRoot);
+      symlinkSync(repoRoot, aliasRoot, 'junction');
+      const missingReport = path.join(aliasRoot, 'artifacts', 'not-written.json');
+      expect(normalizeTs(missingReport, { repoRoot: aliasRoot })).toBe('artifacts/not-written.json');
+      expect(normalizeNode(missingReport, { repoRoot: aliasRoot })).toBe('artifacts/not-written.json');
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps a missing descendant outside the repository when its existing ancestor is a symlink escape', async () => {
+    const normalizeNode = await loadNodeNormalizer();
+    const parent = mkdtempSync(path.join(tmpdir(), 'path-normalization-escape-'));
+    const repoRoot = path.join(parent, 'repo');
+    const externalRoot = path.join(parent, 'external');
+    const escapeRoot = path.join(repoRoot, 'escape');
+    try {
+      mkdirSync(repoRoot);
+      mkdirSync(externalRoot);
+      symlinkSync(externalRoot, escapeRoot, 'junction');
+      const escapedMissingPath = path.join(escapeRoot, 'not-written.json');
+      const expected = path.posix.normalize(path.join(externalRoot, 'not-written.json').replace(/\\/g, '/'));
+      expect(normalizeTs(escapedMissingPath, { repoRoot })).toBe(expected);
+      expect(normalizeNode(escapedMissingPath, { repoRoot })).toBe(expected);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
   it('normalizes Windows drive-letter paths as external on POSIX hosts', async () => {
     const normalizeNode = await loadNodeNormalizer();
     const input = 'C:\\\\repo\\\\artifacts\\\\a.json';

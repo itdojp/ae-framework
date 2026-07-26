@@ -22,19 +22,39 @@ type CanonicalizeExistingPathOptions = {
   base?: string;
 };
 
-/** Resolve filesystem aliases for paths that exist, without inventing a path for missing inputs. */
+/**
+ * Resolve filesystem aliases through the deepest existing ancestor.
+ *
+ * A report path may identify an output leaf that has not been materialized yet.
+ * Canonicalizing the existing ancestor keeps platform aliases (for example
+ * macOS `/var` -> `/private/var`) and symlink boundaries authoritative without
+ * claiming that the missing suffix exists.
+ */
 function canonicalizeExistingPath(
   value: string,
   options: CanonicalizeExistingPathOptions = {},
 ): string {
   const resolved = path.resolve(options.base ?? process.cwd(), value);
-  try {
-    return fs.realpathSync.native(resolved);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException)?.code === 'ENOENT' || (error as NodeJS.ErrnoException)?.code === 'ENOTDIR') {
-      return path.normalize(resolved);
+  let candidate = resolved;
+  const missingSuffix: string[] = [];
+
+  while (true) {
+    try {
+      const canonicalAncestor = fs.realpathSync.native(candidate);
+      return path.join(canonicalAncestor, ...missingSuffix);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException)?.code;
+      if (code !== 'ENOENT' && code !== 'ENOTDIR') {
+        throw error;
+      }
+
+      const parent = path.dirname(candidate);
+      if (parent === candidate) {
+        return path.normalize(resolved);
+      }
+      missingSuffix.unshift(path.basename(candidate));
+      candidate = parent;
     }
-    throw error;
   }
 }
 

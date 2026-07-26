@@ -66,13 +66,13 @@ async function detectTestRunner(): Promise<'jest' | 'vitest'> {
   }
 }
 
-async function detectTestFiles(pattern?: string): Promise<{ pattern: string; fileCount: number }> {
+async function detectTestFiles(pattern?: string): Promise<{ pattern: string; files: string[] }> {
   if (pattern) {
     try {
-      const files = await glob(pattern);
-      return { pattern, fileCount: files.length };
+      const files = await glob(pattern, { nodir: true });
+      return { pattern, files: files.sort((left, right) => left.localeCompare(right)) };
     } catch {
-      return { pattern, fileCount: 0 };
+      return { pattern, files: [] };
     }
   }
 
@@ -85,9 +85,12 @@ async function detectTestFiles(pattern?: string): Promise<{ pattern: string; fil
 
   for (const fallbackPattern of fallbackPatterns) {
     try {
-      const files = await glob(fallbackPattern);
+      const files = await glob(fallbackPattern, { nodir: true });
       if (files.length > 0) {
-        return { pattern: fallbackPattern, fileCount: files.length };
+        return {
+          pattern: fallbackPattern,
+          files: files.sort((left, right) => left.localeCompare(right)),
+        };
       }
     } catch {
       // Continue to next pattern
@@ -95,7 +98,7 @@ async function detectTestFiles(pattern?: string): Promise<{ pattern: string; fil
   }
 
   // If nothing found, use the first fallback as default with a safe fallback string
-  return { pattern: fallbackPatterns[0] ?? 'tests/**/*.test.ts', fileCount: 0 };
+  return { pattern: fallbackPatterns[0] ?? 'tests/**/*.test.ts', files: [] };
 }
 
 export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ failures: number; total: number; seeds: number[] }, AppError>> {
@@ -106,7 +109,8 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
   // Detect test files with fallback patterns
   const testDetection = await detectTestFiles(pattern);
   const finalPattern = testDetection.pattern;
-  const fileCount = testDetection.fileCount;
+  const testFiles = testDetection.files;
+  const fileCount = testFiles.length;
   
   let fails = 0; 
   const seeds: number[] = [];
@@ -144,14 +148,14 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
     
     // Add test runner specific options
     if (testRunner === 'vitest') {
-      // Vitest options - use finalPattern from detection
-      if (finalPattern) {
-        // Try to use as directory pattern first, or as test name pattern
-        if (finalPattern.includes('/') || finalPattern.includes('*')) {
-          args.push('--dir', finalPattern);
-        } else {
-          args.push('--testNamePattern', finalPattern);
-        }
+      // Vitest does not expand quoted globs and --dir accepts only a directory.
+      // Pass the reviewed, concrete glob matches as positional file filters.
+      if (testFiles.length > 0) {
+        args.push(...testFiles);
+      } else if (finalPattern) {
+        // Preserve a concrete non-glob filter for repositories where discovery
+        // cannot enumerate files, while keeping the empty-match warning above.
+        args.push(finalPattern);
       }
       if (workers) {
         const parsedWorkers = parseWorkers(workers);
@@ -205,12 +209,10 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
     if (testRunner === 'vitest') {
       failedSeeds.forEach(({ run, seed }) => {
         const reproArgs = ['vitest', 'run'];
-        if (finalPattern) {
-          if (finalPattern.includes('/') || finalPattern.includes('*')) {
-            reproArgs.push('--dir', finalPattern);
-          } else {
-            reproArgs.push('--testNamePattern', finalPattern);
-          }
+        if (testFiles.length > 0) {
+          reproArgs.push(...testFiles);
+        } else if (finalPattern) {
+          reproArgs.push(finalPattern);
         }
         if (workers) {
           const parsedWorkers = parseWorkers(workers);

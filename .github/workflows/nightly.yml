@@ -123,7 +123,9 @@ jobs:
       - name: Bin smoke check
         run: node scripts/ci/check-bins.mjs
       - name: Flake (30x)
-        run: node dist/src/cli/index.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/**"
+        # Repeat the canonical unit surface. Integration and performance have
+        # independent Nightly jobs and must not be folded into this 30x loop.
+        run: node dist/src/cli.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/unit/**/*.test.ts"
       - name: Bench (run set)
         run: |
           rm -f artifacts/reference/benchmarks/bench.json artifacts/reference/benchmarks/bench.md artifacts/bench-ts-run*.json artifacts/bench-ts-runset.txt artifacts/bench-ts-compare.json || true

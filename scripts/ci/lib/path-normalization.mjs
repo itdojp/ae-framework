@@ -14,16 +14,35 @@ const normalizeUncPath = (raw) => {
   return `//${normalized}`;
 };
 
-/** Resolve filesystem aliases for paths that exist, without inventing a path for missing inputs. */
+/**
+ * Resolve filesystem aliases through the deepest existing ancestor.
+ *
+ * A report path may identify an output leaf that has not been materialized yet.
+ * Canonicalizing the existing ancestor keeps platform aliases (for example
+ * macOS `/var` -> `/private/var`) and symlink boundaries authoritative without
+ * claiming that the missing suffix exists.
+ */
 export function canonicalizeExistingPath(value, { base = process.cwd() } = {}) {
   const resolved = path.resolve(base, String(value));
-  try {
-    return fs.realpathSync.native(resolved);
-  } catch (error) {
-    if (error?.code === 'ENOENT' || error?.code === 'ENOTDIR') {
-      return path.normalize(resolved);
+  let candidate = resolved;
+  const missingSuffix = [];
+
+  while (true) {
+    try {
+      const canonicalAncestor = fs.realpathSync.native(candidate);
+      return path.join(canonicalAncestor, ...missingSuffix);
+    } catch (error) {
+      if (error?.code !== 'ENOENT' && error?.code !== 'ENOTDIR') {
+        throw error;
+      }
+
+      const parent = path.dirname(candidate);
+      if (parent === candidate) {
+        return path.normalize(resolved);
+      }
+      missingSuffix.unshift(path.basename(candidate));
+      candidate = parent;
     }
-    throw error;
   }
 }
 
