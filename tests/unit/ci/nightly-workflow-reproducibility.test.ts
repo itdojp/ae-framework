@@ -51,4 +51,13 @@ describe('Nightly Matrix dependency reproducibility', () => {
     expect(bench?.run).toContain('node dist/src/cli.js bench');
     expect(bench?.run).not.toContain('dist/src/cli/index.js bench');
   });
+
+  it('runs the complete unit project in the thread pool on every nightly platform', () => {
+    const packageJson = JSON.parse(readText('package.json'));
+    const unitScript = packageJson.scripts['test:unit'];
+
+    expect(unitScript).toContain('--project unit');
+    expect(unitScript).toContain('--pool=threads');
+    expect(unitScript).not.toMatch(/--exclude|--forceExit/);
+  });
 });
