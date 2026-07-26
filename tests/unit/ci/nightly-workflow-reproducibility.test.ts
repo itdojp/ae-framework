@@ -52,4 +52,33 @@ describe('Nightly Matrix dependency reproducibility', () => {
     expect(bench?.run).not.toContain('dist/src/cli/index.js bench');
   });
 
+  it('records a deterministic offline cassette before replay smoke', () => {
+    const workflow = YAML.parse(readText('.github/workflows/nightly.yml'));
+    const monitorSteps = workflow.jobs.monitor.steps as Array<{
+      name?: string;
+      run?: string;
+      env?: Record<string, string>;
+    }>;
+    const recordIndex = monitorSteps.findIndex((step) => step.name === 'Record deterministic replay cassette');
+    const replayIndex = monitorSteps.findIndex((step) => step.name === 'Replay smoke');
+    const record = monitorSteps[recordIndex];
+    const replay = monitorSteps[replayIndex];
+
+    expect(recordIndex).toBeGreaterThan(-1);
+    expect(replayIndex).toBeGreaterThan(recordIndex);
+    expect(record?.run).toContain('--prompt "Hello, ae!"');
+    expect(record?.run).toContain('--record');
+    expect(record?.run).toContain('--cassette-dir artifacts/nightly-cassettes');
+    expect(replay?.run).toContain('--prompt "Hello, ae!"');
+    expect(replay?.run).toContain('--replay');
+    expect(replay?.run).toContain('--cassette-dir artifacts/nightly-cassettes');
+    expect(record?.env).toMatchObject({
+      ANTHROPIC_API_KEY: '',
+      OPENAI_API_KEY: '',
+      GEMINI_API_KEY: '',
+    });
+    expect(replay?.env).toEqual(record?.env);
+    expect(`${record?.run}\n${replay?.run}`).not.toContain('|| true');
+  });
+
 });

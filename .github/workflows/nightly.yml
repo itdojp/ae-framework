@@ -162,8 +162,26 @@ jobs:
             baselineReproducibility: .baseline.reproducibility,
             candidateReproducibility: .candidates[0].reproducibility
           }' artifacts/bench-compare.json
+      - name: Record deterministic replay cassette
+        env:
+          ANTHROPIC_API_KEY: ''
+          OPENAI_API_KEY: ''
+          GEMINI_API_KEY: ''
+        run: >-
+          node dist/src/cli/index.js agent:complete
+          --prompt "Hello, ae!"
+          --record
+          --cassette-dir artifacts/nightly-cassettes
       - name: Replay smoke
-        run: AE_RECORDER_MODE=replay node dist/src/cli/index.js agent:complete --prompt "Hello, ae!"
+        env:
+          ANTHROPIC_API_KEY: ''
+          OPENAI_API_KEY: ''
+          GEMINI_API_KEY: ''
+        run: >-
+          node dist/src/cli/index.js agent:complete
+          --prompt "Hello, ae!"
+          --replay
+          --cassette-dir artifacts/nightly-cassettes
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
