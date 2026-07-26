@@ -11,7 +11,7 @@ const scopePath = 'fixtures/security-assurance/sample.security-audit-scope.json'
 const responseFixturePath = 'fixtures/security-assurance/sample.security-audit-responses.json';
 const zeroFindingResponseFixturePath = 'fixtures/security-assurance/boundary-cases/zero-finding.security-audit-responses.json';
 const generatedAt = '2026-05-07T00:00:00.000Z';
-const tsxBin = resolve('node_modules/.bin/tsx');
+const tsxCli = resolve('node_modules/tsx/dist/cli.mjs');
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
 
@@ -210,8 +210,8 @@ describe('security proof-attempt audit producer', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ae-proof-audit-cli-'));
     try {
       const result = spawnSync(
-        tsxBin,
-        [
+        process.execPath,
+        [tsxCli,
           'src/cli/index.ts',
           'security',
           'audit',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -39,9 +39,12 @@ describe('normalizeArtifactPath contract', () => {
   it('keeps external absolute paths absolute', async () => {
     const normalizeNode = await loadNodeNormalizer();
     const repoRoot = path.resolve('/tmp/fake-repo');
-    const input = '/tmp/external.json';
-    expect(normalizeTs(input, { repoRoot })).toBe('/tmp/external.json');
-    expect(normalizeNode(input, { repoRoot })).toBe('/tmp/external.json');
+    const input = path.join(tmpdir(), 'external.json');
+    const expected = path.posix.normalize(
+      path.join(realpathSync.native(tmpdir()), 'external.json').replace(/\\/g, '/'),
+    );
+    expect(normalizeTs(input, { repoRoot })).toBe(expected);
+    expect(normalizeNode(input, { repoRoot })).toBe(expected);
   });
 
   it('resolves filesystem aliases before applying the repository boundary', async () => {
@@ -89,7 +92,9 @@ describe('normalizeArtifactPath contract', () => {
       mkdirSync(externalRoot);
       symlinkSync(externalRoot, escapeRoot, 'junction');
       const escapedMissingPath = path.join(escapeRoot, 'not-written.json');
-      const expected = path.posix.normalize(path.join(externalRoot, 'not-written.json').replace(/\\/g, '/'));
+      const expected = path.posix.normalize(
+        path.join(realpathSync.native(externalRoot), 'not-written.json').replace(/\\/g, '/'),
+      );
       expect(normalizeTs(escapedMissingPath, { repoRoot })).toBe(expected);
       expect(normalizeNode(escapedMissingPath, { repoRoot })).toBe(expected);
     } finally {

@@ -374,14 +374,16 @@ function resolveUIOutputDir(outputDir: unknown): { ok: true; absolutePath: strin
   }
 
   const repoRoot = process.cwd();
-  const realRepoRoot = fs.existsSync(repoRoot) ? fs.realpathSync(repoRoot) : repoRoot;
+  const realRepoRoot = fs.existsSync(repoRoot) ? fs.realpathSync.native(repoRoot) : repoRoot;
   const absolutePath = path.resolve(repoRoot, rawOutputDir);
   const relativePath = path.relative(repoRoot, absolutePath);
   if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
     errors.push('context.outputDir must stay inside the repository workspace');
   }
   const existingAncestor = findExistingAncestor(absolutePath);
-  const realExistingAncestor = fs.existsSync(existingAncestor) ? fs.realpathSync(existingAncestor) : existingAncestor;
+  const realExistingAncestor = fs.existsSync(existingAncestor)
+    ? fs.realpathSync.native(existingAncestor)
+    : existingAncestor;
   const realAncestorRelative = path.relative(realRepoRoot, realExistingAncestor);
   if (realAncestorRelative && (realAncestorRelative.startsWith('..') || path.isAbsolute(realAncestorRelative))) {
     errors.push('context.outputDir must not resolve through a symlink outside the repository workspace');
@@ -702,9 +704,9 @@ function isRepositoryLocalArtifactDirectory(candidatePath: string): boolean {
   const resolvedCandidate = path.resolve(candidatePath);
   const lexicalRelative = path.relative(repoRoot, resolvedCandidate);
   if (!lexicalRelative || lexicalRelative.startsWith('..') || path.isAbsolute(lexicalRelative)) return false;
-  const realRepoRoot = fs.realpathSync(repoRoot);
+  const realRepoRoot = fs.realpathSync.native(repoRoot);
   const existingAncestor = findExistingAncestor(resolvedCandidate);
-  const realAncestor = fs.realpathSync(existingAncestor);
+  const realAncestor = fs.realpathSync.native(existingAncestor);
   const realRelative = path.relative(realRepoRoot, realAncestor);
   return realRelative === '' || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative));
 }

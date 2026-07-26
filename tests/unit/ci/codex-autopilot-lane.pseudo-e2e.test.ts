@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 const scriptPath = resolve('scripts/ci/codex-autopilot-lane.mjs');
 
-function writeFakeGh(binDir: string, stateFile: string) {
+function writeFakeGh(binDir: string, stateFile: string): string {
   const ghPath = path.join(binDir, 'gh');
   const script = `#!/usr/bin/env node
 const fs = require('node:fs');
@@ -158,6 +158,7 @@ process.exit(2);
   chmodSync(ghPath, 0o755);
   writeFileSync(path.join(binDir, 'gh.cmd'), '@echo off\\r\\nnode "%~dp0gh" %*\\r\\n', 'utf8');
   writeFileSync(stateFile, JSON.stringify({ stateQueryCount: 0 }), 'utf8');
+  return ghPath;
 }
 
 describe('codex-autopilot-lane pseudo e2e (actionable execution)', () => {
@@ -166,7 +167,7 @@ describe('codex-autopilot-lane pseudo e2e (actionable execution)', () => {
     const binDir = path.join(tempDir, 'bin');
     mkdirSync(binDir, { recursive: true });
     const stateFile = path.join(tempDir, 'gh-state.json');
-    writeFakeGh(binDir, stateFile);
+    const ghBin = writeFakeGh(binDir, stateFile);
 
     const actionableCommand = [
       'node -e',
@@ -195,6 +196,7 @@ describe('codex-autopilot-lane pseudo e2e (actionable execution)', () => {
         AE_GH_RETRY_NO_SLEEP: '1',
         AI_REVIEW_ACTORS: 'github-copilot[bot]',
         FAKE_GH_STATE_FILE: stateFile,
+        AE_GH_BIN: ghBin,
       },
     });
 

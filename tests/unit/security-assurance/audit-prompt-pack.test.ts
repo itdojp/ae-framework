@@ -14,6 +14,10 @@ const claimsPath = 'fixtures/security-assurance/sample.security-claims.json';
 const generatedAt = '2026-05-07T00:00:00.000Z';
 const repoRoot = resolve('.');
 const cliPath = resolve(repoRoot, 'src/cli/index.ts');
+const pnpmEntrypoint = process.env.npm_execpath;
+const pnpmInvocation = pnpmEntrypoint && /(?:^|[\\/])pnpm(?:\.c?js)?$/iu.test(pnpmEntrypoint)
+  ? { command: process.execPath, prefixArgs: [pnpmEntrypoint] }
+  : { command: 'pnpm', prefixArgs: [] };
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
 
@@ -148,8 +152,9 @@ describe('security audit prompt pack producer', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ae-security-audit-prompt-pack-cli-'));
     try {
       const result = spawnSync(
-        'pnpm',
+        pnpmInvocation.command,
         [
+          ...pnpmInvocation.prefixArgs,
           '-s',
           'exec',
           'tsx',

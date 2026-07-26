@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Lightweight Lean4 runner: runs `lake build` in spec/lean and writes a summary JSON. Non-blocking.
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildFormalRunnerOutput, buildLegacyFormalExecutionEvidence, extractToolVersion } from './execution-evidence.mjs';
+import { resolveToolInvocation, spawnToolSync } from './tool-invocation.mjs';
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -21,13 +21,13 @@ function parseArgs(argv) {
 }
 
 function commandExists(cmd) {
-  const result = spawnSync(cmd, [], { stdio: 'ignore' });
+  const result = spawnToolSync(cmd, [], { stdio: 'ignore' });
   if (result.error && result.error.code === 'ENOENT') return false;
   return true;
 }
 
 function runCommand(cmd, cmdArgs, options = {}) {
-  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8', cwd: options.cwd });
+  const result = spawnToolSync(cmd, cmdArgs, { encoding: 'utf8', cwd: options.cwd });
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
   const output = `${stdout}${stderr}`;
@@ -49,6 +49,7 @@ if (args.help) {
 }
 
 const repoRoot = process.cwd();
+const lakeBin = process.env.AE_FORMAL_LEAN_BIN || 'lake';
 const project = args.project || path.join('spec', 'lean');
 const projectDir = path.resolve(repoRoot, project);
 const outDir = path.join(repoRoot, 'artifacts', 'hermetic-reports', 'formal');
@@ -74,14 +75,15 @@ if (!fs.existsSync(projectDir)) {
   status = 'project_not_found';
   outputFull = `Lean project directory not found: ${projectDir}`;
   output = outputFull;
-} else if (!commandExists('lake')) {
+} else if (!commandExists(lakeBin)) {
   status = 'tool_not_available';
   outputFull = 'lake not found. Install Lean4 via elan and ensure $HOME/.elan/bin is on PATH.';
   output = outputFull;
 } else {
-  toolVersion = extractToolVersion(runCommand('lake', ['--version'], { cwd: projectDir }).output);
+  toolVersion = extractToolVersion(runCommand(lakeBin, ['--version'], { cwd: projectDir }).output);
   versionSource = toolVersion ? 'cli' : 'unavailable';
-  const baseCmd = { cmd: 'lake', args: ['build'] };
+  const baseInvocation = resolveToolInvocation(lakeBin, ['build']);
+  const baseCmd = { cmd: baseInvocation.command, args: baseInvocation.args };
   const runSpec = (timeoutSec > 0 && haveTimeout)
     ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
     : baseCmd;

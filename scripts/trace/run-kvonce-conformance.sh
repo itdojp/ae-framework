@@ -98,7 +98,12 @@ SOURCE_NDJSON="${INPUT}"
 if [[ "${FORMAT}" == "otlp" ]]; then
   TMP_ROOT="${TMPDIR:-${PROJECT_ROOT}/.kvonce-tmp}"
   if [[ ! -d "${TMP_ROOT}" ]]; then
-    mkdir -p -m 700 "${TMP_ROOT}"
+    mkdir -p "${TMP_ROOT}"
+    # POSIX runners can enforce a private mode. Git Bash/MSYS does not expose
+    # compatible chmod semantics for hosted Windows workspaces.
+    if [[ "${OSTYPE:-}" != msys* && "${OSTYPE:-}" != cygwin* ]]; then
+      chmod 700 "${TMP_ROOT}"
+    fi
   fi
   TEMP_FILE="$(mktemp "${TMP_ROOT}/kvonce-events-XXXXXX.ndjson")"
   if ! node "${SCRIPT_DIR}/convert-otlp-kvonce.mjs" --input "${INPUT}" --output "${TEMP_FILE}"; then

@@ -7,7 +7,7 @@ import { importSpecaLikeSecurityArtifacts } from '../../../src/security/assuranc
 
 const inputDir = 'fixtures/security-assurance/speca-like-input';
 const generatedAt = '2026-05-07T00:00:00.000Z';
-const tsxBin = resolve('node_modules/.bin/tsx');
+const tsxCli = resolve('node_modules/tsx/dist/cli.mjs');
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
 
@@ -79,8 +79,8 @@ describe('SPECA-compatible security import', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ae-speca-import-cli-'));
     try {
       const result = spawnSync(
-        tsxBin,
-        [
+        process.execPath,
+        [tsxCli,
           'src/cli/index.ts',
           'security',
           'import-speca',
@@ -210,8 +210,8 @@ describe('SPECA-compatible security import', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ae-speca-outside-out-'));
     try {
       const result = spawnSync(
-        tsxBin,
-        [
+        process.execPath,
+        [tsxCli,
           resolve('src/cli/index.ts'),
           'security',
           'import-speca',
@@ -253,7 +253,7 @@ describe('SPECA-compatible security import', () => {
 
       expect(summary.source).toBe('fixtures/security-assurance/speca-like-input');
       expect(Object.values(summary.outputs).every((value) => !value.includes('\\'))).toBe(true);
-      expect(summary.outputs.claims).toBe(`${outDir}/security-claims.json`);
+      expect(summary.outputs.claims).toBe(`${outDir.replace(/\\/g, '/')}/security-claims.json`);
     } finally {
       rmSync(outDir, { recursive: true, force: true });
     }

@@ -172,7 +172,7 @@ function parseArgs(argv) {
 function discoverSources(sourcePatterns) {
   const matches = new Set();
   for (const pattern of sourcePatterns) {
-    for (const sourcePath of globSync(pattern, { nodir: true })) {
+    for (const sourcePath of globSync(pattern, { nodir: true, windowsPathsNoEscape: true })) {
       matches.add(canonicalizeExistingPath(sourcePath));
     }
   }
@@ -321,7 +321,7 @@ function resolveDiscoveryPackFile(candidates) {
   const matches = new Set();
   for (const candidate of candidates) {
     if (candidate.includes('*') || candidate.includes('{')) {
-      for (const file of globSync(candidate, { nodir: true })) {
+      for (const file of globSync(candidate, { nodir: true, windowsPathsNoEscape: true })) {
         matches.add(canonicalizeExistingPath(file));
       }
       continue;

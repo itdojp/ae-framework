@@ -6,6 +6,7 @@ import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
 
 const execFileAsync = promisify(execFile);
+const toBashArgs = (values: string[]) => values.map((value) => value.replaceAll('\\', '/'));
 const scriptPath = process.env.KVONCE_CONFORMANCE_SCRIPT_PATH
   ? resolve(process.cwd(), process.env.KVONCE_CONFORMANCE_SCRIPT_PATH)
   : resolve(process.cwd(), 'scripts/trace/run-kvonce-conformance.sh');
@@ -40,7 +41,7 @@ describe('run-kvonce-conformance.sh', () => {
   it('produces projection and validation for NDJSON sample', async () => {
     await withTempDir(async (dir) => {
       const outputDir = join(dir, 'ndjson');
-      await execFileAsync('bash', [scriptPath, '--input', 'samples/trace/kvonce-sample.ndjson', '--format', 'ndjson', '--output-dir', outputDir]);
+      await execFileAsync('bash', toBashArgs([scriptPath, '--input', 'samples/trace/kvonce-sample.ndjson', '--format', 'ndjson', '--output-dir', outputDir]));
 
       const projection = JSON.parse(await readFile(join(outputDir, 'kvonce-projection.json'), 'utf8'));
       const stateSequencePath = projection.outputs?.stateSequence
@@ -62,7 +63,7 @@ describe('run-kvonce-conformance.sh', () => {
     await withTempDir(async (dir) => {
       const payload = resolve('samples/trace/kvonce-otlp.json');
       const outputDir = join(dir, 'otlp');
-      await execFileAsync('bash', [scriptPath, '--input', payload, '--format', 'otlp', '--output-dir', outputDir]);
+      await execFileAsync('bash', toBashArgs([scriptPath, '--input', payload, '--format', 'otlp', '--output-dir', outputDir]));
 
       const validation = JSON.parse(await readFile(join(outputDir, 'kvonce-validation.json'), 'utf8'));
       expect(validation.valid).toBe(true);
@@ -73,8 +74,8 @@ describe('run-kvonce-conformance.sh', () => {
     await withTempDir(async (dir) => {
       const ndjsonOutputDir = join(dir, 'ndjson');
       const otlpOutputDir = join(dir, 'otlp');
-      await execFileAsync('bash', [scriptPath, '--input', 'samples/trace/kvonce-sample.ndjson', '--format', 'ndjson', '--output-dir', ndjsonOutputDir]);
-      await execFileAsync('bash', [scriptPath, '--input', 'samples/trace/kvonce-otlp.json', '--format', 'otlp', '--output-dir', otlpOutputDir]);
+      await execFileAsync('bash', toBashArgs([scriptPath, '--input', 'samples/trace/kvonce-sample.ndjson', '--format', 'ndjson', '--output-dir', ndjsonOutputDir]));
+      await execFileAsync('bash', toBashArgs([scriptPath, '--input', 'samples/trace/kvonce-otlp.json', '--format', 'otlp', '--output-dir', otlpOutputDir]));
 
       const ndjsonArtifacts = await listArtifacts(ndjsonOutputDir);
       const otlpArtifacts = await listArtifacts(otlpOutputDir);
@@ -103,7 +104,7 @@ python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
 `, 'utf8');
       await chmod(strictRealpath, 0o755);
       const outputDir = join(dir, 'ndjson');
-      await execFileAsync('bash', [scriptPath, '--input', 'samples/trace/kvonce-sample.ndjson', '--format', 'ndjson', '--output-dir', outputDir], {
+      await execFileAsync('bash', toBashArgs([scriptPath, '--input', 'samples/trace/kvonce-sample.ndjson', '--format', 'ndjson', '--output-dir', outputDir]), {
         env: {
           ...process.env,
           PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`,
@@ -123,7 +124,7 @@ python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
       ].join('\n');
       await writeFile(invalid, lines, 'utf8');
 
-      const result = await execFileAsync('bash', [scriptPath, '--input', invalid, '--format', 'ndjson', '--output-dir', join(dir, 'out')]).catch((error) => error);
+      const result = await execFileAsync('bash', toBashArgs([scriptPath, '--input', invalid, '--format', 'ndjson', '--output-dir', join(dir, 'out')])).catch((error) => error);
       expect(result.code).not.toBe(0);
     });
   });

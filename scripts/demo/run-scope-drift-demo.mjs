@@ -164,6 +164,8 @@ function demoPaths(outputRoot) {
     boundaryJson: path.join(root, 'context-pack', DEMO_NAME, 'boundary-map-summary.json'),
     assuranceJson: path.join(root, 'assurance', DEMO_NAME, 'assurance-summary.json'),
     assuranceMd: path.join(root, 'assurance', DEMO_NAME, 'assurance-summary.md'),
+    claimManifestJson: path.join(root, 'assurance', 'claim-evidence-manifest.json'),
+    verifyLiteJson: path.join(root, 'verify-lite', 'verify-lite-run-summary.json'),
     planArtifactJson: path.join(root, 'plan', DEMO_NAME, 'high-risk-plan-artifact.json'),
     planValidationJson: path.join(root, 'plan', DEMO_NAME, 'plan-artifact-validation.json'),
     planValidationMd: path.join(root, 'plan', DEMO_NAME, 'plan-artifact-validation.md'),
@@ -400,6 +402,8 @@ function run(options) {
     '--assurance-summary', toRepoRelativePath(paths.assuranceJson),
     '--policy-gate-summary', toRepoRelativePath(paths.policyNormalJson),
     '--boundary-map-summary', toRepoRelativePath(paths.boundaryJson),
+    '--claim-evidence-manifest', toRepoRelativePath(paths.claimManifestJson),
+    '--verify-lite-summary', toRepoRelativePath(paths.verifyLiteJson),
     '--output-md', toRepoRelativePath(paths.reviewNormalMd),
     '--generated-at', options.generatedAt,
   ]);
@@ -411,6 +415,8 @@ function run(options) {
     '--assurance-summary', toRepoRelativePath(paths.assuranceJson),
     '--policy-gate-summary', toRepoRelativePath(paths.policyHighRiskJson),
     '--boundary-map-summary', toRepoRelativePath(paths.boundaryJson),
+    '--claim-evidence-manifest', toRepoRelativePath(paths.claimManifestJson),
+    '--verify-lite-summary', toRepoRelativePath(paths.verifyLiteJson),
     '--output-md', toRepoRelativePath(paths.reviewHighRiskMd),
     '--generated-at', options.generatedAt,
   ]);

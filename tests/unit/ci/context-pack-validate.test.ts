@@ -704,14 +704,18 @@ describe('context-pack validate CLI', () => {
   });
 
   it('escapes markdown table cells in validation report', async () => {
-    const dangerousName = 'invalid|<tag>.json';
+    const dangerousName = process.platform === 'win32' ? 'invalid-tag.json' : 'invalid|<tag>.json';
     await writeFile(join(sourcesDir, dangerousName), '<invalid-json>', 'utf8');
 
     const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'));
     expect(result.status).toBe(2);
 
     const markdown = await readFile(join(reportDir, 'context-pack-validate-report.md'), 'utf8');
-    expect(markdown).toContain('invalid\\|&lt;tag&gt;.json');
+    if (process.platform === 'win32') {
+      expect(markdown).toContain('invalid-tag.json');
+    } else {
+      expect(markdown).toContain('invalid\\|&lt;tag&gt;.json');
+    }
     expect(markdown).toContain('&lt;');
   });
 });

@@ -107,7 +107,7 @@ class DocumentationTester {
     const fileSet = new Set<string>();
 
     for (const pattern of patterns) {
-      const matches = await glob(pattern, { nodir: true });
+      const matches = await glob(pattern, { nodir: true, windowsPathsNoEscape: true });
       for (const file of matches) {
         fileSet.add(file);
       }

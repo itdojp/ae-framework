@@ -116,7 +116,7 @@ export function resolveValidationSources(
           if (content === null) {
             continue;
           }
-          resolvedSources.push({ path: path.relative(cwd, file), content });
+          resolvedSources.push({ path: path.relative(cwd, file).replace(/\\/g, '/'), content });
           if (resolvedSources.length >= sourceFileLimit) {
             break;
           }

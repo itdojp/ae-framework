@@ -28,6 +28,10 @@ interface QAFlakeOptions {
   workers?: string | number;
 }
 
+function toPortableTestPath(value: string): string {
+  return value.replace(/\\/gu, '/');
+}
+
 function parseWorkers(workers?: string | number): string | undefined {
   if (workers === undefined) return undefined;
   if (typeof workers === 'number') return String(workers);
@@ -69,7 +73,7 @@ async function detectTestRunner(): Promise<'jest' | 'vitest'> {
 async function detectTestFiles(pattern?: string): Promise<{ pattern: string; files: string[] }> {
   if (pattern) {
     try {
-      const files = await glob(pattern, { nodir: true });
+      const files = (await glob(pattern, { nodir: true })).map(toPortableTestPath);
       return { pattern, files: files.sort((left, right) => left.localeCompare(right)) };
     } catch {
       return { pattern, files: [] };
@@ -85,7 +89,7 @@ async function detectTestFiles(pattern?: string): Promise<{ pattern: string; fil
 
   for (const fallbackPattern of fallbackPatterns) {
     try {
-      const files = await glob(fallbackPattern, { nodir: true });
+      const files = (await glob(fallbackPattern, { nodir: true })).map(toPortableTestPath);
       if (files.length > 0) {
         return {
           pattern: fallbackPattern,

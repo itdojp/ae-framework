@@ -5,11 +5,11 @@
 // - Else, if FDR `refines` exists, run a typecheck (non-blocking summary).
 // - Else, if `cspmchecker` exists, run a typecheck (non-blocking summary).
 // - Else, report tool_not_available.
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 import { buildFormalRunnerOutput, buildLegacyFormalExecutionEvidence, extractToolVersion } from './execution-evidence.mjs';
+import { spawnToolSync } from './tool-invocation.mjs';
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -27,13 +27,13 @@ function parseArgs(argv) {
 }
 
 function commandExists(cmd) {
-  const result = spawnSync(cmd, [], { stdio: 'ignore' });
+  const result = spawnToolSync(cmd, [], { stdio: 'ignore' });
   if (result.error && result.error.code === 'ENOENT') return false;
   return true;
 }
 
 function runShell(cmd) {
-  const result = spawnSync(cmd, { shell: true, encoding: 'utf8' });
+  const result = spawnToolSync(cmd, [], { shell: true, encoding: 'utf8' });
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
   const output = `${stdout}${stderr}`.trim();
@@ -49,7 +49,7 @@ function runShell(cmd) {
 }
 
 function runCommand(cmd, cmdArgs, options = {}) {
-  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8', cwd: options.cwd });
+  const result = spawnToolSync(cmd, cmdArgs, { encoding: 'utf8', cwd: options.cwd });
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
   const output = `${stdout}${stderr}`.trim();
@@ -109,6 +109,7 @@ if (args.help) {
 }
 
 const repoRoot = process.cwd();
+const cspxBin = process.env.AE_FORMAL_CSPX_BIN || 'cspx';
 const file = args.file || path.join('spec', 'csp', 'sample.cspm');
 const absFile = path.resolve(repoRoot, file);
 const outDir = path.join(repoRoot, 'artifacts', 'hermetic-reports', 'formal');
@@ -149,8 +150,8 @@ if (!fs.existsSync(absFile)) {
     outputFull = res.output || 'CSP_RUN_CMD produced no output';
     output = clamp(outputFull);
     backend = 'CSP_RUN_CMD';
-  } else if (commandExists('cspx')) {
-    toolVersion = extractToolVersion(runCommand('cspx', ['--version']).output);
+  } else if (commandExists(cspxBin)) {
+    toolVersion = extractToolVersion(runCommand(cspxBin, ['--version']).output);
     versionSource = toolVersion ? 'cli' : 'unavailable';
     // cspx (OSS): CI-first CSPM checker with JSON output.
     const rawMode = args.mode || 'typecheck';
@@ -175,7 +176,7 @@ if (!fs.existsSync(absFile)) {
     try { fs.rmSync(outFile, { force: true }); } catch {}
 
     const t0 = Date.now();
-    const res = runCommand('cspx', cspxArgs);
+    const res = runCommand(cspxBin, cspxArgs);
     timeMs = res.available ? (Date.now() - t0) : null;
     ran = res.available;
     exitCode = res.status;

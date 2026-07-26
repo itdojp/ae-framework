@@ -54,14 +54,15 @@ exit 0
     try {
       mkdirSync(join(sandbox, 'spec/lean'), { recursive: true });
       const bin = join(sandbox, 'bin');
-      writeExecutable(join(bin, 'lake'), `#!/bin/sh
-if [ "$1" = "--version" ]; then
-  printf '%s\n' 'Lake version 5.0.0 (Lean version 4.19.0)'
-fi
-exit 0
+      const lakeBin = join(bin, 'lake.mjs');
+      writeExecutable(lakeBin, `
+if (process.argv[2] === '--version') {
+  console.log('Lake version 5.0.0 (Lean version 4.19.0)');
+}
 `);
       const result = runRunner(sandbox, 'scripts/formal/verify-lean.mjs', {
         PATH: `${bin}${delimiter}${process.env.PATH || ''}`,
+        AE_FORMAL_LEAN_BIN: lakeBin,
       });
       expect(result.status, result.stderr || result.stdout).toBe(0);
       const summary = JSON.parse(readFileSync(

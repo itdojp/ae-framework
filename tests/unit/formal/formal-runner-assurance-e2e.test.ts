@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 
 const repoRoot = resolve('.');
 const localTmpRoot = resolve(repoRoot, '.codex-local/tmp');
@@ -33,20 +33,17 @@ describe('actual formal runner to Assurance evidence', () => {
       write(join(sandbox, 'tools/tla2tools.jar'), 'fixture-tla-jar');
       write(join(sandbox, 'tools/alloy.jar'), 'fixture-alloy-jar');
       const fakeBin = join(sandbox, 'fake-bin');
-      const fakeJava = join(fakeBin, 'java');
-      write(fakeJava, `#!/bin/sh
-case "$*" in
-  *"tlc2.TLC -version"*) printf '%s\\n' 'TLC2 Version 2.20.0';;
-  *"tlc2.TLC"*) printf '%s\\n' 'Model checking completed. No error has been found.';;
-  *"alloy.jar version"*) printf '%s\\n' 'Alloy 6.2.0';;
-  *"alloy.jar exec"*) printf '%s\\n' 'Alloy execution completed without a counterexample.';;
-  *) printf '%s\\n' 'OpenJDK 17.0.12';;
-esac
-exit 0
+      const javaBin = join(fakeBin, 'java.mjs');
+      write(javaBin, `const args = process.argv.slice(2).join(' ');
+if (args.includes('tlc2.TLC -version')) console.log('TLC2 Version 2.20.0');
+else if (args.includes('tlc2.TLC')) console.log('Model checking completed. No error has been found.');
+else if (args.includes('alloy.jar version')) console.log('Alloy 6.2.0');
+else if (args.includes('alloy.jar exec')) console.log('Alloy execution completed without a counterexample.');
+else console.log('OpenJDK 17.0.12');
 `);
-      chmodSync(fakeJava, 0o755);
       const env = {
-        PATH: `${fakeBin}:/usr/bin:/bin`,
+        PATH: `${fakeBin}${delimiter}${process.env.PATH || ''}`,
+        AE_FORMAL_JAVA_BIN: javaBin,
         TLA_TOOLS_JAR: join(sandbox, 'tools/tla2tools.jar'),
         ALLOY_JAR: join(sandbox, 'tools/alloy.jar'),
         GIT_COMMIT: '0123456789abcdef0123456789abcdef01234567',

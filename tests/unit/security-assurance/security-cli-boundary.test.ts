@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, 
 import { tmpdir } from 'node:os';
 import path, { join, resolve } from 'node:path';
 
-const tsxBin = resolve('node_modules/.bin/tsx');
+const tsxCli = resolve('node_modules/tsx/dist/cli.mjs');
 const inputSpec = 'fixtures/security-assurance/extract-claims/spec.md';
 const scopePath = 'fixtures/security-assurance/sample.security-audit-scope.json';
 const targetPath = 'fixtures/security-assurance/code-map-target';
@@ -19,7 +19,7 @@ const cliEnv = {
 };
 
 function runSecurity(args: string[], options: { cwd?: string } = {}) {
-  return spawnSync(tsxBin, ['src/cli/index.ts', 'security', ...args], {
+  return spawnSync(process.execPath, [tsxCli, 'src/cli/index.ts', 'security', ...args], {
     cwd: options.cwd,
     encoding: 'utf8',
     timeout: 60_000,

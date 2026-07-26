@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import yaml from 'yaml';
@@ -316,7 +316,7 @@ const sortLanes = (values) =>
 
 export function isExecutedAsMain(metaUrl, argvPath = process.argv[1]) {
   if (!argvPath) return false;
-  return metaUrl === `file://${path.resolve(argvPath)}`;
+  return metaUrl === pathToFileURL(path.resolve(argvPath)).href;
 }
 
 const pushWarning = (warnings, code, message, extra = {}) => {

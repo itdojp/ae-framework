@@ -1,2 +1,5 @@
 # Example for future use: Fixed cassettes for distribution (requires Git LFS)
 # cassettes/fixtures/* filter=lfs diff=lfs merge=lfs -text
+
+# Repository text fixtures and workflow sources are byte-stable across hosted OSes.
+* text=auto eol=lf

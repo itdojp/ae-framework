@@ -61,7 +61,10 @@ export function normalizeArtifactPath(value, { repoRoot = process.cwd() } = {}) 
 
   // Preserve UNC semantics: `\\server\share\...` should become `//server/share/...` after normalization.
   if (raw.startsWith('\\\\') || raw.startsWith('//')) {
-    if (path.isAbsolute(raw)) {
+    const sameFilesystemRoot = process.platform !== 'win32'
+      || path.parse(path.resolve(raw)).root.toLowerCase()
+        === path.parse(path.resolve(repoRoot)).root.toLowerCase();
+    if (path.isAbsolute(raw) && sameFilesystemRoot) {
       const root = canonicalizeExistingPath(repoRoot);
       const abs = canonicalizeExistingPath(raw);
       const rel = path.relative(root, abs);
