@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { existsSync, mkdirSync, rmSync, symlinkSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readlinkSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { createCodexTaskAdapter } from '../../../src/agents/codex-task-adapter.js';
@@ -141,7 +141,19 @@ describe('CodeX Task UI scaffold security boundary', () => {
       approval: { approved: true, scope: 'ui-scaffold' },
     }));
 
-    expect(response.shouldBlockProgress).toBe(true);
+    expect(response.shouldBlockProgress, JSON.stringify({
+      repoRoot: process.cwd(),
+      artifactRoot,
+      outside,
+      symlinkPath,
+      outputDir: relative(process.cwd(), symlinkPath),
+      linkExists: existsSync(symlinkPath),
+      linkType: lstatSync(symlinkPath).isSymbolicLink() ? 'symbolic-link' : 'other',
+      declaredTarget: readlinkSync(symlinkPath),
+      realRepoRoot: realpathSync.native(process.cwd()),
+      realLinkTarget: realpathSync.native(symlinkPath),
+      response,
+    }, null, 2)).toBe(true);
     expect(response.blockingReason).toBe('unsafe-ui-output-dir');
     expect(response.warnings).toEqual(expect.arrayContaining([
       expect.stringContaining('symlink outside the repository workspace'),
