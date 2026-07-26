@@ -101,4 +101,31 @@ fs.writeFileSync(process.env.FAKE_PNPM_RECORD, JSON.stringify(process.argv.slice
       ]);
     });
   });
+
+  it('fails deterministically when the pnpm process cannot start', async () => {
+    await withTempDir(async (dir) => {
+      const scriptPath = resolve('scripts/pipelines/run-trace-conformance.mjs');
+
+      await expect(execFileAsync(process.execPath, [
+        scriptPath,
+        '--input',
+        'samples/trace/kvonce-sample.ndjson',
+        '--output-dir',
+        join(dir, 'trace-output'),
+        '--summary-out',
+        join(dir, 'conformance-summary.json'),
+        '--skip-replay',
+        '--no-envelope',
+      ], {
+        env: {
+          ...process.env,
+          PATH: '',
+          npm_execpath: '',
+        },
+      })).rejects.toMatchObject({
+        code: 1,
+        stderr: expect.stringContaining('[pipelines:trace] failed to start pnpm:'),
+      });
+    });
+  });
 });

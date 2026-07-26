@@ -587,8 +587,11 @@ No additional configuration required.
 
     const hasForeignWindowsSyntax =
       process.platform !== 'win32' && (targetDir.includes('\\') || /^[A-Za-z]:/.test(targetDir));
-    if (this.hasControlOrNullByte(targetDir) || hasForeignWindowsSyntax) {
-      throw new Error('Plugin template target directory must not contain control characters, NUL bytes, backslashes, or Windows drive prefixes');
+    if (this.hasControlOrNullByte(targetDir)) {
+      throw new Error('Plugin template target directory must not contain control characters or NUL bytes');
+    }
+    if (hasForeignWindowsSyntax) {
+      throw new Error('Plugin template target directory must not use backslashes or Windows drive prefixes on this platform');
     }
 
     const resolvedProjectRoot = path.resolve(this.projectRoot);

@@ -112,11 +112,10 @@ const child = spawn(command.command, command.args, {
   env: process.env,
 });
 
-child.on('error', (error) => {
-  console.error(`[pipelines:trace] failed to start ${command.command}: ${error.message}`);
-});
-
-child.on('close', (code) => {
+let finalized = false;
+function finalize(code) {
+  if (finalized) return;
+  finalized = true;
   const exitCode = code ?? 1;
   if (opts.envelope) {
     try {
@@ -166,4 +165,13 @@ child.on('close', (code) => {
   }
 
   process.exit(exitCode);
+}
+
+child.once('error', (error) => {
+  console.error(`[pipelines:trace] failed to start ${command.command}: ${error.message}`);
+  finalize(1);
+});
+
+child.once('close', (code) => {
+  finalize(code);
 });
