@@ -9,15 +9,27 @@ const DEFAULT_TEARDOWN_TIMEOUT_MS = 10000;
 const isStryker = Boolean(process.env.STRYKER_MUTATOR);
 const isCiLike = isCI || isStryker;
 
+export function selectCiPool(
+  platform: NodeJS.Platform,
+  configuredPool: unknown,
+): 'forks' | 'threads' {
+  // Windows fork workers can retain subprocess handles after the unit files
+  // have completed. Preserve the unit project's reviewed thread pool on that
+  // platform; every unit file still runs, while other CI projects keep fork
+  // isolation.
+  return platform === 'win32' && configuredPool === 'threads' ? 'threads' : 'forks';
+}
+
 function withCiDefaults(config: Record<string, any>) {
   if (!isCiLike) {
     return config;
   }
+  const pool = selectCiPool(process.platform, config.pool);
   return {
     ...config,
     watch: false,
-    pool: 'forks',
-    threads: false,
+    pool,
+    ...(pool === 'forks' ? { threads: false } : {}),
     testTimeout: Math.max(DEFAULT_TEST_TIMEOUT_MS, config.testTimeout ?? DEFAULT_TEST_TIMEOUT_MS),
     hookTimeout: Math.max(DEFAULT_HOOK_TIMEOUT_MS, config.hookTimeout ?? DEFAULT_HOOK_TIMEOUT_MS),
     teardownTimeout: Math.max(DEFAULT_TEARDOWN_TIMEOUT_MS, config.teardownTimeout ?? DEFAULT_TEARDOWN_TIMEOUT_MS),
