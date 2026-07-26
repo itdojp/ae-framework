@@ -303,8 +303,8 @@ export function runSpinVerification(argv = process.argv) {
 
   try { fs.writeFileSync(outLog, outputFull || output, 'utf-8'); } catch {}
 
-  const relativeInput = path.relative(repoRoot, absFile);
-  const relativeLog = path.relative(repoRoot, outLog);
+  const relativeInput = path.relative(repoRoot, absFile).replaceAll('\\', '/');
+  const relativeLog = path.relative(repoRoot, outLog).replaceAll('\\', '/');
   const executionEvidence = buildLegacyFormalExecutionEvidence({
     runner: 'spin',
     toolName: 'SPIN',

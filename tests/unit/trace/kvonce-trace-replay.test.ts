@@ -8,6 +8,16 @@ import { execFile } from 'node:child_process';
 const execFileAsync = promisify(execFile);
 const scriptPath = resolve(__dirname, '../../../scripts/trace/run-kvonce-trace-replay.mjs');
 
+const withEnvironmentOverrides = (overrides: NodeJS.ProcessEnv): NodeJS.ProcessEnv => {
+  const overriddenKeys = new Set(Object.keys(overrides).map((key) => key.toLowerCase()));
+  return {
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(([key]) => !overriddenKeys.has(key.toLowerCase())),
+    ),
+    ...overrides,
+  };
+};
+
 async function withTempDir(fn: (dir: string) => Promise<void>) {
   const dir = await mkdtemp(join(tmpdir(), 'kvonce-replay-'));
   try {
@@ -59,11 +69,10 @@ fs.writeFileSync(process.env.FAKE_PNPM_RECORD, JSON.stringify(process.argv.slice
         '--output-dir',
         outputDir,
       ], {
-        env: {
-          ...process.env,
+        env: withEnvironmentOverrides({
           npm_execpath: fakePnpm,
           FAKE_PNPM_RECORD: recordPath,
-        },
+        }),
       });
 
       expect(JSON.parse(await readFile(recordPath, 'utf8'))).toEqual([

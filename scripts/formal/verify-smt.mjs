@@ -198,8 +198,10 @@ export function runSmtVerification(argv = process.argv) {
 
   try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
 
-  const relativeInput = file ? path.relative(repoRoot, path.resolve(repoRoot, file)) : 'SMT input not supplied';
-  const relativeLog = path.relative(repoRoot, outLog);
+  const relativeInput = file
+    ? path.relative(repoRoot, path.resolve(repoRoot, file)).replaceAll('\\', '/')
+    : 'SMT input not supplied';
+  const relativeLog = path.relative(repoRoot, outLog).replaceAll('\\', '/');
   const executionEvidence = buildLegacyFormalExecutionEvidence({
     runner: 'smt',
     toolName: solver,

@@ -144,7 +144,8 @@ function normalizeRepoPaths(value) {
   const repoRoot = process.cwd();
   const normalizeString = (text) => String(text)
     .split(`${repoRoot}${path.sep}`).join('')
-    .split(`${repoRoot}/`).join('');
+    .split(`${repoRoot}/`).join('')
+    .split(path.sep).join('/');
   if (Array.isArray(value)) return value.map((entry) => normalizeRepoPaths(entry));
   if (value && typeof value === 'object') {
     return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalizeRepoPaths(entry)]));

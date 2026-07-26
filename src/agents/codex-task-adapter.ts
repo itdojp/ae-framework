@@ -360,6 +360,11 @@ function findExistingAncestor(absolutePath: string): string {
 
 function hasEscapingSymbolicLink(rootPath: string, candidatePath: string): boolean {
   const absoluteRoot = path.resolve(rootPath);
+  const isWithinRoot = (targetPath: string): boolean => {
+    const targetRelative = path.relative(absoluteRoot, targetPath);
+    return targetRelative === ''
+      || (!targetRelative.startsWith('..') && !path.isAbsolute(targetRelative));
+  };
   const relative = path.relative(absoluteRoot, candidatePath);
   if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {
     return false;
@@ -369,6 +374,8 @@ function hasEscapingSymbolicLink(rootPath: string, candidatePath: string): boole
   for (const segment of relative.split(path.sep)) {
     current = path.join(current, segment);
     if (!fs.lstatSync(current).isSymbolicLink()) continue;
+    const declaredTarget = path.resolve(path.dirname(current), fs.readlinkSync(current));
+    if (!isWithinRoot(declaredTarget)) return true;
     const realTarget = fs.realpathSync.native(current);
     const targetRelative = path.relative(realRoot, realTarget);
     if (targetRelative && (targetRelative.startsWith('..') || path.isAbsolute(targetRelative))) return true;

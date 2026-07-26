@@ -25,6 +25,8 @@ const javaCommand = String(process.env.AE_FORMAL_JAVA_COMMAND || 'java').trim() 
 const curlCommand = String(process.env.AE_FORMAL_CURL_COMMAND || 'curl').trim() || 'curl';
 let artifactTempCounter = 0;
 
+const toRepositoryRelativePath = (filePath) => path.relative(repoRoot, filePath).replaceAll('\\', '/');
+
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
 }
@@ -132,7 +134,7 @@ async function buildToolDescriptor({
   return {
     name,
     ...version,
-    artifactPath: path.relative(repoRoot, artifactPath),
+    artifactPath: toRepositoryRelativePath(artifactPath),
     artifactSha256,
   };
 }
@@ -279,7 +281,7 @@ async function runTLC(modulePath, configPath) {
         signal: null,
         timeout: false,
         toolError: error instanceof Error ? error.message : String(error),
-        log: path.relative(repoRoot, logPath),
+        log: toRepositoryRelativePath(logPath),
       });
     });
     proc.on('exit', (code, signal) => {
@@ -292,7 +294,7 @@ async function runTLC(modulePath, configPath) {
         signal,
         timeout: timedOut,
         toolError: null,
-        log: path.relative(repoRoot, logPath),
+        log: toRepositoryRelativePath(logPath),
       });
     });
   });
@@ -346,7 +348,7 @@ async function main() {
       });
     } catch (error) {
       summary.tlc.errors.push({
-        file: path.relative(repoRoot, tlaJar),
+        file: toRepositoryRelativePath(tlaJar),
         error: error instanceof Error ? error.message : String(error),
       });
     }
@@ -356,7 +358,7 @@ async function main() {
           const moduleName = path.basename(f, '.tla');
           const configPath = await resolveTlaConfig(f);
           if (!configPath) {
-            summary.tlc.skipped.push(`${moduleName} (${path.relative(repoRoot, f)}): no .cfg found`);
+            summary.tlc.skipped.push(`${moduleName} (${toRepositoryRelativePath(f)}): no .cfg found`);
             summary.skippedInputs += 1;
             continue;
           }
@@ -367,7 +369,7 @@ async function main() {
             ok: res.ok,
             code: res.code,
             log: res.log,
-            config: path.relative(repoRoot, configPath),
+            config: toRepositoryRelativePath(configPath),
             executionStatus,
             ...(res.toolError ? { error: res.toolError } : {}),
             evidence: buildFormalExecutionEvidence({
@@ -377,11 +379,11 @@ async function main() {
               versionSource: tlaTool.versionSource,
               artifactSha256: tlaTool.artifactSha256,
               expectedArtifactSha256: tlaTool.expectedArtifactSha256,
-              inputPaths: [path.relative(repoRoot, f), path.relative(repoRoot, configPath)],
+              inputPaths: [toRepositoryRelativePath(f), toRepositoryRelativePath(configPath)],
               resultStatus: res.timeout ? 'timeout' : res.toolError ? 'tool-error' : res.ok ? 'ok' : 'failed',
               exitCode: res.code,
               logPath: res.log,
-              scope: `TLC module ${res.module} with configuration ${path.relative(repoRoot, configPath)}`,
+              scope: `TLC module ${res.module} with configuration ${toRepositoryRelativePath(configPath)}`,
               assumptions: [
                 'The result applies only to the supplied TLA+ module and TLC configuration.',
                 'The result does not establish correctness of implementation code outside the model.',
@@ -390,7 +392,7 @@ async function main() {
             }),
           });
         } catch (e) {
-          summary.tlc.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
+          summary.tlc.errors.push({ file: toRepositoryRelativePath(f), error: String(e) });
         }
       }
     }
@@ -419,7 +421,7 @@ async function main() {
         });
       } catch (error) {
         summary.alloy.errors.push({
-          file: path.relative(repoRoot, alloyJar),
+          file: toRepositoryRelativePath(alloyJar),
           error: error instanceof Error ? error.message : String(error),
         });
       }
@@ -461,7 +463,7 @@ async function main() {
             sh.on('error', (error) => {
               const message = error instanceof Error ? error.message : String(error);
               err += `${err ? '\n' : ''}${message}`;
-              void settle({ ok: false, code: null, signal: null, timeout: false, toolError: message, log: path.relative(repoRoot, logPath) });
+              void settle({ ok: false, code: null, signal: null, timeout: false, toolError: message, log: toRepositoryRelativePath(logPath) });
             });
             sh.on('exit', (code, signal) => {
               const timeout = timedOut;
@@ -473,10 +475,10 @@ async function main() {
                 failRegex = /Exception|ERROR|FAILED|Counterexample|assertion/i;
               }
               const okHeuristic = code === 0 && !timeout && !failRegex.test(out + err);
-              void settle({ ok: okHeuristic, code, signal, timeout, toolError: null, log: path.relative(repoRoot, logPath) });
+              void settle({ ok: okHeuristic, code, signal, timeout, toolError: null, log: toRepositoryRelativePath(logPath) });
             });
           });
-          const inputFile = path.relative(repoRoot, f);
+          const inputFile = toRepositoryRelativePath(f);
           const executionStatus = res.timeout ? 'timeout' : res.toolError ? 'tool-error' : 'executed';
           summary.alloy.results.push({
             file: inputFile,
@@ -507,12 +509,12 @@ async function main() {
             }),
           });
         } catch (e) {
-          summary.alloy.errors.push({ file: path.relative(repoRoot, f), error: String(e) });
+          summary.alloy.errors.push({ file: toRepositoryRelativePath(f), error: String(e) });
         }
       }
     } else {
       for (const file of alsFiles) {
-        summary.alloy.skipped.push(`${path.relative(repoRoot, file)}: no Alloy jar available`);
+        summary.alloy.skipped.push(`${toRepositoryRelativePath(file)}: no Alloy jar available`);
         summary.skippedInputs += 1;
       }
     }
@@ -541,7 +543,7 @@ async function main() {
   }
   const out = path.join(outDir, 'model-check.json');
   await writeModelCheckArtifact(out, JSON.stringify(summary, null, 2));
-  console.log('Model check summary written to', path.relative(repoRoot, out));
+  console.log('Model check summary written to', toRepositoryRelativePath(out));
 }
 
 main().catch((e) => {

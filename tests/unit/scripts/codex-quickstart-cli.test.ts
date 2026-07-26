@@ -71,7 +71,7 @@ describe('codex quickstart cli resolution', () => {
     );
     expect(result.ok).toBe(true);
     expect(result.built).toBe(true);
-    expect(result.cliPath).toContain(CLI_CANDIDATES[0]);
+    expect(result.cliPath).toBe(expectedCliPath);
   });
 
   it('returns failure when build succeeds but CLI is still missing', () => {
