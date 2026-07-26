@@ -20,6 +20,12 @@ concurrency:
   cancel-in-progress: true
 
 permissions: read-all
+
+# Ignore mutable runner-level npm configuration. The repository .npmrc is the
+# reviewed authority for lockfile behavior on every nightly platform.
+env:
+  NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+
 jobs:
   matrix-test:
     if: >-
@@ -40,9 +46,16 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: ${{ matrix.node }}
-      # Exception (nightly lane): fallback is retained to keep scheduled signal available even with transient lockfile drift.
-      # Review condition: remove fallback once lockfile update automation covers nightly inputs.
-      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Confirm lockfile authority
+        shell: bash
+        run: |
+          printf 'pnpm=%s lockfile=%s userconfig=%s\n' \
+            "$(pnpm --version)" \
+            "$(pnpm config get lockfile)" \
+            "${NPM_CONFIG_USERCONFIG}"
+          test "$(pnpm config get lockfile)" = "true"
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
       - run: pnpm run test:${{ matrix.kind }}
   perf:
     if: >-
@@ -57,6 +70,13 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '22'
+      - name: Confirm lockfile authority
+        run: |
+          printf 'pnpm=%s lockfile=%s userconfig=%s\n' \
+            "$(pnpm --version)" \
+            "$(pnpm config get lockfile)" \
+            "${NPM_CONFIG_USERCONFIG}"
+          test "$(pnpm config get lockfile)" = "true"
       - name: Root layout guard (pre-install)
         run: node scripts/ci/check-root-layout.mjs
       - name: TODO/FIXME issue reference guard
@@ -89,6 +109,13 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Confirm lockfile authority
+        run: |
+          printf 'pnpm=%s lockfile=%s userconfig=%s\n' \
+            "$(pnpm --version)" \
+            "$(pnpm config get lockfile)" \
+            "${NPM_CONFIG_USERCONFIG}"
+          test "$(pnpm config get lockfile)" = "true"
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: Build

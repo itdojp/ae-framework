@@ -87,6 +87,9 @@ fi
 cat > pan <<'PAN'
 #!/bin/sh
 printf '%s\\n' "$*" > "\${FAKE_PAN_TRACE_FILE}"
+if [ "\${FAKE_PAN_HANG:-0}" = "1" ]; then
+  while :; do :; done
+fi
 printf '%b' "\${FAKE_PAN_OUTPUT-}"
 if [ "\${FAKE_PAN_TRAIL:-0}" = "1" ]; then
   : > model.pml.trail
@@ -107,6 +110,7 @@ function runFakeSpin({
   timeout = false,
   ltl = 'p_done',
   maxDepth = 10000,
+  hang = false,
 }: {
   output?: string;
   exitCode?: number;
@@ -114,13 +118,14 @@ function runFakeSpin({
   timeout?: boolean;
   ltl?: string | null;
   maxDepth?: number;
+  hang?: boolean;
 } = {}) {
   const { sandbox, binDir } = createSandbox();
   const spinTrace = join(sandbox, 'spin-args.txt');
   const panTrace = join(sandbox, 'pan-args.txt');
   const cliArgs = [scriptPath, '--file', 'model.pml', '--max-depth', String(maxDepth)];
   if (ltl) cliArgs.push('--ltl', ltl);
-  if (timeout) cliArgs.push('--timeout', '1000');
+  if (timeout) cliArgs.push('--timeout', '50');
   const result = spawnSync(process.execPath, cliArgs, {
     cwd: sandbox,
     encoding: 'utf8',
@@ -132,6 +137,7 @@ function runFakeSpin({
       FAKE_PAN_OUTPUT: output,
       FAKE_PAN_EXIT_CODE: String(exitCode),
       FAKE_PAN_TRAIL: trail ? '1' : '0',
+      FAKE_PAN_HANG: hang ? '1' : '0',
     },
   });
   const summaryPath = join(sandbox, 'artifacts/hermetic-reports/formal/spin-summary.json');
@@ -305,11 +311,17 @@ describe('verify-spin semantic evidence', () => {
   });
 
   it('distinguishes Pan timeout evidence from generic failure', () => {
-    const { result, summary } = runFakeSpin({ output: '', exitCode: 124, timeout: true });
+    const { result, summary } = runFakeSpin({ output: '', timeout: true, hang: true });
     expect(result.status).toBe(0);
-    expect(summary).toMatchObject({ ran: true, status: 'timeout', ok: null, exitCode: 124 });
+    expect(summary).toMatchObject({ ran: true, status: 'timeout', ok: null, exitCode: null });
     expect(summary.semanticResult).toMatchObject({ parsed: false, timeout: true, searchCompleted: false });
     expect(summary.runnerResult.executionEvidence.result.status).toBe('timeout');
+  });
+
+  it('does not infer timeout from a Pan-owned exit code 124', () => {
+    const { summary } = runFakeSpin({ output: '', exitCode: 124, timeout: true });
+    expect(summary).toMatchObject({ ran: true, status: 'failed', ok: false, exitCode: 124 });
+    expect(summary.semanticResult).toMatchObject({ timeout: false });
   });
 
   it('keeps a generic nonzero Pan result as failed execution evidence', () => {

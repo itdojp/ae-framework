@@ -53,6 +53,9 @@ fi
 if [ "$#" -eq 0 ]; then
   exit 0
 fi
+if [ "\${FAKE_SMT_HANG:-0}" = "1" ]; then
+  while :; do :; done
+fi
 printf '%b' "\${FAKE_SMT_STDOUT-sat\\n}"
 printf '%b' "\${FAKE_SMT_STDERR:-}" >&2
 exit "\${FAKE_SMT_EXIT_CODE:-0}"
@@ -67,17 +70,19 @@ function runFakeSmt({
   stderr = '',
   exitCode = 0,
   timeout = false,
+  hang = false,
 }: {
   expectedResult?: 'sat' | 'unsat';
   stdout?: string;
   stderr?: string;
   exitCode?: number;
   timeout?: boolean;
+  hang?: boolean;
 }) {
   const { sandbox, binDir } = createSandbox();
   const cliArgs = [scriptPath, '--solver=z3', '--file', 'input.smt2'];
   if (expectedResult) cliArgs.push('--expected-result', expectedResult);
-  if (timeout) cliArgs.push('--timeout', '1000');
+  if (timeout) cliArgs.push('--timeout', '50');
   const result = spawnSync(process.execPath, cliArgs, {
     cwd: sandbox,
     encoding: 'utf8',
@@ -87,6 +92,7 @@ function runFakeSmt({
       FAKE_SMT_STDOUT: stdout,
       FAKE_SMT_STDERR: stderr,
       FAKE_SMT_EXIT_CODE: String(exitCode),
+      FAKE_SMT_HANG: hang ? '1' : '0',
     },
   });
   const summaryPath = join(sandbox, 'artifacts/hermetic-reports/formal/smt-summary.json');
@@ -228,11 +234,17 @@ describe('verify-smt semantic evidence', () => {
   });
 
   it('distinguishes a timeout from a generic nonzero solver exit', () => {
-    const { result, summary } = runFakeSmt({ expectedResult: 'sat', stdout: '', exitCode: 124, timeout: true });
+    const { result, summary } = runFakeSmt({ expectedResult: 'sat', stdout: '', timeout: true, hang: true });
     expect(result.status).toBe(0);
-    expect(summary).toMatchObject({ ran: true, status: 'timeout', ok: null, exitCode: 124 });
+    expect(summary).toMatchObject({ ran: true, status: 'timeout', ok: null, exitCode: null });
     expect(summary.semanticResult).toMatchObject({ actualResult: null, matchesExpected: false, timeout: true });
     expect(summary.runnerResult.executionEvidence.result.status).toBe('timeout');
+  });
+
+  it('does not infer timeout from a solver-owned exit code 124', () => {
+    const { summary } = runFakeSmt({ expectedResult: 'sat', stdout: '', exitCode: 124, timeout: true });
+    expect(summary).toMatchObject({ ran: true, status: 'failed', ok: false, exitCode: 124 });
+    expect(summary.semanticResult).toMatchObject({ timeout: false });
   });
 
   it('keeps a missing expectation as an execution report but does not mark it ok', () => {

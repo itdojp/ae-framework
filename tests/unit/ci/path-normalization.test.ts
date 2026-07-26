@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { normalizeArtifactPath as normalizeTs } from '../../../src/utils/path-normalization.js';
@@ -42,6 +44,24 @@ describe('normalizeArtifactPath contract', () => {
     expect(normalizeNode(input, { repoRoot })).toBe('/tmp/external.json');
   });
 
+  it('resolves filesystem aliases before applying the repository boundary', async () => {
+    const normalizeNode = await loadNodeNormalizer();
+    const parent = mkdtempSync(path.join(tmpdir(), 'path-normalization-alias-'));
+    const repoRoot = path.join(parent, 'repo');
+    const aliasRoot = path.join(parent, 'repo-alias');
+    const reportPath = path.join(repoRoot, 'artifacts', 'report.json');
+    try {
+      mkdirSync(path.dirname(reportPath), { recursive: true });
+      writeFileSync(reportPath, '{}\n');
+      symlinkSync(repoRoot, aliasRoot, 'junction');
+      const aliasedReport = path.join(aliasRoot, 'artifacts', 'report.json');
+      expect(normalizeTs(aliasedReport, { repoRoot })).toBe('artifacts/report.json');
+      expect(normalizeNode(aliasedReport, { repoRoot })).toBe('artifacts/report.json');
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
   it('normalizes Windows drive-letter paths as external on POSIX hosts', async () => {
     const normalizeNode = await loadNodeNormalizer();
     const input = 'C:\\\\repo\\\\artifacts\\\\a.json';
@@ -66,4 +86,3 @@ describe('normalizeArtifactPath contract', () => {
     expect(normalizeNode(input)).toBe(expected);
   });
 });
-

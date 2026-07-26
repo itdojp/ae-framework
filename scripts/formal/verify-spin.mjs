@@ -163,14 +163,23 @@ function commandExists(cmd) {
 }
 
 function runCommand(cmd, cmdArgs, options = {}) {
-  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8', cwd: options.cwd });
+  const result = spawnSync(cmd, cmdArgs, {
+    encoding: 'utf8',
+    cwd: options.cwd,
+    ...(options.timeoutMs > 0 ? { timeout: options.timeoutMs, killSignal: 'SIGTERM' } : {}),
+  });
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
-  const output = `${stdout}${stderr}`;
-  if (result.error) {
-    return { available: false, status: result.status ?? null, stdout, stderr, output: output || (result.error.message ?? ''), errorCode: result.error.code ?? null };
+  let output = `${stdout}${stderr}`;
+  const errorCode = result.error?.code ?? null;
+  const timedOut = errorCode === 'ETIMEDOUT';
+  if (result.error && !timedOut) {
+    return { available: false, status: result.status ?? null, stdout, stderr, output: output || (result.error.message ?? ''), errorCode, timedOut: false };
   }
-  return { available: true, status: result.status ?? null, stdout, stderr, output, errorCode: null };
+  if (timedOut && !output && result.error?.message) {
+    output = result.error.message;
+  }
+  return { available: true, status: result.status ?? null, stdout, stderr, output, errorCode, timedOut };
 }
 
 function clamp(value, length = 4000) {
@@ -190,7 +199,6 @@ export function runSpinVerification(argv = process.argv) {
   const absFile = path.resolve(repoRoot, file);
   const ltl = normalizeProperty(args.ltl);
   const timeoutMs = Number.isFinite(Number(args.timeout)) ? Number(args.timeout) : 0;
-  const timeoutSec = timeoutMs > 0 ? Math.max(1, Math.floor(timeoutMs / 1000)) : 0;
   const maxDepth = normalizeMaxDepth(args.maxDepth);
   const panArgs = ['-a', `-m${maxDepth}`];
   if (ltl) panArgs.push('-N', ltl);
@@ -258,11 +266,8 @@ export function runSpinVerification(argv = process.argv) {
           outputFull = [gen.output, cc.output].filter(Boolean).join('\n');
           output = clamp(outputFull);
         } else {
-          const haveTimeout = commandExists('timeout');
-          const runSpec = (timeoutSec > 0 && haveTimeout)
-            ? { cmd: 'timeout', args: [`${timeoutSec}s`, './pan', ...panArgs] }
-            : { cmd: './pan', args: panArgs };
-          const pan = runCommand(runSpec.cmd, runSpec.args, { cwd: tmp });
+          const runSpec = { cmd: './pan', args: panArgs };
+          const pan = runCommand(runSpec.cmd, runSpec.args, { cwd: tmp, timeoutMs });
           ran = pan.available;
           exitCode = pan.status;
           if (!pan.available) {
@@ -270,7 +275,7 @@ export function runSpinVerification(argv = process.argv) {
             outputFull = pan.output || 'Failed to execute pan';
             output = clamp(outputFull);
           } else {
-            const timedOut = timeoutSec > 0 && haveTimeout && pan.status === 124;
+            const timedOut = pan.timedOut === true;
             const trailPresent = fs.readdirSync(tmp).some((entry) => entry.endsWith('.trail'));
             semanticResult = parseSpinSemanticResult({
               output: pan.output,

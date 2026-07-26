@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
@@ -86,6 +86,31 @@ describe('run-kvonce-conformance.sh', () => {
         'projected/kvonce-state-sequence.json',
       ]);
       expect(otlpArtifacts).toEqual(ndjsonArtifacts);
+    });
+  });
+
+  it('materializes NDJSON when realpath rejects a missing output leaf', async () => {
+    await withTempDir(async (dir) => {
+      const binDir = join(dir, 'bin');
+      await mkdir(binDir, { recursive: true });
+      const strictRealpath = join(binDir, 'realpath');
+      await writeFile(strictRealpath, `#!/bin/sh
+if [ ! -e "$1" ]; then
+  printf 'realpath: %s: No such file or directory\\n' "$1" >&2
+  exit 1
+fi
+python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
+`, 'utf8');
+      await chmod(strictRealpath, 0o755);
+      const outputDir = join(dir, 'ndjson');
+      await execFileAsync('bash', [scriptPath, '--input', 'samples/trace/kvonce-sample.ndjson', '--format', 'ndjson', '--output-dir', outputDir], {
+        env: {
+          ...process.env,
+          PATH: `${binDir}:${process.env.PATH ?? ''}`,
+          KVONCE_REALPATH_CMD: 'realpath',
+        },
+      });
+      expect(JSON.parse(await readFile(join(outputDir, 'kvonce-validation.json'), 'utf8')).valid).toBe(true);
     });
   });
 

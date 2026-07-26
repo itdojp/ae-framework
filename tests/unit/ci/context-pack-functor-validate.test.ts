@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -163,6 +163,27 @@ export function reserveInventory(item: InventoryItem, quantity: number): boolean
     expect(report.summary.totalViolations).toBe(0);
     expect(report.mappingObjectCount).toBe(1);
     expect(report.mappingMorphismCount).toBe(1);
+  });
+
+  it('excludes the functor map when the CLI path uses a filesystem alias', async () => {
+    await writeContextPack();
+    await writeFileInWorkdir('src/domain/item.ts', 'export type InventoryItem = { id: string };\n');
+    await writeFileInWorkdir('src/domain/reserve.ts', 'export function reserveInventory(): boolean { return true; }\n');
+    await writeMap({
+      schemaVersion: 'context-pack-functor-map/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      objects: [{ id: 'InventoryItem', moduleGlobs: ['src/domain/**/*.ts'] }],
+      morphisms: [{ id: 'ReserveInventory', entrypoints: [{ file: 'src/domain/reserve.ts', symbol: 'reserveInventory' }] }],
+    });
+    const aliasDir = join(workdir, 'context-pack-alias');
+    await symlink(contextPackDir, aliasDir, 'junction');
+    mapPath = join(aliasDir, 'functor-map.json');
+
+    const result = runVerify();
+    expect(result.status).toBe(0);
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.scannedContextPackFiles).toBe(1);
+    expect(report.mapPath).toBe('spec/context-pack/functor-map.json');
   });
 
   it('fails when context-pack object/morphism are not mapped', async () => {

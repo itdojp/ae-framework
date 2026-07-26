@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 
 const toPosixPath = (value: string): string => value.replace(/\\/g, '/');
@@ -16,6 +17,26 @@ const normalizeUncPath = (raw: string): string => {
 export type NormalizeArtifactPathOptions = {
   repoRoot?: string;
 };
+
+type CanonicalizeExistingPathOptions = {
+  base?: string;
+};
+
+/** Resolve filesystem aliases for paths that exist, without inventing a path for missing inputs. */
+function canonicalizeExistingPath(
+  value: string,
+  options: CanonicalizeExistingPathOptions = {},
+): string {
+  const resolved = path.resolve(options.base ?? process.cwd(), value);
+  try {
+    return fs.realpathSync.native(resolved);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code === 'ENOENT' || (error as NodeJS.ErrnoException)?.code === 'ENOTDIR') {
+      return path.normalize(resolved);
+    }
+    throw error;
+  }
+}
 
 /**
  * Normalize a path string for artifacts/reports JSON.
@@ -38,8 +59,8 @@ export function normalizeArtifactPath(
   // Preserve UNC semantics: `\\server\share\...` should become `//server/share/...` after normalization.
   if (raw.startsWith('\\\\') || raw.startsWith('//')) {
     if (path.isAbsolute(raw)) {
-      const root = path.resolve(repoRoot);
-      const abs = path.resolve(raw);
+      const root = canonicalizeExistingPath(repoRoot);
+      const abs = canonicalizeExistingPath(raw);
       const rel = path.relative(root, abs);
       if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
         return path.posix.normalize(toPosixPath(rel));
@@ -56,8 +77,8 @@ export function normalizeArtifactPath(
 
   // POSIX absolute path: convert to repo-relative when inside repoRoot.
   if (path.isAbsolute(raw)) {
-    const root = path.resolve(repoRoot);
-    const abs = path.resolve(raw);
+    const root = canonicalizeExistingPath(repoRoot);
+    const abs = canonicalizeExistingPath(raw);
     const rel = path.relative(root, abs);
     if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
       return path.posix.normalize(toPosixPath(rel));

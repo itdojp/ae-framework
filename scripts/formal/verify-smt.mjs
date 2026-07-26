@@ -85,12 +85,17 @@ function commandExists(cmd) {
   return true;
 }
 
-function runCommand(cmd, cmdArgs) {
-  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
+function runCommand(cmd, cmdArgs, { timeoutMs = 0 } = {}) {
+  const result = spawnSync(cmd, cmdArgs, {
+    encoding: 'utf8',
+    ...(timeoutMs > 0 ? { timeout: timeoutMs, killSignal: 'SIGTERM' } : {}),
+  });
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
   let output = `${stdout}${stderr}`;
-  if (result.error) {
+  const errorCode = result.error?.code ?? null;
+  const timedOut = errorCode === 'ETIMEDOUT';
+  if (result.error && !timedOut) {
     if (!output && result.error.message) {
       output = result.error.message;
     }
@@ -101,7 +106,11 @@ function runCommand(cmd, cmdArgs) {
       stderr,
       output,
       errorCode: result.error.code ?? null,
+      timedOut: false,
     };
+  }
+  if (timedOut && !output && result.error?.message) {
+    output = result.error.message;
   }
   return {
     available: true,
@@ -109,16 +118,16 @@ function runCommand(cmd, cmdArgs) {
     stdout,
     stderr,
     output,
-    errorCode: null,
+    errorCode,
+    timedOut,
   };
 }
 
 export function runSmtVerification(argv = process.argv) {
   const args = parseArgs(argv);
-  const timeoutSec = args.timeout ? Math.max(1, Math.floor(Number(args.timeout) / 1000)) : 0;
-  const haveTimeout = commandExists('timeout');
-  const timeoutRequested = timeoutSec > 0;
-  const timeoutIgnored = timeoutRequested && !haveTimeout;
+  const timeoutMs = Number.isFinite(Number(args.timeout)) && Number(args.timeout) > 0
+    ? Math.floor(Number(args.timeout))
+    : 0;
   if (args.help) {
     console.log('Usage: node scripts/formal/verify-smt.mjs [--solver=z3|cvc5] [--file path/to/input.smt2] [--expected-result sat|unsat] [--timeout <ms>]');
     console.log('See docs/quality/formal-tools-setup.md for solver setup.');
@@ -158,18 +167,13 @@ export function runSmtVerification(argv = process.argv) {
   } else if (solverSpec && commandExists(solverSpec.cmd)) {
     toolVersion = extractToolVersion(runCommand(solverSpec.cmd, ['--version']).output);
     versionSource = toolVersion ? 'cli' : 'unavailable';
-    const baseCmd = { cmd: solverSpec.cmd, args: [...solverSpec.args, file] };
-    const runSpec = (timeoutSec && haveTimeout)
-      ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
-      : baseCmd;
+    const runSpec = { cmd: solverSpec.cmd, args: [...solverSpec.args, file] };
     const t0 = Date.now();
-    const result = runCommand(runSpec.cmd, runSpec.args);
+    const result = runCommand(runSpec.cmd, runSpec.args, { timeoutMs });
     timeMs = Date.now() - t0;
     if (!result.available) {
       status = 'solver_not_available';
-      if (runSpec.cmd === 'timeout') {
-        output = `Command 'timeout' not found while invoking solver '${solver}'. See docs/quality/formal-tools-setup.md`;
-      } else if (result.errorCode && result.errorCode !== 'ENOENT') {
+      if (result.errorCode && result.errorCode !== 'ENOENT') {
         output = `Failed to execute solver '${solver}' (${result.errorCode}). See docs/quality/formal-tools-setup.md`;
       } else {
         output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
@@ -178,7 +182,7 @@ export function runSmtVerification(argv = process.argv) {
       output = result.output;
       ran = true;
       exitCode = result.status;
-      const timedOut = timeoutSec > 0 && haveTimeout && result.status === 124;
+      const timedOut = result.timedOut === true;
       semanticResult = parseSmtSemanticResult({
         stdout: result.stdout,
         expectedResult,
@@ -186,9 +190,6 @@ export function runSmtVerification(argv = process.argv) {
       });
       status = timedOut ? 'timeout' : (result.status === 0 ? 'ran' : 'failed');
       ok = status === 'ran' ? isSmtSemanticSuccess(semanticResult) : (status === 'failed' ? false : null);
-      if (timeoutIgnored) {
-        output = `Timeout requested (${timeoutSec}s) but 'timeout' is unavailable; running without timeout.\n${output}`;
-      }
     }
   } else {
     status = 'solver_not_available';

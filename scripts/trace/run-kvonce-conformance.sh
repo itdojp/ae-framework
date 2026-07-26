@@ -112,7 +112,7 @@ if [[ "${FORMAT}" == "otlp" ]]; then
   SOURCE_NDJSON="${NDJSON_PATH}"
 elif [[ "${FORMAT}" == "ndjson" ]]; then
   INPUT_REAL="$(kvonce_resolve_path "${INPUT}")"
-  NDJSON_REAL="$(kvonce_resolve_path "${NDJSON_PATH}")"
+  NDJSON_REAL="$(kvonce_resolve_output_path "${NDJSON_PATH}")"
 
   if [[ "${INPUT_REAL}" != "${NDJSON_REAL}" ]]; then
     cp "${INPUT}" "${NDJSON_PATH}"

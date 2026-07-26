@@ -8,6 +8,7 @@ import yaml from 'yaml';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import micromatch from 'micromatch';
+import { canonicalizeExistingPath, normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const DEFAULT_MAP_PATH = 'spec/context-pack/functor-map.json';
 const DEFAULT_SCHEMA_PATH = 'schema/context-pack-functor-map.schema.json';
@@ -17,8 +18,7 @@ const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.mts', '.cts']
 const JS_SPECIFIER_EXTENSIONS = ['.js', '.mjs', '.cjs'];
 const ROOT_DIR = path.resolve(process.cwd());
 
-const normalizePath = (value) => value.replace(/\\/g, '/');
-const toRelativePath = (absolutePath) => normalizePath(path.relative(process.cwd(), absolutePath) || '.');
+const toRelativePath = (absolutePath) => normalizeArtifactPath(absolutePath, { repoRoot: process.cwd() }) ?? '.';
 
 function printHelp() {
   process.stdout.write(`Context Pack Functor validator
@@ -198,7 +198,7 @@ function discoverSources(sourcePatterns) {
       ignore: ['**/node_modules/**', '**/.git/**'],
     });
     for (const filePath of files) {
-      matched.add(path.normalize(filePath));
+      matched.add(canonicalizeExistingPath(filePath));
     }
   }
   return Array.from(matched).sort((left, right) => left.localeCompare(right));
@@ -657,8 +657,8 @@ function validateFunctor(options) {
     ? options.contextPackSourcesOverride
     : mapPayload.contextPackSources;
   const discoveredContextPackFiles = discoverSources(sourcePatterns);
-  const normalizedMapPath = path.normalize(resolvedMapPath);
-  const contextPackFiles = discoveredContextPackFiles.filter((sourcePath) => path.normalize(sourcePath) !== normalizedMapPath);
+  const normalizedMapPath = canonicalizeExistingPath(resolvedMapPath);
+  const contextPackFiles = discoveredContextPackFiles.filter((sourcePath) => sourcePath !== normalizedMapPath);
   if (contextPackFiles.length === 0) {
     violations.push({
       type: 'context-pack-sources-empty',
