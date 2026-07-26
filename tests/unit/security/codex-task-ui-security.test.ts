@@ -123,7 +123,7 @@ describe('CodeX Task UI scaffold security boundary', () => {
     const symlinkPath = join(artifactRoot, `codex-ui-link-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     mkdirSync(outside, { recursive: true });
     try {
-      symlinkSync(outside, symlinkPath, 'dir');
+      symlinkSync(outside, symlinkPath, process.platform === 'win32' ? 'junction' : 'dir');
     } catch {
       rmSync(outside, { recursive: true, force: true });
       return;
@@ -155,7 +155,7 @@ describe('CodeX Task UI scaffold security boundary', () => {
     const symlinkPath = join(artifactRoot, `codex-ui-alias-${suffix}`);
     mkdirSync(target, { recursive: true });
     try {
-      symlinkSync(target, symlinkPath, 'dir');
+      symlinkSync(target, symlinkPath, process.platform === 'win32' ? 'junction' : 'dir');
     } catch {
       rmSync(target, { recursive: true, force: true });
       return;
