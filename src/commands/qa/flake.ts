@@ -28,6 +28,50 @@ interface QAFlakeOptions {
   workers?: string | number;
 }
 
+// Windows CreateProcess limits the complete command line to 32,767 UTF-16
+// code units. Keep a conservative budget after accounting for the executable,
+// fixed runner flags, quoting, and package-manager shim expansion.
+export const VITEST_COMMAND_LINE_BUDGET = 24_000;
+
+function estimatedQuotedArgLength(value: string): number {
+  // Doubling is a safe upper bound for Windows quote/backslash escaping.
+  return (value.length * 2) + 3;
+}
+
+export function chunkVitestFileArgs(
+  files: string[],
+  fixedArgs: string[],
+  budget = VITEST_COMMAND_LINE_BUDGET,
+): string[][] {
+  const fixedLength = fixedArgs.reduce((total, value) => total + estimatedQuotedArgLength(value), 0);
+  if (fixedLength >= budget) {
+    throw new Error(`fixed Vitest arguments exceed the command-line budget (${budget})`);
+  }
+
+  const batches: string[][] = [];
+  let current: string[] = [];
+  let currentLength = fixedLength;
+
+  for (const file of files) {
+    const fileLength = estimatedQuotedArgLength(file);
+    if (fixedLength + fileLength > budget) {
+      throw new Error(`test path exceeds the command-line budget: ${file}`);
+    }
+    if (current.length > 0 && currentLength + fileLength > budget) {
+      batches.push(current);
+      current = [];
+      currentLength = fixedLength;
+    }
+    current.push(file);
+    currentLength += fileLength;
+  }
+
+  if (current.length > 0) {
+    batches.push(current);
+  }
+  return batches;
+}
+
 function toPortableTestPath(value: string): string {
   return value.replace(/\\/gu, '/');
 }
@@ -139,73 +183,113 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
       });
     }
   }
+
+  let command: string;
+  let baseArgs: string[];
+  if (pm === 'pnpm') {
+    command = 'pnpm';
+    baseArgs = ['test'];
+  } else if (pm === 'npx') {
+    command = 'npx';
+    baseArgs = testRunner === 'vitest' ? ['vitest', 'run'] : ['jest'];
+  } else {
+    command = pm;
+    baseArgs = ['run', 'test'];
+  }
+
+  const runnerOptionArgs: string[] = [];
+  if (workers) {
+    const parsedWorkers = parseWorkers(workers);
+    if (parsedWorkers) {
+      if (testRunner === 'vitest') {
+        console.log(`[ae][flake] Warning: Using --maxWorkers ${parsedWorkers} (may conflict with existing config)`);
+      }
+      runnerOptionArgs.push('--maxWorkers', parsedWorkers);
+    }
+  }
+
+  let vitestFileBatches: string[][] = [[]];
+  if (testRunner === 'vitest') {
+    try {
+      if (testFiles.length > 0) {
+        vitestFileBatches = chunkVitestFileArgs(
+          testFiles,
+          [command, ...baseArgs, ...runnerOptionArgs],
+        );
+      } else if (concreteFallback) {
+        vitestFileBatches = [[concreteFallback]];
+      }
+    } catch (error) {
+      return err({
+        code: 'E_CONFIG',
+        key: 'pattern',
+        detail: error instanceof Error ? error.message : 'failed to prepare bounded Vitest arguments',
+      });
+    }
+    if (vitestFileBatches.length > 1) {
+      console.log(`[ae][flake] Split ${fileCount} matched files into ${vitestFileBatches.length} command-line-safe batches`);
+    }
+  }
   
   for (let i = 0; i < times; i++) {
     const seed = Math.floor(Math.random() * 1e9);
     console.log(`[ae][flake] Run ${i + 1}/${times} (seed=${seed})`);
     
-    // Build command args based on package manager and test runner
-    let command: string;
-    let args: string[] = [];
-    
-    if (pm === 'pnpm') {
-      command = 'pnpm';
-      args = ['test'];
-    } else if (pm === 'npx') {
-      command = 'npx';
-      args = testRunner === 'vitest' ? ['vitest', 'run'] : ['jest'];
-    } else {
-      command = pm;
-      args = ['run', 'test'];
-    }
-    
-    // Add test runner specific options
+    let runFailed = false;
+    let firstErrorDetail: string | undefined;
+    const runDeadline = Date.now() + timeoutMs;
+
     if (testRunner === 'vitest') {
-      // Vitest does not expand quoted globs and --dir accepts only a directory.
-      // Pass the reviewed, concrete glob matches as positional file filters.
-      if (testFiles.length > 0) {
-        args.push(...testFiles);
-      } else if (concreteFallback) {
-        // Preserve a concrete non-glob filter for repositories where discovery
-        // cannot enumerate files, while keeping the empty-match warning above.
-        args.push(concreteFallback);
-      }
-      if (workers) {
-        const parsedWorkers = parseWorkers(workers);
-        if (parsedWorkers) {
-          // Note: Some Vitest configurations may conflict with --maxWorkers
-          console.log(`[ae][flake] Warning: Using --maxWorkers ${parsedWorkers} (may conflict with existing config)`);
-          args.push('--maxWorkers', parsedWorkers);
+      for (let batchIndex = 0; batchIndex < vitestFileBatches.length; batchIndex += 1) {
+        const remainingTimeoutMs = runDeadline - Date.now();
+        if (remainingTimeoutMs <= 0) {
+          runFailed = true;
+          firstErrorDetail ??= `flake run exceeded the total timeout (${timeoutMs}ms)`;
+          break;
+        }
+        const batch = vitestFileBatches[batchIndex] ?? [];
+        const args = [...baseArgs, ...batch, ...runnerOptionArgs];
+        const stepName = vitestFileBatches.length === 1
+          ? `flake-run-${i + 1}`
+          : `flake-run-${i + 1}-batch-${batchIndex + 1}-of-${vitestFileBatches.length}`;
+        const result = await run(stepName, command, args, {
+          env: { ...process.env, AE_SEED: String(seed) },
+          stdio: 'inherit',
+          timeout: vitestFileBatches.length === 1 ? timeoutMs : remainingTimeoutMs,
+          killSignal: 'SIGTERM',
+        });
+        if (isErr(result)) {
+          runFailed = true;
+          if (!firstErrorDetail) {
+            firstErrorDetail = 'detail' in result.error ? result.error.detail : result.error.code;
+          }
         }
       }
     } else if (testRunner === 'jest') {
-      // Jest options - use finalPattern from detection 
+      const args = [...baseArgs];
       if (finalPattern) {
         args.push('--testPathPattern', finalPattern);
       }
-      if (workers) {
-        const parsedWorkers = parseWorkers(workers);
-        if (parsedWorkers) {
-          args.push('--maxWorkers', parsedWorkers);
-        }
+      args.push(...runnerOptionArgs);
+      const result = await run(`flake-run-${i + 1}`, command, args, {
+        env: { ...process.env, AE_SEED: String(seed) },
+        stdio: 'inherit',
+        timeout: timeoutMs,
+        killSignal: 'SIGTERM',
+      });
+      if (isErr(result)) {
+        runFailed = true;
+        firstErrorDetail = 'detail' in result.error ? result.error.detail : result.error.code;
       }
     }
-    
-    const result = await run(`flake-run-${i + 1}`, command, args, {
-      env: { ...process.env, AE_SEED: String(seed) }, 
-      stdio: 'inherit',
-      timeout: timeoutMs,
-      killSignal: 'SIGTERM'
-    });
-    
-    if (result.ok) {
+
+    if (!runFailed) {
       console.log(`[ae][flake] ✅ Run ${i + 1} passed`);
-    } else if (isErr(result)) { 
-      fails++; 
+    } else {
+      fails++;
       seeds.push(seed);
       failedSeeds.push({ seed, run: i + 1 });
-      const errorMsg = 'detail' in result.error ? result.error.detail : result.error.code;
-      console.log(`[ae][flake] ❌ Run ${i + 1} failed with seed=${seed} (${errorMsg ?? 'unknown error'})`);
+      console.log(`[ae][flake] ❌ Run ${i + 1} failed with seed=${seed} (${firstErrorDetail ?? 'unknown error'})`);
     }
   }
   
@@ -221,19 +305,11 @@ export async function qaFlake(options: QAFlakeOptions = {}): Promise<Result<{ fa
     console.log(`[ae][flake] Reproduction commands:`);
     if (testRunner === 'vitest') {
       failedSeeds.forEach(({ run, seed }) => {
-        const reproArgs = ['vitest', 'run'];
-        if (testFiles.length > 0) {
-          reproArgs.push(...testFiles);
-        } else if (concreteFallback) {
-          reproArgs.push(concreteFallback);
-        }
-        if (workers) {
-          const parsedWorkers = parseWorkers(workers);
-          if (parsedWorkers) {
-            reproArgs.push('--maxWorkers', parsedWorkers);
-          }
-        }
-        console.log(`[ae][flake]   Run ${run}: AE_SEED=${seed} npx ${reproArgs.join(' ')}`);
+        vitestFileBatches.forEach((batch, batchIndex) => {
+          const reproArgs = ['vitest', 'run', ...batch, ...runnerOptionArgs];
+          const batchLabel = vitestFileBatches.length === 1 ? '' : ` batch ${batchIndex + 1}/${vitestFileBatches.length}`;
+          console.log(`[ae][flake]   Run ${run}${batchLabel}: AE_SEED=${seed} npx ${reproArgs.join(' ')}`);
+        });
       });
     } else {
       failedSeeds.forEach(({ run, seed }) => {

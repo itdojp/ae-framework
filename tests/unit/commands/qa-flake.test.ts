@@ -6,7 +6,11 @@ vi.mock('../../../src/core/exec.js', () => ({
   run: runMock,
 }));
 
-import { qaFlake } from '../../../src/commands/qa/flake.js';
+import {
+  chunkVitestFileArgs,
+  qaFlake,
+  VITEST_COMMAND_LINE_BUDGET,
+} from '../../../src/commands/qa/flake.js';
 
 describe('qaFlake Vitest selection', () => {
   beforeEach(() => {
@@ -40,6 +44,41 @@ describe('qaFlake Vitest selection', () => {
     expect(args).toContain('tests/unit/formal/verify-spin-semantics.test.ts');
     expect(args).not.toContain('--dir');
     expect(args.slice(-2)).toEqual(['--maxWorkers', '1']);
+  });
+
+  it('chunks a large concrete selection below the Windows command-line budget', () => {
+    const files = Array.from(
+      { length: 1_000 },
+      (_, index) => `tests/unit/generated/${String(index).padStart(4, '0')}-${'x'.repeat(32)}.test.ts`,
+    );
+    const fixedArgs = ['pnpm', 'test', '--maxWorkers', '2'];
+    const batches = chunkVitestFileArgs(files, fixedArgs);
+
+    expect(batches.length).toBeGreaterThan(1);
+    expect(batches.flat()).toEqual(files);
+    for (const batch of batches) {
+      const estimatedLength = [...fixedArgs, ...batch]
+        .reduce((total, value) => total + (value.length * 2) + 3, 0);
+      expect(estimatedLength).toBeLessThanOrEqual(VITEST_COMMAND_LINE_BUDGET);
+    }
+  });
+
+  it('runs the default broad selection in bounded batches without dropping matches', async () => {
+    const result = await qaFlake({ times: 1, workers: 2 });
+
+    expect(result.ok).toBe(true);
+    expect(runMock.mock.calls.length).toBeGreaterThan(1);
+    const selectedFiles = runMock.mock.calls.flatMap((call) =>
+      (call[2] as string[]).filter((value) => value.startsWith('tests/')),
+    );
+    expect(selectedFiles.length).toBeGreaterThan(0);
+    expect(new Set(selectedFiles).size).toBe(selectedFiles.length);
+    for (const call of runMock.mock.calls) {
+      const args = call[2] as string[];
+      const estimatedLength = ['pnpm', ...args]
+        .reduce((total, value) => total + (value.length * 2) + 3, 0);
+      expect(estimatedLength).toBeLessThanOrEqual(VITEST_COMMAND_LINE_BUDGET);
+    }
   });
 
   it('fails closed instead of forwarding an unmatched glob to Vitest', async () => {
