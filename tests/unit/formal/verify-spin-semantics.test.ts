@@ -1,13 +1,12 @@
 import { spawnSync } from 'node:child_process';
 import {
-  chmodSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -61,77 +60,80 @@ function createSandbox() {
   mkdirSync(binDir, { recursive: true });
   writeFileSync(join(sandbox, 'model.pml'), 'ltl p_done { <> true }\n', 'utf8');
 
-  const fakeSpin = join(binDir, 'spin');
-  writeFileSync(fakeSpin, `#!/bin/sh
-if [ "$#" -eq 0 ]; then
-  exit 0
-fi
-if [ "\${1:-}" = "-V" ]; then
-  printf '%s\\n' 'Spin Version 6.5.2'
-  exit 0
-fi
-if [ "\${1:-}" = "-a" ]; then
-  printf '%s\\n' "$*" > "\${FAKE_SPIN_TRACE_FILE}"
-  : > pan.c
-  exit 0
-fi
-exit 2
+  const fakeSpin = join(binDir, 'spin.cjs');
+  writeFileSync(fakeSpin, `
+const fs = require('node:fs');
+const args = process.argv.slice(2);
+if (args.length === 0) process.exit(0);
+if (args[0] === '-V') {
+  process.stdout.write('Spin Version 6.5.2\\n');
+  process.exit(0);
+}
+if (args[0] === '-a') {
+  fs.writeFileSync(process.env.FAKE_SPIN_TRACE_FILE, args.join(' ') + '\\n');
+  fs.writeFileSync('pan.c', '/* fixture */\\n');
+  process.exit(0);
+}
+process.exit(2);
 `, 'utf8');
-  chmodSync(fakeSpin, 0o755);
 
-  const fakeGcc = join(binDir, 'gcc');
-  writeFileSync(fakeGcc, `#!/bin/sh
-if [ "$#" -eq 0 ]; then
-  exit 0
-fi
-cat > pan <<'PAN'
-#!/bin/sh
-printf '%s\\n' "$*" > "\${FAKE_PAN_TRACE_FILE}"
-printf '%b' "\${FAKE_PAN_OUTPUT-}"
-if [ "\${FAKE_PAN_TRAIL:-0}" = "1" ]; then
-  : > model.pml.trail
-fi
-exit "\${FAKE_PAN_EXIT_CODE:-0}"
-PAN
-chmod +x pan
-exit 0
+  const fakeGcc = join(binDir, 'gcc.cjs');
+  writeFileSync(fakeGcc, 'process.exit(0);\n', 'utf8');
+
+  const fakePan = join(binDir, 'pan.cjs');
+  writeFileSync(fakePan, `
+const fs = require('node:fs');
+const args = process.argv.slice(2);
+fs.writeFileSync(process.env.FAKE_PAN_TRACE_FILE, args.join(' ') + '\\n');
+if (process.env.FAKE_PAN_HANG === '1') {
+  setInterval(() => {}, 1000);
+} else {
+  process.stdout.write(process.env.FAKE_PAN_OUTPUT ?? '');
+  if (process.env.FAKE_PAN_TRAIL === '1') fs.writeFileSync('model.pml.trail', '');
+  process.exit(Number(process.env.FAKE_PAN_EXIT_CODE ?? '0'));
+}
 `, 'utf8');
-  chmodSync(fakeGcc, 0o755);
-  return { sandbox, binDir };
+  return { sandbox, binDir, fakeSpin, fakeGcc, fakePan };
 }
 
 function runFakeSpin({
   output = completedPanOutput,
   exitCode = 0,
   trail = false,
-  timeout = false,
+  timeoutMs,
   ltl = 'p_done',
   maxDepth = 10000,
+  hang = false,
 }: {
   output?: string;
   exitCode?: number;
   trail?: boolean;
-  timeout?: boolean;
+  timeoutMs?: number;
   ltl?: string | null;
   maxDepth?: number;
+  hang?: boolean;
 } = {}) {
-  const { sandbox, binDir } = createSandbox();
+  const { sandbox, binDir, fakeSpin, fakeGcc, fakePan } = createSandbox();
   const spinTrace = join(sandbox, 'spin-args.txt');
   const panTrace = join(sandbox, 'pan-args.txt');
   const cliArgs = [scriptPath, '--file', 'model.pml', '--max-depth', String(maxDepth)];
   if (ltl) cliArgs.push('--ltl', ltl);
-  if (timeout) cliArgs.push('--timeout', '1000');
+  if (timeoutMs) cliArgs.push('--timeout', String(timeoutMs));
   const result = spawnSync(process.execPath, cliArgs, {
     cwd: sandbox,
     encoding: 'utf8',
     env: {
       ...process.env,
-      PATH: `${binDir}:${process.env.PATH ?? ''}`,
+      PATH: `${binDir}${delimiter}${process.env.PATH ?? ''}`,
+      AE_FORMAL_SPIN_COMMAND: fakeSpin,
+      AE_FORMAL_C_COMPILER_COMMAND: fakeGcc,
+      AE_FORMAL_PAN_COMMAND: fakePan,
       FAKE_SPIN_TRACE_FILE: spinTrace,
       FAKE_PAN_TRACE_FILE: panTrace,
       FAKE_PAN_OUTPUT: output,
       FAKE_PAN_EXIT_CODE: String(exitCode),
       FAKE_PAN_TRAIL: trail ? '1' : '0',
+      FAKE_PAN_HANG: hang ? '1' : '0',
     },
   });
   const summaryPath = join(sandbox, 'artifacts/hermetic-reports/formal/spin-summary.json');
@@ -305,11 +307,17 @@ describe('verify-spin semantic evidence', () => {
   });
 
   it('distinguishes Pan timeout evidence from generic failure', () => {
-    const { result, summary } = runFakeSpin({ output: '', exitCode: 124, timeout: true });
+    const { result, summary } = runFakeSpin({ output: '', timeoutMs: 250, hang: true });
     expect(result.status).toBe(0);
-    expect(summary).toMatchObject({ ran: true, status: 'timeout', ok: null, exitCode: 124 });
+    expect(summary).toMatchObject({ ran: true, status: 'timeout', ok: null, exitCode: null });
     expect(summary.semanticResult).toMatchObject({ parsed: false, timeout: true, searchCompleted: false });
     expect(summary.runnerResult.executionEvidence.result.status).toBe('timeout');
+  });
+
+  it('does not infer timeout from a Pan-owned exit code 124', () => {
+    const { summary } = runFakeSpin({ output: '', exitCode: 124, timeoutMs: 5_000 });
+    expect(summary).toMatchObject({ ran: true, status: 'failed', ok: false, exitCode: 124 });
+    expect(summary.semanticResult).toMatchObject({ timeout: false });
   });
 
   it('keeps a generic nonzero Pan result as failed execution evidence', () => {

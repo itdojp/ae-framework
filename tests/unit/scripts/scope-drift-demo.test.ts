@@ -18,13 +18,27 @@ const runScript = (args: string[]) => spawnSync('node', [scriptPath, ...args], {
 const readJson = (filePath: string) => JSON.parse(readFileSync(filePath, 'utf8'));
 const toPosixPath = (filePath: string) => filePath.split(sep).join('/');
 const normalizeOutputRoot = (content: string, outputRoot: string) => {
+  const nativeRelativeOutputRoot = relative(repoRoot, outputRoot);
   const relativeOutputRoot = toPosixPath(relative(repoRoot, outputRoot));
   const absoluteOutputRoot = toPosixPath(outputRoot);
   return content
+    .split(outputRoot).join('artifacts')
+    .split(nativeRelativeOutputRoot).join('artifacts')
     .split(absoluteOutputRoot).join('artifacts')
     .split(relativeOutputRoot).join('artifacts');
 };
-const stableJson = (value: unknown, outputRoot: string) => normalizeOutputRoot(`${JSON.stringify(value, null, 2)}\n`, outputRoot);
+const normalizeOutputRootValue = (value: unknown, outputRoot: string): unknown => {
+  if (typeof value === 'string') return normalizeOutputRoot(value, outputRoot);
+  if (Array.isArray(value)) return value.map((entry) => normalizeOutputRootValue(entry, outputRoot));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [key, normalizeOutputRootValue(entry, outputRoot)]),
+    );
+  }
+  return value;
+};
+const stableJson = (value: unknown, outputRoot: string) =>
+  `${JSON.stringify(normalizeOutputRootValue(value, outputRoot), null, 2)}\n`;
 
 describe('scope drift assurance demo', () => {
   it('generates report-only and high-risk reviewer surfaces for scope drift', () => {

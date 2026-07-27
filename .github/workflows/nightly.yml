@@ -20,6 +20,12 @@ concurrency:
   cancel-in-progress: true
 
 permissions: read-all
+
+# Ignore mutable runner-level npm configuration. The repository .npmrc is the
+# reviewed authority for lockfile behavior on every nightly platform.
+env:
+  NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.npmrc
+
 jobs:
   matrix-test:
     if: >-
@@ -40,9 +46,16 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: ${{ matrix.node }}
-      # Exception (nightly lane): fallback is retained to keep scheduled signal available even with transient lockfile drift.
-      # Review condition: remove fallback once lockfile update automation covers nightly inputs.
-      - run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+      - name: Confirm lockfile authority
+        shell: bash
+        run: |
+          printf 'pnpm=%s lockfile=%s userconfig=%s\n' \
+            "$(pnpm --version)" \
+            "$(pnpm config get lockfile)" \
+            "${NPM_CONFIG_USERCONFIG}"
+          test "$(pnpm config get lockfile)" = "true"
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
       - run: pnpm run test:${{ matrix.kind }}
   perf:
     if: >-
@@ -57,6 +70,13 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '22'
+      - name: Confirm lockfile authority
+        run: |
+          printf 'pnpm=%s lockfile=%s userconfig=%s\n' \
+            "$(pnpm --version)" \
+            "$(pnpm config get lockfile)" \
+            "${NPM_CONFIG_USERCONFIG}"
+          test "$(pnpm config get lockfile)" = "true"
       - name: Root layout guard (pre-install)
         run: node scripts/ci/check-root-layout.mjs
       - name: TODO/FIXME issue reference guard
@@ -89,6 +109,13 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
         with:
           node-version: '20'
+      - name: Confirm lockfile authority
+        run: |
+          printf 'pnpm=%s lockfile=%s userconfig=%s\n' \
+            "$(pnpm --version)" \
+            "$(pnpm config get lockfile)" \
+            "${NPM_CONFIG_USERCONFIG}"
+          test "$(pnpm config get lockfile)" = "true"
       - name: Install
         run: pnpm install --frozen-lockfile
       - name: Build
@@ -96,12 +123,14 @@ jobs:
       - name: Bin smoke check
         run: node scripts/ci/check-bins.mjs
       - name: Flake (30x)
-        run: node dist/src/cli/index.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/**"
+        # Repeat the canonical unit surface. Integration and performance have
+        # independent Nightly jobs and must not be folded into this 30x loop.
+        run: node dist/src/cli.js qa:flake --times 30 --timeoutMs 240000 --workers 50% --pattern "tests/unit/**/*.test.ts"
       - name: Bench (run set)
         run: |
           rm -f artifacts/reference/benchmarks/bench.json artifacts/reference/benchmarks/bench.md artifacts/bench-ts-run*.json artifacts/bench-ts-runset.txt artifacts/bench-ts-compare.json || true
           for i in 1 2; do
-            AE_SEED=321 node dist/src/cli/index.js bench
+            AE_SEED=321 node dist/src/cli.js bench
             cp artifacts/reference/benchmarks/bench.json "artifacts/bench-ts-run${i}.json"
           done
       - name: Build bench runset
@@ -133,8 +162,26 @@ jobs:
             baselineReproducibility: .baseline.reproducibility,
             candidateReproducibility: .candidates[0].reproducibility
           }' artifacts/bench-compare.json
+      - name: Record deterministic replay cassette
+        env:
+          ANTHROPIC_API_KEY: ''
+          OPENAI_API_KEY: ''
+          GEMINI_API_KEY: ''
+        run: >-
+          node dist/src/cli/index.js agent:complete
+          --prompt "Hello, ae!"
+          --record
+          --cassette-dir artifacts/nightly-cassettes
       - name: Replay smoke
-        run: AE_RECORDER_MODE=replay node dist/src/cli/index.js agent:complete --prompt "Hello, ae!"
+        env:
+          ANTHROPIC_API_KEY: ''
+          OPENAI_API_KEY: ''
+          GEMINI_API_KEY: ''
+        run: >-
+          node dist/src/cli/index.js agent:complete
+          --prompt "Hello, ae!"
+          --replay
+          --cassette-dir artifacts/nightly-cassettes
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,6 +1,7 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   ALLOWED_SCHEMA_ID_PREFIXES,
@@ -149,8 +150,8 @@ describe('check-schema-id-policy', () => {
   });
 
   it('treats URL-escaped module path and argv path as the same file', () => {
-    const metaUrl = 'file:///tmp/with%20space/check-schema-id-policy.mjs';
-    const argvPath = '/tmp/with space/check-schema-id-policy.mjs';
+    const argvPath = path.resolve(tmpdir(), 'with space', 'check-schema-id-policy.mjs');
+    const metaUrl = pathToFileURL(argvPath).href;
     expect(isExecutedAsMain(metaUrl, argvPath)).toBe(true);
   });
 });

@@ -7,7 +7,7 @@ import { extractSecurityClaimsFromSpec } from '../../../src/security/assurance/c
 
 const inputSpec = 'fixtures/security-assurance/extract-claims/spec.md';
 const generatedAt = '2026-05-07T00:00:00.000Z';
-const tsxBin = resolve('node_modules/.bin/tsx');
+const tsxCli = resolve('node_modules/tsx/dist/cli.mjs');
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
 
@@ -64,8 +64,8 @@ describe('security claim extractor', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ae-claim-extract-cli-'));
     try {
       const result = spawnSync(
-        tsxBin,
-        [
+        process.execPath,
+        [tsxCli,
           'src/cli/index.ts',
           'security',
           'extract-claims',

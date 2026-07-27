@@ -1,16 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = path.resolve(process.cwd(), 'scripts/admin/validate-branch-protection-inputs.mjs');
-const tmpRoot = path.resolve(process.cwd(), '.codex-local/tmp');
 const tmpRoots: string[] = [];
 
 const makeGithubOutputPath = () => {
-  const root = tmpRoot;
-  fs.mkdirSync(root, { recursive: true });
-  const dir = fs.mkdtempSync(path.join(root, 'branch-protection-'));
+  const dir = fs.mkdtempSync(path.join(tmpdir(), 'ae-branch-protection-'));
   tmpRoots.push(dir);
   return path.join(dir, 'github-output.txt');
 };
@@ -38,7 +36,6 @@ afterEach(() => {
   for (const root of tmpRoots.splice(0)) {
     fs.rmSync(root, { recursive: true, force: true });
   }
-  fs.rmSync(path.resolve(process.cwd(), '.codex-local'), { recursive: true, force: true });
 });
 
 describe('validate-branch-protection-inputs', () => {

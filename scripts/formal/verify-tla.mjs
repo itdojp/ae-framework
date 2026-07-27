@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 // Lightweight TLA runner: accepts --engine and --file, tries to run Apalache or TLC if available; writes a summary. Non-blocking.
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveRepoRelativeFileInput, validateChoice, TLA_ENGINES } from './input-policy.mjs';
@@ -10,6 +9,7 @@ import {
   extractToolVersion,
   sha256FileSync,
 } from './execution-evidence.mjs';
+import { resolveToolInvocation, spawnToolSync } from './tool-invocation.mjs';
 
 function parseArgs(argv){
   const args = { _: [] };
@@ -28,7 +28,7 @@ function parseArgs(argv){
 }
 
 function commandExists(cmd){
-  const result = spawnSync(cmd, [], { stdio: 'ignore' });
+  const result = spawnToolSync(cmd, [], { stdio: 'ignore' });
   if (result.error && result.error.code === 'ENOENT') {
     return false;
   }
@@ -36,7 +36,7 @@ function commandExists(cmd){
 }
 
 function runCommand(cmd, cmdArgs){
-  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
+  const result = spawnToolSync(cmd, cmdArgs, { encoding: 'utf8' });
   if (result.error) {
     if (result.error.code === 'ENOENT') {
       return { available: false, success: false, status: null, signal: null, output: '' };
@@ -70,6 +70,7 @@ if (args.help){
 }
 
 const repoRoot = process.cwd();
+const javaBin = process.env.AE_FORMAL_JAVA_BIN || 'java';
 
 const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'tla-summary.json');
@@ -156,16 +157,17 @@ if (status === 'invalid_input') {
     } else {
       artifactSha256 = sha256FileSync(jarPath);
       expectedArtifactSha256 = process.env.TLA_TOOLS_SHA256 || null;
-      const versionResult = runCommand('java', ['-cp', jarPath, 'tlc2.TLC', '-version']);
+      const versionResult = runCommand(javaBin, ['-cp', jarPath, 'tlc2.TLC', '-version']);
       toolVersion = extractToolVersion(versionResult.output) || process.env.TLA_TOOLS_VERSION || '';
       versionSource = extractToolVersion(versionResult.output)
         ? 'cli'
         : (process.env.TLA_TOOLS_VERSION ? 'reviewed-pin' : 'unavailable');
-      if (!commandExists('java')) {
+      if (!commandExists(javaBin)) {
         status = 'tool_not_available';
         output = 'TLC not available (java not found). See docs/quality/formal-tools-setup.md';
       } else {
-        const baseCmd = { cmd: 'java', args: ['-cp', jarPath, 'tlc2.TLC', absFile] };
+        const baseInvocation = resolveToolInvocation(javaBin, ['-cp', jarPath, 'tlc2.TLC', absFile]);
+        const baseCmd = { cmd: baseInvocation.command, args: baseInvocation.args };
         const runSpec = (timeoutSec && haveTimeout)
           ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
           : baseCmd;

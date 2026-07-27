@@ -4,6 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { appendSection } from '../ci/step-summary.mjs';
 
+const toPortablePath = (value) => String(value).replace(/\\/g, '/');
+const toBashPath = (value) => process.platform === 'win32' ? toPortablePath(value) : value;
+
+function resolvePnpmInvocation(args) {
+  const pnpmEntrypoint = String(process.env.npm_execpath || '').trim();
+  return /(?:^|[\\/])pnpm(?:\.c?js)?$/iu.test(pnpmEntrypoint)
+    ? { command: process.execPath, args: [pnpmEntrypoint, ...args] }
+    : { command: 'pnpm', args };
+}
+
 function parseArgs(argv) {
   const options = {
     input: 'samples/trace/kvonce-sample.ndjson',
@@ -74,7 +84,7 @@ function inferFormat(file, requested) {
 }
 
 const summary = {
-  input: path.relative(repoRoot, resolvedInput),
+  input: toPortablePath(path.relative(repoRoot, resolvedInput)),
   format: inferFormat(opts.input, opts.format),
   conformance: {
     status: 'not_run',
@@ -91,9 +101,9 @@ if (!fs.existsSync(resolvedInput)) {
   const conformanceArgs = [
     'scripts/trace/run-kvonce-conformance.sh',
     '--input',
-    resolvedInput,
+    toBashPath(resolvedInput),
     '--output-dir',
-    conformanceDir,
+    toBashPath(conformanceDir),
     '--format',
     summary.format,
   ];
@@ -116,7 +126,8 @@ if (!fs.existsSync(resolvedInput)) {
     }
   }
 
-  const tlcResult = run('pnpm', ['run', 'spec:kv-once:tlc']);
+  const tlcInvocation = resolvePnpmInvocation(['run', 'spec:kv-once:tlc']);
+  const tlcResult = run(tlcInvocation.command, tlcInvocation.args);
   summary.tlc.exitCode = tlcResult.status;
   summary.tlc.stdout = tlcResult.stdout.slice(0, OUTPUT_TRUNCATE_LIMIT);
   summary.tlc.stderr = tlcResult.stderr.slice(0, OUTPUT_TRUNCATE_LIMIT);
@@ -141,7 +152,7 @@ if (!fs.existsSync(resolvedInput)) {
 
 const summaryPath = path.join(outputDir, 'kvonce-trace-replay.json');
 fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
-console.log(`KvOnce trace replay summary: ${path.relative(repoRoot, summaryPath)}`);
+console.log(`KvOnce trace replay summary: ${toPortablePath(path.relative(repoRoot, summaryPath))}`);
 
 const summaryLines = [
   `- input: ${summary.input}`,

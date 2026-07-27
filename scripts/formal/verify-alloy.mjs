@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 // Lightweight Alloy runner: accepts --file and tries to run Alloy if available; otherwise prints guidance. Non-blocking.
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -11,6 +10,7 @@ import {
   extractToolVersion,
   sha256FileSync,
 } from './execution-evidence.mjs';
+import { spawnToolSync } from './tool-invocation.mjs';
 
 function parseArgs(argv){
   const args = { _: [] };
@@ -27,7 +27,7 @@ function parseArgs(argv){
 }
 
 function runCommand(cmd, cmdArgs){
-  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
+  const result = spawnToolSync(cmd, cmdArgs, { encoding: 'utf8' });
   if (result.error) {
     if (result.error.code === 'ENOENT') {
       return { available: false, success: false, status: null, output: '' };
@@ -55,6 +55,7 @@ if (args.help){
 }
 
 const repoRoot = path.resolve(process.cwd());
+const javaBin = process.env.AE_FORMAL_JAVA_BIN || 'java';
 const outDir = path.join(repoRoot, 'artifacts/hermetic-reports', 'formal');
 const outFile = path.join(outDir, 'alloy-summary.json');
 const outLog = path.join(outDir, 'alloy-output.txt');
@@ -122,14 +123,14 @@ if (status === 'invalid_input') {
       } else {
         artifactSha256 = sha256FileSync(jarPath);
         expectedArtifactSha256 = process.env.ALLOY_ARTIFACT_SHA256 || null;
-        const versionResult = runCommand('java', ['-jar', jarPath, 'version']);
+        const versionResult = runCommand(javaBin, ['-jar', jarPath, 'version']);
         const cliVersion = extractToolVersion(versionResult.output);
         toolVersion = cliVersion || process.env.ALLOY_VERSION || '';
         versionSource = cliVersion
           ? 'cli'
           : (process.env.ALLOY_VERSION ? 'reviewed-pin' : 'unavailable');
         const t1 = Date.now();
-        const javaResult = runCommand('java', ['-jar', jarPath, 'exec', '-q', '-o', '-', '-f', absFile]);
+        const javaResult = runCommand(javaBin, ['-jar', jarPath, 'exec', '-q', '-o', '-', '-f', absFile]);
         if (!javaResult.available) {
           status = 'java_not_available';
           output = 'Java runtime not found. Ensure `java` is installed and on PATH to run the Alloy jar.';

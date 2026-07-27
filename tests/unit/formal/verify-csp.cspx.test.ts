@@ -7,8 +7,8 @@ import { join, resolve, delimiter } from 'node:path';
 const scriptPath = resolve('scripts/formal/verify-csp.mjs');
 
 function writeFakeCspx(binDir: string) {
-  const p = join(binDir, 'cspx');
-  const script = `#!/usr/bin/env node
+  const p = join(binDir, 'cspx.cjs');
+  const script = `
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -60,18 +60,12 @@ process.exit(exit_code);
   writeFileSync(p, script, { encoding: 'utf8' });
   chmodSync(p, 0o755);
 
-  // Windows: child_process spawn relies on PATHEXT; provide a cmd shim.
-  // Keeping the JS entrypoint at "cspx" makes Unix runners work via shebang.
-  const cmd = join(binDir, 'cspx.cmd');
-  const cmdBody = `@echo off\r\nsetlocal\r\nnode \"%~dp0cspx\" %*\r\n`;
-  writeFileSync(cmd, cmdBody, { encoding: 'utf8' });
-
   return p;
 }
 
 function writeFakeCspxWithoutSummaryJson(binDir: string) {
-  const p = join(binDir, 'cspx');
-  const script = `#!/usr/bin/env node
+  const p = join(binDir, 'cspx.cjs');
+  const script = `
 const args = process.argv.slice(2);
 if (args.includes('--version')) {
   console.log('cspx 0.1.0');
@@ -86,10 +80,6 @@ process.exit(0);
 `;
   writeFileSync(p, script, { encoding: 'utf8' });
   chmodSync(p, 0o755);
-
-  const cmd = join(binDir, 'cspx.cmd');
-  const cmdBody = `@echo off\r\nsetlocal\r\nnode \"%~dp0cspx\" %*\r\n`;
-  writeFileSync(cmd, cmdBody, { encoding: 'utf8' });
 
   return p;
 }
@@ -111,12 +101,15 @@ describe('verify-csp (cspx backend)', () => {
 
     const binDir = join(dir, 'bin');
     mkdirSync(binDir, { recursive: true });
-    writeFakeCspx(binDir);
+    const cspxBin = writeFakeCspx(binDir);
 
     const result = runVerifyCsp(
       dir,
       ['--file', 'spec/csp/ok.cspm', '--mode', 'typecheck'],
-      { PATH: `${binDir}${delimiter}${process.env.PATH || ''}` },
+      {
+        PATH: `${binDir}${delimiter}${process.env.PATH || ''}`,
+        AE_FORMAL_CSPX_BIN: cspxBin,
+      },
     );
     expect(result.status).toBe(0);
 
@@ -145,12 +138,15 @@ describe('verify-csp (cspx backend)', () => {
 
     const binDir = join(dir, 'bin');
     mkdirSync(binDir, { recursive: true });
-    writeFakeCspx(binDir);
+    const cspxBin = writeFakeCspx(binDir);
 
     const result = runVerifyCsp(
       dir,
       ['--file', 'spec/csp/ok.cspm', '--mode', 'assertions'],
-      { PATH: `${binDir}${delimiter}${process.env.PATH || ''}` },
+      {
+        PATH: `${binDir}${delimiter}${process.env.PATH || ''}`,
+        AE_FORMAL_CSPX_BIN: cspxBin,
+      },
     );
     expect(result.status).toBe(0);
 
@@ -174,13 +170,14 @@ describe('verify-csp (cspx backend)', () => {
 
     const binDir = join(dir, 'bin');
     mkdirSync(binDir, { recursive: true });
-    writeFakeCspx(binDir);
+    const cspxBin = writeFakeCspx(binDir);
 
     const result = runVerifyCsp(
       dir,
       ['--file', 'spec/csp/ok.cspm', '--mode', 'assertions'],
       {
         PATH: `${binDir}${delimiter}${process.env.PATH || ''}`,
+        AE_FORMAL_CSPX_BIN: cspxBin,
         CSPX_FIXTURE_STATUS: 'pass',
       },
     );
@@ -213,12 +210,15 @@ describe('verify-csp (cspx backend)', () => {
 
     const binDir = join(dir, 'bin');
     mkdirSync(binDir, { recursive: true });
-    writeFakeCspxWithoutSummaryJson(binDir);
+    const cspxBin = writeFakeCspxWithoutSummaryJson(binDir);
 
     const result = runVerifyCsp(
       dir,
       ['--file', 'spec/csp/ok.cspm', '--mode', 'typecheck'],
-      { PATH: `${binDir}${delimiter}${process.env.PATH || ''}` },
+      {
+        PATH: `${binDir}${delimiter}${process.env.PATH || ''}`,
+        AE_FORMAL_CSPX_BIN: cspxBin,
+      },
     );
     expect(result.status).toBe(0);
 

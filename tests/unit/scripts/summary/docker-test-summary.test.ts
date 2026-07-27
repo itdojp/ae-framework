@@ -29,7 +29,7 @@ describe('docker test summary script', () => {
 
     const summary = summarizeReport({ readFileSyncImpl: stub });
     const [resolvedPath, encoding] = stub.mock.calls[0];
-    expect(resolvedPath.replace(/\\\\/g, '/')).toMatch(/reports\/consolidated-test-report\.json$/);
+    expect(resolvedPath.replace(/\\/g, '/')).toMatch(/reports\/consolidated-test-report\.json$/);
     expect(encoding).toBe('utf8');
     expect(summary.split('\n')).toEqual([
       DOCKER_TEST_HEADER,

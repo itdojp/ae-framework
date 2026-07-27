@@ -222,6 +222,25 @@ describe('MCPPluginManager path safety', () => {
     await expect(fs.stat(path.join(projectRoot, 'plugins', 'relative-plugin', 'plugin.json'))).resolves.toBeDefined();
   });
 
+  test.runIf(process.platform === 'win32')(
+    'accepts native Windows separators only inside the project root and rejects drive/traversal escapes',
+    async () => {
+      const manager = new MCPPluginManager(projectRoot);
+
+      await manager.createPluginTemplate('nested-plugin', 'plugins\\nested');
+      await expect(
+        fs.stat(path.join(projectRoot, 'plugins', 'nested', 'nested-plugin', 'plugin.json')),
+      ).resolves.toBeDefined();
+
+      await expect(
+        manager.createPluginTemplate('escape-plugin', '..\\outside-target'),
+      ).rejects.toThrow(/project root/);
+      await expect(
+        manager.createPluginTemplate('drive-plugin', 'C:\\Windows\\Temp\\ae-framework-plugin-test'),
+      ).rejects.toThrow(/project root/);
+    },
+  );
+
   test.each(['../evil', 'bad/name', 'bad\\name', "bad'name", 'BadName', 'bad name'])(
     'rejects unsafe template plugin name %s before writing files',
     async (unsafeName) => {

@@ -30,11 +30,11 @@ describe('TDD MCP execution policy', () => {
   });
 
   test('resolves approved test commands to executable plus argv without shell text', () => {
-    expect(resolveSafeTDDTestCommand('npm test')).toEqual({
+    expect(resolveSafeTDDTestCommand('npm test', 'linux')).toEqual({
       executable: 'npm',
       args: ['test', '--silent'],
     });
-    expect(formatTDDTestCommand(resolveSafeTDDTestCommand('pnpm test'))).toBe('pnpm test --silent');
+    expect(formatTDDTestCommand(resolveSafeTDDTestCommand('pnpm test', 'linux'))).toBe('pnpm test --silent');
   });
 
   test('resolves Windows package-manager shims through fixed cmd.exe argv', () => {
@@ -76,7 +76,7 @@ describe('TDD MCP execution policy', () => {
   test('runs approved commands through an executable and argv array with shell disabled', () => {
     const executor = vi.fn<TDDTestExecutor>().mockReturnValue('');
 
-    runSafeTDDTestCommand('yarn test', { cwd: process.cwd(), executor });
+    runSafeTDDTestCommand('yarn test', { cwd: process.cwd(), executor, platform: 'linux' });
 
     expect(executor).toHaveBeenCalledWith(
       'yarn',
@@ -112,7 +112,9 @@ describe('TDD MCP execution policy', () => {
     const result = await (server as any).checkRedGreenCycle({ testCommand: 'pnpm test' });
 
     expect(result.content[0].text).toContain('TDD test execution was not run');
-    expect(result.content[0].text).toContain('Approved executable/argv: pnpm test --silent');
+    expect(result.content[0].text).toContain(
+      `Approved executable/argv: ${formatTDDTestCommand(resolveSafeTDDTestCommand('pnpm test'))}`
+    );
   });
 
   test('check_red_green_cycle runs approved tests in the approved workspace root', async () => {
@@ -125,10 +127,26 @@ describe('TDD MCP execution policy', () => {
       ['#!/bin/sh', 'printf "%s" "$PWD" > "$CWD_CAPTURE"', 'exit 0', ''].join('\n'),
       'utf8'
     );
+    await writeFile(
+      path.join(binDir, 'npm.cmd'),
+      ['@echo off', '<nul set /p "=%CD%" > "%CWD_CAPTURE%"', 'exit /b 0', ''].join('\r\n'),
+      'utf8'
+    );
     await chmod(path.join(binDir, 'npm'), 0o755);
     process.env['AE_MCP_WORKSPACE_ROOT'] = workspaceRoot;
     process.env['CWD_CAPTURE'] = capturedCwd;
-    process.env['PATH'] = `${binDir}${path.delimiter}${originalEnv.PATH ?? ''}`;
+    // Keep the integration fixture hermetic. In particular, a missing
+    // npm.cmd on Windows must fail instead of falling through to the hosted
+    // runner's ambient npm and recursively starting the repository test suite.
+    if (process.platform === 'win32') {
+      const commandInterpreter = originalEnv['ComSpec'] ?? originalEnv['COMSPEC'];
+      if (!commandInterpreter) {
+        throw new Error('Windows TDD execution fixture requires ComSpec');
+      }
+      process.env['PATH'] = `${binDir}${path.delimiter}${path.dirname(commandInterpreter)}`;
+    } else {
+      process.env['PATH'] = binDir;
+    }
 
     const server = new TDDGuardServer();
     const result = await (server as any).checkRedGreenCycle({

@@ -10,7 +10,7 @@ const scopePath = 'fixtures/security-assurance/sample.security-audit-scope.json'
 const targetPath = 'fixtures/security-assurance/code-map-target';
 const symbolIndexPath = 'fixtures/security-assurance/sample.symbol-index.json';
 const generatedAt = '2026-05-07T00:00:00.000Z';
-const tsxBin = resolve('node_modules/.bin/tsx');
+const tsxCli = resolve('node_modules/tsx/dist/cli.mjs');
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
 
@@ -61,8 +61,8 @@ describe('security code-map producer', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ae-code-map-cli-'));
     try {
       const result = spawnSync(
-        tsxBin,
-        [
+        process.execPath,
+        [tsxCli,
           'src/cli/index.ts',
           'security',
           'map-code',
@@ -137,8 +137,8 @@ describe('security code-map producer', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ae-code-map-cli-symbol-index-'));
     try {
       const result = spawnSync(
-        tsxBin,
-        [
+        process.execPath,
+        [tsxCli,
           'src/cli/index.ts',
           'security',
           'map-code',

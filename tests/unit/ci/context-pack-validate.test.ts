@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -506,6 +506,24 @@ describe('context-pack validate CLI', () => {
     expect(report.warnings).toEqual([]);
   });
 
+  it('deduplicates discovery sources reached through a filesystem alias', async () => {
+    const discoveryDir = join(workdir, 'spec', 'discovery-pack');
+    const aliasDir = join(workdir, 'discovery-pack-alias');
+    await mkdir(discoveryDir, { recursive: true });
+    await writeFile(join(discoveryDir, 'sample.yaml'), VALID_DISCOVERY_PACK_YAML, 'utf8');
+    await symlink(discoveryDir, aliasDir, 'junction');
+    await writeFile(join(sourcesDir, 'valid.yaml'), VALID_CONTEXT_PACK_WITH_DISCOVERY_YAML, 'utf8');
+
+    const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'), [
+      '--discovery-pack',
+      join(aliasDir, '*.{yaml,yml,json}'),
+    ]);
+
+    expect(result.status).toBe(0);
+    const report = JSON.parse(await readFile(join(reportDir, 'context-pack-validate-report.json'), 'utf8'));
+    expect(report.errors.some((entry: { type: string }) => entry.type === 'discovery-pack-source-ambiguous')).toBe(false);
+  });
+
   it('warns when approved discovery requirements are unmapped', async () => {
     const discoveryDir = join(workdir, 'spec', 'discovery-pack');
     await mkdir(discoveryDir, { recursive: true });
@@ -686,14 +704,18 @@ describe('context-pack validate CLI', () => {
   });
 
   it('escapes markdown table cells in validation report', async () => {
-    const dangerousName = 'invalid|<tag>.json';
+    const dangerousName = process.platform === 'win32' ? 'invalid-tag.json' : 'invalid|<tag>.json';
     await writeFile(join(sourcesDir, dangerousName), '<invalid-json>', 'utf8');
 
     const result = runValidate(join(sourcesDir, '*.{yaml,yml,json}'));
     expect(result.status).toBe(2);
 
     const markdown = await readFile(join(reportDir, 'context-pack-validate-report.md'), 'utf8');
-    expect(markdown).toContain('invalid\\|&lt;tag&gt;.json');
+    if (process.platform === 'win32') {
+      expect(markdown).toContain('invalid-tag.json');
+    } else {
+      expect(markdown).toContain('invalid\\|&lt;tag&gt;.json');
+    }
     expect(markdown).toContain('&lt;');
   });
 });

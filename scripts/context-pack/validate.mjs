@@ -8,6 +8,7 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { globSync } from 'glob';
 import yaml from 'yaml';
+import { canonicalizeExistingPath, normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const DEFAULT_SOURCES = ['spec/context-pack/**/*.{yml,yaml,json}'];
 const DEFAULT_SCHEMA_PATH = 'schema/context-pack-v1.schema.json';
@@ -27,8 +28,7 @@ const DISCOVERY_SECTIONS = {
   decision_ids: 'decisions',
 };
 
-const normalizePath = (value) => value.replace(/\\/g, '/');
-const toRelativePath = (absolutePath) => normalizePath(path.relative(process.cwd(), absolutePath) || '.');
+const toRelativePath = (absolutePath) => normalizeArtifactPath(absolutePath, { repoRoot: process.cwd() }) ?? '.';
 
 function printHelp() {
   process.stdout.write(`Context Pack v1 validator
@@ -172,8 +172,8 @@ function parseArgs(argv) {
 function discoverSources(sourcePatterns) {
   const matches = new Set();
   for (const pattern of sourcePatterns) {
-    for (const sourcePath of globSync(pattern, { nodir: true })) {
-      matches.add(path.resolve(sourcePath));
+    for (const sourcePath of globSync(pattern, { nodir: true, windowsPathsNoEscape: true })) {
+      matches.add(canonicalizeExistingPath(sourcePath));
     }
   }
   return Array.from(matches).sort((a, b) => a.localeCompare(b));
@@ -321,14 +321,14 @@ function resolveDiscoveryPackFile(candidates) {
   const matches = new Set();
   for (const candidate of candidates) {
     if (candidate.includes('*') || candidate.includes('{')) {
-      for (const file of globSync(candidate, { nodir: true })) {
-        matches.add(path.resolve(file));
+      for (const file of globSync(candidate, { nodir: true, windowsPathsNoEscape: true })) {
+        matches.add(canonicalizeExistingPath(file));
       }
       continue;
     }
     const resolvedCandidate = path.resolve(candidate);
     if (fs.existsSync(resolvedCandidate)) {
-      matches.add(resolvedCandidate);
+      matches.add(canonicalizeExistingPath(resolvedCandidate));
     }
   }
   return Array.from(matches).sort((a, b) => a.localeCompare(b));

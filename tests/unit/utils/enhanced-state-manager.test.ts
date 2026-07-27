@@ -14,7 +14,7 @@ afterAll(async () => {
   await Promise.all(tempRoots.map((dir) => rm(dir, { recursive: true, force: true })));
 });
 describe('EnhancedStateManager configuration', () => {
-  it('applies default storage options when omitted', () => {
+  it('applies default storage options when omitted', async () => {
     const root = join(tmpdir(), 'ae-framework-config-default');
     const manager = new EnhancedStateManager(root);
     const options = getOptions(manager);
@@ -32,10 +32,11 @@ describe('EnhancedStateManager configuration', () => {
     expect(options.skipUnchangedPersistence).toBe(true);
 
     const databaseFile = asInternal(manager).databaseFile as string;
-    expect(databaseFile.endsWith('.ae/enhanced-state.db')).toBe(true);
+    expect(databaseFile.endsWith(join('.ae', 'enhanced-state.db'))).toBe(true);
+    await manager.shutdown();
   });
 
-  it('respects provided storage options', () => {
+  it('respects provided storage options', async () => {
     const root = join(tmpdir(), 'ae-framework-config-custom');
     const manager = new EnhancedStateManager(root, {
       databasePath: 'custom.db',
@@ -63,6 +64,7 @@ describe('EnhancedStateManager configuration', () => {
     expect(options.enableSerializationCache).toBe(true);
     expect(options.performanceSampleSize).toBe(8);
     expect(options.skipUnchangedPersistence).toBe(false);
+    await manager.shutdown();
   });
 });
 

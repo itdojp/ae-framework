@@ -348,14 +348,61 @@ function hasUnsafePathSegment(value: string): boolean {
 
 function findExistingAncestor(absolutePath: string): string {
   let current = absolutePath;
-  while (!fs.existsSync(current)) {
+  while (true) {
+    try {
+      fs.lstatSync(current);
+      return current;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== 'ENOENT' && code !== 'ENOTDIR') throw error;
+    }
     const parent = path.dirname(current);
     if (parent === current) {
       return current;
     }
     current = parent;
   }
-  return current;
+}
+
+function toComparableFilesystemPath(value: string): string {
+  const normalized = process.platform === 'win32'
+    ? path.normalize(value)
+      .replace(/^\\\\\?\\UNC\\/iu, '\\\\')
+      .replace(/^\\\\\?\\/u, '')
+      .toLowerCase()
+    : path.normalize(value);
+  const parsedRoot = path.parse(normalized).root;
+  return normalized === parsedRoot ? normalized : normalized.replace(/[\\/]+$/u, '');
+}
+
+function isFilesystemPathWithin(rootPath: string, candidatePath: string): boolean {
+  const root = toComparableFilesystemPath(rootPath);
+  const candidate = toComparableFilesystemPath(candidatePath);
+  return candidate === root || candidate.startsWith(`${root}${path.sep}`);
+}
+
+function hasEscapingSymbolicLink(rootPath: string, candidatePath: string): boolean {
+  const absoluteRoot = path.resolve(rootPath);
+  const relative = path.relative(absoluteRoot, candidatePath);
+  if (relative === '' || relative.startsWith('..') || path.isAbsolute(relative)) {
+    return false;
+  }
+  const realRoot = fs.realpathSync.native(absoluteRoot);
+  let current = absoluteRoot;
+  for (const segment of relative.split(path.sep)) {
+    current = path.join(current, segment);
+    if (!fs.lstatSync(current).isSymbolicLink()) continue;
+    const declaredTarget = path.resolve(path.dirname(current), fs.readlinkSync(current));
+    if (!isFilesystemPathWithin(absoluteRoot, declaredTarget)) return true;
+    let realTarget: string;
+    try {
+      realTarget = fs.realpathSync.native(current);
+    } catch {
+      return true;
+    }
+    if (!isFilesystemPathWithin(realRoot, realTarget)) return true;
+  }
+  return false;
 }
 
 function resolveUIOutputDir(outputDir: unknown): { ok: true; absolutePath: string; relativePath: string } | { ok: false; errors: string[] } {
@@ -374,17 +421,26 @@ function resolveUIOutputDir(outputDir: unknown): { ok: true; absolutePath: strin
   }
 
   const repoRoot = process.cwd();
-  const realRepoRoot = fs.existsSync(repoRoot) ? fs.realpathSync(repoRoot) : repoRoot;
+  const realRepoRoot = fs.existsSync(repoRoot) ? fs.realpathSync.native(repoRoot) : repoRoot;
   const absolutePath = path.resolve(repoRoot, rawOutputDir);
   const relativePath = path.relative(repoRoot, absolutePath);
   if (!relativePath || relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
     errors.push('context.outputDir must stay inside the repository workspace');
   }
   const existingAncestor = findExistingAncestor(absolutePath);
-  const realExistingAncestor = fs.existsSync(existingAncestor) ? fs.realpathSync(existingAncestor) : existingAncestor;
-  const realAncestorRelative = path.relative(realRepoRoot, realExistingAncestor);
-  if (realAncestorRelative && (realAncestorRelative.startsWith('..') || path.isAbsolute(realAncestorRelative))) {
+  const escapingSymlink = hasEscapingSymbolicLink(repoRoot, existingAncestor);
+  if (escapingSymlink) {
     errors.push('context.outputDir must not resolve through a symlink outside the repository workspace');
+  }
+  if (!escapingSymlink) {
+    try {
+      const realExistingAncestor = fs.realpathSync.native(existingAncestor);
+      if (!isFilesystemPathWithin(realRepoRoot, realExistingAncestor)) {
+        errors.push('context.outputDir must not resolve through a symlink outside the repository workspace');
+      }
+    } catch {
+      errors.push('context.outputDir must not resolve through an unresolved filesystem entry');
+    }
   }
 
   if (errors.length > 0) {
@@ -702,11 +758,11 @@ function isRepositoryLocalArtifactDirectory(candidatePath: string): boolean {
   const resolvedCandidate = path.resolve(candidatePath);
   const lexicalRelative = path.relative(repoRoot, resolvedCandidate);
   if (!lexicalRelative || lexicalRelative.startsWith('..') || path.isAbsolute(lexicalRelative)) return false;
-  const realRepoRoot = fs.realpathSync(repoRoot);
+  const realRepoRoot = fs.realpathSync.native(repoRoot);
   const existingAncestor = findExistingAncestor(resolvedCandidate);
-  const realAncestor = fs.realpathSync(existingAncestor);
-  const realRelative = path.relative(realRepoRoot, realAncestor);
-  return realRelative === '' || (!realRelative.startsWith('..') && !path.isAbsolute(realRelative));
+  if (hasEscapingSymbolicLink(repoRoot, existingAncestor)) return false;
+  const realAncestor = fs.realpathSync.native(existingAncestor);
+  return isFilesystemPathWithin(realRepoRoot, realAncestor);
 }
 
 function writeRepositoryLocalCodexArtifact(outDir: string, fileName: string, content: string): void {

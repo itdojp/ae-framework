@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const DEFAULT_VERIFY_LITE_SUMMARY_PATH = 'artifacts/verify-lite/verify-lite-run-summary.json';
 const DEFAULT_HARNESS_HEALTH_PATH = 'artifacts/ci/harness-health.json';
@@ -18,6 +19,10 @@ const HARNESS_HEALTH_REPRO_COMMAND = 'node scripts/ci/build-harness-health.mjs';
 const CHANGE_PACKAGE_REPRO_COMMAND = 'pnpm run change-package:generate';
 const ASSURANCE_REPRO_COMMAND = 'pnpm run verify:assurance';
 const UI_E2E_REPRO_COMMAND = 'pnpm run ui-e2e:semantic';
+
+function toArtifactPath(filePath) {
+  return normalizeArtifactPath(filePath, { repoRoot: process.cwd() }) || path.basename(filePath);
+}
 
 function uniqueNonEmpty(values) {
   const seen = new Set();
@@ -770,35 +775,35 @@ export function run(argv = process.argv) {
     assuranceSummary,
     uiE2ESummary,
     source: {
-      verifyLiteSummaryPath: path.relative(process.cwd(), verifyLiteSummaryPath) || path.basename(verifyLiteSummaryPath),
+      verifyLiteSummaryPath: toArtifactPath(verifyLiteSummaryPath),
       harnessHealthPath: harnessHealth
-        ? path.relative(process.cwd(), harnessHealthPath) || path.basename(harnessHealthPath)
+        ? toArtifactPath(harnessHealthPath)
         : null,
       changePackagePath: changePackage
-        ? path.relative(process.cwd(), changePackagePath) || path.basename(changePackagePath)
+        ? toArtifactPath(changePackagePath)
         : null,
       contextPackSuggestionsPath: contextPackSuggestions
-        ? path.relative(process.cwd(), contextPackSuggestionsPath) || path.basename(contextPackSuggestionsPath)
+        ? toArtifactPath(contextPackSuggestionsPath)
         : null,
       assuranceSummaryPath: assuranceSummary
-        ? path.relative(process.cwd(), assuranceSummaryPath) || path.basename(assuranceSummaryPath)
+        ? toArtifactPath(assuranceSummaryPath)
         : null,
       uiE2ESummaryPath: uiE2ESummary
-        ? path.relative(process.cwd(), uiE2ESummaryPath) || path.basename(uiE2ESummaryPath)
+        ? toArtifactPath(uiE2ESummaryPath)
         : null,
     },
     evidenceSource: {
-      verifyLiteSummaryPath: path.relative(process.cwd(), verifyLiteSummaryPath) || path.basename(verifyLiteSummaryPath),
-      harnessHealthPath: path.relative(process.cwd(), harnessHealthPath) || path.basename(harnessHealthPath),
-      changePackagePath: path.relative(process.cwd(), changePackagePath) || path.basename(changePackagePath),
+      verifyLiteSummaryPath: toArtifactPath(verifyLiteSummaryPath),
+      harnessHealthPath: toArtifactPath(harnessHealthPath),
+      changePackagePath: toArtifactPath(changePackagePath),
       contextPackSuggestionsPath: contextPackSuggestionsPath
-        ? path.relative(process.cwd(), contextPackSuggestionsPath) || path.basename(contextPackSuggestionsPath)
+        ? toArtifactPath(contextPackSuggestionsPath)
         : null,
       assuranceSummaryPath: assuranceSummaryPath
-        ? path.relative(process.cwd(), assuranceSummaryPath) || path.basename(assuranceSummaryPath)
+        ? toArtifactPath(assuranceSummaryPath)
         : null,
       uiE2ESummaryPath: uiE2ESummaryPath
-        ? path.relative(process.cwd(), uiE2ESummaryPath) || path.basename(uiE2ESummaryPath)
+        ? toArtifactPath(uiE2ESummaryPath)
         : null,
     },
   });

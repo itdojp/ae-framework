@@ -167,7 +167,7 @@ function writeTempCommentBody(commentBody) {
 function runGhComment(options, commentBody) {
   const commentFile = writeTempCommentBody(commentBody);
   try {
-    const result = spawnSync(options.ghBin, [
+    const ghArgs = [
       'pr',
       'comment',
       String(options.pr),
@@ -175,7 +175,10 @@ function runGhComment(options, commentBody) {
       options.repo,
       '--body-file',
       commentFile,
-    ], {
+    ];
+    const ghCommand = /\.[cm]?js$/iu.test(options.ghBin) ? process.execPath : options.ghBin;
+    const ghCommandArgs = ghCommand === process.execPath ? [options.ghBin, ...ghArgs] : ghArgs;
+    const result = spawnSync(ghCommand, ghCommandArgs, {
       cwd: process.cwd(),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],

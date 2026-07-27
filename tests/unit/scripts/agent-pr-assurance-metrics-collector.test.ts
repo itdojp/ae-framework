@@ -23,6 +23,12 @@ const runScript = (args: string[]) => spawnSync('node', [scriptPath, ...args], {
 
 const readJson = (filePath: string) => JSON.parse(readFileSync(filePath, 'utf8'));
 
+function writeNodeExecutable(filePath: string, source: string): string {
+  writeFileSync(filePath, source, 'utf8');
+  chmodSync(filePath, 0o755);
+  return filePath;
+}
+
 function compileSchema() {
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   addFormats(ajv);
@@ -199,12 +205,11 @@ describe('agent PR assurance metrics collector', () => {
 
   it('uses gh in live mode and marks absent optional evidence as not_collected instead of implying success', () => {
     const outputRoot = resolve(repoRoot, 'artifacts', `metrics-collector-live-test-${randomUUID()}`);
-    const fakeGh = join(outputRoot, 'fake-gh.mjs');
+    const fakeGhScript = join(outputRoot, 'fake-gh.mjs');
     const outputJson = join(outputRoot, 'live-agent-pr-assurance-metrics.json');
     const outputMd = join(outputRoot, 'live-agent-pr-assurance-metrics.md');
     mkdirSync(outputRoot, { recursive: true });
-    writeFileSync(fakeGh, `#!/usr/bin/env node\nconsole.log(JSON.stringify({\n  number: 99,\n  title: 'live fixture PR',\n  url: 'https://github.com/example/repo/pull/99',\n  state: 'OPEN',\n  createdAt: '2026-06-23T00:00:00Z',\n  mergedAt: '2026-06-23T00:10:00Z',\n  isDraft: false,\n  reviewDecision: '',\n  mergeStateStatus: 'CLEAN',\n  headRefOid: 'fake-head',\n  statusCheckRollup: [\n    { __typename: 'CheckRun', name: 'gate', workflowName: 'Copilot Review Gate', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:01:00Z', completedAt: '2026-06-23T00:02:00Z' },\n    { __typename: 'CheckRun', name: 'policy-gate', workflowName: 'Policy Gate', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:02:00Z', completedAt: '2026-06-23T00:03:00Z' },\n    { __typename: 'CheckRun', name: 'verify-lite', workflowName: 'Verify Lite', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:03:00Z', completedAt: '2026-06-23T00:04:00Z' }\n  ]\n}));\n`, 'utf8');
-    chmodSync(fakeGh, 0o755);
+    const fakeGh = writeNodeExecutable(fakeGhScript, `#!/usr/bin/env node\nconsole.log(JSON.stringify({\n  number: 99,\n  title: 'live fixture PR',\n  url: 'https://github.com/example/repo/pull/99',\n  state: 'OPEN',\n  createdAt: '2026-06-23T00:00:00Z',\n  mergedAt: '2026-06-23T00:10:00Z',\n  isDraft: false,\n  reviewDecision: '',\n  mergeStateStatus: 'CLEAN',\n  headRefOid: 'fake-head',\n  statusCheckRollup: [\n    { __typename: 'CheckRun', name: 'gate', workflowName: 'Copilot Review Gate', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:01:00Z', completedAt: '2026-06-23T00:02:00Z' },\n    { __typename: 'CheckRun', name: 'policy-gate', workflowName: 'Policy Gate', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:02:00Z', completedAt: '2026-06-23T00:03:00Z' },\n    { __typename: 'CheckRun', name: 'verify-lite', workflowName: 'Verify Lite', status: 'COMPLETED', conclusion: 'SUCCESS', startedAt: '2026-06-23T00:03:00Z', completedAt: '2026-06-23T00:04:00Z' }\n  ]\n}));\n`);
 
     try {
       const result = runScript([

@@ -10,6 +10,15 @@ import {
 
 let lastGhInvocationAtMs = 0;
 
+const resolveGhInvocation = (args) => {
+  const configured = String(process.env.AE_GH_BIN ?? '').trim();
+  const command = configured || 'gh';
+  if (/\.[cm]?js$/iu.test(command)) {
+    return { command: process.execPath, args: [command, ...args] };
+  }
+  return { command, args };
+};
+
 const toInteger = (value) => {
   if (value === null || value === undefined) return null;
   const raw = String(value).trim();
@@ -159,7 +168,8 @@ export function execGh(args, { input, encoding = 'utf8', cwd, env, stdio } = {})
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       throttleSync();
-      return execFileSync('gh', args, {
+      const invocation = resolveGhInvocation(args);
+      return execFileSync(invocation.command, invocation.args, {
         encoding,
         stdio: resolvedStdio,
         input,

@@ -9,7 +9,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import path, { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   commandExamples,
@@ -20,22 +20,13 @@ import {
 } from '../../../scripts/codex/export-issue-task.mjs';
 
 function writeFakeGh(tempDir: string, payload: { title: string; url: string; body: string }) {
-  if (process.platform === 'win32') {
-    const fixturePath = join(tempDir, 'gh-fixture.mjs');
-    writeFileSync(fixturePath, `console.log(${JSON.stringify(JSON.stringify(payload))});\n`);
-    const ghPath = join(tempDir, 'gh.cmd');
-    writeFileSync(ghPath, `@echo off\r\n"${process.execPath}" "${fixturePath}" %*\r\n`);
-    return ghPath;
-  }
-
-  const ghPath = join(tempDir, 'gh');
+  const ghPath = join(tempDir, 'gh.cjs');
   writeFileSync(
     ghPath,
     [
-      '#!/usr/bin/env node',
       `console.log(${JSON.stringify(JSON.stringify(payload))});`,
     ].join('\n'),
-    { mode: 0o755 },
+    'utf8',
   );
   return ghPath;
 }
@@ -68,14 +59,15 @@ describe('codex issue task exporter', () => {
   });
 
   it('keeps default output under .codex-local/tasks', () => {
+    const inputRoot = path.resolve('repo', 'worktree');
     const { workRoot, outputPath } = resolveOutputPath({
-      work: '/repo/worktree',
+      work: inputRoot,
       out: null,
       issue: 3490,
     });
 
-    expect(workRoot).toBe('/repo/worktree');
-    expect(outputPath).toBe('/repo/worktree/.codex-local/tasks/issue-3490.md');
+    expect(workRoot).toBe(inputRoot);
+    expect(outputPath).toBe(join(inputRoot, '.codex-local', 'tasks', 'issue-3490.md'));
   });
 
   it('rejects output paths outside the work root', () => {
@@ -177,15 +169,18 @@ describe('codex issue task exporter', () => {
   });
 
   it('prints dedicated worktree and non-interactive Codex command examples', () => {
+    const workRoot = path.resolve('workspace', 'ae-framework');
+    const outputPath = join(workRoot, '.codex-local', 'tasks', 'issue-3490.md');
+    const sibling = join(path.dirname(workRoot), 'ae-framework-3490-work');
     const examples = commandExamples({
       issue: 3490,
-      workRoot: '/workspace/ae-framework',
-      outputPath: '/workspace/ae-framework/.codex-local/tasks/issue-3490.md',
+      workRoot,
+      outputPath,
     });
 
     expect(examples).toContain('git worktree add');
     expect(examples).toContain('ae-framework-3490-work');
-    expect(examples).toContain("--cd '/workspace/ae-framework-3490-work'");
+    expect(examples).toContain(`--cd '${sibling}'`);
     expect(examples).toContain('Preflight reminder');
     expect(examples).toContain('Context Pack conflict: found');
     expect(examples).toContain('--sandbox workspace-write --ask-for-approval never');

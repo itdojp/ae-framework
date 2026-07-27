@@ -1,6 +1,7 @@
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   cleanRootSafeRemove,
@@ -81,8 +82,8 @@ describe('clean-root-safe-remove', () => {
   });
 
   it('treats URL-escaped module path and argv path as the same file', () => {
-    const metaUrl = 'file:///tmp/with%20space/clean-root-safe-remove.mjs';
-    const argvPath = '/tmp/with space/clean-root-safe-remove.mjs';
+    const argvPath = path.resolve(tmpdir(), 'with space', 'clean-root-safe-remove.mjs');
+    const metaUrl = pathToFileURL(argvPath).href;
     expect(isExecutedAsMain(metaUrl, argvPath)).toBe(true);
   });
 });

@@ -123,7 +123,7 @@ describe('CodeX Task UI scaffold security boundary', () => {
     const symlinkPath = join(artifactRoot, `codex-ui-link-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     mkdirSync(outside, { recursive: true });
     try {
-      symlinkSync(outside, symlinkPath, 'dir');
+      symlinkSync(outside, symlinkPath, process.platform === 'win32' ? 'junction' : 'dir');
     } catch {
       rmSync(outside, { recursive: true, force: true });
       return;
@@ -146,6 +146,62 @@ describe('CodeX Task UI scaffold security boundary', () => {
     expect(response.warnings).toEqual(expect.arrayContaining([
       expect.stringContaining('symlink outside the repository workspace'),
     ]));
+  });
+
+  it('fails closed for a broken UI output symlink instead of treating it as a missing directory', async () => {
+    mkdirSync(artifactRoot, { recursive: true });
+    const suffix = `${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const missingTarget = join(tmpdir(), `codex-ui-missing-${suffix}`);
+    const symlinkPath = join(artifactRoot, `codex-ui-broken-link-${suffix}`);
+    try {
+      symlinkSync(missingTarget, symlinkPath, 'dir');
+    } catch {
+      return;
+    }
+    cleanup = () => rmSync(symlinkPath, { recursive: true, force: true });
+    const adapter = createCodexTaskAdapter();
+
+    const response = await adapter.handleTask(makeRequest({
+      phaseState: makePhaseState(),
+      outputDir: relative(process.cwd(), symlinkPath),
+      dryRun: false,
+      approval: { approved: true, scope: 'ui-scaffold' },
+    }));
+
+    expect(response.shouldBlockProgress).toBe(true);
+    expect(response.blockingReason).toBe('unsafe-ui-output-dir');
+    expect(response.warnings).toEqual(expect.arrayContaining([
+      expect.stringContaining('symlink outside the repository workspace'),
+    ]));
+  });
+
+  it('allows UI output roots through a symlink alias that remains inside the repository', async () => {
+    mkdirSync(artifactRoot, { recursive: true });
+    const suffix = `${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const target = join(artifactRoot, `codex-ui-target-${suffix}`);
+    const symlinkPath = join(artifactRoot, `codex-ui-alias-${suffix}`);
+    mkdirSync(target, { recursive: true });
+    try {
+      symlinkSync(target, symlinkPath, process.platform === 'win32' ? 'junction' : 'dir');
+    } catch {
+      rmSync(target, { recursive: true, force: true });
+      return;
+    }
+    cleanup = () => {
+      rmSync(symlinkPath, { recursive: true, force: true });
+      rmSync(target, { recursive: true, force: true });
+    };
+    const adapter = createCodexTaskAdapter();
+
+    const response = await adapter.handleTask(makeRequest({
+      phaseState: makePhaseState(),
+      outputDir: relative(process.cwd(), symlinkPath),
+      dryRun: false,
+      approval: { approved: true, scope: 'ui-scaffold', actor: 'operator' },
+    }));
+
+    expect(response.shouldBlockProgress).toBe(false);
+    expect(existsSync(join(target, 'apps', 'web', 'app', 'admin-panel', 'page.tsx'))).toBe(true);
   });
 
   it('writes only under the approved output root and sanitizes entity path segments for trusted requests', async () => {

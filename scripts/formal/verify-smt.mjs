@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // Lightweight SMT runner: executes a solver when available and records semantic result evidence. Non-blocking.
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildFormalRunnerOutput, buildLegacyFormalExecutionEvidence, extractToolVersion } from './execution-evidence.mjs';
+import { spawnToolSync } from './tool-invocation.mjs';
 
 const SMT_RESULTS = new Set(['sat', 'unsat', 'unknown']);
 const SMT_EXPECTED_RESULTS = new Set(['sat', 'unsat']);
@@ -78,19 +78,24 @@ function parseArgs(argv) {
 }
 
 function commandExists(cmd) {
-  const result = spawnSync(cmd, [], { stdio: 'ignore' });
+  const result = spawnToolSync(cmd, [], { stdio: 'ignore' });
   if (result.error && result.error.code === 'ENOENT') {
     return false;
   }
   return true;
 }
 
-function runCommand(cmd, cmdArgs) {
-  const result = spawnSync(cmd, cmdArgs, { encoding: 'utf8' });
+function runCommand(cmd, cmdArgs, { timeoutMs = 0 } = {}) {
+  const result = spawnToolSync(cmd, cmdArgs, {
+    encoding: 'utf8',
+    ...(timeoutMs > 0 ? { timeout: timeoutMs, killSignal: 'SIGTERM' } : {}),
+  });
   const stdout = result.stdout ?? '';
   const stderr = result.stderr ?? '';
   let output = `${stdout}${stderr}`;
-  if (result.error) {
+  const errorCode = result.error?.code ?? null;
+  const timedOut = errorCode === 'ETIMEDOUT';
+  if (result.error && !timedOut) {
     if (!output && result.error.message) {
       output = result.error.message;
     }
@@ -101,7 +106,11 @@ function runCommand(cmd, cmdArgs) {
       stderr,
       output,
       errorCode: result.error.code ?? null,
+      timedOut: false,
     };
+  }
+  if (timedOut && !output && result.error?.message) {
+    output = result.error.message;
   }
   return {
     available: true,
@@ -109,16 +118,16 @@ function runCommand(cmd, cmdArgs) {
     stdout,
     stderr,
     output,
-    errorCode: null,
+    errorCode,
+    timedOut,
   };
 }
 
 export function runSmtVerification(argv = process.argv) {
   const args = parseArgs(argv);
-  const timeoutSec = args.timeout ? Math.max(1, Math.floor(Number(args.timeout) / 1000)) : 0;
-  const haveTimeout = commandExists('timeout');
-  const timeoutRequested = timeoutSec > 0;
-  const timeoutIgnored = timeoutRequested && !haveTimeout;
+  const timeoutMs = Number.isFinite(Number(args.timeout)) && Number(args.timeout) > 0
+    ? Math.floor(Number(args.timeout))
+    : 0;
   if (args.help) {
     console.log('Usage: node scripts/formal/verify-smt.mjs [--solver=z3|cvc5] [--file path/to/input.smt2] [--expected-result sat|unsat] [--timeout <ms>]');
     console.log('See docs/quality/formal-tools-setup.md for solver setup.');
@@ -129,9 +138,9 @@ export function runSmtVerification(argv = process.argv) {
   const file = args.file;
   const expectedResult = normalizeExpectedResult(args.expectedResult);
   const solverSpec = solver === 'z3'
-    ? { cmd: 'z3', args: ['-smt2'] }
+    ? { cmd: String(process.env.AE_FORMAL_SMT_COMMAND || 'z3').trim() || 'z3', args: ['-smt2'] }
     : solver === 'cvc5'
-      ? { cmd: 'cvc5', args: ['--lang=smt2'] }
+      ? { cmd: String(process.env.AE_FORMAL_SMT_COMMAND || 'cvc5').trim() || 'cvc5', args: ['--lang=smt2'] }
       : null;
 
   const repoRoot = path.resolve(process.cwd());
@@ -158,18 +167,13 @@ export function runSmtVerification(argv = process.argv) {
   } else if (solverSpec && commandExists(solverSpec.cmd)) {
     toolVersion = extractToolVersion(runCommand(solverSpec.cmd, ['--version']).output);
     versionSource = toolVersion ? 'cli' : 'unavailable';
-    const baseCmd = { cmd: solverSpec.cmd, args: [...solverSpec.args, file] };
-    const runSpec = (timeoutSec && haveTimeout)
-      ? { cmd: 'timeout', args: [`${timeoutSec}s`, baseCmd.cmd, ...baseCmd.args] }
-      : baseCmd;
+    const runSpec = { cmd: solverSpec.cmd, args: [...solverSpec.args, file] };
     const t0 = Date.now();
-    const result = runCommand(runSpec.cmd, runSpec.args);
+    const result = runCommand(runSpec.cmd, runSpec.args, { timeoutMs });
     timeMs = Date.now() - t0;
     if (!result.available) {
       status = 'solver_not_available';
-      if (runSpec.cmd === 'timeout') {
-        output = `Command 'timeout' not found while invoking solver '${solver}'. See docs/quality/formal-tools-setup.md`;
-      } else if (result.errorCode && result.errorCode !== 'ENOENT') {
+      if (result.errorCode && result.errorCode !== 'ENOENT') {
         output = `Failed to execute solver '${solver}' (${result.errorCode}). See docs/quality/formal-tools-setup.md`;
       } else {
         output = `Solver '${solver}' not found. See docs/quality/formal-tools-setup.md`;
@@ -178,7 +182,7 @@ export function runSmtVerification(argv = process.argv) {
       output = result.output;
       ran = true;
       exitCode = result.status;
-      const timedOut = timeoutSec > 0 && haveTimeout && result.status === 124;
+      const timedOut = result.timedOut === true;
       semanticResult = parseSmtSemanticResult({
         stdout: result.stdout,
         expectedResult,
@@ -186,9 +190,6 @@ export function runSmtVerification(argv = process.argv) {
       });
       status = timedOut ? 'timeout' : (result.status === 0 ? 'ran' : 'failed');
       ok = status === 'ran' ? isSmtSemanticSuccess(semanticResult) : (status === 'failed' ? false : null);
-      if (timeoutIgnored) {
-        output = `Timeout requested (${timeoutSec}s) but 'timeout' is unavailable; running without timeout.\n${output}`;
-      }
     }
   } else {
     status = 'solver_not_available';
@@ -197,8 +198,10 @@ export function runSmtVerification(argv = process.argv) {
 
   try { fs.writeFileSync(outLog, output, 'utf-8'); } catch {}
 
-  const relativeInput = file ? path.relative(repoRoot, path.resolve(repoRoot, file)) : 'SMT input not supplied';
-  const relativeLog = path.relative(repoRoot, outLog);
+  const relativeInput = file
+    ? path.relative(repoRoot, path.resolve(repoRoot, file)).replaceAll('\\', '/')
+    : 'SMT input not supplied';
+  const relativeLog = path.relative(repoRoot, outLog).replaceAll('\\', '/');
   const executionEvidence = buildLegacyFormalExecutionEvidence({
     runner: 'smt',
     toolName: solver,

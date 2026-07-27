@@ -102,9 +102,14 @@ describe('GuardRunner process-starting guard execution policy', () => {
     const result = await runner.run(testExecutionGuard);
 
     expect(result).toEqual({ success: true, message: 'All tests pass' });
-    expect(childProcessMock.spawnSync).toHaveBeenCalledWith(
-      'npm',
+    const invocation = createGuardNpmInvocation(
       ['test', '--silent'],
+      process.platform,
+      { PATH: '/usr/bin', HOME: '/home/operator' },
+    );
+    expect(childProcessMock.spawnSync).toHaveBeenCalledWith(
+      invocation.command,
+      invocation.args,
       expect.objectContaining({
         cwd: '/repo',
         encoding: 'utf8',
@@ -189,16 +194,26 @@ describe('GuardRunner process-starting guard execution policy', () => {
 
     expect(result.success).toBe(true);
     expect(result.message).toContain('Coverage: 85%');
+    const coverageInvocation = createGuardNpmInvocation(
+      ['run', 'coverage', '--silent'],
+      process.platform,
+      { PATH: '/usr/bin' },
+    );
+    const testInvocation = createGuardNpmInvocation(
+      ['test', '--', '--coverage', '--silent'],
+      process.platform,
+      { PATH: '/usr/bin' },
+    );
     expect(childProcessMock.spawnSync).toHaveBeenNthCalledWith(
       1,
-      'npm',
-      ['run', 'coverage', '--silent'],
+      coverageInvocation.command,
+      coverageInvocation.args,
       expect.objectContaining({ shell: false })
     );
     expect(childProcessMock.spawnSync).toHaveBeenNthCalledWith(
       2,
-      'npm',
-      ['test', '--', '--coverage', '--silent'],
+      testInvocation.command,
+      testInvocation.args,
       expect.objectContaining({ shell: false })
     );
   });

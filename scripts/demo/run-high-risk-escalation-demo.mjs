@@ -153,7 +153,8 @@ function normalizeRepoPaths(value) {
   const repoRoot = process.cwd();
   const normalizeString = (text) => String(text)
     .split(`${repoRoot}${path.sep}`).join('')
-    .split(`${repoRoot}/`).join('');
+    .split(`${repoRoot}/`).join('')
+    .split(path.sep).join('/');
   if (Array.isArray(value)) return value.map((entry) => normalizeRepoPaths(entry));
   if (value && typeof value === 'object') {
     return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, normalizeRepoPaths(entry)]));
@@ -170,6 +171,7 @@ function demoPaths(outputRoot) {
     producerMd: path.join(root, 'agents', DEMO_NAME, 'producer-normalization-summary.md'),
     claimManifestJson: path.join(root, 'assurance', DEMO_NAME, 'claim-evidence-manifest.json'),
     claimProvenanceJson: path.join(root, 'assurance', DEMO_NAME, 'claim-evidence-provenance.json'),
+    verifyLiteJson: path.join(root, 'verify-lite', 'verify-lite-run-summary.json'),
     assuranceJson: path.join(root, 'assurance', DEMO_NAME, 'assurance-summary.json'),
     assuranceMd: path.join(root, 'assurance', DEMO_NAME, 'assurance-summary.md'),
     boundaryJson: path.join(root, 'context-pack', DEMO_NAME, 'boundary-map-summary.json'),
@@ -457,6 +459,7 @@ function run(options) {
     '--policy-gate-summary', toRepoRelativePath(paths.policyNormalJson),
     '--boundary-map-summary', toRepoRelativePath(paths.boundaryJson),
     '--claim-evidence-manifest', toRepoRelativePath(paths.claimManifestJson),
+    '--verify-lite-summary', toRepoRelativePath(paths.verifyLiteJson),
     '--output-md', toRepoRelativePath(paths.reviewNormalMd),
     '--generated-at', options.generatedAt,
   ]);
@@ -469,6 +472,7 @@ function run(options) {
     '--policy-gate-summary', toRepoRelativePath(paths.policyHighRiskJson),
     '--boundary-map-summary', toRepoRelativePath(paths.boundaryJson),
     '--claim-evidence-manifest', toRepoRelativePath(paths.claimManifestJson),
+    '--verify-lite-summary', toRepoRelativePath(paths.verifyLiteJson),
     '--output-md', toRepoRelativePath(paths.reviewHighRiskMd),
     '--generated-at', options.generatedAt,
   ]);

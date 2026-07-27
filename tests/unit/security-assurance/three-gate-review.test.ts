@@ -15,7 +15,7 @@ const cacheKeyFindingsPath = 'fixtures/security-assurance/cache-key/expected/sec
 const cacheKeyScopePath = 'fixtures/security-assurance/cache-key/expected/security-audit-scope.json';
 const cacheKeyCodeMapPath = 'fixtures/security-assurance/cache-key/expected/security-code-map.json';
 const generatedAt = '2026-05-07T00:00:00.000Z';
-const tsxBin = resolve('node_modules/.bin/tsx');
+const tsxCli = resolve('node_modules/tsx/dist/cli.mjs');
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
 
@@ -585,8 +585,8 @@ describe('security three-gate review producer', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'ae-security-review-cli-'));
     try {
       const result = spawnSync(
-        tsxBin,
-        [
+        process.execPath,
+        [tsxCli,
           'src/cli/index.ts',
           'security',
           'review',

@@ -22,6 +22,12 @@ function makeTempRoot(prefix: string) {
   return outputRoot;
 }
 
+function writeNodeExecutable(filePath: string, source: string): string {
+  writeFileSync(filePath, source, 'utf8');
+  chmodSync(filePath, 0o755);
+  return filePath;
+}
+
 describe('PR review surface posting helper', () => {
   it('defaults to dry-run and prints the target, marker, and comment body without invoking gh', () => {
     const outputRoot = makeTempRoot('pr-review-surface-post-dry-run');
@@ -86,10 +92,10 @@ describe('PR review surface posting helper', () => {
   it('uses gh pr comment with a generated body-file only in comment mode', () => {
     const outputRoot = makeTempRoot('pr-review-surface-post-comment');
     const bodyFile = join(outputRoot, 'assurance-review.md');
-    const fakeGh = join(outputRoot, 'fake-gh.mjs');
+    const fakeGhScript = join(outputRoot, 'fake-gh.mjs');
     const recordFile = join(outputRoot, 'gh-record.json');
     writeFileSync(bodyFile, '# PR Assurance Review Surface\n\nReview evidence.\n', 'utf8');
-    writeFileSync(fakeGh, `#!/usr/bin/env node
+    const fakeGh = writeNodeExecutable(fakeGhScript, `#!/usr/bin/env node
 import fs from 'node:fs';
 const args = process.argv.slice(2);
 const bodyFileIndex = args.indexOf('--body-file');
@@ -100,8 +106,7 @@ fs.writeFileSync(${JSON.stringify(recordFile)}, JSON.stringify({
   body: bodyFile ? fs.readFileSync(bodyFile, 'utf8') : null,
 }, null, 2));
 console.log('https://github.com/example/repo/pull/42#issuecomment-1');
-`, 'utf8');
-    chmodSync(fakeGh, 0o755);
+`);
 
     const result = runScript([
       '--repo', 'example/repo',
@@ -135,13 +140,12 @@ console.log('https://github.com/example/repo/pull/42#issuecomment-1');
   it('returns an actionable authentication error when gh pr comment fails', () => {
     const outputRoot = makeTempRoot('pr-review-surface-post-gh-failure');
     const bodyFile = join(outputRoot, 'assurance-review.md');
-    const fakeGh = join(outputRoot, 'fake-gh-fail.mjs');
+    const fakeGhScript = join(outputRoot, 'fake-gh-fail.mjs');
     writeFileSync(bodyFile, '# Review\n', 'utf8');
-    writeFileSync(fakeGh, `#!/usr/bin/env node
+    const fakeGh = writeNodeExecutable(fakeGhScript, `#!/usr/bin/env node
 console.error('gh: authentication required');
 process.exit(1);
-`, 'utf8');
-    chmodSync(fakeGh, 0o755);
+`);
 
     const result = runScript([
       '--repo', 'example/repo',

@@ -5,6 +5,13 @@ import path from 'node:path';
 
 const repoRoot = process.cwd();
 
+function resolvePnpmInvocation(args) {
+  const pnpmEntrypoint = String(process.env.npm_execpath || '').trim();
+  return /(?:^|[\\/])pnpm(?:\.c?js)?$/iu.test(pnpmEntrypoint)
+    ? { command: process.execPath, args: [pnpmEntrypoint, ...args] }
+    : { command: 'pnpm', args };
+}
+
 function parseArgs(argv) {
   const options = {
     input: null,
@@ -77,20 +84,21 @@ const summaryOutArg = path.relative(repoRoot, summaryOutPath);
 const traceOutputArg = path.relative(repoRoot, traceOutputDir);
 const envelopeOutPath = path.resolve(repoRoot, opts.envelopeOut);
 
-const command = ['pnpm', 'verify:conformance'];
+const commandArgs = ['verify:conformance'];
 const inputPath = opts.input || path.join('samples', 'trace', 'kvonce-sample.ndjson');
-command.push('--trace', inputPath);
+commandArgs.push('--trace', inputPath);
 if (opts.format) {
-  command.push('--trace-format', opts.format);
+  commandArgs.push('--trace-format', opts.format);
 }
-command.push('--trace-output', traceOutputArg);
-command.push('--out', summaryOutArg);
+commandArgs.push('--trace-output', traceOutputArg);
+commandArgs.push('--out', summaryOutArg);
 if (!opts.replay) {
-  command.push('--trace-skip-replay');
+  commandArgs.push('--trace-skip-replay');
 }
+const command = resolvePnpmInvocation(commandArgs);
 
 if (opts.dryRun) {
-  console.log('[trace] dry-run:', command.join(' '));
+  console.log('[trace] dry-run:', [command.command, ...command.args].join(' '));
   console.log(`[trace] summary -> ${summaryOutArg}`);
   if (opts.envelope) {
     console.log(`[trace] envelope -> ${path.relative(repoRoot, envelopeOutPath)}`);
@@ -98,13 +106,16 @@ if (opts.dryRun) {
   process.exit(0);
 }
 
-const child = spawn(command[0], command.slice(1), {
+const child = spawn(command.command, command.args, {
   cwd: repoRoot,
   stdio: 'inherit',
   env: process.env,
 });
 
-child.on('close', (code) => {
+let finalized = false;
+function finalize(code) {
+  if (finalized) return;
+  finalized = true;
   const exitCode = code ?? 1;
   if (opts.envelope) {
     try {
@@ -154,4 +165,13 @@ child.on('close', (code) => {
   }
 
   process.exit(exitCode);
+}
+
+child.once('error', (error) => {
+  console.error(`[pipelines:trace] failed to start ${command.command}: ${error.message}`);
+  finalize(1);
+});
+
+child.once('close', (code) => {
+  finalize(code);
 });

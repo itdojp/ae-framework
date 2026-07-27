@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { collectRequiredCheckClassifications } from '../ci/lib/check-classification.mjs';
 
 const DEFAULT_OUTPUT_JSON = 'artifacts/metrics/agent-pr-assurance-metrics.json';
@@ -263,7 +264,7 @@ function collectLivePr(options) {
     'headRefOid',
     'statusCheckRollup',
   ].join(',');
-  const result = spawnSync(options.ghBin, [
+  const ghArgs = [
     'pr',
     'view',
     String(options.pr),
@@ -271,7 +272,10 @@ function collectLivePr(options) {
     options.repo,
     '--json',
     fields,
-  ], {
+  ];
+  const ghCommand = /\.[cm]?js$/iu.test(options.ghBin) ? process.execPath : options.ghBin;
+  const ghCommandArgs = ghCommand === process.execPath ? [options.ghBin, ...ghArgs] : ghArgs;
+  const result = spawnSync(ghCommand, ghCommandArgs, {
     cwd: process.cwd(),
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -709,7 +713,7 @@ function main() {
   process.stdout.write(`Agent PR assurance metrics written.\n- json: ${displayPath(options.outputJson)}\n- markdown: ${displayPath(options.outputMd)}\n- source: ${document.agentPrAssurance.source}\n`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   try {
     main();
   } catch (error) {

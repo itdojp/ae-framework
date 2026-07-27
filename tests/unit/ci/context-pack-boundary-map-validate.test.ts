@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -160,6 +160,30 @@ describe('context-pack boundary map validate CLI', () => {
     const markdown = await readFile(summaryMarkdownPath(), 'utf8');
     expect(markdown).toContain('Status: boundary map ok');
     expect(markdown).toContain('No boundary map drift detected.');
+  });
+
+  it('excludes the map when the CLI path uses a filesystem alias', async () => {
+    await writeContextPack();
+    await writeMap({
+      schemaVersion: 'context-pack-boundary-map/v1',
+      contextPackSources: ['spec/context-pack/**/*.{yml,yaml,json}'],
+      slices: [
+        {
+          id: 'inventory-item-model',
+          produces: [{ kind: 'object', refId: 'InventoryItem' }],
+        },
+      ],
+    });
+    const aliasDir = join(workdir, 'context-pack-alias');
+    await symlink(contextPackDir, aliasDir, 'junction');
+    mapPath = join(aliasDir, 'boundary-map.json');
+
+    const result = runVerify();
+    expect(result.status).toBe(0);
+    const report = JSON.parse(await readFile(reportJsonPath(), 'utf8'));
+    expect(report.scannedContextPackFiles).toBe(1);
+    expect(report.skippedAuxiliaryFiles).toBe(0);
+    expect(report.mapPath).toBe('spec/context-pack/boundary-map.json');
   });
 
   it('fails when a consumed ref has no upstream producer', async () => {

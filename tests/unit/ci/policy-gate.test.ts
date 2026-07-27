@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import crypto from 'node:crypto';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import {
   buildMarkdownSummary,
   buildPolicyGateReport,
@@ -1896,7 +1896,7 @@ describe('policy-gate', () => {
 
       expect(agentAssuranceFindings.count).toBe(2);
       expect(agentAssuranceFindings.sources).toContain(
-        assuranceSummaryPath.replace(`${process.cwd()}/`, ''),
+        relative(process.cwd(), assuranceSummaryPath).split(sep).join('/'),
       );
       expect(agentAssuranceFindings.findings).toEqual(expect.arrayContaining([
         expect.objectContaining({

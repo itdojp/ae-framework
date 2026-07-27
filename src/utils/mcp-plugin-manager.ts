@@ -585,8 +585,13 @@ No additional configuration required.
       throw new Error('Plugin template target directory is required and must be a string');
     }
 
-    if (this.hasControlOrNullByte(targetDir) || targetDir.includes('\\') || /^[A-Za-z]:/.test(targetDir)) {
-      throw new Error('Plugin template target directory must not contain control characters, NUL bytes, backslashes, or Windows drive prefixes');
+    const hasForeignWindowsSyntax =
+      process.platform !== 'win32' && (targetDir.includes('\\') || /^[A-Za-z]:/.test(targetDir));
+    if (this.hasControlOrNullByte(targetDir)) {
+      throw new Error('Plugin template target directory must not contain control characters or NUL bytes');
+    }
+    if (hasForeignWindowsSyntax) {
+      throw new Error('Plugin template target directory must not use backslashes or Windows drive prefixes on this platform');
     }
 
     const resolvedProjectRoot = path.resolve(this.projectRoot);

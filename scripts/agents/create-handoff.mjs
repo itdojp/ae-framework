@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { buildHookFeedbackArtifact } from './build-hook-feedback.mjs';
+import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const DEFAULT_HOOK_FEEDBACK_PATH = 'artifacts/agents/hook-feedback.json';
 const DEFAULT_VERIFY_LITE_SUMMARY_PATH = 'artifacts/verify-lite/verify-lite-run-summary.json';
@@ -80,8 +81,7 @@ function relativeOrNull(absolutePath) {
   if (!absolutePath) {
     return null;
   }
-  const relativePath = path.relative(process.cwd(), absolutePath);
-  return relativePath || path.basename(absolutePath);
+  return normalizeArtifactPath(absolutePath, { repoRoot: process.cwd() }) || path.basename(absolutePath);
 }
 
 function readJsonOptional(filePath, label) {

@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 
 const toPosixPath = (value: string): string => value.replace(/\\/g, '/');
@@ -16,6 +17,46 @@ const normalizeUncPath = (raw: string): string => {
 export type NormalizeArtifactPathOptions = {
   repoRoot?: string;
 };
+
+type CanonicalizeExistingPathOptions = {
+  base?: string;
+};
+
+/**
+ * Resolve filesystem aliases through the deepest existing ancestor.
+ *
+ * A report path may identify an output leaf that has not been materialized yet.
+ * Canonicalizing the existing ancestor keeps platform aliases (for example
+ * macOS `/var` -> `/private/var`) and symlink boundaries authoritative without
+ * claiming that the missing suffix exists.
+ */
+function canonicalizeExistingPath(
+  value: string,
+  options: CanonicalizeExistingPathOptions = {},
+): string {
+  const resolved = path.resolve(options.base ?? process.cwd(), value);
+  let candidate = resolved;
+  const missingSuffix: string[] = [];
+
+  while (true) {
+    try {
+      const canonicalAncestor = fs.realpathSync.native(candidate);
+      return path.join(canonicalAncestor, ...missingSuffix);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException)?.code;
+      if (code !== 'ENOENT' && code !== 'ENOTDIR') {
+        throw error;
+      }
+
+      const parent = path.dirname(candidate);
+      if (parent === candidate) {
+        return path.normalize(resolved);
+      }
+      missingSuffix.unshift(path.basename(candidate));
+      candidate = parent;
+    }
+  }
+}
 
 /**
  * Normalize a path string for artifacts/reports JSON.
@@ -37,9 +78,12 @@ export function normalizeArtifactPath(
 
   // Preserve UNC semantics: `\\server\share\...` should become `//server/share/...` after normalization.
   if (raw.startsWith('\\\\') || raw.startsWith('//')) {
-    if (path.isAbsolute(raw)) {
-      const root = path.resolve(repoRoot);
-      const abs = path.resolve(raw);
+    const sameFilesystemRoot = process.platform !== 'win32'
+      || path.parse(path.resolve(raw)).root.toLowerCase()
+        === path.parse(path.resolve(repoRoot)).root.toLowerCase();
+    if (path.isAbsolute(raw) && sameFilesystemRoot) {
+      const root = canonicalizeExistingPath(repoRoot);
+      const abs = canonicalizeExistingPath(raw);
       const rel = path.relative(root, abs);
       if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
         return path.posix.normalize(toPosixPath(rel));
@@ -56,8 +100,8 @@ export function normalizeArtifactPath(
 
   // POSIX absolute path: convert to repo-relative when inside repoRoot.
   if (path.isAbsolute(raw)) {
-    const root = path.resolve(repoRoot);
-    const abs = path.resolve(raw);
+    const root = canonicalizeExistingPath(repoRoot);
+    const abs = canonicalizeExistingPath(raw);
     const rel = path.relative(root, abs);
     if (!rel.startsWith('..') && !path.isAbsolute(rel)) {
       return path.posix.normalize(toPosixPath(rel));

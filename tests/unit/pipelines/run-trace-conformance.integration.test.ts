@@ -1,11 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { mkdtemp, rm, readFile, mkdir } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
 
 const execFileAsync = promisify(execFile);
+
+const withEnvironmentOverrides = (overrides: NodeJS.ProcessEnv): NodeJS.ProcessEnv => {
+  const overriddenKeys = new Set(Object.keys(overrides).map((key) => key.toLowerCase()));
+  return {
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(([key]) => !overriddenKeys.has(key.toLowerCase())),
+    ),
+    ...overrides,
+  };
+};
 
 async function withTempDir<T>(fn: (dir: string) => Promise<T>) {
   const dir = await mkdtemp(join(tmpdir(), 'pipelines-trace-'));
@@ -56,6 +66,74 @@ describe('pipelines:trace', () => {
       expect(envelope.summary.overall_status).toBe(summary.overall_status);
       expect(Array.isArray(envelope.artifacts)).toBe(true);
       expect(envelope.artifacts.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('executes a pnpm JavaScript entrypoint through the current Node runtime', async () => {
+    await withTempDir(async (dir) => {
+      const scriptPath = resolve('scripts/pipelines/run-trace-conformance.mjs');
+      const fakePnpm = join(dir, 'pnpm.cjs');
+      const recordPath = join(dir, 'pnpm-args.json');
+      await writeFile(fakePnpm, `
+const fs = require('node:fs');
+fs.writeFileSync(process.env.FAKE_PNPM_RECORD, JSON.stringify(process.argv.slice(2)));
+`, 'utf8');
+
+      await execFileAsync(process.execPath, [
+        scriptPath,
+        '--input',
+        'samples/trace/kvonce-sample.ndjson',
+        '--output-dir',
+        join(dir, 'trace-output'),
+        '--summary-out',
+        join(dir, 'conformance-summary.json'),
+        '--skip-replay',
+        '--no-envelope',
+      ], {
+        env: withEnvironmentOverrides({
+          npm_execpath: fakePnpm,
+          FAKE_PNPM_RECORD: recordPath,
+        }),
+      });
+
+      expect(JSON.parse(await readFile(recordPath, 'utf8'))).toEqual([
+        'verify:conformance',
+        '--trace',
+        'samples/trace/kvonce-sample.ndjson',
+        '--trace-format',
+        'auto',
+        '--trace-output',
+        expect.any(String),
+        '--out',
+        expect.any(String),
+        '--trace-skip-replay',
+      ]);
+    });
+  });
+
+  it('fails deterministically when the pnpm process cannot start', async () => {
+    await withTempDir(async (dir) => {
+      const scriptPath = resolve('scripts/pipelines/run-trace-conformance.mjs');
+
+      await expect(execFileAsync(process.execPath, [
+        scriptPath,
+        '--input',
+        'samples/trace/kvonce-sample.ndjson',
+        '--output-dir',
+        join(dir, 'trace-output'),
+        '--summary-out',
+        join(dir, 'conformance-summary.json'),
+        '--skip-replay',
+        '--no-envelope',
+      ], {
+        env: withEnvironmentOverrides({
+          PATH: '',
+          npm_execpath: '',
+        }),
+      })).rejects.toMatchObject({
+        code: 1,
+        stderr: expect.stringContaining('[pipelines:trace] failed to start pnpm:'),
+      });
     });
   });
 });

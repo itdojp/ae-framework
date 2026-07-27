@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import path, { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import {
   CLI_CANDIDATES,
   ensureCLI,
@@ -10,10 +12,10 @@ import {
 
 describe('codex quickstart cli resolution', () => {
   it('prefers the first CLI candidate when both are present', () => {
-    const rootDir = '/tmp/repo';
+    const rootDir = resolve(tmpdir(), 'repo');
     const existsFn = vi.fn(() => true);
     const cliPath = findCLI(rootDir, existsFn);
-    expect(cliPath).toContain(CLI_CANDIDATES[0]);
+    expect(cliPath).toBe(path.join(rootDir, CLI_CANDIDATES[0]));
   });
 
   it('returns null when no candidate exists', () => {
@@ -45,8 +47,8 @@ describe('codex quickstart cli resolution', () => {
   });
 
   it('builds once and resolves CLI when build succeeds', () => {
-    const rootDir = '/tmp/repo';
-    const expectedCliPath = `${rootDir}/${CLI_CANDIDATES[0]}`;
+    const rootDir = resolve(tmpdir(), 'repo');
+    const expectedCliPath = path.join(rootDir, CLI_CANDIDATES[0]);
     let built = false;
     const spawn = vi.fn(() => {
       built = true;
@@ -69,7 +71,7 @@ describe('codex quickstart cli resolution', () => {
     );
     expect(result.ok).toBe(true);
     expect(result.built).toBe(true);
-    expect(result.cliPath).toContain(CLI_CANDIDATES[0]);
+    expect(result.cliPath).toBe(expectedCliPath);
   });
 
   it('returns failure when build succeeds but CLI is still missing', () => {
@@ -112,8 +114,8 @@ describe('codex quickstart cli resolution', () => {
   });
 
   it('treats URL-escaped module path and argv path as the same file', () => {
-    const metaUrl = 'file:///tmp/with%20space/quickstart.mjs';
-    const argvPath = '/tmp/with space/quickstart.mjs';
+    const argvPath = resolve(tmpdir(), 'with space', 'quickstart.mjs');
+    const metaUrl = pathToFileURL(argvPath).href;
     expect(isExecutedAsMain(metaUrl, argvPath)).toBe(true);
   });
 
