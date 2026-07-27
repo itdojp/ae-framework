@@ -60,6 +60,17 @@ Custom files:
 pnpm run check:doc-consistency -- --docs README.md,docs/README.md
 ```
 
+Generated agent-command catalog:
+```bash
+# Check mode preserves and validates the committed verification date.
+node scripts/docs/check-agent-commands-doc-sync.mjs
+
+# Write mode requires the UTC date that the generated slice was verified.
+node scripts/docs/check-agent-commands-doc-sync.mjs --write --last-verified YYYY-MM-DD
+```
+
+Check mode reads the single `lastVerified` value from `docs/agents/commands.md`, validates it as a real `YYYY-MM-DD` calendar date, and uses that value when rendering the complete expected catalog. It never refreshes the date from the wall clock. Missing, malformed, or duplicate `lastVerified` entries fail closed. Use explicit write mode only after the workflow-derived catalog has been verified; repeated writes with the same workflow and date are byte-identical.
+
 Note:
 - When `--format json` or `--docs` is specified, only `check-doc-consistency.mjs` runs for compatibility; the other validators are skipped.
 - Run `pnpm run check:ci-doc-index-consistency` separately when CI index validation is also required.
@@ -140,6 +151,17 @@ pnpm run check:doc-consistency -- --format json
 ```bash
 pnpm run check:doc-consistency -- --docs README.md,docs/README.md
 ```
+
+生成済みAgent command catalog:
+```bash
+# Check modeはcommit済みのverification dateを保持・検証します。
+node scripts/docs/check-agent-commands-doc-sync.mjs
+
+# Write modeには生成スライスを検証したUTC日付を明示します。
+node scripts/docs/check-agent-commands-doc-sync.mjs --write --last-verified YYYY-MM-DD
+```
+
+Check modeは`docs/agents/commands.md`から唯一の`lastVerified`を読み取り、実在する`YYYY-MM-DD`暦日として検証したうえで、完全な期待catalogのrenderに同じ値を使用します。wall clockから日付を更新することはありません。`lastVerified`の欠落、不正形式、重複はfail closedです。workflow由来catalogを検証した場合にだけ明示的なwrite modeを使用し、同じworkflowと日付による連続writeはbyte-identicalになります。
 
 注意:
 - `--format json` または `--docs` を指定した場合は互換性のため `check-doc-consistency.mjs` のみを実行し、他の validator はスキップします。

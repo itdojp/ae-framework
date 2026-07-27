@@ -7,14 +7,65 @@ import { fileURLToPath } from 'node:url';
 const DEFAULT_WORKFLOW_PATH = '.github/workflows/agent-commands.yml';
 const DEFAULT_OUTPUT_PATH = 'docs/agents/commands.md';
 const __filename = fileURLToPath(import.meta.url);
+const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/u;
 
-function buildGeneratedFrontMatter(lastVerified = new Date().toISOString().slice(0, 10)) {
+function isLeapYear(year) {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+}
+
+function validateLastVerified(lastVerified) {
+  const match = ISO_DATE_PATTERN.exec(String(lastVerified ?? ''));
+  if (!match) {
+    throw new Error('lastVerified must use YYYY-MM-DD format');
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const daysInMonth = [31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (month < 1 || month > 12 || day < 1 || day > daysInMonth[month - 1]) {
+    throw new Error('lastVerified must be a valid calendar date');
+  }
+  return match[0];
+}
+
+function parseGeneratedFrontMatter(documentText) {
+  const lines = String(documentText).split(/\r?\n/u);
+  if (lines[0] !== '---') {
+    throw new Error('generated document must start with front matter');
+  }
+
+  const closingIndex = lines.indexOf('---', 1);
+  if (closingIndex < 0) {
+    throw new Error('generated document front matter is not closed');
+  }
+
+  const lastVerifiedLines = lines
+    .slice(1, closingIndex)
+    .filter((line) => /^lastVerified\s*:/u.test(line));
+  if (lastVerifiedLines.length === 0) {
+    throw new Error('generated document front matter is missing lastVerified');
+  }
+  if (lastVerifiedLines.length !== 1) {
+    throw new Error('generated document front matter contains duplicate lastVerified');
+  }
+
+  const scalarMatch = /^lastVerified:\s*(?:'([^']*)'|"([^"]*)"|([^\s#]+))\s*$/u.exec(lastVerifiedLines[0]);
+  if (!scalarMatch) {
+    throw new Error('generated document lastVerified is malformed');
+  }
+  const lastVerified = validateLastVerified(scalarMatch[1] ?? scalarMatch[2] ?? scalarMatch[3]);
+  return { lastVerified };
+}
+
+function buildGeneratedFrontMatter({ lastVerified }) {
+  const verifiedDate = validateLastVerified(lastVerified);
   return [
     '---',
     'docRole: derived',
     'canonicalSource:',
     '  - .github/workflows/agent-commands.yml',
-    `lastVerified: '${lastVerified}'`,
+    `lastVerified: '${verifiedDate}'`,
     '---',
     '',
   ];
@@ -111,9 +162,9 @@ function extractLabelMetadata(workflowText) {
   };
 }
 
-function renderMarkdown({ prCommands, issueCommands, prLabels, issueLabels, dynamicLabels }) {
+function renderMarkdown({ lastVerified, prCommands, issueCommands, prLabels, issueLabels, dynamicLabels }) {
   const lines = [
-    ...buildGeneratedFrontMatter(),
+    ...buildGeneratedFrontMatter({ lastVerified }),
     '# Agent Commands Catalog',
     '',
     '> この文書は `.github/workflows/agent-commands.yml` から自動生成されます。手動編集しないでください。',
@@ -180,6 +231,7 @@ function parseArgs(argv) {
     workflowPath: DEFAULT_WORKFLOW_PATH,
     outputPath: DEFAULT_OUTPUT_PATH,
     write: false,
+    lastVerified: undefined,
   };
   for (let index = 2; index < argv.length; index += 1) {
     const value = argv[index];
@@ -193,6 +245,14 @@ function parseArgs(argv) {
     }
     if (value === '--write') {
       options.write = true;
+      continue;
+    }
+    if (value === '--last-verified' && argv[index + 1] && !argv[index + 1].startsWith('-')) {
+      options.lastVerified = argv[++index];
+      continue;
+    }
+    if (value.startsWith('--last-verified=')) {
+      options.lastVerified = value.slice('--last-verified='.length);
       continue;
     }
     if ((value === '--workflow' || value === '--workflow-path') && argv[index + 1]) {
@@ -219,12 +279,13 @@ function ensureDirectory(filePath) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
 }
 
-function buildCatalogFromWorkflow(workflowText) {
+function buildCatalogFromWorkflow(workflowText, { lastVerified }) {
   const { prSection, issueSection } = splitWorkflowSections(workflowText);
   const prCommands = extractPrCommands(prSection);
   const issueCommands = extractIssueCommands(issueSection);
   const labels = extractLabelMetadata(workflowText);
   return renderMarkdown({
+    lastVerified,
     prCommands,
     issueCommands,
     prLabels: labels.prLabels,
@@ -238,10 +299,17 @@ export function main(argv = process.argv) {
   const workflowPath = path.resolve(options.rootDir, options.workflowPath);
   const outputPath = path.resolve(options.rootDir, options.outputPath);
 
-  const workflowText = fs.readFileSync(workflowPath, 'utf8');
-  const expected = buildCatalogFromWorkflow(workflowText);
-
   if (options.write) {
+    let lastVerified;
+    try {
+      lastVerified = validateLastVerified(options.lastVerified);
+    } catch (error) {
+      process.stderr.write(`Invalid --last-verified: ${error.message}\n`);
+      process.stderr.write('Usage: node scripts/docs/check-agent-commands-doc-sync.mjs --write --last-verified YYYY-MM-DD\n');
+      return 1;
+    }
+    const workflowText = fs.readFileSync(workflowPath, 'utf8');
+    const expected = buildCatalogFromWorkflow(workflowText, { lastVerified });
     ensureDirectory(outputPath);
     fs.writeFileSync(outputPath, expected);
     process.stdout.write(`Updated ${options.outputPath}\n`);
@@ -250,14 +318,23 @@ export function main(argv = process.argv) {
 
   if (!fs.existsSync(outputPath)) {
     process.stderr.write(`Missing generated file: ${options.outputPath}\n`);
-    process.stderr.write('Run: node scripts/docs/check-agent-commands-doc-sync.mjs --write\n');
+    process.stderr.write('Run: node scripts/docs/check-agent-commands-doc-sync.mjs --write --last-verified YYYY-MM-DD\n');
     return 1;
   }
 
   const current = fs.readFileSync(outputPath, 'utf8');
+  let lastVerified;
+  try {
+    ({ lastVerified } = parseGeneratedFrontMatter(current));
+  } catch (error) {
+    process.stderr.write(`Invalid generated document front matter: ${error.message}\n`);
+    return 1;
+  }
+  const workflowText = fs.readFileSync(workflowPath, 'utf8');
+  const expected = buildCatalogFromWorkflow(workflowText, { lastVerified });
   if (current !== expected) {
     process.stderr.write(`Out of sync: ${options.outputPath}\n`);
-    process.stderr.write('Run: node scripts/docs/check-agent-commands-doc-sync.mjs --write\n');
+    process.stderr.write(`Run: node scripts/docs/check-agent-commands-doc-sync.mjs --write --last-verified ${lastVerified}\n`);
     return 1;
   }
 
@@ -275,7 +352,9 @@ export {
   extractIssueCommands,
   extractLabelMetadata,
   extractPrCommands,
+  parseGeneratedFrontMatter,
   parseArgs,
   renderMarkdown,
   splitWorkflowSections,
+  validateLastVerified,
 };
