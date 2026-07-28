@@ -240,6 +240,26 @@ describe('codex adapter stdio contract', () => {
     });
   });
 
+  it('rejects a malformed authority snapshot digest before delegating to adapter', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return { async handleTask() { throw new Error('must not run'); } };
+        }
+      `);
+      const result = runAdapter(
+        tempRoot,
+        JSON.stringify({
+          description: 'run intent',
+          subagent_type: 'intent',
+          context: { authoritySnapshotDigest: 'sha256:unknown' },
+        }),
+      );
+      expect(result.status).toBe(3);
+      expect(parseJsonLine(result.stdout).code).toBe('INVALID_REQUEST_SCHEMA');
+    });
+  });
+
   it('returns exit 1 with machine-readable error for adapter exceptions', () => {
     withTempRepo((tempRoot) => {
       writeAdapterModule(tempRoot, `

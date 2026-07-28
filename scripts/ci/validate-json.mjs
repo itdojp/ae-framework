@@ -252,6 +252,11 @@ const checks = [
     label: 'Temporal run summary schema validation'
   },
   {
+    schema: 'schema/github-work-state-v1.schema.json',
+    fixtures: ['fixtures/github-work-state/sample.github-work-state.json'],
+    label: 'GitHub work state v1 schema validation'
+  },
+  {
     schema: 'schema/context-pack-functor-map.schema.json',
     fixtures: ['fixtures/context-pack/sample.functor-map.json'],
     label: 'Context Pack functor map schema validation'

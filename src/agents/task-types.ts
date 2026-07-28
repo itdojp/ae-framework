@@ -3,6 +3,8 @@
  */
 
 export interface TaskRequestContext {
+  /** Content digest from a validated github-work-state/v1 authority snapshot. */
+  authoritySnapshotDigest?: string;
   validationTaskType?: string;
   strict?: boolean;
   sources?: string | string[];
@@ -63,6 +65,8 @@ export interface TaskResponse {
   blockingReason?: string;
   // Minimal input required to resume execution (tool-neutral string format).
   requiredHumanInput?: string;
+  // Additive binding to the latest validated GitHub authority snapshot.
+  authoritySnapshotDigest?: string;
   // Formal phase separates generated scaffolds from real checker execution.
   formal?: {
     scaffold: {

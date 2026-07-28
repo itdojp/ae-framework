@@ -17,6 +17,14 @@ const changePackageFixturePath = resolve(process.cwd(), 'fixtures/change-package
 const assuranceSummaryFixturePath = resolve(process.cwd(), 'fixtures/assurance/sample.assurance-summary.json');
 const uiE2ESummaryFixturePath = resolve(process.cwd(), 'fixtures/e2e/sample.ui-e2e-summary.json');
 const policyGateFixturePath = resolve(process.cwd(), 'fixtures/policy-gate/sample.policy-gate-summary-v1.json');
+const authoritySnapshotFixturePath = resolve(
+  process.cwd(),
+  'fixtures/github-work-state/sample.github-work-state.json',
+);
+const invalidAuthoritySnapshotFixturePath = resolve(
+  process.cwd(),
+  'fixtures/github-work-state/wrong-head-check.github-work-state.json',
+);
 
 const schema = JSON.parse(await readFile(schemaPath, 'utf8')) as Record<string, unknown>;
 const ajv = new Ajv2020({ allErrors: true, strict: false });
@@ -115,6 +123,40 @@ describe('create-handoff CLI', () => {
     expect(handoff.artifacts.some((entry) => entry.path === 'artifacts/ci/harness-health.json')).toBe(false);
     expect(handoff.artifacts.some((entry) => entry.path === 'artifacts/change-package/change-package.json')).toBe(false);
     expect(handoff.blockers.some((entry) => entry.summary.includes('Missing artifact: harness-health'))).toBe(true);
+  });
+
+  it('binds the latest validated GitHub authority snapshot digest into JSON and Markdown', async () => {
+    await writeFixture('artifacts/agents/hook-feedback.json', hookFeedbackFixturePath);
+    await writeFixture('.codex-local/authority/github-work-state.json', authoritySnapshotFixturePath);
+
+    const { result, outputJsonPath, outputMdPath } = runCreate([
+      '--authority-snapshot',
+      '.codex-local/authority/github-work-state.json',
+    ]);
+    expect(result.status, result.stderr.toString()).toBe(0);
+
+    const handoff = JSON.parse(await readFile(outputJsonPath, 'utf8')) as {
+      authoritySnapshotDigest: string;
+      artifacts: Array<{ path: string }>;
+    };
+    const markdown = await readFile(outputMdPath, 'utf8');
+    expect(handoff.authoritySnapshotDigest).toMatch(/^sha256:[a-f0-9]{64}$/u);
+    expect(handoff.artifacts).toContainEqual(expect.objectContaining({
+      path: '.codex-local/authority/github-work-state.json',
+    }));
+    expect(markdown).toContain(`- Authority snapshot: ${handoff.authoritySnapshotDigest}`);
+    expect(validate(handoff), JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it('fails closed for a semantically invalid authority snapshot', async () => {
+    await writeFixture('artifacts/agents/hook-feedback.json', hookFeedbackFixturePath);
+    await writeFixture('.codex-local/authority/wrong-head.json', invalidAuthoritySnapshotFixturePath);
+    const { result } = runCreate([
+      '--authority-snapshot',
+      '.codex-local/authority/wrong-head.json',
+    ]);
+    expect(result.status).toBe(1);
+    expect(result.stderr.toString()).toContain('bound to wrong head');
   });
 
   it('derives handoff content from verify-lite and companion artifacts when hook-feedback is missing', async () => {

@@ -4,7 +4,7 @@ canonicalSource:
 - AGENTS.md
 - docs/agents/agent-producer-matrix.md
 - docs/integrations/CODEX-INTEGRATION.md
-lastVerified: '2026-06-05'
+lastVerified: '2026-07-28'
 ---
 
 # Codex CLI GitHub Issue Runbook
@@ -139,6 +139,57 @@ Before changing files:
 
    Use one worktree per Issue for parallel work. Do not reuse a shared worktree
    for multiple concurrent Issue implementations.
+
+#### 5.1 GitHub authority snapshot and stale-context audit
+
+After the Draft PR exists, separate trusted network capture from deterministic
+offline comparison. Never copy review bodies, tokens, secrets, or private comment
+text into the snapshot.
+
+```bash
+REPO=itdojp/ae-framework
+ISSUE=3434
+PR=4000
+HEAD_SHA="$(gh pr view "$PR" --repo "$REPO" --json headRefOid --jq .headRefOid)"
+mkdir -p .codex-local/authority
+
+# Trusted network operation. GraphQL pagination must reach every review thread
+# and status-check context; required checks are bound to HEAD_SHA.
+pnpm run github-work-state:capture -- \
+  --repo "$REPO" --issue "$ISSUE" --pr "$PR" \
+  --expected-head "$HEAD_SHA" \
+  --output .codex-local/authority/github-work-state-current.json
+
+cp .codex-local/authority/github-work-state-current.json \
+  .codex-local/authority/github-work-state-baseline.json
+```
+
+At continuation/end-of-iteration time, capture `current` again and run the
+network-free validator:
+
+```bash
+pnpm run github-work-state:compare -- \
+  --baseline .codex-local/authority/github-work-state-baseline.json \
+  --current .codex-local/authority/github-work-state-current.json \
+  --expected-head "$HEAD_SHA" \
+  --output .codex-local/authority/github-work-state-comparison.json
+```
+
+Exit/result policy:
+
+- `0 / no-state-change`: semantic state is identical. A later `generatedAt` is
+  not progress and must not be recorded as a completed iteration.
+- `2 / stale-context`: reconcile the classified change before continuing. This
+  includes a new/base head, a changed review-thread ID set even when counts are
+  equal, resolution changes, and required-check reruns/state changes.
+- `1 / contract-invalid`: stop. Incomplete pagination, digest/schema drift,
+  wrong-head CI, or an unexpected current head cannot be used as authority.
+
+Record `authoritySnapshotDigest: sha256:...` in the local task ledger. Pass the
+validated snapshot to `handoff:create --authority-snapshot <path>`, or pass its
+digest as `context.authoritySnapshotDigest` to the Codex adapter. Do not replace
+the baseline after a stale result until the head/thread/check change has been
+reviewed and the local plan/ledger has been reconciled.
 
 ### 6. Post-work checklist
 
@@ -322,6 +373,57 @@ codex --cd "$WORK"
 
    parallel work では Issue ごとに worktree を分け、複数 Issue の実装を
    shared worktree で同時に進めないでください。
+
+#### 5.1 GitHub authority snapshot と stale-context audit
+
+Draft PR 作成後は、trusted network capture と deterministic offline comparison
+を分離します。review 本文、token、secret、private comment text は snapshot
+へ保存しません。
+
+```bash
+REPO=itdojp/ae-framework
+ISSUE=3434
+PR=4000
+HEAD_SHA="$(gh pr view "$PR" --repo "$REPO" --json headRefOid --jq .headRefOid)"
+mkdir -p .codex-local/authority
+
+# trusted network operation。全 review thread / status-check context の
+# GraphQL pagination を完了し、required check を HEAD_SHA へ bind する。
+pnpm run github-work-state:capture -- \
+  --repo "$REPO" --issue "$ISSUE" --pr "$PR" \
+  --expected-head "$HEAD_SHA" \
+  --output .codex-local/authority/github-work-state-current.json
+
+cp .codex-local/authority/github-work-state-current.json \
+  .codex-local/authority/github-work-state-baseline.json
+```
+
+継続時または iteration 終了時に `current` を再 capture し、network を使わない
+validator を実行します。
+
+```bash
+pnpm run github-work-state:compare -- \
+  --baseline .codex-local/authority/github-work-state-baseline.json \
+  --current .codex-local/authority/github-work-state-current.json \
+  --expected-head "$HEAD_SHA" \
+  --output .codex-local/authority/github-work-state-comparison.json
+```
+
+exit / result policy:
+
+- `0 / no-state-change`: semantic state は同一です。`generatedAt` だけが後刻に
+  なった capture を進捗または完了 iteration として記録しません。
+- `2 / stale-context`: classified change を reconcile してから続行します。head/base
+  変更、件数が同じでも thread ID 集合が異なる場合、resolution 変更、required
+  check の rerun/state 変更を含みます。
+- `1 / contract-invalid`: 停止します。pagination 不完了、digest/schema drift、
+  wrong-head CI、想定外の current head は authority として使用できません。
+
+local task ledger へ `authoritySnapshotDigest: sha256:...` を記録します。
+validated snapshot は `handoff:create --authority-snapshot <path>` へ渡せます。
+Codex adapter では digest を `context.authoritySnapshotDigest` として渡します。
+stale result の head/thread/check change を review し、local plan/ledger を reconcile
+するまでは baseline を上書きしません。
 
 ### 6. 作業後 checklist
 

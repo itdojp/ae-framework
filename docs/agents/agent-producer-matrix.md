@@ -4,7 +4,7 @@ canonicalSource:
 - docs/product/ASSURANCE-CONTROL-PLANE-POLICY.md
 - docs/product/ASSURANCE-CONTROL-PLANE.md
 - docs/reference/CONTRACT-CATALOG.md
-lastVerified: '2026-06-20'
+lastVerified: '2026-07-28'
 ---
 
 # Agent Producer Matrix
@@ -69,6 +69,7 @@ Raw producer examples live under `fixtures/agents/evidence-adapters/` and remain
 | Explain what changed and why it is reviewable | `change-package/v2` | Connects diff scope, claims, evidence, waivers, and policy decisions. |
 | Normalize raw Codex / Claude Code / Copilot / human output | `docs/agents/evidence-adapters.md` fixture mapping, then existing artifacts | Fixtures are examples, not contracts; use existing generators and validators. |
 | Hand work from one agent/session to another | `ae-handoff/v1` | Use with `docs/agents/handoff.md`. |
+| Bind continuation to current GitHub Issue/PR authority | `github-work-state/v1` | Capture from GitHub without review bodies, then compare offline before reusing local context. |
 | Return compact blockers and next actions to a producer | `hook-feedback/v1` | Use with `docs/agents/hook-feedback.md`. |
 | Link claims to supporting evidence | `claim-evidence-manifest/v1` | Claim states must match the evidence lane. |
 | Capture policy gate judgment | `policy-decision/v1` | Policy decision is a judgment artifact, not a raw log. |
@@ -133,6 +134,7 @@ Raw producer example は `fixtures/agents/evidence-adapters/` 配下に置き、
 | 何が変わり、なぜ review 可能か説明する | `change-package/v2` | diff scope、claim、evidence、waiver、policy decision を接続します。 |
 | raw Codex / Claude Code / Copilot / human output を正規化する | `docs/agents/evidence-adapters.md` の fixture mapping、その後に既存 artifact | fixture は example であり contract ではありません。既存 generator / validator を使います。 |
 | agent/session 間で作業を引き継ぐ | `ae-handoff/v1` | `docs/agents/handoff.md` と併用します。 |
+| continuation を現在の GitHub Issue/PR authority へ bind する | `github-work-state/v1` | review 本文を保存せず GitHub から capture し、local context 再利用前に offline compare します。 |
 | compact blocker と next action を producer に返す | `hook-feedback/v1` | `docs/agents/hook-feedback.md` と併用します。 |
 | claim と supporting evidence を接続する | `claim-evidence-manifest/v1` | claim state は evidence lane と一致させます。 |
 | policy gate judgment を記録する | `policy-decision/v1` | policy decision は judgment artifact であり raw log ではありません。 |

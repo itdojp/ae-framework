@@ -10,6 +10,7 @@
 - Risks / Rollback note:
 - Blockers:
 - Change Package:
+- Authority snapshot: n/a
 
 ```json
 {

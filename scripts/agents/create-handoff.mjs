@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { buildHookFeedbackArtifact } from './build-hook-feedback.mjs';
+import { readAndValidateGitHubWorkStateSnapshot } from './github-work-state-lib.mjs';
 import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const DEFAULT_HOOK_FEEDBACK_PATH = 'artifacts/agents/hook-feedback.json';
@@ -319,6 +320,7 @@ function buildArtifacts({
   assuranceSummaryPath,
   changePackagePath,
   policyGateSummaryPath,
+  authoritySnapshotPath,
   manualArtifacts,
 }) {
   const artifacts = [];
@@ -359,6 +361,9 @@ function buildArtifacts({
   }
   if (policyGateSummaryPath) {
     addArtifact(artifacts, { path: policyGateSummaryPath, description: 'policy-gate summary' });
+  }
+  if (authoritySnapshotPath) {
+    addArtifact(artifacts, { path: authoritySnapshotPath, description: 'GitHub authority snapshot' });
   }
   for (const entry of manualArtifacts) {
     addArtifact(artifacts, parseArtifactEntry(entry));
@@ -431,6 +436,7 @@ export function renderMarkdown(handoff) {
   lines.push(`- Risks / Rollback note: ${handoff.risksRollbackNote ?? 'n/a'}`);
   lines.push(`- Blockers: ${blockerList}`);
   lines.push(`- Change Package: ${handoff.changePackageRef ?? 'n/a'}`);
+  lines.push(`- Authority snapshot: ${handoff.authoritySnapshotDigest ?? 'n/a'}`);
   lines.push('', renderFencedCodeBlock('json', JSON.stringify(handoff, null, 2)), '');
   return `${lines.join('\n')}\n`;
 }
@@ -449,6 +455,7 @@ function printHelp() {
       + `  --assurance-summary <path>       Optional assurance summary path (default: ${DEFAULT_ASSURANCE_SUMMARY_PATH})\n`
       + `  --ui-e2e-summary <path>          Optional UI E2E summary path (default: ${DEFAULT_UI_E2E_SUMMARY_PATH})\n`
       + `  --policy-gate-summary <path>     Optional policy-gate summary path (default: ${DEFAULT_POLICY_GATE_SUMMARY_PATH})\n`
+      + '  --authority-snapshot <path>      Optional validated github-work-state/v1 snapshot\n'
       + `  --output-json <path>             Output JSON path (default: ${DEFAULT_OUTPUT_JSON_PATH})\n`
       + `  --output-md <path>               Output Markdown path (default: ${DEFAULT_OUTPUT_MD_PATH})\n`
       + `  --schema <path>                  Schema path for final validation (default: ${DEFAULT_SCHEMA_PATH})\n`
@@ -481,6 +488,8 @@ export function parseArgs(argv = process.argv.slice(2)) {
     assuranceSummaryPath: DEFAULT_ASSURANCE_SUMMARY_PATH,
     uiE2ESummaryPath: DEFAULT_UI_E2E_SUMMARY_PATH,
     policyGateSummaryPath: DEFAULT_POLICY_GATE_SUMMARY_PATH,
+    authoritySnapshotPath: null,
+    authoritySnapshotDigest: null,
     outputJsonPath: DEFAULT_OUTPUT_JSON_PATH,
     outputMarkdownPath: DEFAULT_OUTPUT_MD_PATH,
     schemaPath: DEFAULT_SCHEMA_PATH,
@@ -560,6 +569,11 @@ export function parseArgs(argv = process.argv.slice(2)) {
     }
     if (arg === '--policy-gate-summary') {
       options.policyGateSummaryPath = readRequiredValue(argv, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === '--authority-snapshot') {
+      options.authoritySnapshotPath = readRequiredValue(argv, index, arg);
       index += 1;
       continue;
     }
@@ -728,6 +742,9 @@ export function buildHandoffArtifact({ options, hookFeedbackBundle, now = new Da
     assuranceSummaryPath,
     changePackagePath,
     policyGateSummaryPath,
+    authoritySnapshotPath: options.authoritySnapshotPath
+      ? relativeOrNull(path.resolve(options.authoritySnapshotPath))
+      : null,
     manualArtifacts: options.artifacts,
   });
   const blockers = buildBlockers({
@@ -764,6 +781,9 @@ export function buildHandoffArtifact({ options, hookFeedbackBundle, now = new Da
     risksRollbackNote: options.risksRollbackNote ?? null,
     blockers,
     changePackageRef: options.changePackageRef ?? changePackagePath ?? null,
+    ...(options.authoritySnapshotDigest
+      ? { authoritySnapshotDigest: options.authoritySnapshotDigest }
+      : {}),
   };
 }
 
@@ -797,6 +817,10 @@ export function run(argv = process.argv.slice(2)) {
   }
 
   const hookFeedbackBundle = loadHookFeedback(options);
+  if (options.authoritySnapshotPath) {
+    const authoritySnapshot = readAndValidateGitHubWorkStateSnapshot(path.resolve(options.authoritySnapshotPath));
+    options.authoritySnapshotDigest = authoritySnapshot.snapshotDigest;
+  }
   const generatedAt = options.generatedAt ?? new Date().toISOString();
   const handoff = buildHandoffArtifact({ options, hookFeedbackBundle, now: generatedAt });
   validateHandoffArtifact(handoff, options.schemaPath);

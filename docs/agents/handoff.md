@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-31'
+lastVerified: '2026-07-28'
 owner: agent-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -41,6 +41,10 @@ This document defines the minimum handoff protocol between agents. It does not r
   - example: `artifacts/change-package/summary.md`
   - if no Change Package exists, record `n/a` in Markdown
   - in JSON, keep `changePackageRef` present and set it to `null` because the schema treats the field as required but nullable
+- Authority snapshot digest
+  - pass a validated `github-work-state/v1` file with `--authority-snapshot <path>`
+  - the builder copies only `snapshotDigest` into `authoritySnapshotDigest` and lists the snapshot as an artifact
+  - a schema-invalid, digest-invalid, or wrong-head-check snapshot fails closed
 
 ### JSON sidecar mapping
 | Markdown field | JSON field |
@@ -53,6 +57,7 @@ This document defines the minimum handoff protocol between agents. It does not r
 | Risks / rollback note | `risksRollbackNote` |
 | Blockers | `blockers[]` |
 | Change Package | `changePackageRef` |
+| Authority snapshot | `authoritySnapshotDigest` |
 
 ### Usage
 - when generating deterministic sidecars, start with `pnpm run handoff:create -- --goal "<goal>" --target "A"`
@@ -60,6 +65,7 @@ This document defines the minimum handoff protocol between agents. It does not r
 - if `artifacts/assurance/assurance-summary.json` exists, pass `--assurance-summary` so assurance warnings are reflected into `currentStatus`, `nextActions`, `blockers`, and `artifacts`
 - `commandsRun` prefers explicitly provided commands; otherwise it falls back to repro commands from hook feedback
 - if JSON sidecars were generated, validate them with `pnpm run handoff:validate -- artifacts/handoff/ae-handoff.json schema/ae-handoff.schema.json`
+- when resuming GitHub work, pass the latest offline-validated snapshot with `--authority-snapshot .codex-local/authority/github-work-state-current.json`
 
 ### Current repository note
 - PR comments use `/handoff A|B|C` for agent-target handoff
@@ -71,6 +77,7 @@ This document defines the minimum handoff protocol between agents. It does not r
 pnpm run handoff:create -- \
   --goal "prepare this branch for human review" \
   --target "A" \
+  --authority-snapshot .codex-local/authority/github-work-state-current.json \
   --command-run "pnpm -s run verify:lite"
 ```
 
@@ -97,6 +104,7 @@ pnpm run handoff:create -- \
 - Risks / Rollback note: a workflow change can be reverted immediately with a revert PR
 - Blockers: waiting for one human approval
 - Change Package: n/a
+- Authority snapshot: n/a
 ```
 
 ### JSON example
@@ -169,6 +177,10 @@ pnpm run handoff:create -- \
   - 例: `artifacts/change-package/summary.md`
   - Markdown では Change Package がなければ `n/a` を記録する
   - JSON では `changePackageRef` を省略せず、schema が required かつ nullable である前提で `null` を設定する
+- Authority snapshot digest
+  - validated `github-work-state/v1` file を `--authority-snapshot <path>` で渡す
+  - builder は `snapshotDigest` だけを `authoritySnapshotDigest` へ複写し、snapshot path を artifact に追加する
+  - schema 不正、digest 不一致、wrong-head check を含む snapshot は fail closed にする
 
 ### JSON sidecar mapping
 | Markdown field | JSON field |
@@ -181,6 +193,7 @@ pnpm run handoff:create -- \
 | Risks / rollback note | `risksRollbackNote` |
 | Blockers | `blockers[]` |
 | Change Package | `changePackageRef` |
+| Authority snapshot | `authoritySnapshotDigest` |
 
 ### Usage
 - deterministic sidecar を生成する場合は、まず `pnpm run handoff:create -- --goal "<goal>" --target "A"` から開始する
@@ -188,6 +201,7 @@ pnpm run handoff:create -- \
 - `artifacts/assurance/assurance-summary.json` がある場合は `--assurance-summary` を指定し、assurance warning を `currentStatus`、`nextActions`、`blockers`、`artifacts` に反映する
 - `commandsRun` は明示指定を優先し、未指定時は hook feedback の repro command を fallback とする
 - JSON sidecar を生成した場合は、`pnpm run handoff:validate -- artifacts/handoff/ae-handoff.json schema/ae-handoff.schema.json` で検証する
+- GitHub work を再開する場合は、offline validation 済みの最新 snapshot を `--authority-snapshot .codex-local/authority/github-work-state-current.json` で渡す
 
 ### 現行 repository 注記
 - PR comment では agent-target handoff として `/handoff A|B|C` を使う
@@ -199,6 +213,7 @@ pnpm run handoff:create -- \
 pnpm run handoff:create -- \
   --goal "prepare this branch for human review" \
   --target "A" \
+  --authority-snapshot .codex-local/authority/github-work-state-current.json \
   --command-run "pnpm -s run verify:lite"
 ```
 
@@ -225,6 +240,7 @@ pnpm run handoff:create -- \
 - Risks / Rollback note: workflow 変更は revert PR で即時復旧できる
 - Blockers: human approval 1 件待ち
 - Change Package: n/a
+- Authority snapshot: n/a
 ```
 
 ### JSON example

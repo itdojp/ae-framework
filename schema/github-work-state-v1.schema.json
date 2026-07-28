@@ -1,0 +1,273 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://itdojp.github.io/ae-framework/schema/github-work-state-v1.schema.json",
+  "title": "GitHub Work State Snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "repository",
+    "issueNumber",
+    "pullRequestNumber",
+    "baseRef",
+    "baseSha",
+    "headRef",
+    "headSha",
+    "isDraft",
+    "mergeState",
+    "reviewThreads",
+    "requiredCheckPolicy",
+    "requiredChecks",
+    "pagination",
+    "authoritySource",
+    "snapshotDigest"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "github-work-state/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "issueNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "pullRequestNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "baseRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "baseSha": {
+      "$ref": "#/$defs/gitSha"
+    },
+    "headRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "headSha": {
+      "$ref": "#/$defs/gitSha"
+    },
+    "isDraft": {
+      "type": "boolean"
+    },
+    "mergeState": {
+      "type": "string",
+      "enum": [
+        "BEHIND",
+        "BLOCKED",
+        "CLEAN",
+        "DIRTY",
+        "DRAFT",
+        "HAS_HOOKS",
+        "UNKNOWN",
+        "UNSTABLE"
+      ]
+    },
+    "reviewThreads": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reviewThread"
+      }
+    },
+    "requiredCheckPolicy": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/requiredCheckPolicy"
+      }
+    },
+    "requiredChecks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/requiredCheck"
+      }
+    },
+    "pagination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reviewThreads",
+        "requiredChecks"
+      ],
+      "properties": {
+        "reviewThreads": {
+          "$ref": "#/$defs/paginationEvidence"
+        },
+        "requiredChecks": {
+          "$ref": "#/$defs/paginationEvidence"
+        }
+      }
+    },
+    "authoritySource": {
+      "const": "github-api"
+    },
+    "snapshotDigest": {
+      "$ref": "#/$defs/digest"
+    }
+  },
+  "$defs": {
+    "gitSha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "reviewThread": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "threadId",
+        "topCommentId",
+        "path",
+        "isResolved"
+      ],
+      "properties": {
+        "threadId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "topCommentId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "isResolved": {
+          "type": "boolean"
+        }
+      }
+    },
+    "requiredCheckPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "appId"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "appId": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "requiredCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "conclusion",
+        "runId",
+        "headSha",
+        "sourceType",
+        "appId"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conclusion": {
+          "type": "string",
+          "enum": [
+            "ACTION_REQUIRED",
+            "CANCELLED",
+            "ERROR",
+            "EXPECTED",
+            "FAILURE",
+            "MISSING",
+            "NEUTRAL",
+            "PENDING",
+            "SKIPPED",
+            "STALE",
+            "STARTUP_FAILURE",
+            "SUCCESS",
+            "TIMED_OUT",
+            "UNKNOWN"
+          ]
+        },
+        "runId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9]+$"
+        },
+        "headSha": {
+          "$ref": "#/$defs/gitSha"
+        },
+        "sourceType": {
+          "type": "string",
+          "enum": [
+            "check-run",
+            "status-context",
+            "missing"
+          ]
+        },
+        "appId": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "paginationEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pageSize",
+        "pagesFetched",
+        "totalCount",
+        "capturedCount",
+        "complete"
+      ],
+      "properties": {
+        "pageSize": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "pagesFetched": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "totalCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capturedCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "complete": {
+          "const": true
+        }
+      }
+    }
+  }
+}
