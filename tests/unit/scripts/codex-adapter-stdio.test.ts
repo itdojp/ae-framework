@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const scriptPath = resolve('scripts/codex/adapter-stdio.mjs');
@@ -15,12 +14,25 @@ function parseJsonLine(stdout: string) {
 }
 
 function withTempRepo(run: (dir: string) => void) {
-  const dir = mkdtempSync(join(tmpdir(), 'codex-stdio-'));
+  const tmpRoot = resolve('.codex-local/tmp');
+  mkdirSync(tmpRoot, { recursive: true });
+  const dir = mkdtempSync(join(tmpRoot, 'codex-stdio-'));
   try {
     run(dir);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+function writeAuthoritySnapshot(tempRoot: string, relativePath = '.codex-local/authority/current.json') {
+  const fixture = JSON.parse(readFileSync(
+    resolve('fixtures/github-work-state/sample.github-work-state.json'),
+    'utf8',
+  ));
+  const target = join(tempRoot, relativePath);
+  mkdirSync(resolve(target, '..'), { recursive: true });
+  writeFileSync(target, `${JSON.stringify(fixture)}\n`, 'utf8');
+  return { fixture, relativePath, target };
 }
 
 function writeAdapterModule(tempRoot: string, moduleBody: string) {
@@ -257,6 +269,89 @@ describe('codex adapter stdio contract', () => {
       );
       expect(result.status).toBe(3);
       expect(parseJsonLine(result.stdout).code).toBe('INVALID_REQUEST_SCHEMA');
+    });
+  });
+
+  it('rejects digest-only, missing, malformed, mismatched, external, and symlink authority references', () => {
+    withTempRepo((tempRoot) => {
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter() {
+          return { async handleTask() { throw new Error('must not run'); } };
+        }
+      `);
+      const validDigest = `sha256:${'a'.repeat(64)}`;
+      const digestOnly = runAdapter(tempRoot, JSON.stringify({
+        description: 'run intent', subagent_type: 'intent',
+        context: { authoritySnapshotDigest: validDigest },
+      }));
+      expect(digestOnly.status).toBe(3);
+      expect(parseJsonLine(digestOnly.stdout).code).toBe('INVALID_REQUEST_SCHEMA');
+
+      const missing = runAdapter(tempRoot, JSON.stringify({
+        description: 'run intent', subagent_type: 'intent',
+        context: { authoritySnapshotPath: 'missing.json', authoritySnapshotDigest: validDigest },
+      }));
+      expect(parseJsonLine(missing.stdout).code).toBe('INVALID_AUTHORITY_SNAPSHOT');
+
+      const malformedPath = '.codex-local/authority/malformed.json';
+      mkdirSync(join(tempRoot, '.codex-local/authority'), { recursive: true });
+      writeFileSync(join(tempRoot, malformedPath), '{invalid', 'utf8');
+      const malformed = runAdapter(tempRoot, JSON.stringify({
+        description: 'run intent', subagent_type: 'intent',
+        context: { authoritySnapshotPath: malformedPath, authoritySnapshotDigest: validDigest },
+      }));
+      expect(parseJsonLine(malformed.stdout).code).toBe('INVALID_AUTHORITY_SNAPSHOT');
+
+      const { fixture, relativePath, target } = writeAuthoritySnapshot(tempRoot);
+      const mismatch = runAdapter(tempRoot, JSON.stringify({
+        description: 'run intent', subagent_type: 'intent',
+        context: { authoritySnapshotPath: relativePath, authoritySnapshotDigest: validDigest },
+      }));
+      expect(parseJsonLine(mismatch.stdout).code).toBe('INVALID_AUTHORITY_SNAPSHOT');
+
+      const external = runAdapter(tempRoot, JSON.stringify({
+        description: 'run intent', subagent_type: 'intent',
+        context: { authoritySnapshotPath: target, authoritySnapshotDigest: fixture.snapshotDigest },
+      }));
+      expect(parseJsonLine(external.stdout).code).toBe('INVALID_AUTHORITY_SNAPSHOT');
+
+      const linkPath = '.codex-local/authority/link.json';
+      symlinkSync(target, join(tempRoot, linkPath));
+      const symlink = runAdapter(tempRoot, JSON.stringify({
+        description: 'run intent', subagent_type: 'intent',
+        context: { authoritySnapshotPath: linkPath, authoritySnapshotDigest: fixture.snapshotDigest },
+      }));
+      expect(parseJsonLine(symlink.stdout).code).toBe('INVALID_AUTHORITY_SNAPSHOT');
+    });
+  });
+
+  it('passes only a validated snapshot digest to the adapter authority binding', () => {
+    withTempRepo((tempRoot) => {
+      const { fixture, relativePath } = writeAuthoritySnapshot(tempRoot);
+      writeAdapterModule(tempRoot, `
+        export function createCodexTaskAdapter(options) {
+          return {
+            async handleTask(request) {
+              return {
+                summary: 'ok', analysis: JSON.stringify(request.context), recommendations: [],
+                nextActions: ['continue'], warnings: [], shouldBlockProgress: false,
+                authoritySnapshotDigest: options.validatedAuthoritySnapshotDigest
+              };
+            }
+          };
+        }
+      `);
+      const result = runAdapter(tempRoot, JSON.stringify({
+        description: 'run intent', subagent_type: 'intent',
+        context: {
+          authoritySnapshotPath: relativePath,
+          authoritySnapshotDigest: fixture.snapshotDigest,
+        },
+      }));
+      expect(result.status, result.stderr).toBe(0);
+      const response = parseJsonLine(result.stdout);
+      expect(response.authoritySnapshotDigest).toBe(fixture.snapshotDigest);
+      expect(response.analysis).not.toContain('authoritySnapshot');
     });
   });
 

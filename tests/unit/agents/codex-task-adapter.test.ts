@@ -52,12 +52,20 @@ describe.sequential('finalizeTaskResponse', () => {
     }
   });
 
-  it('binds TaskResponse to the validated request authority snapshot digest', () => {
+  it('binds TaskResponse only to a transport-validated authority digest', () => {
     const digest = `sha256:${'a'.repeat(64)}`;
-    const bound = finalizeTaskResponse(
+    const fabricatedRequest = finalizeTaskResponse(
       'intent',
       { ...request, context: { authoritySnapshotDigest: digest } },
       createBaseResponse({ authoritySnapshotDigest: `sha256:${'b'.repeat(64)}` }),
+    );
+    expect(fabricatedRequest).not.toHaveProperty('authoritySnapshotDigest');
+
+    const bound = finalizeTaskResponse(
+      'intent',
+      request,
+      createBaseResponse({ authoritySnapshotDigest: `sha256:${'b'.repeat(64)}` }),
+      digest,
     );
     expect(bound.authoritySnapshotDigest).toBe(digest);
 

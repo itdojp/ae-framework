@@ -43,6 +43,7 @@ This document defines the minimum handoff protocol between agents. It does not r
   - in JSON, keep `changePackageRef` present and set it to `null` because the schema treats the field as required but nullable
 - Authority snapshot digest
   - pass a validated `github-work-state/v1` file with `--authority-snapshot <path>`
+  - the path must be repository-local and resolve to a regular non-symlink file
   - the builder copies only `snapshotDigest` into `authoritySnapshotDigest` and lists the snapshot as an artifact
   - a schema-invalid, digest-invalid, or wrong-head-check snapshot fails closed
 
@@ -179,6 +180,7 @@ pnpm run handoff:create -- \
   - JSON では `changePackageRef` を省略せず、schema が required かつ nullable である前提で `null` を設定する
 - Authority snapshot digest
   - validated `github-work-state/v1` file を `--authority-snapshot <path>` で渡す
+  - pathはrepository-localでregular non-symlink fileへ解決される必要がある
   - builder は `snapshotDigest` だけを `authoritySnapshotDigest` へ複写し、snapshot path を artifact に追加する
   - schema 不正、digest 不一致、wrong-head check を含む snapshot は fail closed にする
 

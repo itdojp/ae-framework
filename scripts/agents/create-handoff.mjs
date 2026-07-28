@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { buildHookFeedbackArtifact } from './build-hook-feedback.mjs';
-import { readAndValidateGitHubWorkStateSnapshot } from './github-work-state-lib.mjs';
+import { resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot } from './github-work-state-lib.mjs';
 import { normalizeArtifactPath } from '../ci/lib/path-normalization.mjs';
 
 const DEFAULT_HOOK_FEEDBACK_PATH = 'artifacts/agents/hook-feedback.json';
@@ -818,7 +818,9 @@ export function run(argv = process.argv.slice(2)) {
 
   const hookFeedbackBundle = loadHookFeedback(options);
   if (options.authoritySnapshotPath) {
-    const authoritySnapshot = readAndValidateGitHubWorkStateSnapshot(path.resolve(options.authoritySnapshotPath));
+    const { snapshot: authoritySnapshot } = resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot(
+      options.authoritySnapshotPath,
+    );
     options.authoritySnapshotDigest = authoritySnapshot.snapshotDigest;
   }
   const generatedAt = options.generatedAt ?? new Date().toISOString();

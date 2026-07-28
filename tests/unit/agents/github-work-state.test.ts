@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import {
@@ -9,9 +9,11 @@ import {
   compareGitHubWorkStateSnapshots,
   compileGitHubWorkStateSchema,
   computeSnapshotDigest,
+  resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot,
   stableStringify,
   validateSnapshotSemantics,
 } from '../../../scripts/agents/github-work-state-lib.mjs';
+import { buildRequiredCheckPolicyFromGitHubResponses } from '../../../scripts/agents/capture-github-work-state.mjs';
 
 const BASE_SHA = 'a'.repeat(40);
 const HEAD_SHA = 'b'.repeat(40);
@@ -72,7 +74,7 @@ function captureOptions({
     generatedAt,
     expectedHead: HEAD_SHA,
     pageSize: 100,
-    fetchIssue: async () => ({ number: 3657 }),
+    fetchIssue: async () => ({ number: 3657, state: 'OPEN', stateReason: null }),
     fetchPullRequest: async () => ({
       number: 4000,
       baseRefName: 'main',
@@ -81,10 +83,15 @@ function captureOptions({
       headRefOid: HEAD_SHA,
       isDraft: true,
       mergeStateStatus: 'CLEAN',
+      state: 'OPEN',
+      merged: false,
+      mergeCommit: null,
     }),
     fetchReviewThreadsPage: pageFetcher(threads),
     fetchRequiredChecksPage: pageFetcher(checks),
-    fetchRequiredCheckPolicy: async () => policy,
+    fetchRequiredCheckPolicy: async () => Array.isArray(policy)
+      ? { source: 'classic-branch-protection', strict: true, checks: policy }
+      : policy,
   };
 }
 
@@ -194,6 +201,59 @@ describe('GitHub work-state authority contract', () => {
     }), { label: 'missing-cursor' })).rejects.toThrow('without an endCursor');
   });
 
+  it('rejects cursor cycles, duplicate pages/nodes, empty continuing pages, and total overflow', async () => {
+    let sameCursorCalls = 0;
+    await expect(collectPaginated(async () => {
+      sameCursorCalls += 1;
+      return {
+        totalCount: 2,
+        nodes: [{ id: `node-${sameCursorCalls}` }],
+        pageInfo: { hasNextPage: true, endCursor: 'A' },
+      };
+    }, { label: 'same-cursor' })).rejects.toThrow('cursor cycle');
+
+    const cyclePages = [
+      { nodes: [{ id: 'one' }], endCursor: 'A' },
+      { nodes: [{ id: 'two' }], endCursor: 'B' },
+      { nodes: [{ id: 'three' }], endCursor: 'A' },
+    ];
+    let cycleIndex = 0;
+    await expect(collectPaginated(async () => {
+      const page = cyclePages[cycleIndex++];
+      return {
+        totalCount: 4,
+        nodes: page.nodes,
+        pageInfo: { hasNextPage: true, endCursor: page.endCursor },
+      };
+    }, { label: 'cursor-cycle' })).rejects.toThrow('cursor cycle');
+
+    let duplicatePageIndex = 0;
+    await expect(collectPaginated(async () => ({
+      totalCount: 2,
+      nodes: [{ id: 'same-node' }],
+      pageInfo: { hasNextPage: duplicatePageIndex++ === 0, endCursor: 'fresh-cursor' },
+    }), { label: 'duplicate-page' })).rejects.toThrow(/duplicate (?:page|node)/u);
+
+    await expect(collectPaginated(async () => ({
+      totalCount: 1,
+      nodes: [],
+      pageInfo: { hasNextPage: true, endCursor: 'next' },
+    }), { label: 'empty-page' })).rejects.toThrow('yielded no new nodes');
+
+    await expect(collectPaginated(async () => ({
+      totalCount: 1,
+      nodes: [{ id: 'one' }, { id: 'two' }],
+      pageInfo: { hasNextPage: false, endCursor: null },
+    }), { label: 'overflow' })).rejects.toThrow('exceeds declared total');
+
+    let boundedPage = 0;
+    await expect(collectPaginated(async () => ({
+      totalCount: 3,
+      nodes: [{ id: `bounded-${boundedPage}` }],
+      pageInfo: { hasNextPage: true, endCursor: `cursor-${boundedPage++}` },
+    }), { label: 'bounded', maxPages: 2 })).rejects.toThrow('maximum page count 2');
+  });
+
   it('uses the complete thread ID set rather than the unresolved count', async () => {
     const baseline = await validSnapshot();
     const current = structuredClone(baseline);
@@ -251,6 +311,226 @@ describe('GitHub work-state authority contract', () => {
       status: 'no-state-change',
       changes: [],
     });
+  });
+
+  it('requires two stable semantic passes and retries transient thread/check changes', async () => {
+    const options = captureOptions();
+    let threadCalls = 0;
+    let checkCalls = 0;
+    const threadStates = [
+      [reviewThread(1)],
+      [{ ...reviewThread(1), isResolved: true }],
+      [{ ...reviewThread(1), isResolved: true }],
+      [{ ...reviewThread(1), isResolved: true }],
+    ];
+    const checkStates = [
+      [checkRun(1)],
+      [{ ...checkRun(1), conclusion: 'PENDING' }],
+      [{ ...checkRun(1), conclusion: 'PENDING' }],
+      [{ ...checkRun(1), conclusion: 'PENDING' }],
+    ];
+    const snapshot = await captureGitHubWorkState({
+      ...options,
+      fetchReviewThreadsPage: async () => {
+        const nodes = threadStates[Math.min(threadCalls++, threadStates.length - 1)];
+        return { totalCount: nodes.length, nodes, pageInfo: { hasNextPage: false, endCursor: null } };
+      },
+      fetchRequiredChecksPage: async () => {
+        const nodes = checkStates[Math.min(checkCalls++, checkStates.length - 1)];
+        return { totalCount: nodes.length, nodes, pageInfo: { hasNextPage: false, endCursor: null } };
+      },
+      fetchRequiredCheckPolicy: async () => ({
+        source: 'classic-branch-protection',
+        strict: true,
+        checks: [{ name: 'required-0001', appId: 7 }],
+      }),
+    });
+    expect(threadCalls).toBe(4);
+    expect(checkCalls).toBe(4);
+    expect(snapshot.reviewThreads[0].isResolved).toBe(true);
+    expect(snapshot.requiredChecks[0].conclusion).toBe('PENDING');
+  });
+
+  it('accepts an explicitly stable two-pass capture and rejects check-only instability', async () => {
+    const options = captureOptions();
+    let stableCheckCalls = 0;
+    const stable = await captureGitHubWorkState({
+      ...options,
+      fetchRequiredChecksPage: async (args) => {
+        stableCheckCalls += 1;
+        return pageFetcher([checkRun(1), checkRun(2)])(args);
+      },
+    });
+    expect(stableCheckCalls).toBe(2);
+    expect(stable.requiredChecks).toHaveLength(2);
+
+    let changingCheckCalls = 0;
+    await expect(captureGitHubWorkState({
+      ...options,
+      consistencyAttempts: 2,
+      fetchRequiredChecksPage: async () => {
+        const conclusion = changingCheckCalls++ % 2 === 0 ? 'SUCCESS' : 'PENDING';
+        const nodes = [{ ...checkRun(1), conclusion }, checkRun(2)];
+        return { totalCount: nodes.length, nodes, pageInfo: { hasNextPage: false, endCursor: null } };
+      },
+    })).rejects.toThrow('did not stabilize after 2 attempts');
+  });
+
+  it('fails closed when the authority head changes during capture or semantic state never stabilizes', async () => {
+    const options = captureOptions();
+    let pullRequestCalls = 0;
+    const basePullRequest = await options.fetchPullRequest();
+    await expect(captureGitHubWorkState({
+      ...options,
+      consistencyAttempts: 1,
+      fetchPullRequest: async () => ({
+        ...basePullRequest,
+        headRefOid: pullRequestCalls++ % 2 === 0 ? HEAD_SHA : 'c'.repeat(40),
+      }),
+    })).rejects.toThrow('authority-state-changed-during-capture');
+
+    let threadCalls = 0;
+    await expect(captureGitHubWorkState({
+      ...options,
+      consistencyAttempts: 3,
+      fetchReviewThreadsPage: async () => {
+        const node = { ...reviewThread(1), isResolved: threadCalls++ % 2 === 0 };
+        return { totalCount: 1, nodes: [node], pageInfo: { hasNextPage: false, endCursor: null } };
+      },
+      fetchRequiredCheckPolicy: async () => ({
+        source: 'classic-branch-protection', strict: true, checks: [
+          { name: 'required-0001', appId: 7 },
+          { name: 'required-0002', appId: 7 },
+        ],
+      }),
+    })).rejects.toThrow('did not stabilize after 3 attempts');
+  });
+
+  it('includes strict required-check policy and check/app changes in stale-context classification', async () => {
+    const baseline = await validSnapshot();
+    const mutations = [
+      { policy: { ...baseline.requiredCheckPolicy, strict: false }, appId: null },
+      {
+        policy: { ...baseline.requiredCheckPolicy, checks: baseline.requiredCheckPolicy.checks.slice(0, 1) },
+        appId: null,
+      },
+      {
+        policy: {
+          ...baseline.requiredCheckPolicy,
+          checks: baseline.requiredCheckPolicy.checks.map((entry) => ({ ...entry, appId: 99 })),
+        },
+        appId: 99,
+      },
+    ];
+    for (const { policy: requiredCheckPolicy, appId } of mutations) {
+      const current = structuredClone(baseline);
+      current.requiredCheckPolicy = requiredCheckPolicy;
+      if (requiredCheckPolicy.checks.length !== current.requiredChecks.length) {
+        current.requiredChecks = current.requiredChecks.slice(0, requiredCheckPolicy.checks.length);
+      } else if (appId !== null) {
+        current.requiredChecks = current.requiredChecks.map((entry) => ({ ...entry, appId }));
+      }
+      current.snapshotDigest = computeSnapshotDigest(current);
+      const result = compareGitHubWorkStateSnapshots(baseline, current, { expectedHead: HEAD_SHA });
+      expect(result.status).toBe('stale-context');
+      expect(result.changes.map((entry: { kind: string }) => entry.kind))
+        .toContain('required-check-policy-changed');
+    }
+
+    const noChecks = await validSnapshot({ checks: [], policy: [] });
+    expect(noChecks.requiredCheckPolicy).toMatchObject({ strict: true, checks: [] });
+    expect(noChecks.requiredChecks).toEqual([]);
+    await expect(validSnapshot({ policy: { source: 'classic-branch-protection', checks: [] } }))
+      .rejects.toThrow('strict must be boolean');
+    await expect(validSnapshot({ policy: { source: 'ruleset', strict: true, checks: [] } }))
+      .rejects.toThrow('source must be classic-branch-protection');
+    await expect(validSnapshot({
+      policy: {
+        source: 'classic-branch-protection',
+        strict: true,
+        checks: [{ name: 'required-0001', appId: 'unbound' }],
+      },
+    })).rejects.toThrow('appId must be a positive integer or null');
+  });
+
+  it('fails closed on active rulesets and malformed classic branch-protection policy', () => {
+    expect(buildRequiredCheckPolicyFromGitHubResponses([], null)).toEqual({
+      source: 'classic-branch-protection', strict: false, checks: [],
+    });
+    expect(buildRequiredCheckPolicyFromGitHubResponses([], {
+      strict: true,
+      checks: [{ context: 'verify-lite', app_id: 15368 }],
+      contexts: ['verify-lite', 'legacy'],
+    })).toEqual({
+      source: 'classic-branch-protection',
+      strict: true,
+      checks: [
+        { name: 'verify-lite', appId: 15368 },
+        { name: 'legacy', appId: null },
+      ],
+    });
+    expect(() => buildRequiredCheckPolicyFromGitHubResponses(
+      [{ type: 'required_status_checks' }],
+      null,
+    )).toThrow('a ruleset applies');
+    expect(() => buildRequiredCheckPolicyFromGitHubResponses([], { checks: [] }))
+      .toThrow('response is malformed');
+    expect(() => buildRequiredCheckPolicyFromGitHubResponses({}, null))
+      .toThrow('effective rules response is malformed');
+  });
+
+  it('captures and classifies Issue/PR lifecycle changes and merge commit binding', async () => {
+    const baseline = await validSnapshot();
+    const mergedCaptured = await captureGitHubWorkState({
+      ...captureOptions(),
+      fetchIssue: async () => ({ number: 3657, state: 'CLOSED', stateReason: 'COMPLETED' }),
+      fetchPullRequest: async () => ({
+        number: 4000,
+        baseRefName: 'main',
+        baseRefOid: BASE_SHA,
+        headRefName: 'codex/3657-github-authority-snapshot',
+        headRefOid: HEAD_SHA,
+        isDraft: false,
+        mergeStateStatus: 'UNKNOWN',
+        state: 'MERGED',
+        merged: true,
+        mergeCommit: { oid: 'e'.repeat(40) },
+      }),
+    });
+    expect(mergedCaptured).toMatchObject({
+      issueState: 'CLOSED',
+      issueStateReason: 'COMPLETED',
+      pullRequestState: 'MERGED',
+      merged: true,
+      mergeCommitSha: 'e'.repeat(40),
+    });
+
+    for (const reason of ['COMPLETED', 'NOT_PLANNED']) {
+      const closed = structuredClone(baseline);
+      closed.issueState = 'CLOSED';
+      closed.issueStateReason = reason;
+      closed.snapshotDigest = computeSnapshotDigest(closed);
+      const result = compareGitHubWorkStateSnapshots(baseline, closed, { expectedHead: HEAD_SHA });
+      expect(result.changes.map((entry: { kind: string }) => entry.kind)).toContain('issue-state-changed');
+    }
+
+    const closedPr = redigest({ ...structuredClone(baseline), pullRequestState: 'CLOSED' });
+    expect(compareGitHubWorkStateSnapshots(baseline, closedPr, { expectedHead: HEAD_SHA }).changes
+      .map((entry: { kind: string }) => entry.kind)).toContain('pull-request-state-changed');
+
+    const mergeSha = 'e'.repeat(40);
+    const mergedPr = redigest({
+      ...structuredClone(baseline),
+      pullRequestState: 'MERGED',
+      merged: true,
+      mergeCommitSha: mergeSha,
+    });
+    const mergedResult = compareGitHubWorkStateSnapshots(baseline, mergedPr, { expectedHead: HEAD_SHA });
+    expect(mergedResult.changes.map((entry: { kind: string }) => entry.kind))
+      .toEqual(expect.arrayContaining(['pull-request-state-changed', 'pull-request-merged']));
+
+    const missingMergeBinding = redigest({ ...mergedPr, mergeCommitSha: null });
+    expect(validateSnapshotSemantics(missingMergeBinding)).toContain('merged PR must bind mergeCommitSha');
   });
 
   it('does not treat a successful required check from another head as current success', async () => {
@@ -338,5 +618,46 @@ describe('GitHub work-state authority contract', () => {
     const snapshot = await validSnapshot();
     const clone = redigest({ ...snapshot, generatedAt: '2026-07-29T00:00:00.000Z' });
     expect(validateSnapshotSemantics(clone)).toEqual([]);
+  });
+
+  it('validates only repository-local regular non-symlink snapshot references', () => {
+    const localTmp = resolve('.codex-local/tmp');
+    mkdirSync(localTmp, { recursive: true });
+    const repoRoot = mkdtempSync(resolve(localTmp, 'authority-reference-'));
+    const authorityDir = resolve(repoRoot, '.codex-local/authority');
+    mkdirSync(authorityDir, { recursive: true });
+    const fixture = readFixture('sample.github-work-state.json');
+    const relativePath = '.codex-local/authority/current.json';
+    writeFileSync(resolve(repoRoot, relativePath), `${JSON.stringify(fixture)}\n`);
+    try {
+      const validated = resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot(relativePath, {
+        repoRoot,
+        expectedDigest: fixture.snapshotDigest,
+      });
+      expect(validated.snapshot.snapshotDigest).toBe(fixture.snapshotDigest);
+
+      expect(() => resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot('missing.json', { repoRoot }))
+        .toThrow('does not exist');
+      expect(() => resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot(resolve(repoRoot, relativePath), { repoRoot }))
+        .toThrow('repository-relative');
+
+      writeFileSync(resolve(authorityDir, 'malformed.json'), '{invalid');
+      expect(() => resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot(
+        '.codex-local/authority/malformed.json',
+        { repoRoot },
+      )).toThrow('not valid JSON');
+      expect(() => resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot(relativePath, {
+        repoRoot,
+        expectedDigest: `sha256:${'0'.repeat(64)}`,
+      })).toThrow('does not match');
+
+      symlinkSync(resolve(repoRoot, relativePath), resolve(authorityDir, 'link.json'));
+      expect(() => resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot(
+        '.codex-local/authority/link.json',
+        { repoRoot },
+      )).toThrow('symbolic links are forbidden');
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
+    }
   });
 });

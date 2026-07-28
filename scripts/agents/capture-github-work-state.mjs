@@ -13,7 +13,7 @@ import {
 const ISSUE_QUERY = `
 query GitHubWorkStateIssue($owner: String!, $name: String!, $issue: Int!) {
   repository(owner: $owner, name: $name) {
-    issue(number: $issue) { number }
+    issue(number: $issue) { number state stateReason }
   }
 }`;
 
@@ -28,6 +28,9 @@ query GitHubWorkStatePullRequest($owner: String!, $name: String!, $pullRequest: 
       headRefOid
       isDraft
       mergeStateStatus
+      state
+      merged
+      mergeCommit { oid }
     }
   }
 }`;
@@ -191,7 +194,7 @@ function splitRepository(repository) {
   return { owner, name };
 }
 
-function runGhJson(args, { input = null } = {}) {
+function runGhJson(args, { input = null, allowNotFound = false } = {}) {
   const result = spawnSync('gh', args, {
     encoding: 'utf8',
     input,
@@ -201,6 +204,7 @@ function runGhJson(args, { input = null } = {}) {
   if (result.error) throw result.error;
   if (result.status !== 0) {
     const stderr = String(result.stderr ?? '').trim().slice(0, 800);
+    if (allowNotFound && /(?:HTTP\s+404|status\s+404)/iu.test(stderr)) return null;
     throw new Error(`gh ${args.slice(0, 2).join(' ')} failed (exit ${result.status}): ${stderr}`);
   }
   try {
@@ -222,6 +226,39 @@ function executeGraphql(query, variables) {
     throw new Error(`GitHub GraphQL query failed: ${messages}`);
   }
   return response;
+}
+
+export function buildRequiredCheckPolicyFromGitHubResponses(effectiveRules, classicPolicy) {
+  if (!Array.isArray(effectiveRules)) throw new Error('effective rules response is malformed');
+  if (effectiveRules.length > 0) {
+    throw new Error('effective required-check policy incomplete: a ruleset applies to the base branch');
+  }
+  if (classicPolicy === null) {
+    return { source: 'classic-branch-protection', strict: false, checks: [] };
+  }
+  if (!classicPolicy || typeof classicPolicy !== 'object' || typeof classicPolicy.strict !== 'boolean') {
+    throw new Error('classic branch-protection required-check response is malformed');
+  }
+  if (classicPolicy.checks !== undefined && !Array.isArray(classicPolicy.checks)) {
+    throw new Error('classic branch-protection checks must be an array');
+  }
+  if (classicPolicy.contexts !== undefined && !Array.isArray(classicPolicy.contexts)) {
+    throw new Error('classic branch-protection contexts must be an array');
+  }
+  const checks = Array.isArray(classicPolicy.checks)
+    ? classicPolicy.checks.map((entry) => ({ name: entry.context, appId: entry.app_id }))
+    : [];
+  const representedNames = new Set(checks.map((entry) => entry.name));
+  const legacyContexts = Array.isArray(classicPolicy.contexts)
+    ? classicPolicy.contexts
+      .filter((name) => !representedNames.has(name))
+      .map((name) => ({ name, appId: null }))
+    : [];
+  return {
+    source: 'classic-branch-protection',
+    strict: classicPolicy.strict,
+    checks: [...checks, ...legacyContexts],
+  };
 }
 
 function buildGitHubClients() {
@@ -274,18 +311,11 @@ function buildGitHubClients() {
       };
     },
     async fetchRequiredCheckPolicy({ repository, baseRef }) {
+      const encodedBaseRef = encodeURIComponent(baseRef);
+      const effectiveRules = runGhJson(['api', `repos/${repository}/rules/branches/${encodedBaseRef}`]);
       const endpoint = `repos/${repository}/branches/${encodeURIComponent(baseRef)}/protection/required_status_checks`;
-      const response = runGhJson(['api', endpoint]);
-      const checks = Array.isArray(response?.checks)
-        ? response.checks.map((entry) => ({ name: entry.context, appId: entry.app_id }))
-        : [];
-      const representedNames = new Set(checks.map((entry) => entry.name));
-      const legacyContexts = Array.isArray(response?.contexts)
-        ? response.contexts
-          .filter((name) => !representedNames.has(name))
-          .map((name) => ({ name, appId: null }))
-        : [];
-      return [...checks, ...legacyContexts];
+      const response = runGhJson(['api', endpoint], { allowNotFound: true });
+      return buildRequiredCheckPolicyFromGitHubResponses(effectiveRules, response);
     },
   };
 }

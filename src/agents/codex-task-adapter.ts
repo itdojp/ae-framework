@@ -17,9 +17,15 @@ import {
 
 export type Phase = 'intent' | 'formal' | 'stories' | 'validation' | 'modeling' | 'ui';
 
-export interface CodexTaskAdapterOptions {}
+export interface CodexTaskAdapterOptions {
+  /** Digest produced by the repository-local snapshot validator at the transport boundary. */
+  validatedAuthoritySnapshotDigest?: string;
+}
 
-export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): TaskHandler {
+export function createCodexTaskAdapter(opts: CodexTaskAdapterOptions = {}): TaskHandler {
+  const validatedAuthoritySnapshotDigest = /^sha256:[a-f0-9]{64}$/u.test(
+    opts.validatedAuthoritySnapshotDigest ?? '',
+  ) ? opts.validatedAuthoritySnapshotDigest : undefined;
   const intent = new IntentTaskAdapter();
   const nl = new NaturalLanguageTaskAdapter();
   const stories = new UserStoriesTaskAdapter();
@@ -46,7 +52,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           case 'intent':
             {
               const resp = await intent.handleIntentTask(request as any);
-              const finalResp = writeAndReturn(phase, request, resp);
+              const finalResp = writeAndReturn(phase, request, resp, validatedAuthoritySnapshotDigest);
               recordSpanResult(span, finalResp);
               return finalResp;
             }
@@ -193,40 +199,40 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
                   }
                 : {}),
             };
-            const finalResp = writeAndReturn(phase, request, resp);
+            const finalResp = writeAndReturn(phase, request, resp, validatedAuthoritySnapshotDigest);
             recordSpanResult(span, finalResp);
             return finalResp;
           }
           case 'stories':
             {
               const resp = await stories.handleUserStoriesTask(request);
-              const finalResp = writeAndReturn(phase, request, resp);
+              const finalResp = writeAndReturn(phase, request, resp, validatedAuthoritySnapshotDigest);
               recordSpanResult(span, finalResp);
               return finalResp;
             }
           case 'validation':
             {
               const resp = await validation.handleValidationTask(request);
-              const finalResp = writeAndReturn(phase, request, resp);
+              const finalResp = writeAndReturn(phase, request, resp, validatedAuthoritySnapshotDigest);
               recordSpanResult(span, finalResp);
               return finalResp;
             }
           case 'modeling':
             {
               const resp = await modeling.handleDomainModelingTask(request);
-              const finalResp = writeAndReturn(phase, request, resp);
+              const finalResp = writeAndReturn(phase, request, resp, validatedAuthoritySnapshotDigest);
               recordSpanResult(span, finalResp);
               return finalResp;
             }
           case 'ui':
             {
               const resp = await handleUI(request, span);
-              const finalResp = writeAndReturn(phase, request, resp);
+              const finalResp = writeAndReturn(phase, request, resp, validatedAuthoritySnapshotDigest);
               recordSpanResult(span, finalResp);
               return finalResp;
             }
           default: {
-            const finalResp = writeAndReturn(phase, request, createNeutralResponse(phase, request));
+            const finalResp = writeAndReturn(phase, request, createNeutralResponse(phase, request), validatedAuthoritySnapshotDigest);
             recordSpanResult(span, finalResp);
             return finalResp;
           }
@@ -243,7 +249,7 @@ export function createCodexTaskAdapter(_opts: CodexTaskAdapterOptions = {}): Tas
           blockingReason: 'adapter-error',
           requiredHumanInput: `error_context_for_phase_${phase}`,
         };
-        const finalResp = writeAndReturn(phase, request, errorResp);
+        const finalResp = writeAndReturn(phase, request, errorResp, validatedAuthoritySnapshotDigest);
         recordSpanResult(span, finalResp);
         return finalResp;
       } finally {
@@ -665,16 +671,23 @@ function buildBlockedAction(phase: Phase, blockingReason: string, requiredHumanI
   return `Resolve ${blockingReason} and rerun codex task (${phase})`;
 }
 
-function bindAuthoritySnapshotDigest(request: TaskRequest, response: TaskResponse): TaskResponse {
+function bindAuthoritySnapshotDigest(
+  validatedAuthoritySnapshotDigest: string | undefined,
+  response: TaskResponse,
+): TaskResponse {
   const { authoritySnapshotDigest: _untrustedResponseDigest, ...unboundResponse } = response;
-  const digest = request.context?.authoritySnapshotDigest;
-  if (typeof digest !== 'string' || !/^sha256:[a-f0-9]{64}$/u.test(digest)) {
+  if (!validatedAuthoritySnapshotDigest) {
     return unboundResponse;
   }
-  return { ...unboundResponse, authoritySnapshotDigest: digest };
+  return { ...unboundResponse, authoritySnapshotDigest: validatedAuthoritySnapshotDigest };
 }
 
-export function finalizeTaskResponse(phase: Phase, request: TaskRequest, response: TaskResponse): TaskResponse {
+export function finalizeTaskResponse(
+  phase: Phase,
+  request: TaskRequest,
+  response: TaskResponse,
+  validatedAuthoritySnapshotDigest?: string,
+): TaskResponse {
   const summary = typeof response.summary === 'string' ? response.summary.trim() : '';
   const analysis = typeof response.analysis === 'string' ? response.analysis : '';
   const recommendations = normalizeStringList(response.recommendations);
@@ -683,7 +696,7 @@ export function finalizeTaskResponse(phase: Phase, request: TaskRequest, respons
 
   if (!response.shouldBlockProgress) {
     const actionableNext = nextActions.length > 0 ? nextActions : defaultContinueActions(phase);
-    return bindAuthoritySnapshotDigest(request, {
+    return bindAuthoritySnapshotDigest(validatedAuthoritySnapshotDigest, {
       ...response,
       summary: summary || `Continue: ${phase}`,
       analysis,
@@ -709,7 +722,7 @@ export function finalizeTaskResponse(phase: Phase, request: TaskRequest, respons
     ? summary
     : `Blocked: ${summary || `${phase} task requires human input`}`;
 
-  return bindAuthoritySnapshotDigest(request, {
+  return bindAuthoritySnapshotDigest(validatedAuthoritySnapshotDigest, {
     ...response,
     summary: blockedSummary,
     analysis,
@@ -722,8 +735,18 @@ export function finalizeTaskResponse(phase: Phase, request: TaskRequest, respons
   });
 }
 
-function writeAndReturn(phase: Phase, request: TaskRequest, response: TaskResponse): TaskResponse {
-  const finalResponse = finalizeTaskResponse(phase, request, response);
+function writeAndReturn(
+  phase: Phase,
+  request: TaskRequest,
+  response: TaskResponse,
+  validatedAuthoritySnapshotDigest?: string,
+): TaskResponse {
+  const finalResponse = finalizeTaskResponse(
+    phase,
+    request,
+    response,
+    validatedAuthoritySnapshotDigest,
+  );
   try {
     const outDir = getArtifactsDir();
     writeRepositoryLocalCodexArtifact(

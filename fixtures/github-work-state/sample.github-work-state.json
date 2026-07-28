@@ -24,16 +24,20 @@
       "isResolved": true
     }
   ],
-  "requiredCheckPolicy": [
-    {
-      "name": "policy-gate",
-      "appId": 15368
-    },
-    {
-      "name": "verify-lite",
-      "appId": 15368
-    }
-  ],
+  "requiredCheckPolicy": {
+    "source": "classic-branch-protection",
+    "strict": true,
+    "checks": [
+      {
+        "name": "policy-gate",
+        "appId": 15368
+      },
+      {
+        "name": "verify-lite",
+        "appId": 15368
+      }
+    ]
+  },
   "requiredChecks": [
     {
       "name": "policy-gate",
@@ -69,5 +73,10 @@
     }
   },
   "authoritySource": "github-api",
-  "snapshotDigest": "sha256:595570215c2e1734cdc60d92cb749b277fe4951ef82530c6cf3a936757d3a266"
+  "snapshotDigest": "sha256:9e6bffee29393c17a3c8dbe2ef8f744342b489508a87320d458483b3543383d2",
+  "issueState": "OPEN",
+  "issueStateReason": null,
+  "pullRequestState": "OPEN",
+  "merged": false,
+  "mergeCommitSha": null
 }

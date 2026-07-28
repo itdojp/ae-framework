@@ -153,8 +153,9 @@ PR=4000
 HEAD_SHA="$(gh pr view "$PR" --repo "$REPO" --json headRefOid --jq .headRefOid)"
 mkdir -p .codex-local/authority
 
-# Trusted network operation. GraphQL pagination must reach every review thread
-# and status-check context; required checks are bound to HEAD_SHA.
+# Trusted network operation. Two semantic passes must stabilize. GraphQL
+# pagination must reach every review thread/status-check context, and classic
+# required-check policy (including strict) is bound to HEAD_SHA.
 pnpm run github-work-state:capture -- \
   --repo "$REPO" --issue "$ISSUE" --pr "$PR" \
   --expected-head "$HEAD_SHA" \
@@ -185,15 +186,22 @@ code; the generated comparison report remains the machine-readable authority.
   not progress and must not be recorded as a completed iteration.
 - `2 / stale-context`: reconcile the classified change before continuing. This
   includes a new/base head, a changed review-thread ID set even when counts are
-  equal, resolution changes, and required-check reruns/state changes.
+  equal, resolution changes, Issue/PR lifecycle changes, required-check policy
+  changes, and required-check reruns/state changes.
 - `1 / contract-invalid`: stop. Incomplete pagination, digest/schema drift,
-  wrong-head CI, or an unexpected current head cannot be used as authority.
+  capture instability, wrong-head CI, an unexpected current head, or any
+  applicable ruleset that prevents complete effective-policy capture cannot be
+  used as authority. The v1 capture supports classic branch protection and
+  fails closed rather than treating a ruleset-only policy as empty.
 
 Record `authoritySnapshotDigest: sha256:...` in the local task ledger. Pass the
-validated snapshot to `handoff:create --authority-snapshot <path>`, or pass its
-digest as `context.authoritySnapshotDigest` to the Codex adapter. Do not replace
-the baseline after a stale result until the head/thread/check change has been
-reviewed and the local plan/ledger has been reconciled.
+validated snapshot to `handoff:create --authority-snapshot <path>`. For the
+Codex stdio adapter, pass both repository-local `context.authoritySnapshotPath`
+and matching `context.authoritySnapshotDigest`; digest-only context is
+non-authoritative and rejected. Paths must resolve to regular, non-symlink files
+inside the repository. Do not replace the baseline after a stale result until
+the lifecycle/head/thread/check/policy change has been reviewed and the local
+plan/ledger has been reconciled.
 
 ### 6. Post-work checklist
 
@@ -391,8 +399,9 @@ PR=4000
 HEAD_SHA="$(gh pr view "$PR" --repo "$REPO" --json headRefOid --jq .headRefOid)"
 mkdir -p .codex-local/authority
 
-# trusted network operation。全 review thread / status-check context の
-# GraphQL pagination を完了し、required check を HEAD_SHA へ bind する。
+# trusted network operation。2回のsemantic passが安定することを要求する。
+# 全review thread / status-check contextのGraphQL paginationを完了し、
+# classic required-check policy（strictを含む）をHEAD_SHAへbindする。
 pnpm run github-work-state:capture -- \
   --repo "$REPO" --issue "$ISSUE" --pr "$PR" \
   --expected-head "$HEAD_SHA" \
@@ -424,15 +433,19 @@ package manager の lifecycle wrapper は子processのnon-zero exit codeを正�
   なった capture を進捗または完了 iteration として記録しません。
 - `2 / stale-context`: classified change を reconcile してから続行します。head/base
   変更、件数が同じでも thread ID 集合が異なる場合、resolution 変更、required
-  check の rerun/state 変更を含みます。
+  check policy変更、Issue/PR lifecycle変更、required checkのrerun/state変更を含みます。
 - `1 / contract-invalid`: 停止します。pagination 不完了、digest/schema drift、
-  wrong-head CI、想定外の current head は authority として使用できません。
+  capture不安定、wrong-head CI、想定外のcurrent head、またはeffective policyを
+  完全にcaptureできない適用rulesetはauthorityとして使用できません。v1はclassic
+  branch protectionのみをcaptureし、ruleset-only policyを空として扱わずfail closedにします。
 
 local task ledger へ `authoritySnapshotDigest: sha256:...` を記録します。
 validated snapshot は `handoff:create --authority-snapshot <path>` へ渡せます。
-Codex adapter では digest を `context.authoritySnapshotDigest` として渡します。
-stale result の head/thread/check change を review し、local plan/ledger を reconcile
-するまでは baseline を上書きしません。
+Codex stdio adapterにはrepository-localな`context.authoritySnapshotPath`と、一致する
+`context.authoritySnapshotDigest`の両方を渡します。digest-only contextはauthority
+ではなくrejectされます。pathはrepository内のregular non-symlink fileに限定します。
+stale resultのlifecycle/head/thread/check/policy changeをreviewし、local plan/ledgerを
+reconcileするまではbaselineを上書きしません。
 
 ### 6. 作業後 checklist
 

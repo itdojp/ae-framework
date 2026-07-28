@@ -94,50 +94,111 @@ export function collectSensitiveFieldPaths(value, currentPath = '$') {
   return findings;
 }
 
-export async function collectPaginated(fetchPage, { label, pageSize = 100 } = {}) {
+function boundedContractError(label, message) {
+  return new Error(`${label}: ${message}`.slice(0, 480));
+}
+
+function defaultPaginationNodeKey(node) {
+  if (typeof node?.id === 'string' && node.id.length > 0) return `id:${node.id}`;
+  if (node?.__typename === 'CheckRun' && node.databaseId !== null && node.databaseId !== undefined) {
+    return `check-run:${node.databaseId}`;
+  }
+  if (node?.__typename === 'StatusContext') {
+    return `status-context:${String(node.context ?? '')}:${String(node.commit?.oid ?? '')}`;
+  }
+  return `content:${crypto.createHash('sha256').update(stableStringify(node)).digest('hex')}`;
+}
+
+export async function collectPaginated(
+  fetchPage,
+  { label = 'collection', pageSize = 100, maxPages = 1000, nodeKey = defaultPaginationNodeKey } = {},
+) {
   if (typeof fetchPage !== 'function') {
-    throw new Error(`${label ?? 'collection'} fetchPage must be a function`);
+    throw boundedContractError(label, 'fetchPage must be a function');
   }
   if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
-    throw new Error(`${label ?? 'collection'} pageSize must be between 1 and 100`);
+    throw boundedContractError(label, 'pageSize must be between 1 and 100');
+  }
+  if (!Number.isInteger(maxPages) || maxPages < 1 || maxPages > 10_000) {
+    throw boundedContractError(label, 'maxPages must be between 1 and 10000');
+  }
+  if (typeof nodeKey !== 'function') {
+    throw boundedContractError(label, 'nodeKey must be a function');
   }
 
   const nodes = [];
+  const seenCursors = new Set();
+  const seenNodeKeys = new Set();
+  const seenPageSignatures = new Set();
   let cursor = null;
   let pagesFetched = 0;
   let declaredTotal = null;
 
   while (true) {
+    const requestCursorKey = cursor === null ? '<initial>' : cursor;
+    if (seenCursors.has(requestCursorKey)) {
+      throw boundedContractError(label, `pagination cursor cycle detected before page ${pagesFetched + 1}`);
+    }
+    seenCursors.add(requestCursorKey);
+    if (pagesFetched >= maxPages) {
+      throw boundedContractError(label, `pagination exceeded maximum page count ${maxPages}`);
+    }
     const page = await fetchPage({ cursor, pageSize });
     pagesFetched += 1;
     if (!page || !Array.isArray(page.nodes) || !page.pageInfo) {
-      throw new Error(`${label ?? 'collection'} page ${pagesFetched} is malformed`);
+      throw boundedContractError(label, `page ${pagesFetched} is malformed`);
+    }
+    if (typeof page.pageInfo.hasNextPage !== 'boolean') {
+      throw boundedContractError(label, `page ${pagesFetched} has an invalid hasNextPage value`);
     }
     if (!Number.isInteger(page.totalCount) || page.totalCount < 0) {
-      throw new Error(`${label ?? 'collection'} page ${pagesFetched} has an invalid totalCount`);
+      throw boundedContractError(label, `page ${pagesFetched} has an invalid totalCount`);
     }
     if (declaredTotal === null) {
       declaredTotal = page.totalCount;
     } else if (declaredTotal !== page.totalCount) {
-      throw new Error(`${label ?? 'collection'} totalCount changed during pagination`);
+      throw boundedContractError(label, 'totalCount changed during pagination');
+    }
+
+    const pageKeys = page.nodes.map((node) => String(nodeKey(node)));
+    const pageSignature = crypto.createHash('sha256').update(stableStringify(pageKeys)).digest('hex');
+    if (seenPageSignatures.has(pageSignature)) {
+      throw boundedContractError(label, `duplicate page detected at page ${pagesFetched}`);
+    }
+    seenPageSignatures.add(pageSignature);
+    for (const key of pageKeys) {
+      if (seenNodeKeys.has(key)) {
+        throw boundedContractError(label, `duplicate node detected at page ${pagesFetched}`);
+      }
+      seenNodeKeys.add(key);
     }
     nodes.push(...page.nodes);
+    if (nodes.length > declaredTotal) {
+      throw boundedContractError(
+        label,
+        `captured node count exceeds declared total (${nodes.length} > ${declaredTotal})`,
+      );
+    }
 
     if (page.pageInfo.hasNextPage !== true) {
       break;
     }
-    if (typeof page.pageInfo.endCursor !== 'string' || page.pageInfo.endCursor.length === 0) {
-      throw new Error(`${label ?? 'collection'} pagination reported another page without an endCursor`);
+    if (page.nodes.length === 0) {
+      throw boundedContractError(label, `page ${pagesFetched} hasNextPage=true but yielded no new nodes`);
     }
-    if (page.pageInfo.endCursor === cursor) {
-      throw new Error(`${label ?? 'collection'} pagination cursor did not advance`);
+    if (typeof page.pageInfo.endCursor !== 'string' || page.pageInfo.endCursor.length === 0) {
+      throw boundedContractError(label, 'pagination reported another page without an endCursor');
+    }
+    if (seenCursors.has(page.pageInfo.endCursor)) {
+      throw boundedContractError(label, `pagination cursor cycle detected after page ${pagesFetched}`);
     }
     cursor = page.pageInfo.endCursor;
   }
 
   if (nodes.length !== declaredTotal) {
-    throw new Error(
-      `${label ?? 'collection'} pagination incomplete: captured ${nodes.length} of ${declaredTotal}`,
+    throw boundedContractError(
+      label,
+      `pagination incomplete: captured ${nodes.length} of ${declaredTotal}`,
     );
   }
 
@@ -213,18 +274,36 @@ function normalizeCheckNode(node) {
 }
 
 export function normalizeRequiredCheckPolicy(rawPolicy) {
-  const entries = Array.isArray(rawPolicy) ? rawPolicy : [];
+  if (!rawPolicy || typeof rawPolicy !== 'object' || Array.isArray(rawPolicy)) {
+    throw new Error('required check policy must be an object');
+  }
+  if (rawPolicy.source !== 'classic-branch-protection') {
+    throw new Error('required check policy source must be classic-branch-protection');
+  }
+  if (typeof rawPolicy.strict !== 'boolean') {
+    throw new Error('required check policy strict must be boolean');
+  }
+  if (!Array.isArray(rawPolicy.checks)) {
+    throw new Error('required check policy checks must be an array');
+  }
   const unique = new Map();
-  for (const entry of entries) {
+  for (const entry of rawPolicy.checks) {
     const name = assertNonEmptyString(
       typeof entry === 'string' ? entry : entry?.name ?? entry?.context,
       'required check name',
     );
     const rawAppId = typeof entry === 'string' ? null : entry?.appId ?? entry?.app_id ?? null;
-    const appId = Number.isInteger(rawAppId) && rawAppId > 0 ? rawAppId : null;
+    if (rawAppId !== null && (!Number.isInteger(rawAppId) || rawAppId < 1)) {
+      throw new Error(`required check ${name} appId must be a positive integer or null`);
+    }
+    const appId = rawAppId;
     unique.set(`${name}\u0000${appId ?? ''}`, { name, appId });
   }
-  return Array.from(unique.values()).sort(compareRequiredCheckPolicy);
+  return {
+    source: rawPolicy.source,
+    strict: rawPolicy.strict,
+    checks: Array.from(unique.values()).sort(compareRequiredCheckPolicy),
+  };
 }
 
 function compareRequiredCheckPolicy(left, right) {
@@ -251,7 +330,7 @@ function buildRequiredChecks(rawCheckNodes, requiredPolicy, headSha) {
     .map(normalizeCheckNode)
     .filter(Boolean);
   const selected = [];
-  for (const policy of requiredPolicy) {
+  for (const policy of requiredPolicy.checks) {
     const exactHeadMatches = allChecks.filter(
       (check) => requiredPolicyMatches(check, policy) && check.headSha === headSha,
     );
@@ -271,6 +350,145 @@ function buildRequiredChecks(rawCheckNodes, requiredPolicy, headSha) {
   return selected.sort(compareRequiredChecks);
 }
 
+function normalizeIssueLifecycle(issue, expectedNumber) {
+  if (issue?.number !== expectedNumber) {
+    throw new Error(`GitHub Issue #${expectedNumber} was not returned by the authority source`);
+  }
+  const issueState = assertNonEmptyString(issue.state, 'Issue state').toUpperCase();
+  if (!['OPEN', 'CLOSED'].includes(issueState)) throw new Error(`unsupported Issue state: ${issueState}`);
+  const issueStateReason = issue.stateReason === null || issue.stateReason === undefined
+    ? null
+    : assertNonEmptyString(issue.stateReason, 'Issue state reason').toUpperCase();
+  if (issueStateReason !== null && !['COMPLETED', 'NOT_PLANNED', 'REOPENED'].includes(issueStateReason)) {
+    throw new Error(`unsupported Issue state reason: ${issueStateReason}`);
+  }
+  return { issueState, issueStateReason };
+}
+
+function normalizePullRequestAuthority(pullRequest, expectedNumber, expectedHead) {
+  if (pullRequest?.number !== expectedNumber) {
+    throw new Error(`GitHub PR #${expectedNumber} was not returned by the authority source`);
+  }
+  const headSha = assertGitSha(pullRequest.headRefOid, 'PR head SHA');
+  if (expectedHead !== null && headSha !== assertGitSha(expectedHead, 'expected head SHA')) {
+    throw new Error(`stale head: expected ${expectedHead}, GitHub reports ${headSha}`);
+  }
+  if (typeof pullRequest.isDraft !== 'boolean') throw new Error('PR isDraft must be boolean');
+  if (typeof pullRequest.merged !== 'boolean') throw new Error('PR merged must be boolean');
+  const pullRequestState = assertNonEmptyString(pullRequest.state, 'PR state').toUpperCase();
+  if (!['OPEN', 'CLOSED', 'MERGED'].includes(pullRequestState)) {
+    throw new Error(`unsupported PR state: ${pullRequestState}`);
+  }
+  const mergeCommitSha = pullRequest.mergeCommit?.oid === null || pullRequest.mergeCommit?.oid === undefined
+    ? null
+    : assertGitSha(pullRequest.mergeCommit.oid, 'PR merge commit SHA');
+  return {
+    baseRef: assertNonEmptyString(pullRequest.baseRefName, 'PR base ref'),
+    baseSha: assertGitSha(pullRequest.baseRefOid, 'PR base SHA'),
+    headRef: assertNonEmptyString(pullRequest.headRefName, 'PR head ref'),
+    headSha,
+    isDraft: pullRequest.isDraft,
+    mergeState: assertNonEmptyString(pullRequest.mergeStateStatus, 'PR merge state').toUpperCase(),
+    pullRequestState,
+    merged: pullRequest.merged,
+    mergeCommitSha,
+  };
+}
+
+function authorityStamp(issueLifecycle, pullRequestAuthority) {
+  return stableStringify({ ...issueLifecycle, ...pullRequestAuthority });
+}
+
+async function captureGitHubWorkStatePass({
+  repository,
+  issueNumber,
+  pullRequestNumber,
+  generatedAt,
+  expectedHead,
+  pageSize,
+  fetchIssue,
+  fetchPullRequest,
+  fetchReviewThreadsPage,
+  fetchRequiredChecksPage,
+  fetchRequiredCheckPolicy,
+}) {
+  const [startIssue, startPullRequest] = await Promise.all([
+    fetchIssue({ repository, issueNumber }),
+    fetchPullRequest({ repository, pullRequestNumber }),
+  ]);
+  const startIssueLifecycle = normalizeIssueLifecycle(startIssue, issueNumber);
+  const startPullRequestAuthority = normalizePullRequestAuthority(
+    startPullRequest,
+    pullRequestNumber,
+    expectedHead,
+  );
+
+  const [threadCollection, checkCollection, rawRequiredPolicy] = await Promise.all([
+    collectPaginated(
+      ({ cursor, pageSize: requestedPageSize }) => fetchReviewThreadsPage({
+        repository,
+        pullRequestNumber,
+        cursor,
+        pageSize: requestedPageSize,
+      }),
+      { label: 'reviewThreads', pageSize },
+    ),
+    collectPaginated(
+      ({ cursor, pageSize: requestedPageSize }) => fetchRequiredChecksPage({
+        repository,
+        pullRequestNumber,
+        headSha: startPullRequestAuthority.headSha,
+        cursor,
+        pageSize: requestedPageSize,
+      }),
+      { label: 'requiredChecks', pageSize },
+    ),
+    fetchRequiredCheckPolicy({ repository, baseRef: startPullRequestAuthority.baseRef }),
+  ]);
+
+  const [endIssue, endPullRequest] = await Promise.all([
+    fetchIssue({ repository, issueNumber }),
+    fetchPullRequest({ repository, pullRequestNumber }),
+  ]);
+  const endIssueLifecycle = normalizeIssueLifecycle(endIssue, issueNumber);
+  const endPullRequestAuthority = normalizePullRequestAuthority(endPullRequest, pullRequestNumber, null);
+  if (authorityStamp(startIssueLifecycle, startPullRequestAuthority)
+      !== authorityStamp(endIssueLifecycle, endPullRequestAuthority)) {
+    throw boundedContractError('authority-state-changed-during-capture', 'start/end authority stamp mismatch');
+  }
+
+  const reviewThreads = threadCollection.nodes.map(normalizeReviewThread).sort(compareReviewThreads);
+  const requiredCheckPolicy = normalizeRequiredCheckPolicy(rawRequiredPolicy);
+  const requiredChecks = buildRequiredChecks(
+    checkCollection.nodes,
+    requiredCheckPolicy,
+    startPullRequestAuthority.headSha,
+  );
+  const snapshotWithoutDigest = {
+    schemaVersion: GITHUB_WORK_STATE_SCHEMA_VERSION,
+    generatedAt,
+    repository,
+    issueNumber,
+    pullRequestNumber,
+    ...startIssueLifecycle,
+    ...startPullRequestAuthority,
+    reviewThreads,
+    requiredCheckPolicy,
+    requiredChecks,
+    pagination: {
+      reviewThreads: threadCollection.evidence,
+      requiredChecks: checkCollection.evidence,
+    },
+    authoritySource: 'github-api',
+  };
+  const snapshot = { ...snapshotWithoutDigest, snapshotDigest: computeSnapshotDigest(snapshotWithoutDigest) };
+  const semanticErrors = validateSnapshotSemantics(snapshot);
+  if (semanticErrors.length > 0) {
+    throw new Error(`captured snapshot is invalid: ${semanticErrors.join('; ')}`);
+  }
+  return snapshot;
+}
+
 export async function captureGitHubWorkState({
   repository,
   issueNumber,
@@ -283,6 +501,7 @@ export async function captureGitHubWorkState({
   fetchReviewThreadsPage,
   fetchRequiredChecksPage,
   fetchRequiredCheckPolicy,
+  consistencyAttempts = 3,
 }) {
   const normalizedRepository = assertNonEmptyString(repository, 'repository');
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/u.test(normalizedRepository)) {
@@ -295,88 +514,37 @@ export async function captureGitHubWorkState({
   if (Number.isNaN(generatedAtDate.getTime())) throw new Error('generatedAt must be a valid ISO-8601 timestamp');
   const normalizedGeneratedAt = generatedAtDate.toISOString();
 
-  const issue = await fetchIssue({ repository: normalizedRepository, issueNumber: normalizedIssueNumber });
-  if (issue?.number !== normalizedIssueNumber) {
-    throw new Error(`GitHub Issue #${normalizedIssueNumber} was not returned by the authority source`);
+  if (!Number.isInteger(consistencyAttempts) || consistencyAttempts < 1 || consistencyAttempts > 10) {
+    throw new Error('consistencyAttempts must be between 1 and 10');
   }
-  const pullRequest = await fetchPullRequest({
-    repository: normalizedRepository,
-    pullRequestNumber: normalizedPullRequestNumber,
-  });
-  if (pullRequest?.number !== normalizedPullRequestNumber) {
-    throw new Error(`GitHub PR #${normalizedPullRequestNumber} was not returned by the authority source`);
-  }
-
-  const headSha = assertGitSha(pullRequest.headRefOid, 'PR head SHA');
-  if (expectedHead !== null && headSha !== assertGitSha(expectedHead, 'expected head SHA')) {
-    throw new Error(`stale head: expected ${expectedHead}, GitHub reports ${headSha}`);
-  }
-  const baseSha = assertGitSha(pullRequest.baseRefOid, 'PR base SHA');
-  const mergeState = assertNonEmptyString(pullRequest.mergeStateStatus, 'PR merge state').toUpperCase();
-  if (typeof pullRequest.isDraft !== 'boolean') {
-    throw new Error('PR isDraft must be boolean');
-  }
-
-  const [threadCollection, checkCollection, rawRequiredPolicy] = await Promise.all([
-    collectPaginated(
-      ({ cursor, pageSize: requestedPageSize }) => fetchReviewThreadsPage({
-        repository: normalizedRepository,
-        pullRequestNumber: normalizedPullRequestNumber,
-        cursor,
-        pageSize: requestedPageSize,
-      }),
-      { label: 'reviewThreads', pageSize },
-    ),
-    collectPaginated(
-      ({ cursor, pageSize: requestedPageSize }) => fetchRequiredChecksPage({
-        repository: normalizedRepository,
-        pullRequestNumber: normalizedPullRequestNumber,
-        headSha,
-        cursor,
-        pageSize: requestedPageSize,
-      }),
-      { label: 'requiredChecks', pageSize },
-    ),
-    fetchRequiredCheckPolicy({
-      repository: normalizedRepository,
-      baseRef: pullRequest.baseRefName,
-    }),
-  ]);
-
-  const reviewThreads = threadCollection.nodes.map(normalizeReviewThread).sort(compareReviewThreads);
-  const requiredCheckPolicy = normalizeRequiredCheckPolicy(rawRequiredPolicy);
-  const requiredChecks = buildRequiredChecks(checkCollection.nodes, requiredCheckPolicy, headSha);
-
-  const snapshotWithoutDigest = {
-    schemaVersion: GITHUB_WORK_STATE_SCHEMA_VERSION,
-    generatedAt: normalizedGeneratedAt,
+  const passOptions = {
     repository: normalizedRepository,
     issueNumber: normalizedIssueNumber,
     pullRequestNumber: normalizedPullRequestNumber,
-    baseRef: assertNonEmptyString(pullRequest.baseRefName, 'PR base ref'),
-    baseSha,
-    headRef: assertNonEmptyString(pullRequest.headRefName, 'PR head ref'),
-    headSha,
-    isDraft: pullRequest.isDraft,
-    mergeState,
-    reviewThreads,
-    requiredCheckPolicy,
-    requiredChecks,
-    pagination: {
-      reviewThreads: threadCollection.evidence,
-      requiredChecks: checkCollection.evidence,
-    },
-    authoritySource: 'github-api',
+    generatedAt: normalizedGeneratedAt,
+    expectedHead,
+    pageSize,
+    fetchIssue,
+    fetchPullRequest,
+    fetchReviewThreadsPage,
+    fetchRequiredChecksPage,
+    fetchRequiredCheckPolicy,
   };
-  const snapshot = {
-    ...snapshotWithoutDigest,
-    snapshotDigest: computeSnapshotDigest(snapshotWithoutDigest),
-  };
-  const semanticErrors = validateSnapshotSemantics(snapshot);
-  if (semanticErrors.length > 0) {
-    throw new Error(`captured snapshot is invalid: ${semanticErrors.join('; ')}`);
+  for (let attempt = 1; attempt <= consistencyAttempts; attempt += 1) {
+    try {
+      const first = await captureGitHubWorkStatePass(passOptions);
+      const second = await captureGitHubWorkStatePass(passOptions);
+      if (first.snapshotDigest === second.snapshotDigest) return second;
+    } catch (error) {
+      if (!String(error instanceof Error ? error.message : error).includes('authority-state-changed-during-capture')) {
+        throw error;
+      }
+    }
   }
-  return snapshot;
+  throw boundedContractError(
+    'authority-state-changed-during-capture',
+    `semantic authority did not stabilize after ${consistencyAttempts} attempts`,
+  );
 }
 
 export function compileGitHubWorkStateSchema(schemaPath = DEFAULT_GITHUB_WORK_STATE_SCHEMA_PATH) {
@@ -420,6 +588,23 @@ export function validateSnapshotSemantics(
     errors.push('snapshotDigest does not match the semantic snapshot content');
   }
 
+  if (snapshot?.merged === true) {
+    if (snapshot.pullRequestState !== 'MERGED') errors.push('merged PR must use pullRequestState=MERGED');
+    if (!SHA_PATTERN.test(snapshot.mergeCommitSha ?? '')) errors.push('merged PR must bind mergeCommitSha');
+  } else {
+    if (snapshot?.pullRequestState === 'MERGED') errors.push('pullRequestState=MERGED requires merged=true');
+    if (snapshot?.mergeCommitSha !== null) errors.push('unmerged PR must use mergeCommitSha=null');
+  }
+  if (snapshot?.issueState === 'OPEN'
+      && snapshot.issueStateReason !== null
+      && snapshot.issueStateReason !== 'REOPENED') {
+    errors.push('open Issue state reason must be null or REOPENED');
+  }
+  if (snapshot?.issueState === 'CLOSED'
+      && !['COMPLETED', 'NOT_PLANNED'].includes(snapshot.issueStateReason)) {
+    errors.push('closed Issue must state COMPLETED or NOT_PLANNED');
+  }
+
   const threadIds = new Set();
   const topCommentIds = new Set();
   for (const thread of snapshot?.reviewThreads ?? []) {
@@ -432,14 +617,15 @@ export function validateSnapshotSemantics(
     errors.push('reviewThreads must be sorted by threadId');
   }
 
+  const requiredPolicyChecks = snapshot?.requiredCheckPolicy?.checks ?? [];
   const policyKeys = new Set();
-  for (const policy of snapshot?.requiredCheckPolicy ?? []) {
+  for (const policy of requiredPolicyChecks) {
     const key = `${policy.name}\u0000${policy.appId ?? ''}`;
     if (policyKeys.has(key)) errors.push(`duplicate required check policy: ${policy.name}`);
     policyKeys.add(key);
   }
-  if (!isSorted(snapshot?.requiredCheckPolicy ?? [], compareRequiredCheckPolicy)) {
-    errors.push('requiredCheckPolicy must be sorted by name and appId');
+  if (!isSorted(requiredPolicyChecks, compareRequiredCheckPolicy)) {
+    errors.push('requiredCheckPolicy.checks must be sorted by name and appId');
   }
   if (!isSorted(snapshot?.requiredChecks ?? [], compareRequiredChecks)) {
     errors.push('requiredChecks must be sorted canonically');
@@ -466,7 +652,7 @@ export function validateSnapshotSemantics(
       errors.push(`materialized required check ${check.name} cannot use conclusion=MISSING`);
     }
   }
-  for (const policy of snapshot?.requiredCheckPolicy ?? []) {
+  for (const policy of requiredPolicyChecks) {
     if (!(snapshot?.requiredChecks ?? []).some((check) => requiredPolicyMatches(check, policy))) {
       errors.push(`required check policy has no exact-head record: ${policy.name}`);
     }
@@ -495,6 +681,75 @@ export function readAndValidateGitHubWorkStateSnapshot(
     throw new Error(`invalid GitHub work-state snapshot ${snapshotPath}: ${errors.join('; ')}`);
   }
   return snapshot;
+}
+
+export function resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot(
+  snapshotReference,
+  {
+    repoRoot = process.cwd(),
+    expectedDigest = null,
+    schemaPath = DEFAULT_GITHUB_WORK_STATE_SCHEMA_PATH,
+  } = {},
+) {
+  const reference = assertNonEmptyString(snapshotReference, 'authority snapshot reference');
+  if (reference.includes('\u0000')
+      || path.isAbsolute(reference)
+      || /^[A-Za-z]:[\\/]/u.test(reference)
+      || reference.includes('\\')) {
+    throw boundedContractError('authority snapshot', 'reference must be a repository-relative POSIX path');
+  }
+  const segments = reference.split('/');
+  if (segments.some((segment) => segment === '' || segment === '.' || segment === '..' || segment === '.git')) {
+    throw boundedContractError('authority snapshot', 'reference contains a forbidden path segment');
+  }
+
+  const root = fs.realpathSync(path.resolve(repoRoot));
+  const candidate = path.resolve(root, ...segments);
+  if (candidate === root || !candidate.startsWith(`${root}${path.sep}`)) {
+    throw boundedContractError('authority snapshot', 'reference escapes the repository root');
+  }
+  let current = root;
+  for (const segment of segments) {
+    current = path.join(current, segment);
+    let stat;
+    try {
+      stat = fs.lstatSync(current);
+    } catch {
+      throw boundedContractError('authority snapshot', 'referenced file does not exist');
+    }
+    if (stat.isSymbolicLink()) {
+      throw boundedContractError('authority snapshot', 'symbolic links are forbidden');
+    }
+  }
+  const finalStat = fs.statSync(candidate);
+  if (!finalStat.isFile()) {
+    throw boundedContractError('authority snapshot', 'reference must resolve to a regular file');
+  }
+  const realCandidate = fs.realpathSync(candidate);
+  if (!realCandidate.startsWith(`${root}${path.sep}`)) {
+    throw boundedContractError('authority snapshot', 'resolved file escapes the repository root');
+  }
+
+  let snapshot;
+  try {
+    snapshot = JSON.parse(fs.readFileSync(realCandidate, 'utf8'));
+  } catch {
+    throw boundedContractError('authority snapshot', 'referenced file is not valid JSON');
+  }
+  const errors = validateSnapshotSemantics(snapshot, { schemaPath });
+  if (errors.length > 0) {
+    throw boundedContractError('authority snapshot', `contract validation failed: ${errors.join('; ')}`);
+  }
+  if (expectedDigest !== null) {
+    const normalizedExpectedDigest = assertNonEmptyString(expectedDigest, 'expected authority snapshot digest');
+    if (!DIGEST_PATTERN.test(normalizedExpectedDigest)) {
+      throw boundedContractError('authority snapshot', 'expected digest is malformed');
+    }
+    if (snapshot.snapshotDigest !== normalizedExpectedDigest) {
+      throw boundedContractError('authority snapshot', 'expected digest does not match validated snapshot');
+    }
+  }
+  return { snapshot, snapshotPath: reference };
 }
 
 function collectCheckValues(snapshot, field) {
@@ -559,6 +814,28 @@ export function compareGitHubWorkStateSnapshots(baseline, current, { expectedHea
   if (baseline.baseRef !== current.baseRef || baseline.baseSha !== current.baseSha) {
     add('base-changed', `${baseline.baseRef}@${baseline.baseSha} -> ${current.baseRef}@${current.baseSha}`);
   }
+  if (baseline.issueState !== current.issueState
+      || baseline.issueStateReason !== current.issueStateReason) {
+    add(
+      'issue-state-changed',
+      `${baseline.issueState}/${baseline.issueStateReason ?? 'null'} -> ${current.issueState}/${current.issueStateReason ?? 'null'}`,
+    );
+  }
+  if (baseline.pullRequestState !== current.pullRequestState) {
+    add('pull-request-state-changed', `${baseline.pullRequestState} -> ${current.pullRequestState}`);
+  }
+  if (baseline.merged !== current.merged || baseline.mergeCommitSha !== current.mergeCommitSha) {
+    add(
+      current.merged ? 'pull-request-merged' : 'pull-request-merge-binding-changed',
+      `${baseline.mergeCommitSha ?? 'unmerged'} -> ${current.mergeCommitSha ?? 'unmerged'}`,
+    );
+  }
+  if (stableStringify(baseline.requiredCheckPolicy) !== stableStringify(current.requiredCheckPolicy)) {
+    add(
+      'required-check-policy-changed',
+      `classic strict/check policy changed (${baseline.requiredCheckPolicy.strict} -> ${current.requiredCheckPolicy.strict})`,
+    );
+  }
 
   const baselineThreads = new Map(baseline.reviewThreads.map((thread) => [thread.threadId, thread]));
   const currentThreads = new Map(current.reviewThreads.map((thread) => [thread.threadId, thread]));
@@ -603,7 +880,7 @@ export function compareGitHubWorkStateSnapshots(baseline, current, { expectedHea
     }
   }
   if (baseline.isDraft !== current.isDraft || baseline.mergeState !== current.mergeState) {
-    add('pull-request-state-changed', `draft/merge state changed`);
+    add('pull-request-readiness-changed', 'draft/mergeability state changed');
   }
   if (changes.length === 0) {
     add('authority-state-changed', 'semantic snapshot digest changed');

@@ -9,7 +9,12 @@
     "generatedAt",
     "repository",
     "issueNumber",
+    "issueState",
+    "issueStateReason",
     "pullRequestNumber",
+    "pullRequestState",
+    "merged",
+    "mergeCommitSha",
     "baseRef",
     "baseSha",
     "headRef",
@@ -39,9 +44,30 @@
       "type": "integer",
       "minimum": 1
     },
+    "issueState": {
+      "type": "string",
+      "enum": ["OPEN", "CLOSED"]
+    },
+    "issueStateReason": {
+      "type": ["string", "null"],
+      "enum": ["COMPLETED", "NOT_PLANNED", "REOPENED", null]
+    },
     "pullRequestNumber": {
       "type": "integer",
       "minimum": 1
+    },
+    "pullRequestState": {
+      "type": "string",
+      "enum": ["OPEN", "CLOSED", "MERGED"]
+    },
+    "merged": {
+      "type": "boolean"
+    },
+    "mergeCommitSha": {
+      "oneOf": [
+        { "$ref": "#/$defs/gitSha" },
+        { "type": "null" }
+      ]
     },
     "baseRef": {
       "type": "string",
@@ -80,9 +106,22 @@
       }
     },
     "requiredCheckPolicy": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/requiredCheckPolicy"
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "strict", "checks"],
+      "properties": {
+        "source": {
+          "const": "classic-branch-protection"
+        },
+        "strict": {
+          "type": "boolean"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requiredCheckPolicyEntry"
+          }
+        }
       }
     },
     "requiredChecks": {
@@ -153,7 +192,7 @@
         }
       }
     },
-    "requiredCheckPolicy": {
+    "requiredCheckPolicyEntry": {
       "type": "object",
       "additionalProperties": false,
       "required": [
