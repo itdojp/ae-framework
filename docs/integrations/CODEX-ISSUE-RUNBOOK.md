@@ -168,7 +168,7 @@ At continuation/end-of-iteration time, capture `current` again and run the
 network-free validator:
 
 ```bash
-pnpm run github-work-state:compare -- \
+node scripts/agents/compare-github-work-state.mjs \
   --baseline .codex-local/authority/github-work-state-baseline.json \
   --current .codex-local/authority/github-work-state-current.json \
   --expected-head "$HEAD_SHA" \
@@ -176,6 +176,10 @@ pnpm run github-work-state:compare -- \
 ```
 
 Exit/result policy:
+
+Use the direct Node CLI shown above when automation distinguishes these exit
+codes. Package-manager lifecycle wrappers can normalize a non-zero child exit
+code; the generated comparison report remains the machine-readable authority.
 
 - `0 / no-state-change`: semantic state is identical. A later `generatedAt` is
   not progress and must not be recorded as a completed iteration.
@@ -402,7 +406,7 @@ cp .codex-local/authority/github-work-state-current.json \
 validator を実行します。
 
 ```bash
-pnpm run github-work-state:compare -- \
+node scripts/agents/compare-github-work-state.mjs \
   --baseline .codex-local/authority/github-work-state-baseline.json \
   --current .codex-local/authority/github-work-state-current.json \
   --expected-head "$HEAD_SHA" \
@@ -410,6 +414,11 @@ pnpm run github-work-state:compare -- \
 ```
 
 exit / result policy:
+
+automation が次の exit code を区別する場合は、上記の direct Node CLI を使用します。
+package manager の lifecycle wrapper は子processのnon-zero exit codeを正規化する
+場合がありますが、生成されたcomparison reportをmachine-readable authorityとして
+扱います。
 
 - `0 / no-state-change`: semantic state は同一です。`generatedAt` だけが後刻に
   なった capture を進捗または完了 iteration として記録しません。
