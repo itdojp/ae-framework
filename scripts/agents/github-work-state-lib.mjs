@@ -98,6 +98,24 @@ function boundedContractError(label, message) {
   return new Error(`${label}: ${message}`.slice(0, 480));
 }
 
+class RetryableCaptureConsistencyError extends Error {
+  constructor(label, message) {
+    super(`${label}: ${message}`.slice(0, 480));
+    this.name = 'RetryableCaptureConsistencyError';
+  }
+}
+
+class AuthorityStateChangedDuringCaptureError extends RetryableCaptureConsistencyError {
+  constructor(message) {
+    super('authority-state-changed-during-capture', message);
+    this.name = 'AuthorityStateChangedDuringCaptureError';
+  }
+}
+
+function retryableCollectionConsistencyError(label, message) {
+  return new RetryableCaptureConsistencyError(label, message);
+}
+
 function defaultPaginationNodeKey(node) {
   if (typeof node?.id === 'string' && node.id.length > 0) return `id:${node.id}`;
   if (node?.__typename === 'CheckRun' && node.databaseId !== null && node.databaseId !== undefined) {
@@ -157,24 +175,24 @@ export async function collectPaginated(
     if (declaredTotal === null) {
       declaredTotal = page.totalCount;
     } else if (declaredTotal !== page.totalCount) {
-      throw boundedContractError(label, 'totalCount changed during pagination');
+      throw retryableCollectionConsistencyError(label, 'totalCount changed during pagination');
     }
 
     const pageKeys = page.nodes.map((node) => String(nodeKey(node)));
     const pageSignature = crypto.createHash('sha256').update(stableStringify(pageKeys)).digest('hex');
     if (seenPageSignatures.has(pageSignature)) {
-      throw boundedContractError(label, `duplicate page detected at page ${pagesFetched}`);
+      throw retryableCollectionConsistencyError(label, `duplicate page detected at page ${pagesFetched}`);
     }
     seenPageSignatures.add(pageSignature);
     for (const key of pageKeys) {
       if (seenNodeKeys.has(key)) {
-        throw boundedContractError(label, `duplicate node detected at page ${pagesFetched}`);
+        throw retryableCollectionConsistencyError(label, `duplicate node detected at page ${pagesFetched}`);
       }
       seenNodeKeys.add(key);
     }
     nodes.push(...page.nodes);
     if (nodes.length > declaredTotal) {
-      throw boundedContractError(
+      throw retryableCollectionConsistencyError(
         label,
         `captured node count exceeds declared total (${nodes.length} > ${declaredTotal})`,
       );
@@ -184,7 +202,10 @@ export async function collectPaginated(
       break;
     }
     if (page.nodes.length === 0) {
-      throw boundedContractError(label, `page ${pagesFetched} hasNextPage=true but yielded no new nodes`);
+      throw retryableCollectionConsistencyError(
+        label,
+        `page ${pagesFetched} hasNextPage=true but yielded no new nodes`,
+      );
     }
     if (typeof page.pageInfo.endCursor !== 'string' || page.pageInfo.endCursor.length === 0) {
       throw boundedContractError(label, 'pagination reported another page without an endCursor');
@@ -196,7 +217,7 @@ export async function collectPaginated(
   }
 
   if (nodes.length !== declaredTotal) {
-    throw boundedContractError(
+    throw retryableCollectionConsistencyError(
       label,
       `pagination incomplete: captured ${nodes.length} of ${declaredTotal}`,
     );
@@ -454,7 +475,7 @@ async function captureGitHubWorkStatePass({
   const endPullRequestAuthority = normalizePullRequestAuthority(endPullRequest, pullRequestNumber, null);
   if (authorityStamp(startIssueLifecycle, startPullRequestAuthority)
       !== authorityStamp(endIssueLifecycle, endPullRequestAuthority)) {
-    throw boundedContractError('authority-state-changed-during-capture', 'start/end authority stamp mismatch');
+    throw new AuthorityStateChangedDuringCaptureError('start/end authority stamp mismatch');
   }
 
   const reviewThreads = threadCollection.nodes.map(normalizeReviewThread).sort(compareReviewThreads);
@@ -536,13 +557,12 @@ export async function captureGitHubWorkState({
       const second = await captureGitHubWorkStatePass(passOptions);
       if (first.snapshotDigest === second.snapshotDigest) return second;
     } catch (error) {
-      if (!String(error instanceof Error ? error.message : error).includes('authority-state-changed-during-capture')) {
+      if (!(error instanceof RetryableCaptureConsistencyError)) {
         throw error;
       }
     }
   }
-  throw boundedContractError(
-    'authority-state-changed-during-capture',
+  throw new AuthorityStateChangedDuringCaptureError(
     `semantic authority did not stabilize after ${consistencyAttempts} attempts`,
   );
 }

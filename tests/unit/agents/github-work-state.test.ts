@@ -351,6 +351,129 @@ describe('GitHub work-state authority contract', () => {
     expect(snapshot.requiredChecks[0].conclusion).toBe('PENDING');
   });
 
+  it('retries transient pagination consistency failures before accepting two stable passes', async () => {
+    const scenarios = [
+      {
+        name: 'totalCount change',
+        pages: [
+          {
+            totalCount: 2,
+            nodes: [reviewThread(1)],
+            pageInfo: { hasNextPage: true, endCursor: 'total-next' },
+          },
+          {
+            totalCount: 3,
+            nodes: [reviewThread(2)],
+            pageInfo: { hasNextPage: false, endCursor: null },
+          },
+        ],
+      },
+      {
+        name: 'duplicate node',
+        pages: [
+          {
+            totalCount: 3,
+            nodes: [reviewThread(1)],
+            pageInfo: { hasNextPage: true, endCursor: 'duplicate-next' },
+          },
+          {
+            totalCount: 3,
+            nodes: [reviewThread(2), reviewThread(1)],
+            pageInfo: { hasNextPage: false, endCursor: null },
+          },
+        ],
+      },
+      {
+        name: 'total overflow',
+        pages: [{
+          totalCount: 1,
+          nodes: [reviewThread(1), reviewThread(2)],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        }],
+      },
+      {
+        name: 'incomplete pagination',
+        pages: [{
+          totalCount: 2,
+          nodes: [reviewThread(1)],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        }],
+      },
+    ];
+
+    for (const scenario of scenarios) {
+      const options = captureOptions();
+      let transientPageIndex = 0;
+      let calls = 0;
+      const snapshot = await captureGitHubWorkState({
+        ...options,
+        consistencyAttempts: 2,
+        fetchReviewThreadsPage: async () => {
+          calls += 1;
+          if (transientPageIndex < scenario.pages.length) {
+            return scenario.pages[transientPageIndex++];
+          }
+          const nodes = [reviewThread(9)];
+          return { totalCount: nodes.length, nodes, pageInfo: { hasNextPage: false, endCursor: null } };
+        },
+      });
+      expect(snapshot.reviewThreads.map((thread) => thread.threadId), scenario.name)
+        .toEqual([reviewThread(9).id]);
+      expect(calls, scenario.name).toBe(scenario.pages.length + 2);
+    }
+  });
+
+  it('fails closed after retrying persistent pagination consistency failures', async () => {
+    const options = captureOptions();
+    let calls = 0;
+    await expect(captureGitHubWorkState({
+      ...options,
+      consistencyAttempts: 2,
+      fetchReviewThreadsPage: async () => {
+        calls += 1;
+        return {
+          totalCount: 2,
+          nodes: [reviewThread(1)],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        };
+      },
+    })).rejects.toThrow('did not stabilize after 2 attempts');
+    expect(calls).toBe(2);
+  });
+
+  it('applies pagination consistency retries to required-check collection', async () => {
+    const options = captureOptions({
+      checks: [checkRun(1)],
+      policy: [{ name: 'required-0001', appId: 7 }],
+    });
+    let calls = 0;
+    const snapshot = await captureGitHubWorkState({
+      ...options,
+      consistencyAttempts: 2,
+      fetchRequiredChecksPage: async () => {
+        calls += 1;
+        if (calls === 1) {
+          return {
+            totalCount: 2,
+            nodes: [checkRun(1)],
+            pageInfo: { hasNextPage: true, endCursor: 'checks-next' },
+          };
+        }
+        if (calls === 2) {
+          return {
+            totalCount: 3,
+            nodes: [checkRun(2)],
+            pageInfo: { hasNextPage: false, endCursor: null },
+          };
+        }
+        const nodes = [checkRun(1)];
+        return { totalCount: nodes.length, nodes, pageInfo: { hasNextPage: false, endCursor: null } };
+      },
+    });
+    expect(calls).toBe(4);
+    expect(snapshot.requiredChecks.map((check) => check.name)).toEqual(['required-0001']);
+  });
+
   it('accepts an explicitly stable two-pass capture and rejects check-only instability', async () => {
     const options = captureOptions();
     let stableCheckCalls = 0;
