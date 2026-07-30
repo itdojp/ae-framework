@@ -79,6 +79,10 @@
         "string",
         "null"
       ]
+    },
+    "authoritySnapshotDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
     }
   },
   "$defs": {

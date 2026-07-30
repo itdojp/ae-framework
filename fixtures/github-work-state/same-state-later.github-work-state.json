@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "github-work-state/v1",
+  "generatedAt": "2026-08-01T12:00:00.000Z",
+  "repository": "itdojp/ae-framework",
+  "issueNumber": 3657,
+  "pullRequestNumber": 4000,
+  "baseRef": "main",
+  "baseSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "headRef": "codex/3657-github-authority-snapshot",
+  "headSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "isDraft": true,
+  "mergeState": "CLEAN",
+  "reviewThreads": [
+    {
+      "threadId": "PRRT_fixture_001",
+      "topCommentId": "PRRC_fixture_001",
+      "path": "src/agents/task-types.ts",
+      "isResolved": false
+    },
+    {
+      "threadId": "PRRT_fixture_002",
+      "topCommentId": "PRRC_fixture_002",
+      "path": "schema/codex-task-response.schema.json",
+      "isResolved": true
+    }
+  ],
+  "requiredCheckPolicy": {
+    "source": "classic-branch-protection",
+    "strict": true,
+    "checks": [
+      {
+        "name": "policy-gate",
+        "appId": 15368
+      },
+      {
+        "name": "verify-lite",
+        "appId": 15368
+      }
+    ]
+  },
+  "requiredChecks": [
+    {
+      "name": "policy-gate",
+      "conclusion": "SUCCESS",
+      "runId": "90002",
+      "headSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sourceType": "check-run",
+      "appId": 15368
+    },
+    {
+      "name": "verify-lite",
+      "conclusion": "SUCCESS",
+      "runId": "90001",
+      "headSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sourceType": "check-run",
+      "appId": 15368
+    }
+  ],
+  "pagination": {
+    "reviewThreads": {
+      "pageSize": 100,
+      "pagesFetched": 1,
+      "totalCount": 2,
+      "capturedCount": 2,
+      "complete": true
+    },
+    "requiredChecks": {
+      "pageSize": 100,
+      "pagesFetched": 1,
+      "totalCount": 2,
+      "capturedCount": 2,
+      "complete": true
+    }
+  },
+  "authoritySource": "github-api",
+  "snapshotDigest": "sha256:9e6bffee29393c17a3c8dbe2ef8f744342b489508a87320d458483b3543383d2",
+  "issueState": "OPEN",
+  "issueStateReason": null,
+  "pullRequestState": "OPEN",
+  "merged": false,
+  "mergeCommitSha": null
+}

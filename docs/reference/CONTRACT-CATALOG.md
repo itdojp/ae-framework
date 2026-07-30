@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-07-01'
+lastVerified: '2026-07-28'
 owner: docs-governance
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -25,7 +25,7 @@ This document is the baseline inventory created for Issue #2406. It classifies t
 
 Some schemas are dual-role. This catalog records the primary role used in the current implementation.
 
-### 3. Schema inventory (snapshot: 2026-06-05)
+### 3. Schema inventory (snapshot: 2026-07-28)
 
 #### 3.1 input
 
@@ -74,6 +74,7 @@ Some schemas are dual-role. This catalog records the primary role used in the cu
 
 #### 3.3 evidence
 
+- `schema/github-work-state-v1.schema.json`
 - `schema/agentic-metrics.schema.json`
 - `schema/assurance-gate-startup-benchmark.schema.json`
 - `schema/assurance-gate-cache-comparison.schema.json`
@@ -185,6 +186,7 @@ The table below keeps the current producer/consumer baseline for representative 
 | `artifacts/hermetic-reports/trace/**/kvonce-validation.json` | `schema/trace-validation.schema.json` | `scripts/trace/run-kvonce-conformance.sh` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/render-trace-summary.mjs` |
 | `artifacts/change-package/change-package.json` | `schema/change-package.schema.json` | `scripts/change-package/generate.mjs` | `scripts/change-package/validate.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/handoff/ae-handoff.json` | `schema/ae-handoff.schema.json` | `scripts/agents/create-handoff.mjs`, `templates/comments/AE-HANDOFF.md`(manual/export), `docs/agents/handoff.md` | `scripts/agents/validate-handoff.mjs`, future PR/Issue handoff consumers |
+| `.codex-local/authority/github-work-state-*.json`; `fixtures/github-work-state/*.github-work-state.json` | `schema/github-work-state-v1.schema.json` (`github-work-state/v1`) | trusted network capture through `scripts/agents/capture-github-work-state.mjs` (`pnpm run github-work-state:capture`); committed fixtures are synthetic/offline-only | offline `scripts/agents/compare-github-work-state.mjs` (`pnpm run github-work-state:compare`), `scripts/agents/create-handoff.mjs`, TaskResponse continuation consumers, and Issue/PR runbook audits; the semantic digest excludes capture time/pagination mechanics, stores thread IDs rather than review bodies, and binds Issue/PR lifecycle plus classic required-check strict policy; capture requires cycle-safe complete pagination and two stable semantic passes, ruleset applicability fails closed as an incomplete effective policy, and Codex TaskResponse binding requires a repository-local regular non-symlink snapshot whose recomputed digest matches request context |
 | `artifacts/agents/hook-feedback.json` | `schema/hook-feedback.schema.json` | `scripts/agents/build-hook-feedback.mjs`, `.github/workflows/pr-ci-status-comment.yml` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/agents/create-handoff.mjs`, `docs/agents/hook-feedback.md`, Claude Code / Codex continuation consumers |
 | `artifacts/agents/producer-normalization-summary.json` | `schema/producer-normalization-summary.schema.json` | `scripts/agents/normalize-producer-output.mjs`, `fixtures/agents/evidence-adapters/**/*.json`; `fixtures/agents/producer-normalization-summary.{codex,ci,formal}.json` are schema-validated fixture summaries | `scripts/ci/validate-json.mjs`, future PR summary / policy-gate report-only context; records raw producer assertions, missing evidence, known gaps, and expected routing without emitting pass/proved/approved judgment |
 | `artifacts/metrics/agent-pr-assurance-metrics.json` (collector default); `artifacts/agents/agent-pr-assurance-metrics.json` (producer-emitted variant) | `schema/agentic-metrics.schema.json` (`agentPrAssurance` extension with optional `productMetrics`) | Optional report-only agent PR assurance metrics collector / producer; fixtures live under `fixtures/agentic-metrics/` and `fixtures/metrics/agent-pr-assurance/` | `scripts/ci/validate-json.mjs`, `scripts/metrics/collect-agent-pr-assurance-metrics.mjs`, and future quality-scorecard / PR-summary consumers when wired; role=observability/evidence, enforcement=report-only, not mandatory for every PR, and no policy-gate block condition is added |
@@ -303,7 +305,7 @@ The produced/consumed table lists implementation entry points. When more than on
 - `evidence`: 監査・再現・可観測性の証跡契約（summary、report、metrics）
 - `operation`: 実行計画や進行制御に関わる運用契約（plan、manifest、package）
 
-## 3. schema 一覧（2026-05-07時点）
+## 3. schema 一覧（2026-07-28時点）
 
 ### 3.1 input
 
@@ -352,6 +354,7 @@ The produced/consumed table lists implementation entry points. When more than on
 
 ### 3.3 evidence
 
+- `schema/github-work-state-v1.schema.json`
 - `schema/agentic-metrics.schema.json`
 - `schema/req2run-metrics.schema.json`
 - `schema/evidence-sprint-measurement-report.schema.json`
@@ -451,6 +454,7 @@ The produced/consumed table lists implementation entry points. When more than on
 | `artifacts/hermetic-reports/trace/**/kvonce-validation.json` | `schema/trace-validation.schema.json` | `scripts/trace/run-kvonce-conformance.sh` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/trace/render-trace-summary.mjs` |
 | `artifacts/change-package/change-package.json` | `schema/change-package.schema.json` | `scripts/change-package/generate.mjs` | `scripts/change-package/validate.mjs`, `.github/workflows/pr-ci-status-comment.yml` |
 | `artifacts/handoff/ae-handoff.json` | `schema/ae-handoff.schema.json` | `scripts/agents/create-handoff.mjs`, `templates/comments/AE-HANDOFF.md`（manual/export）, `docs/agents/handoff.md` | `scripts/agents/validate-handoff.mjs`, future PR/Issue handoff consumers |
+| `.codex-local/authority/github-work-state-*.json`; `fixtures/github-work-state/*.github-work-state.json` | `schema/github-work-state-v1.schema.json`（`github-work-state/v1`） | `scripts/agents/capture-github-work-state.mjs`（`pnpm run github-work-state:capture`）による trusted network capture。commit 済み fixture は synthetic / offline 専用 | offline の `scripts/agents/compare-github-work-state.mjs`（`pnpm run github-work-state:compare`）、`scripts/agents/create-handoff.mjs`、TaskResponse continuation consumer、Issue/PR runbook audit。semantic digest はcapture時刻とpagination mechanicsを除外し、review本文ではなくthread IDを保存し、Issue/PR lifecycleとclassic required-check strict policyをbindする。captureはcycle-safeなpagination完了と2回のsemantic pass安定を要求し、ruleset適用はeffective policy不完全としてfail closedにする。Codex TaskResponse bindingはrepository-local regular non-symlink snapshotの再計算digestとrequest contextの一致を要求する |
 | `artifacts/agents/hook-feedback.json` | `schema/hook-feedback.schema.json` | `scripts/agents/build-hook-feedback.mjs`, `.github/workflows/pr-ci-status-comment.yml` | `scripts/ci/validate-artifacts-ajv.mjs`, `scripts/agents/create-handoff.mjs`, `docs/agents/hook-feedback.md`, Claude Code / Codex continuation consumers |
 | `artifacts/agents/producer-normalization-summary.json` | `schema/producer-normalization-summary.schema.json` | `scripts/agents/normalize-producer-output.mjs`, `fixtures/agents/evidence-adapters/**/*.json`。`fixtures/agents/producer-normalization-summary.{codex,ci,formal}.json` は schema validated fixture summary | `scripts/ci/validate-json.mjs`, 将来の PR summary / policy-gate report-only context。raw producer assertion、missing evidence、known gap、expected routing を記録し、pass/proved/approved judgment は emit しない |
 | `artifacts/metrics/agent-pr-assurance-metrics.json`（collector default）; `artifacts/agents/agent-pr-assurance-metrics.json`（producer-emitted variant） | `schema/agentic-metrics.schema.json`（optional `productMetrics` を含む `agentPrAssurance` extension） | optional な report-only agent PR assurance metrics collector / producer。fixture は `fixtures/agentic-metrics/` と `fixtures/metrics/agent-pr-assurance/` に置く | `scripts/ci/validate-json.mjs`、`scripts/metrics/collect-agent-pr-assurance-metrics.mjs`、接続時の future quality-scorecard / PR-summary consumer。role=observability/evidence、enforcement=report-only、全PR必須ではなく、policy-gate block条件も追加しない |

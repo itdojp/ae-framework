@@ -52,6 +52,31 @@ describe.sequential('finalizeTaskResponse', () => {
     }
   });
 
+  it('binds TaskResponse only to a transport-validated authority digest', () => {
+    const digest = `sha256:${'a'.repeat(64)}`;
+    const fabricatedRequest = finalizeTaskResponse(
+      'intent',
+      { ...request, context: { authoritySnapshotDigest: digest } },
+      createBaseResponse({ authoritySnapshotDigest: `sha256:${'b'.repeat(64)}` }),
+    );
+    expect(fabricatedRequest).not.toHaveProperty('authoritySnapshotDigest');
+
+    const bound = finalizeTaskResponse(
+      'intent',
+      request,
+      createBaseResponse({ authoritySnapshotDigest: `sha256:${'b'.repeat(64)}` }),
+      digest,
+    );
+    expect(bound.authoritySnapshotDigest).toBe(digest);
+
+    const unbound = finalizeTaskResponse(
+      'intent',
+      request,
+      createBaseResponse({ authoritySnapshotDigest: `sha256:${'b'.repeat(64)}` }),
+    );
+    expect(unbound).not.toHaveProperty('authoritySnapshotDigest');
+  });
+
   it('normalizes blocked responses with missing warnings/actions into deterministic payload', () => {
     const response = finalizeTaskResponse(
       'formal',

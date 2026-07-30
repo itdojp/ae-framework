@@ -27,6 +27,13 @@ describe('codex-task-response schema contract', () => {
     expect(validate(payload)).toBe(true);
   });
 
+  it('accepts only a canonical authority snapshot digest', () => {
+    const payload = loadJson(validContinuePath) as Record<string, unknown>;
+    expect(validate({ ...payload, authoritySnapshotDigest: `sha256:${'a'.repeat(64)}` })).toBe(true);
+    expect(validate({ ...payload, authoritySnapshotDigest: 'sha256:unknown' })).toBe(false);
+    expect(validate.errors?.some((error) => error.keyword === 'pattern')).toBe(true);
+  });
+
   it('rejects continue fixture when nextActions is empty', () => {
     const payload = loadJson(invalidContinuePath);
     expect(validate(payload)).toBe(false);

@@ -4,7 +4,7 @@ canonicalSource:
 - AGENTS.md
 - docs/agents/agent-producer-matrix.md
 - docs/integrations/CODEX-INTEGRATION.md
-lastVerified: '2026-06-05'
+lastVerified: '2026-07-28'
 ---
 
 # Codex CLI GitHub Issue Runbook
@@ -139,6 +139,69 @@ Before changing files:
 
    Use one worktree per Issue for parallel work. Do not reuse a shared worktree
    for multiple concurrent Issue implementations.
+
+#### 5.1 GitHub authority snapshot and stale-context audit
+
+After the Draft PR exists, separate trusted network capture from deterministic
+offline comparison. Never copy review bodies, tokens, secrets, or private comment
+text into the snapshot.
+
+```bash
+REPO=itdojp/ae-framework
+ISSUE=3434
+PR=4000
+HEAD_SHA="$(gh pr view "$PR" --repo "$REPO" --json headRefOid --jq .headRefOid)"
+mkdir -p .codex-local/authority
+
+# Trusted network operation. Two semantic passes must stabilize. GraphQL
+# pagination must reach every review thread/status-check context, and classic
+# required-check policy (including strict) is bound to HEAD_SHA.
+pnpm run github-work-state:capture -- \
+  --repo "$REPO" --issue "$ISSUE" --pr "$PR" \
+  --expected-head "$HEAD_SHA" \
+  --output .codex-local/authority/github-work-state-current.json
+
+cp .codex-local/authority/github-work-state-current.json \
+  .codex-local/authority/github-work-state-baseline.json
+```
+
+At continuation/end-of-iteration time, capture `current` again and run the
+network-free validator:
+
+```bash
+node scripts/agents/compare-github-work-state.mjs \
+  --baseline .codex-local/authority/github-work-state-baseline.json \
+  --current .codex-local/authority/github-work-state-current.json \
+  --expected-head "$HEAD_SHA" \
+  --output .codex-local/authority/github-work-state-comparison.json
+```
+
+Exit/result policy:
+
+Use the direct Node CLI shown above when automation distinguishes these exit
+codes. Package-manager lifecycle wrappers can normalize a non-zero child exit
+code; the generated comparison report remains the machine-readable authority.
+
+- `0 / no-state-change`: semantic state is identical. A later `generatedAt` is
+  not progress and must not be recorded as a completed iteration.
+- `2 / stale-context`: reconcile the classified change before continuing. This
+  includes a new/base head, a changed review-thread ID set even when counts are
+  equal, resolution changes, Issue/PR lifecycle changes, required-check policy
+  changes, and required-check reruns/state changes.
+- `1 / contract-invalid`: stop. Incomplete pagination, digest/schema drift,
+  capture instability, wrong-head CI, an unexpected current head, or any
+  applicable ruleset that prevents complete effective-policy capture cannot be
+  used as authority. The v1 capture supports classic branch protection and
+  fails closed rather than treating a ruleset-only policy as empty.
+
+Record `authoritySnapshotDigest: sha256:...` in the local task ledger. Pass the
+validated snapshot to `handoff:create --authority-snapshot <path>`. For the
+Codex stdio adapter, pass both repository-local `context.authoritySnapshotPath`
+and matching `context.authoritySnapshotDigest`; digest-only context is
+non-authoritative and rejected. Paths must resolve to regular, non-symlink files
+inside the repository. Do not replace the baseline after a stale result until
+the lifecycle/head/thread/check/policy change has been reviewed and the local
+plan/ledger has been reconciled.
 
 ### 6. Post-work checklist
 
@@ -322,6 +385,67 @@ codex --cd "$WORK"
 
    parallel work では Issue ごとに worktree を分け、複数 Issue の実装を
    shared worktree で同時に進めないでください。
+
+#### 5.1 GitHub authority snapshot と stale-context audit
+
+Draft PR 作成後は、trusted network capture と deterministic offline comparison
+を分離します。review 本文、token、secret、private comment text は snapshot
+へ保存しません。
+
+```bash
+REPO=itdojp/ae-framework
+ISSUE=3434
+PR=4000
+HEAD_SHA="$(gh pr view "$PR" --repo "$REPO" --json headRefOid --jq .headRefOid)"
+mkdir -p .codex-local/authority
+
+# trusted network operation。2回のsemantic passが安定することを要求する。
+# 全review thread / status-check contextのGraphQL paginationを完了し、
+# classic required-check policy（strictを含む）をHEAD_SHAへbindする。
+pnpm run github-work-state:capture -- \
+  --repo "$REPO" --issue "$ISSUE" --pr "$PR" \
+  --expected-head "$HEAD_SHA" \
+  --output .codex-local/authority/github-work-state-current.json
+
+cp .codex-local/authority/github-work-state-current.json \
+  .codex-local/authority/github-work-state-baseline.json
+```
+
+継続時または iteration 終了時に `current` を再 capture し、network を使わない
+validator を実行します。
+
+```bash
+node scripts/agents/compare-github-work-state.mjs \
+  --baseline .codex-local/authority/github-work-state-baseline.json \
+  --current .codex-local/authority/github-work-state-current.json \
+  --expected-head "$HEAD_SHA" \
+  --output .codex-local/authority/github-work-state-comparison.json
+```
+
+exit / result policy:
+
+automation が次の exit code を区別する場合は、上記の direct Node CLI を使用します。
+package manager の lifecycle wrapper は子processのnon-zero exit codeを正規化する
+場合がありますが、生成されたcomparison reportをmachine-readable authorityとして
+扱います。
+
+- `0 / no-state-change`: semantic state は同一です。`generatedAt` だけが後刻に
+  なった capture を進捗または完了 iteration として記録しません。
+- `2 / stale-context`: classified change を reconcile してから続行します。head/base
+  変更、件数が同じでも thread ID 集合が異なる場合、resolution 変更、required
+  check policy変更、Issue/PR lifecycle変更、required checkのrerun/state変更を含みます。
+- `1 / contract-invalid`: 停止します。pagination 不完了、digest/schema drift、
+  capture不安定、wrong-head CI、想定外のcurrent head、またはeffective policyを
+  完全にcaptureできない適用rulesetはauthorityとして使用できません。v1はclassic
+  branch protectionのみをcaptureし、ruleset-only policyを空として扱わずfail closedにします。
+
+local task ledger へ `authoritySnapshotDigest: sha256:...` を記録します。
+validated snapshot は `handoff:create --authority-snapshot <path>` へ渡せます。
+Codex stdio adapterにはrepository-localな`context.authoritySnapshotPath`と、一致する
+`context.authoritySnapshotDigest`の両方を渡します。digest-only contextはauthority
+ではなくrejectされます。pathはrepository内のregular non-symlink fileに限定します。
+stale resultのlifecycle/head/thread/check/policy changeをreviewし、local plan/ledgerを
+reconcileするまではbaselineを上書きしません。
 
 ### 6. 作業後 checklist
 

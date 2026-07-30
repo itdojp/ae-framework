@@ -8,6 +8,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
+import { resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot } from '../agents/github-work-state-lib.mjs';
 
 const EXIT_CODES = Object.freeze({
   SUCCESS: 0,
@@ -93,10 +94,21 @@ function normalizeTaskRequest(request) {
     ? request.prompt
     : request.description;
 
+  const context = request.context && typeof request.context === 'object'
+    ? (() => {
+        const {
+          authoritySnapshotPath: _authoritySnapshotPath,
+          authoritySnapshotDigest: _authoritySnapshotDigest,
+          ...nonAuthorityContext
+        } = request.context;
+        return nonAuthorityContext;
+      })()
+    : request.context;
   return {
     ...request,
     description,
     prompt,
+    context,
   };
 }
 
@@ -223,10 +235,32 @@ async function main() {
     return;
   }
 
+  let validatedAuthoritySnapshotDigest;
+  const authoritySnapshotPath = request?.context?.authoritySnapshotPath;
+  if (authoritySnapshotPath !== undefined) {
+    try {
+      const { snapshot } = resolveAndValidateRepositoryLocalGitHubWorkStateSnapshot(
+        authoritySnapshotPath,
+        {
+          repoRoot: process.cwd(),
+          expectedDigest: request.context.authoritySnapshotDigest,
+        },
+      );
+      validatedAuthoritySnapshotDigest = snapshot.snapshotDigest;
+    } catch (error) {
+      writeError({
+        code: 'INVALID_AUTHORITY_SNAPSHOT',
+        message: `Authority snapshot validation failed: ${error instanceof Error ? error.message : String(error)}`,
+        exitCode: EXIT_CODES.INVALID_INPUT,
+      });
+      return;
+    }
+  }
+
   let response;
   try {
     const { createCodexTaskAdapter } = await loadAdapter();
-    const adapter = createCodexTaskAdapter();
+    const adapter = createCodexTaskAdapter({ validatedAuthoritySnapshotDigest });
     response = await adapter.handleTask(normalizeTaskRequest(request));
     response = normalizeBlockedWarnings(response);
   } catch (error) {
