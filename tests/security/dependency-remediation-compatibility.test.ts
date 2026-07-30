@@ -27,6 +27,20 @@ function requirePackage(packageRoot: string): unknown {
 }
 
 describe('dependency security remediation compatibility', () => {
+  it.each([
+    'docker/Dockerfile',
+    'docker/Dockerfile.test',
+    'podman/Dockerfile',
+    'podman/Dockerfile.test',
+  ])('copies patched dependency sources before installing in %s', (relativePath) => {
+    const containerfile = readFileSync(join(repoRoot, relativePath), 'utf8');
+    const patchCopyIndex = containerfile.indexOf('COPY patches ./patches');
+    const installIndex = containerfile.indexOf('pnpm install');
+
+    expect(patchCopyIndex).toBeGreaterThanOrEqual(0);
+    expect(installIndex).toBeGreaterThan(patchCopyIndex);
+  });
+
   it('uses brace-expansion 5.0.8 with a bounded aggregate output length', () => {
     const roots = packageRoots('brace-expansion', '5.0.8');
     expect(roots).toHaveLength(1);

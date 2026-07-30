@@ -5,6 +5,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 COPY pnpm-lock.yaml* ./
+COPY patches ./patches
 
 # Install all dependencies first (needed for building)
 RUN npm install -g npm@11.7.0 && corepack enable pnpm && \
