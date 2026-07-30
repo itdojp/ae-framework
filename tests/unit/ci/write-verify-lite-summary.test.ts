@@ -33,6 +33,27 @@ describe('write-verify-lite-summary CLI', () => {
     return { result, summaryPath };
   };
 
+  it('writes the dependency security compatibility outcome explicitly', async () => {
+    const { result, summaryPath } = runWriteSummary({
+      DEPENDENCY_COMPAT_STATUS: 'failure',
+      DEPENDENCY_COMPAT_NOTES: 'test:dependency-security-compat;exit=37',
+    });
+    expect(result.status).toBe(0);
+
+    const summary = JSON.parse(await readFile(summaryPath, 'utf8'));
+    expect(summary.steps.dependencySecurityCompatibility).toEqual({
+      status: 'failure',
+      notes: 'test:dependency-security-compat;exit=37',
+    });
+
+    const validateResult = spawnSync(
+      process.execPath,
+      [validateSummaryScript, summaryPath, verifyLiteSummarySchemaPath],
+      { cwd: repoRoot },
+    );
+    expect(validateResult.status).toBe(0);
+  });
+
   it('writes phase5 status and artifact paths when files exist', async () => {
     const phase5ReportJsonPath = join(workdir, 'artifacts', 'context-pack', 'context-pack-phase5-report.json');
     const phase5ReportMarkdownPath = join(workdir, 'artifacts', 'context-pack', 'context-pack-phase5-report.md');

@@ -106,7 +106,10 @@ JSON
     printf '# compile\\n' > artifacts/discovery-pack/discovery-pack-compile-report.md
     exit "\${VERIFY_TEST_COMPILE_EXIT:-0}"
     ;;
-  dist/src/cli/index.js|scripts/ci/validate-reason-codes.mjs|scripts/context-pack/validate.mjs|scripts/context-pack/verify-functor.mjs|scripts/context-pack/verify-natural-transformation.mjs|scripts/context-pack/verify-product-coproduct.mjs|scripts/context-pack/verify-phase5-templates.mjs|scripts/bdd/lint.mjs|scripts/mutation/mutation-report.mjs|scripts/mutation/list-survivors.mjs)
+  scripts/ci/validate-reason-codes.mjs)
+    exit "\${VERIFY_TEST_REASON_CODES_EXIT:-0}"
+    ;;
+  dist/src/cli/index.js|scripts/context-pack/validate.mjs|scripts/context-pack/verify-functor.mjs|scripts/context-pack/verify-natural-transformation.mjs|scripts/context-pack/verify-product-coproduct.mjs|scripts/context-pack/verify-phase5-templates.mjs|scripts/bdd/lint.mjs|scripts/mutation/mutation-report.mjs|scripts/mutation/list-survivors.mjs)
     exit 0
     ;;
   *)
@@ -151,6 +154,13 @@ describePosixOnly('scripts/ci/run-verify-lite-local.sh discovery-pack rollout', 
 
     expect(result.status).toBe(0);
     expect(readFileSync(pnpmLog, 'utf8')).toContain('-s run test:dependency-security-compat');
+    const summary = JSON.parse(
+      readFileSync(path.join(workspace, 'artifacts', 'verify-lite', 'verify-lite-run-summary.json'), 'utf8'),
+    );
+    expect(summary.steps.dependencySecurityCompatibility).toEqual({
+      status: 'success',
+      notes: 'test:dependency-security-compat',
+    });
   });
 
   it('writes the verify-lite summary before exiting on dependency compatibility failure', () => {
@@ -162,7 +172,28 @@ describePosixOnly('scripts/ci/run-verify-lite-local.sh discovery-pack rollout', 
 
     expect(result.status).toBe(37);
     expect(result.stderr).toContain('dependency-security-compatibility');
-    expect(existsSync(path.join(workspace, 'artifacts', 'verify-lite', 'verify-lite-run-summary.json'))).toBe(true);
+    const summaryPath = path.join(workspace, 'artifacts', 'verify-lite', 'verify-lite-run-summary.json');
+    expect(existsSync(summaryPath)).toBe(true);
+    const summary = JSON.parse(readFileSync(summaryPath, 'utf8'));
+    expect(summary.steps.dependencySecurityCompatibility).toEqual({
+      status: 'failure',
+      notes: 'test:dependency-security-compat;exit=37',
+    });
+  });
+
+  it('runs dependency compatibility only after earlier blocking validation succeeds', () => {
+    const workspace = setupWorkspace();
+    const pnpmLog = path.join(workspace, 'pnpm-commands.log');
+
+    const result = runVerifyLite(workspace, {
+      VERIFY_TEST_PNPM_LOG: pnpmLog,
+      VERIFY_TEST_REASON_CODES_EXIT: '41',
+      VERIFY_TEST_DEP_COMPAT_EXIT: '37',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('reason-code registry validation failed');
+    expect(readFileSync(pnpmLog, 'utf8')).not.toContain('-s run test:dependency-security-compat');
   });
 
   it('writes summary before exiting on strict discovery validation failure', () => {

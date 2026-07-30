@@ -49,6 +49,10 @@ const summary = {
     },
     specCompilerBuild: { status: readStatus('SPEC_COMPILER_STATUS', 'skipped') },
     typeCheck: { status: readStatus('TYPECHECK_STATUS', 'unknown') },
+    dependencySecurityCompatibility: {
+      status: readStatus('DEPENDENCY_COMPAT_STATUS', 'unknown'),
+      notes: process.env.DEPENDENCY_COMPAT_NOTES || null,
+    },
     reasonCodeRegistryValidation: {
       status: readStatus('REASON_CODES_STATUS', 'unknown'),
       notes: process.env.REASON_CODES_NOTES || null,

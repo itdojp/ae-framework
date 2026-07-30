@@ -30,6 +30,8 @@ INSTALL_NOTES="flags=${INSTALL_FLAGS_STR}"
 INSTALL_RETRIED=0
 SPEC_COMPILER_STATUS="skipped"
 TYPECHECK_STATUS="pending"
+DEPENDENCY_COMPAT_STATUS="pending"
+DEPENDENCY_COMPAT_NOTES="not_run"
 REASON_CODES_STATUS="pending"
 REASON_CODES_NOTES=""
 LINT_STATUS="skipped"
@@ -196,19 +198,6 @@ else
   TYPECHECK_STATUS="failure"
   echo "[verify-lite] type check failed" >&2
   exit 1
-fi
-
-echo "[verify-lite] dependency security compatibility"
-DEPENDENCY_COMPAT_EXIT_CODE=0
-if pnpm -s run test:dependency-security-compat; then
-  DEPENDENCY_COMPAT_EXIT_CODE=0
-else
-  DEPENDENCY_COMPAT_EXIT_CODE=$?
-  echo "[verify-lite] dependency security compatibility failed (exit=${DEPENDENCY_COMPAT_EXIT_CODE})" >&2
-  if [[ "$DEFERRED_EXIT_CODE" -eq 0 ]]; then
-    DEFERRED_EXIT_CODE="$DEPENDENCY_COMPAT_EXIT_CODE"
-    DEFERRED_EXIT_REASON="dependency-security-compatibility"
-  fi
 fi
 
 echo "[verify-lite] publication evidence validation"
@@ -680,10 +669,27 @@ else
   CONFORMANCE_NOTES="command_failed"
 fi
 
+echo "[verify-lite] dependency security compatibility"
+DEPENDENCY_COMPAT_EXIT_CODE=0
+if pnpm -s run test:dependency-security-compat; then
+  DEPENDENCY_COMPAT_STATUS="success"
+  DEPENDENCY_COMPAT_NOTES="test:dependency-security-compat"
+else
+  DEPENDENCY_COMPAT_EXIT_CODE=$?
+  DEPENDENCY_COMPAT_STATUS="failure"
+  DEPENDENCY_COMPAT_NOTES="test:dependency-security-compat;exit=${DEPENDENCY_COMPAT_EXIT_CODE}"
+  echo "[verify-lite] dependency security compatibility failed (exit=${DEPENDENCY_COMPAT_EXIT_CODE})" >&2
+  if [[ "$DEFERRED_EXIT_CODE" -eq 0 ]]; then
+    DEFERRED_EXIT_CODE="$DEPENDENCY_COMPAT_EXIT_CODE"
+    DEFERRED_EXIT_REASON="dependency-security-compatibility"
+  fi
+fi
+
 export RUN_TIMESTAMP
 export SUMMARY_PATH
 export INSTALL_STATUS INSTALL_NOTES INSTALL_RETRIED
-export SPEC_COMPILER_STATUS TYPECHECK_STATUS REASON_CODES_STATUS REASON_CODES_NOTES
+export SPEC_COMPILER_STATUS TYPECHECK_STATUS DEPENDENCY_COMPAT_STATUS DEPENDENCY_COMPAT_NOTES
+export REASON_CODES_STATUS REASON_CODES_NOTES
 export LINT_STATUS BUILD_STATUS BDD_LINT_STATUS STATE_MACHINE_STATUS STATE_MACHINE_RENDER_STATUS
 export MUTATION_STATUS MUTATION_NOTES
 export CONTEXT_PACK_STATUS CONTEXT_PACK_NOTES CONTEXT_PACK_REPORT_JSON_PATH CONTEXT_PACK_REPORT_MD_PATH
