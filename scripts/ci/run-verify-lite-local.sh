@@ -199,7 +199,17 @@ else
 fi
 
 echo "[verify-lite] dependency security compatibility"
-pnpm -s run test:dependency-security-compat
+DEPENDENCY_COMPAT_EXIT_CODE=0
+if pnpm -s run test:dependency-security-compat; then
+  DEPENDENCY_COMPAT_EXIT_CODE=0
+else
+  DEPENDENCY_COMPAT_EXIT_CODE=$?
+  echo "[verify-lite] dependency security compatibility failed (exit=${DEPENDENCY_COMPAT_EXIT_CODE})" >&2
+  if [[ "$DEFERRED_EXIT_CODE" -eq 0 ]]; then
+    DEFERRED_EXIT_CODE="$DEPENDENCY_COMPAT_EXIT_CODE"
+    DEFERRED_EXIT_REASON="dependency-security-compatibility"
+  fi
+fi
 
 echo "[verify-lite] publication evidence validation"
 pnpm -s run publication:evidence:validate

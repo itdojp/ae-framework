@@ -43,6 +43,9 @@ set -euo pipefail
 if [[ -n "\${VERIFY_TEST_PNPM_LOG:-}" ]]; then
   printf '%s\\n' "$*" >> "$VERIFY_TEST_PNPM_LOG"
 fi
+if [[ "\${*}" == *"test:dependency-security-compat"* && "\${VERIFY_TEST_DEP_COMPAT_EXIT:-0}" != "0" ]]; then
+  exit "$VERIFY_TEST_DEP_COMPAT_EXIT"
+fi
 if [[ "\${*}" == *" conformance report "* ]]; then
   output=""
   markdown=""
@@ -148,6 +151,18 @@ describePosixOnly('scripts/ci/run-verify-lite-local.sh discovery-pack rollout', 
 
     expect(result.status).toBe(0);
     expect(readFileSync(pnpmLog, 'utf8')).toContain('-s run test:dependency-security-compat');
+  });
+
+  it('writes the verify-lite summary before exiting on dependency compatibility failure', () => {
+    const workspace = setupWorkspace();
+
+    const result = runVerifyLite(workspace, {
+      VERIFY_TEST_DEP_COMPAT_EXIT: '37',
+    });
+
+    expect(result.status).toBe(37);
+    expect(result.stderr).toContain('dependency-security-compatibility');
+    expect(existsSync(path.join(workspace, 'artifacts', 'verify-lite', 'verify-lite-run-summary.json'))).toBe(true);
   });
 
   it('writes summary before exiting on strict discovery validation failure', () => {
