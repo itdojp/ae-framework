@@ -40,6 +40,9 @@ const setupWorkspace = () => {
     path.join(workspace, 'bin', 'pnpm'),
     `#!/usr/bin/env bash
 set -euo pipefail
+if [[ -n "\${VERIFY_TEST_PNPM_LOG:-}" ]]; then
+  printf '%s\\n' "$*" >> "$VERIFY_TEST_PNPM_LOG"
+fi
 if [[ "\${*}" == *" conformance report "* ]]; then
   output=""
   markdown=""
@@ -135,6 +138,18 @@ afterEach(() => {
 });
 
 describePosixOnly('scripts/ci/run-verify-lite-local.sh discovery-pack rollout', () => {
+  it('runs dependency security compatibility on the required verify-lite path', () => {
+    const workspace = setupWorkspace();
+    const pnpmLog = path.join(workspace, 'pnpm-commands.log');
+
+    const result = runVerifyLite(workspace, {
+      VERIFY_TEST_PNPM_LOG: pnpmLog,
+    });
+
+    expect(result.status).toBe(0);
+    expect(readFileSync(pnpmLog, 'utf8')).toContain('-s run test:dependency-security-compat');
+  });
+
   it('writes summary before exiting on strict discovery validation failure', () => {
     const workspace = setupWorkspace();
 

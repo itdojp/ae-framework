@@ -198,6 +198,9 @@ else
   exit 1
 fi
 
+echo "[verify-lite] dependency security compatibility"
+pnpm -s run test:dependency-security-compat
+
 echo "[verify-lite] publication evidence validation"
 pnpm -s run publication:evidence:validate
 
