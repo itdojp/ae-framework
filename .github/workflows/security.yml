@@ -15,6 +15,19 @@ on:
     # Run security scan weekly to reduce cost (Mon 05:20 UTC)
     - cron: '20 5 * * 1'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Security execution scope (focused mode is diagnostic evidence, not a full security pass)
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - container-security
+      expected_head:
+        description: Exact 40-character commit SHA required by focused container-security mode
+        required: false
+        type: string
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -28,6 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       run_security: ${{ steps.lbl.outputs.run_security }}
+      run_container_security: ${{ steps.lbl.outputs.run_container_security }}
     steps:
       - uses: actions/github-script@v7
         id: lbl
@@ -36,8 +50,20 @@ jobs:
             const isPR = context.eventName === 'pull_request';
             const isFork = isPR && context.payload.pull_request?.head?.repo?.fork;
             const labels = (context.payload.pull_request?.labels || []).map(l=>l.name);
-            const runSecurity = !isPR || (!isFork && labels.includes('run-security'));
+            const focusedContainer = context.eventName === 'workflow_dispatch'
+              && context.payload.inputs?.mode === 'container-security';
+            if (focusedContainer) {
+              const expectedHead = context.payload.inputs?.expected_head;
+              if (!/^[a-f0-9]{40}$/.test(expectedHead || '') || expectedHead !== context.sha) {
+                core.setFailed('Focused Container Security requires expected_head to match github.sha exactly.');
+                return;
+              }
+            }
+            const normalSecurityAllowed = !isPR || (!isFork && labels.includes('run-security'));
+            const runSecurity = normalSecurityAllowed && !focusedContainer;
+            const runContainerSecurity = normalSecurityAllowed;
             core.setOutput('run_security', String(runSecurity));
+            core.setOutput('run_container_security', String(runContainerSecurity));
             core.setOutput('is_fork', String(Boolean(isFork)));
   security-scan:
     needs: gate
@@ -362,12 +388,18 @@ jobs:
   container-security:
     name: Container Security
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     needs: gate
-    if: ${{ needs.gate.outputs.run_security == 'true' && github.event_name != 'pull_request' }}
+    if: ${{ needs.gate.outputs.run_container_security == 'true' && github.event_name != 'pull_request' }}
     permissions:
       contents: read
       security-events: write
       actions: read
+    env:
+      CONTAINER_RUNTIME: runc
+      MINIMAL_RUNTIME_IMAGE: docker.io/library/alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
+      TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.72.0@sha256:cffe3f5161a47a6823fbd23d985795b3ed72a4c806da4c4df16266c02accdd6f
+      RUNTIME_REPORT: artifacts/container-security/container-runtime-diagnostic.json
     
     steps:
       - name: Checkout code
@@ -379,52 +411,126 @@ jobs:
         id: container_manifest
         uses: ./.github/actions/detect-container-manifest
 
-      - name: Install Podman
-        if: steps.container_manifest.outputs.skip != 'true'
+      - name: Verify runner container runtime
+        id: runtime_preflight
         run: |
-          sudo apt-get update
-          sudo apt-get install -y podman
+          node scripts/ci/container-runtime-preflight.mjs preflight \
+            --runtime "${CONTAINER_RUNTIME}" \
+            --minimal-image "${MINIMAL_RUNTIME_IMAGE}" \
+            --trivy-image "${TRIVY_IMAGE}" \
+            --repository-dockerfile "${{ steps.container_manifest.outputs.dockerfile }}" \
+            --report "${RUNTIME_REPORT}"
+
+      - name: Require container manifest
+        run: |
+          outcome=success
+          if [ "${{ steps.container_manifest.outputs.skip }}" = "true" ]; then
+            outcome=failure
+          fi
+          node scripts/ci/container-runtime-preflight.mjs record-stage \
+            --report "${RUNTIME_REPORT}" \
+            --stage manifest-detect \
+            --outcome "${outcome}"
 
       - name: Build container image
         if: steps.container_manifest.outputs.skip != 'true'
-        run: podman build -f "${{ steps.container_manifest.outputs.dockerfile }}" -t ae-framework:latest .
+        run: |
+          node scripts/ci/container-runtime-preflight.mjs run-stage \
+            --report "${RUNTIME_REPORT}" \
+            --stage repository-build \
+            --timeout-ms 1800000 \
+            -- "${{ steps.runtime_preflight.outputs.podman_path }}" \
+              --runtime "${{ steps.runtime_preflight.outputs.runtime_path }}" \
+              build \
+              --file "${{ steps.container_manifest.outputs.dockerfile }}" \
+              --tag ae-framework:latest \
+              .
+
+      - name: Verify production image user
+        if: steps.container_manifest.outputs.skip != 'true'
+        run: |
+          node scripts/ci/container-runtime-preflight.mjs run-stage \
+            --report "${RUNTIME_REPORT}" \
+            --stage image-user \
+            --expect-stdout nextjs \
+            -- "${{ steps.runtime_preflight.outputs.podman_path }}" \
+              image inspect --format '{{.Config.User}}' ae-framework:latest
 
       - name: Export image archive
         if: steps.container_manifest.outputs.skip != 'true'
-        run: podman save ae-framework:latest -o ae-framework.tar
+        run: |
+          node scripts/ci/container-runtime-preflight.mjs run-stage \
+            --report "${RUNTIME_REPORT}" \
+            --stage archive-export \
+            --timeout-ms 600000 \
+            -- "${{ steps.runtime_preflight.outputs.podman_path }}" \
+              save \
+              --output artifacts/container-security/ae-framework.tar \
+              ae-framework:latest
+
+          node scripts/ci/container-runtime-preflight.mjs validate-artifact \
+            --report "${RUNTIME_REPORT}" \
+            --stage archive-export \
+            --path artifacts/container-security/ae-framework.tar \
+            --kind archive
 
       - name: Run Trivy vulnerability scanner
         if: steps.container_manifest.outputs.skip != 'true'
         run: |
-          TRIVY_IMAGE="ghcr.io/aquasecurity/trivy:latest"
-          podman pull "${TRIVY_IMAGE}"
-          podman run --rm \
-            --security-opt label=disable \
-            -v "$PWD:/workspace" \
-            -w /workspace \
-            "${TRIVY_IMAGE}" \
-            image --input /workspace/ae-framework.tar --format sarif --output /workspace/trivy-results.sarif
+          node scripts/ci/container-runtime-preflight.mjs run-stage \
+            --report "${RUNTIME_REPORT}" \
+            --stage trivy-pull \
+            --timeout-ms 600000 \
+            -- "${{ steps.runtime_preflight.outputs.podman_path }}" \
+              pull "${TRIVY_IMAGE}"
+
+          node scripts/ci/container-runtime-preflight.mjs run-stage \
+            --report "${RUNTIME_REPORT}" \
+            --stage trivy-scan \
+            --timeout-ms 1200000 \
+            -- "${{ steps.runtime_preflight.outputs.podman_path }}" \
+              --runtime "${{ steps.runtime_preflight.outputs.runtime_path }}" \
+              run --rm \
+              --security-opt label=disable \
+              -v "${GITHUB_WORKSPACE}/artifacts/container-security:/workspace" \
+              -w /workspace \
+              "${TRIVY_IMAGE}" \
+              image --input /workspace/ae-framework.tar --format sarif --output /workspace/trivy-results.sarif
+
+          node scripts/ci/container-runtime-preflight.mjs validate-artifact \
+            --report "${RUNTIME_REPORT}" \
+            --stage sarif-validate \
+            --path artifacts/container-security/trivy-results.sarif \
+            --kind sarif
 
       - name: Upload Trivy scan results
+        id: sarif_upload
         uses: github/codeql-action/upload-sarif@v3
-        if: ${{ always() && steps.container_manifest.outputs.skip != 'true' && hashFiles('trivy-results.sarif') != '' }}
+        if: ${{ success() && steps.container_manifest.outputs.skip != 'true' && hashFiles('artifacts/container-security/trivy-results.sarif') != '' }}
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: 'artifacts/container-security/trivy-results.sarif'
 
-      - name: Note missing Trivy SARIF
-        if: ${{ always() && steps.container_manifest.outputs.skip != 'true' && hashFiles('trivy-results.sarif') == '' }}
+      - name: Record SARIF upload outcome
+        if: ${{ always() && steps.container_manifest.outputs.skip != 'true' && steps.runtime_preflight.outcome == 'success' }}
         run: |
-          printf "%s\n" "::warning::trivy-results.sarif was not generated; skipping SARIF upload"
-          {
-            printf "%s\n" "### Container Security"
-            printf "%s\n" "- trivy-results.sarif: missing"
-            printf "%s\n" "- upload-sarif: skipped"
-          } >> "$GITHUB_STEP_SUMMARY"
+          node scripts/ci/container-runtime-preflight.mjs record-stage \
+            --report "${RUNTIME_REPORT}" \
+            --stage sarif-upload \
+            --outcome "${{ steps.sarif_upload.outcome }}"
+
+      - name: Upload container runtime diagnostic
+        uses: actions/upload-artifact@v4
+        if: ${{ always() && hashFiles('artifacts/container-security/container-runtime-diagnostic.json') != '' }}
+        with:
+          name: container-runtime-diagnostic
+          path: artifacts/container-security/container-runtime-diagnostic.json
+          if-no-files-found: error
+          retention-days: 14
 
   security-notification:
     name: Security Notification
     runs-on: ubuntu-latest
-    needs: [security-scan, dependency-audit, secrets-scan, codeql-analysis]
+    needs: [security-scan, dependency-audit, secrets-scan, codeql-analysis, container-security]
     if: failure() && github.event_name == 'schedule'
     
     steps:

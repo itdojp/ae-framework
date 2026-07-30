@@ -8,6 +8,7 @@ import yaml from 'yaml';
 import { runSchemaIdPolicyCheck } from './check-schema-id-policy.mjs';
 import { validateAgenticMetricsSemantics } from './lib/agentic-metrics-contract.mjs';
 import { validateClaimEvidenceManifestSemantics } from './lib/claim-evidence-manifest-contract.mjs';
+import { validateDiagnosticSemantics as validateContainerRuntimeDiagnosticSemantics } from './lib/container-runtime-diagnostic.mjs';
 import {
   validateSecurityAuditTaskBundleSemantics,
   validateSecurityAuditPromptPackSemantics,
@@ -255,6 +256,15 @@ const checks = [
     schema: 'schema/github-work-state-v1.schema.json',
     fixtures: ['fixtures/github-work-state/sample.github-work-state.json'],
     label: 'GitHub work state v1 schema validation'
+  },
+  {
+    schema: 'schema/container-runtime-diagnostic-v1.schema.json',
+    fixtures: [
+      'fixtures/container-runtime/valid-runc.container-runtime-diagnostic.json',
+      'fixtures/container-runtime/valid-crun.container-runtime-diagnostic.json',
+    ],
+    label: 'Container runtime diagnostic v1 schema validation',
+    semanticValidate: validateContainerRuntimeDiagnosticSemantics,
   },
   {
     schema: 'schema/context-pack-functor-map.schema.json',

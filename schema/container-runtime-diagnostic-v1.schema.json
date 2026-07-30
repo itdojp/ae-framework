@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ae-framework/schema/container-runtime-diagnostic-v1.schema.json",
+  "title": "Container runtime diagnostic v1",
+  "description": "Bounded evidence for the Container Security runtime, build, export, scan, and SARIF path.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "status",
+    "classification",
+    "runner",
+    "packages",
+    "tools",
+    "runtimeCandidates",
+    "selectedRuntime",
+    "podman",
+    "inputs",
+    "configuration",
+    "checks",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "container-runtime-diagnostic/v1"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": ["pass", "fail"]
+    },
+    "classification": {
+      "$ref": "#/$defs/classification"
+    },
+    "runner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "image",
+        "imageVersion",
+        "osRelease",
+        "kernel",
+        "architecture",
+        "userId",
+        "rootless",
+        "cgroupVersion"
+      ],
+      "properties": {
+        "image": { "type": ["string", "null"], "maxLength": 80 },
+        "imageVersion": { "type": ["string", "null"], "maxLength": 80 },
+        "osRelease": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "kernel": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "architecture": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "userId": { "type": "integer", "minimum": 0 },
+        "rootless": { "type": "boolean" },
+        "cgroupVersion": { "enum": ["v1", "v2", "unknown"] }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "installedVersion", "candidateVersion"],
+        "properties": {
+          "name": { "enum": ["podman", "buildah", "conmon", "crun", "runc"] },
+          "installedVersion": { "type": ["string", "null"], "maxLength": 120 },
+          "candidateVersion": { "type": ["string", "null"], "maxLength": 120 }
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/tool" }
+    },
+    "runtimeCandidates": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "path",
+          "version",
+          "source",
+          "available",
+          "selected",
+          "directSmoke",
+          "minimalRun"
+        ],
+        "properties": {
+          "name": { "enum": ["crun", "runc"] },
+          "path": { "$ref": "#/$defs/systemExecutablePath" },
+          "version": { "type": ["string", "null"], "maxLength": 120 },
+          "source": { "$ref": "#/$defs/toolSource" },
+          "available": { "type": "boolean" },
+          "selected": { "type": "boolean" },
+          "directSmoke": { "$ref": "#/$defs/checkResult" },
+          "minimalRun": { "$ref": "#/$defs/checkResult" }
+        }
+      }
+    },
+    "selectedRuntime": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "path", "version", "source"],
+          "properties": {
+            "name": { "enum": ["crun", "runc"] },
+            "path": { "$ref": "#/$defs/systemExecutablePath" },
+            "version": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "source": { "$ref": "#/$defs/toolSource" }
+          }
+        }
+      ]
+    },
+    "podman": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "version",
+        "defaultRuntimePath",
+        "defaultRuntimeVersion",
+        "effectiveRuntimePath",
+        "effectiveRuntimeVersion",
+        "storageDriver",
+        "graphRootScope",
+        "cgroupManager",
+        "runtimeConfig"
+      ],
+      "properties": {
+        "path": { "anyOf": [{ "$ref": "#/$defs/systemExecutablePath" }, { "type": "null" }] },
+        "version": { "type": ["string", "null"], "maxLength": 120 },
+        "defaultRuntimePath": { "anyOf": [{ "$ref": "#/$defs/systemExecutablePath" }, { "type": "null" }] },
+        "defaultRuntimeVersion": { "type": ["string", "null"], "maxLength": 120 },
+        "effectiveRuntimePath": { "anyOf": [{ "$ref": "#/$defs/systemExecutablePath" }, { "type": "null" }] },
+        "effectiveRuntimeVersion": { "type": ["string", "null"], "maxLength": 120 },
+        "storageDriver": { "type": ["string", "null"], "maxLength": 80 },
+        "graphRootScope": { "enum": ["user-storage", "system-storage", "unknown"] },
+        "cgroupManager": { "type": ["string", "null"], "maxLength": 80 },
+        "runtimeConfig": {
+          "type": "array",
+          "maxItems": 24,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "entry"],
+            "properties": {
+              "source": {
+                "type": "string",
+                "pattern": "^/etc/containers/(?:containers\\.conf|containers\\.conf\\.d/[A-Za-z0-9._-]+\\.conf)$",
+                "maxLength": 180
+              },
+              "entry": { "type": "string", "minLength": 1, "maxLength": 240 }
+            }
+          }
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimalImage", "trivyImage", "repositoryDockerfile"],
+      "properties": {
+        "minimalImage": { "$ref": "#/$defs/digestPinnedImage" },
+        "trivyImage": { "$ref": "#/$defs/digestPinnedImage" },
+        "repositoryDockerfile": {
+          "anyOf": [
+            { "enum": ["podman/Dockerfile", "docker/Dockerfile"] },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestedRuntime", "commandTimeoutMs", "outputLimitBytes"],
+      "properties": {
+        "requestedRuntime": { "enum": ["crun", "runc"] },
+        "commandTimeoutMs": { "type": "integer", "minimum": 1000, "maximum": 3600000 },
+        "outputLimitBytes": { "type": "integer", "minimum": 1024, "maximum": 262144 }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "classification", "exitCode", "durationMs", "detail"],
+        "properties": {
+          "id": {
+            "enum": [
+              "podman-info",
+              "manifest-detect",
+              "direct-runtime-smoke",
+              "minimal-run",
+              "minimal-build",
+              "repository-build",
+              "image-user",
+              "archive-export",
+              "trivy-pull",
+              "trivy-scan",
+              "sarif-validate",
+              "sarif-upload"
+            ]
+          },
+          "status": { "enum": ["pass", "fail", "not-run"] },
+          "classification": { "anyOf": [{ "$ref": "#/$defs/classification" }, { "type": "null" }] },
+          "exitCode": { "type": ["integer", "null"] },
+          "durationMs": { "type": "integer", "minimum": 0, "maximum": 3600000 },
+          "detail": {
+            "enum": [
+              "completed",
+              "not-selected",
+              "command-failed",
+              "timeout",
+              "runtime-unavailable",
+              "path-invalid",
+              "version-invalid",
+              "missing-output",
+              "malformed-output",
+              "unexpected-image-user",
+              "upload-skipped",
+              "manifest-missing"
+            ]
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 12,
+      "items": { "type": "string", "minLength": 1, "maxLength": 240 }
+    }
+  },
+  "$defs": {
+    "classification": {
+      "enum": [
+        "runtime-ready",
+        "manifest-missing",
+        "runtime-missing",
+        "runtime-version-incompatible",
+        "runtime-selection-invalid",
+        "minimal-run-failed",
+        "minimal-build-failed",
+        "repository-build-failed",
+        "archive-export-failed",
+        "scan-failed",
+        "sarif-missing",
+        "sarif-malformed",
+        "sarif-upload-failed"
+      ]
+    },
+    "toolSource": {
+      "enum": ["runner-bundle", "ubuntu-package", "unknown"]
+    },
+    "systemExecutablePath": {
+      "type": "string",
+      "pattern": "^/usr/(?:local/)?(?:bin|lib/podman)/[A-Za-z0-9._+-]+$",
+      "maxLength": 180
+    },
+    "digestPinnedImage": {
+      "type": "string",
+      "pattern": "^[a-z0-9.-]+(?::[0-9]+)?/[a-z0-9._/-]+(?::[A-Za-z0-9._-]+)?@sha256:[a-f0-9]{64}$",
+      "maxLength": 300
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "path", "version", "source", "available"],
+      "properties": {
+        "name": { "enum": ["podman", "buildah", "conmon", "crun", "runc"] },
+        "path": { "anyOf": [{ "$ref": "#/$defs/systemExecutablePath" }, { "type": "null" }] },
+        "version": { "type": ["string", "null"], "maxLength": 120 },
+        "source": { "$ref": "#/$defs/toolSource" },
+        "available": { "type": "boolean" }
+      }
+    },
+    "checkResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "exitCode", "durationMs", "detail"],
+      "properties": {
+        "status": { "enum": ["pass", "fail", "not-run"] },
+        "exitCode": { "type": ["integer", "null"] },
+        "durationMs": { "type": "integer", "minimum": 0, "maximum": 3600000 },
+        "detail": {
+          "enum": [
+            "completed",
+            "not-selected",
+            "command-failed",
+            "timeout",
+            "runtime-unavailable",
+            "path-invalid",
+            "version-invalid",
+            "missing-output",
+            "malformed-output"
+          ]
+        }
+      }
+    }
+  }
+}
