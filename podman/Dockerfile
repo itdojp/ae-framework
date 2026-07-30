@@ -14,6 +14,7 @@ COPY pnpm-workspace.yaml ./
 COPY tsconfig*.json ./
 COPY configs/tsconfig ./configs/tsconfig
 COPY packages ./packages
+COPY patches ./patches
 # package.json の preinstall で参照されるため、依存解決前に配置する
 COPY scripts/ci/check-package-manager.mjs ./scripts/ci/check-package-manager.mjs
 RUN if [ "${SKIP_NPM_UPGRADE}" != "1" ]; then npm install -g npm@11.7.0; fi && \

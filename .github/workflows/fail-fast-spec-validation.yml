@@ -34,6 +34,7 @@ jobs:
             spec
             .ae
             packages/spec-compiler
+            patches
             src
             scripts/ci
             configs/tsconfig

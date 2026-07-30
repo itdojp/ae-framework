@@ -1,0 +1,8 @@
+diff --git a/minimatch.js b/minimatch.js
+index 731ed17c6852768f4e1636aabbf532c30dcbca5e..1aa15de4ca94ec418a282815f008fbe7b545ace4 100644
+--- a/minimatch.js
++++ b/minimatch.js
+@@ -19 +19,2 @@ minimatch.GLOBSTAR = GLOBSTAR
+-const expand = require('brace-expansion')
++const braceExpansion = require('brace-expansion')
++const expand = braceExpansion.expand || braceExpansion

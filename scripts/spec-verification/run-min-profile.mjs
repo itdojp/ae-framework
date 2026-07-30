@@ -38,6 +38,15 @@ function lstatIfExists(filePath) {
   }
 }
 
+function statIfExists(filePath) {
+  try {
+    return statSync(filePath);
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
 function realpathIfExists(filePath) {
   try {
     return realpathSync.native(filePath);
@@ -195,12 +204,21 @@ function renderHelp() {
 
 function listFilesRecursive(rootDir) {
   const resolved = path.resolve(rootDir);
-  if (!existsSync(resolved) || !statSync(resolved).isDirectory()) return [];
+  const rootStat = statIfExists(resolved);
+  if (!rootStat?.isDirectory()) return [];
+  let names;
+  try {
+    names = readdirSync(resolved).sort();
+  } catch (error) {
+    if (error?.code === 'ENOENT') return [];
+    throw error;
+  }
   const entries = [];
-  for (const name of readdirSync(resolved).sort()) {
-    if (name === '.git' || name === 'node_modules' || name === 'dist' || name === 'coverage') continue;
+  for (const name of names) {
+    if (name === '.codex-local' || name === '.git' || name === 'node_modules' || name === 'dist' || name === 'coverage') continue;
     const child = path.join(resolved, name);
-    const stat = lstatSync(child);
+    const stat = lstatIfExists(child);
+    if (!stat) continue;
     if (stat.isSymbolicLink()) continue;
     if (stat.isDirectory()) entries.push(...listFilesRecursive(child));
     else if (stat.isFile()) entries.push(child);

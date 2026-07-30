@@ -958,6 +958,16 @@ const expectReadOnlyJobPermissions = (workflow: WorkflowDocument, jobName: strin
 };
 
 describe('CI workflow read-only PR validation boundaries', () => {
+  it('Security Analysis reusable SBOM call uses a caller-safe concurrency namespace', () => {
+    const security = parseWorkflow('security.yml');
+    const sbom = parseWorkflow('sbom-generation.yml');
+
+    expect(security.jobs?.['sbom-generation']?.uses).toBe('./.github/workflows/sbom-generation.yml');
+    expect(sbom.concurrency?.group).toContain('sbom-generation-');
+    expect(sbom.concurrency?.group).not.toContain('github.workflow');
+    expect(sbom.concurrency?.['cancel-in-progress']).toBe(true);
+  });
+
   it('Full CI reusable workflow calls use caller-safe concurrency namespaces', () => {
     const ci = parseWorkflow('ci.yml');
     const reusableCalls = {

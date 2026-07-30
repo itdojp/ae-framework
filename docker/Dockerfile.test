@@ -63,6 +63,8 @@ COPY tsconfig.json ./tsconfig.json
 COPY configs/tsconfig ./configs/tsconfig
 # Copy workspace packages so pnpm can validate the lockfile against workspace manifests.
 COPY packages/ ./packages/
+COPY apps/ ./apps/
+COPY patches ./patches
 COPY scripts/ci/check-package-manager.mjs ./scripts/ci/check-package-manager.mjs
 
 # Enable pnpm and install all dependencies (including dev dependencies for testing)
