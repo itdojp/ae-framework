@@ -89,6 +89,35 @@ describe('Spec & Verification Kit minimum activation profile', () => {
     expect(repoProfile.stepFiles.some((filePath) => filePath.endsWith('.ts'))).toBe(false);
   });
 
+  it('excludes local Codex state and tolerates a profile root removed before discovery', () => {
+    const localRoot = resolve('.codex-local/tmp');
+    mkdirSync(localRoot, { recursive: true });
+    const localSandbox = mkdtempSync(join(localRoot, 'spec-kit-min-local-state-'));
+    mkdirSync(join(localSandbox, 'tests', 'property'), { recursive: true });
+    writeFileSync(
+      join(localSandbox, 'tests', 'property', 'local.property.test.ts'),
+      '// @trace:LOCAL-ONLY\n',
+      'utf8',
+    );
+
+    try {
+      const repoProfile = discoverProfile('.');
+      expect(repoProfile.propertyFiles.some((filePath) => filePath.includes('.codex-local/'))).toBe(false);
+      expect(repoProfile.traceLinks.some((link) => link.traceRef === 'LOCAL-ONLY')).toBe(false);
+    } finally {
+      rmSync(localSandbox, { recursive: true, force: true });
+    }
+
+    const removedRoot = mkdtempSync(join(localRoot, 'spec-kit-min-removed-root-'));
+    rmSync(removedRoot, { recursive: true, force: true });
+    expect(discoverProfile(removedRoot)).toMatchObject({
+      featureFiles: [],
+      stepFiles: [],
+      propertyFiles: [],
+      requirementFiles: [],
+    });
+  });
+
   it('rejects activation profile and output paths outside the current workspace', () => {
     expect(() => parseArgs([
       'node',
