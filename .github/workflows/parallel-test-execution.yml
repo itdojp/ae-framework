@@ -116,7 +116,10 @@ jobs:
             timeout: 20
           - test-type: flake-detection
             command: flake:detect:enhanced:quick
-            timeout: 10
+            # Three CI-fast observations take roughly ten minutes on the
+            # hosted runner. Keep the step bounded without terminating valid
+            # observations at the previous ten-minute edge.
+            timeout: 15
 
     steps:
       - name: Checkout code
@@ -367,7 +370,7 @@ jobs:
         run: |
           printf "%s\n" "🔄 Retrying potentially flaky tests..."
           pnpm run flake:detect:enhanced:quick
-        timeout-minutes: 8
+        timeout-minutes: 15
 
       - name: Upload retry results
         uses: actions/upload-artifact@v4

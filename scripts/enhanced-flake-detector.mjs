@@ -10,6 +10,9 @@ import fs from 'fs';
 import path from 'path';
 import { glob } from 'glob';
 
+const DEFAULT_RUN_TIMEOUT_MS = 4 * 60 * 1000;
+const DEFAULT_FORCE_KILL_GRACE_MS = 30 * 1000;
+
 class EnhancedFlakeDetector {
   constructor(options = {}) {
     this.runs = options.runs || 15;
@@ -21,6 +24,8 @@ class EnhancedFlakeDetector {
     this.testPatterns = new Map();
     this.failureAnalysis = new Map();
     this.executionMetrics = new Map();
+    this.runTimeoutMs = options.runTimeoutMs ?? DEFAULT_RUN_TIMEOUT_MS;
+    this.forceKillGraceMs = options.forceKillGraceMs ?? DEFAULT_FORCE_KILL_GRACE_MS;
     this.config = this.loadConfig();
   }
 
@@ -65,14 +70,20 @@ class EnhancedFlakeDetector {
       
       const testProcess = spawn(testCommand[0], testCommand.slice(1), {
         stdio: ['inherit', 'pipe', 'pipe'],
-        timeout: 90000 // 1.5 minute timeout
+        timeout: this.runTimeoutMs
       });
 
-      // Additional timeout protection
+      // Keep a bounded hard-stop after spawn's graceful timeout. The CI fast
+      // suite takes more than 90 seconds on GitHub-hosted runners, so the
+      // previous fixed timeout killed healthy runs before they could report a
+      // semantic result.
       const forceTimeout = setTimeout(() => {
-        console.log(`   ⏰ Force killing test process after 2 minutes`);
+        const elapsedSeconds = Math.ceil(
+          (this.runTimeoutMs + this.forceKillGraceMs) / 1000
+        );
+        console.log(`   ⏰ Force killing test process after ${elapsedSeconds} seconds`);
         testProcess.kill('SIGKILL');
-      }, 120000);
+      }, this.runTimeoutMs + this.forceKillGraceMs);
 
       let stdout = '';
       let stderr = '';
@@ -475,4 +486,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-export { EnhancedFlakeDetector };
+export {
+  DEFAULT_FORCE_KILL_GRACE_MS,
+  DEFAULT_RUN_TIMEOUT_MS,
+  EnhancedFlakeDetector
+};
