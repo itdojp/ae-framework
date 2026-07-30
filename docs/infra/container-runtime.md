@@ -1,6 +1,6 @@
 ---
 docRole: ssot
-lastVerified: '2026-03-12'
+lastVerified: '2026-07-31'
 owner: infra-ops
 verificationCommand: pnpm -s run check:doc-consistency
 ---
@@ -104,10 +104,29 @@ pnpm pipelines:mutation:quick
 
 GitHub Actions でも同じ Podman ベースのパイプラインが動作します。ローカルで `pnpm pipelines:full` を実行して Verify Lite／Pact／API fuzz／Mutation Quick がすべて緑化することを確認してから PR を作成してください。Podman で取得したレポート (`reports/`, `artifacts/hermetic-reports/`) はそのまま CI の成果物構成と一致します。
 
+### GitHub-hosted Container Security runtime
+
+`Security Analysis` の `Container Security` job は、GitHub-hosted Ubuntu image が提供する reviewed container-tool bundleを使用します。job内で `apt-get install podman` を重ねると、runner bundleのPodman／conmon／OCI runtimeとUbuntu packageの旧tupleが混在するため、実行直前のpackage追加は行いません。
+
+jobは `scripts/ci/container-runtime-preflight.mjs` を通して次をfail closedで確認します。
+
+- runner image／kernel／architectureと、`apt-cache policy`によるPodman／Buildah／conmon／crun／runc inventory
+- system path配下のregular executableと、parse可能なversion
+- OCI runtime `features`応答
+- digest-pinned minimal imageによる`podman run --rm`とminimal Containerfile `RUN true`
+- explicit runtimeを適用した`podman info --debug`のeffective runtime
+- repository image build、non-root `nextjs` user、archive export、Trivy scan、SARIF validation／upload
+
+既定runtimeはrunner bundleの`runc`です。`/usr/local/bin/runc`を優先し、存在・version・direct smoke・minimal run/build・Podman effective runtimeがすべて一致した場合だけrepository buildへ進みます。runtimeの自動fallbackや、build／scan／SARIF failureのwarning変換は行いません。
+
+bounded evidenceは`artifacts/container-security/container-runtime-diagnostic.json`へ`container-runtime-diagnostic/v1`として生成されます。`graphRoot`のprivate absolute pathやenvironment全量は保存せず、user/system storageの分類だけを保持します。classificationは`runtime-missing`、`runtime-version-incompatible`、`runtime-selection-invalid`、各build/export/scan/SARIF failureなどのclosed vocabularyです。
+
+新規に制御するminimal smoke imageとTrivy imageはtagとdigestを併記します。更新時は、upstream release／registry digestを確認したreview済みPRでworkflow、fixture、runbookを同時更新し、同一exact headの独立した`workflow_dispatch`を2回成功させてください。repositoryの`node:22-alpine` base imageは今回のruntime selection contractとは別管理であり、無関係な大量pin変更は行いません。
+
+`workflow_dispatch`の`mode=container-security`は、Container Security runtime pathだけを再現するfocused diagnosticです。実行時は`expected_head`へ40桁のcommit SHAを渡し、`github.sha`との完全一致をgateで検証します。通常の`push`／`schedule`では選択できず、Container Securityをsilent skipしません。focused runの成功はbuild／export／Trivy／SARIF pathのEvidenceであり、Dependency Audit、CodeQL、SBOMを含むfull Security Analysis成功へ昇格しません。full security acceptanceには`mode=all`または通常trusted eventの各lane成功が別途必要です。
+
 ### CI 共有ランナー向け手順
 
-GitHub Actions 上で Podman を利用する場合は、rootless Podman を有効にした専用ランナーを用意する必要があります。パッケージの導入、`loginctl enable-linger`、`podman.socket` の常駐化など詳細な手順は以下を参照してください。
+長時間の共有runnerやself-hosted laneでPodmanを利用する場合は、rootless Podmanを有効にした専用ランナーを用意します。パッケージの導入、`loginctl enable-linger`、`podman.socket` の常駐化など詳細な手順は以下を参照してください。GitHub-hosted `Container Security` jobは前節のbounded preflightを使用し、このself-hosted setupを暗黙の前提にしません。
 
 - [Podman 共有ランナー構築ガイド](./podman-shared-runner.md)
-
-
