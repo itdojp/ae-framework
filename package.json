@@ -90,6 +90,7 @@
     "demo:smoke": "pnpm run demo:agent-assurance && node scripts/demo/run-scope-drift-demo.mjs && node scripts/demo/run-high-risk-escalation-demo.mjs && pnpm run demo:smoke:check",
     "demo:smoke:check": "node scripts/demo/check-demo-smoke-artifacts.mjs",
     "test:security-assurance": "node scripts/security/run-security-assurance-fixture.mjs",
+    "test:dependency-security-compat": "vitest run tests/security/dependency-remediation-compatibility.test.ts",
     "claim-evidence:generate": "node scripts/assurance/build-claim-evidence-manifest.mjs",
     "publication:evidence:validate": "node scripts/release/validate-publication-evidence.mjs",
     "claim-level-summary:generate": "node scripts/assurance/aggregate-claim-levels.mjs",
