@@ -54,14 +54,14 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY tsconfig.json ./tsconfig.json
 COPY configs/tsconfig ./configs/tsconfig
-COPY packages/*/package.json ./packages/*/
 COPY packages/ ./packages/
+COPY apps/ ./apps/
 COPY patches ./patches
 COPY scripts/ci/check-package-manager.mjs ./scripts/ci/check-package-manager.mjs
 
 RUN corepack enable pnpm && \
     pnpm config set store-dir /pnpm && \
-    pnpm install --no-frozen-lockfile --prefer-offline --include-workspace-root
+    pnpm install --frozen-lockfile --prefer-offline --include-workspace-root
 
 COPY vitest.config.ts ./vitest.config.ts
 COPY configs/vitest.ci.config.ts ./configs/vitest.ci.config.ts

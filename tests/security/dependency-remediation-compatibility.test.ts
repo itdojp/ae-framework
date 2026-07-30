@@ -41,6 +41,25 @@ describe('dependency security remediation compatibility', () => {
     expect(installIndex).toBeGreaterThan(patchCopyIndex);
   });
 
+  it.each([
+    'docker/Dockerfile.test',
+    'podman/Dockerfile.test',
+  ])('installs the complete test workspace from the frozen lockfile in %s', (relativePath) => {
+    const containerfile = readFileSync(join(repoRoot, relativePath), 'utf8');
+    const workspaceCopyIndex = containerfile.indexOf('pnpm-workspace.yaml');
+    const packageCopyIndex = containerfile.indexOf('COPY packages/ ./packages/');
+    const appCopyIndex = containerfile.indexOf('COPY apps/ ./apps/');
+    const installIndex = containerfile.indexOf('pnpm install');
+
+    expect(workspaceCopyIndex).toBeGreaterThanOrEqual(0);
+    expect(packageCopyIndex).toBeGreaterThan(workspaceCopyIndex);
+    expect(appCopyIndex).toBeGreaterThan(packageCopyIndex);
+    expect(installIndex).toBeGreaterThan(appCopyIndex);
+    expect(containerfile).toContain('pnpm install --frozen-lockfile');
+    expect(containerfile).not.toContain('pnpm install --no-frozen-lockfile');
+    expect(containerfile).not.toContain('COPY packages/*/package.json ./packages/*/');
+  });
+
   it('uses brace-expansion 5.0.8 with a bounded aggregate output length', () => {
     const roots = packageRoots('brace-expansion', '5.0.8');
     expect(roots).toHaveLength(1);
