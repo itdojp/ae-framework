@@ -5,6 +5,7 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  applyRequestedRuntimeFailure,
   CHECK_IDS,
   DIAGNOSTIC_MAX_BYTES,
   finalizeDiagnostic,
@@ -12,12 +13,14 @@ import {
   isCompleteContainerSecurityEvidence,
   isAllowedSystemExecutable,
   isDigestPinnedImage,
+  orderedRequestedRuntimeCandidates,
   parseToolVersion,
   readBoundedStructuredArtifact,
   renderDiagnostic,
   resolveSafeArtifactFile,
   SARIF_MAX_BYTES,
   sanitizePodmanInfo,
+  selectRequestedRuntimeFailure,
   stageFailureClassification,
   stagePrerequisite,
   validateDiagnosticSemantics,
@@ -43,6 +46,43 @@ const validateSchema = (() => {
 
 const clone = <T>(value: T): T => structuredClone(value);
 
+const runtimeCandidate = ({
+  path: candidatePath = '/usr/local/bin/runc',
+  version = '1.4.3',
+  available = true,
+  directSmoke = { status: 'pass', exitCode: 0, durationMs: 7, detail: 'completed' },
+  minimalRun = { status: 'pass', exitCode: 0, durationMs: 310, detail: 'completed' },
+}: Record<string, any> = {}) => ({
+  name: path.basename(candidatePath),
+  path: candidatePath,
+  version: available ? version : null,
+  source: candidatePath.startsWith('/usr/local/') ? 'runner-bundle' : 'ubuntu-package',
+  available,
+  selected: false,
+  directSmoke,
+  minimalRun,
+});
+
+const applyFailureSelection = (candidates: any[], requestedRuntime = 'runc') => {
+  const value = fixture('valid-runc.container-runtime-diagnostic.json');
+  value.status = 'fail';
+  value.classification = 'runtime-version-incompatible';
+  value.pipelineComplete = false;
+  value.configuration.requestedRuntime = requestedRuntime;
+  value.runtimeCandidates = candidates.map((candidate) => ({ ...candidate, selected: false }));
+  value.selectedRuntime = null;
+  value.podman.effectiveRuntimePath = null;
+  value.podman.effectiveRuntimeVersion = null;
+  value.checks = [
+    { id: 'podman-info', status: 'not-run', classification: null, exitCode: null, durationMs: 0, detail: 'not-selected' },
+    { id: 'manifest-detect', status: 'not-run', classification: null, exitCode: null, durationMs: 0, detail: 'not-selected' },
+    { id: 'direct-runtime-smoke', status: 'not-run', classification: null, exitCode: null, durationMs: 0, detail: 'not-selected' },
+    { id: 'minimal-run', status: 'not-run', classification: null, exitCode: null, durationMs: 0, detail: 'not-selected' },
+    { id: 'minimal-build', status: 'not-run', classification: null, exitCode: null, durationMs: 0, detail: 'not-selected' },
+  ];
+  return applyRequestedRuntimeFailure(value);
+};
+
 describe('container-runtime-diagnostic/v1', () => {
   it.each([
     'valid-runc.container-runtime-diagnostic.json',
@@ -58,6 +98,145 @@ describe('container-runtime-diagnostic/v1', () => {
     const value = fixture('valid-runc.container-runtime-diagnostic.json');
     expect(renderDiagnostic(value)).toBe(renderDiagnostic(clone(value)));
     expect(renderDiagnostic(value).endsWith('\n')).toBe(true);
+  });
+
+  describe('requested runtime failure selection', () => {
+    it('preserves a direct smoke failure when the minimal run passes', () => {
+      const candidate = runtimeCandidate({
+        directSmoke: { status: 'fail', exitCode: 42, durationMs: 315, detail: 'command-failed' },
+        minimalRun: { status: 'pass', exitCode: 0, durationMs: 927, detail: 'completed' },
+      });
+      const value = applyFailureSelection([candidate]);
+
+      expect(value).toMatchObject({
+        status: 'fail',
+        classification: 'runtime-version-incompatible',
+        pipelineComplete: false,
+        selectedRuntime: null,
+      });
+      expect(value.runtimeCandidates[0]).toMatchObject({
+        name: 'runc', path: '/usr/local/bin/runc', version: '1.4.3', source: 'runner-bundle', available: true, selected: false,
+      });
+      expect(value.checks.find((check: any) => check.id === 'direct-runtime-smoke')).toEqual({
+        id: 'direct-runtime-smoke', status: 'fail', classification: 'runtime-version-incompatible', exitCode: 42, durationMs: 315, detail: 'command-failed',
+      });
+      expect(value.checks.find((check: any) => check.id === 'minimal-run')).toEqual({
+        id: 'minimal-run', status: 'pass', classification: null, exitCode: 0, durationMs: 927, detail: 'completed',
+      });
+      expect(validateSchema(value), validateSchema.errors?.map((error) => error.message).join('; ')).toBe(true);
+      expect(validateDiagnosticSemantics(value)).toEqual([]);
+      expect(renderDiagnostic(value)).toBe(renderDiagnostic(applyFailureSelection([clone(candidate)])));
+    });
+
+    it.each([
+      ['timeout', { status: 'fail', exitCode: null, durationMs: 300_000, detail: 'timeout' }],
+      ['nonzero exit', { status: 'fail', exitCode: 125, durationMs: 444, detail: 'command-failed' }],
+    ])('preserves a minimal run %s after direct smoke passed', (_case, minimalRun) => {
+      const value = applyFailureSelection([runtimeCandidate({ minimalRun })]);
+      expect(value.checks.find((check: any) => check.id === 'direct-runtime-smoke')).toMatchObject({
+        status: 'pass', exitCode: 0, durationMs: 7, detail: 'completed', classification: null,
+      });
+      expect(value.checks.find((check: any) => check.id === 'minimal-run')).toEqual({
+        id: 'minimal-run', classification: 'runtime-version-incompatible', ...minimalRun,
+      });
+      expect(value.pipelineComplete).toBe(false);
+      expect(validateSchema(value), validateSchema.errors?.map((error) => error.message).join('; ')).toBe(true);
+      expect(validateDiagnosticSemantics(value)).toEqual([]);
+    });
+
+    it('preserves invalid version invocation evidence as direct smoke failure', () => {
+      const value = applyFailureSelection([runtimeCandidate({
+        available: false,
+        directSmoke: { status: 'fail', exitCode: 9, durationMs: 211, detail: 'version-invalid' },
+        minimalRun: { status: 'not-run', exitCode: null, durationMs: 0, detail: 'runtime-unavailable' },
+      })]);
+      expect(value.runtimeCandidates[0]).toMatchObject({ available: false, version: null, selected: false });
+      expect(value.checks.find((check: any) => check.id === 'direct-runtime-smoke')).toMatchObject({
+        status: 'fail', exitCode: 9, durationMs: 211, detail: 'version-invalid', classification: 'runtime-version-incompatible',
+      });
+      expect(value.checks.find((check: any) => check.id === 'minimal-run')).toMatchObject({
+        status: 'not-run', exitCode: null, durationMs: 0, detail: 'runtime-unavailable', classification: null,
+      });
+      expect(validateSchema(value), validateSchema.errors?.map((error) => error.message).join('; ')).toBe(true);
+      expect(validateDiagnosticSemantics(value)).toEqual([]);
+    });
+
+    it('selects the farthest-progressed failure, then applies stable path preference', () => {
+      const localDirectFailure = runtimeCandidate({
+        path: '/usr/local/bin/runc',
+        directSmoke: { status: 'fail', exitCode: 42, durationMs: 315, detail: 'command-failed' },
+        minimalRun: { status: 'pass', exitCode: 0, durationMs: 927, detail: 'completed' },
+      });
+      const packageMinimalFailure = runtimeCandidate({
+        path: '/usr/bin/runc',
+        version: '1.3.6',
+        directSmoke: { status: 'pass', exitCode: 0, durationMs: 12, detail: 'completed' },
+        minimalRun: { status: 'fail', exitCode: null, durationMs: 800, detail: 'timeout' },
+      });
+      const farther = selectRequestedRuntimeFailure([localDirectFailure, packageMinimalFailure], 'runc');
+      expect(farther.candidate?.path).toBe('/usr/bin/runc');
+      expect(farther.checks.find((check) => check.id === 'minimal-run')).toMatchObject({ durationMs: 800, detail: 'timeout' });
+
+      const localMinimalFailure = runtimeCandidate({
+        path: '/usr/local/bin/runc',
+        minimalRun: { status: 'fail', exitCode: 126, durationMs: 600, detail: 'command-failed' },
+      });
+      const preferred = selectRequestedRuntimeFailure([packageMinimalFailure, localMinimalFailure], 'runc');
+      expect(preferred.candidate?.path).toBe('/usr/local/bin/runc');
+      expect(orderedRequestedRuntimeCandidates([packageMinimalFailure, localMinimalFailure], 'runc').map((entry) => entry.path))
+        .toEqual(['/usr/local/bin/runc', '/usr/bin/runc']);
+      expect(selectRequestedRuntimeFailure([packageMinimalFailure, localMinimalFailure], 'runc'))
+        .toEqual(selectRequestedRuntimeFailure([packageMinimalFailure, localMinimalFailure], 'runc'));
+    });
+
+    it('records a missing requested runtime without fabricated execution evidence', () => {
+      const value = applyFailureSelection([runtimeCandidate({ path: '/usr/bin/crun', version: '1.14.1' })], 'runc');
+      expect(value).toMatchObject({
+        status: 'fail', classification: 'runtime-missing', pipelineComplete: false, selectedRuntime: null,
+      });
+      expect(value.checks.find((check: any) => check.id === 'direct-runtime-smoke')).toEqual({
+        id: 'direct-runtime-smoke', status: 'not-run', classification: null, exitCode: null, durationMs: 0, detail: 'runtime-unavailable',
+      });
+      expect(value.checks.find((check: any) => check.id === 'minimal-run')).toEqual({
+        id: 'minimal-run', status: 'not-run', classification: null, exitCode: null, durationMs: 0, detail: 'not-selected',
+      });
+      expect(validateSchema(value), validateSchema.errors?.map((error) => error.message).join('; ')).toBe(true);
+      expect(validateDiagnosticSemantics(value)).toEqual([]);
+    });
+
+    it('preserves both actual failures for the deterministically chosen candidate', () => {
+      const value = applyFailureSelection([runtimeCandidate({
+        directSmoke: { status: 'fail', exitCode: 17, durationMs: 218, detail: 'malformed-output' },
+        minimalRun: { status: 'fail', exitCode: 125, durationMs: 731, detail: 'command-failed' },
+      })]);
+      expect(value.checks.find((check: any) => check.id === 'direct-runtime-smoke')).toMatchObject({
+        status: 'fail', exitCode: 17, durationMs: 218, detail: 'malformed-output',
+      });
+      expect(value.checks.find((check: any) => check.id === 'minimal-run')).toMatchObject({
+        status: 'fail', exitCode: 125, durationMs: 731, detail: 'command-failed',
+      });
+      expect(validateDiagnosticSemantics(value)).toEqual([]);
+    });
+
+    it('detects substituted check identity and zeroed candidate duration', () => {
+      const value = applyFailureSelection([runtimeCandidate({
+        directSmoke: { status: 'fail', exitCode: 42, durationMs: 315, detail: 'command-failed' },
+        minimalRun: { status: 'pass', exitCode: 0, durationMs: 927, detail: 'completed' },
+      })]);
+      const substituted = clone(value);
+      Object.assign(substituted.checks.find((check: any) => check.id === 'direct-runtime-smoke'), {
+        status: 'pass', classification: null, exitCode: 0, durationMs: 927, detail: 'completed',
+      });
+      Object.assign(substituted.checks.find((check: any) => check.id === 'minimal-run'), {
+        status: 'fail', classification: 'runtime-version-incompatible', exitCode: null, durationMs: 0, detail: 'command-failed',
+      });
+      expect(validateDiagnosticSemantics(substituted)).toContain('check direct-runtime-smoke must preserve the selected runtime candidate result');
+      expect(validateDiagnosticSemantics(substituted)).toContain('check minimal-run must preserve the selected runtime candidate result');
+
+      const zeroed = clone(value);
+      zeroed.checks.find((check: any) => check.id === 'direct-runtime-smoke').durationMs = 0;
+      expect(validateDiagnosticSemantics(zeroed)).toContain('check direct-runtime-smoke must preserve the selected runtime candidate result');
+    });
   });
 
   it('rejects unknown fields and malformed generation time at the runtime trust boundary', () => {
@@ -103,11 +282,18 @@ describe('container-runtime-diagnostic/v1', () => {
   });
 
   it('keeps a missing runtime as an explicit failing classification', () => {
-    const value = fixture('valid-runc.container-runtime-diagnostic.json');
-    value.status = 'fail';
-    value.classification = 'runtime-missing';
-    value.selectedRuntime = null;
-    for (const candidate of value.runtimeCandidates) candidate.selected = false;
+    const value = applyFailureSelection([]);
+    Object.assign(value.tools.find((tool: any) => tool.name === 'podman'), {
+      path: null, version: null, source: 'unknown', available: false,
+    });
+    Object.assign(value.podman, {
+      path: null,
+      version: null,
+      defaultRuntimePath: null,
+      defaultRuntimeVersion: null,
+      effectiveRuntimePath: null,
+      effectiveRuntimeVersion: null,
+    });
     value.checks[0] = {
       id: 'podman-info',
       status: 'fail',

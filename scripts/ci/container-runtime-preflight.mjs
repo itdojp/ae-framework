@@ -6,11 +6,13 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import {
+  applyRequestedRuntimeFailure,
   DIAGNOSTIC_MAX_BYTES,
   finalizeDiagnostic,
   inspectArtifact,
   isAllowedSystemExecutable,
   isDigestPinnedImage,
+  orderedRequestedRuntimeCandidates,
   parseToolVersion,
   readBoundedStructuredArtifact,
   renderDiagnostic,
@@ -437,7 +439,7 @@ const preflight = async (repoRoot, options) => {
   };
 
   if (!podmanTool?.available || !podmanTool.path || !podmanTool.version) {
-    const missing = failDiagnostic(base, 'runtime-missing', {
+    const missing = failDiagnostic(applyRequestedRuntimeFailure(base), 'runtime-missing', {
       id: 'podman-info',
       status: 'fail',
       classification: 'runtime-missing',
@@ -495,23 +497,12 @@ const preflight = async (repoRoot, options) => {
   }
 
   let diagnostic = { ...base, runtimeCandidates };
-  const preferred = runtimeCandidates
-    .filter((candidate) => candidate.name === options.runtime)
-    .sort((left, right) => Number(right.path.startsWith('/usr/local/')) - Number(left.path.startsWith('/usr/local/')))
+  const preferred = orderedRequestedRuntimeCandidates(runtimeCandidates, options.runtime)
     .find((candidate) => candidate.available && candidate.directSmoke.status === 'pass' && candidate.minimalRun.status === 'pass');
   if (!preferred || !preferred.version) {
-    const requestedExists = runtimeCandidates.some((candidate) => candidate.name === options.runtime);
-    const classification = requestedExists ? 'runtime-version-incompatible' : 'runtime-missing';
-    diagnostic = failDiagnostic(diagnostic, classification, {
-      id: 'minimal-run',
-      status: 'fail',
-      classification,
-      exitCode: null,
-      durationMs: 0,
-      detail: requestedExists ? 'command-failed' : 'runtime-unavailable',
-    });
+    diagnostic = applyRequestedRuntimeFailure(diagnostic);
     writeReport(reportPath, diagnostic);
-    throw new Error(`${classification}: requested runtime did not pass direct and minimal smoke checks`);
+    throw new Error(`${diagnostic.classification}: requested runtime did not pass direct and minimal smoke checks`);
   }
   diagnostic.runtimeCandidates = runtimeCandidates.map((candidate) => ({
     ...candidate,

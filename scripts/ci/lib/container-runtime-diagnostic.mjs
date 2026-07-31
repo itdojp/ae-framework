@@ -252,6 +252,105 @@ const duplicateValues = (values) => {
   return [...duplicates];
 };
 
+const compareRuntimeCandidatePreference = (left, right) => {
+  const leftLocal = String(left?.path ?? '').startsWith('/usr/local/') ? 0 : 1;
+  const rightLocal = String(right?.path ?? '').startsWith('/usr/local/') ? 0 : 1;
+  if (leftLocal !== rightLocal) return leftLocal - rightLocal;
+  const leftPath = String(left?.path ?? '');
+  const rightPath = String(right?.path ?? '');
+  if (leftPath === rightPath) return 0;
+  return leftPath < rightPath ? -1 : 1;
+};
+
+export const orderedRequestedRuntimeCandidates = (candidates, requestedRuntime) => (
+  (Array.isArray(candidates) ? candidates : [])
+    .filter((candidate) => candidate?.name === requestedRuntime)
+    .sort(compareRuntimeCandidatePreference)
+);
+
+const runtimeFailureCheck = (id, result, classification) => ({
+  id,
+  status: result?.status,
+  classification: result?.status === 'fail' ? classification : null,
+  exitCode: result?.exitCode,
+  durationMs: result?.durationMs,
+  detail: result?.detail,
+});
+
+/**
+ * Select the authoritative requested-runtime failure evidence.
+ *
+ * Candidates that passed direct smoke but failed minimal run take precedence,
+ * because they reached the later reviewed stage. Within a stage, the same
+ * /usr/local-before-/usr path preference used for success selection applies.
+ */
+export const selectRequestedRuntimeFailure = (candidates, requestedRuntime) => {
+  const requested = orderedRequestedRuntimeCandidates(candidates, requestedRuntime);
+  if (requested.length === 0) {
+    return {
+      classification: 'runtime-missing',
+      candidate: null,
+      checks: [
+        {
+          id: 'direct-runtime-smoke',
+          status: 'not-run',
+          classification: null,
+          exitCode: null,
+          durationMs: 0,
+          detail: 'runtime-unavailable',
+        },
+        {
+          id: 'minimal-run',
+          status: 'not-run',
+          classification: null,
+          exitCode: null,
+          durationMs: 0,
+          detail: 'not-selected',
+        },
+      ],
+    };
+  }
+
+  const candidate = requested.find((entry) => (
+    entry?.directSmoke?.status === 'pass' && entry?.minimalRun?.status === 'fail'
+  )) ?? requested.find((entry) => entry?.directSmoke?.status === 'fail') ?? requested[0];
+  const classification = 'runtime-version-incompatible';
+  return {
+    classification,
+    candidate,
+    checks: [
+      runtimeFailureCheck('direct-runtime-smoke', candidate?.directSmoke, classification),
+      runtimeFailureCheck('minimal-run', candidate?.minimalRun, classification),
+    ],
+  };
+};
+
+export const applyRequestedRuntimeFailure = (diagnostic) => {
+  const selection = selectRequestedRuntimeFailure(
+    diagnostic?.runtimeCandidates,
+    diagnostic?.configuration?.requestedRuntime,
+  );
+  let updated = {
+    ...diagnostic,
+    status: 'fail',
+    classification: selection.classification,
+    pipelineComplete: false,
+    selectedRuntime: null,
+    runtimeCandidates: (Array.isArray(diagnostic?.runtimeCandidates) ? diagnostic.runtimeCandidates : [])
+      .map((candidate) => ({ ...candidate, selected: false })),
+  };
+  for (const check of selection.checks) updated = upsertCheck(updated, check);
+  return updated;
+};
+
+const resultBindingMatches = (check, expected) => (
+  check?.status === expected?.status
+  && check?.classification === expected?.classification
+  && check?.exitCode === expected?.exitCode
+  && check?.durationMs === expected?.durationMs
+  && check?.detail === expected?.detail
+);
+
 const validateResultSemantics = (errors, result, label, {
   classification = false,
   allowRuntimeUnavailableNotRun = false,
@@ -403,6 +502,10 @@ export const validateDiagnosticSemantics = (diagnostic) => {
   } else if (selectedCandidates.length > 1) {
     errors.push('failing diagnostic must not select multiple candidates');
   }
+  if (['runtime-missing', 'runtime-version-incompatible'].includes(diagnostic.classification)) {
+    if (selectedCandidates.length !== 0) errors.push('runtime discovery failure must not select a candidate');
+    if (diagnostic.selectedRuntime !== null) errors.push('runtime discovery failure requires selectedRuntime=null');
+  }
 
   const podman = diagnostic.podman ?? {};
   if (podman.path !== null && !isAllowedSystemExecutable(podman.path)) errors.push('podman path is invalid');
@@ -425,7 +528,13 @@ export const validateDiagnosticSemantics = (diagnostic) => {
   }
   for (const check of checks) {
     if (!CHECK_IDS.includes(check?.id)) errors.push(`unknown check id: ${check?.id ?? 'missing'}`);
-    validateResultSemantics(errors, check, `check ${check?.id ?? 'unknown'}`, { classification: true });
+    validateResultSemantics(errors, check, `check ${check?.id ?? 'unknown'}`, {
+      classification: true,
+      allowRuntimeUnavailableNotRun: (
+        ['runtime-missing', 'runtime-version-incompatible'].includes(diagnostic.classification)
+        && ['direct-runtime-smoke', 'minimal-run'].includes(check?.id)
+      ),
+    });
     if (check?.status === 'fail' && [
       'repository-build',
       'manifest-detect',
@@ -453,8 +562,21 @@ export const validateDiagnosticSemantics = (diagnostic) => {
   }
   if (diagnostic.status === 'fail' && !checks.some((check) => (
     check?.status === 'fail' && check.classification === diagnostic.classification
-  ))) {
+  )) && diagnostic.classification !== 'runtime-missing') {
     errors.push('failing diagnostic requires a check with the same primary classification');
+  }
+
+  if (['runtime-missing', 'runtime-version-incompatible'].includes(diagnostic.classification)) {
+    const selection = selectRequestedRuntimeFailure(candidates, diagnostic.configuration?.requestedRuntime);
+    if (selection.classification !== diagnostic.classification) {
+      errors.push(`runtime failure classification must be ${selection.classification}`);
+    }
+    for (const expected of selection.checks) {
+      const actual = checks.find((check) => check?.id === expected.id);
+      if (!resultBindingMatches(actual, expected)) {
+        errors.push(`check ${expected.id} must preserve the selected runtime candidate result`);
+      }
+    }
   }
 
   if (diagnostic.status === 'pass') {
