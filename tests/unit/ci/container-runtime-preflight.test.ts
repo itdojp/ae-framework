@@ -1,14 +1,22 @@
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  CHECK_IDS,
+  DIAGNOSTIC_MAX_BYTES,
+  finalizeDiagnostic,
   inspectArtifact,
+  isCompleteContainerSecurityEvidence,
   isAllowedSystemExecutable,
   isDigestPinnedImage,
   parseToolVersion,
+  readBoundedStructuredArtifact,
   renderDiagnostic,
+  resolveSafeArtifactFile,
+  SARIF_MAX_BYTES,
   sanitizePodmanInfo,
   stageFailureClassification,
   stagePrerequisite,
@@ -39,6 +47,7 @@ describe('container-runtime-diagnostic/v1', () => {
   it.each([
     'valid-runc.container-runtime-diagnostic.json',
     'valid-crun.container-runtime-diagnostic.json',
+    'valid-complete-runc.container-runtime-diagnostic.json',
   ])('accepts reviewed %s evidence', (name) => {
     const value = fixture(name);
     expect(validateSchema(value), validateSchema.errors?.map((error) => error.message).join('; ')).toBe(true);
@@ -87,7 +96,7 @@ describe('container-runtime-diagnostic/v1', () => {
   it('declares stage prerequisites for fail-closed execution ordering', () => {
     expect(stagePrerequisite('repository-build')).toBe('manifest-detect');
     expect(stagePrerequisite('image-user')).toBe('repository-build');
-    expect(stagePrerequisite('archive-export')).toBe('repository-build');
+    expect(stagePrerequisite('archive-export')).toBe('image-user');
     expect(stagePrerequisite('trivy-pull')).toBe('archive-export');
     expect(stagePrerequisite('trivy-scan')).toBe('trivy-pull');
     expect(stagePrerequisite('podman-info')).toBeNull();
@@ -178,6 +187,7 @@ describe('container-runtime-diagnostic/v1', () => {
   it.each([
     ['manifest-detect', 'manifest-missing', 'manifest-missing'],
     ['minimal-run', 'minimal-run-failed', 'command-failed'],
+    ['minimal-run', 'minimal-run-failed', 'timeout'],
     ['minimal-build', 'minimal-build-failed', 'command-failed'],
     ['repository-build', 'repository-build-failed', 'command-failed'],
     ['image-user', 'repository-build-failed', 'unexpected-image-user'],
@@ -186,6 +196,7 @@ describe('container-runtime-diagnostic/v1', () => {
     ['trivy-scan', 'scan-failed', 'command-failed'],
     ['sarif-validate', 'sarif-missing', 'missing-output'],
     ['sarif-validate', 'sarif-malformed', 'malformed-output'],
+    ['sarif-validate', 'sarif-malformed', 'oversized-output'],
     ['sarif-upload', 'sarif-upload-failed', 'upload-skipped'],
   ])('accepts exact %s failure evidence without converting its reason', (id, classification, detail) => {
     const value = fixture('valid-runc.container-runtime-diagnostic.json');
@@ -231,6 +242,132 @@ describe('container-runtime-diagnostic/v1', () => {
       detail: 'completed',
     });
     expect(validateDiagnosticSemantics(value)).toContain('passing check sarif-upload requires sarif-validate=pass');
+  });
+
+  it.each([
+    [{ status: 'pass', exitCode: 0, durationMs: 1, detail: 'timeout', classification: null }, 'pass requires detail=completed'],
+    [{ status: 'pass', exitCode: null, durationMs: 1, detail: 'completed', classification: null }, 'pass requires exitCode=0'],
+    [{ status: 'pass', exitCode: 0, durationMs: 1, detail: 'completed', classification: 'runtime-selection-invalid' }, 'pass requires classification=null'],
+    [{ status: 'not-run', exitCode: null, durationMs: 0, detail: 'not-selected', classification: 'runtime-selection-invalid' }, 'not-run requires classification=null'],
+    [{ status: 'not-run', exitCode: 0, durationMs: 0, detail: 'not-selected', classification: null }, 'not-run requires exitCode=null'],
+    [{ status: 'not-run', exitCode: null, durationMs: 1, detail: 'not-selected', classification: null }, 'not-run requires durationMs=0'],
+    [{ status: 'not-run', exitCode: null, durationMs: 0, detail: 'completed', classification: null }, 'not-run detail is invalid'],
+    [{ status: 'fail', exitCode: 1, durationMs: 1, detail: 'completed', classification: 'runtime-selection-invalid' }, 'fail detail is invalid'],
+    [{ status: 'fail', exitCode: 1, durationMs: 1, detail: 'not-selected', classification: 'runtime-selection-invalid' }, 'fail detail is invalid'],
+    [{ status: 'fail', exitCode: 1, durationMs: 1, detail: 'command-failed', classification: null }, 'fail requires closed classification'],
+  ])('rejects illegal top-level check status combination %#', (mutation, expected) => {
+    const value = fixture('valid-runc.container-runtime-diagnostic.json');
+    value.checks[0] = { id: 'podman-info', ...mutation };
+    expect(validateDiagnosticSemantics(value).some((error) => error.includes(expected))).toBe(true);
+  });
+
+  it.each([
+    [{ available: false, selected: false, directSmoke: { status: 'pass', exitCode: 0, durationMs: 1, detail: 'completed' } }, 'must not pass'],
+    [{ available: false, selected: true }, 'must be available'],
+    [{ directSmoke: { status: 'pass', exitCode: null, durationMs: 1, detail: 'completed' } }, 'pass requires exitCode=0'],
+    [{ minimalRun: { status: 'not-run', exitCode: 0, durationMs: 0, detail: 'runtime-unavailable' } }, 'not-run requires exitCode=null'],
+    [{ minimalRun: { status: 'not-run', exitCode: null, durationMs: 1, detail: 'runtime-unavailable' } }, 'not-run requires durationMs=0'],
+    [{ minimalRun: { status: 'not-run', exitCode: null, durationMs: 0, detail: 'completed' } }, 'not-run detail is invalid'],
+  ])('rejects illegal runtime candidate status combination %#', (mutation, expected) => {
+    const value = fixture('valid-runc.container-runtime-diagnostic.json');
+    const candidate = value.runtimeCandidates.find((entry: any) => entry.selected);
+    Object.assign(candidate, mutation);
+    expect(validateDiagnosticSemantics(value).some((error) => error.includes(expected))).toBe(true);
+  });
+
+  it.each([
+    ['missing', (value: any) => { value.checks = value.checks.filter((check: any) => check.id !== 'image-user'); }],
+    ['not-run', (value: any) => { value.checks.find((check: any) => check.id === 'image-user').status = 'not-run'; value.checks.find((check: any) => check.id === 'image-user').exitCode = null; value.checks.find((check: any) => check.id === 'image-user').durationMs = 0; value.checks.find((check: any) => check.id === 'image-user').detail = 'not-selected'; }],
+    ['fail', (value: any) => { const check = value.checks.find((entry: any) => entry.id === 'image-user'); Object.assign(check, { status: 'fail', classification: 'repository-build-failed', exitCode: 1, detail: 'unexpected-image-user' }); }],
+  ])('rejects archive-export=pass when image-user is %s', (_state, mutate) => {
+    const value = fixture('valid-complete-runc.container-runtime-diagnostic.json');
+    value.pipelineComplete = false;
+    mutate(value);
+    expect(validateDiagnosticSemantics(value)).toContain('passing check archive-export requires image-user=pass');
+  });
+
+  it('separates runtime readiness from explicit pipeline completion', () => {
+    const preflightOnly = fixture('valid-runc.container-runtime-diagnostic.json');
+    expect(preflightOnly.pipelineComplete).toBe(false);
+    expect(validateDiagnosticSemantics(preflightOnly)).toEqual([]);
+    expect(isCompleteContainerSecurityEvidence(preflightOnly)).toBe(false);
+
+    const pending = fixture('valid-complete-runc.container-runtime-diagnostic.json');
+    pending.pipelineComplete = false;
+    const finalized = finalizeDiagnostic(pending);
+    expect(finalized.pipelineComplete).toBe(true);
+    expect(finalized.checks).toHaveLength(CHECK_IDS.length);
+    expect(validateDiagnosticSemantics(finalized)).toEqual([]);
+    expect(isCompleteContainerSecurityEvidence(finalized)).toBe(true);
+  });
+
+  it('finalizes a persisted diagnostic through the closed CLI boundary', () => {
+    fs.mkdirSync(path.join(repoRoot, 'artifacts/container-security'), { recursive: true });
+    const sandbox = fs.mkdtempSync(path.join(repoRoot, 'artifacts/container-security/finalize-'));
+    try {
+      const report = path.join(sandbox, 'diagnostic.json');
+      const relativeReport = path.relative(repoRoot, report).split(path.sep).join('/');
+      const pending = fixture('valid-complete-runc.container-runtime-diagnostic.json');
+      pending.pipelineComplete = false;
+      fs.writeFileSync(report, renderDiagnostic(pending));
+      execFileSync(process.execPath, [
+        'scripts/ci/container-runtime-preflight.mjs',
+        'finalize',
+        '--report',
+        relativeReport,
+      ], { cwd: repoRoot, stdio: 'pipe' });
+      const persisted = JSON.parse(fs.readFileSync(report, 'utf8'));
+      expect(persisted.pipelineComplete).toBe(true);
+      expect(isCompleteContainerSecurityEvidence(persisted)).toBe(true);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects duplicate persisted checks at the CLI read boundary', () => {
+    fs.mkdirSync(path.join(repoRoot, 'artifacts/container-security'), { recursive: true });
+    const sandbox = fs.mkdtempSync(path.join(repoRoot, 'artifacts/container-security/duplicate-'));
+    try {
+      const report = path.join(sandbox, 'diagnostic.json');
+      const relativeReport = path.relative(repoRoot, report).split(path.sep).join('/');
+      const tampered = fixture('valid-complete-runc.container-runtime-diagnostic.json');
+      tampered.pipelineComplete = false;
+      tampered.checks.push(clone(tampered.checks[0]));
+      fs.writeFileSync(report, renderDiagnostic(tampered));
+      expect(() => execFileSync(process.execPath, [
+        'scripts/ci/container-runtime-preflight.mjs',
+        'validate',
+        '--report',
+        relativeReport,
+      ], { cwd: repoRoot, stdio: 'pipe' })).toThrow();
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ['missing image-user', (value: any) => { value.checks = value.checks.filter((check: any) => check.id !== 'image-user'); }],
+    ['missing sarif-upload', (value: any) => { value.checks = value.checks.filter((check: any) => check.id !== 'sarif-upload'); }],
+    ['not-run stage', (value: any) => { Object.assign(value.checks.find((check: any) => check.id === 'image-user'), { status: 'not-run', classification: null, exitCode: null, durationMs: 0, detail: 'not-selected' }); }],
+    ['duplicate stage', (value: any) => { value.checks.push(clone(value.checks[0])); }],
+    ['failed stage', (value: any) => { Object.assign(value.checks.find((check: any) => check.id === 'trivy-scan'), { status: 'fail', classification: 'scan-failed', exitCode: 1, detail: 'command-failed' }); value.status = 'fail'; value.classification = 'scan-failed'; }],
+  ])('fails closed while finalizing a diagnostic with %s', (_case, mutate) => {
+    const value = fixture('valid-complete-runc.container-runtime-diagnostic.json');
+    value.pipelineComplete = false;
+    mutate(value);
+    expect(() => finalizeDiagnostic(value)).toThrow(/contract-invalid/u);
+  });
+
+  it('keeps failure diagnostics valid and non-finalized', () => {
+    const value = fixture('valid-runc.container-runtime-diagnostic.json');
+    value.status = 'fail';
+    value.classification = 'scan-failed';
+    value.pipelineComplete = false;
+    value.checks.push({
+      id: 'trivy-scan', status: 'fail', classification: 'scan-failed', exitCode: 1, durationMs: 10, detail: 'command-failed',
+    });
+    expect(validateDiagnosticSemantics(value)).toEqual([]);
+    expect(isCompleteContainerSecurityEvidence(value)).toBe(false);
   });
 
   it.each([
@@ -289,28 +426,123 @@ describe('container-runtime-diagnostic/v1', () => {
     expect(parseToolVersion('unknown')).toBeNull();
   });
 
-  it('distinguishes missing, malformed, symlinked, and valid artifacts', () => {
+  it('rejects path traversal, symlink components, and non-file artifacts', () => {
     fs.mkdirSync(path.join(repoRoot, 'artifacts/container-security'), { recursive: true });
     const sandbox = fs.mkdtempSync(path.join(repoRoot, 'artifacts/container-security/test-'));
+    const external = fs.mkdtempSync(path.join(path.dirname(repoRoot), 'container-artifact-external-'));
     try {
       const relativeRoot = path.relative(repoRoot, sandbox).split(path.sep).join('/');
       const archive = `${relativeRoot}/image.tar`;
       const sarif = `${relativeRoot}/results.sarif`;
       const malformed = `${relativeRoot}/malformed.sarif`;
-      const symlink = `${relativeRoot}/linked.sarif`;
+      const finalSymlink = `${relativeRoot}/linked.sarif`;
+      const externalLink = `${relativeRoot}/external-link`;
+      const internalDirectory = path.resolve(sandbox, 'internal-directory');
+      const internalLink = `${relativeRoot}/internal-link`;
+      const empty = `${relativeRoot}/empty.sarif`;
       fs.writeFileSync(path.resolve(repoRoot, archive), 'archive');
       fs.writeFileSync(path.resolve(repoRoot, sarif), JSON.stringify({
         version: '2.1.0',
         runs: [{ tool: { driver: { name: 'Trivy' } }, results: [] }],
       }));
       fs.writeFileSync(path.resolve(repoRoot, malformed), '{"version":"2.1.0","runs":[]}');
-      fs.symlinkSync(path.resolve(repoRoot, sarif), path.resolve(repoRoot, symlink));
+      fs.writeFileSync(path.resolve(repoRoot, empty), '');
+      fs.writeFileSync(path.join(external, 'outside.sarif'), fs.readFileSync(path.resolve(repoRoot, sarif)));
+      fs.symlinkSync(path.resolve(repoRoot, sarif), path.resolve(repoRoot, finalSymlink));
+      fs.symlinkSync(external, path.resolve(repoRoot, externalLink));
+      fs.mkdirSync(internalDirectory);
+      fs.writeFileSync(path.join(internalDirectory, 'inside.sarif'), fs.readFileSync(path.resolve(repoRoot, sarif)));
+      fs.symlinkSync(internalDirectory, path.resolve(repoRoot, internalLink));
 
       expect(inspectArtifact(repoRoot, archive, 'archive').ok).toBe(true);
       expect(inspectArtifact(repoRoot, sarif, 'sarif').ok).toBe(true);
       expect(inspectArtifact(repoRoot, malformed, 'sarif')).toMatchObject({ ok: false, state: 'malformed' });
-      expect(inspectArtifact(repoRoot, symlink, 'sarif')).toMatchObject({ ok: false, state: 'missing' });
-      expect(inspectArtifact(repoRoot, `${relativeRoot}/missing.sarif`, 'sarif')).toMatchObject({ ok: false, state: 'missing' });
+      expect(inspectArtifact(repoRoot, finalSymlink, 'sarif')).toMatchObject({ ok: false, detail: 'path-invalid' });
+      expect(inspectArtifact(repoRoot, `${externalLink}/outside.sarif`, 'sarif')).toMatchObject({ ok: false, detail: 'path-invalid' });
+      expect(inspectArtifact(repoRoot, `${internalLink}/inside.sarif`, 'sarif')).toMatchObject({ ok: false, detail: 'path-invalid' });
+      expect(inspectArtifact(repoRoot, `${relativeRoot}/../escape.sarif`, 'sarif')).toMatchObject({ ok: false, detail: 'path-invalid' });
+      expect(inspectArtifact(repoRoot, path.resolve(repoRoot, sarif), 'sarif')).toMatchObject({ ok: false, detail: 'path-invalid' });
+      expect(inspectArtifact(repoRoot, sarif.replaceAll('/', '\\'), 'sarif')).toMatchObject({ ok: false, detail: 'path-invalid' });
+      expect(inspectArtifact(repoRoot, `${relativeRoot}/missing.sarif`, 'sarif')).toMatchObject({ ok: false, detail: 'missing-output' });
+      expect(inspectArtifact(repoRoot, relativeRoot, 'archive')).toMatchObject({ ok: false, detail: 'missing-output' });
+      expect(inspectArtifact(repoRoot, empty, 'sarif')).toMatchObject({ ok: false, detail: 'missing-output' });
+      expect(resolveSafeArtifactFile(repoRoot, archive, { maxBytes: 7 }).ok).toBe(true);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+      fs.rmSync(external, { recursive: true, force: true });
+    }
+  });
+
+  it('bounds structured artifact reads before parsing without truncation', () => {
+    fs.mkdirSync(path.join(repoRoot, 'artifacts/container-security'), { recursive: true });
+    const sandbox = fs.mkdtempSync(path.join(repoRoot, 'artifacts/container-security/size-'));
+    try {
+      const relativeRoot = path.relative(repoRoot, sandbox).split(path.sep).join('/');
+      const exactPath = path.join(sandbox, 'exact.sarif');
+      const oversizedPath = path.join(sandbox, 'oversized.sarif');
+      const exactDiagnosticPath = path.join(sandbox, 'exact-diagnostic.json');
+      const oversizedDiagnosticPath = path.join(sandbox, 'oversized-diagnostic.json');
+      const prefix = '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"';
+      const suffix = '"}},"results":[]}]}';
+      const padding = SARIF_MAX_BYTES - Buffer.byteLength(prefix + suffix, 'utf8');
+      fs.writeFileSync(exactPath, `${prefix}${'x'.repeat(padding)}${suffix}`);
+      fs.writeFileSync(oversizedPath, Buffer.alloc(SARIF_MAX_BYTES + 1, 0x7b));
+      const diagnosticPrefix = '{"padding":"';
+      const diagnosticSuffix = '"}';
+      const diagnosticPadding = DIAGNOSTIC_MAX_BYTES - Buffer.byteLength(diagnosticPrefix + diagnosticSuffix, 'utf8');
+      fs.writeFileSync(exactDiagnosticPath, `${diagnosticPrefix}${'x'.repeat(diagnosticPadding)}${diagnosticSuffix}`);
+      fs.writeFileSync(oversizedDiagnosticPath, Buffer.alloc(DIAGNOSTIC_MAX_BYTES + 1, 0x7b));
+
+      expect(fs.statSync(exactPath).size).toBe(SARIF_MAX_BYTES);
+      expect(inspectArtifact(repoRoot, `${relativeRoot}/exact.sarif`, 'sarif').ok).toBe(true);
+      expect(fs.statSync(exactDiagnosticPath).size).toBe(DIAGNOSTIC_MAX_BYTES);
+      expect(readBoundedStructuredArtifact(repoRoot, `${relativeRoot}/exact-diagnostic.json`, 'diagnostic').ok).toBe(true);
+
+      const readSpy = vi.spyOn(fs, 'readFileSync');
+      try {
+        expect(inspectArtifact(repoRoot, `${relativeRoot}/oversized.sarif`, 'sarif')).toMatchObject({
+          ok: false,
+          state: 'malformed',
+          detail: 'oversized-output',
+        });
+        expect(readBoundedStructuredArtifact(repoRoot, `${relativeRoot}/oversized-diagnostic.json`, 'diagnostic')).toMatchObject({
+          ok: false,
+          state: 'malformed',
+          detail: 'oversized-output',
+        });
+        expect(readSpy).not.toHaveBeenCalled();
+      } finally {
+        readSpy.mockRestore();
+      }
+      expect(resolveSafeArtifactFile(repoRoot, `${relativeRoot}/exact.sarif`, { maxBytes: SARIF_MAX_BYTES }).ok).toBe(true);
+      expect(resolveSafeArtifactFile(repoRoot, `${relativeRoot}/oversized.sarif`, { maxBytes: SARIF_MAX_BYTES }))
+        .toMatchObject({ ok: false, detail: 'oversized-output' });
+      expect(DIAGNOSTIC_MAX_BYTES).toBe(256 * 1024);
+
+      const reportPath = path.join(sandbox, 'oversized-failure-diagnostic.json');
+      const relativeReport = path.relative(repoRoot, reportPath).split(path.sep).join('/');
+      const pending = fixture('valid-complete-runc.container-runtime-diagnostic.json');
+      pending.pipelineComplete = false;
+      pending.checks = pending.checks.filter((check: any) => check.id !== 'sarif-upload');
+      fs.writeFileSync(reportPath, renderDiagnostic(pending));
+      expect(() => execFileSync(process.execPath, [
+        'scripts/ci/container-runtime-preflight.mjs',
+        'validate-artifact',
+        '--report',
+        relativeReport,
+        '--stage',
+        'sarif-validate',
+        '--path',
+        `${relativeRoot}/oversized.sarif`,
+        '--kind',
+        'sarif',
+      ], { cwd: repoRoot, stdio: 'pipe' })).toThrow();
+      const failure = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+      expect(failure).toMatchObject({ status: 'fail', classification: 'sarif-malformed', pipelineComplete: false });
+      expect(failure.checks.find((check: any) => check.id === 'sarif-validate')).toMatchObject({
+        status: 'fail', classification: 'sarif-malformed', detail: 'oversized-output',
+      });
+      expect(validateDiagnosticSemantics(failure)).toEqual([]);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

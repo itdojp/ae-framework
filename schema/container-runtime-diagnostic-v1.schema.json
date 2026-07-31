@@ -10,6 +10,7 @@
     "generatedAt",
     "status",
     "classification",
+    "pipelineComplete",
     "runner",
     "packages",
     "tools",
@@ -34,6 +35,10 @@
     },
     "classification": {
       "$ref": "#/$defs/classification"
+    },
+    "pipelineComplete": {
+      "type": "boolean",
+      "description": "True only after all twelve reviewed Container Security checks have passed and explicit finalization has completed."
     },
     "runner": {
       "type": "object",
@@ -233,6 +238,7 @@
               "path-invalid",
               "version-invalid",
               "missing-output",
+              "oversized-output",
               "malformed-output",
               "unexpected-image-user",
               "upload-skipped",
@@ -309,6 +315,7 @@
             "path-invalid",
             "version-invalid",
             "missing-output",
+            "oversized-output",
             "malformed-output"
           ]
         }

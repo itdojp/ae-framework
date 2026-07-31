@@ -63,6 +63,9 @@ describe('Container Security runtime workflow', () => {
     expect(step('Build container image').run).toContain('steps.runtime_preflight.outputs.runtime_path');
     expect(step('Run Trivy vulnerability scanner').run).toContain('steps.runtime_preflight.outputs.runtime_path');
     expect(step('Verify production image user').run).toContain('--expect-stdout nextjs');
+    expect(stepIndex('Build container image')).toBeLessThan(stepIndex('Verify production image user'));
+    expect(stepIndex('Verify production image user')).toBeLessThan(stepIndex('Export image archive'));
+    expect(stepIndex('Export image archive')).toBeLessThan(stepIndex('Run Trivy vulnerability scanner'));
   });
 
   it('pins newly controlled smoke and scanner images by digest', () => {
@@ -80,6 +83,10 @@ describe('Container Security runtime workflow', () => {
     expect(step('Upload Trivy scan results').if).not.toContain('always()');
     expect(step('Record SARIF upload outcome').if).toContain('always()');
     expect(step('Record SARIF upload outcome').run).toContain('steps.sarif_upload.outcome');
+    expect(stepIndex('Record SARIF upload outcome')).toBeLessThan(stepIndex('Finalize container security diagnostic'));
+    expect(stepIndex('Finalize container security diagnostic')).toBeLessThan(stepIndex('Upload container runtime diagnostic'));
+    expect(step('Finalize container security diagnostic').if).toContain('success()');
+    expect(step('Finalize container security diagnostic').run).toContain('container-runtime-preflight.mjs finalize');
     expect(workflowText).not.toContain('Note missing Trivy SARIF');
     expect(workflowText).not.toContain('skipping SARIF upload');
   });

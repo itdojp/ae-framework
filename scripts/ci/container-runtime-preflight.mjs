@@ -6,10 +6,13 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import {
+  DIAGNOSTIC_MAX_BYTES,
+  finalizeDiagnostic,
   inspectArtifact,
   isAllowedSystemExecutable,
   isDigestPinnedImage,
   parseToolVersion,
+  readBoundedStructuredArtifact,
   renderDiagnostic,
   sanitizePodmanInfo,
   SCHEMA_VERSION,
@@ -48,6 +51,7 @@ const usage = () => {
   node scripts/ci/container-runtime-preflight.mjs run-stage --report PATH --stage STAGE [--timeout-ms N] [--expect-stdout VALUE] -- /absolute/command [args...]
   node scripts/ci/container-runtime-preflight.mjs validate-artifact --report PATH --stage archive-export|sarif-validate --path PATH --kind archive|sarif
   node scripts/ci/container-runtime-preflight.mjs record-stage --report PATH --stage sarif-upload --outcome success|failure|cancelled|skipped
+  node scripts/ci/container-runtime-preflight.mjs finalize --report PATH
 `);
 };
 
@@ -108,7 +112,7 @@ const repoRelativePath = (repoRoot, name, value, requiredRoot) => {
   if (typeof value !== 'string' || value.length === 0 || path.isAbsolute(value)) {
     throw new Error(`${name} must be repository-relative`);
   }
-  if (value.includes('\\') || value.split('/').some((segment) => segment === '..' || segment === '.git')) {
+  if (value.includes('\\') || value.split('/').some((segment) => segment === '.' || segment === '..' || segment === '.git')) {
     throw new Error(`${name} is outside the repository artifact boundary`);
   }
   const absolute = path.resolve(repoRoot, value);
@@ -299,17 +303,20 @@ const cgroupVersion = () => {
 const writeReport = (reportPath, diagnostic) => {
   const errors = validateDiagnosticSemantics(diagnostic);
   if (errors.length > 0) throw new Error(`contract-invalid: ${errors.slice(0, 5).join('; ')}`);
+  const rendered = renderDiagnostic(diagnostic);
+  if (Buffer.byteLength(rendered, 'utf8') > DIAGNOSTIC_MAX_BYTES) {
+    throw new Error('contract-invalid: diagnostic exceeds reviewed size limit');
+  }
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   const temp = `${reportPath}.tmp-${process.pid}`;
-  fs.writeFileSync(temp, renderDiagnostic(diagnostic), { mode: 0o600 });
+  fs.writeFileSync(temp, rendered, { mode: 0o600 });
   fs.renameSync(temp, reportPath);
 };
 
 const readReport = (repoRoot, relativePath) => {
-  const absolute = repoRelativePath(repoRoot, 'report', relativePath, 'artifacts/container-security');
-  const stat = fs.lstatSync(absolute);
-  if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('report must be a regular non-symlink file');
-  const diagnostic = JSON.parse(fs.readFileSync(absolute, 'utf8'));
+  const result = readBoundedStructuredArtifact(repoRoot, relativePath, 'diagnostic');
+  if (!result.ok) throw new Error(`contract-invalid: diagnostic artifact ${result.detail}`);
+  const { absolute, value: diagnostic } = result;
   const errors = validateDiagnosticSemantics(diagnostic);
   if (errors.length > 0) throw new Error(`contract-invalid: ${errors.slice(0, 5).join('; ')}`);
   return { absolute, diagnostic };
@@ -323,7 +330,7 @@ const writeGithubOutputs = (values) => {
 };
 
 const failDiagnostic = (diagnostic, classification, check) => {
-  let updated = { ...diagnostic, status: 'fail', classification };
+  let updated = { ...diagnostic, status: 'fail', classification, pipelineComplete: false };
   if (check) updated = upsertCheck(updated, check);
   return updated;
 };
@@ -382,6 +389,7 @@ const preflight = async (repoRoot, options) => {
     generatedAt: options.generatedAt ?? new Date().toISOString(),
     status: 'fail',
     classification: 'runtime-missing',
+    pipelineComplete: false,
     runner: {
       image: process.env.ImageOS?.slice(0, 80) ?? null,
       imageVersion: process.env.ImageVersion?.slice(0, 80) ?? null,
@@ -477,7 +485,7 @@ const preflight = async (repoRoot, options) => {
     runtimeCandidates.push({
       name,
       path: runtimePath,
-      version,
+      version: available ? version : null,
       source: toolSourceForPath(runtimePath),
       available,
       selected: false,
@@ -641,6 +649,7 @@ const runStage = async (repoRoot, options) => {
   ensureBoundedInteger('timeout-ms', options.timeoutMs, 1_000, 3_600_000);
   ensureBoundedInteger('output-limit-bytes', options.outputLimitBytes, 1_024, 262_144);
   const { absolute, diagnostic } = readReport(repoRoot, options.report);
+  if (diagnostic.pipelineComplete) throw new Error('run-stage cannot mutate finalized evidence');
   if (diagnostic.status !== 'pass' || diagnostic.classification !== 'runtime-ready') {
     throw new Error('run-stage requires a runtime-ready diagnostic');
   }
@@ -668,7 +677,7 @@ const runStage = async (repoRoot, options) => {
     ...stageResult,
     classification: stageResult.status === 'pass' ? null : classification,
   };
-  let updated = upsertCheck(diagnostic, check);
+  let updated = upsertCheck({ ...diagnostic, pipelineComplete: false }, check);
   if (stageResult.status !== 'pass') updated = { ...updated, status: 'fail', classification };
   writeReport(absolute, updated);
   if (stageResult.status !== 'pass') throw new Error(`${classification}: ${options.stage} ${stageResult.detail}`);
@@ -678,6 +687,7 @@ const validateArtifact = (repoRoot, options) => {
   if (!['archive-export', 'sarif-validate'].includes(options.stage)) throw new Error('validate-artifact stage is invalid');
   if (!['archive', 'sarif'].includes(options.kind)) throw new Error('validate-artifact kind is invalid');
   const { absolute, diagnostic } = readReport(repoRoot, options.report);
+  if (diagnostic.pipelineComplete) throw new Error('validate-artifact cannot mutate finalized evidence');
   const existing = diagnostic.checks.find((check) => check.id === options.stage);
   const prerequisite = options.stage === 'archive-export' ? 'archive-export' : 'trivy-scan';
   const prerequisiteCheck = diagnostic.checks.find((check) => check.id === prerequisite);
@@ -698,16 +708,17 @@ const validateArtifact = (repoRoot, options) => {
     durationMs: existing?.durationMs ?? 0,
     detail: result.detail,
   };
-  let updated = upsertCheck(diagnostic, check);
+  let updated = upsertCheck({ ...diagnostic, pipelineComplete: false }, check);
   if (!result.ok) updated = { ...updated, status: 'fail', classification };
   writeReport(absolute, updated);
-  if (!result.ok) throw new Error(`${classification}: ${options.artifactPath ?? 'artifact'} ${result.detail}`);
+  if (!result.ok) throw new Error(`${classification}: artifact ${result.detail}`);
 };
 
 const recordStage = (repoRoot, options) => {
   if (!['manifest-detect', 'sarif-upload'].includes(options.stage)) throw new Error('record-stage stage is invalid');
   if (!['success', 'failure', 'cancelled', 'skipped'].includes(options.outcome)) throw new Error('record-stage outcome is invalid');
   const { absolute, diagnostic } = readReport(repoRoot, options.report);
+  if (diagnostic.pipelineComplete) throw new Error('record-stage cannot mutate finalized evidence');
   let passed = options.outcome === 'success';
   const classification = stageFailureClassification(options.stage);
   if (options.stage === 'manifest-detect' && passed) {
@@ -735,10 +746,21 @@ const recordStage = (repoRoot, options) => {
         ? 'manifest-missing'
         : (options.outcome === 'skipped' ? 'upload-skipped' : 'command-failed')),
   };
-  let updated = upsertCheck(diagnostic, check);
+  let updated = upsertCheck({ ...diagnostic, pipelineComplete: false }, check);
   if (!passed && diagnostic.status === 'pass') updated = { ...updated, status: 'fail', classification };
   writeReport(absolute, updated);
   if (!passed) throw new Error(`${classification}: ${options.stage} outcome=${options.outcome}`);
+};
+
+const finalizeReport = (repoRoot, options) => {
+  const { absolute, diagnostic } = readReport(repoRoot, options.report);
+  const finalized = finalizeDiagnostic(diagnostic);
+  writeReport(absolute, finalized);
+  writeGithubOutputs({
+    pipeline_complete: finalized.pipelineComplete,
+    report_path: options.report,
+  });
+  process.stdout.write(`Finalized ${SCHEMA_VERSION}: pipelineComplete=true\n`);
 };
 
 const main = async () => {
@@ -751,6 +773,7 @@ const main = async () => {
   } else if (options.command === 'run-stage') await runStage(repoRoot, options);
   else if (options.command === 'validate-artifact') validateArtifact(repoRoot, options);
   else if (options.command === 'record-stage') recordStage(repoRoot, options);
+  else if (options.command === 'finalize') finalizeReport(repoRoot, options);
   else throw new Error(`unknown command: ${options.command}`);
 };
 

@@ -119,7 +119,11 @@ jobは `scripts/ci/container-runtime-preflight.mjs` を通して次をfail close
 
 既定runtimeはrunner bundleの`runc`です。`/usr/local/bin/runc`を優先し、存在・version・direct smoke・minimal run/build・Podman effective runtimeがすべて一致した場合だけrepository buildへ進みます。runtimeの自動fallbackや、build／scan／SARIF failureのwarning変換は行いません。
 
-bounded evidenceは`artifacts/container-security/container-runtime-diagnostic.json`へ`container-runtime-diagnostic/v1`として生成されます。`graphRoot`のprivate absolute pathやenvironment全量は保存せず、user/system storageの分類だけを保持します。classificationは`runtime-missing`、`runtime-version-incompatible`、`runtime-selection-invalid`、各build/export/scan/SARIF failureなどのclosed vocabularyです。
+bounded evidenceは`artifacts/container-security/container-runtime-diagnostic.json`へ`container-runtime-diagnostic/v1`として生成されます。`graphRoot`のprivate absolute pathやenvironment全量は保存せず、user/system storageの分類だけを保持します。classificationは`runtime-missing`、`runtime-version-incompatible`、`runtime-selection-invalid`、各build/export/scan/SARIF failureなどのclosed vocabularyです。check resultは`pass`／`fail`／`not-run`ごとにexit code、duration、detail、classificationの組み合わせを閉じ、timeout、malformed output、missing outputを別failureとして保持します。runtime candidateも同じstatus semanticsを使用し、unavailable candidateや未実行candidateをpassへ変換しません。
+
+preflightの成功時点では`pipelineComplete=false`です。`manifest-detect -> repository-build -> image-user -> archive-export -> trivy-pull -> trivy-scan -> sarif-validate -> sarif-upload`の順に前提を検査し、12個すべてのreview済みcheckが一意にpassした後、`finalize`コマンドだけが`pipelineComplete=true`へ更新します。したがってruntime-readyな中間reportやfailure reportは診断用途には使用できますが、complete Container Security Evidenceとしては扱いません。
+
+archive、SARIF、diagnostic reportのread boundaryはrepository-relative pathだけを受け取り、`.`／`..`／backslash／absolute pathと、finalを含む全path componentのsymlinkを拒否します。これはread前のbounded validationであり、同時filesystem mutationに対するatomic openを主張しません。structured artifactはread前にsizeを検査し、diagnostic JSONは256 KiB、Trivy SARIFは16 MiBを上限とします。上限超過時はtruncateせずfail closedです。上限変更は実際のartifact size evidence、memory bound、workflow timeoutを同じreviewで確認してください。
 
 新規に制御するminimal smoke imageとTrivy imageはtagとdigestを併記します。更新時は、upstream release／registry digestを確認したreview済みPRでworkflow、fixture、runbookを同時更新し、同一exact headの独立した`workflow_dispatch`を2回成功させてください。repositoryの`node:22-alpine` base imageは今回のruntime selection contractとは別管理であり、無関係な大量pin変更は行いません。
 

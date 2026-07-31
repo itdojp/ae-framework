@@ -2,6 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 export const SCHEMA_VERSION = 'container-runtime-diagnostic/v1';
+export const CONTAINER_ARTIFACT_ROOT = 'artifacts/container-security';
+export const DIAGNOSTIC_MAX_BYTES = 256 * 1024;
+export const SARIF_MAX_BYTES = 16 * 1024 * 1024;
 
 export const CLASSIFICATIONS = Object.freeze([
   'runtime-ready',
@@ -37,7 +40,7 @@ export const CHECK_IDS = Object.freeze([
 const CHECK_PREREQUISITES = Object.freeze({
   'repository-build': 'manifest-detect',
   'image-user': 'repository-build',
-  'archive-export': 'repository-build',
+  'archive-export': 'image-user',
   'trivy-pull': 'archive-export',
   'trivy-scan': 'trivy-pull',
   'sarif-validate': 'trivy-scan',
@@ -149,35 +152,94 @@ export const validateSarifDocument = (value) => {
   return errors;
 };
 
-export const inspectArtifact = (repoRoot, relativePath, kind) => {
+const artifactFailure = (state, detail) => ({ ok: false, state, detail });
+
+const insideCanonicalRoot = (root, candidate) => {
+  const relative = path.relative(root, candidate);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+};
+
+/**
+ * Resolve an existing artifact without following any symlink component.
+ *
+ * This is a bounded pre-read validation, not an atomic open operation. Callers
+ * must not claim protection from a concurrent filesystem mutation after this
+ * function returns.
+ */
+export const resolveSafeArtifactFile = (repoRoot, relativePath, {
+  maxBytes = null,
+  requireNonEmpty = true,
+} = {}) => {
   if (typeof relativePath !== 'string' || relativePath.length === 0 || path.isAbsolute(relativePath)) {
-    return { ok: false, state: 'missing', detail: 'missing-output' };
+    return artifactFailure('missing', 'path-invalid');
   }
-  if (relativePath.includes('\\') || relativePath.split('/').includes('..')) {
-    return { ok: false, state: 'missing', detail: 'missing-output' };
+  const segments = relativePath.split('/');
+  if (relativePath.includes('\\') || segments.some((segment) => segment === '' || segment === '.' || segment === '..')) {
+    return artifactFailure('missing', 'path-invalid');
   }
-  const artifactRoot = path.resolve(repoRoot, 'artifacts', 'container-security');
-  const absolute = path.resolve(repoRoot, relativePath);
-  const relative = path.relative(artifactRoot, absolute);
-  if (relative.startsWith('..') || path.isAbsolute(relative)) {
-    return { ok: false, state: 'missing', detail: 'missing-output' };
+
+  const root = path.resolve(repoRoot, CONTAINER_ARTIFACT_ROOT);
+  const absolute = path.resolve(repoRoot, ...segments);
+  const textualRelative = path.relative(root, absolute);
+  if (textualRelative === '' || textualRelative.startsWith('..') || path.isAbsolute(textualRelative)) {
+    return artifactFailure('missing', 'path-invalid');
   }
-  if (!fs.existsSync(absolute)) {
-    return { ok: false, state: 'missing', detail: 'missing-output' };
-  }
-  const stat = fs.lstatSync(absolute);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.size === 0) {
-    return { ok: false, state: 'missing', detail: 'missing-output' };
-  }
-  if (kind !== 'sarif') return { ok: true, state: 'valid', detail: 'completed' };
+
   try {
-    const parsed = JSON.parse(fs.readFileSync(absolute, 'utf8'));
-    const errors = validateSarifDocument(parsed);
-    if (errors.length > 0) return { ok: false, state: 'malformed', detail: 'malformed-output' };
+    const rootStat = fs.lstatSync(root);
+    if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) {
+      return artifactFailure('missing', 'path-invalid');
+    }
+    const canonicalRoot = fs.realpathSync(root);
+    if (!insideCanonicalRoot(fs.realpathSync(path.resolve(repoRoot)), canonicalRoot)) {
+      return artifactFailure('missing', 'path-invalid');
+    }
+
+    let current = root;
+    const artifactSegments = textualRelative.split(path.sep).filter(Boolean);
+    for (const segment of artifactSegments) {
+      current = path.join(current, segment);
+      const component = fs.lstatSync(current);
+      if (component.isSymbolicLink()) return artifactFailure('missing', 'path-invalid');
+    }
+
+    const stat = fs.lstatSync(absolute);
+    if (!stat.isFile() || stat.isSymbolicLink()) return artifactFailure('missing', 'missing-output');
+    if (requireNonEmpty && stat.size === 0) return artifactFailure('missing', 'missing-output');
+    if (maxBytes !== null && stat.size > maxBytes) return artifactFailure('malformed', 'oversized-output');
+
+    const canonicalParent = fs.realpathSync(path.dirname(absolute));
+    const canonicalFile = fs.realpathSync(absolute);
+    if (!insideCanonicalRoot(canonicalRoot, canonicalParent) || !insideCanonicalRoot(canonicalRoot, canonicalFile)) {
+      return artifactFailure('missing', 'path-invalid');
+    }
+    return { ok: true, state: 'valid', detail: 'completed', absolute, stat };
   } catch {
-    return { ok: false, state: 'malformed', detail: 'malformed-output' };
+    return artifactFailure('missing', 'missing-output');
   }
-  return { ok: true, state: 'valid', detail: 'completed' };
+};
+
+export const readBoundedStructuredArtifact = (repoRoot, relativePath, kind) => {
+  if (!['diagnostic', 'sarif'].includes(kind)) return artifactFailure('malformed', 'malformed-output');
+  const maxBytes = kind === 'diagnostic' ? DIAGNOSTIC_MAX_BYTES : SARIF_MAX_BYTES;
+  const resolved = resolveSafeArtifactFile(repoRoot, relativePath, { maxBytes });
+  if (!resolved.ok) return resolved;
+  try {
+    const value = JSON.parse(fs.readFileSync(resolved.absolute, 'utf8'));
+    if (kind === 'sarif') {
+      const errors = validateSarifDocument(value);
+      if (errors.length > 0) return artifactFailure('malformed', 'malformed-output');
+    }
+    return { ...resolved, value };
+  } catch {
+    return artifactFailure('malformed', 'malformed-output');
+  }
+};
+
+export const inspectArtifact = (repoRoot, relativePath, kind) => {
+  if (kind === 'sarif') return readBoundedStructuredArtifact(repoRoot, relativePath, 'sarif');
+  if (kind === 'archive') return resolveSafeArtifactFile(repoRoot, relativePath);
+  return artifactFailure('malformed', 'malformed-output');
 };
 
 const duplicateValues = (values) => {
@@ -190,13 +252,50 @@ const duplicateValues = (values) => {
   return [...duplicates];
 };
 
+const validateResultSemantics = (errors, result, label, {
+  classification = false,
+  allowRuntimeUnavailableNotRun = false,
+} = {}) => {
+  if (!result || typeof result !== 'object' || Array.isArray(result)) {
+    errors.push(`${label} must be an object`);
+    return;
+  }
+  if (!['pass', 'fail', 'not-run'].includes(result.status)) {
+    errors.push(`${label} status is not closed`);
+    return;
+  }
+  if (!Number.isInteger(result.durationMs) || result.durationMs < 0 || result.durationMs > 3_600_000) {
+    errors.push(`${label} durationMs is invalid`);
+  }
+  if (result.status === 'pass') {
+    if (result.exitCode !== 0) errors.push(`${label} pass requires exitCode=0`);
+    if (result.detail !== 'completed') errors.push(`${label} pass requires detail=completed`);
+    if (classification && result.classification !== null) errors.push(`${label} pass requires classification=null`);
+  } else if (result.status === 'not-run') {
+    if (result.exitCode !== null) errors.push(`${label} not-run requires exitCode=null`);
+    if (result.durationMs !== 0) errors.push(`${label} not-run requires durationMs=0`);
+    const allowedDetails = allowRuntimeUnavailableNotRun
+      ? ['not-selected', 'runtime-unavailable']
+      : ['not-selected'];
+    if (!allowedDetails.includes(result.detail)) errors.push(`${label} not-run detail is invalid`);
+    if (classification && result.classification !== null) errors.push(`${label} not-run requires classification=null`);
+  } else {
+    if (result.detail === 'completed' || result.detail === 'not-selected') {
+      errors.push(`${label} fail detail is invalid`);
+    }
+    if (classification && !CLASSIFICATIONS.includes(result.classification)) {
+      errors.push(`${label} fail requires closed classification`);
+    }
+  }
+};
+
 export const validateDiagnosticSemantics = (diagnostic) => {
   const errors = [];
   if (!diagnostic || typeof diagnostic !== 'object' || Array.isArray(diagnostic)) {
     return ['diagnostic must be an object'];
   }
   closedKeys(errors, diagnostic, [
-    'schemaVersion', 'generatedAt', 'status', 'classification', 'runner', 'packages', 'tools',
+    'schemaVersion', 'generatedAt', 'status', 'classification', 'pipelineComplete', 'runner', 'packages', 'tools',
     'runtimeCandidates', 'selectedRuntime', 'podman', 'inputs', 'configuration', 'checks', 'limitations',
   ], 'diagnostic');
   if (!UTC_DATE_TIME.test(diagnostic.generatedAt ?? '') || Number.isNaN(Date.parse(diagnostic.generatedAt))) {
@@ -205,6 +304,7 @@ export const validateDiagnosticSemantics = (diagnostic) => {
   if (diagnostic.schemaVersion !== SCHEMA_VERSION) errors.push(`schemaVersion must be ${SCHEMA_VERSION}`);
   if (!CLASSIFICATIONS.includes(diagnostic.classification)) errors.push('classification is not closed');
   if (!['pass', 'fail'].includes(diagnostic.status)) errors.push('status must be pass or fail');
+  if (typeof diagnostic.pipelineComplete !== 'boolean') errors.push('pipelineComplete must be boolean');
   if (diagnostic.classification === 'runtime-ready' && diagnostic.status !== 'pass') {
     errors.push('runtime-ready requires status=pass');
   }
@@ -266,9 +366,20 @@ export const validateDiagnosticSemantics = (diagnostic) => {
     ], 'runtime candidate');
     closedKeys(errors, candidate?.directSmoke, ['status', 'exitCode', 'durationMs', 'detail'], 'direct runtime smoke');
     closedKeys(errors, candidate?.minimalRun, ['status', 'exitCode', 'durationMs', 'detail'], 'minimal runtime run');
+    validateResultSemantics(errors, candidate?.directSmoke, `runtime candidate ${candidate?.name ?? 'unknown'} directSmoke`, {
+      allowRuntimeUnavailableNotRun: true,
+    });
+    validateResultSemantics(errors, candidate?.minimalRun, `runtime candidate ${candidate?.name ?? 'unknown'} minimalRun`, {
+      allowRuntimeUnavailableNotRun: true,
+    });
     if (!isAllowedSystemExecutable(candidate?.path)) errors.push(`runtime candidate ${candidate?.name ?? 'unknown'} path is invalid`);
     if (candidate?.name !== path.basename(candidate?.path ?? '')) errors.push(`runtime candidate ${candidate?.name ?? 'unknown'} name does not match path`);
     if (candidate?.available && !parseToolVersion(candidate?.version)) errors.push(`runtime candidate ${candidate?.name ?? 'unknown'} version is malformed`);
+    if (!candidate?.available && candidate?.version !== null) errors.push(`unavailable runtime candidate ${candidate?.name ?? 'unknown'} must not claim version`);
+    if (!candidate?.available && (candidate?.directSmoke?.status === 'pass' || candidate?.minimalRun?.status === 'pass')) {
+      errors.push(`unavailable runtime candidate ${candidate?.name ?? 'unknown'} must not pass`);
+    }
+    if (candidate?.selected && !candidate?.available) errors.push(`selected runtime candidate ${candidate?.name ?? 'unknown'} must be available`);
     if (toolSourceForPath(candidate?.path) !== candidate?.source) errors.push(`runtime candidate ${candidate?.name ?? 'unknown'} source does not match path`);
   }
   const selectedCandidates = candidates.filter((entry) => entry?.selected === true);
@@ -314,15 +425,7 @@ export const validateDiagnosticSemantics = (diagnostic) => {
   }
   for (const check of checks) {
     if (!CHECK_IDS.includes(check?.id)) errors.push(`unknown check id: ${check?.id ?? 'missing'}`);
-    if (check?.status === 'pass' && (check.exitCode !== 0 || check.classification !== null)) {
-      errors.push(`passing check ${check.id} must have exitCode=0 and no classification`);
-    }
-    if (check?.status === 'fail' && !CLASSIFICATIONS.includes(check.classification)) {
-      errors.push(`failing check ${check.id} requires closed classification`);
-    }
-    if (check?.status === 'not-run' && check.exitCode !== null) {
-      errors.push(`not-run check ${check.id} must not claim an exit code`);
-    }
+    validateResultSemantics(errors, check, `check ${check?.id ?? 'unknown'}`, { classification: true });
     if (check?.status === 'fail' && [
       'repository-build',
       'manifest-detect',
@@ -334,7 +437,7 @@ export const validateDiagnosticSemantics = (diagnostic) => {
       'sarif-upload',
     ].includes(check.id)) {
       const expected = stageFailureClassification(check.id, {
-        outputState: check.detail === 'malformed-output' ? 'malformed' : 'missing',
+        outputState: ['malformed-output', 'oversized-output'].includes(check.detail) ? 'malformed' : 'missing',
       });
       if (check.classification !== expected) errors.push(`failing check ${check.id} classification must be ${expected}`);
     }
@@ -362,8 +465,34 @@ export const validateDiagnosticSemantics = (diagnostic) => {
       }
     }
   }
+  if (diagnostic.pipelineComplete) {
+    if (diagnostic.status !== 'pass' || diagnostic.classification !== 'runtime-ready') {
+      errors.push('pipelineComplete requires a passing runtime-ready diagnostic');
+    }
+    if (checks.length !== CHECK_IDS.length) errors.push('pipelineComplete requires exactly all reviewed checks');
+    for (const id of CHECK_IDS) {
+      if (checks.filter((check) => check?.id === id && check.status === 'pass').length !== 1) {
+        errors.push(`pipelineComplete requires ${id}=pass exactly once`);
+      }
+    }
+  }
   return errors;
 };
+
+export const finalizeDiagnostic = (diagnostic) => {
+  if (diagnostic?.pipelineComplete === true) throw new Error('contract-invalid: diagnostic is already finalized');
+  const finalized = { ...diagnostic, pipelineComplete: true };
+  const errors = validateDiagnosticSemantics(finalized);
+  if (errors.length > 0) throw new Error(`contract-invalid: ${errors.slice(0, 5).join('; ')}`);
+  return finalized;
+};
+
+export const isCompleteContainerSecurityEvidence = (diagnostic) => (
+  diagnostic?.pipelineComplete === true
+  && diagnostic.status === 'pass'
+  && diagnostic.classification === 'runtime-ready'
+  && validateDiagnosticSemantics(diagnostic).length === 0
+);
 
 export const upsertCheck = (diagnostic, check) => {
   const checks = Array.isArray(diagnostic.checks) ? [...diagnostic.checks] : [];

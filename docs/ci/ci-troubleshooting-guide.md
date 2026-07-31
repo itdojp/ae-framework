@@ -60,7 +60,7 @@ Purpose: provide a short, deterministic path to diagnose common CI failures and 
 - Notification decisions for `automation-observability-weekly` are persisted in `weekly-alert-summary.json`. If no notification was sent, inspect `suppressed` and `suppressedReason`.
 - SLO / MTTR thresholds are defined in `docs/ci/automation-slo-mttr.md` and evaluated from the weekly `automation-observability-weekly` artifact.
 - `Security Analysis / Secrets Scanning` is skipped when `GITLEAKS_LICENSE` is not configured. Add the repository secret `GITLEAKS_LICENSE` to enable the scan.
-- `Container Security` fails closed when the archive or `trivy-results.sarif` is missing/malformed. Inspect the uploaded `container-runtime-diagnostic` artifact for the stable build/export/scan/SARIF classification before triaging the upload step.
+- `Container Security` fails closed when the archive or `trivy-results.sarif` is missing, malformed, oversized, or crosses the non-symlink artifact boundary. Inspect the uploaded `container-runtime-diagnostic` artifact for the stable build/export/scan/SARIF classification before triaging the upload step. Only `pipelineComplete=true` after all 12 reviewed checks pass is complete Container Security evidence; a failure artifact remains useful with `pipelineComplete=false`.
 
 ### 6. Symptom-to-runbook map
 
@@ -223,7 +223,7 @@ gh workflow run "Codex Autopilot Lane" --ref <HEAD_BRANCH> -f pr_number=12345 -f
 - `automation-observability-weekly` の通知判定は `weekly-alert-summary.json` に保存される。通知が来ない場合は `suppressed` と `suppressedReason` を確認する。
 - SLO / MTTR の判定基準は `docs/ci/automation-slo-mttr.md` にあり、週次 `automation-observability-weekly` artifact で評価される。
 - `Security Analysis / Secrets Scanning` は `GITLEAKS_LICENSE` 未設定時に skip される。scan を有効化する場合は repository secret `GITLEAKS_LICENSE` を設定する。
-- `Container Security` はimage archiveまたは`trivy-results.sarif`が欠落／malformedの場合にfail closedとなる。upload stepの前に、upload済み`container-runtime-diagnostic` artifactでbuild／export／scan／SARIFのstable classificationを確認する。
+- `Container Security` はimage archiveまたは`trivy-results.sarif`が欠落／malformed／oversized、またはnon-symlink artifact boundaryを外れる場合にfail closedとなる。upload stepの前に、upload済み`container-runtime-diagnostic` artifactでbuild／export／scan／SARIFのstable classificationを確認する。complete Evidenceは12個のreview済みcheckがすべてpassした後の`pipelineComplete=true`だけであり、failure artifactは`pipelineComplete=false`のまま診断に使用する。
 
 ### 6. 症状 → runbook 対応表
 

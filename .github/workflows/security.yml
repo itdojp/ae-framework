@@ -518,6 +518,12 @@ jobs:
             --stage sarif-upload \
             --outcome "${{ steps.sarif_upload.outcome }}"
 
+      - name: Finalize container security diagnostic
+        if: ${{ success() && steps.container_manifest.outputs.skip != 'true' }}
+        run: |
+          node scripts/ci/container-runtime-preflight.mjs finalize \
+            --report "${RUNTIME_REPORT}"
+
       - name: Upload container runtime diagnostic
         uses: actions/upload-artifact@v4
         if: ${{ always() && hashFiles('artifacts/container-security/container-runtime-diagnostic.json') != '' }}

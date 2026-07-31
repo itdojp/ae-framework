@@ -262,6 +262,7 @@ const checks = [
     fixtures: [
       'fixtures/container-runtime/valid-runc.container-runtime-diagnostic.json',
       'fixtures/container-runtime/valid-crun.container-runtime-diagnostic.json',
+      'fixtures/container-runtime/valid-complete-runc.container-runtime-diagnostic.json',
     ],
     label: 'Container runtime diagnostic v1 schema validation',
     semanticValidate: validateContainerRuntimeDiagnosticSemantics,

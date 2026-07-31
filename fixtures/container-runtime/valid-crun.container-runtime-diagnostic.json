@@ -3,6 +3,7 @@
   "generatedAt": "2026-07-31T00:00:00.000Z",
   "status": "pass",
   "classification": "runtime-ready",
+  "pipelineComplete": false,
   "runner": {
     "image": "ubuntu24",
     "imageVersion": "reviewed-fixture",
