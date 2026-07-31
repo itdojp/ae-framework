@@ -1,0 +1,90 @@
+{
+  "schemaVersion": "container-runtime-diagnostic/v1",
+  "generatedAt": "2026-07-31T00:00:00.000Z",
+  "status": "pass",
+  "classification": "runtime-ready",
+  "pipelineComplete": false,
+  "runner": {
+    "image": "ubuntu24",
+    "imageVersion": "20260726.254.1",
+    "osRelease": "Ubuntu 24.04.4 LTS",
+    "kernel": "6.17.0-1020-azure",
+    "architecture": "x86_64",
+    "userId": 1001,
+    "rootless": true,
+    "cgroupVersion": "v2"
+  },
+  "packages": [
+    { "name": "podman", "installedVersion": "4.9.3+ds1-1ubuntu0.2", "candidateVersion": "4.9.3+ds1-1ubuntu0.2" },
+    { "name": "buildah", "installedVersion": "1.33.7+ds1-1ubuntu0.2", "candidateVersion": "1.33.7+ds1-1ubuntu0.2" },
+    { "name": "conmon", "installedVersion": "2.1.10+ds1-1build2", "candidateVersion": "2.1.10+ds1-1build2" },
+    { "name": "crun", "installedVersion": "1.14.1-1", "candidateVersion": "1.14.1-1" },
+    { "name": "runc", "installedVersion": "1.3.3-0ubuntu1", "candidateVersion": "1.3.3-0ubuntu1" }
+  ],
+  "tools": [
+    { "name": "podman", "path": "/usr/local/bin/podman", "version": "5.8.4", "source": "runner-bundle", "available": true },
+    { "name": "buildah", "path": "/usr/bin/buildah", "version": "1.33.7", "source": "ubuntu-package", "available": true },
+    { "name": "conmon", "path": "/usr/local/lib/podman/conmon", "version": "2.2.1", "source": "runner-bundle", "available": true },
+    { "name": "crun", "path": "/usr/local/bin/crun", "version": "1.28", "source": "runner-bundle", "available": true },
+    { "name": "runc", "path": "/usr/local/bin/runc", "version": "1.4.3", "source": "runner-bundle", "available": true }
+  ],
+  "runtimeCandidates": [
+    {
+      "name": "crun",
+      "path": "/usr/bin/crun",
+      "version": "1.14.1",
+      "source": "ubuntu-package",
+      "available": true,
+      "selected": false,
+      "directSmoke": { "status": "pass", "exitCode": 0, "durationMs": 8, "detail": "completed" },
+      "minimalRun": { "status": "fail", "exitCode": 1, "durationMs": 125, "detail": "command-failed" }
+    },
+    {
+      "name": "runc",
+      "path": "/usr/local/bin/runc",
+      "version": "1.4.3",
+      "source": "runner-bundle",
+      "available": true,
+      "selected": true,
+      "directSmoke": { "status": "pass", "exitCode": 0, "durationMs": 7, "detail": "completed" },
+      "minimalRun": { "status": "pass", "exitCode": 0, "durationMs": 310, "detail": "completed" }
+    }
+  ],
+  "selectedRuntime": {
+    "name": "runc",
+    "path": "/usr/local/bin/runc",
+    "version": "1.4.3",
+    "source": "runner-bundle"
+  },
+  "podman": {
+    "path": "/usr/local/bin/podman",
+    "version": "5.8.4",
+    "defaultRuntimePath": "/usr/bin/crun",
+    "defaultRuntimeVersion": "1.14.1",
+    "effectiveRuntimePath": "/usr/local/bin/runc",
+    "effectiveRuntimeVersion": "1.4.3",
+    "storageDriver": "overlay",
+    "graphRootScope": "user-storage",
+    "cgroupManager": "cgroupfs",
+    "runtimeConfig": []
+  },
+  "inputs": {
+    "minimalImage": "docker.io/library/alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1",
+    "trivyImage": "ghcr.io/aquasecurity/trivy:0.72.0@sha256:cffe3f5161a47a6823fbd23d985795b3ed72a4c806da4c4df16266c02accdd6f",
+    "repositoryDockerfile": "podman/Dockerfile"
+  },
+  "configuration": {
+    "requestedRuntime": "runc",
+    "commandTimeoutMs": 300000,
+    "outputLimitBytes": 65536
+  },
+  "checks": [
+    { "id": "podman-info", "status": "pass", "classification": null, "exitCode": 0, "durationMs": 12, "detail": "completed" },
+    { "id": "direct-runtime-smoke", "status": "pass", "classification": null, "exitCode": 0, "durationMs": 7, "detail": "completed" },
+    { "id": "minimal-run", "status": "pass", "classification": null, "exitCode": 0, "durationMs": 310, "detail": "completed" },
+    { "id": "minimal-build", "status": "pass", "classification": null, "exitCode": 0, "durationMs": 825, "detail": "completed" }
+  ],
+  "limitations": [
+    "Non-selected crun candidate from ubuntu-package did not pass the minimal run."
+  ]
+}
