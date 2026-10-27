@@ -288,13 +288,14 @@
     "tool": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "path", "version", "source", "available"],
+      "required": ["name", "path", "version", "source", "available", "versionProbe"],
       "properties": {
         "name": { "enum": ["podman", "buildah", "conmon", "crun", "runc"] },
         "path": { "anyOf": [{ "$ref": "#/$defs/systemExecutablePath" }, { "type": "null" }] },
         "version": { "type": ["string", "null"], "maxLength": 120 },
         "source": { "$ref": "#/$defs/toolSource" },
-        "available": { "type": "boolean" }
+        "available": { "type": "boolean" },
+        "versionProbe": { "$ref": "#/$defs/checkResult", "description": "Observed --version result. A failed probe retains its executable path but cannot establish availability." }
       }
     },
     "checkResult": {

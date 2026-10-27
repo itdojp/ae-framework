@@ -22,11 +22,11 @@
     { "name": "runc", "installedVersion": "1.3.3-0ubuntu1", "candidateVersion": "1.3.3-0ubuntu1" }
   ],
   "tools": [
-    { "name": "podman", "path": "/usr/local/bin/podman", "version": "5.8.4", "source": "runner-bundle", "available": true },
-    { "name": "buildah", "path": "/usr/bin/buildah", "version": "1.33.7", "source": "ubuntu-package", "available": true },
-    { "name": "conmon", "path": "/usr/local/lib/podman/conmon", "version": "2.2.1", "source": "runner-bundle", "available": true },
-    { "name": "crun", "path": "/usr/local/bin/crun", "version": "1.28", "source": "runner-bundle", "available": true },
-    { "name": "runc", "path": "/usr/local/bin/runc", "version": "1.4.3", "source": "runner-bundle", "available": true }
+    { "name": "podman", "path": "/usr/local/bin/podman", "version": "5.8.4", "source": "runner-bundle", "available": true, "versionProbe": { "status": "pass", "exitCode": 0, "durationMs": 5, "detail": "completed" } },
+    { "name": "buildah", "path": "/usr/bin/buildah", "version": "1.33.7", "source": "ubuntu-package", "available": true, "versionProbe": { "status": "pass", "exitCode": 0, "durationMs": 5, "detail": "completed" } },
+    { "name": "conmon", "path": "/usr/local/lib/podman/conmon", "version": "2.2.1", "source": "runner-bundle", "available": true, "versionProbe": { "status": "pass", "exitCode": 0, "durationMs": 5, "detail": "completed" } },
+    { "name": "crun", "path": "/usr/local/bin/crun", "version": "1.28", "source": "runner-bundle", "available": true, "versionProbe": { "status": "pass", "exitCode": 0, "durationMs": 5, "detail": "completed" } },
+    { "name": "runc", "path": "/usr/local/bin/runc", "version": "1.4.3", "source": "runner-bundle", "available": true, "versionProbe": { "status": "pass", "exitCode": 0, "durationMs": 5, "detail": "completed" } }
   ],
   "runtimeCandidates": [
     {

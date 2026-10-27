@@ -47,35 +47,65 @@
       "path": "/usr/local/bin/podman",
       "version": "5.8.4",
       "source": "runner-bundle",
-      "available": true
+      "available": true,
+      "versionProbe": {
+        "status": "pass",
+        "exitCode": 0,
+        "durationMs": 5,
+        "detail": "completed"
+      }
     },
     {
       "name": "buildah",
       "path": "/usr/bin/buildah",
       "version": "1.33.7",
       "source": "ubuntu-package",
-      "available": true
+      "available": true,
+      "versionProbe": {
+        "status": "pass",
+        "exitCode": 0,
+        "durationMs": 5,
+        "detail": "completed"
+      }
     },
     {
       "name": "conmon",
       "path": "/usr/local/lib/podman/conmon",
       "version": "2.2.1",
       "source": "runner-bundle",
-      "available": true
+      "available": true,
+      "versionProbe": {
+        "status": "pass",
+        "exitCode": 0,
+        "durationMs": 5,
+        "detail": "completed"
+      }
     },
     {
       "name": "crun",
       "path": "/usr/local/bin/crun",
       "version": "1.28",
       "source": "runner-bundle",
-      "available": true
+      "available": true,
+      "versionProbe": {
+        "status": "pass",
+        "exitCode": 0,
+        "durationMs": 5,
+        "detail": "completed"
+      }
     },
     {
       "name": "runc",
       "path": "/usr/local/bin/runc",
       "version": "1.4.3",
       "source": "runner-bundle",
-      "available": true
+      "available": true,
+      "versionProbe": {
+        "status": "pass",
+        "exitCode": 0,
+        "durationMs": 5,
+        "detail": "completed"
+      }
     }
   ],
   "runtimeCandidates": [

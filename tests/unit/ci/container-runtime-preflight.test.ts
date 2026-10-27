@@ -5,6 +5,7 @@ import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  applyPodmanInventoryFailure,
   applyRequestedRuntimeFailure,
   CHECK_IDS,
   DIAGNOSTIC_MAX_BYTES,
@@ -26,7 +27,7 @@ import {
   validateDiagnosticSemantics,
   validateSarifDocument,
 } from '../../../scripts/ci/lib/container-runtime-diagnostic.mjs';
-import { runCommand } from '../../../scripts/ci/container-runtime-preflight.mjs';
+import { inventoryTool, runCommand } from '../../../scripts/ci/container-runtime-preflight.mjs';
 
 const repoRoot = process.cwd();
 const schema = JSON.parse(fs.readFileSync(
@@ -281,29 +282,87 @@ describe('container-runtime-diagnostic/v1', () => {
     expect(stagePrerequisite('podman-info')).toBeNull();
   });
 
-  it('keeps a missing runtime as an explicit failing classification', () => {
-    const value = applyFailureSelection([]);
-    Object.assign(value.tools.find((tool: any) => tool.name === 'podman'), {
-      path: null, version: null, source: 'unknown', available: false,
-    });
-    Object.assign(value.podman, {
-      path: null,
-      version: null,
-      defaultRuntimePath: null,
-      defaultRuntimeVersion: null,
-      effectiveRuntimePath: null,
-      effectiveRuntimeVersion: null,
-    });
-    value.checks[0] = {
-      id: 'podman-info',
-      status: 'fail',
-      classification: 'runtime-missing',
-      exitCode: null,
-      durationMs: 0,
-      detail: 'runtime-unavailable',
+  describe('Podman inventory version probe', () => {
+    const diagnosticForTool = (tool: any) => {
+      const value = applyFailureSelection([]);
+      value.tools = value.tools.map((entry: any) => entry.name === 'podman' ? tool : entry);
+      value.podman.path = tool.path;
+      value.podman.version = tool.version;
+      value.podman.defaultRuntimePath = null;
+      value.podman.defaultRuntimeVersion = null;
+      value.checks = value.checks.map((check: any) => ({
+        ...check, status: 'not-run', classification: null, exitCode: null, durationMs: 0, detail: 'not-selected',
+      }));
+      return applyPodmanInventoryFailure(value);
     };
-    expect(validateSchema(value)).toBe(true);
-    expect(validateDiagnosticSemantics(value)).toEqual([]);
+
+    it.each([
+      ['nonzero', { exitCode: 42, durationMs: 315, timedOut: false, stdout: 'podman version 5.8.4', stderr: '' }, 'command-failed'],
+      ['timeout', { exitCode: null, durationMs: 300000, timedOut: true, stdout: '', stderr: '' }, 'timeout'],
+      ['timeout with exit', { exitCode: 143, durationMs: 1200, timedOut: true, stdout: '5.8.4', stderr: '' }, 'timeout'],
+      ['timeout despite zero exit', { exitCode: 0, durationMs: 1200, timedOut: true, stdout: '5.8.4', stderr: '' }, 'timeout'],
+      ['malformed', { exitCode: 0, durationMs: 927, timedOut: false, stdout: 'not a version', stderr: '' }, 'version-invalid'],
+      ['spawn failure', { exitCode: null, durationMs: 2, spawnError: new Error('private-value'), stdout: '', stderr: '' }, 'command-failed'],
+    ])('preserves %s as versionProbe, not a podman-info failure', async (_name, observed, detail) => {
+      const execute = vi.fn().mockResolvedValue(observed);
+      const tool = await inventoryTool('podman', repoRoot, {}, { resolve: () => '/usr/local/bin/podman', execute });
+      expect(execute).toHaveBeenCalledWith('/usr/local/bin/podman', ['--version'], { cwd: repoRoot });
+      expect(tool).toEqual({
+        name: 'podman', path: '/usr/local/bin/podman', version: null, source: 'runner-bundle', available: false,
+        versionProbe: { status: 'fail', exitCode: observed.exitCode, durationMs: observed.durationMs, detail },
+      });
+      const value = diagnosticForTool(tool);
+      expect(value).toMatchObject({ status: 'fail', classification: 'runtime-version-incompatible', pipelineComplete: false, selectedRuntime: null });
+      expect(value.checks.every((check: any) => check.status === 'not-run')).toBe(true);
+      expect(value.tools.find((entry: any) => entry.name === 'podman').versionProbe).toEqual(tool.versionProbe);
+      expect(validateSchema(value), JSON.stringify(validateSchema.errors)).toBe(true);
+      expect(validateDiagnosticSemantics(value)).toEqual([]);
+      expect(renderDiagnostic(value)).toBe(renderDiagnostic(clone(value)));
+      expect(renderDiagnostic(value)).not.toContain('private-value');
+      expect(() => finalizeDiagnostic(value)).toThrow('contract-invalid');
+    });
+
+    it('records a truly missing executable without running or inventing a failure', async () => {
+      const execute = vi.fn();
+      const tool = await inventoryTool('podman', repoRoot, {}, { resolve: () => null, execute });
+      expect(execute).not.toHaveBeenCalled();
+      expect(tool).toMatchObject({ path: null, available: false, versionProbe: { status: 'not-run', exitCode: null, durationMs: 0, detail: 'not-selected' } });
+      const value = diagnosticForTool(tool);
+      expect(value.classification).toBe('runtime-missing');
+      expect(validateSchema(value)).toBe(true);
+      expect(validateDiagnosticSemantics(value)).toEqual([]);
+    });
+
+    it('keeps known successful versions eligible and ignores a failed probe version string', async () => {
+      const tool = await inventoryTool('podman', repoRoot, {}, {
+        resolve: () => '/usr/bin/podman',
+        execute: vi.fn().mockResolvedValue({ exitCode: 0, durationMs: 17, stdout: 'podman version 4.9.3', stderr: '' }),
+      });
+      expect(tool).toMatchObject({ available: true, version: '4.9.3', versionProbe: { status: 'pass', exitCode: 0, durationMs: 17, detail: 'completed' } });
+    });
+
+    it.each([
+      ['fake info execution', (value: any) => { Object.assign(value.checks[0], { status: 'fail', classification: 'runtime-version-incompatible', exitCode: 42, durationMs: 315, detail: 'command-failed' }); }],
+      ['wrong failure class', (value: any) => { value.classification = 'runtime-missing'; }],
+      ['missing probe', (value: any) => { delete value.tools[0].versionProbe; }],
+      ['discarded path', (value: any) => { value.tools[0].path = null; }],
+      ['promoted availability', (value: any) => { value.tools[0].available = true; }],
+      ['fabricated version', (value: any) => { value.tools[0].version = '5.8.4'; }],
+      ['missing exit code', (value: any) => { delete value.tools[0].versionProbe.exitCode; }],
+      ['zero command failure', (value: any) => { value.tools[0].versionProbe.exitCode = 0; }],
+      ['nonzero malformed version', (value: any) => { value.tools[0].versionProbe.detail = 'version-invalid'; }],
+      ['private output', (value: any) => { value.tools[0].versionProbe.stdout = 'secret'; }],
+      ['path substitution', (value: any) => { value.podman.path = '/usr/bin/podman'; }],
+      ['fake runtime candidate', (value: any) => { value.runtimeCandidates = [runtimeCandidate()]; }],
+    ])('rejects %s', async (_name, mutate) => {
+      const tool = await inventoryTool('podman', repoRoot, {}, {
+        resolve: () => '/usr/local/bin/podman',
+        execute: vi.fn().mockResolvedValue({ exitCode: 42, durationMs: 315, stdout: '', stderr: '' }),
+      });
+      const value = diagnosticForTool(tool);
+      mutate(value);
+      expect(validateDiagnosticSemantics(value).length).toBeGreaterThan(0);
+    });
   });
 
   it('rejects selected runtime path substitution', () => {

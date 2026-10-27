@@ -343,6 +343,18 @@ export const applyRequestedRuntimeFailure = (diagnostic) => {
   return updated;
 };
 
+/** A version probe is inventory evidence, never a podman-info execution. */
+export const applyPodmanInventoryFailure = (diagnostic) => {
+  const tool = diagnostic.tools.find((entry) => entry.name === 'podman');
+  return {
+    ...diagnostic,
+    status: 'fail',
+    classification: tool?.path === null ? 'runtime-missing' : 'runtime-version-incompatible',
+    pipelineComplete: false,
+    selectedRuntime: null,
+  };
+};
+
 const resultBindingMatches = (check, expected) => (
   check?.status === expected?.status
   && check?.classification === expected?.classification
@@ -443,17 +455,32 @@ export const validateDiagnosticSemantics = (diagnostic) => {
   for (const name of toolNames) {
     if (!['podman', 'buildah', 'conmon', 'crun', 'runc'].includes(name)) errors.push(`unknown tool inventory name: ${name ?? 'missing'}`);
   }
-  for (const entry of tools) closedKeys(errors, entry, ['name', 'path', 'version', 'source', 'available'], 'tool entry');
+  for (const entry of tools) closedKeys(errors, entry, ['name', 'path', 'version', 'source', 'available', 'versionProbe'], 'tool entry');
   for (const duplicate of duplicateValues(toolNames)) errors.push(`duplicate tool inventory: ${duplicate}`);
   for (const tool of tools) {
-    if (tool?.available) {
-      if (!isAllowedSystemExecutable(tool.path)) errors.push(`tool ${tool.name} path is not an allowed system executable`);
-      if (!parseToolVersion(tool.version)) errors.push(`tool ${tool.name} version is malformed`);
-      if (toolSourceForPath(tool.path) !== tool.source) errors.push(`tool ${tool.name} source does not match path`);
-    } else if (tool?.path !== null || tool?.version !== null) {
-      errors.push(`unavailable tool ${tool?.name ?? 'unknown'} must not claim path/version`);
+    closedKeys(errors, tool?.versionProbe, ['status', 'exitCode', 'durationMs', 'detail'], 'tool versionProbe');
+    validateResultSemantics(errors, tool?.versionProbe, 'tool versionProbe');
+    if (tool?.versionProbe?.exitCode !== null && !Number.isInteger(tool?.versionProbe?.exitCode)) errors.push('tool versionProbe exitCode is invalid');
+    if (tool?.versionProbe?.detail === 'version-invalid' && tool?.versionProbe?.exitCode !== 0) errors.push('version-invalid requires a completed zero-exit probe');
+    if (tool?.versionProbe?.detail === 'command-failed' && tool?.versionProbe?.exitCode === 0) errors.push('command-failed must not claim exitCode=0');
+    if (!['completed', 'not-selected', 'timeout', 'command-failed', 'version-invalid'].includes(tool?.versionProbe?.detail)) {
+      errors.push('tool versionProbe detail is invalid');
+    }
+    if (tool?.available !== (tool?.versionProbe?.status === 'pass')) errors.push('tool availability must match versionProbe');
+    if (tool?.path === null) {
+      if (tool.version !== null || tool.source !== 'unknown' || tool.versionProbe?.status !== 'not-run') {
+        errors.push('missing tool requires absent version/source and an unexecuted versionProbe');
+      }
+    } else {
+      if (!isAllowedSystemExecutable(tool?.path) || path.basename(tool?.path ?? '') !== tool?.name) errors.push('tool path is invalid');
+      if (toolSourceForPath(tool?.path) !== tool?.source) errors.push('tool source does not match path');
+      if (!['pass', 'fail'].includes(tool?.versionProbe?.status)) errors.push('existing tool requires an attempted versionProbe');
+      if (tool?.available && !parseToolVersion(tool?.version)) errors.push(`tool ${tool.name} version is malformed`);
+      if (!tool?.available && tool?.version !== null) errors.push('failed versionProbe must not claim a version');
     }
   }
+  const podmanTool = tools.find((tool) => tool?.name === 'podman');
+  const podmanProbeBlocked = podmanTool?.available === false;
 
   const candidates = Array.isArray(diagnostic.runtimeCandidates) ? diagnostic.runtimeCandidates : [];
   for (const duplicate of duplicateValues(candidates.map((entry) => entry?.path))) {
@@ -509,8 +536,11 @@ export const validateDiagnosticSemantics = (diagnostic) => {
 
   const podman = diagnostic.podman ?? {};
   if (podman.path !== null && !isAllowedSystemExecutable(podman.path)) errors.push('podman path is invalid');
-  if (podman.path !== null && !parseToolVersion(podman.version)) errors.push('podman version is malformed');
-  if ((podman.path === null) !== (podman.version === null)) errors.push('podman path/version must be both present or both null');
+  if (podman.version !== null && !parseToolVersion(podman.version)) errors.push('podman version is malformed');
+  if (!podmanProbeBlocked && (podman.path === null) !== (podman.version === null)) errors.push('podman path/version must be both present or both null');
+  if (podman.path !== podmanTool?.path || podman.version !== podmanTool?.version) {
+    errors.push('podman path/version must match tool inventory');
+  }
   for (const binding of ['defaultRuntime', 'effectiveRuntime']) {
     const runtimePath = podman[`${binding}Path`];
     const runtimeVersion = podman[`${binding}Version`];
@@ -562,11 +592,11 @@ export const validateDiagnosticSemantics = (diagnostic) => {
   }
   if (diagnostic.status === 'fail' && !checks.some((check) => (
     check?.status === 'fail' && check.classification === diagnostic.classification
-  )) && diagnostic.classification !== 'runtime-missing') {
+  )) && diagnostic.classification !== 'runtime-missing' && !podmanProbeBlocked) {
     errors.push('failing diagnostic requires a check with the same primary classification');
   }
 
-  if (['runtime-missing', 'runtime-version-incompatible'].includes(diagnostic.classification)) {
+  if (!podmanProbeBlocked && ['runtime-missing', 'runtime-version-incompatible'].includes(diagnostic.classification)) {
     const selection = selectRequestedRuntimeFailure(candidates, diagnostic.configuration?.requestedRuntime);
     if (selection.classification !== diagnostic.classification) {
       errors.push(`runtime failure classification must be ${selection.classification}`);
@@ -576,6 +606,20 @@ export const validateDiagnosticSemantics = (diagnostic) => {
       if (!resultBindingMatches(actual, expected)) {
         errors.push(`check ${expected.id} must preserve the selected runtime candidate result`);
       }
+    }
+  }
+
+  if (podmanProbeBlocked) {
+    const expected = applyPodmanInventoryFailure(diagnostic);
+    if (diagnostic.status !== 'fail' || diagnostic.classification !== expected.classification || diagnostic.pipelineComplete !== false) {
+      errors.push('unavailable Podman must preserve its inventory failure classification');
+    }
+    if (diagnostic.selectedRuntime !== null || candidates.length !== 0) errors.push('Podman inventory failure must not run runtime discovery');
+    if (!checks.some((check) => check?.id === 'podman-info') || checks.some((check) => check?.status !== 'not-run')) {
+      errors.push('Podman inventory failure must leave podman-info and downstream checks not-run');
+    }
+    for (const binding of ['defaultRuntimePath', 'defaultRuntimeVersion', 'effectiveRuntimePath', 'effectiveRuntimeVersion']) {
+      if (podman[binding] !== null) errors.push('Podman inventory failure must not claim runtime info');
     }
   }
 

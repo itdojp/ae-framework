@@ -6,6 +6,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import {
+  applyPodmanInventoryFailure,
   applyRequestedRuntimeFailure,
   DIAGNOSTIC_MAX_BYTES,
   finalizeDiagnostic,
@@ -229,15 +230,27 @@ const executableAt = (candidate) => {
   }
 };
 
-const inventoryTool = async (name, repoRoot, options) => {
-  const toolPath = resolveExecutable(name);
-  if (!toolPath) return { name, path: null, version: null, source: 'unknown', available: false };
-  const result = await runCommand(toolPath, ['--version'], { cwd: repoRoot, ...options });
-  const version = parseToolVersion(`${result.stdout}\n${result.stderr}`);
-  if (result.exitCode !== 0 || !version) {
-    return { name, path: null, version: null, source: 'unknown', available: false };
+export const inventoryTool = async (name, repoRoot, options, {
+  resolve = resolveExecutable,
+  execute = runCommand,
+} = {}) => {
+  const toolPath = resolve(name);
+  if (!toolPath) return {
+    name, path: null, version: null, source: 'unknown', available: false,
+    versionProbe: commandResult(null, { notRun: true }),
+  };
+  const result = await execute(toolPath, ['--version'], { cwd: repoRoot, ...options });
+  let versionProbe = commandResult(result);
+  const version = versionProbe.status === 'pass'
+    ? parseToolVersion(`${result.stdout}\n${result.stderr}`)
+    : null;
+  if (versionProbe.status === 'pass' && !version) {
+    versionProbe = { ...versionProbe, status: 'fail', detail: 'version-invalid' };
   }
-  return { name, path: toolPath, version, source: toolSourceForPath(toolPath), available: true };
+  return {
+    name, path: toolPath, version, source: toolSourceForPath(toolPath),
+    available: versionProbe.status === 'pass', versionProbe,
+  };
 };
 
 const parseAptPolicy = (name, output) => {
@@ -439,16 +452,9 @@ const preflight = async (repoRoot, options) => {
   };
 
   if (!podmanTool?.available || !podmanTool.path || !podmanTool.version) {
-    const missing = failDiagnostic(applyRequestedRuntimeFailure(base), 'runtime-missing', {
-      id: 'podman-info',
-      status: 'fail',
-      classification: 'runtime-missing',
-      exitCode: null,
-      durationMs: 0,
-      detail: 'runtime-unavailable',
-    });
-    writeReport(reportPath, missing);
-    throw new Error('runtime-missing: podman inventory is unavailable');
+    const failed = applyPodmanInventoryFailure(base);
+    writeReport(reportPath, failed);
+    throw new Error(`${failed.classification}: podman version probe did not establish availability`);
   }
 
   const defaultInfoResult = await runCommand(

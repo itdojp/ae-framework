@@ -136,3 +136,21 @@ archive、SARIF、diagnostic reportのread boundaryはrepository-relative path�
 長時間の共有runnerやself-hosted laneでPodmanを利用する場合は、rootless Podmanを有効にした専用ランナーを用意します。パッケージの導入、`loginctl enable-linger`、`podman.socket` の常駐化など詳細な手順は以下を参照してください。GitHub-hosted `Container Security` jobは前節のbounded preflightを使用し、このself-hosted setupを暗黙の前提にしません。
 
 - [Podman 共有ランナー構築ガイド](./podman-shared-runner.md)
+
+## Podman version-probe evidence boundary (#3672)
+
+Tool inventory now requires `tools[].versionProbe`: the bounded normalized
+`--version` result (`status`, `exitCode`, `durationMs`, `detail`). A resolved
+executable retains its canonical allowed system path and source even when the
+probe times out, exits nonzero, or returns a malformed version. Such a probe
+cannot establish `available=true` or supply a version. Raw output is not stored.
+
+When the Podman probe fails, the diagnostic is `runtime-version-incompatible`
+and retains the failure in `tools[name=podman].versionProbe`. `podman-info` and
+all subsequent checks remain `not-run`: they were not executed. A genuinely
+missing executable instead has a null path, a not-run probe, and
+`runtime-missing`. Neither path selects a runtime or sets `pipelineComplete`.
+The twelve final pipeline check IDs are unchanged. This tightens the unmerged
+Draft contract; historical artifacts lacking versionProbe are not accepted by
+this head. Revert this follow-up commit to roll back; no main contract, runtime
+selection, vulnerability threshold, or required check name is changed.
