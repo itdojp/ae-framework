@@ -10,6 +10,63 @@ import fs from 'fs';
 import path from 'path';
 import { glob } from 'glob';
 
+export const SUITE_TIMEOUT_MS = 240_000;
+export const KILL_GRACE_MS = 2_000;
+
+// A package-manager process may exit before its workers close inherited pipes.
+// On POSIX, terminate the owned process group, not just the pnpm wrapper.
+export function runBoundedTestCommand(command, args, {
+  timeoutMs = SUITE_TIMEOUT_MS, killGraceMs = KILL_GRACE_MS,
+} = {}) {
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 600_000
+    || !Number.isInteger(killGraceMs) || killGraceMs < 1 || killGraceMs > 10_000) {
+    throw new Error('invalid test execution deadline');
+  }
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const grouped = process.platform !== 'win32';
+    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'], detached: grouped });
+    let stdout = '', stderr = '', timedOut = false, settled = false;
+    let hardKill, drainDeadline;
+    const append = (text, data) => (text + data.toString()).slice(-65_536);
+    child.stdout.on('data', (data) => { stdout = append(stdout, data); });
+    child.stderr.on('data', (data) => { stderr = append(stderr, data); });
+    const signalTree = (signal) => {
+      try {
+        if (grouped && child.pid) process.kill(-child.pid, signal);
+        else child.kill(signal);
+      } catch (error) {
+        if (error.code !== 'ESRCH') stderr = append(stderr, 'process-termination-error');
+      }
+    };
+    const finish = (exitCode, signal = null, spawnError = false) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline); clearTimeout(hardKill); clearTimeout(drainDeadline);
+      // Even if the wrapper closed early, do not leave its owned workers alive.
+      if (timedOut) signalTree('SIGKILL');
+      child.stdout.destroy(); child.stderr.destroy();
+      resolve({
+        success: !timedOut && !spawnError && exitCode === 0,
+        status: timedOut ? 'timeout' : spawnError ? 'tool-error' : exitCode === 0 ? 'pass' : 'fail',
+        timedOut, exitCode, signal, duration: Date.now() - start, stdout, stderr, timeoutMs,
+      });
+    };
+    const deadline = setTimeout(() => {
+      timedOut = true;
+      signalTree('SIGTERM');
+      hardKill = setTimeout(() => signalTree('SIGKILL'), killGraceMs);
+      // Detached grandchildren can retain pipes: bounded waiting is not proof
+      // that arbitrary reparented processes have exited.
+      drainDeadline = setTimeout(() => finish(child.exitCode, child.signalCode), killGraceMs + 1_000);
+    }, timeoutMs);
+    child.once('close', (code, signal) => finish(code, signal));
+    child.once('error', () => finish(null, null, true));
+  });
+}
+
+export const detectionExitCode = (statistics, threshold) => statistics.failureRate >= threshold ? 1 : 0;
+
 class EnhancedFlakeDetector {
   constructor(options = {}) {
     this.runs = options.runs || 15;
@@ -17,6 +74,7 @@ class EnhancedFlakeDetector {
     this.earlyWarningThreshold = options.earlyWarningThreshold || 0.15; // 15% for warnings
     this.testPattern = options.testPattern || 'tests/**/*.test.ts';
     this.outputDir = options.outputDir || './reports/flake-detection';
+    this.timeoutMs = options.timeoutMs ?? SUITE_TIMEOUT_MS;
     this.results = new Map();
     this.testPatterns = new Map();
     this.failureAnalysis = new Map();
@@ -55,66 +113,24 @@ class EnhancedFlakeDetector {
   }
 
   async runTestSuite(run, testFile = null) {
-    return new Promise((resolve, reject) => {
-      const startTime = Date.now();
-      const testCommand = testFile ? 
-        ['npx', 'vitest', 'run', testFile, '--reporter=verbose'] :
-        ['pnpm', 'test:fast'];
-      
-      console.log(`🔄 Running test suite (${run}/${this.runs})${testFile ? ` - ${testFile}` : ''}...`);
-      
-      const testProcess = spawn(testCommand[0], testCommand.slice(1), {
-        stdio: ['inherit', 'pipe', 'pipe'],
-        timeout: 90000 // 1.5 minute timeout
-      });
+    const testCommand = testFile ?
+      ['npx', 'vitest', 'run', testFile, '--reporter=verbose'] :
+      ['pnpm', 'test:fast'];
 
-      // Additional timeout protection
-      const forceTimeout = setTimeout(() => {
-        console.log(`   ⏰ Force killing test process after 2 minutes`);
-        testProcess.kill('SIGKILL');
-      }, 120000);
+    console.log(`🔄 Running test suite (${run}/${this.runs})${testFile ? ` - ${testFile}` : ''}...`);
 
-      let stdout = '';
-      let stderr = '';
-
-      testProcess.stdout?.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      testProcess.stderr?.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      testProcess.on('close', (code) => {
-        const duration = Date.now() - startTime;
-        clearTimeout(forceTimeout);
-        
-        resolve({
-          run,
-          success: code === 0,
-          exitCode: code,
-          stdout,
-          stderr,
-          duration,
-          timestamp: new Date().toISOString(),
-          testFile: testFile || 'all'
-        });
-      });
-
-      testProcess.on('error', (error) => {
-        clearTimeout(forceTimeout);
-        reject({
-          run,
-          success: false,
-          error: error.message,
-          timestamp: new Date().toISOString(),
-          testFile: testFile || 'all'
-        });
-      });
-    });
+    const result = await runBoundedTestCommand(testCommand[0], testCommand.slice(1), { timeoutMs: this.timeoutMs });
+    return { ...result, run, timestamp: new Date().toISOString(), testFile: testFile || 'all' };
   }
 
   analyzeFailurePatterns(result) {
+    // Observed execution outcomes outrank heuristic keywords in test output.
+    if (result.status === 'timeout' || result.timedOut) {
+      return { failureType: 'timeout', keywords: ['execution deadline'], severity: 'high', suggestedActions: ['Investigate suite duration and process cleanup'] };
+    }
+    if (result.status === 'tool-error') {
+      return { failureType: 'tool-error', keywords: [], severity: 'high', suggestedActions: ['Check test command availability'] };
+    }
     const patterns = this.config.patterns;
     const analysis = {
       failureType: 'unknown',
@@ -356,7 +372,11 @@ class EnhancedFlakeDetector {
         success: r.success,
         duration: r.duration,
         timestamp: r.timestamp,
-        exitCode: r.exitCode
+        exitCode: r.exitCode,
+        status: r.status,
+        timedOut: r.timedOut,
+        signal: r.signal,
+        timeoutMs: r.timeoutMs
       }))
     };
 
@@ -457,6 +477,9 @@ async function main() {
       case 'output':
         options.outputDir = value;
         break;
+      case 'timeout-ms':
+        options.timeoutMs = Number(value);
+        break;
     }
   }
   
@@ -465,6 +488,7 @@ async function main() {
   try {
     const results = await detector.detectFlakeTests();
     await detector.generateReport(results);
+    process.exitCode = detectionExitCode(results.statistics, detector.threshold);
   } catch (error) {
     console.error('❌ Flake detection failed:', error.message);
     process.exit(1);

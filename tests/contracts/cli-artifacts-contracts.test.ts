@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { spawnSync } from 'node:child_process';
+import { execFile, type ExecFileOptions } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -18,8 +18,22 @@ const conformanceVerifySchema = JSON.parse(readFileSync(resolve('schema/conforma
 const conformanceMetricsSchema = JSON.parse(readFileSync(resolve('schema/conformance-metrics.schema.json'), 'utf8'));
 const conformanceReportSchema = JSON.parse(readFileSync(resolve('schema/conformance-report.schema.json'), 'utf8'));
 
+// Synchronous CLI calls can starve Vitest's worker RPC for the entire file
+// (>60s under load), even while all assertions pass. Keep the same commands,
+// exit-code assertions, output bound and deadlines, but yield while they run.
+const runCommand = (command: string, args: string[], options: ExecFileOptions) =>
+  new Promise<{ status: number; stdout: string; stderr: string }>((resolveResult, reject) => {
+    execFile(command, args, { ...options, encoding: 'utf8', maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+      if (error && (error.killed || typeof error.code !== 'number')) {
+        reject(error); // timeout/spawn/buffer failures are not assertion exit codes
+        return;
+      }
+      resolveResult({ status: error && typeof error.code === 'number' ? error.code : 0, stdout: String(stdout), stderr: String(stderr) });
+    });
+  });
+
 const runAeCli = (args: string[]) =>
-  spawnSync(tsxBin, ['src/cli/index.ts', ...args], {
+  runCommand(tsxBin, ['src/cli/index.ts', ...args], {
     cwd: repoRoot,
     encoding: 'utf8',
     timeout: 120_000,
@@ -32,7 +46,7 @@ const runAeCli = (args: string[]) =>
   });
 
 const runVerifyProfile = (args: string[]) =>
-  spawnSync(nodeBin, ['scripts/verify/run.mjs', ...args], {
+  runCommand(nodeBin, ['scripts/verify/run.mjs', ...args], {
     cwd: repoRoot,
     encoding: 'utf8',
     timeout: 120_000,
@@ -57,13 +71,13 @@ const parseJsonFromStdout = (stdout: string) => {
 };
 
 describe('CLI/Artifacts contract conformance', () => {
-  it('spec lint --format json follows schema and exit code contract (success/input)', () => {
+  it('spec lint --format json follows schema and exit code contract (success/input)', async () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'ae-contract-spec-lint-'));
     try {
       const irPath = join(tempDir, 'ae-ir.json');
       const lintReportPath = join(tempDir, 'artifacts', 'spec', 'lint-report.json');
 
-      const compileResult = runAeCli([
+      const compileResult = await runAeCli([
         'spec',
         'compile',
         '-i',
@@ -73,7 +87,7 @@ describe('CLI/Artifacts contract conformance', () => {
       ]);
       expect(compileResult.status).toBe(0);
 
-      const lintResult = runAeCli([
+      const lintResult = await runAeCli([
         'spec',
         'lint',
         '-i',
@@ -96,7 +110,7 @@ describe('CLI/Artifacts contract conformance', () => {
       const reportPayload = JSON.parse(readFileSync(lintReportPath, 'utf8')) as Record<string, unknown>;
       expect(validate(reportPayload), JSON.stringify(validate.errors)).toBe(true);
 
-      const invalidInputResult = runAeCli([
+      const invalidInputResult = await runAeCli([
         'spec',
         'lint',
         '-i',
@@ -118,13 +132,13 @@ describe('CLI/Artifacts contract conformance', () => {
     }
   });
 
-  it('spec validate --format json follows schema and exit code contract (success/input/internal)', () => {
+  it('spec validate --format json follows schema and exit code contract (success/input/internal)', async () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'ae-contract-spec-validate-'));
     try {
       const irPath = join(tempDir, 'ae-ir.json');
       const validateReportPath = join(tempDir, 'artifacts', 'spec', 'validate-report.json');
 
-      const validateResult = runAeCli([
+      const validateResult = await runAeCli([
         'spec',
         'validate',
         '-i',
@@ -146,7 +160,7 @@ describe('CLI/Artifacts contract conformance', () => {
       const stdoutPayload = parseJsonFromStdout(validateResult.stdout);
       expect(validateSchema(stdoutPayload), JSON.stringify(validateSchema.errors)).toBe(true);
 
-      const invalidInputResult = runAeCli([
+      const invalidInputResult = await runAeCli([
         'spec',
         'validate',
         '-i',
@@ -166,7 +180,7 @@ describe('CLI/Artifacts contract conformance', () => {
 
       const notDirectoryPath = join(tempDir, 'not-a-dir');
       writeFileSync(notDirectoryPath, 'x', 'utf8');
-      const internalErrorResult = runAeCli([
+      const internalErrorResult = await runAeCli([
         'spec',
         'validate',
         '-i',
@@ -192,11 +206,11 @@ describe('CLI/Artifacts contract conformance', () => {
     }
   });
 
-  it('verify:profile --json follows schema and exit code contract (success/input/internal)', () => {
+  it('verify:profile --json follows schema and exit code contract (success/input/internal)', async () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'ae-contract-verify-profile-'));
     try {
       const summaryPath = join(tempDir, 'artifacts', 'verify-profile-summary.json');
-      const successResult = runVerifyProfile([
+      const successResult = await runVerifyProfile([
         '--profile',
         'fast',
         '--dry-run',
@@ -217,19 +231,19 @@ describe('CLI/Artifacts contract conformance', () => {
       const filePayload = JSON.parse(readFileSync(summaryPath, 'utf8')) as Record<string, unknown>;
       expect(validate(filePayload), JSON.stringify(validate.errors)).toBe(true);
 
-      const unknownProfileResult = runVerifyProfile([
+      const unknownProfileResult = await runVerifyProfile([
         '--profile',
         'unknown',
         '--json',
       ]);
       expect(unknownProfileResult.status).toBe(2);
 
-      const missingProfileResult = runVerifyProfile(['--json']);
+      const missingProfileResult = await runVerifyProfile(['--json']);
       expect(missingProfileResult.status).toBe(3);
 
       const outDir = join(tempDir, 'existing-directory');
       mkdirSync(outDir);
-      const writeFailureResult = runVerifyProfile([
+      const writeFailureResult = await runVerifyProfile([
         '--profile',
         'fast',
         '--dry-run',
@@ -243,11 +257,11 @@ describe('CLI/Artifacts contract conformance', () => {
     }
   });
 
-  it('conformance verify --format json follows output schema contract (success)', () => {
+  it('conformance verify --format json follows output schema contract (success)', async () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'ae-contract-conformance-verify-'));
     try {
       const outputPath = join(tempDir, 'artifacts', 'conformance', 'conformance-results.json');
-      const result = runAeCli([
+      const result = await runAeCli([
         'conformance',
         'verify',
         '--input',
@@ -275,8 +289,8 @@ describe('CLI/Artifacts contract conformance', () => {
     }
   });
 
-  it('conformance metrics --format json follows output schema contract (success)', () => {
-    const result = runAeCli([
+  it('conformance metrics --format json follows output schema contract (success)', async () => {
+    const result = await runAeCli([
       'conformance',
       'metrics',
       '--format',
@@ -292,11 +306,11 @@ describe('CLI/Artifacts contract conformance', () => {
     expect(validate(payload), JSON.stringify(validate.errors)).toBe(true);
   });
 
-  it('conformance report --format json follows output schema contract (success)', () => {
+  it('conformance report --format json follows output schema contract (success)', async () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'ae-contract-conformance-report-'));
     try {
       const outputPath = join(tempDir, 'artifacts', 'conformance', 'conformance-summary.json');
-      const result = runAeCli([
+      const result = await runAeCli([
         'conformance',
         'report',
         '--inputs',
@@ -321,8 +335,8 @@ describe('CLI/Artifacts contract conformance', () => {
     }
   });
 
-  it('quality run --format json follows output/exit contract (success/input)', () => {
-    const successResult = runAeCli([
+  it('quality run --format json follows output/exit contract (success/input)', async () => {
+    const successResult = await runAeCli([
       'quality',
       'run',
       '--format',
@@ -338,7 +352,7 @@ describe('CLI/Artifacts contract conformance', () => {
     const validate = ajv.compile(qualityReportSchema);
     expect(validate(payload), JSON.stringify(validate.errors)).toBe(true);
 
-    const invalidFormatResult = runAeCli([
+    const invalidFormatResult = await runAeCli([
       'quality',
       'run',
       '--format',
@@ -348,8 +362,8 @@ describe('CLI/Artifacts contract conformance', () => {
     expect(invalidFormatResult.status).toBe(2);
   });
 
-  it('quality reconcile --format json follows output contract (success)', () => {
-    const result = runAeCli([
+  it('quality reconcile --format json follows output contract (success)', async () => {
+    const result = await runAeCli([
       'quality',
       'reconcile',
       '--format',
