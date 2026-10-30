@@ -80,13 +80,18 @@ describe('Spec & Verification Kit minimum activation profile', () => {
     }
 
     try {
-      expect(discoverProfile(workRoot).propertyFiles).toEqual([]);
+      // Inspect only owned fixtures: scanning "." races with other tests'
+      // temporary files and traverses unrelated local reports/worktrees.
+      const steps = join(workRoot, 'spec/bdd/steps');
+      mkdirSync(steps, { recursive: true });
+      writeFileSync(join(steps, 'supported.steps.js'), '// supported loader\n');
+      writeFileSync(join(steps, 'unsupported.steps.ts'), '// no TypeScript loader\n');
+      const profile = discoverProfile(workRoot);
+      expect(profile.propertyFiles).toEqual([]);
+      expect(profile.stepFiles).toEqual(['spec/bdd/steps/supported.steps.js']);
     } finally {
       rmSync(sandbox, { recursive: true, force: true });
     }
-
-    const repoProfile = discoverProfile('.');
-    expect(repoProfile.stepFiles.some((filePath) => filePath.endsWith('.ts'))).toBe(false);
   });
 
   it('rejects activation profile and output paths outside the current workspace', () => {

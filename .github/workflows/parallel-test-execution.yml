@@ -116,7 +116,8 @@ jobs:
             timeout: 20
           - test-type: flake-detection
             command: flake:detect:enhanced:quick
-            timeout: 10
+            # 3 x (240s suite + 2s kill grace + 1s pipe drain), plus reporting.
+            timeout: 15
 
     steps:
       - name: Checkout code
@@ -367,7 +368,7 @@ jobs:
         run: |
           printf "%s\n" "🔄 Retrying potentially flaky tests..."
           pnpm run flake:detect:enhanced:quick
-        timeout-minutes: 8
+        timeout-minutes: 15
 
       - name: Upload retry results
         uses: actions/upload-artifact@v4
